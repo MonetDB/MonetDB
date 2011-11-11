@@ -25,42 +25,34 @@ is the command-line interface to the MonetDB server.
 If the
 .BI \-\-statement= query
 .RB ( \-s
-.IR query)
-option is given, the query is executed as if it were given in a file.
+.IR query )
+option is given, the query is executed.
 If any files are listed after the options, queries are read from the
 files and executed.
-In either case,
-.I mclient
-exits after executing the query or queries, unless the
-.B \-\-interactive
-.RB ( \-i )
-option is given, in which case it continues reading queries from
-standard input.
-The file name
+The special filename
 .B \-
-refers to the standard input.
-If
+refers to standard input.
+Note that if there is both a
+.B \-\-statement
+option and filename arguments, the query given with
+.B \-\-statement
+is executed first.
+If no
+.B \-\-statement
+option is given and no files are specified on the command line,
 .I mclient
-is started without any non-option arguments and without the
-.B \-\-statement
-.RB ( \-s )
-option, it reads queries from standard input.
+reads queries from standard input.
 .PP
-When reading from standard input because no file arguments and no
-.B \-\-statement
-.RB ( \-s )
-option were passed on the command line, or because the
+When reading from standard input, if standard input is a terminal
+or if the
 .B \-\-interactive
 .RB ( \-i )
-option was given,
+option is given,
 .I mclient
 interprets lines starting with
 .B \e
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
-Note that this is not done when reading from standard input when the
-.B \-
-file argument is given.
 .PP
 Before
 .I mclient
@@ -102,7 +94,9 @@ and to the argument of the
 .B \-\-statement
 .RB ( \-s )
 option but not to the contents of files specified on the command line
-or files specified using the
+(except for
+.B \-
+which refers to standard input) or files specified using the
 .B \e<
 command (those must be encoded using UTF-8).  The default encoding is
 taken from the locale.
@@ -134,14 +128,19 @@ platforms where these are supported.
 \fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
 Specify the portnumber of the server (default: 50000).
 .TP
-\fB\-\-interactive[=\fP\fItimermode\fP\fB]\fP (\fB\-i[\fP\fItimermode\fP\fB]\fP)
-After executing the queries from the
-.B \-\-statement
-option (if given) and any file specified on the command
-line, read queries from standard input.  When this option is set, all
-files are read line by line, like if it were entered on mclient's
-console.  The optional \fItimermode\fP argument controls the
-format of the time reported for queries.  The default mode is
+\fB\-\-interactive\fP[\fB=\fP\fItimermode\fP] (\fB\-i\fP[\fItimermode\fP])
+When reading from standard input, interpret lines starting with
+.B \e
+(backslash) specially.
+See the section BACKSLASH COMMANDS below.
+This is the default if standard input is a terminal.
+The optional \fItimermode\fP argument controls the
+format of the time reported for queries.  Note that no space is
+allowed between
+.B \-i
+and
+.IR timermode .
+The default mode is
 \fBhuman\fP which adjusts the time precision to the measured value.  The
 modes \fBms\fP, \fBs\fP and \fBm\fP force millisecond, second and minute
 + second precision respectively.
@@ -174,11 +173,12 @@ is a pretty format which is meant for human consumption, and
 is a valid (in the XML sense) document.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
-uses \fIc\fP as column separator, but produces a single header line in
+uses \fIc\fP as column separator and produces a single header line in
 addition to the data.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.
+Note that using this option slows down processing.
 .TP
 \fB\-\-history\fP (\fB\-H\fP)
 Load and save the command line history (default off).
@@ -188,9 +188,7 @@ Save client/server interaction in the specified file.
 .TP
 \fB\-\-statement=\fP\fIstmt\fP (\fB\-s\fP \fIstmt\fP)
 Execute the specified query.  The query is run before any queries from
-files specified on the command line are run, and before the
-interactive session is started (if the \fB\-\-interactive\fP option is
-given).
+files specified on the command line are run.
 .TP
 \fB\--timezone\fP (\fB\-z\fP)
 Do not tell the client's timezone to the server.
