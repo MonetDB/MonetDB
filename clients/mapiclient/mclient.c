@@ -2525,7 +2525,7 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive[=tm] read stdin after command line args, use time formatting {ms,s,m}\n");
+	fprintf(stderr, " -i          | --interactive[=tm] interpret \\ commands on stdin, use time formatting {ms,s,m}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -2542,6 +2542,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
+	fprintf(stderr, "The file argument can be - for stdin\n");
 	exit(xit);
 }
 
