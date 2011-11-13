@@ -1800,7 +1800,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_message("%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
+	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_message("CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -1868,7 +1868,7 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
 		return sql_message("ALTER TABLE: no such table '%s'", t->base.name);
 
-	} else if (!schema_privs(sql->role_id, s)){
+	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
 		return sql_message("ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -1996,7 +1996,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		return sql_message("DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
 		return sql_message("DROP TABLE: cannot drop system table '%s'", tname);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
 		return sql_message("DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if ( !drop_action && t->keys.set) {
@@ -2041,7 +2041,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 
 	t = mvc_bind_table(sql, ss, tname);
 
-	if (!schema_privs(sql->role_id, ss)) {  
+	if (!schema_privs(sql->role_id, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)){  
 		return sql_message("DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
 		return sql_message("DROP VIEW: unknown view '%s'", tname);
