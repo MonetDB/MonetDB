@@ -60,3 +60,4 @@ Multiplication_and_cast.Bug-2923
 like_or.Bug-2924
 alter_table_add_column.Bug-2919
 update_with_count.Bug-2928
+user_create_temp_table.Bug-2916
