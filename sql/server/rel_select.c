@@ -3512,33 +3512,6 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 }
 
 static sql_exp *
-flatten_exps( mvc *sql, list *exps )
-{
-	node *n;
-	sql_exp *e = NULL;
-
-	for (n=exps->h; n; n=n->next) {
-		sql_exp *c = n->data, *ne = NULL;
-	
-		switch(c->type)  {
-		case e_cmp:
-			if (!c->f) {
-				char *cmp = compare_func((comp_type)c->flag);
-				ne = rel_binop_(sql, c->l, c->r, NULL, cmp, card_value);
-				if (!e)
-					e = ne;
-				else
-					e = rel_binop_(sql, e, ne, NULL, "sql_and", card_value);
-			}
-			break;
-		default:
-			assert(0);
-		}
-	}
-	return e;
-}
-
-static sql_exp *
 _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int f)
 {
 	sql_subaggr *a = NULL;
@@ -3602,8 +3575,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		if (groupby->r && exps_intern(groupby->r)) {
 			sql_rel *i = groupby->l;
 
-			if (i->exps && f == sql_sel) {
-				e = flatten_exps(sql, i->exps);
+			if (i->exps && f == sql_sel && is_join(i->op)) {
+				sql_rel *j = i->r;
+
+				e = j->exps->h->data;
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
 				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
 				return e;
 			}
