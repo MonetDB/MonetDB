@@ -15,14 +15,31 @@ stdout of test 'check0` in directory 'test/leaks` itself:
 # MonetDB/SQL module v2.26.0 loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
-
-# 15:06:32 >  
-# 15:06:32 >  mclient -lsql -ftest -i -e --host=alf --port=39294 
-# 15:06:32 >  
+# 22:06:31 >  
+# 22:06:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=33453"
+# 22:06:31 >  
 
 #select htype, ttype, count from bbp() as bbp 
 #where kind like 'pers%'
