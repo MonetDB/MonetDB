@@ -49,7 +49,7 @@ BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("DllMain %ld\n", (long) reason);
+	ODBCLOG("DllMain %ld (%s)\n", (long) reason, PACKAGE_STRING);
 #endif
 	(void) hinstDLL;
 	(void) reason;
