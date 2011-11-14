@@ -1,10 +1,6 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Changed a bug where the sign() function returned the same type as its
-  argument instead of always an INTEGER.
-
 * Wed Oct 26 2011 Fabian Groffen <fabian@cwi.nl>
 - Added a fix for bug #2834, which caused weird (failing) behaviour
   with PreparedStatements.

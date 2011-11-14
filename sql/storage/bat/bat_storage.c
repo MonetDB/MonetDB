@@ -611,16 +611,18 @@ create_col(sql_trans *tr, sql_column *c)
 		/* alter ? */
 		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL) {
 			sql_delta *d = fc->data;
-			cnt = d->cnt; 
+			cnt = d->cnt + 1; 
 		}
-		if (cnt) {
+		if (cnt && fc != c) {
 			sql_delta *d = fc->data;
 
 			bat->bid = copyBat(d->bid, type, 0);
-			bat->ibid = copyBat(d->ibid, type, d->ibase);
+			if (d->ibid)
+				bat->ibid = copyBat(d->ibid, type, d->ibase);
 			bat->ibase = d->ibase;
 			bat->cnt = d->cnt;
-			bat->ubid = e_ubat(type);
+			if (d->ubid)
+				bat->ubid = e_ubat(type);
 		} else {
 			BAT *b = bat_new(TYPE_void, type, c->t->sz);
 			if (!b) 

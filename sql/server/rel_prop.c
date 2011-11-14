@@ -71,7 +71,7 @@ find_prop( prop *p, int kind)
 	return p;
 }
 
-char *
+const char *
 propkind2string( prop *p)
 {
 	switch(p->kind) {

@@ -6,3 +6,7 @@
   csv+c where c is the column separator.  The form with csv+ produces
   a single header line with column names.
 
+* Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Changed a bug where the sign() function returned the same type as its
+  argument instead of always an INTEGER.
+

@@ -413,29 +413,43 @@ function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcomma
 end clients;
 
 function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
+
+	ns:bat[:int,:str] := nil:bat[:int,:str];
+	iht:bat[:int,:str] := nil:bat[:int,:str];
+	itt:bat[:int,:str] := nil:bat[:int,:str];
+	icnt:bat[:int,:lng] := nil:bat[:int,:lng];
+	irefcnt:bat[:int,:int] := nil:bat[:int,:int];
+	ilrefcnt:bat[:int,:int] := nil:bat[:int,:int];
+	ilocation:bat[:int,:str] := nil:bat[:int,:str];
+	iheat:bat[:int,:int] := nil:bat[:int,:int];
+	idirty:bat[:int,:str] := nil:bat[:int,:str];
+	istatus:bat[:int,:str] := nil:bat[:int,:str];
+	ikind:bat[:int,:str] := nil:bat[:int,:str];
+barrier bbp_1 := true;
 	ns := bbp.getNames();
+	iht := bbp.getHeadType();
+	itt := bbp.getTailType();
+	icnt := bbp.getCount();
+	irefcnt := bbp.getRefCount();
+	ilrefcnt := bbp.getLRefCount();
+	ilocation := bbp.getLocation();
+	iheat := bbp.getHeat();
+	idirty := bbp.getDirty();
+	istatus := bbp.getStatus();
+	ikind := bbp.getKind();
+exit bbp_1;
 	ri := algebra.markT(ns, 0:oid);
 	i := bat.reverse(ri);
 	n := algebra.markH(ns, 0:oid);
-	iht := bbp.getHeadType();
 	ht := algebra.markH(iht, 0:oid);
-	itt := bbp.getTailType();
 	tt := algebra.markH(itt, 0:oid);
-	icnt := bbp.getCount();
 	cnt := algebra.markH(icnt, 0:oid);
-	irefcnt := bbp.getRefCount();
 	refcnt := algebra.markH(irefcnt, 0:oid);
-	ilrefcnt := bbp.getLRefCount();
 	lrefcnt := algebra.markH(ilrefcnt, 0:oid);
-	ilocation := bbp.getLocation();
 	location := algebra.markH(ilocation, 0:oid);
-	iheat := bbp.getHeat();
 	heat := algebra.markH(iheat, 0:oid);
-	idirty := bbp.getDirty();
 	dirty := algebra.markH(idirty, 0:oid);
-	istatus := bbp.getStatus();
 	status := algebra.markH(istatus, 0:oid);
-	ikind := bbp.getKind();
 	kind := algebra.markH(ikind, 0:oid);
 	return (i,n,ht,tt,cnt,refcnt,lrefcnt,location,heat,dirty,status,kind);
 end bbp;
@@ -1853,7 +1867,7 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_message("%s TABLE: name '%s' already in use", cd, t->base.name);
-	} else if (temp != SQL_DECLARED_TABLE &&!schema_privs(sql->role_id, s)){
+	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_message("CREATE %s: insufficient privileges for user '%s' in schema '%s'", (temp == SQL_ARRAY)?"ARRAY":"TABLE", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -1921,7 +1935,7 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
 		return sql_message("ALTER TABLE: no such table '%s'", t->base.name);
 
-	} else if (!schema_privs(sql->role_id, s)){
+	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
 		return sql_message("ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
@@ -2049,7 +2063,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int tt)
 		return sql_message("DROP %s: cannot drop VIEW '%s'", (tt==tt_table)?"TABLE":"ARRAY", tname);
 	} else if (t->system) {
 		return sql_message("DROP %s: cannot drop system %s '%s'", (tt==tt_table)?"TABLE":"ARRAY", (tt==tt_table)?"table":"array", tname);
-	} else if (!schema_privs(sql->role_id, s)) {
+	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
 		return sql_message("DROP %s: access denied for %s to schema ;'%s'", (tt==tt_table)?"TABLE":"ARRAY", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if ( !drop_action && t->keys.set) {
@@ -2094,7 +2108,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 
 	t = mvc_bind_table(sql, ss, tname);
 
-	if (!schema_privs(sql->role_id, ss)) {  
+	if (!schema_privs(sql->role_id, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)){  
 		return sql_message("DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
 		return sql_message("DROP VIEW: unknown view '%s'", tname);

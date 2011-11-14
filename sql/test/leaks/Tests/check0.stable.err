@@ -6,7 +6,12 @@ stderr of test 'check0` in directory 'test/leaks` itself:
 # 11:28:50 >  
 
 
-# 11:28:50 >  
-# 11:28:50 >  Done.
-# 11:28:50 >  
+# 22:06:14 >  
+# 22:06:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=36318"
+# 22:06:14 >  
+
+
+# 22:06:14 >  
+# 22:06:14 >  "Done."
+# 22:06:14 >  
 

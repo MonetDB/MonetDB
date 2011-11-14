@@ -209,6 +209,12 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 		q = pushArgument(mb, q, c->nr);
 	}
 	q->retc = q->argc;
+	/* Lets make it a propper assignment */
+	for (i = 0, n = l->h; n; n = n->next, i++) {
+		stmt *c = n->data;
+
+		q = pushArgument(mb, q, c->nr);
+	}
 	return q;
 }
 
@@ -227,6 +233,7 @@ table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 			q = pushReturn(mb, q, newTmpVariable(mb, type));
 		else
 			setVarType(mb,getArg(q,0), type);
+		setVarUDFtype(mb, getArg(q,i));
 	}
 	return q;
 }
@@ -2342,14 +2349,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	(void)t;
 	r = rel_optimizer(m, rel);
 	s = rel_bin(m, r);
-/*
-	if (s && s->type == st_ordered) {
-		stmt *order = s->op1;
-		stmt *ns = s->op2;
 
-		s = sql_reorder(order, ns);
-	}
-*/
 	if (s->type == st_list && s->nrcols == 0 && s->key) {
 		/* row to columns */
 		node *n;
