@@ -706,15 +706,15 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
-			name = e->name;
-			if (!name && e->type == e_column && e->r)
-				name = e->r;
-			slen = strlen(name);
-			if (slen > len5)
-				len5 = slen;
 			name = e->rname;
 			if (!name && e->type == e_column && e->l)
 				name = e->l;
+			slen = strlen(name);
+			if (slen > len5)
+				len5 = slen;
+			name = e->name;
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
 			slen = strlen(name);
 			if (slen > len6)
 				len6 = slen;
@@ -781,7 +781,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				rname = e->l;
 
 			if (mnstr_printf(out,
-				"[ \"%s\",\t%d,\t%d,\t%s,\t%s,\t%s\t]\n",
+				"[ \"%s\",\t%d,\t%d,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n",
 				t->type->sqlname,
 				t->digits,
 				t->scale,
@@ -800,7 +800,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		q->paramlen = len;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
 		if (result) 
-			extra = ",,,";
+			extra = ",\"\",\"\",\"\"";
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;

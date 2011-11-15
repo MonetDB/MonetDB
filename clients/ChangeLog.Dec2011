@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Fixed SQLNumResultCols and SQLDescribeCol to return useful
+  information after a call to SQLPrepare and before any SQLExecute.
+
 * Wed Nov  9 2011 Sjoerd Mullender <sjoerd@acm.org>
 - mclient: The exact interpretation of the -i (--interactive) option
   and the - filename argument have changed.  The - filename argument
