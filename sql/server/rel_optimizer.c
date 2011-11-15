@@ -5379,7 +5379,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
-	if (gp.cnt[op_select] && !sql->emode == m_prepare) 
+	if (gp.cnt[op_select] && (!sql->emode == m_prepare || !sql->emode == m_prepareresult)) 
 		rel = rewrite(sql, rel, &rel_simplify_like_select, &changes); 
 
 	if (gp.cnt[op_select]) 

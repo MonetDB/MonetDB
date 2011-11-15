@@ -232,7 +232,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
 	int i, namelen;
 	cq *n = NEW(cq);
@@ -241,6 +241,7 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	cache->nr++;
 
 	n->sa = sa;
+	n->rel = r;
 	n->s = s;
 
 	n->params = NULL;

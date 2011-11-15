@@ -61,6 +61,7 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #include <mtime.h>
 #include <bat/res_table.h>
 #include <bat/bat_storage.h>
+#include <rel_exp.h>
 
 @= dec_tostr
 	char buf[32];
@@ -673,14 +674,52 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
 	int len = c->params ? list_length(c->params) : 0;
-	size_t len1 = 0;	/* column widths */
+	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0;	/* column widths */
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
 	sql_subtype *t;
+	int result = (c->emode == m_prepareresult);
 
 	if (!out)
 		return 0;
 
+	if (result && is_project(q->rel->op) && q->rel->exps) {
+		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
+		sql_rel *r = q->rel;
+
+		len += list_length(r->exps);
+
+		for (n = r->exps->h; n; n = n->next) {
+			char *name;
+			sql_exp *e = n->data;
+			size_t slen;
+
+			t = exp_subtype(e);
+			slen = strlen(t->type->sqlname);
+			if (slen > len1)
+				len1 = slen;
+			while (t->digits >= max2) {
+				len2++;
+				max2 *= 10;
+			}
+			while (t->scale >= max3) {
+				len3++;
+				max3 *= 10;
+			}
+			name = e->name;
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			slen = strlen(name);
+			if (slen > len5)
+				len5 = slen;
+			name = e->rname;
+			if (!name && e->type == e_column && e->l)
+				name = e->l;
+			slen = strlen(name);
+			if (slen > len6)
+				len6 = slen;
+		}
+	}
 	/* calculate column widths */
 	if (c->params) {
 		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
@@ -701,35 +740,78 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 				len3++;
 				max3 *= 10;
 			}
+			
 		}
 	}
 
 	/* write header, query type: Q_PREPARE */
-	if (mnstr_printf(out,
-		"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-		"%% .prepare,\t.prepare,\t.prepare # table_name\n"
-		"%% type,\tdigits,\tscale # name\n"
-		"%% varchar,\tint,\tint # type\n"
-		"%% " SZFMT ",\t%d,\t%d # length\n",
-		q->id, len, len, len1, len2, len3) < 0) {
-		return -1;
+	if (result) { 
+		if (mnstr_printf(out,
+			"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
+			"%% .prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n"
+			"%% type,\tdigits,\tscale,\tschema, \ttable, \tcolumn # name\n"
+			"%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n"
+			"%% " SZFMT ",\t%d,\t%d,\t" SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n",
+			q->id, len, len, len1, len2, len3, len4, len5, len6) < 0) 
+			return -1;
+	} else {
+		if (mnstr_printf(out,
+			"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
+			"%% .prepare,\t.prepare,\t.prepare # table_name\n"
+			"%% type,\tdigits,\tscale # name\n"
+			"%% varchar,\tint,\tint # type\n"
+			"%% " SZFMT ",\t%d,\t%d # length\n",
+			q->id, len, len, len1, len2, len3) < 0) 
+			return -1;
 	}
 
+	if (result && is_project(q->rel->op) && q->rel->exps) {
+		sql_rel *r = q->rel;
+
+		for (n = r->exps->h; n; n = n->next) {
+			char *name, *rname, *schema = NULL;
+			sql_exp *e = n->data;
+
+			t = exp_subtype(e);
+			name = e->name;
+			if (!name && e->type == e_column && e->r)
+				name = e->r;
+			rname = e->rname;
+			if (!rname && e->type == e_column && e->l)
+				rname = e->l;
+
+			if (mnstr_printf(out,
+				"[ \"%s\",\t%d,\t%d,\t%s,\t%s,\t%s\t]\n",
+				t->type->sqlname,
+				t->digits,
+				t->scale,
+				schema?schema:"",
+				rname?rname:"",
+				name?name:""
+				) < 0) {
+					return -1;
+				}
+		}
+	}
 	if (c->params) {
+		char *extra = "";
 		int i;
 
 		q->paramlen = len;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
+		if (result) 
+			extra = ",,,";
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
 
 			if (t) {
 				if (mnstr_printf(out,
-					"[ \"%s\",\t%d,\t%d\t]\n",
+					"[ \"%s\",\t%d,\t%d%s\t]\n",
 					t->type->sqlname,
 					t->digits,
-					t->scale
+					t->scale,
+					extra
 				) < 0) {
 					return -1;
 				}

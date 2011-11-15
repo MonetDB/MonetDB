@@ -1197,7 +1197,8 @@ extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
 
 extern int sqlcleanup(mvc *c, int err);
-extern stmt *sql_symbol2stmt(mvc *c, symbol *sym);
+extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
+extern stmt *sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
@@ -1603,50 +1604,58 @@ rel_need_distinct_query( sql_rel *rel)
 }
 
 
-stmt *
-sql_symbol2stmt(mvc *c, symbol *sym)
+sql_rel *
+sql_symbol2relation(mvc *c, symbol *sym)
 {
-	stmt *s = NULL;
 	int status;
 	sql_rel *r;
 
 	status = c->session->status;
 	r = rel_semantic(c, sym);
-
 	if (!r) {
 		if (c->errstr[0]) {
 			return NULL;
 		} else {
 			c->session->status = status;
+			return NULL;
+		}
+	}
+	if (r) {
+		r = rel_optimizer(c, r);
+		if (rel_is_point_query(r) || rel_need_distinct_query(r))
+			c->point_query = 1;
+	}
+	return r;
+}
+
+stmt *
+sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym)
+{
+	stmt *s = NULL;
+
+	if (!r) {
+		if (c->errstr[0]) {
+			return NULL;
+		} else {
 			/*printf("# falling back to direct mode \n");*/
 			s = output_semantic(c, sym);
+			if (s) {
+				s = rel2bin(c, s);
+				s = bin_optimizer(c, s);
+			}
 		}
 	} else {
-		int pq;
-
-		r = rel_optimizer(c, r);
-		pq = rel_is_point_query(r);
-		if (!pq)
-			pq = rel_need_distinct_query(r);
-
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);
 		}
-		rel_destroy(r);
 		if (s) {
 			/* only needed for delta tables */
 			s = rel2bin(c, s); 	
 			s = bin_optimizer(c, s);
-			c->point_query = pq;
 			return s;
 		}
-	}
-
-	if (s) {
-		s = rel2bin(c, s);
-		s = bin_optimizer(c, s);
 	}
 	return s;
 }
