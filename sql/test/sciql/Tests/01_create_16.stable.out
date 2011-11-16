@@ -20,18 +20,16 @@ stdout of test '01_create_16` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
-
-# 13:13:44 >  
-# 13:13:44 >  mclient -lsql -ftest -i -e --host=jarl --port=33096 
-# 13:13:44 >  
+# 11:12:55 >  
+# 11:12:55 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:12:55 >  
 
 #CREATE ARRAY sparse( x integer DIMENSION[4], y integer DIMENSION[4], v float DEFAULT 0.0 CHECK(v>=0.0));
 #SELECT * FROM sparse;
 % sys.sparse,	sys.sparse,	sys.sparse # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]

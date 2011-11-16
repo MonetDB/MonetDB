@@ -20,11 +20,9 @@ stdout of test '01_create_18` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
-
-# 13:35:39 >  
-# 13:35:39 >  mclient -lsql -ftest -i -e --host=jarl --port=33039 
-# 13:35:39 >  
+# 11:12:56 >  
+# 11:12:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:12:56 >  
 
 #CREATE ARRAY ary(x INTEGER DIMENSION[1:1:10]);
 #SELECT * FROM ary;

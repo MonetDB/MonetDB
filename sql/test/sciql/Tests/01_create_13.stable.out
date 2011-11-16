@@ -19,18 +19,16 @@ stdout of test '01_create_13` in directory 'test/sciql` itself:
 
 Ready.
 
-Over..
-
-# 23:29:49 >  
-# 23:29:49 >  mclient -lsql -ftest -i -e --host=jarl --port=31678 
-# 23:29:49 >  
+# 11:12:54 >  
+# 11:12:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:12:54 >  
 
 #CREATE ARRAY ary (dimx INT DIMENSION[17:3:27], dimy INT DIMENSION[31:2:40], dimz INT DIMENSION[0:5:19], v1 FLOAT DEFAULT 0.43, v2 FLOAT DEFAULT 3.3, v3 INT DEFAULT 999);
 #SELECT * FROM ary;
 % sys.ary,	sys.ary,	sys.ary,	sys.ary,	sys.ary,	sys.ary # table_name
 % dimx,	dimy,	dimz,	v1,	v2,	v3 # name
 % int,	int,	int,	double,	double,	int # type
-% 2,	2,	2,	22,	22,	3 # length
+% 2,	2,	2,	24,	24,	3 # length
 [ 17,	31,	0,	0.43,	3.3,	999	]
 [ 17,	31,	5,	0.43,	3.3,	999	]
 [ 17,	31,	10,	0.43,	3.3,	999	]

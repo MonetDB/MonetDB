@@ -20,18 +20,16 @@ stdout of test '02_update_01` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
-
-# 14:43:30 >  
-# 14:43:30 >  mclient -lsql -ftest -i -e --host=jarl --port=34781 
-# 14:43:30 >  
+# 11:12:57 >  
+# 11:12:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:12:57 >  
 
 #CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
 #SELECT * FROM matrix;
 % sys.matrix,	sys.matrix,	sys.matrix # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]
@@ -54,7 +52,7 @@ Over..
 % sys.matrix,	sys.matrix,	sys.matrix # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	-1	]
 [ 0,	2,	-2	]

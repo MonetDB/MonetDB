@@ -18,33 +18,10 @@ stdout of test '04_insert_06` in directory 'test/sciql` itself:
 # MonetDB/SQL module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/10_math.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/11_times.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/12_url.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/13_date.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/14_inet.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/15_history.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/16_tracelog.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/17_compress.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/18_dictionary.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/19_cluster.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/20_vacuum.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/21_dependency_functions.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/22_clients.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/23_skyserver.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/24_zorder.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/25_debug.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/29_array.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/40_geom.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/80_udf.sql
-# SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/99_system.sql
 
-Over..
-
-# 22:20:24 >  
-# 22:20:24 >  mclient -lsql -ftest -i -e --host=jarl --port=35504 
-# 22:20:24 >  
+# 11:13:01 >  
+# 11:13:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33649"
+# 11:13:01 >  
 
 #CREATE ARRAY ary (x INT DIMENSION [4], y INT DIMENSION [4], v1 INT, v2 INT);
 #SELECT * FROM ary;

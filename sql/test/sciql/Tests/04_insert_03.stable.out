@@ -40,8 +40,6 @@ Ready.
 # SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/80_udf.sql
 # SQL loading sql scripts /export/scratch0/zhang/monet-install/sciql/debug/lib/monetdb5/createdb/99_system.sql
 
-Over..
-
 # 22:42:48 >  
 # 22:42:48 >  mclient -lsql -ftest -i -e --host=jarl --port=37015 
 # 22:42:48 >  
@@ -52,7 +50,7 @@ Over..
 % sys.matrix_0403,	sys.matrix_0403,	sys.matrix_0403 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]
@@ -73,7 +71,7 @@ Over..
 % sys.stripes,	sys.stripes,	sys.stripes # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	1,	6.6	]
 [ 0,	3,	6.6	]
 [ 1,	1,	6.6	]
@@ -88,7 +86,7 @@ Over..
 % sys.matrix_0403,	sys.matrix_0403,	sys.matrix_0403 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	6.6	]
 [ 0,	1,	6.6	]
 [ 0,	2,	6.6	]

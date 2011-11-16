@@ -31,7 +31,7 @@ Over..
 % sys.diagonal,	sys.diagonal,	sys.diagonal # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 1,	1,	0	]
 [ 2,	2,	0	]

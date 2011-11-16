@@ -20,18 +20,16 @@ stdout of test '04_insert_01` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
-
 # 15:14:17 >  
-# 15:14:17 >  mclient -lsql -ftest -i -e --host=jarl --port=33220 
+# 15:14:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=32652" 
 # 15:14:17 >  
 
 #CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0);
 #SELECT * FROM matrix;
-% sys.matrix,	sys.matrix,	sys.matrix # table_name
+% sys.matrix_0401,	sys.matrix_0401,	sys.matrix_0401 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]
@@ -51,10 +49,10 @@ Over..
 #UPDATE matrix SET v = (x + y) * 100;
 [ 16	]
 #SELECT * FROM matrix;
-% sys.matrix,	sys.matrix,	sys.matrix # table_name
+% sys.matrix_0401,	sys.matrix_0401,	sys.matrix_0401 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	100	]
 [ 0,	2,	200	]
@@ -77,7 +75,7 @@ Over..
 % sys.matrix,	sys.matrix,	sys.matrix # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	100	]
 [ 0,	2,	200	]
