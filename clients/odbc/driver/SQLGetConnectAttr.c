@@ -196,10 +196,13 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	rc = SQLGetConnectAttr_(dbc, Attribute, ptr, n, &n);
 
 	if (ptr != ValuePtr) {
-		SQLSMALLINT nn = (SQLSMALLINT) n;
+		if (SQL_SUCCEEDED(rc)) {
+			SQLSMALLINT nn = (SQLSMALLINT) n;
 
-		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength,
-			    StringLengthPtr, 2, addDbcError, dbc);
+			fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength,
+				    StringLengthPtr, 2, addDbcError, dbc);
+		}
+		free(ptr);
 	} else if (StringLengthPtr)
 		*StringLengthPtr = n;
 

@@ -340,10 +340,14 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	rc = SQLColAttribute_(stmt, ColumnNumber, FieldIdentifier, ptr,
 			      n, &n, NumericAttributePtr);
 
-	if (ptr != CharacterAttributePtr)
-		fixWcharOut(rc, ptr, n, CharacterAttributePtr, BufferLength,
-			    StringLengthPtr, 2, addStmtError, stmt);
-	else if (StringLengthPtr)
+	if (ptr != CharacterAttributePtr) {
+		if (SQL_SUCCEEDED(rc)) {
+			fixWcharOut(rc, ptr, n, CharacterAttributePtr,
+				    BufferLength, StringLengthPtr, 2,
+				    addStmtError, stmt);
+		}
+		free(ptr);
+	} else if (StringLengthPtr)
 		*StringLengthPtr = n;
 
 	return rc;

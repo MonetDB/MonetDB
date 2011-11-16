@@ -434,8 +434,11 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 	out = malloc(n);
 	rc = SQLDriverConnect_(dbc, WindowHandle, in, SQL_NTS, out, n, &n,
 			       DriverCompletion, 0);
-	fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
-		    StringLength2Ptr, 1, addDbcError, dbc);
+	if (SQL_SUCCEEDED(rc)) {
+		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
+			    StringLength2Ptr, 1, addDbcError, dbc);
+	}
+	free(out);
 	if (in)
 		free(in);
 	return rc;

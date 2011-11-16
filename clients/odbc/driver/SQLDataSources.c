@@ -147,12 +147,16 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 			     server, 100, &length1,
 			     descr, 100, &length2);
 
-	fixWcharOut(rc, server, length1,
-		    ServerName, BufferLength1, NameLength1,
-		    1, addEnvError, env);
-	fixWcharOut(rc, descr, length2,
-		    Description, BufferLength2, NameLength2,
-		    1, addEnvError, env);
+	if (SQL_SUCCEEDED(rc)) {
+		fixWcharOut(rc, server, length1,
+			    ServerName, BufferLength1, NameLength1,
+			    1, addEnvError, env);
+		fixWcharOut(rc, descr, length2,
+			    Description, BufferLength2, NameLength2,
+			    1, addEnvError, env);
+	}
+	free(server);
+	free(descr);
 
 	return rc;
 }
