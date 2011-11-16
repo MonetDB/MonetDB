@@ -451,18 +451,15 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 {
 	mbr *c;
 	size_t i;
-	int xmin, ymin, xmax, ymax;
+	flt vals[4];
 
 	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readInt(s, &xmin) ||
-		    !mnstr_readInt(s, &ymin) ||
-		    !mnstr_readInt(s, &xmax) ||
-		    !mnstr_readInt(s, &ymax))
+		if (!mnstr_readIntArray(s, (int *) vals, 4))
 			return NULL;
-		c->xmin = (flt) xmin;
-		c->ymin = (flt) ymin;
-		c->xmax = (flt) xmax;
-		c->ymax = (flt) ymax;
+		c->xmin = vals[0];
+		c->ymin = vals[1];
+		c->xmax = vals[2];
+		c->ymax = vals[3];
 	}
 	return a;
 }
@@ -473,15 +470,14 @@ int
 mbrWRITE(mbr *c, stream *s, size_t cnt)
 {
 	size_t i;
+	flt vals[4];
 
 	for (i = 0; i < cnt; i++, c++) {
-		/* use binary writeInt (as sizeof (flt) == sizeof(int)); */
-		/* We want to write nil's here too.
-		   So no overflow checking needed */
-		if (!mnstr_writeInt(s, (int) c->xmin) ||
-		    !mnstr_writeInt(s, (int) c->ymin) ||
-		    !mnstr_writeInt(s, (int) c->xmax) ||
-		    !mnstr_writeInt(s, (int) c->ymax))
+		vals[0] = c->xmin;
+		vals[1] = c->ymin;
+		vals[2] = c->xmax;
+		vals[3] = c->ymax;
+		if (!mnstr_writeIntArray(s, (int *) vals, 4))
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
