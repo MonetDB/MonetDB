@@ -414,30 +414,7 @@ end clients;
 
 function bbp{inline}()( id:bat[:oid,:int], name:bat[:oid,:str], htype:bat[:oid,:str], ttype:bat[:oid,:str], count:bat[:oid,:lng], refcnt:bat[:oid,:int], lrefcnt:bat[:oid,:int], location:bat[:oid,:str], heat:bat[:oid,:int], dirty:bat[:oid,:str], status:bat[:oid,:str], kind:bat[:oid,:str]);
 
-	ns:bat[:int,:str] := nil:bat[:int,:str];
-	iht:bat[:int,:str] := nil:bat[:int,:str];
-	itt:bat[:int,:str] := nil:bat[:int,:str];
-	icnt:bat[:int,:lng] := nil:bat[:int,:lng];
-	irefcnt:bat[:int,:int] := nil:bat[:int,:int];
-	ilrefcnt:bat[:int,:int] := nil:bat[:int,:int];
-	ilocation:bat[:int,:str] := nil:bat[:int,:str];
-	iheat:bat[:int,:int] := nil:bat[:int,:int];
-	idirty:bat[:int,:str] := nil:bat[:int,:str];
-	istatus:bat[:int,:str] := nil:bat[:int,:str];
-	ikind:bat[:int,:str] := nil:bat[:int,:str];
-barrier bbp_1 := true;
-	ns := bbp.getNames();
-	iht := bbp.getHeadType();
-	itt := bbp.getTailType();
-	icnt := bbp.getCount();
-	irefcnt := bbp.getRefCount();
-	ilrefcnt := bbp.getLRefCount();
-	ilocation := bbp.getLocation();
-	iheat := bbp.getHeat();
-	idirty := bbp.getDirty();
-	istatus := bbp.getStatus();
-	ikind := bbp.getKind();
-exit bbp_1;
+	(ns,iht,itt,icnt,irefcnt,ilrefcnt,ilocation,iheat,idirty,istatus,ikind) := bbp.get();
 	ri := algebra.markT(ns, 0:oid);
 	i := bat.reverse(ri);
 	n := algebra.markH(ns, 0:oid);
@@ -1220,7 +1197,8 @@ extern backend *backend_create(mvc *m, Client c);
 extern void backend_destroy(backend *b);
 
 extern int sqlcleanup(mvc *c, int err);
-extern stmt *sql_symbol2stmt(mvc *c, symbol *sym);
+extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
+extern stmt *sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym);
 
 extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
@@ -1627,51 +1605,59 @@ rel_need_distinct_query( sql_rel *rel)
 }
 
 
-stmt *
-sql_symbol2stmt(mvc *c, symbol *sym)
+sql_rel *
+sql_symbol2relation(mvc *c, symbol *sym)
 {
-	stmt *s = NULL;
 	int status;
 	sql_rel *r;
 
 	status = c->session->status;
 	r = rel_semantic(c, sym);
-
 	if (!r) {
 		if (c->errstr[0]) {
 			return NULL;
 		} else {
 			c->session->status = status;
-			/*printf("# falling back to direct mode \n");*/
-			s = output_semantic(c, sym);
+			return NULL;
 		}
-	} else {
-		int pq;
-
+	}
+	if (r) {
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
-		pq = rel_is_point_query(r);
-		if (!pq)
-			pq = rel_need_distinct_query(r);
+		if (rel_is_point_query(r) || rel_need_distinct_query(r))
+			c->point_query = 1;
+	}
+	return r;
+}
 
+stmt *
+sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym)
+{
+	stmt *s = NULL;
+
+	if (!r) {
+		if (c->errstr[0]) {
+			return NULL;
+		} else {
+			/*printf("# falling back to direct mode \n");*/
+			s = output_semantic(c, sym);
+			if (s) {
+				s = rel2bin(c, s);
+				s = bin_optimizer(c, s);
+			}
+		}
+	} else {
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);
 		}
-		rel_destroy(r);
 		if (s) {
 			/* only needed for delta tables */
 			s = rel2bin(c, s); 	
 			s = bin_optimizer(c, s);
-			c->point_query = pq;
 			return s;
 		}
-	}
-
-	if (s) {
-		s = rel2bin(c, s);
-		s = bin_optimizer(c, s);
 	}
 	return s;
 }

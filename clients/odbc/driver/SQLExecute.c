@@ -143,6 +143,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		break;
 	}
 
+	assert(stmt->ImplRowDescr == NULL || stmt->ImplRowDescr->sql_desc_count == nrCols);
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
 
 	if (nrCols == 0)
@@ -174,18 +175,26 @@ ODBCInitResult(ODBCStmt *stmt)
 			s = "";
 		if (*s) {
 			rec->sql_desc_unnamed = SQL_NAMED;
+			if (rec->sql_desc_label)
+				free(rec->sql_desc_label);
 			rec->sql_desc_label = (SQLCHAR *) strdup(s);
+			if (rec->sql_desc_name)
+				free(rec->sql_desc_name);
 			rec->sql_desc_name = (SQLCHAR *) strdup(s);
 		} else {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
 			rec->sql_desc_label = NULL;
 			rec->sql_desc_name = NULL;
 		}
+		if (rec->sql_desc_base_column_name)
+			free(rec->sql_desc_base_column_name);
 		rec->sql_desc_base_column_name = NULL; /* see below */
 
 		s = mapi_get_type(hdl, i);
 		if (s == NULL)	/* shouldn't happen */
 			s = "";
+		if (rec->sql_desc_type_name)
+			free(rec->sql_desc_type_name);
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
 		if (concise_type == SQL_INTERVAL_MONTH) {
@@ -264,13 +273,19 @@ ODBCInitResult(ODBCStmt *stmt)
 		s = mapi_get_table(hdl, i);
 		if (s) {
 			char *p = strchr(s, '.');
+			if (rec->sql_desc_table_name)
+				free(rec->sql_desc_table_name);
 			if (p) {
+				if (rec->sql_desc_schema_name)
+					free(rec->sql_desc_schema_name);
 				rec->sql_desc_schema_name = (SQLCHAR *) dupODBCstring((SQLCHAR *) s, p - s);
 				rec->sql_desc_table_name = (SQLCHAR *) strdup(p + 1);
 				if (p != s) {
 					/* base table name and base
 					 * column name exist if there
 					 * is a schema name */
+					if (rec->sql_desc_base_table_name)
+						free(rec->sql_desc_base_table_name);
 					rec->sql_desc_base_table_name = (SQLCHAR *) strdup(p + 1);
 					if (rec->sql_desc_name)
 						rec->sql_desc_base_column_name = (SQLCHAR *) strdup((char *) rec->sql_desc_name);
@@ -285,7 +300,8 @@ ODBCInitResult(ODBCStmt *stmt)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
 		rec->sql_desc_local_type_name = NULL;
-		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
+		if (rec->sql_desc_catalog_name == NULL)
+			rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 
@@ -326,19 +342,21 @@ SQLExecute_(ODBCStmt *stmt)
 	SQLINTEGER offset;
 
 	/* check statement cursor state, query should be prepared */
-	if (stmt->State == INITED || (stmt->State >= EXECUTED0 && stmt->queryid < 0)) {
+	if (stmt->State == INITED ||
+	    (stmt->State >= EXECUTED0 && stmt->queryid < 0)) {
 		/* Function sequence error */
 		addStmtError(stmt, "HY010", NULL, 0);
 		return SQL_ERROR;
 	}
-	if (stmt->State >= EXECUTED1 || (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
+	if (stmt->State >= EXECUTED1 ||
+	    (stmt->State == EXECUTED0 && mapi_more_results(stmt->hdl))) {
 		/* Invalid cursor state */
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
 
 	/* internal state correctness checks */
-	assert(stmt->ImplRowDescr->descRec == NULL);
+	assert(stmt->ImplRowDescr->descRec != NULL);
 
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->mid);

@@ -69,16 +69,6 @@ SQLNumResultCols(SQLHSTMT StatementHandle,
 		return SQL_ERROR;
 	}
 
-	/* When the query is only prepared (via SQLPrepare) we do not have
-	 * the correct nrCols value yet (this is a limitation of the current
-	 * MonetDB SQL frontend implementation). */
-	/* we only have a correct nrCols value when the query is executed */
-	if (stmt->State < EXECUTED0) {
-		/* General error */
-		addStmtError(stmt, "HY000", "Cannot return the number of output columns. Query must be executed first", 0);
-		return SQL_ERROR;
-	}
-
 	/* We can now set the "number of output columns" value */
 	/* Note: row count can be 0 (for non SELECT queries) */
 	*ColumnCountPtr = stmt->ImplRowDescr->sql_desc_count;
