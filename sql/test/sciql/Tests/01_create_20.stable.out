@@ -19,18 +19,16 @@ stdout of test '01_create_20` in directory 'test/sciql` itself:
 
 Ready.
 
-Over..
-
-# 17:53:50 >  
-# 17:53:50 >  mclient -lsql -ftest -i -e --host=jarl --port=39586 
-# 17:53:50 >  
+# 16:32:44 >  
+# 16:32:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
+# 16:32:44 >  
 
 #CREATE ARRAY timeseries (tick TIMESTAMP DIMENSION, payload FLOAT DEFAULT 0.0 );
 #SELECT * FROM timeseries;
 % sys.timeseries,	sys.timeseries # table_name
 % tick,	payload # name
 % timestamp,	double # type
-% 26,	22 # length
+% 26,	24 # length
 #DROP ARRAY timeseries;
 
 # 17:53:50 >  

@@ -20,7 +20,9 @@ stdout of test '00_syntax_error_03` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
+# 16:32:39 >  
+# 16:32:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
+# 16:32:39 >  
 
 # 13:45:43 >  
 # 13:45:43 >  mclient -lsql -ftest -i -e --host=jarl --port=30420 

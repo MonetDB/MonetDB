@@ -19,15 +19,33 @@ stdout of test '00_syntax_error_01` in directory 'test/sciql` itself:
 
 Ready.
 # SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
-Over..
-
-# 13:37:16 >  
-# 13:37:16 >  mclient -lsql -ftest -i -e --host=jarl --port=38847 
-# 13:37:16 >  
+# 16:28:17 >  
+# 16:28:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31491"
+# 16:28:17 >  
 
 
-# 13:37:16 >  
-# 13:37:16 >  Done.
-# 13:37:16 >  
+# 16:28:17 >  
+# 16:28:17 >  "Done."
+# 16:28:17 >  
 

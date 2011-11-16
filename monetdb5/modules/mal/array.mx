@@ -84,7 +84,7 @@ pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYmap
 comment "The argument is a double set of dimension columns. The first set describes the shape
 of the target array and the second one holds the index values of interest. The result is a column
-with the oid positions of the elements in target. ";
+with the oid positions of the elements in target.";
 
 pattern unmap(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
 address ARRAYumap
