@@ -90,7 +90,8 @@ typedef struct QRYSTAT {
 	int calls; 	/* number of calls */
 	int greuse; /* number of global reuse */
 	int lreuse; /* number of local reuse in current execution only */
-	lng dtreuse;/* data transfer amount in RU that query reuses from others */
+	lng dt;		/* data transfer (RU) by this query */
+	lng dtreuse;/* data transfer (RU) that query reuses from others */
 	int *crd;   /* instructions credits */
 	int stop;
 	int wl;		/* waterline of globally reused instructions*/

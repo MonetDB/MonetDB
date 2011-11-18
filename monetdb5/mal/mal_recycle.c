@@ -138,7 +138,7 @@ int reusePolicy = REUSE_COVER;	/* recycle reuse policy
  * If we run low on memory, we either deploy the LRU or
  * BENEFIT algorithm to determine the victims.
  */
-int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
+int rcachePolicy = RCACHE_BENEFIT;  /* recycle cache management policy
 			RCACHE_ALL: baseline, do nothing
 			RCACHE_LRU: evict the LRU
 			RCACHE_BENEFIT: evict items with smallest benefit= weight * cost
@@ -180,7 +180,9 @@ double recycleAlpha = 0.5;
 #define recycleW(X)  ((recycleBlk->profiler[X].counter + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
 */
 
-#define recycleCost(X) (recycleBlk->profiler[X].ticks)
+/*#define recycleCost(X) (recycleBlk->profiler[X].ticks)*/
+/* ticks are not correct for octopus.bind, use wbytes insteead */
+#define recycleCost(X) (recycleBlk->profiler[X].wbytes)
 #define recycleW(X)  ((recycleBlk->profiler[X].trace && (recycleBlk->profiler[X].counter >1 )) ? \
 						(recycleBlk->profiler[X].counter -1) : 0.1 )
 
@@ -956,6 +958,14 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 	lng memLimit;
 	lng cacheLimit;
 	QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+		bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+		bindidxRef = putName("bind_idxbat",11);
 
 /*	(void) rd;	*/
 	RECYCLEspace();
@@ -1027,6 +1037,11 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 			"#memory="LLFMT", stop=%d, recycled=%d, executed=%d \n",
 			recyclerUsedMemory, recycleBlk->stop,
 			cntxt->rcc->recycled0, cntxt->rcc->statements);
+
+	if ( getModuleId(p) == octopusRef &&
+			 (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) )
+		recycleQPat->ptrn[cntxt->rcc->curQ]->dt += wr;
+
 	cntxt->rcc->recent = i;
 	cntxt->rcc->RPadded0++;
 	setSelectProp(q);

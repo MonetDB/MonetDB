@@ -169,50 +169,24 @@ RECYCLEdumpQPat(stream *s)
 static void
 RECYCLEdumpDataTrans(stream *s)
 {
-	int i, n, qidx, err=0;
-	InstrPtr p;
-	lng *dt, sum = 0, rdt, rsum = 0;
-
-	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
-
-	if (octopusRef == 0)
-		octopusRef = putName("octopus",7);
-	if (bindRef == 0)
-        bindRef = putName("bind",4);
-	if (bindidxRef == 0)
-        bindidxRef = putName("bind_idxbat",11);
+	int i, n;
+	lng dt, sum = 0, rdt, rsum = 0;
 
 	if (!recycleBlk || !recycleQPat)
 		return;
 
 	n = recycleQPat->cnt;
-	dt = GDKzalloc(sizeof(lng) * n);
-
-	for(i=0; i< recycleBlk->stop; i++){
-		p = getInstrPtr(recycleBlk,i);
-		if ( getModuleId(p) != octopusRef ||
-			 (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef) )
-			 continue;
-		qidx = p->recycle;
-		if ( qidx >= 0 && qidx < n )
-			dt[qidx] += recycleBlk->profiler[i].wbytes;
-		else err = i;
-	}
 
 	mnstr_printf(s,"#Query  \t Data   \t DT Reused\n");
 	mnstr_printf(s,"#pattern\t transf.\t from others\n");
 	for( i=0; i < n; i++){
 		rdt = recycleQPat->ptrn[i]->dtreuse;
-		mnstr_printf(s,"# %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt[i], rdt);
-		sum += dt[i];
-		rsum += rdt;
+        dt = recycleQPat->ptrn[i]->dt;
+        mnstr_printf(s,"# %d \t\t "LLFMT"\t\t"LLFMT"\n", i, dt, rdt);
+        sum += dt;
+        rsum += rdt;
 	}
 	mnstr_printf(s,"#########\n# Total transfer "LLFMT" Total reused "LLFMT"\n", sum, rsum);
-	if (err)
-		mnstr_printf(s,"# CL %d points to missing query pattern\n",
-			getInstrPtr(recycleBlk,err)->recycle );
-
-	GDKfree(dt);
 }
 
 str
