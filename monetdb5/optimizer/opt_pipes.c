@@ -74,7 +74,7 @@ struct PIPELINES{
 
 {"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"},
 
-{"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,constants,commonTerms,joinPath,deadcode,recycle,reduce,dataflow,history,multiplex,garbageCollector"},
+{"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,commonTerms,joinPath,deadcode,recycle,reduce,history,multiplex,garbageCollector"},
 
 {"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
 {"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
