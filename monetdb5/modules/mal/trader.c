@@ -55,17 +55,18 @@ static lng estimateSavings0(MalBlkPtr mb,  sht bidtype)
 static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 {
 	MalStkPtr stk = NULL;
-	int i, j, k, marked = 0;
+	int i, j, k, marked = 0, maxparam = 0;
 	ValPtr lhs, rhs;
 	InstrPtr p, q;
 	lng savedInstr = 0, savedKB = 0;
-	static str octopusRef = 0, bindRef = 0;
-
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
 
 	if (octopusRef == 0)
 		octopusRef = putName("octopus",7);
 	if (bindRef == 0)
-        bindRef = putName("bind",4);
+		bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+		bindidxRef = putName("bind_idxbat",11);
 
 	if( recycleBlk == 0 || reusePolicy == 0)
 		return 0;
@@ -93,6 +94,8 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 			lhs->len = 0;
 		}
 	}
+	maxparam = getArg(mb->stmt[0], mb->stmt[0]->argc - 1);
+	/* don't compare function parameters */
 
 	for (k = 0; k < mb->stop; k++){
 		p = getInstrPtr(mb,k);
@@ -112,20 +115,18 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 		   	 (getModuleId(p) != getModuleId(q)))
 				continue;
 
-			switch(reusePolicy){
+			if (p->argc < q->argc-1) continue;
+			/* sub-range instructions can be subsumed from entire table */
 
-			case REUSE_COVER:
-				/* 1: check for subsumption : TODO*/
-
-			case REUSE_EXACT:
-				/* 2: exact covering */
-				if (p->argc != q->argc-1) continue;
+			else if (p->argc == q->argc-1) { /* check for exact match */
 
 				if ( bidtype == BID_TRANS ) j = p->retc + 1;
 				else j = p->retc;
-				for ( ; j < p->argc; j++)
+				for ( ; j < p->argc; j++){
+					if (getArg(p,j) <= maxparam) continue;
 					if (VALcmp(&stk->stk[getArg(p,j)], &getVarConstant(recycleBlk,getArg(q,j))))
 						goto nomatch;
+				}
 
 				/* found an exact match - get the results on the stack */
 				for( j=0; j<p->retc; j++){
@@ -136,18 +137,23 @@ static lng estimateSavings(MalBlkPtr mb, sht bidtype)
 				if ( bidtype == BID_TRANS )
 					savedKB += recycleBlk->profiler[i].wbytes;
 				else savedInstr++;
-				goto nextinstr;
-
-				nomatch:
+				break;
+			}
+			else { 	/* check for bind subsumption */
+				int nr_part = 0;
+				if ( bidtype != BID_TRANS )
 					continue;
+				for (j = p->retc + 1; j < 6; j++)
+					if ( VALcmp(&stk->stk[getArg(p,j)],
+						&getVarConstant(recycleBlk, getArg(q,j))) )
+					goto nomatch;
+				nr_part = * (int*) getVarValue(mb, getArg(p,7));
+				savedKB += nr_part?recycleBlk->profiler[i].wbytes/nr_part : 0;
 			}
 
-		}	/* end loop over RP */
-
-		/* processing of subsumed instruction: TODO */
-
-		nextinstr:
-			continue;
+			nomatch:
+				continue;
+		} 	/* end loop over RP */
 	}
 
 	/* clean up the phony stack */
