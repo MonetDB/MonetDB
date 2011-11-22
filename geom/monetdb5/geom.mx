@@ -451,11 +451,13 @@ mbrREAD(mbr *a, stream *s, size_t cnt)
 {
 	mbr *c;
 	size_t i;
+	int v[4];
 	flt vals[4];
 
 	for (i = 0, c = a; i < cnt; i++, c++) {
-		if (!mnstr_readIntArray(s, (int *) vals, 4))
+		if (!mnstr_readIntArray(s, v, 4))
 			return NULL;
+		memcpy(vals, v, 4 * sizeof(int));
 		c->xmin = vals[0];
 		c->ymin = vals[1];
 		c->xmax = vals[2];
@@ -471,13 +473,15 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 {
 	size_t i;
 	flt vals[4];
+	int v[4];
 
 	for (i = 0; i < cnt; i++, c++) {
 		vals[0] = c->xmin;
 		vals[1] = c->ymin;
 		vals[2] = c->xmax;
 		vals[3] = c->ymax;
-		if (!mnstr_writeIntArray(s, (int *) vals, 4))
+		memcpy(v, vals, 4 * sizeof(int));
+		if (!mnstr_writeIntArray(s, v, 4))
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
