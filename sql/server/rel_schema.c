@@ -180,6 +180,7 @@ table_constraint_name(symbol *s, sql_table *t)
 	char *suffix;		/* stores the type of this constraint */
 	dnode *nms = NULL;
 	static char buf[BUFSIZ];
+	size_t len;
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -200,16 +201,18 @@ table_constraint_name(symbol *s, sql_table *t)
 	}
 
 	/* copy table name */
-	strncpy(buf, t->base.name, BUFSIZ);
+	strncpy(buf, t->base.name, BUFSIZ - 1);
+	buf[BUFSIZ - 1] = '\0';
 
 	/* add column name(s) */
 	for (; nms; nms = nms->next) {
-		strncat(buf, "_", BUFSIZ - strlen(buf));
-		strncat(buf, nms->data.sval, BUFSIZ - strlen(buf));
+		len = strlen(buf);
+		snprintf(buf + len, BUFSIZ - len, "_%s", nms->data.sval);
 	}
 
 	/* add suffix */
-	strncat(buf, suffix, BUFSIZ - strlen(buf));
+	len = strlen(buf);
+	snprintf(buf + len, BUFSIZ - len, "%s", suffix);
 
 	return buf;
 }
