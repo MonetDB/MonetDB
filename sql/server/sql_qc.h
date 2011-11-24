@@ -29,6 +29,7 @@ typedef struct cq {
 	struct cq *next;	/* link them into a queue */
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
 	sql_allocator *sa;	/* the symbols are allocated from this sa */
+	sql_rel *rel;		/* relational query */
 	symbol *s;		/* the SQL parse tree */
 	sql_subtype *params;	/* parameter types */
 	int paramlen;		/* number of parameters */
@@ -53,7 +54,7 @@ extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 

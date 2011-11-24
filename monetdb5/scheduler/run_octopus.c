@@ -612,6 +612,12 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bid[j][k] = *(lng*) getArgReference(stk,pci,i);
 	}
 
+	for ( j = 0; j < tcnt; j++){
+		for ( k = 0; k < tcnt; k++)
+			mnstr_printf(cntxt->fdout, LLFMT" ", bid[j][k]);
+		mnstr_printf(cntxt->fdout, "\n");
+	}
+
 	/* compute schedule */
 /*	Round Robin
 	for ( j = 0; j < tcnt; j++)
@@ -626,6 +632,7 @@ OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pr = workers[sch[j]].pnum;
 		stk->stk[v].val.sval = GDKstrdup(peers[pr].uri);
 		stk->stk[v].len = (int) strlen(stk->stk[v].val.sval);
+		mnstr_printf(cntxt->fdout, "Tentacle %d scheduled on node %d: %s\n", j+1, sch[j], peers[pr].uri);
 	}
 
 	for ( j= 0; j < tcnt; j++)

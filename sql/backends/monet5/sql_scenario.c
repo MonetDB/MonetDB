@@ -691,6 +691,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	 */
 	c->state[MAL_SCENARIO_PARSER] = sql;
 	while( m->scanner.rs->pos < m->scanner.rs->len ){
+		sql_rel *r;
 		stmt *s;
 		int oldvtop, oldstop;
 
@@ -723,7 +724,8 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		MSinitClientPrg(c,"user",nme);
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
-		s = sql_symbol2stmt(m, m->sym);
+		r = sql_symbol2relation(m, m->sym);
+		s = sql_symbol2stmt(m, r, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout,"#SQLstatement:\n");
 #endif
@@ -1373,7 +1375,8 @@ SQLparser(Client c)
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
-		stmt *s = sql_symbol2stmt(m, m->sym);
+		sql_rel *r = sql_symbol2relation(m, m->sym);
+		stmt *s = sql_symbol2stmt(m, r, m->sym);
 
 		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
@@ -1389,7 +1392,7 @@ SQLparser(Client c)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1410,11 +1413,12 @@ SQLparser(Client c)
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
 					m->sa,        /* the allocator */
+					r,	      /* keep relational query */
 					m->sym,       /* the sql symbol tree */
 					m->args,      /* the argument list */
 					m->argc,
 					m->scanner.key ^ m->session->schema->base.id,  /* the statement hash key */
-					(m->emode == m_prepare) ? Q_PREPARE :
+					(m->emode == m_prepare || m->emode == m_prepareresult) ? Q_PREPARE :
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
@@ -1433,7 +1437,7 @@ SQLparser(Client c)
 		}
 	}
 	if (be->q) {
-		if (m->emode == m_prepare)
+		if (m->emode == m_prepare || m->emode == m_prepareresult)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
@@ -1625,7 +1629,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->emode == m_prepare){
+	if( m->emode == m_prepare || m->emode == m_prepareresult){
 		goto cleanup_engine;
 	} else if( m->emode == m_explain ){
 		/*
@@ -1713,7 +1717,7 @@ SQLrecompile(Client c, backend *be)
 	int oldstop = c->curprg->def->stop;
 
 	SQLCacheRemove(c, be->q->name);
-	s = sql_symbol2stmt(m, be->q->s);
+	s = sql_symbol2stmt(m, be->q->rel, be->q->s);
 	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
 

@@ -58,6 +58,7 @@ Ready.
 [ "oid",	"int",	1151	]
 [ "oid",	"int",	1151	]
 [ "oid",	"int",	1151	]
+[ "oid",	"int",	1151	]
 [ "oid",	"int",	3163	]
 [ "oid",	"int",	3163	]
 [ "oid",	"int",	3163	]
@@ -77,7 +78,7 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	487	]
+[ "transient",	497	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name

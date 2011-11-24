@@ -138,7 +138,7 @@ int reusePolicy = REUSE_COVER;	/* recycle reuse policy
  * If we run low on memory, we either deploy the LRU or
  * BENEFIT algorithm to determine the victims.
  */
-int rcachePolicy = RCACHE_LRU;  /* recycle cache management policy
+int rcachePolicy = RCACHE_BENEFIT;  /* recycle cache management policy
 			RCACHE_ALL: baseline, do nothing
 			RCACHE_LRU: evict the LRU
 			RCACHE_BENEFIT: evict items with smallest benefit= weight * cost
@@ -180,7 +180,9 @@ double recycleAlpha = 0.5;
 #define recycleW(X)  ((recycleBlk->profiler[X].counter + 2) * (0.05 + (sht)recycleBlk->profiler[X].trace) / 3.0)
 */
 
-#define recycleCost(X) (recycleBlk->profiler[X].ticks)
+/*#define recycleCost(X) (recycleBlk->profiler[X].ticks)*/
+/* ticks are not correct for octopus.bind, use wbytes insteead */
+#define recycleCost(X) (recycleBlk->profiler[X].wbytes)
 #define recycleW(X)  ((recycleBlk->profiler[X].trace && (recycleBlk->profiler[X].counter >1 )) ? \
 						(recycleBlk->profiler[X].counter -1) : 0.1 )
 
@@ -956,6 +958,14 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 	lng memLimit;
 	lng cacheLimit;
 	QryStatPtr qsp = recycleQPat->ptrn[cntxt->rcc->curQ];
+	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
+
+	if (octopusRef == 0)
+		octopusRef = putName("octopus",7);
+	if (bindRef == 0)
+		bindRef = putName("bind",4);
+	if (bindidxRef == 0)
+		bindidxRef = putName("bind_idxbat",11);
 
 /*	(void) rd;	*/
 	RECYCLEspace();
@@ -1027,6 +1037,11 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 			"#memory="LLFMT", stop=%d, recycled=%d, executed=%d \n",
 			recyclerUsedMemory, recycleBlk->stop,
 			cntxt->rcc->recycled0, cntxt->rcc->statements);
+
+	if ( getModuleId(p) == octopusRef &&
+			 (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef) )
+		recycleQPat->ptrn[cntxt->rcc->curQ]->dt += wr;
+
 	cntxt->rcc->recent = i;
 	cntxt->rcc->RPadded0++;
 	setSelectProp(q);
@@ -1939,13 +1954,14 @@ static int
 RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 {
 	int i, j, qidx, lcomp, rcomp, pc = -1;
-	bat bid, sbid = -1;
+	/*	bat bid; */
+	bat sbid = -1;
 	InstrPtr q;
 	bit gluse = FALSE;
-	size_t scnt = 0;
+	BUN scnt = 0;
 	BAT *b, *bn;
-	oid lval = 0, hval = 0;
-	dbl ratio;
+	/*	oid lval = 0, hval = 0;
+	  dbl ratio; */
 	static str octopusRef = 0, bindRef = 0, bindidxRef = 0;
 
 	if (octopusRef == 0)
@@ -1975,6 +1991,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 			if ( p->argc == 7 )
 				goto exactmatch;
 			else goto subsumption;
+
 		else {		/* q is bat partition */
 
 			lcomp = VALcmp(&getVar(recycleBlk,getArg(q,6))->value,
@@ -1984,8 +2001,8 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 
 			if ( lcomp == 0 && rcomp == 0 )            /* found an exact match */
 				goto exactmatch;
-			else if ( lcomp <= 0 && rcomp <= 0 )
-				goto subsumption;
+/*			else if ( lcomp <= 0 && rcomp <= 0 )
+				goto subsumption;*/
 			else
 				continue;
 		}
@@ -2013,38 +2030,39 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
             mal_unset_lock(recycleLock,"recycle");
             return i;
 
-		subsumption:
-			bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
-			b = BBPquickdesc(bid, FALSE);
-			if( sbid == -1){
-				sbid = bid;
-				scnt = BATcount(b);
-				pc = i;
-			}
-			else if ( BATcount(b) < scnt ) {
-				sbid = bid;
-				scnt = BATcount(b);
-				pc = i;
-			}
+    	subsumption:
+			sbid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
+			pc = i;
+			break;
 
 		notfound:
 			continue;
 	}
 
 	if ( sbid >= 0 ) {	/* subsumption of octopus.bind */
+		BUN psz;
+		int part_nr = *(int *)getArgReference(s, p, 6);
+		int nr_parts = *(int *)getArgReference(s, p, 7);
+
 		b = BBPquickdesc(sbid, FALSE);
-		lval = *(oid *)getArgReference(s, p, 6);
+		scnt = BATcount(b);
+		psz = scnt?(scnt/nr_parts):0;
+		bn =  BATslice(b, part_nr*psz, (part_nr+1==nr_parts)?scnt:((part_nr+1)*psz));
+		BATseqbase(bn, part_nr*psz);
+
+		/*		lval = *(oid *)getArgReference(s, p, 6);
 		hval = *(oid *)getArgReference(s, p, 7);
 		bn = BATslice(b, lval, hval);
 		BATseqbase(bn, lval);
-		ratio = (dbl)BATcount(bn)/(dbl)scnt;
+		ratio = (dbl)BATcount(bn)/(dbl)scnt; */
+
 		VALset(&s->stk[getArg(p,0)], TYPE_bat, &bn->batCacheid);
 		BBPkeepref( bn->batCacheid);
 
 		recycleBlk->profiler[pc].counter++;
 		recycleBlk->profiler[pc].clk = GDKusec();
 		recycleQPat->ptrn[cntxt->rcc->curQ]->dtreuse +=
-			(lng) (ratio * recycleBlk->profiler[pc].wbytes);
+			(lng) scnt?(psz * recycleBlk->profiler[pc].wbytes / scnt):0;
 		cntxt->rcc->recycled0++;
 		cntxt->rcc->recent = i;
 	}

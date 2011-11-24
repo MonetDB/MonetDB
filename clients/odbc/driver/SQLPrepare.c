@@ -60,7 +60,8 @@ SQLPrepare_(ODBCStmt *stmt,
 	char *query, *s;
 	MapiMsg ret;
 	MapiHdl hdl;
-	int nrParams;
+	int nrows;
+	ODBCDescRec *prec, *rrec; /* param and row descriptors */
 	ODBCDescRec *rec;
 	int i;
 
@@ -90,8 +91,8 @@ SQLPrepare_(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
-	s = malloc(strlen(query) + 9);
-	strcat(strcpy(s, "prepare "), query);
+	s = malloc(strlen(query) + 15);
+	strcat(strcpy(s, "prepareresult "), query);
 	free(query);
 
 	ODBCResetStmt(stmt);
@@ -118,15 +119,57 @@ SQLPrepare_(ODBCStmt *stmt,
 		addStmtError(stmt, "HY001", 0, 0);
 		return SQL_ERROR;
 	}
-	nrParams = (int) mapi_rows_affected(hdl);
-	setODBCDescRecCount(stmt->ImplParamDescr, nrParams);
-	rec = stmt->ImplParamDescr->descRec + 1;
-	for (i = 0; i < nrParams; i++, rec++) {
+	nrows = (int) mapi_rows_affected(hdl);
+	/* these two will be adjusted later */
+	setODBCDescRecCount(stmt->ImplParamDescr, nrows);
+	setODBCDescRecCount(stmt->ImplRowDescr, nrows);
+	prec = stmt->ImplParamDescr->descRec + 1;
+	rrec = stmt->ImplRowDescr->descRec + 1;
+	stmt->nparams = 0;
+	for (i = 0; i < nrows; i++) {
 		struct sql_types *tp;
 		int concise_type;
 		int length, scale;
 
 		mapi_fetch_row(hdl);
+		s = mapi_fetch_field(hdl, 5); /* column name: null -> param */
+		if (s == NULL) {
+			stmt->nparams++;
+			rec = prec++;
+			rec->sql_desc_nullable = SQL_NULLABLE;
+			rec->sql_desc_searchable = SQL_UNSEARCHABLE;
+			rec->sql_desc_unnamed = SQL_UNNAMED;
+			rec->sql_desc_label = NULL;
+			rec->sql_desc_name = NULL;
+			rec->sql_desc_schema_name = NULL;
+			rec->sql_desc_table_name = NULL;
+			rec->sql_desc_base_table_name = NULL;
+			rec->sql_desc_base_column_name = NULL;
+			rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
+		} else {
+			rec = rrec++;
+			rec->sql_desc_nullable = SQL_NULLABLE_UNKNOWN;
+			rec->sql_desc_searchable = SQL_PRED_SEARCHABLE;
+			rec->sql_desc_unnamed = SQL_NAMED;
+			rec->sql_desc_label = (SQLCHAR *) strdup(s);
+			rec->sql_desc_name = (SQLCHAR *) strdup(s);
+			s = mapi_fetch_field(hdl, 3); /* schema name */
+			rec->sql_desc_schema_name = s && *s ? (SQLCHAR *) strdup(s) : NULL;
+			s = mapi_fetch_field(hdl, 4); /* table name */
+			rec->sql_desc_table_name = s && *s ? (SQLCHAR *) strdup(s) : NULL;
+			if (rec->sql_desc_schema_name) {
+				/* base table name and base column
+				 * name exist if there is a schema
+				 * name */
+				rec->sql_desc_base_table_name = (SQLCHAR *) strdup((char *) rec->sql_desc_table_name);
+				rec->sql_desc_base_column_name = (SQLCHAR *) strdup((char *) rec->sql_desc_name);
+			} else {
+				rec->sql_desc_base_table_name = NULL;
+				rec->sql_desc_base_column_name = NULL;
+			}
+			rec->sql_desc_parameter_type = 0;
+		}
+
 		s = mapi_fetch_field(hdl, 0); /* type */
 		rec->sql_desc_type_name = (SQLCHAR *) strdup(s);
 		concise_type = ODBCConciseType(s);
@@ -138,7 +181,7 @@ SQLPrepare_(ODBCStmt *stmt,
 		scale = atoi(s);
 
 		/* for interval types, length and scale are used
-		   differently */
+		 * differently */
 		if (concise_type == SQL_INTERVAL_MONTH) {
 			switch (length) {
 			case 1:
@@ -219,27 +262,20 @@ SQLPrepare_(ODBCStmt *stmt,
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		rec->sql_desc_local_type_name = NULL;
-		rec->sql_desc_nullable = SQL_NULLABLE;
-		rec->sql_desc_parameter_type = SQL_PARAM_INPUT;
 		rec->sql_desc_rowver = SQL_FALSE;
-		rec->sql_desc_unnamed = SQL_UNNAMED;
 		rec->sql_desc_catalog_name = stmt->Dbc->dbname ? (SQLCHAR *) strdup(stmt->Dbc->dbname) : NULL;
 
 		/* unused fields */
-		rec->sql_desc_auto_unique_value = 0;
-		rec->sql_desc_base_column_name = NULL;
-		rec->sql_desc_base_table_name = NULL;
+		rec->sql_desc_auto_unique_value = SQL_FALSE;
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_display_size = 0;
 		rec->sql_desc_indicator_ptr = NULL;
-		rec->sql_desc_label = NULL;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_schema_name = NULL;
-		rec->sql_desc_searchable = 0;
 		rec->sql_desc_table_name = NULL;
-		rec->sql_desc_updatable = 0;
+		rec->sql_desc_updatable = SQL_ATTR_READONLY;
 
 		/* this must come after other fields have been
 		 * initialized */
@@ -253,10 +289,17 @@ SQLPrepare_(ODBCStmt *stmt,
 		}
 	}
 
+	assert(prec - stmt->ImplParamDescr->descRec == stmt->nparams + 1);
+	assert(rrec - stmt->ImplRowDescr->descRec == nrows - stmt->nparams + 1);
+	setODBCDescRecCount(stmt->ImplParamDescr, stmt->nparams);
+	setODBCDescRecCount(stmt->ImplRowDescr, nrows - stmt->nparams);
+
 	/* update the internal state */
 	stmt->queryid = mapi_get_tableid(hdl);
-	stmt->nparams = nrParams;
-	stmt->State = PREPARED1;	/* XXX or PREPARED0, depending on query */
+	if (stmt->ImplRowDescr->sql_desc_count == 0)
+		stmt->State = PREPARED0; /* no columns: no result set */
+	else
+		stmt->State = PREPARED1;
 
 	return SQL_SUCCESS;
 }
