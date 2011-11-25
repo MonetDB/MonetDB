@@ -267,6 +267,7 @@ int yydebug=1;
 	dimension
 	array_dim_ref
 	array_cell_ref
+	index_term
 
 %type <type>
 	data_type
@@ -389,7 +390,6 @@ int yydebug=1;
 	dim_exp
 	index_exp /* position indices of array cells */
 	index_exp_list
-	index_term
 
 	array_element_def_list
 
@@ -1669,7 +1669,7 @@ dim_range_list:
 	}
 ;
 
-dim_range :
+dim_range:
 	'[' dim_exp ':' dim_exp ':' dim_exp ']'
 	{
 		dlist *l = L();
@@ -1693,7 +1693,7 @@ dim_range :
 	}
 ;
 
-dim_exp :
+dim_exp:
 	literal
 	{
 		$$= append_symbol(L(), $1);
@@ -1708,6 +1708,7 @@ dim_exp :
 	{
 		$$= append_symbol(L(), NULL);
 	}
+ ;
 
 serial_opt_params:
 	/* empty: return the defaults */
@@ -3181,12 +3182,15 @@ table_ref:
 				  append_symbol($2->data.lval, $4); }
 */
  |  array_dim_ref { /* allow "s1.a1[x][1:2]" */
-	$$ = _symbol_create_symbol( SQL_ARRAY, $1);
+ 	dlist *l = L();
+	append_symbol(l, $1);
+	append_symbol(l, NULL);
+	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
  |  array_dim_ref table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
 	dlist *l = L();
-	l = append_symbol(l, $1);
-	l = append_symbol(l, $2);
+	append_symbol(l, $1);
+	append_symbol(l, $2);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
 
@@ -3234,14 +3238,17 @@ opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
  |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
  |  sqlGROUP BY group_ref_commalist { 
+ /*
 	dlist *l = L();
-	l= append_list(l,$3);
-	l= append_int(l,0);
+	append_list(l,$3);
+	append_int(l,0);
 	$$ = _symbol_create_list( SQL_GROUPBY, l );}
+	*/
+	$$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
  |  sqlGROUP BY DISTINCT group_ref_commalist {
 	dlist *l = L();
-	l= append_list(l,$4);
-	l= append_int(l,1);
+	append_list(l,$4);
+	append_int(l,1);
 	$$ = _symbol_create_list( SQL_GROUPBY, l);}
  ;
 
@@ -3252,9 +3259,8 @@ group_ref_commalist:
  ;
 
 group_item:
-	array_dim_ref { $$ = _symbol_create_symbol( SQL_ARRAY_INDEX, $1); }
- |  array_cell_ref { $$ = _symbol_create_symbol(SQL_COLUMN, $1); }
-/* |  column_ref { $$ = _symbol_create_list(SQL_COLUMN, $1); } */
+	array_dim_ref { $$ = $1; }
+ |  array_cell_ref { $$ = $1; }
 ;
 
 column_ref_commalist:
@@ -3653,8 +3659,8 @@ value_exp:
 array_dim_ref:
 	qname index_exp_list { 
 		dlist *l = L();
-		l = append_list(l, $1);
-		l = append_list(l, $2);
+		append_list(l, $1);
+		append_list(l, $2);
 		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
 		}
 ;
@@ -3664,9 +3670,9 @@ array_dim_ref:
 array_cell_ref:
 	array_dim_ref '.' ident { 
 		dlist *l = L();
-		l = append_symbol(l, $1);
-		l = append_string(l, $3);
-		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
+		append_symbol(l, $1);
+		append_string(l, $3);
+		$$ = _symbol_create_list( SQL_COLUMN, l);
 		}
 ;
 
@@ -4460,45 +4466,41 @@ column_ref:
 				  L(), $1), $3), $5);}
  ;
 
-index_exp_list :
+index_exp_list:
 	index_exp
 	{
-		$$= $1;
+		$$= append_list(L(), $1);
 	}
   | index_exp_list index_exp
 	{
-		$$= append_list($1,$2);
+		$$ = append_list($1, $2);
 	}
+;
 
-index_exp :
+index_exp:
 	'[' index_term ':' index_term ':' index_term ']'
 	{
 		dlist *l = L();
-		append_list(l, $2);
-		append_list(l, $4);
-		$$ = append_list(l, $6);
+		append_symbol(l, $2);
+		append_symbol(l, $4);
+		$$ = append_symbol(l, $6);
 	}
 	| '[' index_term ':' index_term ']'
 	{
 		dlist *l = L();
-		append_list(l, $2);
-		$$ = append_list(l, $4);
+		append_symbol(l, $2);
+		$$ = append_symbol(l, $4);
 	}
 	| '[' index_term ']'
 	{
-		$$= append_list(L(), $2);
+		$$= append_symbol(L(), $2);
 	}
 ;
 
-index_term :
-	scalar_exp
-	{
-		$$= append_symbol(L(), $1);
-	}
-  | '*'
-	{ 
-		$$= append_symbol(L(), NULL);
-	}
+index_term:
+	scalar_exp { $$= $1; }
+  | '*' { $$= NULL; }
+;
 
 cast_exp:
      CAST '(' cast_value AS data_type ')'
