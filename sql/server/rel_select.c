@@ -431,6 +431,97 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	return rel;
 }
 
+static sql_rel *
+rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
+{
+	node *cn = NULL;
+	dnode *idx_exp = NULL, *idx_term = NULL;
+	sql_rel *rel_tbl = rel_basetable(sql, t, tname), *rel =  rel_basetable(sql, t, tname);
+	sql_exp *col_exp = NULL, *slc_val = NULL, *expin = NULL;
+	sql_column *col = NULL;
+	sql_subfunc *sf = NULL;
+	exp_kind ek = {type_value, card_value, FALSE};
+
+	assert(dimref->token == SQL_ARRAY_INDEX);
+
+	if (t->ndims)
+		return sql_error(sql, 02, "array slicing over a table ('%s')not allowed", t->base.name);
+
+	/* Handling array slicing using normal SQL: WHERE <pred_exp> IN '(' <value_commalist> ')'.
+	 * Loop over all table columns and sliced columns.  Translate each slicing
+	 * <start>:<step>:<stop> into:
+	 *     <column name> in '(' array_series(start, step, stop, 1, 1) ')'
+	 */
+	for (cn = t->columns.set->h, idx_exp = dimref->data.lval->h->next->data.lval->h;
+			cn && idx_exp; cn = cn->next, idx_exp = idx_exp->next) {
+		list *args = new_exp_list(sql->sa);
+		int skip = 1;
+
+		col = (sql_column *) cn->data;
+		while(!col->dim) { /* skip the non-dimensional attributes in the table columns */
+			cn = cn->next;
+			col = (sql_column*)cn->data;
+		}
+
+		/* In case of '[*]', '[*:*]' or '[*:*:*]', don't slice this column */
+		for (idx_term = idx_exp->data.lval->h; idx_term; idx_term = idx_term->next)
+			if (idx_term->data.sym) skip = 0;
+		if (skip) continue;
+
+		/* build the slc_val expression, which is going to compute a list of to be sliced dimensional values. */
+		idx_term = idx_exp->data.lval->h;
+		if(idx_exp->data.lval->cnt == 1) {
+			slc_val = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
+		} else {
+			/* If the value of start/step/stop is omitted, we get its value from the dimension definition.
+			 * TODO: deal with unbounded dimension */
+			if (!col->dim->start || !col->dim->step || !col->dim->stop)
+				return sql_error(sql, 02, "slicing over unbounded dimension not supported");
+
+			/* the first <exp> is always the start */
+			append(args, idx_term->data.sym ? /* check for '*' */
+					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start)));
+
+
+			if(idx_exp->data.lval->cnt == 2) {
+				append(args, exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
+			} else {
+				idx_term = idx_term->next;
+				append(args, idx_term->data.sym ?
+					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
+			}
+
+			idx_term = idx_term->next;
+			append(args, idx_term->data.sym ?
+					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop)));
+
+			/* Only create 1 group and repeat the numbers once */
+			append(args, exp_atom_int(sql->sa, 1));
+			append(args, exp_atom_int(sql->sa, 1));
+			sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(args), F_FUNC);
+			if (!sf)
+				return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
+			slc_val = exp_op(sql->sa, args, sf);
+		}
+
+		/* <col_exp> IN '(' <slc_val> ')' */
+		col_exp = exp_column(sql->sa, t->base.name, col->base.name, &col->type, CARD_MULTI, 0, 0);
+		exp_label(sql->sa, slc_val, ++sql->label);
+		expin = exp_in(sql->sa, col_exp, append(new_exp_list(sql->sa), slc_val), cmp_in);
+		rel = rel_select(sql->sa, rel, expin);
+	}
+
+	/* the number of sliced dimensions must be smaller than or equal to the number of dimensions */
+	if (idx_exp)
+		return sql_error(sql, 02, "array slicing over too many columns");
+
+	rel->card = rel->card > exps_card(rel_tbl->exps) ? rel->card : exps_card(rel_tbl->exps);
+	return rel_project(sql->sa, rel, rel_tbl->exps);
+}
+
 sql_rel *
 _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 {
@@ -1538,11 +1629,11 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 	sql_table *t = NULL;
 
 	(void)rel;
-	if (tableref->token == SQL_NAME) {
+	if (tableref->token == SQL_NAME || tableref->token == SQL_ARRAY) {
 		sql_rel *temp_table = NULL;
-		char *sname = qname_schema(tableref->data.lval->h->data.lval);
+		char *sname = tableref->token == SQL_NAME ? qname_schema(tableref->data.lval->h->data.lval) : qname_schema(tableref->data.lval->h->data.sym->data.lval->h->data.lval);
 		sql_schema *s = NULL;
-		tname = qname_table(tableref->data.lval->h->data.lval);
+		tname = tableref->token == SQL_NAME ? qname_table(tableref->data.lval->h->data.lval) : qname_table(tableref->data.lval->h->data.sym->data.lval->h->data.lval);
 
 		if (sname && !(s=mvc_bind_schema(sql,sname)))
 			return sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
@@ -1569,13 +1660,14 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 		}
 		if (!t && !temp_table) {
-			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
+			return sql_error(sql, 02, "SELECT: no such %s '%s'", tableref->token==SQL_ARRAY?"array":"table", tname);
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
 			return sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
+
 		if (temp_table && !t) {
 			node *n;
 			list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
@@ -1610,7 +1702,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 			return rel;
 		}
-		return rel_basetable(sql, t, tname);
+		return tableref->token == SQL_ARRAY ? rel_arrayslice(sql, t, tname, tableref->data.lval->h->data.sym) : rel_basetable(sql, t, tname);
 	} else if (tableref->token == SQL_VALUES) {
 		return rel_values(sql, tableref);
 	} else if (tableref->token == SQL_TABLE) {
