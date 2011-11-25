@@ -33,6 +33,17 @@ create function array_series("start" bigint, step bigint, stop bigint, N integer
 create function array_series("start" float, step float, stop float, N integer, M integer) returns table (id bigint, dimval float)
 	external name "array".series;
 
+create function array_series1("start" tinyint, step tinyint, stop tinyint, N integer, M integer) returns table (idimval tinyint)
+	external name "array".series_;
+create function array_series1("start" smallint, step smallint, stop smallint, N integer, M integer) returns table (dimval smallint)
+	external name "array".series_;
+create function array_series1("start" integer, step integer, stop integer, N integer, M integer) returns table (dimval integer)
+	external name "array".series_;
+create function array_series1("start" bigint, step bigint, stop bigint, N integer, M integer) returns table (dimval bigint)
+	external name "array".series_;
+create function array_series1("start" float, step float, stop float, N integer, M integer) returns table (dimval float)
+	external name "array".series_;
+
 create function array_filler(cnt bigint, val tinyint) returns table (id bigint, cellval tinyint)
 	external name "array".filler;
 create function array_filler(cnt bigint, val smallint) returns table (id bigint, cellval smallint)
