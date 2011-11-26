@@ -342,10 +342,14 @@ SQLworker(void *arg)
 		MT_sema_down(&task->sema, "SQLworker");
 
 		if (task->next < 0) {
+			MT_sema_up(&task->reply, "SQLworker");
+			/* stage three, save all BATs to disk before quiting */
+			for (i = 0; i < task->as->nr_attrs; i++) 
+			if ( task->fields[0][i] && task->cols[i]>0)
+				BATsave(task->as->format[task->cols[i]-1].c[0]);
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout, "SQLworker terminated\n");
 #endif
-			MT_sema_up(&task->reply, "SQLworker");
 			return;
 		}
 
