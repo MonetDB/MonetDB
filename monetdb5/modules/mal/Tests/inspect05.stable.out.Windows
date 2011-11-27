@@ -773,7 +773,7 @@ end main;
 [ "addScenario",		  "pattern",	  "clients",		  "(usr:str,sc:str):void ",												  "CLTaddScenario;"					  ]
 [ "addUser",			  "pattern",	  "clients",		  "(nme:str,pw:str,scen:bat[:str,:any_1]):oid ",									  "CLTaddUser;"						  ]
 [ "backendsum",			  "command",	  "clients",	  "(pw:str):str ",															  "CLTbackendsum;"				  ]
-[ "checkPermission",		  "pattern",	  "clients",		  "(usr:str,pw:str,sc:str):void ",											  "CLTcheckPermission;"					  ]
+[ "checkPermission",		  "pattern",	  "clients",		  "(usr:str,pw:str):void ",											  "CLTcheckPermission;"					  ]
 [ "changePassword",		  "pattern",	  "clients",		  "(old:str,new:str):void ",												  "CLTchangePassword;"					  ]
 [ "changeUsername",		  "pattern",	  "clients",		  "(old:str,new:str):void ",												  "CLTchangeUsername;"					  ]
 [ "getUsers",			  "pattern",	  "clients",		  "(s:bat[:str,:any_1]):bat[:oid,:str] ",										  "CLTgetUsers;"					  ]

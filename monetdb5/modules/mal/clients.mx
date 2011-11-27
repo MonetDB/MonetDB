@@ -684,7 +684,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 }
 
 @mal
-pattern checkPermission(usr:str, pw:str, sc:str):void
+pattern checkPermission(usr:str, pw:str):void
 address CLTcheckPermission
 comment "Check permission for a user, requires hashed password (backendsum)";
 @h

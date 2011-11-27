@@ -86,11 +86,11 @@ sub query
 
   my $tpe = $h->getReply();
   if ($tpe > 0) {
-    # "regular" resultset
+    # "regular" resultset, or just "tuple"
     $self->{querytype} = 1;
-    $self->{id} = $h->{id};
-    $self->{affrows} = $h->{count};
-    $self->{colcnt} = $h->{nrcols};
+    $self->{id} = $h->{id} || -1;
+    $self->{affrows} = $h->{count} if $h->{count};
+    $self->{colcnt} = $h->{nrcols} if $h->{nrcols};
 
     my $hdr;
     foreach $hdr (@{$h->{hdrs}}) {
@@ -104,6 +104,21 @@ sub query
         @{$self->{collens}} = split(/,\t/, $hdr);
       }
       # TODO: table_name
+    }
+    # we must pre-fetch if this is not an SQL result-set
+    if (!$h->{count}) {
+      do {
+        my @cols = split(/,\t */, $h->{row});
+        my $i = -1;
+        while (++$i < @cols) {
+          $cols[$i] =~ s/^\[ //;
+          $cols[$i] =~ s/[ \t]+\]$//;
+          $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+        }
+        push(@{$self->{rows}}, [@cols]);
+      } while (($tpe = $h->getReply()) > 0);
+      $self->{affrows} = @{$self->{rows}};
+      undef $self->{id};
     }
   } elsif ($tpe == -1) {
     # error
@@ -125,7 +140,7 @@ sub id
 {
   my ($self) = @_;
 
-  return $self->{id};
+  return $self->{id} || -1;
 }
 
 sub rows_affected
@@ -166,21 +181,24 @@ sub length
 sub fetch
 {
   my ($self) = @_;
-  
+
   return if ++$self->{i} >= $self->{affrows};
   
-  my @cols = split(/,\t */, $self->{h}->{row});
-  my $i = -1;
-  while (++$i < @cols) {
-    $cols[$i] =~ s/^\[ //;
-    $cols[$i] =~ s/[ \t]+\]$//;
-    $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+  if ($self->{id}) {
+    my @cols = split(/,\t */, $self->{h}->{row});
+    my $i = -1;
+    while (++$i < @cols) {
+      $cols[$i] =~ s/^\[ //;
+      $cols[$i] =~ s/[ \t]+\]$//;
+      $cols[$i] = MonetDB::CLI::MapiPP->unquote($cols[$i]);
+    }
+    $self->{currow} = [@cols];
+    $self->{h}->getReply();
+  } else {
+    $self->{currow} = $self->{rows}[$self->{i}];
   }
-  $self->{currow} = [@cols];
   
-  $self->{h}->getReply();
-  
-  return $self->{colcnt};
+  return @{$self->{currow}};
 }
 
 sub field
