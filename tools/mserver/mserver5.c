@@ -440,10 +440,10 @@ main(int argc, char **av)
 		struct stat sb;
 		char *binpath = get_bin_path();
 		if (binpath != NULL) {
-			char *p = strrchr(binpath, '/');
+			char *p = strrchr(binpath, DIR_SEP);
 			if (p != NULL)
 				*p = '\0';
-			p = strrchr(binpath, '/');
+			p = strrchr(binpath, DIR_SEP);
 			if (p != NULL) {
 				*p = '\0';
 				for (i = 0; libdirs[i] != NULL; i++) {
