@@ -440,15 +440,25 @@ main(int argc, char **av)
 		struct stat sb;
 		char *binpath = get_bin_path();
 		if (binpath != NULL) {
-			binpath = dirname(binpath);
-			binpath = dirname(binpath);
-			for (i = 0; libdirs[i] != NULL; i++) {
-				snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-						binpath, DIR_SEP, libdirs[i], DIR_SEP);
-				if (stat(prmodpath, &sb) == 0) {
-					modpath = prmodpath;
-					break;
+			char *p = strrchr(binpath, '/');
+			if (p != NULL)
+				*p = '\0';
+			p = strrchr(binpath, '/');
+			if (p != NULL) {
+				*p = '\0';
+				for (i = 0; libdirs[i] != NULL; i++) {
+					snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
+							binpath, DIR_SEP, libdirs[i], DIR_SEP);
+					if (stat(prmodpath, &sb) == 0) {
+						modpath = prmodpath;
+						break;
+					}
 				}
+			} else {
+				printf("#warning: unusable binary location, "
+						"please use --set monet_mod_path=/path/to/... to "
+						"allow finding modules\n");
+				fflush(NULL);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
