@@ -146,14 +146,14 @@ Ready.
 [ NULL	]
 #SELECT id, Dimension(g) FROM geom WHERE id < 3;
 % sys.geom,	sys. # table_name
-% id,	or_or_=_dimension_g # name
+% id,	or_or_=_Dimension_g # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]
 [ 2,	3	]
 #SELECT id, Dimension(g) FROM geom WHERE id = 3; -- null argument, throws exception
 % sys.geom,	sys. # table_name
-% id,	dimension_g # name
+% id,	Dimension_g # name
 % int,	int # type
 % 1,	1 # length
 [ 3,	NULL	]
