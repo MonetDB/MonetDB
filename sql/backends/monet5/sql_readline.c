@@ -35,6 +35,7 @@
 #include "mal_readline.h"
 #include "mal_client.h"
 #include "mal_scenario.h"
+#include "sql_readline.h"
 
 /* #define _SQL_READLINE_DEBUG  */
 
@@ -42,7 +43,6 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "sql_readline.h"
 #include "mal_debugger.h"
 
 void init_sql_readline(void);
