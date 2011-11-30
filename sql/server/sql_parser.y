@@ -234,6 +234,11 @@ int yydebug=1;
 	window_function_type
 	window_partition_clause
 	window_order_clause
+	window_frame_clause
+	window_frame_start
+	window_frame_end
+	window_frame_preceding
+	window_frame_following
 	XML_value_function
 	XML_comment
   	XML_concatenation
@@ -378,6 +383,8 @@ int yydebug=1;
 	forest_element_list
 	forest_element
 	XML_value_expression_list
+	window_frame_extent
+	window_frame_between
 
 %type <i_val>
 	any_all_some
@@ -423,6 +430,8 @@ int yydebug=1;
 	with_or_without_data
 	XML_content_option
 	XML_whitespace_option
+	window_frame_units
+	window_frame_exclusion
 
 %type <w_val>
 	wrdval
@@ -555,7 +564,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token INDEX
 
 %token AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token OVER PARTITION 
+%token OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED
 
 %%
 
@@ -3513,6 +3522,34 @@ param:
 <window order clause> ::= ORDER BY <sort specification list>
 
 <window frame clause> ::= <window frame units> <window frame extent> [ <window frame exclusion> ]
+
+<window frame units> ::= ROWS | RANGE
+
+<window frame extent> ::= <window frame start> | <window frame between>
+
+<window frame start> ::= UNBOUNDED PRECEDING | <window frame preceding> | CURRENT ROW
+
+<window frame preceding> ::= <unsigned value specification> PRECEDING
+
+<window frame between> ::= BETWEEN <window frame bound 1> AND <window frame bound 2>
+
+<window frame bound 1> ::= <window frame bound>
+
+<window frame bound 2> ::= <window frame bound>
+
+<window frame bound> ::=
+                <window frame start>
+        |       UNBOUNDED FOLLOWING
+        |       <window frame following>
+
+<window frame following> ::= <unsigned value specification> FOLLOWING
+
+<window frame exclusion> ::=
+                EXCLUDE CURRENT ROW
+        |       EXCLUDE GROUP
+        |       EXCLUDE TIES
+        |       EXCLUDE NO OTHERS
+
 */
 
 window_function: 
@@ -3527,8 +3564,8 @@ window_function_type:
   ;
 
 window_specification:
-	window_partition_clause window_order_clause
-	{ $$ = append_symbol(append_symbol(L(), $1), $2); }
+	window_partition_clause window_order_clause window_frame_clause
+	{ $$ = append_symbol(append_symbol(append_symbol(L(), $1), $2), $3); }
   ;
 
 window_partition_clause:
@@ -3543,6 +3580,55 @@ window_order_clause:
 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3 ); }
   ;
 
+window_frame_clause:
+	/* empty */ 	{ $$ = NULL; }
+  |	window_frame_units window_frame_extent window_frame_exclusion
+	{ $$ = _symbol_create_list( SQL_FRAME, append_int(append_int($2, $1), $3)); }
+  ;
+
+window_frame_units:
+	ROWS		{ $$ = FRAME_ROWS; }
+  |	RANGE		{ $$ = FRAME_RANGE; }
+  ;
+
+window_frame_extent:
+	window_frame_start	{ $$ = append_symbol(append_symbol(L(), $1), _symbol_create_int(SQL_FRAME, -1)); }
+  |	window_frame_between	{ $$ = $1; }
+  ;
+
+window_frame_start:
+	UNBOUNDED PRECEDING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
+  |	window_frame_preceding  { $$ = $1; }
+  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+  ;
+
+window_frame_preceding:
+	value_exp PRECEDING	{ $$ = $1; }
+  ;
+	
+window_frame_between:
+	BETWEEN window_frame_start AND window_frame_end
+				{ $$ = append_symbol(append_symbol(L(), $2), $4); }
+  ;
+
+window_frame_end:
+	UNBOUNDED FOLLOWING	{ $$ = _symbol_create_int(SQL_FRAME, -1); }
+  | 	window_frame_following	{ $$ = $1; }
+  |	CURRENT ROW		{ $$ = _symbol_create_int(SQL_FRAME, 0); }
+  ;
+
+window_frame_following:
+	value_exp PRECEDING	{ $$ = $1; }
+  ;
+
+window_frame_exclusion:
+ 	/* empty */		{ $$ = EXCLUDE_NONE; }
+ |      EXCLUDE CURRENT ROW	{ $$ = EXCLUDE_CURRENT_ROW; }
+ |      EXCLUDE sqlGROUP	{ $$ = EXCLUDE_GROUP; }
+ |      EXCLUDE TIES		{ $$ = EXCLUDE_TIES; }
+ |      EXCLUDE NO OTHERS	{ $$ = EXCLUDE_NO_OTHERS; }
+ ;
+	
 var_ref:
 	AT ident 	{ $$ = _symbol_create( SQL_NAME, $2 ); }
  ;
@@ -5393,6 +5479,7 @@ char *token2string(int token)
 	SQL(FUNC);
 	SQL(AGGR);
 	SQL(RANK);
+	SQL(FRAME);
 	SQL(COMPARE);
 	SQL(FILTER);
 	SQL(TEMP_LOCAL);

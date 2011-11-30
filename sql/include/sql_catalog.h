@@ -93,6 +93,15 @@
 #define RD_INS 1
 #define RD_UPD 2
 
+#define FRAME_ROWS  0 
+#define FRAME_RANGE 1
+
+#define EXCLUDE_NONE 0
+#define EXCLUDE_CURRENT_ROW 1
+#define EXCLUDE_GROUP 2
+#define EXCLUDE_TIES 3
+#define EXCLUDE_NO_OTHERS 4
+
 #define cur_user 1
 #define cur_role 2
 

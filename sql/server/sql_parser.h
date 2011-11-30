@@ -145,6 +145,7 @@ typedef enum tokens {
 	SQL_FUNC,
 	SQL_AGGR,
 	SQL_RANK,
+	SQL_FRAME,
 	SQL_COMPARE,
 	SQL_FILTER,
 	SQL_TEMP_LOCAL,

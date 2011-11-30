@@ -57,7 +57,7 @@ scanner_init_keywords(void)
 	keywords_insert("PERCENT_RANK", RANK);
 	keywords_insert("CUME_DIST", RANK);
 	keywords_insert("ROW_NUMBER", RANK);
-	
+
 	keywords_insert("AS", AS);
 	keywords_insert("ASC", ASC);
 	keywords_insert("AUTHORIZATION", AUTHORIZATION);
@@ -323,6 +323,15 @@ scanner_init_keywords(void)
 	keywords_insert("OLD", OLD);
 	keywords_insert("EACH", EACH);
 	keywords_insert("REFERENCING", REFERENCING);
+
+	keywords_insert("RANGE", RANGE);
+	keywords_insert("UNBOUNDED", UNBOUNDED);
+	keywords_insert("PRECEDING", PRECEDING);
+	keywords_insert("FOLLOWING", FOLLOWING);
+	keywords_insert("CURRENT", CURRENT);
+	keywords_insert("EXCLUDE", EXCLUDE);
+	keywords_insert("OTHERS", OTHERS);
+	keywords_insert("TIES", TIES);
 
 	/* special SQL/XML keywords */
 	keywords_insert("XMLCOMMENT", XMLCOMMENT);

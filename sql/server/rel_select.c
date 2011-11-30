@@ -4097,6 +4097,24 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 	return exps;
 }
 
+static list *
+rel_frame(mvc *sql, symbol *frame, list *exps)
+{
+	/* units, extent, exclusion */
+	dnode *d = frame->data.lval->h;
+
+	/* RANGE vs UNITS */
+	sql_exp *units = exp_atom_int(sql->sa, d->next->next->data.i_val);
+	sql_exp *start = exp_atom_int(sql->sa, d->data.i_val);
+	sql_exp *end   = exp_atom_int(sql->sa, d->next->data.i_val);
+	sql_exp *excl  = exp_atom_int(sql->sa, d->next->next->next->data.i_val);
+	append(exps, units);
+	append(exps, start);
+	append(exps, end);
+	append(exps, excl);
+	return exps;
+}
+
 /* window functions */
 static sql_exp *
 rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
@@ -4140,6 +4158,14 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		obe = rel_order_by(sql, &r, window_specification->h->next->data.sym, f);
 		if (!obe)
 			return NULL;
+	} else {
+		obe = new_exp_list(sql->sa);
+	}
+	/* Frame */
+	if (window_specification->h->next->next->data.sym) {
+		obe  = rel_frame(sql, window_specification->h->next->next->data.sym, obe);
+		if (!obe)
+			return NULL;
 	}
 	wf = sql_bind_func(sql->sa, sql->session->schema, aggrstr, idtype, NULL, F_FUNC);
 	if (!wf)
@@ -4148,10 +4174,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	e = exp_op(sql->sa, gbe, wf);
 	/* make sure the expression has the proper cardinality */
 	e->card = CARD_AGGR;
-	if (obe)
-		e->r = obe;
-	else	/* e->r specifies window expression */
-		e->r = new_exp_list(sql->sa);
+	/* e->r specifies window expression */
+	e->r = obe;
 	return e;
 }
 
