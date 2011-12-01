@@ -59,7 +59,7 @@ public class JdbcClient {
 		copts.addOption("f", "file", CmdLineOpts.CAR_ONE, null,
 				"A file name to use either for reading or writing.  The " +
 				"file will be used for writing when dump mode is used " +
-				"(-d --dump).  In read mode, the file can also be an URL " +
+				"(-D --dump).  In read mode, the file can also be an URL " +
 				"pointing to a plain text file that is optionally gzip " +
 				"compressed.");
 		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"),
@@ -69,9 +69,9 @@ public class JdbcClient {
 		copts.addOption(null, "password", CmdLineOpts.CAR_ONE, null, null);
 		copts.addOption("d", "database", CmdLineOpts.CAR_ONE, "",
 				"Try to connect to the given database (only makes sense " +
-				"if connecting to a DatabasePool, M5 or equivalent process).");
+				"if connecting to monetdbd).");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql",
-				"Use the given language, for example 'xquery'.");
+				"Use the given language, defaults to 'sql'.");
 
 		// arguments which have no argument(s)
 		copts.addOption(null, "help", CmdLineOpts.CAR_ZERO, null,
@@ -148,7 +148,7 @@ public class JdbcClient {
 			System.out.print(
 "Usage java -jar jdbcclient.jar\n" +
 "                  [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                  [-l language] [-b database] [-e] [-d [table]]\n" +
+"                  [-l language] [-d database] [-e] [-D [table]]\n" +
 "                  [-X<opt>]\n" +
 "or using long option equivalents --host --port --file --user --language\n" +
 "--dump --echo --database.\n" +

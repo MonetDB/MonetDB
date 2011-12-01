@@ -121,8 +121,11 @@ SQLGetCursorNameW(SQLHSTMT StatementHandle,
 	n++;			/* account for NUL byte */
 	cursor = malloc(n);
 	rc = SQLGetCursorName_(stmt, cursor, BufferLength, &n);
-	fixWcharOut(rc, cursor, n, CursorName, BufferLength,
-		    NameLengthPtr, 1, addStmtError, stmt);
+	if (SQL_SUCCEEDED(rc))    {
+		fixWcharOut(rc, cursor, n, CursorName, BufferLength,
+			    NameLengthPtr, 1, addStmtError, stmt);
+	}
+	free(cursor);
 
 	return rc;
 }

@@ -15,7 +15,7 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?vaults UDF NOT_WIN32?LSST ENABLE_DATACELL?datacell
+SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/misc \

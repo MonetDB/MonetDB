@@ -225,8 +225,11 @@ SQLDescribeColW(SQLHSTMT StatementHandle,
 			     ColumnSizePtr,
 			     DecimalDigitsPtr,
 			     NullablePtr);
-	fixWcharOut(rc, colname, n, ColumnName, BufferLength, NameLengthPtr,
-		    1, addStmtError, stmt);
+	if (SQL_SUCCEEDED(rc)) {
+		fixWcharOut(rc, colname, n, ColumnName, BufferLength,
+			    NameLengthPtr, 1, addStmtError, stmt);
+	}
+	free(colname);
 
 	return rc;
 }

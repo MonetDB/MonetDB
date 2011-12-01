@@ -867,10 +867,13 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 
 	rc = SQLGetInfo_(dbc, InfoType, ptr, n, &n);
 
-	if (ptr != InfoValuePtr)
-		fixWcharOut(rc, ptr, n, InfoValuePtr, BufferLength,
-			    StringLengthPtr, 2, addDbcError, dbc);
-	else if (StringLengthPtr)
+	if (ptr != InfoValuePtr) {
+		if (SQL_SUCCEEDED(rc)) {
+			fixWcharOut(rc, ptr, n, InfoValuePtr, BufferLength,
+				    StringLengthPtr, 2, addDbcError, dbc);
+		}
+		free(ptr);
+	} else if (StringLengthPtr)
 		*StringLengthPtr = n;
 
 	return rc;

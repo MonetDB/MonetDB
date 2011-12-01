@@ -150,8 +150,11 @@ SQLNativeSqlW(SQLHSTMT StatementHandle,
 	sqlout = malloc(n);
 	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
-	fixWcharOut(rc, sqlout, nn, OutStatementText, BufferLength,
-		    TextLength2Ptr, 1, addStmtError, stmt);
+	if (SQL_SUCCEEDED(rc)) {
+		fixWcharOut(rc, sqlout, nn, OutStatementText, BufferLength,
+			    TextLength2Ptr, 1, addStmtError, stmt);
+	}
+	free(sqlout);
 
 	return rc;
 }
