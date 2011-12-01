@@ -277,7 +277,7 @@ sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
 		list *cascade_action = m->cascade_action;
 
 		if (m->session->status || m->errstr[0]) {
-			e = _strdup(m->errstr);
+			e = _STRDUP(m->errstr);
 			if (!e) {
 				_DELETE(o);
 				return NULL;
@@ -747,7 +747,7 @@ char *dlist2string(mvc *sql, dlist *l, char **err)
 		char *s = NULL;
 
 		if (n->type == type_string && n->data.sval)
-			s = _strdup(n->data.sval);
+			s = _STRDUP(n->data.sval);
 		else if (n->type == type_symbol)
 			s = symbol2string(sql, n->data.sym, err);
 
@@ -887,7 +887,7 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 	default:
 		return NULL;
 	}
-	return _strdup(buf);
+	return _STRDUP(buf);
 }
 
 

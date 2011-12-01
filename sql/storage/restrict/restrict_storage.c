@@ -547,7 +547,7 @@ dup_bat(sql_trans *tr, sql_bat *obat, sql_bat *bat)
 	bat->cnt = obat->cnt;
 	if (bat->bid)
 		temp_dup(bat->bid);
-	bat->name = _strdup(obat->name);
+	bat->name = _STRDUP(obat->name);
 	return LOG_OK;
 }
 
@@ -579,7 +579,7 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 	bat->bid = obat->bid;
 	if (bat->bid) 
 		obat->bid = temp_copy(bat->bid, isTempTable(t));
-	bat->name = _strdup(obat->name);
+	bat->name = _STRDUP(obat->name);
 	(void)tr;
 	return LOG_OK;
 }

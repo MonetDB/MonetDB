@@ -812,7 +812,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	bat->ibase = obat->ibase;
 	bat->cnt = obat->cnt;
 
-	bat->name = _strdup(obat->name);
+	bat->name = _STRDUP(obat->name);
 
 	assert(bat->ibid);
 	if (bat->ibid) {
@@ -895,7 +895,7 @@ int
 dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 {
 	bat->dbid = obat->dbid;
-	bat->dname = _strdup(obat->dname);
+	bat->dname = _STRDUP(obat->dname);
 	if (bat->dbid) {
 		if (is_new) {
 			obat->dbid = temp_copy(bat->dbid, temp);

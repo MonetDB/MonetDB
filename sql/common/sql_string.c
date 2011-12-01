@@ -55,7 +55,7 @@ mkUpper(char *s)
 char *
 toLower(const char *s)
 {
-	char *r = _strdup(s);
+	char *r = _STRDUP(s);
 
 	return mkLower(r);
 }
@@ -63,7 +63,7 @@ toLower(const char *s)
 char *
 toUpper(const char *s)
 {
-	char *r = _strdup(s);
+	char *r = _STRDUP(s);
 
 	return mkUpper(r);
 }
@@ -135,7 +135,7 @@ sql2str(char *s)
 }
 
 char *
-sql_strdup(char *s)
+sql_STRDUP(char *s)
 {
 	size_t l = strlen(s);
 	char *r = NEW_ARRAY(char, l);
@@ -187,7 +187,7 @@ char *sql_message( const char *format, ... )
 	va_start (ap,format);
 	(void) vsnprintf( buf, BUFSIZ, format, ap); 
 	va_end (ap);
-	return _strdup(buf);
+	return _STRDUP(buf);
 }
 
 char *sa_message( sql_allocator *sa, const char *format, ... )
