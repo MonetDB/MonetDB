@@ -302,8 +302,11 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 		   addDbcError, dbc, return SQL_ERROR);
 	out = malloc(1024);
 	rc = SQLBrowseConnect_(dbc, in, SQL_NTS, out, 1024, &n);
-	fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
-		    StringLength2Ptr, 1, addDbcError, dbc);
+	if (SQL_SUCCEEDED(rc) || rc == SQL_NEED_DATA) {
+		fixWcharOut(rc, out, n, OutConnectionString, BufferLength,
+			    StringLength2Ptr, 1, addDbcError, dbc);
+	}
+	free(out);
 	if (in)
 		free(in);
 	return rc;

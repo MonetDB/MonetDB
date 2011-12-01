@@ -28,15 +28,14 @@ INCLUDES = .. \
 	../../../../clients/mapilib \
 	../../../../common/options \
 	../../../../common/stream \
-	../../../../gdk \
-	$(READLINE_INCS) $(MSEED_CFLAGS) $(cfitsio_CFLAGS) $(curl_CFLAGS)
+	../../../../gdk
 
 lib__lsst = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = lsst.c
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat $(curl_LIBS)
+		../../../../gdk/libbat
 }
 
 headers_lsstmal = {

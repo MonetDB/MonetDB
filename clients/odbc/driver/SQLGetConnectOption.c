@@ -135,11 +135,15 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	rc = SQLGetConnectOption_(dbc, Option, ptr);
 
 	if (ptr != ValuePtr) {
-		SQLSMALLINT n = (SQLSMALLINT) strlen((char *) ptr);
-		SQLSMALLINT *nullp = NULL;
+		if (SQL_SUCCEEDED(rc)) {
+			SQLSMALLINT n = (SQLSMALLINT) strlen((char *) ptr);
+			SQLSMALLINT *nullp = NULL;
 
-		fixWcharOut(rc, ptr, n, ValuePtr, SQL_MAX_OPTION_STRING_LENGTH,
-			    nullp, 2, addDbcError, dbc);
+			fixWcharOut(rc, ptr, n, ValuePtr,
+				    SQL_MAX_OPTION_STRING_LENGTH, nullp, 2,
+				    addDbcError, dbc);
+		}
+		free(ptr);
 	}
 
 	return rc;

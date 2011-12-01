@@ -377,10 +377,13 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	rc = SQLGetDescField_(desc, RecordNumber, FieldIdentifier, ptr, n, &n);
 
 	if (ptr != ValuePtr) {
-		SQLSMALLINT nn = (SQLSMALLINT) n;
+		if (SQL_SUCCEEDED(rc)) {
+			SQLSMALLINT nn = (SQLSMALLINT) n;
 
-		fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength,
-			    StringLengthPtr, 2, addDescError, desc);
+			fixWcharOut(rc, ptr, nn, ValuePtr, BufferLength,
+				    StringLengthPtr, 2, addDescError, desc);
+		}
+		free(ptr);
 	} else if (StringLengthPtr)
 		*StringLengthPtr = n;
 
