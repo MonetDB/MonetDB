@@ -135,7 +135,7 @@ sql2str(char *s)
 }
 
 char *
-sql_STRDUP(char *s)
+sql_strdup(char *s)
 {
 	size_t l = strlen(s);
 	char *r = NEW_ARRAY(char, l);
