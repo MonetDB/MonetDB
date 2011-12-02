@@ -367,7 +367,7 @@ handle_error(mvc *m, stream *out, int pstatus)
 }
 
 static str
-sql_update_dec2010( Client c, mvc *m )
+sql_update_dec2011( Client c, mvc *m )
 {
 	node *nsch, *ntab, *ncol;
 	sql_trans *tr;
@@ -531,7 +531,7 @@ SQLinitClient(Client c)
         	sql_find_subtype(&clob, "clob", 0, 0);
 		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &clob, &clob, &clob, F_FILT )) {
 			char *err;
-			if ((err = sql_update_dec2010(c, m)) != NULL)
+			if ((err = sql_update_dec2011(c, m)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
 	}
