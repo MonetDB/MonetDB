@@ -104,7 +104,7 @@ propvalue2string( prop *p)
 		case PROP_REMOTE: {
 			   char *uri = p->value;
 
-			   return _strdup(uri);
+			   return _STRDUP(uri);
 			}
 			break;
 		default:
