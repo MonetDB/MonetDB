@@ -439,7 +439,7 @@ SQLinitClient(Client c)
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
 
-		buffer_init(b, _strdup(sqlinit), len);
+		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
 		bstream_next(fdin);
 		MCpushClientInput(c, fdin, 0, "");
@@ -829,7 +829,7 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = NULL;
 	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE);
 	if( msg == MAL_SUCCEED)
-		*ret= _strdup("SQLcompile");
+		*ret= _STRDUP("SQLcompile");
 	return msg;
 }
 /*

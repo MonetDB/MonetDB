@@ -98,7 +98,7 @@ propvalue2string( prop *p)
 			   sql_idx *i = p->value;
 
 			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
-			   return _strdup(buf);
+			   return _STRDUP(buf);
 			}
 			break;
 		case PROP_REMOTE: {

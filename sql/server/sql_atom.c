@@ -324,8 +324,8 @@ atom2sql(atom *a)
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
 		if (a->data.val.cval[0])
-			return _strdup("true");
-		return _strdup("false");
+			return _STRDUP("true");
+		return _STRDUP("false");
 	case EC_CHAR:
 	case EC_STRING:
 		assert (a->data.vtype == TYPE_str);
@@ -439,7 +439,7 @@ atom2sql(atom *a)
         default:
                 snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
-	return _strdup(buf);
+	return _STRDUP(buf);
 }
 
 

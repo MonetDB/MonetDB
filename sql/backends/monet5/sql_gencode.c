@@ -2173,7 +2173,7 @@ backend_callinline(backend *be, Client c, stmt *s )
 			curInstr = newAssignment(curBlk);
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
 			varid = getDestVar(curInstr);
-			renameVariable(curBlk, varid, _strdup(arg));
+			renameVariable(curBlk, varid, _STRDUP(arg));
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk,varid);
 
@@ -2237,7 +2237,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(mb, _strdup(arg), type);
+			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb,0);
@@ -2250,7 +2250,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 			int varid = 0;
 
 			snprintf(arg, SMALLBUFSIZ, "A%d", argc);
-			varid = newVariable(mb, _strdup(arg), type);
+			varid = newVariable(mb, _STRDUP(arg), type);
 			curInstr = pushArgument(mb, curInstr, varid);
 			setVarType(mb, varid, type);
 			setVarUDFtype(mb,varid);

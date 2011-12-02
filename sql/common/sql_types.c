@@ -131,7 +131,7 @@ base_init(sql_allocator *sa, sql_base * b, sqlid id, int flag, char *name)
 	b->flag = flag;
 	b->name = NULL;
 	if (name)
-		b->name = sa?sa_strdup(sa,name):_strdup(name);
+		b->name = sa?sa_strdup(sa,name):_STRDUP(name);
 }
 
 void
@@ -140,7 +140,7 @@ base_set_name(sql_base * b, char *name)
 	assert(name);
 	if (b->name)
 		_DELETE(b->name);
-	b->name = _strdup(name);
+	b->name = _STRDUP(name);
 }
 
 void
@@ -300,7 +300,7 @@ sql_subtype_string(sql_subtype *t)
 
 	else
 		snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
-	return _strdup(buf);
+	return _STRDUP(buf);
 }
 
 sql_subtype *
@@ -408,7 +408,7 @@ subtype2string(sql_subtype *t)
 	} else {
 			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
 	}
-	return _strdup(buf);
+	return _STRDUP(buf);
 }
 
 int 
@@ -889,8 +889,8 @@ sql_create_alias(char *name, char *alias)
 {
 	sql_alias *a = ZNEW(sql_alias);
 
-	a->name = _strdup(name);
-	a->alias = _strdup(alias);
+	a->name = _STRDUP(name);
+	a->alias = _STRDUP(alias);
 	list_append(aliases, a);
 	if (!keyword_exists(a->alias) )
 		keywords_insert(a->alias, KW_ALIAS);
@@ -926,7 +926,7 @@ sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned
 	sql_type *t = ZNEW(sql_type);
 
 	base_init(NULL, &t->base, store_next_oid(), TR_OLD, name);
-	t->sqlname = _strdup(sqlname);
+	t->sqlname = _STRDUP(sqlname);
 	t->digits = digits;
 	t->scale = scale;
 	t->localtype = ATOMindex(t->base.name);
@@ -958,7 +958,7 @@ arg_dup(sql_arg *oa)
 {
 	sql_arg *a = ZNEW(sql_arg);
 
-	a->name = _strdup(oa->name);
+	a->name = _STRDUP(oa->name);
 	a->type = oa->type;
 	return a;
 }
@@ -1052,8 +1052,8 @@ sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, 
 
 	assert(res && ops);
 	base_init(NULL, &t->base, store_next_oid(), TR_OLD, name);
-	t->imp = _strdup(imp);
-	t->mod = _strdup(mod);
+	t->imp = _STRDUP(imp);
+	t->mod = _STRDUP(mod);
 	t->ops = ops;
 	if (aggr) {
 		t->res = *res;
@@ -1084,8 +1084,8 @@ sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 
 	assert(res && ops);
 	base_init(NULL, &t->base, store_next_oid(), TR_OLD, name);
-	t->imp = _strdup(imp);
-	t->mod = _strdup("SQL");
+	t->imp = _STRDUP(imp);
+	t->mod = _STRDUP("SQL");
 	t->ops = ops;
 	if (res) {	
 		t->res = *res;

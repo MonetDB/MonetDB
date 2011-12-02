@@ -1240,7 +1240,7 @@ stack_push_var(mvc *sql, char *name, sql_subtype *type)
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = (void*)1;
-	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].name = _STRDUP(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
 	assert(sql->vars[sql->topvars].type.comp_type == NULL);
@@ -1256,7 +1256,7 @@ stack_push_rel_var(mvc *sql, char *name, sql_rel *var, sql_subtype *type)
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = rel_dup(var);
-	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].name = _STRDUP(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].type = *type;
 	assert(sql->vars[sql->topvars].type.comp_type != NULL);
@@ -1272,7 +1272,7 @@ stack_push_rel_view(mvc *sql, char *name, sql_rel *var)
 		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
 	}
 	sql->vars[sql->topvars].s = var;
-	sql->vars[sql->topvars].name = _strdup(name);
+	sql->vars[sql->topvars].name = _STRDUP(name);
 	sql->vars[sql->topvars].value.vtype = 0;
 	sql->vars[sql->topvars].view = 1;
 	sql->vars[sql->topvars].type.comp_type = NULL;
@@ -1319,7 +1319,7 @@ stack_push_frame(mvc *sql, char *name)
 	sql->vars[sql->topvars].view = 0;
 	sql->vars[sql->topvars].type.comp_type = NULL;
 	if (name)
-		sql->vars[sql->topvars].name = _strdup(name);
+		sql->vars[sql->topvars].name = _STRDUP(name);
 	sql->topvars++;
 	sql->frame++;
 }
@@ -1473,7 +1473,7 @@ stack_set_string(mvc *sql, char *name, char *val)
 	if (v != NULL) {
 		if (v->val.sval)
 			_DELETE(v->val.sval);
-		v->val.sval = _strdup(val);
+		v->val.sval = _STRDUP(val);
 	}
 }
 

@@ -1837,12 +1837,12 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 	nt->event = i->event;
 	nt->old_name = nt->new_name = nt->condition = NULL;
 	if (i->old_name)
-		nt->old_name = _strdup(i->old_name);
+		nt->old_name = _STRDUP(i->old_name);
 	if (i->new_name)
-		nt->new_name = _strdup(i->new_name);
+		nt->new_name = _STRDUP(i->new_name);
 	if (i->condition)
-		nt->condition = _strdup(i->condition);
-	nt->statement = _strdup(i->statement);
+		nt->condition = _STRDUP(i->condition);
+	nt->statement = _STRDUP(i->statement);
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *okc = n->data;
@@ -1864,14 +1864,14 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 	c->type = oc->type;
 	c->def = NULL;
 	if (oc->def)
-		c->def = _strdup(oc->def);
+		c->def = _STRDUP(oc->def);
 	c->null = oc->null;
 	c->colnr = oc->colnr;
 	c->unique = oc->unique;
 	c->t = t;
 	c->storage_type = NULL;
 	if (oc->storage_type)
-		c->storage_type = _strdup(oc->storage_type);
+		c->storage_type = _STRDUP(oc->storage_type);
 
 	if (isTable(c->t))
 		store_funcs.dup_col(tr, oc, c);
@@ -1891,14 +1891,14 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c )
 	col->type = c->type;
 	col->def = NULL;
 	if (c->def)
-		col->def = _strdup(c->def);
+		col->def = _STRDUP(c->def);
 	col->null = c->null;
 	col->colnr = c->colnr;
 	col->unique = c->unique;
 	col->t = t;
 	col->storage_type = NULL;
 	if (c->storage_type)
-		col->storage_type = _strdup(c->storage_type);
+		col->storage_type = _STRDUP(c->storage_type);
 
 	cs_add(&t->columns, col, TR_NEW);
 
@@ -1957,7 +1957,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->persistence = ot->persistence;
 	t->commit_action = ot->commit_action;
 	t->readonly = ot->readonly;
-	t->query = (ot->query) ? _strdup(ot->query) : NULL;
+	t->query = (ot->query) ? _STRDUP(ot->query) : NULL;
 
 	cs_init(&t->columns, (fdestroy) &column_destroy);
 	cs_init(&t->keys, (fdestroy) &key_destroy);
@@ -2030,7 +2030,7 @@ type_dup(sql_trans *tr, int flag, sql_type *ot, sql_schema * s)
 	(void) tr;
 	base_init(NULL, &t->base, ot->base.id, tr_flag(&ot->base, flag), ot->base.name);
 
-	t->sqlname = _strdup(ot->sqlname);
+	t->sqlname = _STRDUP(ot->sqlname);
 	t->digits = ot->digits;
 	t->scale = ot->scale;
 	t->radix = ot->radix;
@@ -2050,10 +2050,10 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	(void)tr;
 	base_init(NULL, &f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
 
-	f->imp = (of->imp)?_strdup(of->imp):NULL;
-	f->mod = (of->mod)?_strdup(of->mod):NULL;
+	f->imp = (of->imp)?_STRDUP(of->imp):NULL;
+	f->mod = (of->mod)?_STRDUP(of->mod):NULL;
 	f->type = of->type;
-	f->query = (of->query)?_strdup(of->query):NULL;
+	f->query = (of->query)?_STRDUP(of->query):NULL;
 	f->sql = of->sql;
 	f->side_effect = of->side_effect;
 	f->ops = list_create(of->ops->destroy);
@@ -2200,7 +2200,7 @@ trans_dup(backend_stack stk, sql_trans *ot, char *newname)
 	/* name the old transaction */
 	if (newname) {
 		assert(ot->name == NULL);
-		ot->name = _strdup(newname);
+		ot->name = _STRDUP(newname);
 	}
 
 	if (ot->schemas.set) {
@@ -2933,12 +2933,12 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 				_DELETE(fc->storage_type);
 			fc->storage_type = NULL;
 			if (pfc->storage_type)
-				fc->storage_type = _strdup(pfc->storage_type);
+				fc->storage_type = _STRDUP(pfc->storage_type);
 			if (fc->def) 
 				_DELETE(fc->def);
 			fc->def = NULL;
 			if (pfc->def)
-				fc->def = _strdup(pfc->def);
+				fc->def = _STRDUP(pfc->def);
 		}
 		fc->base.wtime = fc->base.rtime = 0;
 	}
@@ -3382,7 +3382,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
-		char *seq_name = _strdup(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
 		seq_name[strlen(seq_name)-1] = '\0';
 		n = cs_find_name(&syss->seqs, seq_name);
@@ -3578,7 +3578,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 	t = ZNEW(sql_type);
 	systype = find_sql_table(find_sql_schema(tr, "sys"), "types");
 	base_init(NULL, &t->base, next_oid(), TR_NEW, impl);
-	t->sqlname = _strdup(sqlname);
+	t->sqlname = _STRDUP(sqlname);
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
@@ -3606,15 +3606,15 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 
 	base_init(NULL, &t->base, next_oid(), TR_NEW, func);
 	assert(impl && mod);
-	t->imp = (impl)?_strdup(impl):NULL;
-	t->mod = (mod)?_strdup(mod):NULL; 
+	t->imp = (impl)?_STRDUP(impl):NULL;
+	t->mod = (mod)?_STRDUP(mod):NULL; 
 	t->type = type;
 	sql = t->sql = (query)?1:0;
 	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = list_dup(args, (fdup)&arg_dup);
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
-	t->query = (query)?_strdup(query):NULL;
+	t->query = (query)?_STRDUP(query):NULL;
 	if (res)
 		t->res = *res;
 	t->s = s;
@@ -3799,7 +3799,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	assert( (isTable(t) ||
 		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
 
-	t->query = sql ? _strdup(sql) : NULL;
+	t->query = sql ? _STRDUP(sql) : NULL;
 	t->s = s;
 	t->sz = sz;
 	if (sz < 0)
@@ -4148,7 +4148,7 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 			_DELETE(col->def);
 		col->def = NULL;
 		if (val)
-			col->def = _strdup(val);
+			col->def = _STRDUP(val);
 		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
 		if (isGlobal(col->t)) 
 			tr->schema_updates ++;
@@ -4567,12 +4567,12 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, char *name,
 	ni->event = event;
 	ni->old_name = ni->new_name = ni->condition = NULL; 
 	if (old_name)
-		ni->old_name = _strdup(old_name);
+		ni->old_name = _STRDUP(old_name);
 	if (new_name)
-		ni->new_name = _strdup(new_name);
+		ni->new_name = _STRDUP(new_name);
 	if (condition)
-		ni->condition = _strdup(condition);
-	ni->statement = _strdup(statement);
+		ni->condition = _STRDUP(condition);
+	ni->statement = _STRDUP(statement);
 
 	cs_add(&t->triggers, ni, TR_NEW);
 	list_append(t->s->triggers, ni);
@@ -4796,7 +4796,7 @@ sql_session_reset(sql_session *s, int ac)
 
 	if (s->schema_name)
 		_DELETE(s->schema_name);
-	s->schema_name = _strdup("sys");
+	s->schema_name = _STRDUP("sys");
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;

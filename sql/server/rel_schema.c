@@ -179,8 +179,10 @@ table_constraint_name(symbol *s, sql_table *t)
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
 	dnode *nms = NULL;
-	static char buf[BUFSIZ];
+	char *buf;
+	size_t buflen;
 	size_t len;
+	size_t slen;
 
 	switch (s->token) {
 		case SQL_UNIQUE:
@@ -201,18 +203,32 @@ table_constraint_name(symbol *s, sql_table *t)
 	}
 
 	/* copy table name */
-	strncpy(buf, t->base.name, BUFSIZ - 1);
-	buf[BUFSIZ - 1] = '\0';
+	len = strlen(t->base.name);
+	buflen = BUFSIZ;
+	slen = strlen(suffix);
+	while (len + slen >= buflen)
+		buflen += BUFSIZ;
+	buf = malloc(buflen);
+	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
 	for (; nms; nms = nms->next) {
-		len = strlen(buf);
-		snprintf(buf + len, BUFSIZ - len, "_%s", nms->data.sval);
+		slen = strlen(nms->data.sval);
+		while (len + slen + 1 >= buflen) {
+			buflen += BUFSIZ;
+			buf = realloc(buf, buflen);
+		}
+		snprintf(buf + len, buflen - len, "_%s", nms->data.sval);
+		len += slen + 1;
 	}
 
 	/* add suffix */
-	len = strlen(buf);
-	snprintf(buf + len, BUFSIZ - len, "%s", suffix);
+	slen = strlen(suffix);
+	while (len + slen >= buflen) {
+		buflen += BUFSIZ;
+		buf = realloc(buf, buflen);
+	}
+	snprintf(buf + len, buflen - len, "%s", suffix);
 
 	return buf;
 }
@@ -533,6 +549,8 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		if (!opt_name)
 			opt_name = table_constraint_name(sym, t);
 		res = table_constraint_type(sql, opt_name, sym, ss, t);
+		if (opt_name != l->h->data.sval)
+			free(opt_name);
 	}
 
 	if (!res) {

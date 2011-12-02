@@ -54,7 +54,7 @@
 
 #define NEWADT( size ) (adt*)GDKmalloc(size)
 #define _DELETE( ptr )	{ GDKfree(ptr); ptr = NULL; }
-#define _strdup( ptr )	GDKstrdup((char*)ptr)
+#define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
 typedef struct sql_ref {
 	int refcnt;
