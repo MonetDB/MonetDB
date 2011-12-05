@@ -572,6 +572,7 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	for (j=0; j<cnt; j++)
 		BUNappend(res, BUNtail(bats_i[mapT[j]], batsT[mapT[j]]++), FALSE);
 	GDKfree(batsT);
+	GDKfree(bats_i);
 	return res;
 }
 
