@@ -50,6 +50,7 @@
 #include <sql_rel2bin.h>
 #include <rel_optimizer.h>
 #include <rel_subquery.h>
+#include <rel_prop.h>
 #include <rel_exp.h>
 #include <rel_bin.h>
 
@@ -244,21 +245,20 @@ relational_func_create_result( MalBlkPtr mb, InstrPtr q, sql_rel *f)
 	node *n;
 	int i;
 
+	q->argc = q->retc = 0;
 	for (i = 0, n = f->exps->h; n; n = n->next, i++ ) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
 		type = newBatType(TYPE_oid,type);
-		if (i)
-			q = pushReturn(mb, q, newTmpVariable(mb, type));
-		else
-			setVarType(mb,getArg(q,0), type);
+		q = pushReturn(mb, q, newTmpVariable(mb, type));
 	}
 	return q;
 }
 
+
 static void
-monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
@@ -319,6 +319,155 @@ monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	if (backup)
 		c->curprg = backup;
 }
+
+/* stub and remote function */
+static void
+_create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *prp)
+{
+	Client c = MCgetClient(m->clientid);
+	MalBlkPtr curBlk = 0;
+	InstrPtr curInstr = 0, p, o;
+	Symbol backup = NULL;
+	char *uri = prp->value;
+	node *n;
+	int i, q, v;
+	int *lret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
+	int *rret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
+	char old = name[0];
+
+	/* dirty hack, rename (change first char of name) L->l, local
+         * functions name start with 'l' 	 */ 
+	name[0] = 'l';
+	_create_relational_function(m, name, rel, call);
+
+	/* create stub */
+	name[0] = old;
+	backup = c->curprg;
+	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
+	name[0] = 'l';
+	curBlk = c->curprg->def;
+	curInstr = getInstrPtr(curBlk, 0);
+
+	curInstr = relational_func_create_result(curBlk, curInstr, rel);
+	setVarUDFtype(curBlk,0);
+
+	/* ops */
+	if (call->op1->type == st_list) {
+		node *n;
+
+		for(n=call->op1->op4.lval->h; n; n = n->next) {
+			stmt *op = n->data;
+			sql_subtype *t = tail_type(op);
+			int type = t->type->localtype;
+			int varid = 0;
+			char *nme = op->op3->op4.aval->data.val.sval;
+
+			varid = newVariable(curBlk, _strdup(nme), type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+			setVarUDFtype(curBlk,varid);
+		}
+	}
+
+	/* declare return variables */
+	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+		sql_exp *e = n->data;
+		int type = exp_subtype(e)->type->localtype;
+
+		type = newBatType(TYPE_oid,type);
+		p = newFcnCall(curBlk, batRef, newRef);
+		p = pushType(curBlk, p, getHeadType(type));
+		p = pushType(curBlk, p, getTailType(type));
+		setArgType(curBlk, p, 0, type);
+		lret[i] = getArg(p, 0);
+	}
+
+	/* q := remote.connect("uri", "user", "pass"); */
+        p = newStmt(curBlk, remoteRef, connectRef);
+        p = pushStr(curBlk, p, uri);
+        p = pushStr(curBlk, p, "monetdb");
+        p = pushStr(curBlk, p, "monetdb");
+        p = pushStr(curBlk, p, "msql");
+        q = getArg(p, 0);
+
+	/* remote.register(q, "mod", "fcn"); */
+        p = newStmt(curBlk, remoteRef, putName("register", 8));
+        p = pushArgument(curBlk, p, q);
+        p = pushStr(curBlk, p, userRef);
+        p = pushStr(curBlk, p, name);
+
+	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
+	p = newInstruction(curBlk, ASSIGNsymbol);
+	setModuleId(p, remoteRef);
+	setFunctionId(p, execRef);
+	p = pushArgument(curBlk, p, q);
+	p = pushStr(curBlk, p, userRef);
+	p = pushStr(curBlk, p, name);
+
+	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+		/* x1 := remote.put(q, :type) */
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushArgument(curBlk, o, lret[i]);
+		v = getArg(o, 0);
+		p = pushReturn(curBlk, p, v);
+		rret[i] = v;
+	}
+
+	/* send arguments to remote */
+	for(i = curInstr->retc; i < curInstr->argc; i++) {
+		/* x1 := remote.put(q, A0); */
+		o = newStmt(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushArgument(curBlk, o, getArg(curInstr, i));
+		p = pushArgument(curBlk, p, getArg(o, 0));
+	}
+	pushInstruction(curBlk, p);
+
+	/* return results */
+	for(i = 0; i < curInstr->retc; i++) {
+		/* y1 := remote.get(q, x1); */
+		p = newFcnCall(curBlk, remoteRef, getRef);
+		p = pushArgument(curBlk, p, q);
+		p = pushArgument(curBlk, p, rret[i]);
+		getArg(p, 0) = lret[i];
+	}
+
+	/* remote.disconnect(q); */
+	p = newStmt(curBlk, remoteRef, disconnectRef);
+	p = pushArgument(curBlk, p, q);
+
+	p = newInstruction(curBlk, RETURNsymbol);
+	p->retc = p->argc = 0;
+	for(i = 0; i < curInstr->retc; i++) 
+		p = pushArgument(curBlk, p, lret[i]);
+	p->retc = p->argc;
+	/* assignment of return */
+	for(i = 0; i < curInstr->retc; i++) 
+		p = pushArgument(curBlk, p, lret[i]);
+	pushInstruction(curBlk, p);
+	pushEndInstruction(curBlk);
+
+	/* SQL function definitions meant f r inlineing should not be optimized before */
+	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	addQueryToCache(c);
+	if (backup)
+		c->curprg = backup;
+	name[0] = old; /* make sure stub is called */
+}
+
+static void
+monet5_create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
+
+{
+	prop *p = NULL;
+
+	if (rel && (p = find_prop(rel->p, PROP_REMOTE)) != NULL)
+		_create_relational_remote(m, name, rel, call, p);
+	else
+		_create_relational_function(m, name, rel, call);
+}
+
 /*
  * @-
  * Some utility routines to generate code
@@ -692,43 +841,31 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_oid;
 			int tt = s->op4.cval->type.type->localtype;
 			sql_table *t = s->op4.cval->t;
-			str mod = isRemote(t)?remoteRef:sqlRef;
+			str mod = sqlRef;
 
 			q = newStmt2(mb, mod, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			if (isRemote(t))
-				q = pushStr(mb, q, t->query);
-			else
-				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.cval->base.name);
 			q = pushInt(mb, q, s->flag);
-			/* dummy version */
-			if (isRemote(t))
-				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
 		case st_dbat:{
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?remoteRef:sqlRef;
+			str mod = sqlRef;
 
 			q = newStmt2(mb, mod, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
 			setVarUDFtype(mb,getArg(q,0));
-			if (isRemote(t))
-				q = pushStr(mb, q, t->query);
-			else
-				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushInt(mb, q, s->flag);
-			/* dummy version */
-			if (isRemote(t))
-				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
@@ -736,23 +873,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt;
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.idxval->t;
-			str mod = isRemote(t)?remoteRef:sqlRef;
+			str mod = sqlRef;
 
 			q = newStmt2(mb, mod, bindidxRef);
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
-			if (isRemote(t))
-				q = pushStr(mb, q, t->query);
-			else
-				q = pushArgument(mb, q, sql->mvc_var);
+			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
-			/* dummy version */
-			if (isRemote(t))
-				q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
 		}
 			break;
@@ -1630,7 +1761,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			node *n;
 
 			/* dump args */
-			if (s->op1) 
+			if (s->op1)
 				_dumpstmt(sql, mb, s->op1);
 			monet5_create_relational_function(sql->mvc, fimp, rel, s);
 
@@ -1752,7 +1883,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_delete:{
 			int r = _dumpstmt(sql, mb, s->op1);
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?remoteRef:sqlRef;
+			str mod = sqlRef;
 
 			q = newStmt1(mb, mod, "delete");
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -1764,7 +1895,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_table_clear:{
 			sql_table *t = s->op4.tval;
-			str mod = isRemote(t)?remoteRef:sqlRef;
+			str mod = sqlRef;
 
 			q = newStmt1(mb, mod, "clear_table");
 			q = pushSchema(mb, q, t);
