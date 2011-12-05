@@ -362,7 +362,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 			int varid = 0;
 			char *nme = op->op3->op4.aval->data.val.sval;
 
-			varid = newVariable(curBlk, _strdup(nme), type);
+			varid = newVariable(curBlk, GDKstrdup(nme), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk,varid);
