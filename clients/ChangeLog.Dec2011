@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Dec  6 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed some bugs in the PHP interface affecting the mapi_ping(),
+  monetdb_insert_id() and auto_commit() functions.  Bugs #2936, #2937,
+  #2938.
+
 * Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Fixed SQLNumResultCols and SQLDescribeCol to return useful
   information after a call to SQLPrepare and before any SQLExecute.
