@@ -81,8 +81,8 @@ SQLGetConnectOption(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOption " PTRFMT " %u\n",
-		PTRFMTCAST ConnectionHandle, (unsigned int) Option);
+	ODBCLOG("SQLGetConnectOption " PTRFMT " %s\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
 #endif
 
 	if (!isValidDbc(dbc))
@@ -111,8 +111,8 @@ SQLGetConnectOptionW(SQLHDBC ConnectionHandle,
 	SQLPOINTER ptr;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %u\n",
-		PTRFMTCAST ConnectionHandle, (unsigned int) Option);
+	ODBCLOG("SQLGetConnectOptionW " PTRFMT " %s\n",
+		PTRFMTCAST ConnectionHandle, translateConnectOption(Option));
 #endif
 
 	if (!isValidDbc(dbc))

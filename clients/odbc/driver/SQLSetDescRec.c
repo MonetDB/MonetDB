@@ -35,6 +35,57 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
+#ifdef ODBCDEBUG
+static char *
+translateSubType(SQLSMALLINT Type, SQLSMALLINT SubType)
+{
+	if (Type == SQL_DATETIME) {
+		switch (SubType) {
+		case SQL_CODE_DATE:
+			return "SQL_CODE_DATE";
+		case SQL_CODE_TIME:
+			return "SQL_CODE_TIME";
+		case SQL_CODE_TIMESTAMP:
+			return "SQL_CODE_TIMESTAMP";
+		default:
+			return "unknown";
+		}
+	} else if (Type == SQL_INTERVAL) {
+		switch (SubType) {
+		case SQL_CODE_MONTH:
+			return "SQL_CODE_MONTH";
+		case SQL_CODE_YEAR:
+			return "SQL_CODE_YEAR";
+		case SQL_CODE_YEAR_TO_MONTH:
+			return "SQL_CODE_YEAR_TO_MONTH";
+		case SQL_CODE_DAY:
+			return "SQL_CODE_DAY";
+		case SQL_CODE_HOUR:
+			return "SQL_CODE_HOUR";
+		case SQL_CODE_MINUTE:
+			return "SQL_CODE_MINUTE";
+		case SQL_CODE_SECOND:
+			return "SQL_CODE_SECOND";
+		case SQL_CODE_DAY_TO_HOUR:
+			return "SQL_CODE_DAY_TO_HOUR";
+		case SQL_CODE_DAY_TO_MINUTE:
+			return "SQL_CODE_DAY_TO_MINUTE";
+		case SQL_CODE_DAY_TO_SECOND:
+			return "SQL_CODE_DAY_TO_SECOND";
+		case SQL_CODE_HOUR_TO_MINUTE:
+			return "SQL_CODE_HOUR_TO_MINUTE";
+		case SQL_CODE_HOUR_TO_SECOND:
+			return "SQL_CODE_HOUR_TO_SECOND";
+		case SQL_CODE_MINUTE_TO_SECOND:
+			return "SQL_CODE_MINUTE_TO_SECOND";
+		default:
+			return "unknown";
+		}
+	} else
+		return "unused";
+}
+#endif
+
 SQLRETURN SQL_API
 SQLSetDescRec(SQLHDESC DescriptorHandle,
 	      SQLSMALLINT RecNumber,
@@ -50,9 +101,10 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescRec " PTRFMT " %d %d %d " LENFMT " %d %d\n",
+	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d\n",
 		PTRFMTCAST DescriptorHandle, (int) RecNumber,
-		(int) Type, (int) SubType, LENCAST Length,
+		isAD(desc) ? translateCType(Type) : translateSQLType(Type),
+		translateSubType(Type, SubType), LENCAST Length,
 		(int) Precision, (int) Scale);
 #endif
 

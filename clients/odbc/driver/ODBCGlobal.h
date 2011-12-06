@@ -141,6 +141,17 @@ extern const char *ODBCdebug;
 extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #endif
+
+char *translateCType(SQLSMALLINT ValueType);
+char *translateSQLType(SQLSMALLINT ParameterType);
+char *translateFieldIdentifier(SQLSMALLINT FieldIdentifier);
+char *translateFetchOrientation(SQLUSMALLINT FetchOrientation);
+char *translateConnectAttribute(SQLINTEGER Attribute);
+char *translateConnectOption(SQLUSMALLINT Option);
+char *translateEnvAttribute(SQLINTEGER Attribute);
+char *translateStmtAttribute(SQLINTEGER Attribute);
+char *translateStmtOption(SQLUSMALLINT Option);
+char *translateCompletionType(SQLSMALLINT CompletionType);
 #endif
 
 #endif

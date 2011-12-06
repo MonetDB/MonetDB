@@ -81,6 +81,31 @@ ODBCConciseType(const char *name)
 	return 0;
 }
 
+#ifdef ODBCDEBUG
+static char *
+translatequerytype(int querytype)
+{
+	switch (querytype) {
+	case Q_PARSE:
+		return "Q_PARSE";
+	case Q_TABLE:
+		return "Q_TABLE";
+	case Q_UPDATE:
+		return "Q_UPDATE";
+	case Q_SCHEMA:
+		return "Q_SCHEMA";
+	case Q_TRANS:
+		return "Q_TRANS";
+	case Q_PREPARE:
+		return "Q_PREPARE";
+	case Q_BLOCK:
+		return "Q_BLOCK";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 SQLRETURN
 ODBCInitResult(ODBCStmt *stmt)
 {
@@ -119,7 +144,8 @@ ODBCInitResult(ODBCStmt *stmt)
 	stmt->rowcount = (SQLULEN) mapi_rows_affected(hdl);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("ODBCInitResult: querytype %d\n", stmt->querytype);
+	ODBCLOG("ODBCInitResult: querytype %s\n",
+		translatequerytype(stmt->querytype));
 #endif
 
 	switch (stmt->querytype) {
@@ -143,7 +169,12 @@ ODBCInitResult(ODBCStmt *stmt)
 		break;
 	}
 
-	assert(stmt->ImplRowDescr == NULL || stmt->ImplRowDescr->sql_desc_count == nrCols);
+#if 0
+	/* XXX is this correct? */
+	assert(stmt->ImplRowDescr == NULL ||
+	       stmt->ImplRowDescr->sql_desc_count == nrCols ||
+	       stmt->ImplRowDescr->sql_desc_count == 0);
+#endif
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
 
 	if (nrCols == 0)

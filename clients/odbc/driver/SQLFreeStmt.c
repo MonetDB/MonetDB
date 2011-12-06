@@ -83,13 +83,32 @@ SQLFreeStmt_(ODBCStmt *stmt,
 	/* not reached */
 }
 
+#ifdef ODBCDEBUG
+static char *
+translateOption(SQLUSMALLINT Option)
+{
+	switch (Option) {
+	case SQL_CLOSE:
+		return "SQL_CLOSE";
+	case SQL_DROP:
+		return "SQL_DROP";
+	case SQL_UNBIND:
+		return "SQL_UNBIND";
+	case SQL_RESET_PARAMS:
+		return "SQL_RESET_PARAMS";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLFreeStmt(SQLHSTMT StatementHandle,
 	    SQLUSMALLINT Option)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeStmt " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) Option);
+	ODBCLOG("SQLFreeStmt " PTRFMT " %s\n",
+		PTRFMTCAST StatementHandle, translateOption(Option));
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

@@ -72,6 +72,25 @@ SQLDataSources_(ODBCEnv *env,
 	return SQL_ERROR;
 }
 
+#ifdef ODBCDEBUG
+static char *
+translateDirection(SQLUSMALLINT Direction)
+{
+	switch (Direction) {
+	case SQL_FETCH_NEXT:
+		return "SQL_FETCH_NEXT";
+	case SQL_FETCH_FIRST:
+		return "SQL_FETCH_FIRST";
+	case SQL_FETCH_FIRST_USER:
+		return "SQL_FETCH_FIRST_USER";
+	case SQL_FETCH_FIRST_SYSTEM:
+		return "SQL_FETCH_FIRST_SYSTEM";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLDataSources(SQLHENV EnvironmentHandle,
 	       SQLUSMALLINT Direction,
@@ -85,8 +104,8 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSources " PTRFMT " %u\n",
-		PTRFMTCAST EnvironmentHandle, (unsigned int) Direction);
+	ODBCLOG("SQLDataSources " PTRFMT " %s\n",
+		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))
@@ -131,8 +150,8 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 	SQLSMALLINT length1, length2;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSourcesW " PTRFMT " %u\n",
-		PTRFMTCAST EnvironmentHandle, (unsigned int) Direction);
+	ODBCLOG("SQLDataSourcesW " PTRFMT " %s\n",
+		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))

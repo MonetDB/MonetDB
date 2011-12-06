@@ -392,7 +392,7 @@
 		}
 		
 		if (is_string($seq)) {
-			$query = "SELECT NEXT VALUE FOR ".db_quote_ident($seq)."";
+			$query = "SELECT NEXT VALUE FOR ".monetdb_quote_ident($seq)."";
 			$res = monetdb_query($connection, $query);
 			$row = monetdb_fetch_assoc($result);
             return($row[$seq]);
@@ -518,7 +518,7 @@
 	function auto_commit($conn, $flag=TRUE) {
 		if ($conn["socket"] != NULL) {
 			$cmd = "auto_commit " . $flag;
-			mapi_write($socket, format_command($cmd));
+			mapi_write($conn["socket"], format_command($cmd));
 			
 			return TRUE;
 		}

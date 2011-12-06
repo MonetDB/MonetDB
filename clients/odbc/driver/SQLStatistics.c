@@ -41,6 +41,34 @@
 #include "ODBCUtil.h"
 
 
+#ifdef ODBCDEBUG
+static char *
+translateUnique(SQLUSMALLINT Unique)
+{
+	switch (Unique) {
+	case SQL_INDEX_ALL:
+		return "SQL_INDEX_ALL";
+	case SQL_INDEX_UNIQUE:
+		return "SQL_INDEX_UNIQUE";
+	default:
+		return "unknown";
+	}
+}
+
+static char *
+translateReserved(SQLUSMALLINT Reserved)
+{
+	switch (Reserved) {
+	case SQL_ENSURE:
+		return "SQL_ENSURE";
+	case SQL_QUICK:
+		return "SQL_QUICK";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 static SQLRETURN
 SQLStatistics_(ODBCStmt *stmt,
 	       SQLCHAR *CatalogName,
@@ -67,11 +95,11 @@ SQLStatistics_(ODBCStmt *stmt,
 		      addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %u %u\n",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %s %s\n",
 		(int) NameLength1, (char *) CatalogName,
 		(int) NameLength2, (char *) SchemaName,
 		(int) NameLength3, (char *) TableName,
-		(unsigned int) Unique, (unsigned int) Reserved);
+		translateUnique(Unique), translateReserved(Reserved));
 #endif
 
 	/* check for valid Unique argument */

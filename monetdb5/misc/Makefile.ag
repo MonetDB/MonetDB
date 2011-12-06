@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 
-INCLUDES = ../../gdk ../../common/utils
+INCLUDES = ../../common/utils
 
 lib_sabaoth = {
 	NOINST
