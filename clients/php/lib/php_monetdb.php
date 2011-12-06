@@ -392,7 +392,7 @@
 		}
 		
 		if (is_string($seq)) {
-			$query = "SELECT NEXT VALUE FOR ".db_quote_ident($seq)."";
+			$query = "SELECT NEXT VALUE FOR ".monetdb_quote_ident($seq)."";
 			$res = monetdb_query($connection, $query);
 			$row = monetdb_fetch_assoc($result);
             return($row[$seq]);
