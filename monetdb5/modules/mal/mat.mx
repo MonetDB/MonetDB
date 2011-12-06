@@ -561,10 +561,19 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	bte *mapT;
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	BATseqbase(res, map->hseqbase);
-	mapT = (bte*)Tloc(map, 0);
 	batsT = (BUN*)GDKmalloc(sizeof(BUN) * len);
 	bats_i = (BATiter*)GDKmalloc(sizeof(BATiter) * len);
+	if (res == NULL || batsT == NULL || bats_i == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		if (bats_i)
+			GDKfree(bats_i);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	mapT = (bte*)Tloc(map, 0);
 	for (i=0; i<len; i++) {
 		batsT[i] = 0;
 		bats_i[i] = bat_iterator(bats[i]);
@@ -586,11 +595,18 @@ MATproject_@1( BAT *map, BAT **bats, int len )
 	@1 *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
 	BATseqbase(res, map->hseqbase);
 	resT = (@1*)Tloc(res, 0);
 	mapT = (bte*)Tloc(map, 0);
-	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
 	for (i=0; i<len; i++)
 		batsT[i] = (@1*)Tloc(bats[i], 0);
 	for (j=0; j<cnt; j++)
