@@ -468,7 +468,7 @@ mvc_set_schema(mvc *m, char *schema)
 	if (s) {
 		if (m->session->schema_name)
 			_DELETE(m->session->schema_name);
-		m->session->schema_name = _strdup(schema);
+		m->session->schema_name = _STRDUP(schema);
 		m->type = Q_TRANS;
 		if (m->session->active) 
 			m->session->schema = s;

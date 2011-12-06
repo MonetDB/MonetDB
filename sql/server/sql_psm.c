@@ -625,8 +625,8 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					return sql_error(sql, 01, "CREATE %s%s: external name %s.%s not bound (%s,%s)", KF, F, fmod, fnme, s->base.name, fname );
 				} else {
 					sql_func *f = sf->func;
-					f->mod = _strdup(fmod);
-					f->imp = _strdup(fnme);
+					f->mod = _STRDUP(fmod);
+					f->imp = _STRDUP(fnme);
 					if (res && restype)
 						f->res = *restype;
 					f->sql = 0; /* native */
