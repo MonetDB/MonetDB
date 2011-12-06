@@ -169,7 +169,12 @@ ODBCInitResult(ODBCStmt *stmt)
 		break;
 	}
 
-	assert(stmt->ImplRowDescr == NULL || stmt->ImplRowDescr->sql_desc_count == nrCols);
+#if 0
+	/* XXX is this correct? */
+	assert(stmt->ImplRowDescr == NULL ||
+	       stmt->ImplRowDescr->sql_desc_count == nrCols ||
+	       stmt->ImplRowDescr->sql_desc_count == 0);
+#endif
 	setODBCDescRecCount(stmt->ImplRowDescr, nrCols);
 
 	if (nrCols == 0)
