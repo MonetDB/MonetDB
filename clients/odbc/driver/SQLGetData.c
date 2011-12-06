@@ -51,8 +51,9 @@ SQLGetData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %u %d\n", PTRFMTCAST StatementHandle,
-		(unsigned int) Col_or_Param_Num, (int) TargetType);
+	ODBCLOG("SQLGetData " PTRFMT " %u %s\n", PTRFMTCAST StatementHandle,
+		(unsigned int) Col_or_Param_Num,
+		translateCType(TargetType));
 #endif
 
 	if (!isValidStmt(stmt))

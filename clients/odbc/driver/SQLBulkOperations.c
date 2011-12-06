@@ -40,6 +40,25 @@
 #include "ODBCStmt.h"
 
 
+#ifdef ODBCDEBUG
+static char *
+translateOperation(SQLSMALLINT Operation)
+{
+	switch (Operation) {
+	case SQL_ADD:
+		return "SQL_ADD";
+	case SQL_UPDATE_BY_BOOKMARK:
+		return "SQL_UPDATE_BY_BOOKMARK";
+	case SQL_DELETE_BY_BOOKMARK:
+		return "SQL_DELETE_BY_BOOKMARK";
+	case SQL_FETCH_BY_BOOKMARK:
+		return "SQL_FETCH_BY_BOOKMARK";
+	default:
+		return "invalid";
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLBulkOperations(SQLHSTMT StatementHandle,
 		  SQLSMALLINT Operation)
@@ -47,8 +66,8 @@ SQLBulkOperations(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBulkOperations " PTRFMT " %d\n",
-		PTRFMTCAST StatementHandle, (int) Operation);
+	ODBCLOG("SQLBulkOperations " PTRFMT " %s\n",
+		PTRFMTCAST StatementHandle, translateOperation(Operation));
 #endif
 
 	if (!isValidStmt(stmt))

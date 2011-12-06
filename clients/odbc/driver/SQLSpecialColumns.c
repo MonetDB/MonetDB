@@ -41,6 +41,51 @@
 #include "ODBCUtil.h"
 
 
+#ifdef ODBCDEBUG
+static char *
+translateIdentifierType(SQLUSMALLINT IdentifierType)
+{
+	switch (IdentifierType) {
+	case SQL_BEST_ROWID:
+		return "SQL_BEST_ROWID";
+	case SQL_ROWVER:
+		return "SQL_ROWVER";
+	default:
+		return "unknown";
+	}
+}
+
+static char *
+translateScope(SQLUSMALLINT Scope)
+{
+	/* check for valid Scope argument */
+	switch (Scope) {
+	case SQL_SCOPE_CURROW:
+		return "SQL_SCOPE_CURROW";
+	case SQL_SCOPE_TRANSACTION:
+		return "SQL_SCOPE_TRANSACTION";
+	case SQL_SCOPE_SESSION:
+		return "SQL_SCOPE_SESSION";
+	default:
+		return "unknown";
+	}
+}
+
+static char *
+translateNullable(SQLUSMALLINT Nullable)
+{
+	/* check for valid Nullable argument */
+	switch (Nullable) {
+	case SQL_NO_NULLS:
+		return "SQL_NO_NULLS";
+	case SQL_NULLABLE:
+		return "SQL_NULLABLE";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 static SQLRETURN
 SQLSpecialColumns_(ODBCStmt *stmt,
 		   SQLUSMALLINT IdentifierType,
@@ -65,11 +110,11 @@ SQLSpecialColumns_(ODBCStmt *stmt,
 	fixODBCstring(TableName, NameLength3, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %u %u\n",
+	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\" %s %s\n",
 		(int) NameLength1, (char *) CatalogName,
 		(int) NameLength2, (char *) SchemaName,
 		(int) NameLength3, (char *) TableName,
-		(unsigned int) Scope, (unsigned int) Nullable);
+		translateScope(Scope), translateNullable(Nullable));
 #endif
 
 	/* check for valid IdentifierType argument */
@@ -489,8 +534,9 @@ SQLSpecialColumns(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns " PTRFMT " %u ",
-		PTRFMTCAST StatementHandle, (unsigned int) IdentifierType);
+	ODBCLOG("SQLSpecialColumns " PTRFMT " %s ",
+		PTRFMTCAST StatementHandle,
+		translateIdentifierType(IdentifierType));
 #endif
 
 	if (!isValidStmt(stmt))
@@ -546,8 +592,9 @@ SQLSpecialColumnsW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %u ",
-		PTRFMTCAST StatementHandle, (unsigned int) IdentifierType);
+	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %s ",
+		PTRFMTCAST StatementHandle,
+		translateIdentifierType(IdentifierType));
 #endif
 
 	if (!isValidStmt(stmt))

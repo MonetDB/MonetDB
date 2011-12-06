@@ -39,6 +39,40 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 
+#ifdef ODBCDEBUG
+static char *
+translateOperation(SQLUSMALLINT Operation)
+{
+	switch (Operation) {
+	case SQL_POSITION:
+		return "SQL_POSITION";
+	case SQL_REFRESH:
+		return "SQL_REFRESH";
+	case SQL_UPDATE:
+		return "SQL_UPDATE";
+	case SQL_DELETE:
+		return "SQL_DELETE";
+	default:
+		return "unknown";
+	}
+}
+
+static char *
+translateLockType(SQLUSMALLINT LockType)
+{
+	switch (LockType) {
+	case SQL_LOCK_NO_CHANGE:
+		return "SQL_LOCK_NO_CHANGE";
+	case SQL_LOCK_EXCLUSIVE:
+		return "SQL_LOCK_EXCLUSIVE";
+	case SQL_LOCK_UNLOCK:
+		return "SQL_LOCK_UNLOCK";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 SQLRETURN SQL_API
 SQLSetPos(SQLHSTMT StatementHandle,
 	  SQLSETPOSIROW RowNumber,
@@ -48,9 +82,9 @@ SQLSetPos(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %u %u\n",
+	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %s %s\n",
 		PTRFMTCAST StatementHandle, ULENCAST RowNumber,
-		(unsigned int) Operation, (unsigned int) LockType);
+		translateOperation(Operation), translateLockType(LockType));
 #endif
 
 	if (!isValidStmt(stmt))

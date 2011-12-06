@@ -249,8 +249,9 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 		LENP_OR_POINTER_T NumericAttributePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttribute " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) FieldIdentifier);
+	ODBCLOG("SQLColAttribute " PTRFMT " %s\n",
+		PTRFMTCAST StatementHandle,
+		translateFieldIdentifier(FieldIdentifier));
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -301,8 +302,9 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColAttributeW " PTRFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) FieldIdentifier);
+	ODBCLOG("SQLColAttributeW " PTRFMT " %s\n",
+		PTRFMTCAST StatementHandle,
+		translateFieldIdentifier(FieldIdentifier));
 #endif
 
 	if (!isValidStmt(stmt))

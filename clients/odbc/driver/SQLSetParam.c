@@ -51,9 +51,10 @@ SQLSetParam(SQLHSTMT StatementHandle,
 	    SQLLEN *StrLen_or_Ind)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetParam " PTRFMT " %u %d %d " ULENFMT " %d\n",
+	ODBCLOG("SQLSetParam " PTRFMT " %u %s %s " ULENFMT " %d\n",
 		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
-		(int) ValueType, (int) ParameterType,
+		translateCType(ValueType),
+		translateSQLType(ParameterType),
 		ULENCAST LengthPrecision, (int) ParameterScale);
 #endif
 

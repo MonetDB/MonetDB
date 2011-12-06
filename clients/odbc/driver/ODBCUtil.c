@@ -547,6 +547,512 @@ struct sql_types ODBC_c_types[] = {
 
 const char *ODBCdebug;
 
+char *
+translateCType(SQLSMALLINT ValueType)
+{
+	switch (ValueType) {
+	case SQL_C_CHAR:
+		return "SQL_C_CHAR";
+	case SQL_C_WCHAR:
+		return "SQL_C_WCHAR";
+	case SQL_C_BINARY:
+		return "SQL_C_BINARY";
+	case SQL_C_BIT:
+		return "SQL_C_BIT";
+	case SQL_C_STINYINT:
+		return "SQL_C_STINYINT";
+	case SQL_C_UTINYINT:
+		return "SQL_C_UTINYINT";
+	case SQL_C_TINYINT:
+		return "SQL_C_TINYINT";
+	case SQL_C_SSHORT:
+		return "SQL_C_SSHORT";
+	case SQL_C_USHORT:
+		return "SQL_C_USHORT";
+	case SQL_C_SHORT:
+		return "SQL_C_SHORT";
+	case SQL_C_SLONG:
+		return "SQL_C_SLONG";
+	case SQL_C_ULONG:
+		return "SQL_C_ULONG";
+	case SQL_C_LONG:
+		return "SQL_C_LONG";
+	case SQL_C_SBIGINT:
+		return "SQL_C_SBIGINT";
+	case SQL_C_UBIGINT:
+		return "SQL_C_UBIGINT";
+	case SQL_C_NUMERIC:
+		return "SQL_C_NUMERIC";
+	case SQL_C_FLOAT:
+		return "SQL_C_FLOAT";
+	case SQL_C_DOUBLE:
+		return "SQL_C_DOUBLE";
+	case SQL_C_TYPE_DATE:
+		return "SQL_C_TYPE_DATE";
+	case SQL_C_TYPE_TIME:
+		return "SQL_C_TYPE_TIME";
+	case SQL_C_TYPE_TIMESTAMP:
+		return "SQL_C_TYPE_TIMESTAMP";
+	case SQL_C_INTERVAL_YEAR:
+		return "SQL_C_INTERVAL_YEAR";
+	case SQL_C_INTERVAL_MONTH:
+		return "SQL_C_INTERVAL_MONTH";
+	case SQL_C_INTERVAL_YEAR_TO_MONTH:
+		return "SQL_C_INTERVAL_YEAR_TO_MONTH";
+	case SQL_C_INTERVAL_DAY:
+		return "SQL_C_INTERVAL_DAY";
+	case SQL_C_INTERVAL_HOUR:
+		return "SQL_C_INTERVAL_HOUR";
+	case SQL_C_INTERVAL_MINUTE:
+		return "SQL_C_INTERVAL_MINUTE";
+	case SQL_C_INTERVAL_SECOND:
+		return "SQL_C_INTERVAL_SECOND";
+	case SQL_C_INTERVAL_DAY_TO_HOUR:
+		return "SQL_C_INTERVAL_DAY_TO_HOUR";
+	case SQL_C_INTERVAL_DAY_TO_MINUTE:
+		return "SQL_C_INTERVAL_DAY_TO_MINUTE";
+	case SQL_C_INTERVAL_DAY_TO_SECOND:
+		return "SQL_C_INTERVAL_DAY_TO_SECOND";
+	case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+		return "SQL_C_INTERVAL_HOUR_TO_MINUTE";
+	case SQL_C_INTERVAL_HOUR_TO_SECOND:
+		return "SQL_C_INTERVAL_HOUR_TO_SECOND";
+	case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+		return "SQL_C_INTERVAL_MINUTE_TO_SECOND";
+	case SQL_C_GUID:
+		return "SQL_C_GUID";
+	case SQL_C_DEFAULT:
+		return "SQL_C_DEFAULT";
+	case SQL_ARD_TYPE:
+		return "SQL_ARD_TYPE";
+	case SQL_DATETIME:
+		return "SQL_DATETIME";
+	case SQL_INTERVAL:
+		return "SQL_INTERVAL";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateSQLType(SQLSMALLINT ParameterType)
+{
+	switch (ParameterType) {
+	case SQL_CHAR:
+		return "SQL_CHAR";
+	case SQL_VARCHAR:
+		return "SQL_VARCHAR";
+	case SQL_LONGVARCHAR:
+		return "SQL_LONGVARCHAR";
+	case SQL_BINARY:
+		return "SQL_BINARY";
+	case SQL_VARBINARY:
+		return "SQL_VARBINARY";
+	case SQL_LONGVARBINARY:
+		return "SQL_LONGVARBINARY";
+	case SQL_TYPE_DATE:
+		return "SQL_TYPE_DATE";
+	case SQL_INTERVAL_MONTH:
+		return "SQL_INTERVAL_MONTH";
+	case SQL_INTERVAL_YEAR:
+		return "SQL_INTERVAL_YEAR";
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+		return "SQL_INTERVAL_YEAR_TO_MONTH";
+	case SQL_INTERVAL_DAY:
+		return "SQL_INTERVAL_DAY";
+	case SQL_INTERVAL_HOUR:
+		return "SQL_INTERVAL_HOUR";
+	case SQL_INTERVAL_MINUTE:
+		return "SQL_INTERVAL_MINUTE";
+	case SQL_INTERVAL_DAY_TO_HOUR:
+		return "SQL_INTERVAL_DAY_TO_HOUR";
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+		return "SQL_INTERVAL_DAY_TO_MINUTE";
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+		return "SQL_INTERVAL_HOUR_TO_MINUTE";
+	case SQL_TYPE_TIME:
+		return "SQL_TYPE_TIME";
+	case SQL_TYPE_TIMESTAMP:
+		return "SQL_TYPE_TIMESTAMP";
+	case SQL_INTERVAL_SECOND:
+		return "SQL_INTERVAL_SECOND";
+	case SQL_INTERVAL_DAY_TO_SECOND:
+		return "SQL_INTERVAL_DAY_TO_SECOND";
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+		return "SQL_INTERVAL_HOUR_TO_SECOND";
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		return "SQL_INTERVAL_MINUTE_TO_SECOND";
+	case SQL_DECIMAL:
+		return "SQL_DECIMAL";
+	case SQL_NUMERIC:
+		return "SQL_NUMERIC";
+	case SQL_FLOAT:
+		return "SQL_FLOAT";
+	case SQL_REAL:
+		return "SQL_REAL";
+	case SQL_DOUBLE:
+		return "SQL_DOUBLE";
+	case SQL_WCHAR:
+		return "SQL_WCHAR";
+	case SQL_WVARCHAR:
+		return "SQL_WVARCHAR";
+	case SQL_WLONGVARCHAR:
+		return "SQL_WLONGVARCHAR";
+	case SQL_BIT:
+		return "SQL_BIT";
+	case SQL_TINYINT:
+		return "SQL_TINYINT";
+	case SQL_SMALLINT:
+		return "SQL_SMALLINT";
+	case SQL_INTEGER:
+		return "SQL_INTEGER";
+	case SQL_BIGINT:
+		return "SQL_BIGINT";
+	case SQL_GUID:
+		return "SQL_GUID";
+	case SQL_DATETIME:
+		return "SQL_DATETIME";
+	case SQL_INTERVAL:
+		return "SQL_INTERVAL";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateFieldIdentifier(SQLSMALLINT FieldIdentifier)
+{
+	switch (FieldIdentifier) {
+	case SQL_COLUMN_LENGTH:
+		return "SQL_COLUMN_LENGTH";
+	case SQL_COLUMN_PRECISION:
+		return "SQL_COLUMN_PRECISION";
+	case SQL_COLUMN_SCALE:
+		return "SQL_COLUMN_SCALE";
+	case SQL_DESC_AUTO_UNIQUE_VALUE:
+		return "SQL_DESC_AUTO_UNIQUE_VALUE";
+	case SQL_DESC_BASE_COLUMN_NAME:
+		return "SQL_DESC_BASE_COLUMN_NAME";
+	case SQL_DESC_BASE_TABLE_NAME:
+		return "SQL_DESC_BASE_TABLE_NAME";
+	case SQL_DESC_CASE_SENSITIVE:
+		return "SQL_DESC_CASE_SENSITIVE";
+	case SQL_DESC_CATALOG_NAME:
+		return "SQL_DESC_CATALOG_NAME";
+	case SQL_DESC_CONCISE_TYPE:
+		return "SQL_DESC_CONCISE_TYPE";
+	case SQL_DESC_COUNT:
+		return "SQL_DESC_COUNT";
+	case SQL_DESC_DATA_PTR:
+		return "SQL_DESC_DATA_PTR";
+	case SQL_DESC_DATETIME_INTERVAL_CODE:
+		return "SQL_DESC_DATETIME_INTERVAL_CODE";
+	case SQL_DESC_DATETIME_INTERVAL_PRECISION:
+		return "SQL_DESC_DATETIME_INTERVAL_PRECISION";
+	case SQL_DESC_DISPLAY_SIZE:
+		return "SQL_DESC_DISPLAY_SIZE";
+	case SQL_DESC_FIXED_PREC_SCALE:
+		return "SQL_DESC_FIXED_PREC_SCALE";
+	case SQL_DESC_INDICATOR_PTR:
+		return "SQL_DESC_INDICATOR_PTR";
+	case SQL_DESC_LABEL:
+		return "SQL_DESC_LABEL";
+	case SQL_DESC_LENGTH:
+		return "SQL_DESC_LENGTH";
+	case SQL_DESC_LITERAL_PREFIX:
+		return "SQL_DESC_LITERAL_PREFIX";
+	case SQL_DESC_LITERAL_SUFFIX:
+		return "SQL_DESC_LITERAL_SUFFIX";
+	case SQL_DESC_LOCAL_TYPE_NAME:
+		return "SQL_DESC_LOCAL_TYPE_NAME";
+	case SQL_DESC_NAME:
+		return "SQL_DESC_NAME";
+	case SQL_DESC_NULLABLE:
+		return "SQL_DESC_NULLABLE";
+	case SQL_DESC_NUM_PREC_RADIX:
+		return "SQL_DESC_NUM_PREC_RADIX";
+	case SQL_DESC_OCTET_LENGTH:
+		return "SQL_DESC_OCTET_LENGTH";
+	case SQL_DESC_OCTET_LENGTH_PTR:
+		return "SQL_DESC_OCTET_LENGTH_PTR";
+	case SQL_DESC_PARAMETER_TYPE:
+		return "SQL_DESC_PARAMETER_TYPE";
+	case SQL_DESC_PRECISION:
+		return "SQL_DESC_PRECISION";
+	case SQL_DESC_ROWVER:
+		return "SQL_DESC_ROWVER";
+	case SQL_DESC_SCALE:
+		return "SQL_DESC_SCALE";
+	case SQL_DESC_SCHEMA_NAME:
+		return "SQL_DESC_SCHEMA_NAME";
+	case SQL_DESC_SEARCHABLE:
+		return "SQL_DESC_SEARCHABLE";
+	case SQL_DESC_TABLE_NAME:
+		return "SQL_DESC_TABLE_NAME";
+	case SQL_DESC_TYPE:
+		return "SQL_DESC_TYPE";
+	case SQL_DESC_TYPE_NAME:
+		return "SQL_DESC_TYPE_NAME";
+	case SQL_DESC_UNNAMED:
+		return "SQL_DESC_UNNAMED";
+	case SQL_DESC_UNSIGNED:
+		return "SQL_DESC_UNSIGNED";
+	case SQL_DESC_UPDATABLE:
+		return "SQL_DESC_UPDATABLE";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateFetchOrientation(SQLUSMALLINT FetchOrientation)
+{
+	switch (FetchOrientation) {
+	case SQL_FETCH_NEXT:
+		return "SQL_FETCH_NEXT";
+	case SQL_FETCH_FIRST:
+		return "SQL_FETCH_FIRST";
+	case SQL_FETCH_LAST:
+		return "SQL_FETCH_LAST";
+	case SQL_FETCH_PRIOR:
+		return "SQL_FETCH_PRIOR";
+	case SQL_FETCH_RELATIVE:
+		return "SQL_FETCH_RELATIVE";
+	case SQL_FETCH_ABSOLUTE:
+		return "SQL_FETCH_ABSOLUTE";
+	case SQL_FETCH_BOOKMARK:
+		return "SQL_FETCH_BOOKMARK";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateConnectAttribute(SQLINTEGER Attribute)
+{
+	switch (Attribute) {
+	case SQL_ATTR_ACCESS_MODE:
+		return "SQL_ATTR_ACCESS_MODE";
+	case SQL_ATTR_ASYNC_ENABLE:
+		return "SQL_ATTR_ASYNC_ENABLE";
+	case SQL_ATTR_AUTOCOMMIT:
+		return "SQL_ATTR_AUTOCOMMIT";
+	case SQL_ATTR_AUTO_IPD:
+		return "SQL_ATTR_AUTO_IPD";
+	case SQL_ATTR_CONNECTION_DEAD:
+		return "SQL_ATTR_CONNECTION_DEAD";
+	case SQL_ATTR_CONNECTION_TIMEOUT:
+		return "SQL_ATTR_CONNECTION_TIMEOUT";
+	case SQL_ATTR_CURRENT_CATALOG:
+		return "SQL_ATTR_CURRENT_CATALOG";
+	case SQL_ATTR_DISCONNECT_BEHAVIOR:
+		return "SQL_ATTR_DISCONNECT_BEHAVIOR";
+	case SQL_ATTR_ENLIST_IN_DTC:
+		return "SQL_ATTR_ENLIST_IN_DTC";
+	case SQL_ATTR_ENLIST_IN_XA:
+		return "SQL_ATTR_ENLIST_IN_XA";
+	case SQL_ATTR_LOGIN_TIMEOUT:
+		return "SQL_ATTR_LOGIN_TIMEOUT";
+	case SQL_ATTR_METADATA_ID:
+		return "SQL_ATTR_METADATA_ID";
+	case SQL_ATTR_ODBC_CURSORS:
+		return "SQL_ATTR_ODBC_CURSORS";
+	case SQL_ATTR_PACKET_SIZE:
+		return "SQL_ATTR_PACKET_SIZE";
+	case SQL_ATTR_QUIET_MODE:
+		return "SQL_ATTR_QUIET_MODE";
+	case SQL_ATTR_TRACE:
+		return "SQL_ATTR_TRACE";
+	case SQL_ATTR_TRACEFILE:
+		return "SQL_ATTR_TRACEFILE";
+	case SQL_ATTR_TRANSLATE_LIB:
+		return "SQL_ATTR_TRANSLATE_LIB";
+	case SQL_ATTR_TRANSLATE_OPTION:
+		return "SQL_ATTR_TRANSLATE_OPTION";
+	case SQL_ATTR_TXN_ISOLATION:
+		return "SQL_ATTR_TXN_ISOLATION";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateConnectOption(SQLUSMALLINT Option)
+{
+	switch (Option) {
+	case SQL_ACCESS_MODE:
+		return "SQL_ACCESS_MODE";
+	case SQL_AUTOCOMMIT:
+		return "SQL_AUTOCOMMIT";
+	case SQL_LOGIN_TIMEOUT:
+		return "SQL_LOGIN_TIMEOUT";
+	case SQL_ODBC_CURSORS:
+		return "SQL_ODBC_CURSORS";
+	case SQL_OPT_TRACE:
+		return "SQL_OPT_TRACE";
+	case SQL_PACKET_SIZE:
+		return "SQL_PACKET_SIZE";
+	case SQL_TRANSLATE_OPTION:
+		return "SQL_TRANSLATE_OPTION";
+	case SQL_TXN_ISOLATION:
+		return "SQL_TXN_ISOLATION";
+	case SQL_QUIET_MODE:
+		return "SQL_QUIET_MODE";
+	case SQL_CURRENT_QUALIFIER:
+		return "SQL_CURRENT_QUALIFIER";
+	case SQL_OPT_TRACEFILE:
+		return "SQL_OPT_TRACEFILE";
+	case SQL_TRANSLATE_DLL:
+		return "SQL_TRANSLATE_DLL";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateEnvAttribute(SQLINTEGER Attribute)
+{
+	switch (Attribute) {
+	case SQL_ATTR_ODBC_VERSION:
+		return "SQL_ATTR_ODBC_VERSION";
+	case SQL_ATTR_OUTPUT_NTS:
+		return "SQL_ATTR_OUTPUT_NTS";
+	case SQL_ATTR_CONNECTION_POOLING:
+		return "SQL_ATTR_CONNECTION_POOLING";
+	case SQL_ATTR_CP_MATCH:
+		return "SQL_ATTR_CP_MATCH";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateStmtAttribute(SQLINTEGER Attribute)
+{
+	switch (Attribute) {
+	case SQL_ATTR_APP_PARAM_DESC:
+		return "SQL_ATTR_APP_PARAM_DESC";
+	case SQL_ATTR_APP_ROW_DESC:
+		return "SQL_ATTR_APP_ROW_DESC";
+	case SQL_ATTR_ASYNC_ENABLE:
+		return "SQL_ATTR_ASYNC_ENABLE";
+	case SQL_ATTR_CONCURRENCY:
+		return "SQL_ATTR_CONCURRENCY";
+	case SQL_ATTR_CURSOR_SCROLLABLE:
+		return "SQL_ATTR_CURSOR_SCROLLABLE";
+	case SQL_ATTR_CURSOR_SENSITIVITY:
+		return "SQL_ATTR_CURSOR_SENSITIVITY";
+	case SQL_ATTR_CURSOR_TYPE:
+		return "SQL_ATTR_CURSOR_TYPE";
+	case SQL_ATTR_IMP_PARAM_DESC:
+		return "SQL_ATTR_IMP_PARAM_DESC";
+	case SQL_ATTR_IMP_ROW_DESC:
+		return "SQL_ATTR_IMP_ROW_DESC";
+	case SQL_ATTR_MAX_LENGTH:
+		return "SQL_ATTR_MAX_LENGTH";
+	case SQL_ATTR_MAX_ROWS:
+		return "SQL_ATTR_MAX_ROWS";
+	case SQL_ATTR_NOSCAN:
+		return "SQL_ATTR_NOSCAN";
+	case SQL_ATTR_PARAM_BIND_OFFSET_PTR:
+		return "SQL_ATTR_PARAM_BIND_OFFSET_PTR";
+	case SQL_ATTR_PARAM_BIND_TYPE:
+		return "SQL_ATTR_PARAM_BIND_TYPE";
+	case SQL_ATTR_PARAM_OPERATION_PTR:
+		return "SQL_ATTR_PARAM_OPERATION_PTR";
+	case SQL_ATTR_PARAM_STATUS_PTR:
+		return "SQL_ATTR_PARAM_STATUS_PTR";
+	case SQL_ATTR_PARAMS_PROCESSED_PTR:
+		return "SQL_ATTR_PARAMS_PROCESSED_PTR";
+	case SQL_ATTR_PARAMSET_SIZE:
+		return "SQL_ATTR_PARAMSET_SIZE";
+	case SQL_ATTR_RETRIEVE_DATA:
+		return "SQL_ATTR_RETRIEVE_DATA";
+	case SQL_ATTR_ROW_ARRAY_SIZE:
+		return "SQL_ATTR_ROW_ARRAY_SIZE";
+	case SQL_ROWSET_SIZE:
+		return "SQL_ROWSET_SIZE";
+	case SQL_ATTR_ROW_BIND_OFFSET_PTR:
+		return "SQL_ATTR_ROW_BIND_OFFSET_PTR";
+	case SQL_ATTR_ROW_BIND_TYPE:
+		return "SQL_ATTR_ROW_BIND_TYPE";
+	case SQL_ATTR_ROW_NUMBER:
+		return "SQL_ATTR_ROW_NUMBER";
+	case SQL_ATTR_ROW_OPERATION_PTR:
+		return "SQL_ATTR_ROW_OPERATION_PTR";
+	case SQL_ATTR_ROW_STATUS_PTR:
+		return "SQL_ATTR_ROW_STATUS_PTR";
+	case SQL_ATTR_ROWS_FETCHED_PTR:
+		return "SQL_ATTR_ROWS_FETCHED_PTR";
+	case SQL_ATTR_METADATA_ID:
+		return "SQL_ATTR_METADATA_ID";
+	case SQL_ATTR_ENABLE_AUTO_IPD:
+		return "SQL_ATTR_ENABLE_AUTO_IPD";
+	case SQL_ATTR_FETCH_BOOKMARK_PTR:
+		return "SQL_ATTR_FETCH_BOOKMARK_PTR";
+	case SQL_ATTR_KEYSET_SIZE:
+		return "SQL_ATTR_KEYSET_SIZE";
+	case SQL_ATTR_QUERY_TIMEOUT:
+		return "SQL_ATTR_QUERY_TIMEOUT";
+	case SQL_ATTR_SIMULATE_CURSOR:
+		return "SQL_ATTR_SIMULATE_CURSOR";
+	case SQL_ATTR_USE_BOOKMARKS:
+		return "SQL_ATTR_USE_BOOKMARKS";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateStmtOption(SQLUSMALLINT Option)
+{
+	switch (Option) {
+	case SQL_QUERY_TIMEOUT:
+		return "SQL_QUERY_TIMEOUT";
+	case SQL_MAX_ROWS:
+		return "SQL_MAX_ROWS";
+	case SQL_NOSCAN:
+		return "SQL_NOSCAN";
+	case SQL_MAX_LENGTH:
+		return "SQL_MAX_LENGTH";
+	case SQL_ASYNC_ENABLE:
+		return "SQL_ASYNC_ENABLE";
+	case SQL_BIND_TYPE:
+		return "SQL_BIND_TYPE";
+	case SQL_CURSOR_TYPE:
+		return "SQL_CURSOR_TYPE";
+	case SQL_CONCURRENCY:
+		return "SQL_CONCURRENCY";
+	case SQL_KEYSET_SIZE:
+		return "SQL_KEYSET_SIZE";
+	case SQL_ROWSET_SIZE:
+		return "SQL_ROWSET_SIZE";
+	case SQL_SIMULATE_CURSOR:
+		return "SQL_SIMULATE_CURSOR";
+	case SQL_RETRIEVE_DATA:
+		return "SQL_RETRIEVE_DATA";
+	case SQL_USE_BOOKMARKS:
+		return "SQL_USE_BOOKMARKS";
+	case SQL_ROW_NUMBER:
+		return "SQL_ROW_NUMBER";
+	default:
+		return "unknown";
+	}
+}
+
+char *
+translateCompletionType(SQLSMALLINT CompletionType)
+{
+	switch (CompletionType) {
+	case SQL_COMMIT:
+		return "SQL_COMMIT";
+	case SQL_ROLLBACK:
+		return "SQL_ROLLBACK";
+	default:
+		return "unknown";
+	}
+}
+
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 #include <stdarg.h>
 

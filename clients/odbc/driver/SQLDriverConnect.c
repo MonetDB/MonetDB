@@ -240,6 +240,25 @@ ODBCConnectionString(SQLRETURN rc,
 	return rc;
 }
 
+#ifdef ODBCDEBUG
+static char *
+translateDriverCompletion(SQLUSMALLINT DriverCompletion)
+{
+	switch (DriverCompletion) {
+	case SQL_DRIVER_PROMPT:
+		return "SQL_DRIVER_PROMPT";
+	case SQL_DRIVER_COMPLETE:
+		return "SQL_DRIVER_COMPLETE";
+	case SQL_DRIVER_COMPLETE_REQUIRED:
+		return "SQL_DRIVER_COMPLETE_REQUIRED";
+	case SQL_DRIVER_NOPROMPT:
+		return "SQL_DRIVER_NOPROMPT";
+	default:
+		return "unknown";
+	}
+}
+#endif
+
 static SQLRETURN
 SQLDriverConnect_(ODBCDbc *dbc,
 		  SQLHWND WindowHandle,
@@ -270,8 +289,9 @@ SQLDriverConnect_(ODBCDbc *dbc,
 		      addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("\"%.*s\" %u\n", StringLength1,
-		(char *) InConnectionString, (unsigned int) DriverCompletion);
+	ODBCLOG("\"%.*s\" %s\n", StringLength1,
+		(char *) InConnectionString,
+		translateDriverCompletion(DriverCompletion));
 #endif
 
 	/* check input arguments */
