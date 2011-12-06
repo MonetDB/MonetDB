@@ -36,7 +36,6 @@
 #include "utils.h"
 #include "properties.h"
 #include "glob.h"
-#include "database.h"
 #include "control.h"
 #include <msabaoth.h>
 #include <mutils.h>
