@@ -518,7 +518,7 @@
 	function auto_commit($conn, $flag=TRUE) {
 		if ($conn["socket"] != NULL) {
 			$cmd = "auto_commit " . $flag;
-			mapi_write($socket, format_command($cmd));
+			mapi_write($conn["socket"], format_command($cmd));
 			
 			return TRUE;
 		}
