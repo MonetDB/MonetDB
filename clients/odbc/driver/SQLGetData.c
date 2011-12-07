@@ -94,6 +94,11 @@ SQLGetData(SQLHSTMT StatementHandle,
 		addStmtError(stmt, "07009", NULL, 0);
 		return SQL_ERROR;
 	}
+	if (TargetValuePtr == NULL) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
+		return SQL_ERROR;
+	}
 
 	if (Col_or_Param_Num != stmt->currentCol)
 		stmt->retrieved = 0;
