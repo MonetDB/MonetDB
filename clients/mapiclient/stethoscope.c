@@ -238,6 +238,7 @@ doProfile(void *d)
 	MapiHdl hdl = NULL;
 
 	/* set up the profiler */
+	id[0] = '\0';
 	dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
@@ -248,7 +249,6 @@ doProfile(void *d)
 		snprintf(id, 10, "[%d] ", wthr->tid);
 		printf("-- connection with server %s is %s\n", wthr->uri, id);
 	} else {
-		id[0] = '\0';
 		printf("-- connection with server %s\n", wthr->uri);
 	}
 
@@ -437,7 +437,7 @@ main(int argc, char **argv)
 		dbname = "";
 	}
 
-	if (alts == NULL) {
+	if (alts == NULL || *alts == NULL) {
 		/* nothing to redirect, so a single host to try */
 		char uri[512];
 		snprintf(uri, 512, "mapi:monetdb://%s:%d/%s", host, portnr, dbname);
@@ -465,31 +465,26 @@ main(int argc, char **argv)
 	} else {
 		/* fork runner threads for all alternatives */
 		i = 1;
-		if (*alts != NULL) {
-			walk = thds = malloc(sizeof(wthread));
-			while (1) {
-				walk->tid = i++;
-				walk->uri = *alts;
-				walk->user = user;
-				walk->pass = password;
-				walk->argc = argc - a;
-				walk->argv = &argv[a];
-				walk->s = NULL;
+		walk = thds = malloc(sizeof(wthread));
+		while (1) {
+			walk->tid = i++;
+			walk->uri = *alts;
+			walk->user = user;
+			walk->pass = password;
+			walk->argc = argc - a;
+			walk->argv = &argv[a];
+			walk->s = NULL;
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-				walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
+			walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
 #else
-				pthread_create(&walk->id, NULL, &doProfile, walk);
+			pthread_create(&walk->id, NULL, &doProfile, walk);
 #endif
-				alts++;
-				if (*alts == NULL)
-					break;
-				walk = walk->next = malloc(sizeof(wthread));
-			}
-			walk->next = NULL;
-		} else {
-			fprintf(stderr, "%s: no databases found for '%s'\n",
-					argv[0], dbname);
+			alts++;
+			if (*alts == NULL)
+				break;
+			walk = walk->next = malloc(sizeof(wthread));
 		}
+		walk->next = NULL;
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)

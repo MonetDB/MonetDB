@@ -15,4 +15,4 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = NOT_WIN32?utils NOT_WIN32?client NOT_WIN32?daemon
+SUBDIRS = utils client HAVE_MONETDB5?daemon
