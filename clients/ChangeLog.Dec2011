@@ -1,6 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Dec  7 2011 Fabian Groffen <fabian@cwi.nl>
+- Fix making connections with stethoscope to hosts without monetdbd.
+  Bug #2944.
+
 * Tue Dec  6 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed some bugs in the PHP interface affecting the mapi_ping(),
   monetdb_insert_id() and auto_commit() functions.  Bugs #2936, #2937,
