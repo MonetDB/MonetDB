@@ -123,10 +123,6 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_topn: 
 	case op_sample: 
 		rel->l = rel_remote_func(sql, rel->l);
-		if (find_prop(rel->p, PROP_REMOTE) != NULL) {
-			list *exps = rel_projections(sql, rel, NULL, 1, 1);
-			rel = rel_relational_func(sql->sa, rel, exps);
-		}
 		break;
 	case op_ddl: 
 		rel->l = rel_remote_func(sql, rel->l);
@@ -138,6 +134,10 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_delete:
 		rel->r = rel_remote_func(sql, rel->r);
 		break;
+	}
+	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
+		list *exps = rel_projections(sql, rel, NULL, 1, 1);
+		rel = rel_relational_func(sql->sa, rel, exps);
 	}
 	return rel;
 }
