@@ -1009,6 +1009,8 @@ ODBCFetch(ODBCStmt *stmt,
 	TIMESTAMP_STRUCT tsval;
 	double fval = 0;
 
+	assert(ptr != NULL);
+
 	ird = stmt->ImplRowDescr;
 	ard = stmt->ApplRowDescr;
 
