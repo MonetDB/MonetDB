@@ -437,7 +437,7 @@ autoUpgradePassphraseMar2011Apr2011(confkeyval *ckv)
  * Explicitly pulled out functionality that is just implemented to
  * obtain an automatic upgrade path.
  *
- * Starting from the Jan2012? release, the discoveryport setting has
+ * Starting from the Dec2011 release, the discoveryport setting has
  * disappeared.  Instead, a boolean discovery is available to enable or
  * disable the service.  It always uses the same port as the connections
  * are on.
@@ -449,7 +449,7 @@ autoUpgradePassphraseMar2011Apr2011(confkeyval *ckv)
  * took place).
  */
 static char
-autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
+autoUpgradeDiscoveryPortAug2011Dec2011(confkeyval *mckv)
 {
 	confkeyval *kv;
 	confkeyval ckv[] = {
@@ -478,7 +478,7 @@ autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
  * Explicitly pulled out functionality that is just implemented to
  * obtain an automatic upgrade path.
  *
- * Starting from the Jan2012? release, the controlport setting has
+ * Starting from the Dec2011 release, the controlport setting has
  * disappeared.  Instead, a boolean control is available to enable or
  * disable the (remote) service.  It always uses the same port as the
  * connections are on, since starting from this release the same handler
@@ -493,7 +493,7 @@ autoUpgradeDiscoveryPortAug2011Jan2012(confkeyval *mckv)
  * took place).
  */
 static char
-autoUpgradeControlPortAug2011Jan2012(confkeyval *mckv)
+autoUpgradeControlPortAug2011Dec2011(confkeyval *mckv)
 {
 	char *pwhash;
 	char hstr[256];
@@ -804,8 +804,8 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 
-	if (autoUpgradeDiscoveryPortAug2011Jan2012(_mero_props) != 0 ||
-			autoUpgradeControlPortAug2011Jan2012(_mero_props) != 0)
+	if (autoUpgradeDiscoveryPortAug2011Dec2011(_mero_props) != 0 ||
+			autoUpgradeControlPortAug2011Dec2011(_mero_props) != 0)
 		writeProps(_mero_props, ".");
 	/* end upgrades to conf-file in place */
 
