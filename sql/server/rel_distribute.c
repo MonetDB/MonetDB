@@ -32,8 +32,8 @@
 static sql_rel *
 distribute(mvc *sql, sql_rel *rel) 
 {
-	sql_rel *l = NULL;//, *r;
-	prop *p;
+	sql_rel *l = NULL, *r = NULL;
+	prop *p, *pl, *pr;
 
 	if (!rel)
 		return rel;
@@ -63,8 +63,17 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_union: 
 	case op_inter: 
 	case op_except: 
-		rel->l = distribute(sql, rel->l);
-		rel->r = distribute(sql, rel->r);
+		l = rel->l = distribute(sql, rel->l);
+		r = rel->r = distribute(sql, rel->r);
+
+		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+		    r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
+		    strcmp(pl->value, pr->value) == 0) {
+			l->p = prop_remove(l->p, pl);
+			r->p = prop_remove(r->p, pr);
+			pl->p = rel->p;
+			rel->p = pl;
+		}
 		break;
 	case op_project:
 	case op_select: 
