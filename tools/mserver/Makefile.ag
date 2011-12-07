@@ -22,7 +22,6 @@ man_MANS = mserver5.1
 EXTRA_DIST = $(man_MANS)
 
 INCLUDES = ../../monetdb5/mal \
-		   ../../monetdb5/misc \
 		   ../../gdk \
 		   ../../common/stream \
 		   ../../common/utils \

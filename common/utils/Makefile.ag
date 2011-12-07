@@ -35,3 +35,8 @@ lib_muuid = {
 	NOINST
 	SOURCES = muuid.h muuid.c
 }
+
+lib_msabaoth = {
+	NOINST
+	SOURCES = msabaoth.h msabaoth.c
+}

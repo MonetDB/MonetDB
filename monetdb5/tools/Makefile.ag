@@ -25,7 +25,7 @@ lib_monetdb5 = {
 	SCRIPTS = mal
 	DIR = libdir
 	SOURCES = libmonetdb5.rc
-	LIBS = ../misc/libsabaoth ../mal/libmal ../modules/atoms/libatoms \
+	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../gdk/libbat \
@@ -33,6 +33,8 @@ lib_monetdb5 = {
 		../../common/stream/libstream \
 		../../common/utils/libmcrypt \
 		../../common/utils/libmuuid \
+		../../common/utils/libmsabaoth \
+		../../common/utils/libmutils \
 		$(UUID_LIBS) $(curl_LIBS) \
 		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
 		$(DL_LIBS) $(READLINE_LIBS) $(openssl_LIBS) $(pcre_LIBS) \

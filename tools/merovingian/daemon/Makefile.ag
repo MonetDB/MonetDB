@@ -24,9 +24,7 @@ monetdb_var_run_DATA =
 monetdb_var_dbfarmdir = $(localstatedir)/monetdb5/dbfarm
 monetdb_var_dbfarm_DATA = .merovingian_properties
 
-# MONETDB5: Sabaoth
 INCLUDES = .. \
-		   ../../../monetdb5/misc \
 		   ../../../common/stream \
 		   ../../../common/utils \
 		   ../../../clients/mapilib \
@@ -50,12 +48,12 @@ bin_monetdbd = {
 			  peering.c peering.h \
 			  proxy.c proxy.h
 	LIBS = ../utils/libmeroutil \
-		   ../../../monetdb5/misc/libsabaoth \
 		   ../../../common/stream/libstream \
 		   ../../../clients/mapilib/libmapi \
-		   ../../../common/utils/libmutils \
 		   ../../../common/utils/libmcrypt \
 		   ../../../common/utils/libmuuid \
+		   ../../../common/utils/libmsabaoth \
+		   ../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(curl_LIBS) \
 		   $(SOCKET_LIBS) \

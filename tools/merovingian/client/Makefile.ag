@@ -17,10 +17,7 @@
 
 man_MANS = monetdb.1
 
-# MONETDB5: Sabaoth
-# COMMON:   stream
-INCLUDES = ../../../monetdb5/misc \
-		   ../../../common/stream \
+INCLUDES = ../../../common/stream \
 		   ../../../common/utils \
 		   ../utils
 
@@ -29,11 +26,11 @@ EXTRA_DIST = $(man_MANS)
 bin_monetdb = {
 	SOURCES = monetdb.c
 	LIBS = ../utils/libmeroutil \
-		   ../../../monetdb5/misc/libsabaoth \
 		   ../../../common/stream/libstream \
-		   ../../../common/utils/libmutils \
 		   ../../../common/utils/libmcrypt \
 		   ../../../common/utils/libmuuid \
+		   ../../../common/utils/libmsabaoth \
+		   ../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
