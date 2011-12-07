@@ -338,19 +338,19 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (!i || isRemote(i->t)) /* alter statements */
-					break;
-				cnt = store_funcs.count_idx(i);
-				assert(cnt <= (size_t) GDK_oid_max);
-				b = store_funcs.bind_idx(m->session->tr,i,0);
-				if ( b ) {
-					str loc;
-					if (b->batPersistence == PERSISTENT && ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
-						varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
-					cnt = BATcount(b);
-					BBPreleaseref(b->batCacheid);
+				if (!i || isRemote(i->t)) { /* alter statements */
+					cnt = store_funcs.count_idx(i);
+					assert(cnt <= (size_t) GDK_oid_max);
+					b = store_funcs.bind_idx(m->session->tr,i,0);
+					if ( b ) {
+						str loc;
+						if (b->batPersistence == PERSISTENT && ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
+							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
+						cnt = BATcount(b);
+						BBPreleaseref(b->batCacheid);
+					}
+					rows = (wrd) cnt;
 				}
-				rows = (wrd) cnt;
 			} else if (s && f == bindRef && cname) {
 				size_t cnt;
 				sql_table *t = mvc_bind_table(m, s, tname);
@@ -387,6 +387,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 			if (not_null)
 				varSetProp(mb, k, notnilProp, op_eq, NULL);
+
 			{
 				int lowprop = hlbProp, highprop = hubProp;
 				/* rows == cnt has been checked above to be <= GDK_oid_max */
