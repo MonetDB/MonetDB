@@ -338,7 +338,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
 
-				if (!i || isRemote(i->t)) { /* alter statements */
+				if (i && !isRemote(i->t)) { /* skip alter and remote statements */
 					cnt = store_funcs.count_idx(i);
 					assert(cnt <= (size_t) GDK_oid_max);
 					b = store_funcs.bind_idx(m->session->tr,i,0);
