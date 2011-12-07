@@ -1024,13 +1024,13 @@ ODBCFetch(ODBCStmt *stmt,
 	ardrec = col <= ard->sql_desc_count ? &ard->descRec[col] : NULL;
 	sql_type = irdrec->sql_desc_concise_type;
 
-	if (ptr && offset)
-		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
+	if (offset > 0)
+		ptr = (SQLPOINTER) ((char *) ptr + offset);
 
-	if (lenp && offset)
-		lenp = (SQLLEN *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
-	if (nullp && offset)
-		nullp = (SQLLEN *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+	if (lenp)
+		lenp = (SQLLEN *) ((char *) lenp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(*lenp) : bind_type));
+	if (nullp)
+		nullp = (SQLLEN *) ((char *) nullp + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(*nullp) : bind_type));
 
 	/* translate default type */
 	/* note, type can't be SQL_ARD_TYPE since when this function
