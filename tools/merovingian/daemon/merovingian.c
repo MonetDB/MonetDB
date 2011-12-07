@@ -840,12 +840,12 @@ main(int argc, char *argv[])
 	if (kv->val != NULL) {
 		char *h = kv->val + 1;
 		if ((p = strchr(h, '}')) == NULL) {
-			Mfprintf(stderr, "incompatible passphrase (not hashed as "
-					MONETDB5_PASSWDHASH ")\n");
+			Mfprintf(stderr, "warning: incompatible passphrase (not hashed as "
+					MONETDB5_PASSWDHASH "), disabling passphrase\n");
 		} else {
 			*p = '\0';
 			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
-				Mfprintf(stderr, "passphrase hash '%s' incompatible, "
+				Mfprintf(stderr, "warning: passphrase hash '%s' incompatible, "
 						"expected '%s', disabling passphrase\n",
 						h, MONETDB5_PASSWDHASH);
 			} else {
