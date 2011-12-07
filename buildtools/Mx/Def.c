@@ -281,12 +281,14 @@ MakeDefs(char *name)
 			if (allTrue()) {
 				d = NwDef(dir, mod, sec, lino, file);
 				/* specially for Windows: replace all /'s with DIR_SEP's */
-				if (DIR_SEP != '/') {
+#if DIR_SEP != '/'
+				{
 					char *tmp = cmd;
 
 					while ((tmp = strchr(tmp, '/')) != NULL)
 						*tmp++ = DIR_SEP;
 				}
+#endif
 				d->d_cmd = cmd;
 				lastdir = Continue;
 			}
