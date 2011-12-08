@@ -637,8 +637,8 @@
 					break;
 			}
 			if ($res != NULL) {
-				if (!is_array($res['query'] ||
-					!array_key_exists('id', $res['query'] ||
+				if (!is_array($res['query']) ||
+					!array_key_exists('id', $res['query']) ||
 					mapi_free_result($conn['id'], $res['query']['id']))
 			   	{
 					return TRUE;
