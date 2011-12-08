@@ -64,7 +64,7 @@
 	/**
 	* Execute an SQL query and return the resulting handle by reference.
 	*/
-	function &mapi_execute($conn=NULL, $query) {
+	function mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
 		global $rows;
 		/**
@@ -163,12 +163,12 @@
 				if ($row[1] == Q_TABLE) {
 					$operation = Q_TABLE;
 					// save info about the query
-					$fields = split(" ", $row);
+					$fields = explode(" ", $row);
 					$handle["query"] = array("id" => $fields[1], "rows" => $fields[2], "cols" => $fields[3], "index" => $fields[4]);
 
 				} else if ($row[1] == Q_UPDATE) {
 					$operation = Q_UPDATE;
-					$fields = split(" ", $row);
+					$fields = explode(" ", $row);
 					$handle["query"] = array("affected" => $fields[1]);
 				} else if ($row[1] == Q_CREATE) {
 					$operation = Q_CREATE;
@@ -222,13 +222,13 @@
 		//$parsed_rows = "";
 
 		$rows = rtrim($rows, "\t]");
-		return split("\t]", $rows);
+		return explode("\t]", $rows);
 //		print_r($parsed_rows);
 		/*
 		foreach ($rows as &$row) {
 
 			$row = ltrim($row, "[ ");
-			$row = split(",\t",  $row);
+			$row = explode(",\t",  $row);
 
 			foreach ($row as &$field) {
 				$field = stripslashes($field);
@@ -244,7 +244,7 @@
 
 	function php_parse_row($row) {
 		$row = ltrim($row, "[ ");
-		$row = split(",\t",  $row);
+		$row = explode(",\t",  $row);
 		foreach ($row as &$field) {
 			if ($field == "NULL") {
 				$field = NULL;
@@ -269,12 +269,12 @@
 
 		/* Field names */
 		$header[1] = ltrim($header[1], "% ");
-		$header[1] = split("#", $header[1]);
+		$header[1] = explode("#", $header[1]);
 		$header_array["fields"] = explode(",\t", $header[1][0]);
 
 		/* Field types */
 		$header[2] = ltrim($header[2], "% ");
-		$header[2] = split("#", $header[2]);
+		$header[2] = explode("#", $header[2]);
 		$header_array["types"] = explode(",\t", $header[2][0]);
 
 		return $header_array;
@@ -328,7 +328,7 @@
 			)
 
 		*/
-		$credentials = split(":", $challenge);
+		$credentials = explode(":", $challenge);
 		$algos = explode(',', $credentials[3]);
 
 
@@ -352,7 +352,7 @@
 		if ($response != MSG_PROMPT) {
 		// not ready to authenticate yet
 			if ($response[0] == MSG_REDIRECT) {
-				$redirects = split("\n", $response);
+				$redirects = explode("\n", $response);
 	                 	/* Follow the first redirect */
 
 				if ( ($redirects[0] == "") || (substr($redirects[0], 0, 6) != "^mapi:") ) {
@@ -637,8 +637,8 @@
 					break;
 			}
 			if ($res != NULL) {
-				if (!is_array($res['query'] ||
-					!array_key_exists('id', $res['query'] ||
+				if (!is_array($res['query']) ||
+					!array_key_exists('id', $res['query']) ||
 					mapi_free_result($conn['id'], $res['query']['id']))
 			   	{
 					return TRUE;

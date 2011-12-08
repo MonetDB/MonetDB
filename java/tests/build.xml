@@ -37,7 +37,7 @@ All Rights Reserved.
   <property name="builddir"  value="build" />
   <property name="jardir"    value="../jars" />
   <property name="jdbc_jar"
-    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
+    value="${jardir}/monetdb-jdbc-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
   <property name="jdbc_url"
     value="jdbc:monetdb://localhost/?user=monetdb&amp;password=monetdb${debug}" />
   <property name="jdbctests-jar"

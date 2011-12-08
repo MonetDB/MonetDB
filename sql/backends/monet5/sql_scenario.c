@@ -372,7 +372,7 @@ sql_update_dec2011( Client c, mvc *m )
 	node *nsch, *ntab, *ncol;
 	sql_trans *tr;
 	char *buf = GDKmalloc(1024), *err = NULL;
-	int bufsize = 1024, pos = 0;
+	size_t bufsize = 1024, pos = 0;
 
 	buf[0] = 0;
  	tr = m->session->tr;
@@ -380,28 +380,28 @@ sql_update_dec2011( Client c, mvc *m )
 		sql_schema *s = nsch->data;
 
 		if ( isalpha((int)s->base.name[0]) ) {
-			if (!s->tables.set) 
+			if (!s->tables.set)
 				continue;
 			for( ntab = (s)->tables.set->h ;ntab; ntab = ntab->next){
 				sql_table *t = ntab->data;
 
-				if (!isTable(t) || !t->columns.set) 
+				if (!isTable(t) || !t->columns.set)
 					continue;
 				for ( ncol = (t)->columns.set->h; ncol; ncol= ncol->next){
 					sql_column *c = (sql_column *) ncol->data;
-			
-					if (c->type.type->eclass == EC_INTERVAL && 
-					    strcmp(c->type.type->base.name, "sec_interval") == 0) {
-						if (bufsize < pos + 100) 
+
+					if (c->type.type->eclass == EC_INTERVAL &&
+					    strcmp(c->type.type->sqlname, "sec_interval") == 0) {
+						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 2*strlen(c->base.name))
 							buf = GDKrealloc(buf, bufsize += 1024);
-						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\"\n",
+						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\";\n",
 							s->base.name, t->base.name, c->base.name, c->base.name);
 					}
 				}
 			}
 		}
 	}
-	if (bufsize < pos + 256) 
+	if (bufsize < pos + 256)
 		buf = GDKrealloc(buf, bufsize += 1024);
 	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name pcre.like_filter;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name pcre.ilike_filter;\n");

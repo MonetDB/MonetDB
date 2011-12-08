@@ -46,11 +46,11 @@ esac
 case $1 in
 	jdbc)
 		TYPE=JDBC
-		FILES="monetdb-XXX-jdbc.jar monetdb-XXX-xmldb.jar"
+		FILES="monetdb-jdbc-XXX.jar"
 		;;
 	mcl)
 		TYPE=MCL
-		FILES="monetdb-XXX-mcl.jar"
+		FILES="monetdb-mcl-XXX.jar"
 		;;
 	*)
 		echo "invalid type: $1"
