@@ -64,7 +64,7 @@
 	/**
 	* Execute an SQL query and return the resulting handle by reference.
 	*/
-	function &mapi_execute($conn=NULL, $query) {
+	function mapi_execute($conn=NULL, $query) {
 		global $connection_pool;
 		global $rows;
 		/**
