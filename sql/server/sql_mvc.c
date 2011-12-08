@@ -85,6 +85,14 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
+		if (catalog_version) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+		}
+
 		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
@@ -96,6 +104,14 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
+
+		if (catalog_version) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+		}
 
 		if (!catalog_version) {
 			sql_create_env(m, s);
