@@ -256,7 +256,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
 			offset -= (offset / 60) * 60;
 			tz += (offset < 10 ? "0" : "") + offset;
-			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
+			sendIndependentCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
 		}
 
 		// we're absolutely not closed, since we're brand new
@@ -1244,7 +1244,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param command the exact string to send to MonetDB
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
-	void sendIndependantCommand(String command) throws SQLException {
+	void sendIndependentCommand(String command) throws SQLException {
 		synchronized (server) {
 			try {
 				out.writeLine(
