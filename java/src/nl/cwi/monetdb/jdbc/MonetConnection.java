@@ -1285,46 +1285,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	}
 
 	/**
-	 * Sends the given string to MonetDB as data; it is sent using a
-	 * special Xcopy mode of the server, allowing not to make any
-	 * changes to the given in String.  A Response is returned, just
-	 * like for a normal query.
-	 *
-	 * @param in the exact string to send to MonetDB
-	 * @param name the name to associate to the data in in
-	 * @return A Response object, or null if no response
-	 * @throws SQLException if a database error occurs
-	 */
-	Response copyToServer(String in, String name) throws SQLException {
-		synchronized (server) {
-			// TODO: maybe in the future add support for a second
-			// name which is a convenience "alias" (e.g. in XQuery)
-			// tell server we're going to "copy" data over to be
-			// stored under the given name, make up something if the
-			// caller doesn't know it too
-			if (name == null) {
-				name = "doc_" + System.currentTimeMillis() + ".xml";
-				addWarning("adding new document with name: " + name);
-			}
-			sendControlCommand("copy " + name);
-			// the server is waiting for data to come
-			String[] templ = new String[3];	// empty on everything
-			ResponseList l = new ResponseList(
-					0,
-					0,
-					ResultSet.FETCH_FORWARD,
-					ResultSet.CONCUR_READ_ONLY
-			);
-			try {
-				l.executeQuery(templ, in);
-				return(l.getNextResponse()); // don't you love Java?
-			} finally {
-				l.close();
-			}
-		}
-	}
-
-	/**
 	 * Adds a warning to the pile of warnings this Connection object
 	 * has.  If there were no warnings (or clearWarnings was called)
 	 * this warning will be the first, otherwise this warning will get
