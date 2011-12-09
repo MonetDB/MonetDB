@@ -62,3 +62,4 @@ alter_table_add_column.Bug-2919
 update_with_count.Bug-2928
 user_create_temp_table.Bug-2916
 exists-select.Bug-2933
+jena-optional-1-test.Bug-2915
