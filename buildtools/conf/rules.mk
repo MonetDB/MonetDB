@@ -26,7 +26,7 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 # first, also with bison-generated files.  This is crucial
 # to prevent inconsistent (re-)definitions of macros.
 %.tab.c: %.y
-	$(LOCKFILE) waiting
+	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(YACC) $(YFLAGS) $(AM_YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
 	$(MV) $*.tab.c $*.tab.c.tmp
@@ -37,14 +37,14 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	$(RM) waiting
 
 %.tab.h: %.y
-	$(LOCKFILE) waiting
+	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(YACC) $(YFLAGS) $(AM_YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.h ]; then $(MV) y.tab.h $*.tab.h ; fi
 	[ ! -f y.tab.c ] || $(RM) y.tab.c
 	$(RM) waiting
 
 %.yy.c: %.l
-	$(LOCKFILE) waiting
+	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f $(LEX_OUTPUT_ROOT).c ]; then $(MV) $(LEX_OUTPUT_ROOT).c $*.yy.c ; fi
 	$(MV) $*.yy.c $*.yy.c.tmp
