@@ -363,7 +363,6 @@ MakeDefs(char *name)
 			break;
 		default:
 			Fatal("MakeDefs", "Unknown directive:%c%c", MARK, dir);
-			break;
 		}
 	}
 	d = NwDef(Efile, mod, sec, mx_line, mx_file);
