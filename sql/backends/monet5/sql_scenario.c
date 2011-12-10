@@ -405,13 +405,10 @@ sql_update_dec2011( Client c, mvc *m )
 		buf = GDKrealloc(buf, bufsize += 1024);
 	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"like\"(val string, pat string, esc string) external name pcre.like_filter;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create filter function sys.\"ilike\"(val string, pat string, esc string) external name pcre.ilike_filter;\n");
-	printf("%s\n", buf);
-	if ((err = SQLstatementIntern(c, &buf, "update", 1, 0)) != MAL_SUCCEED) {
-		GDKfree(buf);
-		return err;
-	}
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
 	GDKfree(buf);
-	return NULL;
+	return err;		/* usually MAL_SUCCEED */
 }
 
 str

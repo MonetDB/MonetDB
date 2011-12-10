@@ -256,7 +256,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
 			offset -= (offset / 60) * 60;
 			tz += (offset < 10 ? "0" : "") + offset;
-			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
+			sendIndependentCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
 		}
 
 		// we're absolutely not closed, since we're brand new
@@ -1244,7 +1244,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param command the exact string to send to MonetDB
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
-	void sendIndependantCommand(String command) throws SQLException {
+	void sendIndependentCommand(String command) throws SQLException {
 		synchronized (server) {
 			try {
 				out.writeLine(
@@ -1280,46 +1280,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				if (error != null) throw new SQLException(error);
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage());
-			}
-		}
-	}
-
-	/**
-	 * Sends the given string to MonetDB as data; it is sent using a
-	 * special Xcopy mode of the server, allowing not to make any
-	 * changes to the given in String.  A Response is returned, just
-	 * like for a normal query.
-	 *
-	 * @param in the exact string to send to MonetDB
-	 * @param name the name to associate to the data in in
-	 * @return A Response object, or null if no response
-	 * @throws SQLException if a database error occurs
-	 */
-	Response copyToServer(String in, String name) throws SQLException {
-		synchronized (server) {
-			// TODO: maybe in the future add support for a second
-			// name which is a convenience "alias" (e.g. in XQuery)
-			// tell server we're going to "copy" data over to be
-			// stored under the given name, make up something if the
-			// caller doesn't know it too
-			if (name == null) {
-				name = "doc_" + System.currentTimeMillis() + ".xml";
-				addWarning("adding new document with name: " + name);
-			}
-			sendControlCommand("copy " + name);
-			// the server is waiting for data to come
-			String[] templ = new String[3];	// empty on everything
-			ResponseList l = new ResponseList(
-					0,
-					0,
-					ResultSet.FETCH_FORWARD,
-					ResultSet.CONCUR_READ_ONLY
-			);
-			try {
-				l.executeQuery(templ, in);
-				return(l.getNextResponse()); // don't you love Java?
-			} finally {
-				l.close();
 			}
 		}
 	}
@@ -2154,216 +2114,218 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			String error = null;
 
 			try {
-				// make sure we're ready to send query; read data till we
-				// have the prompt it is possible (and most likely) that we
-				// already have the prompt and do not have to skip any
-				// lines.  Ignore errors from previous result sets.
-				in.waitForPrompt();
+				synchronized (server) {
+					// make sure we're ready to send query; read data till we
+					// have the prompt it is possible (and most likely) that we
+					// already have the prompt and do not have to skip any
+					// lines.  Ignore errors from previous result sets.
+					in.waitForPrompt();
 
-				int size;
-				// {{{ set reply size
-				/**
-				 * Change the reply size of the server.  If the given
-				 * value is the same as the current value known to use,
-				 * then ignore this call.  If it is set to 0 we get a
-				 * prompt after the server sent it's header.
-				 */
-				size = cachesize == 0 ? DEF_FETCHSIZE : cachesize;
-				size = maxrows != 0 ? Math.min(maxrows, size) : size;
-				// don't do work if it's not needed
-				if (lang == LANG_SQL && size != curReplySize && templ != commandTempl) {
-					sendControlCommand("reply_size " + size);
+					int size;
+					// {{{ set reply size
+					/**
+					 * Change the reply size of the server.  If the given
+					 * value is the same as the current value known to use,
+					 * then ignore this call.  If it is set to 0 we get a
+					 * prompt after the server sent it's header.
+					 */
+					size = cachesize == 0 ? DEF_FETCHSIZE : cachesize;
+					size = maxrows != 0 ? Math.min(maxrows, size) : size;
+					// don't do work if it's not needed
+					if (lang == LANG_SQL && size != curReplySize && templ != commandTempl) {
+						sendControlCommand("reply_size " + size);
 
-					// store the reply size after a successful change
-					curReplySize = size;
-				}
-				// }}} set reply size
+						// store the reply size after a successful change
+						curReplySize = size;
+					}
+					// }}} set reply size
 
-				// If the query is larger than the TCP buffer size, use a
-				// special send thread to avoid deadlock with the server due
-				// to blocking behaviour when the buffer is full.  Because
-				// the server will be writing back results to us, it will
-				// eventually block as well when its TCP buffer gets full,
-				// as we are blocking an not consuming from it.  The result
-				// is a state where both client and server want to write,
-				// but block.
-				if (query.length() > MapiSocket.BLOCK) {
-					// get a reference to the send thread
-					if (sendThread == null) sendThread = new SendThread(out);
-					// tell it to do some work!
-					sendThread.runQuery(templ, query);
-					sendThreadInUse = true;
-				} else {
-					// this is a simple call, which is a lot cheaper and will
-					// always succeed for small queries.
-					out.writeLine(
-							(templ[0] == null ? "" : templ[0]) +
-							query +
-							(templ[1] == null ? "" : templ[1]));
-				}
+					// If the query is larger than the TCP buffer size, use a
+					// special send thread to avoid deadlock with the server due
+					// to blocking behaviour when the buffer is full.  Because
+					// the server will be writing back results to us, it will
+					// eventually block as well when its TCP buffer gets full,
+					// as we are blocking an not consuming from it.  The result
+					// is a state where both client and server want to write,
+					// but block.
+					if (query.length() > MapiSocket.BLOCK) {
+						// get a reference to the send thread
+						if (sendThread == null) sendThread = new SendThread(out);
+						// tell it to do some work!
+						sendThread.runQuery(templ, query);
+						sendThreadInUse = true;
+					} else {
+						// this is a simple call, which is a lot cheaper and will
+						// always succeed for small queries.
+						out.writeLine(
+								(templ[0] == null ? "" : templ[0]) +
+								query +
+								(templ[1] == null ? "" : templ[1]));
+					}
 
-				// go for new results
-				String tmpLine = in.readLine();
-				int linetype = in.getLineType();
-				Response res = null;
-				while (linetype != BufferedMCLReader.PROMPT) {
-					// each response should start with a start of header
-					// (or error)
-					switch (linetype) {
-						case BufferedMCLReader.SOHEADER:
-							// make the response object, and fill it
-							try {
-								switch (sohp.parse(tmpLine)) {
-									case StartOfHeaderParser.Q_PARSE:
-										throw new MCLParseException("Q_PARSE header not allowed here", 1);
-									case StartOfHeaderParser.Q_TABLE:
-									case StartOfHeaderParser.Q_PREPARE: {
-										int id = sohp.getNextAsInt();
-										int tuplecount = sohp.getNextAsInt();
-										int columncount = sohp.getNextAsInt();
-										int rowcount = sohp.getNextAsInt();
-										// enforce the maxrows setting
-										if (maxrows != 0 && tuplecount > maxrows)
-											tuplecount = maxrows;
-										res = new ResultSetResponse(
-												id,
-												tuplecount,
-												columncount,
-												rowcount,
-												this,
-												seqnr
-										);
-										// only add this resultset to
-										// the hashmap if it can possibly
-										// have an additional datablock
-										if (rowcount < tuplecount) {
-											if (rsresponses == null)
-												rsresponses = new HashMap();
-											rsresponses.put(
-													new Integer(id),
-													res
+					// go for new results
+					String tmpLine = in.readLine();
+					int linetype = in.getLineType();
+					Response res = null;
+					while (linetype != BufferedMCLReader.PROMPT) {
+						// each response should start with a start of header
+						// (or error)
+						switch (linetype) {
+							case BufferedMCLReader.SOHEADER:
+								// make the response object, and fill it
+								try {
+									switch (sohp.parse(tmpLine)) {
+										case StartOfHeaderParser.Q_PARSE:
+											throw new MCLParseException("Q_PARSE header not allowed here", 1);
+										case StartOfHeaderParser.Q_TABLE:
+										case StartOfHeaderParser.Q_PREPARE: {
+											int id = sohp.getNextAsInt();
+											int tuplecount = sohp.getNextAsInt();
+											int columncount = sohp.getNextAsInt();
+											int rowcount = sohp.getNextAsInt();
+											// enforce the maxrows setting
+											if (maxrows != 0 && tuplecount > maxrows)
+												tuplecount = maxrows;
+											res = new ResultSetResponse(
+													id,
+													tuplecount,
+													columncount,
+													rowcount,
+													this,
+													seqnr
 											);
-										}
-									} break;
-									case StartOfHeaderParser.Q_UPDATE:
-										res = new UpdateResponse(
-												sohp.getNextAsInt(),   // count
-												sohp.getNextAsString() // key-id
+											// only add this resultset to
+											// the hashmap if it can possibly
+											// have an additional datablock
+											if (rowcount < tuplecount) {
+												if (rsresponses == null)
+													rsresponses = new HashMap();
+												rsresponses.put(
+														new Integer(id),
+														res
 												);
-									break;
-									case StartOfHeaderParser.Q_SCHEMA:
-										res = new SchemaResponse();
-									break;
-									case StartOfHeaderParser.Q_TRANS:
-										boolean ac = sohp.getNextAsString().equals("t") ? true : false;
-										if (autoCommit && ac) {
-											addWarning("Server enabled auto commit " +
-													"mode while local state " +
-													"already was auto commit."
+											}
+										} break;
+										case StartOfHeaderParser.Q_UPDATE:
+											res = new UpdateResponse(
+													sohp.getNextAsInt(),   // count
+													sohp.getNextAsString() // key-id
 													);
-										}
-										autoCommit = ac;
-										res = new AutoCommitResponse(ac);
-									break;
-									case StartOfHeaderParser.Q_BLOCK: {
-										// a new block of results for a
-										// response...
-										int id = sohp.getNextAsInt(); 
-										sohp.getNextAsInt();	// columncount
-										int rowcount = sohp.getNextAsInt();
-										int offset = sohp.getNextAsInt();
-										ResultSetResponse t =
-											(ResultSetResponse)rsresponses.get(new Integer(id));
-										if (t == null) {
-											error = "no ResultSetResponse with id " + id + " found";
-											break;
-										}
+										break;
+										case StartOfHeaderParser.Q_SCHEMA:
+											res = new SchemaResponse();
+										break;
+										case StartOfHeaderParser.Q_TRANS:
+											boolean ac = sohp.getNextAsString().equals("t") ? true : false;
+											if (autoCommit && ac) {
+												addWarning("Server enabled auto commit " +
+														"mode while local state " +
+														"already was auto commit."
+														);
+											}
+											autoCommit = ac;
+											res = new AutoCommitResponse(ac);
+										break;
+										case StartOfHeaderParser.Q_BLOCK: {
+											// a new block of results for a
+											// response...
+											int id = sohp.getNextAsInt(); 
+											sohp.getNextAsInt();	// columncount
+											int rowcount = sohp.getNextAsInt();
+											int offset = sohp.getNextAsInt();
+											ResultSetResponse t =
+												(ResultSetResponse)rsresponses.get(new Integer(id));
+											if (t == null) {
+												error = "no ResultSetResponse with id " + id + " found";
+												break;
+											}
 
-										DataBlockResponse r =
-											new DataBlockResponse(
-												rowcount,	// rowcount
-												t.getRSType() == ResultSet.TYPE_FORWARD_ONLY
-											);
+											DataBlockResponse r =
+												new DataBlockResponse(
+													rowcount,	// rowcount
+													t.getRSType() == ResultSet.TYPE_FORWARD_ONLY
+												);
 
-										t.addDataBlockResponse(offset, r);
-										res = r;
-									} break;
-								}
-							} catch (MCLParseException e) {
-								error = "error while parsing start of header:\n" +
-									e.getMessage() +
-									" found: '" + tmpLine.charAt(e.getErrorOffset()) + "'" +
-									" in: \"" + tmpLine + "\"" +
-									" at pos: " + e.getErrorOffset();
-								// flush all the rest
-								in.waitForPrompt();
-								linetype = in.getLineType();
-								break;
-							}
-
-							// immediately handle errors after parsing
-							// the header (res may be null)
-							if (error != null) {
-								in.waitForPrompt();
-								linetype = in.getLineType();
-								break;
-							}
-
-							// here we have a res object, which
-							// we can start filling
-							while (res.wantsMore()) {
-								error = res.addLine(
-										in.readLine(),
-										in.getLineType()
-								);
-								if (error != null) {
-									// right, some protocol violation,
-									// skip the rest of the result
+											t.addDataBlockResponse(offset, r);
+											res = r;
+										} break;
+									}
+								} catch (MCLParseException e) {
+									error = "error while parsing start of header:\n" +
+										e.getMessage() +
+										" found: '" + tmpLine.charAt(e.getErrorOffset()) + "'" +
+										" in: \"" + tmpLine + "\"" +
+										" at pos: " + e.getErrorOffset();
+									// flush all the rest
 									in.waitForPrompt();
 									linetype = in.getLineType();
 									break;
 								}
-							}
-							if (error != null) break;
-							// it is of no use to store
-							// DataBlockReponses, you never want to
-							// retrieve them directly anyway
-							if (!(res instanceof DataBlockResponse))
-								responses.add(res);
 
-							// read the next line (can be prompt, new
-							// result, error, etc.) before we start the
-							// loop over
-							tmpLine = in.readLine();
-							linetype = in.getLineType();
-						break;
-						case BufferedMCLReader.INFO:
-							addWarning(tmpLine.substring(1));
+								// immediately handle errors after parsing
+								// the header (res may be null)
+								if (error != null) {
+									in.waitForPrompt();
+									linetype = in.getLineType();
+									break;
+								}
 
-							// read the next line (can be prompt, new
-							// result, error, etc.) before we start the
-							// loop over
-							tmpLine = in.readLine();
-							linetype = in.getLineType();
-						break;
-						default:	// Yeah... in Java this is correct!
-							// we have something we don't
-							// expect/understand, let's make it an error
-							// message
-							tmpLine = "!protocol violation, unexpected line: " + tmpLine;
-						case BufferedMCLReader.ERROR:
-							// read everything till the prompt (should be
-							// error) we don't know if we ignore some
-							// garbage here... but the log should reveal
-							// that
-							error = in.waitForPrompt();
-							linetype = in.getLineType();
-							if (error != null) {
-								error = tmpLine.substring(1) + "\n" + error;
-							} else {
-								error = tmpLine.substring(1);
-							}
-						break;
+								// here we have a res object, which
+								// we can start filling
+								while (res.wantsMore()) {
+									error = res.addLine(
+											in.readLine(),
+											in.getLineType()
+									);
+									if (error != null) {
+										// right, some protocol violation,
+										// skip the rest of the result
+										in.waitForPrompt();
+										linetype = in.getLineType();
+										break;
+									}
+								}
+								if (error != null) break;
+								// it is of no use to store
+								// DataBlockReponses, you never want to
+								// retrieve them directly anyway
+								if (!(res instanceof DataBlockResponse))
+									responses.add(res);
+
+								// read the next line (can be prompt, new
+								// result, error, etc.) before we start the
+								// loop over
+								tmpLine = in.readLine();
+								linetype = in.getLineType();
+							break;
+							case BufferedMCLReader.INFO:
+								addWarning(tmpLine.substring(1));
+
+								// read the next line (can be prompt, new
+								// result, error, etc.) before we start the
+								// loop over
+								tmpLine = in.readLine();
+								linetype = in.getLineType();
+							break;
+							default:	// Yeah... in Java this is correct!
+								// we have something we don't
+								// expect/understand, let's make it an error
+								// message
+								tmpLine = "!protocol violation, unexpected line: " + tmpLine;
+							case BufferedMCLReader.ERROR:
+								// read everything till the prompt (should be
+								// error) we don't know if we ignore some
+								// garbage here... but the log should reveal
+								// that
+								error = in.waitForPrompt();
+								linetype = in.getLineType();
+								if (error != null) {
+									error = tmpLine.substring(1) + "\n" + error;
+								} else {
+									error = tmpLine.substring(1);
+								}
+							break;
+						}
 					}
 				}
 

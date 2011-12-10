@@ -122,7 +122,7 @@ NxtTok(Tok * t)
 
 		if (!HideDir(t->t_dir))
 			for (; t->t_nxt[0]; t->t_nxt++) {
-				if ((t->t_nxt[0] == '\n'))
+				if (t->t_nxt[0] == '\n')
 					break;
 				if ((t->t_nxt[0] == MARK) && (t->t_nxt[-1] != '\\'))
 					break;

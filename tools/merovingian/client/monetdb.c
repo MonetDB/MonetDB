@@ -677,7 +677,6 @@ command_status(int argc, char *argv[])
 						fprintf(stderr, "status: unknown option: -%c\n", *p);
 						command_help(2, &argv[-1]);
 						exit(1);
-					break;
 				}
 			}
 			/* make this option no longer available, for easy use
