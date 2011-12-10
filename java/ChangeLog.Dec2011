@@ -1,6 +1,11 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Sat Dec 10 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed a bug where closing ResultSets and PreparedStatements could lead
+  to errors on concurrent running queries using the same Connection due
+  to a race condition.
+
 * Thu Dec  8 2011 Fabian Groffen <fabian@cwi.nl>
 - Changed version scheme of JDBC driver and MCL jar to be more standard,
   from monetdb-X.Y-<thing>.jar to monetdb-<thing>-X.Y.jar, bug #2943
