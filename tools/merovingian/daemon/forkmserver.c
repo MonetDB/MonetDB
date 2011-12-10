@@ -115,7 +115,6 @@ forkMserver(char *database, sabdb** stats, int force)
 	switch ((*stats)->state) {
 		case SABdbRunning:
 			return(NO_ERR);
-		break;
 		case SABdbCrashed:
 			t = localtime(&info.lastcrash);
 			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
