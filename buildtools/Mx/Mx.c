@@ -147,7 +147,6 @@ main(int argc, char **argv)
 		GenForm();
 
 	exit(mx_err ? 1 : 0);
-	return 1;
 }
 
 Directive str2dir[] = {
