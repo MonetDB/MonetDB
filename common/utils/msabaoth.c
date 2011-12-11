@@ -432,7 +432,6 @@ msab_registerStop(void)
 		fprintf(f, LLFMT "\n", (lng)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
-		return(NULL);
 	} else {
 		char buf[PATHLENGTH];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
