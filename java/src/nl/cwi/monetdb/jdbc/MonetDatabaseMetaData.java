@@ -244,7 +244,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			String columnNamePattern)
 		throws SQLException
 	{
-		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented");
+		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented", "0A000");
 	}
 
 	/**
@@ -925,7 +925,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -1807,7 +1807,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -1848,7 +1848,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -2219,7 +2219,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -2276,7 +2276,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -2835,7 +2835,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -3287,14 +3287,14 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 	/**
 	 * Indicates whether the SQLSTATEs returned by <code>SQLException.getSQLState</code>
-	 * is X/Open (now known as Open Group) SQL CLI or SQL99.
+	 * is X/Open (now known as Open Group) SQL CLI or SQL:2003.
 	 * @return the type of SQLSTATEs, one of:
 	 *		  sqlStateXOpen or
-	 *		  sqlStateSQL99
+	 *		  sqlStateSQL
 	 */
 	public int getSQLStateType() {
-		// we conform to the SQL99 standard, so...
-		return(DatabaseMetaData.sqlStateSQL99);
+		// At least this driver conforms with SQLSTATE to the SQL:2003 standard
+		return(DatabaseMetaData.sqlStateSQL);
 	}
 
 	/**
@@ -3354,7 +3354,8 @@ class MonetVirtualResultSet extends MonetResultSet {
 	 * @throws SQLException if a database error occurs
 	 */
  	public boolean absolute(int row) throws SQLException {
-		if (closed) throw new SQLException("ResultSet is closed!");
+		if (closed)
+			throw new SQLException("ResultSet is closed!", "M1M20");
 
 		// first calculate what the JDBC row is
 		if (row < 0) {

@@ -1,6 +1,11 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Sun Dec 11 2011 Fabian Groffen <fabian@cwi.nl>
+- SQLExceptions thrown now carry a SQLSTATE.  Until the server starts
+  sending correct SQLSTATEs for errors, all server originated errors
+  are considered generic data exceptions (22000).
+
 * Sat Dec 10 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed a bug where closing ResultSets and PreparedStatements could lead
   to errors on concurrent running queries using the same Connection due

@@ -112,7 +112,7 @@ public class MonetPreparedStatement
 		);
 
 		if (!super.execute("PREPARE " + prepareQuery))
-			throw new SQLException("Unexpected server response");
+			throw new SQLException("Unexpected server response", "M0M10");
 
 		// cheat a bit to get the ID and the number of columns
 		id = ((MonetConnection.ResultSetResponse)header).id;
@@ -191,7 +191,7 @@ public class MonetPreparedStatement
 
 	/** override the addBatch from the Statement to throw an SQLException */
 	public void addBatch(String q) throws SQLException {
-		throw new SQLException("This method is not available in a PreparedStatement!");
+		throw new SQLException("This method is not available in a PreparedStatement!", "M1M05");
 	}
 
 	/**
@@ -232,7 +232,7 @@ public class MonetPreparedStatement
 
 	/** override the execute from the Statement to throw an SQLException */
 	public boolean execute(String q) throws SQLException {
-		throw new SQLException("This method is not available in a PreparedStatement!");
+		throw new SQLException("This method is not available in a PreparedStatement!", "M1M05");
 	}
 
 	/**
@@ -246,14 +246,14 @@ public class MonetPreparedStatement
 	 */
 	public ResultSet executeQuery() throws SQLException{
 		if (execute() != true)
-			throw new SQLException("Query did not produce a result set");
+			throw new SQLException("Query did not produce a result set", "M1M19");
 
 		return(getResultSet());
 	}
 
 	/** override the executeQuery from the Statement to throw an SQLException*/
 	public ResultSet executeQuery(String q) throws SQLException {
-		throw new SQLException("This method is not available in a PreparedStatement!");
+		throw new SQLException("This method is not available in a PreparedStatement!", "M1M05");
 	}
 
 	/**
@@ -268,14 +268,14 @@ public class MonetPreparedStatement
 	 */
 	public int executeUpdate() throws SQLException {
 		if (execute() != false)
-			throw new SQLException("Query produced a result set");
+			throw new SQLException("Query produced a result set", "M1M17");
 
 		return(getUpdateCount());
 	}
 
 	/** override the executeUpdate from the Statement to throw an SQLException*/
 	public int executeUpdate(String q) throws SQLException {
-		throw new SQLException("This method is not available in a PreparedStatement!");
+		throw new SQLException("This method is not available in a PreparedStatement!", "M1M05");
 	}
 
 	/**
@@ -353,7 +353,7 @@ public class MonetPreparedStatement
 			 */
 			public boolean isSigned(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				// we can hardcode this, based on the colum type
 				// (from ResultSetMetaData.isSigned)
@@ -388,7 +388,7 @@ public class MonetPreparedStatement
 			 */
 			public int getPrecision(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				return(digits[param - 1]);
 			}
@@ -403,7 +403,7 @@ public class MonetPreparedStatement
 			 */
 			public int getScale(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				return(scale[param - 1]);
 			}
@@ -417,7 +417,7 @@ public class MonetPreparedStatement
 			 */
 			public int getParameterType(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				return(javaType[param - 1]);
 			}
@@ -434,7 +434,7 @@ public class MonetPreparedStatement
 			 */
 			public String getParameterTypeName(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				return(monetdbType[param - 1]);
 			}
@@ -454,7 +454,7 @@ public class MonetPreparedStatement
 			 */
 			public String getParameterClassName(int param) throws SQLException {
 				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
+					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
 				return(MonetResultSet.getClassForType(javaType[param - 1]).getName());
 			}
@@ -487,7 +487,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setArray(int i, Array x) throws SQLException {
-		throw new SQLException("Operation setArray(int i, Array x) currently not supported!");
+		throw new SQLException("Operation setArray(int i, Array x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -510,7 +510,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int, InputStream x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int, InputStream x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -557,7 +557,7 @@ public class MonetPreparedStatement
 	public void setAsciiStream(int parameterIndex, InputStream x, long length)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int parameterIndex, InputStream x, long length) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setAsciiStream(int parameterIndex, InputStream x, long length) currently not supported!", "0A000");
 	}
 
 	/**
@@ -595,7 +595,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -641,7 +641,7 @@ public class MonetPreparedStatement
 	public void setBinaryStream(int parameterIndex, InputStream x, long length)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x, long length) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(int parameterIndex, InputStream x, long length) currently not supported!", "0A000");
 	}
 
 	/**
@@ -655,7 +655,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setBlob(int i, InputStream x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream) currently not supported!", "0A000");
 	}
 
 	/**
@@ -669,7 +669,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setBlob(int i, Blob x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int i, Blob x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int i, Blob x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -692,7 +692,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setBlob(int i, InputStream is, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream, long) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setBlob(int, InputStream, long) currently not supported!", "0A000");
 	}
 
 	/**
@@ -773,7 +773,7 @@ public class MonetPreparedStatement
 		try {
 			reader.read(tmp);
 		} catch (IOException e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "M1M25");
 		}
 		setString(parameterIndex, tmp.toString());
 	}
@@ -799,7 +799,7 @@ public class MonetPreparedStatement
 	public void setCharacterStream(int parameterIndex, Reader reader)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("setCharacterStream(int, Reader) not supported");
+		throw new SQLFeatureNotSupportedException("setCharacterStream(int, Reader) not supported", "0A000");
 	}
 
 	/**
@@ -855,7 +855,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setClob(int i, Reader x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("setClob(int, Reader) not supported");
+		throw new SQLFeatureNotSupportedException("setClob(int, Reader) not supported", "0A000");
 	}
 
 	/**
@@ -883,7 +883,7 @@ public class MonetPreparedStatement
 			reader.read(buf);
 		} catch (IOException e) {
 			throw new SQLException("failed to read from stream: " +
-					e.getMessage());
+					e.getMessage(), "M1M25");
 		}
 		setString(i, buf.toString());
 	}
@@ -989,7 +989,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setNCharacterStream(int i, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNCharacterStream currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setNCharacterStream currently not supported!", "0A000");
 	}
 
 	/**
@@ -1023,7 +1023,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setNClob(int i, Reader value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1038,7 +1038,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setNClob(int i, NClob value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, NClob) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, NClob) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1061,7 +1061,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setNClob(int i, Reader r, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader, long) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setNClob(int, Reader, long) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1077,7 +1077,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setNString(int i, String value) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setNString(int i, String x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setNString(int i, String x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1154,7 +1154,7 @@ public class MonetPreparedStatement
 	 */
 	public void setObject(int index, Object x) throws SQLException {
 		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
+			throw new SQLException("No such parameter with index: " + index, "M1M05");
 
 		setObject(index, x, javaType[index - 1]);
 	}
@@ -1272,7 +1272,7 @@ public class MonetPreparedStatement
 						try {
 							val = new BigDecimal(0.0);
 						} catch (NumberFormatException ex) {
-							throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+							throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage(), "M0M03");
 						}
 					}
 					val = val.setScale(scale, BigDecimal.ROUND_HALF_UP);
@@ -1327,7 +1327,7 @@ public class MonetPreparedStatement
 				case Types.LONGNVARCHAR:
 					throw new SQLFeatureNotSupportedException("N CHAR types not supported");
 				default:
-					throw new SQLException("Conversion not allowed");
+					throw new SQLException("Conversion not allowed", "M1M05");
 			}
 		} else if (x instanceof Number) {
 			Number num = (Number)x;
@@ -1367,7 +1367,7 @@ public class MonetPreparedStatement
 							try {
 								val = new BigDecimal(0.0);
 							} catch (NumberFormatException ex) {
-								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage(), "M0M03");
 							}
 						}
 						setBigDecimal(parameterIndex, val);
@@ -1379,7 +1379,7 @@ public class MonetPreparedStatement
 							try {
 								val = new BigDecimal(0.0);
 							} catch (NumberFormatException ex) {
-								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage());
+								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage(), "M0M03");
 							}
 						}
 						setBigDecimal(parameterIndex, val);
@@ -1399,7 +1399,7 @@ public class MonetPreparedStatement
 					setString(parameterIndex, x.toString());
 				break;
 				default:
-					throw new SQLException("Conversion not allowed");
+					throw new SQLException("Conversion not allowed", "M1M05");
 			}
 		} else if (x instanceof Boolean) {
 			boolean val = ((Boolean)x).booleanValue();
@@ -1430,7 +1430,7 @@ public class MonetPreparedStatement
 					try {
 						dec = new BigDecimal(val ? 1.0 : 0.0);
 					} catch (NumberFormatException e) {
-						throw new SQLException("Internal error: unable to create template BigDecimal: " + e.getMessage());
+						throw new SQLException("Internal error: unable to create template BigDecimal: " + e.getMessage(), "M0M03");
 					}
 					setBigDecimal(parameterIndex, dec);
 				} break;
@@ -1444,7 +1444,7 @@ public class MonetPreparedStatement
 					setString(parameterIndex, "" + val);
 				break;
 				default:
-					throw new SQLException("Conversion not allowed");
+					throw new SQLException("Conversion not allowed", "M1M05");
 			}
 		} else if (x instanceof byte[]) {
 			switch (targetSqlType) {
@@ -1454,7 +1454,7 @@ public class MonetPreparedStatement
 					setBytes(parameterIndex, (byte[])x);
 				break;
 				default:
-					throw new SQLException("Conversion not allowed");
+					throw new SQLException("Conversion not allowed", "M1M05");
 			}
 		} else if (x instanceof java.sql.Date ||
 				x instanceof Timestamp ||
@@ -1468,7 +1468,7 @@ public class MonetPreparedStatement
 				break;
 				case Types.DATE:
 					if (x instanceof Time) {
-						throw new SQLException("Conversion not allowed");
+						throw new SQLException("Conversion not allowed", "M1M05");
 					} else if (x instanceof java.sql.Date) {
 						setDate(parameterIndex, (java.sql.Date)x);
 					} else if (x instanceof Timestamp) {
@@ -1479,14 +1479,14 @@ public class MonetPreparedStatement
 					if (x instanceof Time) {
 						setTime(parameterIndex, (Time)x);
 					} else if (x instanceof java.sql.Date) {
-						throw new SQLException("Conversion not allowed");
+						throw new SQLException("Conversion not allowed", "M1M05");
 					} else if (x instanceof Timestamp) {
 						setTime(parameterIndex, new Time(((Timestamp)x).getTime()));
 					}
 				break;
 				case Types.TIMESTAMP:
 					if (x instanceof Time) {
-						throw new SQLException("Conversion not allowed");
+						throw new SQLException("Conversion not allowed", "M1M05");
 					} else if (x instanceof java.sql.Date) {
 						setTimestamp(parameterIndex, new Timestamp(((java.sql.Date)x).getTime()));
 					} else if (x instanceof Timestamp) {
@@ -1494,7 +1494,7 @@ public class MonetPreparedStatement
 					}
 				break;
 				default:
-					throw new SQLException("Conversion not allowed");
+					throw new SQLException("Conversion not allowed", "M1M05");
 			}
 		} else if (x instanceof Array) {
 			setArray(parameterIndex, (Array)x);
@@ -1503,10 +1503,10 @@ public class MonetPreparedStatement
 		} else if (x instanceof Clob) {
 			setClob(parameterIndex, (Clob)x);
 		} else if (x instanceof NClob) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!", "0A000");
 		} else if (x instanceof Struct) {
 			// I have no idea how to do this...
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Struct currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Struct currently not supported!", "0A000");
 		} else if (x instanceof Ref) {
 			setRef(parameterIndex, (Ref)x);
 		} else if (x instanceof RowId) {
@@ -1517,11 +1517,11 @@ public class MonetPreparedStatement
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
 			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!", "0A000");
 		} else if (x instanceof SQLXML) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
 		} else {	// java Class
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!");
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!", "0A000");
 		}
 	}
 
@@ -1537,7 +1537,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setRef(int i, Ref x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setRef(int i, Ref x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setRef(int i, Ref x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1552,7 +1552,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setRowId(int i, RowId x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation setRowId(int i, RowId x) currently not supported!");
+		throw new SQLFeatureNotSupportedException("Operation setRowId(int i, RowId x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1596,7 +1596,7 @@ public class MonetPreparedStatement
 	 *         not support this method
 	 */
 	public void setSQLXML(int parameterIndex, SQLXML x) throws SQLException {
-		throw new SQLFeatureNotSupportedException("setSQLXML(int, SQLXML) not supported");
+		throw new SQLFeatureNotSupportedException("setSQLXML(int, SQLXML) not supported", "0A000");
 	}
 
 	/**
@@ -1631,7 +1631,7 @@ public class MonetPreparedStatement
 		throws SQLException
 	{
 		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
+			throw new SQLException("No such parameter with index: " + index, "M1M05");
 
 		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
 		if (hasTimeZone) {
@@ -1689,7 +1689,7 @@ public class MonetPreparedStatement
 		throws SQLException
 	{
 		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
+			throw new SQLException("No such parameter with index: " + index, "M1M05");
 
 		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
 		if (hasTimeZone) {
@@ -1735,7 +1735,7 @@ public class MonetPreparedStatement
 	public void setUnicodeStream(int parameterIndex, InputStream x, int length)
 		throws SQLException
 	{
-		throw new SQLException("Operation setUnicodeStream(int parameterIndex, InputStream x, int length) currently not supported!");
+		throw new SQLException("Operation setUnicodeStream(int parameterIndex, InputStream x, int length) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1748,7 +1748,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setURL(int parameterIndex, URL x) throws SQLException {
-		throw new SQLException("Operation setURL(int parameterIndex, URL x) currently not supported!");
+		throw new SQLException("Operation setURL(int parameterIndex, URL x) currently not supported!", "0A000");
 	}
 
 	/**
@@ -1796,7 +1796,7 @@ public class MonetPreparedStatement
 	 */
 	void setValue(int index, String val) throws SQLException {
 		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
+			throw new SQLException("No such parameter with index: " + index, "M1M05");
 
 		values[index - 1] = val;
 	}
@@ -1819,7 +1819,7 @@ public class MonetPreparedStatement
 		for (int i = 0; i < size; i++) {
 			if (i > 0) buf.append(", ");
 			if (values[i] == null) throw
-				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.");
+				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.", "M1M05");
 
 			buf.append(values[i]);
 		}

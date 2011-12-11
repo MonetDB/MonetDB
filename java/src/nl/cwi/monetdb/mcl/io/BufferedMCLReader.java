@@ -99,6 +99,10 @@ public class BufferedMCLReader extends BufferedReader {
 	 * carriage return followed immediately by a linefeed.  Before this
 	 * method returns, it sets the linetype to any of the in MCL
 	 * recognised line types.
+	 * <br /><br />
+	 * Warning: until the server properly prefixes its error messages
+	 * with SQLSTATE codes, this method prefixes all errors it sees with
+	 * the generic data exception code (22000).
 	 *
 	 * @return A String containing the contents of the line, not
 	 *         including any line-termination characters, or null if the
@@ -108,6 +112,8 @@ public class BufferedMCLReader extends BufferedReader {
 	public String readLine() throws IOException {
 		String r = super.readLine();
 		setLineType(r);
+		if (lineType == ERROR)
+			r = "!22000:" + r.substring(1);
 		return(r);
 	}
 
@@ -181,7 +187,8 @@ public class BufferedMCLReader extends BufferedReader {
 		while (lineType != PROMPT) {
 			if ((tmp = readLine()) == null)
 				throw new IOException("Connection to server lost!");
-			if (lineType == ERROR) ret += "\n" + tmp.substring(1);
+			if (lineType == ERROR)
+				ret += "\n" + tmp.substring(1);
 		}
 		return(ret == "" ? null : ret.trim());
 	}
