@@ -521,7 +521,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 }
 
 static void
-load_merge_table_parts(sql_trans *tr, sql_table *t, oid rid)
+load_table_parts(sql_trans *tr, sql_table *t, oid rid)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *objects = find_sql_table(syss, "objects");
@@ -534,7 +534,7 @@ load_merge_table_parts(sql_trans *tr, sql_table *t, oid rid)
 }
 
 static void
-load_merge_tables(sql_trans *tr, sql_schema *s)
+load_tables_of_tables(sql_trans *tr, sql_schema *s)
 {
 	node *n;
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -547,12 +547,12 @@ load_merge_tables(sql_trans *tr, sql_schema *s)
 		sql_table *t = n->data;
 		oid r = oid_nil;
 
-		if (isMergeTable(t)) {
+		if (isMergeTable(t) || isReplicaTable(t)) {
 			rids *rs = table_funcs.rids_select(tr, mt_id, &t->base.id, &t->base.id, NULL);
 
 			rs = table_funcs.rids_orderby(tr, rs, mt_nr); 
 			for(r = table_funcs.rids_next(rs); r != oid_nil; r = table_funcs.rids_next(rs)) 
-				load_merge_table_parts(tr, t, r);
+				load_table_parts(tr, t, r);
 			table_funcs.rids_destroy(rs);
 		}
 	}
@@ -628,7 +628,7 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 		cs_add(&t->columns, load_column(tr, t, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
 
-	if (!isTable(t) && !isMergeTable(t) && !isRemote(t)) 
+	if (!isTable(t) && !isMergeTable(t) && !isReplicaTable(t) && !isRemote(t)) 
 		return t;
 
 	/* load idx's first as the may be needed by the keys */
@@ -909,7 +909,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
 	    	cs_add(&s->tables, load_table(tr, s, rid), TR_OLD);
 	table_funcs.rids_destroy(rs);
-	load_merge_tables(tr, s);
+	load_tables_of_tables(tr, s);
 
 	/* next functions which could use these types */
 	func_schema = find_sql_column(funcs, "schema_id");
@@ -2091,7 +2091,7 @@ seq_dup(sql_trans *tr, int flag, sql_sequence *oseq, sql_schema * s)
 }
 
 static void
-merge_table_dup(sql_table *omt, sql_schema *s, int flag) 
+table_of_tables_dup(sql_table *omt, sql_schema *s, int flag) 
 {
 	node *n;
 	sql_table *mt = schema_table_find(s, omt);
@@ -2143,8 +2143,8 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		for (n = os->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
-			if (ot->persistence != SQL_LOCAL_TEMP && isMergeTable(ot))
-				merge_table_dup(ot, s, flag);
+			if (ot->persistence != SQL_LOCAL_TEMP && (isMergeTable(ot) || isReplicaTable(ot)))
+				table_of_tables_dup(ot, s, flag);
 		}
 		os->tables.nelm = NULL;
 	}

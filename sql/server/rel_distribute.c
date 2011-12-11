@@ -30,6 +30,67 @@
 #include "sql_env.h"
 
 static sql_rel *
+replica(mvc *sql, sql_rel *rel, char *uri) 
+{
+	if (!rel)
+		return rel;
+
+	switch (rel->op) {
+	case op_basetable: {
+		sql_table *t = rel->l;
+
+		if (isReplicaTable(t)) {
+			node *n;
+
+			/* replace by the replica which matches the uri */
+			for (n = t->tables.set->h; n; n = n->next) {
+				sql_table *p = n->data;
+
+				if (isRemote(p) && strcmp(uri, p->query) == 0) {
+					rel->l = p;
+					break;
+				}
+			}
+		}
+	}
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		rel->l = replica(sql, rel->l, uri);
+		rel->r = replica(sql, rel->r, uri);
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample: 
+		rel->l = replica(sql, rel->l, uri);
+		break;
+	case op_ddl: 
+		rel->l = replica(sql, rel->l, uri);
+		if (rel->r)
+			rel->r = replica(sql, rel->r, uri);
+		break;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		rel->r = replica(sql, rel->r, uri);
+		break;
+	}
+	return rel;
+}
+
+static sql_rel *
 distribute(mvc *sql, sql_rel *rel) 
 {
 	sql_rel *l = NULL, *r = NULL;
@@ -66,6 +127,13 @@ distribute(mvc *sql, sql_rel *rel)
 		l = rel->l = distribute(sql, rel->l);
 		r = rel->r = distribute(sql, rel->r);
 
+		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) == NULL) {
+			r = rel->r = distribute(sql, replica(sql, rel->r, pl->value));
+		} else if (l && (pl = find_prop(l->p, PROP_REMOTE)) == NULL &&
+		    	   r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL) {
+			l = rel->l = distribute(sql, replica(sql, rel->l, pr->value));
+		}
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
 		    r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL && 
 		    strcmp(pl->value, pr->value) == 0) {

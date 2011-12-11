@@ -162,7 +162,8 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname,
 	char *n;
 	int tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
-	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
+	        (temp == SQL_MERGE_TABLE)?tt_merge_table:
+	        (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
@@ -600,7 +601,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	int res = SQL_OK;
 
-	if (alter && (isView(t) || (isMergeTable(t) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
+	if (alter && (isView(t) || ((isMergeTable(t) || isReplicaTable(t)) && s->token != SQL_TABLE && s->token != SQL_DROP_TABLE) || (isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) )){
 		char *msg = "";
 
 		switch (s->token) {
@@ -634,7 +635,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		sql_error(sql, 02, "ALTER TABLE: cannot %s %s '%s'\n",
 				msg, 
-				isMergeTable(t)?"MERGE TABLE":"VIEW",
+				isMergeTable(t)?"MERGE TABLE":
+				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
 				t->base.name);
 		return SQL_ERR;
 	}
@@ -793,7 +795,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_STREAM)?tt_stream:
-	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
+	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
+	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))

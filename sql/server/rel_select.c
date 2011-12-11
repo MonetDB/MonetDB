@@ -432,9 +432,10 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 }
 
 sql_rel *
-_rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
+rel_basetable(mvc *sql, sql_table *t, char *atname)
 {
 	node *cn;
+	sql_allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	char *tname = t->base.name;
 
@@ -470,40 +471,6 @@ _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 	rel->card = CARD_MULTI;
 	rel->nrcols = list_length(t->columns.set);
 	return rel;
-}
-
-sql_rel *
-rel_basetable(mvc *sql, sql_table *t, char *tname)
-{
-#if 0
-	if (isMergeTable(t)) {
-		/* instantiate merge tabel */
-		sql_rel *rel = NULL;
-
-		if (sql->emode == m_deps) {
-			rel = _rel_basetable(sql->sa, t, tname);
-		} else {
-			node *n;
-
-			if (list_empty(t->tables.set)) 
-				rel = _rel_basetable(sql->sa, t, tname);
-			if (t->tables.set) {
-				for (n = t->tables.set->h; n; n = n->next) {
-					sql_table *pt = n->data;
-					sql_rel *prel = rel_basetable(sql, pt, tname);
-					if (rel) { 
-						rel = rel_setop(sql->sa, rel, prel, op_union);
-						rel->exps = rel_projections(sql, rel, NULL, 1, 1);
-					} else {
-						rel = prel;
-					}
-				}
-			}
-		}
-		return rel;
-	}
-#endif
-	return _rel_basetable(sql->sa, t, tname);
 }
 
 sql_rel *

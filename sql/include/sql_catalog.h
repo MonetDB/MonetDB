@@ -117,7 +117,8 @@ typedef enum temp_t {
 	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE,
 	SQL_STREAM,
-	SQL_REMOTE
+	SQL_REMOTE,
+	SQL_REPLICA_TABLE
 } temp_t;
 
 typedef enum commit_action_t { 
@@ -378,15 +379,17 @@ typedef enum table_types {
 	tt_generated = 2,	/* generated (functions can be sql or c-code) */
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
-	tt_remote = 5		/* stored on a remote server */
+	tt_remote = 5,		/* stored on a remote server */
+	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define isTable(x) 	(x->type==tt_table)
-#define isView(x)  	(x->type==tt_view)
-#define isGenerated(x)  (x->type==tt_generated)
-#define isMergeTable(x) (x->type==tt_merge_table)
-#define isStream(x)  	(x->type==tt_stream)
-#define isRemote(x)  	(x->type==tt_remote)
+#define isTable(x) 	  (x->type==tt_table)
+#define isView(x)  	  (x->type==tt_view)
+#define isGenerated(x)    (x->type==tt_generated)
+#define isMergeTable(x)   (x->type==tt_merge_table)
+#define isStream(x)  	  (x->type==tt_stream)
+#define isRemote(x)  	  (x->type==tt_remote)
+#define isReplicaTable(x) (x->type==tt_replica_table)
 
 typedef struct sql_table {
 	sql_base base;

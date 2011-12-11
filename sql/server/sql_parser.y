@@ -539,7 +539,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMPORARY STREAM MERGE REMOTE
+%token TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -1325,6 +1325,16 @@ table_def:
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  MERGE TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
+	  dlist *l = L();
+
+	  append_int(l, tpe);
+	  append_list(l, $3);
+	  append_symbol(l, $4);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+ |  REPLICA TABLE qname table_content_source 
+	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
