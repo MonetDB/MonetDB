@@ -444,6 +444,7 @@ msab_registerStop(void)
 	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
 	unlink(path);
+	return(NULL);
 }
 
 /**
