@@ -113,7 +113,7 @@ public class BufferedMCLReader extends BufferedReader {
 	public String readLine() throws IOException {
 		String r = super.readLine();
 		setLineType(r);
-		if (lineType == ERROR && !r.matches("^![0-9A-Z]{5}:"))
+		if (lineType == ERROR && !r.matches("^![0-9A-Z]{5}:.+"))
 			r = "!22000:" + r.substring(1);
 		return(r);
 	}
