@@ -3,7 +3,7 @@
 M0M03 illegal arguments (invalid call of internal function)
 01M03 illegal arguments (invalid call of internal function)
 M0M04 only supported in SQL mode
-M1M05 invalid argument (to JDBC method)
+M1M05 invalid argument (user supplied)
 M0M06 savepoint is not MonetSavepoint
 01M07 unrecognised clientinfo property
 01M08 read-only conection mode not supported
@@ -32,3 +32,5 @@ M0M27 unknown error
 M0M29 assert
 3BM30 autocommit mode active
 2DM30 autocommit mode active
+M1M31 no such object
+M1M32 object already exists

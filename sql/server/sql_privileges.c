@@ -81,30 +81,30 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *cn
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
 
 	if (!t) 
-		return sql_message("GRANT no such table '%s'", tname);
+		return sql_message("M1M31:GRANT no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
 		allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
 
 	if (!allowed) 
-		return sql_message("GRANTOR '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+		return sql_message("0L000:GRANT: grantor '%s' is not allowed to grant privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
 
 	if (cname) { 
 		c = mvc_bind_column(sql, t, cname);
 		if (!c) 
-			return sql_message("GRANT: table %s has no column %s", tname, cname);
+			return sql_message("M1M31:GRANT: table %s has no column %s", tname, cname);
 		/* allowed on column */
 		if (!allowed)
 			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0);
 
 		if (!allowed) 
-			return sql_message("GRANTOR %s is not allowed to grant privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(privs), tname);
+			return sql_message("0L000:GRANT: grantor %s is not allowed to grant privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(privs), tname);
 	}
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0) 
-		return sql_message("User/Role '%s' unknown", grantee);
+		return sql_message("M1M31:GRANT: user/role '%s' unknown", grantee);
 	if (privs == all)
 		sql_insert_all_privs(sql, grantee_id, t->base.id, grantor, grant);
 	else if (!c)
@@ -148,30 +148,30 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *c
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
 
 	if (!t) 
-		return sql_message("REVOKE Table name %s doesn't exist", tname);
+		return sql_message("M1M31:REVOKE: no such table '%s'", tname);
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
 		allowed = sql_grantable(sql, grantor, t->base.id, all, 0);
 
 	if (!allowed) 
-		return sql_message("GRANTOR '%s' is not allowed to revoke privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
+		return sql_message("0L000:REVOKE: grantor '%s' is not allowed to revoke privileges for table '%s'", stack_get_string(sql,"current_user"), tname);
 
 	if (cname) { 
 		c = mvc_bind_column(sql, t, cname);
 		if (!c) 
-			return sql_message("REVOKE: table %s has no column %s", tname, cname);
+			return sql_message("M1M31:REVOKE: table %s has no column %s", tname, cname);
 		/* allowed on column */
 		if (!allowed)
 			allowed = sql_grantable(sql, grantor, c->base.id, privs, 0);
 
 		if (!allowed) 
-			return sql_message("GRANTOR %s is not allowed to revoke privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(privs), tname);
+			return sql_message("0L000:REVOKE: grantor %s is not allowed to revoke privilege %s for table %s", stack_get_string(sql, "current_user"), priv2string(privs), tname);
 	}
 
 	grantee_id = sql_find_auth(sql, grantee);
 	if (grantee_id <= 0) 
-		return sql_message("User/Role '%s' unknown", grantee);
+		return sql_message("M1M31:REVOKE: user/role '%s' unknown", grantee);
 	if (privs == all) {
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_SELECT, grantor, grant);
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant);
@@ -207,7 +207,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 	sql_column *auth_name = find_sql_column(auths, "name");
 
 	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
-		return sql_message("CREATE ROLE: Role '%s' allready exists\n", auth);
+		return sql_message("0P000:CREATE ROLE: role '%s' already exists", auth);
 
 	id = store_next_oid();
 	table_funcs.table_insert(m->session->tr, auths, &id, auth, &grantor);
@@ -224,7 +224,7 @@ sql_drop_role(mvc *m, str auth)
 
 	rid = table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL);
 	if (rid == oid_nil)
-		return sql_message("DROP ROLE: Role '%s' does not exist\n", auth);
+		return sql_message("0P000:DROP ROLE: no such role '%s'", auth);
 	table_funcs.table_delete(m->session->tr, auths, rid);
 	return NULL;
 }
@@ -243,13 +243,13 @@ sql_grant_role(mvc *m, str grantee, str auth /*, grantor?, admin? */ )
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
-		return sql_message("GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
+		return sql_message("M1M05:GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
 	grantee_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
 	if (rid == oid_nil) {
 		_DELETE(grantee_id);
-		return sql_message("GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
+		return sql_message("M1M05:GRANT: cannot grant ROLE '%s' to ROLE '%s'", grantee, auth );
 	}
 	auth_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
@@ -276,13 +276,13 @@ sql_revoke_role(mvc *m, str grantee, str auth)
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (rid == oid_nil)
-		return sql_message("REVOKE no such role '%s' or grantee '%s'", auth, grantee);
+		return sql_message("M1M31:REVOKE: no such role '%s' or grantee '%s'", auth, grantee);
 	grantee_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
 	if (rid == oid_nil) {
 		_DELETE(grantee_id);
-		return sql_message("REVOKE no such role '%s' or grantee '%s'", auth, grantee);
+		return sql_message("M1M31:REVOKE: no such role '%s' or grantee '%s'", auth, grantee);
 	}
 	auth_id = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
@@ -484,15 +484,15 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	int schema_id = 0;
 
 	if (backend_find_user(sql, user) >= 0) {
-		return sql_message("CREATE USER: user '%s' already exists", user);
+		return sql_message("M1M32:CREATE USER: user '%s' already exists", user);
 	}
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
-		return sql_message("CREATE USER: no such schema '%s'", schema);
+		return sql_message("M1M31:CREATE USER: no such schema '%s'", schema);
 	}
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname,
 					schema_id, sql->user_id)) != NULL)
 	{
-		char *r = sql_message("CREATE USER: %s", err);
+		char *r = sql_message("M0M27:CREATE USER: %s", err);
 		GDKfree(err);
 		return r;
 	}
@@ -505,9 +505,9 @@ sql_drop_user(mvc *sql, char *user)
 	int user_id = sql_find_auth(sql, user);
 
 	if (mvc_check_dependency(sql, user_id, OWNER_DEPENDENCY, NULL))
-		return sql_message("DROP USER: '%s' owns a schema", user);
+		return sql_message("M1M05:DROP USER: '%s' owns a schema", user);
 	if (backend_drop_user(sql,user) == FALSE)
-		return sql_message("%s", sql->errstr);
+		return sql_message("M0M27:%s", sql->errstr);
 	return sql_drop_role(sql, user);
 }
 
@@ -521,15 +521,15 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc,
 		user = NULL;
 	/* USER == NULL -> current_user */
 	if (user != NULL && backend_find_user(sql, user) < 0)
-		return sql_message("ALTER USER: no such user '%s'", user);
+		return sql_message("M1M31:ALTER USER: no such user '%s'", user);
 
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && user != NULL && strcmp(user, stack_get_string(sql, "current_user")) != 0)
-		return sql_message("ALTER USER: insufficient privileges to change user '%s'", user);
+		return sql_message("M1M05:ALTER USER: insufficient privileges to change user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
-		return sql_message("ALTER USER: no such schema '%s'", schema);
+		return sql_message("M1M31:ALTER USER: no such schema '%s'", schema);
 	}
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, oldpasswd) == FALSE)
-		return sql_message("%s", sql->errstr);
+		return sql_message("M0M27:%s", sql->errstr);
 	return NULL;
 }
 
@@ -537,15 +537,15 @@ char *
 sql_rename_user(mvc *sql, char *olduser, char *newuser)
 {
 	if (backend_find_user(sql, olduser) < 0)
-		return sql_message("ALTER USER: no such user '%s'", olduser);
+		return sql_message("M1M31:ALTER USER: no such user '%s'", olduser);
 	if (backend_find_user(sql, newuser) >= 0)
-		return sql_message("ALTER USER: user '%s' already exists", newuser);
+		return sql_message("M1M32:ALTER USER: user '%s' already exists", newuser);
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
-		return sql_message("ALTER USER: insufficient privileges to "
+		return sql_message("M1M05:ALTER USER: insufficient privileges to "
 				"rename user '%s'", olduser);
 
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
-		return sql_message("%s", sql->errstr);
+		return sql_message("M1M05:%s", sql->errstr);
 	return NULL;
 
 }
