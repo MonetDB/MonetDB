@@ -47,7 +47,14 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 				sql_table *p = n->data;
 
 				if (isRemote(p) && strcmp(uri, p->query) == 0) {
-					rel->l = p;
+					if (rel_is_ref(rel)) {
+						sql_rel *l = rel_basetable(sql, p, NULL);
+						l ->exps = list_dup(rel->exps, (fdup)NULL);
+						rel_destroy(rel);
+						rel = l;
+					} else {
+						rel->l = p;
+					}
 					break;
 				}
 			}
