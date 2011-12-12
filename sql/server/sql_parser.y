@@ -631,7 +631,7 @@ sqlstmt:
 			}
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
-				yyerror("We only support debugging SQL in interactive mode");
+				yyerror("SQL debugging only supported in interactive mode");
 				YYABORT;
 			  }
 		  	  m->emod |= mod_debug;
@@ -2048,7 +2048,7 @@ while_statement:
 		  char *label = $1?$1:$8;
 		  if ($1 && $8 && strcmp($1, $8) != 0) {
 			$$ = NULL;
-			yyerror("Labels of while should match");
+			yyerror("WHILE: labels should match");
 			YYABORT;
 		  }
  		  l = L();
@@ -2462,7 +2462,7 @@ copyfrom_stmt:
    | COPY opt_nr INTO qname FROM '(' string_commalist ')'
 	{ dlist *l = L();
 	  if ($2 != NULL) {
-	  	yyerror("Cannot pass number of records in Binary COPY INTO");
+	  	yyerror("COPY INTO: cannot pass number of records when using binary COPY INTO");
 		YYABORT;
 	  }
 	  append_list(l, $4);
@@ -2909,7 +2909,7 @@ select_no_parens_orderby:
 					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
 			}
 	  	} else {
-			yyerror("Missing select operator");
+			yyerror("missing SELECT operator");
 			YYABORT;
 	  	}
 	 } 
@@ -3276,7 +3276,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		char *msg = sql_message("ESCAPE must be one character");
+		char *msg = sql_message("\b22025:ESCAPE must be one character");
 		yyerror(msg);
 		_DELETE(msg)
 		$$ = NULL;
@@ -3887,7 +3887,7 @@ interval_type:
 
 		$$.type = NULL;
 	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek, &sp, &ep )) < 0){
-			yyerror("incorrect interval");
+			yyerror("\b22006:incorrect interval");
 			YYABORT;
 	  	} else {
 			int d = inttype2digits(sk, ek);
@@ -3942,7 +3942,7 @@ literal:
 			err = 1;
 		  
 		  if (err) {
-			char *msg = sql_message("invalid hexadecimal number or hexadecimal too large (%s)", $1);
+			char *msg = sql_message("\b22003:invalid hexadecimal number or hexadecimal too large (%s)", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -3977,7 +3977,7 @@ literal:
 		  }
 
 		  if (err) {
-			char *msg = sql_message("integer value too large or not a number (%s)", $1);
+			char *msg = sql_message("\b22003:integer value too large or not a number (%s)", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4011,7 +4011,7 @@ literal:
 			errno = 0;
 			val = strtod($1,&p);
 			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
-				char *msg = sql_message("Double value too large or not a number (%s)", $1);
+				char *msg = sql_message("\b22003:double value too large or not a number (%s)", $1);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4030,7 +4030,7 @@ literal:
 		  errno = 0;
  		  val = strtod($1,&p);
 		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
-			char *msg = sql_message("Double value too large or not a number (%s)", $1);
+			char *msg = sql_message("\b22003:double value too large or not a number (%s)", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4046,7 +4046,7 @@ literal:
 
  		  r = sql_find_subtype(&t, "date", 0, 0 );
 		  if (!r || (a = atom_general(SA, &t, $2)) == NULL) {
-			char *msg = sql_message("incorrect date value (%s)", $2);
+			char *msg = sql_message("\b22007:incorrect date value (%s)", $2);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4062,7 +4062,7 @@ literal:
 
 	          r = sql_find_subtype(&t, ($3)?"timetz":"time", $2, 0);
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
-			char *msg = sql_message("incorrect time value (%s)", $4);
+			char *msg = sql_message("\b22007:incorrect time value (%s)", $4);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4078,7 +4078,7 @@ literal:
 
  		  r = sql_find_subtype(&t, ($3)?"timestamptz":"timestamp",$2,0);
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
-			char *msg = sql_message("incorrect timestamp value (%s)", $4);
+			char *msg = sql_message("\b22007:incorrect timestamp value (%s)", $4);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4098,7 +4098,7 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			char *msg = sql_message("incorrect blob %s", $2);
+			char *msg = sql_message("\b22M28:incorrect blob %s", $2);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4115,7 +4115,7 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			char *msg = sql_message("incorrect %s %s", $1, $2);
+			char *msg = sql_message("\b22000:incorrect %s %s", $1, $2);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4132,7 +4132,7 @@ literal:
 	          if (r && (a = atom_general(SA, &t, $2)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
-			char *msg = sql_message("incorrect %s %s", $1, $2);
+			char *msg = sql_message("\b22000:incorrect %s %s", $1, $2);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4153,7 +4153,7 @@ literal:
 				$$ = _newAtomNode(a);
 		  }
 		  if (!t || !$$) {
-			char *msg = sql_message("type (%s) unknown", $1);
+			char *msg = sql_message("\b22000:type (%s) unknown", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4203,7 +4203,7 @@ interval_expression:
 			while (cpyval /= 10)
 				inlen++;
 		    	if (inlen > t.digits) {
-				char *msg = sql_message("incorrect interval (" LLFMT " > %d)", inlen, t.digits);
+				char *msg = sql_message("\b22006:incorrect interval (" LLFMT " > %d)", inlen, t.digits);
 				yyerror(msg);
 				$$ = NULL;
 				YYABORT;
@@ -4451,7 +4451,7 @@ data_type:
 			{ 
 			  int d = $3;
 			  if (d > 18) {
-				char *msg = sql_message("decimal of %d digits are not supported", d);
+				char *msg = sql_message("\b22003:decimal of %d digits are not supported", d);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
@@ -4467,9 +4467,9 @@ data_type:
 			  if (s > d || d > 18) {
 				char *msg = NULL;
 				if (s > d)
-					msg = sql_message("scale (%d) should be less or equal to the precision (%d)", s, d);
+					msg = sql_message("\b22003:scale (%d) should be less or equal to the precision (%d)", s, d);
 				else
-					msg = sql_message("decimal(%d,%d) isn't supported because P=%d > 18", d, s, d);
+					msg = sql_message("\b22003:decimal(%d,%d) isn't supported because P=%d > 18", d, s, d);
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
@@ -4485,7 +4485,7 @@ data_type:
 			  } else if ($3 > 24 && $3 <= 53) {
 				sql_find_subtype(&$$, "double", $3, 0);
 			  } else {
-				char *msg = sql_message("number of digits for FLOAT values should be between 1 and 53");
+				char *msg = sql_message("\b22003:number of digits for FLOAT values should be between 1 and 53");
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4495,7 +4495,7 @@ data_type:
 			}
  |  sqlFLOAT '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
+				char *msg = sql_message("\b22003:precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4506,7 +4506,7 @@ data_type:
 			  } else if ($3 > 24 && $3 <= 53) {
 				sql_find_subtype(&$$, "double", $3, $5);
 			  } else {
-				char *msg = sql_message("number of digits for FLOAT values should be between 1 and 53");
+				char *msg = sql_message("\b22003:number of digits for FLOAT values should be between 1 and 53");
 				yyerror(msg);
 				_DELETE(msg);
 				$$.type = NULL;
@@ -4526,7 +4526,7 @@ data_type:
 			{ sql_find_subtype(&$$, $1, $3, 0); }
  | type_alias '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
-				char *msg = sql_message("precision(%d) should be less than number of digits(%d)", $5, $3);
+				char *msg = sql_message("\b22003:precision(%d) should be less than number of digits(%d)", $5, $3);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4539,7 +4539,7 @@ data_type:
  | IDENT		{ mvc *m = (mvc*)parm;
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
-				char *msg = sql_message("type (%s) unknown", $1);
+				char *msg = sql_message("\b22000:type (%s) unknown", $1);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4554,7 +4554,7 @@ data_type:
 			{ mvc *m = (mvc*)parm;
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
-				char *msg = sql_message("type (%s) unknown", $1);
+				char *msg = sql_message("\b22000:type (%s) unknown", $1);
 
 				yyerror(msg);
 				_DELETE(msg);
@@ -4571,7 +4571,7 @@ type_alias:
  ALIAS
 	{ 	char *t = sql_bind_alias($1);
 	  	if (!t) {
-			char *msg = sql_message("type (%s) unknown", $1);
+			char *msg = sql_message("\b22000:type (%s) unknown", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4703,7 +4703,7 @@ intval:
 		  sql_subtype *tpe;
 
 		  if (!stack_find_var(m, name)) {
-			char *msg = sql_message("constant (%s) unknown", $1);
+			char *msg = sql_message("\b22000:constant (%s) unknown", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -4719,7 +4719,7 @@ intval:
 			assert((lng) GDK_int_min < sgn && sgn <= (lng) GDK_int_max);
 			$$ = (int) sgn;
 		  } else {
-			char *msg = sql_message("constant (%s) has wrong type (number expected)", $1);
+			char *msg = sql_message("\b22000:constant (%s) has wrong type (number expected)", $1);
 
 			yyerror(msg);
 			_DELETE(msg);
@@ -5440,9 +5440,14 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 
 int parse_error(mvc * c, const char *err)
 {
+	char *sqlstate = "42000:";
+	if (err && *err == '\b') {
+		sqlstate = "";
+		err++;
+	}
 	(void)sql_error( c, 4,
-		 "!%s in: \"%s\"\n",
-		 err, QUERY(c->scanner));
+		 "!%s%s in: \"%s\"\n",
+		 sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
 
