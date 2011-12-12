@@ -10,12 +10,12 @@ stderr of test 'inserts_with_defaults.SF-921977` in directory 'test/BugDay_2005-
 # 14:29:03 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48614  < inserts_with_defaults.SF-921977.sql
 # 14:29:03 >  
 
-MAPI  = monetdb@localhost:35781
+MAPI  = monetdb@sofia:39182
 QUERY = INSERT INTO null_1 (id) VALUES(1);
-ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column null_1.text1
-MAPI  = monetdb@localhost:35781
+ERROR = !INSERT INTO: NOT NULL constraint violated for column null_1.text1
+MAPI  = monetdb@sofia:39182
 QUERY = INSERT INTO null_1 (text1) VALUES('test');
-ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column null_1.id
+ERROR = !INSERT INTO: NOT NULL constraint violated for column null_1.id
 
 # 14:29:04 >  
 # 14:29:04 >  Done.

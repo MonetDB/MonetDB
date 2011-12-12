@@ -2441,7 +2441,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.catalog", "catalog unknown type");
 	}
 	if (msg)
-		throw(SQL, "sql.catalog", "%s", msg);
+		return msg;
 	return MAL_SUCCEED;
 }
 

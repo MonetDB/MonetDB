@@ -69,10 +69,10 @@ stderr of test 'rollback_mistake.SF-2814622` in directory 'test/BugTracker-2009`
 # 19:34:00 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35878 
 # 19:34:00 >  
 
-MAPI  = monetdb@alf:35878
+MAPI  = monetdb@sofia:38256
 QUERY = insert into tmp values(0,'llllll');
-ERROR = !SQLException:str_cast:value too long for type (var)char(3)
-MAPI  = monetdb@alf:35878
+ERROR = !value too long for type (var)char(3)
+MAPI  = monetdb@sofia:38256
 QUERY = insert into tmp values(0,'ddd');
 ERROR = !INSERT INTO: no such table 'tmp'
 

@@ -446,7 +446,7 @@ SQLvalidatePipeline(void){
 	mal_set_lock(sql_contextLock,"SQL optimizer");
 	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'inline' should be the first\n");
+		throw(SQL,"optimizer","SET OPTIMIZER: 'inline' should be the first\n");
 	}
 
 	/* deadcode should be used */
@@ -470,25 +470,25 @@ SQLvalidatePipeline(void){
 		else
 		if (strcmp(optimizers[i],"octopus") == 0){
 			mal_unset_lock(sql_contextLock,"SQL optimizer");
-			throw(SQL,"optimizer"," 'octopus' needs Linux\n");
+			throw(SQL,"optimizer","SET OPTIMIZER: 'octopus' needs monetdbd\n");
 		}
 #endif
 	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'mitosis' needs 'mergetable'\n");
+		throw(SQL,"optimizer","SET OPTIMIZER: 'mitosis' needs 'mergetable'\n");
 	}
 
 	if (optimizers[0] && multiplex == 0){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'multiplex' should be used\n");
+		throw(SQL,"optimizer","SET OPTIMIZER: 'multiplex' should be used\n");
 	}
 	if (optimizers[0] && deadcode == FALSE ){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'deadcode' should be used at least once\n");
+		throw(SQL,"optimizer"," SET OPTIMIZER: 'deadcode' should be used at least once\n");
 	}
 	if (optimizers[0] && garbage == FALSE ){
 		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," 'garbageCollector' should be used as the last one\n");
+		throw(SQL,"optimizer","SET OPTIMIZER: 'garbageCollector' should be used as the last one\n");
 	}
 	mal_unset_lock(sql_contextLock,"SQL optimizer");
 	return MAL_SUCCEED;

@@ -10,9 +10,9 @@ stderr of test 'update_set_null` in directory 'test/Update_Delete_action` itself
 # 11:14:02 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=36748 
 # 11:14:02 >  
 
-MAPI  = monetdb@koala:39231
+MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =1;
-ERROR = !SQLException:assert:UPDATE: NOT NULL constraint violated for column 't2.id'
+ERROR = !UPDATE: NOT NULL constraint violated for column 't2.id'
 
 # 11:14:02 >  
 # 11:14:02 >  Done.

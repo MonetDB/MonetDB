@@ -79,12 +79,12 @@ stderr of test 'coalesce` in directory 'test` itself:
 # 20:30:43 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:43 >  
 
-MAPI  = monetdb@alf:39627
+MAPI  = monetdb@sofia:39182
 QUERY = select id, coalesce(age,'age unknown') from coalescetest;
-ERROR = !SQLException:int:conversion of string 'age unknown' failed
-MAPI  = monetdb@alf:39627
+ERROR = !conversion of string 'age unknown' failed
+MAPI  = monetdb@sofia:39182
 QUERY = select id, coalesce(name, age, 'unknown') from coalescetest;
-ERROR = !SQLException:int:conversion of string 'a' failed
+ERROR = !conversion of string 'unknown' failed
 
 # 20:30:44 >  
 # 20:30:44 >  Done.

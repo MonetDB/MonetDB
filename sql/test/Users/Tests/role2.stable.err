@@ -79,9 +79,9 @@ stderr of test 'role2` in directory 'test/Users` itself:
 # 20:38:25 >  /usr/bin/python role2.SQL.py role2 
 # 20:38:25 >  
 
-MAPI  = my_user2@alf:31333
+MAPI  = my_user2@sofia:38256
 QUERY = SET ROLE my_role;
-ERROR = !SQLException:sql.setVariable:Role (my_role) missing
+ERROR = !Role (my_role) missing
 
 # 20:38:25 >  
 # 20:38:25 >  Done.

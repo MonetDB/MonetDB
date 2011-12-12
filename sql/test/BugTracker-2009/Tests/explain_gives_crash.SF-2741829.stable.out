@@ -25,65 +25,65 @@ Ready.
 # 21:13:40 >  
 
 #~BeginVariableOutput~#
-function user.s1_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-"    sql.catalog(29\,\"sys\"\,139969897199736\,0);"
-"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
-    _10 := algebra.selectNotNil(_7);
-"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
-    _13 := bat.reverse(_11);
-"    _14 := algebra.kdifference(_10\,_13);"
-"    (ext21\,grp19) := group.done(_14);"
-    _17 := bat.mirror(ext21);
-"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
-    _19 := aggr.count(_18);
-    _20:wrd  := aggr.sum(_18);
-    _21 := calc.isnil(_20);
-"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
-"    _24 := calc.!=(_19\,_23);"
-"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
-"    sql.exportOperation(\"\");"
-end s1_1;
-function user.s2_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-"    sql.catalog(29\,\"sys\"\,139969898184024\,0);"
-"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
-    _10 := algebra.selectNotNil(_7);
-"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
-    _13 := bat.reverse(_11);
-"    _14 := algebra.kdifference(_10\,_13);"
-"    (ext21\,grp19) := group.done(_14);"
-    _17 := bat.mirror(ext21);
-"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
-    _19 := aggr.count(_18);
-    _20:wrd  := aggr.sum(_18);
-    _21 := calc.isnil(_20);
-"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
-"    _24 := calc.!=(_19\,_23);"
-"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
-"    sql.exportOperation(\"\");"
-end s2_1;
+function user.s4_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+"    sql.catalog(29\,""sys"":str\,140704337421584:ptr\,0:int);"
+"    X_11:bat[:oid\,:int]  := sql.bind(X_2\,""sys""\,""blabla""\,""id""\,0);"
+    X_13 := algebra.selectNotNil(X_11);
+"    X_8:bat[:oid\,:oid]  := sql.bind_dbat(X_2\,""sys""\,""blabla""\,1);"
+    X_10 := bat.reverse(X_8);
+"    X_14 := algebra.kdifference(X_13\,X_10);"
+"    (ext26\,grp24) := group.done(X_14);"
+    X_17 := bat.mirror(ext26);
+"    X_18:bat[:oid\,:wrd]  := aggr.count(grp24\,grp24\,X_17);"
+    X_23 := aggr.count(X_18);
+    X_19:wrd  := aggr.sum(X_18);
+    X_20 := calc.isnil(X_19);
+"    X_22 := calc.ifthenelse(X_20\,0:wrd\,X_19);"
+"    X_24 := calc.!=(X_23\,X_22);"
+"    sql.assert(X_24\,""UPDATE: UNIQUE constraint 'blabla.dada' violated"":str);"
+"    sql.exportOperation("""");"
+end s4_1;
+function user.s5_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+"    sql.catalog(29\,""sys"":str\,140704337487152:ptr\,0:int);"
+"    X_11:bat[:oid\,:int]  := sql.bind(X_2\,""sys""\,""blabla""\,""id""\,0);"
+    X_13 := algebra.selectNotNil(X_11);
+"    X_8:bat[:oid\,:oid]  := sql.bind_dbat(X_2\,""sys""\,""blabla""\,1);"
+    X_10 := bat.reverse(X_8);
+"    X_14 := algebra.kdifference(X_13\,X_10);"
+"    (ext26\,grp24) := group.done(X_14);"
+    X_17 := bat.mirror(ext26);
+"    X_18:bat[:oid\,:wrd]  := aggr.count(grp24\,grp24\,X_17);"
+    X_23 := aggr.count(X_18);
+    X_19:wrd  := aggr.sum(X_18);
+    X_20 := calc.isnil(X_19);
+"    X_22 := calc.ifthenelse(X_20\,0:wrd\,X_19);"
+"    X_24 := calc.!=(X_23\,X_22);"
+"    sql.assert(X_24\,""UPDATE: UNIQUE constraint 'blabla.dada' violated"":str);"
+"    sql.exportOperation("""");"
+end s5_1;
 #~EndVariableOutput~#
 #~BeginVariableOutput~#
-function user.s1_1{autoCommit=true}():void;
-    _2 := sql.mvc();
-"    sql.catalog(29\,\"sys\"\,139969897199736\,0);"
-"    _7:bat[:oid\,:int]  := sql.bind(_2\,\"sys\"\,\"blabla\"\,\"id\"\,0);"
-    _10 := algebra.selectNotNil(_7);
-"    _11:bat[:oid\,:oid]  := sql.bind_dbat(_2\,\"sys\"\,\"blabla\"\,1);"
-    _13 := bat.reverse(_11);
-"    _14 := algebra.kdifference(_10\,_13);"
-"    (ext21\,grp19) := group.done(_14);"
-    _17 := bat.mirror(ext21);
-"    _18:bat[:oid\,:wrd]  := aggr.count(grp19\,grp19\,_17);"
-    _19 := aggr.count(_18);
-    _20:wrd  := aggr.sum(_18);
-    _21 := calc.isnil(_20);
-"    _23 := calc.ifthenelse(_21\,0:wrd\,_20);"
-"    _24 := calc.!=(_19\,_23);"
-"    sql.assert(_24\,\"UPDATE: UNIQUE constraint 'blabla.dada' violated\");"
-"    sql.exportOperation(\"\");"
-end s1_1;
+function user.s8_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+"    sql.catalog(29\,""sys"":str\,140704337646656:ptr\,0:int);"
+"    X_11:bat[:oid\,:int]  := sql.bind(X_2\,""sys""\,""blabla""\,""id""\,0);"
+    X_13 := algebra.selectNotNil(X_11);
+"    X_8:bat[:oid\,:oid]  := sql.bind_dbat(X_2\,""sys""\,""blabla""\,1);"
+    X_10 := bat.reverse(X_8);
+"    X_14 := algebra.kdifference(X_13\,X_10);"
+"    (ext26\,grp24) := group.done(X_14);"
+    X_17 := bat.mirror(ext26);
+"    X_18:bat[:oid\,:wrd]  := aggr.count(grp24\,grp24\,X_17);"
+    X_23 := aggr.count(X_18);
+    X_19:wrd  := aggr.sum(X_18);
+    X_20 := calc.isnil(X_19);
+"    X_22 := calc.ifthenelse(X_20\,0:wrd\,X_19);"
+"    X_24 := calc.!=(X_23\,X_22);"
+"    sql.assert(X_24\,""UPDATE: UNIQUE constraint 'blabla.dada' violated"":str);"
+"    sql.exportOperation("""");"
+end s8_1;
 #~EndVariableOutput~#
 
 # 11:37:28 >  

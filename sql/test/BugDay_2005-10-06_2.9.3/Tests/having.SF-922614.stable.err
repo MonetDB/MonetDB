@@ -10,7 +10,7 @@ stderr of test 'having.SF-922614` in directory 'test/BugDay_2005-10-06_2.9.3` it
 # 16:54:28 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44748  < having.SF-922614.sql
 # 16:54:28 >  
 
-MAPI  = monetdb@alf:31814
+MAPI  = monetdb@sofia:39182
 QUERY = select * from t10 having i= max(i);
 ERROR = !SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
 

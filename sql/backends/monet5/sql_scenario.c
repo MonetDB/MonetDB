@@ -1659,17 +1659,27 @@ SQLengineIntern(Client c, backend *be)
 
 cleanup_engine:
 	if (msg) {
-		if (getExceptionType(msg) == OPTIMIZER) {
+		enum malexception type = getExceptionType(msg);
+		if (type == OPTIMIZER) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c,c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
+		} else if (type == SQL) {
+			/* don't print exception decoration, just the message */
+			char *n = NULL;
+			char *o = msg;
+			while ((n = strchr(o, '\n')) != NULL) {
+				*n++ = '\0';
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+				o = n;
+			}
+			if (strlen(o) != 0)
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		} else {
-			str p = getExceptionPlace(msg);
-			showException(getExceptionType(msg), p, "%s", getExceptionMessage(msg));
-			GDKfree(p);
+			dumpExceptionsToStream(c->fdout, msg);
 		}
 		showErrors(c);
 		m->session->status = -10;
