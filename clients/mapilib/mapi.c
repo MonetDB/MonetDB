@@ -1122,6 +1122,17 @@ clean_print(char *msg, const char *prefix, FILE *fd)
 		if (strncmp(msg, prefix, len) == 0)
 			msg += len;
 
+		/* skip SQLSTATE if provided */
+		if (strlen(msg) > 6 && msg[5] == ':' &&
+				((msg[0] >= '0' && msg[0] <= '9') || (msg[0] >= 'A' && msg[0] <= 'Z')) &&
+				((msg[1] >= '0' && msg[1] <= '9') || (msg[1] >= 'A' && msg[1] <= 'Z')) &&
+				((msg[2] >= '0' && msg[2] <= '9') || (msg[2] >= 'A' && msg[2] <= 'Z')) &&
+				((msg[3] >= '0' && msg[3] <= '9') || (msg[3] >= 'A' && msg[3] <= 'Z')) &&
+				((msg[4] >= '0' && msg[4] <= '9') || (msg[4] >= 'A' && msg[4] <= 'Z')))
+		{
+			msg += 6;
+		}
+
 		/* output line */
 		fputs(msg, fd);
 		fputc('\n', fd);
@@ -1141,6 +1152,18 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	while (p && *p) {
 		fprintf(fd, "%.*s%c", len - 1, s, t);
 		s = "        ";
+
+		/* skip SQLSTATE if provided */
+		if (strlen(p) > 6 && p[5] == ':' &&
+				((p[0] >= '0' && p[0] <= '9') || (p[0] >= 'A' && p[0] <= 'Z')) &&
+				((p[1] >= '0' && p[1] <= '9') || (p[1] >= 'A' && p[1] <= 'Z')) &&
+				((p[2] >= '0' && p[2] <= '9') || (p[2] >= 'A' && p[2] <= 'Z')) &&
+				((p[3] >= '0' && p[3] <= '9') || (p[3] >= 'A' && p[3] <= 'Z')) &&
+				((p[4] >= '0' && p[4] <= '9') || (p[4] >= 'A' && p[4] <= 'Z')))
+		{
+			p += 6;
+		}
+
 		q = strchr(p, '\n');
 		if (q) {
 			q++;	/* also print the newline */

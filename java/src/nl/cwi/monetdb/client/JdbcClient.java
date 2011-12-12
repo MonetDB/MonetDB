@@ -554,15 +554,14 @@ copts.produceHelpMessage()
 						executeQuery(query, stmt, out);
 					} catch (SQLException e) {
 						out.flush();
-						if (hasFile) {
-							System.err.println("Error on line " + i + ": " + e.getMessage());
-						} else {
-							System.err.println("Error: " + e.getMessage());
-						}
-						// print all error messages in the chain (if any)
-						while ((e = e.getNextException()) != null) {
-							System.err.println(e.getMessage());
-						}
+						do {
+							if (hasFile) {
+								System.err.println("Error on line " + i + ": [" + e.getSQLState() + "] " + e.getMessage());
+							} else {
+								System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+							}
+							// print all error messages in the chain (if any)
+						} while ((e = e.getNextException()) != null);
 					}
 					query = "";
 					wasComplete = true;
@@ -672,7 +671,10 @@ copts.produceHelpMessage()
 							}
 						} catch (SQLException e) {
 							out.flush();
-							System.err.println("Error: " + e.getMessage());
+							do {
+								System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+								// print all error messages in the chain (if any)
+							} while ((e = e.getNextException()) != null);
 						}
 					} else if (qp.getQuery().startsWith("\\l") ||
 							qp.getQuery().startsWith("\\i"))
@@ -716,11 +718,14 @@ copts.produceHelpMessage()
 							executeQuery(query, stmt, out);
 						} catch (SQLException e) {
 							out.flush();
-							if (hasFile) {
-								System.err.println("Error on line " + i + ": " + e.getMessage());
-							} else {
-								System.err.println("Error: " + e.getMessage());
-							}
+							do {
+								if (hasFile) {
+									System.err.println("Error on line " + i + ": [" + e.getSQLState() + "] " + e.getMessage());
+								} else {
+									System.err.println("Error: [" + e.getSQLState() + "] " + e.getMessage());
+								}
+								// print all error messages in the chain (if any)
+							} while ((e = e.getNextException()) != null);
 						}
 						query = "";
 						wasComplete = true;
@@ -862,11 +867,11 @@ copts.produceHelpMessage()
 			stmt.executeBatch();
 			stmt.clearBatch();
 		} catch (SQLException e) {
-			System.err.println("Error at line " + i + ": " + e.getMessage());
-			// print all error messages in the chain (if any)
-			while ((e = e.getNextException()) != null) {
-				System.err.println(e.getMessage());
-			}
+			do {
+				System.err.println("Error at line " + i + ": [" +
+						e.getSQLState() + "] " + e.getMessage());
+				// print all error messages in the chain (if any)
+			} while ((e = e.getNextException()) != null);
 		}
 	}
 

@@ -10,7 +10,7 @@ stderr of test 'insert_from_no-existing_tables.SF-1037020` in directory 'test/Bu
 # 11:38:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47172  < insert_from_no-existing_tables.SF-1037020.sql
 # 11:38:32 >  
 
-MAPI  = monetdb@localhost:32040
+MAPI  = monetdb@sofia:39182
 QUERY = insert into t1037020 select * from does_not_exist;
 ERROR = !SELECT: no such table 'does_not_exist'
 

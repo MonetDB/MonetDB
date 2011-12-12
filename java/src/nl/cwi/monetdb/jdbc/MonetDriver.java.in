@@ -130,14 +130,15 @@ final public class MonetDriver implements Driver {
 		try {
 			uri = new URI(url.substring(5));
 		} catch (URISyntaxException e) {
-			throw new SQLException(e.toString());
+			throw new SQLException(e.toString(), "08M26");
 		}
 
 		if (uri.getHost() == null) throw
 			new SQLException("Invalid URL: no hostname given or " +
-					"unparsable in '" + url + "'");
+					"unparsable in '" + url + "'", "08M26");
 		info.put("host", uri.getHost());
-		if (uri.getPort() > 0) info.put("port", "" + uri.getPort());
+		if (uri.getPort() > 0)
+			info.put("port", "" + uri.getPort());
 
 		// check the database
 		if (uri.getPath() != null && uri.getPath().length() != 0 &&

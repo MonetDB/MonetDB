@@ -74,9 +74,9 @@ stderr of test 'insert_query` in directory 'test/ssqq` itself:
 # 11:37:20 >  mclient -lsql -ftest -i -e --host=yngling --port=35016 
 # 11:37:20 >  
 
-MAPI  = monetdb@yngling:35016
+MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_query(1, NULL, 0, NULL);
-ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column query.query_text
+ERROR = !INSERT INTO: NOT NULL constraint violated for column query.query_text
 
 # 11:37:20 >  
 # 11:37:20 >  Done.

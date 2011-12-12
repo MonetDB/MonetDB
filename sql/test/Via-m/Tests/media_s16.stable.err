@@ -70,9 +70,9 @@ stderr of test 'media_s16` in directory 'test/Via-m` itself:
 # 16:30:12 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=35785 
 # 16:30:12 >  
 
-MAPI  = monetdb@volund:35971
+MAPI  = monetdb@sofia:38256
 QUERY = set id_media_description =  add_media_description('description 1');
-ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'media_description.unq_media_description_description' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'media_description.unq_media_description_description' violated
 
 # 16:30:12 >  
 # 16:30:12 >  Done.

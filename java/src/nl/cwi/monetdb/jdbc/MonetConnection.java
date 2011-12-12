@@ -158,7 +158,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			throw new IllegalArgumentException("password should not be null or empty");
 		if (language == null || language.trim().equals("")) {
 			language = "sql";
-			addWarning("No language given, defaulting to 'sql'");
+			addWarning("No language given, defaulting to 'sql'", "M1M05");
 		}
 
 		// initialise query templates (filled later, but needed below)
@@ -189,7 +189,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 				server.debug(f.getAbsolutePath());
 			} catch (IOException ex) {
-				throw new SQLException("Opening logfile failed: " + ex.getMessage());
+				throw new SQLException("Opening logfile failed: " + ex.getMessage(), "08M01");
 			}
 		}
 
@@ -198,7 +198,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				server.connect(hostname, port, username, password);
 			if (warning != null) {
 				for (Iterator it = warning.iterator(); it.hasNext(); ) {
-					addWarning(it.next().toString());
+					addWarning(it.next().toString(), "01M02");
 				}
 			}
 
@@ -206,11 +206,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			out = server.getWriter();
 
 			String error = in.waitForPrompt();
-			if (error != null) throw new SQLException(error);
+			if (error != null)
+				throw new SQLException(error.substring(6), "08001");
 		} catch (IOException e) {
-			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
+			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage(), "08006");
 		} catch (Exception e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "08001");
 		}
 
 
@@ -361,7 +362,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public Array createArrayOf(String typeName, Object[] elements)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("createArrayOf(String, Object[]) not supported");
+		throw new SQLFeatureNotSupportedException("createArrayOf(String, Object[]) not supported", "0A000");
 	}
 
 	/**
@@ -452,7 +453,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			statements.put(ret, null);
 			return(ret);
 		} catch (IllegalArgumentException e) {
-			throw new SQLException(e.toString());
+			throw new SQLException(e.toString(), "M0M03");
 		}
 		// we don't have to catch SQLException because that is declared to
 		// be thrown
@@ -469,7 +470,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         not support MonetClob objects that can be filled in
 	 */
 	public Clob createClob() throws SQLException {
-		throw new SQLFeatureNotSupportedException("createClob() not supported");
+		throw new SQLFeatureNotSupportedException("createClob() not supported", "0A000");
 	}
 
 	/**
@@ -483,7 +484,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         not support MonetBlob objects that can be filled in
 	 */
 	public Blob createBlob() throws SQLException {
-		throw new SQLFeatureNotSupportedException("createBlob() not supported");
+		throw new SQLFeatureNotSupportedException("createBlob() not supported", "0A000");
 	}
 
 	/**
@@ -497,7 +498,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         not support MonetClob objects that can be filled in
 	 */
 	public NClob createNClob() throws SQLException {
-		throw new SQLFeatureNotSupportedException("createNClob() not supported");
+		throw new SQLFeatureNotSupportedException("createNClob() not supported", "0A000");
 	}
 
 	/**
@@ -519,7 +520,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public Struct createStruct(String typeName, Object[] attributes)
 		throws SQLException
 	{
-		throw new SQLFeatureNotSupportedException("createStruct() not supported");
+		throw new SQLFeatureNotSupportedException("createStruct() not supported", "0A000");
 	}
 
 	/**
@@ -533,7 +534,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         not support this data type
 	 */
 	public SQLXML createSQLXML() throws SQLException {
-		throw new SQLFeatureNotSupportedException("createSQLXML() not supported");
+		throw new SQLFeatureNotSupportedException("createSQLXML() not supported", "0A000");
 	}
 
 	/**
@@ -557,7 +558,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public String getCatalog() throws SQLException {
 		if (lang != LANG_SQL)
-			throw new SQLException("This method is only supported in SQL mode");
+			throw new SQLException("This method is only supported in SQL mode", "M0M04");
 
 		// this is a dirty hack, but it works as long as MonetDB
 		// only handles one catalog (dbfarm) at a time
@@ -621,7 +622,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public DatabaseMetaData getMetaData() throws SQLException {
 		if (lang != LANG_SQL)
-			throw new SQLException("This method is only supported in SQL mode");
+			throw new SQLException("This method is only supported in SQL mode", "M0M04");
 
 		return(new MonetDatabaseMetaData(this));
 	}
@@ -667,7 +668,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public SQLWarning getWarnings() throws SQLException {
 		if (closed)
-			throw new SQLException("Cannot call on closed Connection");
+			throw new SQLException("Cannot call on closed Connection", "M1M20");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
@@ -725,7 +726,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public boolean isValid(int timeout) throws SQLException {
 		if (timeout < 0)
-			throw new SQLException("timeout is less than 0");
+			throw new SQLException("timeout is less than 0", "M1M05");
 		if (closed)
 			return(false);
 		// ping db using select 1;
@@ -865,7 +866,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			statements.put(ret, null);
 			return(ret);
 		} catch (IllegalArgumentException e) {
-			throw new SQLException(e.toString());
+			throw new SQLException(e.toString(), "M0M03");
 		}
 		// we don't have to catch SQLException because that is declared to
 		// be thrown
@@ -911,7 +912,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	{
 		if (autoGeneratedKeys != Statement.RETURN_GENERATED_KEYS &&
 				autoGeneratedKeys != Statement.NO_GENERATED_KEYS)
-			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS");
+			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS", "M1M05");
 		
 		/* MonetDB has no way to disable this, so just do the normal
 		 * thing ;) */
@@ -939,7 +940,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public void releaseSavepoint(Savepoint savepoint) throws SQLException {
 		if (!(savepoint instanceof MonetSavepoint)) throw
-			new SQLException("This driver can only handle savepoints it created itself");
+			new SQLException("This driver can only handle savepoints it created itself", "M0M06");
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
@@ -1003,7 +1004,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
 		if (!(savepoint instanceof MonetSavepoint)) throw
-			new SQLException("This driver can only handle savepoints it created itself");
+			new SQLException("This driver can only handle savepoints it created itself", "M0M06");
 
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
@@ -1075,7 +1076,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *        is cleared.
 	 */
 	public void setClientInfo(String name, String value) {
-		addWarning("clientInfo: " + name + "is not a recognised property");
+		addWarning("clientInfo: " + name + "is not a recognised property", "01M07");
 	}
 
 	/**
@@ -1096,9 +1097,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 	/**
 	 * Puts this connection in read-only mode as a hint to the driver to
-	 * enable database optimizations.  MonetDB doesn't support writable
-	 * ResultSets, hence an SQLWarning is generated if attempted to set
-	 * to false here.
+	 * enable database optimizations.  MonetDB doesn't support any mode
+	 * here, hence an SQLWarning is generated if attempted to set
+	 * to true here.
 	 *
 	 * @param readOnly true enables read-only mode; false disables it
 	 * @throws SQLException if a database access error occurs or this
@@ -1106,7 +1107,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 */
 	public void setReadOnly(boolean readOnly) throws SQLException {
 		if (readOnly == true)
-			addWarning("cannot setReadOnly(true): read-only Connection mode not supported");
+			addWarning("cannot setReadOnly(true): read-only Connection mode not supported", "01M08");
 	}
 
 	/**
@@ -1157,7 +1158,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		try {
 			sp = new MonetSavepoint(name);
 		} catch (IllegalArgumentException e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "M0M03");
 		}
 
 		// note: can't use sendIndependentCommand here because we need
@@ -1196,7 +1197,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (level != TRANSACTION_SERIALIZABLE) {
 			addWarning("MonetDB only supports fully serializable " +
 					"transactions, continuing with transaction level " +
-					"raised to TRANSACTION_SERIALIZABLE");
+					"raised to TRANSACTION_SERIALIZABLE", "01M09");
 		}
 	}
 
@@ -1252,9 +1253,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 						command +
 						(queryTempl[1] == null ? "" : queryTempl[1]));
 				String error = in.waitForPrompt();
-				if (error != null) throw new SQLException(error);
+				if (error != null)
+					throw new SQLException(error.substring(6),
+							error.substring(0, 5));
 			} catch (IOException e) {
-				throw new SQLException(e.getMessage());
+				throw new SQLException(e.getMessage(), "08000");
 			}
 		}
 	}
@@ -1277,9 +1280,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 						command +
 						(commandTempl[1] == null ? "" : commandTempl[1]));
 				String error = in.waitForPrompt();
-				if (error != null) throw new SQLException(error);
+				if (error != null)
+					throw new SQLException(error.substring(6),
+							error.substring(0, 5));
 			} catch (IOException e) {
-				throw new SQLException(e.getMessage());
+				throw new SQLException(e.getMessage(), "08000");
 			}
 		}
 	}
@@ -1292,11 +1297,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *
 	 * @param reason the warning message
 	 */
-	void addWarning(String reason) {
+	void addWarning(String reason, String sqlstate) {
 		if (warnings == null) {
-			warnings = new SQLWarning(reason);
+			warnings = new SQLWarning(reason, sqlstate);
 		} else {
-			warnings.setNextWarning(new SQLWarning(reason));
+			warnings.setNextWarning(new SQLWarning(reason, sqlstate));
 		}
 	}
 
@@ -1583,7 +1588,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			if (!isSet[TYPES]) error += "type header missing\n";
 			if (!isSet[TABLES]) error += "table name header missing\n";
 			if (!isSet[LENS]) error += "column width header missing\n";
-			if (error != "") throw new SQLException(error);
+			if (error != "") throw new SQLException(error, "M0M10");
 		}
 
 		/**
@@ -1856,7 +1861,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		public void complete() throws SQLException {
 			if ((pos + 1) != data.length) throw
-				new SQLException("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?");
+				new SQLException("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?", "M0M10");
 		}
 
 		/**
@@ -2220,7 +2225,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 											if (autoCommit && ac) {
 												addWarning("Server enabled auto commit " +
 														"mode while local state " +
-														"already was auto commit."
+														"already was auto commit.", "01M11"
 														);
 											}
 											autoCommit = ac;
@@ -2236,7 +2241,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 											ResultSetResponse t =
 												(ResultSetResponse)rsresponses.get(new Integer(id));
 											if (t == null) {
-												error = "no ResultSetResponse with id " + id + " found";
+												error = "M0M12:no ResultSetResponse with id " + id + " found";
 												break;
 											}
 
@@ -2251,7 +2256,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 										} break;
 									}
 								} catch (MCLParseException e) {
-									error = "error while parsing start of header:\n" +
+									error = "M0M10:error while parsing start of header:\n" +
 										e.getMessage() +
 										" found: '" + tmpLine.charAt(e.getErrorOffset()) + "'" +
 										" in: \"" + tmpLine + "\"" +
@@ -2280,12 +2285,14 @@ public class MonetConnection extends MonetWrapper implements Connection {
 									if (error != null) {
 										// right, some protocol violation,
 										// skip the rest of the result
+										error = "M0M10:" + error;
 										in.waitForPrompt();
 										linetype = in.getLineType();
 										break;
 									}
 								}
-								if (error != null) break;
+								if (error != null)
+									break;
 								// it is of no use to store
 								// DataBlockReponses, you never want to
 								// retrieve them directly anyway
@@ -2299,7 +2306,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 								linetype = in.getLineType();
 							break;
 							case BufferedMCLReader.INFO:
-								addWarning(tmpLine.substring(1));
+								addWarning(tmpLine.substring(1), "01000");
 
 								// read the next line (can be prompt, new
 								// result, error, etc.) before we start the
@@ -2311,7 +2318,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 								// we have something we don't
 								// expect/understand, let's make it an error
 								// message
-								tmpLine = "!protocol violation, unexpected line: " + tmpLine;
+								tmpLine = "!M0M10:protocol violation, unexpected line: " + tmpLine;
 							case BufferedMCLReader.ERROR:
 								// read everything till the prompt (should be
 								// error) we don't know if we ignore some
@@ -2334,16 +2341,30 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					String tmp = sendThread.getErrors();
 					if (tmp != null) {
 						if (error == null) {
-							error = tmp;
+							error = "08000:" + tmp;
 						} else {
-							error += tmp;
+							error += "\n08000:" + tmp;
 						}
 					}
 				}
-				if (error != null) throw new SQLException(error.trim());
+				if (error != null) {
+					SQLException ret = null;
+					String[] errors = error.split("\n");
+					for (int i = 0; i < errors.length; i++) {
+						if (ret == null) {
+							ret = new SQLException(errors[i].substring(6),
+									errors[i].substring(0, 5));
+						} else {
+							ret.setNextException(new SQLException(
+										errors[i].substring(6),
+										errors[i].substring(0, 5)));
+						}
+					}
+					throw ret;
+				}
 			} catch (IOException e) {
 				closed = true;
-				throw new SQLException(e.getMessage() + " (mserver still alive?)");
+				throw new SQLException(e.getMessage() + " (mserver still alive?)", "08000");
 			}
 		}
 	}
@@ -2437,7 +2458,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			throws SQLException
 		{
 			if (state != WAIT) throw
-				new SQLException("SendThread already in use!");
+				new SQLException("SendThread already in use!", "M0M03");
 
 			this.templ = templ;
 			this.query = query;

@@ -69,9 +69,9 @@ stderr of test 'primekeyconstraint.SF-2783425` in directory 'test/BugTracker-200
 # 08:02:34 >  mclient -lsql -umonetdb -Pmonetdb --host=eir --port=30582 
 # 08:02:34 >  
 
-MAPI  = monetdb@localhost:30291
+MAPI  = monetdb@sofia:38256
 QUERY = ALTER TABLE way_nds ADD CONSTRAINT pk_way_nds PRIMARY KEY (way, idx);
-ERROR = !SQLException:sql.catalog:ALTER TABLE: NOT NULL constraint violated for column way_nds.way
+ERROR = !ALTER TABLE: NOT NULL constraint violated for column way_nds.way
 
 # 08:02:34 >  
 # 08:02:34 >  Done.

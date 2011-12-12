@@ -341,7 +341,7 @@ error(stream *out, char *str)
 	return 0;
 }
 
-#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED "!25005:current transaction is aborted (please ROLLBACK)\n"
 
 static int
 handle_error(mvc *m, stream *out, int pstatus)
@@ -459,7 +459,7 @@ SQLinitClient(Client c)
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
-		throw(PERMD, "SQLinitClient", "schema authorization error");
+		throw(PERMD, "SQLinitClient", "08004:schema authorization error");
 	}
 	_DELETE(schema);
 
@@ -1341,7 +1341,7 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			mnstr_printf(out, "!EXEC: no prepared statement with id: %d\n",
+			mnstr_printf(out, "!07003:EXEC: no prepared statement with id: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
 					"no prepared statement with id: %d",
@@ -1351,7 +1351,7 @@ SQLparser(Client c)
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			mnstr_printf(out, "!EXEC: given handle id is not for a "
+			mnstr_printf(out, "!07005:EXEC: given handle id is not for a "
 					"prepared statement: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
@@ -1523,7 +1523,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 #endif
 	mb = ((Symbol)q->code)->def;
 	if ( mb->errors )
-		throw(SQL, "SQLengine", "Program contains errors");
+		throw(SQL, "SQLengine", "39000:program contains errors");
 	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
@@ -1549,7 +1549,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			GDKfree(argv);
 		if( pci->retc >= MAXARG)
 			GDKfree(argrec);
-		throw(SQL, "sql.prepare", "wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+		throw(SQL, "sql.prepare", "07001:EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
 		for (i = 0; i < m->argc; i++) {
 			atom *arg = m->args[i];
@@ -1561,7 +1561,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 					GDKfree(argv);
 				if (pci->retc >= MAXARG)
 					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "wrong type for argument %d of "
+				throw(SQL, "sql.prepare", "07001:EXEC: wrong type for argument %d of "
 						"prepared statement: %s, expected %s",
 						i + 1, atom_type(arg)->type->sqlname,
 						pt->type->sqlname);
@@ -1612,7 +1612,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
-		throw(SQL, "SQLengine", "Program contains errors");
+		throw(SQL, "SQLengine", "39000:program contains errors");
 	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
@@ -1659,17 +1659,27 @@ SQLengineIntern(Client c, backend *be)
 
 cleanup_engine:
 	if (msg) {
-		if (getExceptionType(msg) == OPTIMIZER) {
+		enum malexception type = getExceptionType(msg);
+		if (type == OPTIMIZER) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c,c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
+		} else if (type == SQL) {
+			/* don't print exception decoration, just the message */
+			char *n = NULL;
+			char *o = msg;
+			while ((n = strchr(o, '\n')) != NULL) {
+				*n++ = '\0';
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+				o = n;
+			}
+			if (strlen(o) != 0)
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		} else {
-			str p = getExceptionPlace(msg);
-			showException(getExceptionType(msg), p, "%s", getExceptionMessage(msg));
-			GDKfree(p);
+			dumpExceptionsToStream(c->fdout, msg);
 		}
 		showErrors(c);
 		m->session->status = -10;
@@ -1727,7 +1737,7 @@ SQLrecompile(Client c, backend *be)
 		resetMalBlk(c->curprg->def, oldstop);
 		freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
-		throw(SQL, "SQLrecompile", "Semantic errors");
+		throw(SQL, "SQLrecompile", "M0M27:semantic errors");
 	}
 	return SQLengineIntern(c, be);
 }
@@ -1753,7 +1763,7 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		throw(SQL, "assert", "M0M29:%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1766,7 +1776,7 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		throw(SQL, "assert", "M0M29:%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1779,7 +1789,7 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		throw(SQL, "assert", "M0M29:%s", *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1792,7 +1802,7 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;
 	if (*flg){
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		throw(SQL, "assert", "M0M29:%s", *msg);
 	}
 	return MAL_SUCCEED;
 }

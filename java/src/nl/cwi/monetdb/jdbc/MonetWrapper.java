@@ -77,6 +77,6 @@ public class MonetWrapper implements Wrapper {
 	 *         interface
 	 */
 	public <T> T unwrap(Class<T> iface) throws SQLException {
-		throw new SQLException("No object found (not implemented)");
+		throw new SQLException("No object found (not implemented)", "0A000");
 	}
 }

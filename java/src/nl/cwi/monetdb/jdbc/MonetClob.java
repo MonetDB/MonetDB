@@ -65,7 +65,7 @@ public class MonetClob implements Clob {
 	 *         not support this method
 	 */
 	public InputStream getAsciiStream() throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation getAsciiStream() currently not supported");
+		throw new SQLFeatureNotSupportedException("Operation getAsciiStream() currently not supported", "0A000");
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class MonetClob implements Clob {
 	 *         not support this method
 	 */
 	public Reader getCharacterStream() throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation getCharacterStream() currently not supported");
+		throw new SQLFeatureNotSupportedException("Operation getCharacterStream() currently not supported", "0A000");
 	}
 
 	/**
@@ -95,7 +95,7 @@ public class MonetClob implements Clob {
 	 *         not support this method
 	 */
 	public Reader getCharacterStream(long pos, long length) throws SQLException {
-		throw new SQLFeatureNotSupportedException("Operation getCharacterStream(long, long) currently not supported");
+		throw new SQLFeatureNotSupportedException("Operation getCharacterStream(long, long) currently not supported", "0A000");
 	}
 
 	/**
@@ -113,7 +113,7 @@ public class MonetClob implements Clob {
 	 */
 	public String getSubString(long pos, int length) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
+			throw new SQLException("This Clob has been freed", "M1M20");
 		try {
 			return(buf.substring((int)(pos - 1), (int)(pos - 1 + length)));
 		} catch (IndexOutOfBoundsException e) {
@@ -131,7 +131,7 @@ public class MonetClob implements Clob {
 	 */
 	public long length() throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
+			throw new SQLException("This Clob has been freed", "M1M20");
 		return((long)buf.length());
 	}
 
@@ -167,20 +167,20 @@ public class MonetClob implements Clob {
 	 */
 	public long position(String searchstr, long start) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
+			throw new SQLException("This Clob has been freed", "M1M20");
 		return((long)(buf.indexOf(searchstr, (int)(start - 1))));
 	}
 
 	public OutputStream setAsciiStream(long pos) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
-		throw new SQLException("Operation setAsciiStream(long pos) currently not supported");
+			throw new SQLException("This Clob has been freed", "M1M20");
+		throw new SQLException("Operation setAsciiStream(long pos) currently not supported", "0A000");
 	}
 
 	public Writer setCharacterStream(long pos) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
-		throw new SQLException("Operation setCharacterStream(long pos) currently not supported");
+			throw new SQLException("This Clob has been freed", "M1M20");
+		throw new SQLException("Operation setCharacterStream(long pos) currently not supported", "0A000");
 	}
 
 	/**
@@ -218,7 +218,7 @@ public class MonetClob implements Clob {
 		throws SQLException
 	{
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
+			throw new SQLException("This Clob has been freed", "M1M20");
 
 		int buflen = buf.length();
 		int retlen = Math.min(buflen, (int)(pos - 1 + len));
@@ -242,7 +242,7 @@ public class MonetClob implements Clob {
 	 */
 	public void truncate(long len) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Clob has been freed");
+			throw new SQLException("This Clob has been freed", "M1M20");
 		// this command is a no-op
 	}
 

@@ -72,12 +72,12 @@ stderr of test 'duplicate-key.Bug-2667` in directory 'test/BugTracker-2010` itse
 # 12:43:13 >  mclient -lsql -ftest -i -e --host=ottar --port=34908 
 # 12:43:13 >  
 
-MAPI  = monetdb@alf:34990
+MAPI  = monetdb@sofia:38256
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk2 PRIMARY KEY (id);
-ERROR = !SQLException:sql.catalog:CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
-MAPI  = monetdb@alf:34990
+ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
+MAPI  = monetdb@sofia:38256
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk3 PRIMARY KEY (id);
-ERROR = !SQLException:sql.catalog:CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
+ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
 
 # 12:43:13 >  
 # 12:43:13 >  Done.
