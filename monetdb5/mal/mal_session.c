@@ -630,9 +630,11 @@ MALengine(Client c)
 	if (prg->def->errors == 0)
 		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
 	if (msg) {
-		str place = getExceptionPlace(msg);
-		showException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-		GDKfree(place);
+		/* ignore "internal" exceptions */
+		str fcn = getExceptionPlace(msg); /* retrieves from "first" exception */
+		if (strcmp(fcn, "client.quit") != 0)
+			dumpExceptionsToStream(c->fdout, msg);
+		GDKfree(fcn);
 		if (!c->listing)
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		showErrors(c);

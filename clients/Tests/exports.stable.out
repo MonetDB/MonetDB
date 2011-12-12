@@ -5755,6 +5755,7 @@ str divRef;
 str doALGfetch(ptr ret, BAT *b, lng *pos);
 str doneRef;
 int dropRegist(str sch, str tab, str col, int acc);
+void dumpExceptionsToStream(stream *out, str msg);
 void dumpHelpTable(stream *f, Module s, str text, int flag);
 void dumpManual(stream *f, Module v, int recursive);
 void dumpManualFooter(stream *f);
