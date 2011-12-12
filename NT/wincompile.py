@@ -76,4 +76,7 @@ p = subprocess.Popen(argv, shell = False, stdout = subprocess.PIPE, stderr = sub
 out, err = p.communicate()
 sys.stdout.write(out.replace('\r\n', '\n'))
 sys.stderr.write(err.replace('\r\n', '\n'))
+if p.returncode and not verbose:
+    sys.stderr.write('failed invocation: %s\n' % ' '.join(argv))
+    sys.stderr.flush()
 sys.exit(p.returncode)

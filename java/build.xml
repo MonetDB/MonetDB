@@ -45,11 +45,11 @@ All Rights Reserved.
   <property file="build.properties" />
 
   <property name="jdbc-jar"
-    value="${jardir}/monetdb-${JDBC_MAJOR}.${JDBC_MINOR}-jdbc.jar" />
+    value="${jardir}/monetdb-jdbc-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
   <property name="jdbcclient-jar"
     value="${jardir}/jdbcclient.jar" />
   <property name="mcl-jar"
-    value="${jardir}/monetdb-${MCL_MAJOR}.${MCL_MINOR}-mcl.jar" />
+    value="${jardir}/monetdb-mcl-${MCL_MAJOR}.${MCL_MINOR}.jar" />
 
   <property name="mero-control-jar"
     value="${jardir}/merocontrol.jar" />

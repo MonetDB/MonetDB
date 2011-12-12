@@ -95,18 +95,20 @@
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
 #define LENFMT		"%d"
 #define ULENFMT		"%u"
-#define LENCAST     (int)
-#define ULENCAST    (unsigned int)
+#define LENCAST		(int)
+#define ULENCAST	(unsigned int)
 #else
 #ifdef _MSC_VER
 #define LENFMT		"%I64d"
 #define ULENFMT		"%I64u"
+#define LENCAST		(__int64)
+#define ULENCAST	(unsigned __int64)
 #else
 #define LENFMT		"%ld"
 #define ULENFMT		"%lu"
+#define LENCAST		(long)
+#define ULENCAST	(unsigned long)
 #endif
-#define LENCAST     (long)
-#define ULENCAST    (unsigned long)
 #endif
 
 /* these functions are called from within the library */
@@ -141,6 +143,17 @@ extern const char *ODBCdebug;
 extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 #endif
+
+char *translateCType(SQLSMALLINT ValueType);
+char *translateSQLType(SQLSMALLINT ParameterType);
+char *translateFieldIdentifier(SQLSMALLINT FieldIdentifier);
+char *translateFetchOrientation(SQLUSMALLINT FetchOrientation);
+char *translateConnectAttribute(SQLINTEGER Attribute);
+char *translateConnectOption(SQLUSMALLINT Option);
+char *translateEnvAttribute(SQLINTEGER Attribute);
+char *translateStmtAttribute(SQLINTEGER Attribute);
+char *translateStmtOption(SQLUSMALLINT Option);
+char *translateCompletionType(SQLSMALLINT CompletionType);
 #endif
 
 #endif

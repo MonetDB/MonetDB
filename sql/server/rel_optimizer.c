@@ -4154,7 +4154,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (isMergeTable(t)) 
+		if (isMergeTable(t) || isReplicaTable(t)) 
 			return rel;
 	}
 	case op_table:
@@ -5136,7 +5136,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			if (t->tables.set) {
 				for (n = t->tables.set->h; n; n = n->next) {
 					sql_table *pt = n->data;
-					sql_rel *prel = _rel_basetable(sql->sa, pt, tname);
+					sql_rel *prel = rel_basetable(sql, pt, tname);
 					node *n, *m;
 
 					/* rename (mostly the idxs) */

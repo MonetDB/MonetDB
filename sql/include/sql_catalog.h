@@ -117,7 +117,8 @@ typedef enum temp_t {
 	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE,
 	SQL_STREAM,
-	SQL_REMOTE
+	SQL_REMOTE,
+	SQL_REPLICA_TABLE
 } temp_t;
 
 typedef enum commit_action_t { 
@@ -386,7 +387,8 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_array = 6		/* arrays */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	tt_array = 7		/* arrays */
 } table_types;
 
 #define isTable(x) 	(x->type==tt_table)
@@ -395,6 +397,7 @@ typedef enum table_types {
 #define isMergeTable(x) (x->type==tt_merge_table)
 #define isStream(x)  	(x->type==tt_stream)
 #define isRemote(x)  	(x->type==tt_remote)
+#define isReplicaTable(x) (x->type==tt_replica_table)
 #define isArray(x)  	(x->type==tt_array)
 #define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
 #define isFixedDim(x)   (x->start && x->step && x->stop && x->start[0] != '\0' && x->step[0] != '\0' && x->stop[0] != '\0')

@@ -157,7 +157,7 @@ setConfVal(confkeyval *ckv, char *val) {
 					"key '%s' is unitialised (invalid value), internal error",
 					ckv->key);
 			return(strdup(buf));
-		}; break;
+		}
 		case INT: {
 			char *p = val;
 			while (*p >= '0' && *p <= '9')

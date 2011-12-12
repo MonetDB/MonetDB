@@ -100,7 +100,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
 				mnstr_printf(fout, "%s(%s)", 
-					isStream(t)?"stream":isMergeTable(t)?"merge table":"table",
+					isStream(t)?"stream":
+					isMergeTable(t)?"merge table":
+					isReplicaTable(t)?"replica table":"table",
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));

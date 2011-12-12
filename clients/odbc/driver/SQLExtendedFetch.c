@@ -55,8 +55,9 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %d " LENFMT "\n",
-		PTRFMTCAST StatementHandle, FetchOrientation,
+	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT "\n",
+		PTRFMTCAST StatementHandle,
+		translateFetchOrientation(FetchOrientation),
 		LENCAST FetchOffset);
 #endif
 

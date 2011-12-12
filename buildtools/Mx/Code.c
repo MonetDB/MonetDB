@@ -341,8 +341,7 @@ CodeSubBlk(char *sub, char **argv)
       outofmem:
 	Error("Limit of %d characters per block reached.", blk_size);
 	exit(1);
-	return 0;
-
+	return NULL; /* icc demands this, clang-3.0 chokes on it */
 }
 
 void

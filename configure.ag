@@ -1203,7 +1203,6 @@ AC_PATH_PROG(BASH,bash, /usr/bin/bash, $PATH)
 AC_CHECK_PROG(RM,rm,rm -f)
 AC_CHECK_PROG(MV,mv,mv -f)
 AC_PROG_LN_S
-AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
 
 AC_CHECK_PROGS(RPMBUILD,rpmbuild rpm)
 
@@ -3139,8 +3138,3 @@ case "`make -v 2>&1`" in
 	echo
 	;;
 esac
-
-if test x"$LOCKFILE" = x"echo" ; then
-	echo "'lockfile' not found (usually part of a package named procmail)"
-	echo "Please do NOT parallelise the build process! (use -j1 with make)"
-fi

@@ -561,10 +561,19 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	bte *mapT;
 
 	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
-	BATseqbase(res, map->hseqbase);
-	mapT = (bte*)Tloc(map, 0);
 	batsT = (BUN*)GDKmalloc(sizeof(BUN) * len);
 	bats_i = (BATiter*)GDKmalloc(sizeof(BATiter) * len);
+	if (res == NULL || batsT == NULL || bats_i == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		if (bats_i)
+			GDKfree(bats_i);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	mapT = (bte*)Tloc(map, 0);
 	for (i=0; i<len; i++) {
 		batsT[i] = 0;
 		bats_i[i] = bat_iterator(bats[i]);
@@ -572,12 +581,13 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	for (j=0; j<cnt; j++)
 		BUNappend(res, BUNtail(bats_i[mapT[j]], batsT[mapT[j]]++), FALSE);
 	GDKfree(batsT);
+	GDKfree(bats_i);
 	return res;
 }
 
 @= project
 static BAT *
-MATproject_@1( BAT *map, BAT **bats, int len )
+MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
 {
 	BAT *res;
 	int i;
@@ -585,11 +595,18 @@ MATproject_@1( BAT *map, BAT **bats, int len )
 	@1 *resT, **batsT;
 	bte *mapT;
 
-	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
 	BATseqbase(res, map->hseqbase);
 	resT = (@1*)Tloc(res, 0);
 	mapT = (bte*)Tloc(map, 0);
-	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
 	for (i=0; i<len; i++)
 		batsT[i] = (@1*)Tloc(bats[i], 0);
 	for (j=0; j<cnt; j++)
@@ -604,6 +621,73 @@ MATproject_@1( BAT *map, BAT **bats, int len )
 @:project(sht)@
 @:project(int)@
 @:project(lng)@
+
+/*
+ *  Mitosis-pieces are usually slices (views) of a base table/BAT.
+ *  For variable-size atoms, this means that the vheap's of all pieces are
+ *  likely to be identical (full) views of the same original base-BAT vheap.
+ *  If so, the result of MATproject can also simply be a view of that very
+ *  original base-BAT vheap (rather than a new view with all value (re-)inserted),
+ *  i.e., we only need to build the result's tail BUN heap by copying the
+ *  pointers (references) into the vheap from the input BATs (pieces).
+ */
+static BAT *
+MATproject_var( BAT *map, BAT **bats, int len )
+{
+	BAT *res = NULL;
+	int i = 0, j = -1;
+	bit shared_Tvheaps = FALSE;
+
+	while (i < len && BATcount(bats[i]) == 0)
+		i++;
+	if (i < len &&
+	    bats[i]->tvarsized &&
+	    bats[i]->T->vheap != NULL &&
+	    bats[i]->T->vheap->parentid > 0) {
+		shared_Tvheaps = TRUE;
+		j = i++;
+	}
+	while (shared_Tvheaps && i < len) {
+		shared_Tvheaps &= (BATcount(bats[i]) == 0 ||
+		                   ( bats[i]->ttype == bats[j]->ttype &&
+		                     bats[i]->batRestricted == BAT_READ &&
+		                     bats[i]->T->vheap == bats[j]->T->vheap &&
+		                     bats[i]->T->width == bats[j]->T->width &&
+		                     bats[i]->T->shift == bats[j]->T->shift ));
+		i++;
+	}
+	if (shared_Tvheaps) {
+		switch (bats[j]->T->width) {
+		case sizeof(bte):
+			res = MATproject_bte(map, bats, len, TYPE_bte);
+			break;
+		case sizeof(sht):
+			res = MATproject_sht(map, bats, len, TYPE_sht);
+			break;
+		case sizeof(int):
+			res = MATproject_int(map, bats, len, TYPE_int);
+			break;
+		case sizeof(lng):
+			res = MATproject_lng(map, bats, len, TYPE_lng);
+			break;
+		default:
+			/* can (should) not happen */
+			assert(0);
+			return MATproject_any( map, bats, len );
+		}
+		if (res != NULL) {
+			res->tvarsized = 1;
+			res->ttype = bats[j]->ttype;
+			res->T->vheap = bats[j]->T->vheap;
+			res->T->width = bats[j]->T->width;
+			res->T->shift = bats[j]->T->shift;
+			BBPshare(bats[j]->T->vheap->parentid);
+		}
+	} else {
+		res = MATproject_any( map, bats, len );
+	}
+	return res;
+}
 
 static int
 MATnonil( BAT **bats, int len)
@@ -624,15 +708,15 @@ MATproject_( BAT *map, BAT **bats, int len )
 	if (ATOMstorage(bats[0]->ttype) <= TYPE_void) {
 		/*error*/
 	} else if (ATOMvarsized(bats[0]->ttype)) {
-		res = MATproject_any(map, bats, len);
+		res = MATproject_var(map, bats, len);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(bte)) {
-		res = MATproject_bte(map, bats, len);
+		res = MATproject_bte(map, bats, len, bats[0]->ttype);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(sht)) {
-		res = MATproject_sht(map, bats, len);
+		res = MATproject_sht(map, bats, len, bats[0]->ttype);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(int)) {
-		res = MATproject_int(map, bats, len);
+		res = MATproject_int(map, bats, len, bats[0]->ttype);
 	} else if (ATOMsize(bats[0]->ttype) == sizeof(lng)) {
-		res = MATproject_lng(map, bats, len);
+		res = MATproject_lng(map, bats, len, bats[0]->ttype);
 	} else {
 		res = MATproject_any(map, bats, len);
 	}

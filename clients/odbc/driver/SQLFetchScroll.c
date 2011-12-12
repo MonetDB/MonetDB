@@ -177,8 +177,9 @@ SQLFetchScroll(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetchScroll " PTRFMT " %d " LENFMT "\n",
-		PTRFMTCAST StatementHandle, FetchOrientation,
+	ODBCLOG("SQLFetchScroll " PTRFMT " %s " LENFMT "\n",
+		PTRFMTCAST StatementHandle,
+		translateFetchOrientation(FetchOrientation),
 		LENCAST FetchOffset);
 #endif
 

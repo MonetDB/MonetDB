@@ -51,8 +51,9 @@ SQLGetData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %u %d\n", PTRFMTCAST StatementHandle,
-		(unsigned int) Col_or_Param_Num, (int) TargetType);
+	ODBCLOG("SQLGetData " PTRFMT " %u %s\n", PTRFMTCAST StatementHandle,
+		(unsigned int) Col_or_Param_Num,
+		translateCType(TargetType));
 #endif
 
 	if (!isValidStmt(stmt))
@@ -91,6 +92,11 @@ SQLGetData(SQLHSTMT StatementHandle,
 	    Col_or_Param_Num > stmt->ImplRowDescr->sql_desc_count) {
 		/* Invalid descriptor index */
 		addStmtError(stmt, "07009", NULL, 0);
+		return SQL_ERROR;
+	}
+	if (TargetValuePtr == NULL) {
+		/* Invalid use of null pointer */
+		addStmtError(stmt, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 

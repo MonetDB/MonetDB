@@ -19,9 +19,17 @@
 
 package nl.cwi.monetdb.merovingian;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * A Control class to perform operations on a remote merovingian
@@ -31,7 +39,7 @@ import java.util.*;
  * possible actions against a merovingian server that has remote control
  * facilities enabled.
  * <br />
- * In the merovingian world, other merovingians in the vincinity are
+ * In the merovingian world, other merovingians in the vicinity are
  * known to each merovingian, allowing to perform cluster wide actions.
  * The implementation taken in this class is to require one known
  * merovingian to get insight in the entire network.  Note that
@@ -94,7 +102,7 @@ public class Control {
 	
 	final static private String RESPONSE_OK = "OK";
 
-	private String[] sendCommand(
+	private List<String> sendCommand(
 			String database, String command, boolean hasOutput)
 		throws MerovingianException, IOException
 	{
@@ -102,72 +110,65 @@ public class Control {
 		PrintStream out = new PrintStream(s.getOutputStream());
 		BufferedReader in = new BufferedReader(
 				new InputStreamReader(s.getInputStream()));
-		String response;
+		try {
+			/* login ritual, step 1: get challenge from server */
+			String response = in.readLine();
+			if (response == null)
+				throw new MerovingianException("server closed the connection");
+			
+			if (!response.startsWith("merovingian:1:") &&
+					!response.startsWith("merovingian:2:"))
+				throw new MerovingianException("unsupported merovingian server");
+			
+			String[] tokens = response.split(":");
+			if (tokens.length < 3)
+				throw new MerovingianException("did not understand merovingian server");
+			String version = tokens[1];
+			String token = tokens[2];
 
-		/* login ritual, step 1: get challenge from server */
-		response = in.readLine();
-		if (!response.startsWith("merovingian:1:") &&
-				!response.startsWith("merovingian:2:"))
-			throw new MerovingianException("unsupported merovingian server");
-		String[] tokens = response.split(":");
-		String version = tokens[1];
-		String token = tokens[2];
+			response = controlHash(passphrase, token);
+			if (version.equals("1")) {
+				out.print(response + "\n");
+			} else if (version.equals("2")) {
+				// we only support control mode for now
+				out.print(response + ":control\n");
+			}
+			response = in.readLine();
+			if (response == null) {
+				throw new MerovingianException("server closed the connection");
+			}
 
-		response = controlHash(passphrase, token);
-		if (version.equals("1")) {
-			out.print(response + "\n");
-		} else if (version.equals("2")) {
-			// we only support control mode for now
-			out.print(response + ":control\n");
-		}
+			if (!response.equals(RESPONSE_OK)) {
+				throw new MerovingianException(response);
+			}
 
-		response = in.readLine();
-		if (response == null) {
-			in.close();
-			out.close();
-			s.close();
-			throw new MerovingianException("server closed the connection");
-		}
-		if (!response.equals(RESPONSE_OK)) {
-			in.close();
-			out.close();
-			s.close();
-			throw new MerovingianException(response);
-		}
+			/* send command, form is simple: "<db> <cmd>\n" */
+			out.print(database + " " + command + "\n");
 
-		/* send command, form is simple: "<db> <cmd>\n" */
-		out.print(database + " " + command + "\n");
+			/* Response has the first line either "OK\n" or an error
+			 * message.  In case of a command with output, the data will
+			 * follow the first line */
+			response = in.readLine();
+			if (response == null) {
+				throw new MerovingianException("server closed the connection");
+			}
+			if (!response.equals(RESPONSE_OK)) {
+				throw new MerovingianException(response);
+			}
 
-		/* Response has the first line either "OK\n" or an error
-		 * message.  In case of a command with output, the data will
-		 * follow the first line */
-		response = in.readLine();
-		if (response == null) {
-			in.close();
-			out.close();
-			s.close();
-			throw new MerovingianException("server closed the connection");
-		}
-		if (!response.equals(RESPONSE_OK)) {
-			in.close();
-			out.close();
-			s.close();
-			throw new MerovingianException(response);
-		}
+			if (!hasOutput)
+				return null;
 
-		String[] ret = null;
-		if (hasOutput) {
-			ArrayList l = new ArrayList();
+			ArrayList<String> l = new ArrayList<String>();
 			while ((response = in.readLine()) != null) {
 				l.add(response);
 			}
-			ret = (String[])(l.toArray(new String[l.size()]));
+			return l;
+		} finally {
+			in.close();
+			out.close();
+			s.close();
 		}
-
-		in.close();
-		out.close();
-		s.close();
-		return(ret);
 	}
 
 	public void start(String database)
@@ -253,18 +254,18 @@ public class Control {
 		throws MerovingianException, IOException
 	{
 		Properties ret = new Properties();
-		String[] response = sendCommand(database, "get", true);
-		for (int i = 0; i < response.length; i++) {
-			if (response[i].startsWith("#"))
+		List<String> response = sendCommand(database, "get", true);
+		for (String responseLine : response) {
+			if (responseLine.startsWith("#"))
 				continue;
-			int pos = response[i].indexOf("=");
+			int pos = responseLine.indexOf("=");
 			if (pos > 0) {
 				ret.setProperty(
-						response[i].substring(0, pos),
-						response[i].substring(pos + 1, response[i].length()));
+						responseLine.substring(0, pos),
+						responseLine.substring(pos + 1, responseLine.length()));
 			}
 		}
-		return(ret);
+		return ret;
 	}
 
 	public Properties getDefaultProperties()
@@ -276,8 +277,10 @@ public class Control {
 	public SabaothDB getStatus(String database)
 		throws MerovingianException, IOException
 	{
-		String[] response = sendCommand(database, "status", true);
-		return(new SabaothDB(response[0]));
+		List<String> response = sendCommand(database, "status", true);
+		if (response.isEmpty())
+			throw new MerovingianException("communication error");
+		return new SabaothDB(response.get(0));
 	}
 	
 	/**
@@ -291,7 +294,7 @@ public class Control {
 	public boolean exists(String database)
 		throws MerovingianException, IOException
 	{
-		SabaothDB[] all = getAllStatuses();
+		List<SabaothDB> all = getAllStatuses();
 		for (SabaothDB db : all) {
 			if (db.getName().equals(database)) {
 				return true;
@@ -300,43 +303,42 @@ public class Control {
 		return false;
 	}
 
-	public SabaothDB[] getAllStatuses()
+	public List<SabaothDB> getAllStatuses()
 		throws MerovingianException, IOException
 	{
-		ArrayList l = new ArrayList();
-		String[] response = sendCommand("#all", "status", true);
+		List<SabaothDB> l = new ArrayList<SabaothDB>();
+		List<String> response = sendCommand("#all", "status", true);
 		try {
-			for (int i = 0; i < response.length; i++) {
-				l.add(new SabaothDB(response[i]));
+			for (String responseLine : response) {
+				l.add(new SabaothDB(responseLine));
 			}
 		} catch (IllegalArgumentException e) {
 			throw new MerovingianException(e.getMessage());
 		}
-		return((SabaothDB[])(l.toArray(new SabaothDB[l.size()])));
+		return Collections.unmodifiableList(l);
 	}
 
-	public URI[] getAllNeighbours()
+	public List<URI> getAllNeighbours()
 		throws MerovingianException, IOException
 	{
-		ArrayList l = new ArrayList();
-		String[] response = sendCommand("anelosimus", "eximius", true);
+		List<URI> l = new ArrayList<URI>();
+		List<String> response = sendCommand("anelosimus", "eximius", true);
 		try {
-			for (int i = 0; i < response.length; i++) {
+			for (String responseLine : response) {
 				// format is <db>\t<uri>
-				String[] parts = response[i].split("\t", 2);
+				String[] parts = responseLine.split("\t", 2);
 				if (parts.length != 2)
 					throw new MerovingianException("invalid entry: " +
-							response[i]);
+							responseLine);
 				if (parts[0].equals("*")) {
-					response[i] = parts[1];
+					l.add(new URI(parts[1]));
 				} else {
-					response[i] = parts[1] + parts[0];
+					l.add(new URI(parts[1] + parts[0]));
 				}
-				l.add(new URI(response[i]));
 			}
 		} catch (URISyntaxException e) {
 			throw new MerovingianException(e.getMessage());
 		}
-		return((URI[])(l.toArray(new URI[l.size()])));
+		return Collections.unmodifiableList(l);
 	}
 }

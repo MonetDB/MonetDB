@@ -18,7 +18,6 @@
 SUBDIRS = NOT_WIN32?vaults UDF LSST ENABLE_DATACELL?datacell
 
 INCLUDES = ../../include ../../common ../../storage ../../server \
-		   ../../../monetdb5/misc \
 		   ../../../monetdb5/modules/atoms \
 		   ../../../monetdb5/modules/kernel \
 		   ../../../monetdb5/mal \

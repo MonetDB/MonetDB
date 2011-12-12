@@ -15,11 +15,12 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../misc ../mal ../optimizer \
+INCLUDES = ../mal ../optimizer \
 		   ../modules/atoms ../modules/mal ../modules/kernel \
 		   ../../clients/mapilib \
 		   ../../common/options \
 		   ../../common/stream \
+		   ../../common/utils \
 		   ../../gdk
 
 MTSAFE
