@@ -905,7 +905,7 @@ translateConnectOption(SQLUSMALLINT Option)
 	case SQL_TRANSLATE_DLL:
 		return "SQL_TRANSLATE_DLL";
 	default:
-		return "unknown";
+		return translateConnectAttribute((SQLSMALLINT) Option);
 	}
 }
 
