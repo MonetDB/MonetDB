@@ -35,6 +35,12 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	if (!rel)
 		return rel;
 
+	if (rel_is_ref(rel)) {
+		sql_rel *nrel = rel_copy(sql->sa, rel);
+
+		rel_destroy(rel);
+		rel = nrel;
+	}
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
@@ -46,16 +52,17 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 			for (n = t->tables.set->h; n; n = n->next) {
 				sql_table *p = n->data;
 
-				if (isRemote(p) && strcmp(uri, p->query) == 0) {
-					if (rel_is_ref(rel)) {
-						sql_rel *l = rel_basetable(sql, p, NULL);
-						l ->exps = list_dup(rel->exps, (fdup)NULL);
-						rel_destroy(rel);
-						rel = l;
-					} else {
-						rel->l = p;
+				if (isRemote(p) && strcmp(uri, p->query) == 0){
+					node *n, *m;
+					sql_rel *r = rel_basetable(sql, p, t->base.name);
+					for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
+						sql_exp *e = n->data;
+						sql_exp *ne = m->data;
+
+						exp_setname(sql->sa, ne, e->rname, e->name);
 					}
-					break;
+					rel_destroy(rel);
+					rel = r;
 				}
 			}
 		}
