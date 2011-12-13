@@ -71,7 +71,7 @@ monet5_drop_user(ptr _mvc, str user)
 
 	err = AUTHremoveUser(&c, &user);
 	if (err != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "DROP USER: %s", err);
+		(void)sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
 		_DELETE(err);
 		return FALSE;
 	}
