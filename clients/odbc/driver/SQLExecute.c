@@ -127,9 +127,14 @@ ODBCInitResult(ODBCStmt *stmt)
       repeat:
 	errstr = mapi_result_error(hdl);
 	if (errstr) {
-		/* XXX more fine-grained control required */
-		/* Syntax error or access violation */
-		addStmtError(stmt, "42000", errstr, 0);
+		const char *emsg, *sqlstate;
+
+		if ((sqlstate = ODBCErrorType(errstr, &emsg)) != NULL)
+			addStmtError(stmt, sqlstate, emsg, 0);
+		else {
+			/* Syntax error or access violation */
+			addStmtError(stmt, "42000", errstr, 0);
+		}
 		return SQL_ERROR;
 	}
 	nrCols = mapi_get_field_count(hdl);
@@ -434,7 +439,8 @@ SQLExecute_(ODBCStmt *stmt)
 #endif
 
 	/* Have the server execute the query */
-	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt && stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
+	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt &&
+	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
 		if (stmt->Dbc->cachelimit != 1000)
 			mapi_cache_limit(stmt->Dbc->mid, 1000);
@@ -454,8 +460,20 @@ SQLExecute_(ODBCStmt *stmt)
 		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
+		/* reuse variable query for error message */
+		query = mapi_result_error(hdl);
+		if (query == NULL)
+			query = mapi_error_str(stmt->Dbc->mid);
+		if (query) {
+			const char *emsg, *sqlstate;
+
+			if ((sqlstate = ODBCErrorType(query, &emsg)) != NULL) {
+				addStmtError(stmt, sqlstate, emsg, 0);
+				return SQL_ERROR;
+			}
+		}
 		/* General error */
-		addStmtError(stmt, "HY000", mapi_error_str(stmt->Dbc->mid), 0);
+		addStmtError(stmt, "HY000", query, 0);
 		return SQL_ERROR;
 	}
 
