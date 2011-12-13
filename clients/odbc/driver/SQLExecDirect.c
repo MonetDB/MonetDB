@@ -45,10 +45,6 @@ static struct errors {
 	const char *msg;
 } errors[] = {
 	{"syntax error", "42000"},
-	{"DROP TABLE: no such table", "42S02"},
-	{"DROP VIEW: unknown view", "42S02"},
-	{"ALTER TABLE: no such table", "42S02"},
-	{"CREATE INDEX: no such table", "42S02"},
 	{"SELECT: no such table", "42S02"},
 	{"INSERT INTO: no such table", "42S02"},
 	{"DELETE FROM: no such table", "42S02"},
@@ -62,7 +58,7 @@ ODBCErrorType(const char *msg, const char **emsg)
 {
 	struct errors *e;
 
-	if (strlen(msg) > 6 && msg[5] == ':' &&
+	if (strlen(msg) > 6 && msg[5] == '!' &&
 	    ((msg[0] >= '0' && msg[0] <= '9') ||
 	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
 	    ((msg[1] >= '0' && msg[1] <= '9') ||
@@ -72,8 +68,7 @@ ODBCErrorType(const char *msg, const char **emsg)
 	    ((msg[3] >= '0' && msg[3] <= '9') ||
 	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
 	    ((msg[4] >= '0' && msg[4] <= '9') ||
-	     (msg[4] >= 'A' && msg[4] <= 'Z')) &&
-	    strncmp(msg, "ERROR", 5) != 0) {
+	     (msg[4] >= 'A' && msg[4] <= 'Z'))) {
 		*emsg = msg + 6;
 		while (**emsg == ' ')
 			(*emsg)++;
