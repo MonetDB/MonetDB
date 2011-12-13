@@ -45,11 +45,6 @@ static struct errors {
 	const char *msg;
 } errors[] = {
 	{"syntax error", "42000"},
-	{"SELECT: no such table", "42S02"},
-	{"INSERT INTO: no such table", "42S02"},
-	{"DELETE FROM: no such table", "42S02"},
-	{"UPDATE: no such table", "42S02"},
-	{"CONSTRAINT FOREIGN KEY: no such table", "42S02"},
 	{NULL, NULL},		/* sentinel */
 };
 

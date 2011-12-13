@@ -1576,7 +1576,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			}
 		}
 		if (!t && !temp_table) {
-			return sql_error(sql, 02, "SELECT: no such table '%s'", tname);
+			return sql_error(sql, 02, "42S02!SELECT: no such table '%s'", tname);
 		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
 			return sql_error(sql, 02, "SELECT: access denied for %s to table '%s.%s'", stack_get_string(sql, "current_user"), s->base.name, tname);
 		}
@@ -1733,7 +1733,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp)
-			return sql_error(sql, 02, "SELECT: no such column '%s.%s'", tname, cname);
+			return sql_error(sql, 02, "42S22!SELECT: no such column '%s.%s'", tname, cname);
 	} else if (dlist_length(l) >= 3) {
 		return sql_error(sql, 02, "TODO: column names of level >= 3");
 	}
