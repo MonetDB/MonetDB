@@ -492,7 +492,17 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 	if ((err = backend_create_user(sql, user, passwd, enc, fullname,
 					schema_id, sql->user_id)) != NULL)
 	{
-		char *r = sql_message("M0M27!CREATE USER: %s", getExceptionMessage(err));
+		/* strip off MAL exception decorations */
+		char *r;
+		char *e = err;
+		if ((e = strchr(e, ':')) == NULL) {
+			e = err;
+		} else if ((e = strchr(++e, ':')) == NULL) {
+			e = err;
+		} else {
+			e++;
+		}
+		r = sql_message("M0M27!CREATE USER: %s", e);
 		GDKfree(err);
 		return r;
 	}
