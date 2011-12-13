@@ -242,11 +242,14 @@ table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 static InstrPtr
 relational_func_create_result( MalBlkPtr mb, InstrPtr q, sql_rel *f)
 {
+	sql_rel *r = f;
 	node *n;
 	int i;
 
+	if (is_topn(f->op))
+		r = f->l;
 	q->argc = q->retc = 0;
-	for (i = 0, n = f->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
@@ -334,7 +337,10 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	int *lret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
 	int *rret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
 	char old = name[0];
+	sql_rel *r = rel;
 
+	if (is_topn(r->op))
+		r = rel->l;
 	/* dirty hack, rename (change first char of name) L->l, local
          * functions name start with 'l' 	 */ 
 	name[0] = 'l';
@@ -370,7 +376,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	}
 
 	/* declare return variables */
-	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
@@ -404,7 +410,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	p = pushStr(curBlk, p, userRef);
 	p = pushStr(curBlk, p, name);
 
-	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		/* x1 := remote.put(q, :type) */
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
