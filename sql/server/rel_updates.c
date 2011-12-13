@@ -313,7 +313,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	node *n, *m;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "INSERT INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!INSERT INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -747,7 +747,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
-		(void) sql_error(sql, 02, "UPDATE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -900,7 +900,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	sql_table *t = NULL;
 
 	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "DELETE FROM: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!DELETE FROM: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!schema)
@@ -1018,7 +1018,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1129,7 +1129,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	}
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)

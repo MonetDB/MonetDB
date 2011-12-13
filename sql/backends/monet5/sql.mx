@@ -1849,9 +1849,9 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_message("40000!%s TABLE: name '%s' already in use", cd, t->base.name);
+		return sql_message("42S01!%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_message("40000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* first check default values */
@@ -1916,10 +1916,10 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 		return sql_message("3F000!ALTER TABLE: no such schema '%s'", sname);
 
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
-		return sql_message("40000!ALTER TABLE: no such table '%s'", t->base.name);
+		return sql_message("42S02!ALTER TABLE: no such table '%s'", t->base.name);
 
 	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
-		return sql_message("40000!ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* First check if all the changes are allowed */
@@ -2041,13 +2041,13 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 		t = mvc_bind_table(sql, s, tname);
 	}
 	if (!t) { 
-		return sql_message("40000!DROP TABLE: no such table '%s'", tname);
+		return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
 	} else if (!isTable(t) && !isStream(t) && !isRemote(t)) {
-		return sql_message("40000!DROP TABLE: cannot drop VIEW '%s'", tname);
+		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
-		return sql_message("40000!DROP TABLE: cannot drop system table '%s'", tname);
+		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)){
-		return sql_message("40000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if ( !drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -2071,7 +2071,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action)
 	}
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_message("40000!DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
+		return sql_message("42000!DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 	
 	mvc_drop_table(sql, s, t, drop_action);
 	return MAL_SUCCEED;
@@ -2092,15 +2092,15 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 	t = mvc_bind_table(sql, ss, tname);
 
 	if (!schema_privs(sql->role_id, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)){  
-		return sql_message("40000!DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		return sql_message("42000!DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
-		return sql_message("40000!DROP VIEW: unknown view '%s'", tname);
+		return sql_message("42S02!DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
-		return sql_message("40000!DROP VIEW: unable to drop view '%s': is a table", tname);
+		return sql_message("42000!DROP VIEW: unable to drop view '%s': is a table", tname);
 	} else if (t->system) {
-		return sql_message("40000!DROP VIEW: cannot drop system view '%s'", tname);
+		return sql_message("42000!DROP VIEW: cannot drop system view '%s'", tname);
 	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-			return sql_message("40000!DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
+			return sql_message("42000!DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
 	} else {
 		mvc_drop_table(sql, ss, t, drop_action);
 		return MAL_SUCCEED;
@@ -2120,9 +2120,9 @@ drop_key( mvc *sql, char *sname, char *kname, int drop_action )
 		ss = cur_schema(sql);
 
 	if ((key = mvc_bind_key(sql, ss, kname )) == NULL) 
-		return sql_message("40000!ALTER TABLE: no such constraint '%s'", kname);
+		return sql_message("42000!ALTER TABLE: no such constraint '%s'", kname);
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL)) 
-		return sql_message("40000!ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
+		return sql_message("42000!ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
 	mvc_drop_key(sql, ss, key, drop_action);
 	return MAL_SUCCEED;
 }
@@ -2140,11 +2140,11 @@ create_index( mvc *sql, char *iname, int itype, char *sname, char *tname, MalStk
 	i = mvc_bind_idx(sql, s, iname);
 	t = mvc_bind_table(sql, s, tname);
 	if (i) {
-		return sql_message("40000!CREATE INDEX: name '%s' already in use", iname);
+		return sql_message("42S11!CREATE INDEX: name '%s' already in use", iname);
 	} else if (!t) {
-		return sql_message("40000!CREATE INDEX: no such table '%s'", tname);
+		return sql_message("42S02!CREATE INDEX: no such table '%s'", tname);
 	} else if (isView(t)) {
-		return sql_message("40000!CREATE INDEX: cannot create index on view '%s'", tname);
+		return sql_message("42S02!CREATE INDEX: cannot create index on view '%s'", tname);
 	} else {
 		int n;
 		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
@@ -2157,7 +2157,7 @@ create_index( mvc *sql, char *iname, int itype, char *sname, char *tname, MalStk
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
 			if (!c) {
-				return sql_message("40000!CREATE INDEX: no such column '%s'", cname);
+				return sql_message("42S22!CREATE INDEX: no such column '%s'", cname);
 			} else {
 				mvc_create_ic(sql, i, c);
 				mvc_create_dependency(sql, c->base.id, i->base.id, INDEX_DEPENDENCY);
@@ -2177,9 +2177,9 @@ drop_index( mvc *sql, char *sname, char *iname)
 		return sql_message("3F000!DROP INDEX: no such schema '%s'", sname);
  	i = mvc_bind_idx(sql, s, iname);
 	if (!i) {
-		return sql_message("40000!DROP INDEX: no such index '%s'", iname);
+		return sql_message("42S12!DROP INDEX: no such index '%s'", iname);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_message("40000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message("42000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		mvc_drop_idx(sql, s, i);
 	}
@@ -2196,9 +2196,9 @@ create_seq( mvc *sql, char *sname, sql_sequence *seq)
 	if (s == NULL)
 		s = cur_schema(sql);
 	if (find_sql_sequence(s, seq->base.name)) {
-		return sql_message("40000!CREATE SEQUENCE: name '%s' already in use", seq->base.name);
+		return sql_message("42000!CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_message( "40000!CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message( "42000!CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
@@ -2215,9 +2215,9 @@ alter_seq( mvc *sql, char *sname, sql_sequence *seq, lng *val)
 	if (s == NULL)
 		s = cur_schema(sql);
 	if (!(nseq = find_sql_sequence(s, seq->base.name))) {
-		return sql_message( "40000!ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
+		return sql_message( "42000!ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_message( "40000!ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_message( "42000!ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* first alter the known values */
@@ -2237,7 +2237,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 	sql_sequence *seq = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("DROP SEQUENCE: no such schema '%s'", sname);
+		return sql_message("3F000!DROP SEQUENCE: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
 	if (!(seq = find_sql_sequence(s, name))) {

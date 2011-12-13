@@ -1552,7 +1552,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 		tname = qname_table(tableref->data.lval->h->data.lval);
 
 		if (sname && !(s=mvc_bind_schema(sql,sname)))
-			return sql_error(sql, 02, "SELECT: no such schema '%s'", sname);
+			return sql_error(sql, 02, "3F000!SELECT: no such schema '%s'", sname);
 		/* TODO: search path */
 		if (!t && !sname) {
 			sql_subtype *tpe;
@@ -3863,7 +3863,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02,
-			"NEXT VALUE FOR: no such schema '%s'", sname);
+			"3F000!NEXT VALUE FOR: no such schema '%s'", sname);
 	if (!s)
 		s = sql->session->schema;
 

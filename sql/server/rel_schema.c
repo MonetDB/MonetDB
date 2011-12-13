@@ -166,7 +166,7 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname,
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-		sql_error(sql, 01, "CREATE TABLE: duplicate column name %s", n);
+		sql_error(sql, 01, "42S21!CREATE TABLE: duplicate column name %s", n);
 
 		return NULL;
 	}
@@ -303,7 +303,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 */
 		rt = _bind_table(t, ss, cur_schema(sql), rtname);
 		if (!rt) {
-			(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
+			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
@@ -370,7 +370,7 @@ column_option(
 		char *err = NULL, *r = symbol2string(sql, s->data.sym, &err);
 
 		if (!r) {
-			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		} else {
@@ -437,7 +437,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	sql_table *ft = mvc_bind_table(sql, ss, rtname);
 
 	if (!ft) {
-		sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
@@ -448,7 +448,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 		assert(n->next->next->next->next->type == type_int);
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
+			sql_error(sql, 02, "Create Key failed, key %s already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -476,7 +476,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
+				sql_error(sql, 02, "42S22!CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 				return SQL_ERR;
 			}
 			mvc_create_fkc(sql, fk, c);
@@ -517,7 +517,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, "CONSTRAINT %s: no such column '%s' for table '%s'",
+				sql_error(sql, 02, "42S22!CONSTRAINT %s: no such column '%s' for table '%s'",
 						kt == pkey ? "PRIMARY KEY" : "UNIQUE",
 						nm, t->base.name);
 				return SQL_ERR;
@@ -583,7 +583,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		cs = find_sql_column(t, cname);
 		if (cs) {
-			sql_error(sql, 02, "%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
 		cs = mvc_create_column(sql, t, cname, ctype);
@@ -655,7 +655,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		} else {
 			return column_options(sql, olist, ss, t, c);
@@ -670,12 +670,12 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		r = symbol2string(sql, sym, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, "incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
@@ -692,7 +692,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
 
 		if (!c) {
-			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		mvc_null(sql, c, null);
@@ -702,7 +702,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		if (!c) {
-			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		mvc_drop_default(sql,c);
@@ -716,7 +716,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		node *n;
 
 		if (sname && !(os = mvc_bind_schema(sql, sname))) {
-			sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
+			sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 			return SQL_ERR;
 		}
 		if (!os)
@@ -739,23 +739,23 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		assert(l->h->next->type == type_int);
 		if (col == NULL) {
-			sql_error(sql, 02, "ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		if (cs_size(&t->columns) <= 1) {
-			sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
+			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
 			return SQL_ERR;
 		}
 		if (t->system) {
-			sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
+			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
 			return SQL_ERR;
 		}
 		if (isView(t)) {
-			sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
+			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
 			return SQL_ERR;
 		}
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
-			sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
+			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
 			return SQL_ERR;
 		}
 		if (!drop_action  && t->keys.set) {
@@ -798,7 +798,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE TABLE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
 
 	if (temp != SQL_PERSIST && tt == tt_table && 
 			commit_action == CA_COMMIT)
@@ -817,7 +817,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 
 	if (mvc_bind_table(sql, s, name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "%s TABLE: name '%s' already in use", cd, name);
+		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
 		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
@@ -883,12 +883,12 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 (void)ss;
 	(void) check;		/* Stefan: unused!? */
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
-		return sql_error(sql, 02, "CREATE VIEW: no such schema '%s'", sname);
+		return sql_error(sql, 02, "3F000!CREATE VIEW: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
-		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
+		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
 	} else if (create && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
@@ -900,9 +900,9 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			SelectNode *sn = (SelectNode *) query;
 
 			if (sn->limit)
-				return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
+				return sql_error(sql, 01, "42000!CREATE VIEW: LIMIT not supported");
 			if (sn->orderby)
-				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
+				return sql_error(sql, 01, "42000!CREATE VIEW: ORDER BY not supported");
 		}
 
 		if (create) /* for subtable we only need direct dependencies */
@@ -920,7 +920,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
 			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-				sql_error(sql, 01, "CREATE VIEW: duplicate column name %s", n);
+				sql_error(sql, 01, "42S21!CREATE VIEW: duplicate column name %s", n);
 				rel_destroy(sq);
 				return NULL;
 			}
@@ -1072,14 +1072,14 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "ALTER TABLE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!ALTER TABLE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s'", tname);
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
@@ -1720,7 +1720,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_schema2(sql->sa, DDL_DROP_TYPE, s->data.sval, NULL, 0);
 	} 	break;
 	default:
-		return sql_error(sql, 01, "schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, "42000!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
 

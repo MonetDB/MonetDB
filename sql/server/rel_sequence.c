@@ -97,7 +97,7 @@ rel_create_seq(
 	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "3F000!CREATE SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = ss;
 	(void) tpe;
@@ -151,7 +151,7 @@ rel_alter_seq(
 
 	assert(start_list->h->type == type_int);
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE SEQUENCE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "3F000!CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!s)
 		s = ss;
 	(void) tpe;
