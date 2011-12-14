@@ -2243,7 +2243,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_message("DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, s)) {
-		return sql_message("DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
+		return sql_message("42000!DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
 		return sql_message("DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
@@ -2307,7 +2307,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = sql_message("CREATE SCHEMA: no such authorization '%s'", name);
 		}
 		if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-			msg = sql_message("CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
+			msg = sql_message("42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		}
 		if (mvc_bind_schema(sql, sname)) {
 			msg = sql_message("CREATE SCHEMA: name '%s' already in use", sname);
@@ -3100,10 +3100,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if ( s == NULL)
-		throw(SQL,"sql.clear_table","Schema missing");
+		throw(SQL,"sql.clear_table","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( t == NULL)
-		throw(SQL,"sql.clear_table","Table missing");
+		throw(SQL,"sql.clear_table","42S02!Table missing");
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
@@ -3135,10 +3135,10 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.delete","Cannot access descriptor");
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
-		throw(SQL,"sql.delete","Schema missing");
+		throw(SQL,"sql.delete","3F000!Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
-		throw(SQL,"sql.delete","Table missing");
+		throw(SQL,"sql.delete","42S02!Table missing");
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
 	if (tpe == TYPE_bat)
 		BBPunfix(((BAT*)ins)->batCacheid);
@@ -3317,7 +3317,7 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(SQL,"sql.declared_table","Schema missing");
+		throw(SQL,"sql.declared_table","3F000!Schema missing");
 	(void)mvc_create_table(m, s, *name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -3349,10 +3349,10 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		throw(SQL, "sql.dtColumn", "Cannot find column type");
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(SQL,"sql.declared_table_column","Schema missing");
+		throw(SQL,"sql.declared_table_column","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( t == NULL)
-		throw(SQL,"sql.declared_table_column","Table missing");
+		throw(SQL,"sql.declared_table_column","42S02!Table missing");
 	(void)mvc_create_column(m, t, *name, &tpe); 
 	*ret = 0;
 	return MAL_SUCCEED;
@@ -3371,10 +3371,10 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(SQL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *name);
 	if ( t == NULL)
-		throw(SQL,"sql.drop","Table missing");
+		throw(SQL,"sql.drop","42S02!Table missing");
 	(void)mvc_drop_table(m, s, t, 0);
 	return MAL_SUCCEED;
 }
@@ -3392,7 +3392,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if ( s == NULL)
-		throw(SQL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","3F000!Schema missing");
 	while(i && s->tables.set->t) {
 		t = s->tables.set->t->data;
 		(void)mvc_drop_table(m, s, t, 0);
@@ -3690,10 +3690,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 
 	if ( s == NULL)
-		throw(SQL,"sql.drop","Schema missing");
+		throw(SQL,"sql.drop","3F000!Schema missing");
 	t = mvc_bind_table(m, s, tname);
 	if (!t) 
-		throw(SQL,"sql", "table %s not found", tname);
+		throw(SQL,"sql", "42S02!table %s not found", tname);
 	if (list_length(t->columns.set) != (pci->argc-(2+pci->retc)))
 		throw(SQL,"sql", "Not enough columns in found");
 
@@ -4208,7 +4208,7 @@ str_2time_daytime( daytime *res, str *v, int *digits )
 	}
 	pos = daytime_fromstr(*v, &len, &res);
 	if (!pos)
-		throw(SQL,"daytime", "daytime (%s) has incorrect format", *v);
+		throw(SQL,"daytime", "22007!daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime( res, res, digits);
 }
 
@@ -4265,7 +4265,7 @@ str_2time_timestamp( timestamp *res, str *v, int *digits )
 	}
 	pos = timestamp_fromstr(*v, &len, &res);
 	if (!pos)
-		throw(SQL,"timestamp", "timestamp (%s) has incorrect format", *v);
+		throw(SQL,"timestamp", "22007!timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp( res, res, digits);
 }
 
@@ -5743,12 +5743,12 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if ( s == NULL)
-		throw(SQL,"sql.rowid","Schema missing");
+		throw(SQL,"sql.rowid","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tname);
 	if ( s == NULL)
-		throw(SQL,"sql.rowid","Table missing");
+		throw(SQL,"sql.rowid","42S02!Table missing");
 	if (!s || !t || !t->columns.set->h)
-		throw(SQL, "calc.rowid", "Cannot find column");
+		throw(SQL, "calc.rowid", "42S22!Cannot find column");
 	c = t->columns.set->h->data;
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
@@ -5899,10 +5899,10 @@ str SQLcluster1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","42S02!Table missing");
 	tr = m->session->tr;
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
@@ -5973,10 +5973,10 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","42S02!Table missing");
 	tr = m->session->tr;
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
@@ -6049,13 +6049,13 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@1","Schema missing");
+		throw(SQL,"sql.@1","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@1","Table missing");
+		throw(SQL,"sql.@1","42S02!Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(SQL,"sql.@1","insufficient privileges");
+		throw(SQL,"sql.@1","42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
 		throw(SQL,"sql.@1","@1 not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
@@ -6172,13 +6172,13 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@1","Schema missing");
+		throw(SQL,"sql.@1","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@1","Table missing");
+		throw(SQL,"sql.@1","42S02!Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(SQL,"sql.@1","insufficient privileges");
+		throw(SQL,"sql.@1","42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
 		throw(SQL,"sql.@1","vacuum not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
@@ -6233,10 +6233,10 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.drop_hash","Schema missing");
+		throw(SQL,"sql.drop_hash","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.drop_hash","Table missing");
+		throw(SQL,"sql.drop_hash","42S02!Table missing");
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;
@@ -6270,10 +6270,10 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.cluster","Schema missing");
+		throw(SQL,"sql.cluster","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.cluster","Table missing");
+		throw(SQL,"sql.cluster","42S02!Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -6335,10 +6335,10 @@ str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@2","Schema missing");
+		throw(SQL,"sql.@2","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@2","Table missing");
+		throw(SQL,"sql.@2","42S02!Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -6440,7 +6440,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rethrow("sql.rdfShred", msg, getContext(cntxt, mb, &m, NULL));
 
 	if ((sch = mvc_bind_schema(m, *schema)) == NULL)
-		throw(SQL, "sql.rdfShred", "schema missing");
+		throw(SQL, "sql.rdfShred", "3F000!schema missing");
 
 	g_tbl = mvc_bind_table(m, sch, "graph");
 	gname = mvc_bind_column(m, g_tbl, "gname");
