@@ -221,6 +221,6 @@ SQLRETURN SQLPrepare_(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
 SQLRETURN SQLSetStmtAttr_(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
-const char *ODBCErrorType(const char *msg);
+const char *ODBCErrorType(const char *msg, const char **emsg);
 
 #endif

@@ -514,7 +514,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "CREATE %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -655,7 +655,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -742,7 +742,7 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);

@@ -45,23 +45,32 @@ static struct errors {
 	const char *msg;
 } errors[] = {
 	{"syntax error", "42000"},
-	{"DROP TABLE: no such table", "42S02"},
-	{"DROP VIEW: unknown view", "42S02"},
-	{"ALTER TABLE: no such table", "42S02"},
-	{"CREATE INDEX: no such table", "42S02"},
-	{"SELECT: no such table", "42S02"},
-	{"INSERT INTO: no such table", "42S02"},
-	{"DELETE FROM: no such table", "42S02"},
-	{"UPDATE: no such table", "42S02"},
-	{"CONSTRAINT FOREIGN KEY: no such table", "42S02"},
 	{NULL, NULL},		/* sentinel */
 };
 
 const char *
-ODBCErrorType(const char *msg)
+ODBCErrorType(const char *msg, const char **emsg)
 {
 	struct errors *e;
 
+	if (strlen(msg) > 6 && msg[5] == '!' &&
+	    ((msg[0] >= '0' && msg[0] <= '9') ||
+	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
+	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
+	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
+	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
+	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	     (msg[4] >= 'A' && msg[4] <= 'Z'))) {
+		*emsg = msg + 6;
+		while (**emsg == ' ')
+			(*emsg)++;
+		return msg;
+	}
+
+	*emsg = msg;
 	for (e = errors; e->error != NULL; e++)
 		if (strncmp(msg, e->error, strlen(e->error)) == 0)
 			return e->msg;
@@ -124,10 +133,11 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 		if (query == NULL)
 			query = mapi_error_str(stmt->Dbc->mid);
 		if (query != NULL) {
-			const char *e = ODBCErrorType(query);
+			const char *m;
+			const char *e = ODBCErrorType(query, &m);
 
 			if (e) {
-				addStmtError(stmt, e, query, 0);
+				addStmtError(stmt, e, m, 0);
 				return SQL_ERROR;
 			}
 		}

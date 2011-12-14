@@ -2241,7 +2241,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 											ResultSetResponse t =
 												(ResultSetResponse)rsresponses.get(new Integer(id));
 											if (t == null) {
-												error = "M0M12:no ResultSetResponse with id " + id + " found";
+												error = "M0M12!no ResultSetResponse with id " + id + " found";
 												break;
 											}
 
@@ -2256,7 +2256,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 										} break;
 									}
 								} catch (MCLParseException e) {
-									error = "M0M10:error while parsing start of header:\n" +
+									error = "M0M10!error while parsing start of header:\n" +
 										e.getMessage() +
 										" found: '" + tmpLine.charAt(e.getErrorOffset()) + "'" +
 										" in: \"" + tmpLine + "\"" +
@@ -2285,7 +2285,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 									if (error != null) {
 										// right, some protocol violation,
 										// skip the rest of the result
-										error = "M0M10:" + error;
+										error = "M0M10!" + error;
 										in.waitForPrompt();
 										linetype = in.getLineType();
 										break;
@@ -2318,7 +2318,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 								// we have something we don't
 								// expect/understand, let's make it an error
 								// message
-								tmpLine = "!M0M10:protocol violation, unexpected line: " + tmpLine;
+								tmpLine = "!M0M10!protocol violation, unexpected line: " + tmpLine;
 							case BufferedMCLReader.ERROR:
 								// read everything till the prompt (should be
 								// error) we don't know if we ignore some
@@ -2341,9 +2341,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					String tmp = sendThread.getErrors();
 					if (tmp != null) {
 						if (error == null) {
-							error = "08000:" + tmp;
+							error = "08000!" + tmp;
 						} else {
-							error += "\n08000:" + tmp;
+							error += "\n08000!" + tmp;
 						}
 					}
 				}

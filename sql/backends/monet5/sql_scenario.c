@@ -341,7 +341,7 @@ error(stream *out, char *str)
 	return 0;
 }
 
-#define TRANS_ABORTED "!25005:current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED "!25005!current transaction is aborted (please ROLLBACK)\n"
 
 static int
 handle_error(mvc *m, stream *out, int pstatus)
@@ -459,7 +459,7 @@ SQLinitClient(Client c)
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
-		throw(PERMD, "SQLinitClient", "08004:schema authorization error");
+		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
 	_DELETE(schema);
 
@@ -1523,7 +1523,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 #endif
 	mb = ((Symbol)q->code)->def;
 	if ( mb->errors )
-		throw(SQL, "SQLengine", "39000:program contains errors");
+		throw(SQL, "SQLengine", "39000!program contains errors");
 	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
@@ -1549,7 +1549,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			GDKfree(argv);
 		if( pci->retc >= MAXARG)
 			GDKfree(argrec);
-		throw(SQL, "sql.prepare", "07001:EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
 		for (i = 0; i < m->argc; i++) {
 			atom *arg = m->args[i];
@@ -1561,7 +1561,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 					GDKfree(argv);
 				if (pci->retc >= MAXARG)
 					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "07001:EXEC: wrong type for argument %d of "
+				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of "
 						"prepared statement: %s, expected %s",
 						i + 1, atom_type(arg)->type->sqlname,
 						pt->type->sqlname);
@@ -1612,7 +1612,7 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
-		throw(SQL, "SQLengine", "39000:program contains errors");
+		throw(SQL, "SQLengine", "39000!program contains errors");
 	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
@@ -1737,7 +1737,7 @@ SQLrecompile(Client c, backend *be)
 		resetMalBlk(c->curprg->def, oldstop);
 		freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
-		throw(SQL, "SQLrecompile", "M0M27:semantic errors");
+		throw(SQL, "SQLrecompile", "M0M27!semantic errors");
 	}
 	return SQLengineIntern(c, be);
 }
@@ -1762,8 +1762,21 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "M0M29:%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1775,8 +1788,21 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "M0M29:%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1788,8 +1814,21 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "M0M29:%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1801,8 +1840,21 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "M0M29:%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }

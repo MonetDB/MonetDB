@@ -12,7 +12,7 @@ stderr of test 'revoke_role.SF-1691646` in directory 'test/BugTracker` itself:
 
 MAPI  = monetdb@sofia:39182
 QUERY = REVOKE auth1 from user1;
-ERROR = !REVOKE no such role 'auth1' or grantee 'user1'
+ERROR = !REVOKE: no such role 'auth1' or grantee 'user1'
 
 # 09:58:20 >  
 # 09:58:20 >  Done.

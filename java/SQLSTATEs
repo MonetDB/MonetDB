@@ -32,5 +32,5 @@ M0M27 unknown error
 M0M29 assert
 3BM30 autocommit mode active
 2DM30 autocommit mode active
-M1M31 no such object
-M1M32 object already exists
+42M31 user/role already exists
+42M32 user/role not found

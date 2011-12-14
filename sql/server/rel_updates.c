@@ -313,7 +313,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	node *n, *m;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "INSERT INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!INSERT INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -326,7 +326,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			t = mvc_bind_table(sql, NULL, tname);
 	}
 	if (!t) {
-		return sql_error(sql, 02, "INSERT INTO: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!INSERT INTO: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "INSERT INTO: cannot insert into view '%s'", tname);
 	} else if (t->readonly) {
@@ -348,7 +348,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			if (c) {
 				list_append(collist, c);
 			} else {
-				return sql_error(sql, 02, "INSERT INTO: no such column '%s.%s'", tname, n->data.sval);
+				return sql_error(sql, 02, "42S22!INSERT INTO: no such column '%s.%s'", tname, n->data.sval);
 			}
 		}
 	} else {
@@ -370,7 +370,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
-				return sql_error(sql, 02, "INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
+				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				sql_rel *inner = NULL;
 				sql_rel *i = NULL;
@@ -414,7 +414,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
 	   (!r->exps && collist)) 
-		return sql_error(sql, 02, "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
+		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
 	inserts = insert_exp_array(t, &len);
 
@@ -747,7 +747,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
-		(void) sql_error(sql, 02, "UPDATE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -764,7 +764,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 			t = tpe->comp_type;
 	}
 	if (!t) {
-		return sql_error(sql, 02, "UPDATE: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!UPDATE: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "UPDATE: cannot update view '%s'", tname);
 	} else if (t->readonly) {
@@ -819,7 +819,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_where)
 
 			if (!c) {
 				rel_destroy(r);
-				return sql_error(sql, 02, "UPDATE: no such column '%s.%s'", t->base.name, cname);
+				return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
 			}
 			a = assignment->h->data.sym;
 			if (a) {
@@ -900,7 +900,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	sql_table *t = NULL;
 
 	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "DELETE FROM: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!DELETE FROM: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!schema)
@@ -916,7 +916,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		}
 	}
 	if (!t) {
-		return sql_error(sql, 02, "DELETE FROM: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!DELETE FROM: no such table '%s'", tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "DELETE FROM: cannot delete from view '%s'", tname);
 	} else if (t->readonly) {
@@ -1018,7 +1018,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1034,7 +1034,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 		}
 	}
 	if (!t) 
-		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
@@ -1129,7 +1129,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 	}
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1145,7 +1145,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 		}
 	}
 	if (!t) 
-		return sql_error(sql, 02, "COPY INTO: no such table '%s'", tname);
+		return sql_error(sql, 02, "42S02!COPY INTO: no such table '%s'", tname);
 	if (t->readonly) 
 		return sql_error(sql, 02, "COPY INTO: cannot copy into read only table '%s'", tname);
 	if (t && !isTempTable(t) && STORE_READONLY(active_store_type))
