@@ -370,7 +370,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
-				return sql_error(sql, 02, "INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
+				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				sql_rel *inner = NULL;
 				sql_rel *i = NULL;
@@ -414,7 +414,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
 	   (!r->exps && collist)) 
-		return sql_error(sql, 02, "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
+		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
 	inserts = insert_exp_array(t, &len);
 
