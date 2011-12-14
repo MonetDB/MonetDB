@@ -114,13 +114,13 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	return sq;
 }
 
-static char *
-as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
+static int
+as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char *msg )
 {
         sql_rel *r = sq;
 
 	if (!r)
-		return NULL;
+		return 0;
 
         if (is_topn(r->op) || is_sample(r->op))
                 r = sq->l;
@@ -129,14 +129,20 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 		dnode *n = column_spec->h;
 		node *m = r->exps->h;
 
-		for (; n; n = n->next, m = m->next) {
+		for (; n && m; n = n->next, m = m->next) {
 			char *cname = n->data.sval;
 			sql_exp *e = m->data;
 			sql_subtype *tp = exp_subtype(e);
 
-			if (mvc_bind_column(sql, t, cname))
-				return cname;
+			if (mvc_bind_column(sql, t, cname)) {
+				sql_error(sql, 01, "42S21!%s: duplicate column name %s", msg, cname);
+				return -1;
+			}
 			mvc_create_column(sql, t, cname, tp);
+		}
+		if (n || m) {
+			sql_error(sql, 01, "21S02!%s: number of columns does not match", msg);
+			return -1;
 		}
 	} else {
 		node *m;
@@ -148,28 +154,27 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec )
 
 			if (!cname)
 				cname = "v";
-			if (mvc_bind_column(sql, t, cname))
-				return cname;
+			if (mvc_bind_column(sql, t, cname)) {
+				sql_error(sql, 01, "42S21!%s: duplicate column name %s", msg, cname);
+				return -1;
+			}
 			mvc_create_column(sql, t, cname, tp);
 		}
 	}
-	return NULL;
+	return 0;
 }
 
 sql_table *
 mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, char *tname, dlist *column_spec, int temp, int commit_action )
 {
-	char *n;
 	int tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
 	         ((temp == SQL_MERGE_TABLE)?tt_merge_table:tt_table);
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
-	if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-		sql_error(sql, 01, "42S21!CREATE TABLE: duplicate column name %s", n);
+	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
 
 		return NULL;
-	}
 	return t;
 }
 
@@ -916,11 +921,8 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			rel_add_intern(sql, sq);
 
 		if (create) {
-			char *n;
-
 			t = mvc_create_view(sql, s, name, SQL_DECLARED_TABLE, q, 0);
-			if ((n = as_subquery( sql, t, sq, column_spec)) != NULL) {
-				sql_error(sql, 01, "42S21!CREATE VIEW: duplicate column name %s", n);
+			if (as_subquery( sql, t, sq, column_spec, "CREATE VIEW") != 0) {
 				rel_destroy(sq);
 				return NULL;
 			}
