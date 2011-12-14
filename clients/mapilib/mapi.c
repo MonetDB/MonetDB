@@ -3058,11 +3058,13 @@ mapi_timeout(Mapi mid, int timeout)
 }
 
 static MapiMsg
-mapi_Xcommand(Mapi mid, char *cmdname, char *cmdvalue)
+mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue)
 {
 	MapiHdl hdl;
 
 	mapi_check(mid, "mapi_Xcommand");
+	if (mid->active && read_into_cache(mid->active, 0) != MOK)
+		return MERROR;
 	if (mnstr_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
 	    mnstr_flush(mid->to)) {
 		close_connection(mid);
@@ -3410,13 +3412,26 @@ MapiMsg
 mapi_set_size_header(Mapi mid, int value)
 {
 	if (mid->languageId != LANG_SQL) {
-		mapi_setError(mid, "size header only supported in SQL", "mapi_toggle_size_header", MERROR);
+		mapi_setError(mid, "size header only supported in SQL", "mapi_set_size_header", MERROR);
 		return MERROR;
 	}
 	if (value)
 		return mapi_Xcommand(mid, "sizeheader", "1");
 	else
 		return mapi_Xcommand(mid, "sizeheader", "0");
+}
+
+MapiMsg
+mapi_release_id(Mapi mid, int id)
+{
+	char buf[10];
+
+	if (mid->languageId != LANG_SQL) {
+		mapi_setError(mid, "release only supported in SQL", "mapi_release_id", MERROR);
+		return MERROR;
+	}
+	snprintf(buf, sizeof(buf), "%d", id);
+	return mapi_Xcommand(mid, "release", buf);
 }
 
 MapiMsg

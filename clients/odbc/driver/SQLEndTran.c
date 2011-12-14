@@ -158,7 +158,7 @@ SQLEndTran_(SQLSMALLINT HandleType,
 				    nativeErrCode);
 		}
 		/* clean up the statement handle */
-		SQLFreeStmt_(stmt, SQL_CLOSE);
+		ODBCResetStmt(stmt);
 		ODBCFreeStmt_(stmt);
 
 		for (stmt = dbc->FirstStmt; stmt; stmt = stmt->next)

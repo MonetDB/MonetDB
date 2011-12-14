@@ -47,6 +47,8 @@ ODBCResetStmt(ODBCStmt *stmt)
 	SQLFreeStmt_(stmt, SQL_CLOSE);
 	setODBCDescRecCount(stmt->ImplParamDescr, 0);
 
+	if (stmt->queryid >= 0)
+		mapi_release_id(stmt->Dbc->mid, stmt->queryid);
 	stmt->queryid = -1;
 	stmt->nparams = 0;
 	stmt->State = INITED;
