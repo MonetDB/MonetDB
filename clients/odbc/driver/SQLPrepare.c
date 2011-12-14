@@ -133,7 +133,7 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		mapi_fetch_row(hdl);
 		s = mapi_fetch_field(hdl, 5); /* column name: null -> param */
-		if (s == NULL) {
+		if (s == NULL || *s == 0) {
 			stmt->nparams++;
 			rec = prec++;
 			rec->sql_desc_nullable = SQL_NULLABLE;

@@ -392,7 +392,7 @@ SQLExecute_(ODBCStmt *stmt)
 	}
 
 	/* internal state correctness checks */
-	assert(stmt->ImplRowDescr->descRec != NULL);
+	assert(stmt->State == PREPARED0 || stmt->State == EXECUTED0 || stmt->ImplRowDescr->descRec != NULL);
 
 	assert(stmt->Dbc);
 	assert(stmt->Dbc->mid);
