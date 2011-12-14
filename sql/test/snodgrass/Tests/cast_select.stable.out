@@ -133,7 +133,7 @@ SELECT CAST('2 12:34' AS INTERVAL DAY TO MINUTE );
 1 row
 
 SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE ); -- err: works not
-Error on line 21: SQLException:calc.second_interval:wrong format (12:34)
+Error on line 21: [22000] wrong format (12:34)
 SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = INTERVAL '2064:00:00' HOUR TO SECOND;
 +----------------+
 | =_single_value |
@@ -143,7 +143,7 @@ SELECT CAST( INTERVAL'86 00:00:00' DAY TO SECOND AS INTERVAL HOUR TO SECOND ) = 
 1 row
 
 SELECT CAST('86 00:00:00' AS INTERVAL HOUR(3) TO SECOND ); -- err: overflow exception
-Error on line 23: SQLException:calc.second_interval:wrong format (86 00:00:00)
+Error on line 23: [22000] wrong format (86 00:00:00)
 SELECT CAST( CAST( 7430400 AS INTERVAL SECOND ) AS INTERVAL DAY TO SECOND ) = INTERVAL '86 00:00:00' DAY TO SECOND;
 +----------------+
 | =_single_value |
