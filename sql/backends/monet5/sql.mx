@@ -4542,7 +4542,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		if (r) 
 			GDKfree(r);
 		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
-			throw(SQL, "str_cast", "value too long for type (var)char(%d)", len);
+			throw(SQL, "str_cast", "22001!value too long for type (var)char(%d)", len);
 		} else {
 			r = GDKstrdup(str_nil);
 		}
@@ -4707,7 +4707,7 @@ str @2_2_@1( @1 *res, @2 *v )
 		return(MAL_SUCCEED);
 	} else {
 		throw(SQL, "convert",
-			"value (" @4 ") exceeds limits of type @1", val);
+			"22003!value (" @4 ") exceeds limits of type @1", val);
 	}
 }
 
@@ -4741,7 +4741,7 @@ str bat@2_2_@1( int *res, int *bid )
 			if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 				*o = (@1)val;
 			} else {
-				msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
+				msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", val);
 				break;
 			}
 		}
@@ -4756,7 +4756,7 @@ str bat@2_2_@1( int *res, int *bid )
 				if ((@3)(@1)val > (@3) GDK_@1_min && val > (@3) GDK_@1_min && val <= (@3) GDK_@1_max)	{
 					*o = (@1)val;
 				} else {
-					msg= createException(SQL, "convert", "value (" @4 ") exceeds limits of type @1", val);
+					msg= createException(SQL, "convert", "22003!value (" @4 ") exceeds limits of type @1", val);
 					break;
 				}
 			}
@@ -4830,7 +4830,7 @@ str
 	inlen += (s2-s1);
 	if (p && inlen > p) {
 		throw(SQL, "convert",
-			"too many digits (%d > %d)", inlen, p);
+			"22003!too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the @1 type is bigger than or equal to the @2 type, it will
@@ -5026,7 +5026,7 @@ str
 	/* rounding is allowed */
 	if (p && inlen > p) {
 		throw(SQL, "convert",
-			"too many digits (%d > %d)", inlen, p);
+			"22003!too many digits (%d > %d)", inlen, p);
 	}
 	*res = (@1) r;
 	return MAL_SUCCEED;
@@ -5122,7 +5122,7 @@ str
 	inlen += (s2-s1);
 	if (p && inlen > p) {
 		throw(SQL, "convert",
-			"too many digits (%d > %d)", inlen, p);
+			"22003!too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the @1 type is bigger than or equal to the @2 type, it will
@@ -5299,7 +5299,7 @@ str
 		return MAL_SUCCEED;
 	} else {
 		throw(SQL, "convert",
-			"value (" LLFMT ") exceeds limits of type @1", val);
+			"22003!value (" LLFMT ") exceeds limits of type @1", val);
 	}
 }
 
@@ -5323,7 +5323,7 @@ str
 	inlen += (s2-s1);
 	if (p && inlen > p) {
 		throw(SQL, "@2_2_@1",
-			"too many digits (%d > %d)", inlen, p);
+			"22003!too many digits (%d > %d)", inlen, p);
 	}
 
 	if(s2 > s1) 
@@ -5337,7 +5337,7 @@ str
 		return MAL_SUCCEED;
 	} else {
 		throw(SQL, "convert",
-			"value (" LLFMT ") exceeds limits of type @1", val);
+			"22003!value (" LLFMT ") exceeds limits of type @1", val);
 	}
 }
 
@@ -5385,7 +5385,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 				BBPreleaseref(b->batCacheid);
 				BBPreleaseref(bn->batCacheid);
-				throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", (lng) val);
+				throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
 			}
 		}
 	} else{
@@ -5405,7 +5405,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 					BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(bn->batCacheid);
-					throw(SQL, "convert", "value (" LLFMT ") exceeds limits of type @1", (lng) val);
+					throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
 				}
 			}
 		}
