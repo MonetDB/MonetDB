@@ -177,7 +177,7 @@ DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = BSKTlocate(tbl);
 	if ( idx == 0)
-		throw(SQL, "datacell.pause", "Basket not found");
+		throw(SQL, "datacell.resume", "Basket not found");
 
 	DCreceptorResume(&ret, &tbl);
 	DCemitterResume(&ret, &tbl);
