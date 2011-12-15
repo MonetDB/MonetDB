@@ -55,6 +55,8 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	if (rel_is_ref(rel)) {
 		sql_rel *nrel = rel_copy(sql->sa, rel);
 
+		if (nrel && rel->p)
+			nrel->p = prop_copy(sql->sa, rel->p);
 		rel_destroy(rel);
 		rel = nrel;
 	}
@@ -126,6 +128,15 @@ distribute(mvc *sql, sql_rel *rel)
 
 	if (!rel)
 		return rel;
+
+	if (rel_is_ref(rel)) {
+		sql_rel *nrel = rel_copy(sql->sa, rel);
+
+		if (nrel && rel->p)
+			nrel->p = prop_copy(sql->sa, rel->p);
+		rel_destroy(rel);
+		rel = nrel;
+	}
 
 	switch (rel->op) {
 	case op_basetable: {
