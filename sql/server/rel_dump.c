@@ -305,11 +305,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		print_indent(sql, fout, depth);
 		if (t->s)
 			mnstr_printf(fout, "%s(%s.%s)", 
-				isStream(t)?"stream":"table",
+				isStream(t)?"stream":
+				isRemote(t)?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
 				t->s->base.name, t->base.name);
 		else
 			mnstr_printf(fout, "%s(%s)", 
-				isStream(t)?"stream":"table",
+				isStream(t)?"stream":
+				isRemote(t)?"REMOTE":
+				isReplicaTable(t)?"REPLICA":"table",
 				t->base.name);
 		if (rel->exps) 
 			exps_print(sql, fout, rel->exps, depth, 1, 0);

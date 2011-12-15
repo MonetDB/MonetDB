@@ -29,6 +29,23 @@
 #include "rel_updates.h"
 #include "sql_env.h"
 
+
+static sql_rel *
+rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p) 
+{
+	node *n, *m;
+	sql_rel *r = rel_basetable(sql, p, t->base.name);
+
+	for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e = n->data;
+		sql_exp *ne = m->data;
+
+		exp_setname(sql->sa, ne, e->rname, e->name);
+	}
+	rel_destroy(rel);
+	return r;
+}
+
 static sql_rel *
 replica(mvc *sql, sql_rel *rel, char *uri) 
 {
@@ -48,22 +65,19 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		if (isReplicaTable(t)) {
 			node *n;
 
-			/* replace by the replica which matches the uri */
-			for (n = t->tables.set->h; n; n = n->next) {
-				sql_table *p = n->data;
-
-				if (isRemote(p) && strcmp(uri, p->query) == 0){
-					node *n, *m;
-					sql_rel *r = rel_basetable(sql, p, t->base.name);
-					for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
-						sql_exp *e = n->data;
-						sql_exp *ne = m->data;
-
-						exp_setname(sql->sa, ne, e->rname, e->name);
+			if (uri) {
+				/* replace by the replica which matches the uri */
+				for (n = t->tables.set->h; n; n = n->next) {
+					sql_table *p = n->data;
+	
+					if (isRemote(p) && strcmp(uri, p->query) == 0) {
+						rel = rewrite_replica(sql, rel, t, p);
+						break;
 					}
-					rel_destroy(rel);
-					rel = r;
 				}
+			} else { /* no match, use first */
+				sql_table *p = t->tables.set->h->data;
+				rel = rewrite_replica(sql, rel, t, p);
 			}
 		}
 	}
@@ -237,5 +251,6 @@ sql_rel *
 rel_distribute(mvc *sql, sql_rel *rel) 
 {
 	rel = distribute(sql, rel);
+	rel = replica(sql, rel, NULL);
 	return rel_remote_func(sql, rel);
 }
