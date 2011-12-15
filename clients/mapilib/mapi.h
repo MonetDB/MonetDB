@@ -166,6 +166,7 @@ mapi_export int mapi_get_autocommit(Mapi mid);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
+mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
 mapi_export char *mapi_result_error(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);

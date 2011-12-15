@@ -516,6 +516,7 @@ MapiMsg mapi_quick_response(MapiHdl hdl, FILE *fd);
 char *mapi_quote(const char *msg, int size);
 MapiMsg mapi_read_response(MapiHdl hdl);
 MapiMsg mapi_reconnect(Mapi mid);
+MapiMsg mapi_release_id(Mapi mid, int id);
 char **mapi_resolve(const char *host, int port, const char *pattern);
 char *mapi_result_error(MapiHdl hdl);
 mapi_int64 mapi_rows_affected(MapiHdl hdl);
