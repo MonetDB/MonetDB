@@ -112,7 +112,7 @@ usage(void)
 	mnstr_printf(ACout, "\nactuator [options]\n");
 	mnstr_printf(ACout, "--host=<host name>, default localhost\n");
 	mnstr_printf(ACout, "--port=<portnr>, default 50600 \n");
-	mnstr_printf(ACout, "--protocol=<name>  either tpc/udp\n");
+	mnstr_printf(ACout, "--protocol=<name>  either tcp/udp\n");
 	mnstr_printf(ACout, "--actuator=<actuator name> to identify the event received \n");
     mnstr_printf(ACout, "--active run as a active listener \n");
     mnstr_printf(ACout, "--passive run as a passive listener (default)\n");
