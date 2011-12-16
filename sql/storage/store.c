@@ -1034,7 +1034,6 @@ static void
 insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
 	int zero = 0;
-	bit F = FALSE;
 	node *n = NULL, *m = NULL;
 
 	for (n = funcs->h; n; n = n->next) {
@@ -1046,9 +1045,9 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		char arg_nme[] = "arg_0";
 
 		if (f->s)
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &se, &f->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &f->type, &se, &f->s->base.id);
 		else
-			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &F, &se, &zero);
+			table_funcs.table_insert(tr, sysfunc, &f->base.id, f->base.name, f->imp, f->mod, &sql, &f->type, &se, &zero);
 		
 		if (f->res.type) {
 			char *name = "result";
@@ -1075,7 +1074,7 @@ static void
 insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 {
 	int zero = 0;
-	bit T = TRUE, F = FALSE;
+	bit F = FALSE;
 	node *n = NULL;
 
 	for (n = aggrs->h; n; n = n->next) {
@@ -1086,9 +1085,9 @@ insert_aggrs(sql_trans *tr, sql_table *sysfunc, sql_table *sysarg)
 		int number = 0;
 
 		if (aggr->s)
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &F, &aggr->s->base.id);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &aggr->type, &F, &aggr->s->base.id);
 		else
-			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &T, &F, &zero);
+			table_funcs.table_insert(tr, sysfunc, &aggr->base.id, aggr->base.name, aggr->imp, aggr->mod, &F, &aggr->type, &F, &zero);
 		
 		id = next_oid();
 		table_funcs.table_insert(tr, sysarg, &id, &aggr->base.id, name1, aggr->res.type->sqlname, &aggr->res.digits, &aggr->res.scale, &number);

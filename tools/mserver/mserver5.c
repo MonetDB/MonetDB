@@ -105,9 +105,6 @@ usage(char *prog)
 	fprintf(stderr,"     --optimizers\n");
 	fprintf(stderr,"     --forcemito\n");
 	fprintf(stderr,"     --debug=<bitmask>\n");
-#ifndef NATIVE_WIN32
-	fprintf(stderr,"(See `man mserver5.conf` for the documentation.)\n");
-#endif
 
 	exit(0);
 }
