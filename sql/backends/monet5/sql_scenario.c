@@ -1176,8 +1176,17 @@ SQLshowPlan(Client c)
 	newStmt(c->curprg->def, "mdb", "listMapi");
 }
 
+static void
+SQLshowDot(Client c)
+{
+	InstrPtr q;
+	/* we should determine rendering requirements first */
+	/* FIXME: unify this with direct showFlowGraph() calls as used below */
+	q = newStmt(c->curprg->def, "mdb", "dot");
+	q = pushStr(c->curprg->def, q, "stdout-mapi");
+}
+
 /*
- * @-
  * The core part of the SQL interface, parse the query and
  * prepare the intermediate code.
  */
@@ -1368,7 +1377,8 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (m->emode != m_explain && !(m->emod & (mod_debug | mod_trace)))
+		if (m->emode != m_explain && m->emode != m_dot &&
+				!(m->emod & (mod_debug | mod_trace)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
@@ -1385,11 +1395,13 @@ SQLparser(Client c)
 		/* generate and call the MAL code */
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
+		if (m->emode == m_dot)
+			SQLshowDot(c);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain && m->emode != m_dot) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1480,14 +1492,14 @@ SQLparser(Client c)
 		}
 	}
 /*
- * @-
  * Inspect the variables for post code-generation actions.
  */
 finalize:
 	if (m->emode == m_explain && be->q && be->q->code)
 		printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	if (m->emode == m_dot && be->q && be->q->code)
+		showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 	/*
-	 * @-
 	 * Gather the statistics for post analysis. It should preferably
 	 * be stored in an SQL table
 	 */
@@ -1497,7 +1509,6 @@ finalize:
 }
 
 /*
- * @-
  * Execution of the SQL program is delegated to the MALengine.
  * Different cases should be distinguished. The default is to
  * hand over the MAL block derived by the parser for execution.
@@ -1606,7 +1617,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_explain) {
+	if (m->emode == m_explain || m->emode == m_dot) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
@@ -1628,30 +1639,33 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if( m->emode == m_prepare || m->emode == m_prepareresult){
 		goto cleanup_engine;
-	} else if( m->emode == m_explain ){
+	} else if (m->emode == m_explain || m->emode == m_dot) {
 		/*
-		 * @-
 		 * If you want to see the detailed code, we have to pick it up from
 		 * the cache as well. This calls for finding the call to the
-		 * cached routine, which may be hidden . For now we take a shortcut.
+		 * cached routine, which may be hidden. For now we take a shortcut.
 		 */
-		if( be->q) {
+		if (be->q) {
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
-			if (p->blk)
-				printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI );
+			if (p->blk) {
+				if (m->emode == m_explain) {
+					printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI);
+				} else {
+					showFlowGraph(p->blk, 0, "stdout-mapi");
+				}
+			}
 		}
-		c->curprg->def->errors = -1; /* don;t execute */
+		c->curprg->def->errors = -1; /* don't execute */
 	}
 	c->glb = 0;
-	be->language= 'D';
+	be->language = 'D';
 	/*
-	 * @-
 	 * The code below is copied from MALengine, which handles execution
 	 * in the context of a user global environment. We have a private
 	 * environment.
 	 */
-	if( MALcommentsOnly(c->curprg->def)) {
+	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
 		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);

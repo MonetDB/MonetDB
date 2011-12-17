@@ -593,7 +593,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	if (flg & LIST_MAPI) {
 		size_t len = 0;
 		str ps;
-		/* a bit dirty, but only here we have the number of lines */
 		mnstr_printf(fd, "&1 0 %d 1 %d\n", /* type id rows columns tuples */
 				mb->stop, mb->stop);
 		mnstr_printf(fd, "%% .explain # table_name\n");
@@ -608,7 +607,7 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 				GDKfree(ps);
 			}
 		}
-		mnstr_printf(fd, "%% " SZFMT " # length\n", len);	/* unknown */
+		mnstr_printf(fd, "%% " SZFMT " # length\n", len);
 	}
 	for (i = first; i < first +size && i < mb->stop; i++)
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
@@ -953,6 +952,7 @@ void chkDeclarations(MalBlkPtr mb){
 	}
 	GDKfree(decl);
 }
+
 /*
  * Data flow analysis.
  * Flow graph display is handy for debugging and analysis.
@@ -962,29 +962,29 @@ static void
 showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 {
 	InstrPtr p;
-	int i, k,found;
-
+	int i, k, found;
 
 	for (i = pc + 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
-		found=0;
+		found = 0;
 		for (k = 0; k < p->argc; k++) {
-			if (p->argv[k] == varid  ){
+			if (p->argv[k] == varid) {
 				mnstr_printf(f, "n%d -> n%d\n", pc, i);
 				found++;
 			}
 		}
 		/* stop as soon you find a re-assignment */
 		for (k = 0; k < p->retc; k++) {
-			if (getArg(p,k) == varid)
+			if (getArg(p, k) == varid)
 				i = mb->stop;
 		}
 		/* or a side-effect usage */
-		if( found &&
-			(p->retc== 0 || getArgType(mb,p,0)== TYPE_void) )
-				i = mb->stop;
+		if (found &&
+			(p->retc == 0 || getArgType(mb, p, 0) == TYPE_void))
+			i = mb->stop;
 	}
 }
+
 static void
 showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 {
@@ -992,13 +992,13 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 	int i, k;
 
 	/* find last use, needed for operations with side effects */
-	for (i = pc -1; i >= 0; i-- ){
+	for (i = pc - 1; i >= 0; i--) {
 		p = getInstrPtr(mb, i);
 		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid )
-				mnstr_printf(f, "n%d -> n%d\n",i, pc);
-				return;
-			}
+			if (p->argv[k] == varid)
+				mnstr_printf(f, "n%d -> n%d\n", i, pc);
+		return;
+	}
 }
 
 /*
@@ -1010,8 +1010,8 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
 	str s, msg;
 
-	(void) stk;		/* fool the compiler */
-	msg = instruction2str(mb,stk, p, LIST_MAL_DEBUG);
+	(void) stk;     /* fool the compiler */
+	msg = instruction2str(mb, stk, p, LIST_MAL_DEBUG);
 	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
 	for (s = msg; *s; s++)
 		if (*s == '"')
@@ -1028,43 +1028,83 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	stream *f;
 	InstrPtr p;
 	int i, k;
+	char mapimode = 0;
+	buffer *bufstr = NULL;
 
-	(void) stk;		/* fool the compiler */
+	(void) stk;     /* fool the compiler */
 
-	if (idcmp(fname, "stdout") == 0)
+	if (idcmp(fname, "stdout") == 0) {
 		f = GDKout;
-	else
+	} else if (idcmp(fname, "stdout-mapi") == 0) {
+		bufstr = buffer_create(8096);
+		f = buffer_wastream(bufstr, "bufstr_write");
+		mapimode = 1;
+	} else {
 		f = open_wastream(fname);
+	}
 	p = getInstrPtr(mb, 0);
-	mnstr_printf(f, "digraph %s{\n", getFunctionId(p));
+	mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);
 	showFlowDetails(mb, stk, p, 0, f);
 	for (k = p->retc; k < p->argc; k++) {
 		showOutFlow(mb, 0, p->argv[k], f);
 	}
-	for (i = 1; i < mb->stop ; i++) {
+	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 
 		showFlowDetails(mb, stk, p, i, f);
 
 		for (k = 0; k < p->retc; k++)
-				showOutFlow(mb, i, p->argv[k], f);
+			showOutFlow(mb, i, p->argv[k], f);
 
-		if( p->retc== 0 || getArgType(mb,p,0)== TYPE_void) /* assume side effects */
-		for (k = p->retc; k < p->argc; k++)
-			if (getArgType(mb,p,k) != TYPE_void &&
-				!isVarConstant(mb,getArg(p,k)))
-				showOutFlow(mb, i, p->argv[k], f);
+		if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
+			for (k = p->retc; k < p->argc; k++)
+				if (getArgType(mb, p, k) != TYPE_void &&
+					!isVarConstant(mb, getArg(p, k)))
+					showOutFlow(mb, i, p->argv[k], f);
 
-		if( getFunctionId(p)== 0)
-			for (k =0; k< p->retc; k++)
-				if( getArgType(mb,p,k) != TYPE_void)
+		if (getFunctionId(p) == 0)
+			for (k = 0; k < p->retc; k++)
+				if (getArgType(mb, p, k) != TYPE_void)
 					showInFlow(mb, i, p->argv[k], f);
-		if ( p->token == ENDsymbol)
+		if (p->token == ENDsymbol)
 			break;
 	}
 	mnstr_printf(f, "}\n");
-	if (f != GDKout)
+
+	if (mapimode == 1) {
+		size_t maxlen = 0;
+		size_t rows = 0;
+		str buf = buffer_get_buf(bufstr);
+		str line, oline;
+
+		/* calculate width of column, and the number of tuples */
+		oline = buf;
+		while ((line = strchr(oline, '\n')) != NULL) {
+			if ((size_t) (line - oline) > maxlen)
+				maxlen = line - oline;
+			rows++;
+			oline = line + 1;
+		} /* see printf before this mapimode if, last line ends with \n */
+
+		/* write mapi header */
+		mnstr_printf(GDKout, "&1 0 " SZFMT " 1 " SZFMT "\n",
+				/* type id rows columns tuples */ rows, rows);
+		mnstr_printf(GDKout, "%% .dot # table_name\n");
+		mnstr_printf(GDKout, "%% dot # name\n");
+		mnstr_printf(GDKout, "%% clob # type\n");
+		mnstr_printf(GDKout, "%% " SZFMT " # length\n", maxlen);
+		oline = buf;
+		while ((line = strchr(oline, '\n')) != NULL) {
+			*line++ = '\0';
+			mnstr_printf(GDKout, "=%s\n", oline);
+			oline = line;
+		}
+		free(buf);
 		mnstr_close(f);
+		buffer_destroy(bufstr);
+	} else if (f != GDKout) {
+		mnstr_close(f);
+	}
 }
 

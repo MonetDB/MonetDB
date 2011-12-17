@@ -59,6 +59,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 	BAT *b;
 
 	assert(access == RDONLY || access == RD_INS);
+	assert(bat != NULL);
 	if (temp || access == RD_INS) {
 		assert(bat->ibid);
 		b = temp_descriptor(bat->ibid);

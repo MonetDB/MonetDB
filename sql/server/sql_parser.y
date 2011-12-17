@@ -544,7 +544,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE PREPARERESULT EXECUTE
+%token SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE SQL_DOT PREPARE PREPARERESULT EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -638,6 +638,22 @@ sqlstmt:
 			  }
 			  YYACCEPT;
 			}
+
+ | SQL_DOT 		{ mvc *m = (mvc*)parm;
+		  	  m->emode = m_dot;
+			  m->scanner.as = m->scanner.yycur; 
+			  m->scanner.key = 0;
+			}
+	sql SCOLON 	{ mvc *m = (mvc*)parm;
+			  if (m->sym) {
+				append_symbol(m->sym->data.lval, $3);
+				$$ = m->sym;
+			  } else {
+				m->sym = $$ = $3;
+			  }
+			  YYACCEPT;
+			}
+
  | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
 			  if (m->scanner.mode == LINE_1) {
 				yyerror("SQL debugging only supported in interactive mode");
@@ -4748,6 +4764,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
+|  SQL_DOT	{ $$ = sa_strdup(SA, "dot"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
