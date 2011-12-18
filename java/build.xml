@@ -150,8 +150,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <src path="${srcdir}" />
@@ -168,8 +166,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <include name="${mcl-package}/**/*.java" />
@@ -184,8 +180,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <include name="${client-package}/**/*.java" />
@@ -200,8 +194,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <include name="${util-package}/**/*.java" />
@@ -216,8 +208,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="${debug}"
       optimize="${optimize}"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <include name="${mero-control-package}/**/*.java" />
