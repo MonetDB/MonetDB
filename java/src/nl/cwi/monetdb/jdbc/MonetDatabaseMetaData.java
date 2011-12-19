@@ -3198,10 +3198,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		types[0] = "varchar";
 		columns[1] = "MAX_LEN";
 		types[1] = "integer";
-		columns[1] = "DEFAULT_VALUE";
-		types[1] = "varchar";
-		columns[1] = "DESCRIPTION";
-		types[1] = "varchar";
+		columns[2] = "DEFAULT_VALUE";
+		types[2] = "varchar";
+		columns[3] = "DESCRIPTION";
+		types[3] = "varchar";
 
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
@@ -3319,6 +3319,84 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		throws SQLException
 	{
 		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented", "0A000");
+	}
+
+	//== 1.7 methods (JDBC 4.1)
+	
+	/**
+	 * Retrieves a description of the pseudo or hidden columns available
+	 * in a given table within the specified catalog and schema.  Pseudo
+	 * or hidden columns may not always be stored within a table and are
+	 * not visible in a ResultSet unless they are specified in the
+	 * query's outermost SELECT list.  Pseudo or hidden columns may not
+	 * necessarily be able to be modified.  If there are no pseudo or
+	 * hidden columns, an empty ResultSet is returned.
+	 *
+	 * @param catalog a catalog name
+	 * @param schemaPattern a schema name pattern
+	 * @param tableNamePattern a table name pattern
+	 * @param columnNamePattern a column name pattern
+	 * @return ResultSet where each row is a column description
+	 * @throws SQLException if a database access error occurs
+	 */
+	public ResultSet getPseudoColumns(
+			String catalog,
+			String schemaPattern,
+			String tableNamePattern,
+			String columnNamePattern)
+		throws SQLException
+	{
+		String[] columns, types;
+		String[][] results;
+
+		columns = new String[12];
+		types = new String[12];
+		results = new String[12][0];
+
+		columns[0] = "TABLE_CAT";
+		types[0] = "varchar";
+		columns[1] = "TABLE_SCHEM";
+		types[1] = "varchar";
+		columns[2] = "TABLE_NAME";
+		types[2] = "varchar";
+		columns[3] = "COLUMN_NAME";
+		types[3] = "varchar";
+		columns[4] = "DATA_TYPE";
+		types[4] = "int";
+		columns[5] = "COLUMN_SIZE";
+		types[5] = "int";
+		columns[6] = "DECIMAL_DIGITS";
+		types[6] = "int";
+		columns[7] = "NUM_PREC_RADIX";
+		types[7] = "int";
+		columns[8] = "COLUMN_USAGE";
+		types[8] = "varchar";
+		columns[9] = "REMARKS";
+		types[9] = "varchar";
+		columns[10] = "CHAR_OCTET_LENGTH";
+		types[10] = "int";
+		columns[11] = "IS_NULLABLE";
+		types[11] = "varchar";
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
+		}
+	}
+
+	/**
+	 * Retrieves whether a generated key will always be returned if the
+	 * column name(s) or index(es) specified for the auto generated key
+	 * column(s) are valid and the statement succeeds.  The key that is
+	 * returned may or may not be based on the column(s) for the auto
+	 * generated key.
+	 *
+	 * @return true if so, false otherwise
+	 * @throws SQLException - if a database access error occurs
+	 */
+	public boolean generatedKeyAlwaysReturned() throws SQLException {
+		return(true);
 	}
 
 	//== end methods interface DatabaseMetaData
