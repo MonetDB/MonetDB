@@ -2,7 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Dec 19 2011 Fabian Groffen <fabian@cwi.nl>
-- JDBC now implementd JDBCv4.1 which makes it possible to be built with
+- JDBC now implements JDBCv4.1 which makes it possible to be built with
   Java 7 and up.  JDBCv4.1 is a maintenance release of JDBCv4, and hence
   can be compiled with Java 6, although the added methods obviously are
   not part of the java.sql interfaces.
