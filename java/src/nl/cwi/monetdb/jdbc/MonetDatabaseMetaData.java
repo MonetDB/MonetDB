@@ -99,24 +99,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Retrieves whether a SQLException while autoCommit is true
-	 * inidcates that all open ResultSets are closed, even ones that are
-	 * holdable. When a SQLException occurs while autocommit is true, it
-	 * is vendor specific whether the JDBC driver responds with a commit
-	 * operation, a rollback operation, or by doing neither a commit nor
-	 * a rollback. A potential result of this difference is in whether
-	 * or not holdable ResultSets are closed.
-	 *
-	 * @return true if so; false otherwise
-	 */
-	public boolean autoCommitFailureClosesAllResultSets() {
-		// The driver caches most of it, and as far as I knoww the
-		// server doesn't close outstanding result handles on commit
-		// failure either.
-		return(false);
-	}
-
-	/**
 	 * Can all the procedures returned by getProcedures be called
 	 * by the current user?
 	 *
@@ -134,129 +116,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public boolean allTablesAreSelectable() {
 		return(true);
-	}
-
-	/**
-	 * Retrieves a description of the system and user functions
-	 * available in the given catalog.
-	 *
-	 * Only system and user function descriptions matching the schema
-	 * and function name criteria are returned. They are ordered by
-	 * FUNCTION_CAT, FUNCTION_SCHEM, FUNCTION_NAME and SPECIFIC_ NAME.
-	 *
-	 * Each function description has the the following columns:
-	 *
-	 *    1. FUNCTION_CAT String => function catalog (may be null)
-	 *    2. FUNCTION_SCHEM String => function schema (may be null)
-	 *    3. FUNCTION_NAME String => function name. This is the
-	 *       name used to invoke the function
-	 *    4. REMARKS String => explanatory comment on the function
-	 *    5. FUNCTION_TYPE short => kind of function:
-	 *        * functionResultUnknown - Cannot determine if a return
-	 *          value or table will be returned
-	 *        * functionNoTable- Does not return a table
-	 *        * functionReturnsTable - Returns a table 
-	 *    6. SPECIFIC_NAME String => the name which uniquely identifies
-	 *       this function within its schema. This is a user specified,
-	 *       or DBMS generated, name that may be different then the
-	 *       FUNCTION_NAME for example with overload functions 
-	 *
-	 * A user may not have permission to execute any of the functions
-	 * that are returned by getFunctions.
-	 *
-	 * @param catalog a catalog name; must match the catalog name as it
-	 *        is stored in the database; "" retrieves those without a
-	 *        catalog; null means that the catalog name should not be
-	 *        used to narrow the search
-	 * @param schemaPattern a schema name pattern; must match the schema
-	 *        name as it is stored in the database; "" retrieves those
-	 *        without a schema; null means that the schema name should
-	 *        not be used to narrow the search
-	 * @param functionNamePattern a function name pattern; must match
-	 *        the function name as it is stored in the database 
-	 * @return ResultSet - each row is a function description
-	 * @throws SQLException if a database access error occurs
-	 */
-	public ResultSet getFunctions(
-			String catalog,
-			String schemaPattern,
-			String functionNamePattern)
-		throws SQLException
-	{
-		String select;
-		String orderby;
-		String cat = getEnv("gdk_dbname");
-
-		select =
-			"SELECT * FROM ( " +
-			"SELECT '" + cat + "' AS \"FUNCTION_CAT\", " +
-				"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
-				"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
-				"null AS \"REMARKS\", " +
-				DatabaseMetaData.functionResultUnknown + " AS \"FUNCTION_TYPE\", " +
-				"CASE WHEN \"functions\".\"sql\" = false THEN CAST(\"functions\"/\"mod\" || '.' || \"functions\".\"func\" AS CLOB) ELSE CAST(\"functions\".\"name\" AS CLOB) END AS \"SPECIFIC_NAME\" " +
-			"FROM \"sys\".\"functions\" AS \"functions\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
-			") AS \"functions\" WHERE 1 = 1 ";
-
-		if (catalog != null) {
-			select += "AND LOWER('" + cat + "') LIKE '" + escapeQuotes(catalog).toLowerCase() + "' ";
-		}
-		if (schemaPattern != null) {
-			select += "AND LOWER(\"FUNCTION_SCHEM\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
-		}
-		if (functionNamePattern != null) {
-			select += "AND LOWER(\"FUNCTION_NAME\") LIKE '" + escapeQuotes(functionNamePattern).toLowerCase() + "' ";
-		}
-
-		orderby = "ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"";
-
-		return(getStmt().executeQuery(select + orderby));
-	}
-
-	/**
-	 * Retrieves a description of the given catalog's system or user
-	 * function parameters and return type.
-	 *
-	 * We don't implement this, because it is too much work, and left as
-	 * an SQL exercise for the future.  This function is here just for
-	 * JDBC4.
-	 *
-	 * @param catalog a catalog name; must match the catalog name as
-	 *        it is stored in the database; "" retrieves those without a
-	 *        catalog; null means that the catalog name should not be
-	 *        used to narrow the search
-	 * @param schemaPattern a schema name pattern; must match the schema
-	 *        name as it is stored in the database; "" retrieves those
-	 *        without a schema; null means that the schema name should
-	 *        not be used to narrow the search
-	 * @param functionNamePattern a procedure name pattern; must match the
-	 *        function name as it is stored in the database
-	 * @param columnNamePattern a parameter name pattern; must match the
-	 *        parameter or column name as it is stored in the database
-	 * @return ResultSet - each row describes a user function parameter,
-	 *         column or return type
-	 * @throws SQLException - if a database access error occurs
-	 */
-	public ResultSet getFunctionColumns(
-			String catalog,
-			String schemaPattern,
-			String functionNamePattern,
-			String columnNamePattern)
-		throws SQLException
-	{
-		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented", "0A000");
-	}
-
-	/**
-	 * Indicates whether or not this data source supports the SQL ROWID
-	 * type, and if so the lifetime for which a RowId object remains
-	 * valid.
-	 *
-	 * @return ROWID_UNSUPPORTED for now
-	 */
-	public RowIdLifetime getRowIdLifetime() {
-		// I believe we don't do rowids
-		return(RowIdLifetime.ROWID_UNSUPPORTED);
 	}
 
 	/**
@@ -887,49 +746,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	}
 
 	/**
-	 * Retrieves a list of the client info properties that the driver
-	 * supports. The result set contains the following columns
-	 *
-	 *    1. NAME String=> The name of the client info property
-	 *    2. MAX_LEN int=> The maximum length of the value for the
-	 *       property
-	 *    3. DEFAULT_VALUE String=> The default value of the
-	 *       property
-	 *    4. DESCRIPTION String=> A description of the
-	 *       property. This will typically contain information as
-	 *       to where this property is stored in the database. 
-	 *
-	 * The ResultSet is sorted by the NAME column 
-	 *
-	 * @return A ResultSet object; each row is a supported client info
-	 *         property, none in case of MonetDB's current JDBC driver
-	 * @throws SQLException if a database access error occurs
-	 */
-	public ResultSet getClientInfoProperties() throws SQLException {
-		String[] columns, types;
-		String[][] results;
-
-		columns = new String[4];
-		types = new String[4];
-		results = new String[4][0];
-
-		columns[0] = "NAME";
-		types[0] = "varchar";
-		columns[1] = "MAX_LEN";
-		types[1] = "integer";
-		columns[1] = "DEFAULT_VALUE";
-		types[1] = "varchar";
-		columns[1] = "DESCRIPTION";
-		types[1] = "varchar";
-
-		try {
-			return(new MonetVirtualResultSet(columns, types, results));
-		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
-		}
-	}
-
-	/**
 	 * Can a schema name be used in a data manipulation statement?
 	 *
 	 * @return true if so
@@ -1055,16 +871,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsStoredProcedures() {
-		return(false);
-	}
-
-	/**
-	 * Retrieves whether this database supports invoking user-defined or
-	 * vendor functions using the stored procedure escape syntax.
-	 *
-	 * @return true if so; false otherwise
-	 */
-	public boolean supportsStoredFunctionsUsingCallSyntax() {
 		return(false);
 	}
 
@@ -1709,24 +1515,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		orderby = "ORDER BY \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\" ";
 
 		return(getStmt().executeQuery(select + orderby));
-	}
-
-	/**
-	 * Get the schema names available in this database.  The results
-	 * are ordered by schema name.
-	 *
-	 * <P>The schema column is:
-	 *	<OL>
-	 *	<LI><B>TABLE_SCHEM</B> String => schema name
-	 *	<LI><B>TABLE_CATALOG</B> String => catalog name (may be null)
-	 *	</OL>
-	 *
-	 * @return ResultSet each row has a single String column that is a
-	 *         schema name
-	 * @throws SQLException if a database error occurs
-	 */
-	public ResultSet getSchemas() throws SQLException {
-		return(getSchemas(null, null));
 	}
 
 	/**
@@ -2839,7 +2627,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		}
 	}
 
-	// ** JDBC 2 Extensions **
+	//== 1.2 methods (JDBC 2)
 
 	/**
 	 * Does the database support the given result set type?
@@ -2964,7 +2752,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		return(false);
 	}
 
-	// ** JDBC 3 extensions **
+	//== 1.4 methods (JDBC 3)
 
 	/**
 	 * Retrieves whether this database supports savepoints.
@@ -3272,7 +3060,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version major number
 	 */
 	public int getJDBCMajorVersion() {
-		return(3); // This class implements JDBC 3.0 (at least we try to)
+		return(4); // This class implements JDBC 4.0 (at least we try to)
 	}
 
 	/**
@@ -3282,7 +3070,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version minor number
 	 */
 	public int getJDBCMinorVersion() {
-		return(0); // This class implements JDBC 3.0 (at least we try to)
+		return(0); // This class implements JDBC 4.0 (at least we try to)
 	}
 
 	/**
@@ -3317,6 +3105,220 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public boolean supportsStatementPooling() {
 		// For the moment, I don't think so
 		return(false);
+	}
+
+	//== 1.6 methods (JDBC 4)
+
+	/**
+	 * Indicates whether or not this data source supports the SQL ROWID
+	 * type, and if so the lifetime for which a RowId object remains
+	 * valid.
+	 *
+	 * @return ROWID_UNSUPPORTED for now
+	 */
+	public RowIdLifetime getRowIdLifetime() {
+		// I believe we don't do rowids
+		return(RowIdLifetime.ROWID_UNSUPPORTED);
+	}
+
+	/**
+	 * Get the schema names available in this database.  The results
+	 * are ordered by schema name.
+	 *
+	 * <P>The schema column is:
+	 *	<OL>
+	 *	<LI><B>TABLE_SCHEM</B> String => schema name
+	 *	<LI><B>TABLE_CATALOG</B> String => catalog name (may be null)
+	 *	</OL>
+	 *
+	 * @return ResultSet each row has a single String column that is a
+	 *         schema name
+	 * @throws SQLException if a database error occurs
+	 */
+	public ResultSet getSchemas() throws SQLException {
+		return(getSchemas(null, null));
+	}
+
+	/**
+	 * Retrieves whether this database supports invoking user-defined or
+	 * vendor functions using the stored procedure escape syntax.
+	 *
+	 * @return true if so; false otherwise
+	 */
+	public boolean supportsStoredFunctionsUsingCallSyntax() {
+		return(false);
+	}
+
+	/**
+	 * Retrieves whether a SQLException while autoCommit is true
+	 * inidcates that all open ResultSets are closed, even ones that are
+	 * holdable. When a SQLException occurs while autocommit is true, it
+	 * is vendor specific whether the JDBC driver responds with a commit
+	 * operation, a rollback operation, or by doing neither a commit nor
+	 * a rollback. A potential result of this difference is in whether
+	 * or not holdable ResultSets are closed.
+	 *
+	 * @return true if so; false otherwise
+	 */
+	public boolean autoCommitFailureClosesAllResultSets() {
+		// The driver caches most of it, and as far as I knoww the
+		// server doesn't close outstanding result handles on commit
+		// failure either.
+		return(false);
+	}
+
+	/**
+	 * Retrieves a list of the client info properties that the driver
+	 * supports. The result set contains the following columns
+	 *
+	 *    1. NAME String=> The name of the client info property
+	 *    2. MAX_LEN int=> The maximum length of the value for the
+	 *       property
+	 *    3. DEFAULT_VALUE String=> The default value of the
+	 *       property
+	 *    4. DESCRIPTION String=> A description of the
+	 *       property. This will typically contain information as
+	 *       to where this property is stored in the database. 
+	 *
+	 * The ResultSet is sorted by the NAME column 
+	 *
+	 * @return A ResultSet object; each row is a supported client info
+	 *         property, none in case of MonetDB's current JDBC driver
+	 * @throws SQLException if a database access error occurs
+	 */
+	public ResultSet getClientInfoProperties() throws SQLException {
+		String[] columns, types;
+		String[][] results;
+
+		columns = new String[4];
+		types = new String[4];
+		results = new String[4][0];
+
+		columns[0] = "NAME";
+		types[0] = "varchar";
+		columns[1] = "MAX_LEN";
+		types[1] = "integer";
+		columns[1] = "DEFAULT_VALUE";
+		types[1] = "varchar";
+		columns[1] = "DESCRIPTION";
+		types[1] = "varchar";
+
+		try {
+			return(new MonetVirtualResultSet(columns, types, results));
+		} catch (IllegalArgumentException e) {
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
+		}
+	}
+
+	/**
+	 * Retrieves a description of the system and user functions
+	 * available in the given catalog.
+	 *
+	 * Only system and user function descriptions matching the schema
+	 * and function name criteria are returned. They are ordered by
+	 * FUNCTION_CAT, FUNCTION_SCHEM, FUNCTION_NAME and SPECIFIC_ NAME.
+	 *
+	 * Each function description has the the following columns:
+	 *
+	 *    1. FUNCTION_CAT String => function catalog (may be null)
+	 *    2. FUNCTION_SCHEM String => function schema (may be null)
+	 *    3. FUNCTION_NAME String => function name. This is the
+	 *       name used to invoke the function
+	 *    4. REMARKS String => explanatory comment on the function
+	 *    5. FUNCTION_TYPE short => kind of function:
+	 *        * functionResultUnknown - Cannot determine if a return
+	 *          value or table will be returned
+	 *        * functionNoTable- Does not return a table
+	 *        * functionReturnsTable - Returns a table 
+	 *    6. SPECIFIC_NAME String => the name which uniquely identifies
+	 *       this function within its schema. This is a user specified,
+	 *       or DBMS generated, name that may be different then the
+	 *       FUNCTION_NAME for example with overload functions 
+	 *
+	 * A user may not have permission to execute any of the functions
+	 * that are returned by getFunctions.
+	 *
+	 * @param catalog a catalog name; must match the catalog name as it
+	 *        is stored in the database; "" retrieves those without a
+	 *        catalog; null means that the catalog name should not be
+	 *        used to narrow the search
+	 * @param schemaPattern a schema name pattern; must match the schema
+	 *        name as it is stored in the database; "" retrieves those
+	 *        without a schema; null means that the schema name should
+	 *        not be used to narrow the search
+	 * @param functionNamePattern a function name pattern; must match
+	 *        the function name as it is stored in the database 
+	 * @return ResultSet - each row is a function description
+	 * @throws SQLException if a database access error occurs
+	 */
+	public ResultSet getFunctions(
+			String catalog,
+			String schemaPattern,
+			String functionNamePattern)
+		throws SQLException
+	{
+		String select;
+		String orderby;
+		String cat = getEnv("gdk_dbname");
+
+		select =
+			"SELECT * FROM ( " +
+			"SELECT '" + cat + "' AS \"FUNCTION_CAT\", " +
+				"\"schemas\".\"name\" AS \"FUNCTION_SCHEM\", " +
+				"\"functions\".\"name\" AS \"FUNCTION_NAME\", " +
+				"null AS \"REMARKS\", " +
+				DatabaseMetaData.functionResultUnknown + " AS \"FUNCTION_TYPE\", " +
+				"CASE WHEN \"functions\".\"sql\" = false THEN CAST(\"functions\"/\"mod\" || '.' || \"functions\".\"func\" AS CLOB) ELSE CAST(\"functions\".\"name\" AS CLOB) END AS \"SPECIFIC_NAME\" " +
+			"FROM \"sys\".\"functions\" AS \"functions\", \"sys\".\"schemas\" AS \"schemas\" WHERE \"functions\".\"schema_id\" = \"schemas\".\"id\" " +
+			") AS \"functions\" WHERE 1 = 1 ";
+
+		if (catalog != null) {
+			select += "AND LOWER('" + cat + "') LIKE '" + escapeQuotes(catalog).toLowerCase() + "' ";
+		}
+		if (schemaPattern != null) {
+			select += "AND LOWER(\"FUNCTION_SCHEM\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
+		}
+		if (functionNamePattern != null) {
+			select += "AND LOWER(\"FUNCTION_NAME\") LIKE '" + escapeQuotes(functionNamePattern).toLowerCase() + "' ";
+		}
+
+		orderby = "ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"";
+
+		return(getStmt().executeQuery(select + orderby));
+	}
+
+	/**
+	 * Retrieves a description of the given catalog's system or user
+	 * function parameters and return type.
+	 *
+	 * We don't implement this, because it is too much work, and left as
+	 * an SQL exercise for the future.  This function is here just for
+	 * JDBC4.
+	 *
+	 * @param catalog a catalog name; must match the catalog name as
+	 *        it is stored in the database; "" retrieves those without a
+	 *        catalog; null means that the catalog name should not be
+	 *        used to narrow the search
+	 * @param schemaPattern a schema name pattern; must match the schema
+	 *        name as it is stored in the database; "" retrieves those
+	 *        without a schema; null means that the schema name should
+	 *        not be used to narrow the search
+	 * @param functionNamePattern a procedure name pattern; must match the
+	 *        function name as it is stored in the database
+	 * @param columnNamePattern a parameter name pattern; must match the
+	 *        parameter or column name as it is stored in the database
+	 * @return ResultSet - each row describes a user function parameter,
+	 *         column or return type
+	 * @throws SQLException - if a database access error occurs
+	 */
+	public ResultSet getFunctionColumns(
+			String catalog,
+			String schemaPattern,
+			String functionNamePattern,
+			String columnNamePattern)
+		throws SQLException
+	{
+		throw new SQLException("getFunctionColumns(String, String, String, String) is not implemented", "0A000");
 	}
 
 	//== end methods interface DatabaseMetaData
