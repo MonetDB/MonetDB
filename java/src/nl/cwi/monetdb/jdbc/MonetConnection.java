@@ -2192,8 +2192,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		void closeResponse(int i) {
 			if (i < 0 || i >= responses.size()) return;
-			Response tmp = (Response)(responses.get(i));
-			if (tmp != null) tmp.close();
+			Response tmp = (Response)(responses.set(i, null));
+			if (tmp != null)
+				tmp.close();
 		}
 
 		/**
@@ -2220,6 +2221,18 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			for (int i = 0; i < responses.size(); i++) {
 				closeResponse(i);
 			}
+		}
+
+		/**
+		 * Returns whether this ResponseList has still unclosed
+		 * Responses.
+		 */
+		boolean hasUnclosedResponses() {
+			for (int i = 0; i < responses.size(); i++) {
+				if (responses.get(i) != null)
+					return(true);
+			}
+			return(false);
 		}
 
 		/**

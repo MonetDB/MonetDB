@@ -35,6 +35,7 @@ M0M29 assert
 42M31 user/role already exists
 42M32 user/role not found
 08M33 connection timeout
+0AM34 Java generics not supported
 
 TODO:
 JDBC 4.1 suggests the following SQLException subclass mapping:

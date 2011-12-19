@@ -3060,7 +3060,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version major number
 	 */
 	public int getJDBCMajorVersion() {
-		return(4); // This class implements JDBC 4.0 (at least we try to)
+		return(4); // This class implements JDBC 4.1 (at least we try to)
 	}
 
 	/**
@@ -3070,7 +3070,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version minor number
 	 */
 	public int getJDBCMinorVersion() {
-		return(0); // This class implements JDBC 4.0 (at least we try to)
+		return(1); // This class implements JDBC 4.1 (at least we try to)
 	}
 
 	/**

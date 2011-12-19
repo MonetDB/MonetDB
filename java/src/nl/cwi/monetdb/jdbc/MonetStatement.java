@@ -62,6 +62,9 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	protected boolean closed;
 	/** Whether the application wants this Statement object to be pooled */
 	protected boolean poolable;
+	/** Whether this Statement should be closed if the last ResultSet
+	 * closes */
+	private boolean closeOnCompletion = false;
 	/** The size of the blocks of results to ask for at the server */
 	private int fetchSize = 0;
 	/** The maximum number of rows to return in a ResultSet */
@@ -314,28 +317,6 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		// close previous ResultSet, if not closed already
 		if (lastResponseList != null) lastResponseList.close();
 		closed = true;
-	}
-
-	/**
-	 * Retrieves whether this Statement object has been closed. A
-	 * Statement is closed if the method close has been called on it, or
-	 * if it is automatically closed.
-	 *
-	 * @return true if this Statement object is closed; false if it is
-	 *         still open
-	 */
-	public boolean isClosed() {
-		return(closed);
-	}
-
-	/**
-	 * Returns a value indicating whether the Statement is poolable or
-	 * not.
-	 *
-	 * @return true if the Statement is poolable; false otherwise
-	 */
-	public boolean isPoolable() {
-		return(poolable);
 	}
 
 	// Chapter 13.1.2.3 of Sun's JDBC 3.0 Specification
@@ -1062,6 +1043,40 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	}
 
 	/**
+	 * Sets the number of seconds the driver will wait for a Statement
+	 * object to execute to the given number of seconds. If the limit is
+	 * exceeded, an SQLException is thrown.
+	 * <br /><br />
+	 * MonetDB does not support cancelling running queries, hence this
+	 * method does not do anything.
+	 *
+	 * @param seconds the new query timeout limit in seconds; zero means
+	 *        there is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition seconds &gt;= 0 is not satisfied
+	 */
+	public void setQueryTimeout(int seconds) throws SQLException {
+		if (seconds < 0)
+			throw new SQLException("Illegal timeout value: " + seconds, "M1M05");
+		if (seconds > 0)
+			addWarning("setQueryTimeout: query time outs not supported", "01M24");
+	}
+
+	//== 1.6 methods (JDBC 4.0)
+
+	/**
+	 * Retrieves whether this Statement object has been closed. A
+	 * Statement is closed if the method close has been called on it, or
+	 * if it is automatically closed.
+	 *
+	 * @return true if this Statement object is closed; false if it is
+	 *         still open
+	 */
+	public boolean isClosed() {
+		return(closed);
+	}
+
+	/**
 	 * Requests that a Statement be pooled or not pooled. The value
 	 * specified is a hint to the statement pool implementation
 	 * indicating whether the applicaiton wants the statement to be
@@ -1084,23 +1099,42 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	}
 
 	/**
-	 * Sets the number of seconds the driver will wait for a Statement
-	 * object to execute to the given number of seconds. If the limit is
-	 * exceeded, an SQLException is thrown.
-	 * <br /><br />
-	 * MonetDB does not support cancelling running queries, hence this
-	 * method does not do anything.
+	 * Returns a value indicating whether the Statement is poolable or
+	 * not.
 	 *
-	 * @param seconds the new query timeout limit in seconds; zero means
-	 *        there is no limit
-	 * @throws SQLException if a database access error occurs or the
-	 *         condition seconds &gt;= 0 is not satisfied
+	 * @return true if the Statement is poolable; false otherwise
 	 */
-	public void setQueryTimeout(int seconds) throws SQLException {
-		if (seconds < 0)
-			throw new SQLException("Illegal timeout value: " + seconds, "M1M05");
-		if (seconds > 0)
-			addWarning("setQueryTimeout: query time outs not supported", "01M24");
+	public boolean isPoolable() {
+		return(poolable);
+	}
+
+	//== 1.7 methods (JDBC 4.1)
+	
+	/**
+	 * Specifies that this Statement will be closed when all its
+	 * dependent result sets are closed.  If execution of the Statement
+	 * does not produce any result sets, this method has no effect.
+	 *
+	 * @throws SQLException if this method is called on a closed Statement
+	 */
+	public void closeOnCompletion() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Statement", "M1M20");
+		closeOnCompletion = true;
+	}
+
+	/**
+	 * Returns a value indicating whether this Statement will be closed
+	 * when all its dependent result sets are closed.
+	 *
+	 * @return true if the Statement will be closed when all of its
+	 *         dependent result sets are closed; false otherwise
+	 * @throws SQLException if this method is called on a closed Statement
+	 */
+	public boolean isCloseOnCompletion() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Statement", "M1M20");
+		return(closeOnCompletion);
 	}
 
 	//== end methods of interface Statement
@@ -1119,5 +1153,16 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		} else {
 			warnings.setNextWarning(new SQLWarning(reason, sqlstate));
 		}
+	}
+
+	/**
+	 * Closes this Statement if there are no more open ResultSets
+	 * (Responses).  Called by MonetResultSet.close().
+	 */
+	void closeIfCompletion() {
+		if (!closeOnCompletion || lastResponseList == null)
+			return;
+		if (!lastResponseList.hasUnclosedResponses())
+			close();
 	}
 }
