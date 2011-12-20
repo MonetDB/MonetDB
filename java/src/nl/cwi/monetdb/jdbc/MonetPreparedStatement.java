@@ -1329,8 +1329,8 @@ public class MonetPreparedStatement
 				default:
 					throw new SQLException("Conversion not allowed", "M1M05");
 			}
-		} else if (x instanceof Number) {
-			Number num = (Number)x;
+		} else if (x instanceof BigDecimal) {
+			BigDecimal num = (BigDecimal)x;
 			switch (targetSqlType) {
 				case Types.TINYINT:
 					setByte(parameterIndex, num.byteValue());
@@ -1342,11 +1342,7 @@ public class MonetPreparedStatement
 					setInt(parameterIndex, num.intValue());
 				break;
 				case Types.BIGINT:
-					if (x instanceof BigDecimal) {
-						setLong(parameterIndex, ((BigDecimal)x).setScale(scale, BigDecimal.ROUND_HALF_UP).longValue());
-					} else {
-						setLong(parameterIndex, num.longValue());
-					}
+					setLong(parameterIndex, num.setScale(scale, BigDecimal.ROUND_HALF_UP).longValue());
 				break;
 				case Types.REAL:
 					setFloat(parameterIndex, num.floatValue());
@@ -1357,33 +1353,7 @@ public class MonetPreparedStatement
 				break;
 				case Types.DECIMAL:
 				case Types.NUMERIC:
-					if (x instanceof BigDecimal) {
-						setBigDecimal(parameterIndex, (BigDecimal)x);
-					} else if (x instanceof BigInteger) {
-						BigDecimal val;
-						try {
-							val = new BigDecimal((BigInteger)x, scale);
-						} catch (NumberFormatException e) {
-							try {
-								val = new BigDecimal(0.0);
-							} catch (NumberFormatException ex) {
-								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage(), "M0M03");
-							}
-						}
-						setBigDecimal(parameterIndex, val);
-					} else {
-						BigDecimal val;
-						try {
-							val = new BigDecimal(num.doubleValue());
-						} catch (NumberFormatException e) {
-							try {
-								val = new BigDecimal(0.0);
-							} catch (NumberFormatException ex) {
-								throw new SQLException("Internal error: unable to create template BigDecimal: " + ex.getMessage(), "M0M03");
-							}
-						}
-						setBigDecimal(parameterIndex, val);
-					}
+					setBigDecimal(parameterIndex, num);
 				break;
 				case Types.BIT:
 				case Types.BOOLEAN:
@@ -1392,6 +1362,20 @@ public class MonetPreparedStatement
 					} else {
 						setBoolean(parameterIndex, false);
 					}
+				break;
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, x.toString());
+				break;
+				default:
+					throw new SQLException("Conversion not allowed", "M1M05");
+			}
+		} else if (x instanceof BigInteger) {
+			BigInteger num = (BigInteger)x;
+			switch (targetSqlType) {
+				case Types.BIGINT:
+					setLong(parameterIndex, num.longValue());
 				break;
 				case Types.CHAR:
 				case Types.VARCHAR:
