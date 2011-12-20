@@ -1,6 +1,11 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Tue Dec 20 2011 Fabian Groffen <fabian@cwi.nl>
+- Resolved a concurrency problem where ResultSet's date-related getters
+  could cause odd stack traces when used by multiple threads at the
+  same time, bug #2950.
+
 * Mon Dec 19 2011 Fabian Groffen <fabian@cwi.nl>
 - JDBC now implements JDBCv4.1 which makes it possible to be built with
   Java 7 and up.  JDBCv4.1 is a maintenance release of JDBCv4, and hence

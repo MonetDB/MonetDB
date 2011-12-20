@@ -1822,11 +1822,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
-	private static SimpleDateFormat ts =
+	private SimpleDateFormat ts =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static SimpleDateFormat t =
+	private SimpleDateFormat t =
 		new SimpleDateFormat("HH:mm:ss");
-	private static SimpleDateFormat d =
+	private SimpleDateFormat d =
 		new SimpleDateFormat("yyyy-MM-dd");
 	/**
 	 * Helper method which parses the date/time value for columns of type
