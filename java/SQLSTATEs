@@ -34,3 +34,20 @@ M0M29 assert
 2DM30 autocommit mode active
 42M31 user/role already exists
 42M32 user/role not found
+08M33 connection timeout
+0AM34 Java generics not supported
+
+TODO:
+JDBC 4.1 suggests the following SQLException subclass mapping:
+NonTransientSQLExeceptions (fails when same operation executed again)
+0A SQLFeatureNotSupportedException
+08 SQLNonTransientConnectionException
+22 SQLDataException
+23 SQLIntegrityConstraintViolationException
+28 SQLInvalidAuthorizationException
+42 SQLSyntaxErrorException
+TransientSQLExeceptions (retry of same operation might succeed)
+08 SQLTransientConnectionException
+40 SQLTransactionRollbackException
+   SQLTimeoutException
+

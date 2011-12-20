@@ -249,6 +249,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		if (!header.isClosed()) {
 			header.close();
 		}
+		if (statement instanceof MonetStatement)
+			((MonetStatement)statement).closeIfCompletion();
 	}
 
 	// Chapter 14.2.3 from Sun JDBC 3.0 specification
@@ -1434,15 +1436,25 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public Object getObject(int i, Map map) throws SQLException {
+	public Object getObject(int i, Map<String,Class<?>> map)
+		throws SQLException
+	{
+		Class type;
+
 		if (tlp.values[i - 1] == null) {
 			lastColumnRead = i - 1;
 			return(null);
 		}
 
-		Class type = getClassForType(getJavaType(types[i - 1]));
+		if (map.containsKey(types[i - 1])) {
+			type = map.get(types[i - 1]);
+		} else {
+			type = getClassForType(getJavaType(types[i - 1]));
+		}
 
-		if (type == BigDecimal.class) {
+		if (type == String.class) {
+			return(getString(i));
+		} else if (type == BigDecimal.class) {
 			return(getBigDecimal(i));
 		} else if (type == Boolean.class) {
 			return(Boolean.valueOf(getBoolean(i)));
@@ -1454,6 +1466,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			return(new Float(getFloat(i)));
 		} else if (type == Double.class) {
 			return(new Double(getDouble(i)));
+		} else if (type == byte[].class) {
+			return(getBytes(i));
 		} else if (type == java.sql.Date.class) {
 			return(getDate(i));
 		} else if (type == Time.class) {
@@ -1464,11 +1478,56 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			return(getClob(i));
 		} else if (type == Blob.class) {
 			return(getBlob(i));
-		} else if (type == byte[].class) {
-			return(getBytes(i));
 		} else {
 			return(getString(i));
 		}
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object and will convert from the SQL type of
+	 * the column to the requested Java data type, if the conversion is
+	 * supported.  If the conversion is not supported or null is
+	 * specified for the type, a SQLException is thrown.
+	 *
+	 * @param i the first column is 1, the second is 2, ...
+	 * @param type Class representing the Java data type to convert the
+	 *        designated column to
+	 * @return an instance of type holding the column value
+	 * @throws SQLException if conversion is not supported, type is
+	 *         null or another error occurs. The getCause() method of
+	 *         the exception may provide a more detailed exception, for
+	 *         example, if a conversion error occurs
+	 */
+	public <T> T getObject(int i, Class<T> type) throws SQLException {
+		if (type == null)
+			throw new SQLException("type is null", "M1M05");
+
+		throw new SQLFeatureNotSupportedException("cannot return a Java generic type based on static types from getXXX methods", "0AM34");
+	}
+
+	/**
+	 * Retrieves the value of the designated column in the current row
+	 * of this ResultSet object and will convert from the SQL type of
+	 * the column to the requested Java data type, if the conversion is
+	 * supported.  If the conversion is not supported or null is
+	 * specified for the type, a SQLException is thrown.
+	 *
+	 * @param columnLabel the label for the column specified with the
+	 *        SQL AS clause. If the SQL AS clause was not specified,
+	 *        then the label is the name of the column
+	 * @param type Class representing the Java data type to convert the
+	 *        designated column to
+	 * @return an instance of type holding the column value
+	 * @throws SQLException if conversion is not supported, type is
+	 *         null or another error occurs. The getCause() method of
+	 *         the exception may provide a more detailed exception, for
+	 *         example, if a conversion error occurs
+	 */
+	public <T> T getObject(String columnLabel, Class<T> type)
+		throws SQLException
+	{
+		return(getObject(findColumn(columnLabel), type));
 	}
 
 	/**
@@ -1481,8 +1540,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	static Class getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
-		 * Sun's JDBC specification 3.0
+		 * Oracle's JDBC specification 4.1
 		 */
+		// keep this switch aligned with getObject(int, Map) !
 		switch(type) {
 			case Types.CHAR:
 			case Types.VARCHAR:
@@ -1505,6 +1565,10 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.FLOAT:
 			case Types.DOUBLE:
 				return(Double.class);
+			case Types.BINARY:      // MonetDB currently does not support these
+			case Types.VARBINARY:   // see treat_blob_as_binary property
+			case Types.LONGVARBINARY:
+				return(byte[].class);
 			case Types.DATE:
 				return(java.sql.Date.class);
 			case Types.TIME:
@@ -1515,18 +1579,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				return(Clob.class);
 			case Types.BLOB:
 				return(Blob.class);
-			case Types.BINARY:      // MonetDB currently does not support these
-			case Types.VARBINARY:   // see treat_blob_as_binary property
-			case Types.LONGVARBINARY:
-				return(byte[].class);
 
-			// all below are currently not implemented and used
-			case Types.DISTINCT:
-			case Types.ARRAY:
-			case Types.STRUCT:
-			case Types.REF:
-			case Types.DATALINK:
-			case Types.OTHER:
+			// all the rest are currently not implemented and used
 			default:
 				return(String.class);
 		}
@@ -1768,11 +1822,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
-	private static SimpleDateFormat ts =
+	private SimpleDateFormat ts =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static SimpleDateFormat t =
+	private SimpleDateFormat t =
 		new SimpleDateFormat("HH:mm:ss");
-	private static SimpleDateFormat d =
+	private SimpleDateFormat d =
 		new SimpleDateFormat("yyyy-MM-dd");
 	/**
 	 * Helper method which parses the date/time value for columns of type

@@ -56,8 +56,6 @@ All Rights Reserved.
       destdir="${builddir}"
       debug="true"
       optimize="false"
-      target="${javac_version}"
-      source="${javac_version}"
       includeantruntime="false"
       >
       <include name="**/*.java" />

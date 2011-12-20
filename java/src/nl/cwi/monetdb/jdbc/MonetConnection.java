@@ -24,6 +24,9 @@ import java.util.*;
 import java.io.*;
 import java.nio.*;
 import java.security.*;
+import java.util.concurrent.Executor;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import nl.cwi.monetdb.mcl.io.*;
 import nl.cwi.monetdb.mcl.net.*;
 import nl.cwi.monetdb.mcl.parser.*;
@@ -170,7 +173,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (hash != null) server.setHash(hash);
 		if (database != null) server.setDatabase(database);
 		server.setLanguage(language);
-		server.setSoTimeout(sockTimeout);
 
 		// we're debugging here... uhm, should be off in real life
 		if (debug) {
@@ -202,6 +204,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				}
 			}
 
+			// apply NetworkTimeout value from legacy (pre 4.1) driver
+			// so_timeout calls
+			server.setSoTimeout(sockTimeout);
+
 			in = server.getReader();
 			out = server.getWriter();
 
@@ -213,7 +219,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		} catch (Exception e) {
 			throw new SQLException(e.getMessage(), "08001");
 		}
-
 
 		// we seem to have managed to log in, let's store the
 		// language used
@@ -1227,6 +1232,123 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				(closed ? "connected" : "disconnected"));
 	}
 
+	//== 1.7 methods (JDBC 4.1)
+
+	/**
+	 * Sets the given schema name to access.
+	 *
+	 * @param schema the name of a schema in which to work
+	 * @throws SQLException if a database access error occurs or this
+	 *         method is called on a closed connection
+	 */
+	public void setSchema(String schema) throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Connection", "M1M20");
+		createStatement().executeUpdate("SET SCHEMA = \"" + schema + "\"");
+	}
+
+	/**
+	 * Retrieves this Connection object's current schema name.
+	 *
+	 * @return the current schema name or null if there is none
+	 * @throws SQLException if a database access error occurs or this
+	 *         method is called on a closed connection
+	 */
+	public String getSchema() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Connection", "M1M20");
+		ResultSet rs = createStatement().executeQuery("SELECT CURRENT_SCHEMA");
+		if (!rs.next())
+			throw new SQLException("Row expected", "02000");
+		return(rs.getString(1));
+	}
+
+	/**
+	 * Terminates an open connection. Calling abort results in:
+	 *  * The connection marked as closed
+	 *  * Closes any physical connection to the database
+	 *  * Releases resources used by the connection
+	 *  * Insures that any thread that is currently accessing the
+	 *    connection will either progress to completion or throw an
+	 *    SQLException. 
+	 * Calling abort marks the connection closed and releases any
+	 * resources. Calling abort on a closed connection is a no-op. 
+	 *
+	 * @param executor The Executor implementation which will be used by
+	 *        abort
+	 * @throws SQLException if a database access error occurs or the
+	 *         executor is null
+	 * @throws SecurityException if a security manager exists and
+	 *         its checkPermission method denies calling abort
+	 */
+	public void abort(Executor executor) throws SQLException {
+		if (closed)
+			return;
+		if (executor == null)
+			throw new SQLException("executor is null", "M1M05");
+		// this is really the simplest thing to do, it destroys
+		// everything (in particular the server connection)
+		close();
+	}
+
+	/**
+	 * Sets the maximum period a Connection or objects created from the
+	 * Connection will wait for the database to reply to any one
+	 * request. If any request remains unanswered, the waiting method
+	 * will return with a SQLException, and the Connection or objects
+	 * created from the Connection will be marked as closed. Any
+	 * subsequent use of the objects, with the exception of the close,
+	 * isClosed or Connection.isValid methods, will result in a
+	 * SQLException.
+	 *
+	 * @param executor The Executor implementation which will be used by
+	 *        setNetworkTimeout
+	 * @param milliseconds The time in milliseconds to wait for the
+	 *        database operation to complete
+	 * @throws SQLException if a database access error occurs, this
+	 *         method is called on a closed connection, the executor is
+	 *         null, or the value specified for seconds is less than 0.
+	 * @throws SQLException if a database access error occurs or
+	 *         this method is called on a closed Connection
+	 */
+	public void setNetworkTimeout(Executor executor, int millis)
+		throws SQLException
+	{
+		if (closed)
+			throw new SQLException("Cannot call on closed Connection", "M1M20");
+		if (executor == null)
+			throw new SQLException("executor is null", "M1M05");
+		if (millis < 0)
+			throw new SQLException("milliseconds is less than zero", "M1M05");
+
+		try {
+			server.setSoTimeout(millis);
+		} catch (SocketException e) {
+			throw new SQLException(e.getMessage(), "08000");
+		}
+	}
+
+	/**
+	 * Retrieves the number of milliseconds the driver will wait for a
+	 * database request to complete. If the limit is exceeded, a
+	 * SQLException is thrown.
+	 *
+	 * @return the current timeout limit in milliseconds; zero means
+	 *         there is no limit
+	 * @throws SQLException if a database access error occurs or
+	 *         this method is called on a closed Connection
+	 */
+	public int getNetworkTimeout() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Connection", "M1M20");
+
+		try {
+			return(server.getSoTimeout());
+		} catch (SocketException e) {
+			throw new SQLException(e.getMessage(), "08000");
+		}
+	}
+
 	//== end methods of interface Connection
 
 	/**
@@ -1256,6 +1378,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				if (error != null)
 					throw new SQLException(error.substring(6),
 							error.substring(0, 5));
+			} catch (SocketTimeoutException e) {
+				close(); // JDBC 4.1 semantics: abort()
+				throw new SQLException("connection timed out", "08M33");
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage(), "08000");
 			}
@@ -1283,6 +1408,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				if (error != null)
 					throw new SQLException(error.substring(6),
 							error.substring(0, 5));
+			} catch (SocketTimeoutException e) {
+				close(); // JDBC 4.1 semantics, abort()
+				throw new SQLException("connection timed out", "08M33");
 			} catch (IOException e) {
 				throw new SQLException(e.getMessage(), "08000");
 			}
@@ -2064,8 +2192,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		void closeResponse(int i) {
 			if (i < 0 || i >= responses.size()) return;
-			Response tmp = (Response)(responses.get(i));
-			if (tmp != null) tmp.close();
+			Response tmp = (Response)(responses.set(i, null));
+			if (tmp != null)
+				tmp.close();
 		}
 
 		/**
@@ -2092,6 +2221,18 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			for (int i = 0; i < responses.size(); i++) {
 				closeResponse(i);
 			}
+		}
+
+		/**
+		 * Returns whether this ResponseList has still unclosed
+		 * Responses.
+		 */
+		boolean hasUnclosedResponses() {
+			for (int i = 0; i < responses.size(); i++) {
+				if (responses.get(i) != null)
+					return(true);
+			}
+			return(false);
 		}
 
 		/**
@@ -2362,6 +2503,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					}
 					throw ret;
 				}
+			} catch (SocketTimeoutException e) {
+				close(); // JDBC 4.1 semantics, abort()
+				throw new SQLException("connection timed out", "08M33");
 			} catch (IOException e) {
 				closed = true;
 				throw new SQLException(e.getMessage() + " (mserver still alive?)", "08000");
