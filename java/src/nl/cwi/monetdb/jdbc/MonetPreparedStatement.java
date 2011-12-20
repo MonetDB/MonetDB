@@ -1442,7 +1442,9 @@ public class MonetPreparedStatement
 			}
 		} else if (x instanceof java.sql.Date ||
 				x instanceof Timestamp ||
-				x instanceof Time)
+				x instanceof Time ||
+				x instanceof Calendar ||
+				x instanceof java.util.Date)
 		{
 			switch (targetSqlType) {
 				case Types.CHAR:
@@ -1457,6 +1459,12 @@ public class MonetPreparedStatement
 						setDate(parameterIndex, (java.sql.Date)x);
 					} else if (x instanceof Timestamp) {
 						setDate(parameterIndex, new java.sql.Date(((Timestamp)x).getTime()));
+					} else if (x instanceof java.util.Date) {
+						setDate(parameterIndex, new java.sql.Date(
+									((java.util.Date)x).getTime()));
+					} else if (x instanceof Calendar) {
+						setDate(parameterIndex, new java.sql.Date(
+									((Calendar)x).getTimeInMillis()));
 					}
 				break;
 				case Types.TIME:
@@ -1466,6 +1474,12 @@ public class MonetPreparedStatement
 						throw new SQLException("Conversion not allowed", "M1M05");
 					} else if (x instanceof Timestamp) {
 						setTime(parameterIndex, new Time(((Timestamp)x).getTime()));
+					} else if (x instanceof java.util.Date) {
+						setTime(parameterIndex, new java.sql.Time(
+									((java.util.Date)x).getTime()));
+					} else if (x instanceof Calendar) {
+						setTime(parameterIndex, new java.sql.Time(
+									((Calendar)x).getTimeInMillis()));
 					}
 				break;
 				case Types.TIMESTAMP:
@@ -1475,6 +1489,12 @@ public class MonetPreparedStatement
 						setTimestamp(parameterIndex, new Timestamp(((java.sql.Date)x).getTime()));
 					} else if (x instanceof Timestamp) {
 						setTimestamp(parameterIndex, (Timestamp)x);
+					} else if (x instanceof java.util.Date) {
+						setTimestamp(parameterIndex, new java.sql.Timestamp(
+									((java.util.Date)x).getTime()));
+					} else if (x instanceof Calendar) {
+						setTimestamp(parameterIndex, new java.sql.Timestamp(
+									((Calendar)x).getTimeInMillis()));
 					}
 				break;
 				default:
