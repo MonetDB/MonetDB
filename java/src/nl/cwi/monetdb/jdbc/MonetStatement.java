@@ -215,7 +215,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 					tmpBatch.append(sep);
 				tmpBatch.append(tmp);
 				// send and receive
-				error |= internalBatch(tmpBatch.toString(), counts, offset, i, e);
+				error |= internalBatch(tmpBatch.toString(), counts, offset, i + 1, e);
 				offset = i;
 				tmpBatch.delete(0, tmpBatch.length());
 				first = true;
@@ -223,7 +223,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 			}
 			if (tmpBatch.length() + sep.length() + tmp.length() >= MapiSocket.BLOCK) {
 				// send and receive
-				error |= internalBatch(tmpBatch.toString(), counts, offset, i, e);
+				error |= internalBatch(tmpBatch.toString(), counts, offset, i + 1, e);
 				offset = i;
 				tmpBatch.delete(0, tmpBatch.length());
 				first = true;
