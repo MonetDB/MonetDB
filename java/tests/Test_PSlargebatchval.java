@@ -46,6 +46,7 @@ public class Test_PSlargebatchval {
 			pstmt.setDouble(3, 1.0);
 			pstmt.addBatch();
 			pstmt.executeBatch();
+			stmt.execute("DROP TABLE x");
 
 			pstmt.close();
 			stmt.close();
