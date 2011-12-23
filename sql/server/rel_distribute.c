@@ -30,6 +30,57 @@
 #include "sql_env.h"
 
 
+static int 
+has_remote_or_replica( sql_rel *rel ) 
+{
+	if (!rel)
+		return 0;
+
+	switch (rel->op) {
+	case op_basetable: {
+		sql_table *t = rel->l;
+
+		if (isReplicaTable(t) || isRemote(t)) 
+			return 1;
+	} 	
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		if (has_remote_or_replica( rel->l ) ||
+		    has_remote_or_replica( rel->r ))
+			return 1;
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample: 
+		if (has_remote_or_replica( rel->l )) 
+			return 1;
+		break;
+	case op_ddl: 
+		if (has_remote_or_replica( rel->l )) 
+			return 1;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		if (rel->r && has_remote_or_replica( rel->r )) 
+			return 1;
+		break;
+	}
+	return 0;
+}
+
 static sql_rel *
 rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p) 
 {
@@ -53,12 +104,16 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		return rel;
 
 	if (rel_is_ref(rel)) {
-		sql_rel *nrel = rel_copy(sql->sa, rel);
+		if (has_remote_or_replica(rel)) {
+			sql_rel *nrel = rel_copy(sql->sa, rel);
 
-		if (nrel && rel->p)
-			nrel->p = prop_copy(sql->sa, rel->p);
-		rel_destroy(rel);
-		rel = nrel;
+			if (nrel && rel->p)
+				nrel->p = prop_copy(sql->sa, rel->p);
+			rel_destroy(rel);
+			rel = nrel;
+		} else {
+			return rel;
+		}
 	}
 	switch (rel->op) {
 	case op_basetable: {
@@ -130,12 +185,16 @@ distribute(mvc *sql, sql_rel *rel)
 		return rel;
 
 	if (rel_is_ref(rel)) {
-		sql_rel *nrel = rel_copy(sql->sa, rel);
+		if (has_remote_or_replica(rel)) {
+			sql_rel *nrel = rel_copy(sql->sa, rel);
 
-		if (nrel && rel->p)
-			nrel->p = prop_copy(sql->sa, rel->p);
-		rel_destroy(rel);
-		rel = nrel;
+			if (nrel && rel->p)
+				nrel->p = prop_copy(sql->sa, rel->p);
+			rel_destroy(rel);
+			rel = nrel;
+		} else {
+			return rel;
+		}
 	}
 
 	switch (rel->op) {

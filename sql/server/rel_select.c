@@ -405,6 +405,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 		break;
 	case op_table:
 		rel->l = i->l;
+		rel->r = i->r;
 		break;
 	case op_groupby:
 		rel->l = rel_copy(sa, i->l);
