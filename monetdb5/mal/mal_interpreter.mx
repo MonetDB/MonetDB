@@ -2582,11 +2582,10 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 			newclk = GDKusec();
 			mb->profiler[ppc].counter++;
 			mb->profiler[ppc].ticks = newclk - @1->clk;
+			mb->profiler[ppc].totalticks += mb->profiler[ppc].ticks;
 			mb->profiler[ppc].clk += mb->profiler[ppc].clk;
-			if (pci) {
-				mb->profiler[ppc].rbytes = getVolume(stk, pci, 0);
-				mb->profiler[ppc].wbytes = getVolume(stk, pci, 1);
-			}
+			mb->profiler[ppc].rbytes = getVolume(stk, pci, 0);
+			mb->profiler[ppc].wbytes = getVolume(stk, pci, 1);
 			profilerEvent(cntxt->idx, mb, stk, ppc,"done ");
 			ppc = -1;
 		}
@@ -2672,6 +2671,7 @@ lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
 	BAT *b;
 	int isview = 0;
 
+	if ( pci == 0) return 0;
 	limit = rd == 0 ? pci->retc : pci->argc;
 	i = rd ? pci->retc : 0;
 
