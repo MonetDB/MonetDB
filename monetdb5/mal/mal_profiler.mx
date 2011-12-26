@@ -501,7 +501,7 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFwbytes].status)
 		log0("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
-		log0("count,\t clkticks,\t");
+		log0("count,\t totalticks,\t");
 	if (profileCounter[PROFstmt].status)
 		log0("stmt,\t");
 	if (profileCounter[PROFtype].status)
@@ -644,7 +644,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
 		log(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		log2("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].clk);
+		log2("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */

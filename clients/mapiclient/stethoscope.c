@@ -162,23 +162,23 @@ usage(void)
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "The trace options:\n");
-	fprintf(stderr, "  S = start instruction profiling\n");
-	fprintf(stderr, "  a = aggregates\n");
-	fprintf(stderr, "  e = event\n");
-	fprintf(stderr, "  f = function \n");
-	fprintf(stderr, "  o = operation called\n");
-	fprintf(stderr, "  i = interpreter thread\n");
-	fprintf(stderr, "  T = time\n");
-	fprintf(stderr, "  t = ticks\n");
-	fprintf(stderr, "  c = cpu statistics\n");
-	fprintf(stderr, "  m = memory resources\n");
+	fprintf(stderr, "  S = monitor start of instruction profiling\n");
+	fprintf(stderr, "  a = aggregate clock ticks per instruction\n");
+	fprintf(stderr, "  e = event counter\n");
+	fprintf(stderr, "  f = function name and pc counter \n");
+	fprintf(stderr, "  o = module.function operation called\n");
+	fprintf(stderr, "  i = interpreter thread number\n");
+	fprintf(stderr, "  T = wall colck time\n");
+	fprintf(stderr, "  t = ticks in microseconds\n");
+	fprintf(stderr, "  c = cpu statistics (utime,ctime,stime,cstime)\n");
+	fprintf(stderr, "  m = memory resources as provided by OS\n");
 	fprintf(stderr, "  r = block reads\n");
 	fprintf(stderr, "  w = block writes\n");
 	fprintf(stderr, "  b = bytes read/written\n");
-	fprintf(stderr, "  s = statement\n");
-	fprintf(stderr, "  y = argument types\n");
-	fprintf(stderr, "  p = page faults, context switches\n");
-	fprintf(stderr, "  u = user\n");
+	fprintf(stderr, "  s = MAL statement\n");
+	fprintf(stderr, "  y = MAL argument types\n");
+	fprintf(stderr, "  p = process statistics, e.g. page faults, context switches\n");
+	fprintf(stderr, "  u = user id\n");
 }
 
 /* Any signal should be captured and turned into a graceful
