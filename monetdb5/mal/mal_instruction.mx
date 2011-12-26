@@ -117,8 +117,9 @@ typedef struct PERF {
 #endif
 	struct timeval clock;	/* clock */
 	lng clk;		/* microseconds clock */
-	int counter;
 	lng ticks;		/* micro seconds spent */
+	int counter;	/* accumulate statistics */
+	lng totalticks;	
 	bit trace;		/* facilitate filter-based profiling */
 	lng rbytes;		/* bytes read by an instruction */
 	lng wbytes;		/* bytes written by an instruction */
@@ -2190,16 +2191,6 @@ The MAL profiler dumps some performance data at the
 beginning of each line.
 */
 
-@= performanceData
-    if( mb->profiler ){
-		int pc= getPC(mb,p);
-        double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
-        snprintf(t,(len-(t-base)),"[%7d, %5.2f] ",mb->profiler[pc].counter,avg);
-    }
-    advance(t,base,len);
-@
-@c
-
 @= showParam
         tpe= getTypeName(getArgType(mb,p,i));
 	if (flg & LIST_MAL_PROPS)
@@ -2382,7 +2373,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 		snprintf(t,len-1,"#%3d ",getPC(mb,p));
 		advance(t,base,len);
 	}
-	/* @:performanceData@ */
 	if (p->argc > 0 && isTmpVar(mb, getArg(p, 0))) {
 		if (isVarUsed(mb, getDestVar(p))) {
 			snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, getVarTmp(mb, getArg(p, 0)));
