@@ -2564,7 +2564,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 				mb->profiler[ppc].clock = stk->clock;
 				/* emit the instruction upon start as well */
 				if (@2 && malProfileMode)
-					profilerEvent(cntxt->idx, mb, stk, stkpc,"start");
+					profilerEvent(cntxt->idx, mb, stk, stkpc,1);
 #ifdef HAVE_TIMES
 				times(&stk->timer);
 				mb->profiler[ppc].timer = stk->timer;
@@ -2586,7 +2586,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 			mb->profiler[ppc].clk += mb->profiler[ppc].clk;
 			mb->profiler[ppc].rbytes = getVolume(stk, pci, 0);
 			mb->profiler[ppc].wbytes = getVolume(stk, pci, 1);
-			profilerEvent(cntxt->idx, mb, stk, ppc,"done ");
+			profilerEvent(cntxt->idx, mb, stk, ppc,0);
 			ppc = -1;
 		}
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)

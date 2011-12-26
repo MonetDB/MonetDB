@@ -245,7 +245,7 @@ mal_export str openProfilerStream(stream *fd);
 mal_export str closeProfilerStream(void);
 
 mal_export void initProfiler(MalBlkPtr mb);
-mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status);
+mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 mal_export str setLogFile(stream *fd, Module cntxt, str fname);
 mal_export str setLogStream(Module cntxt, str host, int port);
 mal_export str setLogStreamStream(Module cntxt, stream *s);
@@ -318,7 +318,7 @@ profilerAvailable(void)
 {
 	return 1;
 }
-static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc,str status);
+static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
 
@@ -430,17 +430,17 @@ deactivateCounter(str name)
  * Note that the profiler itself should lead to event generations.
  */
 void
-profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
+profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
 	if (mb->profiler == NULL) return;
-	if (profileCounter[PROFstart].status == 0 && mb->profiler[pc].ticks == 0)
+	if (profileCounter[PROFstart].status == 0 && start)
 		return;
 	if (myname == 0)
 		myname = putName("profiler", 8);
 	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
-		offlineProfilerEvent(idx, mb, stk, pc,status);
+		offlineProfilerEvent(idx, mb, stk, pc,start);
 	if (cachedProfiling)
 		cachedProfilerEvent(idx, mb, stk, pc);
 }
@@ -514,7 +514,7 @@ offlineProfilerHeader(void)
 }
 
 void
-offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
+offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
 	static struct Mallinfo prevMalloc;
 	InstrPtr pci = getInstrPtr(mb, pc);
@@ -555,7 +555,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status)
 	log0("[ ");
 	if (profileCounter[PROFevent].status) {
 		log("%d,\t", eventcounter);
-		log("\"%s\",\t", status);
+	}
+	if (profileCounter[PROFstart].status) {
+		log("\"%s\",\t", start?"start":"done");
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
