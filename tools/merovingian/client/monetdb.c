@@ -1209,7 +1209,6 @@ command_get(int argc, char *argv[])
 	if (twidth < 6)
 		twidth = 6;
 	value = malloc(sizeof(char) * twidth + 1);
-	printf("     name          prop     source           value\n");
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
@@ -1245,9 +1244,25 @@ command_get(int argc, char *argv[])
 				}
 			}
 		} else {
+			/* check validity of properties before printing them */
+			if (stats == orig) {
+				snprintf(vbuf, sizeof(vbuf), "%s", property);
+				buf = vbuf;
+				while ((p = strtok(buf, ",")) != NULL) {
+					buf = NULL;
+					if (strcmp(p, "name") == 0)
+						continue;
+					kv = findConfKey(props, p);
+					if (kv == NULL)
+						fprintf(stderr, "get: no such property: %s\n", p);
+				}
+			}
 			snprintf(vbuf, sizeof(vbuf), "%s", property);
 		}
 		buf = vbuf;
+		/* print header after errors */
+		if (stats == orig)
+			printf("     name          prop     source           value\n");
 
 		while ((p = strtok(buf, ",")) != NULL) {
 			buf = NULL;
@@ -1258,11 +1273,8 @@ command_get(int argc, char *argv[])
 				abbreviateString(value, stats->dbname, twidth);
 			} else {
 				kv = findConfKey(props, p);
-				if (kv == NULL) {
-					fprintf(stderr, "get: no such property: %s\n", p);
-					stats = NULL;
+				if (kv == NULL)
 					continue;
-				}
 				if (kv->val == NULL) {
 					kv = findConfKey(defprops, p);
 					source = "default";

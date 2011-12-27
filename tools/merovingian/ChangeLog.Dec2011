@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue Dec 27 2011 Fabian Groffen <fabian@cwi.nl>
+- Fixed crash in monetdb when an invalid property was retrieved using
+  the get command, bug #2953.
+
 * Sat Oct  8 2011 Fabian Groffen <fabian@cwi.nl>
 - monetdb get output is now grouped by database instead of by property
 
