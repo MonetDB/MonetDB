@@ -55,13 +55,13 @@ struct PIPELINES{
  * deterministically, and to check / debug whether "unexpected" problems are related to
  * mitosis (and/or mergetable).
 */
-{ "no_mitosis_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector" },
+{ "no_mitosis_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" },
 
 /* The sequential pipe line is (and should be kept!) identical to the default pipeline,
  * except that optimizers mitosis & dataflow are omitted.  It is use mainly to make some
  * tests work deterministically, i.e., avoid ambigious output, by avoiding parallelism.
 */
-{ "sequential_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,garbageCollector" },
+{ "sequential_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,accumulators,garbageCollector" },
 
 /* The default pipeline used in the November 2009 release*/
 { "nov2009_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector" },
