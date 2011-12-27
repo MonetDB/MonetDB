@@ -628,6 +628,37 @@ main(int argc, char *argv[])
 	kv->val = strdup("64");
 	kv = findConfKey(_mero_db_props, "type");
 	kv->val = strdup("database");
+	kv = findConfKey(_mero_db_props, "optpipe");
+	kv->val = strdup("default_pipe");
+	{ /* nrthreads */
+		int ncpus = -1;
+		char cnt[8];
+
+#if defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
+		/* this works on Linux, Solaris and AIX */
+		ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_NCPU)   /* BSD */
+		size_t len = sizeof(int);
+		int mib[3];
+
+		/* Everyone should have permission to make this call,
+		 * if we get a failure something is really wrong. */
+		mib[0] = CTL_HW;
+		mib[1] = HW_NCPU;
+		mib[2] = -1;
+		sysctl(mib, 3, &ncpus, &len, NULL, 0);
+#elif defined(WIN32)
+		SYSTEM_INFO sysinfo;
+
+		GetSystemInfo(&sysinfo);
+		ncpus = sysinfo.dwNumberOfProcessors;
+#endif
+		if (ncpus > 0) {
+			snprintf(cnt, sizeof(cnt), "%d", ncpus);
+			kv = findConfKey(_mero_db_props, "nthreads");
+			kv->val = strdup(cnt);
+		}
+	}
 
 	*dbfarm = '\0';
 	if (argc > 1) {
