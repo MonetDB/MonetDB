@@ -1578,19 +1578,23 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				/* Below we have to calculate how many "chunks" we need
 				 * to allocate to store the entire result.  However, if
 				 * the user didn't set a cache size, as in this case, we
-				 * need to stick to our defaults.  So far, so good.  Now
-				 * the problem with XQuery is, that it doesn't support
-				 * any block fetching, so we need to always fetch
-				 * everything at once.  For that reason, the cache size
-				 * is here set to the tuplecount, such that we do a full
-				 * fetch at once.  To avoid a division by zero lateron,
-				 * we make sure the cache size is not 0 */
-				cacheSize = lang == LANG_SQL ? MonetConnection.DEF_FETCHSIZE : (tuplecount + 1);
+				 * need to stick to our defaults. */
+				cacheSize = MonetConnection.DEF_FETCHSIZE;
 				cacheSizeSetExplicitly = false;
 			} else {
 				cacheSize = parent.cachesize;
 				cacheSizeSetExplicitly = true;
 			}
+			/* So far, so good.  Now the problem with EXPLAIN, DOT, etc
+			 * queries is, that they don't support any block fetching,
+			 * so we need to always fetch everything at once.  For that
+			 * reason, the cache size is here set to the rowcount if
+			 * it's larger, such that we do a full fetch at once.
+			 * (Because we always set a reply_size, we can only get a
+			 * larger rowcount from the server if it doesn't paginate,
+			 * because it's a pseudo SQL result.) */
+			if (rowcount > cacheSize)
+				cacheSize = rowcount;
 			seqnr = seq;
 			closed = false;
 			destroyOnClose = false;
