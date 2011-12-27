@@ -198,7 +198,7 @@ DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx;
+	int idx,ret;
 	str nme= *(str*) getArgReference(stk, pci,1);
 
 	(void) cntxt;
@@ -206,8 +206,10 @@ DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	idx = BSKTlocate(nme);
 	if ( idx == 0)
 		throw(MAL,"datacell.remove","Basket not found");
-	/* remove basket  and corresponding receptor/emitters depending on it*/
-	return MAL_SUCCEED;
+	/* first remove the dependent continous queries */
+
+	/* finally remove the basket itself, the underlying table is *not* dropped */
+	return BSKTdrop(&ret, &nme);
 }
 
 str
