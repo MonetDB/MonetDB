@@ -4953,7 +4953,7 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	sql_rel *t2 = table_ref(sql, NULL, tab_ref2);
 
 	assert(n->next->type == type_int);
-	(void)rel; /* TODO correlated unions */
+	(void)rel; /* TODO correlated setqueries */
 	if (!t1 || !t2)
 		return NULL;
 
