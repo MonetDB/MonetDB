@@ -30,6 +30,7 @@ import java.net.SocketTimeoutException;
 import nl.cwi.monetdb.mcl.io.*;
 import nl.cwi.monetdb.mcl.net.*;
 import nl.cwi.monetdb.mcl.parser.*;
+import nl.cwi.monetdb.mcl.MCLException;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -216,8 +217,15 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				throw new SQLException(error.substring(6), "08001");
 		} catch (IOException e) {
 			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage(), "08006");
-		} catch (Exception e) {
+		} catch (MCLParseException e) {
 			throw new SQLException(e.getMessage(), "08001");
+		} catch (MCLException e) {
+			String[] connex = e.getMessage().split("\n");
+			SQLException sqle = new SQLException(connex[0], "08001", e);
+			for (int i = 1; i < connex.length; i++) {
+				sqle.setNextException(new SQLException(connex[1], "08001"));
+			}
+			throw sqle;
 		}
 
 		// we seem to have managed to log in, let's store the
