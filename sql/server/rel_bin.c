@@ -1025,7 +1025,7 @@ static stmt *
 rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
-	node *en, *n;
+	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 
 	if (rel->l) /* first construct the left sub relation */
