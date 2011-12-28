@@ -284,7 +284,7 @@ public final class MapiSocket {
 						con.getInetAddress().getHostName() + ":" +
 						con.getPort() + ": End of stream reached");
 			if ((lineType = reader.getLineType()) == BufferedMCLReader.ERROR) {
-				err += "\n" + tmp.substring(1);
+				err += "\n" + tmp.substring(7);
 			} else if (lineType == BufferedMCLReader.INFO) {
 				warns.add(tmp.substring(1));
 			} else if (lineType == BufferedMCLReader.REDIRECT) {
