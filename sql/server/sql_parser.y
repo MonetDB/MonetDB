@@ -3285,19 +3285,8 @@ table_name:
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
  |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
- |  sqlGROUP BY group_ref_commalist { 
- /*
-	dlist *l = L();
-	append_list(l,$3);
-	append_int(l,0);
-	$$ = _symbol_create_list( SQL_GROUPBY, l );}
-	*/
-	$$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
- |  sqlGROUP BY DISTINCT group_ref_commalist {
-	dlist *l = L();
-	append_list(l,$4);
-	append_int(l,1);
-	$$ = _symbol_create_list( SQL_GROUPBY, l);}
+ |  sqlGROUP BY group_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
+ |  sqlGROUP BY DISTINCT group_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($4,1) );}
  ;
 
 group_ref_commalist:
