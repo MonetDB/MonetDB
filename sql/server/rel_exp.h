@@ -100,5 +100,6 @@ extern void exps_fix_card( list *exps, int card);
 extern int exps_intern(list *exps);
 
 extern char *compare_func( comp_type t );
+extern int is_identity( sql_exp *e, sql_rel *r);
 
 #endif /* _REL_EXP_H_ */
