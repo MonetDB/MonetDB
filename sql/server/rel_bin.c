@@ -1059,8 +1059,8 @@ static stmt *
 rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
-	node *en, *n;
-	stmt *left = NULL, *right = NULL, *join = NULL;
+	node *en = NULL, *n;
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l, refs);
@@ -1070,44 +1070,117 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		return NULL;	
 	left = row2cols(sql, left);
 	right = row2cols(sql, right);
+	/* 
+ 	 * split in 2 steps, 
+ 	 * 	first cheap join(s) (equality or idx) 
+ 	 * 	second selects/filters 
+         */
 	if (rel->exps) {
-		for( en = rel->exps->h; en; en = en->next ) {
-			stmt *s = exp_bin(sql, en->data, left, right, NULL, NULL);
+		int idx = 0;
+		list *jns = list_new(sql->sa);
 
+		for( en = rel->exps->h; en; en = en->next ) {
+			int join_idx = sql->opt_stats[0];
+			sql_exp *e = en->data;
+			stmt *s = NULL;
+
+			/* only handle simple joins here */		
+			if (list_length(jns) && (idx || !e->type == e_cmp || e->flag != cmp_equal))
+				break;
+
+			s = exp_bin(sql, en->data, left, right, NULL, NULL);
 			if (!s) {
 				assert(0);
 				return NULL;
 			}
+			if (join_idx != sql->opt_stats[0])
+				idx = 1;
 			if (!join) {
 				join = s;
-			} else {
-				/* break column join */
-				stmt *l = stmt_mark(sql->sa, stmt_reverse(sql->sa, join), 100);
-				stmt *r = stmt_mark(sql->sa, join, 100);
-				stmt *ld = s->op1;
-				stmt *rd = stmt_reverse(sql->sa, s->op2);
-				stmt *le = stmt_join(sql->sa, l, ld, cmp_equal);
-				stmt *re = stmt_join(sql->sa, r, rd, cmp_equal);
+			/* stop on first non equality join */
+			} else if (s->type != st_join && 
+				   s->type != st_join2 && 
+				   s->type != st_joinN) {
+				if (s->type == st_reverse) {
+					stmt *rs = s->op1;
 
-				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, compare_func((comp_type)s->flag), tail_type(le), tail_type(le), F_FUNC);
-				stmt * cmp;
-
-				assert(f);
-
-				cmp = stmt_binop(sql->sa, le, re, f);
-
-				cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal);
-
-				l = stmt_semijoin(sql->sa, l, cmp);
-				r = stmt_semijoin(sql->sa, r, cmp);
-				join = stmt_join(sql->sa, stmt_reverse(sql->sa, l), r, cmp_equal);
+					if (rs->type == st_join || 
+				   	    rs->type == st_join2 || 
+				   	    rs->type == st_joinN) { 
+						list_append(jns, s);
+						continue;
+					}
+				}
+				/* handle select expressions */
+				/*assert(0);*/
+				/* should be handled by join list (reljoin) */
+				if (s->h == join->h) {
+					join = stmt_semijoin(sql->sa, join,s);
+				} else {
+					join = stmt_reverse(sql->sa, join);
+					join = stmt_semijoin(sql->sa, join,s);
+					join = stmt_reverse(sql->sa, join);
+				}
+				continue;
 			}
+			list_append(jns, s);
+		}
+		if (list_length(jns) > 1) {
+			join = stmt_releqjoin(sql->sa, jns);
+		} else {
+			join = jns->h->data; 
 		}
 	} else {
 		/* TODO: this case could use some optimization */
 		stmt *l = bin_first_column(sql->sa, left);
 		stmt *r = bin_first_column(sql->sa, right);
 		join = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_all); 
+	}
+	jl = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
+	jr = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, join),0));
+	if (en) {
+		stmt *sub, *sel;
+		list *nl;
+
+		/* construct relation */
+		nl = list_new(sql->sa);
+
+		/* first project using equi-joins */
+		for( n = left->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jl, column(sql->sa, c) );
+	
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		for( n = right->op4.lval->h; n; n = n->next ) {
+			stmt *c = n->data;
+			char *rnme = table_name(sql->sa, c);
+			char *nme = column_name(sql->sa, c);
+			stmt *s = stmt_project(sql->sa, jr, column(sql->sa, c) );
+
+			s = stmt_alias(sql->sa, s, rnme, nme);
+			list_append(nl, s);
+		}
+		sub = stmt_list(sql->sa, nl);
+
+		/* continue with non equi-joins */
+		sel = stmt_relselect_init(sql->sa);
+		for( ; en; en = en->next ) {
+			stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
+
+			if (!s) {
+				assert(0);
+				return NULL;
+			}
+			stmt_relselect_fill(sel, s);
+		}
+		/* recreate join output */
+		sel = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, sel, 0));
+		jl = stmt_project(sql->sa, sel, jl); 
+		jr = stmt_project(sql->sa, sel, jr); 
 	}
 
 	/* construct relation */
@@ -1117,10 +1190,10 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 	   Reduce this using difference and semijoin */
 	if (rel->op == op_anti) {
 		stmt *c = left->op4.lval->h->data;
-		join = stmt_diff(sql->sa, c, join);
+		join = stmt_diff(sql->sa, c, stmt_reverse(sql->sa, jl));
 	} else {
 		stmt *c = left->op4.lval->h->data;
-		join = stmt_semijoin(sql->sa, c, join);
+		join = stmt_semijoin(sql->sa, c, stmt_reverse(sql->sa, jl));
 	}
 
 	join = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
