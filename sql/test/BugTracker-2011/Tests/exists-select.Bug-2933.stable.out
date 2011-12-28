@@ -52,15 +52,34 @@ Ready.
 #INSERT INTO _rank2933 VALUES (33, 34);
 [ 1	]
 #SELECT
-% . # table_name
-% single_value # name
-% tinyint # type
+#  count(*)
+#FROM
+#  _rank2933 AS _rank1,
+#  _rank2933 AS _rank2
+#WHERE
+#  NOT _rank1.pre = _rank2.pre AND
+#  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post AND
+#    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
+% sys._rank1 # table_name
+% L5 # name
+% wrd # type
 % 1 # length
 [ 2	]
 #SELECT
-% . # table_name
-% single_value # name
-% tinyint # type
+#  count(*)
+#FROM
+#  _rank2933 AS _rank1,
+#  _rank2933 AS _rank2
+#WHERE
+#  NOT _rank1.pre = _rank2.pre AND
+#  EXISTS (SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post 
+#  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
+#    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
+% sys._rank1 # table_name
+% L12 # name
+% wrd # type
 % 1 # length
 [ 2	]
 #DROP TABLE _rank2933;

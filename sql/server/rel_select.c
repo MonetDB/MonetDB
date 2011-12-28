@@ -174,7 +174,11 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 	if (settname && !tname && old->type == e_column)
 		tname = old->l;
 
-	if (!cname) {
+	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+		ne->p = prop_copy(sql->sa, old->p);
+		return ne;
+	} else if (!cname) {
 		char name[16], *nme;
 		nme = number2name(name, 16, ++sql->label);
 
@@ -2669,10 +2673,85 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	set_intern(e);
+	//set_intern(e);
 	rel_project_add_exp(sql, rel, e);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	return rel;
+}
+
+static sql_exp *
+find_identity(list *exps, sql_rel *r) 
+{
+	node *n;
+
+	if (!exps)
+		return NULL;
+	for (n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (is_identity(e, r)) 
+			return e;
+	}
+	return NULL;
+}
+
+static sql_exp *
+rel_find_identity(mvc *sql, sql_rel *r, sql_exp *e ) 
+{
+	sql_exp *ne = NULL;
+	node *n;
+
+	switch(r->op) {
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+		ne = rel_find_identity(sql, r->l, e);
+		if (!ne)
+			ne = rel_find_identity(sql, r->r, e);
+		return ne;
+	case op_semi:
+	case op_anti:
+	case op_select:
+		ne = rel_find_identity(sql, r->l, e);
+		return ne;
+	case op_topn:
+	case op_sample:
+	case op_groupby:
+	case op_union:
+	case op_except:
+	case op_inter:
+	case op_project:
+
+		ne = rel_find_identity(sql, r->l, e);
+		if (ne && r->exps) { /* find exp pointing to ne */
+			for (n = r->exps->h; n; n = n->next) {
+				sql_exp *re = n->data;
+			
+				if (e->rname && re->l && strcmp(e->rname, re->l) == 0 && strcmp(e->name, re->r) == 0) 
+					return re;
+				if (!e->rname && !re->l && strcmp(e->name, re->r) == 0) 
+					return re;
+			}
+		} else if (r->exps) {
+			return e;
+		}
+		return NULL;
+	case op_table:
+	case op_basetable:
+		if (r->exps) {
+			node *en;
+
+			for (en = r->exps->h; en; en = en->next) {
+				sql_exp *oe = en->data;
+
+				if (oe == e)
+					return e;
+			}
+		}
+	default:
+		return NULL;
+	}
 }
 
 sql_rel *
@@ -2931,7 +3010,9 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			/* look up the identity columns and label these */
 			le = rel_bind_column(sql, rel, e->name, f);
-			re = rel_bind_column(sql, r, e->name, f);
+
+			/* find expression back */
+			re = rel_find_identity(sql, r, le );
 
 			if (!le || !re)
 				return NULL;
@@ -4583,16 +4664,20 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					outer_gbexps = rel_projections(sql, outer, NULL, 1, 1);
 					if (!is_project(outer->op))
 						rel->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
-					e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
-					set_intern(e);
-					rel_project_add_exp(sql, outer, e);
+					/* find or create identity column */
+					if ((e = find_identity(outer->exps, outer)) == NULL) {
+						e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
+						set_intern(e);
+						rel_project_add_exp(sql, outer, e);
+					}
 					set_processed(outer);
 					e = rel_lastexp(sql, outer);
 
-					assert(pre_prj != NULL);
-					for(n = pre_prj->h; n; n = n->next) {
-						sql_exp *e = n->data;
-						e->card = CARD_AGGR;
+					if (pre_prj) {
+						for(n = pre_prj->h; n; n = n->next) {
+							sql_exp *e = n->data;
+							e->card = CARD_AGGR;
+						}
 					}
 					rel = rel_groupby_gbe(sql->sa, rel, e);
 				}
@@ -4839,6 +4924,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 {
 	sql_rel *res = NULL;
 	SelectNode *sn = NULL;
+	int used = 0;
 
 	if (sq->token != SQL_SELECT)
 		return table_ref(sql, rel, sq);
@@ -4858,7 +4944,13 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		sql_rel *fnd = NULL;
 
 		for (n = fl->h; n ; n = n->next) {
-			fnd = table_ref(sql, rel, n->data.sym);
+			fnd = table_ref(sql, NULL, n->data.sym);
+			if (!fnd && rel) {
+				if (used)
+					rel = rel_dup(rel);
+				fnd = table_ref(sql, rel, n->data.sym);
+				used = 1;
+			}
 
 			if (!fnd)
 				break;
@@ -4872,11 +4964,10 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 				rel_destroy(res);
 			return NULL;
 		}
-		if (rel /*&& !toplevel */) {
+		if (rel && !used /*&& !toplevel */) {
 			rel_setsubquery(res);
 			res = rel_crossproduct(sql->sa, rel, res, op_join);
 		}
-
 	} else if (toplevel || !res) {	/* only on top level query */
 		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 	}
@@ -4930,16 +5021,44 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 	sql_rel *res = NULL;
 	dnode *n = q->data.lval->h;
 	symbol *tab_ref1 = n->data.sym;
-	int dist = n->next->data.i_val;
+	int dist = n->next->data.i_val, used = 0;
 	dlist *corresponding = n->next->next->data.lval;
 	symbol *tab_ref2 = n->next->next->next->data.sym;
-
-	sql_rel *t1 = table_ref(sql, NULL, tab_ref1);
-	sql_rel *t2 = table_ref(sql, NULL, tab_ref2);
+	sql_rel *t1, *t2; 
 
 	assert(n->next->type == type_int);
-	(void)rel; /* TODO correlated setqueries */
-	if (!t1 || !t2)
+	t1 = table_ref(sql, NULL, tab_ref1);
+	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
+		sql_rel *r = rel;
+
+		if (rel_is_ref(rel)) {
+			used = 1;
+			r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+			set_processed(r);
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
+		t1 = table_ref(sql, r, tab_ref1);
+	}
+	if (!t1)
+		return NULL;
+	t2 = table_ref(sql, NULL, tab_ref2);
+	if (rel && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
+		sql_rel *r = rel;
+
+		if (rel_is_ref(rel)) {
+			if (used)
+				rel = rel_dup(rel);
+			r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+			set_processed(r);
+		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
+		t2 = table_ref(sql, r, tab_ref2);
+	}
+	if (!t2)
 		return NULL;
 
 	rel_remove_internal_exp(t1);
