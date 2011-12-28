@@ -71,7 +71,7 @@ monet5_drop_user(ptr _mvc, str user)
 
 	err = AUTHremoveUser(&c, &user);
 	if (err != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "DROP USER: %s", err);
+		(void)sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
 		_DELETE(err);
 		return FALSE;
 	}
@@ -278,14 +278,14 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		}
 		if (user == NULL) {
 			if ((err = AUTHchangePassword(&c, &opwd, &pwd)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);
 			}
 		} else {
 			str username = NULL;
 			if ((err = AUTHresolveUser(&username, &c->user)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);
 			}
@@ -298,7 +298,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 				return(FALSE);
 			}
 			if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
-				(void)sql_error(m, 02, "ALTER USER: %s", err);
+				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);
 			}
@@ -337,7 +337,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sql_column *auths_name = find_sql_column(auths, "name");
 
 	if ((err = AUTHchangeUsername(&c, &olduser, &newuser)) != MAL_SUCCEED) {
-		(void)sql_error(m, 02, "ALTER USER: %s", err);
+		(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 		GDKfree(err);
 		return(FALSE);
 	}
@@ -481,5 +481,3 @@ monet5_user_get_def_schema(mvc *m, oid user)
 	mvc_rollback(m, 0, NULL);
 	return schema;
 }
-
-

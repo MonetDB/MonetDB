@@ -72,9 +72,9 @@ stderr of test 'wrong_error_message_dropping_view.Bug-2713` in directory 'test/B
 # 22:26:26 >  mclient -lsql -ftest -i -e --host=alf --port=32564 
 # 22:26:26 >  
 
-MAPI  = monetdb@alf:32564
+MAPI  = monetdb@sofia:38256
 QUERY = drop view t2713;
-ERROR = !SQLException:sql.catalog:DROP VIEW: unable to drop view 't2713': is a table
+ERROR = !DROP VIEW: unable to drop view 't2713': is a table
 
 # 22:26:26 >  
 # 22:26:26 >  Done.

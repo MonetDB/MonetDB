@@ -79,9 +79,9 @@ stderr of test 'string_length_not_checked.SF-2075078` in directory 'test/BugTrac
 # 12:25:53 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30598 
 # 12:25:53 >  
 
-MAPI  = monetdb@alf:30598
+MAPI  = monetdb@sofia:38256
 QUERY = INSERT INTO STAFF VALUES ('Claggetsville Maryland');
-ERROR = !SQLException:str_cast:value too long for type (var)char(15)
+ERROR = !value too long for type (var)char(15)
 
 # 12:25:53 >  
 # 12:25:53 >  Done.

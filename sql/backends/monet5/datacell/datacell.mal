@@ -51,7 +51,7 @@ comment "Pause a receptor or emitter";
 
 pattern resume(obj:str):void
 address DCresumeObject
-comment "Pause a receptor or emitter";
+comment "(Re)start a receptor or emitter";
 
 pattern query(name:str,def:str):void
 address DCquery

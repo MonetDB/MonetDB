@@ -73,7 +73,7 @@ public class MonetBlob implements Blob {
 	 */
 	public InputStream getBinaryStream() throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		return(new ByteArrayInputStream(buf));
 	}
 
@@ -98,13 +98,13 @@ public class MonetBlob implements Blob {
 		throws SQLException
 	{
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		if (pos < 1)
-			throw new SQLException("pos is less than 1");
+			throw new SQLException("pos is less than 1", "M1M05");
 		if (pos - 1 > buf.length)
-			throw new SQLException("pos is greater than the number of bytes in the Blob");
+			throw new SQLException("pos is greater than the number of bytes in the Blob", "M1M05");
 		if (pos - 1 + length > buf.length)
-			throw new SQLException("pos + length is greater than the number of bytes in the Blob");
+			throw new SQLException("pos + length is greater than the number of bytes in the Blob", "M1M05");
 		return(new ByteArrayInputStream(buf, (int)(pos - 1), (int)length));
 	}
 
@@ -124,14 +124,14 @@ public class MonetBlob implements Blob {
 	 */
 	public byte[] getBytes(long pos, int length) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		try {
 			byte[] r = new byte[length];
 			for (int i = 0; i < length; i++)
 				r[i] = buf[(int)pos - 1 + i];
 			return(r);
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "M0M10");
 		}
 	}
 
@@ -145,7 +145,7 @@ public class MonetBlob implements Blob {
 	 */
 	public long length() throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		return((long)buf.length);
 	}
 
@@ -180,7 +180,7 @@ public class MonetBlob implements Blob {
 	 */
 	public long position(byte[] pattern, long start) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		try {
 			for (int i = (int)(start - 1); i < buf.length - pattern.length; i++) {
 				int j;
@@ -192,7 +192,7 @@ public class MonetBlob implements Blob {
 					return(i);
 			}
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "M0M10");
 		}
 		return(-1);
 	}
@@ -217,10 +217,10 @@ public class MonetBlob implements Blob {
 	 */
 	public OutputStream setBinaryStream(long pos) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		if (pos < 1)
-			throw new SQLException("pos is less than 1");
-		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(long pos) currently not supported");
+			throw new SQLException("pos is less than 1", "M1M05");
+		throw new SQLFeatureNotSupportedException("Operation setBinaryStream(long pos) currently not supported", "0A000");
 	}
 
 	/**
@@ -262,13 +262,13 @@ public class MonetBlob implements Blob {
 		throws SQLException
 	{
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		try {
 			/* transactions? what are you talking about? */
 			for (int i = (int)pos; i < len; i++)
 				buf[i] = bytes[offset - 1 + i];
 		} catch (IndexOutOfBoundsException e) {
-			throw new SQLException(e.getMessage());
+			throw new SQLException(e.getMessage(), "M0M10");
 		}
 		return(len);
 	}
@@ -284,7 +284,7 @@ public class MonetBlob implements Blob {
 	 */
 	public void truncate(long len) throws SQLException {
 		if (buf == null)
-			throw new SQLException("This Blob object has been freed");
+			throw new SQLException("This Blob object has been freed", "M1M20");
 		if (buf.length > len) {
 			byte[] newbuf = new byte[(int)len];
 			for (int i = 0; i < len; i++)

@@ -79,18 +79,18 @@ stderr of test 'decimal` in directory 'test` itself:
 # 20:30:39 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
 # 20:30:39 >  
 
-MAPI  = monetdb@alf:39627
+MAPI  = monetdb@sofia:39182
 QUERY = insert into decimaltest values (1234);
-ERROR = !SQLException:convert:too many digits (6 > 5)
-MAPI  = monetdb@alf:39627
+ERROR = !too many digits (6 > 5)
+MAPI  = monetdb@sofia:39182
 QUERY = insert into decimaltest values (-1234);
-ERROR = !SQLException:convert:too many digits (6 > 5)
-MAPI  = monetdb@alf:39627
+ERROR = !too many digits (6 > 5)
+MAPI  = monetdb@sofia:39182
 QUERY = insert into decimaltest values (1234.1);
-ERROR = !SQLException:convert:too many digits (6 > 5)
-MAPI  = monetdb@alf:39627
+ERROR = !too many digits (6 > 5)
+MAPI  = monetdb@sofia:39182
 QUERY = insert into decimaltest values (-1234.1);
-ERROR = !SQLException:convert:too many digits (6 > 5)
+ERROR = !too many digits (6 > 5)
 
 # 20:30:39 >  
 # 20:30:39 >  Done.

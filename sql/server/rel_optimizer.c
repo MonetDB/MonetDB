@@ -553,6 +553,8 @@ joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 	sql_rel *key_r  = find_rel(rels, key->r);
 
 	assert (!h || !key || (h->type == e_cmp && key->type == e_cmp));
+	if (is_complex_exp(h->flag) || is_complex_exp(key->flag))
+		return -1;
 	if (h_l == key_l && h_r == key_r)
 		return 0;
 	if (h_r == key_l && h_l == key_r)

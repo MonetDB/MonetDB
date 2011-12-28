@@ -10,15 +10,15 @@ stderr of test 'update_set_default` in directory 'test/Update_Delete_action` its
 # 11:13:36 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=33372 
 # 11:13:36 >  
 
-MAPI  = monetdb@koala:33780
+MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =3;
-ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@koala:33780
+ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 11 where id =4;
-ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@koala:33780
+ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = monetdb@sofia:38256
 QUERY = update t2 set id = 7 where id =5;
-ERROR = !SQLException:assert:UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
+ERROR = !UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
 
 # 11:13:36 >  
 # 11:13:36 >  Done.

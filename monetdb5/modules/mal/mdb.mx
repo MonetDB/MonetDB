@@ -179,6 +179,10 @@ pattern trap():void
 address mdbTrap
 comment "A suspended process for debugging.";
 
+pattern dot(s:str):void 
+address MDBshowFlowGraph
+comment "Dump the data flow of the current routine in a format recognizable by the command 'dot' to the file s";
+
 pattern dot(M:str,F:str,s:str):void 
 address MDBshowFlowGraph
 comment "Dump the data flow of the function 
@@ -906,24 +910,34 @@ MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Symbol s = NULL;
 
 	(void)cntxt;
+
 	if (stk != 0) {
-		modnme = *(str*) getArgReference(stk, p, 1);
-		fcnnme = *(str*) getArgReference(stk, p, 2);
-		fname = *(str*) getArgReference(stk, p, 3);
+		if (p->argc == 2) {
+			modnme = fcnnme = NULL;
+			fname = *(str*) getArgReference(stk, p, 1);
+		} else {
+			modnme = *(str*) getArgReference(stk, p, 1);
+			fcnnme = *(str*) getArgReference(stk, p, 2);
+			fname = *(str*) getArgReference(stk, p, 3);
+		}
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
 		fname = getArgDefault(mb, p, 3);
 	}
 
-	s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
+	if (modnme != NULL) {
+		s = findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 
-	if (s == NULL) {
-		char buf[1024];
-		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
-		throw(MAL, "mdb.dot", "%s", buf);
+		if (s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
+			throw(MAL, "mdb.dot", "%s", buf);
+		}
+		showFlowGraph(s->def, stk, fname);
+	} else {
+		showFlowGraph(mb, stk, fname);
 	}
-	showFlowGraph(s->def, stk, fname);
 	return MAL_SUCCEED;
 }
 

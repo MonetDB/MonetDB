@@ -62,6 +62,9 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	protected boolean closed;
 	/** Whether the application wants this Statement object to be pooled */
 	protected boolean poolable;
+	/** Whether this Statement should be closed if the last ResultSet
+	 * closes */
+	private boolean closeOnCompletion = false;
 	/** The size of the blocks of results to ask for at the server */
 	private int fetchSize = 0;
 	/** The maximum number of rows to return in a ResultSet */
@@ -104,19 +107,19 @@ public class MonetStatement extends MonetWrapper implements Statement {
 
 		// check our limits, and generate warnings as appropriate
 		if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
-			addWarning("No concurrency mode other then read only is supported, continuing with concurrency level READ_ONLY");
+			addWarning("No concurrency mode other then read only is supported, continuing with concurrency level READ_ONLY", "01M13");
 			resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
 		}
 
 		// check type for supported mode
 		if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-			addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.");
+			addWarning("Change sensitive scrolling ResultSet objects are not supported, continuing with a change non-sensitive scrollable cursor.", "01M14");
 			resultSetType = ResultSet.TYPE_SCROLL_INSENSITIVE;
 		}
 
 		// check type for supported holdability
 		if (resultSetHoldability != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
-			addWarning("Close cursors at commit not supported, continuing with holdability to hold open cursors over commit.");
+			addWarning("Close cursors at commit not supported, continuing with holdability to hold open cursors over commit.", "01M15");
 		}
 
 		closed = false;
@@ -199,7 +202,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		boolean first = true;
 		boolean error = false;
 
-		BatchUpdateException e = new BatchUpdateException("Error(s) occurred while executing the batch, see next SQLExceptions for details", counts);
+		BatchUpdateException e = new BatchUpdateException("Error(s) occurred while executing the batch, see next SQLExceptions for details", "22000", counts);
 		StringBuffer tmpBatch = new StringBuffer(MapiSocket.BLOCK);
 		String sep = connection.queryTempl[2];
 		for (int i = 0; i < batch.size(); i++) {
@@ -208,10 +211,11 @@ public class MonetStatement extends MonetWrapper implements Statement {
 				// The thing is too big.  Way too big.  Since it won't
 				// be optimal anyway, just add it to whatever we have
 				// and continue.
-				if (!first) tmpBatch.append(sep);
+				if (!first)
+					tmpBatch.append(sep);
 				tmpBatch.append(tmp);
 				// send and receive
-				error |= internalBatch(tmpBatch.toString(), counts, offset, i, e);
+				error |= internalBatch(tmpBatch.toString(), counts, offset, i + 1, e);
 				offset = i;
 				tmpBatch.delete(0, tmpBatch.length());
 				first = true;
@@ -219,7 +223,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 			}
 			if (tmpBatch.length() + sep.length() + tmp.length() >= MapiSocket.BLOCK) {
 				// send and receive
-				error |= internalBatch(tmpBatch.toString(), counts, offset, i, e);
+				error |= internalBatch(tmpBatch.toString(), counts, offset, i + 1, e);
 				offset = i;
 				tmpBatch.delete(0, tmpBatch.length());
 				first = true;
@@ -232,7 +236,8 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		error |= internalBatch(tmpBatch.toString(), counts, offset, counts.length, e);
 
 		// throw BatchUpdateException if it contains something
-		if (error) throw e;
+		if (error)
+			throw e;
 		// otherwise just return the counts
 		return(counts);
 	}
@@ -251,12 +256,12 @@ public class MonetStatement extends MonetWrapper implements Statement {
 			if (!type) count = getUpdateCount();
 			do {
 				if (offset >= max) throw
-					new SQLException("Overflow: don't use multi statements when batching (" + max + ")");
+					new SQLException("Overflow: don't use multi statements when batching (" + max + ")", "M1M16");
 				if (type) {
 					e.setNextException(
 						new SQLException("Batch query produced a ResultSet! " +
 							"Ignoring and setting update count to " +
-							"value " + EXECUTE_FAILED));
+							"value " + EXECUTE_FAILED, "M1M17"));
 					counts[offset] = EXECUTE_FAILED;
 				} else if (count >= 0) {
 					counts[offset] = count;
@@ -283,7 +288,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 *                      operation is not supported
 	 */
 	public void cancel() throws SQLException {
-		throw new SQLException("Query cancelling is currently not supported by the DBMS.");
+		throw new SQLException("Query cancelling is currently not supported by the DBMS.", "0A000");
 	}
 
 	/**
@@ -312,28 +317,6 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		// close previous ResultSet, if not closed already
 		if (lastResponseList != null) lastResponseList.close();
 		closed = true;
-	}
-
-	/**
-	 * Retrieves whether this Statement object has been closed. A
-	 * Statement is closed if the method close has been called on it, or
-	 * if it is automatically closed.
-	 *
-	 * @return true if this Statement object is closed; false if it is
-	 *         still open
-	 */
-	public boolean isClosed() {
-		return(closed);
-	}
-
-	/**
-	 * Returns a value indicating whether the Statement is poolable or
-	 * not.
-	 *
-	 * @return true if the Statement is poolable; false otherwise
-	 */
-	public boolean isPoolable() {
-		return(poolable);
 	}
 
 	// Chapter 13.1.2.3 of Sun's JDBC 3.0 Specification
@@ -394,7 +377,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	{
 		if (autoGeneratedKeys != Statement.RETURN_GENERATED_KEYS &&
 				autoGeneratedKeys != Statement.NO_GENERATED_KEYS)
-			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS");
+			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS", "M1M05");
 		
 		/* MonetDB has no way to disable this, so just do the normal
 		 * thing ;) */
@@ -440,7 +423,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	public boolean execute(String sql, int[] columnIndexed)
 		throws SQLException
 	{
-		addWarning("execute: generated keys for fixed set of columns not supported");
+		addWarning("execute: generated keys for fixed set of columns not supported", "01M18");
 		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
@@ -483,7 +466,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	public boolean execute(String sql, String[] columnNames)
 		throws SQLException
 	{
-		addWarning("execute: generated keys for fixed set of columns not supported");
+		addWarning("execute: generated keys for fixed set of columns not supported", "01M18");
 		return(execute(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
@@ -533,7 +516,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public ResultSet executeQuery(String sql) throws SQLException {
 		if (execute(sql) != true)
-			throw new SQLException("Query did not produce a result set");
+			throw new SQLException("Query did not produce a result set", "M1M19");
 
 		return(getResultSet());
 	}
@@ -552,7 +535,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public int executeUpdate(String sql) throws SQLException {
 		if (execute(sql) != false)
-			throw new SQLException("Query produced a result set");
+			throw new SQLException("Query produced a result set", "M1M17");
 
 		return(getUpdateCount());
 	}
@@ -580,12 +563,12 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	{
 		if (autoGeneratedKeys != Statement.RETURN_GENERATED_KEYS &&
 				autoGeneratedKeys != Statement.NO_GENERATED_KEYS)
-			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS");
+			throw new SQLException("Invalid argument, expected RETURN_GENERATED_KEYS or NO_GENERATED_KEYS", "M1M05");
 		
 		/* MonetDB has no way to disable this, so just do the normal
 		 * thing ;) */
 		if (execute(sql) != false)
-			throw new SQLException("Query produced a result set");
+			throw new SQLException("Query produced a result set", "M1M17");
 
 		return(getUpdateCount());
 	}
@@ -616,7 +599,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	public int executeUpdate(String sql, int[] columnIndexes)
 		throws SQLException
 	{
-		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported", "01M18");
 		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
@@ -646,7 +629,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	public int executeUpdate(String sql, String[] columnNames)
 		throws SQLException
 	{
-		addWarning("executeUpdate: generated keys for fixed set of columns not supported");
+		addWarning("executeUpdate: generated keys for fixed set of columns not supported", "01M18");
 		return(executeUpdate(sql, Statement.RETURN_GENERATED_KEYS));
 	}
 
@@ -720,7 +703,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		try {
 			return(new MonetVirtualResultSet(columns, types, results));
 		} catch (IllegalArgumentException e) {
-			throw new SQLException("Internal driver error: " + e.getMessage());
+			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
 	}
 
@@ -763,7 +746,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 * obtained with the method getResultSet.
 	 * <br /><br />
 	 * There are no more results when the following is true:<br />
-	 * (!getMoreResults() && (getUpdateCount() == -1)
+	 * (!getMoreResults() &amp;&amp; (getUpdateCount() == -1)
 	 *
 	 * @return true if the next result is a ResultSet object; false if it is
 	 *              an update count or there are no more results
@@ -921,7 +904,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public SQLWarning getWarnings() throws SQLException {
 		if (closed)
-			throw new SQLException("Cannot call on closed Statement");
+			throw new SQLException("Cannot call on closed Statement", "M1M20");
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
@@ -953,7 +936,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setCursorName(String name) throws SQLException {
-		addWarning("setCursorName: positioned updates/deletes not supported");
+		addWarning("setCursorName: positioned updates/deletes not supported", "01M21");
 	}
 
 	/**
@@ -975,7 +958,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public void setEscapeProcessing(boolean enable) throws SQLException {
 		if (enable)
-			addWarning("setEscapeProcessing: JDBC escape syntax is not supported by this driver");
+			addWarning("setEscapeProcessing: JDBC escape syntax is not supported by this driver", "01M22");
 	}
 
 	/**
@@ -999,7 +982,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		{
 			fetchDirection = direction;
 		} else {
-			throw new SQLException("Illegal direction: " + direction);
+			throw new SQLException("Illegal direction: " + direction, "M1M05");
 		}
 	}
 
@@ -1017,7 +1000,7 @@ public class MonetStatement extends MonetWrapper implements Statement {
 		if (rows >= 0 && !(getMaxRows() != 0 && rows > getMaxRows())) {
 			fetchSize = rows;
 		} else {
-			throw new SQLException("Illegal fetch size value: " + rows);
+			throw new SQLException("Illegal fetch size value: " + rows, "M1M05");
 		}
 	}
 
@@ -1040,9 +1023,9 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public void setMaxFieldSize(int max) throws SQLException {
 		if (max < 0)
-			throw new SQLException("Illegal max value: " + max);
+			throw new SQLException("Illegal max value: " + max, "M1M05");
 		if (max > 0)
-			addWarning("setMaxFieldSize: field size limitation not supported");
+			addWarning("setMaxFieldSize: field size limitation not supported", "01M23");
 	}
 
 	/**
@@ -1055,8 +1038,42 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 */
 	public void setMaxRows(int max) throws SQLException {
 		if (max < 0)
-			throw new SQLException("Illegal max value: " + max);
+			throw new SQLException("Illegal max value: " + max, "M1M05");
 		maxRows = max;
+	}
+
+	/**
+	 * Sets the number of seconds the driver will wait for a Statement
+	 * object to execute to the given number of seconds. If the limit is
+	 * exceeded, an SQLException is thrown.
+	 * <br /><br />
+	 * MonetDB does not support cancelling running queries, hence this
+	 * method does not do anything.
+	 *
+	 * @param seconds the new query timeout limit in seconds; zero means
+	 *        there is no limit
+	 * @throws SQLException if a database access error occurs or the
+	 *         condition seconds &gt;= 0 is not satisfied
+	 */
+	public void setQueryTimeout(int seconds) throws SQLException {
+		if (seconds < 0)
+			throw new SQLException("Illegal timeout value: " + seconds, "M1M05");
+		if (seconds > 0)
+			addWarning("setQueryTimeout: query time outs not supported", "01M24");
+	}
+
+	//== 1.6 methods (JDBC 4.0)
+
+	/**
+	 * Retrieves whether this Statement object has been closed. A
+	 * Statement is closed if the method close has been called on it, or
+	 * if it is automatically closed.
+	 *
+	 * @return true if this Statement object is closed; false if it is
+	 *         still open
+	 */
+	public boolean isClosed() {
+		return(closed);
 	}
 
 	/**
@@ -1082,23 +1099,42 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	}
 
 	/**
-	 * Sets the number of seconds the driver will wait for a Statement
-	 * object to execute to the given number of seconds. If the limit is
-	 * exceeded, an SQLException is thrown.
-	 * <br /><br />
-	 * MonetDB does not support cancelling running queries, hence this
-	 * method does not do anything.
+	 * Returns a value indicating whether the Statement is poolable or
+	 * not.
 	 *
-	 * @param seconds the new query timeout limit in seconds; zero means
-	 *        there is no limit
-	 * @throws SQLException if a database access error occurs or the
-	 *         condition seconds &gt;= 0 is not satisfied
+	 * @return true if the Statement is poolable; false otherwise
 	 */
-	public void setQueryTimeout(int seconds) throws SQLException {
-		if (seconds < 0)
-			throw new SQLException("Illegal timeout value: " + seconds);
-		if (seconds > 0)
-			addWarning("setQueryTimeout: query time outs not supported");
+	public boolean isPoolable() {
+		return(poolable);
+	}
+
+	//== 1.7 methods (JDBC 4.1)
+	
+	/**
+	 * Specifies that this Statement will be closed when all its
+	 * dependent result sets are closed.  If execution of the Statement
+	 * does not produce any result sets, this method has no effect.
+	 *
+	 * @throws SQLException if this method is called on a closed Statement
+	 */
+	public void closeOnCompletion() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Statement", "M1M20");
+		closeOnCompletion = true;
+	}
+
+	/**
+	 * Returns a value indicating whether this Statement will be closed
+	 * when all its dependent result sets are closed.
+	 *
+	 * @return true if the Statement will be closed when all of its
+	 *         dependent result sets are closed; false otherwise
+	 * @throws SQLException if this method is called on a closed Statement
+	 */
+	public boolean isCloseOnCompletion() throws SQLException {
+		if (closed)
+			throw new SQLException("Cannot call on closed Statement", "M1M20");
+		return(closeOnCompletion);
 	}
 
 	//== end methods of interface Statement
@@ -1111,11 +1147,22 @@ public class MonetStatement extends MonetWrapper implements Statement {
 	 *
 	 * @param reason the warning message
 	 */
-	private void addWarning(String reason) {
+	private void addWarning(String reason, String sqlstate) {
 		if (warnings == null) {
-			warnings = new SQLWarning(reason);
+			warnings = new SQLWarning(reason, sqlstate);
 		} else {
-			warnings.setNextWarning(new SQLWarning(reason));
+			warnings.setNextWarning(new SQLWarning(reason, sqlstate));
 		}
+	}
+
+	/**
+	 * Closes this Statement if there are no more open ResultSets
+	 * (Responses).  Called by MonetResultSet.close().
+	 */
+	void closeIfCompletion() {
+		if (!closeOnCompletion || lastResponseList == null)
+			return;
+		if (!lastResponseList.hasUnclosedResponses())
+			close();
 	}
 }

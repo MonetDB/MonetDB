@@ -48,6 +48,7 @@
 #include "mal_builder.h"
 
 #include <sql_rel2bin.h>
+#include <rel_select.h>
 #include <rel_optimizer.h>
 #include <rel_subquery.h>
 #include <rel_prop.h>
@@ -240,13 +241,18 @@ table_func_create_result( MalBlkPtr mb, InstrPtr q, sql_table *f)
 }
 
 static InstrPtr
-relational_func_create_result( MalBlkPtr mb, InstrPtr q, sql_rel *f)
+relational_func_create_result( mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 {
+	sql_rel *r = f;
 	node *n;
 	int i;
 
+	if (is_topn(r->op))
+		r = r->l;
+	if (!is_project(r->op))
+		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	q->argc = q->retc = 0;
-	for (i = 0, n = f->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
@@ -291,7 +297,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
-	curInstr = relational_func_create_result(curBlk, curInstr, rel);
+	curInstr = relational_func_create_result(m, curBlk, curInstr, r);
 	setVarUDFtype(curBlk,0);
 
 	/* ops */
@@ -331,10 +337,16 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	char *uri = prp->value;
 	node *n;
 	int i, q, v;
-	int *lret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
-	int *rret = SA_NEW_ARRAY(m->sa, int, list_length(rel->exps));
+	int *lret, *rret;
 	char old = name[0];
+	sql_rel *r = rel;
 
+	if (is_topn(r->op))
+		r = r->l;
+	if (!is_project(r->op))
+		r = rel_project(m->sa, r, rel_projections(m, r, NULL, 1, 1));
+ 	lret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
+	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
 	/* dirty hack, rename (change first char of name) L->l, local
          * functions name start with 'l' 	 */ 
 	name[0] = 'l';
@@ -348,7 +360,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
-	curInstr = relational_func_create_result(curBlk, curInstr, rel);
+	curInstr = relational_func_create_result(m, curBlk, curInstr, rel);
 	setVarUDFtype(curBlk,0);
 
 	/* ops */
@@ -370,7 +382,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	}
 
 	/* declare return variables */
-	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		sql_exp *e = n->data;
 		int type = exp_subtype(e)->type->localtype;
 
@@ -404,7 +416,7 @@ _create_relational_remote(mvc *m, char *name, sql_rel *rel, stmt *call, prop *pr
 	p = pushStr(curBlk, p, userRef);
 	p = pushStr(curBlk, p, name);
 
-	for (i = 0, n = rel->exps->h; n; n = n->next, i++ ) {
+	for (i = 0, n = r->exps->h; n; n = n->next, i++ ) {
 		/* x1 := remote.put(q, :type) */
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
@@ -1766,7 +1778,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			monet5_create_relational_function(sql->mvc, fimp, rel, s);
 
 			q = newStmt(mb, mod, fimp);
-			q = relational_func_create_result(mb, q, rel);
+			q = relational_func_create_result(sql->mvc, mb, q, rel);
 			if (s->op1)
 				for (n = s->op1->op4.lval->h; n; n = n->next) {
 					stmt *op = n->data;

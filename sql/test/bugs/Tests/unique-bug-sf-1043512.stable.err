@@ -10,12 +10,12 @@ stderr of test 'unique-bug-sf-1043512` in directory 'test/bugs` itself:
 # 17:24:53 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=55076  < unique-bug-sf-1043512.sql
 # 17:24:53 >  
 
-MAPI  = monetdb@localhost:45579
+MAPI  = monetdb@sofia:38256
 QUERY = insert into unique_test values (1);
-ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
-MAPI  = monetdb@localhost:45579
+ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+MAPI  = monetdb@sofia:38256
 QUERY = insert into unique_test values (1);
-ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
 
 # 17:24:53 >  
 # 17:24:53 >  Done.

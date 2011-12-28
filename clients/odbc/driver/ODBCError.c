@@ -71,31 +71,32 @@ static struct SQLStateMsg {
 	{"01001", "Cursor operation conflict"},
 	{"01002", "Disconnect error"},
 	{"01003", "NULL value eliminated in set function"},
-	{"01004", "String data, right-truncated"},
+	{"01004", "String data, right truncated"},
 	{"01006", "Privilege not revoked"},
 	{"01007", "Privilege not granted"},
 	{"01S00", "Invalid connection string attribute"},
 	{"01S01", "Error in row"},
 	{"01S02", "Option value changed"},
-	{"01S06", "Attempt to fetch before the result set returned the first rowset"},
+	{"01S06", "Attempt to fetch before the result set returned the first "
+		  "rowset"},
 	{"01S07", "Fractional truncation"},
-	{"01S08", "Error saving File DSN"},
+	{"01S08", "Error saving file DSN"},
 	{"01S09", "Invalid keyword"},
-	{"07001", "Wrong number of parameters"},
 	{"07002", "COUNT field incorrect"},
 	{"07005", "Prepared statement not a cursor-specification"},
 	{"07006", "Restricted data type attribute violation"},
+	{"07007", "Restricted parameter value violation"},
 	{"07009", "Invalid descriptor index"},
 	{"07S01", "Invalid use of default parameter"},
 	{"08001", "Client unable to establish connection"},
 	{"08002", "Connection name in use"},
-	{"08003", "Connection does not exist"},
+	{"08003", "Connection not open"},
 	{"08004", "Server rejected the connection"},
 	{"08007", "Connection failure during transaction"},
 	{"08S01", "Communication link failure"},
 	{"21S01", "Insert value list does not match column list"},
 	{"21S02", "Degree of derived table does not match column list"},
-	{"22001", "String data, right-truncated"},
+	{"22001", "String data, right truncated"},
 	{"22002", "Indicator variable required but not supplied"},
 	{"22003", "Numeric value out of range"},
 	{"22007", "Invalid datetime format"},
@@ -109,7 +110,7 @@ static struct SQLStateMsg {
 	{"23000", "Integrity constraint violation"},
 	{"24000", "Invalid cursor state"},
 	{"25000", "Invalid transaction state"},
-	{"25S01", "Transaction state"},
+	{"25S01", "Transaction state unknown"},
 	{"25S02", "Transaction is still active"},
 	{"25S03", "Transaction is rolled back"},
 	{"28000", "Invalid authorization specification"},
@@ -134,7 +135,7 @@ static struct SQLStateMsg {
 	{"HY004", "Invalid SQL data type"},
 	{"HY007", "Associated statement is not prepared"},
 	{"HY008", "Operation canceled"},
-	{"HY009", "Invalid use of null pointer"},
+	{"HY009", "Invalid argument value"},
 	{"HY010", "Function sequence error"},
 	{"HY011", "Attribute cannot be set now"},
 	{"HY012", "Invalid transaction operation code"},
@@ -142,7 +143,8 @@ static struct SQLStateMsg {
 	{"HY014", "Limit on the number of handles exceeded"},
 	{"HY015", "No cursor name available"},
 	{"HY016", "Cannot modify an implementation row descriptor"},
-	{"HY017", "Invalid use of an automatically allocated descriptor handle"},
+	{"HY017", "Invalid use of an automatically allocated descriptor "
+		  "handle"},
 	{"HY018", "Server declined cancel request"},
 	{"HY019", "Non-character and non-binary data sent in pieces"},
 	{"HY020", "Attempt to concatenate a null value"},
@@ -152,7 +154,7 @@ static struct SQLStateMsg {
 	{"HY091", "Invalid descriptor field identifier"},
 	{"HY092", "Invalid attribute/option identifier"},
 	{"HY095", "Function type out of range"},
-	{"HY096", "Invalid information type"},
+	{"HY096", "Information type out of range"},
 	{"HY097", "Column type out of range"},
 	{"HY098", "Scope type out of range"},
 	{"HY099", "Nullable type out of range"},
@@ -166,24 +168,36 @@ static struct SQLStateMsg {
 	{"HY109", "Invalid cursor position"},
 	{"HY110", "Invalid driver completion"},
 	{"HY111", "Invalid bookmark value"},
+	{"HY114", "Driver does not support connection-level asynchronous "
+		  "function execution"},
+	{"HY115", "SQLEndTran is not allowed for an environment that contains "
+		  "a connection with asynchronous function execution enabled"},
+	{"HY117", "Connection is suspended due to unknown transaction state.  "
+		  "Only disconnect and read-only functions are allowed."},
+	{"HY121", "Cursor Library and Driver-Aware Pooling cannot be enabled "
+		  "at the same time"},
 	{"HYC00", "Optional feature not implemented"},
 	{"HYT00", "Timeout expired"},
 	{"HYT01", "Connection timeout expired"},
 	{"IM001", "Driver does not support this function"},
-	{"IM002", "Data source name not found and no default driver specified"},
-	{"IM003", "Specified driver could not be loaded"},
+	{"IM002", "Data source not found and no default driver specified"},
+	{"IM003", "Specified driver could not be connected to"},
 	{"IM004", "Driver's SQLAllocHandle on SQL_HANDLE_ENV failed"},
 	{"IM005", "Driver's SQLAllocHandle on SQL_HANDLE_DBC failed"},
 	{"IM006", "Driver's SQLSetConnectAttr failed"},
 	{"IM007", "No data source or driver specified; dialog prohibited"},
 	{"IM008", "Dialog failed"},
-	{"IM009", "Unable to load translation DLL"},
+	{"IM009", "Unable to connect to translation DLL"},
 	{"IM010", "Data source name too long"},
 	{"IM011", "Driver name too long"},
 	{"IM012", "DRIVER keyword syntax error"},
-	{"IM013", "Trace file error"},
-	{"IM014", "Invalid name of File DSN"},
-	{"IM015", "Corrupt file data source"},
+	{"IM014", "The specified DSN contains an architecture mismatch "
+		  "between the Driver and Application"},
+	{"IM015", "Driver's SQLConnect on SQL_HANDLE_DBC_INFO_HANDLE failed"},
+	{"IM017", "Polling is disabled in asynchronous notification mode"},
+	{"IM018", "SQLCompleteAsync has not been called to complete the "
+		  "previous asynchronous operation on this handle."},
+	{"S1118", "Driver does not support asynchronous notification"},
 	{0, 0}
 };
 
@@ -198,13 +212,13 @@ getStandardSQLStateMsg(const char *SQLState)
 	assert(SQLState);
 
 	for (p = SQLStateMsg; p->SQLState; p++)
-		if (strcmp(p->SQLState, SQLState) == 0)
+		if (strncmp(p->SQLState, SQLState, 5) == 0)
 			return p->SQLMsg;
 
 	/* Present a msg to notify the system administrator/programmer */
 	fprintf(stderr,
 		"\nMonetDB, ODBC Driver, ODBCError.c: "
-		"No message defined for SQLState: %s. "
+		"No message defined for SQLState: %.5s. "
 		"Please report this error.\n", SQLState);
 
 	return SQLState;	/* always return a string */

@@ -12,12 +12,12 @@ stderr of test 'create_same_temp_tab_after_its_drop.SF-1850809` in directory 'te
 # 11:00:59 >  mclient -lsql -umonetdb -Pmonetdb --host=amelia --port=35980 
 # 11:00:59 >  
 
-MAPI  = monetdb@localhost:38198
+MAPI  = monetdb@sofia:38256
 QUERY = INSERT INTO temptest VALUES (3);
 ERROR = !INSERT INTO: no such table 'temptest'
-MAPI  = monetdb@localhost:38198
+MAPI  = monetdb@sofia:38256
 QUERY = DROP TABLE temptest;
-ERROR = !SQLException:sql.catalog:DROP TABLE: no such table 'temptest'
+ERROR = !DROP TABLE: no such table 'temptest'
 
 # 11:00:59 >  
 # 11:00:59 >  Done.

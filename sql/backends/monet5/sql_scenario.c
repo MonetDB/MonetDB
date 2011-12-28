@@ -341,7 +341,7 @@ error(stream *out, char *str)
 	return 0;
 }
 
-#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED "!25005!current transaction is aborted (please ROLLBACK)\n"
 
 static int
 handle_error(mvc *m, stream *out, int pstatus)
@@ -459,7 +459,7 @@ SQLinitClient(Client c)
 	schema = monet5_user_get_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
-		throw(PERMD, "SQLinitClient", "schema authorization error");
+		throw(PERMD, "SQLinitClient", "08004!schema authorization error");
 	}
 	_DELETE(schema);
 
@@ -1176,8 +1176,17 @@ SQLshowPlan(Client c)
 	newStmt(c->curprg->def, "mdb", "listMapi");
 }
 
+static void
+SQLshowDot(Client c)
+{
+	InstrPtr q;
+	/* we should determine rendering requirements first */
+	/* FIXME: unify this with direct showFlowGraph() calls as used below */
+	q = newStmt(c->curprg->def, "mdb", "dot");
+	q = pushStr(c->curprg->def, q, "stdout-mapi");
+}
+
 /*
- * @-
  * The core part of the SQL interface, parse the query and
  * prepare the intermediate code.
  */
@@ -1341,7 +1350,7 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			mnstr_printf(out, "!EXEC: no prepared statement with id: %d\n",
+			mnstr_printf(out, "!07003:EXEC: no prepared statement with id: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
 					"no prepared statement with id: %d",
@@ -1351,7 +1360,7 @@ SQLparser(Client c)
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			mnstr_printf(out, "!EXEC: given handle id is not for a "
+			mnstr_printf(out, "!07005:EXEC: given handle id is not for a "
 					"prepared statement: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
@@ -1368,7 +1377,8 @@ SQLparser(Client c)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (m->emode != m_explain && !(m->emod & (mod_debug | mod_trace)))
+		if (m->emode != m_explain && m->emode != m_dot &&
+				!(m->emod & (mod_debug | mod_trace)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
@@ -1385,11 +1395,13 @@ SQLparser(Client c)
 		/* generate and call the MAL code */
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
+		if (m->emode == m_dot)
+			SQLshowDot(c);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain && m->emode != m_dot) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1480,14 +1492,14 @@ SQLparser(Client c)
 		}
 	}
 /*
- * @-
  * Inspect the variables for post code-generation actions.
  */
 finalize:
 	if (m->emode == m_explain && be->q && be->q->code)
 		printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	if (m->emode == m_dot && be->q && be->q->code)
+		showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
 	/*
-	 * @-
 	 * Gather the statistics for post analysis. It should preferably
 	 * be stored in an SQL table
 	 */
@@ -1497,7 +1509,6 @@ finalize:
 }
 
 /*
- * @-
  * Execution of the SQL program is delegated to the MALengine.
  * Different cases should be distinguished. The default is to
  * hand over the MAL block derived by the parser for execution.
@@ -1523,7 +1534,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 #endif
 	mb = ((Symbol)q->code)->def;
 	if ( mb->errors )
-		throw(SQL, "SQLengine", "Program contains errors");
+		throw(SQL, "SQLengine", "39000!program contains errors");
 	pci = getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv = (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
@@ -1549,7 +1560,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			GDKfree(argv);
 		if( pci->retc >= MAXARG)
 			GDKfree(argrec);
-		throw(SQL, "sql.prepare", "wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
+		throw(SQL, "sql.prepare", "07001!EXEC: wrong number of arguments for prepared statement: %d, expected %d", argc, parc);
 	} else {
 		for (i = 0; i < m->argc; i++) {
 			atom *arg = m->args[i];
@@ -1561,7 +1572,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 					GDKfree(argv);
 				if (pci->retc >= MAXARG)
 					GDKfree(argrec);
-				throw(SQL, "sql.prepare", "wrong type for argument %d of "
+				throw(SQL, "sql.prepare", "07001!EXEC: wrong type for argument %d of "
 						"prepared statement: %s, expected %s",
 						i + 1, atom_type(arg)->type->sqlname,
 						pt->type->sqlname);
@@ -1606,13 +1617,13 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_explain) {
+	if (m->emode == m_explain || m->emode == m_dot) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
-		throw(SQL, "SQLengine", "Program contains errors");
+		throw(SQL, "SQLengine", "39000!program contains errors");
 	}
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
@@ -1628,30 +1639,33 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if( m->emode == m_prepare || m->emode == m_prepareresult){
 		goto cleanup_engine;
-	} else if( m->emode == m_explain ){
+	} else if (m->emode == m_explain || m->emode == m_dot) {
 		/*
-		 * @-
 		 * If you want to see the detailed code, we have to pick it up from
 		 * the cache as well. This calls for finding the call to the
-		 * cached routine, which may be hidden . For now we take a shortcut.
+		 * cached routine, which may be hidden. For now we take a shortcut.
 		 */
-		if( be->q) {
+		if (be->q) {
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
-			if (p->blk)
-				printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI );
+			if (p->blk) {
+				if (m->emode == m_explain) {
+					printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI);
+				} else {
+					showFlowGraph(p->blk, 0, "stdout-mapi");
+				}
+			}
 		}
-		c->curprg->def->errors = -1; /* don;t execute */
+		c->curprg->def->errors = -1; /* don't execute */
 	}
 	c->glb = 0;
-	be->language= 'D';
+	be->language = 'D';
 	/*
-	 * @-
 	 * The code below is copied from MALengine, which handles execution
 	 * in the context of a user global environment. We have a private
 	 * environment.
 	 */
-	if( MALcommentsOnly(c->curprg->def)) {
+	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
 		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
@@ -1659,17 +1673,27 @@ SQLengineIntern(Client c, backend *be)
 
 cleanup_engine:
 	if (msg) {
-		if (getExceptionType(msg) == OPTIMIZER) {
+		enum malexception type = getExceptionType(msg);
+		if (type == OPTIMIZER) {
 			resetMalBlk( c->curprg->def, 1);
 			/* resetInstructions(c->curprg->def, 1);*/
 			freeVariables(c,c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
+		} else if (type == SQL) {
+			/* don't print exception decoration, just the message */
+			char *n = NULL;
+			char *o = msg;
+			while ((n = strchr(o, '\n')) != NULL) {
+				*n++ = '\0';
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+				o = n;
+			}
+			if (strlen(o) != 0)
+				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		} else {
-			str p = getExceptionPlace(msg);
-			showException(getExceptionType(msg), p, "%s", getExceptionMessage(msg));
-			GDKfree(p);
+			dumpExceptionsToStream(c->fdout, msg);
 		}
 		showErrors(c);
 		m->session->status = -10;
@@ -1727,7 +1751,7 @@ SQLrecompile(Client c, backend *be)
 		resetMalBlk(c->curprg->def, oldstop);
 		freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
-		throw(SQL, "SQLrecompile", "Semantic errors");
+		throw(SQL, "SQLrecompile", "M0M27!semantic errors");
 	}
 	return SQLengineIntern(c, be);
 }
@@ -1752,8 +1776,21 @@ SQLassert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1765,8 +1802,21 @@ SQLassertInt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1778,8 +1828,21 @@ SQLassertWrd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }
@@ -1791,8 +1854,21 @@ SQLassertLng(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void) cntxt;
 	(void)mb;
 	if (*flg){
+		const char *sqlstate = "M0M29!";
 		/* mdbDump(mb,stk,pci);*/
-		throw(SQL, "assert", "%s", *msg);
+		if (strlen(*msg) > 6 && (*msg)[5] == '!' &&
+		    (('0' <= (*msg)[0] && (*msg)[0] <= '9') ||
+		     ('A' <= (*msg)[0] && (*msg)[0] <= 'Z')) &&
+		    (('0' <= (*msg)[1] && (*msg)[1] <= '9') ||
+		     ('A' <= (*msg)[1] && (*msg)[1] <= 'Z')) &&
+		    (('0' <= (*msg)[2] && (*msg)[2] <= '9') ||
+		     ('A' <= (*msg)[2] && (*msg)[2] <= 'Z')) &&
+		    (('0' <= (*msg)[3] && (*msg)[3] <= '9') ||
+		     ('A' <= (*msg)[3] && (*msg)[3] <= 'Z')) &&
+		    (('0' <= (*msg)[4] && (*msg)[4] <= '9') ||
+		     ('A' <= (*msg)[4] && (*msg)[4] <= 'Z')))
+			sqlstate = "";
+		throw(SQL, "assert", "%s%s", sqlstate, *msg);
 	}
 	return MAL_SUCCEED;
 }

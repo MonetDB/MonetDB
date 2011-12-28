@@ -86,10 +86,12 @@ command_help(int argc, char *argv[])
 		printf("    -P pass  password to use to login at remote merovingian\n");
 		printf("  use the help command to get help for a particular command\n");
 	} else if (strcmp(argv[1], "create") == 0) {
-		printf("Usage: monetdb create database [database ...]\n");
-		printf("  Initialises a new database in the MonetDB Server.  A\n");
+		printf("Usage: monetdb create [-m pattern] database [database ...]\n");
+		printf("  Initialises a new database or multiplexfunnel in the MonetDB Server.  A\n");
 		printf("  database created with this command makes it available\n");
 		printf("  for use, however in maintenance mode (see monetdb lock).\n");
+		printf("Options:\n");
+		printf("  -m  create a multiplex funnel for pattern.\n");
 	} else if (strcmp(argv[1], "destroy") == 0) {
 		printf("Usage: monetdb destroy [-f] database [database ...]\n");
 		printf("  Removes the given database, including all its data and\n");
@@ -1180,7 +1182,7 @@ command_get(int argc, char *argv[])
 		orig = stats;
 	}
 
-	/* suppress header when there are no results */
+	/* avoid work when there are no results */
 	if (orig == NULL) {
 		free(props);
 		return;
@@ -1207,7 +1209,6 @@ command_get(int argc, char *argv[])
 	if (twidth < 6)
 		twidth = 6;
 	value = malloc(sizeof(char) * twidth + 1);
-	printf("     name          prop     source           value\n");
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
@@ -1225,30 +1226,52 @@ command_get(int argc, char *argv[])
 		free(buf);
 
 		if (propall == 1) {
-			kv = findConfKey(props, "type");
-			if (kv != NULL && kv->val != NULL &&
-					strcmp(kv->val, "mfunnel") == 0)
-			{
-				snprintf(vbuf, sizeof(vbuf), "name,type,mfunnel,shared");
-			} else {
-				size_t off = 0;
-				kv = props;
-				off += snprintf(vbuf, sizeof(vbuf), "name");
-				while (kv->key != NULL) {
-					if (strcmp(kv->key, "mfunnel") != 0 &&
-							strcmp(kv->key, "type") != 0)
-						off += snprintf(vbuf + off, sizeof(vbuf) - off,
-								",%s", kv->key);
-					kv++;
-				}
+			size_t off = 0;
+			kv = props;
+			off += snprintf(vbuf, sizeof(vbuf), "name");
+			while (kv->key != NULL) {
+				off += snprintf(vbuf + off, sizeof(vbuf) - off,
+						",%s", kv->key);
+				kv++;
 			}
 		} else {
+			/* check validity of properties before printing them */
+			if (stats == orig) {
+				snprintf(vbuf, sizeof(vbuf), "%s", property);
+				buf = vbuf;
+				while ((p = strtok(buf, ",")) != NULL) {
+					buf = NULL;
+					if (strcmp(p, "name") == 0)
+						continue;
+					kv = findConfKey(props, p);
+					if (kv == NULL)
+						fprintf(stderr, "get: no such property: %s\n", p);
+				}
+			}
 			snprintf(vbuf, sizeof(vbuf), "%s", property);
 		}
 		buf = vbuf;
+		/* print header after errors */
+		if (stats == orig)
+			printf("     name          prop     source           value\n");
 
 		while ((p = strtok(buf, ",")) != NULL) {
 			buf = NULL;
+
+			/* filter properties based on object type */
+			kv = findConfKey(props, "type");
+			if (kv != NULL && kv->val != NULL) {
+				if (strcmp(kv->val, "mfunnel") == 0) {
+					if (strcmp(p, "name") != 0 &&
+							strcmp(p, "type") != 0 &&
+							strcmp(p, "mfunnel") != 0 &&
+							strcmp(p, "shared") != 0)
+						continue;
+				}
+			} else { /* no type == database (default) */
+				if (strcmp(p, "mfunnel") == 0)
+					continue;
+			}
 
 			/* special virtual case */
 			if (strcmp(p, "name") == 0) {
@@ -1256,11 +1279,8 @@ command_get(int argc, char *argv[])
 				abbreviateString(value, stats->dbname, twidth);
 			} else {
 				kv = findConfKey(props, p);
-				if (kv == NULL) {
-					fprintf(stderr, "get: no such property: %s\n", p);
-					stats = NULL;
+				if (kv == NULL)
 					continue;
-				}
 				if (kv->val == NULL) {
 					kv = findConfKey(defprops, p);
 					source = "default";

@@ -74,12 +74,12 @@ stderr of test 'insert_quser` in directory 'test/ssqq` itself:
 # 16:29:57 >  mclient -lsql -ftest -i -e --host=yngling --port=31832 
 # 16:29:57 >  
 
-MAPI  = monetdb@yngling:31832
+MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_quser(NULL, NULL, NULL, NULL);
-ERROR = !SQLException:assert:INSERT INTO: NOT NULL constraint violated for column quser.password
-MAPI  = monetdb@yngling:31832
+ERROR = !INSERT INTO: NOT NULL constraint violated for column quser.password
+MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_quser('user1', 'email3@example.com', 3, 'nosecret');
-ERROR = !SQLException:assert:INSERT INTO: UNIQUE constraint 'quser.user_name_unq' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'quser.user_name_unq' violated
 
 # 16:29:57 >  
 # 16:29:57 >  Done.

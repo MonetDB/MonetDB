@@ -172,51 +172,11 @@ SQLGetDiagField_(SQLSMALLINT HandleType,
 		char *state = getSqlState(err);
 		char *msg;
 
-		if (strcmp(state, "01S00") == 0 ||
-		    strcmp(state, "01S01") == 0 ||
-		    strcmp(state, "01S02") == 0 ||
-		    strcmp(state, "01S06") == 0 ||
-		    strcmp(state, "01S07") == 0 ||
-		    strcmp(state, "07S01") == 0 ||
-		    strcmp(state, "08S01") == 0 ||
-		    strcmp(state, "21S01") == 0 ||
-		    strcmp(state, "21S02") == 0 ||
-		    strcmp(state, "25S01") == 0 ||
-		    strcmp(state, "25S02") == 0 ||
-		    strcmp(state, "25S03") == 0 ||
-		    strcmp(state, "42S01") == 0 ||
-		    strcmp(state, "42S02") == 0 ||
-		    strcmp(state, "42S11") == 0 ||
-		    strcmp(state, "42S12") == 0 ||
-		    strcmp(state, "42S21") == 0 ||
-		    strcmp(state, "42S22") == 0 ||
-		    strcmp(state, "HY095") == 0 ||
-		    strcmp(state, "HY097") == 0 ||
-		    strcmp(state, "HY098") == 0 ||
-		    strcmp(state, "HY099") == 0 ||
-		    strcmp(state, "HY100") == 0 ||
-		    strcmp(state, "HY101") == 0 ||
-		    strcmp(state, "HY105") == 0 ||
-		    strcmp(state, "HY107") == 0 ||
-		    strcmp(state, "HY109") == 0 ||
-		    strcmp(state, "HY110") == 0 ||
-		    strcmp(state, "HY111") == 0 ||
-		    strcmp(state, "HYT00") == 0 ||
-		    strcmp(state, "HYT01") == 0 ||
-		    strcmp(state, "IM001") == 0 ||
-		    strcmp(state, "IM002") == 0 ||
-		    strcmp(state, "IM003") == 0 ||
-		    strcmp(state, "IM004") == 0 ||
-		    strcmp(state, "IM005") == 0 ||
-		    strcmp(state, "IM006") == 0 ||
-		    strcmp(state, "IM007") == 0 ||
-		    strcmp(state, "IM008") == 0 ||
-		    strcmp(state, "IM010") == 0 ||
-		    strcmp(state, "IM011") == 0 ||
-		    strcmp(state, "IM012") == 0)
-			msg = "ODBC 3.0";
+		if (('0' <= state[0] && state[0] <= '4') ||
+		    ('A' <= state[0] && state[0] <= 'H'))
+			msg = "ISO 9075"; /* defined by standard */
 		else
-			msg = "ISO 9075";
+			msg = "ODBC 3.0"; /* effectively just "IM" */
 
 		copyDiagString(msg, DiagInfoPtr, BufferLength, StringLengthPtr);
 		return SQL_SUCCESS;

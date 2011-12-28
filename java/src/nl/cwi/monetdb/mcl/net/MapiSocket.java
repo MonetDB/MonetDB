@@ -119,9 +119,6 @@ public final class MapiSocket {
 	/** A short in two bytes for holding the block size in bytes */
 	private byte[] blklen = new byte[2];
 
-	/** SO_TIMEOUT value for the underlying java.net.Socket */
-	private int sockTimeout = 0;
-
 	/**
 	 * Constructs a new MapiSocket.
 	 */
@@ -200,8 +197,18 @@ public final class MapiSocket {
 	 * @param timeout The specified timeout, in milliseconds.  A timeout
 	 *        of zero is interpreted as an infinite timeout.
 	 */
-	public void setSoTimeout(int s) {
-		this.sockTimeout = s;
+	public void setSoTimeout(int s) throws SocketException {
+		// limit time to wait on blocking operations (0 = indefinite)
+		con.setSoTimeout(s);
+	}
+
+	/**
+	 * Gets the SO_TIMEOUT from the underlying Socket.
+	 *
+	 * @return the currently in use timeout in milliseconds
+	 */
+	public int getSoTimeout() throws SocketException {
+		return(con.getSoTimeout());
 	}
 
 	/**
@@ -240,8 +247,6 @@ public final class MapiSocket {
 			// set nodelay, as it greatly speeds up small messages (like we
 			// often do)
 			con.setTcpNoDelay(true);
-			// limit time to wait on blocking operations (0 = indefinite)
-			con.setSoTimeout(sockTimeout);
 
 			fromMonet = new BlockInputStream(con.getInputStream());
 			toMonet = new BlockOutputStream(con.getOutputStream());

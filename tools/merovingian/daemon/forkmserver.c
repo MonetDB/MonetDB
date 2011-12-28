@@ -224,6 +224,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
 
 		kv = findConfKey(ckv, "nthreads");
+		if (kv->val == NULL)
+			kv = findConfKey(_mero_db_props, "nthreads");
 		if (kv->val != NULL) {
 			snprintf(nthreads, sizeof(nthreads), "gdk_nr_threads=%s", kv->val);
 		} else {
@@ -240,6 +242,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 
 		kv = findConfKey(ckv, "optpipe");
+		if (kv->val == NULL)
+			kv = findConfKey(_mero_db_props, "optpipe");
 		if (kv->val != NULL) {
 			snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
 		} else {

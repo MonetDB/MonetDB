@@ -47,6 +47,8 @@ ODBCResetStmt(ODBCStmt *stmt)
 	SQLFreeStmt_(stmt, SQL_CLOSE);
 	setODBCDescRecCount(stmt->ImplParamDescr, 0);
 
+	if (stmt->queryid >= 0)
+		mapi_release_id(stmt->Dbc->mid, stmt->queryid);
 	stmt->queryid = -1;
 	stmt->nparams = 0;
 	stmt->State = INITED;
@@ -101,14 +103,14 @@ SQLPrepare_(ODBCStmt *stmt,
 	free(s);
 	s = NULL;
 	if (ret != MOK) {
-		const char *e;
+		const char *e, *m;
 
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
 		if ((s = mapi_result_error(hdl)) == NULL)
 			s = mapi_error_str(stmt->Dbc->mid);
-		if (s && (e = ODBCErrorType(s)) != NULL)
-			addStmtError(stmt, e, s, 0);
+		if (s && (e = ODBCErrorType(s, &m)) != NULL)
+			addStmtError(stmt, e, m, 0);
 		else
 			addStmtError(stmt, "42000", s, 0);
 		return SQL_ERROR;
@@ -133,7 +135,7 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		mapi_fetch_row(hdl);
 		s = mapi_fetch_field(hdl, 5); /* column name: null -> param */
-		if (s == NULL) {
+		if (s == NULL || *s == 0) {
 			stmt->nparams++;
 			rec = prec++;
 			rec->sql_desc_nullable = SQL_NULLABLE;

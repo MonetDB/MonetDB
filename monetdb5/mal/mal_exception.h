@@ -69,6 +69,7 @@ mal_export enum malexception	getExceptionType(str);
 mal_export str	getExceptionPlace(str);
 mal_export str	getExceptionMessage(str);
 mal_export str	exceptionToString(enum malexception);
+mal_export void dumpExceptionsToStream(stream *out, str msg);
 mal_export char *M5OutOfMemory;	/* pointer to constant string */
 
 #include "mal_errors.h"

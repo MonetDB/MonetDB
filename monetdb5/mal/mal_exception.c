@@ -208,8 +208,8 @@ createException(enum malexception type, const char *fcn, const char *format, ...
  * Internal helper function to properly emit the given string to out,
  * thereby abiding to all the protocol laws.
  */
-static void
-dumpToStream(stream *out, str whatever) {
+void
+dumpExceptionsToStream(stream *out, str whatever) {
 	size_t i;
 	size_t last = 0;
 	size_t len ;
@@ -244,15 +244,11 @@ showException(enum malexception type, const char *fcn, const char *format, ...)
 	va_list ap;
 	str msg;
 
-	/* ignore an internal exception */
-	if (strcmp(fcn, "client.quit") == 0)
-		return;
-
 	va_start(ap, format);
 	msg = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
 
-	dumpToStream(GDKout, msg);
+	dumpExceptionsToStream(GDKout, msg);
 	GDKfree(msg);
 }
 
@@ -322,7 +318,7 @@ showScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *fo
 	msg = createScriptExceptionInternal(mb, pc, type, NULL, format, ap);
 	va_end(ap);
 
-	dumpToStream(GDKout,msg);
+	dumpExceptionsToStream(GDKout,msg);
 	GDKfree(msg);
 }
 

@@ -29,12 +29,92 @@
 #include "rel_updates.h"
 #include "sql_env.h"
 
+
+static int 
+has_remote_or_replica( sql_rel *rel ) 
+{
+	if (!rel)
+		return 0;
+
+	switch (rel->op) {
+	case op_basetable: {
+		sql_table *t = rel->l;
+
+		if (isReplicaTable(t) || isRemote(t)) 
+			return 1;
+	} 	
+	case op_table:
+		break;
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+
+	case op_semi: 
+	case op_anti: 
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+		if (has_remote_or_replica( rel->l ) ||
+		    has_remote_or_replica( rel->r ))
+			return 1;
+		break;
+	case op_project:
+	case op_select: 
+	case op_groupby: 
+	case op_topn: 
+	case op_sample: 
+		if (has_remote_or_replica( rel->l )) 
+			return 1;
+		break;
+	case op_ddl: 
+		if (has_remote_or_replica( rel->l )) 
+			return 1;
+	case op_insert:
+	case op_update:
+	case op_delete:
+		if (rel->r && has_remote_or_replica( rel->r )) 
+			return 1;
+		break;
+	}
+	return 0;
+}
+
+static sql_rel *
+rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_table *p) 
+{
+	node *n, *m;
+	sql_rel *r = rel_basetable(sql, p, t->base.name);
+
+	for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e = n->data;
+		sql_exp *ne = m->data;
+
+		exp_setname(sql->sa, ne, e->rname, e->name);
+	}
+	rel_destroy(rel);
+	return r;
+}
+
 static sql_rel *
 replica(mvc *sql, sql_rel *rel, char *uri) 
 {
 	if (!rel)
 		return rel;
 
+	if (rel_is_ref(rel)) {
+		if (has_remote_or_replica(rel)) {
+			sql_rel *nrel = rel_copy(sql->sa, rel);
+
+			if (nrel && rel->p)
+				nrel->p = prop_copy(sql->sa, rel->p);
+			rel_destroy(rel);
+			rel = nrel;
+		} else {
+			return rel;
+		}
+	}
 	switch (rel->op) {
 	case op_basetable: {
 		sql_table *t = rel->l;
@@ -42,21 +122,19 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 		if (isReplicaTable(t)) {
 			node *n;
 
-			/* replace by the replica which matches the uri */
-			for (n = t->tables.set->h; n; n = n->next) {
-				sql_table *p = n->data;
-
-				if (isRemote(p) && strcmp(uri, p->query) == 0) {
-					if (rel_is_ref(rel)) {
-						sql_rel *l = rel_basetable(sql, p, NULL);
-						l ->exps = list_dup(rel->exps, (fdup)NULL);
-						rel_destroy(rel);
-						rel = l;
-					} else {
-						rel->l = p;
+			if (uri) {
+				/* replace by the replica which matches the uri */
+				for (n = t->tables.set->h; n; n = n->next) {
+					sql_table *p = n->data;
+	
+					if (isRemote(p) && strcmp(uri, p->query) == 0) {
+						rel = rewrite_replica(sql, rel, t, p);
+						break;
 					}
-					break;
 				}
+			} else { /* no match, use first */
+				sql_table *p = t->tables.set->h->data;
+				rel = rewrite_replica(sql, rel, t, p);
 			}
 		}
 	}
@@ -105,6 +183,19 @@ distribute(mvc *sql, sql_rel *rel)
 
 	if (!rel)
 		return rel;
+
+	if (rel_is_ref(rel)) {
+		if (has_remote_or_replica(rel)) {
+			sql_rel *nrel = rel_copy(sql->sa, rel);
+
+			if (nrel && rel->p)
+				nrel->p = prop_copy(sql->sa, rel->p);
+			rel_destroy(rel);
+			rel = nrel;
+		} else {
+			return rel;
+		}
+	}
 
 	switch (rel->op) {
 	case op_basetable: {
@@ -230,5 +321,6 @@ sql_rel *
 rel_distribute(mvc *sql, sql_rel *rel) 
 {
 	rel = distribute(sql, rel);
+	rel = replica(sql, rel, NULL);
 	return rel_remote_func(sql, rel);
 }
