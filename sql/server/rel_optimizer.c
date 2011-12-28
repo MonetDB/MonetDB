@@ -482,8 +482,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			return 0;
 		}
 	case e_column:
-		*cnt += 1;
-		return 1;
+		*cnt += 20;
+		return 20;
 	case e_atom:
 		*cnt += 10;
 		return 10;
@@ -1028,9 +1028,8 @@ reorder_join(mvc *sql, sql_rel *rel)
 		list_append(rels, rel->r);
 		cnt = list_length(exps);
 		rel->exps = find_fk(sql->sa, rels, exps);
-		if (list_length(rel->exps) != cnt) {
-			rel->exps = list_dup(exps, (fdup)NULL);
-		}
+		if (list_length(rel->exps) != cnt) 
+			rel->exps = order_join_expressions(sql->sa, exps, rels);
 	} else { 
  		get_relations(rel, rels);
 		if (list_length(rels) > 1) {
