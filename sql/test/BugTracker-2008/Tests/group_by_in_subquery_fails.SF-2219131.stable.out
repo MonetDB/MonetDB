@@ -24,8 +24,13 @@ Ready.
 # 16:56:46 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=34683  -G
 # 16:56:46 >  
 
-% .L2 # table_name
-% L2 # name
+# 17:32:51 >  
+# 17:32:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=33369"
+# 17:32:51 >  
+
+#select (select 1);
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]

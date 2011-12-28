@@ -65,7 +65,7 @@ Ready.
 % bigint # type
 % 1 # length
 % . # table_name
-% L5 # name
+% L4 # name
 % double # type
 % 24 # length
 [ NULL	]
@@ -74,7 +74,7 @@ Ready.
 % varchar,	varchar # type
 % 0,	0 # length
 % sys.victim,	sys.victim # table_name
-% L10,	L11 # name
+% L7,	L10 # name
 % varchar,	varchar # type
 % 0,	0 # length
 [ NULL,	NULL	]

@@ -5467,6 +5467,7 @@ end main;
 [ "collect",			  "pattern",	  "mdb",	  "(v:any_1):void ",															  "OPTtraceCall;"					  ]
 [ "dump",			  "pattern",	  "mdb",	  "():void ",																  "MDBdump;"						  ]
 [ "dot",			  "pattern",	  "mdb",	  "(M:str,F:str,s:str):void ",														  "MDBshowFlowGraph;"					  ]
+[ "dot",			  "pattern",	  "mdb",	  "(s:str):void ",												  "MDBshowFlowGraph;"			  ]
 [ "getDefinition",		  "pattern",	  "mdb",	  "():bat[:void,:str] ",														  "MDBgetDefinition;"					  ]
 [ "getStackTrace",		  "pattern",	  "mdb",	  "():bat[:void,:str] ",														  "MDBStkTrace;"					  ]
 [ "getStackFrame",		  "pattern",	  "mdb",	  "():bat[:str,:str] ",															  "MDBgetStackFrame;"					  ]
