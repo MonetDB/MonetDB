@@ -30,6 +30,7 @@ import java.net.SocketTimeoutException;
 import nl.cwi.monetdb.mcl.io.*;
 import nl.cwi.monetdb.mcl.net.*;
 import nl.cwi.monetdb.mcl.parser.*;
+import nl.cwi.monetdb.mcl.MCLException;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -216,8 +217,15 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				throw new SQLException(error.substring(6), "08001");
 		} catch (IOException e) {
 			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage(), "08006");
-		} catch (Exception e) {
+		} catch (MCLParseException e) {
 			throw new SQLException(e.getMessage(), "08001");
+		} catch (MCLException e) {
+			String[] connex = e.getMessage().split("\n");
+			SQLException sqle = new SQLException(connex[0], "08001", e);
+			for (int i = 1; i < connex.length; i++) {
+				sqle.setNextException(new SQLException(connex[1], "08001"));
+			}
+			throw sqle;
 		}
 
 		// we seem to have managed to log in, let's store the
@@ -1570,19 +1578,23 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				/* Below we have to calculate how many "chunks" we need
 				 * to allocate to store the entire result.  However, if
 				 * the user didn't set a cache size, as in this case, we
-				 * need to stick to our defaults.  So far, so good.  Now
-				 * the problem with XQuery is, that it doesn't support
-				 * any block fetching, so we need to always fetch
-				 * everything at once.  For that reason, the cache size
-				 * is here set to the tuplecount, such that we do a full
-				 * fetch at once.  To avoid a division by zero lateron,
-				 * we make sure the cache size is not 0 */
-				cacheSize = lang == LANG_SQL ? MonetConnection.DEF_FETCHSIZE : (tuplecount + 1);
+				 * need to stick to our defaults. */
+				cacheSize = MonetConnection.DEF_FETCHSIZE;
 				cacheSizeSetExplicitly = false;
 			} else {
 				cacheSize = parent.cachesize;
 				cacheSizeSetExplicitly = true;
 			}
+			/* So far, so good.  Now the problem with EXPLAIN, DOT, etc
+			 * queries is, that they don't support any block fetching,
+			 * so we need to always fetch everything at once.  For that
+			 * reason, the cache size is here set to the rowcount if
+			 * it's larger, such that we do a full fetch at once.
+			 * (Because we always set a reply_size, we can only get a
+			 * larger rowcount from the server if it doesn't paginate,
+			 * because it's a pseudo SQL result.) */
+			if (rowcount > cacheSize)
+				cacheSize = rowcount;
 			seqnr = seq;
 			closed = false;
 			destroyOnClose = false;
