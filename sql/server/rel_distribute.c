@@ -133,8 +133,14 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 					}
 				}
 			} else { /* no match, use first */
-				sql_table *p = t->tables.set->h->data;
-				rel = rewrite_replica(sql, rel, t, p);
+				sql_table *p = NULL;
+
+				if (t->tables.set) {
+					p = t->tables.set->h->data;
+					rel = rewrite_replica(sql, rel, t, p);
+				} else {
+					rel = NULL;
+				}
 			}
 		}
 	}
