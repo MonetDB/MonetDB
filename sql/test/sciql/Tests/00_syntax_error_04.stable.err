@@ -32,7 +32,7 @@ stderr of test '00_syntax_error_04` in directory 'test/sciql` itself:
 
 MAPI  = monetdb@jarl:32630
 QUERY = create array err(x integer dimension[128], v float default 'unknown');
-ERROR = !SQLException:dbl:conversion of string 'unknown' failed
+ERROR = !conversion of string 'unknown' failed
 MAPI  = monetdb@jarl:32630
 QUERY = create array err(x integer dimension[128], v float default (v > 0));
 ERROR = !incorrect default value ''
