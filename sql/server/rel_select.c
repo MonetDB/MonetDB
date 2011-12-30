@@ -443,7 +443,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 	sql_subfunc *sf = NULL;
 	exp_kind ek = {type_value, card_value, FALSE};
 
-	assert(dimref->token == SQL_ARRAY_INDEX);
+	assert(dimref->token == SQL_ARRAY_DIM_SLICE);
 
 	if (t->ndims)
 		return sql_error(sql, 02, "array slicing over a table ('%s')not allowed", t->base.name);

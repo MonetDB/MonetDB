@@ -268,9 +268,8 @@ int yydebug=1;
 	XML_primary
 	opt_comma_string_value_expression
 
-	group_item /* sciql structural grouping */
 	dimension
-	array_dim_ref
+	array_dim_slice
 	array_cell_ref
 	index_term
 
@@ -322,7 +321,6 @@ int yydebug=1;
 	ident_commalist
 	opt_corresponding
 	column_ref_commalist
-	group_ref_commalist
 	name_commalist
 	schema_name_list
 	column_ref
@@ -398,6 +396,7 @@ int yydebug=1;
 	index_exp /* position indices of array cells */
 	index_exp_list
 	array_element_def_list
+	tiling_commalist
 
 %type <i_val>
 	any_all_some
@@ -3229,13 +3228,13 @@ table_ref:
 				{ $$ = $2;
 				  append_symbol($2->data.lval, $4); }
 */
- |  array_dim_ref { /* allow "s1.a1[x][1:2]" */
+ |  array_dim_slice { /* allow "s1.a1[x][1:2]" */
  	dlist *l = L();
 	append_symbol(l, $1);
 	append_symbol(l, NULL);
 	$$ = _symbol_create_list( SQL_ARRAY, l);
 	}
- |  array_dim_ref table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
+ |  array_dim_slice table_name { /* allow "s1.a1[x][1:2] AS <ident>" */
 	dlist *l = L();
 	append_symbol(l, $1);
 	append_symbol(l, $2);
@@ -3285,20 +3284,15 @@ table_name:
 opt_group_by_clause:
     /* empty */ 		  { $$ = NULL; }
  |  sqlGROUP BY column_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, $3 );}
- |  sqlGROUP BY group_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
- |  sqlGROUP BY DISTINCT group_ref_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($4,1) );}
+ |  sqlGROUP BY tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($3,0) );}
+ |  sqlGROUP BY DISTINCT tiling_commalist { $$ = _symbol_create_list( SQL_GROUPBY, append_int($4,1) );}
  ;
 
-group_ref_commalist:
-    group_item		{ $$ = append_symbol(L(),$1);}
- |  group_ref_commalist ',' group_item
+tiling_commalist:
+    array_dim_slice { $$ = append_symbol(L(),$1);}
+ |  tiling_commalist ',' array_dim_slice
 			{ $$ = append_symbol( $1, $3);}
  ;
-
-group_item:
-	array_dim_ref { $$ = $1; }
- |  array_cell_ref { $$ = $1; }
-;
 
 column_ref_commalist:
     column_ref		{ $$ = append_symbol(L(),
@@ -3684,7 +3678,7 @@ value_exp:
  |  cast_exp
  |  XML_value_function
  |  param
- |  array_dim_ref
+ |  array_dim_slice
  |  array_cell_ref
  |  ARRAY '(' scalar_exp_list ')' {
 	dlist *l = L();
@@ -3693,19 +3687,19 @@ value_exp:
 	}
 ;
 
-array_dim_ref:
+array_dim_slice:
 	qname index_exp_list { 
 		dlist *l = L();
 		append_list(l, $1);
 		append_list(l, $2);
-		$$ = _symbol_create_list( SQL_ARRAY_INDEX, l);
+		$$ = _symbol_create_list( SQL_ARRAY_DIM_SLICE, l);
 		}
 ;
 
 /* TODO: haven't all uses of this syntax been replaced with:
- * SELECT <ident> FROM <array_dim_ref>? */
+ * SELECT <ident> FROM <array_dim_slice>? */
 array_cell_ref:
-	array_dim_ref '.' ident { 
+	array_dim_slice '.' ident { 
 		dlist *l = L();
 		append_symbol(l, $1);
 		append_string(l, $3);
@@ -5806,7 +5800,7 @@ char *token2string(int token)
 	SQL(XMLVALIDATE);
 	SQL(XMLNAMESPACES);
 	SQL(ARRAY);
-	SQL(ARRAY_INDEX);
+	SQL(ARRAY_DIM_SLICE);
 	SQL(DIMENSION);
 	}
 	return "unknown";	/* just needed for broken compilers ! */
