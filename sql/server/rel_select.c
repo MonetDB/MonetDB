@@ -1629,10 +1629,10 @@ static sql_exp *
 rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 {
 	sql_exp *exp = NULL;
-	dlist *l = column_r->data.lval;
+	dlist *l = NULL;
 
-	assert(column_r->token == SQL_COLUMN &&
-		(column_r->type == type_list || column_r->type == type_int));
+	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
+	l = column_r->data.lval;
 
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
 		int nr = l->h->data.i_val;
