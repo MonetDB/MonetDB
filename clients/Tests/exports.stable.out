@@ -6161,7 +6161,7 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags);
 str prodRef;
 int profilerAvailable(void);
-void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, str status);
+void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 str profilerRef;
 str projectRef;
 void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg);

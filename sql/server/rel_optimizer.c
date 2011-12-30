@@ -482,8 +482,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			return 0;
 		}
 	case e_column:
-		*cnt += 1;
-		return 1;
+		*cnt += 20;
+		return 20;
 	case e_atom:
 		*cnt += 10;
 		return 10;
@@ -1030,9 +1030,8 @@ reorder_join(mvc *sql, sql_rel *rel)
 		list_append(rels, rel->r);
 		cnt = list_length(exps);
 		rel->exps = find_fk(sql->sa, rels, exps);
-		if (list_length(rel->exps) != cnt) {
-			rel->exps = list_dup(exps, (fdup)NULL);
-		}
+		if (list_length(rel->exps) != cnt) 
+			rel->exps = order_join_expressions(sql->sa, exps, rels);
 	} else { 
  		get_relations(rel, rels);
 		if (list_length(rels) > 1) {
@@ -1850,7 +1849,7 @@ exps_case_fixup( mvc *sql, list *exps, sql_exp *cond, int lr )
 		list *nexps = new_exp_list(sql->sa);
 		for( n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			if (e->type == e_func && e->l && !is_rank_op(e) ) {
+			if (is_func(e->type) && e->l && !is_rank_op(e) ) {
 				sql_subfunc *f = e->f;
 
 				if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) {
@@ -4920,30 +4919,6 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 		}
 	}
 	return rel;
-}
-
-static int
-is_identity( sql_exp *e, sql_rel *r)
-{
-	switch(e->type) {
-	case e_column:
-		if (r && is_project(r->op)) {
-			sql_exp *re = NULL;
-			if (e->l)
-				re = exps_bind_column2(r->exps, e->l, e->r);
-			if (!re && ((char*)e->r)[0] == 'L')
-				re = exps_bind_column(r->exps, e->r, NULL);
-			if (re)
-				return is_identity(re, r->l);
-		}
-		return 0;
-	case e_func: {
-		sql_subfunc *f = e->f;
-		return (strcmp(f->func->base.name, "identity") == 0);
-	}
-	default:
-		return 0;
-	}
 }
 
 static int
