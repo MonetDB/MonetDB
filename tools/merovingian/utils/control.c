@@ -106,7 +106,7 @@ char* control_send(
 			len += recv(sock, sbuf + len, sizeof(sbuf) - len, 0);
 		/* perform login ritual */
 		if (len <= 0) {
-			snprintf(sbuf, sizeof(sbuf), "no response from merovingian");
+			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
 			return(strdup(sbuf));
 		}
 		/* we only understand merovingian:1 and :2 (backwards compat
@@ -131,7 +131,7 @@ char* control_send(
 						"instead of monetdbd?");
 			} else {
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-						"unsupported merovingian server");
+						"unsupported monetdbd server");
 			}
 			return(strdup(sbuf));
 		}
@@ -167,21 +167,21 @@ char* control_send(
 				p = strchr(chal, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* servertype */
 				p = strchr(p, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* protover */
 				p = strchr(p, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* algos */
@@ -189,14 +189,14 @@ char* control_send(
 				p = strchr(p, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* endian */
 				p = strchr(p, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* hash */
@@ -204,7 +204,7 @@ char* control_send(
 				p = strchr(p, ':');
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"invalid challenge from merovingian server");
+							"invalid challenge from monetdbd server");
 					return(strdup(sbuf));
 				}
 				*p = '\0';
@@ -227,7 +227,7 @@ char* control_send(
 					phash = mcrypt_MD5Sum(pass, strlen(pass));
 				} else {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
-							"server requires unknown hash '%s'", shash);
+							"monetdbd server requires unknown hash: %s", shash);
 					return(strdup(sbuf));
 				}
 
@@ -274,7 +274,7 @@ char* control_send(
 
 		len = recv(sock, sbuf, sizeof(sbuf), 0);
 		if (len <= 0)
-			return(strdup("no response from merovingian"));
+			return(strdup("no response from monetdbd after login"));
 		if (len == 2) /* blockmode bytes? try reading more */
 			len += recv(sock, sbuf + 2, sizeof(sbuf) - 2, 0);
 		sbuf[len - 1] = '\0';
@@ -310,12 +310,12 @@ char* control_send(
 			bufpos += len;
 		}
 		if (bufpos == 0)
-			return(strdup("no response from merovingian"));
+			return(strdup("incomplete response from monetdbd"));
 		buf[bufpos - 1] = '\0';
 		*ret = buf;
 	} else {
 		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
-			return(strdup("no response from merovingian"));
+			return(strdup("incomplete response from monetdbd"));
 		sbuf[len - 1] = '\0';
 		*ret = strdup(sbuf);
 	}

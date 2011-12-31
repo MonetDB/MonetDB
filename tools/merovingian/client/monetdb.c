@@ -222,7 +222,7 @@ MEROgetStatus(sabdb **ret, char *database)
 			e = msab_deserialise(&stats, p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
-						"merovingian: %s\n", e);
+						"monetdbd: %s\n", e);
 				free(e);
 				continue;
 			}
@@ -513,7 +513,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		if (ret != NULL) {
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
-			fprintf(stderr, "%s: failed to perform command: %s\n",
+			fprintf(stderr, "%s: %s\n",
 					cmd, ret);
 			free(ret);
 			exit(2);
@@ -583,7 +583,7 @@ simple_command(int argc, char *argv[], char *merocmd, char *successmsg, char glo
 
 	if (glob) {
 		if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-			fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
+			fprintf(stderr, "%s: %s\n", argv[0], e);
 			free(e);
 			exit(2);
 		}
@@ -690,7 +690,7 @@ command_status(int argc, char *argv[])
 	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "status: internal error: %s\n", e);
+		fprintf(stderr, "status: %s\n", e);
 		free(e);
 		exit(2);
 	}
@@ -923,7 +923,7 @@ command_startstop(int argc, char *argv[], startstop mode)
 	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "%s: internal error: %s\n", type, e);
+		fprintf(stderr, "%s: %s\n", type, e);
 		free(e);
 		exit(2);
 	}
@@ -1051,7 +1051,7 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "%s: internal error: %s\n", argv[0], e);
+		fprintf(stderr, "%s: %s\n", argv[0], e);
 		free(e);
 		exit(2);
 	}
@@ -1169,7 +1169,7 @@ command_get(int argc, char *argv[])
 		exit(1);
 	}
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "get: internal error: %s\n", e);
+		fprintf(stderr, "get: %s\n", e);
 		free(e);
 		exit(2);
 	}
@@ -1191,7 +1191,7 @@ command_get(int argc, char *argv[])
 	e = control_send(&buf, mero_host, mero_port,
 			"#defaults", "get", 1, mero_pass);
 	if (e != NULL) {
-		fprintf(stderr, "get: internal error: %s\n", e);
+		fprintf(stderr, "get: %s\n", e);
 		free(e);
 		exit(2);
 	} else if (strncmp(buf, "OK\n", 3) != 0) {
@@ -1214,7 +1214,7 @@ command_get(int argc, char *argv[])
 		e = control_send(&buf, mero_host, mero_port,
 				stats->dbname, "get", 1, mero_pass);
 		if (e != NULL) {
-			fprintf(stderr, "get: internal error: %s\n", e);
+			fprintf(stderr, "get: %s\n", e);
 			free(e);
 			exit(2);
 		} else if (strncmp(buf, "OK\n", 3) != 0) {
@@ -1409,7 +1409,7 @@ command_destroy(int argc, char *argv[])
 	}
 
 	if ((e = MEROgetStatus(&orig, NULL)) != NULL) {
-		fprintf(stderr, "destroy: internal error: %s\n", e);
+		fprintf(stderr, "destroy: %s\n", e);
 		free(e);
 		exit(2);
 	}
