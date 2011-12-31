@@ -41,14 +41,14 @@ Ready.
 | | | | | | | table(sys._tables) [ _tables.id as p.id, _tables.type as p.type, _tables.%TID% NOT NULL as p.%TID% ] |
 | | | | | | ) [ p.type < smallint[tinyint "2"] ]                                                                   |
 | | | | | ) [ p.id as tables.id ]                                                                                  |
-| | | | ) [ sys.count() NOT NULL as L1 ],                                                                          |
+| | | | ) [  ] [ sys.count() NOT NULL as L1 ],                                                                     |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
 | | | | | | | table(tmp._tables) [ _tables.id as t.id, _tables.type as t.type, _tables.%TID% NOT NULL as t.%TID% ] |
 | | | | | | ) [ t.type < smallint[tinyint "2"] ]                                                                   |
 | | | | | ) [ t.id as tables.id ]                                                                                  |
-| | | | ) [ sys.count() NOT NULL as L1 ]                                                                           |
+| | | | ) [  ] [ sys.count() NOT NULL as L1 ]                                                                      |
 | | | ) [ L1 ]                                                                                                     |
 | | ) [  ] [ sys.sum no nil (L1) as L1 ]                                                                           |
 | ) [ L1 NOT NULL ]                                                                                                                                                                                                                                                         |
