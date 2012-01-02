@@ -931,7 +931,7 @@ typedef struct {
 @c
 /* as the offset field got split in two, we need macros to get and set them */
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
-#define set_offset(z,i)	{ (z)->off1 = (((i)+4096)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
+#define set_offset(z,i)	{ (z)->off1 = (((i)+OFFSET_ZERO)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
 
 tzone tzone_local;
 @h
@@ -3115,7 +3115,7 @@ MTIMElocal_timezone(lng *res)
 	tzone z;
 
 	tzone_get_local(&z);
-	*res = get_offset((&z));
+	*res = get_offset(&z);
 	return MAL_SUCCEED;
 }
 
@@ -3890,28 +3890,29 @@ MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
 str
 MTIMEcurrent_timestamp(timestamp *t)
 {
-	MTIMEepoch(t);
-	return MAL_SUCCEED;
+	return MTIMEepoch(t);
 }
 
 str
 MTIMEcurrent_date(date *d)
 {
 	timestamp stamp;
+	str e;
 
-	MTIMEcurrent_timestamp(&stamp);
-	MTIMEtimestamp_extract_date_default(d, &stamp);
-	return MAL_SUCCEED;
+	if ((e = MTIMEcurrent_timestamp(&stamp)) == MAL_SUCCEED)
+		e = MTIMEtimestamp_extract_date_default(d, &stamp);
+	return e;
 }
 
 str
 MTIMEcurrent_time(daytime *t)
 {
 	timestamp stamp;
+	str e;
 
-	MTIMEcurrent_timestamp(&stamp);
-	MTIMEtimestamp_extract_daytime_default(t, &stamp);
-	return MAL_SUCCEED;
+	if ((e = MTIMEcurrent_timestamp(&stamp)) == MAL_SUCCEED)
+		e = MTIMEtimestamp_extract_daytime_default(t, &stamp);
+	return e;
 }
 /* more SQL extraction utilities */
 str
@@ -4106,6 +4107,8 @@ str MTIMEstrftime(str *s, date *d, str *format)
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0) 
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz+1);
+	if (*s == NULL)
+		throw(MAL, "mtime.str_to_date", "memory allocation failure");
 	strncpy(*s, buf, sz+1);
 	return MAL_SUCCEED;
 #else 
