@@ -1,6 +1,9 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Mon Jan  2 2012 Fabian Groffen <fabian@cwi.nl>
+- Implemented getMetaData() method of PreparedStatement.
+
 * Tue Dec 27 2011 Fabian Groffen <fabian@cwi.nl>
 - Fixed an AssertionError for special results from e.g. EXPLAIN queries.
 
