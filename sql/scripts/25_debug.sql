@@ -40,7 +40,7 @@ create function environment()
 
 -- The database foot print
 create function storage()
-returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint)
+returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted boolean)
 external name sql.storage;
 
 -- The BAT buffer pool overview

@@ -476,7 +476,8 @@ pattern storage()(
 	capacity:bat[:oid,:lng],
 	width:bat[:oid,:int],
 	size:bat[:oid,:lng],
-	hashsize:bat[:oid,:lng])
+	hashsize:bat[:oid,:lng],
+	sorted:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
 
@@ -6528,13 +6529,13 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Inspection of the actual storage footprint is a recurring question of users.
  * This is modelled as a generic SQL table producing function.
  * create function storage()
- * returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint)
+ * returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted int)
  * external name sql.storage;
  */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux;
+	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *sort;
 	mvc *m = NULL;
 	str msg = getContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
@@ -6549,6 +6550,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ratom = (int*) getArgReference(stk,pci,6);
 	int *rsize = (int*) getArgReference(stk,pci,7);
 	int *raux = (int*) getArgReference(stk,pci,8);
+	int *rsort = (int*) getArgReference(stk,pci,9);
 
 	if (msg)
 		return msg;
@@ -6571,7 +6573,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(size, 0);
 	aux = BATnew(TYPE_void,TYPE_lng, 0);
 	BATseqbase(aux, 0);
-	if ( sch == NULL || tab == NULL || col == NULL || loc == NULL ||
+	sort = BATnew(TYPE_void,TYPE_bit, 0);
+	BATseqbase(sort, 0);
+	if ( sch == NULL || tab == NULL || col == NULL || loc == NULL || sort == NULL ||
 		 cnt == NULL || cap == NULL || atom == NULL || size == NULL || aux == NULL){
 		if ( sch ) BBPreleaseref(sch->batCacheid);
 		if ( tab ) BBPreleaseref(tab->batCacheid);
@@ -6582,6 +6586,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( atom ) BBPreleaseref(atom->batCacheid);
 		if ( size ) BBPreleaseref(size->batCacheid);
 		if ( aux ) BBPreleaseref(aux->batCacheid);
+		if ( sort ) BBPreleaseref(aux->batCacheid);
 		throw(SQL,"sql.storage", MAL_MALLOC_FAIL);
 	}
 	for( nsch= tr->schemas.set->h; nsch; nsch= nsch->next){
@@ -6626,6 +6631,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				aux = BUNappend(aux, &sz, FALSE);
 				/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 				/*printf("\n");*/
+
+				w =  BATtordered(bn) > 0;
+				sort = BUNappend(sort, &w, FALSE);
 				BBPunfix(bn->batCacheid);
 			}
 
@@ -6665,6 +6673,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							aux = BUNappend(aux, &sz, FALSE);
 							/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 							/*printf("\n");*/
+							w =  BATtordered(bn) > 0;
+							sort = BUNappend(sort, &w, FALSE);
 							BBPunfix(bn->batCacheid);
 						}
 					}
@@ -6681,6 +6691,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*ratom = atom->batCacheid);
 	BBPkeepref(*rsize = size->batCacheid);
 	BBPkeepref(*raux = aux->batCacheid);
+	BBPkeepref(*rsort = sort->batCacheid);
 	return MAL_SUCCEED;
 }
 
