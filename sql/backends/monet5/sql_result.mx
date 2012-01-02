@@ -800,7 +800,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		q->paramlen = len;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
 		if (result) 
-			extra = ",\"\",\"\",\"\"";
+			extra = ",\t\"\",\t\"\",\t\"\"";
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
