@@ -744,6 +744,8 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 		sql_idx *idx = NULL;
 		sql_exp *je = djn->data, *le = je->l, *re = je->r; 
 
+		if (is_complex_exp(je->flag))
+			break;
 		if (!find_prop(je->p, PROP_JOINIDX)) {
 			int swapped = 0;
 			list *aaje = matching_joins(sa, rels, aje, je);
@@ -816,7 +818,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	/* find foreign keys and reorder the expressions on reducing quality */
 	sdje = find_fk(sql->sa, rels, exps);
 
-	/* open problem, some expressions use more then 2 relations */
+	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
 		/* get the first expression */

@@ -58,8 +58,12 @@ public class MonetPreparedStatement
 	private final int[] javaType;
 	private final int[] digits;
 	private final int[] scale;
+	private final String[] schema;
+	private final String[] table;
+	private final String[] column;
 	private final int id;
 	private final int size;
+	private final int rscolcnt;
 
 	private final String[] values;
 	private final StringBuffer buf;
@@ -111,18 +115,22 @@ public class MonetPreparedStatement
 			resultSetHoldability
 		);
 
-		if (!super.execute("PREPARE " + prepareQuery))
+		if (!super.execute("PREPARERESULT " + prepareQuery))
 			throw new SQLException("Unexpected server response", "M0M10");
 
 		// cheat a bit to get the ID and the number of columns
 		id = ((MonetConnection.ResultSetResponse)header).id;
 		size = ((MonetConnection.ResultSetResponse)header).tuplecount;
+		rscolcnt = ((MonetConnection.ResultSetResponse)header).columncount;
 
 		// initialise blank finals
 		monetdbType = new String[size];
 		javaType = new int[size];
 		digits = new int[size];
 		scale = new int[size];
+		schema = new String[size];
+		table = new String[size];
+		column = new String[size];
 		values = new String[size];
 		buf = new StringBuffer(6 + 12 * size);
 
@@ -135,6 +143,11 @@ public class MonetPreparedStatement
 			javaType[i] = MonetDriver.getJavaType(monetdbType[i]);
 			digits[i] = rs.getInt("digits");
 			scale[i] = rs.getInt("scale");
+			if (rscolcnt == 3)
+				continue;
+			schema[i] = rs.getString("schema");
+			table[i] = rs.getString("table");
+			column[i] = rs.getString("column");
 		}
 		rs.close();
 
@@ -169,10 +182,14 @@ public class MonetPreparedStatement
 		javaType = null;
 		digits = null;
 		scale = null;
+		schema = null;
+		table = null;
+		column = null;
 		values = null;
 		buf = null;
 		id = -1;
 		size = -1;
+		rscolcnt = -1;
 
 		this.connection = connection;
 	}
@@ -279,6 +296,24 @@ public class MonetPreparedStatement
 	}
 
 	/**
+	 * Returns the index in the backing arrays for the given
+	 * resultset column number
+	 */
+	private int getColumnIdx(int colnr) throws SQLException {
+		int curcol = 0;
+		for (int i = 0; i < size; i++) {
+			if (!column[i].equals(""))
+				continue;
+			curcol++;
+			if (curcol == colnr)
+				return(i);
+		}
+		throw new SQLException("No such column with index: " + colnr, "M1M05");
+	}
+
+	/* helper for the anonymous class inside getMetaData */
+	private abstract class rsmdw extends MonetWrapper implements ResultSetMetaData {}
+	/**
 	 * Retrieves a ResultSetMetaData object that contains information
 	 * about the columns of the ResultSet object that will be returned
 	 * when this PreparedStatement object is executed.
@@ -289,16 +324,354 @@ public class MonetPreparedStatement
 	 * method getMetaData on a PreparedStatement object rather than
 	 * waiting to execute it and then invoking the ResultSet.getMetaData
 	 * method on the ResultSet object that is returned.
-	 * <br /><br />
-	 * NOTE: Using this method is expensive for this driver due to the
-	 * lack of underlying DBMS support.  Currently not implemented
 	 *
 	 * @return the description of a ResultSet object's columns or null if the
 	 *         driver cannot return a ResultSetMetaData object
 	 * @throws SQLException if a database access error occurs
 	 */
-	public ResultSetMetaData getMetaData() throws SQLException {
-		return(null);
+	public ResultSetMetaData getMetaData() {
+		if (rscolcnt == 3)
+			return(null); // not sufficient data with pre-Dec2011 PREPARE
+
+		// return inner class which implements the ResultSetMetaData interface
+		return(new rsmdw() {
+			// for the more expensive methods, we provide a simple cache
+			// for the most expensive part; getting the ResultSet which
+			// contains the data
+			private DatabaseMetaData dbmd = null;
+			private Map colrs = new HashMap();
+
+			/**
+			 * Returns the number of columns in this ResultSet object.
+			 *
+			 * @returns the number of columns
+			 */
+			public int getColumnCount() {
+				int cnt = 0;
+
+				for (int i = 0; i < size; i++) {
+					if (!column[i].equals(""))
+						cnt++;
+				}
+				
+				return(cnt);
+			}
+
+			/**
+			 * Indicates whether the designated column is automatically
+			 * numbered, thus read-only.
+			 * 
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 * @throws SQLException if a database access error occurs
+			 */
+			public boolean isAutoIncrement(int column) throws SQLException {
+				// the only column I know of is a 'secret' column called rowid
+				// with datatype oid
+				// avoid nullpointer exception here
+				if ("oid".equals(monetdbType[getColumnIdx(column)])) {
+					return(true);
+				} else {
+					return(false);
+				}
+			}
+
+			/**
+			 * Indicates whether a column's case matters. This holds for all
+			 * columns in MonetDB resultsets since the mapping is done case
+			 * insensitive, therefore this method will always return false.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns false
+			 */
+			public boolean isCaseSensitive(int column) {
+				return(false);
+			}
+
+			/**
+			 * Indicates whether the designated column can be used in a
+			 * where clause.
+			 * It is unknown to me what kind ot columns they regard to,
+			 * as I think all columns are useable in a where clause.
+			 * Returning true for all here, for the time being.
+			 * Possible thought; maybe they want to know here if it's a
+			 * real column existing in a table or not...
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns true
+			 */
+			public boolean isSearchable(int column) {
+				return(true);
+			}
+
+			/**
+			 * Indicates whether the designated column is a cash value.
+			 * From the MonetDB database perspective it is by definition
+			 * unknown whether the value is a currency, because there are
+			 * no currency datatypes such as MONEY.  With this knowledge
+			 * we can always return false here.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @returns false
+			 */
+			public boolean isCurrency(int column) {
+				return(false);
+			}
+			
+			/**
+			 * Indicates whether values in the designated column are signed
+			 * numbers.
+			 * Within MonetDB all numeric types are signed.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isSigned(int column) throws SQLException {
+				// we can hardcode this, based on the colum type
+				switch (javaType[getColumnIdx(column)]) {
+					case Types.NUMERIC:
+					case Types.DECIMAL:
+					case Types.TINYINT:
+					case Types.SMALLINT:
+					case Types.INTEGER:
+					case Types.BIGINT:
+					case Types.REAL:
+					case Types.FLOAT:
+					case Types.DOUBLE:
+						return(true);
+					case Types.BIT: // we don't use type BIT, it's here for completeness
+					case Types.BOOLEAN:
+					case Types.DATE:
+					case Types.TIME:
+					case Types.TIMESTAMP:
+					default:
+						return(false);
+				}
+			}
+
+			/**
+			 * Indicates the designated column's normal maximum width in
+			 * characters.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the normal maximum number of characters allowed as the
+			 *         width of the designated column
+			 * @throws SQLException if there is no such column
+			 */
+			public int getColumnDisplaySize(int column) throws SQLException {
+				return(digits[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Get the designated column's table's schema.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return schema name or "" if not applicable
+			 * @throws SQLException if a database access error occurs
+			 */
+			public String getSchemaName(int column) throws SQLException {
+				return(schema[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Gets the designated column's table name.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return table name or "" if not applicable
+			 */
+			public String getTableName(int col) throws SQLException {
+				return(column[getColumnIdx(col)]);
+			}
+
+			/**
+			 * Get the designated column's number of decimal digits.
+			 * This method is currently very expensive as it needs to
+			 * retrieve the information from the database using an SQL
+			 * query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return precision
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int getPrecision(int column) throws SQLException {
+				return(digits[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Gets the designated column's number of digits to right of
+			 * the decimal point.  This method is currently very
+			 * expensive as it needs to retrieve the information from
+			 * the database using an SQL query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return scale
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int getScale(int column) throws SQLException {
+				return(scale[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Indicates the nullability of values in the designated
+			 * column.  This method is currently very expensive as it
+			 * needs to retrieve the information from the database using
+			 * an SQL query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return nullability
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int isNullable(int column) throws SQLException {
+				return(columnNullableUnknown);
+			}
+
+			/**
+			 * Gets the designated column's table's catalog name.
+			 * Because MonetDB handles only one catalog (dbfarm) at a
+			 * time, the current one is the one we deal with here.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the name of the catalog for the table in which the given
+			 *         column appears or "" if not applicable
+			 */
+			public String getCatalogName(int column) throws SQLException {
+				return(getConnection().getCatalog());
+			}
+
+			/**
+			 * Indicates whether the designated column is definitely not
+			 * writable.  MonetDB does not support cursor updates, so
+			 * nothing is writable.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isReadOnly(int column) {
+				return(true);
+			}
+
+			/**
+			 * Indicates whether it is possible for a write on the
+			 * designated column to succeed.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isWritable(int column) {
+				return(false);
+			}
+
+			/**
+			 * Indicates whether a write on the designated column will
+			 * definitely succeed.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return true if so; false otherwise
+			 */
+			public boolean isDefinitelyWritable(int column) {
+				return(false);
+			}
+
+			/**
+			 * Returns the fully-qualified name of the Java class whose
+			 * instances are manufactured if the method
+			 * ResultSet.getObject is called to retrieve a value from
+			 * the column.  ResultSet.getObject may return a subclass of
+			 * the class returned by this method.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the fully-qualified name of the class in the Java
+			 *         programming language that would be used by the method
+			 *         ResultSet.getObject to retrieve the value in the
+			 *         specified column. This is the class name used for custom
+			 *         mapping.
+			 * @throws SQLException if there is no such column
+			 */
+			public String getColumnClassName(int column) throws SQLException {
+				return(
+					MonetResultSet.getClassForType(javaType[getColumnIdx(column)]).getName()
+				);
+			}
+
+			/**
+			 * Gets the designated column's suggested title for use in
+			 * printouts and displays. This is currently equal to
+			 * getColumnName().
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the suggested column title
+			 * @throws SQLException if there is no such column
+			 */
+			public String getColumnLabel(int column) throws SQLException {
+				return(getColumnName(column));
+			}
+
+			/**
+			 * Gets the designated column's name
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return the column name
+			 * @throws SQLException if there is no such column
+			 */
+			public String getColumnName(int col) throws SQLException {
+				return(column[getColumnIdx(col)]);
+			}
+
+			/**
+			 * Retrieves the designated column's SQL type.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return SQL type from java.sql.Types
+			 * @throws SQLException if there is no such column
+			 */
+			public int getColumnType(int column) throws SQLException {
+				return(javaType[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Retrieves the designated column's database-specific type name.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return type name used by the database. If the column type is a
+			 *         user-defined type, then a fully-qualified type name is
+			 *         returned.
+			 * @throws SQLException if there is no such column
+			 */
+			public String getColumnTypeName(int column) throws SQLException {
+				return(monetdbType[getColumnIdx(column)]);
+			}
+
+			/**
+			 * Returns the Metadata ResultSet for the given column
+			 * number of this ResultSet.  If the column was previously
+			 * requested, a cached ResultSet is returned, otherwise it
+			 * is fetched using the DatabaseMetaData class.
+			 *
+			 * @param column the column index number starting from 1
+			 * @return Metadata ResultSet
+			 * @throws SQLException if a database error occurs
+			 */
+			private ResultSet getColumnResultSet(int col)
+				throws SQLException
+			{
+				if (!colrs.containsKey("" + col)) {
+					if (dbmd == null)
+						dbmd = getConnection().getMetaData();
+					ResultSet rscol = 
+						dbmd.getColumns(
+								null, /* this doesn't matter here... */
+								schema[getColumnIdx(col)],
+								table[getColumnIdx(col)],
+								column[getColumnIdx(col)]
+							);
+					colrs.put("" + col, rscol);
+				}
+
+				ResultSet res = (ResultSet)(colrs.get("" + col));
+				res.beforeFirst();
+				return(res);
+			}
+		});
 	}
 
 	/* helper class for the anonymous class in getParameterMetaData */
@@ -1799,10 +2172,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if the given index is out of bounds
 	 */
 	void setValue(int index, String val) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		values[index - 1] = val;
+		values[getColumnIdx(index)] = val;
 	}
 
 	/**
@@ -1820,10 +2190,15 @@ public class MonetPreparedStatement
 		buf.append(id);
 		buf.append("(");
 		// check if all columns are set and do a replace
+		int col = 0;
 		for (int i = 0; i < size; i++) {
-			if (i > 0) buf.append(", ");
+			if (!column[i].equals(""))
+				continue;
+			col++;
+			if (col > 1)
+				buf.append(",");
 			if (values[i] == null) throw
-				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.", "M1M05");
+				new SQLException("Cannot execute, parameter " + col + " is missing.", "M1M05");
 
 			buf.append(values[i]);
 		}

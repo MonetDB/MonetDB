@@ -221,4 +221,32 @@ childhandler(int sig, siginfo_t *si, void *unused)
 			(long long int)si->si_pid);
 }
 
+/**
+ * Last resort handler to give a message in the log.
+ */
+void
+segvhandler(int sig) {
+	struct sigaction sa;
+
+	(void)sig;
+
+	/* (try to) ignore any further segfaults */
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGSEGV, &sa, NULL);
+
+	if (_mero_topdp != NULL) {
+		char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
+				"\na fatal error has occurred which prevents monetdbd from operating."
+				"\nThis is likely a bug in monetdbd, please report it on http://bugs.monetdb.org/"
+				"\nand include the tail of this log in your bugreport with your explanation of "
+				"\nwhat you were doing, if possible.\n"
+				"\nABORTING NOW, YOU HAVE TO MANUALLY KILL ALL REMAINING mserver5 PROCESSES\n";
+		if (write(_mero_topdp->err, errmsg, sizeof(errmsg) - 1) >= 0)
+			sync();
+	}
+	abort();
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */
