@@ -1401,7 +1401,6 @@ str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int 
 	BAT	*ns, *ht, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	int	i;
 	char buf[MAXPATHLEN];
-	char cwd[MAXPATHLEN];
 
 	ns = BATnew(TYPE_int,TYPE_str,BBPsize);
 	ht = BATnew(TYPE_int,TYPE_str,BBPsize);
@@ -1431,7 +1430,7 @@ str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int 
 
 			if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 				mode = "transient";
-			snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
+			snprintf(buf,MAXPATHLEN,"%s",BBP_physical(i));
 			BUNins(ns, &i, BBP_logical(i), FALSE);
 			BUNins(ht, &i, BATatoms[BAThtype(bn)].name, FALSE);
 			BUNins(tt, &i, BATatoms[BATttype(bn)].name, FALSE);

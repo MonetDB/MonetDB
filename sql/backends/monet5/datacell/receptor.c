@@ -49,6 +49,8 @@
 #include "stream_socket.h"
 #include "mal_builder.h"
 
+/* #define _DEBUG_RECEPTOR_ */
+
 #define TCP 1
 #define UDP 2
 #define CSV 3
@@ -394,7 +396,7 @@ RCbody(Receptor rc)
 	size_t j;
 	str e, he;
 	str line = "\0";
-	int i, n;
+	int i, k, n;
 #ifdef _DEBUG_RECEPTOR_
 	int m = 0;
 #endif
@@ -497,6 +499,7 @@ bodyRestart:
 				goto parse;
 			}
 
+/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
 				if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
@@ -513,9 +516,9 @@ parse:
 							/* only keep the last errorenous event for analysis */
 							if ( rcError )
 								GDKfree(rcError);
-							rcError= (char*) GDKmalloc(strlen(line)+1 );
+							rcError= (char*) GDKmalloc( k =strlen(line)+100 );
 							if ( rcError)
-								strncpy(rcError,line, strlen(line) + 1);
+								snprintf(rcError,k,"newline missing:%s",line);
 							rcErrorEvent = cnt;
 							cnt--;
 							break;
@@ -527,6 +530,13 @@ parse:
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
 							if ( baskets[rc->bskt].errors)
 								BUNappend(baskets[rc->bskt].errors, line, TRUE);
+							/* only keep the last errorenous event for analysis */
+							if ( rcError )
+								GDKfree(rcError);
+							rcError= (char*) GDKmalloc( k =strlen(line)+100 );
+							if ( rcError)
+								snprintf(rcError,k,"parsing error:%s",line);
+							rcErrorEvent = cnt;
 							break;
 						}
 						rc->received++;

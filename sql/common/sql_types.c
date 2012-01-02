@@ -432,7 +432,6 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *typ
 {
 	node *n = aggrs->h;
 
-	(void)s;
 	while (n) {
 		sql_func *a = n->data;
 		sql_arg *arg = NULL;
