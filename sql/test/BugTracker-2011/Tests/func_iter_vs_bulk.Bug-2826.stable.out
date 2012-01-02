@@ -33,27 +33,27 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 66 # length
+% 65 # length
 function user.s3_1{autoCommit=true}():void;
     X_23 := nil:bat[:oid,:dbl];
-barrier X_55 := language.dataflow();
+barrier X_56 := language.dataflow();
     X_2 := sql.mvc();
-    X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
-    X_8:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",2);
-    X_12 := algebra.kdifference(X_10,X_8);
-    X_13 := algebra.kunion(X_12,X_8);
-    X_5:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",1);
-    X_14 := algebra.kunion(X_13,X_5);
-    X_15:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","tab_2826",1);
-    X_16 := bat.reverse(X_15);
-    X_17 := algebra.kdifference(X_14,X_16);
+    X_12:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
+    X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",2);
+    X_14 := algebra.kdifference(X_12,X_10);
+    X_15 := algebra.kunion(X_14,X_10);
+    X_9:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",1);
+    X_16 := algebra.kunion(X_15,X_9);
+    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","tab_2826",1);
+    X_8 := bat.reverse(X_5);
+    X_17 := algebra.kdifference(X_16,X_8);
     X_18 := batcalc.flt(X_17);
     X_42 := batmmath.log10(X_18);
     X_19 := algebra.thetauselect(X_42,1:flt,">");
     X_21 := algebra.markT(X_19,0@0:oid);
     X_22 := bat.reverse(X_21);
-    X_23 := algebra.leftjoin(X_22,X_14);
-exit X_55;
+    X_23 := algebra.leftjoin(X_22,X_17);
+exit X_56;
     X_24 := sql.resultSet(1,1,X_23);
     sql.rsColumn(X_24,"sys.tab_2826","d","double",53,0,X_23);
     X_30 := io.stdout();

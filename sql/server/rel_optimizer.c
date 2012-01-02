@@ -832,12 +832,12 @@ order_joins(mvc *sql, list *rels, list *exps)
 		l = find_one_rel(rels, cje->l);
 		r = find_one_rel(rels, cje->r);
 
-		if (l && r) {
+		if (l && r && l != r) {
 			list_remove_data(sdje, cje);
 			list_remove_data(exps, cje);
 		}
 	}
-	if (l && r) {
+	if (l && r && l != r) {
 		list_remove_data(rels, l);
 		list_remove_data(rels, r);
 		list_append(n_rels, l);
@@ -1347,6 +1347,195 @@ project_unsafe(sql_rel *rel)
 			return 1;
 	}
 	return 0;
+}
+
+static int 
+can_push_func(sql_exp *e, sql_rel *rel, int *must)
+{
+	if (!e)
+		return 0;
+	switch(e->type) {
+	case e_cmp: {
+		int mustl = 0, mustr = 0, mustf = 0;
+		sql_exp *l = e->l, *r = e->r, *f = e->f;
+
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) 
+			return 0;
+		return (l->type != e_column && can_push_func(l, rel, &mustl) && (*must = mustl)) || 
+	               (!f && r->type != e_column && can_push_func(r, rel, &mustr) && (*must = mustr)) || 
+		       (f && 
+	                r->type != e_column && can_push_func(r, rel, &mustr) && 
+			f->type != e_column && can_push_func(f, rel, &mustf) && (*must = (mustr || mustf)));
+	}
+	case e_convert:
+		return can_push_func(e->l, rel, must);
+	case e_func: {
+		list *l = e->l;
+		node *n;
+		int res = 1, lmust = 0;
+		
+		if (l) for (n = l->h; n && res; n = n->next)
+			res &= can_push_func(n->data, rel, &lmust);
+		if (!lmust)
+			return 1;
+		(*must) |= lmust;
+		return res;
+	}
+	case e_column:
+		if (rel && !rel_find_exp(rel, e)) 
+			return 0;
+		(*must) = 1;
+	case e_atom:
+	default:
+		return 1;
+	}
+	return 0;
+}
+
+static int
+exps_can_push_func(list *exps, sql_rel *rel) 
+{
+	node *n;
+
+	for(n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		int must = 0, mustl = 0, mustr = 0;
+
+		if (is_join(rel->op) && ((can_push_func(e, rel->l, &mustl) && mustl) || (can_push_func(e, rel->r, &mustr) && mustr)))
+			return 1;
+		else if (is_select(rel->op) && can_push_func(e, NULL, &must) && must)
+			return 1;
+	}
+	return 0;
+}
+
+/* (open) PROBLEM(S)
+ * 
+ * 1
+ *  current always renaming gives problems with other expressions using expression 'ne' (union's
+ *  sometimes share (correct or not) expressions on a shared referenced table).
+ *
+ *  not renaming gives problems with overloaded names (ie on the lower level an expression
+ *  with the given name could allready exist
+ *
+ * 2 
+ *  creating projections for subqueries are empty, for now we just don't rewrite these.
+ */
+static sql_rel *
+rel_push_func_down(int *changes, mvc *sql, sql_rel *rel) 
+{
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps) {
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		list *exps = rel->exps;
+		node *n;
+
+		if (exps_can_push_func(exps, rel)) {
+			/* we need a full projection, group by's and unions cannot be extended
+ 			 * with more expressions */
+			if (l->op != op_project) { 
+				if (is_subquery(l))
+					return rel;
+				rel->l = l = rel_project(sql->sa, l, 
+					rel_projections(sql, l, NULL, 1, 1));
+			}
+			if (is_join(rel->op) && r->op != op_project) {
+				if (is_subquery(r))
+					return rel;
+				rel->r = r = rel_project(sql->sa, r, 
+					rel_projections(sql, r, NULL, 1, 1));
+			}
+			for(n = exps->h; n; n = n->next) {
+				sql_exp *e = n->data, *ne = NULL;
+				int must = 0, mustl = 0, mustr = 0;
+
+				assert(e->type == e_cmp);
+				if ((is_join(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
+				    (is_select(rel->op) && can_push_func(e, NULL, &must) && must)) {
+					must = 0; mustl = 0; mustr = 0;
+					ne = e->l;
+					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+						if (mustr)
+							append(r->exps, ne);
+						else
+							append(l->exps, ne);
+						exp_label(sql->sa, ne, ++sql->label);
+						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					}
+					e->l = ne;
+
+					must = 0; mustl = 0; mustr = 0;
+					ne = e->r;
+					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+						if (mustr)
+							append(r->exps, ne);
+						else
+							append(l->exps, ne);
+						exp_label(sql->sa, ne, ++sql->label);
+						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+					}
+					e->r = ne;
+
+					if (e->f) {
+						must = 0; mustl = 0; mustr = 0;
+						ne = e->f;
+						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+					            (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+							if (mustr)
+								append(r->exps, ne);
+							else
+								append(l->exps, ne);
+							exp_label(sql->sa, ne, ++sql->label);
+							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						}
+						e->f = ne;
+					}
+				}
+			}
+			(*changes)++;
+		}
+	}
+	if (rel->op == op_project && rel->l && rel->exps) {
+		sql_rel *pl = rel->l;
+
+		if (is_join(pl->op) && exps_can_push_func(rel->exps, rel)) {
+			node *n;
+			sql_rel *l = pl->l, *r = pl->r;
+			list *nexps;
+
+			if (l->op != op_project) { 
+				if (is_subquery(l))
+					return rel;
+				pl->l = l = rel_project(sql->sa, l, 
+					rel_projections(sql, l, NULL, 1, 1));
+			}
+			if (is_join(rel->op) && r->op != op_project) {
+				if (is_subquery(r))
+					return rel;
+				pl->r = r = rel_project(sql->sa, r, 
+					rel_projections(sql, r, NULL, 1, 1));
+			}
+			nexps = new_exp_list(sql->sa);
+			for ( n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				int mustl = 0, mustr = 0;
+
+				if ((can_push_func(e, l, &mustl) && mustl) || 
+				    (can_push_func(e, r, &mustr) && mustr)) {
+					if (mustl)
+						append(l->exps, e);
+					else
+						append(r->exps, e);
+				} else
+					append(nexps, e);
+			}
+			rel->exps = nexps;
+			(*changes)++;
+		}
+	}
+	return rel;
 }
 
 
@@ -4870,15 +5059,12 @@ rel_reduce_casts(int *changes, mvc *sql, sql_rel *rel)
 				continue;
 			/* rewrite e if left or right is cast */
 			if (le->type == e_convert || re->type == e_convert) {
-				sql_rel *l = rel->l, *r = rel->r;
+				sql_rel *r = rel->r;
 
 				/* if convert on left then find
 				 * mul or div on right which increased
 				 * scale!
-				 *
-				 * TODO handle select case
 				 */
-				(void)l;
 				if (le->type == e_convert && re->type == e_column && r && is_project(r->op)) {
 					sql_exp *nre = rel_find_exp(r, re);
 					sql_subtype *tt = exp_totype(le);
@@ -5287,7 +5473,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
 	}
 
-	if (gp.cnt[op_union]) 
+	if (gp.cnt[op_union])
 		rel = rewrite(sql, rel, &rel_merge_union, &changes); 
 
 	if (gp.cnt[op_select]) 
@@ -5369,6 +5555,12 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);
+
+	if (gp.cnt[op_join] || 
+	    gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
+	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
+	    gp.cnt[op_select]) 
+		rel = rewrite(sql, rel, &rel_push_func_down, &changes);
 
 	if (!changes && gp.cnt[op_topn]) {
 		rel = rewrite_topdown(sql, rel, &rel_push_topn_down, &changes); 

@@ -78,7 +78,7 @@ Ready.
 #  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 % sys._rank1 # table_name
-% L12 # name
+% L13 # name
 % wrd # type
 % 1 # length
 [ 2	]

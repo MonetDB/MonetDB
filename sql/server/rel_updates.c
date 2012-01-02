@@ -174,7 +174,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
-	sql_exp *nll_exps = NULL, *e;
+	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	for (m = i->columns->h; m; m = m->next) {
@@ -189,7 +189,7 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *_is = nth(ins->exps, c->c->colnr), *nl, *je; 
+		sql_exp *_is = nth(ins->exps, c->c->colnr), *lnl, *rnl, *je; 
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 		char *ename = exp_name(_is);
 
@@ -197,12 +197,15 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 			exp_label(sql->sa, _is, ++sql->label);
 		ename = exp_name(_is);
 		_is = exp_column(sql->sa, exp_relname(_is), ename, exp_subtype(_is), _is->card, has_nil(_is), is_intern(_is));
-		nl = exp_unop(sql->sa, _is, isnil);
+		lnl = exp_unop(sql->sa, _is, isnil);
+		rnl = exp_unop(sql->sa, _is, isnil);
 		if (need_nulls) {
-		    if (nll_exps) {
-			nll_exps = exp_binop(sql->sa, nll_exps, nl, or);
+		    if (lnll_exps) {
+			lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
+			rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
 		    } else {
-			nll_exps = nl;
+			lnll_exps = lnl;
+			rnll_exps = rnl;
 		    }
 		}
 
@@ -213,9 +216,9 @@ rel_insert_join_idx(mvc *sql, sql_idx *i, sql_rel *inserts)
 	}
 	if (need_nulls) {
        		_nlls = rel_select( sql->sa, rel_dup(ins), 
-				exp_compare(sql->sa, nll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
         	nnlls = rel_select( sql->sa, rel_dup(ins), 
-				exp_compare(sql->sa, nll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
@@ -582,7 +585,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
-	sql_exp *nll_exps = NULL, *e;
+	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa);
 
 	for (m = i->columns->h; m; m = m->next) {
@@ -595,19 +598,22 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *nl, *je;
+		sql_exp *upd = nth(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_column(sql->sa, exp_relname(upd), exp_name(upd), exp_subtype(upd), upd->card, has_nil(upd), is_intern(upd));
-		nl = exp_unop(sql->sa, upd, isnil);
+		lnl = exp_unop(sql->sa, upd, isnil);
+		rnl = exp_unop(sql->sa, upd, isnil);
 		if (need_nulls) {
-		    if (nll_exps) {
-			nll_exps = exp_binop(sql->sa, nll_exps, nl, or);
+		    if (lnll_exps) {
+			lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
+			rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
 		    } else {
-			nll_exps = nl;
+			lnll_exps = lnl;
+			rnll_exps = rnl;
 		    }
 		}
 		if (rel_convert_types(sql, &rtc, &upd, 1, type_equal) < 0) 
@@ -617,9 +623,9 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 	}
 	if (need_nulls) {
        		_nlls = rel_select( sql->sa, rel_dup(ups), 
-				exp_compare(sql->sa, nll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
+				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
         	nnlls = rel_select( sql->sa, rel_dup(ups), 
-				exp_compare(sql->sa, nll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
+				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
 		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL));
