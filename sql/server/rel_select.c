@@ -3913,39 +3913,85 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
+
+/* E.g.:
+ * sql> plan select sum(v) from a group by a[x-1:x+2][y-1:y+2];
+ *
+ * FROM
+ * +-------------------------------------------------------------+
+ * | rel                                                         |
+ * +=============================================================+
+ * | project (                                                   |
+ * | | group by (                                                |
+ * | | | array(sys.a) [ a.x, a.y, a.v, a.%TID% NOT NULL ] COUNT  |
+ * | | ) [ a.x, a.y ] [ a.x, a.y, sys.sum no nil (a.v) as L6 ]   |
+ * | ) [ L6 ]                                                    |
+ * +-------------------------------------------------------------+
+ *
+ * TO
+ * +-----------------------------------------------------------------------------+
+ * | rel                                                                         |
+ * +=============================================================================+
+ * | project (                                                                   |
+ * | | project (                                                                 |
+ * | | | array(sys.a) [ a.x, a.y, a.v, a.%TID% NOT NULL ] COUNT                  |
+ * | | ) [ a.x, a.y, sys.array_tiling_sum(a.v, a.x, -1, 2, a.y, -1, 2) as L6 ]   |
+ * | ) [ L6 ]                                                                    |
+ * +-----------------------------------------------------------------------------+
+ */
 static sql_exp *
 _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *aggrstr, symbol *sym, int f)
 {
+	sql_exp *exp = NULL, *dim1 = NULL, *tstt1 = NULL, *tstp1 = NULL,
+			*dim2 = NULL, *tstt2 = NULL, *tstp2 = NULL;
+	sql_subfunc *sf = NULL;
+	list *args = new_exp_list(sql->sa);
+	char *aggrstr2 = malloc(strlen("array_tiling_") + strlen(aggrstr) + 1);
 
-	(void)sql;
-	(void)rel;
-	(void)groupby;
 	(void)distinct;
-	(void)aggrstr;
-	(void)sym;
-	(void)f;
-	/*
-	 * sql> plan select sum(v) from a group by a[x-1:x+2][y-1:y+2];
-	 * +-------------------------------------------------------------+
-	 * | rel                                                         |
-	 * +=============================================================+
-	 * | project (                                                   |
-	 * | | group by (                                                |
-	 * | | | array(sys.a) [ a.x, a.y, a.v, a.%TID% NOT NULL ] COUNT  |
-	 * | | ) [ a.x, a.y ] [ a.x, a.y, sys.sum no nil (a.v) as L6 ]   |
-	 * | ) [ L6 ]                                                    |
-	 * +-------------------------------------------------------------+
-	 *
-	 * +-------------------------------------------------------------+
-	 * | rel                                                         |
-	 * +=============================================================+
-	 * | project (                                                   |
-	 * | | array(sys.a) [ a.x, a.y, a.v, a.%TID% NOT NULL ] COUNT    |
-	 * | ) [ sys.array_tiling_sum(a.v, a.x, -1, 2, a.y, -1, 2) ]
-	 * +-------------------------------------------------------------+
-	 */
 
-	return NULL;
+	strcpy(aggrstr2, "array_tiling_\0");
+	strcat(aggrstr2, aggrstr);
+
+	dim1 = ((list*)groupby->r)->h->data;
+	tstt1 = ((list*)dim1->f)->h->data;
+	tstp1 = ((list*)dim1->f)->h->next->data;
+	if (((list*)groupby->r)->h->next) {
+		dim2 = ((list*)groupby->r)->h->data;
+		tstt2 = ((list*)dim2->f)->h->data;
+		tstp2 = ((list*)dim2->f)->h->next->data;
+	}
+	
+	if (!sym) {	/* AGGR(*) case, but only "count" is allowed */
+		if (strcmp(aggrstr, "count") != 0) {
+			sql_error(sql, 02, "%s: unable to perform '%s(*)'", toUpperCopy(aggrstr2, aggrstr), aggrstr);
+			free(aggrstr2);
+			return NULL;
+		}
+	} else {
+		if(sym->token != SQL_COLUMN) {
+			sql_error(sql, 02, "expressions other than <column name> not supported");
+			free(aggrstr2);
+			return NULL;
+		}
+		append(args, rel_column_ref(sql, rel, sym, f));
+	}
+	append(append(append(args, dim1), tstt1), tstp1);
+	if (dim2)
+		append(append(append(args, dim2), tstt2), tstp2);
+	sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, exps_subtype(args), F_FUNC);
+	if (!sf) {
+		sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
+		free(aggrstr2);
+		return NULL;
+	}
+	exp = exp_op(sql->sa, args, sf);
+	/* HACK: secretly change the groupby into a project */
+	groupby->op = op_project;
+	groupby->r = NULL;
+	rel_project_add_exp(sql, groupby, exp);
+	free(aggrstr2);
+	return exp;
 }
 
 static sql_exp *
@@ -3994,12 +4040,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		return e;
 	}
 
-	//if (((sql_exp*)((list*)groupby->r)->h->data)->f) {
+	if (((sql_exp*)((list*)groupby->r)->h->data)->f) {
 		/* e_column->f has been "misused" => an aggragation over array tiles */
-	//	return
-		_rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, sym, f);
-	//}
-	
+		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, sym, f);
+	}
+
 	if (!sym) {	/* count(*) case */
 
 		if (strcmp(aggrstr, "count") != 0) {
@@ -4389,6 +4434,7 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 			found_sgb += 1;
 			if(o->next->type == type_int) {
 				if(o->next->data.i_val) {
+					/* TODO: how do we pass this information? */
 					return sql_error(sql, 02, "SELECT: DISTINCT array tiles not supported yet\n");
 				}
 				o = o->next; /* skip the node containing the DISTINCT information */
