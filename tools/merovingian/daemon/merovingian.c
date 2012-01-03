@@ -1028,6 +1028,15 @@ main(int argc, char *argv[])
 
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = 0;
+	sa.sa_handler = segvhandler;
+	if (sigaction(SIGSEGV, &sa, NULL) == -1) {
+		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",
+				argv[0], strerror(errno));
+		MERO_EXIT(1);
+	}
+
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		Mfprintf(oerr, "%s: FATAL: unable to create signal handlers: %s\n",

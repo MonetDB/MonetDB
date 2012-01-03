@@ -93,7 +93,8 @@ typedef struct{
 } *Node, NodeRecord;
 
 static Node *
-OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist){
+OPTdependencies(Client cntxt, MalBlkPtr mb, int **Ulist)
+{
 	Node *list = (Node *) GDKzalloc(sizeof(Node) * mb->stop);
 	int *var = (int*) GDKzalloc(sizeof(int) * mb->vtop), *uselist = NULL;
 	int i,j,sz=0;
@@ -244,8 +245,10 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize) < 0)
+	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
+		GDKfree(uselist);
 		return 0;
+	}
 	
 	pushInstruction(mb,old[0]);
 	old[0]=0;
@@ -293,6 +296,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (old[i])
 			freeInstruction(old[i]);
 	OPTremoveDep(dep, limit);
+	GDKfree(uselist);
 	GDKfree(old);
 	return 1;
 }

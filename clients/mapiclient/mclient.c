@@ -2474,16 +2474,16 @@ set_timezone(Mapi mid)
 #ifdef HAVE_TIMEZONE
 #ifdef _MSC_VER
 #define timezone _timezone
-#define daylight _daylight
-#define tzset _tzset
 #endif
 	char buf[128];
+	struct tm *tm;
+	time_t t;
 	long tzone;
 	MapiHdl hdl;
 
-	/* timezone and daylight are POSIX-defined variables */
-	tzset();
-	tzone = timezone - 3600 * daylight;
+	t = time(NULL);
+	tm = localtime(&t);
+	tzone = timezone - 3600 * tm->tm_isdst;
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",

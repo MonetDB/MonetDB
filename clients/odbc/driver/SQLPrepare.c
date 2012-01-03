@@ -63,6 +63,7 @@ SQLPrepare_(ODBCStmt *stmt,
 	MapiMsg ret;
 	MapiHdl hdl;
 	int nrows;
+	int ncols;
 	ODBCDescRec *prec, *rrec; /* param and row descriptors */
 	ODBCDescRec *rec;
 	int i;
@@ -122,6 +123,7 @@ SQLPrepare_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 	nrows = (int) mapi_rows_affected(hdl);
+	ncols = mapi_get_field_count(hdl);
 	/* these two will be adjusted later */
 	setODBCDescRecCount(stmt->ImplParamDescr, nrows);
 	setODBCDescRecCount(stmt->ImplRowDescr, nrows);
@@ -134,8 +136,12 @@ SQLPrepare_(ODBCStmt *stmt,
 		int length, scale;
 
 		mapi_fetch_row(hdl);
-		s = mapi_fetch_field(hdl, 5); /* column name: null -> param */
-		if (s == NULL || *s == 0) {
+		if (ncols == 3 ||
+		    (s = mapi_fetch_field(hdl, 5)) == NULL ||
+		    *s == 0) {
+			/* either old prepare (i.e. old server) or no
+			 * column name: either way, this describes a
+			 * parameter */
 			stmt->nparams++;
 			rec = prec++;
 			rec->sql_desc_nullable = SQL_NULLABLE;
