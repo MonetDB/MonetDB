@@ -715,7 +715,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			name = e->name;
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			slen = strlen(name);
+			slen = name ? strlen(name) : 0;
 			if (slen > len6)
 				len6 = slen;
 		}
