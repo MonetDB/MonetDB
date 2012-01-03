@@ -705,8 +705,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 		sql_exp *e = n->data;
 
 		keys[i] = exp_keyvalue(e);
-		/* add some weigth for the selections */
-		if (e->type == e_cmp) {
+		/* add some weight for the selections */
+		if (e->type == e_cmp && !is_complex_exp(e->flag)) {
 			sql_rel *l = find_rel(rels, e->l);
 			sql_rel *r = find_rel(rels, e->r);
 
@@ -827,10 +827,12 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* find the involved relations */
 
 		/* complex expressions may touch multiple base tables 
-		 * Should be push up to extra selection.
+		 * Should be pushed up to extra selection.
 		 * */
-		l = find_one_rel(rels, cje->l);
-		r = find_one_rel(rels, cje->r);
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag)) {
+			l = find_one_rel(rels, cje->l);
+			r = find_one_rel(rels, cje->r);
+		}
 
 		if (l && r) {
 			list_remove_data(sdje, cje);
