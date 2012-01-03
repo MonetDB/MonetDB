@@ -137,8 +137,7 @@ SQLPrepare_(ODBCStmt *stmt,
 
 		mapi_fetch_row(hdl);
 		if (ncols == 3 ||
-		    (s = mapi_fetch_field(hdl, 5)) == NULL ||
-		    *s == 0) {
+		    (s = mapi_fetch_field(hdl, 5)) == NULL) {
 			/* either old prepare (i.e. old server) or no
 			 * column name: either way, this describes a
 			 * parameter */
