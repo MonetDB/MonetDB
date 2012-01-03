@@ -1856,6 +1856,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         t0 = time.time()
         tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length)
+        if tres == 'segfault':
+            # rename core file, if any -- might have to check
+            # /proc/sys/kernel/core_pattern in the future but hopefully
+            # this value is kept sane
+            if os.path.exists('core'):
+                try:
+                    os.rename('core', 'core-%s' % (TST))
+                except:
+                    pass
 
         t1 = time.time()
         TX = t1 - t0
