@@ -862,7 +862,7 @@ command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime_def
 
 typedef int date;
 #define date_nil ((date) int_nil)
-#define date_isnil(X)  (X == date_nil)
+#define date_isnil(X)  ((X) == date_nil)
 @c
 #include "monetdb_config.h"
 #include "mtime.h"
@@ -875,7 +875,7 @@ typedef int date;
  */
 typedef int daytime;
 #define daytime_nil ((daytime) int_nil)
-#define daytime_isnil(X) ( X == (daytime) int_nil)
+#define daytime_isnil(X) ((X) == daytime_nil)
 
 /*
  * @- timestamp
