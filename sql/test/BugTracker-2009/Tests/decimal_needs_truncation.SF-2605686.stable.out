@@ -30,11 +30,14 @@ Ready.
 % decimal # type
 % 7 # length
 [ 0.1235	]
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "decimal",	5,	4	]
+#PREPARE INSERT INTO testdec (testdec) values (?);
+#PREPARE INSERT INTO testdec (testdec) values (?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	0,	0 # length
+[ "decimal",	5,	4,	NULL,	NULL,	NULL	]
+#exec 6(0.12345);
 [ 1	]
 % sys.testdec # table_name
 % testdec # name

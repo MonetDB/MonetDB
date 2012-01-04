@@ -19,11 +19,15 @@ Ready.
 # 09:15:18 >  
 
 [ 3	]
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 4,	1,	1 # length
-[ "char",	0,	0	]
+#prepare select name from t1234205 where name like ?;
+#prepare select name from t1234205 where name like ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	8,	4 # length
+[ "varchar",	1024,	0,	"",	"t1234205",	"name"	]
+[ "char",	0,	0,	NULL,	NULL,	NULL	]
+#execute 3 ('%');
 % sys.t1234205 # table_name
 % name # name
 % varchar # type
@@ -31,11 +35,14 @@ Ready.
 [ "niels"	]
 [ "fabian"	]
 [ "martin"	]
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 0,	1,	1 # length
-#execute 2 ();
+#prepare select name from t1234205 where name like 'n%';
+#prepare select name from t1234205 where name like 'n%';
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	4,	1,	0,	8,	4 # length
+[ "varchar",	1024,	0,	"",	"t1234205",	"name"	]
+#execute 4 ();
 % sys.t1234205 # table_name
 % name # name
 % varchar # type

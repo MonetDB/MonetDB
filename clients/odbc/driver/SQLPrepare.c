@@ -94,8 +94,8 @@ SQLPrepare_(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLPrepare: \"%s\"\n", query);
 #endif
-	s = malloc(strlen(query) + 15);
-	strcat(strcpy(s, "prepareresult "), query);
+	s = malloc(strlen(query) + 9);
+	strcat(strcpy(s, "prepare "), query);
 	free(query);
 
 	ODBCResetStmt(stmt);
