@@ -580,7 +580,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		 * BEWARE. you may not use a size estimation, because it
 		 * may fire a BATproperty check in a few cases.
 		 * In case a join fails, we may try another order first before
-		 * abandoning the task.
+		 * abandoning the task. It can handle cases where a Cartesian product emerges.
 		 *
 		 * A left-join sequence only requires the result to be sorted
 		 * against the first operand. For all others operand pairs, the cheapest join suffice.
@@ -599,12 +599,20 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 			b = BATsemijoin(joins[j], joins[j + 1]);
 		}
 		if (b==NULL){
+			if ( postpone[j] && postpone[j+1]){
+				for( --top; top>=0; top--)
+					BBPreleaseref(joins[top]->batCacheid);
+				GDKfree(postpone);
+				return NULL;
+			}
 			postpone[j] = TRUE;
 			postpone[j+1] = TRUE;
 			postponed = 0;
 			for( k=0; k<top; k++)
 				postponed += postpone[k]== TRUE;
 			if ( postponed == top){
+				for( --top; top>=0; top--)
+					BBPreleaseref(joins[top]->batCacheid);
 				GDKfree(postpone);
 				return NULL;
 			}
@@ -624,6 +632,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 				mnstr_printf(cntxt->fdout, "#joinPath %d:= join(%d,%d)\n", 
 					b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid);
 
+		if ( b == 0 ){
+			for( --top; top>=0; top--)
+				BBPreleaseref(joins[top]->batCacheid);
+			GDKfree(postpone);
+			return 0;
+		}
 		BBPdecref(joins[j]->batCacheid, FALSE);
 		BBPdecref(joins[j+1]->batCacheid, FALSE);
 		joins[j] = b;
@@ -645,17 +659,25 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, **joins = (BAT**)GDKmalloc(pci->argc*sizeof(BAT*)); 
 	str joinPathRef = putName("joinPath",8);
 	str leftjoinPathRef = putName("leftjoinPath",12);
+	int error = 0;
 
 	if ( joins == NULL)
 		throw(MAL, "algebra.joinPath", MAL_MALLOC_FAIL);
 	(void)mb;
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = (int *) getArgReference(stk, pci, i);
-		if ((b = BATdescriptor(*bid)) == NULL) {
+		b = BATdescriptor(*bid);
+		if (  b && top ) {
+			if (TYPEerror(joins[top-1]->ttype, b->htype) ) {
+				b= NULL;
+				error = 1;
+			}
+		}
+		if ( b == NULL) {
 			for( --top; top>=0; top--)
 				BBPreleaseref(joins[top]->batCacheid);
 			GDKfree(joins);
-			throw(MAL, "algebra.joinPath", INTERNAL_BAT_ACCESS);
+			throw(MAL, "algebra.joinPath", error? SEMANTIC_TYPE_MISMATCH: INTERNAL_BAT_ACCESS);
 		}
 		joins[top++] = b;
 	}
