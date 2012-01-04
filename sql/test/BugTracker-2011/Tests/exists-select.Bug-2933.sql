@@ -27,3 +27,7 @@ WHERE
     ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 
 DROP TABLE _rank2933;
+
+
+SELECT 123 AS dummy1 FROM tables n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
+	(SELECT * FROM columns) nnn WHERE n.id > 0 );

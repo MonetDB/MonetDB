@@ -1860,9 +1860,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
             # this value is kept sane
-            if os.path.exists('core'):
+            corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core')
+            if os.path.exists(corefile):
                 try:
-                    os.rename('core', 'core-%s' % (TST))
+                    os.rename(corefile, '%s-%s' % (corefile, TST))
                 except:
                     pass
 

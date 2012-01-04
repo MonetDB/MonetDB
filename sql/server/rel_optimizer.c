@@ -547,14 +547,19 @@ find_one_rel(list *rels, sql_exp *e)
 static int
 joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 {
-	sql_rel *h_l = find_rel(rels, h->l);
-	sql_rel *h_r = find_rel(rels, h->r);
-	sql_rel *key_l = find_rel(rels, key->l);
-	sql_rel *key_r  = find_rel(rels, key->r);
+	sql_rel *h_l;
+	sql_rel *h_r;
+	sql_rel *key_l;
+	sql_rel *key_r;
 
 	assert (!h || !key || (h->type == e_cmp && key->type == e_cmp));
 	if (is_complex_exp(h->flag) || is_complex_exp(key->flag))
 		return -1;
+	h_l = find_rel(rels, h->l);
+	h_r = find_rel(rels, h->r);
+	key_l = find_rel(rels, key->l);
+	key_r  = find_rel(rels, key->r);
+
 	if (h_l == key_l && h_r == key_r)
 		return 0;
 	if (h_r == key_l && h_l == key_r)

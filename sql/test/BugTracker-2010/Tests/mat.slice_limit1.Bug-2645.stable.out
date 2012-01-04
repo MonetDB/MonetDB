@@ -115,7 +115,7 @@ Ready.
 #TRACE select cast(x as string)||'-bla-'||cast(y as string) from slice_test limit 1;
 % sys. # table_name
 % concat_concat_x # name
-% clob # type
+% varchar # type
 % 7 # length
 [ "0-bla-1"	]
 #SELECT count(*) FROM
