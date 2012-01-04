@@ -4183,7 +4183,7 @@ daytime_2time_daytime( daytime *res, daytime *v, int *digits )
 
 	/* correct fraction */
 	*res = *v;
-	if (d < 3) {
+	if (!daytime_isnil(*v) && d < 3) {
 		*res /= scales[3-d];
 		*res *= scales[3-d];
 	}
