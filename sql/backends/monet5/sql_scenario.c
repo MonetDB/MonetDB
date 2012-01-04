@@ -1395,13 +1395,11 @@ SQLparser(Client c)
 		/* generate and call the MAL code */
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
-		if (m->emode == m_dot)
-			SQLshowDot(c);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain && m->emode != m_dot) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain ) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1418,6 +1416,8 @@ SQLparser(Client c)
 
 			if (m->emode == m_inplace)
 				m->emode = m_normal;
+			if (m->emode == m_dot)
+				SQLshowDot(c);
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
