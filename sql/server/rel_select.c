@@ -511,7 +511,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			append(args, exp_atom_int(sql->sa, 1));
 			sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(args), F_FUNC);
 			if (!sf)
-				return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
+				return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 			slc_val = exp_op(sql->sa, args, sf);
 		}
 
