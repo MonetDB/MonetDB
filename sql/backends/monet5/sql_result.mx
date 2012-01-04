@@ -679,12 +679,11 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
 	sql_subtype *t;
-	int result = (c->emode == m_prepareresult);
 
 	if (!out)
 		return 0;
 
-	if (result && is_project(q->rel->op) && q->rel->exps) {
+	if (is_project(q->rel->op) && q->rel->exps) {
 		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
 		sql_rel *r = q->rel;
 
@@ -746,27 +745,17 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 	}
 
 	/* write header, query type: Q_PREPARE */
-	if (result) { 
-		if (mnstr_printf(out,
-			"&5 %d %d 6 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-			"%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n"
-			"%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n"
-			"%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n"
-			"%% " SZFMT ",\t%d,\t%d,\t" SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n",
-			q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) 
-			return -1;
-	} else {
-		if (mnstr_printf(out,
-			"&5 %d %d 3 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
-			"%% .prepare,\t.prepare,\t.prepare # table_name\n"
-			"%% type,\tdigits,\tscale # name\n"
-			"%% varchar,\tint,\tint # type\n"
-			"%% " SZFMT ",\t%d,\t%d # length\n",
-			q->id, nrows, nrows, len1, len2, len3) < 0) 
-			return -1;
+	if (mnstr_printf(out,
+			 "&5 %d %d 6 %d\n" /* TODO: add type here: r(esult) or u(pdate) */
+			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n"
+			 "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n"
+			 "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n"
+			 "%% " SZFMT ",\t%d,\t%d,\t" SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n",
+			 q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+		return -1;
 	}
 
-	if (result && is_project(q->rel->op) && q->rel->exps) {
+	if (is_project(q->rel->op) && q->rel->exps) {
 		sql_rel *r = q->rel;
 
 		for (n = r->exps->h; n; n = n->next) {
@@ -795,24 +784,20 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		}
 	}
 	if (c->params) {
-		char *extra = "";
 		int i;
 
 		q->paramlen = nparam;
 		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, nrows);
-		if (result) 
-			extra = ",\tNULL,\tNULL,\tNULL";
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
 
 			if (t) {
 				if (mnstr_printf(out,
-					"[ \"%s\",\t%d,\t%d%s\t]\n",
+					"[ \"%s\",\t%d,\t%d,\tNULL,\tNULL,\tNULL\t]\n",
 					t->type->sqlname,
 					t->digits,
-					t->scale,
-					extra
+					t->scale
 				) < 0) {
 					return -1;
 				}

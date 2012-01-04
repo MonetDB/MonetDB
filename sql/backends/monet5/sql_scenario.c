@@ -1389,7 +1389,7 @@ SQLparser(Client c)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1415,7 +1415,7 @@ SQLparser(Client c)
 					m->args,      /* the argument list */
 					m->argc,
 					m->scanner.key ^ m->session->schema->base.id,  /* the statement hash key */
-					(m->emode == m_prepare || m->emode == m_prepareresult) ? Q_PREPARE :
+					m->emode == m_prepare ? Q_PREPARE :
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
@@ -1434,7 +1434,7 @@ SQLparser(Client c)
 		}
 	}
 	if (be->q) {
-		if (m->emode == m_prepare || m->emode == m_prepareresult)
+		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
@@ -1626,7 +1626,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->emode == m_prepare || m->emode == m_prepareresult){
+	if( m->emode == m_prepare){
 		goto cleanup_engine;
 	} else if( m->emode == m_explain ){
 		/*

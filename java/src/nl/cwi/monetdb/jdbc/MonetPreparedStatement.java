@@ -115,7 +115,7 @@ public class MonetPreparedStatement
 			resultSetHoldability
 		);
 
-		if (!super.execute("PREPARERESULT " + prepareQuery))
+		if (!super.execute("PREPARE " + prepareQuery))
 			throw new SQLException("Unexpected server response", "M0M10");
 
 		// cheat a bit to get the ID and the number of columns

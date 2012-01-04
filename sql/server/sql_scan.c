@@ -285,7 +285,6 @@ scanner_init_keywords(void)
 	keywords_insert("DEBUG", SQL_DEBUG);
 	keywords_insert("TRACE", SQL_TRACE);
 	keywords_insert("PREPARE", PREPARE);
-	keywords_insert("PREPARERESULT", PREPARERESULT);
 	keywords_insert("PREP", PREPARE);
 	keywords_insert("EXECUTE", EXECUTE);
 	keywords_insert("EXEC", EXECUTE);

@@ -48,7 +48,6 @@
 #define m_prepare 3
 #define m_explain 4 
 #define m_plan 5 
-#define m_prepareresult 6
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
