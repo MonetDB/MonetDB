@@ -83,6 +83,46 @@ Ready.
 % 1 # length
 [ 2	]
 #DROP TABLE _rank2933;
+#SELECT 123 AS dummy1 FROM tables n WHERE EXISTS ( SELECT 456 AS dummy2 FROM
+#	(SELECT * FROM columns) nnn WHERE n.id > 0 );
+% . # table_name
+% dummy1 # name
+% tinyint # type
+% 3 # length
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
+[ 123	]
 
 # 17:14:07 >  
 # 17:14:07 >  "Done."
