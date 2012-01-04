@@ -5610,6 +5610,10 @@ second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 	lng r = *(int*)s;
 
 	(void)sk;
+	if (daytime_isnil(*s)) {
+		*res = lng_nil;
+		return MAL_SUCCEED;
+	}
 	switch(k) {
 	case isec:
 		break;
