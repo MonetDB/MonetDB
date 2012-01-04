@@ -392,10 +392,10 @@ sql_update_dec2011( Client c, mvc *m )
 
 					if (c->type.type->eclass == EC_INTERVAL &&
 					    strcmp(c->type.type->sqlname, "sec_interval") == 0) {
-						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 2*strlen(c->base.name))
+						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 3*strlen(c->base.name))
 							buf = GDKrealloc(buf, bufsize += 1024);
-						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\";\n",
-							s->base.name, t->base.name, c->base.name, c->base.name);
+						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\" where \"%s\" is not null;\n",
+							s->base.name, t->base.name, c->base.name, c->base.name, c->base.name);
 					}
 				}
 			}
