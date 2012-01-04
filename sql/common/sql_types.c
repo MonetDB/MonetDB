@@ -388,6 +388,9 @@ is_subtype(sql_subtype *sub, sql_subtype *super)
 		return 0;
 	if (super->digits > 0 && sub->digits > super->digits) 
 		return 0;
+	if (super->digits == 0 && super->type->eclass == EC_STRING && 
+	    (sub->type->eclass == EC_STRING || sub->type->eclass == EC_CHAR))
+		return 1;
 	/* subtypes are only equal iff
 	   they map onto the same systemtype */
 	return (type_cmp(sub->type, super->type) == 0);
