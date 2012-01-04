@@ -4186,7 +4186,7 @@ daytime_2time_daytime( daytime *res, daytime *v, int *digits )
 
 	/* correct fraction */
 	*res = *v;
-	if (d < 3) {
+	if (!daytime_isnil(*v) && d < 3) {
 		*res /= scales[3-d];
 		*res *= scales[3-d];
 	}
@@ -5613,6 +5613,10 @@ second_interval_daytime( lng *res, daytime *s, int *d, int *sk )
 	lng r = *(int*)s;
 
 	(void)sk;
+	if (daytime_isnil(*s)) {
+		*res = lng_nil;
+		return MAL_SUCCEED;
+	}
 	switch(k) {
 	case isec:
 		break;

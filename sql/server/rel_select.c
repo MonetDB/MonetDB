@@ -4334,7 +4334,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		return NULL;
 	}
 	case SQL_PARAMETER:{
-		if (sql->emode != m_prepare && sql->emode != m_prepareresult)
+		if (sql->emode != m_prepare)
 			return sql_error(sql, 02, "SELECT: parameters ('?') not allowed in normal queries, use PREPARE");
 		assert(se->type == type_int);
 		return exp_atom_ref(sql->sa, se->data.i_val, NULL);

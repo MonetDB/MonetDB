@@ -26,16 +26,23 @@ Ready.
 # 00:21:12 >  
 
 #PREPARE
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	2,	1 # length
-[ "int",	32,	0	]
-[ "decimal",	8,	0	]
-[ "int",	32,	0	]
-[ "int",	32,	0	]
+#UPDATE TB.STOCK_ITEM SET
+#  S_QUANTITY = ?,
+#  S_YTD = S_YTD + ?,
+#  S_ORDER_CNT = S_ORDER_CNT + 1
+#WHERE S_W_ID = ? AND S_I_ID = ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "decimal",	8,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#drop table TB.STOCK_ITEM;
+#drop schema TB;
 
-# 00:21:13 >  
-# 00:21:13 >  Done.
-# 00:21:13 >  
+# 12:42:02 >  
+# 12:42:02 >  "Done."
+# 12:42:02 >  
 
