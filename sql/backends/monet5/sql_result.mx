@@ -673,7 +673,8 @@ int
 mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 {
 	node *n;
-	int len = c->params ? list_length(c->params) : 0;
+	int nparam = c->params ? list_length(c->params) : 0;
+	int nrows = nparam;
 	size_t len1 = 0, len4 = 0, len5 = 0, len6 = 0;	/* column widths */
 	int len2 = 1, len3 = 1;
 	sql_arg *a;
@@ -687,7 +688,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		unsigned int max2 = 10, max3 = 10; /* to help calculate widths */
 		sql_rel *r = q->rel;
 
-		len += list_length(r->exps);
+		nrows += list_length(r->exps);
 
 		for (n = r->exps->h; n; n = n->next) {
 			char *name;
@@ -715,7 +716,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			name = e->name;
 			if (!name && e->type == e_column && e->r)
 				name = e->r;
-			slen = strlen(name);
+			slen = name ? strlen(name) : 0;
 			if (slen > len6)
 				len6 = slen;
 		}
@@ -752,7 +753,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			"%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n"
 			"%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n"
 			"%% " SZFMT ",\t%d,\t%d,\t" SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n",
-			q->id, len, len, len1, len2, len3, len4, len5, len6) < 0) 
+			q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) 
 			return -1;
 	} else {
 		if (mnstr_printf(out,
@@ -761,7 +762,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			"%% type,\tdigits,\tscale # name\n"
 			"%% varchar,\tint,\tint # type\n"
 			"%% " SZFMT ",\t%d,\t%d # length\n",
-			q->id, len, len, len1, len2, len3) < 0) 
+			q->id, nrows, nrows, len1, len2, len3) < 0) 
 			return -1;
 	}
 
@@ -797,10 +798,10 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 		char *extra = "";
 		int i;
 
-		q->paramlen = len;
-		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, len);
+		q->paramlen = nparam;
+		q->params = SA_NEW_ARRAY(q->sa, sql_subtype, nrows);
 		if (result) 
-			extra = ",\t\"\",\t\"\",\t\"\"";
+			extra = ",\tNULL,\tNULL,\tNULL";
 		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			a = n->data;
 			t = &a->type;
