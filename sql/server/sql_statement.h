@@ -141,10 +141,10 @@ typedef enum comp_type {
 	cmp_project = 11	/* special case for projection joins */
 } comp_type;
 
-#define is_theta_exp(e) (e == cmp_gt || e == cmp_gte || e == cmp_lte ||\
-		         e == cmp_lt || e == cmp_equal || e == cmp_notequal)
+#define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
+		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(e) (e == cmp_or || e == cmp_in || e == cmp_notin || e == cmp_filter)
+#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e) == cmp_filter)
 
 /* flag to indicate anti join/select */
 #define ANTI 16
