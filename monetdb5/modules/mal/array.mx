@@ -36,16 +36,16 @@ for each shape tripple.
 @{
 
 @= array_mdefs
-command series_(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
+command series(start:@1, step:@1, stop:@1, N:int, M:int) :bat[:oid,:@1] 
 address ARRAYseries_@1
 comment  "Generates a single series BAT based on range condition, repeating each value N times and repeat the process M times.";
 
-function series (start:@1, step:@1, stop:@1, N:int, M:int) (id:bat[:oid,:lng], dimval:bat[:oid,:@1]);
-	b1 := array.series_(start, step, stop, N, M);
+function series_ (start:@1, step:@1, stop:@1, N:int, M:int) (id:bat[:oid,:lng], dimval:bat[:oid,:@1]);
+	b1 := array.series(start, step, stop, N, M);
 	b2 := bat.mirror(b1);
 	b3 := batcalc.lng(b2);
 	return (b3,b1);
-end series;
+end series_;
 
 @mal
 module array;
@@ -63,22 +63,22 @@ to be dealt with differently
 @:array_mdefs(timestamp)@
 
 @mal
-pattern filler_(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
+pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
 address ARRAYfiller_bat
 comment "Create an array value representation described by a series column and fill it with V";
 
-pattern filler_(cnt:lng, v:any_1):bat[:oid,:any_1]
+pattern filler(cnt:lng, v:any_1):bat[:oid,:any_1]
 address ARRAYfiller
 comment "Create an array value representation of CNT items and fill it with V";
 
-function filler(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
-	b1 := array.filler_(cnt, v);
+function filler_(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
+	b1 := array.filler(cnt, v);
 	# TODO: why is a markH necessary here, but no in array.series?
 	b2 := algebra.markH(b1, 0@0);
 	b3 := bat.mirror(b2);
     b4 := batcalc.lng(b3);
 	return (b4,b2);
-end filler;
+end filler_;
 
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYmap
