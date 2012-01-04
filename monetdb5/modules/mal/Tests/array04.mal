@@ -1,28 +1,27 @@
 # tiling operations over fixed arrays
 
-#create array v(i int dimension[0:1:4], payload:int)
-v:= array.series(0,1,6,1,1);
-vv:= array.series(0,1,6,1,1);
-io.print(v,vv);
+#create array v(i int dimension[0:1:6], v int default 37)
+i:= array.series(0,1,6,1,1);
+v:= array.filler(i, 37);
+io.print(i,v);
 
-#select sum(V) from V group by V[0:1:2]
+#select sum(V) from V group by V[x:x+2]
 template:= array.series(0@0,1@0,2@0,1,1);
 io.print(template);
 
-g:= array.tiles(vv,template);
+g:= array.tiles(v,template);
 io.print(g);
 
-gs:= array.sum(vv,template);
+gs:= array.sum(v,template);
 io.print(gs);
 
-
-#create array M(x int dimension[0:1:4], y int dimension[0:1:4], int default 1);
+#create array M(x int dimension[0:1:4], y int dimension[0:1:4], v int default 37);
 mx:= array.series(0,1,4,4,1);
 my:= array.series(0,1,4,1,4);
-mv:= array.series(0,1,16,1,1);
+mv:= array.filler(mx,37);
 io.print(mx,my,mv);
 
-#select sum(M) from M group by M[0:1:2][0:1:2]
+#select sum(M) from M group by M[x:x+2][y:y+2]
 t0:= array.series(0,1,2,2,1);
 t1:= array.series(0,1,2,1,2);
 io.print(t0,t1);
@@ -46,6 +45,7 @@ io.print(nx,ny,nv);
 map:= array.embed(nx,ny,mx,my);
 io.print(map);
 rv:= array.replace(nv,map,mv);
+io.print(rv);
 
 #now produce the tiled sum over the enlarged one
 template:= array.map(nx,ny,t0,t1);
