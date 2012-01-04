@@ -4291,11 +4291,14 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@3 *v = (@3*)BUNtail(bi,p);
-		@1 r;
-		msg = @2_2time_@1( &r, @4, digits );
+		union {
+			lng l;
+			@1 r;
+		} u;
+		msg = @2_2time_@1( &u.r, @4, digits );
 		if (msg)
 			break;
-		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+		BUNins(dst, BUNhead(bi,p), &u.r, FALSE);
 	}
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
