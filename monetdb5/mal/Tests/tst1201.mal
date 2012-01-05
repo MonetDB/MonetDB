@@ -8,7 +8,7 @@
 #
 #
 #
-lzone:= mtime.timezone("GMT+1");
+lzone:= mtime.timezone("GMT+01:00");
 mtime.timezone_local(lzone);
 ##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
 ## test the various ways to create rules

@@ -26,16 +26,18 @@ All Rights Reserved.
  * @v 1.0
  *
  * @+ Temporal Module
- * The goal of this module is to provide adequate functionality for storing
- * and manipulated time-related data. The minimum requirement is that data
- * can easily be imported from all common commercial RDBMS products.
+ * The goal of this module is to provide adequate functionality for
+ * storing and manipulated time-related data. The minimum requirement
+ * is that data can easily be imported from all common commercial
+ * RDBMS products.
  *
  * This module supersedes the 'temporal' module that has a number of
- * conceptual problems and hard-to-solve bugs that stem from these problems.
+ * conceptual problems and hard-to-solve bugs that stem from these
+ * problems.
  *
- * The starting point of this module are SQL 92 and the ODBC time-related data types.
- * Also, some functionalities have been imported from the time classes of the Java
- * standard library.
+ * The starting point of this module are SQL 92 and the ODBC
+ * time-related data types.  Also, some functionalities have been
+ * imported from the time classes of the Java standard library.
  *
  * This module introduces four basic types and operations on them:
  * @table @samp
@@ -48,25 +50,28 @@ All Rights Reserved.
  * @item timestamp
  * a combination of date and time, indicating an exact point in
  *
- * time (GMT). GMT is the time at the Greenwich meridian without a daylight savings
- * time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which
- * makes it easy to perform time difference calculations.
+ * time (GMT). GMT is the time at the Greenwich meridian without a
+ * daylight savings time (DST) regime. Absence of DST means that hours
+ * are consecutive (no jumps) which makes it easy to perform time
+ * difference calculations.
  *
  * @item timezone
  * the local time is often different from GMT (even at Greenwich in
- * summer, as the UK also has DST). Therefore, whenever a timestamp is composed
- * from a local daytime and date, a timezone should be specified in order to
- * translate the local daytime to GMT (and vice versa if a timestamp is to
- * be decomposed in a local date and daytime).
+ * summer, as the UK also has DST). Therefore, whenever a timestamp is
+ * composed from a local daytime and date, a timezone should be
+ * specified in order to translate the local daytime to GMT (and vice
+ * versa if a timestamp is to be decomposed in a local date and
+ * daytime).
  *
  * @item rule
- * There is an additional atom @samp{rule} that is used to define when daylight
- * savings time in a timezone starts and ends. We provide predefined timezone
- * objects for a number of timezones below (see the init script of this module).
- * Also, there is one timezone called the local @samp{timezone}, which can be set
- * to one global value in a running Monet server, that is used if the timezone
- * parameter is omitted from a command that needs it (if not set, the default value
- * of the local timezone is plain GMT).
+ * There is an additional atom @samp{rule} that is used to define when
+ * daylight savings time in a timezone starts and ends. We provide
+ * predefined timezone objects for a number of timezones below (see
+ * the init script of this module).  Also, there is one timezone
+ * called the local @samp{timezone}, which can be set to one global
+ * value in a running Monet server, that is used if the timezone
+ * parameter is omitted from a command that needs it (if not set, the
+ * default value of the local timezone is plain GMT).
  * @end table
  *
  * @+ Limitations
@@ -74,156 +79,183 @@ All Rights Reserved.
  *
  * @table @samp
  * @item min and max year
- * The maximum and minimum dates and timestamps that can be stored are in the years 5,867,411 and
- * -5,867,411, respectively. Interestingly, the year 0 is not a valid year. The year before 1 is
- * called -1.
+ * The maximum and minimum dates and timestamps that can be stored are
+ * in the years 5,867,411 and -5,867,411, respectively. Interestingly,
+ * the year 0 is not a valid year. The year before 1 is called -1.
  *
  * @item valid dates
- * Fall in a valid year, and have a month and day that is valid in that year. The first day in the year
- * is January 1, the last December 31. Months with 31 days are January, March, May, July, August,
- * October, and December, while April, June, September and November have 30 days. February has 28
- * days, expect in a leap year, when it has 29. A leap year is a year that is an exact multiple of
- * 4. Years that are a multiple of 100 but not of 400 are an exception; they are no leap years.
+ * Fall in a valid year, and have a month and day that is valid in
+ * that year. The first day in the year is January 1, the last
+ * December 31. Months with 31 days are January, March, May, July,
+ * August, October, and December, while April, June, September and
+ * November have 30 days. February has 28 days, expect in a leap year,
+ * when it has 29. A leap year is a year that is an exact multiple of
+ * 4. Years that are a multiple of 100 but not of 400 are an
+ * exception; they are no leap years.
  *
  * @item valid daytime
- * The smallest daytime is 00:00:00:000 and the largest 23:59:59:999 (the hours in a daytime
- * range between [0,23], minutes and seconds between [0,59] and milliseconds between [0:999]).
- * Daytime identifies a valid time-of-day, not an amount of time (for denoting amounts of time, or
- * time differences, we use here concepts like "number of days" or "number of milliseconds" denoted
- * by some value of a standard integer type).
+ * The smallest daytime is 00:00:00:000 and the largest 23:59:59:999
+ * (the hours in a daytime range between [0,23], minutes and seconds
+ * between [0,59] and milliseconds between [0:999]).  Daytime
+ * identifies a valid time-of-day, not an amount of time (for denoting
+ * amounts of time, or time differences, we use here concepts like
+ * "number of days" or "number of milliseconds" denoted by some value
+ * of a standard integer type).
  *
  * @item valid timestamp
  * is formed by a combination of a valid date and valid daytime.
  * @item difference in days
- * For difference calculations between dates (in numbers of days) we use signed integers (the @i{int}
- * Monet type), hence the valid range for difference calculations is between -2147483648 and
- * 2147483647 days (which corresponds to roughly -5,867,411 and 5,867,411 years).
+ * For difference calculations between dates (in numbers of days) we
+ * use signed integers (the @i{int} Monet type), hence the valid range
+ * for difference calculations is between -2147483648 and 2147483647
+ * days (which corresponds to roughly -5,867,411 and 5,867,411 years).
  * @item difference in msecs
- * For difference between timestamps (in numbers of milliseconds) we use 64-bit longs (the @i{lng} Monet type).
- * These are large integers of maximally 19 digits, which therefore impose a limit of about 106,000,000,000 years
- * on the maximum time difference used in computations.
+ * For difference between timestamps (in numbers of milliseconds) we
+ * use 64-bit longs (the @i{lng} Monet type).  These are large
+ * integers of maximally 19 digits, which therefore impose a limit of
+ * about 106,000,000,000 years on the maximum time difference used in
+ * computations.
  * @end table
  *
- * There are also conceptual limitations that are inherent to the time system itself:
+ * There are also conceptual limitations that are inherent to the time
+ * system itself:
  * @table @samp
  * @item Gregorian calendar
- * The basics of the Gregorian calendar stem from the time of Julius Caesar,
- * when the concept of a solar year as consisting of 365.25 days (365 days plus once
- * in 4 years one extra day) was introduced. However, this Julian Calendar, made a year 11
- * minutes long, which subsequently accumulated over the ages, causing a shift in
- * seasons. In medieval times this was noticed, and in 1582 Pope Gregory XIII issued a
- * decree, skipped 11 days. This measure was not adopted in the whole of Europe immediately,
- * however.  For this reason, there were many regions in Europe that upheld different dates.
+ * The basics of the Gregorian calendar stem from the time of Julius
+ * Caesar, when the concept of a solar year as consisting of 365.25
+ * days (365 days plus once in 4 years one extra day) was
+ * introduced. However, this Julian Calendar, made a year 11 minutes
+ * long, which subsequently accumulated over the ages, causing a shift
+ * in seasons. In medieval times this was noticed, and in 1582 Pope
+ * Gregory XIII issued a decree, skipped 11 days. This measure was not
+ * adopted in the whole of Europe immediately, however.  For this
+ * reason, there were many regions in Europe that upheld different
+ * dates.
  *
- * It was only on @b{September 14, 1752} that some consensus was reached and more countries
- * joined the Gregorian Calendar, which also was last modified at that time. The modifications
- * were twofold: first, 12 more days were skipped. Second, it was determined that the
- * year starts on January 1 (in England, for instance, it had been starting on March 25).
+ * It was only on @b{September 14, 1752} that some consensus was
+ * reached and more countries joined the Gregorian Calendar, which
+ * also was last modified at that time. The modifications were
+ * twofold: first, 12 more days were skipped. Second, it was
+ * determined that the year starts on January 1 (in England, for
+ * instance, it had been starting on March 25).
  *
- * Other parts of the world have adopted the Gregorian Calendar even later.
+ * Other parts of the world have adopted the Gregorian Calendar even
+ * later.
  *
- * This module implements the Gregorian Calendar in all its regularity. This means
- * that values before the year 1752 probably do not correspond with the dates that
- * people really used in times before that (what they did use, however, was very vague
- * anyway, as explained above). In solar terms, however, this calendar is reasonably
- * accurate (see the "correction seconds" note below).
+ * This module implements the Gregorian Calendar in all its
+ * regularity. This means that values before the year 1752 probably do
+ * not correspond with the dates that people really used in times
+ * before that (what they did use, however, was very vague anyway, as
+ * explained above). In solar terms, however, this calendar is
+ * reasonably accurate (see the "correction seconds" note below).
  *
  * @item timezones
- * The basic timezone regime was established on @b{November 1, 1884} in the @emph{International
- * Meridian Conference} held in Greenwich (UK). Before that, a different time held in almost
- * any city. The conference established 24 different time zones defined by regular longitude intervals
- * that all differed by one hour.	Not for long it was that national and political interest started
- * to erode this nicely regular system.  Timezones now often follow country borders, and some regions
- * (like the Guinea areas in Latin America) have times that differ with a 15 minute grain from GMT
- * rather than an hour or even half-an-hour grain.
+ * The basic timezone regime was established on @b{November 1, 1884}
+ * in the @emph{International Meridian Conference} held in Greenwich
+ * (UK). Before that, a different time held in almost any city. The
+ * conference established 24 different time zones defined by regular
+ * longitude intervals that all differed by one hour. Not for long it
+ * was that national and political interest started to erode this
+ * nicely regular system.  Timezones now often follow country borders,
+ * and some regions (like the Guinea areas in Latin America) have
+ * times that differ with a 15 minute grain from GMT rather than an
+ * hour or even half-an-hour grain.
  *
- * An extra complication became the introduction of daylight saving time (DST), which
- * causes a time jump in spring, when the clock is skips one hour and in autumn, when the
- * clock is set back one hour (so in a one hour span, the same times occur twice).
- * The DST regime is a purely political decision made on a country-by-country basis. Countries
- * in the same timezone can have different DST regimes. Even worse, some countries have DST in
- * some years, and not in other years.
+ * An extra complication became the introduction of daylight saving
+ * time (DST), which causes a time jump in spring, when the clock is
+ * skips one hour and in autumn, when the clock is set back one hour
+ * (so in a one hour span, the same times occur twice).  The DST
+ * regime is a purely political decision made on a country-by-country
+ * basis. Countries in the same timezone can have different DST
+ * regimes. Even worse, some countries have DST in some years, and not
+ * in other years.
  *
- * To avoid confusion, this module stores absolute points of time in GMT only (GMT does not
- * have a DST regime). When storing local times in the database, or retrieving local times
- * from absolute timestamps, a correct timezone object should be used for the conversion.
+ * To avoid confusion, this module stores absolute points of time in
+ * GMT only (GMT does not have a DST regime). When storing local times
+ * in the database, or retrieving local times from absolute
+ * timestamps, a correct timezone object should be used for the
+ * conversion.
  *
- * Applications that do not make correct use of timezones, will produce irregular results
- * on e.g. time difference calculations.
+ * Applications that do not make correct use of timezones, will
+ * produce irregular results on e.g. time difference calculations.
  *
  * @item correction seconds
- * Once every such hundred years, a correction second is added on new year's night.
- * As I do not know the rule, and this rule would seriously complicate this module
- * (as then the duration of a day, which is now the fixed number of 24*60*60*1000
- * milliseconds, becomes parametrized by the date), it is not implemented. Hence
- * these seconds are lost, so time difference calculations in milliseconds (rather than
- * in days) have a small error if the time difference spans many hundreds of years.
+ * Once every such hundred years, a correction second is added on new
+ * year's night.  As I do not know the rule, and this rule would
+ * seriously complicate this module (as then the duration of a day,
+ * which is now the fixed number of 24*60*60*1000 milliseconds,
+ * becomes parametrized by the date), it is not implemented. Hence
+ * these seconds are lost, so time difference calculations in
+ * milliseconds (rather than in days) have a small error if the time
+ * difference spans many hundreds of years.
  * @end table
  *
- * TODO: we cannot handle well changes in the timezone rules (e.g., DST only exists since
- * 40 years, and some countries make frequent changes to the DST policy). To accommodate
- * this we should make timezone_local a function with a year parameter. The tool should
- * maintain and access the timezone database stored in two bats [str,timezone],[str,year].
- * Lookup of the correct timezone would be dynamic in this structure. The timezone_setlocal
- * would just set the string name of the timezone.
+ * TODO: we cannot handle well changes in the timezone rules (e.g.,
+ * DST only exists since 40 years, and some countries make frequent
+ * changes to the DST policy). To accommodate this we should make
+ * timezone_local a function with a year parameter. The tool should
+ * maintain and access the timezone database stored in two bats
+ * [str,timezone],[str,year].  Lookup of the correct timezone would be
+ * dynamic in this structure. The timezone_setlocal would just set the
+ * string name of the timezone.
  *
  * @+ Time/date comparison
  */
 @= compareGrp
-command ==(v:@1,w:@1):bit 
+command ==(v:@1,w:@1):bit
 address MTIME@1_EQ
 comment "Equality of two @1s";
-command !=(v:@1,w:@1):bit 
+command !=(v:@1,w:@1):bit
 address MTIME@1_NEQ
 comment "Equality of two @1s";
-command <(v:@1,w:@1):bit 
+command <(v:@1,w:@1):bit
 address MTIME@1_LT
 comment "Equality of two @1s";
-command <=(v:@1,w:@1):bit 
+command <=(v:@1,w:@1):bit
 address MTIME@1_LE
 comment "Equality of two @1s";
-command >(v:@1,w:@1):bit 
+command >(v:@1,w:@1):bit
 address MTIME@1_GT
 comment "Equality of two @1s";
-command >=(v:@1,w:@1):bit 
+command >=(v:@1,w:@1):bit
 address MTIME@1_GE
 comment "Equality of two @1s";
-command isnil(v:@1):bit 
+command isnil(v:@1):bit
 address MTIME@1_isnil
 comment "Nil test for @1 value";
 
 module mtime;
-command calc.==(v:@1,w:@1):bit 
+command calc.==(v:@1,w:@1):bit
 address MTIME@1_EQ
 comment "Equality of two @1s";
-command calc.!=(v:@1,w:@1):bit 
+command calc.!=(v:@1,w:@1):bit
 address MTIME@1_NEQ
 comment "Equality of two @1s";
-command calc.<(v:@1,w:@1):bit 
+command calc.<(v:@1,w:@1):bit
 address MTIME@1_LT
 comment "Equality of two @1s";
-command calc.<=(v:@1,w:@1):bit 
+command calc.<=(v:@1,w:@1):bit
 address MTIME@1_LE
 comment "Equality of two @1s";
-command calc.>(v:@1,w:@1):bit 
+command calc.>(v:@1,w:@1):bit
 address MTIME@1_GT
 comment "Equality of two @1s";
-command calc.>=(v:@1,w:@1):bit 
+command calc.>=(v:@1,w:@1):bit
 address MTIME@1_GE
 comment "Equality of two @1s";
-command calc.isnil(v:@1):bit 
+command calc.isnil(v:@1):bit
 address MTIME@1_isnil
 comment "Nil test for @1 value";
-command calc.min(v:@1,w:@1):@1 
+command calc.min(v:@1,w:@1):@1
 address MTIME@1_min
 comment "Minimum test for @1 value";
-command calc.max(v:@1,w:@1):@1 
+command calc.max(v:@1,w:@1):@1
 address MTIME@1_max
 comment "Maximum test for @1 value";
-command calc.min_no_nil(v:@1,w:@1):@1 
+command calc.min_no_nil(v:@1,w:@1):@1
 address MTIME@1_min_no_nil
 comment "Minimum test for @1 value";
-command calc.max_no_nil(v:@1,w:@1):@1 
+command calc.max_no_nil(v:@1,w:@1):@1
 address MTIME@1_max_no_nil
 comment "Maximum test for @1 value";
 @
@@ -265,9 +297,9 @@ command date(s:date):date
 address MTIMEdate_date
 comment "Noop routine.";
 
-command fromstr() :date 
+command fromstr() :date
 address date_fromstr;
-command tostr() :str 
+command tostr() :str
 address date_tostr;
 
 @:compareGrp(date)@
@@ -287,9 +319,9 @@ address date_tostr;
 #        SEP = '.' or ':'
 # @end verbatim
 atom daytime :int;
-command fromstr():daytime 
+command fromstr():daytime
 address daytime_tz_fromstr;
-command tostr():str 
+command tostr():str
 address daytime_tostr;
 
 @:compareGrp(daytime)@
@@ -317,10 +349,10 @@ address daytime_tostr;
 # timezone. The default local timezone is just GMT+00, but it can be set
 # arbitrarily.
 atom timestamp :lng;
-command fromstr():timestamp 
+command fromstr():timestamp
 address timestamp_fromstr;
 
-command tostr():str 
+command tostr():str
 address timestamp_tostr;
 
 command unix_epoch{unsafe}():timestamp
@@ -329,10 +361,10 @@ comment "The Unix epoch time (00:00:00 UTC on January 1, 1970)";
 command epoch{unsafe}():timestamp
 address MTIMEepoch
 comment "unix-time (epoch) support: seconds since the Unix epoch";
-command epoch(t:timestamp):int 
+command epoch(t:timestamp):int
 address MTIMEepoch2int
 comment "unix-time (epoch) support: seconds since epoch";
-command epoch(t:int):timestamp 
+command epoch(t:int):timestamp
 address MTIMEtimestamp
 comment "convert seconds since epoch into a timestamp";
 
@@ -384,11 +416,11 @@ comment "convert seconds since epoch into a timestamp";
 # Other values of the rule parameters on creating a timezone will produce a
 # nil-timezone.
 atom timezone :lng;
-command fromstr():timezone 
+command fromstr():timezone
 address tzone_fromstr;
-command tostr():str   
+command tostr():str
 address tzone_tostr;
-command str():str   
+command str():str
 address MTIMEtzone_tostr;
 command timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
@@ -397,58 +429,58 @@ address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
 
 atom zrule :int;
-command fromstr():zrule 
+command fromstr():zrule
 address rule_fromstr;
-command tostr():str 
+command tostr():str
 address rule_tostr;
-command define(m:int,d:int,w:int,h:int,min:int):zrule 
+command define(m:int,d:int,w:int,h:int,min:int):zrule
 address MTIMEruleDef0
 comment "Introduce a synomym timezone rule.";
-command define(m:int,d:str,w:int,h:int,min:int):zrule 
+command define(m:int,d:str,w:int,h:int,min:int):zrule
 address MTIMEruleDef1
 comment "Introduce a synomym timezone rule.";
-command define(m:int,d:str,w:int,min:int):zrule 
+command define(m:int,d:str,w:int,min:int):zrule
 address MTIMEruleDef2
 comment "Introduce a synomym timezone rule.";
 
 
 module batmtime;
 module mtime;
-command date_sub_sec_interval(t:date,s:int):date 
+command date_sub_sec_interval(t:date,s:int):date
 address MTIMEdate_sub_sec_interval_wrap
 comment "Subtract seconds from a date";
-command date_sub_msec_interval(t:date,ms:lng):date 
+command date_sub_msec_interval(t:date,ms:lng):date
 address MTIMEdate_sub_msec_interval_lng_wrap;
 
-command date_add_sec_interval(t:date,s:int):date 
+command date_add_sec_interval(t:date,s:int):date
 address MTIMEdate_add_sec_interval_wrap
 comment "Add seconds to a date";
-command date_add_msec_interval(t:date,ms:lng):date 
+command date_add_msec_interval(t:date,ms:lng):date
 address MTIMEdate_add_msec_interval_lng_wrap;
 
-command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp 
+command timestamp_sub_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_sub_msec_interval_lng_wrap;
-command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp 
+command timestamp_add_msec_interval(t:timestamp,ms:lng):timestamp
 address MTIMEtimestamp_add_msec_interval_lng_wrap;
 
-command timestamp_sub_month_interval(t:timestamp,s:int):timestamp 
+command timestamp_sub_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_sub_month_interval_wrap
 comment "Subtract months from a timestamp";
-command timestamp_add_month_interval(t:timestamp,s:int):timestamp 
+command timestamp_add_month_interval(t:timestamp,s:int):timestamp
 address MTIMEtimestamp_add_month_interval_wrap
 comment "Add months to a timestamp";
 command timestamp(t:timestamp):timestamp
 address MTIMEtimestamp2timestamp;
 
-command time_sub_msec_interval(t:daytime,ms:lng):daytime 
+command time_sub_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_sub_msec_interval_wrap
 comment "Subtract seconds from a time";
-command time_add_msec_interval(t:daytime,ms:lng):daytime 
+command time_add_msec_interval(t:daytime,ms:lng):daytime
 address MTIMEtime_add_msec_interval_wrap
 comment "Add seconds to a time";
 
-command date_add_month_interval(t:date,s:int):date 
-address MTIMEdate_add_month_interval_wrap
+command date_add_month_interval(t:date,s:int):date
+address MTIMEdate_addmonths
 comment "Add months to a date";
 
 # @-
@@ -464,26 +496,26 @@ command date(:void):date
 address MTIMEnil2date
 comment "generate the nil date";
 
-command local_timezone():lng 
-address MTIMElocal_timezone 
+command local_timezone():lng
+address MTIMElocal_timezone
 comment "get the local timezone in seconds";
 
-command timezone_local(t:timezone):void 
-address MTIMEtzone_set_local 
+command timezone_local(t:timezone):void
+address MTIMEtzone_set_local
 comment "set the local timezone; which is used for printing timestamps";
-command timezone_local() :timezone 
-address MTIMEtzone_get_local 
+command timezone_local() :timezone
+address MTIMEtzone_get_local
 comment "get the local timezone; which is used for printing timestamps";
 
 # @+ Time/date construction
 # Construct temporal values from simple(r) parameters.
 # Out-of range result values are represented by the nil.
-command date(s:str):date 
+command date(s:str):date
 address MTIMEdate_fromstr
 comment "convert the string to a type date value";
 
-command date(yr:int, mo:int, day:int):date 
-address MTIMEdate_create 
+command date(yr:int, mo:int, day:int):date
+address MTIMEdate_create
 comment "creates a date from (year,month,day).";
 
 command daytime(s:str):daytime
@@ -495,39 +527,39 @@ command daytime(:lng):daytime
 address MTIMEsecs2daytime;
 
 command daytime(h:int,m:int,s:int,mi:int)
-		:daytime 
-address MTIMEdaytime_create 
+		:daytime
+address MTIMEdaytime_create
 comment "creates a time from (hours,minutes,
 	seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime,t:timezone) :timestamp 
-address MTIMEtimestamp_create 
+command timestamp(d:date,dt:daytime,t:timezone) :timestamp
+address MTIMEtimestamp_create
 comment "creates a timestamp from (date, daytime,timezone) parameters.";
-command timestamp(d:date,dt:daytime) :timestamp 
-address MTIMEtimestamp_create_default 
+command timestamp(d:date,dt:daytime) :timestamp
+address MTIMEtimestamp_create_default
 comment "creates a timestamp from (d,dt) parameters (in the local timezone).";
-command timestamp(d:date) :timestamp 
-address MTIMEtimestamp_create_from_date 
+command timestamp(d:date) :timestamp
+address MTIMEtimestamp_create_from_date
 comment "creates a timestamp from (d,00:00:00) parameters (in the local timezone).";
 
 command rule(s:str):zrule
 address MTIMErule_fromstr
 comment "create a rule from a  string.";
-command rule (mo:int,d:int,wkday:int,mi:int) :zrule 
-address MTIMErule_create 
+command rule (mo:int,d:int,wkday:int,mi:int) :zrule
+address MTIMErule_create
 comment "create a DST start/end date rule.";
 
-command timezone(s:str):timezone 
+command timezone(s:str):timezone
 address MTIMEtzone_fromstr
 comment "Convert the string to a timezone.";
-command timezone(s:int):timezone 
+command timezone(s:int):timezone
 address MTIMEtzone_create
 comment "Convert the int to a timezone.";
-command timezone(s:lng):timezone 
+command timezone(s:lng):timezone
 address MTIMEtzone_create
 comment "Convert the int to a timezone.";
-command timezone(mi:int,s:zrule,erule:zrule):timezone 
-address MTIMEtzone_create_dst 
-comment "create a timezone as an hour difference 
+command timezone(mi:int,s:zrule,erule:zrule):timezone
+address MTIMEtzone_create_dst
+comment "create a timezone as an hour difference
 	from GMT and a DST.";
 
 # @+ Time/date decomposition
@@ -535,101 +567,101 @@ comment "create a timezone as an hour difference
 # For decomposing a timestamp, there are routines that decompose it in a date
 # and daytime. The bulk variants are also provided to simplify code
 # generation for SQL and to improve speed.
-command year(d:date) :int 
-address MTIMEdate_extract_year 
-comment "extracts year from date (nonzero 
+command year(d:date) :int
+address MTIMEdate_extract_year
+comment "extracts year from date (nonzero
 	value between -5867411 and +5867411).";
 command batmtime.year(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_year_bulk;
 
-command month(d:date) :int 
-address MTIMEdate_extract_month 
+command month(d:date) :int
+address MTIMEdate_extract_month
 comment "extracts month from date";
 command batmtime.month(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_month_bulk;
 
-command day(d:date) :int 
-address MTIMEdate_extract_day 
+command day(d:date) :int
+address MTIMEdate_extract_day
 comment "extracts day from date ";
 command batmtime.day(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_day_bulk;
 
-command hours(h:daytime) :int 
-address MTIMEdaytime_extract_hours 
+command hours(h:daytime) :int
+address MTIMEdaytime_extract_hours
 comment "extracts hour from daytime";
 command batmtime.hours(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_hours_bulk;
 
-command minutes(d:daytime) :int 
-address MTIMEdaytime_extract_minutes 
+command minutes(d:daytime) :int
+address MTIMEdaytime_extract_minutes
 comment "extracts minutes from daytime";
 command minutes(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
-command seconds(d:daytime) :int 
-address MTIMEdaytime_extract_seconds 
+command seconds(d:daytime) :int
+address MTIMEdaytime_extract_seconds
 comment "extracts seconds from daytime";
 command batmtime.seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
-command sql_seconds(d:daytime) :int 
-address MTIMEdaytime_extract_sql_seconds 
+command sql_seconds(d:daytime) :int
+address MTIMEdaytime_extract_sql_seconds
 comment "extracts seconds (with fractional milliseconds) from daytime";
 command batmtime.sql_seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_sql_seconds_bulk;
 
-command milliseconds(d:daytime) :int 
-address MTIMEdaytime_extract_milliseconds 
+command milliseconds(d:daytime) :int
+address MTIMEdaytime_extract_milliseconds
 comment "extracts milliseconds from daytime";
 command batmtime.milliseconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
-command daytime(t:timestamp) :daytime 
-address MTIMEtimestamp_extract_daytime_default 
-comment "extracts daytime from timestamp 
+command daytime(t:timestamp) :daytime
+address MTIMEtimestamp_extract_daytime_default
+comment "extracts daytime from timestamp
 	in the local timezone.";
-command daytime(t:timestamp, v:timezone) :daytime 
-address MTIMEtimestamp_extract_daytime 
-comment "extracts daytime from timestamp 
+command daytime(t:timestamp, v:timezone) :daytime
+address MTIMEtimestamp_extract_daytime
+comment "extracts daytime from timestamp
 	in a specific timezone.";
 
-command date(t:timestamp) :date 
-address MTIMEtimestamp_extract_date_default 
-comment "extracts date from timestamp 
+command date(t:timestamp) :date
+address MTIMEtimestamp_extract_date_default
+comment "extracts date from timestamp
 	in the local timezone.";
-command date(t:timestamp,v:timezone) :date 
-address MTIMEtimestamp_extract_date 
-comment "extracts date from timestamp in a 
+command date(t:timestamp,v:timezone) :date
+address MTIMEtimestamp_extract_date
+comment "extracts date from timestamp in a
 	specific timezone.";
 
-command setTimezone(name:str):timezone 
+command setTimezone(name:str):timezone
 address MTIMEtimezone
 comment "Test and set the timezone.";
 
-command start_dst(t:timezone) :zrule 
-address MTIMEtzone_extract_start 
-comment "extract rule that determines 
+command start_dst(t:timezone) :zrule
+address MTIMEtzone_extract_start
+comment "extract rule that determines
 	start of DST from timezone.";
-command end_dst(t:timezone) :zrule 
-address MTIMEtzone_extract_end 
-comment "extract rule that determines 
+command end_dst(t:timezone) :zrule
+address MTIMEtzone_extract_end
+comment "extract rule that determines
 	end of DST from timezone.";
-command minutes(t:timezone) :int 
-address MTIMEtzone_extract_minutes 
-comment "extract number of minutes that 
+command minutes(t:timezone) :int
+address MTIMEtzone_extract_minutes
+comment "extract number of minutes that
 	time zone is offset wrt GMT.";
 
-command month(t:zrule) :int 
-address MTIMErule_extract_month 
+command month(t:zrule) :int
+address MTIMErule_extract_month
 comment "extract month from rule.";
-command day(t:zrule) :int 
-address MTIMErule_extract_day 
+command day(t:zrule) :int
+address MTIMErule_extract_day
 comment "extract day from rule.";
-command weekday(t:zrule) :int 
-address MTIMErule_extract_weekday 
+command weekday(t:zrule) :int
+address MTIMErule_extract_weekday
 comment "extract weekday from rule.";
-command minutes(t:zrule) :int 
-address MTIMErule_extract_minutes 
+command minutes(t:zrule) :int
+address MTIMErule_extract_minutes
 comment "extract minutes from rule.";
 
 # @+ Time/date arithmetic
@@ -641,84 +673,84 @@ comment "extract minutes from rule.";
 # Arithmetic overflow returns the nil atom (no error messages). For all commands in
 # this modules it holds that if one of the parameters is nil, the result is also nil
 # (nil has the don't know semantics in MIL).
-command addyears(value:date, years:int) :date 
-address MTIMEdate_addyears 
-comment "returns the date after a number 
+command addyears(value:date, years:int) :date
+address MTIMEdate_addyears
+comment "returns the date after a number
 	of years (possibly negative).";
-command addmonths(value:date, months:int) :date 
-address MTIMEdate_addmonths 
-comment "returns the date after a number of 
+command addmonths(value:date, months:int) :date
+address MTIMEdate_addmonths
+comment "returns the date after a number of
 	months (possibly negative).";
-command adddays(value:date, days:int) :date 
-address MTIMEdate_adddays 
-comment "returns the date after a number 
+command adddays(value:date, days:int) :date
+address MTIMEdate_adddays
+comment "returns the date after a number
 	of days (possibly negative).";
-command diff(val1:date, val2:date) :int 
-address MTIMEdate_diff 
-comment "returns the number of days 
+command diff(val1:date, val2:date) :int
+address MTIMEdate_diff
+comment "returns the number of days
 	between 'val1' and 'val2'.";
 
-command dayofyear(d:date) :int 
-address MTIMEdate_extract_dayofyear 
-comment "Returns N where d is the Nth day 
+command dayofyear(d:date) :int
+address MTIMEdate_extract_dayofyear
+comment "Returns N where d is the Nth day
 	of the year (january 1 returns 1)";
-command weekofyear(d:date) :int 
-address MTIMEdate_extract_weekofyear 
+command weekofyear(d:date) :int
+address MTIMEdate_extract_weekofyear
 comment "Returns the week number in the year.";
-command dayofweek(d:date) :int 
-address MTIMEdate_extract_dayofweek 
-comment "Returns the current day of the week 
+command dayofweek(d:date) :int
+address MTIMEdate_extract_dayofweek
+comment "Returns the current day of the week
 	where 1=sunday, .., 7=saturday";
 
-command add(v:timestamp, msecs:lng) :timestamp 
-address MTIMEtimestamp_add 
-comment "returns the timestamp that comes 'msecs' 
+command add(v:timestamp, msecs:lng) :timestamp
+address MTIMEtimestamp_add
+comment "returns the timestamp that comes 'msecs'
 	(possibly negative) after 'value'.";
-command diff(val1:timestamp, val2:timestamp) :lng 
-address MTIMEtimestamp_diff 
-comment "returns the number of milliseconds 
+command diff(val1:timestamp, val2:timestamp) :lng
+address MTIMEtimestamp_diff
+comment "returns the number of milliseconds
 	between 'val1' and 'val2'.";
 
-command dst(t:timestamp,v:timezone) :bit 
-address MTIMEtimestamp_inside_dst 
-comment "return whether DST holds in the 
+command dst(t:timestamp,v:timezone) :bit
+address MTIMEtimestamp_inside_dst
+comment "return whether DST holds in the
 	timezone at a certain point of time.";
 
-command compute(r:zrule, year:int) :date 
-address MTIMEcompute_rule_foryear 
+command compute(r:zrule, year:int) :date
+address MTIMEcompute_rule_foryear
 comment "compute the date from a rule in a given year";
 
 # @- Day and month names
 # One day we should introduce the concept of locale, and hook here.
-command monthnum(month:str) :int 
-address MTIMEmonth_from_str 
+command monthnum(month:str) :int
+address MTIMEmonth_from_str
 comment "Returns month number [1-12] from a string
 	 or nil if does not match any.";
-command monthname(month:int) :str 
-address MTIMEmonth_to_str 
-comment "Returns month name from a number 
+command monthname(month:int) :str
+address MTIMEmonth_to_str
+comment "Returns month name from a number
 	between [1-12], str(nil) otherwise.";
-command daynum(day:str) :int 
-address MTIMEday_from_str 
-comment "Returns number of day [1-7] from a 
+command daynum(day:str) :int
+address MTIMEday_from_str
+comment "Returns number of day [1-7] from a
 	string or nil if does not match any.";
-command dayname(day:int) :str 
-address MTIMEday_to_str 
-comment "Returns day name from a number 
+command dayname(day:int) :str
+address MTIMEday_to_str
+comment "Returns day name from a number
 	between [1-7], str(nil) otherwise.";
 
-command time_synonyms(allow:bit) 
-address MTIMEsynonyms 
-comment "Allow synonyms for the parse format of 
+command time_synonyms(allow:bit)
+address MTIMEsynonyms
+comment "Allow synonyms for the parse format of
 	date/timestamp.";
 
-command olddate (format:str) :date 
-address MTIMEolddate 
-comment "create a date from the old instant 
+command olddate (format:str) :date
+address MTIMEolddate
+comment "create a date from the old instant
 	format.";
-command oldduration(format:str) :int 
-address MTIMEoldduration 
-comment "parse the old duration format and 
+command oldduration(format:str) :int
+address MTIMEoldduration
+comment "parse the old duration format and
 	return an (estimated) number of days.";
 
 command str_to_date(s:str, format:str) :date
@@ -736,13 +768,13 @@ command msecs(d:int,h:int,m:int,s:int,ms:int):lng
 address MTIMEmsecs
 comment "convert date components to milliseconds";
 
-command daytime(h:int):daytime 
+command daytime(h:int):daytime
 address MTIMEdaytime1
 comment "default time with zeroed components";
-command daytime(h:int,m:int):daytime 
+command daytime(h:int,m:int):daytime
 address MTIMEdaytime2
 comment "default time with zeroed components";
-command daytime(h:int,m:int,s:int):daytime 
+command daytime(h:int,m:int,s:int):daytime
 address MTIMEdaytime3
 comment "default time with zeroed components";
 
@@ -753,7 +785,7 @@ address MTIMEcurrent_date;
 command current_time():daytime
 address MTIMEcurrent_time;
 
-command year(t:timestamp):int 
+command year(t:timestamp):int
 address MTIMEtimestamp_year;
 command month(t:timestamp):int
 address MTIMEtimestamp_month;
@@ -783,7 +815,7 @@ address MTIMEsql_minutes;
 command seconds(msecs:lng):int
 address MTIMEsql_seconds;
 
-command msec{unsafe}():lng 
+command msec{unsafe}():lng
 address MTIMEmsec
 comment "get time of day in msec since 1-1-1970.";
 
@@ -825,12 +857,12 @@ command daytime(t:timestamp) :daytime address MTIMEtimestamp_extract_daytime_def
  * @+ Atoms
  *
  * @- date
- * Internally, we store date as the (possibly negative) number of
- * days since the start of the calendar. Oddly, since I (later) learned
- * that the year 0 did no exist, this defines the start of the calendar to
- * be Jan 1 of the year -1 (in other words, a -- positive -- year component
- * of a date is equal to the number of years that have passed since the start
- * of the calendar).
+ * Internally, we store date as the (possibly negative) number of days
+ * since the start of the calendar. Oddly, since I (later) learned
+ * that the year 0 did no exist, this defines the start of the
+ * calendar to be Jan 1 of the year -1 (in other words, a -- positive
+ * -- year component of a date is equal to the number of years that
+ * have passed since the start of the calendar).
  */
 #ifndef _MONETTIME_H_
 #define _MONETTIME_H_
@@ -870,8 +902,8 @@ typedef int date;
 @h
 /*
  * @- daytime
- * Daytime values are also stored as the number of milliseconds that passed since
- * the start of the day (i.e. midnight).
+ * Daytime values are also stored as the number of milliseconds that
+ * passed since the start of the day (i.e. midnight).
  */
 typedef int daytime;
 #define daytime_nil ((daytime) int_nil)
@@ -893,7 +925,8 @@ typedef struct {
 
 /*
  * @- rule
- * rules are used to define the start and end of DST. It uses the 25 lower bits of an int.
+ * rules are used to define the start and end of DST. It uses the 25
+ * lower bits of an int.
  */
 typedef union {
 	struct {
@@ -913,7 +946,8 @@ typedef union {
 			(r).s.minutes = ((i)&(2047<<10))>>10;	\
 			(r).s.month = ((i)&(15<<21))>>21; }
 
-/* phony zero values, used to get negative numbers from unsigned sub-integers in rule */
+/* phony zero values, used to get negative numbers from unsigned
+ * sub-integers in rule */
 #define WEEKDAY_ZERO	8
 #define DAY_ZERO	32
 #define OFFSET_ZERO	4096
@@ -924,7 +958,8 @@ typedef union {
  * A tzone consists of an offset and two DST rules, all crammed into one lng.
  */
 typedef struct {
-	/* we had this as bitfields in one unsigned long long, but native sun CC does not eat that.  */
+	/* we had this as bit fields in one unsigned long long, but native
+	 * sun CC does not eat that.  */
 	unsigned int dst:1, off1:6, dst_start:25;
 	unsigned int off2:7, dst_end:25;
 } tzone;
@@ -949,7 +984,6 @@ mtime_export str MTIMEcurrent_date(date *d);
 mtime_export str MTIMEcurrent_time(daytime *t);
 mtime_export int timestamp_tostr(str *buf, int *len, timestamp *val);
 mtime_export int timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone);
-mtime_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 mtime_export str MTIMEnil2date(date *ret, int *src);
 mtime_export str MTIMEdate2date(date *ret, date *src);
 mtime_export str MTIMEdaytime2daytime(daytime *ret, daytime *src);
@@ -1047,7 +1081,6 @@ mtime_export str MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec);
 mtime_export str MTIMEdate_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec);
 mtime_export str MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec);
 mtime_export str MTIMEdate_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec);
-mtime_export str MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months);
 mtime_export str MTIMEtimestamp_add_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec);
 mtime_export str MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec);
 mtime_export str MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *t, int *months);
@@ -1178,14 +1211,6 @@ monettime_prelude(void)
 }
 
 static int synonyms = TRUE;
-
-static int
-monettime_synonyms(bit *allow)
-{
-	if (*allow != bit_nil)
-		synonyms = *allow;
-	return GDK_SUCCEED;
-}
 
 static inline int
 leapyear(int year)
@@ -1378,7 +1403,7 @@ static int dummy;
 
 #define BEFORE(d1,m1,d2,m2) (d1 < d2 || (d1 == d2 && m1 <= m2))
 
-static inline int timestamp_add(timestamp *ret, timestamp *v, lng *msecs);
+static inline str timestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 
 static inline int
 timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
@@ -1403,8 +1428,8 @@ timestamp_inside(timestamp *ret, timestamp *t, tzone *z, lng offset)
 	start_days = compute_rule(&start, year);
 	end_days = compute_rule(&end, year);
 
-	return BEFORE(start_days, start_msecs, end_days, end_msecs) ? (BEFORE(start_days, start_msecs, ret->days, ret->msecs) && 
-		BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs) || 
+	return BEFORE(start_days, start_msecs, end_days, end_msecs) ? (BEFORE(start_days, start_msecs, ret->days, ret->msecs) &&
+		BEFORE(ret->days, ret->msecs, end_days, end_msecs)) : (BEFORE(start_days, start_msecs, ret->days, ret->msecs) ||
 		BEFORE(ret->days, ret->msecs, end_days, end_msecs));
 }
 
@@ -1682,18 +1707,18 @@ timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
     char buf1[128], buf2[128], *s= *buf, *s1 = buf1, *s2 = buf2;
     if (timezone!=NULL)
     {
-        int off = get_offset(timezone);
+        /* int off = get_offset(timezone); */
         timestamp tmp = *val;
-    
+
         if (!ts_isnil(tmp) && timestamp_inside(&tmp, val, timezone, (lng) 0)) {
             lng add = (lng) 3600000;
-    
+
             timestamp_add(&tmp, &tmp, &add);
-            off += 60;
+            /* off += 60; */
         }
         len1 = date_tostr(&s1, &big, &tmp.days);
         len2 = daytime_tostr(&s2, &big, &tmp.msecs);
-    
+
         if (*len < 2 + len1 + len2) {
             if (*buf)
                 GDKfree(*buf);
@@ -1709,7 +1734,7 @@ timestamp_tz_tostr(str *buf, int *len, timestamp *val, tzone *timezone)
         *s++ = ' ';
         strcpy(s, buf2);
         s += len2;
-    /* omit GMT distance in order not to cinfuse the confused user
+    /* omit GMT distance in order not to confuse the confused user
         strcpy(s, "GMT"); s += 3;
         if (off) {
             *s++ = (off>=0)?'+':'-';
@@ -1987,7 +2012,7 @@ date_prelude(void)
 	set_offset(&tzone_local, 0);
 }
 
-static int
+static str
 oldduration(int *ndays, str s)
 {
 	int year = 0, month = 0, day = 0;
@@ -2033,24 +2058,24 @@ oldduration(int *ndays, str s)
 				break;
 			default:	/* GDKerror("duration_fromstr: wrong duration '%s'!\n",s); */
 				*ndays = int_nil;
-				return GDK_SUCCEED;
+				return MAL_SUCCEED;
 			}
 		} else {
 			snew++;
 		}
 	}
 	*ndays = year * 365 + month * 30 + day;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
+static str
 olddate(date *d, str buf)
 {
 	int day = 0, month, year, yearneg = (buf[0] == '-'), pos = yearneg;
 
 	*d = date_nil;
 	if (!GDKisdigit(buf[pos])) {
-		return GDK_FAIL;	/* syntax error */
+		throw(MAL, "mtime.olddate", "syntax error");
 	}
 	for (year = 0; GDKisdigit(buf[pos]); pos++) {
 		year = (buf[pos] - '0') + year * 10;
@@ -2059,10 +2084,10 @@ olddate(date *d, str buf)
 	}
 	pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
 	if (month == int_nil) {
-		return GDK_FAIL;	/* syntax error */
+		throw(MAL, "mtime.olddate", "syntax error");
 	}
 	if (!GDKisdigit(buf[pos])) {
-		return GDK_FAIL;	/* syntax error */
+		throw(MAL, "mtime.olddate", "syntax error");
 	}
 	while (GDKisdigit(buf[pos])) {
 		day = (buf[pos] - '0') + day * 10;
@@ -2072,73 +2097,39 @@ olddate(date *d, str buf)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	*d = todate(day, month, yearneg ? -year : year);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static int
+static str
 tzone_set_local(tzone *z)
 {
+	if (tz_isnil(*z))
+		throw(MAL, "mtime.timezone_local", "cannot set timezone to nil");
 	tzone_local = *z;
-	return GDK_SUCCEED;
-}
-
-static int
-tzone_get_local(tzone *z)
-{
-	*z = tzone_local;
-	return GDK_SUCCEED;
-}
-
-/* Returns month number [1-12] from a string (or nil if does not match any). */
-static int
-month_from_str(int *ret, str month)
-{
-	parse_substr(ret, month, 3, MONTHS, 12);
-	return GDK_SUCCEED;
-}
-
-/* Returns month name from a number between [1-7], str(nil) otherwise. */
-static inline int
-month_to_str(str *ret, int *month)
-{
-	*ret = GDKstrdup(MONTHS[(*month < 1 || *month > 12) ? 0 : *month]);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* Returns number of day [1-7] from a string (or nil if does not match any). */
-static inline int
+static inline str
 day_from_str(int *ret, str day)
 {
-	parse_substr(ret, day, 3, DAYS, 7);
-	return GDK_SUCCEED;
-}
-
-/* Returns day name from a number between [1-7], str(nil) otherwise. */
-static inline int
-day_to_str(str *ret, int *day)
-{
-	*ret = GDKstrdup(DAYS[(*day < 1 || *day > 7) ? 0 : *day]);
-	return GDK_SUCCEED;
-}
-
-/* creates a date from (day,month,year) parameters */
-static inline int
-date_create(date *ret, int *year, int *month, int *day)
-{
-	*ret = todate(*day, *month, *year);
-	return GDK_SUCCEED;
+	if (strcmp(day, str_nil) == 0)
+		*ret = int_nil;
+	else
+		parse_substr(ret, day, 3, DAYS, 7);
+	return MAL_SUCCEED;
 }
 
 /* creates a daytime from (hours,minutes,seconds,milliseconds) parameters */
-static inline int
+static inline str
 daytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 {
 	*ret = totime(*hour, *min, *sec, *msec);
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* creates a timestamp from (date,daytime) parameters */
-static inline int
+static inline str
 timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 {
 	if (*d == date_nil || *t == daytime_nil || tz_isnil(*z)) {
@@ -2157,16 +2148,16 @@ timestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 		}
 		timestamp_add(ret, ret, &add);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static inline int
+static inline str
 timestamp_create_default(timestamp *ret, date *d, daytime *t)
 {
 	return timestamp_create(ret, d, t, &tzone_local);
 }
 
-static inline int
+static inline str
 timestamp_create_from_date(timestamp *ret, date *d)
 {
 	daytime t = totime(0,0,0,0);
@@ -2174,7 +2165,7 @@ timestamp_create_from_date(timestamp *ret, date *d)
 }
 
 /* extracts year from date (value between -5867411 and +5867411). */
-static inline int
+static inline str
 date_extract_year(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2182,11 +2173,11 @@ date_extract_year(int *ret, date *v)
 	} else {
 		fromdate((int) *v, &dummy, &dummy, ret);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts month from date (value between 1 and 12) */
-static inline int
+static inline str
 date_extract_month(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2194,11 +2185,11 @@ date_extract_month(int *ret, date *v)
 	} else {
 		fromdate((int) *v, &dummy, ret, &dummy);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts day from date (value between 1 and 31)*/
-static inline int
+static inline str
 date_extract_day(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2206,11 +2197,11 @@ date_extract_day(int *ret, date *v)
 	} else {
 		fromdate((int) *v, ret, &dummy, &dummy);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* Returns N where d is the Nth day of the year (january 1 returns 1). */
-static inline int
+static inline str
 date_extract_dayofyear(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2221,11 +2212,11 @@ date_extract_dayofyear(int *ret, date *v)
 		fromdate((int) *v, &dummy, &dummy, &year);
 		*ret = (int) (1 + *v - todate(1, 1, year));
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* Returns the week number */
-static inline int
+static inline str
 date_extract_weekofyear(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2250,11 +2241,11 @@ date_extract_weekofyear(int *ret, date *v)
 			return date_extract_weekofyear(ret, &lastyear_dec_31);
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* Returns the current day  of the week where 1=monday, .., 7=sunday */
-static inline int
+static inline str
 date_extract_dayofweek(int *ret, date *v)
 {
 	if (*v == date_nil) {
@@ -2262,11 +2253,11 @@ date_extract_dayofweek(int *ret, date *v)
 	} else {
 		*ret = date_dayofweek(*v);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts hour from daytime (value between 0 and 23) */
-static inline int
+static inline str
 daytime_extract_hours(int *ret, daytime *v)
 {
 	if (*v == daytime_nil) {
@@ -2274,11 +2265,11 @@ daytime_extract_hours(int *ret, daytime *v)
 	} else {
 		fromtime((int) *v, ret, &dummy, &dummy, &dummy);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts minutes from daytime (value between 0 and 59) */
-static inline int
+static inline str
 daytime_extract_minutes(int *ret, daytime *v)
 {
 	if (*v == daytime_nil) {
@@ -2286,11 +2277,11 @@ daytime_extract_minutes(int *ret, daytime *v)
 	} else {
 		fromtime((int) *v, &dummy, ret, &dummy, &dummy);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts seconds from daytime (value between 0 and 59) */
-static inline int
+static inline str
 daytime_extract_seconds(int *ret, daytime *v)
 {
 	if (*v == daytime_nil) {
@@ -2298,11 +2289,11 @@ daytime_extract_seconds(int *ret, daytime *v)
 	} else {
 		fromtime((int) *v, &dummy, &dummy, ret, &dummy);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts (milli) seconds from daytime (value between 0 and 59000) */
-static inline int
+static inline str
 daytime_extract_sql_seconds(int *ret, daytime *v)
 {
 	int sec, milli;
@@ -2312,11 +2303,11 @@ daytime_extract_sql_seconds(int *ret, daytime *v)
 		fromtime((int) *v, &dummy, &dummy, &sec, &milli);
 		*ret = sec* 1000 + milli;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts milliseconds from daytime (value between 0 and 999) */
-static inline int
+static inline str
 daytime_extract_milliseconds(int *ret, daytime *v)
 {
 	if (*v == daytime_nil) {
@@ -2324,10 +2315,10 @@ daytime_extract_milliseconds(int *ret, daytime *v)
 	} else {
 		fromtime((int) *v, &dummy, &dummy, &dummy, ret);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static inline int
+static inline str
 daytime_add(daytime *ret, daytime *v, lng *msec)
 {
 	if (*v == daytime_nil) {
@@ -2335,11 +2326,11 @@ daytime_add(daytime *ret, daytime *v, lng *msec)
 	} else {
 		*ret = *v + (daytime) (*msec);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* extracts daytime from timestamp */
-static inline int
+static inline str
 timestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 {
 	if (ts_isnil(*t) || tz_isnil(*z)) {
@@ -2358,17 +2349,17 @@ timestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 			*ret = tmp.msecs;
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static inline int
+static inline str
 timestamp_extract_daytime_default(daytime *ret, timestamp *t)
 {
 	return timestamp_extract_daytime(ret, t, &tzone_local);
 }
 
 /* extracts date from timestamp */
-static inline int
+static inline str
 timestamp_extract_date(date *ret, timestamp *t, tzone *z)
 {
 	if (ts_isnil(*t) || tz_isnil(*z)) {
@@ -2387,49 +2378,20 @@ timestamp_extract_date(date *ret, timestamp *t, tzone *z)
 			*ret = tmp.days;
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-static inline int
+static inline str
 timestamp_extract_date_default(date *ret, timestamp *t)
 {
 	return timestamp_extract_date(ret, t, &tzone_local);
 }
 
-static inline int date_adddays(date *ret, date *v, int *delta);
+static inline str date_adddays(date *ret, date *v, int *delta);
 
-/* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
-static inline int
-date_addyears(date *ret, date *v, int *delta)
-{
-	if (*v == date_nil || *delta == int_nil) {
-		*ret = date_nil;
-	} else {
-		int d, m, y, x, z = *delta;
-
-		fromdate((int) *v, &d, &m, &y);
-		if (m >= 3) {
-			y++;
-		}
-		*ret = *v;
-		while (z > 0) {
-			x = YEARDAYS(y);
-			date_adddays(ret, ret, &x);
-			z--;
-			y++;
-		}
-		while (z < 0) {
-			z++;
-			y--;
-			x = -YEARDAYS(y);
-			date_adddays(ret, ret, &x);
-		}
-	}
-	return GDK_SUCCEED;
-}
-
-/* returns the date that comes a number of months after 'v' (or before iff *delta < 0). */
-static inline int
+/* returns the date that comes a number of months after 'v' (or before
+ * iff *delta < 0). */
+static inline str
 date_addmonths(date *ret, date *v, int *delta)
 {
 	if (*v == date_nil || *delta == int_nil) {
@@ -2454,11 +2416,12 @@ date_addmonths(date *ret, date *v, int *delta)
 			date_adddays(ret, ret, &x);
 		}
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-/* returns the date that comes a number of day after 'v' (or before iff *delta < 0). */
-static inline int
+/* returns the date that comes a number of day after 'v' (or before
+ * iff *delta < 0). */
+static inline str
 date_adddays(date *ret, date *v, int *delta)
 {
 	lng min = DATE_MIN, max = DATE_MAX;
@@ -2469,26 +2432,14 @@ date_adddays(date *ret, date *v, int *delta)
 	} else {
 		*ret = *v + *delta;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 
-
-/* returns the number of days between 'val1' and 'val2'. */
-static inline int
-date_diff(int *ret, date *v1, date *v2)
-{
-	if (*v1 == date_nil || *v2 == date_nil) {
-		*ret = int_nil;
-	} else {
-		*ret = (int) (*v1 - *v2);
-	}
-	return GDK_SUCCEED;
-}
 
 /* returns the timestamp that comes 'milliseconds' after 'value'. */
-static inline int
+static inline str
 timestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 {
 	if (!ts_isnil(*v) && *msecs != lng_nil) {
@@ -2512,12 +2463,12 @@ timestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 	} else {
 		*ret = *timestamp_nil;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 
 /* returns the number of milliseconds between 'val1' and 'val2'. */
-int
+static str
 timestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 {
 	if (ts_isnil(*v1) || ts_isnil(*v2)) {
@@ -2525,44 +2476,30 @@ timestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 	} else {
 		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-
-/* return whether DST holds in the tzone at a certain point of time. */
-static inline int
-timestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
-{
-	*ret = FALSE;
-
-	if (tz_isnil(*z)) {
-		*ret = bit_nil;
-	} else if (z->dst) {
-		timestamp tmp;
-
-		if (timestamp_inside(&tmp, p, z, (lng) 0)) {
-			*ret = TRUE;
-		}
-	}
-	return GDK_SUCCEED;
-}
 
 /* create a DST start/end date rule. */
-static inline int
+static inline str
 rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 {
 	ret->asint = int_nil;
-	if (*month >= 1 && *month <= 12 && ABS(*weekday) <= 7 && *minutes >= 0 && *minutes < 24 * 60 && ABS(*day) >= 1 && ABS(*day) <= NODAYS[*month] && (*weekday || *day > 0)) {
+	if (*month != int_nil && *month >= 1 && *month <= 12 &&
+		*weekday != int_nil && ABS(*weekday) <= 7 &&
+		*minutes != int_nil && *minutes >= 0 && *minutes < 24 * 60 &&
+		*day != int_nil && ABS(*day) >= 1 && ABS(*day) <= NODAYS[*month] &&
+		(*weekday || *day > 0)) {
 		ret->s.month = *month;
 		ret->s.day = DAY_ZERO + *day;
 		ret->s.weekday = WEEKDAY_ZERO + *weekday;
 		ret->s.minutes = *minutes;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* create a tzone as a simple hour difference from GMT. */
-static inline int
+static inline str
 tzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 {
 	*ret = *tzone_nil;
@@ -2572,11 +2509,11 @@ tzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 		ret->dst_start = get_rule(*start);
 		ret->dst_end = get_rule(*end);
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* create a tzone as an hour difference from GMT and a DST. */
-static inline int
+static inline str
 tzone_create(tzone *ret, int *minutes)
 {
 	*ret = *tzone_nil;
@@ -2584,147 +2521,9 @@ tzone_create(tzone *ret, int *minutes)
 		set_offset(ret, *minutes);
 		ret->dst = FALSE;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-/* extract month from rule. */
-static inline int
-rule_extract_month(int *ret, rule *r)
-{
-	*ret = (r->asint == int_nil) ? int_nil : r->s.month;
-	return GDK_SUCCEED;
-}
-
-/* extract day from rule. */
-static inline int
-rule_extract_day(int *ret, rule *r)
-{
-	*ret = (r->asint == int_nil) ? int_nil : r->s.day - DAY_ZERO;
-	return GDK_SUCCEED;
-}
-
-/* extract weekday from rule. */
-static inline int
-rule_extract_weekday(int *ret, rule *r)
-{
-	*ret = (r->asint == int_nil) ? int_nil : r->s.weekday - WEEKDAY_ZERO;
-	return GDK_SUCCEED;
-}
-
-/* extract minutes from rule. */
-static inline int
-rule_extract_minutes(int *ret, rule *r)
-{
-	*ret = (r->asint == int_nil) ? int_nil : r->s.minutes;
-	return GDK_SUCCEED;
-}
-
-/* extract rule that determines start of DST from tzone. */
-static inline int
-tzone_extract_start(rule *ret, tzone *t)
-{
-	if (tz_isnil(*t) || !t->dst) {
-		ret->asint = int_nil;
-	} else {
-		set_rule(*ret, t->dst_start);
-	}
-	return GDK_SUCCEED;
-}
-
-/* extract rule that determines end of DST from tzone. */
-static inline int
-tzone_extract_end(rule *ret, tzone *t)
-{
-	if (tz_isnil(*t) || !t->dst) {
-		ret->asint = int_nil;
-	} else {
-		set_rule(*ret, t->dst_end);
-	}
-	return GDK_SUCCEED;
-}
-
-/* extract number of minutes that tzone is offset wrt GMT. */
-static inline int
-tzone_extract_minutes(int *ret, tzone *t)
-{
-	*ret = (tz_isnil(*t)) ? int_nil : get_offset(t);
-	return GDK_SUCCEED;
-}
-
-static inline int
-date_sub_sec_interval_wrap(date *ret, date *t, int *sec)
-{
-	if (*sec > 0) {
-		int delta = -(*sec / 86400);
-
-		return date_adddays(ret, t, &delta);
-	}
-
-	return GDK_SUCCEED;
-}
-static inline int
-date_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
-{
-	if (*msec > 0) {
-		int delta = (int) -(*msec / 86400000);
-
-		return date_adddays(ret, t, &delta);
-	}
-
-	return GDK_SUCCEED;
-}
-
-static inline int
-date_add_sec_interval_wrap(date *ret, date *t, int *sec)
-{
-	if (*sec > 0) {
-		int delta = *sec / 86400;
-
-		return date_adddays(ret, t, &delta);
-	}
-
-	return GDK_SUCCEED;
-}
-static inline int
-date_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
-{
-	if (*msec > 0) {
-		int delta = (int) (*msec / 86400000);
-
-		return date_adddays(ret, t, &delta);
-	}
-
-	return GDK_SUCCEED;
-}
-
-static inline int
-date_sub_month_interval_wrap(date *ret, date *t, int *months)
-{
-	return date_addmonths(ret, t, months);
-}
-
-/* compute the date from a rule in a certain year. */
-static inline int
-compute_rule_foryear(date *ret, rule *val, int *year)
-{
-	if (*(int *) val == int_nil || *year < YEAR_MIN || *year > YEAR_MAX) {
-		*ret = date_nil;
-	} else {
-		*ret = compute_rule(val, *year);
-	}
-	return GDK_SUCCEED;
-}
-
-@= compare
-static inline int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
-{
-	if (*val1 == @1_nil || *val2 == @1_nil)
-		*retval = bit_nil;
-	else
-		*retval = *val1 @3 *val2;
-	return GDK_SUCCEED;
-}
-@
 @h
 #define dateEQ(X,Y,Z) *X = *Y == *Z
 #define dateNEQ(X,Y,Z) *X = *Y != *Z
@@ -2740,104 +2539,6 @@ static inline int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 #define daytimeGT(X,Y,Z) *X = *Y > *Z
 #define daytimeGE(X,Y,Z) *X = *Y >= *Z
 @c
-@:compare(date,EQ,==)@
-@:compare(date,NE,!=)@
-@:compare(date,LT,<)@
-@:compare(date,GT,>)@
-@:compare(date,LE,<=)@
-@:compare(date,GE,>=)@
-@:compare(daytime,EQ,==)@
-@:compare(daytime,NE,!=)@
-@:compare(daytime,LT,<)@
-@:compare(daytime,GT,>)@
-@:compare(daytime,LE,<=)@
-@:compare(daytime,GE,>=)@
-
-static inline int
-timestamp_isnil_internal(bit *retval, timestamp *val)
-{
-	*retval = ts_isnil(*val);
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_EQ(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days == val2->days && val1->msecs == val2->msecs;
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_NE(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days != val2->days || val1->msecs != val2->msecs;
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_LT(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs < val2->msecs);
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_LE(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs <= val2->msecs);
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_GT(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs > val2->msecs);
-	return GDK_SUCCEED;
-}
-
-static inline int
-timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
-	return GDK_SUCCEED;
-}
-
-static inline int
-CMDmsec(lng *r)
-{
-#ifdef HAVE_GETTIMEOFDAY
-        struct timeval tp;
-
-        gettimeofday(&tp, NULL);
-        *r = ((lng) (tp.tv_sec)) * LL_CONSTANT(1000) + (lng) tp.tv_usec / LL_CONSTANT(1000);
-#else
-#ifdef HAVE_FTIME
-        struct timeb tb;
-
-        ftime(&tb);
-        *r = ((lng) (tb.time)) * LL_CONSTANT(1000) + ((lng) tb.millitm);
-#endif
-#endif
-	return GDK_SUCCEED;
-}
 
 union lng_tzone {
 	lng lval;
@@ -3043,10 +2744,7 @@ MTIMEprelude(void)
 		@:TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT)@
 	}
 	msg = "West/Europe";
-	if ((msg = MTIMEtimezone(&tz, &msg)) != MAL_SUCCEED)
-		return msg;
-	tzone_set_local(&tz);
-	return MAL_SUCCEED;
+	return MTIMEtimezone(&tz, &msg);
 }
 
 
@@ -3060,37 +2758,38 @@ MTIMEepilogue(void)
 str
 MTIMEsynonyms(bit *allow)
 {
-	monettime_synonyms(allow);
+	if (*allow != bit_nil)
+		synonyms = *allow;
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEoldduration(int *ndays, str *s)
 {
-	oldduration(ndays, *s);
-	return MAL_SUCCEED;
+	return oldduration(ndays, *s);
 }
 
 str
 MTIMEolddate(date *d, str *buf)
 {
-	olddate(d, *buf);
-	return MAL_SUCCEED;
+	return olddate(d, *buf);
 }
 
 str
-MTIMEtimezone(tzone *z, str *name)
+MTIMEtimezone(tzone *ret, str *name)
 {
 	BUN p;
 	str s = *name;
+	tzone *z;
+	BATiter tzi;
 
-	if (BUNfnd(timezones, s) == BUN_NONE)
-		s = "GMT";
-	if ((p = BUNfnd(timezones, s)) != BUN_NONE){
-		BATiter tzi = bat_iterator(timezones);
-		z = (tzone*)BUNtail(tzi,p);
-		tzone_set_local(z);
-	}
+	if ((p = BUNfnd(timezones, s)) == BUN_NONE)
+		throw(MAL, "mtime.setTimezone", "unknown timezone");
+	tzi = bat_iterator(timezones);
+	z = (tzone*)BUNtail(tzi,p);
+	if ((s = tzone_set_local(z)) != MAL_SUCCEED)
+		return s;
+	*ret = *z;
 	return MAL_SUCCEED;
 }
 
@@ -3098,52 +2797,53 @@ str
 MTIMEtzone_set_local(int res, tzone *z)
 {
 	(void) res;		/* fool compilers */
-	tzone_set_local(z);
-	return MAL_SUCCEED;
+	return tzone_set_local(z);
 }
 
 str
 MTIMEtzone_get_local(tzone *z)
 {
-	tzone_get_local(z);
+	*z = tzone_local;
 	return MAL_SUCCEED;
 }
 
-str 
+str
 MTIMElocal_timezone(lng *res)
 {
 	tzone z;
 
-	tzone_get_local(&z);
+	MTIMEtzone_get_local(&z);
 	*res = get_offset(&z);
 	return MAL_SUCCEED;
 }
 
+/* Returns month number [1-12] from a string (or nil if does not match any). */
 str
 MTIMEmonth_from_str(int *ret, str *month)
 {
-	month_from_str(ret, *month);
+	parse_substr(ret, *month, 3, MONTHS, 12);
 	return MAL_SUCCEED;
 }
 
+/* Returns month name from a number between [1-7], str(nil) otherwise. */
 str
 MTIMEmonth_to_str(str *ret, int *month)
 {
-	month_to_str(ret, month);
+	*ret = GDKstrdup(MONTHS[(*month < 1 || *month > 12) ? 0 : *month]);
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEday_from_str(int *ret, str *day)
 {
-	day_from_str(ret, *day);
-	return MAL_SUCCEED;
+	return day_from_str(ret, *day);
 }
 
+/* Returns day name from a number between [1-7], str(nil) otherwise. */
 str
 MTIMEday_to_str(str *ret, int *day)
 {
-	day_to_str(ret, day);
+	*ret = GDKstrdup(DAYS[(*day < 1 || *day > 7) ? 0 : *day]);
 	return MAL_SUCCEED;
 }
 
@@ -3172,16 +2872,21 @@ MTIMEdate_fromstr(date *ret, str *s)
 	int len = 0;
 	date *d = 0;
 
+	if (strcmp(*s, "nil") == 0) {
+		*ret = date_nil;
+		return MAL_SUCCEED;
+	}
 	date_fromstr(*s, &len, &d);
 	*ret = *d;
 	GDKfree(d);
 	return MAL_SUCCEED;
 }
 
+/* creates a date from (day,month,year) parameters */
 str
 MTIMEdate_create(date *ret, int *year, int *month, int *day)
 {
-	date_create(ret, year, month, day);
+	*ret = todate(*day, *month, *year);
 	return MAL_SUCCEED;
 }
 
@@ -3200,8 +2905,7 @@ MTIMEdaytime_tostr(str *ret, daytime *d)
 str
 MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 {
-	daytime_create(ret, hour, min, sec, msec);
-	return MAL_SUCCEED;
+	return daytime_create(ret, hour, min, sec, msec);
 }
 
 str
@@ -3209,6 +2913,11 @@ MTIMEtimestamp_fromstr(timestamp *ret, str *d)
 {
 	int len = (int) strlen(*d);
 
+	if (strcmp(*d, "nil") == 0) {
+		ret->msecs = daytime_nil;
+		ret->days = date_nil;
+		return MAL_SUCCEED;
+	}
 	timestamp_fromstr(*d, &len, &ret);
 	return MAL_SUCCEED;
 }
@@ -3223,8 +2932,7 @@ MTIMEtimestamp_timestamp(timestamp *d, timestamp *s)
 str
 MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 {
-	timestamp_create(ret, d, t, z);
-	return MAL_SUCCEED;
+	return timestamp_create(ret, d, t, z);
 }
 
 str
@@ -3243,85 +2951,73 @@ MTIMEtimestamp_create_from_date(timestamp *ret, date *d)
 str
 MTIMEdate_extract_year(int *ret, date *v)
 {
-	date_extract_year(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_year(ret, v);
 }
 
 str
 MTIMEdate_extract_month(int *ret, date *v)
 {
-	date_extract_month(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_month(ret, v);
 }
 
 str
 MTIMEdate_extract_day(int *ret, date *v)
 {
-	date_extract_day(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_day(ret, v);
 }
 
 str
 MTIMEdate_extract_dayofyear(int *ret, date *v)
 {
-	date_extract_dayofyear(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_dayofyear(ret, v);
 }
 
 str
 MTIMEdate_extract_weekofyear(int *ret, date *v)
 {
-	date_extract_weekofyear(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_weekofyear(ret, v);
 }
 
 str
 MTIMEdate_extract_dayofweek(int *ret, date *v)
 {
-	date_extract_dayofweek(ret, v);
-	return MAL_SUCCEED;
+	return date_extract_dayofweek(ret, v);
 }
 
 str
 MTIMEdaytime_extract_hours(int *ret, daytime *v)
 {
-	daytime_extract_hours(ret, v);
-	return MAL_SUCCEED;
+	return daytime_extract_hours(ret, v);
 }
 
 str
 MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 {
-	daytime_extract_minutes(ret, v);
-	return MAL_SUCCEED;
+	return daytime_extract_minutes(ret, v);
 }
 
 str
 MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 {
-	daytime_extract_seconds(ret, v);
-	return MAL_SUCCEED;
+	return daytime_extract_seconds(ret, v);
 }
 
 str
 MTIMEdaytime_extract_sql_seconds(int *ret, daytime *v)
 {
-	daytime_extract_sql_seconds(ret, v);
-	return MAL_SUCCEED;
+	return daytime_extract_sql_seconds(ret, v);
 }
 
 str
 MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 {
-	daytime_extract_milliseconds(ret, v);
-	return MAL_SUCCEED;
+	return daytime_extract_milliseconds(ret, v);
 }
 
 str
 MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 {
-	timestamp_extract_daytime(ret, t, z);
-	return MAL_SUCCEED;
+	return timestamp_extract_daytime(ret, t, z);
 }
 
 str
@@ -3333,8 +3029,7 @@ MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t)
 str
 MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z)
 {
-	timestamp_extract_date(ret, t, z);
-	return MAL_SUCCEED;
+	return timestamp_extract_date(ret, t, z);
 }
 
 str
@@ -3343,52 +3038,87 @@ MTIMEtimestamp_extract_date_default(date *ret, timestamp *t)
 	return MTIMEtimestamp_extract_date(ret, t, &tzone_local);
 }
 
+/* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
 str
 MTIMEdate_addyears(date *ret, date *v, int *delta)
 {
-	date_addyears(ret, v, delta);
+	if (*v == date_nil || *delta == int_nil) {
+		*ret = date_nil;
+	} else {
+		int d, m, y, x, z = *delta;
+
+		fromdate((int) *v, &d, &m, &y);
+		if (m >= 3) {
+			y++;
+		}
+		*ret = *v;
+		while (z > 0) {
+			x = YEARDAYS(y);
+			date_adddays(ret, ret, &x);
+			z--;
+			y++;
+		}
+		while (z < 0) {
+			z++;
+			y--;
+			x = -YEARDAYS(y);
+			date_adddays(ret, ret, &x);
+		}
+	}
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEdate_adddays(date *ret, date *v, int *delta)
 {
-	date_adddays(ret, v, delta);
-	return MAL_SUCCEED;
+	return date_adddays(ret, v, delta);
 }
 
 str
 MTIMEdate_addmonths(date *ret, date *v, int *delta)
 {
-	date_addmonths(ret, v, delta);
-	return MAL_SUCCEED;
+	return date_addmonths(ret, v, delta);
 }
 
+/* returns the number of days between 'val1' and 'val2'. */
 str
 MTIMEdate_diff(int *ret, date *v1, date *v2)
 {
-	date_diff(ret, v1, v2);
+	if (*v1 == date_nil || *v2 == date_nil) {
+		*ret = int_nil;
+	} else {
+		*ret = (int) (*v1 - *v2);
+	}
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 {
-	timestamp_add(ret, v, msecs);
-	return MAL_SUCCEED;
+	return timestamp_add(ret, v, msecs);
 }
 
 str
 MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 {
-	timestamp_diff(ret, v1, v2);
-	return MAL_SUCCEED;
+	return timestamp_diff(ret, v1, v2);
 }
 
+/* return whether DST holds in the tzone at a certain point of time. */
 str
 MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
 {
-	timestamp_inside_dst(ret, p, z);
+	*ret = FALSE;
+
+	if (tz_isnil(*z)) {
+		*ret = bit_nil;
+	} else if (z->dst) {
+		timestamp tmp;
+
+		if (timestamp_inside(&tmp, p, z, (lng) 0)) {
+			*ret = TRUE;
+		}
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3404,7 +3134,7 @@ MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w)
 {
 	if (ts_isnil(*v) || ts_isnil(*w))
 		*ret = *timestamp_nil;
-	else 
+	else
 	if( v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
 		*ret= *v;
 	else
@@ -3416,7 +3146,7 @@ MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
 {
 	if (ts_isnil(*v) || ts_isnil(*w))
 		*ret = *timestamp_nil;
-	else 
+	else
 	if( !( v->days < w->days || (v->days == w->days && v->msecs < w->msecs)))
 		*ret= *v;
 	else
@@ -3538,6 +3268,10 @@ MTIMErule_fromstr(rule *ret, str *s)
 	int len = 0;
 	rule *d = 0;
 
+	if (strcmp(*s, "nil") == 0) {
+		ret->asint = int_nil;
+		return MAL_SUCCEED;
+	}
 	rule_fromstr(*s, &len, &d);
 	*ret = *d;
 	GDKfree(d);
@@ -3547,22 +3281,19 @@ MTIMErule_fromstr(rule *ret, str *s)
 str
 MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 {
-	rule_create(ret, month, day, weekday, minutes);
-	return MAL_SUCCEED;
+	return rule_create(ret, month, day, weekday, minutes);
 }
 
 str
 MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 {
-	tzone_create_dst(ret, minutes, start, end);
-	return MAL_SUCCEED;
+	return tzone_create_dst(ret, minutes, start, end);
 }
 
 str
 MTIMEtzone_create(tzone *ret, int *minutes)
 {
-	tzone_create(ret, minutes);
-	return MAL_SUCCEED;
+	return tzone_create(ret, minutes);
 }
 
 str
@@ -3572,93 +3303,126 @@ MTIMEtzone_isnil(bit *retval, tzone *val)
     return MAL_SUCCEED;
 }
 
+/* extract month from rule. */
 str
 MTIMErule_extract_month(int *ret, rule *r)
 {
-	rule_extract_month(ret, r);
+	*ret = (r->asint == int_nil) ? int_nil : r->s.month;
 	return MAL_SUCCEED;
 }
 
+/* extract day from rule. */
 str
 MTIMErule_extract_day(int *ret, rule *r)
 {
-	rule_extract_day(ret, r);
+	*ret = (r->asint == int_nil) ? int_nil : r->s.day - DAY_ZERO;
 	return MAL_SUCCEED;
 }
 
+/* extract weekday from rule. */
 str
 MTIMErule_extract_weekday(int *ret, rule *r)
 {
-	rule_extract_weekday(ret, r);
+	*ret = (r->asint == int_nil) ? int_nil : r->s.weekday - WEEKDAY_ZERO;
 	return MAL_SUCCEED;
 }
 
+/* extract minutes from rule. */
 str
 MTIMErule_extract_minutes(int *ret, rule *r)
 {
-	rule_extract_minutes(ret, r);
+	*ret = (r->asint == int_nil) ? int_nil : r->s.minutes;
 	return MAL_SUCCEED;
 }
 
+/* extract rule that determines start of DST from tzone. */
 str
 MTIMEtzone_extract_start(rule *ret, tzone *t)
 {
-	tzone_extract_start(ret, t);
+	if (tz_isnil(*t) || !t->dst) {
+		ret->asint = int_nil;
+	} else {
+		set_rule(*ret, t->dst_start);
+	}
 	return MAL_SUCCEED;
 }
 
+/* extract rule that determines end of DST from tzone. */
 str
 MTIMEtzone_extract_end(rule *ret, tzone *t)
 {
-	tzone_extract_end(ret, t);
+	if (tz_isnil(*t) || !t->dst) {
+		ret->asint = int_nil;
+	} else {
+		set_rule(*ret, t->dst_end);
+	}
 	return MAL_SUCCEED;
 }
 
+/* extract number of minutes that tzone is offset wrt GMT. */
 str
 MTIMEtzone_extract_minutes(int *ret, tzone *t)
 {
-	tzone_extract_minutes(ret, t);
+	*ret = (tz_isnil(*t)) ? int_nil : get_offset(t);
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 {
-	date_sub_sec_interval_wrap(ret, t, sec);
+	if (*sec > 0) {
+		int delta = -(*sec / 86400);
+
+		return date_adddays(ret, t, &delta);
+	}
+
 	return MAL_SUCCEED;
 }
 str
 MTIMEdate_sub_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
 {
-	date_sub_msec_interval_lng_wrap(ret, t, msec);
+	if (*msec > 0) {
+		int delta = (int) -(*msec / 86400000);
+
+		return date_adddays(ret, t, &delta);
+	}
+
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
 {
-	date_add_sec_interval_wrap(ret, t, sec);
+	if (*sec > 0) {
+		int delta = *sec / 86400;
+
+		return date_adddays(ret, t, &delta);
+	}
+
 	return MAL_SUCCEED;
 }
 str
 MTIMEdate_add_msec_interval_lng_wrap(date *ret, date *t, lng *msec)
 {
-	date_add_msec_interval_lng_wrap(ret, t, msec);
+	if (*msec > 0) {
+		int delta = (int) (*msec / 86400000);
+
+		return date_adddays(ret, t, &delta);
+	}
+
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEtimestamp_add_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec)
 {
-	timestamp_add(ret, t, msec);
-	return MAL_SUCCEED;
+	return timestamp_add(ret, t, msec);
 }
 str
 MTIMEtimestamp_sub_msec_interval_lng_wrap(timestamp *ret, timestamp *t, lng *msec)
 {
 	lng Msec= *msec * -1;
-	timestamp_add(ret, t, &Msec);
-	return MAL_SUCCEED;
+	return timestamp_add(ret, t, &Msec);
 }
 str
 MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, timestamp *v, int *months)
@@ -3668,8 +3432,7 @@ MTIMEtimestamp_add_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 	timestamp_extract_daytime(&t, v, &tzone_local);
 	timestamp_extract_date(&d, v, &tzone_local);
 	date_addmonths(&d, &d, months);
-	timestamp_create(ret, &d, &t, &tzone_local);
-	return MAL_SUCCEED;
+	return timestamp_create(ret, &d, &t, &tzone_local);
 }
 str
 MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *v, int *months)
@@ -3680,35 +3443,31 @@ MTIMEtimestamp_sub_month_interval_wrap(timestamp *ret, timestamp *v, int *months
 	timestamp_extract_daytime(&t, v, &tzone_local);
 	timestamp_extract_date(&d, v, &tzone_local);
 	date_addmonths(&d, &d, &m);
-	timestamp_create(ret, &d, &t, &tzone_local);
-	return MAL_SUCCEED;
+	return timestamp_create(ret, &d, &t, &tzone_local);
 }
 
 str
 MTIMEtime_add_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
 {
 	lng s= *mseconds;
-	daytime_add(ret, t, &s);
-	return MAL_SUCCEED;
+	return daytime_add(ret, t, &s);
 }
 str
 MTIMEtime_sub_msec_interval_wrap(daytime *ret, daytime *t, lng *mseconds)
 {
 	lng s= -1 * *mseconds;
-	daytime_add(ret, t, &s);
-	return MAL_SUCCEED;
+	return daytime_add(ret, t, &s);
 }
 
-str
-MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months)
-{
-	return MTIMEdate_addmonths(ret, t, months);
-}
-
+/* compute the date from a rule in a certain year. */
 str
 MTIMEcompute_rule_foryear(date *ret, rule *val, int *year)
 {
-	compute_rule_foryear(ret, val, year);
+	if (*(int *) val == int_nil || *year < YEAR_MIN || *year > YEAR_MAX) {
+		*ret = date_nil;
+	} else {
+		*ret = compute_rule(val, *year);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3730,7 +3489,14 @@ MTIMEtzone_fromstr(tzone *ret, str *s)
 	int len = 0;
 	tzone *d = 0;
 
-	tzone_fromstr(*s, &len, &d);
+	if (strcmp(*s, "nil") == 0) {
+		*ret = *tzone_nil;
+		return MAL_SUCCEED;
+	}
+	if (tzone_fromstr(*s, &len, &d) == 0) {
+		GDKfree(d);
+		throw(MAL, "mtime.timezone", "syntax error");
+	}
 	*ret = *d;
 	GDKfree(d);
 	return MAL_SUCCEED;
@@ -3742,7 +3508,14 @@ MTIMEdaytime_fromstr(daytime *ret, str *s)
 	int len = 0;
 	daytime *d = 0;
 
-	daytime_fromstr(*s, &len, &d);
+	if (strcmp(*s, "nil") == 0) {
+		*ret = daytime_nil;
+		return MAL_SUCCEED;
+	}
+	if (daytime_fromstr(*s, &len, &d) == 0) {
+		GDKfree(d);
+		throw(MAL, "mtime.daytime", "syntax error");
+	}
 	*ret = *d;
 	GDKfree(d);
 	return MAL_SUCCEED;
@@ -3755,7 +3528,10 @@ MTIMEdaytime_fromstr(daytime *ret, str *s)
 str
 MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms)
 {
-	*ret = ((lng) *ms) + 1000 * (*s + 60 * (*m + 60 * (*h + 24 * *d)));
+	if (*d == int_nil || *h == int_nil || *m == int_nil || *s == int_nil || *ms == int_nil)
+		*ret = lng_nil;
+	else
+		*ret = ((lng) *ms) + 1000 * (*s + 60 * (*m + 60 * (*h + 24 * *d)));
 	return MAL_SUCCEED;
 }
 
@@ -3764,14 +3540,13 @@ MTIMEdaytime1(daytime *ret, int *h)
 {
 	int m = 0, s = 0, ms = 0;
 
-	daytime_create(ret, h, &m, &s, &ms);
-	return MAL_SUCCEED;
+	return daytime_create(ret, h, &m, &s, &ms);
 }
 
 str
 MTIMEsecs2daytime(daytime *ret, lng *s)
 {
-	*ret = (daytime)((*s)*1000);
+	*ret = (daytime) ((*s) * 1000);
 	return MAL_SUCCEED;
 }
 
@@ -3780,8 +3555,7 @@ MTIMEdaytime2(daytime *ret, int *h, int *m)
 {
 	int s = 0, ms = 0;
 
-	daytime_create(ret, h, m, &s, &ms);
-	return MAL_SUCCEED;
+	return daytime_create(ret, h, m, &s, &ms);
 }
 
 str
@@ -3789,8 +3563,7 @@ MTIMEdaytime3(daytime *ret, int *h, int *m, int *s)
 {
 	int ms = 0;
 
-	daytime_create(ret, h, m, s, &ms);
-	return MAL_SUCCEED;
+	return daytime_create(ret, h, m, s, &ms);
 }
 
 str
@@ -3801,11 +3574,13 @@ MTIMEunix_epoch(timestamp *ret)
 	str s = "GMT";
 	daytime d1;
 	tzone d2;
+	str e;
 
-	daytime_create(&d1, &zero, &zero, &zero, &zero);
-	MTIMEtzone_fromstr(&d2, &s);
-	timestamp_create(ret, &d0, &d1, &d2);
-	return MAL_SUCCEED;
+	if ((e = daytime_create(&d1, &zero, &zero, &zero, &zero)) != MAL_SUCCEED)
+		return e;
+	if ((e = MTIMEtzone_fromstr(&d2, &s)) != MAL_SUCCEED)
+		return e;
+	return timestamp_create(ret, &d0, &d1, &d2);
 }
 
 str
@@ -3826,33 +3601,46 @@ MTIMEepoch2int(int *ret, timestamp *t)
 {
 	timestamp e;
 	lng v;
+	str err;
 
-	MTIMEunix_epoch(&e);
-	timestamp_diff(&v, t, &e);
-	*ret = (int)(v / 1000);
+	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
+		return err;
+	if ((err = timestamp_diff(&v, t, &e)) != MAL_SUCCEED)
+		return err;
+	if (v == lng_nil)
+		*ret = int_nil;
+	else
+		*ret = (int) (v / 1000);
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEtimestamp(timestamp *ret, int *sec)
 {
-	timestamp e;
-	lng l = ((lng) *sec) * 1000;
+	timestamp t;
+	lng l;
+	str e;
 
-	MTIMEunix_epoch(&e);
-	timestamp_add(ret, &e, &l);
-	return MAL_SUCCEED;
+	if (*sec == int_nil) {
+		*ret = *timestamp_nil;
+		return MAL_SUCCEED;
+	}
+	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
+		return e;
+	l = ((lng) *sec) * 1000;
+	return timestamp_add(ret, &t, &l);
 }
 
 str
 MTIMEtimestamp_lng(timestamp *ret, lng *msec)
 {
-	timestamp e;
+	timestamp t;
 	lng l = *msec;
+	str e;
 
-	MTIMEunix_epoch(&e);
-	timestamp_add(ret, &e, &l);
-	return MAL_SUCCEED;
+	if ((e = MTIMEunix_epoch(&t)) != MAL_SUCCEED)
+		return e;
+	return timestamp_add(ret, &t, &l);
 }
 
 str
@@ -3861,8 +3649,7 @@ MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint)
 	int d0 = 60 * *h;
 	int d1 = d0 + *mint;
 
-	rule_create(ret, m, d, w, &d1);
-	return MAL_SUCCEED;
+	return rule_create(ret, m, d, w, &d1);
 }
 
 str
@@ -3871,20 +3658,22 @@ MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint)
 	int d;
 	int d0 = 60 * *h;
 	int d1 = d0 + *mint;
+	str e;
 
-	day_from_str(&d, *dnme);
-	rule_create(ret, m, &d, w, &d1);
-	return MAL_SUCCEED;
+	if ((e = day_from_str(&d, *dnme)) != MAL_SUCCEED)
+		return e;
+	return rule_create(ret, m, &d, w, &d1);
 }
 
 str
 MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
 {
 	int d;
+	str e;
 
-	day_from_str(&d, *dnme);
-	rule_create(ret, m, &d, w, mint);
-	return MAL_SUCCEED;
+	if ((e = day_from_str(&d, *dnme)) != MAL_SUCCEED)
+		return e;
+	return rule_create(ret, m, &d, w, mint);
 }
 
 str
@@ -3899,9 +3688,9 @@ MTIMEcurrent_date(date *d)
 	timestamp stamp;
 	str e;
 
-	if ((e = MTIMEcurrent_timestamp(&stamp)) == MAL_SUCCEED)
-		e = MTIMEtimestamp_extract_date_default(d, &stamp);
-	return e;
+	if ((e = MTIMEcurrent_timestamp(&stamp)) != MAL_SUCCEED)
+		return e;
+	return MTIMEtimestamp_extract_date_default(d, &stamp);
 }
 
 str
@@ -3910,110 +3699,145 @@ MTIMEcurrent_time(daytime *t)
 	timestamp stamp;
 	str e;
 
-	if ((e = MTIMEcurrent_timestamp(&stamp)) == MAL_SUCCEED)
-		e = MTIMEtimestamp_extract_daytime_default(t, &stamp);
-	return e;
+	if ((e = MTIMEcurrent_timestamp(&stamp)) != MAL_SUCCEED)
+		return e;
+	return MTIMEtimestamp_extract_daytime_default(t, &stamp);
 }
+
 /* more SQL extraction utilities */
 str
 MTIMEtimestamp_year(int *ret, timestamp *t)
 {
 	date d;
-	timestamp_extract_date(&d, t, &tzone_local);
-	date_extract_year(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return date_extract_year(ret, &d);
 }
 str
 MTIMEtimestamp_month(int *ret, timestamp *t)
 {
 	date d;
-	timestamp_extract_date(&d, t, &tzone_local);
-	date_extract_month(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return date_extract_month(ret, &d);
 }
 str
 MTIMEtimestamp_day(int *ret, timestamp *t)
 {
 	date d;
-	timestamp_extract_date(&d, t, &tzone_local);
-	date_extract_day(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return date_extract_day(ret, &d);
 }
 str
 MTIMEtimestamp_hours(int *ret, timestamp *t)
 {
 	daytime d;
-	timestamp_extract_daytime(&d, t, &tzone_local);
-	daytime_extract_hours(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return daytime_extract_hours(ret, &d);
 }
 str
 MTIMEtimestamp_minutes(int *ret, timestamp *t)
 {
 	daytime d;
-	timestamp_extract_daytime(&d, t, &tzone_local);
-	daytime_extract_minutes(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return daytime_extract_minutes(ret, &d);
 }
 str
 MTIMEtimestamp_seconds(int *ret, timestamp *t)
 {
 	daytime d;
-	timestamp_extract_daytime(&d, t, &tzone_local);
-	daytime_extract_seconds(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return daytime_extract_seconds(ret, &d);
 }
 str
 MTIMEtimestamp_sql_seconds(int *ret, timestamp *t)
 {
 	daytime d;
-	timestamp_extract_daytime(&d, t, &tzone_local);
-	daytime_extract_sql_seconds(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return daytime_extract_sql_seconds(ret, &d);
 }
 str
 MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 {
 	daytime d;
-	timestamp_extract_daytime(&d, t, &tzone_local);
-	daytime_extract_milliseconds(ret, &d);
-	return MAL_SUCCEED;
+	str e;
+
+	if ((e = timestamp_extract_daytime(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return daytime_extract_milliseconds(ret, &d);
 }
 
 str
 MTIMEsql_year(int *ret, int *t)
 {
-	*ret= *t/12;
+	if (*t == int_nil)
+		*ret = int_nil;
+	else
+		*ret= *t / 12;
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_month(int *ret, int *t)
 {
-	*ret= *t%12;
+	if (*t == int_nil)
+		*ret = int_nil;
+	else
+		*ret= *t % 12;
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_day(lng *ret, lng *t)
 {
-	*ret= (*t/86400000);
+	if (*t == lng_nil)
+		*ret = lng_nil;
+	else
+		*ret= *t / 86400000;
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_hours(int *ret, lng *t)
 {
-	*ret= (int)( (*t % 86400000)/3600000);
+	if (*t == lng_nil)
+		*ret = int_nil;
+	else
+		*ret= (int) ((*t % 86400000) / 3600000);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_minutes(int *ret, lng *t)
 {
-	*ret= (int)( (*t %3600000)/60000);
+	if (*t == lng_nil)
+		*ret = int_nil;
+	else
+		*ret= (int) ((*t % 3600000) / 60000);
 	return MAL_SUCCEED;
 }
 str
 MTIMEsql_seconds(int *ret, lng *t)
 {
-	*ret= (int)( (*t %60000)/1000);
+	if (*t == lng_nil)
+		*ret = int_nil;
+	else
+		*ret= (int) ((*t % 60000) / 1000);
 	return MAL_SUCCEED;
 }
 
@@ -4026,17 +3850,19 @@ MTIMEsql_seconds(int *ret, lng *t)
  */
 @= Extract
 str MTIME@1_extract_@2_bulk(int *ret, int *bid)
-{       BAT *b,*bn;
+{
+	BAT *b,*bn;
 	@3 v;
 	date d;
 	BUN p,q;
 	BATiter bi;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
+	if ((b= BATdescriptor(*bid)) == NULL)
 		 throw(MAL, "bbp.get@1", "Cannot access descriptor");
-	}
 
-	bn= BATnew(BAThtype(b),TYPE_@3, BATcount(b));
+	bn = BATnew(BAThtype(b),TYPE_@3, BATcount(b));
+	if (bn == NULL)
+		throw(MAL, "batmtime.@2", "memory allocation failure");
 
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
@@ -4060,7 +3886,19 @@ str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 str
 MTIMEmsec(lng *r)
 {
-	(void)CMDmsec(r);
+#ifdef HAVE_GETTIMEOFDAY
+        struct timeval tp;
+
+        gettimeofday(&tp, NULL);
+        *r = ((lng) (tp.tv_sec)) * LL_CONSTANT(1000) + (lng) tp.tv_usec / LL_CONSTANT(1000);
+#else
+#ifdef HAVE_FTIME
+        struct timeb tb;
+
+        ftime(&tb);
+        *r = ((lng) (tb.time)) * LL_CONSTANT(1000) + ((lng) tb.millitm);
+#endif
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -4076,14 +3914,18 @@ MTIMEmsec(lng *r)
 @:Extract(daytime,sql_seconds,int)@
 @:Extract(daytime,milliseconds,int)@
 
-str 
+str
 MTIMEstrptime(date *d, str *s, str *format)
 {
 #ifdef HAVE_STRPTIME
 	struct tm t;
-	
+
+	if (strcmp(*s, str_nil) == 0 || strcmp(*format, str_nil) == 0) {
+		*d = date_nil;
+		return MAL_SUCCEED;
+	}
 	memset(&t, 0, sizeof(struct tm));
-	if (strptime(*s, *format, &t) == NULL) 
+	if (strptime(*s, *format, &t) == NULL)
 		throw(MAL, "mtime.str_to_date", "format '%s', doesn't match date '%s'\n", *format, *s);
 	*d = todate(t.tm_mday, t.tm_mon+1, t.tm_year+1900);
 	return MAL_SUCCEED;
@@ -4099,19 +3941,23 @@ str MTIMEstrftime(str *s, date *d, str *format)
 	char buf[BUFSIZ+1];
 	size_t sz;
 	int mon, year;
-	
+
+	if (date_isnil(*d) || strcmp(*format, str_nil) == 0) {
+		*s = GDKstrdup(str_nil);
+		return MAL_SUCCEED;
+	}
 	memset(&t, 0, sizeof(struct tm));
 	fromdate( (int)*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon-1;
 	t.tm_year = year-1900;
-	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0) 
+	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz+1);
 	if (*s == NULL)
 		throw(MAL, "mtime.str_to_date", "memory allocation failure");
 	strncpy(*s, buf, sz+1);
 	return MAL_SUCCEED;
-#else 
+#else
 	throw(MAL, "mtime.str_to_date", "strptime support missing");
 #endif
 }
