@@ -966,6 +966,7 @@ TESTrenderer(MapiHdl hdl)
 		}
 		mnstr_printf(toConsole, "\t]\n");
 	}
+	fprintf(stderr, "# Timer %7ld.%03ld msec \n", (long) ((th - t0) / 1000), (long) ((th - t0) % 1000));
 }
 
 static void
@@ -1431,9 +1432,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		case Q_UPDATE:
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
-			    formatter == TESTformatter)
+			    formatter == TESTformatter) {
+				timerHumanStop();
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-			else {
+				fprintf(stderr, "# Timer %7ld.%03ld msec \n", (long) ((th - t0) / 1000), (long) ((th - t0) % 1000));
+			} else {
 				timerHumanStop();
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
