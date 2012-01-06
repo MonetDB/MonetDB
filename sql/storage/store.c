@@ -627,8 +627,10 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	cs_init(&t->triggers, (fdestroy) &trigger_destroy);
 	cs_init(&t->tables, (fdestroy) &table_destroy);
 
-	if (isTableOrArray(t))
-		store_funcs.create_del(tr, t);
+	if (isTableOrArray(t)) {
+		if (store_funcs.create_del(tr, t) != LOG_OK)
+			t->persistence = SQL_GLOBAL_TEMP;
+	}
 
 	if (bs_debug)
 		fprintf(stderr, "#\tload table %s\n", t->base.name);

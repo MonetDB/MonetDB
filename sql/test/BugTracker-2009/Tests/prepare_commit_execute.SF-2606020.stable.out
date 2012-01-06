@@ -20,16 +20,23 @@ Ready.
 #end main;
 
 
-# 15:00:14 >  
-# 15:00:14 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30796 
-# 15:00:14 >  
+# 12:41:45 >  
+# 12:41:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:41:45 >  
 
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 4,	2,	1 # length
-[ "int",	32,	0	]
-[ "clob",	0,	0	]
+#start transaction;
+#create table pce (i int, s string);
+#commit;
+#start transaction;
+#prepare insert into pce (i,s) values (?,?); 
+#prepare insert into pce (i,s) values (?,?); 
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 4,	2,	1,	0,	0,	0 # length
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#exec 2(1,'test 1');
 [ 1	]
 % sys.pce,	sys.pce # table_name
 % i,	s # name

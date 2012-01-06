@@ -18,18 +18,19 @@ stdout of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'test/BugTracker-20
 
 Ready.
 
+# 12:42:07 >  
+# 12:42:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:42:07 >  
 
-# 09:32:45 >  
-# 09:32:45 >  mclient -lsql -ftest -i -e --host=rig --port=33580 
-# 09:32:45 >  
-
-#prepare select count(*) from _tables having count(*) > ?;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 3,	2,	1 # length
-[ "wrd",	64,	0	]
-#exec 0(4);
+#prepare select count(*) from _tables having count(*) = ?;
+#prepare select count(*) from _tables having count(*) = ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	0,	2 # length
+[ "wrd",	64,	0,	"",	"",	"L1"	]
+[ "wrd",	64,	0,	NULL,	NULL,	NULL	]
+#exec 1(1);
 % ._tables # table_name
 % L1 # name
 % wrd # type

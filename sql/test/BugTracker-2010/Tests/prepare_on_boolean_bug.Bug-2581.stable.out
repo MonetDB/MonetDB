@@ -23,14 +23,17 @@ Ready.
 # 09:34:27 >  
 
 #prepare select * from skycrash where boom = ? and boom = ?;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "boolean",	1,	0	]
-[ "boolean",	1,	0	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	8,	4 # length
+[ "int",	32,	0,	"",	"skycrash",	"id"	]
+[ "boolean",	1,	0,	"",	"skycrash",	"boom"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#drop table skycrash;
 
-# 09:34:27 >  
-# 09:34:27 >  Done.
-# 09:34:27 >  
+# 12:42:05 >  
+# 12:42:05 >  "Done."
+# 12:42:05 >  
 

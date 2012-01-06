@@ -3205,7 +3205,7 @@ end main;
 [ "date",			  "command",	  "mtime",	  "(s:str):date ",															  "MTIMEdate_fromstr;"					  ]
 [ "date",			  "command",	  "mtime",	  "(X_1:void):date ",														  "MTIMEnil2date;"			  ]
 [ "date",			  "command",	  "mtime",	  "(X_1:date):date ",														  "MTIMEdate2date;"			  ]
-[ "date_add_month_interval",	  "command",	  "mtime",	  "(t:date,s:int):date ",														  "MTIMEdate_add_month_interval_wrap;"			  ]
+[ "date_add_month_interval",	  "command",	  "mtime",	  "(t:date,s:int):date ",										  "MTIMEdate_addmonths;"		  ]
 [ "date_add_msec_interval",	  "command",	  "mtime",	  "(t:date,ms:lng):date ",													  "MTIMEdate_add_msec_interval_lng_wrap;"  ]
 [ "date_add_sec_interval",	  "command",	  "mtime",	  "(t:date,s:int):date ",														  "MTIMEdate_add_sec_interval_wrap;"			  ]
 [ "date_sub_msec_interval",	  "command",	  "mtime",	  "(t:date,ms:lng):date ",													  "MTIMEdate_sub_msec_interval_lng_wrap;"  ]

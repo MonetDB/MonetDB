@@ -753,7 +753,11 @@ create_del(sql_trans *tr, sql_table *t)
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
 	(void)tr;
 	if (t->base.flag == TR_OLD && !isTempTable(t)) {
-		return load_dbat(bat, logger_find_bat(bat_logger, bat->dname));
+		log_bid bid = logger_find_bat(bat_logger, bat->dname);
+
+		if (bid)
+			return load_dbat(bat, bid);
+		ok = LOG_ERR;
 	} else if (bat->dbid && !isTempTable(t)) {
 		return new_persistent_dbat(bat);
 	} else if (!bat->dbid) {
@@ -815,7 +819,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 
 	bat->name = _STRDUP(obat->name);
 
-	assert(bat->ibid);
+	if (!bat->ibid)
+		return LOG_OK;
 	if (bat->ibid) {
 		BAT *b;
 		if (temp) {

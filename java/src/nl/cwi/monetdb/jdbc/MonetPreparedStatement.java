@@ -115,7 +115,7 @@ public class MonetPreparedStatement
 			resultSetHoldability
 		);
 
-		if (!super.execute("PREPARERESULT " + prepareQuery))
+		if (!super.execute("PREPARE " + prepareQuery))
 			throw new SQLException("Unexpected server response", "M0M10");
 
 		// cheat a bit to get the ID and the number of columns
@@ -302,7 +302,7 @@ public class MonetPreparedStatement
 	private int getColumnIdx(int colnr) throws SQLException {
 		int curcol = 0;
 		for (int i = 0; i < size; i++) {
-			if (!column[i].equals(""))
+			if (column[i] != null)
 				continue;
 			curcol++;
 			if (curcol == colnr)
@@ -350,7 +350,7 @@ public class MonetPreparedStatement
 				int cnt = 0;
 
 				for (int i = 0; i < size; i++) {
-					if (!column[i].equals(""))
+					if (column[i] != null)
 						cnt++;
 				}
 				
@@ -2192,7 +2192,7 @@ public class MonetPreparedStatement
 		// check if all columns are set and do a replace
 		int col = 0;
 		for (int i = 0; i < size; i++) {
-			if (!column[i].equals(""))
+			if (column[i] != null)
 				continue;
 			col++;
 			if (col > 1)

@@ -392,10 +392,10 @@ sql_update_dec2011( Client c, mvc *m )
 
 					if (c->type.type->eclass == EC_INTERVAL &&
 					    strcmp(c->type.type->sqlname, "sec_interval") == 0) {
-						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 2*strlen(c->base.name))
+						while (bufsize < pos + 100 + strlen(s->base.name) + strlen(t->base.name) + 3*strlen(c->base.name))
 							buf = GDKrealloc(buf, bufsize += 1024);
-						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\";\n",
-							s->base.name, t->base.name, c->base.name, c->base.name);
+						pos += snprintf(buf+pos, bufsize-pos, "update \"%s\".\"%s\" set \"%s\"=1000*\"%s\" where \"%s\" is not null;\n",
+							s->base.name, t->base.name, c->base.name, c->base.name, c->base.name);
 					}
 				}
 			}
@@ -1395,13 +1395,11 @@ SQLparser(Client c)
 		/* generate and call the MAL code */
 		if (m->emode == m_explain)
 			SQLshowPlan(c);
-		if (m->emode == m_dot)
-			SQLshowDot(c);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && m->emode != m_prepareresult && !m->caching && m->emode != m_explain && m->emode != m_dot) || s->type == st_none || m->type == Q_TRANS) {
+		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain ) || s->type == st_none || m->type == Q_TRANS) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1418,6 +1416,8 @@ SQLparser(Client c)
 
 			if (m->emode == m_inplace)
 				m->emode = m_normal;
+			if (m->emode == m_dot)
+				SQLshowDot(c);
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
@@ -1427,7 +1427,7 @@ SQLparser(Client c)
 					m->args,      /* the argument list */
 					m->argc,
 					m->scanner.key ^ m->session->schema->base.id,  /* the statement hash key */
-					(m->emode == m_prepare || m->emode == m_prepareresult) ? Q_PREPARE :
+					m->emode == m_prepare ? Q_PREPARE :
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
@@ -1446,7 +1446,7 @@ SQLparser(Client c)
 		}
 	}
 	if (be->q) {
-		if (m->emode == m_prepare || m->emode == m_prepareresult)
+		if (m->emode == m_prepare)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
@@ -1637,7 +1637,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->emode == m_prepare || m->emode == m_prepareresult){
+	if( m->emode == m_prepare){
 		goto cleanup_engine;
 	} else if (m->emode == m_explain || m->emode == m_dot) {
 		/*

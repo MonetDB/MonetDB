@@ -547,14 +547,19 @@ find_one_rel(list *rels, sql_exp *e)
 static int
 joinexp_cmp(list *rels, sql_exp *h, sql_exp *key)
 {
-	sql_rel *h_l = find_rel(rels, h->l);
-	sql_rel *h_r = find_rel(rels, h->r);
-	sql_rel *key_l = find_rel(rels, key->l);
-	sql_rel *key_r  = find_rel(rels, key->r);
+	sql_rel *h_l;
+	sql_rel *h_r;
+	sql_rel *key_l;
+	sql_rel *key_r;
 
 	assert (!h || !key || (h->type == e_cmp && key->type == e_cmp));
 	if (is_complex_exp(h->flag) || is_complex_exp(key->flag))
 		return -1;
+	h_l = find_rel(rels, h->l);
+	h_r = find_rel(rels, h->r);
+	key_l = find_rel(rels, key->l);
+	key_r  = find_rel(rels, key->r);
+
 	if (h_l == key_l && h_r == key_r)
 		return 0;
 	if (h_r == key_l && h_l == key_r)
@@ -705,8 +710,8 @@ order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 		sql_exp *e = n->data;
 
 		keys[i] = exp_keyvalue(e);
-		/* add some weigth for the selections */
-		if (e->type == e_cmp) {
+		/* add some weight for the selections */
+		if (e->type == e_cmp && !is_complex_exp(e->flag)) {
 			sql_rel *l = find_rel(rels, e->l);
 			sql_rel *r = find_rel(rels, e->r);
 
@@ -827,10 +832,12 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* find the involved relations */
 
 		/* complex expressions may touch multiple base tables 
-		 * Should be push up to extra selection.
+		 * Should be pushed up to extra selection.
 		 * */
-		l = find_one_rel(rels, cje->l);
-		r = find_one_rel(rels, cje->r);
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag)) {
+			l = find_one_rel(rels, cje->l);
+			r = find_one_rel(rels, cje->r);
+		}
 
 		if (l && r && l != r) {
 			list_remove_data(sdje, cje);
@@ -5544,7 +5551,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
-	if (gp.cnt[op_select] && (!sql->emode == m_prepare || !sql->emode == m_prepareresult)) 
+	if (gp.cnt[op_select] && !sql->emode == m_prepare) 
 		rel = rewrite(sql, rel, &rel_simplify_like_select, &changes); 
 
 	if (gp.cnt[op_select]) 

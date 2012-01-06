@@ -131,9 +131,15 @@ sql_trans_get_dependency_type(sql_trans *tr, int id, short depend_type)
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
 	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_type, &depend_type, NULL);
-	if (rid != oid_nil)	
-		return *(int *) table_funcs.column_find_value(tr, dep_dep_id, rid);
-	else return -1;
+	if (rid != oid_nil) {	
+		int r, *v = table_funcs.column_find_value(tr, dep_dep_id, rid);
+
+		r = *v;
+		_DELETE(v);
+		return r;
+	} else {
+		return -1;
+	}
 }
 
 /*It checks if there are dependency between two ID's */

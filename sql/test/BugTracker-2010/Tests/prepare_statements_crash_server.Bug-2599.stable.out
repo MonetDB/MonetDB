@@ -24,31 +24,43 @@ Ready.
 # 15:41:23 >  
 
 #prepare select * from t_2599 where a>1+?;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "tinyint",	8,	0	]
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>2*?+1;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "tinyint",	8,	0	]
+#prepare select * from t_2599 where a>2*?+1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>?+1;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "tinyint",	8,	0	]
+#prepare select * from t_2599 where a>?+1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
 #prepare select * from t_2599 where a>1+?*2;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 7,	1,	1 # length
-[ "tinyint",	8,	0	]
+#prepare select * from t_2599 where a>1+?*2;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	6,	1 # length
+[ "int",	32,	0,	"",	"t_2599",	"a"	]
+[ "int",	32,	0,	"",	"t_2599",	"b"	]
+[ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+#drop table t_2599;
 
-# 15:41:23 >  
-# 15:41:23 >  Done.
-# 15:41:23 >  
+# 12:42:06 >  
+# 12:42:06 >  "Done."
+# 12:42:06 >  
 

@@ -13,18 +13,21 @@ stdout of test 'prepare_decimal_float.SF-1675795` in directory 'test/BugTracker`
 
 Ready.
 
+# 12:37:54 >  
+# 12:37:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:37:54 >  
 
-# 16:00:53 >  
-# 16:00:53 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=32565 
-# 16:00:53 >  
-
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 9,	1,	1 # length
-[ "timestamp",	7,	0	]
-[ "decimal",	6,	4	]
-[ "decimal",	6,	4	]
+#create table xy ( time timestamp, x decimal(6,4), y decimal(6,4));
+#prepare insert into xy values (?,?,?);
+#prepare insert into xy values (?,?,?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 9,	1,	1,	0,	0,	0 # length
+[ "timestamp",	7,	0,	NULL,	NULL,	NULL	]
+[ "decimal",	6,	4,	NULL,	NULL,	NULL	]
+[ "decimal",	6,	4,	NULL,	NULL,	NULL	]
+#exec 2 (timestamp '2007-03-07 15:28:16.577', 0.6841, 0.684);
 [ 1	]
 [ 1	]
 % sys.xy,	sys.xy,	sys.xy # table_name
