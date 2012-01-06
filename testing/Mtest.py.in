@@ -1883,6 +1883,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     os.rename(corefile, os.path.join(env['GDK_DBFARM'],
                         env['TSTDB'], 'core-%s' % (TST)))
                 except:
+                    corefile = None
+            # leave a marker for TestTools
+            if corefile is None:
+                try:
+                    f = open(os.path.join(env['GDK_DBFARM'], env['TSTDB'],
+                        'crash-%s' % (TST)))
+                    f.write("crash without core file, or renaming it failed\n")
+                    f.close()
+                except:
                     pass
 
         t1 = time.time()
