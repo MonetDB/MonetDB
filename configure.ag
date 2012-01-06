@@ -2799,6 +2799,7 @@ AC_SUBST(libxml2version)
 
 dnl provide different versions of the paths derived above
 if test "${prefix}x" = "NONEx"; then
+	prefix="${ac_default_prefix}"
 	Xprefix="`$translatepath "$Qprefix"`"
 	QXprefix="`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`"
 else
