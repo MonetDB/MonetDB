@@ -1869,7 +1869,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             if corefile is None:
                 corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core.*')
                 corefile = glob.glob(corefile)
-                if corefile is not None and len(corefile) > 0 and os.path.exists(corefile[0]):
+                if corefile is not None and os.path.exists(corefile[0]):
                     corefile = corefile[0]
                 else:
                     corefile = None

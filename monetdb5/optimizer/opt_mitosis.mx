@@ -63,7 +63,7 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_support.h"
 
 #define MAXSLICES 256		/* to be refined */
-#define MINPARTCNT 1000000	/* minimal record count per partition */
+#define MINPARTCNT 100000	/* minimal record count per partition */
 @:exportOptimizer(mitosis)@
 #define OPTDEBUGmitosis  if ( optDebug & ((lng)1 <<DEBUG_OPT_MITOSIS) )
 #endif
@@ -72,6 +72,8 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
+
+#define PARTITION_THRESHOLD (wrd) threads	/* should be increased in production version */
 
 static int eligible(MalBlkPtr mb )
 {
@@ -95,10 +97,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i, j, k, limit, estimate=0, tpe, pieces=1;
 	str schema=0, table=0;
 	VarRecord low,hgh;
-	BUN slice;
+	oid slice;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
 	InstrPtr q,*old, target= 0, matq;
-	size_t argsize= 3 *2 /* or 4? */ *sizeof(lng); /* 2 arguments and a result */
+	size_t argsize= 3 *sizeof(lng); /* 2 arguments and a result */
 	int threads = GDKnr_threads ? GDKnr_threads:1;
 	ValRecord vr;
 	VarPtr loc,rows;
@@ -140,30 +142,22 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	 * For the time being we just go for pieces that fit into memory in isolation.
 	 * A fictive rowcount is derived based on argument types, such that all pieces
 	 * would fit into memory conveniently for processing. We attempt to use
-	 * not more threads than strictly needed.
+	 * not more threads then strictly needed.
 	 * Experience shows that the pieces should not be too small.
 	 * If we should limit to |threads| is still an open issue.
 	 */
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
-		r = (wrd) (monet_memory / argsize);
-		/* if data exceeds memory size,
-		 * i.e., (rowcnt*argsize > monet_memory),
-		 * i.e., (rowcnt > monet_memory/argsize = r) */
-		if (rowcnt > r && r/threads > 0)
-			/* create |pieces| > |threads| partitions such that
-			 * |threads| partitions at a time fit in memory,
-			 * i.e., (threads*(rowcnt/pieces) <= r),
-			 * i.e., (rowcnt/pieces <= r/threads),
-			 * i.e., (pieces => rowcnt/(r/threads))
-			 * (assuming that (r > threads*MINPARTCNT)) */
-			pieces = (int) (rowcnt / (r/threads)) + 1;
+		/* ensure that GDKnr_threads partitions fit into main memory */
+		r = (BUN) (monet_memory / argsize / 4);
+		if ( (r?  (int) rowcnt/r:1) < (wrd) threads && r > MINPARTCNT)
+			pieces = (r?  (int) rowcnt/r:1);
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
 			pieces = (int) MIN ( (rowcnt / MINPARTCNT) , (wrd) threads);
-		/* when testing, always aim for full parallelism, but avoid empty pieces */
+		/* when testing, split also small BATs, but avoid empty pieces */
 		FORCEMITODEBUG
 			if (pieces < threads)
 				pieces = (int) MIN ( (wrd) threads , rowcnt );
