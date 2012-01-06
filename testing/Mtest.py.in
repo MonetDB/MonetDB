@@ -50,6 +50,7 @@ import select
 #import getpass
 import Mfilter
 import fnmatch
+import glob
 
 procdebug = False
 verbose = False
@@ -1861,9 +1862,26 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             # /proc/sys/kernel/core_pattern in the future but hopefully
             # this value is kept sane
             corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core')
-            if os.path.exists(corefile):
+            if not os.path.exists(corefile):
+                corefile = None
+            # braindead engineers at RedHat decided to change the core
+            # dump name on their own (disregarding kernel settings)
+            if corefile is None:
+                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'core.*')
+                corefile = glob.glob(corefile)
+                if corefile not is None and os.path.exists(corefile[0]):
+                    corefile = corefile[0]
+                else:
+                    corefile = None
+            # FreeBSD uses processname.core
+            if corefile is None:
+                corefile = os.path.join(env['GDK_DBFARM'], env['TSTDB'], 'mserver5.core')
+                if not os.path.exists(corefile):
+                    corefile = None
+            if corefile is not None:
                 try:
-                    os.rename(corefile, '%s-%s' % (corefile, TST))
+                    os.rename(corefile, os.path.join(env['GDK_DBFARM'],
+                        env['TSTDB'], 'core-%s' % (TST)))
                 except:
                     pass
 
