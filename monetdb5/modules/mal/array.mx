@@ -80,11 +80,26 @@ function filler_(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
 	return (b4,b2);
 end filler_;
 
+pattern sum(values:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+address ARRAYtilesSum
+comment "Construct the sum over all tiles";
+
+pattern avg(values:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+address ARRAYtilesAvg
+comment "Construct the average over all tiles";
+
+# unused functions
+
 pattern map(dims:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYmap
 comment "The argument is a double set of dimension columns. The first set describes the shape
-of the target array and the second one holds the index values of interest. The result is a column
-with the oid positions of the elements in target.";
+of the target array and the second one holds the index values of interest into each dimension.
+The result is a column with the oid positions of the elements in target.";
+
+#TODO: tiles containing preceding cells of the anchor point are not handled by the current code.
+pattern tiles(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:oid]
+address ARRAYtiles
+comment "Construct the tiled cell id list using a template with relative offsets";
 
 pattern unmap(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
 address ARRAYumap
@@ -110,22 +125,9 @@ pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:bat[:oid, :any_1])
 address ARRAYreplace
 comment "Replace values in v1 at the positions determined by idx with values in v2, return the modified v1.";
 
-pattern tiles(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:oid]
-address ARRAYtiles
-comment "Construct the tiled cell id list using a template with relative offsets";
-
 command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
-
-pattern sum(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:any_2]
-address ARRAYtilesSum
-comment "Construct the sum over all tiles";
-
-pattern sum(cells:bat[:oid,:any_1], template:bat[:oid,:oid]):bat[:oid,:any_1]
-address ARRAYtilesSum
-comment "Construct the sum over all tiles, but take also care of the boundaries in each dimension,
-which is expressed in the number of eligible cells.";
 
 pattern embed(shapes:bat[:oid,:any]...):bat[:oid,:oid]
 address ARRAYembed
@@ -167,11 +169,13 @@ array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
 array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(oid)@
 @:array_defs(bte)@
@@ -664,49 +668,269 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @= tilesAggr
+# define AGGR_CLEANUP() \
+{ \
+	if (bVal) BBPreleaseref(bVal->batCacheid); \
+	for (i = 0; i < ndims; i++) { \
+		if(bDims[i]) BBPreleaseref(bDims[i]->batCacheid); \
+		if(bOffsets[i]) BBPreleaseref(bOffsets[i]->batCacheid); \
+	} \
+	if(bDims) GDKfree(bDims); \
+	if(bDimsI) GDKfree(bDimsI); \
+	if(bOffsets) GDKfree(bOffsets); \
+	if(bOffsetsI) GDKfree(bOffsetsI); \
+	if(dMin) GDKfree(dMin); \
+	if(dMax) GDKfree(dMax); \
+	if(dSize) GDKfree(dSize); \
+	if(apidx) GDKfree(apidx); \
+}
+/* 
+ * array.sum inputs:
+ *  (cell_val BAT,
+ *  dim_1...dim_n BAT, tile_member_offset_dim_1...tile_member_offset_dim_n BAT,
+ *  size_dim_1...size_dim_n)
+ */
 str
 ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *bt, *bn;
-	int *ret = (int*) getArgReference(stk,pci,0);
-	BATiter bi, br;
-	BUN p,q;
-	BUN r,s,z;
-	oid g = 0, limit;
-	@1 sum, elm;
+	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
+	BATiter bValI, *bDimsI = NULL, *bOffsetsI = NULL;
+	BUN p, q, tmpbun, r, s;
+	@1 sum = 0, elm = 0;
+	/* FIXME: this code only deal with INT dimensions */
+	int os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
+	oid tid = 0, osid = 0, vid = 0;
 
 	(void) cntxt;
 	(void) mb;
-	if ((b = BATdescriptor(*(int*)getArgReference(stk,pci,1))) == NULL) 
-		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
-	if ((bt = BATdescriptor(*(int*)getArgReference(stk,pci,2))) == NULL) {
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "array.tiles", RUNTIME_OBJECT_MISSING);
+
+	if ( (pci->argc - pci->retc - 1) % 3 != 0)
+		throw(MAL, "array.sum", "Unbalanced argument sets");
+
+	ndims = (pci->argc - pci->retc - 1) / 3;
+	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bDimsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bOffsetsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
+	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
+	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
+	apidx = (int*) GDKzalloc(sizeof(int) * ndims);
+	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
+	if(!bDims || !bDimsI || !bOffsets || !bOffsetsI || !dMin || !dMax || !dSize || !apidx || !bVal) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
+	}
+	for (i = 0; i < ndims; i++) {
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2+ndims));
+		if (!bDims[i] || !bOffsets[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
+		}
+		dSize[i] = *(int*)getArgReference(stk,pci,i+2+ndims*2);
+	}
+	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
+	bValI = bat_iterator(bVal);
+	for (i = 0; i < ndims; i++) {
+		if (bDims[i]->ttype != bOffsets[i]->ttype) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.sum", SEMANTIC_TYPE_MISMATCH);
+		}
+		bDimsI[i] = bat_iterator(bDims[i]);
+		bOffsetsI[i] = bat_iterator(bOffsets[i]);
+		BATmin(bDims[i], &(dMin[i]));
+		BATmax(bDims[i], &(dMax[i]));
 	}
 
-	bn = BATnew(TYPE_oid, TYPE_@1, TRUE);
-	bi = bat_iterator(b);
-	br = bat_iterator(bt);
-	limit= BATcount(b);
-	BATloop(b,p,q){
+	/* For each anchor piont, compute all cells belong to this tile (bVal.head
+	 * is the group nr.) and compute the SUM */
+	bRes = 	BATnew(TYPE_oid, TYPE_@1, BATcount(bVal));
+	BATloop(bVal, p, q) {
 		sum = 0;
-		g = *(oid*) BUNhead(bi,p);
-		BATloop(bt,r,s){
-			oid o = g + *(oid*) BUNhead(br,r);
-			if ( o < limit) {
-				BUNfndOID(z,bi, &o);
-				if ( z != oid_nil){
-					elm= *(@1*) BUNtail(bi, z);
-					if ( elm != @1_nil)
-						sum += elm;
+		tid = *(oid*) BUNhead(bValI, p);
+		/* get the dimension indices of the anchor point */
+		for (i = 0; i< ndims; i++) {
+			BUNfndOID(tmpbun, bDimsI[i], &tid);
+			if (tmpbun == oid_nil) {
+				AGGR_CLEANUP();
+				throw(MAL, "array.sum", "Expected values not found in BAT");
+			}
+			apidx[i] = *(int*)BUNtail(bDimsI[i], tmpbun);
+		}
+		/* loop over all sets of offsets */
+		BATloop (bOffsets[0], r, s) {
+			osid = *(oid*)BUNhead(bOffsetsI[0], r);
+			vid = 0; /* index into bVal for the value of a qualified tile member */
+			err = 0;
+			/* for the index of the anchor point on dimension d_i, check if the
+			 * resulting index is within the dimension range after having
+			 * shifted according this set of offset on dimension d_i.
+			 * If yes, update 'vid' so that we know the OID of the qualified
+			 * cell at the end; otherwise, skip.
+			 */
+			/* TODO: we can skip more.  If the j-th value bOffsets[i]
+			 * disqualifies the index on dimension d_i, we can jump to the next
+			 * of bOffsets[i] which value follows the j-th value */
+			for (i = 0; i < ndims; i++) {
+				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
+				if (tmpbun == oid_nil) {
+					AGGR_CLEANUP();
+					throw(MAL, "array.sum", "Expected values not found in BAT");
+				}
+				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
+				cidx = apidx[i] + os;
+				if (dMin[i] <= cidx && cidx <= dMax[i]) {
+					/* vid = sum_{i=0}^{(n-1)} (cidx_i * size[i]) + cidx_n */
+					vid += ((i < (ndims -1)) ? cidx * dSize[i] : cidx);
+				} else {
+					err = 1;
+					break; /* skip remaining dimensions */
+				}
+			}
+			if (!err) {
+				BUNfndOID(tmpbun, bValI, &vid);
+				if (tmpbun == oid_nil) {
+					AGGR_CLEANUP();
+					throw(MAL, "array.sum", "Expected values not found in BAT");
+				}
+				elm = *(@1*) BUNtail(bValI, tmpbun);
+				if (elm != @1_nil)
+					sum += elm;
+			}
+		}
+		BUNins(bRes, &tid, &sum, TRUE);
+	}
+	AGGR_CLEANUP();
+	BBPkeepref(*ret = bRes->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/* 
+ * array.avg inputs:
+ *  (cell_val BAT,
+ *  dim_1...dim_n BAT, tile_member_offset_dim_1...tile_member_offset_dim_n BAT,
+ *  size_dim_1...size_dim_n)
+ */
+str
+ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
+	BATiter bValI, *bDimsI = NULL, *bOffsetsI = NULL;
+	BUN p, q, tmpbun, r, s;
+	@1 sum = 0, elm = 0;
+	/* FIXME: this code only deal with INT dimensions */
+	int cnt = 0, os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
+	oid tid = 0, osid = 0, vid = 0;
+	dbl avg = 0.0;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ( (pci->argc - pci->retc - 1) % 3 != 0)
+		throw(MAL, "array.avg", "Unbalanced argument sets");
+
+	ndims = (pci->argc - pci->retc - 1) / 3;
+	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bDimsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bOffsetsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
+	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
+	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
+	apidx = (int*) GDKzalloc(sizeof(int) * ndims);
+	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
+	if(!bDims || !bDimsI || !bOffsets || !bOffsetsI || !dMin || !dMax || !dSize || !apidx || !bVal) {
+		AGGR_CLEANUP();
+		throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
+	}
+	for (i = 0; i < ndims; i++) {
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2+ndims));
+		if (!bDims[i] || !bOffsets[i]) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
+		}
+		dSize[i] = *(int*)getArgReference(stk,pci,i+2+ndims*2);
+	}
+	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
+	bValI = bat_iterator(bVal);
+	for (i = 0; i < ndims; i++) {
+		if (bDims[i]->ttype != bOffsets[i]->ttype) {
+			AGGR_CLEANUP();
+			throw(MAL, "array.avg", SEMANTIC_TYPE_MISMATCH);
+		}
+		bDimsI[i] = bat_iterator(bDims[i]);
+		bOffsetsI[i] = bat_iterator(bOffsets[i]);
+		BATmin(bDims[i], &(dMin[i]));
+		BATmax(bDims[i], &(dMax[i]));
+	}
+
+	/* For each anchor piont, compute all cells belong to this tile (bVal.head
+	 * is the group nr.) and compute the SUM */
+	bRes = 	BATnew(TYPE_oid, TYPE_dbl, BATcount(bVal));
+	BATloop(bVal, p, q) {
+		avg = 0.0; sum = 0; cnt = 0;
+		tid = *(oid*) BUNhead(bValI, p);
+		/* get the dimension indices of the anchor point */
+		for (i = 0; i< ndims; i++) {
+			BUNfndOID(tmpbun, bDimsI[i], &tid);
+			if (tmpbun == oid_nil) {
+				AGGR_CLEANUP();
+				throw(MAL, "array.avg", "Expected values not found in BAT");
+			}
+			apidx[i] = *(int*)BUNtail(bDimsI[i], tmpbun);
+		}
+		/* loop over all sets of offsets */
+		BATloop (bOffsets[0], r, s) {
+			osid = *(oid*)BUNhead(bOffsetsI[0], r);
+			vid = 0; /* index into bVal for the value of a qualified tile member */
+			err = 0;
+			/* for the index of the anchor point on dimension d_i, check if the
+			 * resulting index is within the dimension range after having
+			 * shifted according this set of offset on dimension d_i.
+			 * If yes, update 'vid' so that we know the OID of the qualified
+			 * cell at the end; otherwise, skip.
+			 */
+			/* TODO: we can skip more.  If the j-th value bOffsets[i]
+			 * disqualifies the index on dimension d_i, we can jump to the next
+			 * of bOffsets[i] which value follows the j-th value */
+			for (i = 0; i < ndims; i++) {
+				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
+				if (tmpbun == oid_nil) {
+					AGGR_CLEANUP();
+					throw(MAL, "array.avg", "Expected values not found in BAT");
+				}
+				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
+				cidx = apidx[i] + os;
+				if (dMin[i] <= cidx && cidx <= dMax[i]) {
+					/* vid = sum_{i=0}^{(n-1)} (cidx_i * size[i]) + cidx_n */
+					vid += ((i < (ndims -1)) ? cidx * dSize[i] : cidx);
+				} else {
+					err = 1;
+					break; /* skip remaining dimensions */
+				}
+			}
+			if (!err) {
+				BUNfndOID(tmpbun, bValI, &vid);
+				if (tmpbun == oid_nil) {
+					AGGR_CLEANUP();
+					throw(MAL, "array.avg", "Expected values not found in BAT");
+				}
+				elm = *(@1*) BUNtail(bValI, tmpbun);
+				if (elm != @1_nil) {
+					cnt++;
+					sum += elm;
 				}
 			}
 		}
-		BUNins(bn, &g, &sum, TRUE);
+		avg = sum * 1.0 / cnt;
+		BUNins(bRes, &tid, &avg, TRUE);
 	}
-	BBPkeepref(*ret = bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bt->batCacheid);
+	AGGR_CLEANUP();
+	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
 }
 @-
@@ -735,7 +959,27 @@ ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	case TYPE_dbl:
 		return ARRAYtilesSum_dbl(cntxt,mb,stk,pci);
 	default:
-		throw(MAL, "array.sum", "illegal type");
+		throw(MAL, "array.sum", "illegal/unsupported type");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int type = getTailType(getArgType(mb,pci,1));
+	switch(type){
+	case TYPE_sht:
+		return ARRAYtilesAvg_sht(cntxt,mb,stk,pci);
+	case TYPE_int:
+		return ARRAYtilesAvg_int(cntxt,mb,stk,pci);
+	case TYPE_lng:
+		return ARRAYtilesAvg_lng(cntxt,mb,stk,pci);
+	case TYPE_flt:
+		return ARRAYtilesAvg_flt(cntxt,mb,stk,pci);
+	case TYPE_dbl:
+		return ARRAYtilesAvg_dbl(cntxt,mb,stk,pci);
+	default:
+		throw(MAL, "array.sum", "illegal/unsupported type");
 	}
 	return MAL_SUCCEED;
 }
@@ -749,7 +993,7 @@ ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	if ( (pci->argc - pci->retc) % 2 != 0)
-		throw(MAL, "array.map", "Unbalanced index arguments");
+		throw(MAL, "array.embed", "Unbalanced index arguments");
 
 	b= (BAT**) GDKzalloc(sizeof(BAT*) * pci->argc-pci->retc);
 	if( b == NULL)
@@ -796,7 +1040,7 @@ ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreleaseref(b[n]->batCacheid);
 	GDKfree(b);
 	if( error)
-		throw(MAL,"map.embed","incomplete embedding");
+		throw(MAL,"array.embed","incomplete embedding");
 	return MAL_SUCCEED;
 }
 @-
