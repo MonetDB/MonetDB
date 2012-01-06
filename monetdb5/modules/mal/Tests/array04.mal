@@ -1,54 +1,84 @@
 # tiling operations over fixed arrays
 
-#create array v(i int dimension[0:1:6], v int default 37)
-i:= array.series(0,1,6,1,1);
-v:= array.filler(i, 37);
-io.print(i,v);
-
-#select sum(V) from V group by V[x:x+2]
-template:= array.series(0@0,1@0,2@0,1,1);
-io.print(template);
-
-g:= array.tiles(v,template);
-io.print(g);
-
-gs:= array.sum(v,template);
-io.print(gs);
+##create array v(i int dimension[0:1:6], v int default 37)
+#i:= array.series(0,1,6,1,1);
+#v:= array.filler(i, 37);
+#io.print(i,v);
+#
+##select sum(V) from V group by V[x:x+2]
+#template:= array.series(0@0,1@0,2@0,1,1);
+#io.print(template);
+#
+#g:= array.tiles(v,template);
+#io.print(g);
 
 #create array M(x int dimension[0:1:4], y int dimension[0:1:4], v int default 37);
 mx:= array.series(0,1,4,4,1);
 my:= array.series(0,1,4,1,4);
 mv:= array.filler(mx,37);
-io.print(mx,my,mv);
 
-#select sum(M) from M group by M[x:x+2][y:y+2]
-t0:= array.series(0,1,2,2,1);
-t1:= array.series(0,1,2,1,2);
+##select sum(M) from M group by M[x:x+2][y:y+2]
+#t0:= array.series(0,1,2,2,1);
+#t1:= array.series(0,1,2,1,2);
+#io.print(t0,t1);
+#
+#gs:= array.sum(mv, mx, my, t0, t1, 4, 4);
+#io.print(gs);
+#ga:= array.avg(mv, mx, my, t0, t1, 4, 4);
+#io.print(ga);
+
+#select sum(M) from M group by M[x-1:x+2][y-2:y+1]
+t0:= array.series(-1,1,2,3,1);
+t1:= array.series(-2,1,1,1,3);
 io.print(t0,t1);
 
-template:= array.map(mx,my,t0,t1);
-io.print(template);
+gs:= array.sum(mv, mx, my, t0, t1, 4, 4);
+ga:= array.avg(mv, mx, my, t0, t1, 4, 4);
+io.print(mx, my, mv, gs, ga);
 
-g:= array.tiles(mv,template);
-io.print(g);
+#create array M(x int dimension[0:1:4], y int dimension[0:1:4], v int default x*4+y);
+mv := bat.new(:oid,:int);
+mv := bat.append(mv,0);
+mv := bat.append(mv,1);
+mv := bat.append(mv,2);
+mv := bat.append(mv,3);
+mv := bat.append(mv,4);
+mv := bat.append(mv,5);
+mv := bat.append(mv,6);
+mv := bat.append(mv,7);
+mv := bat.append(mv,8);
+mv := bat.append(mv,9);
+mv := bat.append(mv,10);
+mv := bat.append(mv,11);
+mv := bat.append(mv,12);
+mv := bat.append(mv,13);
+mv := bat.append(mv,14);
+mv := bat.append(mv,15);
+gs:= array.sum(mv, mx, my, t0, t1, 4, 4);
+ga:= array.avg(mv, mx, my, t0, t1, 4, 4);
+io.print(mx, my, mv, gs, ga);
 
-gs:= array.sum(mv,template);
-io.print(gs);
+#template:= array.map(mx,my,t0,t1);
+#io.print(template);
+#
+#g:= array.tiles(mv,template);
+#io.print(g);
+#
+## first create the larger array N[-1:1:5][-1:1:5]
+#nx:= array.series(-1,1,5,6,1);
+#ny:= array.series(-1,1,5,1,6);
+#nv:= array.filler(nx,nil:int);
+#io.print(nx,ny,nv);
+#
+##derive the mapping from cell id in N into M
+#map:= array.embed(nx,ny,mx,my);
+#io.print(map);
+#rv:= array.replace(nv,map,mv);
+#io.print(rv);
+#
+##now produce the tiled sum over the enlarged one
+#template:= array.map(nx,ny,t0,t1);
+#io.print(template);
+#gs:= array.sum(nv,template);
+#io.print(gs);
 
-# first create the larger array N[-1:1:5][-1:1:5]
-nx:= array.series(-1,1,5,6,1);
-ny:= array.series(-1,1,5,1,6);
-nv:= array.filler(nx,nil:int);
-io.print(nx,ny,nv);
-
-#derive the mapping from cell id in N into M
-map:= array.embed(nx,ny,mx,my);
-io.print(map);
-rv:= array.replace(nv,map,mv);
-io.print(rv);
-
-#now produce the tiled sum over the enlarged one
-template:= array.map(nx,ny,t0,t1);
-io.print(template);
-gs:= array.sum(nv,template);
-io.print(gs);
