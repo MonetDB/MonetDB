@@ -73,8 +73,6 @@ comment "Modify the plan to exploit parallel processing on multiple cores";
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
 
-#define PARTITION_THRESHOLD (wrd) threads	/* should be increased in production version */
-
 static int eligible(MalBlkPtr mb )
 {
 	InstrPtr p;
