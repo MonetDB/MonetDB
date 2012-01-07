@@ -1678,7 +1678,8 @@ GDKinit(opt *set, int setlen)
 #ifdef NATIVE_WIN32
 	GDK_mmap_minsize = GDK_mem_maxsize_max;
 #else
-	GDK_mmap_minsize = GDK_mem_bigsize = MIN( 1<<30 , GDK_mem_maxsize_max );
+	GDK_mmap_minsize = GDK_mem_bigsize = MIN( 1<<30 , GDK_mem_maxsize_max/6 );
+	/*   per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);
@@ -1754,7 +1755,8 @@ GDKinit(opt *set, int setlen)
 #else
 	/* WARNING: This unconditionally overwrites above settings, */
 	/* incl. setting via MonetDB env. var. "gdk_mmap_minsize" ! */
-	GDK_mmap_minsize = GDK_mem_bigsize = MIN( 1<<30 , GDK_mem_maxsize_max );
+	GDK_mmap_minsize = GDK_mem_bigsize = MIN( 1<<30 , (GDK_mem_maxsize_max/6) );
+	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
 
 #ifdef HAVE_POSIX_FADVISE
