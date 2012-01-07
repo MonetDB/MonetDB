@@ -147,10 +147,18 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( (i = OPTlegAdviceInternal(mb,stk,p)) > 0 )
 		pieces = i;
 	else {
-		/* ensure that GDKnr_threads partitions fit into main memory */
-		r = (BUN) (monet_memory / argsize / 4);
-		if ( (r?  (int) rowcnt/r:1) < (wrd) threads && r > MINPARTCNT)
-			pieces = (r?  (int) rowcnt/r:1);
+		r = (wrd) (monet_memory / argsize);
+		/* if data exceeds memory size,
+		 * i.e., (rowcnt*argsize > monet_memory),
+		 * i.e., (rowcnt > monet_memory/argsize = r) */
+		if (rowcnt > r && r/threads > 0)
+			/* create |pieces| > |threads| partitions such that
+			 * |threads| partitions at a time fit in memory,
+			 * i.e., (threads*(rowcnt/pieces) <= r),
+			 * i.e., (rowcnt/pieces <= r/threads),
+			 * i.e., (pieces => rowcnt/(r/threads))
+			 * (assuming that (r > threads*MINPARTCNT)) */
+			pieces = (int) (rowcnt / (r/threads)) + 1;
 		else
 		/* exploit parallelism, but ensure minimal partition size to limit overhead */
 		if (rowcnt > MINPARTCNT)
