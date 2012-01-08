@@ -668,7 +668,9 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bid = (int *) getArgReference(stk, pci, i);
 		b = BATdescriptor(*bid);
 		if (  b && top ) {
-			if (TYPEerror(joins[top-1]->ttype, b->htype) ) {
+			if ( !(joins[top-1]->ttype == b->htype) &&
+			     !(joins[top-1]->ttype == TYPE_void && b->htype == TYPE_oid) &&
+			     !(joins[top-1]->ttype == TYPE_oid && b->htype == TYPE_void) ) {
 				b= NULL;
 				error = 1;
 			}
