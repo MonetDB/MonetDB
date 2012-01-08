@@ -305,7 +305,7 @@ end main;
 [ "restart",		  "pattern",	  "sql",		  "(sname:str,sequence:str,start:lng):lng ",						  "mvc_restart_seq;"			  ]
 [ "ra",			  "pattern",	  "sql",	  "(cmd:str,optimize:bit):void ",											  "RAstatement;"				  ]
 [ "shrink",		  "pattern",	  "sql",		  "(sch:str,tbl:str):void ",								  "SQLshrink;"				  ]
-[ "storage",			  "pattern",	  "sql",	  "() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],capacity:bat[:oid,:lng],width:bat[:oid,:int],size:bat[:oid,:lng],hashsize:bat[:oid,:lng]) ", "sql_storage;"			  ]
+[ "storage",		  "pattern",	  "sql",	  "() (schema:bat[:oid,:str],table:bat[:oid,:str],column:bat[:oid,:str],location:bat[:oid,:str],count:bat[:oid,:lng],capacity:bat[:oid,:lng],width:bat[:oid,:int],size:bat[:oid,:lng],hashsize:bat[:oid,:lng],sorted:bat[:oid,:bit]) ",					  "sql_storage;"				  ]
 [ "sql_variables",		  "pattern",	  "sql",	  "():bat[:oid,:str] ",														  "sql_variables;"			  ]
 [ "sql_environment",		  "function",	  "sql",	  "() (name:bat[:oid,:str],value:bat[:oid,:str]);",										  "nil"					  ]
 [ "single",		  "function",	  "sql",		  "(x:any_2):bat[:oid,:any_2];",							  "nil"					  ]
