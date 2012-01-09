@@ -167,8 +167,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
-			/* TODO later it maybe a list */
-			exp_print(sql, fout, e->r, depth+1, 0, 0);
+			exps_print(sql, fout, e->r, depth, alias, 1);
 		} else if (e->f) {
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
 			if (is_anti(e))
