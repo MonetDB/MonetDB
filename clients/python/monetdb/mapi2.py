@@ -176,21 +176,12 @@ class Server:
 
         if protocol == '9':
             algo = challenges[5]
-            if algo == 'SHA512':
-                password = hashlib.sha512(password).hexdigest()
-            elif algo == 'SHA384':
-                password = hashlib.sha384(password).hexdigest()
-            elif algo == 'SHA256':
-                password = hashlib.sha256(password).hexdigest()
-            elif algo == 'SHA224':
-                password = hashlib.sha224(password).hexdigest()
-            elif algo == 'SHA1':
-                password = hashlib.sha1(password).hexdigest()
-            elif algo == 'MD5':
-                password = hashlib.md5(password).hexdigest()
-            else:
-                raise NotSupportedError("The %s hash algorithm is not " +
-                    "supported" % algo)
+            try:
+                h = hashlib.new(algo)
+                h.update(password)
+                password = h.hexdigest()
+            except ValueError, e:
+                raise NotSupportedError(e.message)
         elif protocol != "8":
             raise NotSupportedError("We only speak protocol v8 and v9")
 
