@@ -3591,6 +3591,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	codeset(&cs);
 	strIconv(&filename, *fname, "UTF-8", cs);
+	GDKfree(cs);
 	len = strlen((char*)(*N));
 	GDKstrFromStr(ns=GDKmalloc(len+1), *N, len); len = 0;
 	ss = open_rastream(filename);
