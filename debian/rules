@@ -26,7 +26,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--enable-sql=yes \
 	--enable-strict=no \
 	--enable-testing=yes \
-	--with-valgrind=no \
 	--with-ant=no \
 	--with-bz2=yes \
 	--with-geos=yes \
