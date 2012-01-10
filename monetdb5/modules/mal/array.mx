@@ -686,9 +686,9 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 /* 
  * array.sum inputs:
- *  (cell_val BAT,
- *  dim_1...dim_n BAT, tile_member_offset_dim_1...tile_member_offset_dim_n BAT,
- *  size_dim_1...size_dim_n)
+ *  (cell_val:BAT,
+ *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
+ *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
  */
 str
 ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -723,13 +723,13 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
-		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2));
-		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2+ndims));
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
 			AGGR_CLEANUP();
 			throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
 		}
-		dSize[i] = *(int*)getArgReference(stk,pci,i+2+ndims*2);
+		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
 	bValI = bat_iterator(bVal);
@@ -809,9 +809,9 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* 
  * array.avg inputs:
- *  (cell_val BAT,
- *  dim_1...dim_n BAT, tile_member_offset_dim_1...tile_member_offset_dim_n BAT,
- *  size_dim_1...size_dim_n)
+ *  (cell_val:BAT,
+ *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
+ *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
  */
 str
 ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -847,13 +847,13 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
-		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2));
-		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,i+2+ndims));
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
 			AGGR_CLEANUP();
 			throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
 		}
-		dSize[i] = *(int*)getArgReference(stk,pci,i+2+ndims*2);
+		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
 	bValI = bat_iterator(bVal);
