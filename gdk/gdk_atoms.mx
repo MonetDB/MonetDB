@@ -1446,6 +1446,7 @@ fltFromStr(char *src, int *len, flt **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = flt_nil;
 		p += 3;
+		n = (int) (p - src);
 	} else {
 #ifdef HAVE_STRTOF
 		/* on overflow, strtof returns HUGE_VALF and sets
