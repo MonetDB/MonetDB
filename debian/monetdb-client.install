@@ -1,3 +1,4 @@
 debian/tmp/usr/bin/mclient usr/bin
+debian/tmp/usr/bin/mnc usr/bin
 debian/tmp/usr/bin/msqldump usr/bin
 debian/tmp/usr/bin/stethoscope usr/bin

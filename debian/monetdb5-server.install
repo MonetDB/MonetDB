@@ -1,8 +1,10 @@
 debian/tmp/usr/bin/mserver5 usr/bin
 debian/tmp/usr/lib/libmonetdb5.so.* usr/lib
 
+debian/tmp/usr/lib/monetdb5/lib_lsst.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_mal_compiler.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lib_udf.so usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 
 debian/tmp/usr/lib/monetdb5/aggr.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/alarm.mal usr/lib/monetdb5
@@ -10,16 +12,7 @@ debian/tmp/usr/lib/monetdb5/algebra.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/algebraExtensions.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/array.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/attach.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/bat5.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batExtensions.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batcalc.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batcast.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batcolor.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batifthen.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batmmath.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batmtime.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batstr.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/batxml.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/bat*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/bbp.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/blob.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/box.mal usr/lib/monetdb5
@@ -40,6 +33,7 @@ debian/tmp/usr/lib/monetdb5/inspect.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/language.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/lock.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/logger.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/lsst.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/mal_*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/manual.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/mat.mal usr/lib/monetdb5
@@ -58,7 +52,9 @@ debian/tmp/usr/lib/monetdb5/recycle.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/remote.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/run_*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sabaoth.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/sample.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sema.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/srvpool.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/statistics.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/status.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/str.mal usr/lib/monetdb5
@@ -72,6 +68,9 @@ debian/tmp/usr/lib/monetdb5/udf.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/unix.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/url.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/urlbox.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/vault.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/xml.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/zorder.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/autoload/*_lsst.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/autoload/*_udf.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/*_vault.mal usr/lib/monetdb5/autoload
