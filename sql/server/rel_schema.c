@@ -993,8 +993,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		sql_rel *res = NULL, *joinl = NULL, *joinr = NULL;
 		list *rp = new_exp_list(sql->sa);
 		node *col = NULL;
-		int i = 0, j = 0, cnt = 0, *N, *M;
-		lng cntall = 1;
+		int i = 0, j = 0;
+		lng cnt = 0, cntall = 1, *N = NULL, *M = NULL;
 
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
@@ -1017,11 +1017,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		assert(tt == tt_array && t->fixed);
 
 		/* To compute N (the #times each value is repeated), multiply the size of dimensions defined after the current dimension.  For the last dimension, its N is 1.  To compute M (the #times each value group is repeated), multiply the size of dimensions defined before the current dimension.  For the first dimension, its M is 1. */
-		N = GDKmalloc(sizeof(lng) * t->ndims);
-		M = GDKmalloc(sizeof(lng) * t->ndims);
+		N = SA_NEW_ARRAY(sql->sa, lng, t->ndims);
+		M = SA_NEW_ARRAY(sql->sa, lng, t->ndims);
 		if(!N || !M) {
-			if(N) GDKfree(N);
-			if(M) GDKfree(M);
 			return sql_error(sql, 02, "CREATE ARRAY: failed to allocate space");
 		}
 		for(i = 0; i < t->ndims; i++) N[i] = M[i] = 1;
@@ -1073,8 +1071,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->start)));
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->step)));
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop)));
-				append(args, exp_atom_int(sql->sa, N[i]));
-				append(args, exp_atom_int(sql->sa, M[i]));
+				append(args, exp_atom_lng(sql->sa, N[i]));
+				append(args, exp_atom_lng(sql->sa, M[i]));
 				sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args), F_FUNC);
 				if (!sf)
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
