@@ -4093,7 +4093,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		return e;
 	}
 
-	if (((sql_exp*)((list*)groupby->r)->h->data)->f) {
+	if (((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->f) {
 		/* e_column->f has been "misused" => an aggragation over array tiles */
 		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, sym, f);
 	}
