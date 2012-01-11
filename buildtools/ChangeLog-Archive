@@ -20,9 +20,21 @@
   5.6.  We now no longer demand that OpenSSL is at least version 0.9.8f,
   but instead we require that the hash functions we need are supported.
 
+* Thu Nov  2 2010 Sjoerd Mullender <sjoerd@acm.org>
+- On Windows, we now no longer use the pthreads library but instead
+  use the "native" threads, semaphores, and mutex implementation.
+
+* Wed Sep 22 2010 Fabian Groffen <fabian@cwi.nl>
+- We now provide pkg-config files (*.pc) for libraries.
+
 * Thu Jul 22 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.0-20100823
 - Changed Maddlog to search up the directory tree to find a ChangeLog
   file.
+
+* Fri May  7 2010 Fabian Groffen <fabian@cwi.nl>
+- Fixed Maddlog script to work under our new Mercurial setup.  The
+  --email and --fullname options have disappeared as we can relibably
+  get them from Mercurial now.
 
 * Wed Mar 31 2010 Stefan Manegold <manegold@cwi.nl> - 1.0-20100823
 - Made compilation of "testing" (and "java") independent of MonetDB.
@@ -40,4 +52,22 @@
   directory as alternative to ...\<package>\NT, and thus keep the latter
   clean from files generated during the build.  On Windows, the build
   directory must be a sibling of ...\<package>\NT .
+
+* Fri Jan  8 2010 Sjoerd Mullender <sjoerd@cwi.nl>
+- Added Maddlog script to add ChangeLog entries.
+
+* Tue Dec  1 2009 Fabian Groffen <fabian@cwi.nl>
+- Added mchangelog script that I use to add ChangeLog entries. The
+  script is a highly modified version of Gentoo's echangelog script.
+
+* Thu Dec  6 2007 Fabian Groffen <fabian@cwi.nl>
+- Implemented rudimentary conditional support for ant targets
+
+* Wed Dec  5 2007 Fabian Groffen <fabian@cwi.nl>
+- Allow for 'included' dependencies, such that the wonders of libtool
+  can compile against a build dir of a dependency, instead of its
+  installation dir.
+
+* Tue Jan  9 2007 Fabian Groffen <fabian@cwi.nl>
+- Initial autotooled setup
 
