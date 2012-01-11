@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Aug2011-SP3/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2011/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -625,6 +625,185 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Jan 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- Rebuilt.
+
+* Mon Jan  2 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Implemented getMetaData() method of PreparedStatement.
+
+* Tue Dec 27 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Fixed an AssertionError for special results from e.g. EXPLAIN queries.
+
+* Tue Dec 27 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: Fixed crash in monetdb when an invalid property was retrieved using
+  the get command, bug #2953.
+
+* Wed Dec 21 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Fixed overflow error when batching large statements, bug #2952
+
+* Tue Dec 20 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Resolved a concurrency problem where ResultSet's date-related getters
+  could cause odd stack traces when used by multiple threads at the
+  same time, bug #2950.
+
+* Mon Dec 19 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: JDBC now implements JDBCv4.1 which makes it possible to be built with
+  Java 7 and up.  JDBCv4.1 is a maintenance release of JDBCv4, and hence
+  can be compiled with Java 6, although the added methods obviously are
+  not part of the java.sql interfaces.
+
+* Sun Dec 11 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: SQLExceptions thrown now carry a SQLSTATE.  Until the server starts
+  sending correct SQLSTATEs for all errors, server originated errors
+  without SQLSTATE are considered generic data exceptions (22000).
+
+* Sat Dec 10 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Fixed a bug where closing ResultSets and PreparedStatements could lead
+  to errors on concurrent running queries using the same Connection due
+  to a race condition.
+
+* Thu Dec  8 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: Changed version scheme of JDBC driver and MCL jar to be more standard,
+  from monetdb-X.Y-<thing>.jar to monetdb-<thing>-X.Y.jar, bug #2943
+
+* Wed Dec  7 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: Fix making connections with stethoscope to hosts without monetdbd.
+  Bug #2944.
+
+* Tue Dec  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: Fixed some bugs in the PHP interface affecting the mapi_ping(),
+  monetdb_insert_id() and auto_commit() functions.  Bugs #2936, #2937,
+  #2938.
+
+* Tue Dec  6 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- gdk: Fixed memory detection on 32-bits Solaris systems with more memory
+  than can be addressed in 32-bits mode, bug #2935
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: ODBC: Fixed SQLNumResultCols and SQLDescribeCol to return useful
+  information after a call to SQLPrepare and before any SQLExecute.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: mclient: The exact interpretation of the -i (--interactive) option
+  and the - filename argument have changed.  The - filename argument
+  means read from standard input and no longer implies that no \
+  interpretation is done on the input.  Instead, \ interpretation is done
+  if either standard input is a terminal, or if the -i option is given.
+  The -i option no longer causes mclient to read from standard input.
+  It only means to do \ interpretation when reading from standard input.
+  Use the - filename argument to read from standard input.  Note that
+  if no -s option is specified and no filename arguments are present,
+  mclient still reads from standard input.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- sql: mclient: The csv output format can now also be of the form csv=c and
+  csv+c where c is the column separator.  The form with csv+ produces
+  a single header line with column names.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: ODBC: Improved internal query for SQLSpecialColumns.  Before, the query
+  returned all columns taking part in a PRIMARY KEY *and* all columns
+  taking part in a UNIQUE constraint.  Now it returns only one or the
+  other set.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- sql: Changed a bug where the sign() function returned the same type as its
+  argument instead of always an INTEGER.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: ODBC: The database name is now used as the catalog name throughout.
+  Functions that return a catalog name return the database name, and
+  functions that match on catalog name match it with the database name.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: ODBC: Implemented an easier way to create a log file of interactions
+  with the ODBC driver.  You can now add a connection attribute
+  "LOGFILE=filename" to the connection string parameter of
+  SQLBrowseConnect and SQLDriverConnect, and to the relevant part of
+  the Windows registry or odbc.ini file.  This value is only used if
+  there is no environment variable ODBCDEBUG.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: The embedded monet instance capability of MonetConnection was removed.
+- java: Bump JDBC version to 2.0 (Liberica).  JDBC now implements JDBCv4 which
+  makes it possible to be built with Java 6 and up.  Java 5 and before
+  are no longer supported, and can use the 1.x releases of the driver.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: Quoting of object names for mclient's \d command is now more flexible
+  and consistent with standard SQL quoting rules, bug #2846.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: monetdb get output is now grouped by database instead of by property
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: Unlike in previous releases, 'monetdbd get mserver' now returns the path
+  to the mserver5 binary only for dbfarms that have a running monetdbd,
+  instead of only for those that are not served by a monetdbd.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: Add nclients property that controls the maximum number of concurrent
+  clients allowed to access the database
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- monetdb5: Introduced new variable max_clients that allows to define how many
+  concurrent connections are allowed to be made against the database.
+
+* Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
+- clients: ODBC: Implemented SQLColumnPrivileges function.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- java: INTERVAL columns are now treated as decimals, since they can have
+  sub-second precision.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: Starting monetdbd without any arguments or without dbfarm is no longer
+  supported.  A dbfarm now must be provided for each command.
+- merovingian: The control passphrase has been turned into a hash of the password, for
+  a more stronger authorisation model as used by mclients.  On upgrade,
+  any existing passphrase is converted to the hashed version of the
+  passphrase.
+- merovingian: The monetdbd controlport option has been removed in favour of a
+  boolean control option.  On upgrade, when controlport was set to
+  a non-zero value and a passphrase was set, control is set to true,
+  or false otherwise.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: Install new program, mnc, which provides netcat functionality, but
+  based on MonetDB's communication libraries
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: Report full URI to database instead of just database when available
+  in mclient.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- merovingian: The monetdbd discoveryport option has been removed in favour of a
+  boolean discovery option.  On upgrade, when discoveryport was set to
+  a non-zero value, discovery is set to true, or false otherwise.
+
+* Tue Nov 15 2011 Fabian Groffen <fabian@cwi.nl> - 11.7.1-20120111
+- clients: The time format of the timer output can now be controlled with an
+  optional argument to the -i option.  ms, s and m force the time to be
+  formatted as milliseconds, seconds or minutes + seconds respectively.
+
+* Tue Nov 15 2011 Martin Kersten <mk@cwi.nl> - 11.7.1-20120111
+- monetdb5: bpm and partitions have been moved to the attic.  It is replaced by
+  the partition optimizer, still under construction.
+
+* Tue Nov 15 2011 Martin Kersten <mk@cwi.nl> - 11.7.1-20120111
+- monetdb5: mal_interpreter.mx Protect against concurrent exceptions If multiple
+  parallel blocks access the exception variables and perform GDKfree
+  on old messages, then we may enter a case that one thread attempts a
+  second free.  Simple lock-based protection is the first line of defense.
+
+* Tue Nov 15 2011 Martin Kersten <mk@cwi.nl> - 11.7.1-20120111
+- monetdb5: The dataflow optimizer uses a less strict side-effect test for BAT
+  new operations and better recognizes trivial plans.
+
+* Tue Nov 15 2011 Martin Kersten <mk@cwi.nl> - 11.7.1-20120111
+- monetdb5: The MAL debugger next/step operations semantics have been fixed.
+  The profiler also now clearly shows entrance/exit of a MAL function.
+
 * Tue Nov 15 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.9-20111115
 - Rebuilt.
 
