@@ -41,7 +41,7 @@ Ready.
 [ 2046,	"connections",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
 [ 2055,	"_tables",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
 [ 2064,	"_columns",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
-[ 2075,	"keys",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
+[ 2075,	"_dimensions",	2000,	NULL,	0,	true,	0,	false,	0,	1,	"one"	]
 
 # 19:39:26 >  
 # 19:39:26 >  Done.
