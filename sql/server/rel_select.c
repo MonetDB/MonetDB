@@ -3868,10 +3868,6 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
-#define GET_DIM_SZ(tpe,sta,ste,sto) \
-	ceil((*(tpe *)VALget(&sto->data) * 1.0 - *(tpe *)VALget(&sta->data)) / \
-			*(tpe *)VALget(&ste->data));
-
 /* E.g.:
  * sql> plan select sum(v) from a group by a[x-1:x+2][y-1:y+2];
  *
@@ -3901,14 +3897,14 @@ static sql_exp *
 _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *aggrstr, symbol *sym, int f)
 {
 	sql_exp *exp = NULL, **dim = NULL, **oss = NULL;
-	atom **os_sta = NULL, **os_ste = NULL, **os_sto = NULL;
+	sql_exp **os_sta = NULL, **os_ste = NULL, **os_sto = NULL, **nrep = NULL, **ngrp = NULL;
 	sql_subfunc *sf = NULL;
+	sql_subtype st_int, st_flt;
 	list *arrg_args = new_exp_list(sql->sa);
 	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_t") + strlen(aggrstr) + 1);
 	node *cn = NULL;
 	sql_table *t = (sql_table*)((sql_rel*)groupby->l)->l;
-	int i = 0, j = 0, cnt = 0, *nrep = NULL, *ngrp = NULL;
-	lng *dsize = NULL;
+	int i = 0, j = 0, *dsize = NULL;
 	sql_column *sc = NULL;
 
 	(void)distinct;
@@ -3931,11 +3927,11 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	}
 
 	dim    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	os_sta = SA_NEW_ARRAY(sql->sa, atom*, t->ndims);
-	os_ste = SA_NEW_ARRAY(sql->sa, atom*, t->ndims);
-	os_sto = SA_NEW_ARRAY(sql->sa, atom*, t->ndims);
+	os_sta = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
+	os_ste = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
+	os_sto = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
 	oss    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	dsize  = SA_NEW_ARRAY(sql->sa, lng, t->ndims);
+	dsize  = SA_NEW_ARRAY(sql->sa, int, t->ndims);
 	if (!dim || !os_sta || !os_ste || !os_sto || !oss || !dsize) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
@@ -3945,10 +3941,9 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		atom *d_sta = NULL, *d_ste = NULL, *d_sto = NULL;
 
 		dim[i] = cn->data;
-		/* TODO: check if os_st{a,e,o}[i]->{l,r,f} == NULL */
-		os_sta[i] = sql_bind_arg(sql, ((sql_exp*)((list*)dim[i]->f)->h->data)->flag);
-		os_ste[i] = sql_bind_arg(sql, ((sql_exp*)((list*)dim[i]->f)->h->next->data)->flag);
-		os_sto[i] = sql_bind_arg(sql, ((sql_exp*)((list*)dim[i]->f)->h->next->next->data)->flag);
+		os_sta[i] = (sql_exp*)((list*)dim[i]->f)->h->data;
+		os_ste[i] = (sql_exp*)((list*)dim[i]->f)->h->next->data;
+		os_sto[i] = (sql_exp*)((list*)dim[i]->f)->h->next->next->data;
 
 		/* immediately compute the |dim[i]| */
 		if (!(sc = get_dimension(sql, t, dim[i]->name))) {
@@ -3960,23 +3955,23 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		d_sto = atom_general(sql->sa, &sc->type, sc->dim->stop);
 		switch(d_sto->data.vtype){
 			case TYPE_bte:
-				dsize[i] = GET_DIM_SZ(bte, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(bte *)VALget(&d_sto->data) * 1.0 - *(bte *)VALget(&d_sta->data)) / *(bte *)VALget(&d_ste->data));
 				break;
 			case TYPE_sht:
-				dsize[i] = GET_DIM_SZ(sht, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(sht *)VALget(&d_sto->data) * 1.0 - *(sht *)VALget(&d_sta->data)) / *(sht *)VALget(&d_ste->data));
 				break;
 			case TYPE_int:
-				dsize[i] = GET_DIM_SZ(int, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(int *)VALget(&d_sto->data) * 1.0 - *(int *)VALget(&d_sta->data)) / *(int *)VALget(&d_ste->data));
 				break;
 			case TYPE_lng:
-				dsize[i] = GET_DIM_SZ(lng, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(lng *)VALget(&d_sto->data) * 1.0 - *(lng *)VALget(&d_sta->data)) / *(lng *)VALget(&d_ste->data));
 				break;
 			case TYPE_flt:
-				dsize[i] = GET_DIM_SZ(flt, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(flt *)VALget(&d_sto->data) * 1.0 - *(flt *)VALget(&d_sta->data)) / *(flt *)VALget(&d_ste->data));
 				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
 				break;
 			case TYPE_dbl:
-				dsize[i] = GET_DIM_SZ(dbl, d_sta, d_ste, d_sto);
+				dsize[i] = ceil((*(dbl *)VALget(&d_sto->data) * 1.0 - *(dbl *)VALget(&d_sta->data)) / *(dbl *)VALget(&d_ste->data));
 				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
 				break;
 			default: /* should not reach here */
@@ -3984,40 +3979,44 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		}
 	}
 
-	/* compute the repeatings, see the formula in rel_schema.c */
-	nrep = SA_NEW_ARRAY(sql->sa, int, t->ndims);
-	ngrp = SA_NEW_ARRAY(sql->sa, int, t->ndims);
+	/* Compute the repeatings, see the formula in rel_schema.c.
+	 * The parameters of array_series1() are dynamically computed by the sql_exp-s.
+	 */
+	nrep = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
+	ngrp = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
 	if(!nrep || !ngrp) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
-	for(i = 0; i < t->ndims; i++) nrep[i] = ngrp[i] = 1;
+	sql_find_subtype(&st_int, "int", 9, 0);
+	sql_find_subtype(&st_flt, "double", 23, 0);
+	for(i = 0; i < t->ndims; i++) nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
 	for (i = 0; i < t->ndims; i++){
-		switch(os_sta[i]->data.vtype){
-			case TYPE_bte:
-				cnt = GET_DIM_SZ(bte, os_sta[i], os_ste[i], os_sto[i]);
-				break;
-			case TYPE_sht:
-				cnt = GET_DIM_SZ(sht, os_sta[i], os_ste[i], os_sto[i]);
-				break;
-			case TYPE_int:
-				cnt = GET_DIM_SZ(int, os_sta[i], os_ste[i], os_sto[i]);
-				break;
-			case TYPE_lng:
-				cnt = GET_DIM_SZ(lng, os_sta[i], os_ste[i], os_sto[i]);
-				break;
-			case TYPE_flt:
-				cnt = GET_DIM_SZ(flt, os_sta[i], os_ste[i], os_sto[i]);
-				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
-				break;
-			case TYPE_dbl:
-				cnt = GET_DIM_SZ(dbl, os_sta[i], os_ste[i], os_sto[i]);
-				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
-				break;
-			default: /* should not reach here */
-				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
+		list *ceil_args = new_exp_list(sql->sa);
+
+		exp = rel_check_type(sql, &st_flt, os_sto[i], type_cast);
+		if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(exp), exp_subtype(exp), F_FUNC)))
+			return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
+		/* FIXME: why do I need this extra rel_check_type? */
+		append(ceil_args, exp_binop(sql->sa, exp, rel_check_type(sql, &st_flt, os_sta[i], type_cast), sf));
+
+		if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, "ceil", exps_subtype(ceil_args), F_FUNC)))
+			return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
+		exp = rel_check_type(sql, &st_int, exp_op(sql->sa, ceil_args, sf), type_cast);
+
+		if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", exp_subtype(exp), exp_subtype(os_ste[i]), F_FUNC)))
+			return sql_error(sql, 02, "failed to bind to the SQL function \"/\"");
+		exp = exp_binop(sql->sa, exp, os_ste[i], sf);
+
+		for (j = 0; j < i; j++) {
+			if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
+			nrep[j] = exp_binop(sql->sa, nrep[j], exp, sf);
 		}
-		for (j = 0; j < i; j++) nrep[j] = nrep[j] * cnt;
-		for (j = t->ndims; j > i; j--) ngrp[j] = ngrp[j] * cnt;
+		for (j = t->ndims-1; j > i; j--) {
+			if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
+				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
+			ngrp[j] = exp_binop(sql->sa, ngrp[j], exp, sf);
+		}
 	}
 	/* finally, we build a list of args 'srs_args' with all parameters to
 	 * 'array_series1' to compute the materialised offsets 'oss' for each
@@ -4025,17 +4024,17 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	 * functions. */
 	for (i = 0; i < t->ndims; i++) {
 		list *srs_args = new_exp_list(sql->sa);
-		append(srs_args, exp_atom(sql->sa, os_sta[i]));
-		append(srs_args, exp_atom(sql->sa, os_ste[i]));
-		append(srs_args, exp_atom(sql->sa, os_sto[i]));
-		append(srs_args, exp_atom_lng(sql->sa, nrep[i]));
-		append(srs_args, exp_atom_lng(sql->sa, ngrp[i]));
+		append(srs_args, os_sta[i]);
+		append(srs_args, os_ste[i]);
+		append(srs_args, os_sto[i]);
+		append(srs_args, nrep[i]);
+		append(srs_args, ngrp[i]);
 		if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(srs_args), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 
 		append(arrg_args, dim[i]);
 		append(arrg_args, exp_op(sql->sa, srs_args, sf));
-		append(arrg_args, exp_atom_lng(sql->sa, dsize[i]));
+		append(arrg_args, exp_atom_int(sql->sa, dsize[i]));
 	}
 	if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, exps_subtype(arrg_args), F_FUNC)))
 		return sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
