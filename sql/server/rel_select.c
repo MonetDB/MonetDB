@@ -3907,8 +3907,8 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_t") + strlen(aggrstr) + 1);
 	node *cn = NULL;
 	sql_table *t = (sql_table*)((sql_rel*)groupby->l)->l;
-	int i = 0, j = 0;
-	lng cnt = 0, *dsize = NULL, *nrep = NULL, *ngrp = NULL;
+	int i = 0, j = 0, cnt = 0, *nrep = NULL, *ngrp = NULL;
+	lng *dsize = NULL;
 	sql_column *sc = NULL;
 
 	(void)distinct;
@@ -3985,8 +3985,8 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	}
 
 	/* compute the repeatings, see the formula in rel_schema.c */
-	nrep = SA_NEW_ARRAY(sql->sa, lng, t->ndims);
-	ngrp = SA_NEW_ARRAY(sql->sa, lng, t->ndims);
+	nrep = SA_NEW_ARRAY(sql->sa, int, t->ndims);
+	ngrp = SA_NEW_ARRAY(sql->sa, int, t->ndims);
 	if(!nrep || !ngrp) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
