@@ -168,6 +168,10 @@
 - Disable timer functionality for non-XQuery languages since it is
   incorrect, bug #2705
 
+* Thu Jan 20 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fix problem with Windows cmd script if installation folder name
+  contains parentheses.
+
 * Tue Jan  4 2011 Fabian Groffen <fabian@cwi.nl> - 11.1.1-20110317
 - Added mapi_get_uri function to retrieve mapi URI for the connection
 
@@ -350,4 +354,7 @@
 - Implemented new function mapi_fetch_field_len() which returns the
   length (excluding trailing NULL byte) of the field returned by
   mapi_fetch_field().
+
+* Mon Jan  4 2010 Sjoerd Mullender <sjoerd@cwi.nl>
+- Fix exit code of mclient -D in case dump fails.
 

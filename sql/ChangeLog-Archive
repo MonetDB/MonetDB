@@ -189,6 +189,14 @@
 * Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org> - 2.38.1-20100618
 - Updated Vendor information.
 
+* Tue May 11 2010 Fabian Groffen <fabian@cwi.nl>
+- Prepared statement and function calls now report which argument is
+  of the wrong type, bug #2533.
+
+* Sun Apr 25 2010 Niels Nes <niels@cwi.nl>
+- Fixed a bug when loading data from CSV files when separators occur
+  in quoted fields.  (SourceForge bug #2991400).
+
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 2.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
   This is mainly for Windows, but also on other systems, "testing" can

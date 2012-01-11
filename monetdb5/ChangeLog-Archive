@@ -54,6 +54,10 @@
 - Improve the performance of remote.put for BAT arguments.  The put
   speed is now roughly equal to the speed of get on a BAT.
 
+* Thu Jan 20 2011 Sjoerd Mullender <sjoerd@acm.org>
+- Fix problem with Windows cmd script if installation folder name
+  contains parentheses.
+
 * Sat Jul 17 2010 mk@cwi.nl - 5.22.1-20101029
 - Debugging the optimizer pipeline The best way is to use mdb.traceOptimizer(str)
   and inspect the information gathered during the optimization phase.
@@ -249,6 +253,9 @@
   claimed. Only if there is one operation left to execute, it won't
   block. The admission level is controlled by a threshold, which is
   set to 90% of the physical memory.
+
+* Mon Jan 11 2010 Sjoerd Mullender <sjoerd@acm.org>
+- Install embeddedclient.h.
 
 * Sun Jan 10 2010 Martin Kersten <mk@> - 5.18.1-20100223
 - The ilike[u]select operations has been included in the repertoire

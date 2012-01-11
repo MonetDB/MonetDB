@@ -49,6 +49,10 @@
 * Mon May 31 2010 Sjoerd Mullender <sjoerd@acm.org> - 1.38.1-20100618
 - Updated Vendor information.
 
+* Fri May  7 2010 Fabian Groffen <fabian@cwi.nl>
+- Updated HowToStart.rst for our move from SourceForge for sources,
+  trackers and downloads.
+
 * Tue Apr 20 2010 Stefan Manegold <manegold@cwi.nl> - 1.38.1-20100618
 - Made compilation of "testing" (and "java") independent of MonetDB.
   This is mainly for Windows, but also on other systems, "testing" can
