@@ -222,6 +222,24 @@ exp_atom_wrd(sql_allocator *sa, wrd w)
 }
 
 sql_exp *
+exp_atom_flt(sql_allocator *sa, flt f) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "double", 24, 0);
+	return exp_atom(sa, atom_float(sa, &it, (dbl)f ));
+}
+
+sql_exp *
+exp_atom_dbl(sql_allocator *sa, dbl f) 
+{
+	sql_subtype it; 
+
+	sql_find_subtype(&it, "double", 53, 0);
+	return exp_atom(sa, atom_float(sa, &it, (dbl)f ));
+}
+
+sql_exp *
 exp_atom_str(sql_allocator *sa, str s, sql_subtype *st) 
 {
 	return exp_atom(sa, atom_string(sa, st, s?sa_strdup(sa, s):NULL));
