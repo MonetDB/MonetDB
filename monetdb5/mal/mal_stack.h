@@ -27,7 +27,7 @@
 #endif
 
 #define STACKINCR   128
-#define MAXGLOBALS  4 * STACKINCR
+#define MAXGLOBALS  (4 * STACKINCR)
 #define MAXSHARES   8
 
 typedef str (*MALfcn) ();
