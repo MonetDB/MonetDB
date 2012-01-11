@@ -1047,7 +1047,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 					return sql_error(sql, 02, "CREATE ARRAY: unsupported data type \"%s\"", sc->type.type->sqlname);
 				}
 				for (j = 0; j < i; j++) N[j] = N[j] * cnt;
-				for (j = t->ndims; j > i; j--) M[j] = M[j] * cnt;
+				for (j = t->ndims-1; j > i; j--) M[j] = M[j] * cnt;
 				cntall *= cnt;
 				i++;
 			}
