@@ -73,7 +73,7 @@ stderr of test 'Views` in directory 'test/Views` itself:
 
 MAPI  = monetdb@sofia:38256
 QUERY = ALTER TABLE v1 DROP COLUMN age;
-ERROR = !ALTER TABLE: cannot drop column from VIEW 'v1'
+ERROR = !ALTER TABLE/ARRAY: cannot drop column from VIEW 'v1'
 MAPI  = monetdb@sofia:38256
 QUERY = CREATE TRIGGER trigger_test AFTER INSERT ON v1
                 INSERT INTO t2 values(1,23);
