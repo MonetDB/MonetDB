@@ -46,8 +46,8 @@
  *     a =aggregates
  *     e =event
  *     f =function 
- *     o =operation called
- *     i =interpreter theread
+ *     i =instruction counter
+ *     I =interpreter thread
  *     T =time
  *     t =ticks
  *     c =cpu statistics
@@ -59,6 +59,7 @@
  *     y =argument types
  *     p =pgfaults,cntxtswitches
  *     S =Start profiling instruction
+ *     D =Generate dot file upon query start
  * 
  * Ideally, the stream of events should be piped into a
  * 2D graphical tool, like xosview (Linux).
@@ -100,36 +101,36 @@ static struct {
 	/*  0  */ { 'a', "aggregate", "total count", 0 },
 	/*  1  */ { 'a', "aggregate", "total ticks", 0 },
 	/*  2  */ { 'e', "event", "event id", 0 },
-	/*  3  */ { 'f', "pc", "function", 0 },
-	/*  4  */ { 'f', "pc", "pc", 0 },
-	/*  5  */ { 'o', "operation", "operation", 0 },
-	/*  6  */ { 'T', "time", "time stamp", 0 },
-	/*  7  */ { 't', "ticks", "usec ticks", 1 },
-	/*  8  */ { 'c', "cpu", "utime", 0 },
-	/*  9  */ { 'c', "cpu", "cutime", 0 },
-	/*  0  */ { 'c', "cpu", "stime", 0 },
-	/*  1  */ { 'c', "cpu", "cstime", 0 },
-	/*  2  */ { 'm', "memory", "arena", 0 },
-	/*  3  */ { 'm', "memory", "ordblks", 0 },
-	/*  4  */ { 'm', "memory", "smblks", 0 },
-	/*  5  */ { 'm', "memory", "hblkhd", 0 },
-	/*  6  */ { 'm', "memory", "hblks", 0 },
-	/*  7  */ { 'm', "memory", "fsmblks", 0 },
-	/*  8  */ { 'm', "memory", "uordblks", 0 },
-	/*  9  */ { 'r', "reads", "blk reads", 0 },
-	/*  0  */ { 'w', "writes", "blk writes", 0 },
-	/*  1  */ { 'b', "rbytes", "rbytes", 0 },
-	/*  2  */ { 'b', "wbytes", "wbytes", 0 },
-	/*  3  */ { 's', "stmt", "stmt", 2 },
-	/*  4  */ { 'p', "process", "pg reclaim", 0 },
-	/*  5  */ { 'p', "process", "pg faults", 0 },
-	/*  6  */ { 'p', "process", "swaps", 0 },
-	/*  7  */ { 'p', "process", "ctxt switch", 0 },
-	/*  8  */ { 'p', "process", "inv switch", 0 },
-	/*  9  */ { 'i', "thread", "thread", 0 },
-	/*  0  */ { 'u', "user", "user", 0 },
-	/*  1  */ { 'S', "start", "start", 0 },
-	/*  2  */ { 'y', "type", "type", 0 },
+	/*  3  */ { 'f', "function", "function", 0 },
+	/*  4  */ { 'i', "pc", "pc", 0 },
+	/*  5  */ { 'T', "time", "time stamp", 0 },
+	/*  6  */ { 't', "ticks", "usec ticks", 1 },
+	/*  7  */ { 'c', "cpu", "utime", 0 },
+	/*  8  */ { 'c', "cpu", "cutime", 0 },
+	/*  9  */ { 'c', "cpu", "stime", 0 },
+	/*  0  */ { 'c', "cpu", "cstime", 0 },
+	/*  1  */ { 'm', "memory", "arena", 0 },
+	/*  2  */ { 'm', "memory", "ordblks", 0 },
+	/*  3  */ { 'm', "memory", "smblks", 0 },
+	/*  4  */ { 'm', "memory", "hblkhd", 0 },
+	/*  5  */ { 'm', "memory", "hblks", 0 },
+	/*  6  */ { 'm', "memory", "fsmblks", 0 },
+	/*  7  */ { 'm', "memory", "uordblks", 0 },
+	/*  8  */ { 'r', "reads", "blk reads", 0 },
+	/*  9  */ { 'w', "writes", "blk writes", 0 },
+	/*  0  */ { 'b', "rbytes", "rbytes", 0 },
+	/*  1  */ { 'b', "wbytes", "wbytes", 0 },
+	/*  2  */ { 's', "stmt", "stmt", 2 },
+	/*  3  */ { 'p', "process", "pg reclaim", 0 },
+	/*  4  */ { 'p', "process", "pg faults", 0 },
+	/*  5  */ { 'p', "process", "swaps", 0 },
+	/*  6  */ { 'p', "process", "ctxt switch", 0 },
+	/*  7  */ { 'p', "process", "inv switch", 0 },
+	/*  8  */ { 'I', "thread", "thread", 0 },
+	/*  9  */ { 'u', "user", "user", 0 },
+	/*  0  */ { 'S', "start", "start", 0 },
+	/*  1  */ { 'y', "type", "type", 0 },
+	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 0, 0, 0, 0 }
 };
 
@@ -165,10 +166,10 @@ usage(void)
 	fprintf(stderr, "  S = monitor start of instruction profiling\n");
 	fprintf(stderr, "  a = aggregate clock ticks per instruction\n");
 	fprintf(stderr, "  e = event counter\n");
-	fprintf(stderr, "  f = function name and pc counter \n");
-	fprintf(stderr, "  o = module.function operation called\n");
-	fprintf(stderr, "  i = interpreter thread number\n");
-	fprintf(stderr, "  T = wall colck time\n");
+	fprintf(stderr, "  f = module.function name\n");
+	fprintf(stderr, "  i = instruction counter\n");
+	fprintf(stderr, "  I = interpreter thread number\n");
+	fprintf(stderr, "  T = wall clock time\n");
 	fprintf(stderr, "  t = ticks in microseconds\n");
 	fprintf(stderr, "  c = cpu statistics (utime,ctime,stime,cstime)\n");
 	fprintf(stderr, "  m = memory resources as provided by OS\n");
@@ -179,6 +180,7 @@ usage(void)
 	fprintf(stderr, "  y = MAL argument types\n");
 	fprintf(stderr, "  p = process statistics, e.g. page faults, context switches\n");
 	fprintf(stderr, "  u = user id\n");
+	fprintf(stderr, "  D = Generate dot file upon query start\n");
 }
 
 /* Any signal should be captured and turned into a graceful
@@ -195,7 +197,7 @@ stopListening(int i)
 	}
 }
 
-static void
+static int
 setCounter(char *nme)
 {
 	int i, k = 1;
@@ -207,6 +209,7 @@ setCounter(char *nme)
 		for (i = 0; profileCounter[i].tag; i++)
 			if (profileCounter[i].tag == *nme)
 				profileCounter[i].status = k++;
+	return k;
 }
 
 #define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
@@ -353,8 +356,8 @@ int
 main(int argc, char **argv)
 {
 	int a = 1;
-	int i;
-	char *host = "localhost";
+	int i, k;
+	char *host = NULL;
 	int portnr = 50000;
 	char *dbname = NULL;
 	char *user = NULL;
@@ -402,10 +405,14 @@ main(int argc, char **argv)
 
 	a = optind;
 	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		setCounter(argv[a] + 1);
+		k= setCounter(argv[a] + 1);
 		a++;
 	} else
-		setCounter("TtiesS");
+		k= setCounter("TtesDSI");
+
+	/* DOT needs PC */
+	if( profileCounter[32].status )
+		profileCounter[4].status= k;
 
 	if (user == NULL || password == NULL) {
 		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
@@ -430,12 +437,10 @@ main(int argc, char **argv)
 	/* try and find multiple options, we assume that we always need a
 	 * local merovingian for that, in the future we probably need to fix
 	 * this in a decent manner */
-	if (dbname != NULL) {
+	if (dbname != NULL && host == NULL) {
 		oalts = alts = mapi_resolve(host, portnr, dbname);
-	} else {
+	} else 
 		alts = NULL;
-		dbname = "";
-	}
 
 	if (alts == NULL || *alts == NULL) {
 		/* nothing to redirect, so a single host to try */
@@ -483,6 +488,7 @@ main(int argc, char **argv)
 			if (*alts == NULL)
 				break;
 			walk = walk->next = malloc(sizeof(wthread));
+			printf("Alternative route created '%s'\n",walk->uri);
 		}
 		walk->next = NULL;
 		free(oalts);
