@@ -1039,7 +1039,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 /*
  * @-
  * A consequence of multiple threads is that they may claim more
- * space then available. This may cause GDKmalloc to fail.
+ * space than available. This may cause GDKmalloc to fail.
  * In many cases this situation will be temporary, because
  * threads will ultimately release resources.
  * Therefore, we wait for it.

@@ -96,7 +96,7 @@ InstrPtr newCall(Module scope, str fcnname, int kind){
 /*
  * @-
  * Optimizers may be interested in the function definition
- * for obtaining properties. Rather then polution of the
+ * for obtaining properties. Rather than polution of the
  * instruction record with a scope reference, we use a lookup function until it
  * becomes a performance hindrance.
  */

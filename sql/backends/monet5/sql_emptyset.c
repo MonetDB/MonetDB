@@ -37,7 +37,7 @@
  * set would call for assessment on their effect.
  *
  * The end-result can be further optimized using alias removal.
- * However, this is less effective then in the normal pipeline, because
+ * However, this is less effective than in the normal pipeline, because
  * the garbage collector has already injected additional NIL assignments.
  *
  * The purpose of this operation is to improve recycling, which

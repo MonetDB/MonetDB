@@ -1461,7 +1461,7 @@ SQLparser(Client c)
 		pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
-		/* we know more in this case then
+		/* we know more in this case than
 		    chkProgram(c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			if (m->emod & mod_debug) {

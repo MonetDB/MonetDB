@@ -72,7 +72,7 @@ All Rights Reserved.
  * table it closed the log stream.
  *
  * The function freezeSlaves() removes the log files and makes sure that all
- * existing slaves won't be able to catch up other then by re-initializing the
+ * existing slaves won't be able to catch up other than by re-initializing the
  * database using e.g. a checkpoint.
  * @verbatim
  * CREATE PROCEDURE suspendSync() EXTERNAL NAME slave."stop";

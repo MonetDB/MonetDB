@@ -1570,7 +1570,7 @@ tablet_read_more(bstream *in, stream *out, size_t n)
  * positioned correctly at the reading position. The start and limit
  * indicates the byte range to search for tuples.
  * If start> 0 then we first skip to the next record separator.
- * If necessary we read more then 'limit' bytes to ensure parsing a complete
+ * If necessary we read more than 'limit' bytes to ensure parsing a complete
  * record and stop at the record boundary.
  * Beware, we should allocate Tablet descriptors for each file segment,
  * otherwise we end up with a gross concurrency control problem.

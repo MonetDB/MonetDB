@@ -62,7 +62,7 @@ All Rights Reserved.
  *
  * The range cascades should be limited to simple blocks.
  * Furthermore, we should ensure that variables are not re-used
- * other then in side-effect functions.
+ * other than in side-effect functions.
  *
  * The aliasRemoval and constantExpression optimizers should
  * have done their work. Empty scans are simply dropped,

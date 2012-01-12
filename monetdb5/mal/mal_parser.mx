@@ -362,7 +362,7 @@ str strCopy(Client cntxt, int length){
  * @-
  * And a similar approach is used for operator names.
  * A lookup table is considered, because it generally is
- * faster then a non-dense switch.
+ * faster than a non-dense switch.
  */
 int 
 operatorLength(Client cntxt)
