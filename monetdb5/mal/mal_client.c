@@ -424,6 +424,8 @@ void freeClient(Client c)
 	c->mythread = 0;
 	c->mypid = 0;
 	c->mode = FREECLIENT;
+	GDKfree(c->glb);
+	c->glb = NULL;
 	if (t)
 		THRdel(t);	/* you may perform suicide */
 }

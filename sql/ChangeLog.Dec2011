@@ -1,12 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Thu Nov  3 2011 Sjoerd Mullender <sjoerd@acm.org>
-- mclient: The csv output format can now also be of the form csv=c and
-  csv+c where c is the column separator.  The form with csv+ produces
-  a single header line with column names.
-
-* Wed Nov  2 2011 Sjoerd Mullender <sjoerd@acm.org>
-- Changed a bug where the sign() function returned the same type as its
-  argument instead of always an INTEGER.
-
