@@ -98,10 +98,6 @@ mal_export long position(Client cntxt);
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
 
-static str idCopy(Client cntxt, int len);
-static str strCopy(Client cntxt, int len);
-
-
 void echoInput(Client cntxt)
 {
 	if (cntxt->listing == 1) { 
@@ -223,7 +219,7 @@ typeidLength(Client cntxt)
 	return l;
 }
 
-str idCopy(Client cntxt, int length){
+static str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
 	if ( s == NULL)
 		return NULL;
@@ -346,7 +342,7 @@ stringLength(Client cntxt)
  * Beware, the idcmp routine uses a short cast to compare multiple bytes
  * at once. This may cause problems when the net string length is zero.
  */
-str strCopy(Client cntxt, int length){
+static str strCopy(Client cntxt, int length){
 	str s;
 	int i;
 
@@ -620,8 +616,6 @@ handleInts:
 	}
 	return 0;
 }
-
-#define cstCopy(C,I)  idCopy(C,I)
 
 /*
  * @- Type qualifier
