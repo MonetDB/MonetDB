@@ -453,7 +453,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 
 	assert(dimref->token == SQL_ARRAY_DIM_SLICE);
 
-	if (t->ndims)
+	if (!t->ndims)
 		return sql_error(sql, 02, "array slicing over a table ('%s')not allowed", t->base.name);
 
 	/* Handling array slicing using normal SQL: WHERE <pred_exp> IN '(' <value_commalist> ')'.
@@ -4092,7 +4092,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		return e;
 	}
 
-	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->f) {
+	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->type == e_column && ((sql_exp*)((list*)groupby->r)->h->data)->f) {
 		/* e_column->f has been "misused" => an aggragation over array tiles */
 		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, sym, f);
 	}
