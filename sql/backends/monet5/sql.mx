@@ -1837,6 +1837,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 {
+	sql_allocator *osa;
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
@@ -1854,6 +1855,8 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		return sql_message("42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
+	osa = sql->sa;
+	sql->sa = NULL;
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -1896,12 +1899,14 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 	/* also create dependencies */
 	if (t->query && isView(t)) {
 		sql_rel *r = NULL;
+
 		sql->sa = sa_create();
 		r = rel_parse(sql, t->query, m_deps); 
 		rel_destroy(r);
 		sa_destroy(sql->sa);
 		sql->sa = NULL;
 	}
+	sql->sa = osa;
 	return MAL_SUCCEED;
 }
 
@@ -6701,6 +6706,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getContext(cntxt, mb, &m, &b);
 	sql_rel *rel;
 
+	assert(m->sa == NULL);
 	m->sa = sa_create();
  	rel = rel_read(m, *expr, &pos);
 	if (rel) {

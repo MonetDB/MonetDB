@@ -2339,9 +2339,12 @@ backend_create_func(backend *be, sql_func *f)
  	sa = sa_create();
 	m->session->schema = f->s;
 	s = sql_parse(m, sa, f->query, m_instantiate);
+	m->sa = osa;
 	m->session->schema = schema;
-	if (s && !f->sql) /* native function */
+	if (s && !f->sql) { /* native function */
+		sa_destroy(sa);
 		return;
+	}
 
 	if (!s) {
 		fputs(m->errstr, stderr);
@@ -2417,6 +2420,7 @@ backend_create_func(backend *be, sql_func *f)
 		varSetProp(curBlk, getArg(curInstr, 0), unsafeProp, op_eq, NULL);
 	/* SQL function definitions meant for inlineing should not be optimized before */
 	varSetProp(curBlk, getArg(curInstr, 0), sqlfunctionProp, op_eq, NULL);
+	f->sa = sa;
 	m->sa = osa;
 	addQueryToCache(c);
 	if (backup)
