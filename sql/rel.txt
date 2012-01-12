@@ -131,6 +131,10 @@ e_column
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
+	-> f	only used by SciQL group by.
+			If an array tiling involves this column, ->f is a list of
+			three expressions to denote respectively the start, step and stop
+			of the tiles.
 	-> type 
 
 	
