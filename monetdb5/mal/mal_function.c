@@ -1105,10 +1105,12 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 			oline = line;
 		}
 		free(buf);
-		mnstr_close(f);
+		if (idcmp(fname, "stethoscope") != 0) 
+			mnstr_close(f);
 		buffer_destroy(bufstr);
 	} else if (f != GDKout) {
-		mnstr_close(f);
+		if (idcmp(fname, "stethoscope") != 0) 
+			mnstr_close(f);
 	}
 }
 
