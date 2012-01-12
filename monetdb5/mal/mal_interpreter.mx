@@ -449,9 +449,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	InstrPtr pci = 0;
 	int exceptionVar, prevpc = 0;
 	str ret = 0;
-#if FAST
 	int stamp = -1;
-#endif
 	bat *backup = (bat*)GDKzalloc(mb->maxarg * sizeof(bat));
 	str *sbackup = (str*)GDKzalloc(mb->maxarg * sizeof(str));
 	int *garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
@@ -474,6 +472,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		oldtimer = cntxt->timer = GDKusec();
 	oldMemory.arena = 0;
 
+	/* also produce event record for start of function */
+	if ( startpc == 1 ) {
+		stkpc = 0;
+		@:beginProfile(stk,1)@
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 	/*
@@ -541,9 +544,9 @@ workslow:
 
 			@:beginProfile(stk,1)@
 			@:MALrecycleStart(stk)@ {
-				@:MALinterpret(FAST)@
+				@:MALinterpret(SLOW)@
 			}
-			@:MALflowofcontrol(FAST,continue)@
+			@:MALflowofcontrol(SLOW,continue)@
 			@:endProfile(stk)@
 		}
 	}
@@ -942,9 +945,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	int i, k;
 	int exceptionVar = -1;
 	str ret = MAL_SUCCEED;
-#if FAST
-	int stamp = -1;
-#endif
 	bat *backup = (bat*)GDKzalloc(fs->mb->maxarg * sizeof(bat));
 	str *sbackup = (str*)GDKzalloc(fs->mb->maxarg * sizeof(str));
 	int *garbage = (int*)GDKzalloc(fs->mb->maxarg * sizeof(int));
@@ -1607,6 +1607,8 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
 		@:endProfile(stk)@
+		ppc = 0; /* also finalize function call event */
+		@:endProfile(stk)@
 #endif
 		stkpc = mb->stop;
 		continue;
@@ -2239,6 +2241,8 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (stkpc == mb->stop) {
+		@:endProfile(@3)@
+		ppc = 0; /* also finalize function call event */
 		@:endProfile(@3)@
 		@2;
 	}
