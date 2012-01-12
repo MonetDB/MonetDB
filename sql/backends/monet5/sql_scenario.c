@@ -526,6 +526,8 @@ SQLinitClient(Client c)
 		sql_subtype clob; 
 
         	sql_find_subtype(&clob, "clob", 0, 0);
+		if (!m->sa)
+			m->sa = sa_create();
 		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &clob, &clob, &clob, F_FILT )) {
 			char *err;
 			if ((err = sql_update_dec2011(c, m)) != NULL)
@@ -652,7 +654,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	*o = *m;
 
 	/* create private allocator */
-	m->sa = NULL;
+	assert(m->sa == NULL);
 	SQLtrans(m);
 	status = m->session->status;
 
@@ -732,7 +734,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			handle_error(m, c->fdout, status);
 			sqlcleanup(m, err);
 			/* restore the state */
-			resetMalBlk(c->curprg->def, oldstop);
+			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
@@ -743,7 +745,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 
 		if( c->curprg->def->errors){
 			/* restore the state */
-			resetMalBlk(c->curprg->def, oldstop);
+			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
@@ -758,9 +760,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			if (!output)
 				sql->out = NULL; /* no output */
 			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-			/*MSresetInstructions(c->curprg->def, 1);*/
-			resetMalBlk(c->curprg->def, oldstop);
-			/*freeVariables(c,c->curprg->def, 0, 0);*/
+			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
 		sqlcleanup(m, 0);
@@ -1485,7 +1485,7 @@ SQLparser(Client c)
 			}
 			showErrors(c);
 			/* restore the state */
-			resetMalBlk(c->curprg->def, oldstop);
+			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
@@ -1675,8 +1675,7 @@ cleanup_engine:
 	if (msg) {
 		enum malexception type = getExceptionType(msg);
 		if (type == OPTIMIZER) {
-			resetMalBlk( c->curprg->def, 1);
-			/* resetInstructions(c->curprg->def, 1);*/
+			MSresetInstructions(c->curprg->def, 1);
 			freeVariables(c,c->curprg->def, c->glb, be->vtop);
 			be->language = oldlang;
 			c->glb = oldglb;
@@ -1716,8 +1715,7 @@ cleanup_engine:
 	}
 	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
-	resetMalBlk( c->curprg->def, 1);
-	/* resetInstructions(c->curprg->def, 1);*/
+	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
 	/*
@@ -1748,7 +1746,7 @@ SQLrecompile(Client c, backend *be)
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		/* restore the state */
-		resetMalBlk(c->curprg->def, oldstop);
+		MSresetInstructions(c->curprg->def, oldstop);
 		freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		c->curprg->def->errors = 0;
 		throw(SQL, "SQLrecompile", "M0M27!semantic errors");

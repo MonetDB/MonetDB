@@ -397,7 +397,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid, 0);
-	m->sa = sa_create();
+	m->sa = NULL;
 
 	m->params = NULL;
 	m->sizevars = MAXPARAMS;

@@ -255,6 +255,7 @@ typedef struct sql_func {
 	   		   example string concat
 	 		*/
 	sql_schema *s;
+	sql_allocator *sa;
 } sql_func;
 
 typedef struct sql_subfunc {
