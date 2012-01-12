@@ -425,7 +425,7 @@ typedef struct sql_table {
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
-	int fixed; /* for arrays: fixed or unbounded */
+	bit fixed; /* for arrays: fixed or unbounded */
 	int ndims; /* for arrays: number of dimensions */
 
 	void *data;

@@ -87,6 +87,8 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
+		mvc_create_column_(m, t, "fixed", "boolean", 1);
+		mvc_create_column_(m, t, "nr_dimensions", "int", 32);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 
 		if (catalog_version) {
@@ -109,7 +111,7 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
-		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p WHERE type = 6 UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t WHERE type = 6) AS arrays;", 1);
+		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p WHERE nr_dimensions > 0 UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t WHERE nr_dimensions > 0) AS arrays;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
 		mvc_create_column_(m, t, "schema_id", "int", 32);
@@ -118,6 +120,8 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "system", "boolean", 1);
 		mvc_create_column_(m, t, "commit_action", "smallint", 16);
 		mvc_create_column_(m, t, "readonly", "boolean", 1);
+		mvc_create_column_(m, t, "fixed", "boolean", 1);
+		mvc_create_column_(m, t, "nr_dimensions", "int", 32);
 		mvc_create_column_(m, t, "temporary", "smallint", 16);
 		if (catalog_version) {
 			int pub = ROLE_PUBLIC;
@@ -130,13 +134,21 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		t = mvc_create_view(m, s, "dimensions", SQL_PERSIST, "SELECT * FROM (SELECT pc.*, \"pd\".\"start\", pd.step, pd.stop FROM \"sys\".\"_columns\" AS pc, \"sys\".\"_dimensions\" AS pd WHERE pc.id = pd.column_id UNION ALL SELECT tc.*, \"td\".\"start\", td.step, td.stop FROM \"tmp\".\"_columns\" AS tc, \"tmp\".\"_dimensions\" AS td WHERE tc.id = td.column_id) AS dimensions;", 1);
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "name", "varchar", 1024);
-		mvc_create_column_(m, t, "schema_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
-		mvc_create_column_(m, t, "type", "smallint", 16);
-		mvc_create_column_(m, t, "system", "boolean", 1);
-		mvc_create_column_(m, t, "commit_action", "smallint", 16);
-		mvc_create_column_(m, t, "readonly", "boolean", 1);
-		mvc_create_column_(m, t, "temporary", "smallint", 16);
+		mvc_create_column_(m, t, "type", "varchar", 1024);
+		mvc_create_column_(m, t, "type_digits", "int", 32);
+		mvc_create_column_(m, t, "type_scale", "int", 32);
+		mvc_create_column_(m, t, "table_id", "int", 32);
+		mvc_create_column_(m, t, "default", "varchar", 2048);
+		mvc_create_column_(m, t, "null", "boolean", 1);
+		mvc_create_column_(m, t, "number", "int", 32);
+		mvc_create_column_(m, t, "storage", "varchar", 2048);
+		//mvc_create_column_(m, t, "schema_id", "int", 32);
+		//mvc_create_column_(m, t, "query", "varchar", 2048);
+		//mvc_create_column_(m, t, "type", "smallint", 16);
+		//mvc_create_column_(m, t, "system", "boolean", 1);
+		//mvc_create_column_(m, t, "commit_action", "smallint", 16);
+		//mvc_create_column_(m, t, "readonly", "boolean", 1);
+		//mvc_create_column_(m, t, "temporary", "smallint", 16);
 		mvc_create_column_(m, t, "start", "varchar", 2048);
 		mvc_create_column_(m, t, "step", "varchar", 2048);
 		mvc_create_column_(m, t, "stop", "varchar", 2048);
@@ -1009,12 +1021,13 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 				tt == tt_table? "TABLE":(tt == tt_array? "ARRAY":"OTHER_TT"),
 				s->base.name, name, tt, system, persistence, commit_action);
 
+	/* FIXME: are the NULLs correct values for 'fixed' and 'ndims'? */
 	if (persistence == SQL_DECLARED_TABLE) {
 		/* declared tables should not end up in the catalog */
-		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, NULL, NULL);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, NULL, NULL);
 	}
 	return t;
 }
@@ -1028,11 +1041,11 @@ mvc_create_view(mvc *m, sql_schema *s, char *name, int persistence, char *sql, b
 		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, NULL, NULL);
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, NULL, NULL);
 	}
 	return t;
 }
@@ -1046,11 +1059,11 @@ mvc_create_remote(mvc *m, sql_schema *s, char *name, int persistence, char *loc)
 		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, NULL, NULL);
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, NULL, NULL);
 	}
 	return t;
 }
@@ -1063,7 +1076,7 @@ mvc_create_generated(mvc *m, sql_schema *s, char *name, char *sql, bit system)
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_generated %s %s %s\n", s->base.name, name, sql);
 
-	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_generated, system, SQL_PERSIST, 0, 0);
+	t = sql_trans_create_table(m->session->tr, s, name, sql, tt_generated, system, SQL_PERSIST, 0, 0, NULL, NULL);
 	return t;
 }
 

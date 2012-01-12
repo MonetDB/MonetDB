@@ -1877,12 +1877,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		}
 	}
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, &t->fixed, &t->ndims);
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		mvc_copy_column(sql, nt, c);
-		if (c->dim) nt->ndims++;
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {

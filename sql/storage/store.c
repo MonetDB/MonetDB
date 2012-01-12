@@ -616,6 +616,10 @@ load_table(sql_trans *tr, sql_schema *s, oid rid)
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "readonly"),rid);
 	t->readonly = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(tables, "fixed"),rid);
+	t->fixed = *(bit *)v;	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(tables, "nr_dimensions"),rid);
+	t->ndims = *(int *)v;	_DELETE(v);
 
 	t->pkey = NULL;
 	t->s = s;
@@ -1018,7 +1022,7 @@ insert_schemas(sql_trans *tr)
 			sql_table *t = m->data;
 			sht ca = t->commit_action;
 
-			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->readonly);
+			table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->readonly, &t->fixed, &t->ndims);
 			for (o = t->columns.set->h; o; o = o->next) {
 				sql_column *c = o->data;
 
@@ -1158,7 +1162,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 }
 
 sql_table *
-create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action)
+create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action, bit *fixed, int *ndims)
 {
 	sql_table *t = (sa)?SA_ZNEW(sa, sql_table):ZNEW(sql_table);
 
@@ -1179,8 +1183,9 @@ create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persis
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
-	t->fixed = 1; /* This is ONLY for arrays, should be set to 0 if an unbounded dimension is found. */
-	t->ndims = 0; /* This is ONLY for arrays */
+	/* 'fixed' and 'ndims' are ONLY used for arrays.  Pass NULLs to get their defaults. */
+	t->fixed = fixed ? *fixed : 1; /* should be set to 0 if an unbounded dimension is found. */
+	t->ndims = ndims ? *ndims : 0;
 	t->s = NULL;
 	return t;
 }
@@ -1217,7 +1222,7 @@ sql_table *
 dup_sql_table(sql_allocator *sa, sql_table *t)
 {
 	node *n;
-	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action);
+	sql_table *nt = create_sql_table(sa, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, &t->fixed, &t->ndims);
 
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
@@ -1252,7 +1257,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_sql_table(NULL, name, tt_table, 1, persistence, commit_action);
+	sql_table *t = create_sql_table(NULL, name, tt_table, 1, persistence, commit_action, NULL, NULL /* we never have arrays here */);
 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_table %s\n", name );
@@ -1438,6 +1443,8 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
 		bootstrap_create_column(tr, t, "readonly", "boolean", 1);
+		bootstrap_create_column(tr, t, "fixed", "boolean", 1);
+		bootstrap_create_column(tr, t, "nr_dimensions", "int", 32);
 
 		t = bootstrap_create_table(tr, s, "_columns");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -3847,9 +3854,9 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit *fixed, int *ndims)
 {
-	sql_table *t = create_sql_table(NULL, name, tt, system, persistence, commit_action);
+	sql_table *t = create_sql_table(NULL, name, tt, system, persistence, commit_action, fixed, ndims);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
 	sht ca;
@@ -3877,7 +3884,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int 
 	if (!isDeclaredTable(t))
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
-			&t->system, &ca, &t->readonly);
+			&t->system, &ca, &t->readonly, &t->fixed, &t->ndims);
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	if (isGlobal(t)) 
