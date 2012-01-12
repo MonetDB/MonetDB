@@ -1039,9 +1039,13 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		bufstr = buffer_create(8096);
 		f = buffer_wastream(bufstr, "bufstr_write");
 		mapimode = 1;
+	} else if (idcmp(fname, "stethoscope") == 0) {
+		f = getProfilerStream();
 	} else {
 		f = open_wastream(fname);
 	}
+	if ( f == NULL)
+		return;
 	p = getInstrPtr(mb, 0);
 	mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
 	p = getInstrPtr(mb, 0);

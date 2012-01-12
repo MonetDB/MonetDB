@@ -263,6 +263,7 @@ mal_export void setFilterOnBlock(MalBlkPtr mb, str mod, str fcn);
 mal_export void clrFilter(Module cntxt, str mod, str fcn);
 mal_export void setFilterVariable(MalBlkPtr mb, int i);
 mal_export void clrFilterVariable(MalBlkPtr mb, int i);
+mal_export stream getProfilerStream();
 
 mal_export void MPresetProfiler(stream *fdout);
 
@@ -307,7 +308,7 @@ mal_export void _initTrace(void);
 #include "mal_profiler.h"
 #include "mal_debugger.h"
 
-static stream *eventstream = 0;
+stream *eventstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
@@ -344,6 +345,7 @@ static int delayswitch = 0; /* to wait before sending the profile info */
 #define PROFuser    15
 #define PROFstart   16
 #define PROFtype    17
+#define PROFdot     18
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -367,7 +369,8 @@ static struct {
 	/*  15 */  { "user", 0},
 	/*  16 */  { "start", 0},
 	/*  17 */  { "type", 0},
-	/*  18 */  { 0, 0}
+	/*  18 */  { "dot", 0},
+	/*  19 */  { 0, 0}
 };
 
 /*
@@ -826,6 +829,15 @@ MPresetProfiler(stream *fdout)
 	mal_set_lock(mal_profileLock, "profileLock");
 	eventstream = 0;
 	mal_unset_lock(mal_profileLock, "profileLock");
+}
+
+/*
+ * Extern sources may dump information on the profiler stream
+*/
+stream
+getProfilerStream()  
+{
+	return eventstream;
 }
 
 /*
