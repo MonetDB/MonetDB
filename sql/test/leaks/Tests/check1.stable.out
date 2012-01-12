@@ -30,11 +30,12 @@ Ready.
 % 3,	9,	4 # length
 [ "int",	"int",	0	]
 [ "int",	"lng",	2	]
-[ "int",	"str",	147	]
+[ "int",	"str",	149	]
 [ "oid",	"bit",	0	]
 [ "oid",	"bit",	93	]
 [ "oid",	"bit",	93	]
-[ "oid",	"bit",	376	]
+[ "oid",	"bit",	93	]
+[ "oid",	"bit",	385	]
 [ "oid",	"bit",	1182	]
 [ "oid",	"bit",	1182	]
 [ "oid",	"int",	0	]
@@ -77,13 +78,14 @@ Ready.
 [ "oid",	"int",	42	]
 [ "oid",	"int",	93	]
 [ "oid",	"int",	93	]
+[ "oid",	"int",	93	]
 [ "oid",	"int",	195	]
 [ "oid",	"int",	195	]
-[ "oid",	"int",	376	]
-[ "oid",	"int",	376	]
-[ "oid",	"int",	376	]
-[ "oid",	"int",	376	]
-[ "oid",	"int",	376	]
+[ "oid",	"int",	385	]
+[ "oid",	"int",	385	]
+[ "oid",	"int",	385	]
+[ "oid",	"int",	385	]
+[ "oid",	"int",	385	]
 [ "oid",	"int",	1182	]
 [ "oid",	"int",	1182	]
 [ "oid",	"int",	1182	]
@@ -167,10 +169,10 @@ Ready.
 [ "oid",	"str",	42	]
 [ "oid",	"str",	93	]
 [ "oid",	"str",	93	]
-[ "oid",	"str",	376	]
-[ "oid",	"str",	376	]
-[ "oid",	"str",	376	]
-[ "oid",	"str",	376	]
+[ "oid",	"str",	385	]
+[ "oid",	"str",	385	]
+[ "oid",	"str",	385	]
+[ "oid",	"str",	385	]
 [ "oid",	"str",	1182	]
 [ "oid",	"str",	1182	]
 [ "oid",	"str",	1182	]
@@ -187,13 +189,13 @@ Ready.
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	178	]
+[ "transient",	182	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L3,	.bbp # table_name
 % L3,	L4 # name
 % char,	wrd # type
 % 10,	3 # length
-[ "persistent",	154	]
+[ "persistent",	156	]
 
 # 22:02:15 >  
 # 22:02:15 >  Done.
