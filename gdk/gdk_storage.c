@@ -261,7 +261,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		 * updating the image on disk.
 		 *
 		 * Maybe it is better to make use of MT_msync().  But
-		 * then, we would need to bring in a backup mechanism,
+		 * then we would need to bring in a backup mechanism,
 		 * in which stable images of the BATs are created at
 		 * commit-time.
 		 */
@@ -693,7 +693,7 @@ BATload_intern(bat i, int lock)
  * @- BAT preload
  * To avoid random disk access to large (memory-mapped) BATs it may
  * help to issue a preload request.  Of course, it does not make sense
- * to touch more then we can physically accomodate (budget).
+ * to touch more than we can physically accomodate (budget).
  */
 /* quick and probabilistic test for a sequentially correlated heap */
 static int

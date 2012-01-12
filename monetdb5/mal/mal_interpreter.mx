@@ -547,7 +547,24 @@ workslow:
 			@:endProfile(stk)@
 		}
 	}
-	@:MALwrapup@
+	if (exceptionVar >= 0) {
+		if (ret) {
+			str oldret = ret;
+			ret = createScriptException(mb, mb->stop - 1,
+				getExceptionType(getVarName(mb, exceptionVar)),
+				ret, "Exception not caught");
+			FREE_EXCEPTION(oldret);
+		} else {
+			if (stk->stk[exceptionVar].vtype == TYPE_str) {
+				ret = createScriptException(mb, mb->stop - 1, MAL,
+					stk->stk[exceptionVar].val.sval,
+					"Exception not caught");
+			} else {
+				ret = createScriptException(mb, mb->stop - 1, MAL,
+					NULL, "Exception not caught");
+			}
+		}
+	}
 	GDKfree(backup);
 	GDKfree(sbackup);
 	GDKfree(garbage);
@@ -1039,7 +1056,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 /*
  * @-
  * A consequence of multiple threads is that they may claim more
- * space then available. This may cause GDKmalloc to fail.
+ * space than available. This may cause GDKmalloc to fail.
  * In many cases this situation will be temporary, because
  * threads will ultimately release resources.
  * Therefore, we wait for it.
@@ -1517,26 +1534,6 @@ str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop
 	return MAL_SUCCEED;
 }
 
-@= MALwrapup
-	if (exceptionVar >= 0) {
-		if (ret) {
-			str oldret = ret;
-			ret = createScriptException(mb, mb->stop - 1,
-				getExceptionType(getVarName(mb, exceptionVar)),
-				ret, "Exception not caught");
-			FREE_EXCEPTION(oldret);
-		} else {
-			if (stk->stk[exceptionVar].vtype == TYPE_str) {
-				ret = createScriptException(mb, mb->stop - 1, MAL,
-					stk->stk[exceptionVar].val.sval,
-					"Exception not caught");
-			} else {
-				ret = createScriptException(mb, mb->stop - 1, MAL,
-					NULL, "Exception not caught");
-			}
-		}
-	}
-@
 @h
 /*
  * @+ Safeguarding

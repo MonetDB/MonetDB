@@ -40,7 +40,8 @@ def extract(f):
             .replace(' )', ')') \
             .replace(') ', ')') \
             .replace('* ', '*') \
-            .replace(' ,', ',')
+            .replace(' ,', ',') \
+            .replace(')__attribute__', ') __attribute__')
         decl = strre.sub(r'\1 *', decl)
         res = nmere.search(decl)
         if res is not None:

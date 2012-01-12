@@ -365,7 +365,7 @@ str PNtarget(int *ret, str *fcn, str *tbl)
 }
 
 /* check the routine for input/output relationships */
-/* Make sure we do not re-use the same source more then once */
+/* Make sure we do not re-use the same source more than once */
 str
 PNanalysis(Client cntxt, MalBlkPtr mb)
 {

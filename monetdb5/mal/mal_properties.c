@@ -175,7 +175,7 @@
  * ]
  *
  * Aside, it may be valuable to collect information on e.g. the execution time
- * of functions as a basis for future optimizations. Rather then cluttering the
+ * of functions as a basis for future optimizations. Rather than cluttering the
  * property section, it makes sense to explicitly update this information in
  * a catalog.
  * @+ Properties at the MAL level
