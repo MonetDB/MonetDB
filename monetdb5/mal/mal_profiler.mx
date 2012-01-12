@@ -263,7 +263,7 @@ mal_export void setFilterOnBlock(MalBlkPtr mb, str mod, str fcn);
 mal_export void clrFilter(Module cntxt, str mod, str fcn);
 mal_export void setFilterVariable(MalBlkPtr mb, int i);
 mal_export void clrFilterVariable(MalBlkPtr mb, int i);
-mal_export stream getProfilerStream();
+mal_export stream *getProfilerStream(void);
 
 mal_export void MPresetProfiler(stream *fdout);
 
@@ -331,7 +331,7 @@ static int delayswitch = 0; /* to wait before sending the profile info */
 #define PROFtime    1
 #define PROFthread  2
 #define PROFpc      3
-#define PROFoper    4
+#define PROFfunc    4
 #define PROFticks   5
 #define PROFcpu     6
 #define PROFmemory  7
@@ -355,7 +355,7 @@ static struct {
 	/*  1 */  { "time", 0},
 	/*  2 */  { "thread", 0},
 	/*  3 */  { "pc", 0},
-	/*  4 */  { "operation", 0},
+	/*  4 */  { "function", 0},
 	/*  5 */  { "ticks", 0},
 	/*  6 */  { "cpu", 0},
 	/*  7 */  { "memory", 0},
@@ -436,6 +436,8 @@ void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
 	if (mb->profiler == NULL) return;
+	if (profileCounter[PROFdot].status == 1 && start && pc == 0)
+		showFlowGraph(mb,stk,"stethoscope");
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
 	if (myname == 0)
@@ -462,11 +464,11 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFthread].status) {
 		log0("thread,\t");
 	}
-	if (profileCounter[PROFpc].status) {
-		log0("function,\tpc,\t");
+	if (profileCounter[PROFfunc].status) {
+		log0("function,\t");
 	}
-	if (profileCounter[PROFoper].status) {
-		log0("operation,\t");
+	if (profileCounter[PROFpc].status) {
+		log0("pc,\t");
 	}
 	if (profileCounter[PROFticks].status) {
 		log0("usec,\t");
@@ -584,23 +586,15 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFthread].status) {
 		log(" %d,\t", THRgettid());
 	}
-	if (profileCounter[PROFpc].status) {
-		str mod = "";
-		str fcn = "";
-
-		if (stk->blk) {
-			mod = getModuleId(getInstrPtr(stk->blk, 0));
-			fcn = getFunctionId(getInstrPtr(stk->blk, 0));
-		}
-		log2("\"%s.%s\",\t", mod, fcn);
-		log("%d,\t", getPC(mb, pci));
-	}
-	if (profileCounter[PROFoper].status) {
+	if (profileCounter[PROFfunc].status) {
 		if (getModuleId(pci) && getFunctionId(pci)) {
 			log2("\"%s.%s\",\t",
 				getModuleId(pci), getFunctionId(pci));
 		} else
 			log("\"%s\",\t", operatorName(pci->token));
+	}
+	if (profileCounter[PROFpc].status) {
+		log("%d,\t", getPC(mb, pci));
 	}
 	if (profileCounter[PROFticks].status) {
 		log(LLFMT ",\t", mb->profiler[pc].ticks);
@@ -834,8 +828,8 @@ MPresetProfiler(stream *fdout)
 /*
  * Extern sources may dump information on the profiler stream
 */
-stream
-getProfilerStream()  
+stream *
+getProfilerStream(void)  
 {
 	return eventstream;
 }
