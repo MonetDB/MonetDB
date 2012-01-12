@@ -3893,6 +3893,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
  * | ) [ L6 ]                                                                                          |
  * +---------------------------------------------------------------------------------------------------+
  */
+#define new_subtype_list(sa) list_new(sa)
 static sql_exp *
 _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *aggrstr, symbol *sym, int f)
 {
@@ -3900,7 +3901,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	sql_exp **os_sta = NULL, **os_ste = NULL, **os_sto = NULL, **nrep = NULL, **ngrp = NULL;
 	sql_subfunc *sf = NULL;
 	sql_subtype st_int, st_flt;
-	list *arrg_args = new_exp_list(sql->sa);
+	list *aggr_args = new_exp_list(sql->sa), *aggr_types = new_subtype_list(sql->sa);
 	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_t") + strlen(aggrstr) + 1);
 	node *cn = NULL;
 	sql_table *t = (sql_table*)((sql_rel*)groupby->l)->l;
@@ -3923,7 +3924,9 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		if(sym->token != SQL_COLUMN) {
 			return sql_error(sql, 02, "SELECT: expressions other than <column name> not supported in tiling ranges");
 		}
-		append(arrg_args, rel_column_ref(sql, rel, sym, f));
+		exp = rel_column_ref(sql, rel, sym, f);
+		append(aggr_args, exp);
+		append(aggr_types, exp_subtype(exp));
 	}
 
 	dim    = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
@@ -4020,7 +4023,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	}
 	/* finally, we build a list of args 'srs_args' with all parameters to
 	 * 'array_series1' to compute the materialised offsets 'oss' for each
-	 * dimension, then we append all args to 'arrg_ags' for the SciQL AGGR
+	 * dimension, then we append all args to 'aggr_ags' for the SciQL AGGR
 	 * functions. */
 	for (i = 0; i < t->ndims; i++) {
 		list *srs_args = new_exp_list(sql->sa);
@@ -4032,16 +4035,27 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(srs_args), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 
-		append(arrg_args, dim[i]);
-		append(arrg_args, exp_op(sql->sa, srs_args, sf));
-		append(arrg_args, exp_atom_int(sql->sa, dsize[i]));
+		append(aggr_args, dim[i]);
+		append(aggr_types, exp_subtype(dim[i]));
+
+		/* have to build the list of types "by hand", since the call to
+		 * 'array_series1' is of the type "bat", which causes the
+		 * sql_bind_func_ below to fail */
+		append(aggr_args, exp_op(sql->sa, srs_args, sf));
+		append(aggr_types, exp_subtype(os_sta[i]));
+		
+		exp = exp_atom_int(sql->sa, dsize[i]);
+		append(aggr_args, exp);
+		append(aggr_types, exp_subtype(exp));
 	}
-	if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, exps_subtype(arrg_args), F_FUNC)))
+	if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, aggr_types, F_FUNC)))
 		return sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
-	exp = exp_op(sql->sa, arrg_args, sf);
-	/* HACK: secretly change the groupby into a project */
+	exp = exp_op(sql->sa, aggr_args, sf);
+	/* HACK: secretly change the groupby into a project, and wipe out all traces of the AGGR */
 	groupby->op = op_project;
 	groupby->r = NULL;
+	groupby->card = CARD_MULTI;
+	(*rel)->card = CARD_MULTI;
 	rel_project_add_exp(sql, groupby, exp);
 	return exp;
 }
