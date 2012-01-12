@@ -124,7 +124,7 @@ comment "Generate an exception when b!=0";
 # This module also contains the definitions for managing an SQL database schema in
 # version 5.  It is an adaptation of the original V4.3 code base.
 # A main difference is that the global catalog is obtained from
-# the client record, rather then lookup the variable in a context stack.
+# the client record, rather than lookup the variable in a context stack.
 #
 # The MAL operations below are used in the SQL->MAL compiler and
 # can be (sparingly) used to inspect it from a MIL console.

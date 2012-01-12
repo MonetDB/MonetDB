@@ -245,7 +245,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*
  * @-
  * This optimizer is directly called for the current routine.
- * It is more a code generator then an optimizer per se.
+ * It is more a code generator than an optimizer per se.
  */
 opt_export int OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str OPTmultiplexSimple(Client cntxt);

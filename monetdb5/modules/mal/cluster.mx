@@ -945,7 +945,7 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	}
 	if (cmap->tsorted) {
 		/* input to cluster was sorted, ie nothing to do here 
-		   then to return the input */
+		   than to return the input */
 		BBPunfix(*PSUM);
 		BBPunfix(*CMAP);
 		BBPkeepref(*RB = b->batCacheid);

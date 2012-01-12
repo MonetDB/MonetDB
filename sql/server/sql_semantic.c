@@ -324,7 +324,7 @@ sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 
 		f->res.scale = lt->scale + rt->scale;
 		f->res.digits = lt->digits + rt->digits;
-		/* HACK alert: digits should be less then max */
+		/* HACK alert: digits should be less than max */
 		if (f->res.type->radix == 10 && f->res.digits > 19)
 			f->res.digits = 19;
 		if (f->res.type->radix == 2 && f->res.digits > 53)
@@ -379,7 +379,7 @@ scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 		int digits = rt->scale + lt->digits;
 		sql_subtype nlt;
 
-		/* HACK alert: digits should be less then max */
+		/* HACK alert: digits should be less than max */
 		if (f->res.type->radix == 10 && digits > 19)
 			digits = 19;
 		if (f->res.type->radix == 2 && digits > 53)

@@ -493,7 +493,7 @@ BSKTthreshold(int *ret, str *tbl, int *sz)
 	if ( *sz < 0)
 		throw(MAL,"basket.threshold","Illegal value");
 	if ( *sz < baskets[bskt].winsize)
-		throw(MAL,"basket.threshold","Threshold smaller then window size");
+		throw(MAL,"basket.threshold","Threshold smaller than window size");
 	baskets[bskt].threshold = *sz;
 	*ret = TRUE;
 	return MAL_SUCCEED;

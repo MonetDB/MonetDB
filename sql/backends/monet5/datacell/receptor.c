@@ -25,7 +25,7 @@
  * This module is a prototype for the implementation of a DataCell receptor.  It can be used as follows.
  * @example
  * @end example
- * After this call sensors can sent tuples to the
+ * After this call sensors can send tuples to the
  * the stream X at the DataCell connection.
  * They are appended to the event basket with the usec clock tick included.
  *

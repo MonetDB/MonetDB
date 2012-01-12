@@ -130,7 +130,7 @@ comment "Routine to handle join paths.  The type analysis is rather tricky.";
  * @-
  * Post-optimization. After the join path has been constructed
  * we could search for common subpaths. This heuristic is to
- * remove any pair which is used more then once.
+ * remove any pair which is used more than once.
  * Inner paths are often foreign key walks.
  * The heuristics is sufficient for the code produced by SQL frontend.
  * The alternative is to search for all possible subpaths and materialize them.
@@ -306,7 +306,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				/*
 				 * @-
-				 * Don't inject a pattern when it is used more then once.
+				 * Don't inject a pattern when it is used more than once.
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
 					OPTDEBUGjoinPath {
@@ -544,7 +544,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
  * lead to materialization of large views. This solved the earlier
  * problem noticable on TPC-H that join order was producing slower
  * results. Now, on TPCH-H, all queries run equal or better.
- * about 12 out of 84 joinpaths are improved with more then 10%.
+ * about 12 out of 84 joinpaths are improved with more than 10%.
  * (affecting Q2, Q5, Q7, Q8,Q11,Q13)
  */
 opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);

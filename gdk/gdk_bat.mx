@@ -412,7 +412,7 @@ BATclone(BAT *b, BUN cap)
  * it is rather difficult to give a precise estimate of the required space.
  * The routine BATguess is used internally for this purpose.
  * It balances the cost of small BATs with their probability of occurrence.
- * Small results BATs are more likely then 100M BATs.
+ * Small results BATs are more likely than 100M BATs.
  *
  * Likewise, the routines Hgrows and Tgrows  provides a heuristic to enlarge the space.
  */
