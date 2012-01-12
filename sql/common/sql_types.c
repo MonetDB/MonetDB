@@ -883,6 +883,8 @@ func_destroy(sql_func *t)
 		list_destroy(t->ops);
 	if (t->query)
 		_DELETE(t->query);
+	if (t->sa)
+		sa_destroy(t->sa);
 	_DELETE(t);
 }
 

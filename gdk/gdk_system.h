@@ -79,11 +79,11 @@ gdk_export int GDKdebug;
 /* #define MT_LOCK_TRACE 1 */
 #ifdef MT_LOCK_TRACE
 gdk_export MT_Id MT_locktrace;
-gdk_export void MT_locktrace_start();
-gdk_export void MT_locktrace_end();
+gdk_export void MT_locktrace_start(void);
+gdk_export void MT_locktrace_end(void);
 gdk_export unsigned long long MT_locktrace_cnt[65536];
 gdk_export char *MT_locktrace_nme[65536];
-gdk_export unsigned long long MT_clock();
+gdk_export unsigned long long MT_clock(void);
 
 #define MT_locktrace_hash(_id)  ((int) (((lng) ((size_t) _id))^(((lng) ((size_t) _id))>>16))&65535)
 #define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) do { unsigned long long _c=0; if (MT_locktrace) _c=(MT_getpid() == MT_locktrace)?MT_clock():0; MT_log(_impl, _object, _action, _caller, _fp); if (_c) { MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; } } while(0)
@@ -150,8 +150,6 @@ typedef pthread_mutex_t MT_Lock;
 #define MT_lock_unset(l,n)   MT_log(pthread_mutex_unlock((pthread_mutex_t *) l), l, "MT_unset_lock", n, stderr)
 #define MT_lock_try(l)       pthread_mutex_trylock((pthread_mutex_t *) l)
 #define MT_lock_dump(l,fp,n) MT_log(/*nothing*/, &l, "MT_dump_lock", n, fp)
-
-gdk_export MT_Lock MT_system_lock;
 
 /*
  * @- MT Semaphore API

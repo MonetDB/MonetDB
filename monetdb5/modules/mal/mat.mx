@@ -36,7 +36,7 @@ All Rights Reserved.
  * Normally all mat.new() operations are removed by the
  * mergetable optimizer.
  * In case a mat.new() is retained in the code, then it will
- * behaves as a mat.pack();
+ * behave as a mat.pack();
  *
  * The primitives below are chosen to accomodate the SQL
  * front-end to produce reasonable efficient code.

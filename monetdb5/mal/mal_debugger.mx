@@ -2036,7 +2036,7 @@ if(h && h->mask){
  * the usage of memory by BAT information. The characters are interpreted
  * as follows:
  * .=unused, X=completely used, [0-9]=small elements within the granule
- * More then 9 elements makes it full.
+ * More than 9 elements makes it full.
 @= setVector
 	start= (((long)@1)-min)/granule;
 	lim= (((long)@1)-min + @2)/granule;

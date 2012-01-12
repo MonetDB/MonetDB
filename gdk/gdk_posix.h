@@ -193,21 +193,6 @@ gdk_export size_t MT_getrss(void);
 
 gdk_export void *MT_mmap(char *path, int mode, off_t off, size_t len);
 gdk_export int MT_munmap(void *p, size_t len);
-gdk_export int MT_msync(void *p, size_t off, size_t len, int mode);
-
-typedef struct MT_mmap_hdl_t {
-	void *hdl;
-	int mode;
-	void *fixed;
-#ifdef NATIVE_WIN32
-	int hasLock;
-	void *map;
-#endif
-} MT_mmap_hdl;
-
-gdk_export void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps);
-gdk_export void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
-gdk_export void MT_mmap_close(MT_mmap_hdl *hdl);
 
 gdk_export int MT_path_absolute(const char *path);
 

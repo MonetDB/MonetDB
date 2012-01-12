@@ -199,7 +199,7 @@ stream_export buffer *mnstr_get_buffer(stream *s);
    Block stream is a stream which sends data in blocks of a known
    size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
 
-   A block is written once more then BLOCK size data has been written using
+   A block is written once more than BLOCK size data has been written using
    the write commands or when the flush command is sent.
 
    All full blocks together with a single not full block form a major

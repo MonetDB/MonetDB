@@ -124,7 +124,6 @@ gdk_export void BBPclear(bat bid);
 #ifdef LIBGDK			/* only used within GDK */
 extern bat BBPinsert(BATstore *bs);
 #endif
-gdk_export void BBPcacheit(BATstore *bs, int lock);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, const char *nme);
@@ -138,7 +137,6 @@ gdk_export int BBPsync(int cnt, bat *subcommit);
 gdk_export int BBPincref(bat b, int logical);
 gdk_export void BBPkeepref(bat i);
 gdk_export void BBPreleaseref(bat i);
-gdk_export void BBPreleaselref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 

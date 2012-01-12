@@ -1648,7 +1648,7 @@ str @1SetoidImpl(str *ret, @1 *v){
 
 /*
  * @-
- * Type conversion template. Only allowed then no information is lost.
+ * Type conversion template. Only allowed when no information is lost.
  */
 @= coercionImpl
 calc_export str @1From@2Impl(@1 *res, @2 *val);

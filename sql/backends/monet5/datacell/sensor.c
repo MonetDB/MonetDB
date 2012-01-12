@@ -109,7 +109,7 @@ static int delay = 1;	/* intra batch delay in ms, use 1 to avoid loosing too man
 static int batchsize = 1;
 static int events = -1;
 static int columns = 1;
-static int autoincrement = 1;	/* if id != 0 then we increment and sent it along */
+static int autoincrement = 1;	/* if id != 0 then we increment and send it along */
 static int timestamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
 static char *host = "localhost";
 static int port = 50500;

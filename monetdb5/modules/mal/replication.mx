@@ -72,7 +72,7 @@ All Rights Reserved.
  * table it closed the log stream.
  *
  * The function freezeSlaves() removes the log files and makes sure that all
- * existing slaves won't be able to catch up other then by re-initializing the
+ * existing slaves won't be able to catch up other than by re-initializing the
  * database using e.g. a checkpoint.
  * @verbatim
  * CREATE PROCEDURE suspendSync() EXTERNAL NAME slave."stop";
@@ -942,7 +942,7 @@ The master has to assume that the slave has initialized its SQL environment prop
 */
 static struct MASTERrecord {
 	str uri;
-	oid tag;        /* next one to sent */
+	oid tag;        /* next one to send */
 	Mapi m;
 	time_t last_connect;
 	time_t last_disconnect;
@@ -964,7 +964,7 @@ MASTERsend(void *arg)
 	/* find the last replication log file */
 	master = GDKgetenv_istrue("replication_master") &&
 			 GDKgetenv("replication_slave") == NULL;
-	/* If the slave starts from scratch, it will sent the 0-tag.
+	/* If the slave starts from scratch, it will send the 0-tag.
 	 * This can simply be replaced by the lowest number known.  But,
 	 * then the slave should use the BATmax option instead of the
 	 * BATcount to determine the tag. */
@@ -1012,7 +1012,7 @@ MASTERsend(void *arg)
 			mal_set_lock(repLck, "replication");
 		if (repFile)
 			mnstr_flush(repFile);
-		/* The tricky part of the block wise read is to ensure we sent
+		/* The tricky part of the block wise read is to ensure we send
 		 * proper newline terminated commands.  Moreover, we would not
 		 * like to block due to sending for old files.  */
 		/* read the complete file [now trimmed to 64KB]*/

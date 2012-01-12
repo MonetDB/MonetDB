@@ -176,7 +176,7 @@ address AX3count_no_nil3;
 /*
  * @-
  * In case the group OIDs span a range of more than SMALL_AGGR_MAX,
- * but the number of groups is less then SCAN_AGGR_MAX,
+ * but the number of groups is less than SCAN_AGGR_MAX,
  * we use (backward-) "scan"-lookup (unrolled implementation exploiting
  * fall-through in C's switch statment) instead of hash-lookup,
  * as the latter turned out to be rather expensive ...

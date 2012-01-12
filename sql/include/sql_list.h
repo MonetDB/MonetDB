@@ -87,7 +87,7 @@ extern list *list_sort(list *l, fkeyvalue key, fdup dup);
 /* The sort function sorts the list using the key function, which 
  * translates the list item values into integer keyvalues. */
 /* sometimes more complex functions are needed to compute a key, then
- * we can pass the key's via an array, to keysort */
+ * we can pass the keys via an array, to keysort */
 extern list *list_keysort(list *l, int *key, fdup dup);
 
 extern list *list_dup(list *l, fdup dup);
