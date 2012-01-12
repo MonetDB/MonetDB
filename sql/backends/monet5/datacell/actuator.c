@@ -91,7 +91,7 @@ by telephone. Since, the mapping from event message to real world action is situ
 specific, the default provided here is to only show the event message.
 
 Users interested in experimentation with real actuators, can hook up the event
-stream with a SCADA system or directly sent the events in a proper format to
+stream with a SCADA system or directly send the events in a proper format to
 the channel where the actuators is listening.
 
 The actuator runs in two modes, active or passive. In the former case, the tool
@@ -172,7 +172,7 @@ static void showStatistics(void)
 	mnstr_printf(ACout, "Bandwidth %zu bytes\n", characters * sizeof(char));
 
 
-	/* sent a short tuple to stderr for gnuplot datafile*/
+	/* send a short tuple to stderr for gnuplot datafile*/
 	fprintf(stderr, "events %d throughput %6.2f\n", received, 1000000.0 / elaps * tuplesIntheBuffer);
 	received=0;
 	totallatency=0;

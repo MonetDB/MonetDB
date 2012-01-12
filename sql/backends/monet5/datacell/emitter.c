@@ -26,7 +26,7 @@
  * DataCell emitter.  It can be used as follows.
  * @example
  * @end example
- * After this call it will sent tuples from basket X_p1
+ * After this call it will send tuples from basket X_p1
  * to the stream Y at the localhost default port.
  *
  * Each emitter is supported by an independent thread
