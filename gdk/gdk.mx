@@ -731,7 +731,6 @@ typedef struct {
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, ValPtr res);
-gdk_export int VALprint(stream *fd, ValPtr res);
 gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
 gdk_export void VALempty(ValPtr v);
@@ -985,10 +984,7 @@ typedef int (*GDKfcn) ();
  * These routines should be used to alloc free or extend heaps;
  * they isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
-gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
-gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -1071,7 +1067,6 @@ gdk_export BAT *BATnew(int hdtype, int tltype, BUN capacity);
 gdk_export BAT *BATextend(BAT *b, BUN newcap);
 
 /* internal */
-gdk_export BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export chr 	ATOMelmshift(int sz);
 
 /*
@@ -1562,7 +1557,6 @@ bat_iterator(BAT *b)
  * at the end of the BAT, but not to modify anything that already
  * was in there.
  */
-gdk_export str BATrename(BAT *b, const char *nme);
 #ifndef BATcount
 gdk_export BUN BATcount(BAT *b);
 #endif
@@ -1574,7 +1568,6 @@ gdk_export BAT *BATkey(BAT *b, int onoff);
 gdk_export BAT *BATset(BAT *b, int onoff);
 gdk_export BAT *BATmode(BAT *b, int onoff);
 gdk_export BAT *BATroles(BAT *b, const char *hnme, const char *tnme);
-gdk_export BAT *BATcol_name(BAT *b, const char *tnme);
 gdk_export int BATname(BAT *b, const char *nme);
 gdk_export BAT *BATseqbase(BAT *b, oid o);
 gdk_export BAT *BATsetaccess(BAT *b, int mode);
@@ -1712,9 +1705,7 @@ gdk_export size_t BATmemsize(BAT *b, int dirty);
 
 gdk_export void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
 gdk_export int GDKcreatedir(const char *nme);
-gdk_export int GDKremovedir(const char *nme);
 
-gdk_export int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 /*
  * @- Printing
  * @multitable @columnfractions 0.08 0.7
@@ -1789,8 +1780,6 @@ gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export BAT *BATssort(BAT *b);
 gdk_export BAT *BATssort_rev(BAT *b);
-gdk_export BAT *BATsorder(BAT *b);
-gdk_export BAT *BATsorder_rev(BAT *b);
 
 gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
 gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
@@ -2218,7 +2207,6 @@ gdk_export BAT *BATrangesplit(BAT *b, BUN n, int unary);
 gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 
 /* low level functions */
-gdk_export BUN SORTfnd(BAT *b, ptr v);
 
 #define BATprepareHash(X) (((X)->H->hash == NULL) && !BAThash(X, 0))
 /*
@@ -2266,9 +2254,6 @@ gdk_export BUN SORTfnd(BAT *b, ptr v);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void GDKvminc(size_t len);
-gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
-
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
@@ -2279,7 +2264,6 @@ gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed 
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 gdk_export size_t GDKvm_heapsize(void);
 gdk_export size_t GDKmem_heapsize(void);
-gdk_export size_t GDKmem_heapinuse(void);
 
 gdk_export void *GDKmalloc(size_t size);
 gdk_export void *GDKzalloc(size_t size);
@@ -2776,11 +2760,8 @@ gdk_export BAT *BATpropcheck(BAT *b, int mode);
 
 gdk_export BAT *VIEWcreate(BAT *h, BAT *t);
 gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
-gdk_export BAT *VIEWhead(BAT *b);
-gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export BAT *BATmaterialize(BAT *b);
-gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -3229,7 +3210,6 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
 #define JOIN_GE		2
 #define JOIN_BAND	3
 
-gdk_export BAT *BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order);
 gdk_export BAT *BATselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
 gdk_export BAT *BATantiuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
@@ -3239,11 +3219,8 @@ gdk_export BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
 
 gdk_export BAT *BATconst(BAT *l, int tt, ptr val);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
-gdk_export BAT *BATleftthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
-gdk_export BAT *BATnlthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, BUN estimate);
-gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, BUN estimate);
 gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, BUN estimate);

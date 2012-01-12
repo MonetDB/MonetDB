@@ -34,8 +34,6 @@ All Rights Reserved.
 
 #include <monet_options.h>
 
-gdk_export void GDKlockHome(void);
-
 gdk_export BAT *GDKenv;
 
 @c
@@ -1502,7 +1500,6 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
 }
 
 
-@h
 /*
  * @+ Session Initialization
  * The parameter @emph{db} is followed by the database name relative to
@@ -1522,9 +1519,7 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
  * The arguments relevant for the kernel are extracted from the list.
  * Their value is turned into a blanc space.
  */
-gdk_export int GDKrecovery;
 
-@c
 int GDKrecovery = 0;
 
 @h
