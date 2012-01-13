@@ -331,7 +331,7 @@ printtree(tree *t, int level, char op)
 {
 	(void) level;  /* indenting not used (yet) */
 #define step 4
-	while (t) {
+	while (t != NULL) {
 		switch (t->type) {
 			case j_output_var:
 				if (op) {
@@ -502,7 +502,8 @@ printtree(tree *t, int level, char op)
 			default:
 				printf("<unknown type> ");
 		}
-		t = t->next;
+		if (t != NULL)
+			t = t->next;
 	}
 }
 
@@ -564,6 +565,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	j->buf = jaql;
+	j->err[0] = '\0';
 	yylex_init_extra(j, &j->scanner);
 
 	do {
@@ -606,6 +608,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			case 2: /* plan */
 			case 3: /* planf */
 				printtree(j->p, 0, j->explain == 3);
+				printf("\n");
 				break;
 		}
 		freetree(j->p);
@@ -614,12 +617,13 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		j->esc_depth = 0;
 		j->explain = 0;
 	} while (j->buf != NULL && j->err[0] == '\0');
-	if (j->err[0] != '\0')
-		throw(MAL, "jaql.execute", "%s", j->err);
 
 	yylex_destroy(j->scanner);
 	j->scanner = NULL;
 	/* freevars(j->vars);  should do only on client destroy */
+
+	if (j->err[0] != '\0')
+		throw(MAL, "jaql.execute", "%s", j->err);
 
 	*ret = 0;
 	return MAL_SUCCEED;
