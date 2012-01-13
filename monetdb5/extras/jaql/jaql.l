@@ -103,6 +103,7 @@ false      return _FALSE;
 <OBJ>.     yymore();
 [ \t\r\n]+ /* ignore whitespace */;
 [a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return _IDENT;}
+<<EOF>>    {yyextra->buf = NULL; return EOF;}
 .                      {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);

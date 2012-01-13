@@ -86,6 +86,16 @@ stmt: jaql _SCOLON
 	{
 		j->p = $$ = NULL;
 		YYABORT;
+	}
+	| _SCOLON
+	{
+		j->p = $$ = NULL;
+		YYACCEPT;
+	}
+	|
+	{
+		j->p = $$ = NULL;
+		YYACCEPT;
 	};
 
 jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL));}

@@ -563,54 +563,59 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cntxt->state[MAL_SCENARIO_OPTIMIZE] = j;
 	}
 
-
 	j->buf = jaql;
 	yylex_init_extra(j, &j->scanner);
-	yyparse(j);
-	yylex_destroy(j->scanner);
 
+	do {
+		yyparse(j);
+
+		if (j->err[0] != '\0')
+			break;
+		if (j->p == NULL)
+			continue;
+
+		switch (j->explain) {
+			case 0: {
+				str err;
+				/* normal (execution) mode */
+				Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
+						FUNCTIONsymbol);
+				/* we do not return anything */
+				setVarType(prg->def, 0, TYPE_void);
+				setVarUDFtype(prg->def, 0);
+				(void)dumptree(j, prg->def, j->p);
+				pushEndInstruction(prg->def);
+				/* codegen could report an error */
+				if (j->err[0] != '\0')
+					break;
+
+				chkProgram(cntxt->nspace, prg->def);
+				printFunction(cntxt->fdout, prg->def, 0, LIST_MAL_STMT);
+				err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
+				freeMalBlk(prg->def);
+				if (err != MAL_SUCCEED) {
+					snprintf(j->err, sizeof(j->err), "%s", err);
+					GDKfree(err);
+					break;
+				}
+			}	break;
+			case 1: /* explain */
+			case 2: /* plan */
+				printtree(j->p, 0, j->explain == 1);
+				break;
+			/* case 3: trace? */
+		}
+		freetree(j->p);
+		/* reset, j->buf has been reset by the lexer if EOF was found */
+		j->p = NULL;
+		j->esc_depth = 0;
+		j->explain = 0;
+	} while (j->buf != NULL && j->err[0] == '\0');
 	if (j->err[0] != '\0')
 		throw(MAL, "jaql.execute", "%s", j->err);
 
-	switch (j->explain) {
-		case 0: {
-			str err;
-			/* normal (execution) mode */
-			Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
-					FUNCTIONsymbol);
-			/* we do not return anything */
-			setVarType(prg->def, 0, TYPE_void);
-			setVarUDFtype(prg->def, 0);
-			(void)dumptree(j, prg->def, j->p);
-			pushEndInstruction(prg->def);
-
-			if (j->err[0] != '\0') {
-				freetree(j->p);
-				throw(MAL, "jaql.execute", "%s", j->err);
-			}
-			chkProgram(cntxt->nspace, prg->def);
-			printFunction(cntxt->fdout, prg->def, 0, LIST_MAL_STMT);
-			err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
-			freeMalBlk(prg->def);
-			if (err != MAL_SUCCEED) {
-				freetree(j->p);
-				return err;
-			}
-		}	break;
-		case 1: /* explain */
-		case 2: /* plan */
-			printtree(j->p, 0, j->explain == 1);
-			break;
-		/* case 3: trace? */
-	}
-	freetree(j->p);
-	/* reset all but vars */
-	j->p = NULL;
-	j->esc_depth = 0;
-	j->buf = NULL;
-	j->err[0] = '\0';
+	yylex_destroy(j->scanner);
 	j->scanner = NULL;
-	j->explain = 0;
 	/* freevars(j->vars);  should do only on client destroy */
 
 	*ret = 0;
