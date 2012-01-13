@@ -410,9 +410,11 @@ main(int argc, char **argv)
 	} else
 		k= setCounter("TtesDSI");
 
-	/* DOT needs PC */
-	if( profileCounter[32].status )
+	/* DOT needs function id and PC to correlate */
+	if( profileCounter[32].status ) {
+		profileCounter[3].status= k++;
 		profileCounter[4].status= k;
+	}
 
 	if (user == NULL || password == NULL) {
 		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
