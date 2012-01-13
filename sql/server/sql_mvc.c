@@ -109,6 +109,10 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
+		/* TODO: the code below is out-of-date.  Should be changed into the
+		 * following with the next major catalogue change:
+		 * mvc_create_column(m, t, "storage", "varchar", 2048);
+		 */
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
 		t = mvc_create_view(m, s, "arrays", SQL_PERSIST, "SELECT * FROM (SELECT p.*, 0 AS \"temporary\" FROM \"sys\".\"_tables\" AS p WHERE nr_dimensions > 0 UNION ALL SELECT t.*, 1 AS \"temporary\" FROM \"tmp\".\"_tables\" AS t WHERE nr_dimensions > 0) AS arrays;", 1);
