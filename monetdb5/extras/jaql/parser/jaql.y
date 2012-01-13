@@ -146,7 +146,7 @@ predicates: predicate        {$$ = $1;}
 		  ;
 
 predicate: opt_not variable
-		       {$$ = make_cpred(NULL, $1, make_pred($2, make_comp(_EQUALS), make_bool(1)));}
+		       {$$ = make_cpred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
 		 | opt_not variable comparison value
 		       {$$ = make_cpred(NULL, $1, make_pred($2, $3, $4));}
 		 ;
