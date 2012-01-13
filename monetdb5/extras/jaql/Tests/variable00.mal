@@ -1,0 +1,4 @@
+jaql.x("A = [1,2,4,{\"a\": 5}];");
+jaql.x("A;");
+jaql.x("A -> filter $ <= 2;");
+jaql.x("A -> filter each v v.a >= 5;");
