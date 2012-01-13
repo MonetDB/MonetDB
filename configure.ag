@@ -1389,6 +1389,7 @@ fi
 AC_SUBST(RUBYGEM)
 AM_CONDITIONAL(HAVE_RUBYGEM, test x"$have_rubygem" != xno -a x"$have_rubygem_dir" != xno)
 
+AM_PROG_LEX
 AC_PROG_YACC
 case "$YACC" in
 	bison*)

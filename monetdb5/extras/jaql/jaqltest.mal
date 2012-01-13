@@ -1,0 +1,26 @@
+include json;
+include jaql;
+
+#jaql.x("{}");
+io.print("1");
+jaql.x("A = B;");
+io.print("2a");
+jaql.x("test -> filter $.mgr;");
+io.print("2b");
+jaql.x("test -> filter each emp emp.mgr;");
+io.print("3");
+jaql.x("e -> filter $.mgr or $.income > 30000;");
+io.print("4");
+jaql.x("emps = [ {id:1, dept:1, income:12000},{id:2, dept:1, income:13000} ];");
+io.print("5");
+jaql.x("[ {id:1, dept:1, income:12000},{id:2, dept:1, income:13000} ] -> filter $.dept == 1;");
+io.print("6");
+jaql.x("[ 1, 2, 3 ] -> transform {\"value\":$};");
+io.print("7");
+jaql.x("[ [3,65,8,72], [5,98,2,65] ] -> expand each arr;");
+io.print("8");
+jaql.x("[ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand $.movie_ids;");
+#jaql.x("A -> expand -> transform $ * 2;");
+io.print("9");
+jaql.x("A -> expand $.ids;");
+

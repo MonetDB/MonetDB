@@ -15,5 +15,13 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = compiler ENABLE_CRACKERS?crackers HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx jaql
+module jaql;
+
+pattern execute(jaql:str):void
+address JAQLexecute
+comment "Parse and run the given JAQL query";
+
+pattern x(jaql:str):void
+address JAQLexecute
+comment "execute() alias for the lazy";
 
