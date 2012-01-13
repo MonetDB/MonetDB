@@ -575,9 +575,9 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			continue;
 
 		switch (j->explain) {
-			case 0: {
+			case 0: /* normal (execution) mode */
+			case 1: /* explain: show MAL-plan */ {
 				str err;
-				/* normal (execution) mode */
 				Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
 						FUNCTIONsymbol);
 				/* we do not return anything */
@@ -590,20 +590,23 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 
 				chkProgram(cntxt->nspace, prg->def);
-				printFunction(cntxt->fdout, prg->def, 0, LIST_MAL_STMT);
-				err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
-				freeMalBlk(prg->def);
-				if (err != MAL_SUCCEED) {
-					snprintf(j->err, sizeof(j->err), "%s", err);
-					GDKfree(err);
-					break;
+				if (j->explain == 1) {
+					printFunction(cntxt->fdout, prg->def, 0,
+							LIST_MAL_STMT | LIST_MAPI);
+				} else {
+					err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
+					freeMalBlk(prg->def);
+					if (err != MAL_SUCCEED) {
+						snprintf(j->err, sizeof(j->err), "%s", err);
+						GDKfree(err);
+						break;
+					}
 				}
 			}	break;
-			case 1: /* explain */
 			case 2: /* plan */
-				printtree(j->p, 0, j->explain == 1);
+			case 3: /* planf */
+				printtree(j->p, 0, j->explain == 3);
 				break;
-			/* case 3: trace? */
 		}
 		freetree(j->p);
 		/* reset, j->buf has been reset by the lexer if EOF was found */

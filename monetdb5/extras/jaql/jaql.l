@@ -3,6 +3,7 @@
 %option bison-locations
 %option noyywrap
 %option yylineno
+%option case-insensitive
 %option extra-type="struct _jc *"
 
 %{
@@ -54,6 +55,7 @@ asc        return ASC;
  /* debugging aids */
 explain    return EXPLAIN;
 plan       return PLAN;
+planf      return PLANF;
 
  /* language constructs */
 "->"       return _ARROW;

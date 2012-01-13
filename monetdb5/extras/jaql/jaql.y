@@ -21,7 +21,7 @@
 %token LEX_ERROR
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF
 
 %token _ARROW _DOLLAR _ASSIGN _EQUALS _NEQUAL _TRUE _FALSE
 %token _GREATER _GEQUAL _LESS _LEQUAL _NOT _AND _OR _SCOLON _DOT
@@ -80,6 +80,12 @@ stmt: jaql _SCOLON
 	{
 		j->p = $$ = $2;
 		j->explain = 2;
+		YYACCEPT;
+	}
+	| PLANF jaql _SCOLON
+	{
+		j->p = $$ = $2;
+		j->explain = 3;
 		YYACCEPT;
 	}
 	| LEX_ERROR
