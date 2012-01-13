@@ -5781,6 +5781,7 @@ str getName(str nme, size_t len);
 int getPC(MalBlkPtr mb, InstrPtr p);
 str getPipeCatalog(int *nme, int *def);
 str getPipeDefinition(str name);
+stream *getProfilerStream(void);
 str getRef;
 str getRefName(MalBlkPtr mb, int i);
 str getScenarioLanguage(Client c);
