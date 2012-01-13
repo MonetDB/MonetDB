@@ -773,7 +773,8 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	(void) mb;
 	if( p->retc != q->retc || p->argc != q->argc)
 		return FALSE;
-	for(k=p->retc; k<p->argc;k++)
+	/* heuristic, because instructions are linked using last constant argument */
+	for(k=p->argc-1; k >= p->retc; k--)
 		if( q->argv[k]!= p->argv[k]){
 			if( isVarConstant(mb,getArg(p,k)) &&
 				isVarConstant(mb,getArg(q,k)) ) {
