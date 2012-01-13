@@ -204,7 +204,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				
 		if ( !prop)
 		for (; j ; j = list[j]) 
-			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
+			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
 				hasSameSignature(mb, p, q, p->retc), 
@@ -228,6 +228,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				if ( hasSameArguments(mb, p, q) && 
 					hasSameSignature(mb, p, q, p->retc) && 
 					!hasCommonResults(p, q) && 
+					!isUnsafeFunction(q) && 
 					isLinearFlow(q) 
 				   ) {
 						if (safetyBarrier(p, q) ){

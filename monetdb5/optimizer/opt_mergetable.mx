@@ -2338,7 +2338,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if ( mb->errors == 0) {
 		for(i=0; i<slimit; i++)
 			if (old[i]) {
-				assert(!check_instr(mb, old[i]));
 				freeInstruction(old[i]);
 			}
 		GDKfree(old);

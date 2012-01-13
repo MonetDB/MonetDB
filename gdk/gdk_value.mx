@@ -98,7 +98,7 @@ VALset(ValPtr v, int t, ptr p)
 	return v;
 }
 
-void *
+inline void *
 VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
@@ -133,7 +133,7 @@ VALclear(ValPtr v)
 	VALempty(v);
 }
 
-void
+inline void
 VALempty(ValPtr v)
 {
 	v->len = 0;
