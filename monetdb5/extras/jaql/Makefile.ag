@@ -15,17 +15,15 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+MTSAFE
+
+SUBDIRS = parser
+
 INCLUDES = ../../mal \
 		   ../../optimizer \
 		   ../../../common/options \
 		   ../../../common/stream \
 		   ../../../gdk
-
-AM_YFLAGS = -d
-AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c --header-file=$(LEX_OUTPUT_ROOT).h
-
-# flex' output isn't up to the strictness of our flags
-X_CFLAGS = #$(X_CFLAGS:-Werror=) <- recursive
 
 lib__json = {
 	MODULE
@@ -38,9 +36,10 @@ lib__json = {
 lib__jaql = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = jaql.y jaql.l jaql.c jaql.h jaqlgencode.c jaqlgencode.h
+	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h
 
-	LIBS = ../../tools/libmonetdb5
+	# the ./ is necessary for autogen not to generate garbage
+	LIBS = ./parser/libjaqlp ../../tools/libmonetdb5
 }
 
 headers_json_mal = {
@@ -56,9 +55,9 @@ headers_jaql_mal = {
 }
 
 headers_autoload = {
-        HEADERS = mal
-        DIR = libdir/monetdb5/autoload
-        SOURCES = 30_jaql.mal
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 30_jaql.mal
 }
 
 EXTRA_DIST = json.mal jaql.mal 30_jaql.mal

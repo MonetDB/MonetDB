@@ -31,8 +31,8 @@
 #include "mal_exception.h"
 #include "stream.h"
 
-#include "jaql.tab.h"
-#include "jaql.yy.h"
+#include "parser/jaql.tab.h"
+#include "parser/jaql.yy.h"
 
 extern int yyparse(jc *j);
 void freetree(tree *j);
