@@ -1893,20 +1893,6 @@ mat_setop(MalBlkPtr mb, InstrPtr p, mat_t *mat, int *Mtop )
 	return 0;
 }
 
-#ifndef NDEBUG
-static int
-check_instr(MalBlkPtr mb, InstrPtr p)
-{
-	int i;
-
-	for (i = 0; i<mb->stop; i++) {
-		if (mb->stmt[i] == p)
-			return 1;
-	}
-	return 0;
-}
-#endif
-
 static int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
