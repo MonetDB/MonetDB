@@ -479,7 +479,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 
 		/* build the slc_val expression, which is going to compute a list of to be sliced dimensional values. */
 		idx_term = idx_exp->data.lval->h;
-		if(idx_exp->data.lval->cnt == 1) {
+		if (idx_exp->data.lval->cnt == 1) {
 			slc_val = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
 		} else {
 			/* If the value of start/step/stop is omitted, we get its value from the dimension definition.
@@ -493,7 +493,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start)));
 
 
-			if(idx_exp->data.lval->cnt == 2) {
+			if (idx_exp->data.lval->cnt == 2) {
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
 			} else {
 				idx_term = idx_term->next;
@@ -1897,7 +1897,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 	/* need the base array for the dimension info. */
 	if (sname && !(s=mvc_bind_schema(sql,sname)))
 		return sql_error(sql, 02, "3F000!SELECT: no such schema '%s'", sname);
-	if(!s) s = cur_schema(sql);
+	if (!s) s = cur_schema(sql);
 	if (!(a = mvc_bind_table(sql, s, aname)))
 		return sql_error(sql, 02, "42S02!SELECT: no such array '%s.%s'", s->base.name, aname);
 	if (a->ndims > 2)
@@ -3889,7 +3889,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
  * | project (                                                                                         |
  * | | project (                                                                                       |
  * | | | array(sys.a) [ a.x, a.y, a.v, a.%TID% NOT NULL ] COUNT                                        |
- * | | ) [ a.x, a.y, sys.array_tiling_sum(a.v, a.x, offset_x, size_x, a.y, offset_y, size_y) as L6 ]   |
+ * | | ) [ a.x, a.y, sys.array_sum(a.v, a.x, offset_x, size_x, a.y, offset_y, size_y) as L6 ]   |
  * | ) [ L6 ]                                                                                          |
  * +---------------------------------------------------------------------------------------------------+
  */
@@ -3902,7 +3902,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	sql_subfunc *sf = NULL;
 	sql_subtype st_int, st_flt;
 	list *aggr_args = new_exp_list(sql->sa), *aggr_types = new_subtype_list(sql->sa);
-	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_t") + strlen(aggrstr) + 1);
+	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_") + strlen(aggrstr) + 1);
 	node *cn = NULL;
 	sql_table *t = (sql_table*)((sql_rel*)groupby->l)->l;
 	int i = 0, j = 0, *dsize = NULL;
@@ -3910,7 +3910,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 
 	(void)distinct;
 
-	strcpy(aggrstr2, "array_t\0");
+	strcpy(aggrstr2, "array_\0");
 	strcat(aggrstr2, aggrstr);
 
 	if (!sym) {	/* AGGR(*) case, but only "count" is allowed */
@@ -3921,10 +3921,11 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		sql_error(sql, 02, "%s: '%s(*)' not implemented for array tiles", toUpperCopy(aggrstr2, aggrstr), aggrstr);
 		return NULL;
 	} else {
-		if(sym->token != SQL_COLUMN) {
+		if (sym->token != SQL_COLUMN) {
 			return sql_error(sql, 02, "SELECT: expressions other than <column name> not supported in tiling ranges");
 		}
 		exp = rel_column_ref(sql, rel, sym, f);
+		append(groupby->exps, exp);
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
 	}
@@ -3987,36 +3988,43 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	 */
 	nrep = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
 	ngrp = SA_NEW_ARRAY(sql->sa, sql_exp*, t->ndims);
-	if(!nrep || !ngrp) {
+	if (!nrep || !ngrp) {
 		return sql_error(sql, 02, "SELECT: failed to allocate space");
 	}
 	sql_find_subtype(&st_int, "int", 9, 0);
 	sql_find_subtype(&st_flt, "double", 23, 0);
-	for(i = 0; i < t->ndims; i++) nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
+	for (i = 0; i < t->ndims; i++)
+		nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
 	for (i = 0; i < t->ndims; i++){
 		list *ceil_args = new_exp_list(sql->sa);
+		sql_subtype ost_sta, ost_sto;
+		
+		ost_sta = *exp_subtype(os_sta[i]);
+		ost_sto = *exp_subtype(os_sto[i]);
 
-		exp = rel_check_type(sql, &st_flt, os_sto[i], type_cast);
-		if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(exp), exp_subtype(exp), F_FUNC)))
+		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", &st_flt, &st_flt, F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
-		/* FIXME: why do I need this extra rel_check_type? */
-		append(ceil_args, exp_binop(sql->sa, exp, rel_check_type(sql, &st_flt, os_sta[i], type_cast), sf));
+		append(ceil_args, exp_binop(sql->sa,
+					rel_check_type(sql, &st_flt, os_sto[i], type_cast),
+					rel_check_type(sql, &st_flt, os_sta[i], type_cast), sf));
+		os_sta[i] = rel_check_type(sql, &ost_sta, os_sta[i], type_cast);
+		os_sto[i] = rel_check_type(sql, &ost_sto, os_sto[i], type_cast);
 
-		if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, "ceil", exps_subtype(ceil_args), F_FUNC)))
+		if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, "ceil", exps_subtype(ceil_args), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
 		exp = rel_check_type(sql, &st_int, exp_op(sql->sa, ceil_args, sf), type_cast);
 
-		if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", exp_subtype(exp), exp_subtype(os_ste[i]), F_FUNC)))
+		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", exp_subtype(exp), exp_subtype(os_ste[i]), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"/\"");
 		exp = exp_binop(sql->sa, exp, os_ste[i], sf);
 
 		for (j = 0; j < i; j++) {
-			if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
+			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
 				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
 			nrep[j] = exp_binop(sql->sa, nrep[j], exp, sf);
 		}
 		for (j = t->ndims-1; j > i; j--) {
-			if(!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
+			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(ngrp[j]), exp_subtype(exp), F_FUNC)))
 				return sql_error(sql, 02, "failed to bind to the SQL function \"*\"");
 			ngrp[j] = exp_binop(sql->sa, ngrp[j], exp, sf);
 		}
@@ -4032,7 +4040,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(srs_args, os_sto[i]);
 		append(srs_args, nrep[i]);
 		append(srs_args, ngrp[i]);
-		if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(srs_args), F_FUNC)))
+		if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(srs_args), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 
 		append(aggr_args, dim[i]);
@@ -4048,15 +4056,20 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
 	}
-	if(!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, aggr_types, F_FUNC)))
+	if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, aggr_types, F_FUNC)))
 		return sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
 	exp = exp_op(sql->sa, aggr_args, sf);
+	if (!exp->name) {
+		char name[16], *nme = NULL;
+		nme = number2name(name, 16, ++sql->label);
+		exp_setname(sql->sa, exp, NULL, nme);
+	}
+	append(groupby->exps, exp);
 	/* HACK: secretly change the groupby into a project, and wipe out all traces of the AGGR */
 	groupby->op = op_project;
 	groupby->r = NULL;
 	groupby->card = CARD_MULTI;
 	(*rel)->card = CARD_MULTI;
-	rel_project_add_exp(sql, groupby, exp);
 	return exp;
 }
 
@@ -4493,13 +4506,13 @@ rel_group_by(mvc *sql, sql_rel *rel, symbol *groupby, dlist *selection, int f )
 		list *es = NULL;
 		
 		if (grp->token == SQL_ARRAY_DIM_SLICE) {
-			if(!(es = rel_arraytiling(sql, &rel, grp, f)))
+			if (!(es = rel_arraytiling(sql, &rel, grp, f)))
 				return NULL;
 			/* FIXME: shouldn't we do the same error checks as the case of normal GROUP BY below? */
 			exps = list_merge(exps, es, (fdup)NULL);
 			found_sgb += 1;
-			if(o->next->type == type_int) {
-				if(o->next->data.i_val) {
+			if (o->next->type == type_int) {
+				if (o->next->data.i_val) {
 					/* TODO: how do we pass this information? */
 					return sql_error(sql, 02, "SELECT: DISTINCT array tiles not supported yet\n");
 				}
