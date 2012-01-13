@@ -103,6 +103,10 @@ mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
 		mvc_create_column_(m, t, "default", "varchar", 2048);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
+		/* TODO: the code below is out-of-date.  Should be changed into the
+		 * following with the next major catalogue change:
+		 * mvc_create_column(m, t, "storage", "varchar", 2048);
+		 */
 		mvc_create_column_(m, t, "storage_type", "int", 32);
 
 		if (catalog_version) {
