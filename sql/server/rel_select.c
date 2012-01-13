@@ -979,7 +979,9 @@ rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
 		for (en = groupbyexps->h; en; en = en->next) {
 			sql_exp *e = en->data, *ne;
 
-			/* after the group by the cardinality reduces */
+			/* the cardinality only reduces after a normal SQL group by */
+			if (e->type == e_column && e->f)
+				rel->card = CARD_MULTI;
 			e->card = rel->card;
 			ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
 			append(aggrs, ne);
@@ -2020,6 +2022,7 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		exp->f = offsets;
 		append(exps, exp);
 	}
+	(*rel)->card = CARD_MULTI;
 	return exps;
 }
 
@@ -3868,6 +3871,40 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
+/* Traverse all subexpressions of exp and add it to the exps list if an
+ * e_column is found
+ */
+static list *
+add_columns(mvc *sql, list *exps, sql_exp *exp)
+{
+	node *n;
+
+	switch(exp->type) {
+	case e_atom: /* nothing to add */
+		break;
+	case e_func:
+	case e_aggr:
+		for (n = ((list*)exp->l)->h; n; n = n->next) {
+			add_columns(sql, exps, (sql_exp*)n->data);
+		}
+		break;
+	case e_convert:
+		add_columns(sql, exps, exp->l);
+		break;
+	case e_cmp:
+		add_columns(sql, exps, exp->l);
+		add_columns(sql, exps, exp->r);
+		break;
+	case e_column:
+		append(exps, exp);
+		break;
+	default:
+		return sql_error(sql, 02, "SELECT: invalid expression type %d", exp->type);
+		break;
+	}
+	return exps;
+}
+
 /* E.g.:
  * sql> plan select sum(v) from a group by a[x-1:x+2][y-1:y+2];
  *
@@ -3904,14 +3941,33 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	list *aggr_args = new_exp_list(sql->sa), *aggr_types = new_subtype_list(sql->sa);
 	char *aggrstr2 = SA_NEW_ARRAY(sql->sa, char, strlen("array_") + strlen(aggrstr) + 1);
 	node *cn = NULL;
-	sql_table *t = (sql_table*)((sql_rel*)groupby->l)->l;
+	sql_table *t = NULL;
 	int i = 0, j = 0, *dsize = NULL;
 	sql_column *sc = NULL;
 
 	(void)distinct;
+	(void)f;
 
 	strcpy(aggrstr2, "array_\0");
 	strcat(aggrstr2, aggrstr);
+
+	/* find the base array */
+	if(((sql_rel*)groupby->l)->op == op_basetable) {
+		t = (sql_table*)((sql_rel*)groupby->l)->l;
+	} else {
+		char *aname = NULL;
+		sql_schema *s = NULL;
+
+		if (!(s = cur_schema(sql))) /* should not happen */
+			return sql_error(sql, 02, "SELECT: could not find current schema");
+
+		if (!(aname = exp_relname((sql_exp*)((list*)groupby->r)->h->data)))
+			return sql_error(sql, 02, "SELECT: cannot find base array name in array tiling definitino");
+		if (!(t = mvc_bind_table(sql, s, aname)))
+			return sql_error(sql, 02, "SELECT: no such array '%s.%s'", s->base.name, aname);
+		if (!t->ndims)
+			return sql_error(sql, 02, "SELECT: array tiling not allowed over non-array '%s.%s'", s->base.name, aname);
+	}
 
 	if (!sym) {	/* AGGR(*) case, but only "count" is allowed */
 		if (strcmp(aggrstr, "count") != 0) {
@@ -3921,11 +3977,9 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		sql_error(sql, 02, "%s: '%s(*)' not implemented for array tiles", toUpperCopy(aggrstr2, aggrstr), aggrstr);
 		return NULL;
 	} else {
-		if (sym->token != SQL_COLUMN) {
-			return sql_error(sql, 02, "SELECT: expressions other than <column name> not supported in tiling ranges");
-		}
-		exp = rel_column_ref(sql, rel, sym, f);
-		append(groupby->exps, exp);
+		exp_kind ek = {type_value, card_value, FALSE};
+		exp = rel_value_exp(sql, rel, sym, sql_where, ek);
+		add_columns(sql, groupby->exps, exp);
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
 	}
