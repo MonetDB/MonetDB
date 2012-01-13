@@ -36,6 +36,7 @@
 
 extern int yyparse(jc *j);
 void freetree(tree *j);
+str getContext(Client c, jc **j);
 
 /* assign the output of action (a 1 or more stage pipe) to ident, if
  * ident is NULL, the result should be outputted to the screen, if
@@ -525,26 +526,53 @@ freetree(tree *j)
 	}
 }
 
+void
+freevars(jvar *v) {
+	jvar *n;
+	while (v != NULL) {
+		GDKfree(v->vname);
+		BBPdecref(v->kind, TRUE);
+		BBPdecref(v->string, TRUE);
+		BBPdecref(v->integer, TRUE);
+		BBPdecref(v->doble, TRUE);
+		BBPdecref(v->array, TRUE);
+		BBPdecref(v->object, TRUE);
+		BBPdecref(v->name, TRUE);
+
+		n = v->next;
+		GDKfree(v);
+		v = n;
+	}
+}
+
 str
 JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	jc j;
+	jc *j = NULL;
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str jaql = *(str *)getArgReference(stk, pci, 1);
+	str err;
 
 	(void)mb;
+	
+	if ((err = getContext(cntxt, &j)) != MAL_SUCCEED)
+		GDKfree(err);
 
-	memset(&j, '\0', sizeof(jc));
-	j.buf = jaql;
+	if (j == NULL) {
+		j = GDKzalloc(sizeof(jc));
+		cntxt->state[MAL_SCENARIO_OPTIMIZE] = j;
+	}
 
-	yylex_init_extra(&j, &j.scanner);
-	yyparse(&j);
-	yylex_destroy(j.scanner);
 
-	if (j.err[0] != '\0')
-		throw(MAL, "jaql.execute", "%s", j.err);
+	j->buf = jaql;
+	yylex_init_extra(j, &j->scanner);
+	yyparse(j);
+	yylex_destroy(j->scanner);
 
-	switch (j.explain) {
+	if (j->err[0] != '\0')
+		throw(MAL, "jaql.execute", "%s", j->err);
+
+	switch (j->explain) {
 		case 0: {
 			str err;
 			/* normal (execution) mode */
@@ -553,29 +581,155 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* we do not return anything */
 			setVarType(prg->def, 0, TYPE_void);
 			setVarUDFtype(prg->def, 0);
-			(void)dumptree(&j, prg->def, j.p);
+			(void)dumptree(j, prg->def, j->p);
 			pushEndInstruction(prg->def);
 
-			if (j.err[0] != '\0') {
-				freetree(j.p);
-				throw(MAL, "jaql.execute", "%s", j.err);
+			if (j->err[0] != '\0') {
+				freetree(j->p);
+				throw(MAL, "jaql.execute", "%s", j->err);
 			}
 			chkProgram(cntxt->nspace, prg->def);
 			printFunction(cntxt->fdout, prg->def, 0, LIST_MAL_STMT);
 			err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
-			resetMalBlk(prg->def, prg->def->stop);
+			freeMalBlk(prg->def);
 			if (err != MAL_SUCCEED) {
-				freetree(j.p);
+				freetree(j->p);
 				return err;
 			}
 		}	break;
 		case 1: /* explain */
 		case 2: /* plan */
-			printtree(j.p, 0, j.explain == 1);
+			printtree(j->p, 0, j->explain == 1);
 			break;
 		/* case 3: trace? */
 	}
-	freetree(j.p);
+	freetree(j->p);
+	/* reset all but vars */
+	j->p = NULL;
+	j->esc_depth = 0;
+	j->buf = NULL;
+	j->err[0] = '\0';
+	j->scanner = NULL;
+	j->explain = 0;
+	/* freevars(j->vars);  should do only on client destroy */
+
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
+str
+getContext(Client cntxt, jc **c)
+{
+	*c = ((jc *) cntxt->state[MAL_SCENARIO_OPTIMIZE]); 
+	if (*c == NULL)
+		throw(MAL, "jaql.context", "JAQL environment not found");
+	return MAL_SUCCEED;
+}
+
+str
+JAQLgetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	jc *j;
+	str msg = getContext(cntxt, &j);
+	int *j1 = (int *)getArgReference(stk, pci, 0);
+	int *j2 = (int *)getArgReference(stk, pci, 1);
+	int *j3 = (int *)getArgReference(stk, pci, 2);
+	int *j4 = (int *)getArgReference(stk, pci, 3);
+	int *j5 = (int *)getArgReference(stk, pci, 4);
+	int *j6 = (int *)getArgReference(stk, pci, 5);
+	int *j7 = (int *)getArgReference(stk, pci, 6);
+	str var = *(str *)getArgReference(stk, pci, 7);
+	jvar *t;
+
+	(void)mb;
+
+	if (msg != MAL_SUCCEED)
+		return msg;
+
+	for (t = j->vars; t != NULL; t = t->next) {
+		if (strcmp(t->vname, var) == 0) {
+			*j1 = t->kind;
+			*j2 = t->string;
+			*j3 = t->integer;
+			*j4 = t->doble;
+			*j5 = t->array;
+			*j6 = t->object;
+			*j7 = t->name;
+			break;
+		}
+	}
+	if (t == NULL)
+		throw(MAL, "jaql.getVar", "no such variable: %s", var);
+
+	/* incref for MAL interpreter ref */
+	BBPincref(t->kind, TRUE);
+	BBPincref(t->string, TRUE);
+	BBPincref(t->integer, TRUE);
+	BBPincref(t->doble, TRUE);
+	BBPincref(t->array, TRUE);
+	BBPincref(t->object, TRUE);
+	BBPincref(t->name, TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	jc *j;
+	str msg = getContext(cntxt, &j);
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	str var = *(str *)getArgReference(stk, pci, 1);
+	int *j1 = (int *)getArgReference(stk, pci, 2);
+	int *j2 = (int *)getArgReference(stk, pci, 3);
+	int *j3 = (int *)getArgReference(stk, pci, 4);
+	int *j4 = (int *)getArgReference(stk, pci, 5);
+	int *j5 = (int *)getArgReference(stk, pci, 6);
+	int *j6 = (int *)getArgReference(stk, pci, 7);
+	int *j7 = (int *)getArgReference(stk, pci, 8);
+	jvar *t;
+
+	(void)mb;
+
+	if (msg != MAL_SUCCEED)
+		return msg;
+
+	t = j->vars;
+	if (t == NULL) {
+		t = j->vars = GDKzalloc(sizeof(jvar));
+	} else {
+		while (t->next != NULL) {
+			if (strcmp(t->vname, var) == 0)
+				break;
+			t = t->next;
+		}
+		if (t->next != NULL || strcmp(t->vname, var) == 0) {
+			GDKfree(t->vname);
+			BBPdecref(t->kind, TRUE);
+			BBPdecref(t->string, TRUE);
+			BBPdecref(t->integer, TRUE);
+			BBPdecref(t->doble, TRUE);
+			BBPdecref(t->array, TRUE);
+			BBPdecref(t->object, TRUE);
+			BBPdecref(t->name, TRUE);
+		} else {
+			t = t->next = GDKzalloc(sizeof(jvar));
+		}
+	}
+	t->vname = GDKstrdup(var);
+	t->kind = *j1;
+	t->string = *j2;
+	t->integer = *j3;
+	t->doble = *j4;
+	t->array = *j5;
+	t->object = *j6;
+	t->name = *j7;
+	BBPincref(t->kind, TRUE);
+	BBPincref(t->string, TRUE);
+	BBPincref(t->integer, TRUE);
+	BBPincref(t->doble, TRUE);
+	BBPincref(t->array, TRUE);
+	BBPincref(t->object, TRUE);
+	BBPincref(t->name, TRUE);
 
 	*ret = 0;
 	return MAL_SUCCEED;

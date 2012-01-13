@@ -32,6 +32,18 @@
 #define jaql_export extern
 #endif
 
+typedef struct _jvar {
+	char *vname;
+	int kind;
+	int string;
+	int integer;
+	int doble;
+	int array;
+	int object;
+	int name;
+	struct _jvar *next;
+} jvar;
+
 typedef struct _jc {
 	struct _tree *p;
 	int esc_depth;
@@ -39,6 +51,7 @@ typedef struct _jc {
 	char err[1024];
 	void *scanner;
 	char explain;
+	jvar *vars;
 } jc;
 
 enum treetype {
@@ -103,6 +116,8 @@ void printtree (tree *t, int level, char op);
 
 
 jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+jaql_export str JAQLgetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+jaql_export str JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 

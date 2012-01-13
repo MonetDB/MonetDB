@@ -93,7 +93,7 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	;
 
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1), $2);}
-		| _ARRAY actions        {$$ = append_jaql_pipe(make_json($1), $2);}
+		| _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($1), $2);}
 		;
 
 opt_actions: /* empty */        {$$ = NULL;}

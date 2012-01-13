@@ -451,6 +451,21 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 	while (t != NULL) {
 		switch (t->type) {
 			case j_output_var:
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaql", 4));
+				setFunctionId(q, putName("setVar", 6));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushStr(mb, q, t->sval);
+				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j2);
+				q = pushArgument(mb, q, j3);
+				q = pushArgument(mb, q, j4);
+				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j6);
+				q = pushArgument(mb, q, j7);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				break;
 			case j_output:
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, ioRef);
@@ -508,7 +523,43 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				q = pushStr(mb, q, t->sval);
 				pushInstruction(mb, q);
 				break;
+			case j_var:
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaql", 4));
+				setFunctionId(q, putName("getVar", 6));
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_chr)));
+				j1 = getArg(q, 0);
+				setVarUDFtype(mb, j1);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
+				j2 = getArg(q, 1);
+				setVarUDFtype(mb, j2);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_lng)));
+				j3 = getArg(q, 2);
+				setVarUDFtype(mb, j3);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl)));
+				j4 = getArg(q, 3);
+				setVarUDFtype(mb, j4);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+				j5 = getArg(q, 4);
+				setVarUDFtype(mb, j5);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+				j6 = getArg(q, 5);
+				setVarUDFtype(mb, j6);
+				q = pushReturn(mb, q,
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
+				j7 = getArg(q, 6);
+				setVarUDFtype(mb, j7);
+
+				q = pushStr(mb, q, t->sval);
+				pushInstruction(mb, q);
 			case j_pipe:
+				break;
 			case j_filter:
 				a = dumpwalkvar(mb, t->tval1, j1, j5);
 				/* tval2 can be pred or cpred */
