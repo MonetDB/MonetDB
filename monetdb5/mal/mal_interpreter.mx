@@ -2438,9 +2438,7 @@ void garbageElement(Client cntxt, ValPtr v)
 			v->val.sval = NULL;
 		}
 		v->len = 0;
-		return;
-	}
-	if (v->vtype == TYPE_bat) {
+	} else if (v->vtype == TYPE_bat) {
 		/*
 		 * @-
 		 * All operations are responsible to properly set the
@@ -2462,6 +2460,8 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (cntxt && cntxt->flags & bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid, TRUE);
+	} else if (strcmp(BATatoms[v->vtype].name, "blob") == 0) {
+		GDKfree(v->val.pval);
 	}
 }
 /*

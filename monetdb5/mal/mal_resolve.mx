@@ -529,7 +529,8 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		isaBatType(@1) ||
 		findGDKtype(@1) == TYPE_str ||
 		(!isPolyType(@1) && @1 < TYPE_any &&
-		 @1 >= 0 && ATOMstorage(@1) == TYPE_str)) {
+		 @1 >= 0 && (ATOMstorage(@1) == TYPE_str ||
+					 strcmp(BATatoms[@1].name, "blob") == 0))) {
 		getInstrPtr(@3, 0)->gc |= GARBAGECONTROL;
 		setVarCleanup(mb, getArg(p, @2));
 		p->gc |= GARBAGECONTROL;
@@ -783,7 +784,9 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 		int tpe = getArgType(mb,p,k);
 		if (findGDKtype(tpe) == TYPE_bat ||
 			findGDKtype(tpe) == TYPE_str ||
-			(!isPolyType(tpe) && tpe< TYPE_any && ATOMstorage(tpe) == TYPE_str))
+			(!isPolyType(tpe) && tpe< TYPE_any &&
+			 (ATOMstorage(tpe) == TYPE_str ||
+			  strcmp(BATatoms[tpe].name, "blob") == 0)))
 			setVarCleanup(mb,getArg(p,k));
 	}
 }
