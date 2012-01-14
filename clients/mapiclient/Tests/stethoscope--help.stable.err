@@ -21,10 +21,10 @@ The trace options:
   S = monitor start of instruction profiling
   a = aggregate clock ticks per instruction
   e = event counter
-  f = function name and pc counter 
-  o = module.function operation called
-  i = interpreter thread number
-  T = wall colck time
+  f = module.function name
+  i = instruction counter
+  I = interpreter thread number
+  T = wall clock time
   t = ticks in microseconds
   c = cpu statistics (utime,ctime,stime,cstime)
   m = memory resources as provided by OS
@@ -35,6 +35,7 @@ The trace options:
   y = MAL argument types
   p = process statistics, e.g. page faults, context switches
   u = user id
+  D = Generate dot file upon query start
 
 # 19:24:05 >  
 # 19:24:05 >  "Done."
