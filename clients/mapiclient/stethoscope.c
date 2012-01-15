@@ -19,54 +19,7 @@
 
 /**
  * stethoscope
- * Martin Kersten
- *
- * The Stethoscope
- * The performance profiler infrastructure provides
- * precisely control through annotation of a MAL program. 
- * Often, however, inclusion of profiling statements is an afterthought.
- *
- * The program stethoscope addresses this situation by providing
- * a simple application that can attach itself to a running
- * server and extracts the profiler events from concurrent running queries.
- *
- * The arguments to @code{stethoscope} are the profiler properties to be traced
- * and the applicable filter expressions. For example,
- *   stethoscope -t bat.insert algebra.join
- * tracks the microsecond ticks of two specific MAL instructions.
- * A synopsis of the calling conventions:
- *   stethoscope [options] +[aefoTtcmibds] @{<mod>.<fcn> @}
- *     -d | --dbname=<database_name>
- *     -u | --user=<user>
- *     -P | --password=<password>
- *     -p | --port=<portnr>
- *     -h | --host=<hostname>
- * 
- * Event selector:
- *     a =aggregates
- *     e =event
- *     f =function 
- *     i =instruction counter
- *     I =interpreter thread
- *     T =time
- *     t =ticks
- *     c =cpu statistics
- *     m =memory resources
- *     r =block reads
- *     w =block writes
- *     b =bytes read/written
- *     s =statement
- *     y =argument types
- *     p =pgfaults,cntxtswitches
- *     S =Start profiling instruction
- *     D =Generate dot file upon query start
- * 
- * Ideally, the stream of events should be piped into a
- * 2D graphical tool, like xosview (Linux).
- * 
- * For a convenient way to watch most of the SQL interaction you may use
- * the command:
- * stethoscope -umonetdb -Pmonetdb -hhost +tis "algebra.*" "bat.*" "group.*" "sql.*" "aggr.*"
+ * author Martin Kersten
  */
 
 #include "monetdb_config.h"
@@ -91,6 +44,7 @@
 # endif
 #endif
 
+#define COUNTERSDEFAULT "ISTest"
 
 static struct {
 	char tag;
@@ -131,6 +85,7 @@ static struct {
 	/*  0  */ { 'S', "start", "start", 0 },
 	/*  1  */ { 'y', "type", "type", 0 },
 	/*  2  */ { 'D', "dot", "dot", 0 },
+	/*  3  */ { 'F', "flow", "flow", 0 },
 	/*  3  */ { 0, 0, 0, 0 }
 };
 
@@ -162,7 +117,7 @@ usage(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "The trace options:\n");
+	fprintf(stderr, "The trace options (default '%s'):\n",COUNTERSDEFAULT);
 	fprintf(stderr, "  S = monitor start of instruction profiling\n");
 	fprintf(stderr, "  a = aggregate clock ticks per instruction\n");
 	fprintf(stderr, "  e = event counter\n");
@@ -181,6 +136,7 @@ usage(void)
 	fprintf(stderr, "  p = process statistics, e.g. page faults, context switches\n");
 	fprintf(stderr, "  u = user id\n");
 	fprintf(stderr, "  D = Generate dot file upon query start\n");
+	fprintf(stderr, "  F = dataflow memory claims (in MB)\n");
 }
 
 /* Any signal should be captured and turned into a graceful
@@ -408,11 +364,13 @@ main(int argc, char **argv)
 		k= setCounter(argv[a] + 1);
 		a++;
 	} else
-		k= setCounter("TtesDSI");
+		k= setCounter(COUNTERSDEFAULT);
 
-	/* DOT needs PC */
-	if( profileCounter[32].status )
+	/* DOT needs function id and PC to correlate */
+	if( profileCounter[32].status ) {
+		profileCounter[3].status= k++;
 		profileCounter[4].status= k;
+	}
 
 	if (user == NULL || password == NULL) {
 		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);

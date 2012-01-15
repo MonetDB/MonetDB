@@ -110,7 +110,7 @@ comment "Common sub-expression optimizer"
 static int
 OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, prop, candidate, barrier= 0;
+	int i, j, k, prop, candidate, barrier= 0, cnt;
 	InstrPtr p, q;
 	int actions = 0;
 	int limit, slimit;
@@ -202,9 +202,10 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		prop = hasSideEffects(p,TRUE) || isUpdateInstruction(p);
 		j =	isVarConstant(mb, getArg(p,p->argc-1))? cstlist: candidate;
 				
+		cnt = mb->stop / 128 < 32? 32 : mb->stop/128;	/* limit search depth */
 		if ( !prop)
-		for (; j ; j = list[j]) 
-			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  && !isUnsafeFunction(q)){
+		for (; cnt > 0 && j ; cnt--, j = list[j]) 
+			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
 				hasSameSignature(mb, p, q, p->retc), 
@@ -228,6 +229,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 				if ( hasSameArguments(mb, p, q) && 
 					hasSameSignature(mb, p, q, p->retc) && 
 					!hasCommonResults(p, q) && 
+					!isUnsafeFunction(q) && 
 					isLinearFlow(q) 
 				   ) {
 						if (safetyBarrier(p, q) ){

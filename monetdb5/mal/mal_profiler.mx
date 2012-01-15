@@ -346,6 +346,7 @@ static int delayswitch = 0; /* to wait before sending the profile info */
 #define PROFstart   16
 #define PROFtype    17
 #define PROFdot     18
+#define PROFflow   19
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -370,7 +371,8 @@ static struct {
 	/*  16 */  { "start", 0},
 	/*  17 */  { "type", 0},
 	/*  18 */  { "dot", 0},
-	/*  19 */  { 0, 0}
+	/*  19 */  { "flow", 0},
+	/*  20 */  { 0, 0}
 };
 
 /*
@@ -464,6 +466,8 @@ offlineProfilerHeader(void)
 	if (profileCounter[PROFthread].status) {
 		log0("thread,\t");
 	}
+	if (profileCounter[PROFflow].status)
+		log0("claim,\tmemory,\t");
 	if (profileCounter[PROFfunc].status) {
 		log0("function,\t");
 	}
@@ -562,7 +566,11 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log("%d,\t", eventcounter);
 	}
 	if (profileCounter[PROFstart].status) {
-		log("\"%s\",\t", start?"start":"done");
+		if ( start) {
+			log0("\"start\",\t");
+		} else {
+			log0("\"done\" ,\t");
+		}
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
@@ -585,6 +593,10 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFthread].status) {
 		log(" %d,\t", THRgettid());
+	}
+	if (profileCounter[PROFflow].status) {
+		log("%d,\t", memoryclaims);
+		log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
 	}
 	if (profileCounter[PROFfunc].status) {
 		if (getModuleId(pci) && getFunctionId(pci)) {
