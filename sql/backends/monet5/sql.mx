@@ -101,7 +101,7 @@ pattern include(fname:str):void
 address SQLinclude
 comment "Compile and execute a sql statements on the file";
 
-pattern ra(cmd:str, optimize:bit):void
+pattern evalAlgebra(cmd:str, optimize:bit):void
 address RAstatement
 comment "Compile and execute a single 'relational algebra' statement";
 
