@@ -562,7 +562,11 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log("%d,\t", eventcounter);
 	}
 	if (profileCounter[PROFstart].status) {
-		log("\"%s\",\t", start?"start":"done");
+		if ( start) {
+			log0("\"start\",\t");
+		} else {
+			log0("\"done\" ,\t");
+		}
 	}
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
