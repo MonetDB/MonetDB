@@ -408,7 +408,7 @@ main(int argc, char **argv)
 		k= setCounter(argv[a] + 1);
 		a++;
 	} else
-		k= setCounter("TtesDSI");
+		k= setCounter("ISTest");
 
 	/* DOT needs function id and PC to correlate */
 	if( profileCounter[32].status ) {
