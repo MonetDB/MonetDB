@@ -52,4 +52,4 @@ create function bbp ()
 	external name sql.bbp;
 
 create procedure evalAlgebra( ra_stmt string, opt bool)
-	external name sql.evalAlgebra;
+	external name sql."evalAlgebra";
