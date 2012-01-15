@@ -78,13 +78,11 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 static str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
 
-#define MEMORY_THRESHOLD  0.8
-
 #define USE_DFLOW_ADMISSION
-#ifdef USE_DFLOW_ADMISSION
 /* does not seem to have a major impact */
-static lng memorypool;      /* memory claimed by concurrent threads */
-static int memoryclaims = 0;    /* number of threads active with expensive operations */
+lng memorypool = 0;      /* memory claimed by concurrent threads */
+int memoryclaims = 0;    /* number of threads active with expensive operations */
+#ifdef USE_DFLOW_ADMISSION
 mal_export int DFLOWadmission(lng argclaim, lng hotclaim);
 #endif
 
