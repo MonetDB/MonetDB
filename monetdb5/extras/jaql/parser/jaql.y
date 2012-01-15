@@ -35,8 +35,9 @@
 
 %type <j_tree> stmt jaql jaqlpipe opt_actions actions action predicates
 	predicate variable and_or opt_not comparison value literal
-	opt_each json_fragment opt_command
+	opt_each json_fragment opt_command sort_arg
 %type <j_ident> ident
+%type <j_number> opt_asc_desc
 
 /* get it right:
 http://www.cs.man.ac.uk/~pjj/cs211/ho/node8.html
@@ -124,6 +125,7 @@ actions: _ARROW action          {$$ = $2;}
 action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TRANSFORM opt_each json_fragment  {$$ = make_jaql_transform($2, $3);}
 	  | EXPAND opt_each opt_command       {$$ = make_jaql_expand($2, $3);}
+	  | SORT opt_each BY '[' sort_arg ']' {$$ = make_jaql_sort($2, $5);}
 	  ;
 
 opt_command: /* empty */            {$$ = NULL;}
@@ -134,6 +136,17 @@ opt_command: /* empty */            {$$ = NULL;}
 opt_each: /* empty */  {$$ = make_varname(GDKstrdup("$"));}
 		| EACH _IDENT  {$$ = make_varname($2);}
 		;
+
+sort_arg: variable opt_asc_desc
+		                   {$$ = make_sort_arg($1, $2 == ASC);}
+		| sort_arg ',' variable opt_asc_desc
+		                   {$$ = append_sort_arg($1, make_sort_arg($3, $4));}
+		;
+
+opt_asc_desc: /* empty */  {$$ = ASC;}
+			| ASC          {$$ = ASC;}
+			| DESC         {$$ = DESC;}
+			;
 
 ident: _IDENT   {$$ = $1;}
 	 | _DOLLAR  {$$ = GDKstrdup("$");}

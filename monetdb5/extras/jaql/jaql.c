@@ -199,6 +199,37 @@ make_jaql_expand(tree *var, tree *expr)
 	return res;
 }
 
+/* create a sort operation defined by comparator in expr */
+tree *
+make_jaql_sort(tree *var, tree *expr)
+{
+	tree *res, *w;
+
+	assert(var != NULL && var->type == j_var);
+	assert(expr != NULL && expr->type == j_sort_arg);
+
+	res = GDKzalloc(sizeof(tree));
+
+	for (w = expr; w != NULL; w = w->next) {
+		if (strcmp(var->sval, w->tval1->sval) != 0) {
+			char buf[128];
+			snprintf(buf, sizeof(buf), "sort: unknown variable: %s",
+					w->tval1->sval);
+			res->type = j_error;
+			res->sval = GDKstrdup(buf);
+			freetree(expr);
+			freetree(var);
+			return res;
+		}
+	}
+
+	res->type = j_sort;
+	res->tval1 = var;
+	res->tval2 = expr;
+
+	return res;
+}
+
 /* create predicate, chaining onto the previous predicate ppred,
  * applying a comparison (AND/OR/NOT currently) with the next predicate
  * pred */
@@ -244,6 +275,33 @@ make_pred(tree *var, tree *comp, tree *value)
 	res->tval3 = value;
 
 	return res;
+}
+
+tree *
+make_sort_arg(tree *var, char asc)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+	res->type = j_sort_arg;
+	res->tval1 = var;
+	res->nval = asc;
+
+	return res;
+}
+
+tree *
+append_sort_arg(tree *osarg, tree *nsarg)
+{
+	tree *t = osarg;
+
+	assert(osarg != NULL && osarg->type == j_sort_arg);
+	assert(nsarg != NULL && nsarg->type == j_sort_arg);
+
+	/* find last in chain to append to */
+	while (t->next != NULL)
+		t = t->next;
+	t = t->next = nsarg;
+
+	return osarg;
 }
 
 /* create a variable name from ident */
@@ -403,6 +461,21 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval2, level + step, op);
 				}
 				break;
+			case j_sort:
+				if (op) {
+					printf("j_sort( ");
+					printtree(t->tval1, level + step, op);
+					printf(", ( ");
+					printtree(t->tval2, level + step, op);
+					printf(") ) ");
+				} else {
+					printf("as ");
+					printtree(t->tval1, level + step, op);
+					printf("-> sort: [ ");
+					printtree(t->tval2, level + step, op);
+					printf("] ");
+				}
+				break;
 			case j_cmpnd:
 				if (op) {
 					printf("j_cmpnd( ");
@@ -466,6 +539,26 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval1, level + step, op);
 					printtree(t->tval2, level + step, op);
 					printtree(t->tval3, level + step, op);
+				}
+				break;
+			case j_sort_arg:
+				if (op) {
+					printf("j_sort_arg( ");
+					printtree(t->tval1, level + step, op);
+					printf(", ");
+					if (t->nval == 1) {
+						printf("asc ");
+					} else {
+						printf("desc ");
+					}
+					printf(") ");
+				} else {
+					printtree(t->tval1, level + step, op);
+					if (t->nval == 1) {
+						printf("asc ");
+					} else {
+						printf("desc ");
+					}
 				}
 				break;
 			case j_var:

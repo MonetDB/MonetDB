@@ -90,6 +90,7 @@ true       return _TRUE;
 false      return _FALSE;
 ;          return _SCOLON;
 \.         return _DOT;
+","        return ',';
 "("        return '(';
 ")"        return ')';
 <ARR>{

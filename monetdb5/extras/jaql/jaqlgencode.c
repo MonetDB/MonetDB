@@ -506,7 +506,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
-	int a, b;
+	int a, b, c, d, e, f, g;
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
@@ -739,6 +739,194 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
+			case j_sort: {
+				int l[4][2] = {{j2, 's'}, {j3, 'i'}, {j4, 'd'}, {0, 0}};
+				int lw;
+				a = dumpwalkvar(mb, t->tval1, j1, j5);
+				b = dumprefvar(mb, t->tval2->tval1, a, j1, j6, j7);
+				/* can only sort on one type (str, lng, dbl), and can't
+				 * combine these, so pick first element's type and
+				 * sort all of those */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, newRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushType(mb, q, TYPE_chr);
+				q = pushType(mb, q, TYPE_chr);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushChr(mb, q, 's');
+				q = pushChr(mb, q, 's');
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushChr(mb, q, 'i');
+				q = pushChr(mb, q, 'i');
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushChr(mb, q, 'd');
+				q = pushChr(mb, q, 'd');
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, b);
+				e = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, joinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushArgument(mb, q, c);
+				e = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("fetch", 5));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushInt(mb, q, 0);
+				f = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, uselectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushArgument(mb, q, f);
+				e = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				g = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				q = pushReturn(mb, q, g);
+				q = pushNil(mb, q, newBatType(TYPE_oid, TYPE_oid));
+				pushInstruction(mb, q);
+				for (lw = 0; l[lw][0] != 0; lw++) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, calcRef);
+					setFunctionId(q, putName("==", 2));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, f);
+					q = pushChr(mb, q, l[lw][1]);
+					d = getArg(q, 0);
+					pushInstruction(mb, q);
+					q = newAssignment(mb);
+					q->barrier = BARRIERsymbol;
+					pushArgument(mb, q, d);
+					c = getArg(q, 0);
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, algebraRef);
+					setFunctionId(q, semijoinRef);
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, l[lw][0]);
+					q = pushArgument(mb, q, e);
+					d = getArg(q, 0);
+					pushInstruction(mb, q);
+
+					/* FIXME: ignore multiple sort args for now */
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, algebraRef);
+					if (t->tval2->nval == 1) {
+						setFunctionId(q, sortTailRef);
+					} else {
+						setFunctionId(q, sortReverseTailRef);
+					}
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, d);
+					d = getArg(q, 0);
+					pushInstruction(mb, q);
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, batRef);
+					setFunctionId(q, mirrorRef);
+					q = pushReturn(mb, q, g);
+					q = pushArgument(mb, q, d);
+					pushInstruction(mb, q);
+
+					q = newAssignment(mb);
+					getArg(q, 0) = c;
+					q->argc = q->retc = 1;
+					q->barrier = EXITsymbol;
+				}
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, leftjoinRef); /* need to preserve order of g */
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, b);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, mirrorRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				f = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, leftjoinRef); /* need to preserve order of g */
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, f);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("sdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, g);
+				e = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, sunionRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, e);
+				j5 = getArg(q, 0);
+				pushInstruction(mb, q);
+			} break;
 			case j_cmpnd:
 			case j_comp:
 			case j_pred:
