@@ -47,6 +47,7 @@ typedef struct _jvar {
 typedef struct _jc {
 	struct _tree *p;
 	int esc_depth;
+	char expect_json;
 	char *buf;
 	char err[1024];
 	void *scanner;

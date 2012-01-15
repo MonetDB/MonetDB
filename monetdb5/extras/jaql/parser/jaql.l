@@ -35,6 +35,17 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 %x ARR OBJ
 
 %%
+	/* if the parser expects a JSON bit, give it */
+	if (yyextra->expect_json == '[') {
+		yyextra->esc_depth = 1;
+		yyextra->expect_json = 0;
+		BEGIN(ARR);
+	} else if (yyextra->expect_json == '{') {
+		yyextra->esc_depth = 1;
+		yyextra->expect_json = 0;
+		BEGIN(OBJ);
+	}
+
  /* core language */
 each       return EACH;
 filter     return FILTER;
@@ -79,30 +90,38 @@ true       return _TRUE;
 false      return _FALSE;
 ;          return _SCOLON;
 \.         return _DOT;
-"["        yyextra->esc_depth = 1; BEGIN(ARR);
-<ARR>"]"   %{
-	if (--yyextra->esc_depth == 0) {
-		yylval->j_json = GDKstrdup(yytext - 1);
-		BEGIN(INITIAL);
-		return _ARRAY;
-	} else {
-		yymore();
-	}
-%}
-<ARR>"["   yymore(); yyextra->esc_depth++;
-<ARR>.     yymore();
-"{"        yyextra->esc_depth = 1; BEGIN(OBJ);
-<OBJ>"}"   %{
-	if (--yyextra->esc_depth == 0) {
-		yylval->j_json = GDKstrdup(yytext - 1);
-		BEGIN(INITIAL);
-		return _OBJECT;
-	} else {
-		yymore();
-	}
-%}
-<OBJ>"{"   yymore(); yyextra->esc_depth++;
-<OBJ>.     yymore();
+"("        return '(';
+")"        return ')';
+<ARR>{
+	"]"   %{
+		if (--yyextra->esc_depth == 0) {
+			yylval->j_json = GDKstrdup(yytext - 1);
+			BEGIN(INITIAL);
+			return _ARRAY;
+		} else {
+			yymore();
+		}
+	%}
+	"["   yymore(); yyextra->esc_depth++;
+	.     yymore();
+}
+"]"        return ']';
+"["        return '[';
+<OBJ>{
+	"}"   %{
+		if (--yyextra->esc_depth == 0) {
+			yylval->j_json = GDKstrdup(yytext - 1);
+			BEGIN(INITIAL);
+			return _OBJECT;
+		} else {
+			yymore();
+		}
+	%}
+	"{"   yymore(); yyextra->esc_depth++;
+	.     yymore();
+}
+"}"        return '}';
+"{"        return '{';
 [ \t\r\n]+ /* ignore whitespace */;
 [a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return _IDENT;}
 <<EOF>>    {yyextra->buf = NULL; return EOF;}

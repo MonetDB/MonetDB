@@ -109,7 +109,8 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	;
 
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1), $2);}
-		| _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($1), $2);}
+		| '[' {j->expect_json = '[';}
+		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
 		;
 
 opt_actions: /* empty */        {$$ = NULL;}
@@ -182,6 +183,6 @@ literal: _NUMBER  {$$ = make_number($1);}
 	   | _FALSE   {$$ = make_bool(0);}
 	   ;
 
-json_fragment: _ARRAY   {$$ = make_json($1);}
-			 | _OBJECT  {$$ = make_json($1);}
+json_fragment: '[' {j->expect_json = '[';} _ARRAY   {$$ = make_json($3);}
+			 | '{' {j->expect_json = '{';} _OBJECT  {$$ = make_json($3);}
 			 ;
