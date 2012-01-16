@@ -1108,11 +1108,11 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		if (idcmp(fname, "stethoscope") != 0) {
 			mnstr_close(f);
 			buffer_destroy(bufstr);
-		} else sleep(4000); /* delay for stethoscope */
+		} else MT_sleep_ms(4000); /* delay for stethoscope */
 	} else if (f != GDKout) {
 		if (idcmp(fname, "stethoscope") != 0) 
 			mnstr_close(f);
-		else sleep(4000); /* delay for stethoscope */
+		else MT_sleep_ms(4000); /* delay for stethoscope */
 	}
 }
 

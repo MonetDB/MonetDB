@@ -45,13 +45,16 @@
  * @
  */
 #define MAXSCRIPT 64
+#define MEMORY_THRESHOLD  0.8
 
-mal_export char            monet_cwd[PATHLENGTH];
-mal_export int             monet_welcome;
-mal_export str             *monet_script;
-mal_export int 				monet_daemon;
-mal_export size_t			monet_memory;
-mal_export int				nrservers;
+mal_export char     monet_cwd[PATHLENGTH];
+mal_export int      monet_welcome;
+mal_export str      *monet_script;
+mal_export int 		monet_daemon;
+mal_export size_t	monet_memory;
+mal_export int		nrservers;
+mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
+mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 
 #define mal_set_lock(X,Y) if(GDKprotected) MT_lock_set(&X,Y)
 #define mal_unset_lock(X,Y) if(GDKprotected) MT_lock_unset(&X,Y)

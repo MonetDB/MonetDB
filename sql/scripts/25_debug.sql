@@ -51,5 +51,5 @@ create function bbp ()
 		status string, kind string) 
 	external name sql.bbp;
 
-create procedure ra( ra_stmt string, opt bool)
-	external name sql.ra;
+create procedure evalAlgebra( ra_stmt string, opt bool)
+	external name sql."evalAlgebra";
