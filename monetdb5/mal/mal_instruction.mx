@@ -1759,7 +1759,9 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst )
 	k = newTmpVariable(mb, type);
 	setVarConstant(mb, k);
 	setVarFixed(mb, k);
-	if ( type == TYPE_str)
+	if ( type == TYPE_str ||
+		 (type >= 0 && type < TYPE_any &&
+		  strcmp(BATatoms[type].name, "blob") == 0))
 		setVarCleanup(mb, k);
 	else clrVarCleanup(mb, k);
 	vr = &getVarConstant(mb, k);
