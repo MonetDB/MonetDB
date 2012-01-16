@@ -1517,9 +1517,9 @@ calc_export str CALCstr2oid(oid *ret, str *val);
 str
 CALCstr2oid(oid *ret, str *val)
 {
-	int l = (int) strlen(*val);
+	int l = (int) sizeof(oid);
 
-	(void) OIDfromStr(*val, &l, (ptr) ret);
+	(void) OIDfromStr(*val, &l, &ret);
 	return MAL_SUCCEED;
 }
 
