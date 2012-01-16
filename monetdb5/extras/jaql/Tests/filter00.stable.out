@@ -24,6 +24,9 @@ function user.main():void;
     jaql.x("[ {\"id\":1, \"dept\":1, \"income\":12000},{\"id\":2, \"dept\":2, \"income\":13000} ] -> filter $.dept > $.id;");
     jaql.x("[ {\"id\":1, \"dept\":1, \"income\":12000},{\"id\":2, \"dept\":2, \"income\":13000} ] -> filter $.dept >= $.id;");
     jaql.x("[ {\"id\":1, \"dept\":2, \"income\":12000},{\"id\":2, \"dept\":2, \"income\":13000} ] -> filter $.dept > $.id;");
+    jaql.x("[1,2,4]->filter $ > 2;");
+    jaql.x("[ {\"id\":1, \"dept\":2, \"income\":12000},4,5 ] -> filter $.dept == 2;");
+    jaql.x("[ {\"id\":1, \"dept\":2, \"income\":12000},4,5 ] -> filter $ >= 2;");
 end main;
 [ { "id": 1, "dept": 1, "income": 12000 } ]
 [ { "id": 1, "dept": 1, "income": 12000 } ]
@@ -32,6 +35,10 @@ end main;
 [  ]
 [ { "id": 1, "dept": 1, "income": 12000 }, { "id": 2, "dept": 2, "income": 13000 } ]
 [ { "id": 1, "dept": 2, "income": 12000 } ]
+[ 4 ]
+[ { "id": 1, "dept": 2, "income": 12000 } ]
+[ 4, 5 ]
+
 
 # 21:51:22 >  
 # 21:51:22 >  "Done."
