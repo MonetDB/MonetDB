@@ -1837,6 +1837,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			backup[i].vtype = 0;
 			backup[i].len = 0;
+			backup[i].val.pval = 0;
 			garbage[i] = -1;
 			if (stk->stk[a].vtype == TYPE_bat && getEndOfLife(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a)) {
 				garbage[i] = a;
@@ -1852,7 +1853,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 			} else if (i < pci->retc &&
 					   (stk->stk[a].vtype == TYPE_str ||
-						strcmp(BATatoms[stk->stk[a].vtype].name, "blob") == 0)) {
+						(0 < stk->stk[a].vtype &&
+						 stk->stk[a].vtype < TYPE_any &&
+						 strcmp(BATatoms[stk->stk[a].vtype].name, "blob") == 0))) {
 				backup[i] = stk->stk[a];
 			}
 		}
@@ -2463,6 +2466,7 @@ void garbageElement(Client cntxt, ValPtr v)
 		BBPdecref(bid, TRUE);
 	} else if (strcmp(BATatoms[v->vtype].name, "blob") == 0) {
 		GDKfree(v->val.pval);
+		v->val.pval = 0;
 	}
 }
 /*
