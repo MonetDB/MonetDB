@@ -1,5 +1,7 @@
-create array HRIT_039_image_array (x integer dimension, y integer dimension, value integer);
-create array HRIT_108_image_array (x integer dimension, y integer dimension, value integer);
+create array HRIT_039_image_array (x integer dimension[300], y integer dimension[300], value integer default 23);
+create array HRIT_108_image_array (x integer dimension[300], y integer dimension[300], value integer default 42);
+create array input_image_array    (x integer dimension[300], y integer dimension[300], channel1_value integer default 0, channel2_value integer default 0);
+create array atomic_values (x integer dimension[300], y integer dimension[300], T039_value integer default 0, T108_value integer default 0);
 
 declare threshold_1 float; set threshold_1 = 310.0;
 declare threshold_2 float; set threshold_2 =   2.5;
@@ -78,12 +80,13 @@ begin
 	return a_value * a_value;
 end;
 
-with
-	input_image_array
-as (
-	select
-		[channel1.x], -- could be omitted with "JOIN ON DIMENSIONS"
-		[channel1.y], -- could be omitted with "JOIN ON DIMENSIONS"
+--with
+	--input_image_array
+--as (
+insert into input_image_array
+	select 
+		channel1.x, -- could be omitted with "JOIN ON DIMENSIONS"
+		channel1.y, -- could be omitted with "JOIN ON DIMENSIONS"
 		channel1.value as channel1_value,
 		channel2.value as channel2_value
 	from
@@ -93,7 +96,9 @@ as (
 		on -- DIMENSIONS -- aka. / á la "natural join"
 			channel1.x = channel2.x and
 			channel1.y = channel2.y
-)
+;
+--)
+
 select
 	[atomic_values.x],
 	[atomic_values.y],
@@ -116,7 +121,7 @@ select
 			0
 	end
 	as confidence
-from
+from (
 	select 
 		[x],
 		[y],
@@ -129,8 +134,8 @@ from
 			select
 				[x],
 				[y], 
-				input_image_array[x][y].channel1_value,
-				input_image_array[x][y].channel2_value,
+				channel1_value,
+				channel2_value,
 				avg ( T039 ( channel1_value ) )            as T039_mean,
 				avg ( T108 ( channel2_value ) )            as T018_mean,
 				avg ( square ( T039 ( channel1_value ) ) ) as T039_standard_deviation_tmp,
@@ -141,39 +146,42 @@ from
 				input_image_array[x-1:x+2][y-1:y+2]
 		) 
 		as tmp
+	) as tmp2
 ;
 
-
-	select 
-		[x],
-		[y],
-		T039_value,
-		T108_value,
-		sqrt(T039_standard_deviation_tmp - T_039_mean * T_039_mean) as T039_standard_deviation,
-		sqrt(T108_standard_deviation_tmp - T_108_mean * T_108_mean) as T108_standard_deviation
+insert into atomic_values
+	select
+		x,
+		y,
+		T039 ( channel1_value ) as T039_value,
+		T108 ( channel2_value ) as T108_value
 	from
-		(
-			select
-				[x],
-				[y], 
-				input_image_array[x][y].T039_value,
-				input_image_array[x][y].T108_value,
-				avg ( T039_value )              as T039_mean,
-				avg ( T108_value )              as T018_mean,
-				avg ( T039_value * T039_value ) as T039_standard_deviation_tmp,
-				avg ( T108_value * T108_value ) as T108_standard_deviation_tmp
-			from
-				(
-					select
-						[x],
-						[y],
-						T039 ( channel1_value ) as T039_value,
-						T108 ( channel2_value ) as T108_value
-					from
-						input_image_array
-				) as atomic_values
-			group by
-				atomic_values[x-1:x+2][y-1:y+2]
-		) 
-		as tmp
+		input_image_array
 ;
+
+select 
+	[x],
+	[y],
+	T039_value,
+	T108_value,
+	sqrt(T039_standard_deviation_tmp - T_039_mean * T_039_mean) as T039_standard_deviation,
+	sqrt(T108_standard_deviation_tmp - T_108_mean * T_108_mean) as T108_standard_deviation
+from
+	(
+		select
+			[x],
+			[y], 
+			T039_value,
+			T108_value,
+			avg ( T039_value )              as T039_mean,
+			avg ( T108_value )              as T018_mean,
+			avg ( T039_value * T039_value ) as T039_standard_deviation_tmp,
+			avg ( T108_value * T108_value ) as T108_standard_deviation_tmp
+		from
+			atomic_values
+		group by
+			atomic_values[x-1:x+2][y-1:y+2]
+	) 
+	as tmp
+;
+
