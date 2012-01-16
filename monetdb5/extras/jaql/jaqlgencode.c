@@ -26,13 +26,11 @@
  * bat, pointing to array, so all oids from array bat that have head oid
  * value 0@0) */
 static int
-dumpwalkvar(MalBlkPtr mb, tree *t, int j1, int j5)
+dumpwalkvar(MalBlkPtr mb, int j1, int j5)
 {
 	InstrPtr q;
 	int a;
 
-	/* these operations all operate within a pipe */
-	assert(t && t->type == j_var);
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
 	setFunctionId(q, putName("selectH", 7));
@@ -623,7 +621,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 			case j_pipe:
 				break;
 			case j_filter:
-				a = dumpwalkvar(mb, t->tval1, j1, j5);
+				a = dumpwalkvar(mb, j1, j5);
 				/* tval2 can be pred or cpred */
 				b = dumppred(mb, t->tval2, a, j1, j2, j3, j4, j6, j7);
 				/* b = matching ids from dumpwalkvar (first array) */
@@ -662,7 +660,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 			case j_transform:
 				break;
 			case j_expand:
-				a = dumpwalkvar(mb, t->tval1, j1, j5);
+				a = dumpwalkvar(mb, j1, j5);
 				a = dumprefvar(mb, t->tval2, a, j1, j6, j7);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
@@ -742,7 +740,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 			case j_sort: {
 				int l[4][2] = {{j2, 's'}, {j3, 'i'}, {j4, 'd'}, {0, 0}};
 				int lw;
-				a = dumpwalkvar(mb, t->tval1, j1, j5);
+				a = dumpwalkvar(mb, j1, j5);
 				b = dumprefvar(mb, t->tval2->tval1, a, j1, j6, j7);
 				/* can only sort on one type (str, lng, dbl), and can't
 				 * combine these, so pick first element's type and
@@ -927,6 +925,49 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 			} break;
+			case j_top:
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("selectH", 7));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j1);
+				q = pushOid(mb, q, 0);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, a);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, sliceRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				q = pushWrd(mb, q, 0);
+				q = pushWrd(mb, q, (wrd)(t->nval - 1));
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("sdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, b);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("sdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, b);
+				j5 = getArg(q, 0);
+				pushInstruction(mb, q);
+				break;
 			case j_cmpnd:
 			case j_comp:
 			case j_pred:

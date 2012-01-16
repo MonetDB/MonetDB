@@ -64,6 +64,7 @@ enum treetype {
 	j_transform,
 	j_expand,
 	j_sort,
+	j_top,
 	j_cmpnd,
 	j_comp,
 	j_pred,
@@ -107,6 +108,7 @@ tree *make_jaql_filter(tree *var, tree *pred);
 tree *make_jaql_transform(tree *var, tree *tmpl);
 tree *make_jaql_expand(tree *var, tree *expr);
 tree *make_jaql_sort(tree *var, tree *expr);
+tree *make_jaql_top(long long int num);
 tree *make_cpred(tree *ppred, tree *comp, tree *pred);
 tree *make_pred(tree *var, tree *comp, tree *value);
 tree *make_sort_arg(tree *var, char asc);

@@ -230,6 +230,25 @@ make_jaql_sort(tree *var, tree *expr)
 	return res;
 }
 
+/* create top-N limit operator for the number of elements defined in num */
+tree *
+make_jaql_top(long long int num)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	if (num < 0) {
+		char buf[128];
+		snprintf(buf, sizeof(buf), "top: invalid limit: %lld", num);
+		res->type = j_error;
+		res->sval = GDKstrdup(buf);
+	} else {
+		res->type = j_top;
+		res->nval = num;
+	}
+
+	return res;
+}
+
 /* create predicate, chaining onto the previous predicate ppred,
  * applying a comparison (AND/OR/NOT currently) with the next predicate
  * pred */
@@ -474,6 +493,13 @@ printtree(tree *t, int level, char op)
 					printf("-> sort: [ ");
 					printtree(t->tval2, level + step, op);
 					printf("] ");
+				}
+				break;
+			case j_top:
+				if (op) {
+					printf("j_top( %lld ) ", t->nval);
+				} else {
+					printf("-> top: %lld ", t->nval);
 				}
 				break;
 			case j_cmpnd:

@@ -126,6 +126,9 @@ action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TRANSFORM opt_each json_fragment  {$$ = make_jaql_transform($2, $3);}
 	  | EXPAND opt_each opt_command       {$$ = make_jaql_expand($2, $3);}
 	  | SORT opt_each BY '[' sort_arg ']' {$$ = make_jaql_sort($2, $5);}
+	  | TOP _NUMBER                       {$$ = make_jaql_top($2);}
+	  | TOP _NUMBER opt_each BY '[' sort_arg ']'
+	        {$$ = append_jaql_pipe(make_jaql_sort($3, $6), make_jaql_top($2));}
 	  ;
 
 opt_command: /* empty */            {$$ = NULL;}
