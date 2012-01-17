@@ -625,6 +625,12 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jan 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.3-20120117
+- Rebuilt.
+
+* Mon Jan 16 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.3-20120117
+- monetdb5: A couple of memory leaks have been plugged.
+
 * Wed Jan 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
 - Rebuilt.
 
