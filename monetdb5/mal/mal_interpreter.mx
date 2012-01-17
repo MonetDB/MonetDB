@@ -2468,7 +2468,8 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (cntxt && cntxt->flags & bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid, TRUE);
-	} else if (strcmp(BATatoms[v->vtype].name, "blob") == 0) {
+	} else if (0 < v->vtype && v->vtype < TYPE_any &&
+			   strcmp(BATatoms[v->vtype].name, "blob") == 0) {
 		GDKfree(v->val.pval);
 		v->val.pval = 0;
 	}
