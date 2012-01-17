@@ -3871,12 +3871,13 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 }
 
-/* Traverse all subexpressions of exp and add it to the exps list if an
- * e_column is found
+/* Traverse all subexpressions of 'exp', if an e_column is found, add it to the
+ * 'exps' list if it is not already in 'exps'.
  */
 static list *
 add_columns(mvc *sql, list *exps, sql_exp *exp)
 {
+	bit notexist = 1;
 	node *n;
 
 	switch(exp->type) {
@@ -3896,7 +3897,14 @@ add_columns(mvc *sql, list *exps, sql_exp *exp)
 		add_columns(sql, exps, exp->r);
 		break;
 	case e_column:
-		append(exps, exp);
+		for (n = exps->h; n; n = n->next) {
+			if (strcmp(((sql_exp*)n->data)->name, exp->name) == 0) {
+				notexist = 0;
+				break;
+			}
+		}
+		if (notexist)
+			append(exps, exp);
 		break;
 	default:
 		return sql_error(sql, 02, "SELECT: invalid expression type %d", exp->type);
@@ -3978,7 +3986,8 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		return NULL;
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
-		exp = rel_value_exp(sql, rel, sym, sql_where, ek);
+		if (!(exp = rel_value_exp(sql, rel, sym, sql_where, ek)))
+			return NULL;
 		add_columns(sql, groupby->exps, exp);
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
@@ -4050,27 +4059,19 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	for (i = 0; i < t->ndims; i++)
 		nrep[i] = ngrp[i] = exp_atom_int(sql->sa, 1);
 	for (i = 0; i < t->ndims; i++){
-		list *ceil_args = new_exp_list(sql->sa);
-		sql_subtype ost_sta, ost_sto;
-		
-		ost_sta = *exp_subtype(os_sta[i]);
-		ost_sto = *exp_subtype(os_sto[i]);
-
-		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", &st_flt, &st_flt, F_FUNC)))
+		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", exp_subtype(os_sto[i]), exp_subtype(os_sta[i]), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"-\"");
-		append(ceil_args, exp_binop(sql->sa,
-					rel_check_type(sql, &st_flt, os_sto[i], type_cast),
-					rel_check_type(sql, &st_flt, os_sta[i], type_cast), sf));
-		os_sta[i] = rel_check_type(sql, &ost_sta, os_sta[i], type_cast);
-		os_sto[i] = rel_check_type(sql, &ost_sto, os_sto[i], type_cast);
+		exp = exp_binop(sql->sa, os_sto[i], os_sta[i], sf);
 
-		if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, "ceil", exps_subtype(ceil_args), F_FUNC)))
-			return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
-		exp = rel_check_type(sql, &st_int, exp_op(sql->sa, ceil_args, sf), type_cast);
-
-		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", exp_subtype(exp), exp_subtype(os_ste[i]), F_FUNC)))
+		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_div", &st_flt, &st_flt, F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"/\"");
-		exp = exp_binop(sql->sa, exp, os_ste[i], sf);
+		exp = exp_binop(sql->sa,
+				rel_check_type(sql, &st_flt, exp, type_cast),
+				rel_check_type(sql, &st_flt, exp_copy(sql->sa, os_ste[i]), type_cast), sf);
+
+		if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "ceil", exp_subtype(exp), NULL, F_FUNC)))
+			return sql_error(sql, 02, "failed to bind to the SQL function \"ceil\"");
+		exp = rel_check_type(sql, &st_int, exp_op(sql->sa, append(new_exp_list(sql->sa), exp), sf), type_cast);
 
 		for (j = 0; j < i; j++) {
 			if (!(sf = sql_bind_func(sql->sa, sql->session->schema, "sql_mul", exp_subtype(nrep[j]), exp_subtype(exp), F_FUNC)))
@@ -4119,9 +4120,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		exp_setname(sql->sa, exp, NULL, nme);
 	}
 	append(groupby->exps, exp);
-	/* HACK: secretly change the groupby into a project, and wipe out all traces of the AGGR */
-	groupby->op = op_project;
-	groupby->r = NULL;
+	/* tiling GROUP BY doesn't reduce the cardinality */
 	groupby->card = CARD_MULTI;
 	(*rel)->card = CARD_MULTI;
 	return exp;
@@ -5198,6 +5197,36 @@ rel_remove_internal_exp(sql_rel *rel)
 	}
 }
 
+/* Check if 'e' contains a tiling column by looking into all its subexpressions
+ * to see if a filled e_column->f can be found.
+ */
+static bit
+is_tiling_groupby (sql_exp *e)
+{
+	if(e->type == e_atom) {
+		return 0;
+	} else if (e->type == e_func || e->type == e_aggr) {
+		node *n = ((list*)e->l)->h;
+		for (; n; n = n->next) {
+			if(is_tiling_groupby((sql_exp*)n->data))
+				return 1;
+		}
+		return 0;
+	} else if (e->type == e_convert) {
+		return is_tiling_groupby(e->l);
+	} else if (e->type == e_cmp) {
+		if (is_tiling_groupby(e->l))
+			return 1;
+		if (is_tiling_groupby(e->r))
+			return 1;
+		return 0;
+	} else if (e->type == e_column) {
+		if (e->f)
+			return 1;
+	}
+	return 0;
+}
+
 static sql_rel *
 rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind ek)
 {
@@ -5241,12 +5270,18 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 	if (rel) {
 		if (rel && sn->groupby) {
+			node *n = NULL;
 			list *gbe = rel_group_by(sql, rel, sn->groupby, sn->selection, sql_sel );
 
 			if (!gbe)
 				return NULL;
 			rel = rel_groupby(sql->sa, rel, gbe);
 			aggr = 1;
+			for (n = gbe->h; n && aggr < 2; n = n->next) {
+				/* if we have at least one tiling groupby */
+				if(is_tiling_groupby(n->data))
+					aggr = 2;
+			}
 		}
 
 		/* decorrelate if possible */
@@ -5323,7 +5358,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		/* having implies group by, ie if not supplied do a group by */
 		if (rel->op != op_groupby)
 			rel = rel_groupby(sql->sa,  rel, NULL);
-		aggr = 1;
+		aggr = aggr > 1? aggr : 1;
 	}
 
 	n = sn->selection->h;
@@ -5411,14 +5446,23 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (rel)
 		set_processed(rel);
 	if (aggr && rel) {
-		sql_rel *l = rel;
+		sql_rel *l = rel, *prnt = l;
 		while(l && !is_groupby(l->op))
-			if (is_project(l->op) || is_select(l->op))
+			if (is_project(l->op) || is_select(l->op)) {
+				prnt = l;
 				l = l -> l;
-			else
+			} else {
 				l = NULL;
-		if (l)
+			}
+		if (l) {
 			set_processed(l);
+			if (is_groupby(l->op) && aggr > 1) {
+				if(prnt->op == op_basetable || is_join(prnt->op) || is_semi(prnt->op) || is_set(prnt->op))
+					return sql_error(sql, 02, "SELECT: unexpected relation type %d as parent relation of a tiling GROUP BY", prnt->op);
+				/* overwrite the groupby relation with its child relation */
+				prnt->l = l->l;
+			}
+		}
 	}
 
 	if (rel && sn->distinct)

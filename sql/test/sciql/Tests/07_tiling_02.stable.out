@@ -1,0 +1,117 @@
+stdout of test '07_tiling_02` in directory 'test/sciql` itself:
+
+
+# 11:30:26 >  
+# 11:30:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch0/zhang/monet-install/sciql/debug/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=33188" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_sciql" "--set" "mal_listing=0"
+# 11:30:26 >  
+
+# MonetDB 5 server v11.8.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 7.749 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://jarl.ins.cwi.nl:33188/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 29_array.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 11:30:26 >  
+# 11:30:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=33188"
+# 11:30:26 >  
+
+#create array a (x int dimension[4], y int dimension[4], v float default 37);
+#select x, y,  sum(v), avg(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys.,	sys. # table_name
+% x,	y,	L1,	L2 # name
+% int,	int,	table,	table # type
+% 1,	1,	0,	0 # length
+[ 0,	0,	74,	37	]
+[ 0,	1,	148,	37	]
+[ 0,	2,	222,	37	]
+[ 0,	3,	222,	37	]
+[ 1,	0,	111,	37	]
+[ 1,	1,	222,	37	]
+[ 1,	2,	333,	37	]
+[ 1,	3,	333,	37	]
+[ 2,	0,	111,	37	]
+[ 2,	1,	222,	37	]
+[ 2,	2,	333,	37	]
+[ 2,	3,	333,	37	]
+[ 3,	0,	74,	37	]
+[ 3,	1,	148,	37	]
+[ 3,	2,	222,	37	]
+[ 3,	3,	222,	37	]
+#select x, y, sum(v), avg(v), sum(v), v from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys.,	sys.,	sys.,	sys.a # table_name
+% x,	y,	L3,	L4,	L5,	v # name
+% int,	int,	table,	table,	table,	double # type
+% 1,	1,	0,	0,	0,	24 # length
+[ 0,	0,	74,	37,	74,	37	]
+[ 0,	1,	148,	37,	148,	37	]
+[ 0,	2,	222,	37,	222,	37	]
+[ 0,	3,	222,	37,	222,	37	]
+[ 1,	0,	111,	37,	111,	37	]
+[ 1,	1,	222,	37,	222,	37	]
+[ 1,	2,	333,	37,	333,	37	]
+[ 1,	3,	333,	37,	333,	37	]
+[ 2,	0,	111,	37,	111,	37	]
+[ 2,	1,	222,	37,	222,	37	]
+[ 2,	2,	333,	37,	333,	37	]
+[ 2,	3,	333,	37,	333,	37	]
+[ 3,	0,	74,	37,	74,	37	]
+[ 3,	1,	148,	37,	148,	37	]
+[ 3,	2,	222,	37,	222,	37	]
+[ 3,	3,	222,	37,	222,	37	]
+#select x, y, sum(v1), avg(v1), v1, sum(v2), avg(v2), v2 from aa group by aa[x-1:x+2][y-2:y+1];
+% sys.aa,	sys.aa,	sys.,	sys.,	sys.aa,	sys.,	sys.,	sys.aa # table_name
+% x,	y,	L6,	L7,	v1,	L10,	L11,	v2 # name
+% int,	int,	table,	table,	double,	table,	table,	double # type
+% 1,	1,	0,	0,	24,	0,	0,	24 # length
+[ 0,	0,	74,	37,	37,	85.200000000000003,	42.600000000000001,	42.6	]
+[ 0,	1,	148,	37,	37,	170.40000000000001,	42.600000000000001,	42.6	]
+[ 0,	2,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+[ 0,	3,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+[ 1,	0,	111,	37,	37,	127.80000000000001,	42.600000000000001,	42.6	]
+[ 1,	1,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+[ 1,	2,	333,	37,	37,	383.40000000000003,	42.600000000000001,	42.6	]
+[ 1,	3,	333,	37,	37,	383.40000000000003,	42.600000000000001,	42.6	]
+[ 2,	0,	111,	37,	37,	127.80000000000001,	42.600000000000001,	42.6	]
+[ 2,	1,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+[ 2,	2,	333,	37,	37,	383.40000000000003,	42.600000000000001,	42.6	]
+[ 2,	3,	333,	37,	37,	383.40000000000003,	42.600000000000001,	42.6	]
+[ 3,	0,	74,	37,	37,	85.200000000000003,	42.600000000000001,	42.6	]
+[ 3,	1,	148,	37,	37,	170.40000000000001,	42.600000000000001,	42.6	]
+[ 3,	2,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+[ 3,	3,	222,	37,	37,	255.59999999999999,	42.600000000000001,	42.6	]
+#drop array a;
+
+# 11:30:27 >  
+# 11:30:27 >  "Done."
+# 11:30:27 >  
+
