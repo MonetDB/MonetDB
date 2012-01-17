@@ -15,7 +15,7 @@ SELECT [x], [y],
    THEN 1
   ELSE  0
  END AS confidence
-FROM
+FROM (
  SELECT [x], [y],
   v039, SQRT( v039_sqr_mean - v039_mean * v039_mean ) AS v039_std_dev,
   v108, SQRT( v108_sqr_mean - v108_mean * v108_mean ) AS v108_std_dev
@@ -32,4 +32,7 @@ FROM
     ON c039.x = c108.x AND c039.y = c108.y
   ) AS image_array
   GROUP BY image_array[x-1:x+2][y-1:y+2]
- ) AS tmp;
+ ) AS tmp
+) AS tmp2
+;
+
