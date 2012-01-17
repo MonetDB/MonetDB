@@ -80,9 +80,6 @@ begin
 	return a_value * a_value;
 end;
 
---with
-	--input_image_array
---as (
 insert into input_image_array
 	select 
 		channel1.x, -- could be omitted with "JOIN ON DIMENSIONS"
@@ -97,7 +94,6 @@ insert into input_image_array
 			channel1.x = channel2.x and
 			channel1.y = channel2.y
 ;
---)
 
 select
 	[atomic_values.x],
