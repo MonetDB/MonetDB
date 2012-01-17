@@ -547,12 +547,11 @@ workslow:
 		}
 	}
 	if (exceptionVar >= 0) {
+		str oldret = ret;
 		if (ret) {
-			str oldret = ret;
 			ret = createScriptException(mb, mb->stop - 1,
 				getExceptionType(getVarName(mb, exceptionVar)),
 				ret, "Exception not caught");
-			FREE_EXCEPTION(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop - 1, MAL,
@@ -563,6 +562,7 @@ workslow:
 					NULL, "Exception not caught");
 			}
 		}
+		FREE_EXCEPTION(oldret);
 	}
 	GDKfree(backup);
 	GDKfree(garbage);
@@ -1004,6 +1004,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	}
 
 	@:beginProfile(t,0)@
+	FREE_EXCEPTION(ret);
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
 		@:beginProfile(t,1)@
@@ -1571,6 +1572,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * @+ The major switch
  */
 @= MALinterpret
+	FREE_EXCEPTION(ret);
 	ret = 0;
 	switch (pci->token) {
 	case ASSIGNsymbol: 
@@ -1709,6 +1711,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case RAISEsymbol:
 		exceptionVar = getDestVar(pci);
+		FREE_EXCEPTION(ret);
 		ret = NULL;
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -1784,6 +1787,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPincref(lhs->val.bval, TRUE);
 	}
 	@:restoreTarget(@1, @3)@
+	FREE_EXCEPTION(ret);
 	ret = 0;
 	@:exceptionHndlr(@1, @2, @3)@
 	@:timingHndlr(@1)@
