@@ -177,7 +177,14 @@ make_jaql_transform(tree *var, tree *tmpl)
 	if ((res = _check_exp_var(var->sval, tmpl)) != NULL) {
 		freetree(var);
 		freetree(tmpl);
-		return(res);
+		return res;
+	}
+
+	if (tmpl->type == j_var && tmpl->tval1 == NULL) {
+		/* simple variable, hence not performing any change, so null-op */
+		freetree(var);
+		freetree(tmpl);
+		return NULL;
 	}
 
 	res = GDKzalloc(sizeof(tree));

@@ -28,6 +28,7 @@ function user.main():void;
     jaql.x("plan A -> expand -> transform $ * 2;");
     jaql.x("plan A -> expand $.ids;");
     jaql.x("plan [1,2,3] -> transform {\"value\":$};");
+    jaql.x("plan [1,2,3] -> transform $;");
     jaql.x("plan [1,2,3] -> transform $ * 2;");
     jaql.x("plan [1,2,3] -> transform 2 * $;");
     jaql.x("plan [1,2,3] -> transform 2 * 2;");
@@ -46,6 +47,7 @@ e as $ -> filter: ( $.mgr == true || $.income > 30000 ) => <result>
 A as $ -> expand: $ as $ -> transform: ( $ * 2 ) 
 A as $ -> expand: $.ids => <result> 
 [1,2,3] as $ -> transform: { "value": $ } 
+[1,2,3] => <result> 
 [1,2,3] as $ -> transform: ( $ * 2 ) 
 [1,2,3] as $ -> transform: ( $ * 2 ) 
 [1,2,3] as $ -> transform: 4 

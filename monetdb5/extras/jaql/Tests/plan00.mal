@@ -11,6 +11,7 @@ jaql.x("plan A -> expand -> transform $ * 2;");
 jaql.x("plan A -> expand $.ids;");
 
 jaql.x("plan [1,2,3] -> transform {\"value\":$};");
+jaql.x("plan [1,2,3] -> transform $;");
 jaql.x("plan [1,2,3] -> transform $ * 2;");
 jaql.x("plan [1,2,3] -> transform 2 * $;");
 jaql.x("plan [1,2,3] -> transform 2 * 2;");
