@@ -20,18 +20,16 @@ stdout of test '04_insert_02` in directory 'test/sciql` itself:
 Ready.
 # SQL catalog created, loading sql scripts once
 
-Over..
+# 22:43:33 >  
+# 22:43:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=30950"
+# 22:43:33 >  
 
-# 15:18:50 >  
-# 15:18:50 >  mclient -lsql -ftest -i -e --host=jarl --port=35912 
-# 15:18:50 >  
-
-#CREATE ARRAY matrix (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 3.3);
-#SELECT * FROM matrix;
-% sys.matrix,	sys.matrix,	sys.matrix # table_name
+#CREATE ARRAY matrix_0402 (x INT DIMENSION[4], y INT DIMENSION[4], v FLOAT DEFAULT 0.0);
+#SELECT * FROM matrix_0402;
+% sys.matrix_0402,	sys.matrix_0402,	sys.matrix_0402 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]
@@ -48,13 +46,13 @@ Over..
 [ 3,	1,	0	]
 [ 3,	2,	0	]
 [ 3,	3,	0	]
-#INSERT INTO matrix SELECT x, y, 3.3 FROM matrix WHERE x = 3;
-[ 8	]
-#SELECT * FROM matrix;
-% sys.matrix,	sys.matrix,	sys.matrix # table_name
+#INSERT INTO matrix_0402 SELECT x, y, 3.3 FROM matrix_0402 WHERE x = 3;
+[ 4	]
+#SELECT * FROM matrix_0402;
+% sys.matrix_0402,	sys.matrix_0402,	sys.matrix_0402 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
-% 1,	1,	22 # length
+% 1,	1,	24 # length
 [ 0,	0,	0	]
 [ 0,	1,	0	]
 [ 0,	2,	0	]
