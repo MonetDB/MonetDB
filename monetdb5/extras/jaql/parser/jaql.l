@@ -72,7 +72,7 @@ planf      return PLANF;
 "->"       return _ARROW;
 -?[0-9]+               {yylval->j_number = atol(yytext); return _NUMBER;}
 -?[0-9]+\.[0-9e+-]+    {yylval->j_double = atof(yytext); return _DOUBLE;}
-\"[^\"]\"              {yytext[yyleng - 1] = '\0';
+\"[^\"]*\"             {yytext[yyleng - 1] = '\0';
                         yylval->j_string = GDKstrdup(yytext + 1);
                         return _STRING;}
 \$         return _DOLLAR;
@@ -90,9 +90,14 @@ true       return _TRUE;
 false      return _FALSE;
 ;          return _SCOLON;
 \.         return _DOT;
+":"        return ':';
 ","        return ',';
 "("        return '(';
 ")"        return ')';
+"+"        return '+';
+"-"        return '-';
+"*"        return '*';
+"/"        return '/';
 <ARR>{
 	"]"   %{
 		if (--yyextra->esc_depth == 0) {

@@ -35,7 +35,8 @@
 
 %type <j_tree> stmt jaql jaqlpipe opt_actions actions action predicates
 	predicate variable and_or opt_not comparison value literal
-	opt_each json_fragment opt_command sort_arg
+	opt_each opt_command sort_arg arith_op val_var_arith
+	obj_list arr_list obj_pair json_value
 %type <j_ident> ident
 %type <j_number> opt_asc_desc
 
@@ -123,7 +124,7 @@ actions: _ARROW action          {$$ = $2;}
 	   ;
 
 action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
-	  | TRANSFORM opt_each json_fragment  {$$ = make_jaql_transform($2, $3);}
+	  | TRANSFORM opt_each json_value     {$$ = make_jaql_transform($2, $3);}
 	  | EXPAND opt_each opt_command       {$$ = make_jaql_expand($2, $3);}
 	  | SORT opt_each BY '[' sort_arg ']' {$$ = make_jaql_sort($2, $5);}
 	  | TOP _NUMBER                       {$$ = make_jaql_top($2);}
@@ -199,6 +200,38 @@ literal: _NUMBER  {$$ = make_number($1);}
 	   | _FALSE   {$$ = make_bool(0);}
 	   ;
 
+arith_op: '+'     {$$ = make_op(j_plus);}
+		| '-'     {$$ = make_op(j_min);}
+		| '*'     {$$ = make_op(j_multiply);}
+		| '/'     {$$ = make_op(j_divide);}
+		;
+
+val_var_arith: '(' value arith_op val_var_arith ')'
+			                                 {$$ = make_operation($2, $3, $4);}
+			 | value arith_op val_var_arith  {$$ = make_operation($1, $2, $3);}
+			 | val_var_arith arith_op value  {$$ = make_operation($1, $2, $3);}
+			 | value                         {$$ = $1;}
+			 ;
+
+obj_list: obj_list ',' obj_pair       {$$ = append_pair($1, $3);}
+		| obj_pair                    {$$ = $1;}
+		;
+
+arr_list: arr_list ',' val_var_arith  {$$ = append_elem($1, $3);}
+		| val_var_arith               {$$ = $1;}
+		;
+
+obj_pair: variable                    {$$ = make_pair(NULL, $1);}
+		| _STRING ':' val_var_arith   {$$ = make_pair($1, $3);}
+		;
+
+json_value: val_var_arith             {$$ = $1;}
+		  | '{' obj_list '}'          {$$ = make_json_object($2);}
+		  | '[' arr_list ']'          {$$ = make_json_array($2);}
+		  ;
+
+/*
 json_fragment: '[' {j->expect_json = '[';} _ARRAY   {$$ = make_json($3);}
 			 | '{' {j->expect_json = '{';} _OBJECT  {$$ = make_json($3);}
 			 ;
+*/

@@ -499,6 +499,52 @@ dumppred(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 	return g;
 }
 
+static int
+dumpnextid(MalBlkPtr mb, int j1)
+{
+	int a;
+	InstrPtr q;
+
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, batRef);
+	setFunctionId(q, reverseRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, j1);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, aggrRef);
+	setFunctionId(q, maxRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, a);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, calcRef);
+	setFunctionId(q, putName("wrd", 3));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, a);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, calcRef);
+	setFunctionId(q, putName("+", 1));
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, a);
+	q = pushWrd(mb, q, 1);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, calcRef);
+	setFunctionId(q, oidRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, a);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+
+	return a;
+}
+
 int
 dumptree(jc *j, MalBlkPtr mb, tree *t)
 {
@@ -618,7 +664,6 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 
 				q = pushStr(mb, q, t->sval);
 				pushInstruction(mb, q);
-			case j_pipe:
 				break;
 			case j_filter:
 				a = dumpwalkvar(mb, j1, j5);
@@ -658,6 +703,141 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_transform:
+				a = dumpwalkvar(mb, j1, j5);
+				b = dumprefvar(mb, t->tval1, a, j1, j6, j7);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, a);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				/* for now limited transformations only */
+				switch (t->tval2->type) {
+					case j_num:
+					case j_dbl:
+					case j_str:
+						/* fixed set overwriting */
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, projectRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, a);
+						if (t->tval2->type == j_num) {
+							q = pushLng(mb, q, t->tval2->nval);
+						} else if (t->tval2->type == j_dbl) {
+							q = pushDbl(mb, q, t->tval2->dval);
+						} else {
+							q = pushStr(mb, q, t->tval2->sval);
+						}
+						c = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, projectRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, a);
+						if (t->tval2->type == j_num) {
+							q = pushChr(mb, q, 'i');
+							f = j3;
+						} else if (t->tval2->type == j_dbl) {
+							q = pushChr(mb, q, 'd');
+							f = j4;
+						} else {
+							q = pushChr(mb, q, 's');
+							f = j2;
+						}
+						d = getArg(q, 0);
+						pushInstruction(mb, q);
+						e = dumpnextid(mb, j1);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("markH", 5));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, c);
+						q = pushArgument(mb, q, e);
+						g = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("kunion", 6));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, f);
+						q = pushArgument(mb, q, g);
+						if (t->tval2->type == j_num) {
+							j3 = getArg(q, 0);
+						} else if (t->tval2->type == j_dbl) {
+							j4 = getArg(q, 0);
+						} else if (t->tval2->type == j_str) {
+							j2 = getArg(q, 0);
+						}
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("markH", 5));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, d);
+						q = pushArgument(mb, q, e);
+						g = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("kunion", 6));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j1);
+						q = pushArgument(mb, q, g);
+						j1 = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("markT", 5));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, a);
+						q = pushArgument(mb, q, e);
+						g = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("kdifference", 11));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, g);
+						f = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("kunion", 6));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, f);
+						q = pushArgument(mb, q, g);
+						j5 = getArg(q, 0);
+						pushInstruction(mb, q);
+						break;
+					case j_var:
+						/* simple projection */
+						break;
+					case j_json_obj:
+					case j_json_arr:
+						/* construct JSON bits */
+						break;
+					default:
+						assert(0);
+				}
 				break;
 			case j_expand:
 				a = dumpwalkvar(mb, j1, j5);

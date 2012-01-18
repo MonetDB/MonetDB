@@ -59,7 +59,8 @@ enum treetype {
 	j_output_var,
 	j_output,
 	j_json,
-	j_pipe,
+	j_json_obj,
+	j_json_arr,
 	j_filter,
 	j_transform,
 	j_expand,
@@ -67,8 +68,11 @@ enum treetype {
 	j_top,
 	j_cmpnd,
 	j_comp,
+	j_op,
+	j_operation,
 	j_pred,
 	j_sort_arg,
+	j_pair,
 	j_var,
 	j_num,
 	j_dbl,
@@ -86,7 +90,12 @@ enum comptype {
 	j_lequal,
 	j_not,
 	j_or,
-	j_and
+	j_and,
+	/* bit of hacked in to reuse same field in struct */
+	j_plus,
+	j_min,
+	j_multiply,
+	j_divide
 };
 
 typedef struct _tree {
@@ -103,6 +112,8 @@ typedef struct _tree {
 
 tree *make_json_output(char *ident);
 tree *make_json(char *json);
+tree *make_json_object(tree *obj);
+tree *make_json_array(tree *arr);
 tree *append_jaql_pipe(tree *oaction, tree *naction);
 tree *make_jaql_filter(tree *var, tree *pred);
 tree *make_jaql_transform(tree *var, tree *tmpl);
@@ -115,7 +126,12 @@ tree *make_sort_arg(tree *var, char asc);
 tree *append_sort_arg(tree *osarg, tree *nsarg);
 tree *make_varname(char *ident);
 tree *append_varname(tree *var, char *ident);
+tree *make_pair(char *name, tree *val);
+tree *append_pair(tree *opair, tree *npair);
+tree *append_elem(tree *oelem, tree *nelem);
 tree *make_comp(enum comptype t);
+tree *make_op(enum comptype t);
+tree *make_operation(tree *var1, tree *op, tree *var2);
 tree *make_number(long long int n);
 tree *make_double(double d);
 tree *make_string(char *s);

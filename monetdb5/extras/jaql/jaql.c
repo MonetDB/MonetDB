@@ -66,6 +66,30 @@ make_json(char *s)
 	return res;
 }
 
+tree *
+make_json_object(tree *obj)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	assert(obj != NULL && obj->type == j_pair);
+	res->type = j_json_obj;
+	res->tval1 = obj;
+
+	return res;
+}
+
+tree *
+make_json_array(tree *arr)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	assert(arr != NULL); /* arr can be about everything */
+	res->type = j_json_arr;
+	res->tval1 = arr;
+
+	return res;
+}
+
 /* append naction as next pipe after oaction */
 tree *
 append_jaql_pipe(tree *oaction, tree *naction)
@@ -102,6 +126,38 @@ make_jaql_filter(tree *var, tree *pred)
 	res->type = j_filter;
 	res->tval1 = var;
 	res->tval2 = pred;
+	/* FIXME: check pred's var usage, like _check_exp_var */
+
+	return res;
+}
+
+/* recursive helper to check variable usages for validity */
+static tree *
+_check_exp_var(char *var, tree *t)
+{
+	tree *res = NULL;
+
+	if (t == NULL)
+		return res;
+
+	if (t->type == j_var) {
+		if (strcmp(var, t->sval) != 0) {
+			char buf[128];
+			res = GDKzalloc(sizeof(tree));
+			snprintf(buf, sizeof(buf), "transform: unknown variable: %s",
+					t->sval);
+			res->type = j_error;
+			res->sval = GDKstrdup(buf);
+		}
+		return res;
+	}
+
+	if ((res = _check_exp_var(var, t->tval1)) != NULL)
+		return res;
+	if ((res = _check_exp_var(var, t->tval2)) != NULL)
+		return res;
+	if ((res = _check_exp_var(var, t->tval3)) != NULL)
+		return res;
 
 	return res;
 }
@@ -111,55 +167,20 @@ make_jaql_filter(tree *var, tree *pred)
 tree *
 make_jaql_transform(tree *var, tree *tmpl)
 {
-	tree *res = GDKzalloc(sizeof(tree));
-	char buf[8096];
-	char *p, *q, *r;
-	size_t l;
-	tree *t;
+	tree *res;
 
-	/* process tmpl, to turn into a C-like printf string and extract
-	 * variable references */
-	for (p = tmpl->sval, q = buf; *p != '\0' && q - buf < 8096; p++, q++)
-	{
-		l = strlen(var->sval);
-		if (*p == *var->sval && strncmp(p, var->sval, l) == 0 &&
-				!(p[l] >= 'A' && p[l] <= 'Z') &&
-				!(p[l] >= 'a' && p[l] <= 'z') &&
-				!(p[l] >= '0' && p[l] <= '9') && p[l] != '_')
-		{
-			p += l;
-			if (res->tval3 == NULL) {
-				t = res->tval3 = make_varname(var->sval);
-			} else {
-				t = t->next = make_varname(var->sval);
-			}
-			*q++ = '%';
-			*q++ = 's';
+	assert(var != NULL && var->type == j_var);
+	assert(tmpl != NULL);
 
-			while (*p == '.') {
-				r = p;
-				for (; *p != '\0'; p++) {
-					if (*p != '_' &&
-							!(p[l] >= 'A' && p[l] <= 'Z') &&
-							!(p[l] >= 'a' && p[l] <= 'z') &&
-							!(p[l] >= '0' && p[l] <= '9'))
-					{
-						*q = *p;
-						*p = '\0';
-						append_varname(t, r);
-						*p = *q;
-					}
-				}
-			}
-			/* we don't support x[n] yet */
-		}
-		*q = *p;
+	/* traverse down tmpl, searching for all variable references to
+	 * check if they refer to var */
+	if ((res = _check_exp_var(var->sval, tmpl)) != NULL) {
+		freetree(var);
+		freetree(tmpl);
+		return(res);
 	}
-	*q = '\0';
 
-	GDKfree(tmpl->sval);
-	tmpl->sval = GDKstrdup(buf);
-
+	res = GDKzalloc(sizeof(tree));
 	res->type = j_transform;
 	res->tval1 = var;
 	res->tval2 = tmpl;
@@ -351,6 +372,67 @@ append_varname(tree *var, char *ident)
 	return var;
 }
 
+/* constructs a JSON pair '"name": val' where val can be an expression
+ * or a literal value
+ * if name is NULL, val must be a variable, and the pair constructed
+ * will be named after the (last part of the) variable */
+tree *
+make_pair(char *name, tree *val)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	assert(val != NULL);
+	assert(name != NULL || val->type == j_var);
+
+	if (name == NULL) {
+		tree *w;
+		/* find last var in val */
+		for (w = val; w->tval1 != NULL; w = w->tval1)
+			;
+		name = GDKstrdup(w->sval);
+	}
+
+	res->type = j_pair;
+	res->tval1 = val;
+	res->sval = name;
+
+	return res;
+}
+
+/* append npair to opair */
+tree *
+append_pair(tree *opair, tree *npair)
+{
+	tree *w = opair;
+
+	assert(opair != NULL);
+	assert(npair != NULL);
+
+	while (w->next != NULL)
+		w = w->next;
+
+	w->next = npair;
+
+	return opair;
+}
+
+/* append nelem to oelem */
+tree *
+append_elem(tree *oelem, tree *nelem)
+{
+	tree *w = oelem;
+
+	assert(oelem != NULL);
+	assert(nelem != NULL);
+
+	while (w->next != NULL)
+		w = w->next;
+
+	w->next = nelem;
+
+	return oelem;
+}
+
 /* create a comparison from the given type */
 tree *
 make_comp(enum comptype t)
@@ -358,6 +440,113 @@ make_comp(enum comptype t)
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_comp;
 	res->cval = t;
+
+	return res;
+}
+
+/* create an operation of the given type */
+tree *
+make_op(enum comptype t)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+	res->type = j_op;
+	res->cval = t;
+
+	return res;
+}
+
+/* create an operation over two vars/literals, apply some simple rules
+ * to reduce work lateron (e.g. static calculations)
+ * return is either a j_num, j_dbl or j_operation with tval1 being j_val
+ * or j_operation and tval2 being j_num, j_dbl, j_val or j_operation */
+tree *
+make_operation(tree *var1, tree *op, tree *var2)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	assert(var1 != NULL);
+	assert(op != NULL && op->type == j_op);
+	assert(var2 != NULL);
+
+	if (var1->type == j_bool || var1->type == j_str ||
+			var2->type == j_bool || var2->type == j_str)
+	{
+		/* we can't do arithmetic with these */
+		res->type = j_error;
+		res->sval = GDKstrdup("cannot perform arithmetic on "
+				"string or boolean values");
+		freetree(var1);
+		freetree(op);
+		freetree(var2);
+		return res;
+	}
+
+	if (var1->type != j_var && var1->type != j_operation) {
+		/* left is value (literal) */
+		if (var2->type == j_var || var2->type == j_operation) {
+			/* right is var, or another operation, swap (want the var
+			 * left eventually (if any)) */
+			tree *t = var1;
+			var1 = var2;
+			var2 = t;
+		} else {
+			/* right is literal, pre-compute the value
+			 * only cases left are number/double combinations */
+			if (var1->type == j_num)
+				var1->dval = (double)var1->nval;
+			if (var2->type == j_num)
+				var2->dval = (double)var2->nval;
+			switch (op->cval) {
+				case j_plus:
+					if (var1->type == j_dbl || var2->type == j_dbl) {
+						res->type = j_dbl;
+						res->dval = var1->dval + var2->dval;
+					} else {
+						res->type = j_num;
+						res->nval = var1->nval + var2->nval;
+					}
+					break;
+				case j_min:
+					if (var1->type == j_dbl || var2->type == j_dbl) {
+						res->type = j_dbl;
+						res->dval = var1->dval - var2->dval;
+					} else {
+						res->type = j_num;
+						res->nval = var1->nval - var2->nval;
+					}
+					break;
+				case j_multiply:
+					if (var1->type == j_dbl || var2->type == j_dbl) {
+						res->type = j_dbl;
+						res->dval = var1->dval * var2->dval;
+					} else {
+						res->type = j_num;
+						res->nval = var1->nval * var2->nval;
+					}
+					break;
+				case j_divide:
+					if (var1->type == j_dbl || var2->type == j_dbl) {
+						res->type = j_dbl;
+						res->dval = var1->dval / var2->dval;
+					} else {
+						res->type = j_num;
+						res->nval = var1->nval / var2->nval;
+					}
+					break;
+				default:
+					assert(0);
+			}
+			freetree(var1);
+			freetree(op);
+			freetree(var2);
+			return res;
+		}
+	}
+
+	res->type = j_operation;
+	res->tval1 = var1;
+	res->tval2 = op;
+	res->tval3 = var2;
 
 	return res;
 }
@@ -429,6 +618,40 @@ printtree(tree *t, int level, char op)
 					printf("j_json( %s ) ", t->sval);
 				} else {
 					printf("%s ", t->sval);
+				}
+				break;
+			case j_json_obj:
+				if (op) {
+					printf("j_json_obj( ");
+					printtree(t->tval1, level + step, op);
+					printf(") ");
+				} else {
+					printf("{ ");
+					printtree(t->tval1, level + step, op);
+					printf("} ");
+				}
+				break;
+			case j_json_arr:
+				if (op) {
+					printf("j_json_arr( ");
+					printtree(t->tval1, level + step, op);
+					printf(") ");
+				} else {
+					printf("[ ");
+					printtree(t->tval1, level + step, op);
+					printf("] ");
+				}
+				break;
+			case j_pair:
+				if (op) {
+					printf("j_pair( \"%s\", ", t->sval);
+					printtree(t->tval1, level + step, op);
+					printf(") ");
+				} else {
+					printf("\"%s\": ", t->sval);
+					printtree(t->tval1, level + step, op);
+					if (t->next != NULL)
+						printf(", ");
 				}
 				break;
 			case j_filter:
@@ -520,6 +743,7 @@ printtree(tree *t, int level, char op)
 				}
 				break;
 			case j_comp:
+			case j_op:
 				switch (t->cval) {
 					case j_and:
 						printf("&& ");
@@ -548,8 +772,18 @@ printtree(tree *t, int level, char op)
 					case j_lequal:
 						printf("<= ");
 						break;
-					default:
-						printf("<unknown comp> ");
+					case j_plus:
+						printf("+ ");
+						break;
+					case j_min:
+						printf("- ");
+						break;
+					case j_multiply:
+						printf("* ");
+						break;
+					case j_divide:
+						printf("/ ");
+						break;
 				}
 				break;
 			case j_pred:
@@ -565,6 +799,23 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval1, level + step, op);
 					printtree(t->tval2, level + step, op);
 					printtree(t->tval3, level + step, op);
+				}
+				break;
+			case j_operation:
+				if (op) {
+					printf("j_operation( ");
+					printtree(t->tval1, level + step, op);
+					printf(", ");
+					printtree(t->tval2, level + step, op);
+					printf(", ");
+					printtree(t->tval3, level + step, op);
+					printf(") ");
+				} else {
+					printf("( ");
+					printtree(t->tval1, level + step, op);
+					printtree(t->tval2, level + step, op);
+					printtree(t->tval3, level + step, op);
+					printf(") ");
 				}
 				break;
 			case j_sort_arg:
@@ -618,8 +869,6 @@ printtree(tree *t, int level, char op)
 					printf("!%s\n", t->sval);
 				}
 				break;
-			default:
-				printf("<unknown type> ");
 		}
 		if (t != NULL)
 			t = t->next;
