@@ -50,11 +50,19 @@ create function array_filler(cnt bigint, val varchar(2048)) returns table (id bi
 create function array_filler(cnt bigint, val blob)          returns table (id bigint, vals blob)          external name "array".filler_;
 create function array_filler(cnt bigint, val clob)          returns table (id bigint, vals clob)          external name "array".filler_;
 
-create function array_avg(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
-create function array_avg(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a real)   external name "array".avg;
-create function array_avg(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
+--create function array_avg(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
+--create function array_avg(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a real)   external name "array".avg;
+--create function array_avg(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
 
-create function array_sum(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s bigint) external name "array".sum;
-create function array_sum(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
-create function array_sum(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
+--create function array_sum(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s bigint) external name "array".sum;
+--create function array_sum(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
+--create function array_sum(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
+
+create function array_avg(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
+create function array_avg(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns real   external name "array".avg;
+create function array_avg(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
+
+create function array_sum(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".sum;
+create function array_sum(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
+create function array_sum(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
 

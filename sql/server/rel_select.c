@@ -3748,31 +3748,8 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			sql_arg *a = m->data;
 
 			l = rel_check_type(sql, &a->type, l, type_equal);
-			if(!l && ol->tpe.type && strcmp(ol->tpe.type->sqlname, "table") == 0) {
-				/* reset error */
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-				/* we try even harder for expression that might refer to a
-				 * table created by table returning SQL functions.
-				 * An expression of the type 'table' has a comp_type, which is
-				 * a 'sql_table'. Then we just take the type of the first
-				 * column.
-				 */
-				l = exp_copy(sql->sa, ol);
-				l->tpe = ((sql_column*)l->tpe.comp_type->columns.set->h->data)->type;
-				l = rel_check_type(sql, &a->type, l, type_equal);
-			}
 			a = m->next->data;
 			r = rel_check_type(sql, &a->type, r, type_equal);
-			if(!r && or->tpe.type && strcmp(or->tpe.type->sqlname, "table") == 0) {
-				/* reset error */
-				sql->session->status = 0;
-				sql->errstr[0] = '\0';
-
-				r = exp_copy(sql->sa, or);
-				r->tpe = ((sql_column*)r->tpe.comp_type->columns.set->h->data)->type;
-				r = rel_check_type(sql, &a->type, r, type_equal);
-			}
 			if (l && r)
 				return exp_binop(sql->sa, l, r, f);
 		}
