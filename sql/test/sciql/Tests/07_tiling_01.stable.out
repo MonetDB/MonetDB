@@ -49,8 +49,8 @@ Ready.
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
 % x,	y,	L1 # name
-% int,	int,	table # type
-% 1,	1,	0 # length
+% int,	int,	double # type
+% 1,	1,	24 # length
 [ 0,	0,	37	]
 [ 0,	1,	37	]
 [ 0,	2,	37	]
@@ -70,8 +70,8 @@ Ready.
 #select x, y,  sum(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
 % x,	y,	L2 # name
-% int,	int,	table # type
-% 1,	1,	0 # length
+% int,	int,	double # type
+% 1,	1,	24 # length
 [ 0,	0,	74	]
 [ 0,	1,	148	]
 [ 0,	2,	222	]
