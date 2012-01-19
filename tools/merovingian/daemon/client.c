@@ -232,8 +232,8 @@ handleClient(int sock, char isusock)
 
 	if (strcmp(lang, "control") == 0) {
 		/* handle control client */
-		if (control_authorise(host, chal, algo, passwd, sock))
-			control_handleclient(sock, host);
+		if (control_authorise(host, chal, algo, passwd, fout))
+			control_handleclient(host, sock, fdin, fout);
 		close_stream(fout);
 		close_stream(fdin);
 		return(NO_ERR);
