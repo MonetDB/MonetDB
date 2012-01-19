@@ -84,7 +84,7 @@ end filler_;
 #address ARRAYtilesSum
 #comment "Construct the sum over all tiles";
 
-#pattern avg(values:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+#pattern avg(values:bat[:oid,:any], any...):bat[:oid,:dbl]
 #address ARRAYtilesAvg
 #comment "Construct the average over all tiles";
 
@@ -92,7 +92,7 @@ pattern sum(val:any_1, any...):any_1
 address ARRAYtilesSum
 comment "Construct the sum over all tiles";
 
-pattern avg(val:any_1, any...):any_1
+pattern avg(val:any, any...):dbl
 address ARRAYtilesAvg
 comment "Construct the average over all tiles";
 
@@ -103,7 +103,7 @@ pattern sum(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
 address ARRAYtilesSum
 comment "Construct the sum over all tiles";
 
-pattern avg(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+pattern avg(val:bat[:oid,:any], any...):bat[:oid,:dbl]
 address ARRAYtilesAvg
 comment "Construct the average over all tiles";
 
