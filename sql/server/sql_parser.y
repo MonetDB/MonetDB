@@ -4913,10 +4913,18 @@ data_type:
 				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
+/*
+ * Stefan.Manegold@cwi.nl:
+ * IMHO, this does not belong here, as an ARRAY is not an atomic data type.
+ *
+ * Instead, a correct(ed) version of this needs to be added to "func_data_type:"
+ * to enable ARRAY-returning functions in additition to TABLE-returning functions.
+ *
  | ARRAY '(' array_element_def_list ')' { 
-	/* use a fake type  for now */
+	/ * use a fake type  for now * /
 	sql_find_subtype(&$$, "int", 0, 0);
 	}
+*/
  ;
 
 array_element_def_list:
