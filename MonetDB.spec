@@ -229,6 +229,7 @@ Group: Applications/Databases
 Requires: %{name}-client = %{version}-%{release}
 Requires: perl
 Requires: perl(DBI)
+Requires: perl(Digest::SHA)
 
 %description client-perl
 MonetDB is a database management system that is developed from a
@@ -625,6 +626,15 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jan 20 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.5-20120120
+- Rebuilt.
+
+* Tue Jan 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.3-20120117
+- Rebuilt.
+
+* Mon Jan 16 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.3-20120117
+- monetdb5: A couple of memory leaks have been plugged.
+
 * Wed Jan 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.1-20120111
 - Rebuilt.
 

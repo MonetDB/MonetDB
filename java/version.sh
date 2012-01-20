@@ -130,3 +130,8 @@ sed \
 	-e "s|${TYPE}_MINOR=${ESC_MINOR}|${TYPE}_MINOR=${NEW_MINOR}|g" \
 	-e "s|${TYPE}_VER_SUFFIX=${ESC_SUFFIX}|${TYPE}_VER_SUFFIX=${NEW_SUFFIX}|g" \
 	${file} | ${diff} ${file} - | ${patch}
+
+file="pom.xml"
+sed \
+	-e "s|<version>${ESC_MAJOR}\.${ESC_MINOR}</version>|<version>${NEW_MAJOR}.${NEW_MINOR}</version>|g" \
+	${file} | ${diff} ${file} - | ${patch}

@@ -48,6 +48,8 @@ All Rights Reserved.
     value="${jardir}/monetdb-jdbc-${JDBC_MAJOR}.${JDBC_MINOR}.jar" />
   <property name="jdbcclient-jar"
     value="${jardir}/jdbcclient.jar" />
+  <property name="jmonetdb-jar"
+    value="${jardir}/jmonetdb.jar" />
   <property name="mcl-jar"
     value="${jardir}/monetdb-mcl-${MCL_MAJOR}.${MCL_MINOR}.jar" />
 
@@ -70,7 +72,7 @@ All Rights Reserved.
 
   <target name="default">
     <antcall target="jar_jdbcclient" />
-    <antcall target="jar_mero_control" />
+    <antcall target="jar_jmonetdb" />
   </target>
 
   <target name="distjdbc">
@@ -126,6 +128,25 @@ All Rights Reserved.
       <manifest>
         <attribute name="Built-By" value="${user.name}" />
         <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
+      </manifest>
+    </jar>
+  </target>
+
+  <!-- a convenience jar of MeroControl plus the JMonetDB utility -->
+  <target name="jar_jmonetdb"
+    depends="compile_mcl,compile_util,compile_mero_control,compile_client"
+    unless="uptodate.jmonetdb-jar">
+    <echo message="Building MeroControl + JmonetDB convenience jar" />
+    <jar jarfile="${jmonetdb-jar}">
+      <fileset dir="${builddir}">
+        <include name="${mero-control-package}/**/*.class" />
+        <include name="${mcl-package}/**/*.class" />
+        <include name="${client-package}/**/JMonetDB.class" />
+        <include name="${util-package}/**/*.class" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class" value="nl.cwi.monetdb.client.JMonetDB" />
       </manifest>
     </jar>
   </target>
@@ -276,6 +297,13 @@ All Rights Reserved.
       <srcfiles dir="${srcdir}">
         <include name="${client-package}/**/*.java" />
         <include name="${jdbc-package}/**/*.java" />
+        <include name="${mcl-package}/**/*.java" />
+      </srcfiles>
+    </uptodate>
+    <uptodate targetfile="${jmonetdb-jar}" property="uptodate.jmonetdb-jar">
+      <srcfiles dir="${srcdir}">
+        <include name="${client-package}/**/*.java" />
+        <include name="${mero-control-package}/**/*.java" />
         <include name="${mcl-package}/**/*.java" />
       </srcfiles>
     </uptodate>

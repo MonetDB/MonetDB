@@ -20,8 +20,10 @@
 #ifndef _CONTROLRUNNER_H
 #define _CONTROLRUNNER_H 1
 
-char control_authorise(const char *host, const char *chal, const char *algo, const char *passwd, int sock);
-void control_handleclient(int sock, const char *host);
+#include "stream.h"
+
+char control_authorise(const char *host, const char *chal, const char *algo, const char *passwd, stream *fout);
+void control_handleclient(const char *host, int sock, stream *fdin, stream *fdout);
 void controlRunner(void *d);
 
 #endif

@@ -1,3 +1,21 @@
+monetdb (11.7.5-20120120) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 20 Jan 2012 15:00:25 +0100
+
+monetdb (11.7.3-20120117) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 17 Jan 2012 10:51:40 +0100
+
+monetdb (11.7.3-20120117) unstable; urgency=low
+
+  * monetdb5: A couple of memory leaks have been plugged.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Jan 2012 10:51:39 +0100
+
 monetdb (11.7.1-20120111) unstable; urgency=low
 
   * Rebuilt.

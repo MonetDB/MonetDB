@@ -47,14 +47,15 @@
 SQLRETURN
 SQLFetch_(ODBCStmt *stmt)
 {
-	ODBCDesc *desc;
+	ODBCDesc *ard, *ird;
 	ODBCDescRec *rec;
 	int i;
 	SQLULEN row;
 	SQLINTEGER offset;
 	SQLUSMALLINT *statusp;
 
-	desc = stmt->ApplRowDescr;
+	ard = stmt->ApplRowDescr;
+	ird = stmt->ImplRowDescr;
 
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
@@ -70,12 +71,12 @@ SQLFetch_(ODBCStmt *stmt)
 
 	stmt->State = FETCHED;
 
-	statusp = desc->sql_desc_array_status_ptr;
+	statusp = ird->sql_desc_array_status_ptr;
 
 	if (stmt->retrieveData == SQL_RD_OFF) {
 		/* don't really retrieve the data, just do as if,
 		   updating the SQL_DESC_ARRAY_STATUS_PTR */
-		stmt->rowSetSize = desc->sql_desc_array_size;
+		stmt->rowSetSize = ard->sql_desc_array_size;
 
 		if (stmt->startRow + stmt->rowSetSize > (SQLLEN) stmt->rowcount)
 			stmt->rowSetSize = stmt->rowcount - stmt->startRow;
@@ -87,20 +88,20 @@ SQLFetch_(ODBCStmt *stmt)
 		if (statusp) {
 			for (row = 0; (SQLLEN) row < stmt->rowSetSize; row++)
 				*statusp++ = SQL_ROW_SUCCESS;
-			for (; row < desc->sql_desc_array_size; row++)
+			for (; row < ard->sql_desc_array_size; row++)
 				*statusp++ = SQL_ROW_NOROW;
 		}
 		return SQL_SUCCESS;
 	}
 
-	if (desc->sql_desc_bind_offset_ptr)
-		offset = *desc->sql_desc_bind_offset_ptr;
+	if (ard->sql_desc_bind_offset_ptr)
+		offset = *ard->sql_desc_bind_offset_ptr;
 	else
 		offset = 0;
-	for (row = 0; row < desc->sql_desc_array_size; row++) {
+	for (row = 0; row < ard->sql_desc_array_size; row++) {
 		if (mapi_fetch_row(stmt->hdl) == 0) {
-			if (desc->sql_desc_rows_processed_ptr)
-				*desc->sql_desc_rows_processed_ptr = row;
+			if (ird->sql_desc_rows_processed_ptr)
+				*ird->sql_desc_rows_processed_ptr = row;
 			switch (mapi_error(stmt->Dbc->mid)) {
 			case MOK:
 				if (row == 0)
@@ -126,8 +127,8 @@ SQLFetch_(ODBCStmt *stmt)
 
 		stmt->rowSetSize++;
 
-		for (i = 1; i <= desc->sql_desc_count; i++) {
-			rec = &desc->descRec[i];
+		for (i = 1; i <= ard->sql_desc_count; i++) {
+			rec = &ard->descRec[i];
 			if (rec->sql_desc_data_ptr == NULL)
 				continue;
 			stmt->retrieved = 0;
@@ -148,11 +149,11 @@ SQLFetch_(ODBCStmt *stmt)
 		if (statusp)
 			statusp++;
 	}
-	if (desc->sql_desc_rows_processed_ptr)
-		*desc->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
+	if (ird->sql_desc_rows_processed_ptr)
+		*ird->sql_desc_rows_processed_ptr = (SQLULEN) stmt->rowSetSize;
 
 	if (statusp)
-		while (row++ < desc->sql_desc_array_size)
+		while (row++ < ard->sql_desc_array_size)
 			*statusp++ = SQL_ROW_NOROW;
 
 	if (stmt->rowSetSize > 1) {

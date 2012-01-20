@@ -2217,13 +2217,12 @@ if test "x$have_mseed" != xno; then
 	LDFLAGS="$LDFLAGS $MSEED_LIBS"
 	AC_CHECK_HEADER(libmseed.h,
 		AC_CHECK_LIB(mseed, msr_init,
-			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library])
-			have_mseed=yes,
+			AC_DEFINE(HAVE_MSEED, 1, [Define if you have the mseed library]),
 			[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([-lmseed library not found]); fi; have_mseed=no ], "-lm"),
 		[ if test "x$have_mseed" != xauto; then AC_MSG_ERROR([libmseed.h header not found]); fi; have_mseed=no ])
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
-  if test "x$have_mseed" = "xyes"; then
+  if test "x$have_mseed" = "xyes" -o "x$have_mseed" = "xauto"; then
 	    MSEED_CFLAGS=
 	    MSEED_LIBS="-lmseed"
   fi

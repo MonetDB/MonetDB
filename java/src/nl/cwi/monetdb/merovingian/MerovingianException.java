@@ -20,11 +20,11 @@
 package nl.cwi.monetdb.merovingian;
 
 /**
- * An Exception raised when merovingian specific problems occur.
+ * An Exception raised when monetdbd specific problems occur.
  * <br /><br />
- * XXXX
- * <br />
- * XXX
+ * This class is a shallow wrapper around Exception to identify an
+ * exception as one originating from the monetdbd instance being
+ * communicated with, instead of a locally generated one.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.0
