@@ -81,6 +81,11 @@ public class PasswordField {
 			}
 		}
 		maskingthread.stopMasking();
+		try {
+			maskingthread.join();
+		} catch (InterruptedException e) {
+			// ignore
+		}
 		if (offset == 0) {
 			return(null);
 		}

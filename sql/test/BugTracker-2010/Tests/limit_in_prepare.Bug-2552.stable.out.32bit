@@ -24,12 +24,13 @@ Ready.
 
 [ 3	]
 #prepare select * from rr limit ?;
-% .prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale # name
-% varchar,	int,	int # type
-% 3,	2,	1 # length
-[ "wrd",	32,	0	]
-#exec 0 (1);
+#prepare select * from rr limit ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	2,	1,	0,	0,	0 # length
+[ "wrd",	32,	0,	NULL,	NULL,	NULL	]
+#exec 3 (1);
 % sys.rr # table_name
 % id # name
 % int # type

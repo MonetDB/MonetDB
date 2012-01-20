@@ -31,6 +31,8 @@
 #include <netinet/in.h>
 #include <errno.h>
 
+#include "stream.h"
+#include "stream_socket.h"
 #include "mcrypt.h"
 
 #define SOCKPTR struct sockaddr *
@@ -56,7 +58,9 @@ char* control_send(
 	char sbuf[8096];
 	char *buf;
 	int sock = -1;
-	size_t len;
+	ssize_t len;
+	stream *fdin = NULL;
+	stream *fdout = NULL;
 
 	if (port == -1) {
 		struct sockaddr_un server;
@@ -99,7 +103,7 @@ char* control_send(
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
 			return(strdup(sbuf));
 		}
-		
+
 		/* try reading length */
 		len = recv(sock, sbuf, 2, 0);
 		if (len == 2)
@@ -120,6 +124,9 @@ char* control_send(
 		} else if (strstr(sbuf + 2, ":merovingian:9:") != NULL) {
 			buf = sbuf + 2;
 			ver = 9;
+
+			fdin = block_stream(socket_rastream(sock, "client in"));
+			fdout = block_stream(socket_wastream(sock, "client out"));
 		} else {
 			if (len > 2 &&
 					(strstr(sbuf + 2, ":BIG:") != NULL ||
@@ -145,6 +152,7 @@ char* control_send(
 				p = control_hash(pass, buf);
 				len = snprintf(sbuf, sizeof(sbuf), "%s%s\n",
 						p, ver == 2 ? ":control" : "");
+				send(sock, sbuf, len, 0);
 				free(p);
 				break;
 			case 9:
@@ -155,6 +163,7 @@ char* control_send(
 				char *phash = NULL;
 				char *algsv[] = {
 					"RIPEMD160",
+					"SHA256",
 					"SHA1",
 					"MD5",
 					NULL
@@ -237,27 +246,14 @@ char* control_send(
 					/* TODO: make this actually obey the separation by
 					 * commas, and only allow full matches */
 					if (strstr(algos, *algs) != NULL) {
-						unsigned short blksize;
 						p = mcrypt_hashPassword(*algs, phash, chal);
 						if (p == NULL)
 							continue;
-						len = snprintf(sbuf, sizeof(sbuf),
-								"XXBIG:monetdb:{%s}%s:control:merovingian:\n",
+						mnstr_printf(fdout,
+								"BIG:monetdb:{%s}%s:control:merovingian:\n",
 								*algs, p);
+						mnstr_flush(fdout);
 						free(p);
-						/* server wants blockmode, we need to fake it */
-						blksize = (unsigned short) strlen(sbuf) - 2;
-						/* the last bit tells whether this is all the
-						 * server gets */
-						blksize <<= 1;
-						blksize |= 1;
-#ifdef WORDS_BIGENDIAN
-						sbuf[0] = blksize >> 8 & 0xFF;
-						sbuf[1] = blksize & 0xFF;
-#else
-						sbuf[0] = blksize & 0xFF;
-						sbuf[1] = blksize >> 8 & 0xFF;
-#endif
 						break;
 					}
 				}
@@ -270,26 +266,36 @@ char* control_send(
 			}
 		}
 
-		send(sock, sbuf, len, 0);
+		if (fdin != NULL) {
+			/* stream.h is sooo broken :( */
+			memset(sbuf, '\0', sizeof(sbuf));
+			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0) {
+				close_stream(fdout);
+				close_stream(fdin);
+				return(strdup("no response from monetdbd after login"));
+			}
+			sbuf[strlen(sbuf) - 1] = '\0';
+		} else {
+			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+				return(strdup("no response from monetdbd after login"));
+			sbuf[len - 1] = '\0';
+		}
 
-		len = recv(sock, sbuf, sizeof(sbuf), 0);
-		if (len <= 0)
-			return(strdup("no response from monetdbd after login"));
-		if (len == 2) /* blockmode bytes? try reading more */
-			len += recv(sock, sbuf + 2, sizeof(sbuf) - 2, 0);
-		sbuf[len - 1] = '\0';
-		if (strcmp(sbuf, "OK") != 0) {
+		if (strcmp(sbuf, "=OK") != 0 && strcmp(sbuf, "OK") != 0) {
 			buf = sbuf;
-			if (len > 2 && (buf[0] < ' ' || buf[1] < ' '))
-				buf += 2;  /* blockmode length */
 			if (*buf == '!')
 				buf++;
 			return(strdup(buf));
 		}
 	}
 
-	len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
-	send(sock, sbuf, len, 0);
+	if (fdout != NULL) {
+		mnstr_printf(fdout, "%s %s\n", database, command);
+		mnstr_flush(fdout);
+	} else {
+		len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
+		send(sock, sbuf, len, 0);
+	}
 	if (wait != 0) {
 		size_t buflen = sizeof(sbuf);
 		size_t bufpos = 0;
@@ -297,8 +303,19 @@ char* control_send(
 		bufp = buf = malloc(sizeof(char) * buflen);
 		if (buf == NULL)
 			return(strdup("failed to allocate memory"));
-		while ((len = recv(sock, buf + bufpos, buflen - bufpos, 0)) > 0) {
-			if (len == buflen - bufpos) {
+		while (1) {
+			if (fdin != NULL) {
+				/* stream.h is sooo broken :( */
+				memset(buf + bufpos, '\0', buflen - bufpos);
+				len = mnstr_read_block(fdin, buf + bufpos, buflen - bufpos - 1, 1);
+				if (len >= 0)
+					len = strlen(buf + bufpos);
+			} else {
+				len = recv(sock, buf + bufpos, buflen - bufpos, 0);
+			}
+			if (len <= 0)
+				break;
+			if ((size_t)len == buflen - bufpos) {
 				buflen *= 2;
 				bufp = realloc(buf, sizeof(char) * buflen);
 				if (bufp == NULL) {
@@ -307,19 +324,37 @@ char* control_send(
 				}
 				buf = bufp;
 			}
-			bufpos += len;
+			bufpos += (size_t)len;
 		}
 		if (bufpos == 0)
 			return(strdup("incomplete response from monetdbd"));
 		buf[bufpos - 1] = '\0';
+
+		if (fdin) {
+			/* strip out protocol = */
+			memmove(bufp, bufp + 1, strlen(bufp + 1) + 1);
+			while ((bufp = strstr(bufp, "\n=")) != NULL)
+				memmove(bufp + 1, bufp + 2, strlen(bufp + 2) + 1);
+		}
 		*ret = buf;
 	} else {
-		if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
-			return(strdup("incomplete response from monetdbd"));
-		sbuf[len - 1] = '\0';
-		*ret = strdup(sbuf);
+		if (fdin != NULL) {
+			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0)
+				return(strdup("incomplete response from monetdbd"));
+			sbuf[strlen(sbuf) - 1] = '\0';
+			*ret = strdup(sbuf + 1);
+		} else {
+			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+				return(strdup("incomplete response from monetdbd"));
+			sbuf[len - 1] = '\0';
+			*ret = strdup(sbuf);
+		}
 	}
 
+	if (fdout != NULL)
+		close_stream(fdout);
+	if (fdin != NULL)
+		close_stream(fdin);
 	close(sock);
 
 	return(NULL);

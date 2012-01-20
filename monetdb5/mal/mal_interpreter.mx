@@ -448,8 +448,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int exceptionVar, prevpc = 0;
 	str ret = 0;
 	int stamp = -1;
-	bat *backup = (bat*)GDKzalloc(mb->maxarg * sizeof(bat));
-	str *sbackup = (str*)GDKzalloc(mb->maxarg * sizeof(str));
+	ValPtr backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
 	int *garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 	lng oldtimer = 0;
 	struct Mallinfo oldMemory;
@@ -549,12 +548,11 @@ workslow:
 		}
 	}
 	if (exceptionVar >= 0) {
+		str oldret = ret;
 		if (ret) {
-			str oldret = ret;
 			ret = createScriptException(mb, mb->stop - 1,
 				getExceptionType(getVarName(mb, exceptionVar)),
 				ret, "Exception not caught");
-			FREE_EXCEPTION(oldret);
 		} else {
 			if (stk->stk[exceptionVar].vtype == TYPE_str) {
 				ret = createScriptException(mb, mb->stop - 1, MAL,
@@ -565,9 +563,9 @@ workslow:
 					NULL, "Exception not caught");
 			}
 		}
+		FREE_EXCEPTION(oldret);
 	}
 	GDKfree(backup);
-	GDKfree(sbackup);
 	GDKfree(garbage);
 	return ret;
 }
@@ -943,8 +941,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	int i, k;
 	int exceptionVar = -1;
 	str ret = MAL_SUCCEED;
-	bat *backup = (bat*)GDKzalloc(fs->mb->maxarg * sizeof(bat));
-	str *sbackup = (str*)GDKzalloc(fs->mb->maxarg * sizeof(str));
+	ValPtr backup = GDKzalloc(fs->mb->maxarg * sizeof(ValRecord));
 	int *garbage = (int*)GDKzalloc(fs->mb->maxarg * sizeof(int));
 	Client cntxt = fs->cntxt;
 	MalBlkPtr mb = fs->mb;
@@ -989,7 +986,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			stkpc = mb->stop;
 			fs->state = -1;
 			GDKfree(backup);
-			GDKfree(sbackup);
 			GDKfree(garbage);
 			return ret;
 		}
@@ -1006,6 +1002,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	}
 
 	@:beginProfile(t,0)@
+	FREE_EXCEPTION(ret);
 	ret = MAL_SUCCEED;
 	@:MALrecycleStart(t)@ {
 		@:beginProfile(t,1)@
@@ -1016,19 +1013,19 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 		 */
 		switch (pci->token) {
 		case ASSIGNsymbol: 
-			@:assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
+			@:assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
 			break;
 		case PATcall: 
-			@:patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
+			@:patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
 			break;
 		case CMDcall: 
-			@:commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
+			@:commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
 			break;
 		case FACcall: 
-			@:factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
+			@:factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
 			break;
 		case FCNcall: 
-			@:functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(sbackup);GDKfree(garbage); return ret,t)@ 
+			@:functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
 			break;
 		case NOOPsymbol:
 		case REMsymbol:
@@ -1046,7 +1043,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	if (ret)
 		fs->pc = -fs->pc;
 	GDKfree(backup);
-	GDKfree(sbackup);
 	GDKfree(garbage);
 	return ret;
 }
@@ -1574,6 +1570,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * @+ The major switch
  */
 @= MALinterpret
+	FREE_EXCEPTION(ret);
 	ret = 0;
 	switch (pci->token) {
 	case ASSIGNsymbol: 
@@ -1714,6 +1711,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 	case RAISEsymbol:
 		exceptionVar = getDestVar(pci);
+		FREE_EXCEPTION(ret);
 		ret = NULL;
 		if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
 			ret = createScriptException(mb, stkpc, MAL, NULL,
@@ -1728,7 +1726,6 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (oldtimer)
 			cntxt->timer = oldtimer;
 		GDKfree(backup);
-		GDKfree(sbackup);
 		GDKfree(garbage);
 		return yieldFactory(mb, pci, stkpc);
 	case RETURNsymbol:
@@ -1790,6 +1787,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPincref(lhs->val.bval, TRUE);
 	}
 	@:restoreTarget(@1, @3)@
+	FREE_EXCEPTION(ret);
 	ret = 0;
 	@:exceptionHndlr(@1, @2, @3)@
 	@:timingHndlr(@1)@
@@ -1839,25 +1837,30 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	if (garbageControl(pci)) {
 		for (i = 0; i < pci->argc; i++) {
-			sbackup[i] = 0;
-			backup[i] = 0;
+			int a = getArg(pci, i);
+
+			backup[i].vtype = 0;
+			backup[i].len = 0;
+			backup[i].val.pval = 0;
 			garbage[i] = -1;
-			if (stk->stk[getArg(pci, i)].vtype == TYPE_bat && getEndOfLife(mb, getArg(pci, i)) == stkpc && isNotUsedIn(pci, i + 1, getArg(pci, i))) {
-				garbage[i] = getArg(pci, i);
+			if (stk->stk[a].vtype == TYPE_bat && getEndOfLife(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a)) {
+				garbage[i] = a;
 #ifdef DEBUG_GC
-				mnstr_printf(GDKstdout, "GC %d %s prep\n", getArg(pci, i), getArgName(mb, pci, i));
+				mnstr_printf(GDKstdout, "GC %d %s prep\n", a, getArgName(mb, pci, i));
 #endif
 			}
 
-			if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
-				backup[i] = stk->stk[getArg(pci, i)].val.bval;
+			if (i < pci->retc && stk->stk[a].vtype == TYPE_bat) {
+				backup[i] = stk->stk[a];
 #if @1
 				stamp = BBPcurstamp();
 #endif
-			} else if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_str) {
-				backup[i] = stk->stk[getArg(pci, i)].len;
-				sbackup[i] = stk->stk[getArg(pci, i)].val.sval;
-				backup[i] += (sbackup[i] != NULL);
+			} else if (i < pci->retc &&
+					   (stk->stk[a].vtype == TYPE_str ||
+						(0 < stk->stk[a].vtype &&
+						 stk->stk[a].vtype < TYPE_any &&
+						 BATatoms[stk->stk[a].vtype].atomDestroy))) {
+				backup[i] = stk->stk[a];
 			}
 		}
 	}
@@ -1899,20 +1902,22 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:MALrecycleExit(@2)@
 	if (ret == MAL_SUCCEED && garbageControl(pci)) {
 		for (i = 0; i < pci->argc; i++) {
+			int a = getArg(pci, i);
+
 			if (isaBatType(getArgType(mb, pci, i))) {
-				bat bid = stk->stk[getArg(pci, i)].val.bval;
+				bat bid = stk->stk[a].val.bval;
 
 				/* update the bigfoot information only if we need to gc */
 				if (cntxt->flags & bigfootFlag)
 					updateBigFoot(cntxt, bid, TRUE);
-				if (i < pci->retc && backup[i]) {
-					if (backup[i] != bid && i < pci->retc) {
+				if (i < pci->retc && backup[i].val.bval) {
+					if (backup[i].val.bval != bid && i < pci->retc) {
 						/* possible garbage collect the variable */
 						if (cntxt->flags & bigfootFlag)
-							updateBigFoot(cntxt, backup[i], FALSE);
+							updateBigFoot(cntxt, backup[i].val.bval, FALSE);
 					}
-					BBPdecref(backup[i], TRUE);
-					backup[i] = 0;
+					BBPdecref(backup[i].val.bval, TRUE);
+					backup[i].val.bval = 0;
 				}
 				if (garbage[i] >= 0) {
 					bid = ABS(stk->stk[garbage[i]].val.bval);
@@ -1920,17 +1925,20 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					PARDEBUG mnstr_printf(GDKstdout, "#GC pc=%d bid=%d %s done\n", stkpc, bid, getVarName(mb, garbage[i]));
 					stk->stk[garbage[i]].val.bval = 0;
 				}
-			} else if (i < pci->retc && stk->stk[getArg(pci, i)].vtype == TYPE_str) {
-				int a = getArg(pci, i);
-				if (sbackup[i] && sbackup[i] != stk->stk[a].val.sval) {
-					if (backup[i] > 0)
-						GDKfree(sbackup[i]);
+			} else if (i < pci->retc &&
+					   0 < stk->stk[a].vtype &&
+					   stk->stk[a].vtype < TYPE_any &&
+					   BATatoms[stk->stk[a].vtype].atomDestroy) {
+				if (backup[i].val.pval &&
+					backup[i].val.pval != stk->stk[a].val.pval) {
+					if (backup[i].val.pval)
+						(*BATatoms[stk->stk[a].vtype].atomDestroy)(backup[i].val.pval);
 					if (i >= pci->retc) {
-						stk->stk[getArg(pci, i)].val.sval = 0;
-						stk->stk[getArg(pci, i)].len = 0;
+						stk->stk[a].val.sval = 0;
+						stk->stk[a].len = 0;
 					}
-					backup[i] = 0;
-					sbackup[i] = 0;
+					backup[i].len = 0;
+					backup[i].val.pval = 0;
 				}
 			}
 		}
@@ -2462,8 +2470,10 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (cntxt && cntxt->flags & bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid, TRUE);
-	} else if (BATatoms[v->vtype].atomDestroy) {
+	} else if (0 < v->vtype && v->vtype < TYPE_any &&
+			   BATatoms[v->vtype].atomDestroy) {
 		(*BATatoms[v->vtype].atomDestroy)(v->val.pval);
+		v->val.pval = 0;
 	}
 }
 /*

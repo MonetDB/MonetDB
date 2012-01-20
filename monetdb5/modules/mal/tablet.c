@@ -328,12 +328,31 @@ TABprelude(int *ret)
 
 
 static void
+clearColumn(Column *c)
+{
+	int i;
+	CLEAR(c->batname);
+	CLEAR(c->name);
+	CLEAR(c->type);
+	CLEAR(c->sep);
+	c->width = 0;
+	c->tabs = 0;
+	for (i = 0; i < SLICES; i++)
+		c->c[i] = NULL;
+	for (i = 0; i < BINS; i++)
+		c->bin[i] = NULL;
+	c->p = 0;
+	/* keep nullstr and brackets */
+}
+
+static str
 TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int rnr = (int) (cntxt - mal_clients);
 	Tablet *t;
-	int anr = 0, i, tpe, k = 0;
+	int anr, i, tpe, k = 0;
 	ptr val;
+	str e;
 
 	makeTableSpace(rnr, pci->argc - pci->retc);
 	t = tableReports[rnr];
@@ -345,32 +364,43 @@ TABformatPrepare(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		t->sep = GDKstrdup("\t");
 	t->rowwidth = (int) (strlen(t->rlbrk) + strlen(t->rrbrk) - 2);
 
-	for (i = pci->retc; i < pci->argc; anr++, i++) {
+	for (anr = 0, i = pci->retc; i < pci->argc; anr++, i++) {
 		char *name = getArgName(mb, pci, i);
 		/* The type should be taken from the stack ! */
 		tpe = stk->stk[pci->argv[i]].vtype;
 		val = (ptr) getArgReference(stk, pci, i);
-		bindVariable(t, anr, name, tpe, val, &k);
+		e = bindVariable(t, anr, name, tpe, val, &k);
+		if (e != MAL_SUCCEED)
+			return e;
+	}
+	for (i = anr; (BUN) i < t->nr_attrs; i++) {
+		clearColumn(t->columns + i);
+		CLEAR(t->columns[i].lbrk);
+		CLEAR(t->columns[i].rbrk);
+		CLEAR(t->columns[i].nullstr);
 	}
 	t->nr_attrs = anr;
 	t->fd = cntxt->fdout;
 	t->pivot = 0;
+	return MAL_SUCCEED;
 }
 
 str
 TABsetFormat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	TABformatPrepare(cntxt, mb, stk, pci);
-	return MAL_SUCCEED;
+	return TABformatPrepare(cntxt, mb, stk, pci);
 }
 
 str
 TABheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int rnr = (int) (cntxt - mal_clients);
+	str e;
 
-	TABformatPrepare(cntxt, mb, stk, pci);
+	e = TABformatPrepare(cntxt, mb, stk, pci);
+	if (e != MAL_SUCCEED)
+		return e;
 	TABshowHeader(tableReports[rnr]);
 	return MAL_SUCCEED;
 }
@@ -417,8 +447,11 @@ TABpage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int rnr = (int) (cntxt - mal_clients);
 	Tablet *t;
+	str e;
 
-	TABformatPrepare(cntxt, mb, stk, pci);
+	e = TABformatPrepare(cntxt, mb, stk, pci);
+	if (e != MAL_SUCCEED)
+		return e;
 	t = tableReports[rnr];
 	if (t->ttopbrk == 0) {
 		LINE(t->fd, t->rowwidth);
@@ -2128,24 +2161,6 @@ CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s)
  * The routines to manage the table descriptor
  */
 static void
-clearColumn(Column *c)
-{
-	int i;
-	CLEAR(c->batname);
-	CLEAR(c->name);
-	CLEAR(c->type);
-	CLEAR(c->sep);
-	c->width = 0;
-	c->tabs = 0;
-	for (i = 0; i < SLICES; i++)
-		c->c[i] = NULL;
-	for (i = 0; i < BINS; i++)
-		c->bin[i] = NULL;
-	c->p = 0;
-	/* keep nullstr and brackets */
-}
-
-static void
 clearTable(Tablet *t)
 {
 	unsigned int i;
@@ -2235,13 +2250,16 @@ static str
 bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 {
 	Column *c;
-	char *buf;
 	int tpeStore;
 
 	c = t->columns + anr;
 	tpeStore = ATOMstorage(tpe);
+	if (c->type)
+		GDKfree(c->type);
 	c->type = GDKstrdup(ATOMname(tpeStore));
 	c->adt = tpe;
+	if (c->name)
+		GDKfree(c->name);
 	c->name = GDKstrdup(nme);
 	if (c->rbrk == 0)
 		c->rbrk = GDKstrdup(",");
@@ -2249,7 +2267,6 @@ bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 
 	if (anr >= t->nr_attrs)
 		t->nr_attrs = anr + 1;
-	buf = (char *) GDKzalloc(BUFSIZ);
 
 	if (tpe == TYPE_bat) {
 		BAT *b;
@@ -2265,6 +2282,7 @@ bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 		if (c->c[0])
 			setTabwidth(c);
 	} else if (val) {
+		char *buf = NULL;
 		if (ATOMstorage(tpe) == TYPE_str || ATOMstorage(tpe) > TYPE_str)
 			val = *(str *) val;	/* V5 */
 		(*BATatoms[tpe].atomToStr) (&buf, k, val);
@@ -2273,8 +2291,8 @@ bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 			c->width += (int) strlen(c->lbrk);
 		if (c->rbrk)
 			c->width += (int) strlen(c->rbrk);
+		GDKfree(buf);
 	}
-	GDKfree(buf);
 
 	c->data = val;
 	if (c->scale)
@@ -2289,7 +2307,7 @@ bindVariable(Tablet *t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	*k = c->width;
 	if (c->c[0])
 		BBPunfix(c->c[0]->batCacheid);
-	return NULL;
+	return MAL_SUCCEED;
 }
 
 /*
@@ -2301,7 +2319,7 @@ void
 TABshowHeader(Tablet *t)
 {
 	unsigned int i;
-	char *prop = "name", *p, *q;
+	char *p, *q;
 
 	if (t->title)
 		mnstr_write(t->fd, t->title, 1, strlen(t->title));
@@ -2309,7 +2327,7 @@ TABshowHeader(Tablet *t)
 		LINE(t->fd, t->rowwidth);
 	}
 
-	p = t->properties ? t->properties : prop;
+	p = t->properties ? t->properties : "name";
 	while (p) {
 		q = strchr(p, ',');
 		if (q)
@@ -2331,29 +2349,29 @@ TABshowHeader(Tablet *t)
 					prop = BBPname(c->c[0]->batCacheid);
 				}
 				if (strcmp(p, "name") == 0) {
-					prop = GDKstrdup(c->c[0]->tident);
+					prop = c->c[0]->tident;
 				}
 				if (strcmp(p, "base") == 0) {
 					snprintf(buf, sizeof(buf), OIDFMT, c->c[0]->hseqbase);
-					prop = GDKstrdup(buf);
+					prop = buf;
 				}
 				if (strcmp(p, "sorted") == 0) {
 					if (BATtordered(c->c[0]) & 1)
-						prop = GDKstrdup("true");
+						prop = "true";
 					else
-						prop = GDKstrdup("false");
+						prop = "false";
 				}
 				if (strcmp(p, "dense") == 0) {
 					if (BATtdense(c->c[0]))
-						prop = GDKstrdup("true");
+						prop = "true";
 					else
-						prop = GDKstrdup("false");
+						prop = "false";
 				}
 				if (strcmp(p, "key") == 0) {
 					if (c->c[0]->tkey)
-						prop = GDKstrdup("true");
+						prop = "true";
 					else
-						prop = GDKstrdup("false");
+						prop = "false";
 				}
 				if (strcmp(p, "min") == 0) {
 					switch (c->adt) {
@@ -2361,32 +2379,32 @@ TABshowHeader(Tablet *t)
 						int m;
 						BATmin(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%d", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_lng:{
 						lng m;
 						BATmin(c->c[0], &m);
 						snprintf(buf, sizeof(buf), LLFMT, m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_sht:{
 						sht m;
 						BATmin(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%d", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_dbl:{
 						dbl m;
 						BATmin(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%f", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					default:
-						prop = GDKstrdup("");
+						prop = "";
 					}
 				}
 				if (strcmp(p, "max") == 0) {
@@ -2395,32 +2413,32 @@ TABshowHeader(Tablet *t)
 						int m;
 						BATmax(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%d", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_lng:{
 						lng m;
 						BATmax(c->c[0], &m);
 						snprintf(buf, sizeof(buf), LLFMT, m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_sht:{
 						sht m;
 						BATmax(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%d", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					case TYPE_dbl:{
 						dbl m;
 						BATmax(c->c[0], &m);
 						snprintf(buf, sizeof(buf), "%f", m);
-						prop = GDKstrdup(buf);
+						prop = buf;
 						break;
 					}
 					default:
-						prop = GDKstrdup("");
+						prop = "";
 					}
 				}
 			}
@@ -2435,10 +2453,7 @@ TABshowHeader(Tablet *t)
 			if (c == t->columns)
 				len += t->rlbrk ? (int) strlen(t->rlbrk) : 0;
 			TABS(t->fd, c->tabs - ((len + u + v) / 8));
-			if (prop) {
-				GDKfree(prop);
-				prop = 0;
-			}
+			prop = 0;
 
 		}
 		mnstr_write(t->fd, "# ", 1, 2);
