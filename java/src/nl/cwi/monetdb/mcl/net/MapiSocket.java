@@ -490,7 +490,9 @@ public final class MapiSocket {
 				// endian because most machines today are.
 				String hashes = (hash == null ? chaltok[3] : hash);
 				// if we deal with merovingian, mask our credentials
-				if (servert.equals("merovingian")) {
+				if (servert.equals("merovingian") &&
+						!language.equals("control"))
+				{
 					username = "merovingian";
 					password = "merovingian";
 				}
