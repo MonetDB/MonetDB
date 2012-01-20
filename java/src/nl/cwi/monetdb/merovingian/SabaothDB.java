@@ -24,9 +24,10 @@ import java.util.*;
 /**
  * Implementation of the Sabaoth C-struct as Java object.
  * <br /><br />
- * XXXX
+ * This Class implements a parser for the string representation of a
+ * sabaoth information struct as returned by monetdbd.
  * <br />
- * XXX
+ * Currently this class implements version 1 of the sabdb serialisation.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.0
