@@ -19,6 +19,10 @@
 
 package nl.cwi.monetdb.merovingian;
 
+import nl.cwi.monetdb.mcl.net.MapiSocket;
+import nl.cwi.monetdb.mcl.io.*;
+import nl.cwi.monetdb.mcl.MCLException;
+import nl.cwi.monetdb.mcl.parser.MCLParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -106,69 +110,118 @@ public class Control {
 			String database, String command, boolean hasOutput)
 		throws MerovingianException, IOException
 	{
-		Socket s = new Socket(host, port);
-		PrintStream out = new PrintStream(s.getOutputStream());
-		BufferedReader in = new BufferedReader(
-				new InputStreamReader(s.getInputStream()));
+		BufferedMCLReader min;
+		BufferedMCLWriter mout;
+		MapiSocket ms = new MapiSocket();
+		ms.setDatabase("merovingian");
+		ms.setLanguage("control");
+		ms.debug("test.log");
 		try {
-			/* login ritual, step 1: get challenge from server */
-			String response = in.readLine();
-			if (response == null)
-				throw new MerovingianException("server closed the connection");
+			ms.connect(host, port, "monetdb", passphrase);
+			min = ms.getReader();
+			mout = ms.getWriter();
+		} catch (AssertionError e) { // mcl panics
+			ms.close();
 			
-			if (!response.startsWith("merovingian:1:") &&
-					!response.startsWith("merovingian:2:"))
-				throw new MerovingianException("unsupported merovingian server");
-			
-			String[] tokens = response.split(":");
-			if (tokens.length < 3)
-				throw new MerovingianException("did not understand merovingian server");
-			String version = tokens[1];
-			String token = tokens[2];
+			// Try old protocol instead
+			Socket s;
+			PrintStream out;
+			BufferedReader in;
+			s = new Socket(host, port);
+			out = new PrintStream(s.getOutputStream());
+			in = new BufferedReader(
+					new InputStreamReader(s.getInputStream()));
+			try {
+				/* login ritual, step 1: get challenge from server */
+				String response = in.readLine();
+				if (response == null)
+					throw new MerovingianException("server closed the connection");
 
-			response = controlHash(passphrase, token);
-			if (version.equals("1")) {
-				out.print(response + "\n");
-			} else if (version.equals("2")) {
-				// we only support control mode for now
-				out.print(response + ":control\n");
-			}
-			response = in.readLine();
-			if (response == null) {
-				throw new MerovingianException("server closed the connection");
-			}
+				if (!response.startsWith("merovingian:1:") &&
+						!response.startsWith("merovingian:2:"))
+					throw new MerovingianException("unsupported merovingian server");
 
-			if (!response.equals(RESPONSE_OK)) {
-				throw new MerovingianException(response);
-			}
+				String[] tokens = response.split(":");
+				if (tokens.length < 3)
+					throw new MerovingianException("did not understand merovingian server");
+				String version = tokens[1];
+				String token = tokens[2];
 
-			/* send command, form is simple: "<db> <cmd>\n" */
-			out.print(database + " " + command + "\n");
+				response = controlHash(passphrase, token);
+				if (version.equals("1")) {
+					out.print(response + "\n");
+				} else if (version.equals("2")) {
+					// we only support control mode for now
+					out.print(response + ":control\n");
+				}
 
-			/* Response has the first line either "OK\n" or an error
-			 * message.  In case of a command with output, the data will
-			 * follow the first line */
-			response = in.readLine();
-			if (response == null) {
-				throw new MerovingianException("server closed the connection");
-			}
-			if (!response.equals(RESPONSE_OK)) {
-				throw new MerovingianException(response);
-			}
+				response = in.readLine();
+				if (response == null) {
+					throw new MerovingianException("server closed the connection");
+				}
 
-			if (!hasOutput)
-				return null;
+				if (!response.equals(RESPONSE_OK)) {
+					throw new MerovingianException(response);
+				}
 
-			ArrayList<String> l = new ArrayList<String>();
-			while ((response = in.readLine()) != null) {
-				l.add(response);
+				/* send command, form is simple: "<db> <cmd>\n" */
+				out.print(database + " " + command + "\n");
+
+				/* Response has the first line either "OK\n" or an error
+				 * message.  In case of a command with output, the data will
+				 * follow the first line */
+				response = in.readLine();
+				if (response == null) {
+					throw new MerovingianException("server closed the connection");
+				}
+				if (!response.equals(RESPONSE_OK)) {
+					throw new MerovingianException(response);
+				}
+
+				if (!hasOutput)
+					return null;
+
+				ArrayList<String> l = new ArrayList<String>();
+				while ((response = in.readLine()) != null) {
+					l.add(response);
+				}
+				return l;
+			} finally {
+				in.close();
+				out.close();
+				s.close();
 			}
-			return l;
-		} finally {
-			in.close();
-			out.close();
-			s.close();
+		} catch (MCLException e) {
+			throw new MerovingianException(e.getMessage());
+		} catch (MCLParseException e) {
+			throw new MerovingianException(e.getMessage());
 		}
+
+		mout.writeLine(database + " " + command +"\n");
+		ArrayList<String> l = new ArrayList<String>();
+		String tmpLine = min.readLine();
+		int linetype = min.getLineType();
+		if (linetype == BufferedMCLReader.ERROR)
+			throw new MerovingianException(tmpLine.substring(6));
+		if (linetype != BufferedMCLReader.RESULT)
+			throw new MerovingianException("unexpected line: " + tmpLine);
+		if (!tmpLine.substring(1).equals(RESPONSE_OK))
+			throw new MerovingianException(tmpLine.substring(1));
+		tmpLine = min.readLine();
+		linetype = min.getLineType();
+		while (linetype != BufferedMCLReader.PROMPT) {
+			if (linetype != BufferedMCLReader.RESULT)
+				throw new MerovingianException("unexpected line: " +
+						tmpLine);
+
+			l.add(tmpLine.substring(1));
+
+			tmpLine = min.readLine();
+			linetype = min.getLineType();
+		}
+
+		ms.close();
+		return l;
 	}
 
 	public void start(String database)
