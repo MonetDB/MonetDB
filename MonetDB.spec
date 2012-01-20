@@ -626,6 +626,9 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jan 20 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.5-20120120
+- Rebuilt.
+
 * Tue Jan 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.3-20120117
 - Rebuilt.
 
