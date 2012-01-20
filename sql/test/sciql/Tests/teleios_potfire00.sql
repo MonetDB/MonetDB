@@ -119,7 +119,7 @@ from
 				[x],
 				[y], 
 				avg ( T039 ( channel1_value ) )                     as T039_mean,               -- NOT USED !???
-				avg ( T108 ( channel2_value ) )                     as T018_mean,               -- NOT USED !???
+				avg ( T108 ( channel2_value ) )                     as T108_mean,               -- NOT USED !???
 				sqrt ( avg ( square ( T039 ( channel1_value ) ) ) ) as T039_standard_deviation,
 				sqrt ( avg ( square ( T108 ( channel2_value ) ) ) ) as T108_standard_deviation
 			from

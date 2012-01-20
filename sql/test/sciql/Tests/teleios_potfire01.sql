@@ -133,7 +133,7 @@ from (
 				channel1_value,
 				channel2_value,
 				avg ( T039 ( channel1_value ) )            as T039_mean,
-				avg ( T108 ( channel2_value ) )            as T018_mean,
+				avg ( T108 ( channel2_value ) )            as T108_mean,
 				avg ( square ( T039 ( channel1_value ) ) ) as T039_standard_deviation_tmp,
 				avg ( square ( T108 ( channel2_value ) ) ) as T108_standard_deviation_tmp
 			from
@@ -170,7 +170,7 @@ from
 			T039_value,
 			T108_value,
 			avg ( T039_value )              as T039_mean,
-			avg ( T108_value )              as T018_mean,
+			avg ( T108_value )              as T108_mean,
 			avg ( T039_value * T039_value ) as T039_standard_deviation_tmp,
 			avg ( T108_value * T108_value ) as T108_standard_deviation_tmp
 		from
