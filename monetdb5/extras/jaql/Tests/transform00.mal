@@ -1,1 +1,2 @@
 jaql.x("[1,2,3] -> transform 2 * 2;");
+jaql.x("[{\"a\": 1}, {\"a\": 2}] -> transform $.a;");
