@@ -69,9 +69,16 @@ make_json(char *s)
 tree *
 make_json_object(tree *obj)
 {
-	tree *res = GDKzalloc(sizeof(tree));
+	tree *res;
 
-	assert(obj != NULL && obj->type == j_pair);
+	assert(obj != NULL);
+	
+	if (obj->type == j_error)
+		return obj;
+
+	assert(obj->type == j_pair);
+
+	res = GDKzalloc(sizeof(tree));
 	res->type = j_json_obj;
 	res->tval1 = obj;
 
@@ -171,6 +178,11 @@ make_jaql_transform(tree *var, tree *tmpl)
 
 	assert(var != NULL && var->type == j_var);
 	assert(tmpl != NULL);
+
+	if (tmpl->type == j_error) {
+		freetree(var);
+		return tmpl;
+	}
 
 	/* traverse down tmpl, searching for all variable references to
 	 * check if they refer to var */
@@ -393,6 +405,15 @@ make_pair(char *name, tree *val)
 
 	if (name == NULL) {
 		tree *w;
+
+		if (val->tval1 == NULL) {
+			/* we can't do arithmetic with these */
+			res->type = j_error;
+			res->sval = GDKstrdup("a pair needs a name");
+			freetree(val);
+			return res;
+		}
+
 		/* find last var in val */
 		for (w = val; w->tval1 != NULL; w = w->tval1)
 			;
