@@ -5,3 +5,16 @@ sort00
 top00
 variable00
 plan00
+
+# examples from the docs
+#fail until we implement combined predicates
+#filter01
+transform01
+#fail until we solve the syntactic mess of expand
+#expand01
+#todo
+#group01
+#join01
+#fail until we implement complex comparator and array refs
+#sort01
+top01
