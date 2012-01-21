@@ -19,9 +19,13 @@ stdout of test 'transform00` in directory 'extras/jaql` itself:
 function user.main():void;
     jaql.x("[1,2,3] -> transform 2 * 2;");
     jaql.x("[{\"a\": 1}, {\"a\": 2}] -> transform $.a;");
+    jaql.x("[1,2,3] -> transform 2 * $;");
+    jaql.x("[{\"a\": 1}, {\"a\": 2}] -> transform $.a + $.a;");
 end main;
 [ 4, 4, 4 ]
 [ 1, 2 ]
+[ 2, 4, 6 ]
+[ 2, 4 ]
 
 # 21:27:13 >  
 # 21:27:13 >  "Done."

@@ -1145,9 +1145,9 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			}
 
 			q = p;
-			c = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
 			getArg(q, 1) = s;
 			getArg(q, 2) = v;
+			s = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
 			pushInstruction(mb, q);
 
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -1189,7 +1189,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, i);
 			q = pushChr(mb, q, 'd');
-			h = getArg(q, 0);
+			i = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -1215,6 +1215,14 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, h);
 			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("kunion", 6));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, a);
+			*j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			return a;
