@@ -26,6 +26,8 @@ function user.main():void;
     jaql.x("[1,2,3] -> transform 2 * 2.0 * $;");
     jaql.x("[1,2,3] -> transform ($ * 2.0) / 4;");
     jaql.x("[1,2,3] -> transform [$, $];");
+    jaql.x("[1,2,3] -> transform {\"value\":$};");
+    jaql.x("[1,2,3] -> transform {\"value\":$ + $};");
 end main;
 [ 4, 4, 4 ]
 [ 1, 2.600000 ]
@@ -36,6 +38,8 @@ end main;
 [ 4.000000, 8.000000, 12.000000 ]
 [ 0.500000, 1.000000, 1.500000 ]
 [ [ 1, 1 ], [ 2, 2 ], [ 3, 3 ] ]
+[ { "value": 1 }, { "value": 2 }, { "value": 3 } ]
+[ { "value": 2 }, { "value": 4 }, { "value": 6 } ]
 
 # 21:27:13 >  
 # 21:27:13 >  "Done."

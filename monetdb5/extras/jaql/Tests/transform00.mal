@@ -7,3 +7,5 @@ jaql.x("[1,2,3] -> transform 2 * ($ * 2);");
 jaql.x("[1,2,3] -> transform 2 * 2.0 * $;");
 jaql.x("[1,2,3] -> transform ($ * 2.0) / 4;");
 jaql.x("[1,2,3] -> transform [$, $];");
+jaql.x("[1,2,3] -> transform {\"value\":$};");
+jaql.x("[1,2,3] -> transform {\"value\":$ + $};");
