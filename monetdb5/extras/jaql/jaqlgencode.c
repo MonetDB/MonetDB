@@ -1154,6 +1154,13 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
+			setFunctionId(q, sortRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
 			setFunctionId(q, putName("kunion", 6));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, *j1);
