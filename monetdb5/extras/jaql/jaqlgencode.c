@@ -748,6 +748,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 					q = pushDbl(mb, q, t->tval3->dval);
 					g = getArg(q, 0);
 					pushInstruction(mb, q);
+					break;
 				default:
 					assert(0);
 			}
@@ -876,26 +877,32 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, s);
 			q = pushArgument(mb, q, v);
-			h = getArg(q, 0);
-			pushInstruction(mb, q);
+			if (v != -1) {
+				h = getArg(q, 0);
+				pushInstruction(mb, q);
+			} else {
+				h = -1;
+			}
 			p = copyInstruction(q); /* reuse for dbl case below */
 
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, joinRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, j);
-			q = pushArgument(mb, q, h);
-			h = getArg(q, 0);
-			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j3);
-			q = pushArgument(mb, q, h);
-			*j3 = getArg(q, 0);
-			pushInstruction(mb, q);
+			if (h != -1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, joinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j);
+				q = pushArgument(mb, q, h);
+				h = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kunion", 6));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, *j3);
+				q = pushArgument(mb, q, h);
+				*j3 = getArg(q, 0);
+				pushInstruction(mb, q);
+			}
 
 			if (c != -1) {
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -1107,8 +1114,29 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, e);
 				q = pushArgument(mb, q, r);
-				s = getArg(q, 0);
+				v = getArg(q, 0);
 				pushInstruction(mb, q);
+
+				if (f == -1) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, batcalcRef);
+					setFunctionId(q, putName("dbl", 3));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, s);
+					s = getArg(q, 0);
+					pushInstruction(mb, q);
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, algebraRef);
+					setFunctionId(q, putName("kunion", 6));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, v);
+					q = pushArgument(mb, q, s);
+					s = getArg(q, 0);
+					pushInstruction(mb, q);
+				} else {
+					s = v;
+				}
+
 				v = g;
 			}
 
@@ -1143,14 +1171,16 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushChr(mb, q, 'n');
 			r = getArg(q, 0);
 			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, projectRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, h);
-			q = pushChr(mb, q, 'i');
-			h = getArg(q, 0);
-			pushInstruction(mb, q);
+			if (h != -1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, projectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, h);
+				q = pushChr(mb, q, 'i');
+				h = getArg(q, 0);
+				pushInstruction(mb, q);
+			}
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, projectRef);
@@ -1160,14 +1190,18 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			i = getArg(q, 0);
 			pushInstruction(mb, q);
 
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, h);
-			q = pushArgument(mb, q, i);
-			h = getArg(q, 0);
-			pushInstruction(mb, q);
+			if (h != -1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kunion", 6));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, h);
+				q = pushArgument(mb, q, i);
+				h = getArg(q, 0);
+				pushInstruction(mb, q);
+			} else {
+				h = i;
+			}
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, putName("kdifference", 11));
