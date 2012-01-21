@@ -433,7 +433,7 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 {
 	if (res->token == SQL_TYPE) {
 		return &res->data.lval->h->data.typeval;
-	} else if (res->token == SQL_TABLE) {
+	} else if (res->token == SQL_TABLE || res->token == SQL_ARRAY) {
 		/* here we create a new table-type */
 		sql_schema *sys = find_sql_schema(sql->session->tr, "sys");
 		sql_subtype *t = SA_NEW(sql->sa, sql_subtype);

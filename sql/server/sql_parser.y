@@ -396,6 +396,7 @@ int yydebug=1;
 	index_exp /* position indices of array cells */
 	index_exp_list
 	array_element_def_list
+	array_function_column_list
 	tiling_commalist
 
 %type <i_val>
@@ -2244,9 +2245,28 @@ table_function_column_list:
 				}
   ;
 
+array_function_column_list:
+column data_type dimension	{ $$ = L();
+	append_string($$, $1);
+	append_type($$, &$2);
+	/* append_symbol($$, $3); Since the compiler can't deal with the dimensionality we ommit it'*/
+} | array_function_column_list ',' column data_type dimension {
+	append_string($$, $3);
+	append_type($$, &$4);
+	/* append_symbol($$, $5); Since the compiler can't deal with the dimensionality we ommit it*/
+} | column data_type{ $$ = L();
+	append_string($$, $1);
+	append_type($$, &$2);
+} | array_function_column_list ',' column data_type{
+	append_string($$, $3);
+	append_type($$, &$4);
+};
+
 func_data_type:
     TABLE '(' table_function_column_list ')'	
 		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
+  | ARRAY '(' array_function_column_list ')'
+	{	$$ = _symbol_create_list(SQL_ARRAY, $3); }
  |  data_type
 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
  ;
