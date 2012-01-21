@@ -289,49 +289,33 @@ make_jaql_top(long long int num)
 	return res;
 }
 
-/* create predicate, chaining onto the previous predicate ppred,
- * applying a comparison (AND/OR/NOT currently) with the next predicate
- * pred */
+/* create predicate between left and right which can be predicates on
+ * their own, or variables and values */
 tree *
-make_cpred(tree *ppred, tree *comp, tree *pred)
+make_pred(tree *l, tree *comp, tree *r)
 {
 	tree *res;
 
-	assert(comp == NULL || comp->type == j_comp);
-	assert(pred != NULL && (pred->type == j_pred || pred->type == j_cmpnd));
-
 	/* shortcut to optimize non-not constructions */
-	if (comp == NULL && ppred == NULL)
-		return pred;
+	if (comp == NULL && l == NULL)
+		return r;
 
-	/* optimise the case where comp is _NOT, and pred is a variable to
+	/* optimise the case where comp is _NOT, and r is a variable to
 	 * rewrite its comp to _NEQUALS */
-	if (comp->nval == _NOT && pred->type == j_pred &&
-			pred->tval2->nval == _EQUALS)
+	if (comp->nval == _NOT && r->type == j_pred &&
+			r->tval2->nval == _EQUALS)
 	{
-		pred->tval2->nval = _NEQUAL;
-		return pred;
+		r->tval2->nval = _NEQUAL;
+		freetree(l);
+		freetree(comp);
+		return r;
 	}
 
 	res = GDKzalloc(sizeof(tree));
-	res->type = j_cmpnd;
-	res->tval1 = ppred;
-	res->tval2 = comp;
-	res->tval3 = pred;
-
-	return res;
-}
-
-/* create predicate of simple form that compares an identifier to a
- * value */
-tree *
-make_pred(tree *var, tree *comp, tree *value)
-{
-	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_pred;
-	res->tval1 = var;
+	res->tval1 = l;
 	res->tval2 = comp;
-	res->tval3 = value;
+	res->tval3 = r;
 
 	return res;
 }
@@ -753,23 +737,6 @@ printtree(tree *t, int level, char op)
 					printf("-> top: %lld ", t->nval);
 				}
 				break;
-			case j_cmpnd:
-				if (op) {
-					printf("j_cmpnd( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(", ");
-					printtree(t->tval3, level + step, op);
-					printf(") ");
-				} else {
-					printf("( ");
-					printtree(t->tval1, level + step, op);
-					printtree(t->tval2, level + step, op);
-					printtree(t->tval3, level + step, op);
-					printf(") ");
-				}
-				break;
 			case j_comp:
 			case j_op:
 				switch (t->cval) {
@@ -824,9 +791,11 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval3, level + step, op);
 					printf(") ");
 				} else {
+					printf("( ");
 					printtree(t->tval1, level + step, op);
 					printtree(t->tval2, level + step, op);
 					printtree(t->tval3, level + step, op);
+					printf(") ");
 				}
 				break;
 			case j_operation:

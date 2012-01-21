@@ -158,15 +158,15 @@ ident: _IDENT   {$$ = $1;}
 
 predicates: predicate        {$$ = $1;}
 		  | opt_not '(' predicates and_or predicate ')' 
-                             {$$ = make_cpred(NULL, $1, make_cpred($3, $4, $5));}
+                             {$$ = make_pred(NULL, $1, make_pred($3, $4, $5));}
 		  | predicates and_or predicate
-                             {$$ = make_cpred($1, $2, $3);}
+                             {$$ = make_pred($1, $2, $3);}
 		  ;
 
 predicate: opt_not variable
-		       {$$ = make_cpred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
+		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
 		 | opt_not variable comparison value
-		       {$$ = make_cpred(NULL, $1, make_pred($2, $3, $4));}
+		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 ;
 
 variable: ident                 {$$ = make_varname($1);}
