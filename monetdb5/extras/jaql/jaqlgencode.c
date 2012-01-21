@@ -640,8 +640,6 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 
 			return c;
 		case j_var: {
-			a = dumpnextid(mb, *j1);
-
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
 			setFunctionId(q, reverseRef);
