@@ -124,23 +124,9 @@ append_jaql_pipe(tree *oaction, tree *naction)
 	return oaction;
 }
 
-/* create filter action looping over the input array as ident,
- * performing pred condition to include each element in the array. */
-tree *
-make_jaql_filter(tree *var, tree *pred)
-{
-	tree *res = GDKzalloc(sizeof(tree));
-	res->type = j_filter;
-	res->tval1 = var;
-	res->tval2 = pred;
-	/* FIXME: check pred's var usage, like _check_exp_var */
-
-	return res;
-}
-
 /* recursive helper to check variable usages for validity */
 static tree *
-_check_exp_var(char *var, tree *t)
+_check_exp_var(const char *func, const char *var, tree *t)
 {
 	tree *res = NULL;
 
@@ -151,20 +137,51 @@ _check_exp_var(char *var, tree *t)
 		if (strcmp(var, t->sval) != 0) {
 			char buf[128];
 			res = GDKzalloc(sizeof(tree));
-			snprintf(buf, sizeof(buf), "transform: unknown variable: %s",
-					t->sval);
+			snprintf(buf, sizeof(buf), "%s: unknown variable: %s",
+					func, t->sval);
 			res->type = j_error;
 			res->sval = GDKstrdup(buf);
 		}
 		return res;
 	}
 
-	if ((res = _check_exp_var(var, t->tval1)) != NULL)
+	if ((res = _check_exp_var(func, var, t->tval1)) != NULL)
 		return res;
-	if ((res = _check_exp_var(var, t->tval2)) != NULL)
+	if ((res = _check_exp_var(func, var, t->tval2)) != NULL)
 		return res;
-	if ((res = _check_exp_var(var, t->tval3)) != NULL)
+	if ((res = _check_exp_var(func, var, t->tval3)) != NULL)
 		return res;
+
+	return res;
+}
+
+/* create filter action looping over the input array as ident,
+ * performing pred condition to include each element in the array. */
+tree *
+make_jaql_filter(tree *var, tree *pred)
+{
+	tree *res;
+
+	assert(var != NULL && var->type == j_var);
+	assert(pred != NULL);
+
+	if (pred->type == j_error) {
+		freetree(var);
+		return pred;
+	}
+
+	assert(pred->type == j_pred);
+	
+	if ((res = _check_exp_var("filter", var->sval, pred)) != NULL) {
+		freetree(var);
+		freetree(pred);
+		return res;
+	}
+
+	res = GDKzalloc(sizeof(tree));
+	res->type = j_filter;
+	res->tval1 = var;
+	res->tval2 = pred;
 
 	return res;
 }
@@ -186,7 +203,7 @@ make_jaql_transform(tree *var, tree *tmpl)
 
 	/* traverse down tmpl, searching for all variable references to
 	 * check if they refer to var */
-	if ((res = _check_exp_var(var->sval, tmpl)) != NULL) {
+	if ((res = _check_exp_var("transform", var->sval, tmpl)) != NULL) {
 		freetree(var);
 		freetree(tmpl);
 		return res;
@@ -296,19 +313,42 @@ make_pred(tree *l, tree *comp, tree *r)
 {
 	tree *res;
 
+	if (l != NULL && l->type == j_error) {
+		freetree(comp);
+		freetree(r);
+		return l;
+	}
+	if (r->type == j_error) {
+		freetree(l);
+		freetree(comp);
+		return r;
+	}
+
 	/* shortcut to optimize non-not constructions */
 	if (comp == NULL && l == NULL)
 		return r;
 
-	/* optimise the case where comp is _NOT, and r is a variable to
-	 * rewrite its comp to _NEQUALS */
-	if (comp->nval == _NOT && r->type == j_pred &&
-			r->tval2->nval == _EQUALS)
+	/* optimise the case where comp is j_not, and r is a variable to
+	 * rewrite its comp to j_nequal */
+	if (comp->cval == j_not && r->type == j_pred &&
+			r->tval2->cval == j_equals)
 	{
-		r->tval2->nval = _NEQUAL;
+		r->tval2->cval = j_nequal;
 		freetree(l);
 		freetree(comp);
 		return r;
+	}
+
+	if (r->type == j_bool && comp->cval != j_nequal && comp->cval != j_equals)
+	{
+		freetree(l);
+		freetree(comp);
+		freetree(r);
+
+		res = GDKzalloc(sizeof(tree));
+		res->type = j_error;
+		res->sval = GDKstrdup("filter: can only apply equality tests with booleans");
+		return res;
 	}
 
 	res = GDKzalloc(sizeof(tree));
@@ -393,7 +433,7 @@ make_pair(char *name, tree *val)
 		if (val->tval1 == NULL) {
 			/* we can't do arithmetic with these */
 			res->type = j_error;
-			res->sval = GDKstrdup("a pair needs a name");
+			res->sval = GDKstrdup("transform: a pair needs a name");
 			freetree(val);
 			return res;
 		}
@@ -485,7 +525,7 @@ make_operation(tree *var1, tree *op, tree *var2)
 	{
 		/* we can't do arithmetic with these */
 		res->type = j_error;
-		res->sval = GDKstrdup("cannot perform arithmetic on "
+		res->sval = GDKstrdup("transform: cannot perform arithmetic on "
 				"string or boolean values");
 		freetree(var1);
 		freetree(op);
