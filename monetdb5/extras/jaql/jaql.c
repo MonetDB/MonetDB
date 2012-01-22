@@ -233,10 +233,13 @@ make_jaql_expand(tree *var, tree *expr)
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_expand;
 	res->tval1 = var;
+
+	assert(var->type == j_var);
+	assert(expr == NULL || expr->type == j_var);
+
 	/* make execution easier by always giving expand an argument to
 	 * expand, which defaults to the var we're looping over as (usually
 	 * $, but modified with "each xxx") */
-	assert(var->type == j_var);
 	if (expr == NULL) {
 		expr = GDKzalloc(sizeof(tree));
 		expr->type = j_var;
@@ -251,6 +254,16 @@ make_jaql_expand(tree *var, tree *expr)
 		freetree(var);
 		return res;
 	}
+
+	if (expr->next != NULL) {
+		/* JAQL's confusing "inner pipes" feature -- most probably to
+		 * steer Hadoop's map-reduce job generationi -- is just useless
+		 * for us and actually making our life harder, so just pull out
+		 * this inner pipe, and make it a proper top-level pipe instead */
+		res->next = expr->next;
+		expr->next = NULL;
+	}
+
 	res->tval2 = expr;
 
 	return res;
