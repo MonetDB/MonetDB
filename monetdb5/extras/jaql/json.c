@@ -455,7 +455,8 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 	oid v;
 	bi = bat_iterator(jb->kind);
 
-	switch (*(char *)BUNtail(bi, id)) {
+	BUNfndOID(v, bi, &id);
+	switch (*(char *)BUNtail(bi, v)) {
 		case 'i':
 			bi = bat_iterator(jb->integer);
 			BUNfndOID(v, bi, &id);
