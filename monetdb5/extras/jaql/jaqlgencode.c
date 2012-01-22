@@ -1964,13 +1964,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
-			case j_comp:
 			case j_pred:
-				break;
-			case j_num:
-			case j_dbl:
-			case j_str:
-			case j_bool:
 				break;
 			case j_error:
 				snprintf(j->err, sizeof(j->err), "%s", t->sval);
