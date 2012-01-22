@@ -458,17 +458,17 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 	switch (*(char *)BUNtail(bi, id)) {
 		case 'i':
 			bi = bat_iterator(jb->integer);
-			v = BUNfnd(jb->integer, &id);
+			BUNfndOID(v, bi, &id);
 			mnstr_printf(s, "%lld", *(lng *)BUNtail(bi, v));
 			break;
 		case 'd':
 			bi = bat_iterator(jb->doble);
-			v = BUNfnd(jb->doble, &id);
+			BUNfndOID(v, bi, &id);
 			mnstr_printf(s, "%f", *(dbl *)BUNtail(bi, v));
 			break;
 		case 's':
 			bi = bat_iterator(jb->string);
-			v = BUNfnd(jb->string, &id);
+			BUNfndOID(v, bi, &id);
 			mnstr_printf(s, "\"%s\"", BUNtail(bi, v));
 			break;
 		case 't':
@@ -506,7 +506,7 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 			bi = bat_iterator(objects);
 			ni = bat_iterator(jb->name);
 			BATloop (objects, p, q) {
-				n = BUNfnd(jb->name, BUNtail(bi, p));
+				BUNfndOID(n, ni, BUNtail(bi, p));
 				mnstr_printf(s, "\"%s\": ", BUNtail(ni, n));
 				print_json_value(jb, s, *(oid *)BUNtail(bi, p));
 				if (p < q - 1)
@@ -523,10 +523,11 @@ str
 JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
 {
 	jsonbat jb;
+	oid first = 0;
 
 	loadbats();
 
-	print_json_value(&jb, *s, BUNfirst(jb.kind));
+	print_json_value(&jb, *s, first);
 	mnstr_printf(*s, "\n");
 
 	unloadbats();
