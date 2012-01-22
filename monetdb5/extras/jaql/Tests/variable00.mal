@@ -2,3 +2,5 @@ jaql.x("A = [1,2,4,{\"a\": 5}];");
 jaql.x("A;");
 jaql.x("A -> filter $ <= 2;");
 jaql.x("A -> filter each v v.a >= 5;");
+jaql.x("n = [ [3,65,8,72], [5,98,2,65] ];");
+jaql.x("n -> expand -> transform each n (n * 2);");

@@ -1864,15 +1864,42 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				break;
 			case j_expand:
 				a = dumpwalkvar(mb, j1, j5);
-				a = dumprefvar(mb, t->tval2, a, j1, j6, j7);
+				c = dumprefvar(mb, t->tval2, a, j1, j6, j7);
+
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j1);
-				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, c);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
+
+				/* immediately cleanup j1 */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, c);
+				j1 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, b);
+				j1 = getArg(q, 0);
+				pushInstruction(mb, q);
+
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, uselectRef);
@@ -1889,54 +1916,42 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j5);
 				q = pushArgument(mb, q, a);
-				a = getArg(q, 0);
+				d = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, projectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushOid(mb, q, 0);  /* 0@0 = outermost array */
-				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, d);
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("selectH", 7));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
-				q = pushOid(mb, q, 0);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, semijoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, a);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, sunionRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
-				q = pushArgument(mb, q, b);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
+
+				/* remove old arrays and 0@0 array from j5 */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, a);
-				a = getArg(q, 0);
+				q = pushArgument(mb, q, d);
+				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, b);
+				j5 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				/* append to top-level array */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
 				q = pushArgument(mb, q, b);
+				q = pushArgument(mb, q, j5);
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;

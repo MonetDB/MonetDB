@@ -21,10 +21,13 @@ function user.main():void;
     jaql.x("A;");
     jaql.x("A -> filter $ <= 2;");
     jaql.x("A -> filter each v v.a >= 5;");
+    jaql.x("n = [ [3,65,8,72], [5,98,2,65] ];");
+    jaql.x("n -> expand -> transform each n (n * 2);");
 end main;
 [ 1, 2, 4, { "a": 5 } ]
 [ 1, 2 ]
 [ { "a": 5 } ]
+[ 6, 130, 16, 144, 10, 196, 4, 130 ]
 
 # 21:12:04 >  
 # 21:12:04 >  "Done."
