@@ -493,6 +493,14 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 			q = pushArgument(mb, q, e);
 			e = getArg(q, 0);
 			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, projectRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, e);
+			q = pushNil(mb, q, TYPE_oid);
+			e = getArg(q, 0);
+			pushInstruction(mb, q);
 		}
 
 		g = e;
