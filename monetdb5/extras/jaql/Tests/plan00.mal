@@ -7,6 +7,7 @@ jaql.x("plan [ {id:1, dept:1, income:12000},{id:2, dept:1, income:13000} ] -> fi
 
 jaql.x("plan [ [3,65,8,72], [5,98,2,65] ] -> expand each arr;");
 jaql.x("plan [ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand $.movie_ids;");
+jaql.x("plan [ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand unroll $.movie_ids;");
 jaql.x("plan A -> expand -> transform $ * 2;");
 jaql.x("plan A -> expand $.ids;");
 

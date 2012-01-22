@@ -235,7 +235,7 @@ make_jaql_expand(tree *var, tree *expr)
 	res->tval1 = var;
 
 	assert(var->type == j_var);
-	assert(expr == NULL || expr->type == j_var);
+	assert(expr == NULL || expr->type == j_var || expr->type == j_unroll);
 
 	/* make execution easier by always giving expand an argument to
 	 * expand, which defaults to the var we're looping over as (usually
@@ -244,18 +244,26 @@ make_jaql_expand(tree *var, tree *expr)
 		expr = GDKzalloc(sizeof(tree));
 		expr->type = j_var;
 		expr->sval = GDKstrdup(var->sval);
-	} else if (strcmp(var->sval, expr->sval) != 0) {
-		char buf[128];
-		snprintf(buf, sizeof(buf), "expand: unknown variable: %s", expr->sval);
-		res->type = j_error;
-		res->sval = GDKstrdup(buf);
-		res->tval1 = NULL;
-		freetree(expr);
-		freetree(var);
-		return res;
+	} else {
+		char *v;
+		if (expr->type == j_var)
+			v = expr->sval;
+		if (expr->type == j_unroll && expr->tval1->type == j_var)
+			v = expr->tval1->sval;
+		assert(v != NULL);
+		if (strcmp(var->sval, v) != 0) {
+			char buf[128];
+			snprintf(buf, sizeof(buf), "expand: unknown variable: %s", v);
+			res->type = j_error;
+			res->sval = GDKstrdup(buf);
+			res->tval1 = NULL;
+			freetree(expr);
+			freetree(var);
+			return res;
+		}
 	}
 
-	if (expr->next != NULL) {
+	if (expr->type == j_var && expr->next != NULL) {
 		/* JAQL's confusing "inner pipes" feature -- most probably to
 		 * steer Hadoop's map-reduce job generationi -- is just useless
 		 * for us and actually making our life harder, so just pull out
@@ -265,6 +273,21 @@ make_jaql_expand(tree *var, tree *expr)
 	}
 
 	res->tval2 = expr;
+
+	return res;
+}
+
+/* create a wrapper for expand unroll */
+tree *
+make_unroll(tree *var)
+{
+	tree *res;
+
+	assert(var != NULL && var->type == j_var);
+
+	res = GDKzalloc(sizeof(tree));
+	res->type = j_unroll;
+	res->tval1 = var;
 
 	return res;
 }
@@ -832,6 +855,16 @@ printtree(tree *t, int level, char op)
 					case j_divide:
 						printf("/ ");
 						break;
+				}
+				break;
+			case j_unroll:
+				if (op) {
+					printf("j_unroll( ");
+					printtree(t->tval1, level + step, op);
+					printf(") ");
+				} else {
+					printf("unroll ");
+					printtree(t->tval1, level + step, op);
 				}
 				break;
 			case j_pred:

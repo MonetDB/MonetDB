@@ -51,6 +51,7 @@ each       return EACH;
 filter     return FILTER;
 transform  return TRANSFORM;
 expand     return EXPAND;
+unroll     return UNROLL;
 group      return GROUP;
 into       return INTO;
 by         return BY;

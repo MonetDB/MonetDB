@@ -21,7 +21,7 @@
 %token LEX_ERROR
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN PLANF
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF UNROLL
 
 %token _ARROW _DOLLAR _ASSIGN _EQUALS _NEQUAL _TRUE _FALSE
 %token _GREATER _GEQUAL _LESS _LEQUAL _NOT _AND _OR _SCOLON _DOT
@@ -134,6 +134,7 @@ action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 
 opt_command: /* empty */            {$$ = NULL;}
 		   | variable               {$$ = $1;}
+		   | UNROLL variable        {$$ = make_unroll($2);}
 		   | '(' ident actions ')'  {$$ = append_jaql_pipe(make_varname($2), $3);}
 		   ;
 

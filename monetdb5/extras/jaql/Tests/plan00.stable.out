@@ -25,6 +25,7 @@ function user.main():void;
     jaql.x("plan [ {id:1, dept:1, income:12000},{id:2, dept:1, income:13000} ] -> filter $.dept == 1;");
     jaql.x("plan [ [3,65,8,72], [5,98,2,65] ] -> expand each arr;");
     jaql.x("plan [ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand $.movie_ids;");
+    jaql.x("plan [ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand unroll $.movie_ids;");
     jaql.x("plan A -> expand -> transform $ * 2;");
     jaql.x("plan A -> expand $.ids;");
     jaql.x("plan [1,2,3] -> transform {\"value\":$};");
@@ -44,6 +45,7 @@ e as $ -> filter: ( ( $.mgr == true ) || ( $.income > 30000 ) ) => <result>
 [ {id:1, dept:1, income:12000},{id:2, dept:1, income:13000} ] as $ -> filter: ( $.dept == 1 ) => <result> 
 [ [3,65,8,72], [5,98,2,65] ] as arr -> expand: arr => <result> 
 [ {"name":"Jon Doe", "movie_ids":[3,65,8,72]}, {"name":"Jane Dean","movie_ids":[5,98,2]} ] as $ -> expand: $.movie_ids => <result> 
+[ {"name":"Jon Doe", "movie_ids":[3,65,8,72]}, {"name":"Jane Dean","movie_ids":[5,98,2]} ] as $ -> expand: unroll $.movie_ids => <result> 
 A as $ -> expand: $ as $ -> transform: ( $ * 2 ) 
 A as $ -> expand: $.ids => <result> 
 [1,2,3] as $ -> transform: { "value": $ } 
