@@ -271,6 +271,16 @@ make_jaql_expand(tree *var, tree *expr)
 		res->next = expr->next;
 		expr->next = NULL;
 	}
+	
+	if (expr->type == j_unroll) {
+		/* since unroll is quite different from expand, promote it as
+		 * top operation, forgetting about the expand */
+		res->type = j_unroll;
+		res->tval2 = expr->tval1;
+		expr->tval1 = NULL;
+		freetree(expr);
+		return res;
+	}
 
 	res->tval2 = expr;
 
@@ -791,6 +801,20 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval2, level + step, op);
 				}
 				break;
+			case j_unroll:
+				if (op) {
+					printf("j_unroll( ");
+					printtree(t->tval1, level + step, op);
+					printf(", ");
+					printtree(t->tval2, level + step, op);
+					printf(") ");
+				} else {
+					printf("as ");
+					printtree(t->tval1, level + step, op);
+					printf("-> expand unroll: ");
+					printtree(t->tval2, level + step, op);
+				}
+				break;
 			case j_sort:
 				if (op) {
 					printf("j_sort( ");
@@ -855,16 +879,6 @@ printtree(tree *t, int level, char op)
 					case j_divide:
 						printf("/ ");
 						break;
-				}
-				break;
-			case j_unroll:
-				if (op) {
-					printf("j_unroll( ");
-					printtree(t->tval1, level + step, op);
-					printf(") ");
-				} else {
-					printf("unroll ");
-					printtree(t->tval1, level + step, op);
 				}
 				break;
 			case j_pred:
