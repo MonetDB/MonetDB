@@ -19,9 +19,11 @@ stdout of test 'expand00` in directory 'extras/jaql` itself:
 function user.main():void;
     jaql.x("[ [3,65,8,72], [5,98,2,65,[]] ] -> expand each arr;");
     jaql.x("[ {\"name\":\"Jon Doe\", \"movie_ids\":[3,65,8,72]}, {\"name\":\"Jane Dean\",\"movie_ids\":[5,98,2]} ] -> expand $.movie_ids;");
+    jaql.x("[{\"x\":[1,2],\"y\":\"bla\"},{\"x\":[3]}] -> expand unroll $.x;");
 end main;
 [ 3, 65, 8, 72, 5, 98, 2, 65, [  ] ]
 [ 3, 65, 8, 72, 5, 98, 2 ]
+[ { "x": 1, "y": "bla" }, { "x": 2, "y": "bla" }, { "x": 3 } ]
 
 # 21:15:09 >  
 # 21:15:09 >  "Done."

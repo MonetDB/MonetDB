@@ -279,6 +279,11 @@ make_jaql_expand(tree *var, tree *expr)
 		res->tval2 = expr->tval1;
 		expr->tval1 = NULL;
 		freetree(expr);
+
+		if (res->tval2->tval1 == NULL) {
+			/* unrolling an array without a parent is pointless */
+			res->type = j_expand;
+		}
 		return res;
 	}
 
