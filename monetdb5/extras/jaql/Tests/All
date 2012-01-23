@@ -9,8 +9,7 @@ plan00
 # examples from the docs
 filter01
 transform01
-#fail until we solve the syntactic mess of expand
-#expand01
+expand01
 #todo
 #group01
 #join01
