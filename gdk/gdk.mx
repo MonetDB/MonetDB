@@ -316,6 +316,7 @@ All Rights Reserved.
  * data dictionary.
  * An error at this stage normally lead to an abort.
  */
+
 #ifndef _GDK_H_
 #define _GDK_H_
 
@@ -366,10 +367,8 @@ All Rights Reserved.
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
-# define NAMLEN(dirent) strlen((dirent)->d_name)
 #else
 # define dirent direct
-# define NAMLEN(dirent) (dirent)->d_namlen
 # ifdef HAVE_SYS_NDIR_H
 #  include <sys/ndir.h>
 # endif
@@ -379,16 +378,6 @@ All Rights Reserved.
 # ifdef HAVE_NDIR_H
 #  include <ndir.h>
 # endif
-#endif
-
-#ifdef HAVE_SYS_WAIT_H
-# include <sys/wait.h>
-#endif
-#ifndef WEXITSTATUS
-# define WEXITSTATUS(stat_val) ((unsigned)(stat_val) >> 8)
-#endif
-#ifndef WIFEXITED
-# define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
 #endif
 
 #include <limits.h>		/* for *_MIN and *_MAX */
@@ -573,17 +562,17 @@ typedef size_t BUN;
  */
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
-#define FATALcheck(tst,	msg) if (tst) GDKfatal(msg);
-#define ERRORcheck(tst,	msg) if (tst) { GDKerror(msg); return 0; }
-#define WARNcheck(tst,	msg) if (tst) GDKwarning(msg)
-#define BATcheck(tst,	msg)					\
-	if (tst == NULL) {					\
-		if (strchr(msg, ':'))				\
-			GDKerror("%s.\n",msg);			\
-		else						\
-			GDKerror("%s: BAT required.\n",msg);	\
-		return 0;					\
-	}
+#define ERRORcheck(tst,	msg) do if (tst) { GDKerror(msg); return 0; } while (0)
+#define BATcheck(tst,	msg)						\
+	do {								\
+		if ((tst) == NULL) {					\
+			if (strchr((msg), ':'))				\
+				GDKerror("%s.\n", (msg));		\
+			else						\
+				GDKerror("%s: BAT required.\n", (msg));	\
+			return 0;					\
+		}							\
+	} while (0)
 
 #define ATOMextern(t)	(ATOMstorage(t) >= TYPE_str)
 
@@ -592,34 +581,37 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 #define TYPEcomp(t1,t2)	(ATOMstorage(ATOMtype(t1))==ATOMstorage(ATOMtype(t2)))
 #define TYPEerror(t1,t2)	(!TYPEcomp(t1,t2))
 #define TYPEcheck(t1,t2)						\
-	if (TYPEerror(t1,t2)) {						\
-		GDKerror("TYPEcheck: Incompatible types %s and %s.\n",	\
-			ATOMname(t2), ATOMname(t1));			\
-		return 0;						\
-	} else if (!TYPEcomp(t1,t2)) {					\
-		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
-			ATOMname(t2), ATOMname(t1));			\
-	}
-#define BATcompatible(P1,P2) {						\
-	ERRORcheck(P1 == NULL, "BATcompatible: BAT required\n");	\
-	ERRORcheck(P2 == NULL, "BATcompatible: BAT required\n");	\
-	if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||			\
-	    TYPEerror(BATttype(P1),BATttype(P2)))			\
-	{								\
-		GDKerror("Incompatible operands.\n");			\
-		return 0;						\
-	}								\
-	if (BAThtype(P1) != BAThtype(P2) &&				\
-	    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {		\
-		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
-			ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
-	}								\
-	if (BATttype(P1) != BATttype(P2) &&				\
-	    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {		\
-		CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
-			ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
-	}								\
-}
+	do {								\
+		if (TYPEerror(t1, t2)) {				\
+			GDKerror("TYPEcheck: Incompatible types %s and %s.\n", \
+				ATOMname(t2), ATOMname(t1));		\
+			return 0;					\
+		} else if (!TYPEcomp(t1, t2)) {				\
+			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+				ATOMname(t2), ATOMname(t1));		\
+		}							\
+	} while (0)
+#define BATcompatible(P1,P2)						\
+	do {								\
+		ERRORcheck((P1) == NULL, "BATcompatible: BAT required\n"); \
+		ERRORcheck((P2) == NULL, "BATcompatible: BAT required\n"); \
+		if (TYPEerror(BAThtype(P1),BAThtype(P2)) ||		\
+		    TYPEerror(BATttype(P1),BATttype(P2)))		\
+		{							\
+			GDKerror("Incompatible operands.\n");		\
+			return 0;					\
+		}							\
+		if (BAThtype(P1) != BAThtype(P2) &&			\
+		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
+			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
+		}							\
+		if (BATttype(P1) != BATttype(P2) &&			\
+		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
+			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
+		}							\
+	} while (0)
 
 typedef struct {
 	size_t maxsize;		/* maximum realloc size (bytes) */
@@ -680,7 +672,6 @@ typedef struct {
  * have been deleted in this transaction (and will be reinserted at a
  * transaction abort).
  *
- * @-
  * The location of a certain BUN in a BAT
  * may change between successive library routine invocations.  Therefore, one
  * should avoid keeping references into the BAT storage area for long
@@ -895,7 +886,6 @@ typedef struct BATiter {
 } BATiter;
 
 /*
- * @-
  * The different parts of which a BAT consists are physically stored
  * next to each other in the BATstore type.
  */
@@ -1389,11 +1379,13 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 	} while (0)
 
 #define BUNfndOID(p,bi,v)			\
-	if (BAThdense(bi.b)) {			\
-		BUNfndVOID(p,bi,v);		\
-	} else {				\
-		HASHfnd_oid(p,bi,v);		\
-	}
+	do {					\
+		if (BAThdense(bi.b)) {		\
+			BUNfndVOID(p,bi,v);	\
+		} else {			\
+			HASHfnd_oid(p,bi,v);	\
+		}				\
+	} while (0)
 #define BUNfndSTD(p,bi,v) ((p) = BUNfnd(bi.b,v))
 
 #define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase == oid_nil ?\
@@ -1645,7 +1637,7 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
  * @item int
  * @tab BATdelete (BAT *b)
  * @end multitable
- * @-
+ *
  * A BAT created by BATnew is considered temporary until one calls the
  * routine BATsave or BATmode.  This routine reserves disk space
  * and checks for name clashes in the BAT directory. It also makes the
@@ -2436,7 +2428,6 @@ gdk_export int GDKprotected;
 gdk_export void GDKprotect(void);
 
 /*
- * @-
  * The GDKembedded variable is a property set in the configuration file
  * to indicate that the kernel is only allowed to run as a single process.
  * This can be used to remove all locking overhead.
@@ -2444,14 +2435,14 @@ gdk_export void GDKprotect(void);
  * is set when locking is required, e.g. when multiple threads become
  * active.
  */
-#define gdk_set_lock(X,Y)	if (GDKprotected) MT_lock_set(&X,Y)
-#define gdk_unset_lock(X,Y)	if (GDKprotected) MT_lock_unset(&X,Y)
-#define gdk_up_sema(X,Y)	if (GDKprotected) MT_sema_up(&X,Y)
-#define gdk_down_sema(X,Y)	if (GDKprotected) MT_sema_down(&X,Y)
-#define gdk_signal_cond(X,Y)	if (GDKprotected) MT_cond_signal(&X,Y)
-#define gdk_wait_cond(X,Y,Z)	if (GDKprotected) MT_cond_wait(&X,&Y,Z)
+#define gdk_set_lock(X,Y)	do if (GDKprotected) MT_lock_set(&X,Y); while (0)
+#define gdk_unset_lock(X,Y)	do if (GDKprotected) MT_lock_unset(&X,Y); while (0)
+#define gdk_up_sema(X,Y)	do if (GDKprotected) MT_sema_up(&X,Y); while (0)
+#define gdk_down_sema(X,Y)	do if (GDKprotected) MT_sema_down(&X,Y); while (0)
+#define gdk_signal_cond(X,Y)	do if (GDKprotected) MT_cond_signal(&X,Y); while (0)
+#define gdk_wait_cond(X,Y,Z)	do if (GDKprotected) MT_cond_wait(&X,&Y,Z); while (0)
+
 /*
- * @-
  * The kernel maintains a central table of all active threads.
  * They are indexed by their tid. The structure contains information on the
  * input/output file descriptors, which should be set before a
@@ -2785,10 +2776,13 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * VIEW bats are always mapped read-only.
  */
 #define	VIEWchk(x,y,z)							\
-	if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) { \
-		GDKerror("%s: access denied to %s, aborting.\n", y, BATgetId(x)); \
-		return 0;						\
-	}
+	do {								\
+		if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) { \
+			GDKerror("%s: access denied to %s, aborting.\n", \
+				 (y), BATgetId(x));			\
+			return 0;					\
+		}							\
+	} while (0)
 
 /* the parentid in a VIEW is correct for the normal view. We must correct
  * for the reversed view. A special case are the VIEWcombine bats, these
@@ -2898,8 +2892,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * The first parameter is a BAT, the p and q are BUN pointers, where
  * p is the iteration variable.
  */
-#define BATloop(r, p, q) \
-	for(q = BUNlast(r), p = BUNfirst(r);p < q; p++)
+#define BATloop(r, p, q)					\
+	for (q = BUNlast(r), p = BUNfirst(r);p < q; p++)
 
 /*
  * @- batloop where the current element can be deleted/updated
@@ -2911,9 +2905,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * After the delete/update has taken place, the pointer p is in an
  * inconsistent state till the next iteration of the batloop starts.
  */
-#define BATloopDEL(r, p, q)				\
-	for(p = BUNfirst(r), q = BUNlast(r); p < q;	\
-	    q = MIN(q,BUNlast(r)), p++)
+#define BATloopDEL(r, p, q)						\
+	for (p = BUNfirst(r), q = BUNlast(r); p < q; q = MIN(q,BUNlast(r)), p++)
 
 /*
  * @- sequential scan over deleted BUNs
@@ -2933,17 +2926,23 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  */
 #define GDK_STREQ(l,r) (*(char*) (l) == *(char*) (r) && !strcmp(l,r))
 
-#define HASHloop(bi, h, hb, v)						\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb])	\
+#define HASHloop(bi, h, hb, v)					\
+	for (hb = (h)->hash[HASHprobe((h), v)];			\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
 		if (ATOMcmp(h->type, v, BUNhead(bi, hb)) == 0)
 #define HASHloop_str_hv(bi, h, hb, v)				\
-	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask]; hb != BUN_NONE; hb = (h)->link[hb]) \
+	for (hb = (h)->hash[((BUN *) (v))[-1]&(h)->mask];	\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
-#define HASHloop_str(bi, h, hb, v)				\
-	for (hb = (h)->hash[strHash(v)&(h)->mask]; hb != BUN_NONE; hb = (h)->link[hb]) \
+#define HASHloop_str(bi, h, hb, v)			\
+	for (hb = (h)->hash[strHash(v)&(h)->mask];	\
+	     hb != BUN_NONE;				\
+	     hb = (h)->link[hb])			\
 		if (GDK_STREQ(v, BUNhvar(bi, hb)))
+
 /*
- * @-
  * For string search, we can optimize if the string heap has eliminated
  * all doubles. This is the case when not too many different strings are
  * stored in the heap. You can check this with the macro strElimDoubles()
@@ -2981,15 +2980,17 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * (e.g. HASHloop_int), or the fact that the atom is fixed-sized
  * (HASHlooploc) or variable-sized (HASHloopvar).
  */
-#define HASHlooploc(bi, h, hb, v)					\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb]) \
+#define HASHlooploc(bi, h, hb, v)				\
+	for (hb = (h)->hash[HASHprobe((h), v)];			\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
-#define HASHloopvar(bi, h, hb, v)					\
-	for (hb = h->hash[HASHprobe(h, v)]; hb != BUN_NONE; hb = h->link[hb]) \
+#define HASHloopvar(bi, h, hb, v)				\
+	for (hb = (h)->hash[HASHprobe((h), v)];			\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
-/*
- * @
- */
+
 @:hashloop(bit,chr,simple,bte,hloc)@
 @:hashloop(chr,chr,simple,chr,hloc)@
 @:hashloop(bte,bte,simple,bte,hloc)@
@@ -3011,8 +3012,10 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 @:hashloop(any,any,atom,(bi).b->htype,head)@
 
 @= hashloop
-#define HASHloop_@1(bi,h,hb,v)						\
-	for (hb = h->hash[hash_@2(h,v)]; hb != BUN_NONE; hb = h->link[hb]) \
+#define HASHloop_@1(bi, h, hb, v)			\
+	for (hb = (h)->hash[hash_@2((h), v)];		\
+	     hb != BUN_NONE;				\
+	     hb = (h)->link[hb])			\
 		if (@3_EQ(v, BUN@5(bi, hb), @4))
 @
 @h
@@ -3026,14 +3029,15 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * The 's' finally is an integer denoting the bunsize, used for speed.
  */
 #define SORTloop(b,p,q,tl,th)						\
-	if (!(BATtordered(b)&1)) GDKerror("SORTloop: BAT not sorted.\n"); \
-	else for (p = (ATOMcmp((b)->ttype,tl,ATOMnilptr((b)->ttype))?	\
-		       SORTfndfirst(b,tl):BUNfirst(b)),			\
-		  q = (ATOMcmp((b)->ttype,th,ATOMnilptr((b)->ttype))?	\
-		       SORTfndlast(b,th):BUNlast(b)); p < q; p++)
-/*
- * @-
- */
+	if (!(BATtordered(b) & 1))					\
+		GDKerror("SORTloop: BAT not sorted.\n");		\
+	else for (p = (ATOMcmp((b)->ttype, tl, ATOMnilptr((b)->ttype)) ? \
+		       SORTfndfirst((b), tl) : BUNfirst(b)),		\
+		  q = (ATOMcmp((b)->ttype, th, ATOMnilptr((b)->ttype)) ? \
+		       SORTfndlast((b), th) : BUNlast(b));		\
+		  p < q;						\
+		  p++)
+
 @:sortloop(chr,chr,chr,simple,&chr_nil)@
 @:sortloop(bte,bte,bte,simple,&bte_nil)@
 @:sortloop(sht,sht,sht,simple,&sht_nil)@
@@ -3046,9 +3050,12 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
 @= sortloop
 #define SORTloop_@1(b,p,q,tl,th)					\
-	if (!(BATtordered(b)&1)) GDKerror("SORTloop_@1: BAT not sorted.\n"); \
-	else for (p = @4_EQ(tl,@5,@3)?BUNfirst(b):SORTfndfirst_@2(b,tl), \
-		  q = @4_EQ(th,@5,@3)?BUNfirst(b):SORTfndlast_@2(b,th); p < q; p++)
+	if (!(BATtordered(b) & 1))					\
+		GDKerror("SORTloop_@1: BAT not sorted.\n");		\
+	else for (p = @4_EQ(tl, @5, @3) ? BUNfirst(b) : SORTfndfirst_@2(b, tl), \
+		  q = @4_EQ(th, @5, @3) ? BUNfirst(b) : SORTfndlast_@2(b, th); \
+		  p < q;						\
+		  p++)
 @
 @h
 
@@ -3076,6 +3083,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 @:sortloop(wrd,lng,wrd,simple,&wrd_nil)@
 #endif
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_chr(b,p,q,tl,th)
+
 /*
  * @+ Common BAT Operations
  * Much used, but not necessarily kernel-operations on BATs.
@@ -3257,9 +3265,3 @@ typedef void (*RowFcn) (ptr, ptr *);
 #define MAXPARAMS	32
 
 #endif /* _GDK_H_ */
-/*
- * @iftex
- * %\bibliographystyle{plain}
- * \bibliography{gdk}
- * @end iftex
- */

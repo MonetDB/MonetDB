@@ -285,28 +285,9 @@ BATSIGinterrupt(int nr)
 	GDKexit(nr);
 }
 
-#ifdef SIGCHLD
-static void
-BATSIGchild(int nr)
-{
-	int status;
-
-	(void) nr;
-
-	while (waitpid(-1, &status, WNOHANG) > 0)
-		;
-	PARDEBUG THRprintf(GDKerr, "CHILD EXITED \n");
-
-	(void) signal(SIGPIPE, BATSIGchild);
-}
-#endif
-
 static int
 BATSIGinit(void)
 {
-#ifdef SIGCHLD
-	(void) signal(SIGCHLD, BATSIGchild);
-#endif
 /* HACK to pacify compiler */
 #if (defined(__INTEL_COMPILER) && (SIZEOF_VOID_P > SIZEOF_INT))
 #undef  SIG_IGN			/*((__sighandler_t)1 ) */
