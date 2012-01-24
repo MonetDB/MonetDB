@@ -403,24 +403,20 @@ JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *obj
 		jb.error = GDKstrdup("expected data");
 		p = NULL;
 	} else {
-		switch (*p) {
-			case '[':
-				p = parse_json_array(&jb, &v, p + 1);
-				break;
-			case '{':
-				p = parse_json_object(&jb, &v, p + 1);
-				break;
-			default:
-				jb.error = GDKstrdup("unexpected character 'X', expecting array or object");
-				jb.error[22] = *p;
-				p = NULL;
-				break;
-		}
+		p = parse_json_value(&jb, &v, p);
 	}
 
-	if (p == NULL) {
-		str e = createException(MAL, "json.shred", "%s", jb.error);
-		/* parsing failed */
+	for (; p != NULL && *p != '\0' && isspace(*p); p++)
+		;
+	if (p == NULL || *p != '\0') {
+		str e;
+		if (p == NULL) {
+			/* parsing failed */
+			e = createException(MAL, "json.shred", "%s", jb.error);
+		} else {
+			e = createException(MAL, "json.shred", "invalid JSON data, "
+					"trailing characters: %s", p);
+		}
 		BBPunfix(jb.kind->batCacheid);
 		BBPunfix(jb.string->batCacheid);
 		BBPunfix(jb.integer->batCacheid);
