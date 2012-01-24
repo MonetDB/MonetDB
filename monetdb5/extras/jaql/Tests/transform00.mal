@@ -1,4 +1,5 @@
 jaql.x("[1,2,3] -> transform 2 * 2;");
+jaql.x("[1,2,3] -> transform {\"value\":2 + 2};");
 jaql.x("[{\"a\": 1}, {\"a\": 2.6}] -> transform $.a;");
 jaql.x("[1,2.2,3] -> transform 2 * $;");
 jaql.x("[{\"a\": 1}, {\"a\": 2.5}] -> transform $.a + $.a;");

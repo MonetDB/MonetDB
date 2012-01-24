@@ -18,6 +18,7 @@ stdout of test 'transform00` in directory 'extras/jaql` itself:
 # MonetDB/DataCell module not loaded: MALException:jaql.context:JAQL environment not found
 function user.main():void;
     jaql.x("[1,2,3] -> transform 2 * 2;");
+    jaql.x("[1,2,3] -> transform {\"value\":2 + 2};");
     jaql.x("[{\"a\": 1}, {\"a\": 2.6}] -> transform $.a;");
     jaql.x("[1,2.2,3] -> transform 2 * $;");
     jaql.x("[{\"a\": 1}, {\"a\": 2.5}] -> transform $.a + $.a;");
@@ -30,6 +31,7 @@ function user.main():void;
     jaql.x("[1,2,3] -> transform {\"value\":$ + $};");
 end main;
 [ 4, 4, 4 ]
+[ { "value": 4 }, { "value": 4 }, { "value": 4 } ]
 [ 1, 2.600000 ]
 [ 2, 4.400000, 6 ]
 [ 2, 5.000000 ]

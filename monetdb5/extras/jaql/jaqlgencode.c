@@ -21,6 +21,8 @@
 #include "jaqlgencode.h"
 #include "opt_prelude.h"
 
+static int dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7);
+
 /* returns a bat with subset from kind bat (:oid,:chr) which are
  * referenced by the first array of the JSON structure (oid 0@0 of kind
  * bat, pointing to array, so all oids from array bat that have head oid
@@ -161,20 +163,60 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int j1, int j6, int j7)
 /* returns bat with in the head the oids from elems that match the
  * comparison */
 static int
-dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j6, int j7)
+dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
 	int a, b, c, d, e, f, g;
 
 	assert(t != NULL);
-	assert(t->tval1->type == j_var);
+	assert(t->tval1->type == j_var || t->tval1->type == j_operation);
 	assert(t->tval2->type == j_comp);
-	assert(t->tval3->type == j_var
+	assert(t->tval3->type == j_var || t->tval3->type == j_operation
 			|| t->tval3->type == j_num || t->tval3->type == j_dbl
 			|| t->tval3->type == j_str || t->tval3->type == j_bool);
 
-	a = dumprefvar(mb, t->tval1, elems, j1, j6, j7);
-	if (t->tval3->type != j_var) {
+	if (t->tval1->type == j_operation) {
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, reverseRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, elems);
+		a = getArg(q, 0);
+		pushInstruction(mb, q);
+		b = dumpvariabletransformation(mb, t->tval1, a,
+				j1, j2, j3, j4, j5, j6, j7);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markHRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, a);
+		q = pushOid(mb, q, 0);
+		a = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markTRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, b);
+		q = pushOid(mb, q, 0);
+		b = getArg(q, 0);
+		pushInstruction(mb, q);
+		/* because transformations must leave the original count in
+		 * tact, all elems from b originate straight from a, be it that
+		 * they may be null now */
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, joinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, b);
+		q = pushArgument(mb, q, a);
+		a = getArg(q, 0);
+		pushInstruction(mb, q);
+	} else {
+		a = dumprefvar(mb, t->tval1, elems, *j1, *j6, *j7);
+	}
+
+	if (t->tval3->type != j_var && t->tval3->type != j_operation) {
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
 		setFunctionId(q, reverseRef);
@@ -186,7 +228,46 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 
 	switch (t->tval3->type) {
 		case j_var:
-			b = dumprefvar(mb, t->tval3, elems, j1, j6, j7);
+			b = dumprefvar(mb, t->tval3, elems, *j1, *j6, *j7);
+			c = -1;
+			break;
+		case j_operation:
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, elems);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			c = dumpvariabletransformation(mb, t->tval1, b,
+					j1, j2, j3, j4, j5, j6, j7);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markHRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			q = pushOid(mb, q, 0);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markTRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			q = pushOid(mb, q, 0);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			/* because transformations must leave the original count in
+			 * tact, all elems from c originate straight from b, be it that
+			 * they may be null now */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, joinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
 			c = -1;
 			break;
 		case j_num:
@@ -195,7 +276,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, j3);
+			q = pushArgument(mb, q, *j3);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -210,7 +291,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, j4);
+			q = pushArgument(mb, q, *j4);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -225,7 +306,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, j2);
+			q = pushArgument(mb, q, *j2);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -240,7 +321,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, j1);
+			q = pushArgument(mb, q, *j1);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -338,7 +419,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 				assert(0);
 		}
 	} else {  /* var <cmp> var */
-		int lv[4] = {j2, j3, j4, 0}, *lp = lv;
+		int lv[4] = {*j2, *j3, *j4, 0}, *lp = lv;
 		/* FIXME: we need to check that a and b have at most one value
 		 * per elem here, further code assumes that, because its
 		 * semantically unclear what one should do with multiple values
@@ -372,7 +453,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 		setModuleId(q, algebraRef);
 		setFunctionId(q, semijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, j1);
+		q = pushArgument(mb, q, *j1);
 		q = pushArgument(mb, q, c);
 		c = getArg(q, 0);
 		pushInstruction(mb, q);
@@ -396,7 +477,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 		setModuleId(q, algebraRef);
 		setFunctionId(q, semijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, j1);
+		q = pushArgument(mb, q, *j1);
 		q = pushArgument(mb, q, d);
 		d = getArg(q, 0);
 		pushInstruction(mb, q);
@@ -664,7 +745,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 }
 
 static int
-dumppred(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j6, int j7)
+dumppred(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	int a, l, r;
 	InstrPtr q;
@@ -674,14 +755,14 @@ dumppred(MalBlkPtr mb, tree *t, int elems, int j1, int j2, int j3, int j4, int j
 	/* comparisons only take place between tval1 = var and tval3 = val/var
 	 * for the rest, only boolean logic is applied */
 	if (t->tval2->cval != j_and && t->tval2->cval != j_or)
-		return dumpcomp(mb, t, elems, j1, j2, j3, j4, j6, j7);
+		return dumpcomp(mb, t, elems, j1, j2, j3, j4, j5, j6, j7);
 
 	assert(t->tval1->type == j_pred);
 	assert(t->tval2->cval == j_and || t->tval2->cval == j_or);
 	assert(t->tval3->type == j_pred);
 
-	l = dumppred(mb, t->tval1, elems, j1, j2, j3, j4, j6, j7);
-	r = dumppred(mb, t->tval3, elems, j1, j2, j3, j4, j6, j7);
+	l = dumppred(mb, t->tval1, elems, j1, j2, j3, j4, j5, j6, j7);
+	r = dumppred(mb, t->tval3, elems, j1, j2, j3, j4, j5, j6, j7);
 	/* l,r = oid from elems that match in head */
 
 	if (t->tval2->cval == j_and) {
@@ -753,7 +834,7 @@ dumpnextid(MalBlkPtr mb, int j1)
 	return a;
 }
 
-/* returns a BAT which is the subset of j1 that refer to the values
+/* returns a BAT which is the subset of j1 that refers to the values
  * returned from the variable and its optional calculation applied to it
  * the j{1..7} variables are updated to point to the updated BATs as
  * insertions of new values (the serialised versions of the variable) */
@@ -844,7 +925,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			pushInstruction(mb, q);
 
 			return c;
-		case j_var: {
+		case j_var:
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
 			setFunctionId(q, reverseRef);
@@ -872,7 +953,6 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			pushInstruction(mb, q);
 
 			return c;
-		}
 		case j_operation: {
 			int r, s;
 			int u, v;
@@ -1754,7 +1834,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				break;
 			case j_filter:
 				a = dumpwalkvar(mb, j1, j5);
-				b = dumppred(mb, t->tval2, a, j1, j2, j3, j4, j6, j7);
+				b = dumppred(mb, t->tval2, a, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
 				/* b = matching ids from dumpwalkvar (first array) */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);

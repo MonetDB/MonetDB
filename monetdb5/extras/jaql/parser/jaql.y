@@ -157,16 +157,18 @@ ident: _IDENT   {$$ = $1;}
 	 | _DOLLAR  {$$ = GDKstrdup("$");}
 	 ;
 
-predicates: predicate        {$$ = $1;}
-		  | opt_not '(' predicates and_or predicate ')' 
-                             {$$ = make_pred(NULL, $1, make_pred($3, $4, $5));}
-		  | predicates and_or predicate
-                             {$$ = make_pred($1, $2, $3);}
+predicates: opt_not predicate  {$$ = make_pred(NULL, $1, $2);}
+		  | opt_not '(' predicates ')' 
+                               {$$ = make_pred(NULL, $1, $3);}
+		  | predicates and_or predicates
+                               {$$ = make_pred($1, $2, $3);}
 		  ;
 
 predicate: opt_not variable
 		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
 		 | opt_not variable comparison value
+		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
+		 | opt_not val_var_arith comparison value
 		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 ;
 
@@ -207,10 +209,9 @@ arith_op: '+'     {$$ = make_op(j_plus);}
 		| '/'     {$$ = make_op(j_divide);}
 		;
 
-val_var_arith: '(' value arith_op val_var_arith ')'
-			                                 {$$ = make_operation($2, $3, $4);}
-			 | value arith_op val_var_arith  {$$ = make_operation($1, $2, $3);}
-			 | val_var_arith arith_op value  {$$ = make_operation($1, $2, $3);}
+val_var_arith: val_var_arith arith_op val_var_arith
+			                                 {$$ = make_operation($1, $2, $3);}
+			 | '(' val_var_arith ')'         {$$ = $2;}
 			 | value                         {$$ = $1;}
 			 ;
 
