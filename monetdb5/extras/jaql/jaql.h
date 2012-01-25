@@ -65,10 +65,12 @@ enum treetype {
 	j_transform,
 	j_expand,
 	j_unroll,
+	j_join,
 	j_sort,
 	j_top,
 	j_comp,
 	j_op,
+	j_join_input,
 	j_operation,
 	j_pred,
 	j_sort_arg,
@@ -118,6 +120,7 @@ tree *append_jaql_pipe(tree *oaction, tree *naction);
 tree *make_jaql_filter(tree *var, tree *pred);
 tree *make_jaql_transform(tree *var, tree *tmpl);
 tree *make_jaql_expand(tree *var, tree *expr);
+tree *make_jaql_join(tree *inputs, tree *pred, tree *tmpl);
 tree *make_jaql_sort(tree *var, tree *expr);
 tree *make_jaql_top(long long int num);
 tree *make_unroll(tree *var);
@@ -129,6 +132,8 @@ tree *append_varname(tree *var, char *ident);
 tree *make_pair(char *name, tree *val);
 tree *append_pair(tree *opair, tree *npair);
 tree *append_elem(tree *oelem, tree *nelem);
+tree *make_join_input(char preserve, tree *var, tree *invar);
+tree *append_join_input(tree *ojinp, tree *njinp);
 tree *make_comp(enum comptype t);
 tree *make_op(enum comptype t);
 tree *make_operation(tree *var1, tree *op, tree *var2);

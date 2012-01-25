@@ -21,7 +21,7 @@
 %token LEX_ERROR
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN PLANF UNROLL
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF UNROLL PRESERVE
 
 %token _ARROW _DOLLAR _ASSIGN _EQUALS _NEQUAL _TRUE _FALSE
 %token _GREATER _GEQUAL _LESS _LEQUAL _NOT _AND _OR _SCOLON _DOT
@@ -36,9 +36,10 @@
 %type <j_tree> stmt jaql jaqlpipe opt_actions actions action predicates
 	predicate variable and_or opt_not comparison value literal
 	opt_each opt_command sort_arg arith_op val_var_arith
-	obj_list arr_list obj_pair json_value
+	obj_list arr_list obj_pair json_value join_var_refs join_var_ref
+	opt_join_in
 %type <j_ident> ident
-%type <j_number> opt_asc_desc
+%type <j_number> opt_asc_desc opt_preserve
 
 /* get it right:
 http://www.cs.man.ac.uk/~pjj/cs211/ho/node8.html
@@ -113,6 +114,8 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1), $2);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
+		| JOIN join_var_refs WHERE predicates INTO json_value
+		                        {$$ = make_jaql_join($2, $4, $6);}
 		;
 
 opt_actions: /* empty */        {$$ = NULL;}
@@ -131,6 +134,22 @@ action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TOP _NUMBER opt_each BY '[' sort_arg ']'
 	        {$$ = append_jaql_pipe(make_jaql_sort($3, $6), make_jaql_top($2));}
 	  ;
+
+join_var_refs: join_var_refs ',' join_var_ref  {$$ = append_join_input($1, $3);}
+			 | join_var_ref                    {$$ = $1;}
+			 ;
+
+join_var_ref: opt_preserve _IDENT opt_join_in
+			     {$$ = make_join_input($1 == PRESERVE, make_varname($2), $3);}
+			;
+
+opt_preserve: /* empty */           {$$ = 0;}
+			| PRESERVE              {$$ = PRESERVE;}
+			;
+
+opt_join_in: /* empty */            {$$ = NULL;}
+		   | IN _IDENT              {$$ = make_varname($2);}
+		   ;
 
 opt_command: /* empty */            {$$ = NULL;}
 		   | variable               {$$ = $1;}

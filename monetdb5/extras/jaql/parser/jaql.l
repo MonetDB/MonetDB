@@ -57,6 +57,7 @@ into       return INTO;
 by         return BY;
 as         return AS;
 join       return JOIN;
+preserve   return PRESERVE;
 where      return WHERE;
 in         return IN;
 sort       return SORT;

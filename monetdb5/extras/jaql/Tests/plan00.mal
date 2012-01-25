@@ -19,3 +19,7 @@ jaql.x("plan [1,2,3] -> transform 2 * 2;");
 jaql.x("plan [1,2,3] -> transform 2 * ($ * 2);");
 jaql.x("plan [1,2,3] -> transform 2 * 2.0 * $;");
 jaql.x("plan [1,2,3] -> transform ($ * 2.0) / 4;");
+
+jaql.x("plan join users, pages where users.id == pages.userid into {users.name, pages.url};");
+jaql.x("plan join u in users, p in pages where u.id == p.userid into {u.name, p.url};");
+jaql.x("plan join preserve u in users, p in pages where u.id == p.userid into {u.name, p.url};");

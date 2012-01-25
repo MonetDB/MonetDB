@@ -71,12 +71,10 @@ make_json_object(tree *obj)
 {
 	tree *res;
 
-	assert(obj != NULL);
+	assert(obj != NULL && (obj->type == j_pair || obj->type == j_error));
 	
 	if (obj->type == j_error)
 		return obj;
-
-	assert(obj->type == j_pair);
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_json_obj;
@@ -126,7 +124,7 @@ append_jaql_pipe(tree *oaction, tree *naction)
 
 /* recursive helper to check variable usages for validity */
 static tree *
-_check_exp_var(const char *func, const char *var, tree *t)
+_check_exp_var(const char *func, const char **vars, tree *t)
 {
 	tree *res = NULL;
 
@@ -134,7 +132,12 @@ _check_exp_var(const char *func, const char *var, tree *t)
 		return res;
 
 	if (t->type == j_var) {
-		if (strcmp(var, t->sval) != 0) {
+		const char **var;
+		for (var = vars; *var != NULL; var++) {
+			if (strcmp(*var, t->sval) == 0)
+				break;
+		}
+		if (*var == NULL) {
 			char buf[128];
 			res = GDKzalloc(sizeof(tree));
 			snprintf(buf, sizeof(buf), "%s: unknown variable: %s",
@@ -145,14 +148,20 @@ _check_exp_var(const char *func, const char *var, tree *t)
 		return res;
 	}
 
-	if ((res = _check_exp_var(func, var, t->tval1)) != NULL)
+	if ((res = _check_exp_var(func, vars, t->tval1)) != NULL)
 		return res;
-	if ((res = _check_exp_var(func, var, t->tval2)) != NULL)
+	if ((res = _check_exp_var(func, vars, t->tval2)) != NULL)
 		return res;
-	if ((res = _check_exp_var(func, var, t->tval3)) != NULL)
+	if ((res = _check_exp_var(func, vars, t->tval3)) != NULL)
 		return res;
 
 	return res;
+}
+static tree *
+_check_exp_var1(const char *func, const char *var, tree *t)
+{
+	const char *vars[] = {var, NULL};
+	return _check_exp_var(func, vars, t);
 }
 
 /* create filter action looping over the input array as ident,
@@ -172,7 +181,7 @@ make_jaql_filter(tree *var, tree *pred)
 
 	assert(pred->type == j_pred);
 	
-	if ((res = _check_exp_var("filter", var->sval, pred)) != NULL) {
+	if ((res = _check_exp_var1("filter", var->sval, pred)) != NULL) {
 		freetree(var);
 		freetree(pred);
 		return res;
@@ -203,7 +212,7 @@ make_jaql_transform(tree *var, tree *tmpl)
 
 	/* traverse down tmpl, searching for all variable references to
 	 * check if they refer to var */
-	if ((res = _check_exp_var("transform", var->sval, tmpl)) != NULL) {
+	if ((res = _check_exp_var1("transform", var->sval, tmpl)) != NULL) {
 		freetree(var);
 		freetree(tmpl);
 		return res;
@@ -307,30 +316,64 @@ make_unroll(tree *var)
 	return res;
 }
 
+/* create a join operation over 2 or more inputs, applying predicates,
+ * producing output defined by tmpl */
+tree *
+make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
+{
+	tree *res;
+	const char **vars;
+	int i;
+
+	/* docs seem to suggest a where clause (pred) is always present */
+	assert(inputs != NULL && inputs->type == j_join_input);
+	assert(pred != NULL && pred->type == j_pred);
+	assert(tmpl != NULL);
+
+	if (inputs->next == NULL) {
+		res = GDKzalloc(sizeof(tree));
+		res->type = j_error;
+		res->sval = GDKstrdup("join: need two or more inputs");
+		freetree(inputs);
+		freetree(pred);
+		freetree(tmpl);
+		return res;
+	}
+
+	for (i = 0, res = inputs; res != NULL; res = res->next, i++)
+		;
+	vars = GDKmalloc(sizeof(char *) * i + 1);
+	for (i = 0, res = inputs; res != NULL; res = res->next, i++)
+		vars[i] = res->tval2->sval;
+	vars[i] = NULL;
+
+	if ((res = _check_exp_var("join", vars, pred)) != NULL)
+		return res;
+	if ((res = _check_exp_var("join", vars, tmpl)) != NULL)
+		return res;
+
+	res = GDKzalloc(sizeof(tree));
+	res->type = j_join;
+	res->tval1 = inputs;
+	res->tval2 = pred;
+	res->tval3 = tmpl;
+
+	return res;
+}
+
 /* create a sort operation defined by comparator in expr */
 tree *
 make_jaql_sort(tree *var, tree *expr)
 {
-	tree *res, *w;
+	tree *res;
 
 	assert(var != NULL && var->type == j_var);
 	assert(expr != NULL && expr->type == j_sort_arg);
 
+	if ((res = _check_exp_var1("sort", var->sval, expr)) != NULL)
+		return res;
+
 	res = GDKzalloc(sizeof(tree));
-
-	for (w = expr; w != NULL; w = w->next) {
-		if (strcmp(var->sval, w->tval1->sval) != 0) {
-			char buf[128];
-			snprintf(buf, sizeof(buf), "sort: unknown variable: %s",
-					w->tval1->sval);
-			res->type = j_error;
-			res->sval = GDKstrdup(buf);
-			freetree(expr);
-			freetree(var);
-			return res;
-		}
-	}
-
 	res->type = j_sort;
 	res->tval1 = var;
 	res->tval2 = expr;
@@ -534,6 +577,45 @@ append_elem(tree *oelem, tree *nelem)
 	w->next = nelem;
 
 	return oelem;
+}
+
+/* creates a join input variable with optional preserve flag set
+ * if invar is not NULL, var is considered the alias variable */
+tree *
+make_join_input(char preserve, tree *var, tree *invar)
+{
+	tree *res;
+
+	assert(var != NULL && var->type == j_var);
+	assert(invar == NULL || invar->type == j_var);
+
+	res = GDKzalloc(sizeof(tree));
+	res->type = j_join_input;
+	res->nval = preserve;
+	res->tval2 = var;
+	if (invar == NULL) {
+		res->tval1 = make_varname(GDKstrdup(var->sval));
+	} else {
+		res->tval1 = invar;
+	}
+
+	return res;
+}
+
+tree *
+append_join_input(tree *ojinp, tree *njinp)
+{
+	tree *w = ojinp;
+
+	assert(ojinp != NULL && ojinp->type == j_join_input);
+	assert(njinp != NULL && njinp->type == j_join_input);
+
+	while (w->next != NULL)
+		w = w->next;
+
+	w->next = njinp;
+
+	return ojinp;
 }
 
 /* create a comparison from the given type */
@@ -820,6 +902,41 @@ printtree(tree *t, int level, char op)
 					printtree(t->tval2, level + step, op);
 				}
 				break;
+			case j_join:
+				if (op) {
+					tree *i;
+					printf("j_join( ");
+					printtree(t->tval1, level + step, op);
+					for (i = t->tval1->next; i != NULL; i = i->next) {
+						printf(", ");
+						printtree(i, level + step, op);
+					}
+					printf(", ( ");
+					printtree(t->tval2, level + step, op);
+					printf("), ");
+					printtree(t->tval3, level + step, op);
+				} else {
+					tree *i;
+					printf("as ");
+					printtree(t->tval1, level + step, op);
+					for (i = t->tval1->next; i != NULL; i = i->next) {
+						printf(", ");
+						printtree(i, level + step, op);
+					}
+					printf("-> join: where ( ");
+					printtree(t->tval2, level + step, op);
+					printf(") into ");
+					printtree(t->tval3, level + step, op);
+				}
+				t = t->tval3->next;
+				while (t != NULL) {
+					printf(", ");
+					printtree(t, level + step, op);
+					t = t->next;
+				}
+				if (op)
+					printf(") ");
+				break;
 			case j_sort:
 				if (op) {
 					printf("j_sort( ");
@@ -885,6 +1002,24 @@ printtree(tree *t, int level, char op)
 						printf("/ ");
 						break;
 				}
+				break;
+			case j_join_input:
+				if (op) {
+					printf("j_join_input( ");
+					printf("%lld , ", t->nval);
+					printtree(t->tval1, level + step, op);
+					printf(", ");
+					printtree(t->tval2, level + step, op);
+					printf(") ");
+				} else {
+					if (t->nval == 1)
+						printf("preserve ");
+					printtree(t->tval2, level + step, op);
+					printf("in ");
+					printtree(t->tval1, level + step, op);
+				}
+				/* avoid re-recursion after j_join */
+				t = NULL;
 				break;
 			case j_pred:
 				if (op) {
