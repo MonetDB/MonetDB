@@ -108,6 +108,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 				char *t = sql_subtype_string(atom_type(a));
 				char *s = atom2string(sql->sa, a);
 				mnstr_printf(fout, "%s \"%s\"", t, s);
+				_DELETE(t);
 			}
 		} else { /* variables */
 			if (e->r) { /* named parameters */
@@ -528,17 +529,16 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs)
 void
 _rel_print(mvc *sql, sql_rel *rel) 
 {
-	list *refs = list_create(NULL);
+	list *refs = sa_list(sql->sa);
 	rel_print_refs(sql, THRdata[0], rel, 0, refs);
 	rel_print_(sql, THRdata[0], rel, 0, refs);
 	mnstr_printf(THRdata[0], "\n");
-	list_destroy(refs);
 }
 
 void
 rel_print(mvc *sql, sql_rel *rel, int depth) 
 {
-	list *refs = list_create(NULL);
+	list *refs = sa_list(sql->sa);
 	size_t pos;
 	size_t nl = 0;
 	size_t len = 0, lastpos = 0;
@@ -582,8 +582,6 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	mnstr_close(s);
 	mnstr_destroy(s);
 	buffer_destroy(b);
-
-	list_destroy(refs);
 }
 
 static void
@@ -765,7 +763,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 				return sql_error(sql, -1, "type: missing ')'\n");
 			(*pos)++;
 		}
-		tpe = sql_bind_subtype(tname, d, s);
+		tpe = sql_bind_subtype(sql->sa, tname, d, s);
 		skipWS(r, pos);
 		*e = old;
 		if (r[*pos] == '[') { /* convert */
@@ -786,7 +784,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	case '\"': 
 		*e = 0;
 		tname = b;
-		tpe = sql_bind_subtype(tname, 0, 0);
+		tpe = sql_bind_subtype(sql->sa, tname, 0, 0);
 		st = readString(r,pos);
 		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 		skipWS(r, pos);
@@ -826,7 +824,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 				a = sql_bind_aggr(sql->sa, s, cname, NULL);
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 		} else {
-			list *ops = list_new(sql->sa);
+			list *ops = sa_list(sql->sa);
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
 			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);

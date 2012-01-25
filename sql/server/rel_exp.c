@@ -83,7 +83,7 @@ exp_filter(sql_allocator *sa, sql_exp *l, list *r, sql_subfunc *f)
 sql_exp *
 exp_filter2(sql_allocator *sa, sql_exp *l, sql_exp *r1, sql_exp *r2, sql_subfunc *f) 
 {
-	list *r = list_new(sa);
+	list *r = sa_list(sa);
 
 	append(r, r1);
 	if (r2)
@@ -137,7 +137,7 @@ exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype 
 	e->card = exp->card;
 	e->l = exp;
 	totype = dup_subtype(sa, totype);
-	e->r = append(append(list_new(sa), dup_subtype(sa, fromtype)),totype);
+	e->r = append(append(sa_list(sa), dup_subtype(sa, fromtype)),totype);
 	e->tpe = *totype; 
 	if (exp->name)
 		e->name = sa_strdup(sa, exp->name);
@@ -433,20 +433,6 @@ exp_subtype( sql_exp *e )
 		return NULL;
 	}
 	return NULL;
-}
-
-list *
-exps_subtype( list *l )
-{
-	node *n;
-	list *t = list_create(l->destroy);
-
-	for (n = l->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		append(t, exp_subtype(e));
-	}
-	return t;
 }
 
 char *
@@ -830,10 +816,12 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_column:
-		if (e->l) {
-			ne = exps_bind_column2(rel->exps, e->l, e->r);
-		} else {
-			ne = exps_bind_column(rel->exps, e->r, NULL);
+		if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
+			if (e->l) {
+				ne = exps_bind_column2(rel->exps, e->l, e->r);
+			} else {
+				ne = exps_bind_column(rel->exps, e->r, NULL);
+			}
 		}
 		return ne;
 	case e_convert:
@@ -949,6 +937,14 @@ exp_is_atom( sql_exp *e )
 	return 0;
 }
 
+static int
+exp_key( sql_exp *e )
+{
+	if (e->name)
+		return hash_key(e->name);
+	return 0;
+}
+
 sql_exp *
 exps_bind_column( list *exps, char *cname, int *ambiguous ) 
 {
@@ -957,6 +953,36 @@ exps_bind_column( list *exps, char *cname, int *ambiguous )
 	if (exps && cname) {
 		node *en;
 
+		if (exps && !exps->ht && list_length(exps) > HASH_MIN_SIZE) {
+			exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+
+			for (en = exps->h; en; en = en->next ) {
+				sql_exp *e = en->data;
+				if (e->name) {
+					int key = exp_key(e);
+
+					hash_add(exps->ht, key, e);
+				}
+			}
+		}
+		if (exps && exps->ht) {
+			int key = hash_key(cname);
+			sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
+
+			for (; he; he = he->chain) {
+				sql_exp *ce = he->value;
+
+				if (ce->name && strcmp(ce->name, cname) == 0) {
+					if (e) {
+						if (ambiguous)
+							*ambiguous = 1;
+						return NULL;
+					}
+					e = ce;
+				}
+			}
+			return e;
+		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *ce = en->data;
 			if (ce->name && strcmp(ce->name, cname) == 0) {
@@ -978,6 +1004,32 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 	if (exps) {
 		node *en;
 
+		if (exps && !exps->ht && list_length(exps) > HASH_MIN_SIZE) {
+			exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
+
+			for (en = exps->h; en; en = en->next ) {
+				sql_exp *e = en->data;
+				if (e->name) {
+					int key = exp_key(e);
+
+					hash_add(exps->ht, key, e);
+				}
+			}
+		}
+		if (exps && exps->ht) {
+			int key = hash_key(cname);
+			sql_hash_e *he = exps->ht->buckets[key&(exps->ht->size-1)]; 
+
+			for (; he; he = he->chain) {
+				sql_exp *e = he->value;
+
+				if (e && is_column(e->type) && e->name && e->rname && strcmp(e->name, cname) == 0 && strcmp(e->rname, rname) == 0)
+					return e;
+				if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
+					return e;
+			}
+			return NULL;
+		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
 		
@@ -985,8 +1037,10 @@ exps_bind_column2( list *exps, char *rname, char *cname )
 				return e;
 			if (e && e->type == e_column && e->name && !e->rname && e->l && strcmp(e->name, cname) == 0 && strcmp(e->l, rname) == 0)
 				return e;
-			if (e && e->type == e_column && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0)
+			if (e && e->type == e_column && !e->name && !e->rname && e->l && e->r && strcmp(e->r, cname) == 0 && strcmp(e->l, rname) == 0) {
+				assert(0);
 				return e;
+			}
 		}
 	}
 	return NULL;

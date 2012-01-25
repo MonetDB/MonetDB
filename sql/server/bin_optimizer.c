@@ -481,7 +481,7 @@ _bin_optimizer(mvc *c, stmt *s)
 		list *l = s->op4.lval;
 		list *nl = NULL;
 
-		nl = list_new(c->sa);
+		nl = sa_list(c->sa);
 		for (n = l->h; n; n = n->next) {
 			stmt *ns = _bin_optimizer(c, n->data);
 

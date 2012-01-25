@@ -40,18 +40,33 @@ list_create(fdestroy destroy)
 	l->destroy = destroy;
 	l->h = l->t = NULL;
 	l->cnt = 0;
+	l->ht = NULL;
 	return l;
 }
 
 list *
-list_new(sql_allocator *sa)
+sa_list(sql_allocator *sa)
 {
-	list *l = SA_NEW(sa, list);
+	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
 
 	l->sa = sa;
 	l->destroy = NULL;
 	l->h = l->t = NULL;
 	l->cnt = 0;
+	l->ht = NULL;
+	return l;
+}
+
+list *
+list_new(sql_allocator *sa, fdestroy destroy)
+{
+	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+
+	l->sa = sa;
+	l->destroy = destroy;
+	l->h = l->t = NULL;
+	l->cnt = 0;
+	l->ht = NULL;
 	return l;
 }
 
@@ -60,7 +75,7 @@ list_new_(list *l)
 {
 	list *res = NULL;
 	if (l->sa) 
-		res = list_new(l->sa);
+		res = list_new(l->sa, l->destroy);
 	else
 		res = list_create(l->destroy);
 	return res;
@@ -89,7 +104,7 @@ list_destroy(list *l)
 	if (l) {
 		node *n = l->h;
 
-		while (n) {
+		while (n && (l->destroy|| !l->sa)) {
 			node *t = n;
 
 			n = n->next;
@@ -120,6 +135,11 @@ list_append(list *l, void *data)
 	}
 	l->t = n;
 	l->cnt++;
+	if (l->ht) {
+		int key = l->ht->key(data);
+	
+		hash_add(l->ht, key, data);
+	}
 	return l;
 }
 
@@ -138,6 +158,11 @@ list_append_before(list *l, node *m, void *data)
 		p->next = n;
 	}
 	l->cnt++;
+	if (l->ht) {
+		int key = l->ht->key(data);
+	
+		hash_add(l->ht, key, data);
+	}
 	return l;
 }
 
@@ -152,12 +177,35 @@ list_prepend(list *l, void *data)
 	n->next = l->h;
 	l->h = n;
 	l->cnt++;
+	if (l->ht) {
+		int key = l->ht->key(data);
+	
+		hash_add(l->ht, key, data);
+	}
 	return l;
+}
+
+static void 
+hash_delete(sql_hash *h, void *data)
+{
+	int key = h->key(data);
+	sql_hash_e *e, *p = h->buckets[key&(h->size-1)];
+	
+	e = p;
+	for (; p->value != data ; p = p->chain) 
+		e = p;
+	if (p && p->value == data) {
+		if (p == e)
+			h->buckets[key&(h->size-1)] = p->chain;
+		else
+			e->chain = p->chain;
+	}
 }
 
 node *
 list_remove_node(list *l, node *n)
 {
+	void *data = n->data;
 	node *p = l->h;
 
 	if (p != n)
@@ -173,6 +221,8 @@ list_remove_node(list *l, node *n)
 		l->t = p;
 	node_destroy(l, n);
 	l->cnt--;
+	if (l->ht && data)
+		hash_delete(l->ht, data);
 	return p;
 }
 
@@ -184,6 +234,8 @@ list_remove_data(list *s, void *data)
 	/* maybe use compare func */
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
+			if (s->ht && n->data)
+				hash_delete(s->ht, n->data);
 			n->data = NULL;
 			list_remove_node(s, n);
 			break;
@@ -198,6 +250,8 @@ list_move_data(list *s, list *d, void *data)
 
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
+			if (s->ht && n->data)
+				hash_delete(s->ht, n->data);
 			n->data = NULL;	/* make sure data isn't destroyed */
 			list_remove_node(s, n);
 			break;

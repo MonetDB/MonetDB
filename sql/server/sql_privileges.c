@@ -72,14 +72,18 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 }
 
 char *
-sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *cname, int grant, int grantor)
+sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor)
 {
-	sql_schema *cur = cur_schema(sql);
-	sql_table *t = mvc_bind_table(sql, cur, tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 	sql_column *c = NULL;
 	int allowed, grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
 
+ 	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (s)
+ 		t = mvc_bind_table(sql, s, tname);
 	if (!t) 
 		return sql_message("42S02!GRANT no such table '%s'", tname);
 
@@ -139,14 +143,18 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 }
 
 char *
-sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *tname, char *cname, int grant, int grantor)
+sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, int grantor)
 {
-	sql_schema *cur = cur_schema(sql);
-	sql_table *t = mvc_bind_table(sql, cur, tname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 	sql_column *c = NULL;
 	int allowed, grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
 
+ 	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	if (s)
+ 		t = mvc_bind_table(sql, s, tname);
 	if (!t) 
 		return sql_message("42S02!REVOKE: no such table '%s'", tname);
 
@@ -503,7 +511,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 			e++;
 		}
 		r = sql_message("M0M27!CREATE USER: %s", e);
-		GDKfree(err);
+		_DELETE(err);
 		return r;
 	}
 	return NULL;

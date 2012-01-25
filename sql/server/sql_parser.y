@@ -673,6 +673,10 @@ create:
     CREATE 		{ mvc *m = (mvc*)parm;
 			  if (m->emode == m_normal)
 		  	  	m->emode = m_inplace; }
+drop:
+    DROP 		{ mvc *m = (mvc*)parm;
+			  if (m->emode == m_normal)
+		  	  	m->emode = m_inplace; }
 set:
     SET 		{ mvc *m = (mvc*)parm;
 			  if (m->emode == m_normal)
@@ -775,7 +779,7 @@ schema:
 		append_symbol(l, $5);
 		append_list(l, $6);
 		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
-  |	DROP SCHEMA qname drop_action
+  |	drop SCHEMA qname drop_action
 		{ dlist *l = L();
 		append_list(l, $3);
 		append_int(l, $4);
@@ -906,8 +910,8 @@ privileges:
  ;
 
 object_name:
-     TABLE ident		{ $$ = _symbol_create(SQL_TABLE, $2); }
- |   ident			{ $$ = _symbol_create(SQL_NAME, $1); }
+     TABLE qname		{ $$ = _symbol_create_list(SQL_TABLE, $2); }
+ |   qname			{ $$ = _symbol_create_list(SQL_NAME, $1); }
 
 /* | DOMAIN domain_name
    | CHARACTER SET char_set_name
@@ -1100,7 +1104,7 @@ seq_def:
 /*
  * DROP SEQUENCE name
  */
-  | DROP SEQUENCE qname
+  | drop SEQUENCE qname
 	{
 		dlist *l = L();
 		append_list(l, $3);
@@ -2256,12 +2260,12 @@ triggered_statement:
  ;
 
 drop_statement:
-   DROP TABLE qname drop_action
+   drop TABLE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | DROP FUNCTION qname opt_typelist drop_action
+ | drop FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, 0 );
@@ -2269,7 +2273,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_FUNC );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP UNION FUNCTION qname opt_typelist drop_action
+ | drop UNION FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 0 );
@@ -2277,7 +2281,7 @@ drop_statement:
 	  append_int(l, $6 );
 	  append_int(l, F_UNION );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP FILTER FUNCTION qname opt_typelist drop_action
+ | drop FILTER FUNCTION qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 0 );
@@ -2285,7 +2289,7 @@ drop_statement:
 	  append_int(l, $6 );
 	  append_int(l, F_FILT );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP AGGREGATE qname opt_typelist drop_action
+ | drop AGGREGATE qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, 0 );
@@ -2293,7 +2297,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_AGGR );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP PROCEDURE qname opt_typelist drop_action
+ | drop PROCEDURE qname opt_typelist drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, 0 );
@@ -2301,7 +2305,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_PROC );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP ALL FUNCTION qname drop_action
+ | drop ALL FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 1 );
@@ -2309,7 +2313,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_FUNC );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP ALL UNION FUNCTION qname drop_action
+ | drop ALL UNION FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $5 );
 	  append_int(l, 1 );
@@ -2317,7 +2321,7 @@ drop_statement:
 	  append_int(l, $6 );
 	  append_int(l, F_UNION );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP ALL FILTER FUNCTION qname drop_action
+ | drop ALL FILTER FUNCTION qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $5 );
 	  append_int(l, 1 );
@@ -2325,7 +2329,7 @@ drop_statement:
 	  append_int(l, $6 );
 	  append_int(l, F_FILT );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP ALL AGGREGATE qname drop_action
+ | drop ALL AGGREGATE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 1 );
@@ -2333,7 +2337,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_AGGR );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- | DROP ALL PROCEDURE qname drop_action
+ | drop ALL PROCEDURE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, 1 );
@@ -2341,15 +2345,15 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, F_PROC );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- |  DROP VIEW qname drop_action
+ |  drop VIEW qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
- |  DROP ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
- |  DROP USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
- |  DROP INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
- |  DROP TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
+ |  drop ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
+ |  drop USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
+ |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
+ |  drop TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
  ;
 
 opt_typelist:

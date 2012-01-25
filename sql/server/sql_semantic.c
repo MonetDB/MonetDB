@@ -73,7 +73,7 @@ sql_add_param(mvc *sql, char *name, sql_subtype *st)
 		a->type.type = NULL;
 
 	if (!sql->params)
-		sql->params = list_new(sql->sa);
+		sql->params = sa_list(sql->sa);
 	list_append(sql->params, a);
 }
 
@@ -107,7 +107,6 @@ sql_bind_paramnr(mvc *sql, int nr)
 	}
 	return NULL;
 }
-
 
 atom *
 sql_bind_arg(mvc *sql, int nr)
@@ -511,7 +510,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 		sql_table *tbl = tail_type(tab)->comp_type;
 		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1->op4.aval->data.val.sval);
 		node *n, *m;
-		list *l = list_new(sql->sa);
+		list *l = sa_list(sql->sa);
 		
 		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
 
@@ -530,7 +529,7 @@ check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
 	 	return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
 	} else if (tab->type == st_list) {
 		node *n, *m;
-		list *l = list_new(sql->sa);
+		list *l = sa_list(sql->sa);
 		for (n = ct->columns.set->h, m = tab->op4.lval->h; 
 			n && m; n = n->next, m = m->next) 
 		{

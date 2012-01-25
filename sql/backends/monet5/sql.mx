@@ -81,7 +81,7 @@ pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):vo
 address SQLcatalog
 comment "a user catalog statement";
 
-pattern catalog(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
+pattern catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
 address SQLcatalog
 comment "a grant/revoke privileges statement";
 
@@ -2390,20 +2390,22 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = sql_revoke_role( sql, sname /*grantee */, auth);
 	} 	break;
 	case DDL_GRANT: {
-		char *grantee = *(str*)getArgReference(stk, pci, 3);
-		int privs = *(int*)getArgReference(stk, pci, 4);
-		char *cname = SaveArgReference(stk, pci, 5);
-		int grant = *(int*)getArgReference(stk, pci, 6);
-		int grantor = *(int*)getArgReference(stk, pci, 7);
-		msg = sql_grant_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+		char *tname = *(str*)getArgReference(stk, pci, 3);
+		char *grantee = *(str*)getArgReference(stk, pci, 4);
+		int privs = *(int*)getArgReference(stk, pci, 5);
+		char *cname = SaveArgReference(stk, pci, 6);
+		int grant = *(int*)getArgReference(stk, pci, 7);
+		int grantor = *(int*)getArgReference(stk, pci, 8);
+		msg = sql_grant_table_privs( sql, grantee, privs, sname, tname, cname, grant, grantor);
 	} 	break;
 	case DDL_REVOKE: {
-		char *grantee = *(str*)getArgReference(stk, pci, 3);
-		int privs = *(int*)getArgReference(stk, pci, 4);
-		char *cname = SaveArgReference(stk, pci, 5);
-		int grant = *(int*)getArgReference(stk, pci, 6);
-		int grantor = *(int*)getArgReference(stk, pci, 7);
-		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+		char *tname = *(str*)getArgReference(stk, pci, 3);
+		char *grantee = *(str*)getArgReference(stk, pci, 4);
+		int privs = *(int*)getArgReference(stk, pci, 5);
+		char *cname = SaveArgReference(stk, pci, 6);
+		int grant = *(int*)getArgReference(stk, pci, 7);
+		int grantor = *(int*)getArgReference(stk, pci, 8);
+		msg = sql_revoke_table_privs( sql, grantee, privs, sname, tname, cname, grant, grantor);
 	} 	break;
 	case DDL_CREATE_USER: {
 		char *passwd = *(str*)getArgReference(stk, pci, 3);
