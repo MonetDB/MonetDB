@@ -316,6 +316,37 @@ make_unroll(tree *var)
 	return res;
 }
 
+/* utility to recursively check the given tree for its predicates, and
+ * ensure that only equality expressions are used */
+static tree *
+_check_exp_equals_only(tree *t)
+{
+	tree *res;
+
+	if (t == NULL)
+		return NULL;
+
+	if (t->type == j_pred && t->tval2->type == j_comp && (
+				t->tval2->cval != j_and &&
+				t->tval2->cval != j_or &&
+				t->tval2->cval != j_equals))
+	{
+		res = GDKzalloc(sizeof(tree));
+		res->type = j_error;
+		res->sval = GDKstrdup("join: only equality tests are allowed");
+		return res;
+	}
+
+	if ((res = _check_exp_equals_only(t->tval1)) != NULL)
+		return res;
+	if ((res = _check_exp_equals_only(t->tval2)) != NULL)
+		return res;
+	if ((res = _check_exp_equals_only(t->tval3)) != NULL)
+		return res;
+
+	return NULL;
+}
+
 /* create a join operation over 2 or more inputs, applying predicates,
  * producing output defined by tmpl */
 tree *
@@ -350,6 +381,9 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 	if ((res = _check_exp_var("join", vars, pred)) != NULL)
 		return res;
 	if ((res = _check_exp_var("join", vars, tmpl)) != NULL)
+		return res;
+
+	if ((res = _check_exp_equals_only(pred)) != NULL)
 		return res;
 
 	res = GDKzalloc(sizeof(tree));
@@ -441,7 +475,7 @@ make_pred(tree *l, tree *comp, tree *r)
 
 		res = GDKzalloc(sizeof(tree));
 		res->type = j_error;
-		res->sval = GDKstrdup("filter: can only apply equality tests with booleans");
+		res->sval = GDKstrdup("filter: can only apply equality tests on booleans");
 		return res;
 	}
 
