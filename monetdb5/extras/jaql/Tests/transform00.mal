@@ -10,3 +10,10 @@ jaql.x("[1,2,3] -> transform ($ * 2.0) / 4;");
 jaql.x("[1,2,3] -> transform [$, $];");
 jaql.x("[1,2,3] -> transform {\"value\":$};");
 jaql.x("[1,2,3] -> transform {\"value\":$ + $};");
+
+jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.a};");
+jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.b};");
+jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.c};");
+jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.a};");
+jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.b};");
+jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.a,$.b};");

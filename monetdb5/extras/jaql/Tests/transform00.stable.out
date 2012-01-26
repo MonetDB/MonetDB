@@ -29,6 +29,12 @@ function user.main():void;
     jaql.x("[1,2,3] -> transform [$, $];");
     jaql.x("[1,2,3] -> transform {\"value\":$};");
     jaql.x("[1,2,3] -> transform {\"value\":$ + $};");
+    jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.a};");
+    jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.b};");
+    jaql.x("[{\"a\":1},{\"b\":2}] -> transform {$.c};");
+    jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.a};");
+    jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.b};");
+    jaql.x("[{\"a\":1,\"b\":3},{\"b\":2}] -> transform {$.a,$.b};");
 end main;
 [ 4, 4, 4 ]
 [ { "value": 4 }, { "value": 4 }, { "value": 4 } ]
@@ -42,6 +48,12 @@ end main;
 [ [ 1, 1 ], [ 2, 2 ], [ 3, 3 ] ]
 [ { "value": 1 }, { "value": 2 }, { "value": 3 } ]
 [ { "value": 2 }, { "value": 4 }, { "value": 6 } ]
+[ { "a": 1 }, {  } ]
+[ { "b": 2 }, {  } ]
+[ {  }, {  } ]
+[ { "a": 1 }, {  } ]
+[ { "b": 3 }, { "b": 2 } ]
+[ { "a": 1, "b": 3 }, { "b": 2 } ]
 
 # 21:27:13 >  
 # 21:27:13 >  "Done."
