@@ -227,7 +227,7 @@ end main;
 [ "copy_from",			  "pattern",	  "sql",	  "(sname:str,tname:str,sep:str,rsep:str,ssep:str,ns:str,fname:str,nr:lng,offset:lng,locked:int):bat[:oid,:any]... ",		  "mvc_import_table_wrap;"		  ]
 [ "clear_table",	  "pattern",	  "sql",		  "(sname:str,tname:str):wrd ",								  "mvc_clear_table_wrap;"		  ]
 [ "catalog",			  "pattern",	  "sql",	  "(type:int,iname:str,itype:int,sname:str,tname:str...):void ",							  "SQLcatalog;"				  ]
-[ "catalog",			  "pattern",	  "sql",	  "(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void ",					  "SQLcatalog;"				  ]
+[ "catalog",			  "pattern",	  "sql",	  "(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void ", "SQLcatalog;"				  ]
 [ "catalog",			  "pattern",	  "sql",	  "(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):void ",						  "SQLcatalog;"				  ]
 [ "catalog",			  "pattern",	  "sql",	  "(type:int,grantee:str,role:str):void ",										  "SQLcatalog;"				  ]
 [ "catalog",		  "pattern",	  "sql",		  "(type:int,sname:str,t:ptr,restart:lng):void ",					  "SQLcatalog;"				  ]
