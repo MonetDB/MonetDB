@@ -124,9 +124,8 @@ sql_create_env(mvc *m, sql_schema *s)
 	tpe.digits = t->base.id; /* pass the table through digits */
 
 	/* add function */
-	l = list_create((fdestroy) &arg_destroy);
+	l = sa_list(m->sa);
 	mvc_create_func(m, s, "env", l, &tpe, F_FUNC, "sql", "sql_environment", "CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;");
-	list_destroy(l);
 
 	t = mvc_create_generated(m, s, "#var", NULL, 1);
 	mvc_create_column_(m, t, "name", "varchar", 1024);
@@ -136,8 +135,7 @@ sql_create_env(mvc *m, sql_schema *s)
 	tpe.digits = t->base.id; /* pass the table through digits */
 
 	/* add function */
-	l = list_create((fdestroy) &arg_destroy);
+	l = sa_list(m->sa);
 	mvc_create_func(m, s, "var", l, &tpe, F_FUNC, "sql", "sql_variables", "CREATE FUNCTION var() RETURNS TABLE( name varchar(1024)) EXTERNAL NAME sql.sql_variables;");
-	list_destroy(l);
 	return 0;
 }

@@ -75,11 +75,10 @@ extern char *sql_bind_alias(char *alias);
 extern int sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
-extern sql_subtype *sql_bind_subtype(char *name, unsigned int digits, unsigned int scale);
+extern sql_subtype *sql_bind_subtype(sql_allocator *sa, char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_bind_localtype(char *name);
-extern sql_subtype *sql_create_subtype(sql_type *t, unsigned int s, unsigned int d);
+extern sql_subtype *sql_create_subtype(sql_allocator *sa, sql_type *t, unsigned int s, unsigned int d);
 extern void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
-extern void sql_subtype_destroy(sql_subtype *t);
 extern char *sql_subtype_string(sql_subtype *t);
 
 extern int type_cmp(sql_type *t1, sql_type *t2);
@@ -87,15 +86,14 @@ extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
 extern char *subtype2string(sql_subtype *t);
 
-extern sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, char *name);
+extern sql_type *sql_create_type(sql_allocator *sa, char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, char *name);
 extern void type_destroy(sql_type *t);
 
-extern sql_arg *arg_dup(sql_arg *a);
-extern void arg_destroy(sql_arg *a);
+extern sql_arg *arg_dup(sql_allocator *sa, sql_arg *a);
 
 extern sql_subaggr *sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *type);
 extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, char *name);
-extern sql_func *sql_create_aggr(char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
+extern sql_func *sql_create_aggr(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);
@@ -109,21 +107,19 @@ extern sql_subfunc *sql_bind_func_result3(sql_allocator *sa, sql_schema *s, char
 extern sql_subfunc *sql_bind_func_(sql_allocator *sa, sql_schema *s, char *name, list *ops, int type);
 extern sql_subfunc *sql_bind_func_result_(sql_allocator *sa, sql_schema *s, char *name, list *ops, sql_subtype *res);
 
-extern void func_destroy(sql_func *t);
-extern sql_func *sql_create_func(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
-extern sql_func *sql_create_funcSE(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
-extern sql_func *sql_create_func3(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing);
-extern sql_func *sql_create_func4(char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing);
+extern sql_func *sql_create_func(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
+extern sql_func *sql_create_funcSE(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing);
+extern sql_func *sql_create_func3(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing);
+extern sql_func *sql_create_func4(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing);
 
-extern sql_func *sql_create_func_(char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect, bit aggr, int fix_scale);
+extern sql_func *sql_create_func_(sql_allocator *sa, char *name, char *mod, char *imp, list *ops, sql_subtype *res, bit side_effect, bit aggr, int fix_scale);
 
-extern sql_func *sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res);
+extern sql_func *sql_create_sqlfunc(sql_allocator *sa, char *name, char *imp, list *ops, sql_subtype *res);
 
 extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);
 extern int is_sqlfunc(sql_func *f);
 
-extern void types_init(int debug);
-extern void types_exit(void);
+extern void types_init(sql_allocator *sa, int debug);
 
 #endif /* SQL_TYPES_H */

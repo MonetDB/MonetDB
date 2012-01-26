@@ -280,7 +280,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	if (s->type == st_list && s->nrcols == 0 && s->key) {
 		/* row to columns */
 		node *n;
-		list *l = list_new(m->sa);
+		list *l = sa_list(m->sa);
 
 		for(n=s->op4.lval->h; n; n = n->next)
 			list_append(l, const_column(m->sa, n->data));
@@ -2496,7 +2496,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	if (s->type == st_list && s->nrcols == 0 && s->key) {
 		/* row to columns */
 		node *n;
-		list *l = list_new(m->sa);
+		list *l = sa_list(m->sa);
 
 		for(n=s->op4.lval->h; n; n = n->next)
 			list_append(l, const_column(m->sa, n->data));

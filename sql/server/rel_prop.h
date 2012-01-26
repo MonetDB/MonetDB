@@ -35,8 +35,6 @@ typedef struct prop {
 #define PROP_REMOTE     5	/* uri for remote execution */
 #define PROP_USED	10	/* number of times exp is used */
 
-#define prop_list() 	list_create((fdestroy)&prop_destroy)
-
 extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);

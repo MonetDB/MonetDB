@@ -20,6 +20,59 @@
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 
+static int
+base_key( sql_base *b )
+{
+	return hash_key(b->name);
+}
+
+static void *
+_list_find_name(list *l, char *name)
+{
+	node *n;
+
+	if (l && !l->ht && list_length(l) > HASH_MIN_SIZE && l->sa) {
+		l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&base_key);
+
+		for (n = l->h; n; n = n->next ) {
+			sql_base *b = n->data;
+			int key = base_key(b);
+
+			hash_add(l->ht, key, b);
+		}
+	}
+	if (l && l->ht) {
+		int key = hash_key(name);
+		sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)]; 
+
+		for (; he; he = he->chain) {
+			sql_base *b = he->value;
+
+			if (b->name && strcmp(b->name, name) == 0) 
+				return b;
+		}
+		return NULL;
+	}
+
+	if (l)
+		for (n = l->h; n; n = n->next) {
+			sql_base *b = n->data;
+
+			/* check if names match */
+			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+				return b;
+			}
+		}
+	return NULL;
+}
+
+static void *
+_cs_find_name(changeset * cs, char *name)
+{
+	return _list_find_name(cs->set, name);
+}
+
+
 node *
 cs_find_name(changeset * cs, char *name)
 {
@@ -145,10 +198,10 @@ find_sql_column_node(sql_table *t, char *cname, int id)
 sql_column *
 find_sql_column(sql_table *t, char *cname)
 {
-	node *n = find_sql_column_node(t, cname, -1);
+	sql_column *c = _cs_find_name(&t->columns, cname);
 
-	if (n)
-		return n->data;
+	if (c)
+		return c;
 	return NULL;
 }
 
@@ -164,10 +217,10 @@ find_sql_table_node(sql_schema *s, char *tname, int id)
 sql_table *
 find_sql_table(sql_schema *s, char *tname)
 {
-	node *n = find_sql_table_node(s, tname, -1);
+	sql_table *t = _cs_find_name(&s->tables, tname);
 
-	if (n)
-		return n->data;
+	if (t)
+		return t;
 	return NULL;
 }
 

@@ -151,8 +151,7 @@ typedef struct changeset {
 	node *nelm;
 } changeset;
 
-extern void cs_init(changeset * cs, fdestroy destroy);
-extern void cs_new(changeset * cs, sql_allocator *sa);
+extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
@@ -163,10 +162,32 @@ extern node *cs_find_id(changeset * cs, int id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
 
+typedef void *backend_code;
+typedef size_t backend_stack;
+
+typedef struct sql_trans {
+	char *name;
+	int stime;		/* transaction time stamp (aka start time) */
+	int rtime;
+	int wtime;
+	int schema_number;	/* schema timestamp */
+	int schema_updates;	/* set on schema changes */
+	int status;		/* status of the last query */
+	list *dropped;  	/* protection against recursive cascade action*/
+
+	changeset schemas;
+
+	sql_allocator *sa;	/* transaction allocator */
+
+	struct sql_trans *parent;	/* multilevel transaction support */
+	backend_stack stk;		
+} sql_trans;
+
 typedef struct sql_schema {
 	sql_base base;
 	int auth_id;
 	int owner;
+	// TODO? int type;		/* persistent, session local, transaction local */
 
 	changeset tables;
 	changeset types;
@@ -177,6 +198,7 @@ typedef struct sql_schema {
 	list *triggers;		/* useful within a table */
 
 	char *internal; 	/* optional internal module name */
+	sql_trans *tr;
 } sql_schema;
 
 typedef struct sql_type {
@@ -443,33 +465,14 @@ typedef struct res_table {
 	struct res_table *next;
 } res_table;
 
-typedef void *backend_code;
-typedef size_t backend_stack;
-
-typedef struct sql_trans {
-	char *name;
-	int stime;		/* transaction time stamp (aka start time) */
-	int rtime;
-	int wtime;
-	int schema_number;	/* schema timestamp */
-	int schema_updates;	/* set on schema changes */
-	int status;		/* status of the last query */
-	list *dropped;  	/* protection against recursive cascade action*/
-
-	changeset schemas;
-
-	struct sql_trans *parent;	/* multilevel transaction support */
-	backend_stack stk;		
-} sql_trans;
-
 typedef struct sql_session {
-	sql_trans *tr; 	/* active transaction */	
+	sql_trans *tr; 		/* active transaction */	
 
 	char *schema_name;
 	sql_schema *schema;
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
-	                       commit, rollback, etc. */
+	                           commit, rollback, etc. */
 	char auto_commit;
 	int level;		/* TRANSACTION isolation level */
 	int active;		/* active transaction */
@@ -488,32 +491,32 @@ extern node *list_find_name(list *l, char *name);
 extern node *list_find_id(list *l, int id);
 extern node *list_find_base_id(list *l, int id);
 
-extern node *find_sql_key_node(sql_table *t, char *kname, int id);
 extern sql_key *find_sql_key(sql_table *t, char *kname);
 
-extern node *find_sql_idx_node(sql_table *t, char *kname, int id);
 extern sql_idx *find_sql_idx(sql_table *t, char *kname);
 
-extern node *find_sql_column_node(sql_table *t, char *cname, int id);
 extern sql_column *find_sql_column(sql_table *t, char *cname);
 
-extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
 
-extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
 
-extern node *find_sql_schema_node(sql_trans *t, char *sname, int id);
 extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
-extern node *find_sql_type_node(sql_schema * s, char *tname, int id);
 extern sql_type *find_sql_type(sql_schema * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, char *name);
 
-extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 extern sql_func *find_sql_func(sql_schema * s, char *tname);
 extern list *find_all_sql_func(sql_schema * s, char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
+extern node *find_sql_key_node(sql_table *t, char *kname, int id);
+extern node *find_sql_idx_node(sql_table *t, char *kname, int id);
+extern node *find_sql_column_node(sql_table *t, char *cname, int id);
+extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
+extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
+extern node *find_sql_schema_node(sql_trans *t, char *sname, int id);
+extern node *find_sql_type_node(sql_schema * s, char *tname, int id);
+extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
 #endif /* SQL_CATALOG_H */

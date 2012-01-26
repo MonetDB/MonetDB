@@ -319,10 +319,8 @@ mvc_rollback(mvc *m, int chain, char *name)
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
-		if (tr->name) {
-			_DELETE(tr->name)
+		if (tr->name) 
 			tr->name = NULL;
-		}
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 	} else if (tr->parent) {
 		/* first release all intermediate savepoints */
@@ -1130,23 +1128,23 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 
 	switch(type) {
 		case OWNER_DEPENDENCY : 
-					dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
-					break;
+			dep_list = sql_trans_owner_schema_dependencies(m->session->tr, id);
+			break;
 		case SCHEMA_DEPENDENCY :
-					dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
-					break;
+			dep_list = sql_trans_schema_user_dependencies(m->session->tr, id);
+			break;
 		case TABLE_DEPENDENCY : 
-					dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
-					break;
+			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			break;
 		case VIEW_DEPENDENCY : 
-					dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
-					break;
+			dep_list = sql_trans_get_dependencies(m->session->tr, id, TABLE_DEPENDENCY, NULL);
+			break;
 		case FUNC_DEPENDENCY : 
 		case PROC_DEPENDENCY :
-					dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
-					break;
+			dep_list = sql_trans_get_dependencies(m->session->tr, id, FUNC_DEPENDENCY, ignore_ids);
+			break;
 		default: 
-					dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
+			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
 	
 	if ( list_length(dep_list) >= 2 ) {

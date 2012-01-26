@@ -147,35 +147,32 @@ static stmt *
 connect_catalog(mvc *sql, dlist *qname)
 {
 	char *server, * db, *db_alias, *user, *lang, *passwd; 
-	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
+	int *id = SA_NEW(sql->sa, int), *port = SA_NEW(sql->sa, int);
 	symbol *user_symb = NULL;
-	char *default_dbalias;
 	*id = -1;
 
 	if (qname->cnt) {
 		user_symb = qname->h->next->next->next->next->data.sym;
 		assert(qname->h->next->type == type_int);
 		*port = qname->h->next->data.i_val;
-		server = GDKstrdup(qname->h->data.sval);
-		db = GDKstrdup(qname->h->next->next->data.sval);
-		user = GDKstrdup(user_symb->data.lval->h->data.sval);
-		passwd = GDKstrdup(user_symb->data.lval->h->next->data.sval);
+		server = sa_strdup(sql->sa, qname->h->data.sval);
+		db = sa_strdup(sql->sa, qname->h->next->next->data.sval);
+		user = sa_strdup(sql->sa, user_symb->data.lval->h->data.sval);
+		passwd = sa_strdup(sql->sa, user_symb->data.lval->h->next->data.sval);
 	} else {
 		return sql_error(sql, 02, "CONNECT TO: DEFAULT is not supported!");
 	}
 
 	if (!qname->cnt || qname->h->next->next->next->data.sval == NULL){
-		default_dbalias = sql_message( "%s_%s_%s", server, db, user);
-		db_alias = default_dbalias;
+		db_alias = sa_message(sql->sa, "%s_%s_%s", server, db, user);
 	} else {
-		db_alias = GDKstrdup(qname->h->next->next->next->data.sval);
+		db_alias = sa_strdup(sql->sa, qname->h->next->next->next->data.sval);
 	}
 
 	if (!qname->cnt || qname->h->next->next->next->next->next->data.sval == NULL){
-		lang = GDKstrdup("sql");
-	}
-	else {
-		lang = GDKstrdup(qname->h->next->next->next->next->next->data.sval);
+		lang = sa_strdup(sql->sa, "sql");
+	} else {
+		lang = sa_strdup(sql->sa, qname->h->next->next->next->next->next->data.sval);
 	}
 	
 	*id = mvc_connect_catalog(sql, server, *port, db, db_alias, user, passwd, lang);
@@ -189,12 +186,12 @@ connect_catalog(mvc *sql, dlist *qname)
 static stmt *
 disconnect_catalog(mvc *sql, dlist *qname)
 {
-	int *id = GDKmalloc(sizeof(int)), *port = GDKmalloc(sizeof(int));
+	int *id = SA_NEW(sql->sa, int), *port = SA_NEW(sql->sa, int);
 	char *db_alias = NULL;
 	*id = 0, *port = -1;
 	
 	if (qname->cnt != 0) {
-		db_alias = GDKstrdup(qname->h->data.sval);
+		db_alias = sa_strdup(sql->sa, qname->h->data.sval);
 	
 		*id = mvc_disconnect_catalog(sql, db_alias);
 

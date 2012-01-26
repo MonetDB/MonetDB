@@ -1011,7 +1011,6 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
 			break;
 		p = lrel;
 	}
-	list_destroy(l);
 	if (!lrel) 
 		return NULL;
 	if (p && p->op == op_select && !rel_is_ref(p)) { /* refine old select */
@@ -1322,7 +1321,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 	if (!rel)
 		return NULL;
 
-	if (rel->exps) {
+	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 		if (e)
 			return exp_alias_or_copy(sql, tname, cname, rel, e, 1);
@@ -1437,7 +1436,7 @@ rel_values( mvc *sql, symbol *tableref)
 	symbol *optname = rowlist->t->data.sym;
 	dnode *o;
 	node *m;
-	list *exps = list_new(sql->sa); 
+	list *exps = sa_list(sql->sa); 
 
 	exp_kind ek = {type_value, card_value, TRUE};
 	if (!rowlist->h)
@@ -1454,9 +1453,10 @@ rel_values( mvc *sql, symbol *tableref)
 
 			if (list_empty(exps)) {
 				for (n = values->h; n; n = n->next) {
-					sql_exp *vals = exp_values(sql->sa, list_new(sql->sa));
-					list_append(exps, vals);
+					sql_exp *vals = exp_values(sql->sa, sa_list(sql->sa));
+
 					exp_label(sql->sa, vals, ++sql->label);
+					list_append(exps, vals);
 				}
 			}
 			for (n = values->h, m = exps->h; n && m; 
@@ -1475,7 +1475,7 @@ rel_values( mvc *sql, symbol *tableref)
 		node *n;
 		sql_exp *vals = m->data;
 		list *vals_list = vals->f;
-		list *nexps = list_new(sql->sa);
+		list *nexps = sa_list(sql->sa);
 
 		/* first get super type */
 		vals->tpe = *exp_subtype(vals_list->h->data);
@@ -2673,8 +2673,8 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
 	//set_intern(e);
-	rel_project_add_exp(sql, rel, e);
 	*exp = exp_label(sql->sa, e, ++sql->label);
+	rel_project_add_exp(sql, rel, e);
 	return rel;
 }
 
@@ -2930,7 +2930,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (right) {
 			if (vals_only && !correlated) {
-				list *nvals = list_new(sql->sa);
+				list *nvals = sa_list(sql->sa);
 				sql_exp *e = NULL;
 				node *n;
 
@@ -3469,7 +3469,7 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 sql_exp *
 rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp *a4, sql_schema *s, char *fname, int card)
 {
-	list *tl = list_create(NULL);
+	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 
 	append(tl, exp_subtype(a1));
@@ -3481,7 +3481,6 @@ rel_nop_(mvc *sql, sql_exp *a1, sql_exp *a2, sql_exp *a3, sql_exp *a4, sql_schem
 	if (!s)
 		s = sql->session->schema;
 	f = sql_bind_func_(sql->sa, s, fname, tl, F_FUNC);
-	list_destroy(tl);
 	if (!f || (card == card_relation || f->res.comp_type))
 		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
 	if (!a4)
@@ -3496,7 +3495,7 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
-	list *tl = list_create(NULL);
+	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 	sql_subtype *obj_type = NULL;
 	char *fname = qname_fname(l->data.lval);
@@ -3521,7 +3520,6 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	f = sql_bind_func_(sql->sa, s, fname, tl, type);
-	list_destroy(tl);
 	if (f) {
 		return exp_op(sql->sa, exps, f);
 	} else if (((f = sql_bind_member(sql->sa, s, fname, obj_type, nr_args)) != NULL ||
@@ -4421,7 +4419,7 @@ rel_table_exp(mvc *sql, sql_rel **rel, symbol *column_e )
 		if (!r)
 			return NULL;
 		*rel = r;
-		return list_new(sql->sa); 
+		return sa_list(sql->sa); 
 	} else if (column_e->token == SQL_TABLE) {
 		char *tname = column_e->data.lval->h->data.sval;
 		list *exps;

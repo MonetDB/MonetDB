@@ -333,7 +333,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				mode = getVarConstant(mb, getArg(p,5)).val.ival;
 			}
 
-
 			if (s && f == bindidxRef && cname) {
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);

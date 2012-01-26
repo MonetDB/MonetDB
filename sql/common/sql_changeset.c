@@ -22,20 +22,10 @@
 #include "sql_catalog.h"
 
 void
-cs_init(changeset * cs, fdestroy destroy)
-{
-	cs->sa = NULL;
-	cs->destroy = destroy;
-	cs->set = NULL;
-	cs->dset = NULL;
-	cs->nelm = NULL;
-}
-
-void
-cs_new(changeset * cs, sql_allocator *sa)
+cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 {
 	cs->sa = sa;
-	cs->destroy = NULL;
+	cs->destroy = destroy;
 	cs->set = NULL;
 	cs->dset = NULL;
 	cs->nelm = NULL;
@@ -53,12 +43,8 @@ cs_destroy(changeset * cs)
 void
 cs_add(changeset * cs, void *elm, int flag)
 {
-	if (!cs->set) {
-		if (cs->sa)
-			cs->set = list_new(cs->sa);
-		else
-			cs->set = list_create(cs->destroy);
-	}
+	if (!cs->set) 
+		cs->set = list_new(cs->sa, cs->destroy);
 	list_append(cs->set, elm);
 	if (flag == TR_NEW && !cs->nelm)
 		cs->nelm = cs->set->t;
@@ -78,12 +64,8 @@ cs_del(changeset * cs, node *elm, int flag)
 			cs->nelm = elm->next;
 		list_remove_node(cs->set, elm);
 	} else {
-		if (!cs->dset) {
-			if (cs->sa)
-				cs->dset = list_new(cs->sa);
-			else
-				cs->dset = list_create(cs->destroy);
-		}
+		if (!cs->dset) 
+			cs->dset = list_new(cs->sa, cs->destroy);
 		list_move_data(cs->set, cs->dset, elm->data);
 	}
 }

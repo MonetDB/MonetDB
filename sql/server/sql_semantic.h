@@ -50,8 +50,6 @@ typedef struct exp_kind_t {
 #define sql_sel   3	
 
 
-#define create_string_list() list_create((fdestroy)&GDKfree)
-
 extern stmt *semantic(mvc *sql, symbol *sym);
 extern stmt *output_semantic(mvc *sql, symbol *s);
 
