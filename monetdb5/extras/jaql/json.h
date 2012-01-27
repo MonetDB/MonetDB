@@ -40,6 +40,7 @@ json_export str JSONprint(int *ret, stream **s, int *kind, int *string, int *int
 json_export str JSONstore(int *ret, str *nme, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name);
 json_export str JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *nme);
 json_export str JSONdrop(int *ret, str *name);
+json_export str JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, int *elems, oid *startoid);
 
 #endif
 

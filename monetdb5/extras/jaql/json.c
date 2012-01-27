@@ -724,3 +724,134 @@ JSONdrop(int *ret, str *name)
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+
+oid
+json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia, BATiter bio, BATiter bin, oid start, oid v, jsonbat *jb, jsonbat *jbr)
+{
+	oid w, x;
+	chr k;
+
+	BUNfndOID(w, bik, &v);
+	k = *(chr *)BUNtail(bik, w);
+	BUNappend(jbr->kind, &k, FALSE);
+
+	w = BUNlast(jbr->kind) - 1 + start;
+	switch (k) {
+		case 'i':
+			BUNfndOID(x, bii, &v);
+			BUNins(jbr->integer, &w, BUNtail(bii, x), FALSE);
+			break;
+		case 'd':
+			BUNfndOID(x, bid, &v);
+			BUNins(jbr->doble, &w, BUNtail(bid, x), FALSE);
+			break;
+		case 's':
+			BUNfndOID(x, bis, &v);
+			BUNins(jbr->string, &w, BUNtail(bis, x), FALSE);
+			break;
+		case 'n':
+		case 't':
+		case 'f':
+			/* nothing to do here */
+			break;
+		case 'o': {
+			BAT *elems;
+			BUN p, q;
+			BATiter bi;
+			oid y, z;
+			elems = BATmirror(BATselect(BATmirror(jb->object), &v, &v));
+			bi = bat_iterator(elems);
+			BATloop (elems, p, q) {
+				x = *(oid *)BUNtail(bi, p);
+				z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
+						start, x, jb, jbr);
+				BUNins(jbr->object, &w, &z, FALSE);
+				BUNfndOID(y, bin, &x);
+				BUNins(jbr->name, &z, BUNtail(bin, y), FALSE);
+			}
+			BBPunfix(elems->batCacheid);
+			break;
+		}
+		case 'a': {
+			BAT *elems;
+			BUN p, q;
+			BATiter bi;
+			oid z;
+			elems = BATmirror(BATselect(BATmirror(jb->array), &v, &v));
+			bi = bat_iterator(elems);
+			BATloop (elems, p, q) {
+				z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
+						start, *(oid *)BUNtail(bi, p), jb, jbr);
+				BUNins(jbr->array, &w, &z, FALSE);
+			}
+			BBPunfix(elems->batCacheid);
+			break;
+		}
+	}
+
+	return w;
+}
+
+str
+JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, int *elems, oid *startoid)
+{
+	jsonbat jb, jbr;
+	BAT *e;
+	BATiter bie, bik, bis, bii, bid, bia, bio, bin;
+	BUN p, q;
+	oid v, w, z;
+
+	loadbats();
+	bik = bat_iterator(jb.kind);
+	bis = bat_iterator(jb.string);
+	bii = bat_iterator(jb.integer);
+	bid = bat_iterator(jb.doble);
+	bia = bat_iterator(jb.array);
+	bio = bat_iterator(jb.object);
+	bin = bat_iterator(jb.name);
+	e = BBPquickdesc(ABS(*elems), FALSE);
+	if (*elems < 0)
+		e = BATmirror(e);
+	BBPfix(*elems);
+	bie = bat_iterator(e);
+
+	memset(&jbr, 0, sizeof(jsonbat));
+
+	/* initialise all bats */
+	jbr.kind = BATnew(TYPE_void, TYPE_chr, BATTINY);
+	jbr.kind = BATseqbase(jbr.kind, *startoid);
+	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
+	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
+	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+
+	/* return all elems as the outermost array */
+	BUNappend(jbr.kind, "a", FALSE);
+	w = BUNlast(jbr.kind) - 1 + *startoid;
+	BATloop(e, p, q) {
+		v = *(oid *)BUNtail(bie, p);
+		z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
+				*startoid, v, &jb, &jbr);
+		BUNins(jbr.array, &w, &z, FALSE);
+	}
+
+	unloadbats();
+
+	BBPkeepref(jbr.kind->batCacheid);
+	*rkind = jbr.kind->batCacheid;
+	BBPkeepref(jbr.string->batCacheid);
+	*rstring = jbr.string->batCacheid;
+	BBPkeepref(jbr.integer->batCacheid);
+	*rinteger = jbr.integer->batCacheid;
+	BBPkeepref(jbr.doble->batCacheid);
+	*rdoble = jbr.doble->batCacheid;
+	BBPkeepref(jbr.array->batCacheid);
+	*rarray = jbr.array->batCacheid;
+	BBPkeepref(jbr.object->batCacheid);
+	*robject = jbr.object->batCacheid;
+	BBPkeepref(jbr.name->batCacheid);
+	*rname = jbr.name->batCacheid;
+	return MAL_SUCCEED;
+}
