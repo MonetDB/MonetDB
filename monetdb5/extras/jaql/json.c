@@ -725,7 +725,7 @@ JSONdrop(int *ret, str *name)
 	return MAL_SUCCEED;
 }
 
-oid
+static oid
 json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia, BATiter bio, BATiter bin, oid start, oid v, jsonbat *jb, jsonbat *jbr)
 {
 	oid w, x;
