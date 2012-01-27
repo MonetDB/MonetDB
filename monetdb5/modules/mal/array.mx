@@ -725,7 +725,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@1 sum = 0, elm = 0;
 	/* FIXME: this code only deal with INT dimensions */
 	int os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
-	oid tid = 0, osid = 0, vid = 0;
+	oid tid = 0, osid = 0, vid = 0, mul = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -788,6 +788,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATloop (bOffsets[0], r, s) {
 			osid = *(oid*)BUNhead(bOffsetsI[0], r);
 			vid = 0; /* index into bVal for the value of a qualified tile member */
+			mul = 1;
 			err = 0;
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
@@ -798,7 +799,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* TODO: we can skip more.  If the j-th value bOffsets[i]
 			 * disqualifies the index on dimension d_i, we can jump to the next
 			 * of bOffsets[i] which value follows the j-th value */
-			for (i = 0; i < ndims; i++) {
+			for (i = ndims - 1; i >= 0; i--) {
 				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
 				if (tmpbun == oid_nil) {
 					AGGR_CLEANUP();
@@ -807,12 +808,12 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
 				cidx = apidx[i] + os;
 				if (dMin[i] <= cidx && cidx <= dMax[i]) {
-					/* vid = sum_{i=0}^{(n-1)} (cidx_i * size[i]) + cidx_n */
-					vid += ((i < (ndims -1)) ? cidx * dSize[i] : cidx);
+					vid += mul * cidx;
 				} else {
 					err = 1;
 					break; /* skip remaining dimensions */
 				}
+				mul *= dSize[i];
 			}
 			if (!err) {
 				BUNfndOID(tmpbun, bValI, &vid);
@@ -848,7 +849,7 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@1 sum = 0, elm = 0;
 	/* FIXME: this code only deal with INT dimensions */
 	int cnt = 0, os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
-	oid tid = 0, osid = 0, vid = 0;
+	oid tid = 0, osid = 0, vid = 0, mul = 0;
 	dbl avg = 0.0;
 
 	(void) cntxt;
@@ -912,6 +913,7 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BATloop (bOffsets[0], r, s) {
 			osid = *(oid*)BUNhead(bOffsetsI[0], r);
 			vid = 0; /* index into bVal for the value of a qualified tile member */
+			mul = 1;
 			err = 0;
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
@@ -922,7 +924,7 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* TODO: we can skip more.  If the j-th value bOffsets[i]
 			 * disqualifies the index on dimension d_i, we can jump to the next
 			 * of bOffsets[i] which value follows the j-th value */
-			for (i = 0; i < ndims; i++) {
+			for (i = ndims - 1; i >= 0; i--) {
 				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
 				if (tmpbun == oid_nil) {
 					AGGR_CLEANUP();
@@ -931,12 +933,12 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
 				cidx = apidx[i] + os;
 				if (dMin[i] <= cidx && cidx <= dMax[i]) {
-					/* vid = sum_{i=0}^{(n-1)} (cidx_i * size[i]) + cidx_n */
-					vid += ((i < (ndims -1)) ? cidx * dSize[i] : cidx);
+					vid += mul * cidx;
 				} else {
 					err = 1;
 					break; /* skip remaining dimensions */
 				}
+				mul *= dSize[i];
 			}
 			if (!err) {
 				BUNfndOID(tmpbun, bValI, &vid);
@@ -951,7 +953,7 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		}
-		avg = sum * 1.0 / cnt;
+		avg = (dbl)sum / (dbl)cnt;
 		BUNins(bRes, &tid, &avg, TRUE);
 	}
 	AGGR_CLEANUP();
