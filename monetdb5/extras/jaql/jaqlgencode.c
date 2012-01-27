@@ -176,42 +176,8 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 			|| t->tval3->type == j_str || t->tval3->type == j_bool);
 
 	if (t->tval1->type == j_operation) {
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, batRef);
-		setFunctionId(q, reverseRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, elems);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		b = dumpvariabletransformation(mb, t->tval1, a,
+		a = dumpvariabletransformation(mb, t->tval1, elems,
 				j1, j2, j3, j4, j5, j6, j7);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, markHRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, a);
-		q = pushOid(mb, q, 0);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, markTRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, b);
-		q = pushOid(mb, q, 0);
-		b = getArg(q, 0);
-		pushInstruction(mb, q);
-		/* because transformations must leave the original count in
-		 * tact, all elems from b originate straight from a, be it that
-		 * they may be null now */
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, joinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, b);
-		q = pushArgument(mb, q, a);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
 	} else {
 		a = dumprefvar(mb, t->tval1, elems, *j1, *j6, *j7);
 	}
@@ -232,42 +198,8 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 			c = -1;
 			break;
 		case j_operation:
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, batRef);
-			setFunctionId(q, reverseRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, elems);
-			b = getArg(q, 0);
-			pushInstruction(mb, q);
-			c = dumpvariabletransformation(mb, t->tval1, b,
+			b = dumpvariabletransformation(mb, t->tval3, elems,
 					j1, j2, j3, j4, j5, j6, j7);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, markHRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, b);
-			q = pushOid(mb, q, 0);
-			b = getArg(q, 0);
-			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, markTRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, c);
-			q = pushOid(mb, q, 0);
-			c = getArg(q, 0);
-			pushInstruction(mb, q);
-			/* because transformations must leave the original count in
-			 * tact, all elems from c originate straight from b, be it that
-			 * they may be null now */
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, joinRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, c);
-			q = pushArgument(mb, q, b);
-			b = getArg(q, 0);
-			pushInstruction(mb, q);
 			c = -1;
 			break;
 		case j_num:
@@ -834,8 +766,9 @@ dumpnextid(MalBlkPtr mb, int j1)
 	return a;
 }
 
-/* returns a BAT which is the subset of j1 that refers to the values
+/* returns a BAT which contains the ids of j1 that refer to the values
  * returned from the variable and its optional calculation applied to it
+ * the tail is the element id from the head of elems
  * the j{1..7} variables are updated to point to the updated BATs as
  * insertions of new values (the serialised versions of the variable) */
 static int
@@ -851,14 +784,23 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 		case j_str:
 		case j_num:
 		case j_dbl:
-			/* shortcut, simple action */
+			/* fill up elems size of this constant */
 			a = dumpnextid(mb, *j1);
+
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markHRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, elems);
+			q = pushArgument(mb, q, a);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
 
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, elems);
+			q = pushArgument(mb, q, c);
 			if (t->type == j_num) {
 				q = pushLng(mb, q, t->nval);
 			} else if (t->type == j_dbl) {
@@ -872,7 +814,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			setModuleId(q, algebraRef);
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, elems);
+			q = pushArgument(mb, q, c);
 			if (t->type == j_num) {
 				q = pushChr(mb, q, 'i');
 				d = *j3;
@@ -883,15 +825,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				q = pushChr(mb, q, 's');
 				d = *j2;
 			}
-			c = getArg(q, 0);
-			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("markH", 5));
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, b);
-			q = pushArgument(mb, q, a);
-			b = getArg(q, 0);
+			e = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
@@ -909,50 +843,134 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("markH", 5));
+			setFunctionId(q, putName("kunion", 6));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, e);
+			*j1 = getArg(q, 0);
+			pushInstruction(mb, q);
+
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markTRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, elems);
+			q = pushArgument(mb, q, a);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+
+			return b;
+		case j_var:
+			b = dumprefvar(mb, t, elems, *j1, *j6, *j7);
+
+			/* add back missing vars as null */
+			a = dumpnextid(mb, *j1);
+
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, mirrorRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, elems);
+			e = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("kdifference", 11));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, e);
+			q = pushArgument(mb, q, d);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, projectRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			q = pushChr(mb, q, 'n');
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markHRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, c);
 			q = pushArgument(mb, q, a);
-			c = getArg(q, 0);
+			d = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, putName("kunion", 6));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, *j1);
-			q = pushArgument(mb, q, c);
+			q = pushArgument(mb, q, d);
 			*j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
-			return c;
-		case j_var:
+			/* create return mapping between original elem and newly
+			 * created ids */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markTRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			q = pushArgument(mb, q, a);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
 			setFunctionId(q, reverseRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, elems);
-			c = getArg(q, 0);
+			q = pushArgument(mb, q, d);
+			d = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
-			setFunctionId(q, semijoinRef);
+			setFunctionId(q, putName("kunion", 6));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
-			q = pushArgument(mb, q, c);
-			c = getArg(q, 0);
-			pushInstruction(mb, q);
-			b = dumprefvar(mb, t, c, *j1, *j6, *j7);
-
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, semijoinRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
 			q = pushArgument(mb, q, b);
-			c = getArg(q, 0);
+			q = pushArgument(mb, q, d);
+			b = getArg(q, 0);
 			pushInstruction(mb, q);
 
-			return c;
+			/* return in original elem order */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, leftjoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, e);
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+
+			return b;
 		case j_operation: {
 			int r, s;
 			int u, v;
@@ -1130,14 +1148,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				v = getArg(q, 0);
 				pushInstruction(mb, q);
 			} else {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, semijoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, d);
-				q = pushArgument(mb, q, r);
-				s = getArg(q, 0);
-				pushInstruction(mb, q);
+				s = d;
 				v = f;
 			}
 
@@ -1501,22 +1512,55 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, h);
-			a = getArg(q, 0);
-			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, sortRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, a);
-			a = getArg(q, 0);
+			c = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, putName("kunion", 6));
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, *j1);
-			q = pushArgument(mb, q, a);
+			q = pushArgument(mb, q, c);
 			*j1 = getArg(q, 0);
+			pushInstruction(mb, q);
+
+			/* prepare return, new ids (head) with elem ids (tail) in
+			 * original elems order */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markHRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			q = pushArgument(mb, q, a);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, mirrorRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, leftjoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			q = pushArgument(mb, q, c);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			return a;
@@ -1530,13 +1574,56 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				int *lv[] = {j2, j3, j4, j5, j6, NULL};
 				int **lp = lv;
 
+				/* jaql tool seems not to be able to return null in pairs,
+				 * instead it shows empty pairs instead of null, but it
+				 * however does for arrays, so we filter them out here if
+				 * they weren't a real null (jaql tool crashes on that) */
+				a = dumprefvar(mb, t->tval1, elems, *j1, *j6, *j7);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, b);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kintersect", 10));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushArgument(mb, q, a);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+
 				a = dumpnextid(mb, *j1);
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, b);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
 				setFunctionId(q, markHRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, b);
+				q = pushArgument(mb, q, c);
 				q = pushArgument(mb, q, a);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -1592,9 +1679,17 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 					pushInstruction(mb, q);
 				}
 
-				b = c;
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, markHRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, b);
+				q = pushArgument(mb, q, a);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
 			}
 
+			/* add pair names */
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, projectRef);
@@ -1644,6 +1739,23 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			*j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
+			/* prepare return set with aligned elements */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, markTRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, elems);
+			q = pushArgument(mb, q, f);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, d);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
+
 			c = -1;
 			t = t->tval1;
 			while (t != NULL) {
@@ -1658,10 +1770,10 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, markHRef);
+				setFunctionId(q, joinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, d);
 				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, f);
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
 				if (c == -1) {
@@ -1687,13 +1799,13 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				setFunctionId(q, copyRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, g == 2 ? *j6 : *j5);
-				d = getArg(q, 0);
+				a = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, d);
+				q = pushArgument(mb, q, a);
 				q = pushArgument(mb, q, c);
 				if (g == 2) {
 					*j6 = getArg(q, 0);
@@ -1703,7 +1815,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				pushInstruction(mb, q);
 			}
 
-			return a;
+			return d;
 		default:
 			assert(0);
 	}
@@ -1867,46 +1979,36 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				break;
 			case j_transform:
 				a = dumpwalkvar(mb, j1, j5);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, reverseRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
-				g = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, semijoinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, g);
-				q = pushArgument(mb, q, a);
-				g = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, reverseRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, g);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
 				b = dumpvariabletransformation(mb, t->tval2, a,
 						&j1, &j2, &j3, &j4, &j5, &j6, &j7);
+
+				/* remove old array entries */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, projectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				q = pushOid(mb, q, 0);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, g);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, g);
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("markT", 5));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
-				q = pushOid(mb, q, 0);
-				c = getArg(q, 0);
-				pushInstruction(mb, q);
+
+				/* construct new array members, respecting the old
+				 * element ids order */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
@@ -1916,26 +2018,20 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("markH", 5));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, d);
-				q = pushOid(mb, q, 0);
-				d = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
 				setFunctionId(q, joinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, c);
+				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, d);
-				c = getArg(q, 0);
+				e = getArg(q, 0);
 				pushInstruction(mb, q);
+
+				/* and insert them (j5 is result of sdiff above) */
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
 				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, c);
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
