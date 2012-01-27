@@ -5963,6 +5963,8 @@ void mdbShowBreakpoints(Client cntxt);
 void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 str mdbTrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 str mdbTrapClient(Client cntxt, MalBlkPtr mb1, MalStkPtr stk1, InstrPtr pc1);
+int memoryclaims;
+lng memorypool;
 aggrFun minAggr;
 str minRef;
 str min_no_nilRef;

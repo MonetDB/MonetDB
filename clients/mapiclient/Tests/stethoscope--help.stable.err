@@ -17,7 +17,7 @@ stethoscope [options] +[trace options] {<mod>.<fcn>}
   -p | --port=<portnr>
   -h | --host=<hostname>
 
-The trace options:
+The trace options (default 'ISTest'):
   S = monitor start of instruction profiling
   a = aggregate clock ticks per instruction
   e = event counter
@@ -36,6 +36,7 @@ The trace options:
   p = process statistics, e.g. page faults, context switches
   u = user id
   D = Generate dot file upon query start
+  F = dataflow memory claims (in MB)
 
 # 19:24:05 >  
 # 19:24:05 >  "Done."
