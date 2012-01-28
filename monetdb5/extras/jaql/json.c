@@ -520,11 +520,13 @@ str
 JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
 {
 	jsonbat jb;
-	oid first = 0;
+	BATiter bi;
 
 	loadbats();
 
-	print_json_value(&jb, *s, first);
+	bi = bat_iterator(jb.kind);
+
+	print_json_value(&jb, *s, *(oid *)BUNhead(bi, BUNfirst(jb.kind)));
 	mnstr_printf(*s, "\n");
 
 	unloadbats();
