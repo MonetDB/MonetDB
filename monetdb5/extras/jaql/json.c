@@ -838,6 +838,7 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	}
 
 	unloadbats();
+	BBPunfix(*elems);
 
 	BBPkeepref(jbr.kind->batCacheid);
 	*rkind = jbr.kind->batCacheid;
