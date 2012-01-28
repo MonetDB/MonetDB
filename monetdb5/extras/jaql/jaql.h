@@ -56,6 +56,7 @@ typedef struct _jc {
 } jc;
 
 enum treetype {
+	j_invalid,
 	j_output_var,
 	j_output,
 	j_json,
@@ -84,6 +85,7 @@ enum treetype {
 };
 
 enum comptype {
+	j_cinvalid,
 	j_equals,
 	j_nequal,
 	j_greater,
@@ -142,6 +144,7 @@ tree *make_double(double d);
 tree *make_string(char *s);
 tree *make_bool(char b);
 void printtree (tree *t, int level, char op);
+void freetree(tree *t);
 
 
 jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

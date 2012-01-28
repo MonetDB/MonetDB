@@ -326,15 +326,29 @@ _check_exp_equals_only(tree *t)
 	if (t == NULL)
 		return NULL;
 
-	if (t->type == j_pred && t->tval2->type == j_comp && (
-				t->tval2->cval != j_and &&
-				t->tval2->cval != j_or &&
-				t->tval2->cval != j_equals))
-	{
-		res = GDKzalloc(sizeof(tree));
-		res->type = j_error;
-		res->sval = GDKstrdup("join: only equality tests are allowed");
-		return res;
+	if (t->type == j_pred && t->tval2->type == j_comp) {
+		if (t->tval2->cval != j_and && t->tval2->cval != j_equals) {
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_error;
+			res->sval = GDKstrdup("join: only (conjunctions of) equality "
+					"tests are allowed");
+			return res;
+		}
+		if (t->tval2->cval == j_equals) {
+			if (t->tval1->type != j_var || t->tval3->type != j_var) {
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("join: equality tests must be between "
+						"two variables");
+				return res;
+			}
+			if (strcmp(t->tval1->sval, t->tval3->sval) == 0) {
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("join: self-joins not allowed");
+				return res;
+			}
+		}
 	}
 
 	if ((res = _check_exp_equals_only(t->tval1)) != NULL)
@@ -345,6 +359,30 @@ _check_exp_equals_only(tree *t)
 		return res;
 
 	return NULL;
+}
+
+static tree *
+_extract_equals(tree *t)
+{
+	tree *p, *q;
+
+	assert(t->type == j_pred);
+	assert(t->tval2->type == j_comp);
+
+	if (t->tval2->cval == j_equals)
+		return t;
+
+	assert(t->tval2->cval == j_and);
+
+	p = q = _extract_equals(t->tval1);
+	while (p->next != NULL)
+		p = p->next;
+	p->next = _extract_equals(t->tval3);
+
+	t->tval1 = t->tval3 = t->next = NULL;
+	freetree(t);
+
+	return q;
 }
 
 /* create a join operation over 2 or more inputs, applying predicates,
@@ -383,8 +421,39 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 	if ((res = _check_exp_var("join", vars, tmpl)) != NULL)
 		return res;
 
+	/* JAQL defines that only conjunctions of equality expressions may
+	 * be used (and + ==), where self-joins are disallowed */
 	if ((res = _check_exp_equals_only(pred)) != NULL)
 		return res;
+
+	/* JAQL defines that each of the inputs must be linked through a
+	 * join path, collect all equality tests and put them in a simple
+	 * list */
+	pred = _extract_equals(pred);
+	for (i = 0; vars[i] != NULL; i++) {
+		for (res = pred; res != NULL; res = res->next) {
+			if (strcmp(vars[i], res->tval1->sval) == 0 ||
+					strcmp(vars[i], res->tval3->sval) == 0)
+			{
+				vars[i] = "";
+				break;
+			}
+		}
+		if (vars[i][0] != '\0') {
+			char buf[128];
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_error;
+			snprintf(buf, sizeof(buf), "join: input not referenced "
+					"in where: %s", vars[i]);
+			res->sval = GDKstrdup(buf);
+			freetree(inputs);
+			freetree(pred);
+			freetree(tmpl);
+			return res;
+		}
+	}
+
+	/* FIXME: we skip the graph/path check for now */
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_join;
@@ -1035,6 +1104,9 @@ printtree(tree *t, int level, char op)
 					case j_divide:
 						printf("/ ");
 						break;
+					case j_cinvalid:
+						printf("<<invalid compare node>>");
+						break;
 				}
 				break;
 			case j_join_input:
@@ -1064,12 +1136,16 @@ printtree(tree *t, int level, char op)
 					printf(", ");
 					printtree(t->tval3, level + step, op);
 					printf(") ");
+					if (t->next != NULL)
+						printf("&& ");
 				} else {
 					printf("( ");
 					printtree(t->tval1, level + step, op);
 					printtree(t->tval2, level + step, op);
 					printtree(t->tval3, level + step, op);
 					printf(") ");
+					if (t->next != NULL)
+						printf("and ");
 				}
 				break;
 			case j_operation:
@@ -1139,6 +1215,9 @@ printtree(tree *t, int level, char op)
 				} else {
 					printf("!%s\n", t->sval);
 				}
+				break;
+			case j_invalid:
+				printf("<<invalid tree node>>");
 				break;
 		}
 		if (t != NULL)
