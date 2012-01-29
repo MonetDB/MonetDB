@@ -171,19 +171,19 @@ str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 		}
 
 		em->table.format[j].c[0] = BATcopy(b,b->htype, b->ttype,FALSE);;
-		em->table.format[j].ci[0] = bat_iterator(b);
+		em->table.format[j].ci[0] = bat_iterator(em->table.format[j].c[0]);
 		em->table.format[j].name = GDKstrdup(baskets[idx].cols[i]);
 		em->table.format[j].sep = GDKstrdup(",");
 		em->table.format[j].seplen = (int)strlen(em->table.format[j].sep);
-		em->table.format[j].type = ATOMname(b->ttype);
-		em->table.format[j].adt = (b)->ttype;
+		em->table.format[j].type = GDKstrdup(ATOMname(em->table.format[j].c[0]->ttype));
+		em->table.format[j].adt = em->table.format[j].c[0]->ttype;
 		em->table.format[j].nullstr = GDKstrdup("");
 		em->table.format[j].tostr = &TABLETadt_toStr;
 		em->table.format[j].frstr = &TABLETadt_frStr;
 		em->table.format[j].extra = em->table.format + j;
-		em->table.format[j].len = em->table.format[j].nillen =
-									  ATOMlen(em->table.format[j].adt, ATOMnilptr(em->table.format[j].adt));
-		em->table.format[j].data = GDKmalloc(em->table.format[j].len);
+		em->table.format[j].len = 0;
+		em->table.format[j].nillen = 0;
+		em->table.format[j].data = NULL;
 		j++;
 	}
 	GDKfree(em->table.format[j-1].sep);
