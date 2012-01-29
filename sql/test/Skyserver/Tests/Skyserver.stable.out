@@ -93,7 +93,7 @@ tables
 [ 1	]
 [ 187	]
 % skyserver.photoobjall # table_name
-% L141 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 187	]
@@ -117,7 +117,7 @@ tables
 % . # table_name
 % single_value # name
 % char # type
-% 14 # length
+% 8 # length
 [ "ALL DONE"	]
 views
 functions

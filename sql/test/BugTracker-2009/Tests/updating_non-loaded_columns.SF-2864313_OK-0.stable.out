@@ -32,7 +32,7 @@ Ready.
 [ 1024	]
 [ 1024	]
 % sys.t1 # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 1024	]

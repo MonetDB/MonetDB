@@ -29,7 +29,7 @@ Ready.
 [ 1	]
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
 % sys.dbg,	sys.dbg,	. # table_name
-% d,	L3,	f # name
+% d,	L1,	f # name
 % int,	bigint,	bigint # type
 % 2,	2,	2 # length
 [ 10,	10,	10	]

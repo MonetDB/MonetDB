@@ -81,7 +81,7 @@ Ready.
 [ 5,	3	]
 #select t1.id, (select t2.id from t2 where t1.id=t2.id) from t1;
 % .t1,	.t2 # table_name
-% id,	L6 # name
+% id,	L2 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	1	]
@@ -90,8 +90,8 @@ Ready.
 [ 4,	NULL	]
 [ 5,	NULL	]
 #select t1.id, (select t2.id from t2 where t2.id>2) from t1;
-% sys.t1,	sys.L7 # table_name
-% id,	L7 # name
+% sys.t1,	sys.L1 # table_name
+% id,	L1 # name
 % int,	int # type
 % 1,	1 # length
 [ 1,	3	]

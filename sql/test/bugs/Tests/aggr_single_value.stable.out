@@ -29,52 +29,52 @@ Ready.
 % 1 # length
 [ 1	]
 % . # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]
 % . # table_name
-% L4 # name
+% L1 # name
 % double # type
 % 24 # length
 [ 1	]
 % . # table_name
-% L7 # name
+% L1 # name
 % double # type
 % 24 # length
 [ NULL	]
 % . # table_name
-% L12 # name
+% L1 # name
 % bigint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L13 # name
+% L1 # name
 % bigint # type
 % 20 # length
 [ NULL	]
 % . # table_name
-% L14 # name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L15 # name
+% L1 # name
 % int # type
 % 11 # length
 [ NULL	]
 % . # table_name
-% L16 # name
+% L1 # name
 % tinyint # type
 % 1 # length
 [ 1	]
 % . # table_name
-% L17 # name
+% L1 # name
 % int # type
 % 11 # length
 [ NULL	]

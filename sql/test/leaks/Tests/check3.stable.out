@@ -184,8 +184,8 @@ Ready.
 % 9,	3 # length
 [ "transient",	189	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
-% .L3,	.bbp # table_name
-% L3,	L4 # name
+% .L1,	.bbp # table_name
+% L1,	L2 # name
 % char,	wrd # type
 % 10,	3 # length
 [ "persistent",	149	]

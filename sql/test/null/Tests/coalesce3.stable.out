@@ -44,7 +44,7 @@ Ready.
 #ORDER BY id
 #;
 % .x,	.y # table_name
-% id,	L6 # name
+% id,	L2 # name
 % int,	int # type
 % 2,	1 # length
 [ 1,	1	]

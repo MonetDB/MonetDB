@@ -611,7 +611,7 @@ sqlstmt:
 			}
 
  | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;
-		  	  m->emode = m_explain;
+		  	  m->emod |= mod_explain;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
@@ -626,7 +626,7 @@ sqlstmt:
 			}
 
  | SQL_DOT 		{ mvc *m = (mvc*)parm;
-		  	  m->emode = m_dot;
+		  	  m->emod |= mod_dot;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
@@ -670,22 +670,16 @@ sqlstmt:
 
 
 create:
-    CREATE 		{ mvc *m = (mvc*)parm;
-			  if (m->emode == m_normal)
-		  	  	m->emode = m_inplace; }
+    CREATE 		
+
 drop:
-    DROP 		{ mvc *m = (mvc*)parm;
-			  if (m->emode == m_normal)
-		  	  	m->emode = m_inplace; }
+    DROP 		
+
 set:
-    SET 		{ mvc *m = (mvc*)parm;
-			  if (m->emode == m_normal)
-		  	  	m->emode = m_inplace; }
+    SET 		
 
 declare:
-    DECLARE 		{ mvc *m = (mvc*)parm;
-			  if (m->emode == m_normal)
-		  	  	m->emode = m_inplace; }
+    DECLARE 		
 
 	/* schema definition language */
 sql:

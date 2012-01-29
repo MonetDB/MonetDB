@@ -25,7 +25,7 @@ Ready.
 % 1 # length
 [ 0	]
 % sys.slow_count # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 131072	]

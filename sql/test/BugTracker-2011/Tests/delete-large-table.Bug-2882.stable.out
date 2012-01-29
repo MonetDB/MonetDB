@@ -49,7 +49,7 @@ Ready.
 [ 1	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
@@ -57,7 +57,7 @@ Ready.
 [ 1	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
@@ -65,7 +65,7 @@ Ready.
 [ 2	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L4 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 4	]
@@ -73,7 +73,7 @@ Ready.
 [ 4	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L5 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 8	]
@@ -81,7 +81,7 @@ Ready.
 [ 8	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L6 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 16	]
@@ -89,7 +89,7 @@ Ready.
 [ 16	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L7 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 32	]
@@ -97,7 +97,7 @@ Ready.
 [ 32	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L10 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 64	]
@@ -105,7 +105,7 @@ Ready.
 [ 64	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L11 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 128	]
@@ -113,7 +113,7 @@ Ready.
 [ 128	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L12 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 256	]
@@ -121,7 +121,7 @@ Ready.
 [ 256	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L13 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 512	]
@@ -129,7 +129,7 @@ Ready.
 [ 512	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L14 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 1024	]
@@ -137,7 +137,7 @@ Ready.
 [ 1024	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L15 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 2048	]
@@ -145,7 +145,7 @@ Ready.
 [ 2048	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L16 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 4096	]
@@ -153,7 +153,7 @@ Ready.
 [ 4096	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L17 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 8192	]
@@ -161,7 +161,7 @@ Ready.
 [ 8192	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L20 # name
+% L1 # name
 % wrd # type
 % 5 # length
 [ 16384	]
@@ -169,7 +169,7 @@ Ready.
 [ 16384	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L21 # name
+% L1 # name
 % wrd # type
 % 5 # length
 [ 32768	]
@@ -177,7 +177,7 @@ Ready.
 [ 32768	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L22 # name
+% L1 # name
 % wrd # type
 % 5 # length
 [ 65536	]
@@ -185,7 +185,7 @@ Ready.
 [ 65536	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L23 # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 131072	]
@@ -193,7 +193,7 @@ Ready.
 [ 131072	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L24 # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 262144	]
@@ -201,7 +201,7 @@ Ready.
 [ 262144	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L25 # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 524288	]
@@ -209,7 +209,7 @@ Ready.
 [ 524288	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L26 # name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 1048576	]
@@ -217,7 +217,7 @@ Ready.
 [ 1048576	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L27 # name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 2097152	]
@@ -225,7 +225,7 @@ Ready.
 [ 2097152	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L30 # name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 4194304	]
@@ -233,7 +233,7 @@ Ready.
 [ 4194304	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L31 # name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 8388608	]
@@ -241,7 +241,7 @@ Ready.
 [ 8388608	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L32 # name
+% L1 # name
 % wrd # type
 % 8 # length
 [ 16777216	]
@@ -249,7 +249,7 @@ Ready.
 [ 16777216	]
 #select count(*) from bigtable2882;
 % sys.bigtable2882 # table_name
-% L33 # name
+% L1 # name
 % wrd # type
 % 8 # length
 [ 33554432	]
@@ -258,7 +258,7 @@ Ready.
 [ 20000000	]
 #select count(*) from test2882;
 % sys.test2882 # table_name
-% L35 # name
+% L1 # name
 % wrd # type
 % 8 # length
 [ 20000000	]
@@ -287,7 +287,7 @@ Ready.
 [ 1	]
 #select count(*) from test2882;
 % sys.test2882 # table_name
-% L41 # name
+% L1 # name
 % wrd # type
 % 8 # length
 [ 19999998	]

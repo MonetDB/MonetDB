@@ -32,7 +32,7 @@ Ready.
 [ 10,	"1234567890",	"1234567890"	]
 [ 5,	"12345 ",	"12345"	]
 % sys.t850 # table_name
-% L6 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]

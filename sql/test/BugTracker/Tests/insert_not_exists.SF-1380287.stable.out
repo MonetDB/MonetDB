@@ -79,7 +79,7 @@ Ready.
 [ 1	]
 [ 1	]
 % sys.kwtemp # table_name
-% L5 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
@@ -95,7 +95,7 @@ Ready.
 % 31 # length
 [ "dropping kwTemp"	]
 % sys.kwmtemp # table_name
-% L10 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 20	]
@@ -110,13 +110,18 @@ Ready.
 % char # type
 % 27 # length
 [ "dropping kwmTemp"	]
-% .L13,	sys.s4_keywords # table_name
-% L13,	L14 # name
+#DROP TABLE kwmTemp;
+#COMMIT;
+#START TRANSACTION;
+#SELECT 'expect 20', COUNT(*) FROM s4_keywords;
+% .L1,	sys.s4_keywords # table_name
+% L1,	L2 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]
-% .L15,	sys.s4_kwm # table_name
-% L15,	L16 # name
+#SELECT 'expect 20', COUNT(*) FROM s4_kwm;
+% .L1,	sys.s4_kwm # table_name
+% L1,	L2 # name
 % char,	wrd # type
 % 9,	2 # length
 [ "expect 20",	20	]

@@ -39,42 +39,42 @@ Ready.
 % 1 # length
 [ 1	]
 % sys.i1 # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 10	]
 % sys.i2 # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 100	]
 % sys.i3 # table_name
-% L4 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 1000	]
 % sys.i4 # table_name
-% L5 # name
+% L1 # name
 % wrd # type
 % 5 # length
 [ 10000	]
 % sys.i5 # table_name
-% L6 # name
+% L1 # name
 % wrd # type
 % 6 # length
 [ 100000	]
 % sys.i6 # table_name
-% L7 # name
+% L1 # name
 % wrd # type
 % 7 # length
 [ 1000000	]
 % sys.i7 # table_name
-% L10 # name
+% L1 # name
 % wrd # type
 % 8 # length
 [ 10000000	]
 % sys.i8 # table_name
-% L11 # name
+% L1 # name
 % wrd # type
 % 9 # length
 [ 100000000	]

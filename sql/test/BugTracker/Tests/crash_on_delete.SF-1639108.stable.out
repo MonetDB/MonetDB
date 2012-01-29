@@ -44,7 +44,7 @@ Ready.
 [ "the following query causes the server to crash printing \"sql_optimize.mx:1011: set2pivot: Assertion `n' failed.\""	]
 [ 96	]
 % sys.number # table_name
-% L7 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 31	]

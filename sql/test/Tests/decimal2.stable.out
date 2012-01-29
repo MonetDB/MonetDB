@@ -65,7 +65,7 @@ Ready.
 % . # table_name
 % single_value # name
 % decimal # type
-% 3 # length
+% 2 # length
 [ 0	]
 
 # 20:26:51 >  

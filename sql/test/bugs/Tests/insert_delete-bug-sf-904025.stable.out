@@ -31,7 +31,7 @@ Ready.
 [ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]
@@ -39,7 +39,7 @@ Ready.
 [ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 27	]
@@ -47,7 +47,7 @@ Ready.
 [ 27	]
 #select count(*) from tmp;
 % sys.tmp # table_name
-% L4 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]

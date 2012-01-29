@@ -35,12 +35,12 @@ Ready.
 [ 1	]
 [ 1	]
 % sys.x # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 10	]
 % .x # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 10	]

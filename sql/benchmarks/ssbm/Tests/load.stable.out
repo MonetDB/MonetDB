@@ -43,25 +43,25 @@ Ready.
 [ 2556	]
 #select count(*) from SUPPLIER;
 % sys.supplier # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 100	]
 #select count(*) from CUSTOMER;
 % sys.customer # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 3 # length
 [ 300	]
 #select count(*) from PART;
 % sys.part # table_name
-% L4 # name
+% L1 # name
 % wrd # type
 % 4 # length
 [ 2000	]
 #select count(*) from LINEORDER;
 % sys.lineorder # table_name
-% L5 # name
+% L1 # name
 % wrd # type
 % 5 # length
 [ 60175	]

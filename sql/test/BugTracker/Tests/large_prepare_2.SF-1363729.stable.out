@@ -146,7 +146,7 @@ Ready.
 #);
 [ 1	]
 % sys.mytable # table_name
-% L47 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
