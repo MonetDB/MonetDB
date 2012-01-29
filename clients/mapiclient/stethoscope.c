@@ -328,11 +328,7 @@ main(int argc, char **argv)
  	char *language = NULL;
 
 	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
-	int pagewidth = -1;  /* -1: take whatever is necessary, >0: limit */
-	int pagewidthset = 0;    /* whether the user set the width explicitly */
 	struct stat statb;
-	int save_history;
-	char *output;
 
 	char **alts, **oalts;
 	wthread *walk;
@@ -392,18 +388,14 @@ main(int argc, char **argv)
 			 * for now, needs a better solution */
 			if (strcmp(buf, "user") == 0) {
 				user = strdup(q);	/* leak */
-				q = NULL;
 			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
 				password = strdup(q);	/* leak */
-				q = NULL;
 			} else if (strcmp(buf, "language") == 0) {
 				language = strdup(q);	/* leak */
 				if (strcmp(language, "sql") == 0) {
 					mode = SQL;
-					q = NULL;
 				} else if (strcmp(language, "mal") == 0) {
 					mode = MAL;
-					q = NULL;
 				} else {
 					/* make sure we don't set garbage */
 					fprintf(stderr,
@@ -413,37 +405,12 @@ main(int argc, char **argv)
 						  line, q);
 					free(language);
 					language = NULL;
-					q = NULL;
 				}
-			} else if (strcmp(buf, "save_history") == 0) {
-				if (strcmp(q, "true") == 0 ||
-				    strcmp(q, "on") == 0)
-				{
-					save_history = 1;
-					q = NULL;
-				} else if (strcmp(q, "false") == 0 ||
-					   strcmp(q, "off") == 0)
-				{
-					save_history = 0;
-					q = NULL;
-				}
-			} else if (strcmp(buf, "format") == 0) {
-				output = strdup(q);
-			} else if (strcmp(buf, "width") == 0) {
-				pagewidth = atoi(q);
-				pagewidthset = pagewidth != 0;
 			}
-			if (q != NULL)
-				fprintf(stderr,
-					  "%s:%d: unknown property: %s\n",
-					  mnstr_name(config), line, buf);
 		}
 		mnstr_destroy(config);
 	}
 
-	/* fake use */
-	(void) pagewidth;
-	(void) pagewidthset;
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",
