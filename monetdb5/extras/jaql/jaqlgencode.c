@@ -916,7 +916,6 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		join_result *jrv;
 		for (jrv = jrw->next; jrv != NULL; jrv = jrv->next) {
 			if (jrw->headvar == jrv->headvar) {
-			} else if (jrw->headvar == jrv->headvar) {
 				/* head-on-head */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
@@ -3124,14 +3123,16 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				/* then transform the output with a modified into clause */
 				changetmplrefsjoin(t->tval3);
 
+				/* transform this node into a transform one, and force
+				 * re-iteration so we simulate a pipe */
 				t->type = j_transform;
 				freetree(t->tval1);
 				freetree(t->tval2);
-				t->tval2 = t->tval3;
-				t->tval3 = NULL;
 				t->tval1 = GDKzalloc(sizeof(tree));
 				t->tval1->type = j_var;
 				t->tval1->sval = GDKstrdup("$");
+				t->tval2 = t->tval3;
+				t->tval3 = NULL;
 
 				continue;
 			}
