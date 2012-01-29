@@ -441,6 +441,9 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
+	/* fake use */
+	(void) pagewidth;
+	(void) pagewidthset;
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",
