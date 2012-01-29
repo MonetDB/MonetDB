@@ -29,3 +29,10 @@ elem3 := bat.insert(elem3, 0@0, 3@0);
 
 (k1,k2,k3,k4,k5,k6,k7) := json.extract(j1,j2,j3,j4,j5,j6,j7,elem3,0@0);
 json.print(s, k1,k2,k3,k4,k5,k6,k7);
+
+elem4 := bat.new(:oid, :oid);
+elem4 := bat.insert(elem4, 0@0, 1@0);
+elem4 := bat.insert(elem4, 0@0, nil:oid);
+
+(k1,k2,k3,k4,k5,k6,k7) := json.extract(j1,j2,j3,j4,j5,j6,j7,elem4,0@0);
+json.print(s, k1,k2,k3,k4,k5,k6,k7);

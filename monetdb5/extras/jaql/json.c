@@ -834,8 +834,13 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	w = BUNlast(jbr.kind) - 1 + *startoid;
 	BATloop(e, p, q) {
 		v = *(oid *)BUNtail(bie, p);
-		z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
-				*startoid, v, &jb, &jbr);
+		if (v != oid_nil) {
+			z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
+					*startoid, v, &jb, &jbr);
+		} else {
+			BUNappend(jbr.kind, "n", FALSE);
+			z = BUNlast(jbr.kind) - 1 + *startoid;
+		}
 		BUNins(jbr.array, &w, &z, FALSE);
 	}
 
