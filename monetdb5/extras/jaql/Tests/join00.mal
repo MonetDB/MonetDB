@@ -3,6 +3,5 @@ jaql.x("pages = [ {\"userid\": 1, \"url\":\"code.google.com/p/jaql/\"}, {\"useri
 
 jaql.x("join users, pages where users.id == pages.userid into {users.name, pages.url};");
 jaql.x("join u in users, p in pages where u.id == p.userid into {u.name, p.url};");
-# TODO: preserve
-#jaql.x("join preserve u in users, p in pages where u.id == p.userid into {u.name, p.url};");
+jaql.x("join preserve u in users, p in pages where u.id == p.userid into {u.name, p.url};");
 
