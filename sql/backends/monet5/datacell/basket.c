@@ -567,16 +567,12 @@ BSKTbeat(int *ret, str *tbl, int *sz)
 
 /* provide a tabular view for inspection */
 str
-BSKTtable(int *ret)
+BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *grabsId, int *eventsId)
 {
-	BAT *bn = NULL, *name = NULL, *seen = NULL, *events = NULL, *grabs = NULL;
+	BAT *name = NULL, *seen = NULL, *events = NULL, *grabs = NULL;
 	BAT *threshold = NULL, *winsize = NULL, *winstride = NULL, *beat = NULL;
 	BAT *timeslice = NULL, *timestride = NULL;
 	int i;
-
-	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);
-	if ( bn == 0)
-		throw(MAL,"dictionary.baskets",MAL_MALLOC_FAIL);
 
 	name = BATnew(TYPE_oid,TYPE_str, BATTINY);
 	if ( name == 0 ) goto wrapup;
@@ -623,32 +619,18 @@ BSKTtable(int *ret)
 		BUNappend(timeslice, &baskets[i].timeslice, FALSE);
 		BUNappend(timestride, &baskets[i].timestride, FALSE);
 	}
-	BUNins(bn,"nme", & name->batCacheid, FALSE);
-	BUNins(bn,"threshold", & threshold->batCacheid, FALSE);
-	BUNins(bn,"winsize", & winsize->batCacheid, FALSE);
-	BUNins(bn,"winstride", & winstride->batCacheid, FALSE);
-	BUNins(bn,"timeslice", & winsize->batCacheid, FALSE);
-	BUNins(bn,"timestride", & winstride->batCacheid, FALSE);
-	BUNins(bn,"beat", & beat->batCacheid, FALSE);
-	BUNins(bn,"seen", & seen->batCacheid, FALSE);
-	BUNins(bn,"grabs", & grabs->batCacheid, FALSE);
-	BUNins(bn,"events", & events->batCacheid, FALSE);
-
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPkeepref(name->batCacheid);
-	BBPkeepref(threshold->batCacheid);
-	BBPkeepref(winsize->batCacheid);
-	BBPkeepref(winstride->batCacheid);
-	BBPkeepref(timeslice->batCacheid);
-	BBPkeepref(timestride->batCacheid);
-	BBPkeepref(beat->batCacheid);
-	BBPkeepref(seen->batCacheid);
-	BBPkeepref(grabs->batCacheid);
-	BBPkeepref(events->batCacheid);
+	BBPkeepref(*nameId = name->batCacheid);
+	BBPkeepref(*thresholdId = threshold->batCacheid);
+	BBPkeepref(*winsizeId = winsize->batCacheid);
+	BBPkeepref(*winstrideId =winstride->batCacheid);
+	BBPkeepref(*timesliceId = timeslice->batCacheid);
+	BBPkeepref(*timestrideId = timestride->batCacheid);
+	BBPkeepref(*beatId = beat->batCacheid);
+	BBPkeepref(*seenId = seen->batCacheid);
+	BBPkeepref(*grabsId = grabs->batCacheid);
+	BBPkeepref(*eventsId = events->batCacheid);
 	return MAL_SUCCEED;
 wrapup:
-	if ( bn) BBPreleaseref(bn->batCacheid);
 	if ( name) BBPreleaseref(name->batCacheid);
 	if ( threshold) BBPreleaseref(threshold->batCacheid);
 	if ( winsize) BBPreleaseref(winsize->batCacheid);
@@ -663,23 +645,17 @@ wrapup:
 }
 
 str
-BSKTtableerrors(int *ret)
+BSKTtableerrors(int *nameId, int *errorId)
 {
-	BAT *bn, *name, *error;
+	BAT  *name, *error;
 	BATiter bi;
 	BUN p,q;
 	int i;
-	bn = BATnew(TYPE_str,TYPE_bat, BATTINY);
-	if ( bn == 0)
-		throw(SQL,"baskets.errors", MAL_MALLOC_FAIL);
 	name = BATnew(TYPE_void, TYPE_str, BATTINY);
-	if ( name == 0){
-		BBPreleaseref(bn->batCacheid);
+	if ( name == 0)
 		throw(SQL,"baskets.errors", MAL_MALLOC_FAIL);
-	}
 	error = BATnew(TYPE_void, TYPE_str, BATTINY);
 	if ( error == 0) {
-		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(name->batCacheid);
 		throw(SQL,"baskets.errors", MAL_MALLOC_FAIL);
 	}
@@ -694,11 +670,7 @@ BSKTtableerrors(int *ret)
 		}
 	}
 
-	BUNins(bn,"nme", &name->batCacheid, FALSE);
-	BUNins(bn,"error", &error->batCacheid, FALSE);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPkeepref(name->batCacheid);
-	BBPkeepref(error->batCacheid);
+	BBPkeepref(*nameId = name->batCacheid);
+	BBPkeepref(*errorId = error->batCacheid);
 	return MAL_SUCCEED;
 }

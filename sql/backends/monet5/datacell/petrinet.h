@@ -51,6 +51,6 @@ datacell_export str PNsource(int *ret, str *fcn, str *tbl);
 datacell_export str PNtarget(int *ret, str *fcn, str *tbl);
 datacell_export str PNanalysis(Client cntxt, MalBlkPtr mb);
 datacell_export str PNanalyseWrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str PNtable(int *ret);
+datacell_export str PNtable(int *nameId, int *statusId, int *seenId, int *cyclesId, int *eventsId, int *timeId, int * errorId, int *defId);
 #endif
 
