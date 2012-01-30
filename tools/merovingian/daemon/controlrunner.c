@@ -118,7 +118,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 		/* stream.h is sooo broken :( */
 		memset(buf, '\0', buflen);
 		ret = mnstr_read_block(fdin, buf, buflen - 1, 1);
-		return(ret >= 0 ? (int)strlen(buf) : -(mnstr_errnr(fdin) > 0));
+		return(ret >= 0 ? (int)strlen(buf) : mnstr_errnr(fdin) < 0 ? -1 : 0);
 	} else {
 		return(recv(msgsock, buf, buflen, 0));
 	}
