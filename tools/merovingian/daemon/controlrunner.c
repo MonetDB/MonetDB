@@ -228,7 +228,7 @@ static void ctl_handle_client(
 			if (strcmp(p, "ping") == 0) {
 #define send_client(P) \
 				if (fout != NULL) { \
-					mnstr_printf(fout, P "%s\n", buf2); \
+					mnstr_printf(fout, P "%s", buf2); \
 					mnstr_flush(fout); \
 				} else { \
 					send(msgsock, buf2, len, 0); \
