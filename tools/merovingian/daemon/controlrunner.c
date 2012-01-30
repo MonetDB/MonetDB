@@ -633,11 +633,13 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
 						MERO_VERSION, MONETDB_RELEASE);
 				send_client("=");
+				break;
 			} else if (strcmp(p, "mserver") == 0) {
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s\n", _mero_mserver);
 				send_client("=");
+				break;
 			} else if (strcmp(p, "get") == 0) {
 				confkeyval *props = getDefaultProps();
 				char *pbuf;
@@ -790,6 +792,7 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2),
 						"unknown command: %s\n", p);
 				send_client("!");
+				break;
 			}
 		}
 	}
