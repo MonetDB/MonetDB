@@ -5,7 +5,7 @@
 - Fixed problem where shutdown of monetdbd would lead to shutting down
   database 'control' which does not exist.  Bug #2983.
 - Fixed issue causing (harmless) 'error reading from control channel'
-  messages.
+  messages.  Bug #2984.
 - Resolved problem where remote start/stop/etc. commands with monetdb
-  would report error 'OK'.
+  would report error 'OK'.  Bug #2984.
 
