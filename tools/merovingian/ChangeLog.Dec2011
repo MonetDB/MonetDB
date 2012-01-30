@@ -2,6 +2,8 @@
 # This file is updated with mchangelog
 
 * Mon Jan 30 2012 Fabian Groffen <fabian@cwi.nl>
+- Fixed problem where shutdown of monetdbd would lead to shutting down
+  database 'control' which does not exist.  Bug #2983.
 - Fixed issue causing (harmless) 'error reading from control channel'
   messages.
 - Resolved problem where remote start/stop/etc. commands with monetdb
