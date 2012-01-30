@@ -332,7 +332,7 @@ main(int argc, char **argv)
 
 	char **alts, **oalts;
 	wthread *walk;
-	stream * config;
+	stream * config = NULL;
 
 	static struct option long_options[8] = {
 		{ "dbname", 1, 0, 'd' },
