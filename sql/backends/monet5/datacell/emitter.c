@@ -44,6 +44,9 @@
 #include "batcalc.h"
 #include "dcsocket.h"
 #include "stream_socket.h"
+
+#define _DEBUG_EMITTER_
+
 #define EMPAUSE 1		/* connected but not reading the channel */
 #define EMLISTEN 2		/* connected and reading the channel */
 #define EMSTOP 3		/* not connected */

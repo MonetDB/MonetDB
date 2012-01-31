@@ -1468,10 +1468,14 @@ dump_line(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, BUN id)
 	return 0;
 }
 
+/* The output line is first build before being sent. It solves a problem
+   with UDP, where you may loose most of the information using short writes
+*/
 static inline int
-output_line(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, ptr id)
+output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, stream *fd, BUN nr_attrs, ptr id)
 {
-	BUN i;
+	BUN i = 0;
+	int fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
 		if (fmt[i].c[0] == NULL)
@@ -1483,35 +1487,51 @@ output_line(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, ptr id)
 	}
 	if (i == nr_attrs) {
 		for (i = 0; i < nr_attrs; i++) {
-			Column *f;
+			Column *f = fmt + i;
 			char *p;
 			int l;
 
-			f = fmt + i;
 			if (f->c[0]) {
 				p = BUNtail(f->ci[0], f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 					l = (int) strlen(f->nullstr);
-					if (mnstr_write(fd, f->nullstr, 1, l) != l)
-						return TABLET_error(fd);
+					if ( fill + l + f->seplen > *len) {
+						/* extend the buffer */
+						*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
+						*len += BUFSIZ;
+						if ( *buf == NULL)
+							return -1;
+					}
+					snprintf(*buf + fill,*len - fill -1, "%s",f->nullstr);
+					fill += l;
 				} else {
-					l = f->tostr(f->extra, buf, len, f->adt, p);
-					if (mnstr_write(fd, *buf, 1, l) != l)
-						return TABLET_error(fd);
+					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+					if ( fill + l + f->seplen > *len) {
+						/* extend the buffer */
+						*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
+						*len += BUFSIZ;
+						if ( *buf == NULL)
+							return -1;
+					}
+					strncpy(*buf + fill, *localbuf, l);
+					fill += l;
 				}
 			}
-			if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
-				return TABLET_error(fd);
+			snprintf(*buf+fill, *len - fill -1, "%s",f->sep);
+			fill += f->seplen;
 		}
 	}
+	if (mnstr_write(fd, *buf, 1, fill) != fill)
+		return TABLET_error(fd);
 	return 0;
 }
 
 static inline int
-output_line_dense(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs)
+output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
+	int fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
@@ -1521,18 +1541,34 @@ output_line_dense(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs)
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				int l = (int) strlen(f->nullstr);
-				if (mnstr_write(fd, f->nullstr, 1, l) != l)
-					return TABLET_error(fd);
+				if ( fill + l + f->seplen > *len) {
+					/* extend the buffer */
+					*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
+					*len += BUFSIZ;
+					if ( *buf == NULL)
+						return -1;
+				}
+				snprintf(*buf + fill,*len - fill -1, "%s",f->nullstr);
+				fill += l;
 			} else {
-				int l = f->tostr(f->extra, buf, len, f->adt, p);
-				if (mnstr_write(fd, *buf, 1, l) != l)
-					return TABLET_error(fd);
+				int l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				if ( fill + l + f->seplen > *len) {
+					/* extend the buffer */
+					*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
+					*len += BUFSIZ;
+					if ( *buf == NULL)
+						return -1;
+				}
+				strncpy(*buf + fill, *localbuf, l);
+				fill += l;
 			}
 			f->p++;
 		}
-		if (mnstr_write(fd, f->sep, 1, f->seplen) != f->seplen)
-			return TABLET_error(fd);
+		snprintf(*buf+fill, *len - fill -1, "%s",f->sep);
+		fill += f->seplen;
 	}
+	if (mnstr_write(fd, *buf, 1, fill) != fill) 
+		return TABLET_error(fd);
 	return 0;
 }
 
@@ -1783,8 +1819,9 @@ dump_file(Tablet *as, stream *fd)
 static int
 output_file_default(Tablet *as, BAT *order, stream *fd)
 {
-	int len = BUFSIZ, res = 0;
+	int len = BUFSIZ, locallen = BUFSIZ, res = 0;
 	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN p, q;
 	BUN i = 0;
 	BUN offset = BUNfirst(order) + as->offset;
@@ -1795,8 +1832,9 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 	for (q = offset + as->nr, p = offset; p < q; p++) {
 		ptr h = BUNhead(orderi, p);
 
-		if ((res = output_line(&buf, &len, as->format, fd, as->nr_attrs, h)) < 0) {
+		if ((res = output_line(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs, h)) < 0) {
 			GDKfree(buf);
+			GDKfree(localbuf);
 			return res;
 		}
 		i++;
@@ -1805,6 +1843,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
+	GDKfree(localbuf);
 	GDKfree(buf);
 	return res;
 }
@@ -1812,15 +1851,17 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 int
 output_file_dense(Tablet *as, stream *fd)
 {
-	int len = BUFSIZ, res = 0;
+	int len = BUFSIZ, locallen= BUFSIZ, res = 0;
 	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
 
 	if (buf == NULL)
 		return -1;
 	for (i = 0; i < as->nr; i++) {
-		if ((res = output_line_dense(&buf, &len, as->format, fd, as->nr_attrs)) < 0) {
+		if ((res = output_line_dense(&buf, &len, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
 			GDKfree(buf);
+			GDKfree(localbuf);
 			return res;
 		}
 #ifdef _DEBUG_TABLET_
@@ -1828,6 +1869,7 @@ output_file_dense(Tablet *as, stream *fd)
 			mnstr_printf(GDKout, "#dumped " BUNFMT " lines\n", i);
 #endif
 	}
+	GDKfree(localbuf);
 	GDKfree(buf);
 	return res;
 }
