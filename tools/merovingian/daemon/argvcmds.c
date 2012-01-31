@@ -228,7 +228,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
-				value = control_send(&res, buf, -1, "", "mserver", 0, NULL);
+				value = control_send(&res, buf, -1, "", "mserver", 1, NULL);
 				if (value != NULL) {
 					free(value);
 					value = "unknown (failed to connect to monetdbd)";
@@ -284,7 +284,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
 						value, kv->ival);
 				freeConfFile(cport);
-				value = control_send(&res, buf, -1, "", "version", 0, NULL);
+				value = control_send(&res, buf, -1, "", "version", 1, NULL);
 				if (value != NULL) {
 					free(value);
 					value = NULL;
