@@ -80,6 +80,8 @@ for each continous query step. This provides the information to re-design the ev
 #define PNcontrolInfinit 1	/* infinit loop of PNController  */
 #define PNcontrolEnd 2		/* when all factories are disable PNController exits */
 
+/* #define _DEBUG_PETRINET_ */
+
 /*static int controlRounds = PNcontrolInfinit;*/
 
 static MT_Lock petriLock;
@@ -518,9 +520,6 @@ PNcontroller(void *dummy)
 					pnet[i].available += cnt;
 					pnet[i].enabled++;
 				} else {
-#ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s, source %d\n",  pnet[i].name, j);
-#endif
 					/*stop checking if the rest input BATs does not contain elements */
 					pnet[i].enabled = 0;
 					break;
@@ -595,7 +594,6 @@ static str PNstart(int *ret)
 	int s;
 #ifdef _DEBUG_PETRINET_
 	PNdump(&s);
-	printf("\npnettop=%d\n", pnettop);
 #endif
 	mal_set_lock(petriLock,"pncontroller");
 	if ( status != PNstopped )

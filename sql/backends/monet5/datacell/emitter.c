@@ -45,7 +45,7 @@
 #include "dcsocket.h"
 #include "stream_socket.h"
 
-#define _DEBUG_EMITTER_
+/* #define _DEBUG_EMITTER_*/
 
 #define EMPAUSE 1		/* connected but not reading the channel */
 #define EMLISTEN 2		/* connected and reading the channel */
@@ -196,7 +196,7 @@ str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 
 	(void)ret;
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "Instantiate a new emitter %d fields\n", i);
+	mnstr_printf(EMout, "#Instantiate a new emitter %d fields\n", i);
 #endif
 	return MAL_SUCCEED;
 }
@@ -214,7 +214,7 @@ str DCemitterPause(int *ret, str *nme)
 	em->status = EMPAUSE;
 
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "Pause a emitter\n");
+	mnstr_printf(EMout, "#Pause a emitter\n");
 #endif
 	(void)ret;
 	return MAL_SUCCEED;
@@ -231,7 +231,7 @@ str DCemitterResume(int *ret, str *nme)
 	if (em->status == EMLISTEN)
 		throw(MAL, "emitter.resume", "Emitter running, stop it first");
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "resume an emitter\n");
+	mnstr_printf(EMout, "#Resume an emitter\n");
 #endif
 	em->status = EMLISTEN;
 	(void)ret;
@@ -258,7 +258,7 @@ str EMstop(int *ret, str *nme)
 	if (em == NULL)
 		throw(MAL, "emitter.drop", "Emitter not defined");
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "Drop a emitter\n");
+	mnstr_printf(EMout, "#Drop a emitter\n");
 #endif
 	(void)ret;
 	if (emAnchor == em)
@@ -346,7 +346,7 @@ EMreconnect(Emitter em)
 	do {
 		em->error = socket_client_connect(&em->newsockfd, em->host, em->port);
 		if (em->error) {
-			mnstr_printf(EMout, "Emitter connect fails: %s\n", em->error);
+			mnstr_printf(EMout, "#Emitter connect fails: %s\n", em->error);
 			MT_sleep_ms(em->delay);
 		}
 	} while (em->error);
@@ -364,16 +364,19 @@ bodyRestart:
 	if ( em->status == EMDROP)
 		return;
 	/* create the actual channel */
+#ifdef _DEBUG_EMITTER_
+		mnstr_printf(EMout, "#create emitter %s channel %s %d mode %d protocol=%d\n",em->name, em->host, em->port, em->mode, em->protocol);
+#endif
 	if (em->mode == EMACTIVE && em->protocol == UDP)
 			em->emitter = udp_wastream(em->host, em->port, em->name);
 	else
 		em->emitter = socket_wastream(em->newsockfd, em->name);
 	if (em->emitter == NULL) {
 		perror("Emitter: Could not open stream");
-		mnstr_printf(EMout, "stream %s.%d.%s\n", em->host, em->port, em->name);
+		mnstr_printf(EMout, "#stream %s.%d.%s\n", em->host, em->port, em->name);
 		socket_close(em->newsockfd);
 #ifdef _DEBUG_EMITTER_
-		mnstr_printf(EMout, "Exit emitter body loop\n");
+		mnstr_printf(EMout, "#Exit emitter body loop\n");
 #endif
 		return;
 	}
@@ -386,7 +389,7 @@ bodyRestart:
 	{
 		while (em->status == EMPAUSE) {
 #ifdef _DEBUG_EMITTER_
-			mnstr_printf(EMout, "pause emitter\n");
+			mnstr_printf(EMout, "#Pause emitter\n");
 #endif
 			MT_sleep_ms(em->delay);
 		}
@@ -427,14 +430,14 @@ bodyRestart:
 
 			cnt = BATcount(em->table.format[1].c[0]);
 #ifdef _DEBUG_EMITTER_
-			mnstr_printf(EMout, "Emit " BUNFMT " tuples \n", cnt);
+			mnstr_printf(EMout, "#Emit " BUNFMT " tuples \n", cnt);
 #endif
 			em->table.nr = cnt;
 
 			ret = TABLEToutput_file(&em->table, em->table.format[1].c[0], em->emitter);
 #ifdef _DEBUG_EMITTER_
 			if (ret < 0)
-				mnstr_printf(EMout, "Tuple emission failed\n");
+				mnstr_printf(EMout, "#Tuple emission failed\n");
 #endif
 			if (ret < 0)
 				/* keep the events and try to setup a new connection */
@@ -450,14 +453,14 @@ bodyRestart:
 	/* writing failed, lets restart */
 	if (em->mode == EMPASSIVE) {
 #ifdef _DEBUG_EMITTER_
-		mnstr_printf(EMout, "Restart the connection\n");
+		mnstr_printf(EMout, "#Restart the connection\n");
 #endif
 		if ( em->status != EMSTOP)
 			EMreconnect(em);
 		goto bodyRestart;
 	}
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "Exit emitter body loop\n");
+	mnstr_printf(EMout, "#Exit emitter body loop\n");
 #endif
 	mnstr_close(em->emitter);
 }
@@ -468,13 +471,13 @@ EMstartThread(Emitter em)
 	GDKprotect();
 
 #ifdef _DEBUG_EMITTER_
-	mnstr_printf(EMout, "Emitter body %s started at %s:%d, servermode=%d\n",
+	mnstr_printf(EMout, "#Emitter body %s started at %s:%d, servermode=%d\n",
 		em->name, em->host, em->port, em->mode);
 #endif
 	if (em->mode == EMACTIVE) {
 		EMbody(em);
 #ifdef _DEBUG_EMITTER_
-		mnstr_printf(EMout, "End of emitter thread\n");
+		mnstr_printf(EMout, "#End of emitter thread\n");
 #endif
 		return MAL_SUCCEED;
 	}
@@ -483,7 +486,7 @@ EMstartThread(Emitter em)
 	if (em->mode == EMPASSIVE &&
 		(em->error = socket_server_connect(&em->sockfd, em->port))) {
 		em->status = EMERROR;
-		mnstr_printf(EMout, "EMSTART THREAD: failed to start server:%s\n", em->error);
+		mnstr_printf(EMout, "#EMSTART THREAD: failed to start server:%s\n", em->error);
 		return MAL_SUCCEED;
 	}
 	while (em->status != EMSTOP)
@@ -491,12 +494,12 @@ EMstartThread(Emitter em)
 		if (em->mode == EMPASSIVE) {
 			/* in server mode you should expect new connections */
 #ifdef _DEBUG_EMITTER_
-			mnstr_printf(EMout, "Emitter listens\n");
+			mnstr_printf(EMout, "#Emitter listens\n");
 #endif
 			em->error = socket_server_listen(em->sockfd, &em->newsockfd);
 			if (em->error) {
 				em->status = EMERROR;
-				mnstr_printf(EMout, "Emitter listen fails: %s\n", em->error);
+				mnstr_printf(EMout, "#Emitter listen fails: %s\n", em->error);
 			}
 
 			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_DETACHED) != 0) {
