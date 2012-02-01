@@ -693,7 +693,7 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @= tilesAggr
-# define AGGR_CLEANUP() \
+# define SUM_CLEANUP() \
 { \
 	if (bVal) BBPreleaseref(bVal->batCacheid); \
 	for (i = 0; i < ndims; i++) { \
@@ -708,6 +708,21 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(dMax) GDKfree(dMax); \
 	if(dSize) GDKfree(dSize); \
 	if(apidx) GDKfree(apidx); \
+}
+# define AVG_CLEANUP() \
+{ \
+	if (bVal) BBPreleaseref(bVal->batCacheid); \
+	for (i = 0; i < ndims; i++) { \
+		if(bDims[i]) BBPreleaseref(bDims[i]->batCacheid); \
+		if(bOffsets[i]) BBPreleaseref(bOffsets[i]->batCacheid); \
+	} \
+	if(bDims) GDKfree(bDims); \
+	if(bDimsT) GDKfree(bDimsT); \
+	if(bOffsets) GDKfree(bOffsets); \
+	if(bOffsetsT) GDKfree(bOffsetsT); \
+	if(dMin) GDKfree(dMin); \
+	if(dMax) GDKfree(dMax); \
+	if(dSize) GDKfree(dSize); \
 }
 /* 
  * array.sum inputs:
@@ -744,14 +759,14 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	apidx = (int*) GDKzalloc(sizeof(int) * ndims);
 	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
 	if(!bDims || !bDimsI || !bOffsets || !bOffsetsI || !dMin || !dMax || !dSize || !apidx || !bVal) {
-		AGGR_CLEANUP();
+		SUM_CLEANUP();
 		throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
 		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
 		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
-			AGGR_CLEANUP();
+			SUM_CLEANUP();
 			throw(MAL, "array.sum", RUNTIME_OBJECT_MISSING);
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
@@ -760,7 +775,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bValI = bat_iterator(bVal);
 	for (i = 0; i < ndims; i++) {
 		if (bDims[i]->ttype != bOffsets[i]->ttype) {
-			AGGR_CLEANUP();
+			SUM_CLEANUP();
 			throw(MAL, "array.sum", SEMANTIC_TYPE_MISMATCH);
 		}
 		bDimsI[i] = bat_iterator(bDims[i]);
@@ -779,7 +794,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i< ndims; i++) {
 			BUNfndOID(tmpbun, bDimsI[i], &tid);
 			if (tmpbun == oid_nil) {
-				AGGR_CLEANUP();
+				SUM_CLEANUP();
 				throw(MAL, "array.sum", "Expected values not found in BAT");
 			}
 			apidx[i] = *(int*)BUNtail(bDimsI[i], tmpbun);
@@ -802,7 +817,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (i = ndims - 1; i >= 0; i--) {
 				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
 				if (tmpbun == oid_nil) {
-					AGGR_CLEANUP();
+					SUM_CLEANUP();
 					throw(MAL, "array.sum", "Expected values not found in BAT");
 				}
 				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
@@ -818,7 +833,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!err) {
 				BUNfndOID(tmpbun, bValI, &vid);
 				if (tmpbun == oid_nil) {
-					AGGR_CLEANUP();
+					SUM_CLEANUP();
 					throw(MAL, "array.sum", "Expected values not found in BAT");
 				}
 				elm = *(@1*) BUNtail(bValI, tmpbun);
@@ -828,7 +843,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		BUNins(bRes, &tid, &sum, TRUE);
 	}
-	AGGR_CLEANUP();
+	SUM_CLEANUP();
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -844,13 +859,14 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
-	BATiter bValI, *bDimsI = NULL, *bOffsetsI = NULL;
-	BUN p, q, tmpbun, r, s;
+	@1 *bValT = NULL;
+	dbl *bResT = NULL;
+	int **bDimsT = NULL, **bOffsetsT = NULL;
+	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
 	@1 sum = 0, elm = 0;
 	/* FIXME: this code only deal with INT dimensions */
-	int cnt = 0, os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
-	oid tid = 0, osid = 0, vid = 0, mul = 0;
-	dbl avg = 0.0;
+	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
+	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -860,58 +876,80 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ndims = (pci->argc - pci->retc - 1) / 3;
 	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
-	bDimsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	bDimsT = (int**) GDKzalloc(sizeof(int*) * ndims);
 	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
-	bOffsetsI = (BATiter*) GDKzalloc(sizeof(BATiter) * ndims);
+	bOffsetsT = (int**) GDKzalloc(sizeof(int*) * ndims);
 	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
 	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
-	apidx = (int*) GDKzalloc(sizeof(int) * ndims);
 	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
-	if(!bDims || !bDimsI || !bOffsets || !bOffsetsI || !dMin || !dMax || !dSize || !apidx || !bVal) {
-		AGGR_CLEANUP();
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize || !bVal) {
+		AVG_CLEANUP();
 		throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
 		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
 		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
-			AGGR_CLEANUP();
+			AVG_CLEANUP();
 			throw(MAL, "array.avg", RUNTIME_OBJECT_MISSING);
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
-	bValI = bat_iterator(bVal);
+	if (!BAThdense(bVal)) {
+		AVG_CLEANUP();
+		throw(MAL, "array.avg", "head of value BAT must be dense");
+	}
+	if (bVal->ttype != TYPE_@1) {
+		AVG_CLEANUP();
+		throw(MAL, "array.avg", "tail of value BAT must be of type @1");
+	}
+	arrcnt = BATcount(bVal);
+	arrbase = bVal->hseqbase;
+	offbase = bOffsets[0]->hseqbase;
+	offcnt = BATcount(bOffsets[0]);
 	for (i = 0; i < ndims; i++) {
-		if (bDims[i]->ttype != bOffsets[i]->ttype) {
-			AGGR_CLEANUP();
+		if (!BAThdense(bDims[i])) {
+			AVG_CLEANUP();
+			throw(MAL, "array.avg", "head of all dimension BATs must be dense");
+		}
+		if (!BAThdense(bOffsets[i])) {
+			AVG_CLEANUP();
+			throw(MAL, "array.avg", "head of all offset BATs must be dense");
+		}
+		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
+			AVG_CLEANUP();
+			throw(MAL, "array.avg", "head of all dimension BATs must be aligned with head of value BAT");
+		}
+		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
+			AVG_CLEANUP();
+			throw(MAL, "array.avg", "heads of all offset BATs must be aligned");
+		}
+		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
+			AVG_CLEANUP();
 			throw(MAL, "array.avg", SEMANTIC_TYPE_MISMATCH);
 		}
-		bDimsI[i] = bat_iterator(bDims[i]);
-		bOffsetsI[i] = bat_iterator(bOffsets[i]);
 		BATmin(bDims[i], &(dMin[i]));
 		BATmax(bDims[i], &(dMax[i]));
 	}
 
+	/* access tails as arrays */
+	bValT = (@1*) Tloc(bVal, BUNfirst(bVal));
+	for (i = 0; i < ndims; i++) {
+		bDimsT[i] = (int*) Tloc(bDims[i], BUNfirst(bDims[i]));
+		bOffsetsT[i] = (int*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
+	}
+
 	/* For each anchor piont, compute all cells belong to this tile (bVal.head
 	 * is the group nr.) and compute the SUM */
-	bRes = 	BATnew(TYPE_oid, TYPE_dbl, BATcount(bVal));
-	BATloop(bVal, p, q) {
-		avg = 0.0; sum = 0; cnt = 0;
-		tid = *(oid*) BUNhead(bValI, p);
-		/* get the dimension indices of the anchor point */
-		for (i = 0; i< ndims; i++) {
-			BUNfndOID(tmpbun, bDimsI[i], &tid);
-			if (tmpbun == oid_nil) {
-				AGGR_CLEANUP();
-				throw(MAL, "array.avg", "Expected values not found in BAT");
-			}
-			apidx[i] = *(int*)BUNtail(bDimsI[i], tmpbun);
-		}
+	bRes = 	BATnew(TYPE_void, TYPE_dbl, BATcount(bVal));
+	BATseqbase(bRes, arrbase);
+	bResT = (dbl*) Tloc(bRes, BUNfirst(bRes));
+	for (p = 0 ; p < arrcnt ; p++) {
+		sum = 0; cnt = 0;
 		/* loop over all sets of offsets */
-		BATloop (bOffsets[0], r, s) {
-			osid = *(oid*)BUNhead(bOffsetsI[0], r);
+		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
 			mul = 1;
 			err = 0;
@@ -925,15 +963,9 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * disqualifies the index on dimension d_i, we can jump to the next
 			 * of bOffsets[i] which value follows the j-th value */
 			for (i = ndims - 1; i >= 0; i--) {
-				BUNfndOID(tmpbun, bOffsetsI[i], &osid);
-				if (tmpbun == oid_nil) {
-					AGGR_CLEANUP();
-					throw(MAL, "array.avg", "Expected values not found in BAT");
-				}
-				os = *(int*)BUNtail(bOffsetsI[i], tmpbun);
-				cidx = apidx[i] + os;
+				cidx = bDimsT[i][p] + bOffsetsT[i][r];
 				if (dMin[i] <= cidx && cidx <= dMax[i]) {
-					vid += mul * cidx;
+					vid += mul * (cidx - dMin[i]);
 				} else {
 					err = 1;
 					break; /* skip remaining dimensions */
@@ -941,22 +973,19 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mul *= dSize[i];
 			}
 			if (!err) {
-				BUNfndOID(tmpbun, bValI, &vid);
-				if (tmpbun == oid_nil) {
-					AGGR_CLEANUP();
-					throw(MAL, "array.avg", "Expected values not found in BAT");
-				}
-				elm = *(@1*) BUNtail(bValI, tmpbun);
+				elm = bValT[vid];
 				if (elm != @1_nil) {
 					cnt++;
 					sum += elm;
 				}
 			}
 		}
-		avg = (dbl)sum / (dbl)cnt;
-		BUNins(bRes, &tid, &avg, TRUE);
+		bResT[p] = (cnt ? (dbl)sum / (dbl)cnt : dbl_nil);
 	}
-	AGGR_CLEANUP();
+	AVG_CLEANUP();
+	BATsetcount(bRes, arrcnt);
+	bRes->tsorted = FALSE;
+	BATkey(BATmirror(bRes), FALSE);
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
 }
