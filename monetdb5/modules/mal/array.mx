@@ -859,11 +859,11 @@ ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
-	@1 *bValT = NULL;
+	@1 *bValT = NULL, elm = 0;
 	dbl *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
 	BUN p, r, arrcnt = 0, offcnt = 0, cnt = 0;
-	@1 sum = 0, elm = 0;
+	@2 sum = 0;
 	/* FIXME: this code only deal with INT dimensions */
 	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
 	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
@@ -995,11 +995,11 @@ the tile structure can go over its boundaries. For this to control, we first
 embed the array into a slightly larger array, filled with nulls.
 
 @c
-@:tilesAggr(sht)@
-@:tilesAggr(int)@
-@:tilesAggr(lng)@
-@:tilesAggr(flt)@
-@:tilesAggr(dbl)@
+@:tilesAggr(sht,lng)@
+@:tilesAggr(int,lng)@
+@:tilesAggr(lng,lng)@
+@:tilesAggr(flt,dbl)@
+@:tilesAggr(dbl,dbl)@
 str
 ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int type = getTailType(getArgType(mb,pci,1));
