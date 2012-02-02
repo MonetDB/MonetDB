@@ -2457,7 +2457,7 @@ STRrepeat(str *ret, str *s, int *c)
 			throw(MAL, "str.repeat", "Allocation failed");
 		*t = 0;
 		for(i = *c; i>0; i--, t += l) 
-			strcat(t, *s);
+			strcpy(t, *s);
 	}
 	return MAL_SUCCEED;
 }

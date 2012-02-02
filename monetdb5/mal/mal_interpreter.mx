@@ -89,7 +89,7 @@ mal_export int DFLOWadmission(lng argclaim, lng hotclaim);
 #define heapinfo(X) if ((X) && (X)->base) vol = (X)->free; else vol = 0;
 #define hashinfo(X) if ((X) && (X)->mask) vol = ((X)->mask + (X)->lim + 1) * sizeof(int) + sizeof(*(X)); else vol = 0;
 
-#define FREE_EXCEPTION(p) { if (p && p != M5OutOfMemory) GDKfree(p); }
+#define FREE_EXCEPTION(p) do { if (p && p != M5OutOfMemory) GDKfree(p); } while (0)
 
 /*
  * @-
@@ -134,12 +134,13 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 void showErrors(Client cntxt)
 {
 	int i;
-	if (cntxt->errbuf && *cntxt->errbuf) {
-		i = (int)strlen(cntxt->errbuf);
-		mnstr_printf(cntxt->fdout, "%s", cntxt->errbuf);
-		if (cntxt->errbuf[i - 1] != '\n')
+	char *errbuf = GDKerrbuf;
+	if (errbuf && *errbuf) {
+		i = (int)strlen(errbuf);
+		mnstr_printf(cntxt->fdout, "%s", errbuf);
+		if (errbuf[i - 1] != '\n')
 			mnstr_printf(cntxt->fdout, "\n");
-		cntxt->errbuf[0] = '\0';
+		errbuf[0] = '\0';
 	}
 }
 /*
@@ -972,7 +973,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	printf("#EXECUTE THREAD %d \n", tid);
 	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
 #endif
-	THRset_errbuf(THRget(THRgettid()), cntxt->errbuf);  /* where to leave errors */
 	if (stk->cmd || mb->trap) {
 		lng tm = 0;
 		if (oldtimer)
@@ -1079,6 +1079,8 @@ runDFLOWworker(void *t)
 	int i, local = 0, last = 0;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
+	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKerrbuf[0] = 0;
 	while (task) {
 		local = nxtfs != 0;
 		if (nxtfs == 0)
@@ -1137,6 +1139,8 @@ runDFLOWworker(void *t)
 		else
 			q_enqueue(task->flow->done, fs);
 	}
+	GDKfree(GDKerrbuf);
+	GDKsetbuf(0);
 	THRdel(thr);
 }
 
@@ -2308,32 +2312,35 @@ mal_export str catchKernelException(Client cntxt, str ret);
 str catchKernelException(Client cntxt, str ret)
 {
 	str z;
-	if (cntxt->errbuf && cntxt->errbuf[0]) {
+	char *errbuf = GDKerrbuf;
+	(void) cntxt;
+	if (errbuf && errbuf[0]) {
 		if (ret != MAL_SUCCEED) {
-			z = (char*)GDKmalloc(strlen(ret) + strlen(cntxt->errbuf) + 2);
+			z = (char*)GDKmalloc(strlen(ret) + strlen(errbuf) + 2);
 			if (z) {
 				strcpy(z, ret);
 				if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
-				strcat(z, cntxt->errbuf);
+				strcat(z, errbuf);
 			}
 		} else {
 			/* trap hidden (GDK) exception */
-			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(cntxt->errbuf) + 2);
+			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
 			if (z)
-				sprintf(z, "GDKerror:%s\n", cntxt->errbuf);
+				sprintf(z, "GDKerror:%s\n", errbuf);
 		}
 		/* did we eat the error away of not */
 		if (z)
-			cntxt->errbuf[0] = '\0';
+			errbuf[0] = '\0';
 	} else
 		z = ret;
 	return z;
 }
 @= exceptionHndlr
-if (cntxt->errbuf && cntxt->errbuf[0]) {
+if (GDKerrbuf && GDKerrbuf[0]) {
 	str oldret = ret;
 	ret = catchKernelException(cntxt, ret);
-	FREE_EXCEPTION(oldret);
+	if (ret != oldret)
+		FREE_EXCEPTION(oldret);
 }
 
 if (ret != MAL_SUCCEED) {

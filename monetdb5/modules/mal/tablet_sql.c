@@ -332,9 +332,12 @@ SQLworker(void *arg)
 	unsigned int i;
 	int j, piece;
 	lng t0;
+	Thread thr;
 
-	/* where to leave errors */
-	THRset_errbuf(THRget(THRgettid()), task->errbuf);
+	thr = THRnew(MT_getpid(), "SQLworker");
+	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKerrbuf[0] = 0;
+	task->errbuf = GDKerrbuf;
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "SQLworker %d started\n", task->id);
 #endif
@@ -350,7 +353,7 @@ SQLworker(void *arg)
 #ifdef _DEBUG_TABLET_
 			mnstr_printf(GDKout, "SQLworker terminated\n");
 #endif
-			return;
+			goto do_return;
 		}
 
 		/* stage one, break the lines spread the worker over the workers */
@@ -386,6 +389,11 @@ SQLworker(void *arg)
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "SQLworker exits\n");
 #endif
+
+  do_return:
+	GDKfree(GDKerrbuf);
+	GDKsetbuf(0);
+	THRdel(thr);
 }
 
 static void
@@ -446,8 +454,6 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
  * Reading is handled by a separate task as a preparation for
  * mode parallelism
  */
-static void SQLloader(void *p)
-	__attribute__ ((__noreturn__));
 static void
 SQLloader(void *p)
 {
@@ -466,7 +472,6 @@ SQLloader(void *p)
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 		MT_sema_up(&task->consumer, "tablet loader");
 	}
-	MT_exit_thread(0);
 }
 
 BUN
