@@ -442,8 +442,6 @@ SQLworkdivider(READERtask *task, READERtask *ptask, int nr_attrs, int threads)
  * Reading is handled by a separate task as a preparation for
  * mode parallelism
  */
-static void SQLloader(void *p)
-	__attribute__ ((__noreturn__));
 static void
 SQLloader(void *p)
 {
@@ -462,7 +460,6 @@ SQLloader(void *p)
 		task->ateof = tablet_read_more(task->b, task->out, task->b->size - (task->b->len - task->b->pos)) == EOF;
 		MT_sema_up(&task->consumer, "tablet loader");
 	}
-	MT_exit_thread(0);
 }
 
 BUN
