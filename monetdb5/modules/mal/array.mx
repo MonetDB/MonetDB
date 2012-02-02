@@ -995,6 +995,7 @@ the tile structure can go over its boundaries. For this to control, we first
 embed the array into a slightly larger array, filled with nulls.
 
 @c
+@:tilesAggr(bte,lng)@
 @:tilesAggr(sht,lng)@
 @:tilesAggr(int,lng)@
 @:tilesAggr(lng,lng)@
@@ -1004,6 +1005,8 @@ str
 ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int type = getTailType(getArgType(mb,pci,1));
 	switch(type){
+	case TYPE_bte:
+		return ARRAYtilesSum_bte(cntxt,mb,stk,pci);
 	case TYPE_sht:
 		return ARRAYtilesSum_sht(cntxt,mb,stk,pci);
 	case TYPE_int:
@@ -1024,6 +1027,8 @@ str
 ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int type = getTailType(getArgType(mb,pci,1));
 	switch(type){
+	case TYPE_bte:
+		return ARRAYtilesAvg_bte(cntxt,mb,stk,pci);
 	case TYPE_sht:
 		return ARRAYtilesAvg_sht(cntxt,mb,stk,pci);
 	case TYPE_int:
