@@ -1495,30 +1495,23 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 				p = BUNtail(f->ci[0], f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+					p = f->nullstr;
 					l = (int) strlen(f->nullstr);
-					if ( fill + l + f->seplen > *len) {
-						/* extend the buffer */
-						*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
-						*len += BUFSIZ;
-						if ( *buf == NULL)
-							return -1;
-					}
-					snprintf(*buf + fill,*len - fill -1, "%s",f->nullstr);
-					fill += l;
 				} else {
 					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
-					if ( fill + l + f->seplen > *len) {
-						/* extend the buffer */
-						*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
-						*len += BUFSIZ;
-						if ( *buf == NULL)
-							return -1;
-					}
-					strncpy(*buf + fill, *localbuf, l);
-					fill += l;
+					p = *localbuf;
 				}
+				if (fill + l + f->seplen > *len) {
+					/* extend the buffer */
+					*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+					*len = fill + l + f->seplen + BUFSIZ;
+					if (*buf == NULL)
+						return -1;
+				}
+				strncpy(*buf + fill, p, *len - fill - 1);
+				fill += l;
 			}
-			snprintf(*buf+fill, *len - fill -1, "%s",f->sep);
+			strncpy(*buf + fill, f->sep, *len - fill - 1);
 			fill += f->seplen;
 		}
 	}
@@ -1538,36 +1531,30 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 
 		if (f->c[0]) {
 			char *p = BUNtail(f->ci[0], f->p);
+			int l;
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-				int l = (int) strlen(f->nullstr);
-				if ( fill + l + f->seplen > *len) {
-					/* extend the buffer */
-					*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
-					*len += BUFSIZ;
-					if ( *buf == NULL)
-						return -1;
-				}
-				snprintf(*buf + fill,*len - fill -1, "%s",f->nullstr);
-				fill += l;
+				p = f->nullstr;
+				l = (int) strlen(p);
 			} else {
-				int l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
-				if ( fill + l + f->seplen > *len) {
-					/* extend the buffer */
-					*buf = (char *) GDKrealloc(*buf, *len+ BUFSIZ);
-					*len += BUFSIZ;
-					if ( *buf == NULL)
-						return -1;
-				}
-				strncpy(*buf + fill, *localbuf, l);
-				fill += l;
+				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				p = *localbuf;
 			}
+			if (fill + l + f->seplen > *len) {
+				/* extend the buffer */
+				*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				*len = fill + l + f->seplen + BUFSIZ;
+				if (*buf == NULL)
+					return -1;
+			}
+			strncpy(*buf + fill, p, *len - fill - 1);
+			fill += l;
 			f->p++;
 		}
-		snprintf(*buf+fill, *len - fill -1, "%s",f->sep);
+		strncpy(*buf + fill, f->sep, *len - fill - 1);
 		fill += f->seplen;
 	}
-	if (mnstr_write(fd, *buf, 1, fill) != fill) 
+	if (mnstr_write(fd, *buf, 1, fill) != fill)
 		return TABLET_error(fd);
 	return 0;
 }
