@@ -332,9 +332,12 @@ SQLworker(void *arg)
 	unsigned int i;
 	int j, piece;
 	lng t0;
+	Thread thr;
 
-	/* where to leave errors */
-	THRset_errbuf(THRget(THRgettid()), task->errbuf);
+	thr = THRnew(MT_getpid(), "SQLworker");
+	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
+	GDKerrbuf[0] = 0;
+	task->errbuf = GDKerrbuf;
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "SQLworker %d started\n", task->id);
 #endif
@@ -346,7 +349,7 @@ SQLworker(void *arg)
 			mnstr_printf(GDKout, "SQLworker terminated\n");
 #endif
 			MT_sema_up(&task->reply, "SQLworker");
-			return;
+			goto do_return;
 		}
 
 		/* stage one, break the lines spread the worker over the workers */
@@ -382,6 +385,11 @@ SQLworker(void *arg)
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "SQLworker exits\n");
 #endif
+
+  do_return:
+	GDKfree(GDKerrbuf);
+	GDKsetbuf(0);
+	THRdel(thr);
 }
 
 static void
