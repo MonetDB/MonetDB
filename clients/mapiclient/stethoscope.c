@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
@@ -43,6 +44,12 @@
 #  include "getopt.h"
 # endif
 #endif
+
+enum modes {
+    MAL,
+    SQL
+};
+static enum modes mode = SQL;
 
 #define COUNTERSDEFAULT "ISTest"
 
@@ -318,8 +325,14 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *user = NULL;
 	char *password = NULL;
+ 	char *language = NULL;
+
+	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
+	struct stat statb;
+
 	char **alts, **oalts;
 	wthread *walk;
+	stream * config = NULL;
 
 	static struct option long_options[8] = {
 		{ "dbname", 1, 0, 'd' },
@@ -330,6 +343,74 @@ main(int argc, char **argv)
 		{ "help", 0, 0, '?' },
 		{ 0, 0, 0, 0 }
 	};
+
+	/* parse config file first, command line options override */
+	if (getenv("DOTMONETDBFILE") == NULL) {
+		if (stat(".monetdb", &statb) == 0) {
+			config = open_rastream(".monetdb");
+		} else if (getenv("HOME") != NULL) {
+			char buf[1024];
+			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
+			if (stat(buf, &statb) == 0) {
+				config = open_rastream(buf);
+			}
+		}
+	} else {
+		char *cfile = getenv("DOTMONETDBFILE");
+		if (strcmp(cfile, "") != 0) {
+			if (stat(cfile, &statb) == 0) {
+				config = open_rastream(cfile);
+			} else {
+				fprintf(stderr,
+					      "failed to open file '%s': %s\n",
+					      cfile, strerror(errno));
+			}
+		}
+	}
+
+	if (config != NULL) {
+		char buf[1024];
+		char *q;
+		ssize_t len;
+		int line = 0;
+		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
+			line++;
+			buf[len - 1] = '\0';	/* drop newline */
+			if (buf[0] == '#' || buf[0] == '\0')
+				continue;
+			if ((q = strchr(buf, '=')) == NULL) {
+				fprintf(stderr, "%s:%d: syntax error: %s\n", mnstr_name(config), line, buf);
+				continue;
+			}
+			*q++ = '\0';
+			/* this basically sucks big time, as I can't easily set
+			 * a default, hence I only do things I think are useful
+			 * for now, needs a better solution */
+			if (strcmp(buf, "user") == 0) {
+				user = strdup(q);	/* leak */
+			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
+				password = strdup(q);	/* leak */
+			} else if (strcmp(buf, "language") == 0) {
+				language = strdup(q);	/* leak */
+				if (strcmp(language, "sql") == 0) {
+					mode = SQL;
+				} else if (strcmp(language, "mal") == 0) {
+					mode = MAL;
+				} else {
+					/* make sure we don't set garbage */
+					fprintf(stderr,
+						  "%s:%d: unsupported "
+						  "language: %s\n",
+						  mnstr_name(config),
+						  line, q);
+					free(language);
+					language = NULL;
+				}
+			}
+		}
+		mnstr_destroy(config);
+	}
+
 	while (1) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",

@@ -190,17 +190,17 @@ Ready.
 [ "Ada",	"Wilson",	"(survived the attack on 1888-28-03)"	]
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
 % sys.scene_witness # table_name
-% L142 # name
+% L5 # name
 % wrd # type
 % 1 # length
 [ 6	]
 % sys.scene_inspector # table_name
-% L145 # name
+% L3 # name
 % wrd # type
 % 1 # length
 [ 2	]
 % sys.victim # table_name
-% L146 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
@@ -254,7 +254,7 @@ Ready.
 % 3,	6,	6,	8 # length
 [ "Dr.",	"George",	"Baxter",	"Phillips"	]
 % sys.victim # table_name
-% L151 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 18	]

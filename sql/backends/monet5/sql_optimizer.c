@@ -333,7 +333,6 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 				mode = getVarConstant(mb, getArg(p,5)).val.ival;
 			}
 
-
 			if (s && f == bindidxRef && cname) {
 				size_t cnt;
 				sql_idx *i = mvc_bind_idx(m, s, cname);
@@ -607,9 +606,7 @@ void
 addQueryToCache(Client c)
 {
 	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
-	str optimizer;
 	MalBlkPtr mb;
-	ValRecord src;
 	mvc *m;
 
 	insertSymbol(c->nspace, c->curprg);
@@ -639,8 +636,6 @@ addQueryToCache(Client c)
 			runMALDebugger(c,c->curprg);
 		return;
 	}
-	optimizer = stack_get_string(be->mvc, "optimizer");
-	stack_set_var(be->mvc, "optimizer", VALset(&src, TYPE_str, setOptimizers(optimizer)));
 	addOptimizers(c,mb, be->mvc->point_query);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	if ( m->emod & mod_debug )

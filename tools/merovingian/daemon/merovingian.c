@@ -1166,12 +1166,12 @@ shutdown:
 	/* stop started mservers */
 
 	kv = findConfKey(ckv, "exittimeout");
-	if (d != NULL && atoi(kv->val) > 0) {
+	if (d->next != NULL && atoi(kv->val) > 0) {
 		dpair t;
 		threadlist tl = NULL, tlw = tl;
 
 		pthread_mutex_lock(&_mero_topdp_lock);
-		t = d;
+		t = d->next;
 		while (t != NULL) {
 			if (tl == NULL) {
 				tl = tlw = malloc(sizeof(struct _threadlist));
@@ -1185,7 +1185,7 @@ shutdown:
 			{
 				Mfprintf(stderr, "%s: unable to create thread to terminate "
 						"database '%s': %s\n",
-						argv[0], d->dbname, strerror(thret));
+						argv[0], t->dbname, strerror(thret));
 				tlw->tid = 0;
 			}
 

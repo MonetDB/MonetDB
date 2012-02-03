@@ -29,8 +29,8 @@
 #include "rel_updates.h"
 #include "sql_env.h"
 
-#define new_func_list(sa) list_new(sa)
-#define new_col_list(sa) list_new(sa)
+#define new_func_list(sa) sa_list(sa)
+#define new_col_list(sa) sa_list(sa)
 
 typedef struct global_props {
 	int cnt[MAXOPS];
@@ -604,7 +604,7 @@ find_basetable( sql_rel *r)
 static list *
 order_join_expressions(sql_allocator *sa, list *dje, list *rels)
 {
-	list *res = list_new(sa);
+	list *res = sa_list(sa);
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 
@@ -1367,11 +1367,11 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 					ne = e->l;
 					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+						exp_label(sql->sa, ne, ++sql->label);
 						if (mustr)
 							append(r->exps, ne);
 						else
 							append(l->exps, ne);
-						exp_label(sql->sa, ne, ++sql->label);
 						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 					}
 					e->l = ne;
@@ -1380,11 +1380,11 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 					ne = e->r;
 					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+						exp_label(sql->sa, ne, ++sql->label);
 						if (mustr)
 							append(r->exps, ne);
 						else
 							append(l->exps, ne);
-						exp_label(sql->sa, ne, ++sql->label);
 						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 					}
 					e->r = ne;
@@ -1394,11 +1394,11 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 						ne = e->f;
 						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
 					            (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+							exp_label(sql->sa, ne, ++sql->label);
 							if (mustr)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							exp_label(sql->sa, ne, ++sql->label);
 							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 						}
 						e->f = ne;
@@ -1885,7 +1885,6 @@ rel_merge_projects(int *changes, mvc *sql, sql_rel *rel)
 					}
 				}
 				if (all) {
-					list_destroy(res);
 					rel->r = nr;
 				} else {
 					/* leave as is */
@@ -2051,6 +2050,17 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 	if (is_project(rel->op) && rel->exps) {
 		list *exps = rel->exps;
 		node *n;
+		int needed = 0;
+
+		for (n = exps->h; n && !needed; n = n->next) { 
+			sql_exp *e = n->data;
+
+			if (e->type == e_func || e->type == e_convert ||
+			    e->type == e_aggr) 
+				needed = 1;
+		}
+		if (!needed)
+			return rel;
 
 		rel->exps = new_exp_list(sql->sa); 
 		for (n = exps->h; n; n = n->next) { 
@@ -2248,9 +2258,20 @@ rel_select_cse(int *changes, mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 	if (is_select(rel->op) && rel->exps) { 
-		list *nexps = new_exp_list(sql->sa);
 		node *n;
+		list *nexps;
+		int needed = 0;
 
+		for (n=rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->type == e_cmp && e->flag == cmp_or) 
+				needed = 1;
+		}
+		if (!needed)
+			return rel;
+
+ 		nexps = new_exp_list(sql->sa);
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -2270,11 +2291,28 @@ static sql_rel *
 rel_project_cse(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)changes;
-	(void)sql;
 	if (is_project(rel->op) && rel->exps) { 
-		list *nexps = new_exp_list(sql->sa);
 		node *n, *m;
+		list *nexps;
+		int needed = 0;
 
+		for (n=rel->exps->h; n && !needed; n = n->next) {
+			sql_exp *e1 = n->data;
+
+			if (e1->type != e_column && e1->type != e_atom && e1->name) {
+				for (m=n->next; m; m = m->next){
+					sql_exp *e2 = m->data;
+				
+					if (exp_name(e2) && exp_match_exp(e1, e2)) 
+						needed = 1;
+				}
+			}
+		}
+
+		if (!needed)
+			return rel;
+
+		nexps = new_exp_list(sql->sa);
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e1 = n->data;
 
@@ -2945,11 +2983,11 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 				return rel;
 			}
 		} 
-		nsexps = list_new(sql->sa);
+		nsexps = sa_list(sql->sa);
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 		} 
-		njexps = list_new(sql->sa);
+		njexps = sa_list(sql->sa);
 		if (l->exps) {
 			for(n = l->exps->h; n; n = n->next) {
 				sql_exp *sje = n->data;
@@ -3790,11 +3828,11 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 	switch(e->type) {
 	case e_aggr:
 		/* add to the aggrs */
-		list_append(aexps, e);
 		if (!exp_name(e)) {
 			exp_label(sql->sa, e, ++sql->label);
 			e->rname = e->name;
 		}
+		list_append(aexps, e);
 		return exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	case e_cmp:
 		/* e_cmp's shouldn't exist in an aggr expression list */
@@ -3971,8 +4009,8 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 		if (!fnd) 
 			return rel;
 
-		aexps = list_new(sql->sa);
-		pexps = list_new(sql->sa);
+		aexps = sa_list(sql->sa);
+		pexps = sa_list(sql->sa);
 		for ( n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne = NULL;
 
@@ -4093,7 +4131,7 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 	if (rel->exps) {
 		node *n;
 		int len = list_length(rel->exps), i;
-		sql_exp **exps = (sql_exp**)malloc(sizeof(sql_exp*) * len);
+		sql_exp **exps = NEW_ARRAY(sql_exp*, len);
 
 		for (n=rel->exps->h, i = 0; n; n = n->next, i++) 
 			exps[i] = n->data;
@@ -4107,7 +4145,7 @@ exps_mark_used(sql_rel *rel, sql_rel *subrel)
 				nr += exp_mark_used(subrel, e);
 			}
 		}
-		free(exps);
+		_DELETE(exps);
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
@@ -4250,6 +4288,8 @@ static sql_rel * rel_dce(mvc *sql, sql_rel *rel);
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel) 
 {
+	int needed = 0;
+
 	if (!rel || rel_is_ref(rel))
 		return rel;
 
@@ -4263,8 +4303,19 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_table:
 		if (rel->exps) {
 			node *n;
-			list *exps = new_exp_list(sql->sa);
+			list *exps;
 
+			for(n=rel->exps->h; n && !needed; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!e->used && !is_intern(e))
+					needed = 1;
+			}
+
+			if (!needed)
+				return rel;
+
+			exps = new_exp_list(sql->sa);
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
@@ -4293,8 +4344,18 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 
 		if (rel->l && rel->exps) {
 			node *n;
-			list *exps = new_exp_list(sql->sa);
+			list *exps;
 
+			for(n=rel->exps->h; n && !needed; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (!e->used && !is_intern(e))
+					needed = 1;
+			}
+			if (!needed)
+				return rel;
+
+ 			exps = new_exp_list(sql->sa);
 			for(n=rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 
@@ -4577,7 +4638,7 @@ find_index(sql_allocator *sa, sql_rel *r, list **EXPS)
 			if (list_match(cols, i->columns, cmp) == 0) {
 				/* re-order exps in index order */
 				node *n, *m;
-				list *es = list_new(sa);
+				list *es = sa_list(sa);
 
 				for(n = i->columns->h; n; n = n->next) {
 					int i = 0;
@@ -4688,7 +4749,7 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 	(void)sql;
 	if (is_select(rel->op) && rel->exps) {
 		node *n;
-		list *exps = list_new(sql->sa);
+		list *exps = sa_list(sql->sa);
 			
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;

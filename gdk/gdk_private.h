@@ -200,8 +200,8 @@ extern MT_Lock MT_system_lock;
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 
-#define GDKswapLock(x)  GDKbatLock[(x&BBP_BATMASK)].swap
-#define GDKhashLock(x)  GDKbatLock[(x&BBP_BATMASK)].hash
-#define GDKtrimLock(y)  GDKbbpLock[(y&BBP_THREADMASK)].trim
-#define GDKcacheLock(y) GDKbbpLock[(y&BBP_THREADMASK)].alloc
-#define BBP_free(y)	GDKbbpLock[(y&BBP_THREADMASK)].free
+#define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
+#define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash
+#define GDKtrimLock(y)  GDKbbpLock[(y)&BBP_THREADMASK].trim
+#define GDKcacheLock(y) GDKbbpLock[(y)&BBP_THREADMASK].alloc
+#define BBP_free(y)	GDKbbpLock[(y)&BBP_THREADMASK].free

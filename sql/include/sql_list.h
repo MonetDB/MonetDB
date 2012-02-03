@@ -21,8 +21,10 @@
 #define LIST_H
 
 #include "sql_mem.h"
+#include "sql_hash.h"
 
 typedef struct node {
+	struct sql_hash_e e;
 	struct node *next;
 	void *data;
 } node;
@@ -31,6 +33,7 @@ typedef void (*fdestroy) (void *);
 
 typedef struct list {
 	sql_allocator *sa;
+	sql_hash *ht;
 	fdestroy destroy;
 	node *h;
 	node *t;
@@ -40,7 +43,8 @@ typedef struct list {
 typedef int (*traverse_func) (void *clientdata, int seqnr, void *data);
 
 extern list *list_create(fdestroy destroy);
-extern list *list_new(sql_allocator *sa);
+extern list *sa_list(sql_allocator *sa);
+extern list *list_new(sql_allocator *sa, fdestroy destroy);
 
 extern void list_destroy(list *l);
 extern int list_length(list *l);
@@ -67,7 +71,6 @@ typedef void *(*fdup) (void *data);
 typedef void *(*freduce) (void *v1, void *v2);
 typedef void *(*freduce2) (sql_allocator *sa, void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
-typedef int (*fkeyvalue) (void *data);
 
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern int  list_position(list *l, void *val);

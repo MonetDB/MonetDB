@@ -167,6 +167,9 @@ typedef struct stmt {
 
 	int nr;			/* variable assignment */
 
+	char *tname;
+	char *cname;
+
 	struct stmt *h;
 	struct stmt *t;
 	int optimized;
@@ -178,6 +181,7 @@ typedef struct group {
 	stmt *ext;
 } group;
 
+extern int stmt_key(stmt *s);
 extern const char *st_type2string(st_type type);
 
 extern stmt **stmt_array(sql_allocator *sa, stmt *s);

@@ -125,7 +125,7 @@ end main;
 % int,	str			# type
 % false,false			# dense
 % true,	false			# sorted
-% true,	false			# key
+% true,	true			# key
 % 42,				# min
 % 49,				# max
 #-------------------------------#

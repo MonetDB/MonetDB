@@ -30,7 +30,7 @@ Ready.
 [ 2	]
 #select avg(val - (select avg(val) from bug2739)) from bug2739;
 % sys. # table_name
-% L5 # name
+% L3 # name
 % double # type
 % 24 # length
 [ 0	]

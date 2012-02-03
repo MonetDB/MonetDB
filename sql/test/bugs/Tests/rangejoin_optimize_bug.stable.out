@@ -31,31 +31,31 @@ Ready.
 % 2 # length
 [ 49	]
 % sys.statistics # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 49	]
 [ 49	]
 [ 49	]
 % sys.statistics # table_name
-% L17 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 49	]
 [ 49	]
 % sys.statistics # table_name
-% L26 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]
 [ 49	]
 % sys.statistics # table_name
-% L35 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 49	]
 % sys.statistics # table_name
-% L36 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 49	]

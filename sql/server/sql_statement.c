@@ -50,6 +50,14 @@ dup_subaggr(sql_allocator *sa, sql_subaggr *f)
 	return res;
 }
 
+int
+stmt_key( stmt *s )
+{
+	char *nme = column_name(NULL, s);
+
+	return hash_key(nme);
+}
+
 const char *
 st_type2string(st_type type)
 {
@@ -256,6 +264,7 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->t = NULL;
 	s->optimized = -1;
 	s->rewritten = NULL;
+	s->tname = s->cname = NULL;
 	return s;
 }
 
@@ -500,7 +509,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 
 list* stmt_list_dependencies(sql_allocator *sa, stmt *s, int depend_type)
 {
-	list *dep_list = list_new(sa);
+	list *dep_list = sa_list(sa);
 
 	stmt_deps(dep_list, s, depend_type, s->optimized);
 	return dep_list;
@@ -919,7 +928,7 @@ stmt_limit2(sql_allocator *sa, stmt *a, stmt *b, stmt *offset, stmt *limit, int 
 {
 	stmt *ns = stmt_create(sa, st_limit2);
 
-	ns->op1 = stmt_list(sa, list_append(list_append(list_new(sa),b), a));
+	ns->op1 = stmt_list(sa, list_append(list_append(sa_list(sa),b), a));
 	ns->op2 = offset;
 	ns->op3 = limit;
 	ns->nrcols = b->nrcols;
@@ -1005,7 +1014,7 @@ stmt_relselect_init(sql_allocator *sa)
 {
 	stmt *s = stmt_create(sa, st_relselect);
 
-	s->op1 = stmt_list(sa, list_new(sa));
+	s->op1 = stmt_list(sa, sa_list(sa));
 	s->nrcols = 0;
 	return s;
 }
@@ -1140,8 +1149,8 @@ stmt_releqjoin_init(sql_allocator *sa)
 {
 	stmt *s = stmt_create(sa, st_releqjoin);
 
-	s->op1 = stmt_list(sa, list_new(sa));
-	s->op2 = stmt_list(sa, list_new(sa));
+	s->op1 = stmt_list(sa, sa_list(sa));
+	s->op2 = stmt_list(sa, sa_list(sa));
 	s->nrcols = 2;
 	return s;
 }
@@ -1173,8 +1182,8 @@ stmt_releqjoin__(sql_allocator *sa, list *l1, list *l2)
 stmt *
 stmt_releqjoin(sql_allocator *sa, list *joins)
 {
-	list *l1 = list_new(sa);
-	list *l2 = list_new(sa);
+	list *l1 = sa_list(sa);
+	list *l2 = sa_list(sa);
 	stmt *L = NULL;
 	node *n = NULL;
 
@@ -1317,7 +1326,7 @@ stmt_export(sql_allocator *sa, stmt *t, char *sep, char *rsep, char *ssep, char 
 
 	s->op1 = t;
 	s->op2 = file;
-	s->op4.lval = list_new(sa);
+	s->op4.lval = sa_list(sa);
 	list_append(s->op4.lval, sep);
 	list_append(s->op4.lval, rsep);
 	list_append(s->op4.lval, ssep);
@@ -1415,7 +1424,7 @@ stmt*
 stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
 {
 	stmt *s = stmt_create(sa, st_connection);
-	s->op4.lval = list_new(sa);
+	s->op4.lval = sa_list(sa);
 
 	if (*id != 0)
 		list_append(s->op4.lval, id);
@@ -1477,7 +1486,7 @@ stmt *
 stmt_convert(sql_allocator *sa, stmt *v, sql_subtype *from, sql_subtype *to)
 {
 	stmt *s = stmt_create(sa, st_convert);
-	list *l = list_new(sa);
+	list *l = sa_list(sa);
 
 	from = dup_subtype(sa, from);
 	to = dup_subtype(sa, to);
@@ -1648,6 +1657,9 @@ stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
+
+	s->tname = tname;
+	s->cname = alias;
 	return s;
 }
 
@@ -1836,6 +1848,8 @@ func_name(sql_allocator *sa, char *n1, char *n2)
 {
 	int l1 = _strlen(n1), l2; 
 
+	if (!sa)
+		return n1;
 	if (!n2)
 		return sa_strdup(sa, n1);
 	l2 = _strlen(n2);
@@ -1859,8 +1873,18 @@ func_name(sql_allocator *sa, char *n1, char *n2)
 	}
 }
 
+char * _column_name(sql_allocator *sa, stmt *st);
+
 char *
 column_name(sql_allocator *sa, stmt *st)
+{
+	if (!st->cname)
+		st->cname = _column_name(sa, st);
+	return st->cname;
+}
+
+char *
+_column_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
@@ -1912,14 +1936,17 @@ column_name(sql_allocator *sa, stmt *st)
 	case st_alias:
 		return column_name(sa, st->op3 );
 	case st_bat:
-		return sa_strdup(sa, st->op4.cval->base.name);
+		//return sa_strdup(sa, st->op4.cval->base.name);
+		return st->op4.cval->base.name;
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str)
 			return atom2string(sa, st->op4.aval);
 	case st_var:
 	case st_temp:
 	case st_single:
-		return sa_strdup(sa, "single_value");
+		if (sa)
+			return sa_strdup(sa, "single_value");
+		return "single_value";
 
 	case st_relselect:
 	case st_releqjoin:
@@ -1935,8 +1962,18 @@ column_name(sql_allocator *sa, stmt *st)
 	}
 }
 
+char * _table_name(sql_allocator *sa, stmt *st);
+
 char *
 table_name(sql_allocator *sa, stmt *st)
+{
+	if (!st->tname)
+		st->tname = _table_name(sa, st);
+	return st->tname;
+}
+
+char *
+_table_name(sql_allocator *sa, stmt *st)
 {
 	switch (st->type) {
 	case st_reverse:
@@ -1974,18 +2011,22 @@ table_name(sql_allocator *sa, stmt *st)
 		if (st->op2)
 			return table_name(sa, st->op2);
 	case st_table_clear:
-		return sa_strdup(sa, st->op4.tval->base.name);
+		//return sa_strdup(sa, st->op4.tval->base.name);
+		return st->op4.tval->base.name;
 	case st_bat:
 		return table_name(sa, st->h);
 	case st_alias:
-		if (st->op2)
-			return table_name(sa, st->op2);
+		if (st->tname)
+			return st->tname;
+		//if (st->op2)
+			//return table_name(sa, st->op2);
 		else
 			/* there are no table aliases, ie look into the base column */
 			return table_name(sa, st->op1);
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str && st->op4.aval->data.val.sval && _strlen(st->op4.aval->data.val.sval))
-			return atom2string(sa, st->op4.aval);
+			//return atom2string(sa, st->op4.aval);
+			return st->op4.aval->data.val.sval;
 
 	case st_var:
 	case st_temp:
@@ -2039,7 +2080,8 @@ schema_name(sql_allocator *sa, stmt *st)
 		/* there are no schema aliases, ie look into the base column */
 		return schema_name(sa, st->op1);
 	case st_bat:
-		return sa_strdup(sa, st->op4.cval->t->s->base.name);
+		//return sa_strdup(sa, st->op4.cval->t->s->base.name);
+		return st->op4.cval->t->s->base.name;
 	case st_atom:
 		return NULL;
 	case st_var:
@@ -2062,7 +2104,7 @@ stmt *stmt_while(sql_allocator *sa, stmt *cond, stmt *whilestmts )
 {
 	/* while is a if - block true with leave statement
 	 * needed because the condition needs to be inside this outer block */
-	list *l = list_new(sa);
+	list *l = sa_list(sa);
 	stmt *cstmt, *wstmt;
 
 	list_append(l, cstmt = stmt_cond(sa, stmt_bool(sa, 1), NULL, 0));
@@ -2094,7 +2136,7 @@ stmt *stmt_control_end(sql_allocator *sa, stmt *cond)
 
 stmt *stmt_if(sql_allocator *sa, stmt *cond, stmt *ifstmts, stmt *elsestmts)
 {
-	list *l = list_new(sa);
+	list *l = sa_list(sa);
 	stmt *cstmt;
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *not = sql_bind_func(sa, NULL, "not", bt, NULL, F_FUNC);

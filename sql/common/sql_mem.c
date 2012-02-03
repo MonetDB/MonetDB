@@ -60,6 +60,7 @@ sql_allocator *sa_create(void)
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
 	sa->blks[0] = NEW_ARRAY(char,SA_BLOCK);
+	sa->usedmem = SA_BLOCK;
 	if (!sa->blks[0]) {
 		_DELETE(sa);
 		return NULL;
@@ -119,6 +120,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	}
 	r = sa->blks[sa->nr-1] + sa->used;
 	sa->used += sz;
+	sa->usedmem += sz;
 	return r;
 }
 
@@ -170,4 +172,9 @@ char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2 )
 		memcpy(r+l1, s2, l2);
 	r[l1+l2] = 0;
 	return r;
+}
+
+size_t sa_size( sql_allocator *sa )
+{
+	return sa->usedmem;
 }

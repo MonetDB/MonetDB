@@ -80,7 +80,7 @@ stderr of test 'bind_with_cast.SF-1720934` in directory 'test/BugTracker` itself
 # 19:38:47 >  
 
 MAPI  = monetdb@madrid:32243
-QUERY = exec 2('100');
+QUERY = exec 1('100');
 ERROR = !EXEC: wrong type for argument 1 of prepared statement: char, expected int
 
 # 19:38:47 >  

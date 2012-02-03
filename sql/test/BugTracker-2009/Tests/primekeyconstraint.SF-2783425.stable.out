@@ -47,19 +47,19 @@ Ready.
 [ 5,	NULL	]
 [ 5,	NULL	]
 % sys.way_nds,	sys.way_nds,	sys.way_nds # table_name
-% L4,	way,	idx # name
+% L1,	way,	idx # name
 % wrd,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]
 [ 2,	5,	NULL	]
 % sys.way_nds,	sys.way_nds,	sys.way_nds # table_name
-% L6,	way,	idx # name
+% L1,	way,	idx # name
 % wrd,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]
 [ 2,	NULL,	3	]
 % sys.way_nds,	sys.way_nds,	sys.way_nds # table_name
-% L10,	way,	idx # name
+% L1,	way,	idx # name
 % wrd,	int,	int # type
 % 1,	1,	1 # length
 [ 2,	1,	1	]

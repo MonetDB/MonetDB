@@ -74,7 +74,7 @@ Ready.
 % varchar,	varchar # type
 % 0,	0 # length
 % sys.victim,	sys.victim # table_name
-% L10,	L11 # name
+% L1,	L2 # name
 % varchar,	varchar # type
 % 0,	0 # length
 [ NULL,	NULL	]

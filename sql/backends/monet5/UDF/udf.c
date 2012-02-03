@@ -22,15 +22,18 @@
 #include "udf.h"
 
 static str
-reverse(str src)
+reverse(const char *src)
 {
-	int len;
+	size_t len;
 	str ret, new;
 
 	/* The scalar function returns the new space */
-	len = (int) strlen(src);
-	ret = new = GDKzalloc(len + 1);
-	for (len--; len >= 0; len--)
+	len = strlen(src);
+	ret = new = GDKmalloc(len + 1);
+	if (new == NULL)
+		return NULL;
+	new[len] = 0;
+	while (--len != 0)
 		*new++ = src[len];
 	return ret;
 }
@@ -62,12 +65,13 @@ str UDFBATreverse(int *ret, int *bid)
 
 	/* create the result container */
 	bn = BATnew(left->htype, TYPE_str, BATcount(left));
-	if (left->htype == TYPE_void)
-		BATseqbase(bn, left->hseqbase);
 	if (bn == NULL) {
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "mal.reverse", MAL_MALLOC_FAIL);
 	}
+
+	if (left->htype == TYPE_void)
+		BATseqbase(bn, left->hseqbase);
 
 	/* manage the properties of the result */
 	bn->hsorted = left->hsorted;
@@ -78,18 +82,19 @@ str UDFBATreverse(int *ret, int *bid)
 	BATaccessBegin(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	/* the core of the algorithm, expensive due to malloc/frees */
-	BATloop(left, p, q)
-	{
+	BATloop(left, p, q) {
 		ptr h = BUNhead(li, p);
 		str tl = (str) BUNtail(li, p);
 		v = reverse(tl);
+		if (v == NULL)
+			goto bunins_failed;
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (!(bn->batDirty & 2))
-		(bn) = BATsetaccess(bn, BAT_READ);
-	*ret = (bn)->batCacheid;
+		bn = BATsetaccess(bn, BAT_READ);
+	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(left->batCacheid);
 	return MAL_SUCCEED;

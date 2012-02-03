@@ -55,14 +55,14 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 }
 
 static sql_exp ** 
-insert_exp_array(sql_table *t, int *Len)
+insert_exp_array(mvc *sql, sql_table *t, int *Len)
 {
 	sql_exp **inserts;
 	int i, len = list_length(t->columns.set);
 	node *m;
 
 	*Len = len;
-	inserts = NEW_ARRAY(sql_exp *, len);
+	inserts = SA_NEW_ARRAY(sql->sa, sql_exp *, len);
 	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
 		sql_column *c = m->data;
 
@@ -408,7 +408,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	if (columns) {
 		dnode *n;
 
-		collist = list_new(sql->sa);
+		collist = sa_list(sql->sa);
 		for (n = columns->h; n; n = n->next) {
 			sql_column *c = mvc_bind_column(sql, t, n->data.sval);
 
@@ -483,7 +483,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	   (!r->exps && collist)) 
 		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
-	inserts = insert_exp_array(t, &len);
+	inserts = insert_exp_array(sql, t, &len);
 
 	if (r->exps) {
 		for (n = r->exps->h, m = collist->h; n && m; n = n->next, m = m->next) {
@@ -504,9 +504,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 
 					/* In case of an ARRAY, don't use the (non-dimensional) column default to overwrite the existing cell value(s) */
 					if (c->def && !isArray(t)) {
-						char *q = sql_message( "select %s;", c->def);
+						char *q = sa_message(sql->sa, "select %s;", c->def);
 						e = rel_parse_val(sql, q, sql->emode);
-						_DELETE(q);
 						if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 							return NULL;
 					} else {
@@ -525,8 +524,6 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	exps = new_exp_list(sql->sa);
 	for (i = 0; i<len; i++) 
 		list_append(exps, inserts[i]);
-	_DELETE(inserts);
-	list_destroy(r->exps);
 	r->exps = exps;
 	return isArray(t)?rel_insert_array(sql, t, r):rel_insert_table(sql, t, tname, r);
 }

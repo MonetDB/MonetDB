@@ -62,7 +62,7 @@ Ready.
 #    ancestor.pre < _rank1.pre AND _rank1.pre < ancestor.post AND
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 % sys._rank1 # table_name
-% L5 # name
+% L3 # name
 % wrd # type
 % 1 # length
 [ 2	]
@@ -78,7 +78,7 @@ Ready.
 #  INTERSECT SELECT pre FROM _rank2933 AS ancestor WHERE
 #    ancestor.pre < _rank2.pre AND _rank2.pre < ancestor.post);
 % sys._rank1 # table_name
-% L13 # name
+% L5 # name
 % wrd # type
 % 1 # length
 [ 2	]

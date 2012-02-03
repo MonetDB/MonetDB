@@ -32,13 +32,13 @@ Ready.
 [ 34	]
 #select count(distinct name) from tables;
 % .tables # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 27	]
 #select count(name) , count(distinct name) from tables;
 % .tables,	.tables # table_name
-% L3,	L4 # name
+% L1,	L2 # name
 % wrd,	wrd # type
 % 2,	2 # length
 [ 34,	27	]

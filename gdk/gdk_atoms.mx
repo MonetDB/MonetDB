@@ -310,8 +310,10 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		if (t == GDKatomcnt) {
 			GDKatomcnt++;
 		}
-		FATALcheck(GDKatomcnt == MAXATOMS, "ATOMproperty:too many types");
-		FATALcheck(strlen(id) >= IDLENGTH, "ATOMproperty:name too long");
+		if (GDKatomcnt == MAXATOMS)
+			GDKfatal("ATOMproperty: too many types");
+		if (strlen(id) >= IDLENGTH)
+			GDKfatal("ATOMproperty: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strncpy(BATatoms[t].name, id, IDLENGTH);
 		BATatoms[t].size = sizeof(int);	/* default */

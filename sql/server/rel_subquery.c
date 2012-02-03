@@ -165,8 +165,8 @@ sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs)
 stmt *
 sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 {
-	list *sl = list_new(sql->sa);
-	list *tl = list_create(NULL);
+	list *sl = sa_list(sql->sa);
+	list *tl = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
 
 	list_append(sl, a1);
@@ -181,7 +181,6 @@ sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 	}
 
 	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl, F_FUNC);
-	list_destroy(tl);
 	if (f)
 		return stmt_Nop(sql->sa, stmt_list(sql->sa, sl), f);
 	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
@@ -221,7 +220,7 @@ select_into( mvc *sql, symbol *sq, exp_kind ek)
 		list *rl = s->op4.lval;
 		node *m;
 		dnode *n;
-		list *nl = list_new(sql->sa);
+		list *nl = sa_list(sql->sa);
 
 		assert(s->type == st_list);
 		for (m = rl->h, n = into->h; m && n; m = m->next, n = n->next) {
@@ -267,7 +266,7 @@ find_order(stmt *s)
 static stmt *
 sql_reorder(mvc *sql, stmt *order, stmt *s) 
 {
-	list *l = list_new(sql->sa);
+	list *l = sa_list(sql->sa);
 	node *n;
 	/* we need to keep the order by column, to propagate the sort property*/
 	stmt *o = find_order(order);
@@ -330,7 +329,7 @@ value_exp(mvc *sql, symbol *sq, int f, exp_kind ek)
 		if (s->type == st_list && s->nrcols == 0 && s->key) {
 			/* row to columns */
 			node *n;
-			list *l = list_new(sql->sa);
+			list *l = sa_list(sql->sa);
 
 			for(n=s->op4.lval->h; n; n = n->next)
 				list_append(l, const_column(sql->sa, (stmt*)n->data));

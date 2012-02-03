@@ -81,7 +81,7 @@ pattern catalog(type:int,user:str,passwd:str,enc:int,schema:str,fullname:str):vo
 address SQLcatalog
 comment "a user catalog statement";
 
-pattern catalog(type:int,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
+pattern catalog(type:int,sname:str,tname:str,grantee:str,privs:int,cname:str,grant:int,grantor:int):void
 address SQLcatalog
 comment "a grant/revoke privileges statement";
 
@@ -1696,6 +1696,7 @@ sqlcleanup(mvc *c, int err)
 		c->session->status = -err;
 	if (err < 0)
 		c->session->status = err;
+	c->label = 0;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -2393,20 +2394,22 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = sql_revoke_role( sql, sname /*grantee */, auth);
 	} 	break;
 	case DDL_GRANT: {
-		char *grantee = *(str*)getArgReference(stk, pci, 3);
-		int privs = *(int*)getArgReference(stk, pci, 4);
-		char *cname = SaveArgReference(stk, pci, 5);
-		int grant = *(int*)getArgReference(stk, pci, 6);
-		int grantor = *(int*)getArgReference(stk, pci, 7);
-		msg = sql_grant_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+		char *tname = *(str*)getArgReference(stk, pci, 3);
+		char *grantee = *(str*)getArgReference(stk, pci, 4);
+		int privs = *(int*)getArgReference(stk, pci, 5);
+		char *cname = SaveArgReference(stk, pci, 6);
+		int grant = *(int*)getArgReference(stk, pci, 7);
+		int grantor = *(int*)getArgReference(stk, pci, 8);
+		msg = sql_grant_table_privs( sql, grantee, privs, sname, tname, cname, grant, grantor);
 	} 	break;
 	case DDL_REVOKE: {
-		char *grantee = *(str*)getArgReference(stk, pci, 3);
-		int privs = *(int*)getArgReference(stk, pci, 4);
-		char *cname = SaveArgReference(stk, pci, 5);
-		int grant = *(int*)getArgReference(stk, pci, 6);
-		int grantor = *(int*)getArgReference(stk, pci, 7);
-		msg = sql_revoke_table_privs( sql, grantee, privs, sname, cname, grant, grantor);
+		char *tname = *(str*)getArgReference(stk, pci, 3);
+		char *grantee = *(str*)getArgReference(stk, pci, 4);
+		int privs = *(int*)getArgReference(stk, pci, 5);
+		char *cname = SaveArgReference(stk, pci, 6);
+		int grant = *(int*)getArgReference(stk, pci, 7);
+		int grantor = *(int*)getArgReference(stk, pci, 8);
+		msg = sql_revoke_table_privs( sql, grantee, privs, sname, tname, cname, grant, grantor);
 	} 	break;
 	case DDL_CREATE_USER: {
 		char *passwd = *(str*)getArgReference(stk, pci, 3);
@@ -2473,8 +2476,11 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
 		msg = setOptimizers(*(str *) getArgReference(stk,pci,3));
-		if ( msg != NULL && strcmp(msg,"default_pipe") == 0 )
+		if ( msg != NULL && strcmp(msg, "default_pipe") == 0 ) {
+			if (stack_find_var(m, varname)) 
+				stack_set_string(m, varname, "default_pipe");
 			return MAL_SUCCEED;
+		}
 		msg = SQLvalidatePipeline();
 		if ( msg ){
 			setOptimizers("default_pipe");

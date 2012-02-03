@@ -32,10 +32,10 @@ Ready.
 [ 42	]
 #SELECT COUNT(*) FROM tracelog();
 % . # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 2 # length
-[ 14	]
+[ 17	]
 
 # 11:14:41 >  
 # 11:14:41 >  Done.

@@ -87,7 +87,7 @@ psm_set(mvc *sql, dnode *n)
 static stmt *
 psm_declare(mvc *sql, dnode *n)
 {
-	list *l = list_new(sql->sa);
+	list *l = sa_list(sql->sa);
 
 	while(n) { /* list of 'identfiers with type' */
 		dnode *ids = n->data.sym->data.lval->h->data.lval->h;
@@ -219,7 +219,7 @@ static stmt *
 psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 {
 	exp_kind ek = {type_value, card_value, FALSE};
-	list *case_stmts = list_new(sql->sa);
+	list *case_stmts = sa_list(sql->sa);
 
 	if (!case_when)
 		return NULL;
@@ -343,7 +343,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 		return sql_error(sql, 10, "SELECT: too many nested operators");
 
 	if (blk->h)
- 		l = list_new(sql->sa);
+ 		l = sa_list(sql->sa);
 	stack_push_frame(sql, opt_label);
 	for (n = blk->h; n; n = n->next ) {
 		stmt *res = NULL;
@@ -467,10 +467,10 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 }
 
 static list *
-create_type_list(dlist *params, int param)
+create_type_list(mvc *sql, dlist *params, int param)
 {
 	sql_subtype *par_subtype;
-	list * type_list = list_create((fdestroy) NULL);
+	list * type_list = sa_list(sql->sa);
 	dnode * n = NULL;
 	
 	if (params) {
@@ -518,8 +518,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 	if (s == NULL)
 		s = cur_schema(sql);
 
-	type_list = create_type_list(params, 1);
-	
+	type_list = create_type_list(sql, params, 1);
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (params) {
 			char *arg_list = NULL;
@@ -535,8 +534,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 					arg_list = tpe;
 				}
 			}
-			list_destroy(type_list);
-				
 			(void)sql_error(sql, 02, "CREATE %s%s: name '%s' (%s) already in use", KF, F, fname, arg_list);
 			_DELETE(arg_list);
 			return NULL;
@@ -544,9 +541,6 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 			return sql_error(sql, 02, "CREATE %s%s: name '%s' already in use", KF, F, fname);
 		}
 	} else {
-		if (type_list)
-			list_destroy(type_list);
-	
 		if (create && !schema_privs(sql->role_id, s)) {
 			return sql_error(sql, 02, "CREATE %s%s: insufficient privileges "
 					"for user '%s' in schema '%s'", KF, F,
@@ -564,9 +558,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_name,
 				l = sql->params;
 			}
 			if (!l)
-				l = list_new(sql->sa);
-			l->sa = NULL;
-			l->destroy = (fdestroy)arg_destroy;
+				l = sa_list(sql->sa);
 			if (res)
 				restype = result_type(sql, sf, fname, res);
 
@@ -661,7 +653,7 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 		s =  cur_schema(sql);
 	
 	if (typelist) {	
-		type_list = create_type_list(typelist, 0);
+		type_list = create_type_list(sql, typelist, 0);
 		sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
 		if (!sub_func && !sname) {
 			s = tmp_schema(sql);
@@ -671,8 +663,10 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 			func = sub_func->func;
 	} else {
 		list_func = schema_bind_func(sql,s,name, type);
-		if (list_func && list_func->cnt > 1)
+		if (list_func && list_func->cnt > 1) {
+			list_destroy(list_func);
 			return sql_error(sql, 02, "DROP %s%s: there are more than one %s%s called '%s', please use the full signature", KF, F, kf, f,name);
+		}
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
 	}
@@ -693,11 +687,10 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 						arg_list = tpe;
 					}
 				}
-				list_destroy(type_list);
-				
+				list_destroy(list_func);
 				return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' (%s)", KF, F, kf, f, name, arg_list);
 			}
-			list_destroy(type_list);
+			list_destroy(list_func);
 			return sql_error(sql, 02, "DROP %s%s: no such %s%s '%s' ()", KF, F, kf, f, name);
 
 		} else {
@@ -705,11 +698,13 @@ drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
 		}
 	} else if ((is_func && !func->res.type) || 
 		   (!is_func && func->res.type)) {
+		if (list_func)
+			list_destroy(list_func);
 		return sql_error(sql, 02, "DROP %s%s: cannot drop %s '%s'", KF, F, is_func?"procedure":"function", name);
 	}
-	
-	list_destroy(type_list);
 
+	if (list_func)
+		list_destroy(list_func);
 	if (!schema_privs(sql->role_id, s)) {
 		return sql_error(sql, 02, "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 	}
@@ -749,11 +744,11 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 	
 	list_func = schema_bind_func(sql,s,name, type);
 	
-	if (!list_func) { 
+	if (!list_func) 
 			return sql_error(sql, 02, "DROP ALL %s%s: no such %s%s '%s'", KF, F, kf, f, name);
-	} 
 	
 	if (!schema_privs(sql->role_id, s)) {
+		list_destroy(list_func);
 		return sql_error(sql, 02, "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 	}
 	
@@ -761,14 +756,14 @@ drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 	for( n = list_func->h ; n; n = n->next) {
 		func = (sql_func *) n->data;
 
-		if (!drop_action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func))
+		if (!drop_action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
+			list_destroy(list_func);
 			return sql_error(sql, 02, "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+		}
 	}
 		
 	mvc_drop_all_func(sql, s, list_func, drop_action);
-
 	list_destroy(list_func);
-
 	return stmt_none(sql->sa);
 }
 

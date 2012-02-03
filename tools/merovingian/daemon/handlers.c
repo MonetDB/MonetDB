@@ -42,6 +42,7 @@ static char *sigquit = "SIGQUIT";
 static char *sighup  = "SIGHUP";
 static char *sigabrt = "SIGABRT";
 static char *sigsegv = "SIGSEGV";
+static char *sigbus  = "SIGBUS";
 static char *sigkill = "SIGKILL";
 static char *
 sigtostr(int sig)
@@ -59,6 +60,10 @@ sigtostr(int sig)
 			return(sigabrt);
 		case SIGSEGV:
 			return(sigsegv);
+#ifdef SIGBUS
+		case SIGBUS:
+			return(sigbus);
+#endif
 		case SIGKILL:
 			return(sigkill);
 		default:

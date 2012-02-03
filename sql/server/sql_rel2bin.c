@@ -371,7 +371,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 	list *newsels, *haveNoBasecol, *haveBasecol, *basecols, *oneColSels, *twoColSels;
 	node *bc;
 
-	newsels = list_new(sql->sa);
+	newsels = sa_list(sql->sa);
 
 	/* we skip selects that involve two columns, e.g., R.a < R.b, here */
 	twoColSels = list_select(oldsels, (void *) 1L, (fcmp) &cmp_sel_twoCol, NULL);
@@ -515,7 +515,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 					bound[ct] = ((stmt *) (sels1[ct]->h->data))->op2;
 				}
 				if (list_length(sels1[ct]) > 1) {
-					list *bnds = list_new(sql->sa);
+					list *bnds = sa_list(sql->sa);
 
 					for (n = sels1[ct]->h; n; n = n->next) {
 						list_append(bnds, ((stmt *) (n->data))->op2);
@@ -617,7 +617,7 @@ select_hash_key( mvc *sql, sql_idx *i, list *l )
 			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
 			h = stmt_Nop(sql->sa, stmt_list(sql->sa,  list_append( list_append(
-				list_append(list_new(sql->sa), h), 
+				list_append(sa_list(sql->sa), h), 
 				bits), 
 				s->op2)), 
 				xor);
@@ -648,7 +648,7 @@ join_hash_key( mvc *sql, list *l )
 			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
 
 			h = stmt_Nop(sql->sa, stmt_list(sql->sa,  list_append( list_append(
-				list_append(list_new(sql->sa), h), bits), 
+				list_append(sa_list(sql->sa), h), bits), 
 				stmt_project(sql->sa, o, s ))), 
 				xor);
 		} else {
@@ -723,7 +723,7 @@ static stmt *
 push_semijoin( mvc *sql, stmt *select, stmt *s )
 {
 	if (select->type == st_list){ 
-		list *l = list_new(sql->sa);
+		list *l = sa_list(sql->sa);
 		node *n;
 
 		for(n = select->op4.lval->h; n; n = n->next) {
@@ -910,8 +910,8 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_releqjoin:{
 		stmt *res;
-		list *l1 = list_new(c->sa);
-		list *l2 = list_new(c->sa);
+		list *l1 = sa_list(c->sa);
+		list *l2 = sa_list(c->sa);
 		node *n1, *n2;
 	
 		for (n1 = s->op1->op4.lval->h, n2 = s->op2->op4.lval->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
@@ -1076,7 +1076,7 @@ rel2bin(mvc *c, stmt *s)
 		list *l = s->op4.lval;
 		list *nl = NULL;
 
-		nl = list_new(c->sa);
+		nl = sa_list(c->sa);
 		for (n = l->h; n; n = n->next) {
 			stmt *ns = rel2bin(c, n->data);
 

@@ -335,6 +335,10 @@ main(int argc, char **argv)
 	err = NULL;
 	if ( mode == PASSIVE) {
 		ac->fromServer = udp_rastream(host, port, actuator);
+		if ( ac->fromServer == 0){
+			mnstr_printf(ACout, "Failed to access stream %s:%d\n",host,port);
+			return 0;
+		}
 		consumeStream(ac);
 #ifdef _DEBUG_ACTUATOR_
 			mnstr_printf(ACout, "stream consumed\n");

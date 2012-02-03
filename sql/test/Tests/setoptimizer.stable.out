@@ -32,50 +32,50 @@ Ready.
 % . # table_name
 % single_value # name
 % varchar # type
-% 188 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
+% 12 # length
+[ "default_pipe"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 48 # length
-[ "inline,remap,deadcode,multiplex,garbageCollector"	]
+% 3 # length
+[ "off"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 48 # length
-[ "inline,remap,deadcode,multiplex,garbageCollector"	]
+% 3 # length
+[ "off"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 188 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
+% 2 # length
+[ "on"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 188 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
+% 2 # length
+[ "on"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 169 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 12 # length
+[ "nov2009_pipe"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 169 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 12 # length
+[ "nov2009_pipe"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 169 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector"	]
+% 12 # length
+[ "default_pipe"	]
 
 # 20:30:45 >  
 # 20:30:45 >  Done.
