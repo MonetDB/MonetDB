@@ -3387,6 +3387,7 @@ end main;
 [ "blob",			  "command",	  "blob",	  "(s:str):blob ",															  "BLOBblob_fromstr;"					  ]
 [ "blob",			  "command",	  "blob",	  "(s:blob):blob ",															  "BLOBblob_blob;"					  ]
 [ "#convert",			  "command",	  "blob",	  "():void ",																  "BLOBconvert;"					  ]
+[ "#destroy",			  "command",	  "blob",	  "():void ",													  "BLOBdestroy;"			  ]
 [ "#del",			  "command",	  "blob",	  "():void ",																  "BLOBdel;"						  ]
 [ "#fromstr",			  "command",	  "blob",	  "():void ",																  "BLOBfromstr;"					  ]
 [ "#heap",			  "command",	  "blob",	  "():void ",																  "BLOBheap;"						  ]
