@@ -69,7 +69,7 @@ Ready.
 [ 3,	3,	37	]
 #select x, y,  sum(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
-% x,	y,	L2 # name
+% x,	y,	L1 # name
 % int,	int,	double # type
 % 1,	1,	24 # length
 [ 0,	0,	74	]

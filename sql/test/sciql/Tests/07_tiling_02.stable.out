@@ -69,7 +69,7 @@ Ready.
 [ 3,	3,	222,	37	]
 #select x, y, sum(v), avg(v), sum(v), v from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys.,	sys.,	sys.,	sys.a # table_name
-% x,	y,	L3,	L4,	L5,	v # name
+% x,	y,	L1,	L2,	L3,	v # name
 % int,	int,	double,	double,	double,	double # type
 % 1,	1,	24,	24,	24,	24 # length
 [ 0,	0,	74,	37,	74,	37	]
@@ -90,7 +90,7 @@ Ready.
 [ 3,	3,	222,	37,	222,	37	]
 #select x, y, sum(v1), avg(v1), v1, sum(v2), avg(v2), v2 from aa group by aa[x-1:x+2][y-2:y+1];
 % sys.aa,	sys.aa,	sys.,	sys.,	sys.aa,	sys.,	sys.,	sys.aa # table_name
-% x,	y,	L6,	L7,	v1,	L10,	L11,	v2 # name
+% x,	y,	L1,	L2,	v1,	L3,	L4,	v2 # name
 % int,	int,	double,	double,	double,	double,	double,	double # type
 % 1,	1,	24,	24,	24,	24,	24,	24 # length
 [ 0,	0,	74,	37,	37,	85.2,	42.6,	42.6	]

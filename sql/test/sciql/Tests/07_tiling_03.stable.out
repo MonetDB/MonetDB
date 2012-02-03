@@ -50,7 +50,7 @@ Ready.
 [ 9	]
 #select x,y, avg(f * f) from a group by a[x:x+2][y:y+2];
 % sys.a,	sys.a,	sys. # table_name
-% x,	y,	L42 # name
+% x,	y,	L1 # name
 % int,	int,	double # type
 % 1,	1,	24 # length
 [ 0,	0,	0.385	]
@@ -64,7 +64,7 @@ Ready.
 [ 2,	2,	0.04	]
 #select x,y, f, avg(f * f) from a group by a[x:x+2][y:y+2];
 % sys.a,	sys.a,	sys.a,	sys. # table_name
-% x,	y,	f,	L43 # name
+% x,	y,	f,	L1 # name
 % int,	int,	double,	double # type
 % 1,	1,	24,	24 # length
 [ 0,	0,	0.2,	0.385	]
