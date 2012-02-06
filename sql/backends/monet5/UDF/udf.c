@@ -70,12 +70,16 @@ str UDFBATreverse(int *ret, int *bid)
 		throw(MAL, "mal.reverse", MAL_MALLOC_FAIL);
 	}
 
-	if (left->htype == TYPE_void)
+	/* manage the properties of the result */
+	bn->hdense = BAThdense(left);
+	if (BAThdense(left))
 		BATseqbase(bn, left->hseqbase);
 
-	/* manage the properties of the result */
 	bn->hsorted = left->hsorted;
+	BATkey(bn, BAThkey(left));
+
 	bn->tsorted = 0;  /* assume not sorted afterwards */
+	BATkey(BATmirror(bn), BATtkey(left));
 
 	li = bat_iterator(left);
 	/* advice on sequential scan */
@@ -91,6 +95,7 @@ str UDFBATreverse(int *ret, int *bid)
 		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
+
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (!(bn->batDirty & 2))
 		bn = BATsetaccess(bn, BAT_READ);
