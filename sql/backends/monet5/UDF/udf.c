@@ -98,9 +98,11 @@ str UDFBATreverse(int *ret, int *bid)
 
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
+	BBPreleaseref(left->batCacheid);
+
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
-	BBPreleaseref(left->batCacheid);
+
 	return MAL_SUCCEED;
 
 bunins_failed:
