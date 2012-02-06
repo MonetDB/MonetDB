@@ -60,7 +60,7 @@ str UDFBATreverse(int *ret, int *bid)
 	str v;
 
 	/* locate the BAT in the buffer pool */
-	if ((left = BATdescriptor(*bid)) == NULL)
+	if (bid == NULL || (left = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "mal.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* create the result container */
