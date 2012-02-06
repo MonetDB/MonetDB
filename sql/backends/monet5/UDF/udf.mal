@@ -21,6 +21,9 @@ command reverse(ra1:str):str
 address UDFreverse
 comment "Reverse a string";
 
+
+module batudf;
+
 command reverse(b:bat[:oid,:str]):bat[:oid,:str]
 address UDFBATreverse
 comment "Reverse a BAT of strings");
