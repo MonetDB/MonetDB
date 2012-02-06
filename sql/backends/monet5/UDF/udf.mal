@@ -27,3 +27,34 @@ module batudf;
 command reverse(b:bat[:oid,:str]):bat[:oid,:str]
 address UDFBATreverse
 comment "Reverse a BAT of strings");
+
+
+
+module udf;
+
+command fuse(one:bte,two:bte):sht
+address UDFfuse_bte_sht
+comment "fuse two (1-byte) bte values into one (2-byte) sht value";
+
+command fuse(one:sht,two:sht):int
+address UDFfuse_sht_int
+comment "fuse two (2-byte) sht values into one (4-byte) int value";
+
+command fuse(one:int,two:int):lng
+address UDFfuse_int_lng
+comment "fuse two (4-byte) int values into one (8-byte) lng value";
+
+
+module batudf;
+
+command fuse(one:bat[:oid,:bte],two:bat[:oid,:bte]):bat[:oid,:sht]
+address UDFBATfuse
+comment "fuse two (1-byte) bte values into one (2-byte) sht value";
+
+command fuse(one:bat[:oid,:sht],two:bat[:oid,:sht]):bat[:oid,:int]
+address UDFBATfuse
+comment "fuse two (2-byte) sht values into one (4-byte) int value";
+
+command fuse(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng]
+address UDFBATfuse
+comment "fuse two (4-byte) int values into one (8-byte) lng value";

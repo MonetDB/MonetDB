@@ -28,7 +28,13 @@ end main;
 # str				str		str		str																	str							  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "main",			  "function",	  "user",	  "():void;",																  "nil"							  ]
+[ "fuse",		  "command",	  "udf",	  "(one:int,two:int):lng ",												  "UDFfuse_int_lng;"			  ]
+[ "fuse",		  "command",	  "udf",	  "(one:sht,two:sht):int ",												  "UDFfuse_sht_int;"			  ]
+[ "fuse",		  "command",	  "udf",	  "(one:bte,two:bte):sht ",												  "UDFfuse_bte_sht;"			  ]
 [ "reverse",		  "command",	  "udf",	  "(ra1:str):str ",													  "UDFreverse;"					  ]
+[ "fuse",		  "command",	  "batudf",	  "(one:bat[:oid,:int],two:bat[:oid,:int]):bat[:oid,:lng] ",								  "UDFBATfuse;"				  ]
+[ "fuse",		  "command",	  "batudf",	  "(one:bat[:oid,:sht],two:bat[:oid,:sht]):bat[:oid,:int] ",								  "UDFBATfuse;"				  ]
+[ "fuse",		  "command",	  "batudf",	  "(one:bat[:oid,:bte],two:bat[:oid,:bte]):bat[:oid,:sht] ",								  "UDFBATfuse;"				  ]
 [ "reverse",			  "command",	  "batudf",	  "(b:bat[:oid,:str]):bat[:oid,:str] ",												  "UDFBATreverse;"			  ]
 [ "angsep",		  "command",	  "lsst",	  "(ra1:dbl,dec1:dbl,ra2:dbl,dec2:dbl):dbl ",																												  "qserv_angSep;"			  ]
 [ "ptinsphpoly",	  "pattern",	  "lsst",	  "(ra:dbl,dec:dbl,list:dbl...):int ",																													  "qserv_ptInSphPoly;"			  ]
