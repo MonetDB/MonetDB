@@ -33,8 +33,8 @@ reverse(const char *src)
 	if (new == NULL)
 		return NULL;
 	new[len] = 0;
-	while (--len != 0)
-		*new++ = src[len];
+	while (len > 0)
+		*new++ = src[--len];
 	return ret;
 }
 
