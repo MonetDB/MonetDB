@@ -21,6 +21,7 @@
 #include "monetdb_config.h"
 #include "udf.h"
 
+/* Reverse a string */
 static str
 reverse(const char *src)
 {
@@ -38,8 +39,7 @@ reverse(const char *src)
 	return ret;
 }
 
-str
-UDFreverse(str *ret, str *src)
+str UDFreverse(str *ret, str *src)
 {
 	if (*src == 0 || strcmp(*src, str_nil) == 0)
 		*ret = GDKstrdup(str_nil);
@@ -49,6 +49,8 @@ UDFreverse(str *ret, str *src)
 }
 
 /*
+ * Reverse a BAT of strings
+ *
  * The BAT version is much more complicated, because we need to
  * ensure that properties are maintained.
  */
@@ -59,15 +61,19 @@ str UDFBATreverse(int *ret, int *bid)
 	BUN p, q;
 	str v;
 
+	/* check for NULL pointers */
+	if (ret == NULL || bid == NULL)
+		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
+
 	/* locate the BAT in the buffer pool */
-	if (bid == NULL || (left = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "mal.reverse", RUNTIME_OBJECT_MISSING);
+	if ((left = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* create the result container */
 	bn = BATnew(left->htype, TYPE_str, BATcount(left));
 	if (bn == NULL) {
 		BBPreleaseref(left->batCacheid);
-		throw(MAL, "mal.reverse", MAL_MALLOC_FAIL);
+		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
 
 	/* manage the properties of the result */
@@ -109,5 +115,5 @@ bunins_failed:
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	BBPreleaseref(left->batCacheid);
 	BBPreleaseref(*ret);
-	throw(MAL, "mal.reverse", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batudf.reverse", OPERATION_FAILED " During bulk operation");
 }
