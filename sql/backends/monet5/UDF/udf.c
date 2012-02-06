@@ -97,8 +97,7 @@ str UDFBATreverse(int *ret, int *bid)
 	}
 
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	if (!(bn->batDirty & 2))
-		bn = BATsetaccess(bn, BAT_READ);
+
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(left->batCacheid);
