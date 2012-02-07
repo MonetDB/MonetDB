@@ -87,10 +87,20 @@ comment "Avoid extra BAT copy with sql.append() whenever possible.";
 #ifndef _OPT_SQL_APPEND_
 #define _OPT_SQL_APPEND_
 
-#include "opt_prelude.h"
-#include "opt_support.h"
+#ifdef WIN32
+#ifndef LIBOPT_SQL_APPEND
+#define opt_sql_append_export extern __declspec(dllimport)
+#else
+#define opt_sql_append_export extern __declspec(dllexport)
+#endif
+#else
+#define opt_sql_append_export extern
+#endif
 
-@:exportOptimizer(sql_append)@
+#include "opt_prelude.h"
+
+/*@:exportOptimizer(sql_append)@*/
+opt_sql_append_export str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #define DEBUG_OPT_SQL_APPEND 61
 #define OPTDEBUGsql_append if (optDebug & ((lng)1 << DEBUG_OPT_SQL_APPEND))
