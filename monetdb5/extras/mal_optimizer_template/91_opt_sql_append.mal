@@ -15,5 +15,7 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = compiler ENABLE_CRACKERS?crackers HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx mal_optimizer_template
+# This loads the opt_sql_append optimizer module
+library opt_sql_append;
+include opt_sql_append;
 

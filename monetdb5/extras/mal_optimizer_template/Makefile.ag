@@ -15,5 +15,38 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = compiler ENABLE_CRACKERS?crackers HAVE_RAPTOR?rdf HAVE_SPHINXCLIENT?sphinx mal_optimizer_template
+INCLUDES = \
+	../../optimizer \
+	../../mal \
+	../../../gdk \
+	../../../common/stream \
+	../../../common/options
 
+MTSAFE
+
+lib_opt_sql_append = {
+	MODULE
+	DIR = libdir/monetdb5
+	SEP = _
+	SOURCES = opt_sql_append.mx
+#?	LIBS = ../../tools/libmonetdb5 \
+#?		   ../../../gdk/libbat \
+#?		   ../../../common/stream/libstream \
+#?		   $(MALLOC_LIBS)
+}
+
+headers_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = opt_sql_append.mx
+}
+
+headers_opt_sql_append_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 91_opt_sql_append.mal
+}
+
+EXTRA_DIST = 91_opt_sql_append.mal
+
+EXTRA_DIST_DIR = Tests

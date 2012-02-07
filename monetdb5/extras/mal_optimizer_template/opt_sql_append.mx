@@ -1,0 +1,250 @@
+@/
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.monetdb.org/Legal/MonetDBLicense
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2011 MonetDB B.V.
+All Rights Reserved.
+@
+
+@f opt_sql_append
+
+@c
+/*
+ * @a S. Manegold
+ * @- SQL append show-case optimizer
+ *
+ * This optimizer is mainly for demonstrating how to implement a MAL
+ * optimizer in priciple.
+ *
+ * Purely for that purpose, the optimizer's task is to recognize MAL code
+ * patterns like
+ *
+ *  ...
+ *  v3 := sql.append( ..., ..., ..., ..., v0 );
+ *  ...
+ *  v5 := ... v0 ...;
+ *  ...
+ *
+ * i.e., an sql.append() statement that is eventually followed by some other
+ * statement later on in the MAL program that uses the same v0 BAT as
+ * argument as the sql.append() statement does,
+ *
+ * and transform them into
+ *
+ *  ...
+ *  v1 := aggr.count( v0 );
+ *  v2 := algebra.slice( v0, 0, v1 );
+ *  v3 := sql.append( ..., ..., ..., ..., v2 );
+ *  ...
+ *  v5 := ... v0 ...;
+ *  ...
+ *
+ * i.e., handing a BAT view v2 of BAT v0 as argument to the sql.append()
+ * statement, rather than the original BAT v0.
+ *
+ * As a refinement, patterns like
+ *
+ *  ...
+ *  v3 := sql.append( ..., ..., ..., ..., v0 );
+ *  v4 := aggr.count( v0 );
+ *  ...
+ *  v5 := ... v0 ...;
+ *  ...
+ *
+ * are transformed into
+ *
+ *  ...
+ *  v4 := aggr.count( v0 );
+ *  v2 := algebra.slice( v0, 0, v4 );
+ *  v3 := sql.append( ..., ..., ..., ..., v2 );
+ *  ...
+ *  v5 := ... v0 ...;
+ *  ...
+ *
+ */
+
+@mal
+pattern optimizer.sql_append():str
+address OPTsql_append
+comment "Avoid extra BAT copy with sql.append() whenever possible.";
+
+pattern optimizer.sql_append(mod:str, fcn:str):str
+address OPTsql_append
+comment "Avoid extra BAT copy with sql.append() whenever possible.";
+
+@h
+#ifndef _OPT_SQL_APPEND_
+#define _OPT_SQL_APPEND_
+
+#include "opt_prelude.h"
+#include "opt_support.h"
+
+@:exportOptimizer(sql_append)@
+
+#define DEBUG_OPT_SQL_APPEND 61
+#define OPTDEBUGsql_append if (optDebug & ((lng)1 << DEBUG_OPT_SQL_APPEND))
+
+#endif /* _OPT_SQL_APPEND_ */
+
+@c
+#include "monetdb_config.h"
+#include "opt_sql_append.h"
+#include "mal_interpreter.h"
+
+/* focus initially on persistent tables. */
+
+static int
+OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr *old = NULL;
+	int i, limit, slimit, actions = 0;
+
+	(void) pci; /* Tell compilers that we know that we do not */
+	(void) stk; /* use these function parameters, here.       */
+
+	/* In general, a MAL optimizer transforms a given MAL program into a
+	 * modified one by sequentially walking through the given program
+	 * and concurrently creating a new one from scratch by
+	 * (1) copying statements as is, modified, or in a different order,
+	 * or (2) omitting statements or (3) introducing new statements.
+	 */
+
+	if (mb == NULL)
+		return 0;
+
+	old = mb->stmt;
+	limit= mb->stop;
+	slimit = mb->ssize;
+
+	if (newMalBlkStmt(mb, mb->ssize) < 0)
+		return 0;
+
+	/* the plan signature can be copied safely */
+	pushInstruction(mb, old[0]);
+
+	/* iterate over the instructions of the input MAL program */
+	for (i = 1; i < limit; i++) {
+		InstrPtr p = old[i];
+
+		/* check for
+		 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+		 */
+		if (getModuleId(p) == sqlRef && \
+		    getFunctionId(p) == appendRef && \
+		    p->argc > 5 && \
+		    isaBatType(getArgType(mb, p, 5))) {
+			/* found
+			 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+			 */
+			int j = 0, k = 0;
+			InstrPtr q1 = NULL, q2 = NULL;
+			bit found = FALSE;
+
+			/* check whether next is
+			 *  v4 := aggr.count(v0);
+			 */
+			if (i+1 < limit) {
+				InstrPtr q = old[i+1];
+				if (getModuleId(q) == aggrRef && \
+			            getFunctionId(q) == countRef && \
+			            getArg(q, 1) == getArg(p, 5)) {
+			                /* found
+			                 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+			                 *  v4 := aggr.count(v0);
+			                 */
+					/* issue/execute
+					 *  v4 := aggr.count(v0);
+					 * before
+					 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+					 */
+					pushInstruction(mb, q);
+					q1 = q;
+					i++;
+					actions++;
+				}
+			}
+
+			/* look for
+			 *  v5 := ... v0 ...;
+			 */
+			for (j = i+1; !found  && j < limit; j++)
+				for (k = old[j]->retc; !found && k < old[j]->argc; k++)
+					found = (getArg(old[j], k) == getArg(p, 5));
+			if (found) {
+				/* replace
+				 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+				 * with
+				 *  v1 := aggr.count( v0 );
+				 *  v2 := algebra.slice( v0, 0, v1 );
+				 *  v3 := sql.append( ..., ..., ..., ..., v2 );
+				 */
+
+				/* push new v1 := aggr.count( v0 ); unless already available */
+				if (q1 == NULL) {
+					q1 = newInstruction(mb,ASSIGNsymbol);
+					getArg(q1,0) = newTmpVariable(mb, TYPE_wrd);
+					setModuleId(q1, aggrRef);
+					setFunctionId(q1, countRef);
+					q1 = pushArgument(mb, q1, getArg(p, 5));
+					pushInstruction(mb, q1);
+				}
+
+				/* push new v2 := algebra.slice( v0, 0, v1 ); */
+				q2 = newInstruction(mb,ASSIGNsymbol);
+				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
+				setModuleId(q2, algebraRef);
+				setFunctionId(q2, sliceRef);
+				q2 = pushArgument(mb, q2, getArg(p, 5));
+				q2 = pushWrd(mb, q2, 0);
+				q2 = pushArgument(mb, q2, getArg(q1, 0));
+				pushInstruction(mb, q2);
+
+				/* push modified v3 := sql.append( ..., ..., ..., ..., v2 ); */
+				getArg(p, 5) = getArg(q2, 0);
+				pushInstruction(mb, p);
+
+				actions++;
+				continue;
+			}
+		}
+
+		pushInstruction(mb, p);
+		if (p->token == ENDsymbol) break;
+	}
+
+	/* We would like to retain everything from the ENDsymbol
+	 * up to the end of the plan, because after the ENDsymbol
+	 * the remaining optimizer steps are stored.
+	 */
+	for(i++; i<limit; i++)
+		if (old[i])
+			pushInstruction(mb, old[i]);
+	for(; i<slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
+
+	GDKfree(old);
+
+	/* for statistics we return if/how many patches have been made */
+	DEBUGoptimizers
+		mnstr_printf(cntxt->fdout,"#opt_sql_append: %d statements added\n",
+				actions);
+	return actions;
+}
+
+@include ../../optimizer/optimizerWrapper.mx
+@c
+#include "opt_statistics.h"
+
+@:wrapOptimizer(sql_append,OPT_CHECK_ALL)@
