@@ -41,8 +41,10 @@ Ready.
 % 8 # length
 [ 23950375	]
 [ 24644162	]
-% .L4 # table_name
-% L4 # name
+#drop table way_tags_2430201;
+#select distinct (select 10 union all select 10);
+% .L1 # table_name
+% L1 # name
 % tinyint # type
 % 2 # length
 [ 10	]

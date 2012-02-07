@@ -72,8 +72,8 @@ datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
 datacell_export str BSKTbeat(int *ret, str *tbl, int *sz);
 datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
 datacell_export str BSKTtimewindow(int *ret, str *tbl, int *sz, int *slide);
-datacell_export str BSKTtable(int *ret);
-datacell_export str BSKTtableerrors(int *ret);
+datacell_export str BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *grabsId, int *eventsId);
+datacell_export str BSKTtableerrors(int *nmeId, int *errorId);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);
 datacell_export str BSKTunlock(int *ret, str *tbl);

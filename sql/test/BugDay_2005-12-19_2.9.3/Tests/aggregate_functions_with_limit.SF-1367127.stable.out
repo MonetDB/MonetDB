@@ -75,12 +75,12 @@ Ready.
 [ 1	]
 #select count(*) from test_aggre_limit limit 1;
 % .test_aggre_limit # table_name
-% L4 # name
+% L1 # name
 % wrd # type
 % 2 # length
 [ 50	]
 % sys.test_aggre_limit,	sys.test_aggre_limit # table_name
-% type,	L5 # name
+% type,	L1 # name
 % varchar,	wrd # type
 % 3,	2 # length
 [ "int",	29	]

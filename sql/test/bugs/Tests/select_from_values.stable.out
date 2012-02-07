@@ -25,7 +25,7 @@ Ready.
 # 23:25:51 >  
 
 % .t,	.t # table_name
-% L3,	L4 # name
+% L1,	L2 # name
 % tinyint,	char # type
 % 1,	6 # length
 [ 0,	"Promo0"	]

@@ -453,7 +453,7 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 	atom *a;
 
 	/* exclude named variables */
-	if (s->type != st_var || s->op1->op4.aval->data.val.sval || 
+	if (s->type != st_var || (s->op1 && s->op1->op4.aval->data.val.sval) || 
 		(ct->scale && ct->type->eclass != EC_FLT))
 		return s;
 

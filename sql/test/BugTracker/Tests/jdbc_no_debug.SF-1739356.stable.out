@@ -99,7 +99,7 @@ Ready.
 |     X_56 := bat.append(X_54,X_19,true); |
 |     X_57 := algebra.selectNotNil(X_56); |
 |     X_58:wrd  := aggr.sum(X_57); |
-|     sql.exportValue(1,".tables","L2":str,"wrd",64,0,6,X_58,""); |
+|     sql.exportValue(1,".tables","L1":str,"wrd",64,0,6,X_58,"");     |
 | end s4_1;                                                           |
 +---------------------------------------------------------------------+
 42 rows

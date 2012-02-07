@@ -30,12 +30,12 @@ Ready.
 [ 1	]
 [ 1	]
 % sys.counttest # table_name
-% L2 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 6	]
 % sys.counttest # table_name
-% L3 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 5	]

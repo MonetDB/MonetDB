@@ -27,7 +27,7 @@ Ready.
 [ 1	]
 [ 1	]
 % sys.a,	sys.a # table_name
-% b,	L3 # name
+% b,	L1 # name
 % int,	wrd # type
 % 2,	1 # length
 [ 10,	2	]

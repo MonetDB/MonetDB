@@ -1695,6 +1695,7 @@ sqlcleanup(mvc *c, int err)
 		c->session->status = -err;
 	if (err < 0)
 		c->session->status = err;
+	c->label = 0;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -2472,8 +2473,11 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
 		msg = setOptimizers(*(str *) getArgReference(stk,pci,3));
-		if ( msg != NULL && strcmp(msg,"default_pipe") == 0 )
+		if ( msg != NULL && strcmp(msg, "default_pipe") == 0 ) {
+			if (stack_find_var(m, varname)) 
+				stack_set_string(m, varname, "default_pipe");
 			return MAL_SUCCEED;
+		}
 		msg = SQLvalidatePipeline();
 		if ( msg ){
 			setOptimizers("default_pipe");

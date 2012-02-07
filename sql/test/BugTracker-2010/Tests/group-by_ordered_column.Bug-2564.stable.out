@@ -39,7 +39,7 @@ Ready.
 % mal # name
 % clob # type
 % 63 # length
-function user.s5_1{autoCommit=true}():void;
+function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_30:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c2",0);
     X_29:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c2",2);
@@ -70,13 +70,13 @@ function user.s5_1{autoCommit=true}():void;
     X_42 := bat.mirror(ext59);
     X_43:bat[:oid,:wrd]  := aggr.count(grp57,grp57,X_42);
     X_44 := sql.resultSet(1,1,X_43);
-    sql.rsColumn(X_44,"sys.t2564","L4":str,"wrd",64,0,X_43);
+    sql.rsColumn(X_44,"sys.t2564","L1":str,"wrd",64,0,X_43);
     X_52 := io.stdout();
     sql.exportResult(X_52,X_44);
-end s5_1;
+end s6_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.t2564 # table_name
-% L5 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]

@@ -42,28 +42,28 @@
 #define ERRSIZE 8192
 
 /* different query execution modes (emode) */
-#define m_normal 0
-#define m_inplace 1 
-#define m_execute 2
-#define m_prepare 3
-#define m_explain 4 
-#define m_plan 5 
-#define m_dot 8
+#define m_normal 	0
+#define m_inplace 	1 
+#define m_execute 	2
+#define m_prepare 	3
+#define m_plan 		4
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
-#define m_instantiate 6
-#define m_deps 7
+#define m_instantiate 	5
+#define m_deps 		6
 
 #define QUERY_MODE(m) (m==m_normal || m==m_inplace || m==m_instantiate || m==m_deps)
 
 
 /* different query execution modifiers (emod) */
-#define mod_none 0
-#define mod_debug 2
-#define mod_trace 4
+#define mod_none 	0
+#define mod_debug 	1
+#define mod_trace 	2
+#define mod_explain 	4 
+#define mod_dot 	8 
 /* locked needs unlocking */
-#define mod_locked 8 
+#define mod_locked 	16 
 
 typedef struct sql_var {
 	void *s;	

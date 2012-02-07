@@ -28,29 +28,29 @@ Ready.
 % mal # name
 % clob # type
 % 67 # length
-function user.s3_1{autoCommit=true}():void;
-    X_2 := sql.mvc();
-    X_13:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
-    X_11:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
-    X_15 := algebra.kdifference(X_13,X_11);
-    X_16 := algebra.kunion(X_15,X_11);
-    X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",1);
-    X_17 := algebra.kunion(X_16,X_10);
-    X_6:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","sf_2596114",1);
-    X_9 := bat.reverse(X_6);
-    X_18 := algebra.kdifference(X_17,X_9);
-    X_19:bat[:oid,:dbl]  := batmmath.pow(X_18,2:dbl);
-    X_20 := sql.resultSet(1,1,X_19);
-    sql.rsColumn(X_20,"sys.","power_x","double",53,0,X_19);
-    X_25 := io.stdout();
-    sql.exportResult(X_25,X_20);
-end s3_1;
+function user.s2_1{autoCommit=true}(A0:dbl):void;
+    X_3 := sql.mvc();
+    X_14:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
+    X_12:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",2);
+    X_16 := algebra.kdifference(X_14,X_12);
+    X_17 := algebra.kunion(X_16,X_12);
+    X_11:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",1);
+    X_18 := algebra.kunion(X_17,X_11);
+    X_7:bat[:oid,:oid]  := sql.bind_dbat(X_3,"sys","sf_2596114",1);
+    X_10 := bat.reverse(X_7);
+    X_19 := algebra.kdifference(X_18,X_10);
+    X_20:bat[:oid,:dbl]  := batmmath.pow(X_19,A0);
+    X_21 := sql.resultSet(1,1,X_20);
+    sql.rsColumn(X_21,"sys.","power_x","double",53,0,X_20);
+    X_26 := io.stdout();
+    sql.exportResult(X_26,X_21);
+end s2_1;
 #explain select x*x from SF_2596114;
 % .explain # table_name
 % mal # name
 % clob # type
 % 67 # length
-function user.s4_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_13:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
     X_11:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
@@ -66,7 +66,7 @@ function user.s4_1{autoCommit=true}():void;
     sql.rsColumn(X_20,"sys.","sql_mul_x","double",53,0,X_19);
     X_25 := io.stdout();
     sql.exportResult(X_25,X_20);
-end s4_1;
+end s3_1;
 #drop table SF_2596114;
 
 # 23:02:30 >  

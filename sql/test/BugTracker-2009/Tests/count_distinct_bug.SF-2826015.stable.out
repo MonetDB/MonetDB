@@ -42,12 +42,12 @@ Ready.
 [ "test"	]
 [ "other"	]
 % sys.testdistinct # table_name
-% L7 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]
 % sys.testdistinct # table_name
-% L10 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 2	]

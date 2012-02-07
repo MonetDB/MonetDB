@@ -159,7 +159,7 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 {
 	int i;
 
-	if (!plen && !typelist && !atoms)
+	if (!plen && !typelist)
 		return 0;
 
 	if (!typelist || !atoms)

@@ -1187,6 +1187,21 @@ SQLshowDot(Client c)
 	q = pushStr(c->curprg->def, q, "stdout-mapi");
 }
 
+
+#define MAX_QUERY 	(16*1024*1024)
+
+static int 
+cachable( mvc *m, stmt *s ) 
+{
+	if (m->emode == m_plan ||
+	   !m->caching ||
+            m->type == Q_TRANS || m->type == Q_SCHEMA || 
+	    (s && s->type == st_none) || 
+	    sa_size(m->sa) > MAX_QUERY)
+		return 0;
+	return 1;
+}
+
 /*
  * The core part of the SQL interface, parse the query and
  * prepare the intermediate code.
@@ -1373,13 +1388,15 @@ SQLparser(Client c)
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
-	} else if ((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id))) {
+	} else if (cachable(m, NULL) && 
+                  (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
+		if (m->emod & mod_explain)
+			SQLshowPlan(c);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
-		if (m->emode != m_explain && m->emode != m_dot &&
-				!(m->emod & (mod_debug | mod_trace)))
+		if (!(m->emod & (mod_explain | mod_debug | mod_trace | mod_dot)))
 			m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
 	} else {
@@ -1394,13 +1411,13 @@ SQLparser(Client c)
 		}
 		assert(s);
 		/* generate and call the MAL code */
-		if (m->emode == m_explain)
+		if (m->emod & mod_explain)
 			SQLshowPlan(c);
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
-		if ((m->emode != m_inplace && m->emode != m_prepare && !m->caching && m->emode != m_explain ) || s->type == st_none || m->type == Q_TRANS) {
+		if (!cachable(m, s)) {
 			InstrPtr p;
 			MalBlkPtr curBlk;
 
@@ -1408,17 +1425,13 @@ SQLparser(Client c)
 			backend_callinline(be, c, s);
 
 			curBlk = c->curprg->def;
+
 			p = newFcnCall(curBlk, "optimizer", "remap");
 			typeChecker(c->nspace, curBlk, p, FALSE);
 			p = newFcnCall(curBlk, "optimizer", "multiplex");
 			typeChecker(c->nspace, curBlk, p, FALSE);
 			optimizeMALBlock(c, curBlk);
 			c->curprg->def = curBlk;
-
-			if (m->emode == m_inplace)
-				m->emode = m_normal;
-			if (m->emode == m_dot)
-				SQLshowDot(c);
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
@@ -1432,8 +1445,7 @@ SQLparser(Client c)
 					m->type,  /* the type of the statement */
 					sql_escape_str(QUERY(m->scanner)));
 			scanner_query_processed(&(m->scanner));
-			be->q->code =
-				(backend_code) backend_dumpproc(be, c, be->q, s);
+			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
 
 			/* passed over to query cache, used during dumpproc */
@@ -1451,14 +1463,18 @@ SQLparser(Client c)
 			err = mvc_export_prepare(m, c->fdout, be->q, "");
 		else if (m->emode == m_inplace) {
 			/* everything ready for a fast call */
-		} else /* call procedure generation (only in cache mode) */
+		} else { /* call procedure generation (only in cache mode) */
 			backend_call(be, c, be->q);
+		}
 	}
 
 	/*
 	 * @-
 	 * In the final phase we add any debugging control
 	 */
+
+	if (m->emod & mod_dot)
+		SQLshowDot(c);
 	if (m->emod & mod_trace)
 		SQLsetTrace(be, c, FALSE);
 	if (m->emod & mod_debug)
@@ -1471,7 +1487,8 @@ SQLparser(Client c)
 	 * query block.
 	 */
 	if (err == 0) {
-		pushEndInstruction(c->curprg->def);
+		if (be->q)
+			pushEndInstruction(c->curprg->def);
 
 		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case than
@@ -1496,10 +1513,18 @@ SQLparser(Client c)
  * Inspect the variables for post code-generation actions.
  */
 finalize:
-	if (m->emode == m_explain && be->q && be->q->code)
-		printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-	if (m->emode == m_dot && be->q && be->q->code)
-		showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
+	if (m->emod & mod_explain && !msg) {
+		if (be->q && be->q->code)
+			printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+		else if (c->curprg && c->curprg->def)
+			printFunction(GDKout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	}
+	if (m->emod & mod_dot && !msg) {
+		if (be->q && be->q->code)
+			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
+		else if (c->curprg && c->curprg->def)
+			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
+	}
 	/*
 	 * Gather the statistics for post analysis. It should preferably
 	 * be stored in an SQL table
@@ -1618,7 +1643,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_explain || m->emode == m_dot) {
+	if (m->emod & (mod_explain | mod_dot)) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
@@ -1640,17 +1665,18 @@ SQLengineIntern(Client c, backend *be)
 	}
 	if( m->emode == m_prepare){
 		goto cleanup_engine;
-	} else if (m->emode == m_explain || m->emode == m_dot) {
+	} else if (m->emod & (mod_explain | mod_dot)) {
 		/*
 		 * If you want to see the detailed code, we have to pick it up from
 		 * the cache as well. This calls for finding the call to the
 		 * cached routine, which may be hidden. For now we take a shortcut.
 		 */
+		assert(0);
 		if (be->q) {
 			InstrPtr p;
 			p = getInstrPtr(c->curprg->def,1);
 			if (p->blk) {
-				if (m->emode == m_explain) {
+				if (m->emod & mod_explain) {
 					printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI);
 				} else {
 					showFlowGraph(p->blk, 0, "stdout-mapi");
@@ -1673,6 +1699,8 @@ SQLengineIntern(Client c, backend *be)
 	}
 
 cleanup_engine:
+	if (m->type == Q_SCHEMA) 
+        	qc_clean(m->qc);
 	if (msg) {
 		enum malexception type = getExceptionType(msg);
 		if (type == OPTIMIZER) {

@@ -93,16 +93,17 @@ command beat(bskt:str, t:int):bit
 address DCbeat
 comment "Schedule query with T milliseconds interval";
 
-command baskets():bat[:str,:bat]
+command baskets()(nme:bat[:oid,:str], threshold:bat[:oid,:int], winsize:bat[:oid,:int], winstride:bat[:oid,:int], timeslice:bat[:oid,:int], 
+timestride:bat[:oid,:int], beat:bat[:oid,:int], seen:bat[:oid,:timestamp], grabs:bat[:oid,:int], events:bat[:oid,:int])
 address BSKTtable
 comment "Inspect the datacell baskets";
 
-command queries():bat[:str,:bat]
+command queries()(nme:bat[:oid,:str], status:bat[:oid,:str], seen:bat[:oid,:timestamp], cycles:bat[:oid,:int], events:bat[:oid,:int], time:bat[:oid,:lng], error:bat[:oid,:str], def:bat[:oid,:str])
 address PNtable
-comment "Inspect the datacell queries";
+comment "Return a table with queries registered";
 
-command errors():bat[:str,:bat]
+command errors()(nme:bat[:oid,:str],error:bat[:oid,:str])
 address BSKTtableerrors
-comment "Inspect the erroneous events";
+comment "Return a table the erroneous events";
 
 datacell.prelude();

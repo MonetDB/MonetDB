@@ -50,12 +50,12 @@ Ready.
 [ 1,	"wendy",	"Wendy\nWones"	]
 [ 2,	"fred",	"Fred Flintstone"	]
 % sys.sequences # table_name
-% L16 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 1	]
 % sys.sequences # table_name
-% L17 # name
+% L1 # name
 % wrd # type
 % 1 # length
 [ 0	]

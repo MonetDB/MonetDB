@@ -7,7 +7,7 @@ set optimizer='datacell_pipe';
 
 create table datacell.bsktin(
     id integer,
-    tag timestamp,
+    tag integer,
     payload integer
 );
 create table datacell.bsktout (like datacell.bsktin);
@@ -22,7 +22,7 @@ call datacell.resume();
 call datacell.dump();
 
 -- externally, activate the sensor 
---sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1
+--sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1 --trace
 -- externally, activate the actuator server to listen
 -- actuator 
 

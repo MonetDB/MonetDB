@@ -34,31 +34,31 @@ Ready.
 % mal # name
 % clob # type
 % 65 # length
-function user.s3_1{autoCommit=true}():void;
-    X_23 := nil:bat[:oid,:dbl];
+function user.s2_1{autoCommit=true}(A0:flt):void;
+    X_24 := nil:bat[:oid,:dbl];
 barrier X_56 := language.dataflow();
-    X_2 := sql.mvc();
-    X_12:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",0);
-    X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",2);
-    X_14 := algebra.kdifference(X_12,X_10);
-    X_15 := algebra.kunion(X_14,X_10);
-    X_9:bat[:oid,:dbl]  := sql.bind(X_2,"sys","tab_2826","d",1);
-    X_16 := algebra.kunion(X_15,X_9);
-    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","tab_2826",1);
-    X_8 := bat.reverse(X_5);
-    X_17 := algebra.kdifference(X_16,X_8);
-    X_18 := batcalc.flt(X_17);
-    X_42 := batmmath.log10(X_18);
-    X_19 := algebra.thetauselect(X_42,1:flt,">");
-    X_21 := algebra.markT(X_19,0@0:oid);
-    X_22 := bat.reverse(X_21);
-    X_23 := algebra.leftjoin(X_22,X_17);
+    X_3 := sql.mvc();
+    X_13:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
+    X_11:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",2);
+    X_15 := algebra.kdifference(X_13,X_11);
+    X_16 := algebra.kunion(X_15,X_11);
+    X_10:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",1);
+    X_17 := algebra.kunion(X_16,X_10);
+    X_6:bat[:oid,:oid]  := sql.bind_dbat(X_3,"sys","tab_2826",1);
+    X_9 := bat.reverse(X_6);
+    X_18 := algebra.kdifference(X_17,X_9);
+    X_19 := batcalc.flt(X_18);
+    X_43 := batmmath.log10(X_19);
+    X_20 := algebra.thetauselect(X_43,A0,">");
+    X_22 := algebra.markT(X_20,0@0:oid);
+    X_23 := bat.reverse(X_22);
+    X_24 := algebra.leftjoin(X_23,X_18);
 exit X_56;
-    X_24 := sql.resultSet(1,1,X_23);
-    sql.rsColumn(X_24,"sys.tab_2826","d","double",53,0,X_23);
-    X_30 := io.stdout();
-    sql.exportResult(X_30,X_24);
-end s3_1;
+    X_25 := sql.resultSet(1,1,X_24);
+    sql.rsColumn(X_25,"sys.tab_2826","d","double",53,0,X_24);
+    X_31 := io.stdout();
+    sql.exportResult(X_31,X_25);
+end s2_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

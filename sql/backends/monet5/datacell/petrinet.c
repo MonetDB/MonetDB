@@ -80,6 +80,8 @@ for each continous query step. This provides the information to re-design the ev
 #define PNcontrolInfinit 1	/* infinit loop of PNController  */
 #define PNcontrolEnd 2		/* when all factories are disable PNController exits */
 
+/* #define _DEBUG_PETRINET_ */
+
 /*static int controlRounds = PNcontrolInfinit;*/
 
 static MT_Lock petriLock;
@@ -518,9 +520,6 @@ PNcontroller(void *dummy)
 					pnet[i].available += cnt;
 					pnet[i].enabled++;
 				} else {
-#ifdef _DEBUG_PETRINET_
-					mnstr_printf(cntxt->fdout, "#PETRINET:no tuples for %s, source %d\n",  pnet[i].name, j);
-#endif
 					/*stop checking if the rest input BATs does not contain elements */
 					pnet[i].enabled = 0;
 					break;
@@ -595,7 +594,6 @@ static str PNstart(int *ret)
 	int s;
 #ifdef _DEBUG_PETRINET_
 	PNdump(&s);
-	printf("\npnettop=%d\n", pnettop);
 #endif
 	mal_set_lock(petriLock,"pncontroller");
 	if ( status != PNstopped )
@@ -612,14 +610,10 @@ static str PNstart(int *ret)
 
 /* inspection  routines */
 str
-PNtable(int *ret)
+PNtable(int *nameId, int *statusId, int *seenId, int *cyclesId, int *eventsId, int *timeId, int * errorId, int *defId)
 {
-	BAT *bn = NULL, *name = NULL, *def = NULL, *status = NULL, *seen = NULL, *cycles = NULL, *events = NULL, *time = NULL, *error = NULL;
+	BAT *name = NULL, *def = NULL, *status = NULL, *seen = NULL, *cycles = NULL, *events = NULL, *time = NULL, *error = NULL;
 	int i;
-
-	bn = BATnew(TYPE_str, TYPE_bat, BATTINY);
-	if ( bn == 0)
-		throw(MAL,"dictionary.baskets",MAL_MALLOC_FAIL);
 
 	name = BATnew(TYPE_oid,TYPE_str, BATTINY);
 	if ( name == 0 ) goto wrapup;
@@ -656,28 +650,16 @@ PNtable(int *ret)
 		BUNappend(time, &pnet[i].time, FALSE);
 		BUNappend(error, (pnet[i].error ? pnet[i].error:""), FALSE);
 	}
-	BUNins(bn,"nme", & name->batCacheid, FALSE);
-	BUNins(bn,"status", & status->batCacheid, FALSE);
-	BUNins(bn,"seen", & seen->batCacheid, FALSE);
-	BUNins(bn,"cycles", & cycles->batCacheid, FALSE);
-	BUNins(bn,"events", & events->batCacheid, FALSE);
-	BUNins(bn,"time", & time->batCacheid, FALSE);
-	BUNins(bn,"error", & error->batCacheid, FALSE);
-	BUNins(bn,"def", & def->batCacheid, FALSE);
-
-	*ret = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
-	BBPreleaseref(name->batCacheid);
-	BBPreleaseref(def->batCacheid);
-	BBPreleaseref(status->batCacheid);
-	BBPreleaseref(seen->batCacheid);
-	BBPreleaseref(cycles->batCacheid);
-	BBPreleaseref(events->batCacheid);
-	BBPreleaseref(time->batCacheid);
-	BBPreleaseref(error->batCacheid);
+	BBPkeepref(*nameId = name->batCacheid);
+	BBPkeepref(*defId = def->batCacheid);
+	BBPkeepref(*statusId =status->batCacheid);
+	BBPkeepref(*seenId =seen->batCacheid);
+	BBPkeepref(*cyclesId = cycles->batCacheid);
+	BBPkeepref(*eventsId = events->batCacheid);
+	BBPkeepref(*timeId = time->batCacheid);
+	BBPkeepref(*errorId = error->batCacheid);
 	return MAL_SUCCEED;
 wrapup:
-	if ( bn) BBPreleaseref(bn->batCacheid);
 	if ( name) BBPreleaseref(name->batCacheid);
 	if ( def) BBPreleaseref(def->batCacheid);
 	if ( status) BBPreleaseref(status->batCacheid);

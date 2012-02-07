@@ -29,12 +29,12 @@ Ready.
 % 20 # length
 [ NULL	]
 % sys.casebug # table_name
-% L2 # name
+% L1 # name
 % int # type
 % 11 # length
 [ NULL	]
 % sys. # table_name
-% isnull_not_isnull_L3 # name
+% isnull_not_isnull_L1 # name
 % int # type
 % 1 # length
 [ 0	]

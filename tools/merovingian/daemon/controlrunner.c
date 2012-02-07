@@ -118,7 +118,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 		/* stream.h is sooo broken :( */
 		memset(buf, '\0', buflen);
 		ret = mnstr_read_block(fdin, buf, buflen - 1, 1);
-		return(ret >= 0 ? (int)strlen(buf) : -(mnstr_errnr(fdin) > 0));
+		return(ret >= 0 ? (int)strlen(buf) : mnstr_errnr(fdin) < 0 ? -1 : 0);
 	} else {
 		return(recv(msgsock, buf, buflen, 0));
 	}
@@ -228,7 +228,7 @@ static void ctl_handle_client(
 			if (strcmp(p, "ping") == 0) {
 #define send_client(P) \
 				if (fout != NULL) { \
-					mnstr_printf(fout, P "%s\n", buf2); \
+					mnstr_printf(fout, P "%s", buf2); \
 					mnstr_flush(fout); \
 				} else { \
 					send(msgsock, buf2, len, 0); \
@@ -633,11 +633,13 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
 						MERO_VERSION, MONETDB_RELEASE);
 				send_client("=");
+				break;
 			} else if (strcmp(p, "mserver") == 0) {
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s\n", _mero_mserver);
 				send_client("=");
+				break;
 			} else if (strcmp(p, "get") == 0) {
 				confkeyval *props = getDefaultProps();
 				char *pbuf;
@@ -790,6 +792,7 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2),
 						"unknown command: %s\n", p);
 				send_client("!");
+				break;
 			}
 		}
 	}

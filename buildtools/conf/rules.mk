@@ -119,3 +119,8 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	$(CP) $< $@
 
 SUFFIXES-local: $(BUILT_SOURCES)
+
+ifdef DEB_BUILD_ARCH
+# see buildtools/autogen/autogen/am.py:am_python()
+PY_INSTALL_LAYOUT = --install-layout=deb
+endif

@@ -29,7 +29,7 @@ Ready.
 [ 1	]
 #select min (case when "c" = 0 then 4 else 3/c end) from t2887;
 % sys. # table_name
-% L2 # name
+% L1 # name
 % int # type
 % 1 # length
 [ 4	]
