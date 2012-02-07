@@ -1046,7 +1046,9 @@ def am_python(fd, var, python, am):
         fd.write("\t$(PYTHON) '%s' build\n" % f)
     fd.write('install-exec-local-%s:\n' % var)
     for f in python['FILES']:
-        fd.write("\t$(PYTHON) '%s' install --prefix='$(DESTDIR)$(prefix)'\n" % f)
+        # see buildtools/conf/rules.mk for PY_INSTALL_LAYOUT
+        # it is needed to install into dist-packages on Debian/Ubuntu
+        fd.write("\t$(PYTHON) '%s' install $(PY_INSTALL_LAYOUT) --prefix='$(DESTDIR)$(prefix)'\n" % f)
     fd.write('uninstall-local-%s:\n' % var)
     for pkgdir in sorted(pkgdirs, reverse = True):
         fd.write("\trm -r '$(DESTDIR)$(prefix)/$(PYTHON_LIBDIR)/%s'\n" % pkgdir)
