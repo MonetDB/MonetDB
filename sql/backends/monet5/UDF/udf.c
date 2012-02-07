@@ -182,6 +182,10 @@ str UDFBATfuse(int *ires, int *ione, int *itwo)
 		throw(MAL, "batudf.fuse", "tails of input BATs must be identical");
 	}
 
+	/* advice on sequential scan */
+	BATaccessBegin(bone, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(btwo, USE_TAIL, MMAP_SEQUENTIAL);
+
 #define UDFBATfuse_TYPE(in,uin,out,shift)						\
 {											\
 	in *one, *two;									\
@@ -222,6 +226,9 @@ str UDFBATfuse(int *ires, int *ione, int *itwo)
 	default:
 		throw(MAL, "batudf.fuse", "tails of input BATs must be one of {bte, sht, int}");
 	}
+
+	BATaccessEnd(bone, USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(btwo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	/* manage the properties of the result */
 	bres->hdense = BAThdense(bone);
