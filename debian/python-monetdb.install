@@ -1,2 +1,2 @@
-debian/tmp/usr/lib/python2.6/site-packages/monetdb usr/lib/python2.6/site-packages
-debian/tmp/usr/lib/python2.6/site-packages/python_monetdb-*.egg-info usr/lib/python2.6/site-packages
+debian/tmp/usr/lib/python2.6/dist-packages/monetdb usr/lib/python2.6/dist-packages
+debian/tmp/usr/lib/python2.6/dist-packages/python_monetdb-*.egg-info usr/lib/python2.6/dist-packages
