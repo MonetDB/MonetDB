@@ -35,12 +35,4 @@
 udf_export str UDFreverse(str *ret, str *src);
 udf_export str UDFBATreverse(int *ret, int *bid);
 
-#define UDFfuse_scalar_decl(in,out) \
-        udf_export str UDFfuse_##in##_##out(out *ret, in *one, in *two)
-UDFfuse_scalar_decl(bte,sht);
-UDFfuse_scalar_decl(sht,int);
-UDFfuse_scalar_decl(int,lng);
-
-udf_export str UDFBATfuse(int *ret, int *one, int *two);
-
 #endif /* _SQL_UDF_H_ */
