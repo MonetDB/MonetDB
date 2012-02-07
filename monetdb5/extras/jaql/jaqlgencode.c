@@ -35,11 +35,18 @@ typedef struct _json_var {
 } json_var;
 
 typedef struct _join_result {
-	int bat;
+	int hbat;
+	int tbat;
 	json_var *headvar;
 	json_var *tailvar;
 	struct _join_result *next;
 } join_result;
+
+typedef struct _jgvar {
+	json_var *var;
+	struct _jgvar *next;
+	struct _jgvar *prev;
+} jgvar;
 
 static int dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7);
 static int dumpnextid(MalBlkPtr mb, int j1);
@@ -697,6 +704,90 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 	return g;
 }
 
+static char
+graphcontainspath(jgvar *jgraph, json_var *l, json_var *r)
+{
+	int found = 0;
+
+	assert(jgraph->prev == NULL);
+	for (; jgraph != NULL; jgraph = jgraph->next) {
+		if (jgraph->var == l || jgraph->var == r)
+			found++;
+		if (found == 2)
+			return 1;
+	}
+
+	return 0;
+}
+
+static jgvar *
+calculatejoingraph(join_result *jrs)
+{
+	jgvar *gh, *gt;
+	join_result *jrw;
+	/* should be humongous already */
+#define JRCANDSSIZ 20
+	join_result *jrcands[JRCANDSSIZ];
+	int jrcandslen;
+	int i, j;
+
+	/* create first bit of the join graph */
+	gh = GDKzalloc(sizeof(jgvar));
+	gh->var = jrs->headvar;
+	gt = gh->next = GDKzalloc(sizeof(jgvar));
+	gt->var = jrs->tailvar;
+	gt->prev = gh;
+
+	for (jrcandslen = 0, jrw = jrs->next;
+			jrw != NULL && jrcandslen < JRCANDSSIZ;
+			jrw = jrw->next, jrcandslen++)
+	{
+		jrcands[jrcandslen] = jrw;
+	}
+
+	/* avoid infinite loop on unconnected joins, limit to the number of
+	 * possible candidates we have */
+	for (j = 0; j < jrcandslen; j++) {
+		for (i = 0; i < jrcandslen; i++) {
+			jrw = jrcands[i];
+			if (jrw == NULL)
+				continue;
+			if (graphcontainspath(gh, jrw->headvar, jrw->tailvar) == 1) {
+				/* do nothing */
+			} else if (jrw->headvar == gh->var) {
+				gh->prev = GDKzalloc(sizeof(jgvar));
+				gh->prev->next = gh;
+				gh = gh->prev;
+				gh->var = jrw->tailvar;
+			} else if (jrw->headvar == gt->var) {
+				gt->next = GDKzalloc(sizeof(jgvar));
+				gt->next->prev = gt;
+				gt = gt->next;
+				gt->var = jrw->tailvar;
+			} else if (jrw->tailvar == gh->var) {
+				gh->prev = GDKzalloc(sizeof(jgvar));
+				gh->prev->next = gh;
+				gh = gh->prev;
+				gh->var = jrw->headvar;
+			} else if (jrw->tailvar == gt->var) {
+				gt->next = GDKzalloc(sizeof(jgvar));
+				gt->next->prev = gt;
+				gt = gt->next;
+				gt->var = jrw->headvar;
+			} else {
+				/* couldn't match this join to the graph (yet), so keep it */
+				continue;
+			}
+
+			/* remove this entry, since we've successfully applied it
+			 * somehow */
+			jrcands[i] = NULL;
+		}
+	}
+
+	return gh;
+}
+
 static void
 dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
@@ -704,7 +795,9 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 	int a, b, c, d, l, r;
 	tree *pred;
 	json_var *vars, *ljv, *rjv;
-	join_result *jrs = NULL, *jrw;
+	join_result *jrs = NULL, *jrw, *jrl, *jrr, *jrn, *jrv, *jrp;
+
+	jgvar *jgraph = NULL;
 
 	/* iterate through all predicates and load the set from the correct
 	 * JSON variable */
@@ -835,8 +928,8 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, kunionRef);
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, a);
 		q = pushArgument(mb, q, b);
@@ -892,8 +985,8 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, kunionRef);
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, a);
 		q = pushArgument(mb, q, b);
@@ -957,173 +1050,419 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 			pushInstruction(mb, q);
 		}
 
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, reverseRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, a);
+		b = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markHRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, a);
+		a = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markHRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, b);
+		b = getArg(q, 0);
+		pushInstruction(mb, q);
+
 		if (jrs == NULL) {
 			jrw = jrs = GDKzalloc(sizeof(join_result));
 		} else {
 			jrw = jrw->next = GDKzalloc(sizeof(join_result));
 		}
-		jrw->bat = a;
+		jrw->hbat = b;
+		jrw->tbat = a;
 		jrw->headvar = ljv;
 		jrw->tailvar = rjv;
 	}
 
-	/* intersect the joins */
+	/* intersect conditions that are over the same input sets */
 	for (jrw = jrs; jrw != NULL; jrw = jrw->next) {
-		join_result *jrv;
-		char pw = jrw->headvar->preserve | jrw->tailvar->preserve;
-		char pv;
-		char revw;
-		char revv;
-		for (jrv = jrw->next; jrv != NULL; jrv = jrv->next) {
-			pv = jrv->headvar->preserve | jrv->tailvar->preserve;
-			if (jrw->headvar == jrv->headvar) {
-				/* head-on-head */
-				revw = revv = 0;
-			} else if (jrw->headvar == jrv->tailvar) {
-				/* head-on-tail */
-				revw = 0;
-				revv = 1;
-			} else if (jrw->tailvar == jrv->headvar) {
-				/* tail-on-head */
-				revw = 1;
-				revv = 0;
-			} else if (jrw->tailvar == jrv->tailvar) {
-				/* tail-on-tail */
-				revw = revv = 1;
-			}
+		for (jrp = jrw, jrv = jrw->next; jrv != NULL; jrp = jrv, jrv = jrv->next) {
+			if ((jrw->headvar == jrv->headvar && jrw->tailvar == jrv->tailvar) ||
+					(jrw->headvar == jrv->tailvar && jrw->tailvar == jrv->headvar))
+			{
+				/* join over same inputs, intersect and so eliminate one join */
+				if (jrw->headvar != jrv->headvar) {
+					l = jrv->hbat;
+					jrv->hbat = jrv->tbat;
+					jrv->tbat = l;
+				}
 
-			if (revw == 1) {
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, jrw->bat);
+				q = pushArgument(mb, q, jrw->hbat);
 				l = getArg(q, 0);
 				pushInstruction(mb, q);
-			} else {
-				l = jrw->bat;
-			}
-			if (revv == 1) {
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, jrv->bat);
+				q = pushArgument(mb, q, jrv->hbat);
 				r = getArg(q, 0);
 				pushInstruction(mb, q);
-			} else {
-				r = jrv->bat;
-			}
-
-			if (pw == 0 && pv == 0) {
-				/* simple semi-join (kintersect) is sufficient */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, jrw->tbat);
 				l = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, jrv->tbat);
+				r = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, r);
 				q = pushArgument(mb, q, l);
-				r = getArg(q, 0);
-				pushInstruction(mb, q);
-			} else if (pw == 1 && pv == 0) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, mirrorRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				b = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("outerjoin", 9));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, r);
-				r = getArg(q, 0);
-				pushInstruction(mb, q);
-			} else if (pw == 0 && pv == 1) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, mirrorRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, r);
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("outerjoin", 9));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, l);
-				l = getArg(q, 0);
-				pushInstruction(mb, q);
-			} else if (pw == 1 && pv == 1) {
-				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
-				setFunctionId(q, mirrorRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				b = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("outerjoin", 9));
+				setFunctionId(q, reverseRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, r);
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sdifference", 11));
+				setFunctionId(q, putName("kintersect", 10));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, r);
+				q = pushArgument(mb, q, a);
 				q = pushArgument(mb, q, b);
-				c = getArg(q, 0);
+				a = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sunion", 6));
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, jrw->hbat);
+				q = pushArgument(mb, q, a);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, markHRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, c);
-				r = getArg(q, 0);
+				jrw->hbat = getArg(q, 0);
 				pushInstruction(mb, q);
-			}
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, jrw->tbat);
+				q = pushArgument(mb, q, a);
+				b = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, markHRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, b);
+				jrw->tbat = getArg(q, 0);
+				pushInstruction(mb, q);
 
-			if (revw == 1) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, reverseRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, l);
-				jrw->bat = getArg(q, 0);
-				pushInstruction(mb, q);
-			} else {
-				jrw->bat = l;
-			}
-			if (revv == 1) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, reverseRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, r);
-				jrv->bat = getArg(q, 0);
-				pushInstruction(mb, q);
-			} else {
-				jrv->bat = r;
+				jrp->next = jrv->next;
+				GDKfree(jrv);
+				jrv = jrp;
 			}
 		}
 	}
+
+	jgraph = calculatejoingraph(jrs);
+	/* FIXME: at this point, there may be joins like a->c, while there
+	 * is a->b->c, in which case a->c is a reduction on a and c, having
+	 * effect on everything inbetween (only b in this case) */
+
+	/* compute the joins following the joinpath
+	 * we need three (connected) vars of the joinpath all the time,
+	 * since that equals two join results (and hence some work to do)
+	 * FIXME: we don't do joingraphs like a->b->c a->b->d (forks) */
+	ljv = jgraph->var;
+	rjv = jgraph->next->var;
+	jgraph = jgraph->next->next; /* should always be 1 next (a == b) */
+	jrl = NULL;
+	for (jrp = NULL, jrw = jrs; jrw != NULL; jrp = jrw, jrw = jrw->next) {
+		if (jrw->headvar == ljv && jrw->tailvar == rjv) {
+			jrl = jrw;
+			break;
+		} else if (jrw->tailvar == ljv && jrw->headvar == rjv) {
+			jrl = jrw;
+			/* swap for ease of use */
+			ljv = jrw->headvar;
+			jrw->headvar = jrw->tailvar;
+			jrw->tailvar = ljv;
+			l = jrw->hbat;
+			jrw->hbat = jrw->tbat;
+			jrw->tbat = l;
+			break;
+		}
+	}
+	assert(jrl != NULL);
+	if (jrp == NULL) {
+		jrs = jrl->next;
+	} else {
+		jrp->next = jrl->next;
+	}
+	jrl->next = NULL;
+	jrn = jrl;
+	for (; jgraph != NULL; jgraph = jgraph->next) {
+		ljv = jgraph->prev->var;
+		rjv = jgraph->var;
+
+		for (jrp = NULL, jrw = jrs; jrw != NULL; jrp = jrw, jrw = jrw->next) {
+			if (jrw->headvar == ljv && jrw->tailvar == rjv) {
+				jrr = jrw;
+				break;
+			} else if (jrw->tailvar == ljv && jrw->headvar == rjv) {
+				jrr = jrw;
+				/* swap for ease of use */
+				rjv = jrw->headvar;
+				jrw->headvar = jrw->tailvar;
+				jrw->tailvar = rjv;
+				r = jrw->hbat;
+				jrw->hbat = jrw->tbat;
+				jrw->tbat = r;
+				break;
+			}
+		}
+		assert(jrr != NULL);
+		if (jrp == NULL) {
+			jrs = jrr->next;
+		} else {
+			jrp->next = jrr->next;
+		}
+		jrr->next = jrn;
+		jrn = jrr;
+
+		l = jrl->tbat;
+		r = jrr->hbat;
+
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, reverseRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, r);
+		r = getArg(q, 0);
+		pushInstruction(mb, q);
+
+		if (jrl->headvar->preserve == 1 && jrr->tailvar->preserve == 1) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("outerjoin", 9));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, l);
+			q = pushArgument(mb, q, r);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, l);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, r);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("outerjoin", 9));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, d);
+			q = pushArgument(mb, q, c);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("kdifference", 11));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			q = pushArgument(mb, q, a);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			q = pushArgument(mb, q, c);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+		} else if (jrl->headvar->preserve == 1) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("outerjoin", 9));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, l);
+			q = pushArgument(mb, q, r);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+		} else if (jrr->tailvar->preserve == 1) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, l);
+			c = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, r);
+			d = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("outerjoin", 9));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, d);
+			q = pushArgument(mb, q, c);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+		} else {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, joinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, l);
+			q = pushArgument(mb, q, r);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+		}
+
+		/* put reduced set back in join result */
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, reverseRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, a);
+		d = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, mirrorRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, d);
+		d = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markHRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, d);
+		d = getArg(q, 0);
+		pushInstruction(mb, q);
+
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, joinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, d);
+		q = pushArgument(mb, q, jrr->hbat);
+		jrr->hbat = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, joinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, d);
+		q = pushArgument(mb, q, jrr->tbat);
+		jrr->tbat = getArg(q, 0);
+		pushInstruction(mb, q);
+
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, batRef);
+		setFunctionId(q, mirrorRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, a);
+		d = getArg(q, 0);
+		pushInstruction(mb, q);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, markHRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, d);
+		d = getArg(q, 0);
+		pushInstruction(mb, q);
+
+		/* propagate back */
+		for (jrv = jrn->next; jrv != NULL; jrv = jrv->next) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, joinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, d);
+			q = pushArgument(mb, q, jrv->hbat);
+			jrv->hbat = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, joinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, d);
+			q = pushArgument(mb, q, jrv->tbat);
+			jrv->tbat = getArg(q, 0);
+			pushInstruction(mb, q);
+		}
+
+		jrl = jrr;
+	}
+
+	assert(jrs == NULL); /* should be empty if join graph was complete */
+	jrs = jrn;
 
 	/* for each column extract elems */
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -1132,78 +1471,43 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 	b = getArg(q, 0);
 	pushInstruction(mb, q);
 	for (vars = js; vars->name != NULL; vars++) {
-		d = -1;
 		for (jrw = jrs; jrw != NULL; jrw = jrw->next) {
+			a = -1;
 			if (vars == jrw->tailvar) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("json", 4));
-				setFunctionId(q, putName("extract", 7));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, vars->j1);
-				q = pushArgument(mb, q, vars->j2);
-				q = pushArgument(mb, q, vars->j3);
-				q = pushArgument(mb, q, vars->j4);
-				q = pushArgument(mb, q, vars->j5);
-				q = pushArgument(mb, q, vars->j6);
-				q = pushArgument(mb, q, vars->j7);
-				q = pushArgument(mb, q, jrw->bat);
-				q = pushArgument(mb, q, b);
-				vars->j1 = getArg(q, 0);
-				vars->j2 = getArg(q, 1);
-				vars->j3 = getArg(q, 2);
-				vars->j4 = getArg(q, 3);
-				vars->j5 = getArg(q, 4);
-				vars->j6 = getArg(q, 5);
-				vars->j7 = getArg(q, 6);
-				pushInstruction(mb, q);
-
-				d = 1;
+				a = jrw->tbat;
 			} else if (vars == jrw->headvar) {
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, reverseRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, jrw->bat);
-				c = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("json", 4));
-				setFunctionId(q, putName("extract", 7));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, vars->j1);
-				q = pushArgument(mb, q, vars->j2);
-				q = pushArgument(mb, q, vars->j3);
-				q = pushArgument(mb, q, vars->j4);
-				q = pushArgument(mb, q, vars->j5);
-				q = pushArgument(mb, q, vars->j6);
-				q = pushArgument(mb, q, vars->j7);
-				q = pushArgument(mb, q, c);
-				q = pushArgument(mb, q, b);
-				vars->j1 = getArg(q, 0);
-				vars->j2 = getArg(q, 1);
-				vars->j3 = getArg(q, 2);
-				vars->j4 = getArg(q, 3);
-				vars->j5 = getArg(q, 4);
-				vars->j6 = getArg(q, 5);
-				vars->j7 = getArg(q, 6);
-				pushInstruction(mb, q);
-
-				d = 1;
+				a = jrw->hbat;
 			}
 
-			if (d == 1) {
+			if (a != -1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("json", 4));
+				setFunctionId(q, putName("extract", 7));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, vars->j1);
+				q = pushArgument(mb, q, vars->j2);
+				q = pushArgument(mb, q, vars->j3);
+				q = pushArgument(mb, q, vars->j4);
+				q = pushArgument(mb, q, vars->j5);
+				q = pushArgument(mb, q, vars->j6);
+				q = pushArgument(mb, q, vars->j7);
+				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, b);
+				vars->j1 = getArg(q, 0);
+				vars->j2 = getArg(q, 1);
+				vars->j3 = getArg(q, 2);
+				vars->j4 = getArg(q, 3);
+				vars->j5 = getArg(q, 4);
+				vars->j6 = getArg(q, 5);
+				vars->j7 = getArg(q, 6);
+				pushInstruction(mb, q);
+
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
@@ -1237,7 +1541,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 				break;
 			}
 		}
-		assert(d == 1);  /* join input/where check was done before */
+		assert(a != 1);  /* join input/where check was done before */
 	}
 
 	/* create new objects */

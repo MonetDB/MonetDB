@@ -453,7 +453,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 		}
 	}
 
-	/* FIXME: we skip the graph/path check for now */
+	/* we skip the graph/path check and do it during code generation */
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_join;
