@@ -54,12 +54,23 @@ str UDFreverse(str *ret, str *src)
  * The BAT version is much more complicated, because we need to
  * ensure that properties are maintained.
  */
+
+#define UDFBATreverse_loop_body									\
+	str t = (str) BUNtail(li, p);								\
+	str tr = reverse(t);									\
+												\
+	if (tr == NULL) {									\
+		BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);			\
+		BBPreleaseref(left->batCacheid);						\
+		BBPreleaseref(*ret);								\
+		throw(MAL, "batudf.reverse", OPERATION_FAILED " During bulk operation");	\
+	}
+
 str UDFBATreverse(int *ret, int *bid)
 {
 	BATiter li;
 	BAT *bn, *left;
 	BUN p, q;
-	str v;
 
 	/* check for NULL pointers */
 	if (ret == NULL || bid == NULL)
@@ -76,30 +87,34 @@ str UDFBATreverse(int *ret, int *bid)
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
 
-	/* manage the properties of the result */
-	bn->hdense = BAThdense(left);
-	if (BAThdense(left))
-		BATseqbase(bn, left->hseqbase);
-
-	bn->hsorted = left->hsorted;
-	BATkey(bn, BAThkey(left));
-
-	bn->tsorted = 0;  /* assume not sorted afterwards */
-	BATkey(BATmirror(bn), BATtkey(left));
-
 	li = bat_iterator(left);
+
 	/* advice on sequential scan */
 	BATaccessBegin(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	/* the core of the algorithm, expensive due to malloc/frees */
-	BATloop(left, p, q) {
-		ptr h = BUNhead(li, p);
-		str tl = (str) BUNtail(li, p);
-		v = reverse(tl);
-		if (v == NULL)
-			goto bunins_failed;
-		bunfastins(bn, h, v);
-		GDKfree(v);
+	if (BAThdense(left)) {
+		/* dense [v]oid head */
+		/* initialize dense head of result */
+		bn->hdense = BAThdense(left);
+		BATseqbase(bn, left->hseqbase);
+		BATloop(left, p, q) {
+
+			UDFBATreverse_loop_body
+
+			BUNappend(bn, tr, FALSE);
+			GDKfree(tr);
+		}
+	} else {
+		/* arbitrary (non-dense) head */
+		BATloop(left, p, q) {
+			ptr h = BUNhead(li, p);
+
+			UDFBATreverse_loop_body
+
+			BUNins(bn, h, tr, FALSE);
+			GDKfree(tr);
+		}
 	}
 
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
@@ -110,12 +125,6 @@ str UDFBATreverse(int *ret, int *bid)
 	BBPkeepref(*ret);
 
 	return MAL_SUCCEED;
-
-bunins_failed:
-	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(*ret);
-	throw(MAL, "batudf.reverse", OPERATION_FAILED " During bulk operation");
 }
 
 
