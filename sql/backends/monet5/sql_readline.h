@@ -20,6 +20,16 @@
 #ifndef SQL_READLINETOOLS_H_INCLUDED
 #define SQL_READLINETOOLS_H_INCLUDED
 
+#ifdef WIN32
+#ifndef LIBSQL
+#define sql5_export extern __declspec(dllimport)
+#else
+#define sql5_export extern __declspec(dllexport)
+#endif
+#else
+#define sql5_export extern
+#endif
+
 #include "mal_client.h"
 sql5_export int SQLreadConsole(Client cntxt);
 
