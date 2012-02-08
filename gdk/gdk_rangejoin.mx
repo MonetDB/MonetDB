@@ -68,10 +68,6 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	if (bn == NULL) 
 		return bn;
 	switch (ATOMstorage(rl->ttype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:rangejoin(chr,)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:rangejoin(bte,)@
@@ -204,10 +200,6 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	if (bn == NULL)
 		return bn;
 	switch (ATOMstorage(r->htype)) {
-/* #ifndef NOEXPAND_CHR */
-	case TYPE_chr:
-		@:bandjoin_nl(chr)@
-/* #endif */
 /* #ifndef NOEXPAND_BTE */
 	case TYPE_bte:
 		@:bandjoin_nl(bte)@
@@ -376,10 +368,6 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
 	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), limit ? *limit : MIN(lc, rc));
 	switch (l->ttype) {
-/* #ifndef NOEXPAND_CHR */
-	case TYPE_chr:
-		@:bandjoin_mj_(chr)@
-/* #endif */
 /* #ifndef NOEXPAND_BTE */
 	case TYPE_bte:
 		@:bandjoin_mj_(bte)@

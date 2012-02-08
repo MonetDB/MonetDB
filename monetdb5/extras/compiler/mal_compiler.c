@@ -338,9 +338,11 @@ mccEntry(stream *f, MalBlkPtr mb, int i)
 		mccVar(f, mb, i);
 		mnstr_printf(f, "== bit_nil");
 		break;
-	case TYPE_chr:
+	case TYPE_bte:
 		mccVar(f, mb, i);
-		mnstr_printf(f, "== chr_nil");
+		mnstr_printf(f, " < 0 ||");
+		mccVar(f, mb, i);
+		mnstr_printf(f, "== bte_nil");
 		break;
 	case TYPE_sht:
 		mccVar(f, mb, i);

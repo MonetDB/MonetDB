@@ -876,6 +876,9 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 
 			@1hashash = var & 2;
 			var &= ~2;
+			/* silently convert chr columns to bte */
+                        if (strcmp(type, "chr") == 0)
+                        	strcpy(type, "bte");
 			if ((t = ATOMindex(type)) < 0)
 				t = ATOMunknown_find(type);
 			else if (BATatoms[t].varsized != var)
@@ -915,7 +918,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			bs->@1.heap.filename = NULL;
 			bs->@1.heap.storage = (char) storage;
 			bs->@1.heap.copied = 0;
-			bs->@1.heap.newstorage = (chr) storage;
+			bs->@1.heap.newstorage = (bte) storage;
 			bs->@1.heap.dirty = 0;
 			nread += n;
 		}
@@ -946,7 +949,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			bs->@1.vheap->storage = (char) storage;
 			bs->@1.vheap->copied = 0;
 			bs->@1.vheap->hashash = @1hashash != 0;
-			bs->@1.vheap->newstorage = (chr) storage;
+			bs->@1.vheap->newstorage = (bte) storage;
 			bs->@1.vheap->dirty = 0;
 			bs->@1.vheap->parentid = bid;
 			nread += n;
@@ -1016,6 +1019,7 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_CHR &&
 	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
 		if (silent) {
 			GDKerror("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);

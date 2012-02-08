@@ -73,7 +73,6 @@ comment "test the function of deletion"
 
 @
 @mal
-@:pma_mal(chr)@
 @:pma_mal(bte)@
 @:pma_mal(sht)@
 @:pma_mal(int)@
@@ -111,7 +110,6 @@ pma_export str PMAtestins_@1(void *dummy, bat *b, int *val);
 pma_export str PMAtestdel_@1(void *dummy, bat *b);
 @
 @h
-@:pma_decl(chr)@
 @:pma_decl(bte)@
 @:pma_decl(sht)@
 @:pma_decl(int)@
@@ -158,7 +156,6 @@ PMAnew(bat *res, int *tpe, BUN *sz) {
 	b = BATnew(TYPE_void, *tpe, cnt);
 	if (b) {
 		switch(ATOMstorage(*tpe)) {
-		case TYPE_chr: @:fillnill(chr, chr_nil)@
 		case TYPE_bte: @:fillnill(bte, bte_nil)@
 		case TYPE_sht: @:fillnill(sht, sht_nil)@
 		case TYPE_int: @:fillnill(int, int_nil)@
@@ -906,7 +903,6 @@ PMAtestdel_@1(void *dummy, bat *bid) {
 }
 @
 @c
-@:pma_impl(chr)@
 @:pma_impl(bte)@
 @:pma_impl(sht)@
 @:pma_impl(int)@

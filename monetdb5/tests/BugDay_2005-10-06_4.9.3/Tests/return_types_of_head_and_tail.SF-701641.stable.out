@@ -27,7 +27,7 @@ function user.main():void;
 end main;
 [ "oid" ]
 [ "int" ]
-[ 13 ]
+[ 12 ]
 [ "str" ]
 [ "str" ]
 

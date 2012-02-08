@@ -50,7 +50,7 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, ValPtr s)
 	} else if (s->vtype == TYPE_bit) {
 		d->vtype = s->vtype;
 		d->len = 1;
-		d->val.cval[0] = s->val.cval[0];
+		d->val.btval = s->val.btval;
 	} else {
 		ptr p = s->val.pval;
 
@@ -70,7 +70,7 @@ atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 	a->isnull = 0;
 	a->tpe = *tpe;
 	a->data.vtype = tpe->type->localtype;
-	a->data.val.cval[0] = val;
+	a->data.val.btval = val;
 	a->data.len = 0;
 	return a;
 }
@@ -281,7 +281,7 @@ atom2string(sql_allocator *sa, atom *a)
 		sprintf(buf, "%d", a->data.val.btval);
 		break;
 	case TYPE_bit:
-		if (a->data.val.cval[0])
+		if (a->data.val.btval)
 			return sa_strdup(sa, "true");
 		return sa_strdup(sa, "false");
 	case TYPE_flt:
@@ -323,7 +323,7 @@ atom2sql(atom *a)
 	switch (ec) {
 	case EC_BIT:
 		assert( a->data.vtype == TYPE_bit);
-		if (a->data.val.cval[0])
+		if (a->data.val.btval)
 			return _STRDUP("true");
 		return _STRDUP("false");
 	case EC_CHAR:

@@ -114,12 +114,9 @@ All Rights Reserved.
  *
  * VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
  */
-#ifdef NOEXPAND_CHR
+#ifdef NOEXPAND_BTE
 #ifndef NOEXPAND_BIT
 #define NOEXPAND_BIT 1
-#endif
-#ifndef NOEXPAND_BTE
-#define NOEXPAND_BTE 1
 #endif
 #endif
 
@@ -156,14 +153,6 @@ All Rights Reserved.
 #endif
 #endif
 
-#if defined(NOEXPAND_CHR) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_CHR(tpe,hp,dst,p,src)		\
-	if (tpe == TYPE_chr) {			\
-		((chr*) dst)[p] = *(chr*) src;	\
-	} else
-#else
-#define ATOM_PUT_CHR(tpe,hp,dst,p,src)
-#endif
 #if defined(NOEXPAND_BTE) || defined(SKIP_TYPE_EXPANSIONS)
 #define ATOM_PUT_BTE(tpe,hp,dst,p,src)		\
 	if (tpe == TYPE_bte) {			\
@@ -199,7 +188,7 @@ All Rights Reserved.
 
 #define FIXEDATOM_PUT(b,tpe,p,src,SRC)					\
 	do {								\
-		ATOM_PUT_CHR(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
+		ATOM_PUT_BTE(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
 		ATOM_PUT_SHT(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
 		ATOM_PUT_INT(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
 		ATOM_PUT_LNG(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
@@ -243,7 +232,6 @@ All Rights Reserved.
  * Expand on tail type
 @= H_BUNfastins
 	@:T_BUNfastins(@1,@2,@3,void,VOID,void)@
-	@:T_BUNfastins(@1,@2,@3,chr,SIMPLE,chr)@
 	@:T_BUNfastins(@1,@2,@3,bte,SIMPLE,bte)@
 	@:T_BUNfastins(@1,@2,@3,sht,SIMPLE,sht)@
 	@:T_BUNfastins(@1,@2,@3,int,SIMPLE,int)@
@@ -270,7 +258,6 @@ All Rights Reserved.
  * replacing their generic versions there.
  */
 @:H_BUNfastins(void,VOID,void)@
-@:H_BUNfastins(chr,SIMPLE,chr)@
 @:H_BUNfastins(bte,SIMPLE,bte)@
 @:H_BUNfastins(sht,SIMPLE,sht)@
 @:H_BUNfastins(int,SIMPLE,int)@
@@ -302,7 +289,6 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 #define SKIP_TYPE_EXPANSIONS
 #endif
 #include "gdk_scanselect.h"
-#include "gdk_scanselect_defs_chr.h"
 #include "gdk_scanselect_defs_bte.h"
 #include "gdk_scanselect_defs_sht.h"
 #include "gdk_scanselect_defs_int.h"
@@ -416,11 +402,6 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 */
 @= seqscanHTput
 #ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_CHR
-	if (AsHt == TYPE_chr) {
-		@:seqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),)@
-	} else
-#endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_BTE
 	if (AsHt == TYPE_bte) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
@@ -558,11 +539,6 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
  * Adding test for v != nil for types where nil != MIN.
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_CHR
-	if (AsTt == TYPE_chr) {
-		@:seqscanIF(chr,chr,tloc,simple,chr,)@
-	} else
-#endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_BTE
 	if (AsTt == TYPE_bte) {
 		@:seqscanIF(bte,bte,tloc,simple,bte,)@
@@ -625,7 +601,7 @@ BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int ne
 	int t = b->ttype;
 
 #ifndef SKIP_TYPE_EXPANSIONS
-#if !defined(NOEXPAND_CHR) || !defined(NOEXPAND_SHT) || !defined(NOEXPAND_INT) || !defined(NOEXPAND_LNG)
+#if !defined(NOEXPAND_BTE) || !defined(NOEXPAND_SHT) || !defined(NOEXPAND_INT) || !defined(NOEXPAND_LNG)
 	int AsHt = ATOMstorage(bn->htype), AsTt = ATOMstorage(t);
 #endif
 #endif

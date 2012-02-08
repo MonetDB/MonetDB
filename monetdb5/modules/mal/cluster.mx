@@ -96,7 +96,6 @@ comment "Compute the cluster map for bat b. A cluster map is a list of partition
 @mal
 
 @:mal_cls_new(bte)@
-@:mal_cls_new(chr)@
 @:mal_cls_new(sht)@
 @:mal_cls_new(int)@
 @:mal_cls_new(wrd)@
@@ -149,7 +148,6 @@ cluster_export str  CLS_create2_@1(bat *rpsum, bat *rcmap, bat *b, unsigned int 
 @
 @h
 @:hdr_cls_new(bte)@
-@:hdr_cls_new(chr)@
 @:hdr_cls_new(sht)@
 @:hdr_cls_new(int)@
 @:hdr_cls_new(wrd)@
@@ -223,7 +221,6 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 
 @
 @c
-@:map_fixed(chr)@
 @:map_fixed(bte)@
 @:map_fixed(sht)@
 @:map_fixed(oid)@
@@ -327,7 +324,6 @@ CLUSTER_key( bat *M, bat *B){
 	map->T->nonil = b->T->nonil;
 
 	switch(ATOMstorage(b->ttype)) {
-		case TYPE_chr: CLUSTER_key_chr(map,b); break;
 		case TYPE_bte: CLUSTER_key_bte(map,b); break;
 		case TYPE_sht: CLUSTER_key_sht(map,b); break;
 		case TYPE_oid: CLUSTER_key_oid(map,b); break;
@@ -493,7 +489,6 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 	BATseqbase(nb,0);
 	switch(ATOMstorage(b->ttype)) {
 /*
-	case TYPE_chr: CLUSTER_column_chr(nb, b, cmap);break;
 	case TYPE_bte: CLUSTER_column_bte(nb, b, cmap);break;
 	case TYPE_sht: CLUSTER_column_sht(nb, b, cmap);break;
 	case TYPE_oid: CLUSTER_column_oid(nb, b, cmap);break;
@@ -652,7 +647,6 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 @
 @c
 @:c_cls_new(bte)@
-@:c_cls_new(chr)@
 @:c_cls_new(sht)@
 @:c_cls_new(int)@
 @:c_cls_new(wrd)@
@@ -781,7 +775,6 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 @
 @c
 @:c_cls_new2(bte)@
-@:c_cls_new2(chr)@
 @:c_cls_new2(sht)@
 @:c_cls_new2(int)@
 @:c_cls_new2(wrd)@
@@ -879,7 +872,6 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 	*RB = rb->batCacheid;
 
 	switch(ATOMstorage(b->ttype)) {
-	case TYPE_chr:
 	case TYPE_bte:
 			return CLS_map_bte(rb, cmap, b);
 	case TYPE_sht:
@@ -990,7 +982,6 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 	BBPunfix(*PSUM);
 
 	switch(ATOMstorage(b->ttype)) {
-	case TYPE_chr:
 	case TYPE_bte:
 			return CLS_map2_bte(rb, psumcp, cmap, b);
 	case TYPE_sht:

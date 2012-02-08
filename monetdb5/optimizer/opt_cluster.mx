@@ -191,8 +191,8 @@ _cluster_orderby(MalBlkPtr mb, int *ord, int ol, int *prj, int pl)
 		int bits = 5; 
 		int offset = 3; 
 		
-		/* only cluster for chr,..,lng,flt,dbl atoms */
-		if (tt < TYPE_chr || tt > TYPE_dbl || tt == TYPE_oid ||
+		/* only cluster for bte,..,lng,flt,dbl atoms */
+		if (tt < TYPE_bte || tt > TYPE_dbl || tt == TYPE_oid ||
 	           (ht != TYPE_void && ht != TYPE_oid)) 
 			return 0;
 
@@ -411,10 +411,10 @@ _cluster_join(MalBlkPtr mb, int *join, int jl, int *prj, int pjl)
 		int bits = 5; 
 		int offset = 0; 
 		
-		/* only cluster for chr,..,lng,flt,dbl atoms */
-		if ((tt < TYPE_chr || tt > TYPE_dbl || tt == TYPE_oid ||
+		/* only cluster for bte,..,lng,flt,dbl atoms */
+		if ((tt < TYPE_bte || tt > TYPE_dbl || tt == TYPE_oid ||
 	            (ht != TYPE_void && ht != TYPE_oid)) ||
-		    (t2 < TYPE_chr || t2 > TYPE_dbl || t2 == TYPE_oid ||
+		    (t2 < TYPE_bte || t2 > TYPE_dbl || t2 == TYPE_oid ||
 	            (h2 != TYPE_void && h2 != TYPE_oid))) 
 			return 0;
 

@@ -107,7 +107,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			block++;
 			if (p->argc == 2 && isVarConstant(mb, getArg(p, 1)) &&
 					getArgType(mb, p, 1) == TYPE_bit &&
-					getVarConstant(mb, getArg(p, 1)).val.cval[0] == 0)
+					getVarConstant(mb, getArg(p, 1)).val.btval == 0)
 			{
 				if (skip == 0)
 					skip = block;

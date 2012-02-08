@@ -441,7 +441,7 @@ HEAPextend(Heap *h, size_t size)
 int
 GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 {
-	chr shift = c->shift;
+	bte shift = c->shift;
 	unsigned short width = c->width;
 	unsigned char *pc;
 	unsigned short *ps;

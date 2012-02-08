@@ -25,7 +25,6 @@ lib_gdk = {
 	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
-		gdk_scanselect_defs_chr.mx \
 		gdk_scanselect_defs_bte.mx \
 		gdk_scanselect_defs_sht.mx \
 		gdk_scanselect_defs_int.mx \

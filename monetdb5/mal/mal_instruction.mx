@@ -1550,7 +1550,7 @@ convertConstant(int type, ValPtr vr)
 		assert(0);
 #endif
 	case TYPE_bit:
-	case TYPE_chr:
+	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
 	case TYPE_void:
@@ -1571,15 +1571,11 @@ convertConstant(int type, ValPtr vr)
 			vr->len = (int) strlen(vr->val.sval);
 			return MAL_SUCCEED;
 		  }
-		  if( vr->vtype == TYPE_chr){
-			w= GDKstrdup("a");
-			*w = vr->val.cval[0];
-		  } else
-			ATOMformat(vr->vtype, VALptr(vr), &w);
-			assert(w != NULL);
-			vr->vtype= TYPE_str;
-			vr->len = (int)strlen(w);
-			vr->val.sval= w;
+		  ATOMformat(vr->vtype, VALptr(vr), &w);
+		  assert(w != NULL);
+		  vr->vtype= TYPE_str;
+		  vr->len = (int)strlen(w);
+		  vr->val.sval= w;
 		  /* VALset(vr, type, w); does not use TYPE-str */
 		}
 		if ( vr->vtype != type)

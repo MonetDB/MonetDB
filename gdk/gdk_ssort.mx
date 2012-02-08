@@ -833,7 +833,6 @@ merge_at_@1@2(MergeState *ms, ssize_t i)
 
 @
 @c
-@:typeexpand(chr,CHR)@
 @:typeexpand(bte,BTE)@
 @:typeexpand(sht,SHT)@
 @:typeexpand(int,INT)@
@@ -1024,11 +1023,6 @@ GDKssort@1(void *h, void *t, void *heap, size_t nitems, int hs, int ts, int tpe)
 	hi = lo + nremaining;
 	minrun = merge_compute_minrun(nremaining);
 	switch (tpe) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:do_ssort(chr,@1)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:do_ssort(bte,@1)@

@@ -35,7 +35,7 @@ All Rights Reserved.
 @:@1(,int,simple,,int,@2)@
 @:@1(,lng,simple,,int,@2)@
 @:@1(,dbl,simple,,dbl,@2)@
-@:@1(,chr,simple,,dbl,@2)@
+@:@1(,bte,simple,,dbl,@2)@
 @:@1(,flt,simple,,dbl,@2)@
 @:@1(,sht,simple,,dbl,@2)@
 @:@1(,date,atom,TYPE_,loc,@2)@
@@ -1536,7 +1536,7 @@ newCrackerIndexSideways_@1(int bid, int cbid, int pbid, int cid){
 @
 @= printMacro
 
-/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+/* @1: the type; e.g., bte sht int oid wrd flt dbl lng str */
 {
         str MyBuf = NULL;
         int MyBufLen = 0;

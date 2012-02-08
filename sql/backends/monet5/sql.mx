@@ -3730,7 +3730,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 		/* handle the various cases */
 		switch(col->type.type->localtype){
-		case TYPE_chr:
+		case TYPE_bte:
 		case TYPE_bit:
 		case TYPE_oid:
 		case TYPE_sht:

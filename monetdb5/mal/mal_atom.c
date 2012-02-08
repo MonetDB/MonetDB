@@ -32,7 +32,7 @@
  * The commands defined in an @sc{atom } block are screened as of interest
  * to the library.
  *
- * MonetDB comes with the hardwired types @sc{bit, chr, sht, int, lng, oid, flt,
+ * MonetDB comes with the hardwired types @sc{bit, bte, sht, int, lng, oid, flt,
  * dbl, str} and @sc{bat}, the representation of a bat identifier.
  * The kernel code has been optimized to deal with these types efficiently,
  * i.e. without unnecessary function call overheads.
@@ -304,7 +304,7 @@ int malAtomFixed(int size, int align, char *name)
 	if (strlen(name) >= sizeof(BATatoms[0].name))
 		return -1;
 	i = ATOMindex(name);
-	BATatoms[i] = BATatoms[TYPE_chr];
+	BATatoms[i] = BATatoms[TYPE_bte];
 	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;

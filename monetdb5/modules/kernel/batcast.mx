@@ -41,7 +41,6 @@ All Rights Reserved.
 @
 @mal
 	@:idempotent(bit)@
-	@:idempotent(chr)@
 	@:idempotent(bte)@
 	@:idempotent(sht)@
 	@:idempotent(int)@
@@ -290,7 +289,6 @@ bunins_failed:
 #include "batcast.h"
 
 	@:Idempotent(bit)@
-	@:Idempotent(chr)@
 	@:Idempotent(bte)@
 	@:Idempotent(sht)@
 	@:Idempotent(int)@
@@ -302,7 +300,6 @@ bunins_failed:
 	@:Idempotent(str)@
 
 	@:GeneralStr(bit)@
-	@:GeneralStr(chr)@
 	@:GeneralStr(bte)@
 	@:GeneralStr(sht)@
 	@:GeneralStr(int)@

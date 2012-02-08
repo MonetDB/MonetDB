@@ -553,8 +553,6 @@ tailtype(BAT *b, int str_trick)
 
 	/* more daring remappings possible under simple equality */
 	switch (tpe) {
-	case TYPE_chr:
-		return TYPE_bte;
 	case TYPE_flt:
 		return TYPE_int;
 	case TYPE_dbl:

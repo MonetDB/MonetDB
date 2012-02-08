@@ -99,9 +99,6 @@ command nbytes( s:str ) :int
 address STRBytes
 comment "Return the string length in bytes.";
 
-command chrAt( s:str, index:int) :chr 
-address STRChrAt
-comment "String array lookup operation.";
 command unicodeAt(s:str, index:int) :int 
 address STRWChrAt
 comment "get a unicode character 
@@ -135,17 +132,9 @@ command search( s:str, c:str ) :int
 address STRstrSearch
 comment "Search for a substring. Returns 
 	 position, -1 if not found.";
-command search( s:str, c:chr ) :int 
-address STRchrSearch
-comment "Search for a character. Returns 
-	 position, -1 if not found.";
 command r_search( s:str, c:str ) :int 
 address STRReverseStrSearch
 comment "Reverse search for a substring. Returns 
-	 position, -1 if not found.";
-command r_search( s:str, c:chr ) :int 
-address STRReverseChrSearch
-comment "Reverse search for a char. Returns 
 	 position, -1 if not found.";
 
 command trim( s:str ) :str 
@@ -279,16 +268,12 @@ str_export str STRFromWChr(str *res, int *at);
 str_export str STRWChrAt(int *res, str *arg1, int *at);
 str_export str STRcodeset(str *res);
 str_export str STRIconv(str *res, str *o, str *fp, str *tp);
-str_export str STRChrAt(chr *res, str *arg1, int *at);
 str_export str STRPrefix(bit *res, str *arg1, str *arg2);
 str_export str STRSuffix(bit *res, str *arg1, str *arg2);
 str_export str STRLower(str *res, str *arg1);
 str_export str STRUpper(str *res, str *arg1);
-str_export str STRChrSearch(int *res, str *arg1, chr *c);
 str_export str STRstrSearch(int *res, str *arg1, str *arg2);
 str_export str STRReverseStrSearch(int *res, str *arg1, str *arg2);
-str_export str STRchrSearch(int *res, str *arg1, chr *c);
-str_export str STRReverseChrSearch(int *res, str *arg1, chr *c);
 str_export str STRStrip(str *res, str *arg1);
 str_export str STRLtrim(str *res, str *arg1);
 str_export str STRRtrim(str *res, str *arg1);
@@ -313,11 +298,8 @@ str_export int strReverseStrSearch(int *res, str s, str s2);
 str_export int strStrip(str *res, str s);
 str_export int strLtrim(str *res, str s);
 str_export int strRtrim(str *res, str s);
-str_export int strChrSearch(int *res, str s, chr *c);
-str_export int strReverseChrSearch(int *res, str s, chr *c);
 str_export int strFromWChr(str *res, int *c);
 str_export int strWChrAt(int *res, str val, int *at);
-str_export int strChrAt(chr *res, str val, int *at);
 str_export int codeset(str *res);
 str_export int strIconv(str *res, str org, str f, str t);
 str_export int strSubstitute(str *res, str s, str src, str dst, bit *g);
@@ -1445,7 +1427,7 @@ strEpilogue(void)
 	    || (int) (@1) >= 0x80000000
 #endif
 	   ) {
-		*(@2)++ = chr_nil;
+		*(@2)++ = '\200';
 	} else if ((@1) < 0x80) {
 		*(@2)++ = (@1);
 	} else if ((@1) < 0x800) {
@@ -1613,25 +1595,12 @@ strConcat(str *res, str s, ptr val, int t)
 		return GDK_FAIL;
 	l1 = strlen(s);
 	if (t != TYPE_str) {
-		if (t == TYPE_chr) {
-			char buf[7], *p = buf;
-
-			/* put value in int to avoid warning from compiler */
-			if (* (chr *) val == chr_nil)
-				l2 = -1; /* indicate nil */
-			else
-				l2 = * (unsigned char *) val;
-			@:UTF8_PUTCHAR(l2,p)@
-			l2 = (int) (p - buf);
-			val = (ptr) buf;
-		} else {
-			BATatoms[t].atomToStr(&valstr, &l2, val);
-			val = (ptr) valstr;
-		}
+		BATatoms[t].atomToStr(&valstr, &l2, val);
+		val = (ptr) valstr;
 	} else 
 		l2 = (int) strlen((str) val);
 
-	if (* (str) val == chr_nil || *s == chr_nil)
+	if (* (str) val == '\200' || *s == '\200')
 		*res = GDKstrdup(str_nil);
 	else {
 		if (l1+l2+1 >= INT_MAX) {
@@ -1796,19 +1765,6 @@ strIconv(str *res, str org, str f, str t)
 }
 
 int
-strChrAt(chr *res, str val, int *at)
-{
-	int v;
-
-	strWChrAt(&v, val, at);
-	if (0 <= v && v <= 127)
-		*res = (chr) v;
-	else
-		*res = chr_nil;
-	return GDK_SUCCEED;
-}
-
-int
 strPrefix(bit *res, str s, str prefix)
 {
 	size_t pl, i;
@@ -1946,32 +1902,6 @@ strReverseStrSearch(int *res, str s, str s2)
 	}
 
 	return GDK_SUCCEED;
-}
-
-int
-strChrSearch(int *res, str s, chr *c)
-{
-/* 64bit: should return wrd */
-	int i = (int) *c;
-	char buf[7], *p = buf;
-
-	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i,p)@
-	*p = 0;
-	return strStrSearch(res, s, buf);
-}
-
-int
-strReverseChrSearch(int *res, str s, chr *c)
-{
-/* 64bit: should return wrd */
-	int i = (int) *c;
-	char buf[7], *p = buf;
-
-	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i,p)@
-	*p = 0;
-	return strReverseStrSearch(res, s, buf);
 }
 
 int
@@ -2204,13 +2134,6 @@ STRIconv(str *res, str *o, str *fp, str *tp)
 }
 
 str
-STRChrAt(chr *res, str *arg1, int *at)
-{
-	strChrAt(res, *arg1, at);
-	return MAL_SUCCEED;
-}
-
-str
 STRPrefix(bit *res, str *arg1, str *arg2)
 {
 	strPrefix(res, *arg1, *arg2);
@@ -2239,13 +2162,6 @@ STRUpper(str *res, str *arg1)
 }
 
 str
-STRChrSearch(int *res, str *arg1, chr *c)
-{
-	strChrSearch(res, *arg1, c);
-	return MAL_SUCCEED;
-}
-
-str
 STRstrSearch(int *res, str *arg1, str *arg2)
 {
 	strStrSearch(res, *arg1, *arg2);
@@ -2256,20 +2172,6 @@ str
 STRReverseStrSearch(int *res, str *arg1, str *arg2)
 {
 	strReverseStrSearch(res, *arg1, *arg2);
-	return MAL_SUCCEED;
-}
-
-str
-STRchrSearch(int *res, str *arg1, chr *c)
-{
-	strReverseChrSearch(res, *arg1, c);
-	return MAL_SUCCEED;
-}
-
-str
-STRReverseChrSearch(int *res, str *arg1, chr *c)
-{
-	strReverseChrSearch(res, *arg1, c);
 	return MAL_SUCCEED;
 }
 
