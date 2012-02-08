@@ -25,7 +25,7 @@ All Rights Reserved.
  * @- SQL append show-case optimizer
  *
  * This optimizer is mainly for demonstrating how to implement a MAL
- * optimizer in priciple.
+ * optimizer in principle.
  *
  * Purely for that purpose, the optimizer's task is to recognize MAL code
  * patterns like
@@ -39,6 +39,8 @@ All Rights Reserved.
  * i.e., an sql.append() statement that is eventually followed by some other
  * statement later on in the MAL program that uses the same v0 BAT as
  * argument as the sql.append() statement does,
+ * Do you assume a single re-use of the variable v0?
+ * Do you assume a non-nested  MAL block ?
  *
  * and transform them into
  *
@@ -52,6 +54,7 @@ All Rights Reserved.
  *
  * i.e., handing a BAT view v2 of BAT v0 as argument to the sql.append()
  * statement, rather than the original BAT v0.
+ * My advice, always use new variable names, it may capture some easy to make errors.
  *
  * As a refinement, patterns like
  *
@@ -74,6 +77,10 @@ All Rights Reserved.
  *
  */
 
+/* 
+ * It is mandatory to make optimizers part of the 'optimizer' module.
+ * This allows the optimizer implementation to find them and react on them.
+*/
 @mal
 pattern optimizer.sql_append():str
 address OPTsql_append
@@ -130,13 +137,17 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	 * or (2) omitting statements or (3) introducing new statements.
 	 */
 
+	/* this should not be needed, 'impossible'
 	if (mb == NULL)
 		return 0;
+	*/
 
+	/* safe the old stage of the MAL block */
 	old = mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
 
+	/* initialize the statement list. Notice, the symbol table remains intact */
 	if (newMalBlkStmt(mb, mb->ssize) < 0)
 		return 0;
 
@@ -150,9 +161,10 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* check for
 		 *  v3 := sql.append( ..., ..., ..., ..., v0 );
 		 */
-		if (getModuleId(p) == sqlRef && \
-		    getFunctionId(p) == appendRef && \
-		    p->argc > 5 && \
+		if (getModuleId(p) == sqlRef &&
+		    getFunctionId(p) == appendRef && 
+		    p->argc > 5 &&
+		    p->retc == 1 && 
 		    isaBatType(getArgType(mb, p, 5))) {
 			/* found
 			 *  v3 := sql.append( ..., ..., ..., ..., v0 );
@@ -166,8 +178,10 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 */
 			if (i+1 < limit) {
 				InstrPtr q = old[i+1];
-				if (getModuleId(q) == aggrRef && \
-			            getFunctionId(q) == countRef && \
+				if (getModuleId(q) == aggrRef &&
+			            getFunctionId(q) == countRef &&
+						q->argc == 2 && 
+						q->retc == 1 && 
 			            getArg(q, 1) == getArg(p, 5)) {
 			                /* found
 			                 *  v3 := sql.append( ..., ..., ..., ..., v0 );
@@ -181,13 +195,17 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					pushInstruction(mb, q);
 					q1 = q;
 					i++;
-					actions++;
+					actions++;	/* to keep track if anything has been done */
 				}
 			}
 
-			/* look for
+			/* look for	
 			 *  v5 := ... v0 ...;
 			 */
+			/* an expensive loop, better would be to remember that v0 has a different role.
+			 * A typical method is to keep a map from variable -> instruction where it was
+			 * detected. The you can check each assignment for use of v0
+			*/
 			for (j = i+1; !found  && j < limit; j++)
 				for (k = old[j]->retc; !found && k < old[j]->argc; k++)
 					found = (getArg(old[j], k) == getArg(p, 5));
@@ -202,6 +220,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				/* push new v1 := aggr.count( v0 ); unless already available */
 				if (q1 == NULL) {
+				/* use mal_buil.mx primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
+				/* it will be added to the block and even my re-use MAL instructions */
 					q1 = newInstruction(mb,ASSIGNsymbol);
 					getArg(q1,0) = newTmpVariable(mb, TYPE_wrd);
 					setModuleId(q1, aggrRef);
@@ -211,6 +231,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 
 				/* push new v2 := algebra.slice( v0, 0, v1 ); */
+				/* use mal_buil.mx primitives q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,ASSIGNsymbol);
 				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
 				setModuleId(q2, algebraRef);
@@ -240,6 +261,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for(i++; i<limit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
+	/* any remaining MAL instruction records are removed */
 	for(; i<slimit; i++)
 		if (old[i])
 			freeInstruction(old[i]);
@@ -253,6 +275,9 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	return actions;
 }
 
+/* optimizers have to be registered in the optcatalog in opt_support.c.
+ * you have to path the file accordingly.
+ */
 @include ../../optimizer/optimizerWrapper.mx
 @c
 #include "opt_statistics.h"
