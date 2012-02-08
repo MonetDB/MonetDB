@@ -77,7 +77,7 @@ All Rights Reserved.
  *
  */
 
-/* 
+/*
  * It is mandatory to make optimizers part of the 'optimizer' module.
  * This allows the optimizer implementation to find them and react on them.
 */
@@ -160,9 +160,9 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 *  v3 := sql.append( ..., ..., ..., ..., v0 );
 		 */
 		if (getModuleId(p) == sqlRef &&
-		    getFunctionId(p) == appendRef && 
+		    getFunctionId(p) == appendRef &&
 		    p->argc > 5 &&
-		    p->retc == 1 && 
+		    p->retc == 1 &&
 		    isaBatType(getArgType(mb, p, 5))) {
 			/* found
 			 *  v3 := sql.append( ..., ..., ..., ..., v0 );
@@ -177,14 +177,14 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (i+1 < limit) {
 				InstrPtr q = old[i+1];
 				if (getModuleId(q) == aggrRef &&
-			            getFunctionId(q) == countRef &&
-						q->argc == 2 && 
-						q->retc == 1 && 
-			            getArg(q, 1) == getArg(p, 5)) {
-			                /* found
-			                 *  v3 := sql.append( ..., ..., ..., ..., v0 );
-			                 *  v4 := aggr.count(v0);
-			                 */
+				    getFunctionId(q) == countRef &&
+				    q->argc == 2 &&
+				    q->retc == 1 &&
+				    getArg(q, 1) == getArg(p, 5)) {
+					/* found
+					 *  v3 := sql.append( ..., ..., ..., ..., v0 );
+					 *  v4 := aggr.count(v0);
+					 */
 					/* issue/execute
 					 *  v4 := aggr.count(v0);
 					 * before
@@ -197,7 +197,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 			}
 
-			/* look for	
+			/* look for
 			 *  v5 := ... v0 ...;
 			 */
 			/* an expensive loop, better would be to remember that v0 has a different role.
@@ -218,8 +218,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				/* push new v1 := aggr.count( v0 ); unless already available */
 				if (q1 == NULL) {
-				/* use mal_buil.mx primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
-				/* it will be added to the block and even my re-use MAL instructions */
+					/* use mal_buil.mx primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
+					/* it will be added to the block and even my re-use MAL instructions */
 					q1 = newInstruction(mb,ASSIGNsymbol);
 					getArg(q1,0) = newTmpVariable(mb, TYPE_wrd);
 					setModuleId(q1, aggrRef);
