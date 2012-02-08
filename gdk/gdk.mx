@@ -2821,9 +2821,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloop_bit
  * @tab
  *  (BAT *b; Hash *h, size_t idx; bit *value, BUN w)
- * @item HASHloop_chr
- * @tab
- *  (BAT *b; Hash *h, size_t idx; char *value, BUN w)
  * @item HASHloop_bte
  * @tab
  *  (BAT *b; Hash *h, size_t idx; bte *value, BUN w)
@@ -3075,7 +3072,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
 @:sortloop(wrd,lng,wrd,simple,&wrd_nil)@
 #endif
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_chr(b,p,q,tl,th)
+#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
 /*
  * @+ Common BAT Operations

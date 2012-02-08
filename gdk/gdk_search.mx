@@ -90,7 +90,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_any(H,V)         (ATOMhash((H)->type, (V)) & (H)->mask)
 #define heap_hash_any(hp,H,V) ((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
 #define hash_bte(H,V)         ((BUN) (*(unsigned char*) (V)) & (H)->mask)
-#define hash_chr(H,V)         hash_bte(H,V)
 #define hash_sht(H,V)         ((BUN) mix_sht(*((unsigned short*) (V))) & (H)->mask)
 #define hash_int(H,V)         ((BUN) mix_int(*((unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
@@ -161,7 +160,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 #define HASHfnd_ptr(x,y,z)	HASHfnd_lng(x,y,z)
 #endif
-#define HASHfnd_bit(x,y,z)	HASHfnd_chr(x,y,z)
+#define HASHfnd_bit(x,y,z)	HASHfnd_bte(x,y,z)
 #define HASHfnd_flt(x,y,z)	HASHfnd_int(x,y,z)
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
@@ -211,7 +210,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 #define HASHins_ptr(h,i,v)	HASHins_lng(h,i,v)
 #endif
-#define HASHins_bit(h,i,v)	HASHins_chr(h,i,v)
+#define HASHins_bit(h,i,v)	HASHins_bte(h,i,v)
 #if SIZEOF_OID == SIZEOF_INT	/* OIDDEPEND */
 #define HASHins_oid(h,i,v)	HASHins_int(h,i,v)
 #else
@@ -660,13 +659,13 @@ HASHgonebad(BAT *b, ptr v)
  * @- Range Binary Search
  * Type-specific versions of SORTfndfirst are available using macro
  * expansions. It finds the first BUN larger or equal than a certain
- * value and expands to @`SORTfndfirst_chr@5, @`SORTfndfirst_sht@5,
+ * value and expands to @`SORTfndfirst_bte@5, @`SORTfndfirst_sht@5,
  * @`SORTfndfirst_int@5, @`SORTfndfirst_flt@5, @`SORTfndfirst_lng@5,
  * @`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and @`SORTfndfirst_var@5.
  *
  * Type-specific versions of SORTfndlast are available using macro
  * expansions. It finds the first BUN smaller or equal than a certain
- * value and expands to @`SORTfndlast_chr@5, @`SORTfndlast_sht@5,
+ * value and expands to @`SORTfndlast_bte@5, @`SORTfndlast_sht@5,
  * @`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
  * @`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
  */
