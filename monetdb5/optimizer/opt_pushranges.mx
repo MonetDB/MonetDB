@@ -215,8 +215,8 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				x=  p->argc > 4;
 				x= x && isVarConstant(mb,getArg(p,4));
 				x= x && isVarConstant(mb,getArg(p,5));
-				x= x && getVarConstant(mb,getArg(p,4)).val.cval[0];
-				x= x && getVarConstant(mb,getArg(p,5)).val.cval[0];
+				x= x && getVarConstant(mb,getArg(p,4)).val.btval;
+				x= x && getVarConstant(mb,getArg(p,5)).val.btval;
 				if( z > 0 || (z==0 && p->argc>4 && !x)) {
 					int var = getArg(p, 0);
 					wrd zero = 0;

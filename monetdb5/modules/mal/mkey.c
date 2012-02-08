@@ -116,9 +116,6 @@ CMDhash(wrd *res, ptr val, int tpe)
 	case TYPE_void:
 		code = int_nil;
 		break;
-	case TYPE_chr:
-		code = *(chr *) val;
-		break;
 	case TYPE_bte:
 		code = *(bte *) val;
 		break;
@@ -179,10 +176,6 @@ voidbathash(BAT **res, BAT *b )
 		int sz = Tsize(b), tpe = b->ttype;
 
 		switch (ATOMstorage(tpe)) {
-		case TYPE_chr:
-			for(; v < e; v+=sz)
-				*r++ = *(chr*)v;
-			break;
 		case TYPE_bte:
 			for(; v < e; v+=sz)
 				*r++ = *(bte*)v;
@@ -255,8 +248,8 @@ MKEYrotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	wrd mask = (((wrd)1) << lbit) - 1;
 
 	(void) cntxt;
-	if (tpe == TYPE_chr || tpe == TYPE_bte) {
-		chr *cur = (chr*) pval;
+	if (tpe == TYPE_bte) {
+		bte *cur = (bte*) pval;
 		*dst = GDK_ROTATE(*h, lbit, rbit, mask) ^ *cur;
 	} else if (tpe == TYPE_sht) {
 		sht *cur = (sht*) pval;
@@ -312,7 +305,7 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 	BATseqbase(br, b->hseqbase);
 	dst = (wrd *) Tloc(br, BUNfirst(br));
 
-	if (tpe == TYPE_bte || tpe == TYPE_chr) {
+	if (tpe == TYPE_bte) {
 		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));
 		bte *end = (bte *) BUNtloc(bi, BUNlast(b));
 
@@ -434,8 +427,8 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
     	}
 
 	(void) cntxt;
-	if (tpe == TYPE_chr || tpe == TYPE_bte) {
-		cur = *(chr*) pval;
+	if (tpe == TYPE_bte) {
+		cur = *(bte*) pval;
 	} else if (tpe == TYPE_sht) {
 		cur = *(sht*) pval;
 	} else if (tpe == TYPE_int || tpe == TYPE_flt) {
@@ -521,7 +514,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	BATseqbase(br, bn->hseqbase);
 	dst = (wrd *) Tloc(br, BUNfirst(br));
 
-	if (tpe == TYPE_bte || tpe == TYPE_chr) {
+	if (tpe == TYPE_bte) {
 		bte *cur = (bte *) BUNtloc(bi, BUNfirst(b));
 		bte *end = (bte *) BUNtloc(bi, BUNlast(b));
 
@@ -641,13 +634,7 @@ MKEYhash_bit(wrd *ret, bit *v)
 	return MAL_SUCCEED;
 }
 str
-MKEYhash_chr(wrd *ret, chr *v)
-{
-	CMDhash_bte(ret,v);
-	return MAL_SUCCEED;
-}
-str
-MKEYhash_bte(wrd *ret, chr *v)
+MKEYhash_bte(wrd *ret, bte *v)
 {
 	CMDhash_bte(ret,v);
 	return MAL_SUCCEED;

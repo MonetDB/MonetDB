@@ -321,11 +321,6 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	r_start = r_end = BUNfirst(r);
 
 	switch (loc) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:mergejoin(simple,loc,loc,chr)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:mergejoin(simple,loc,loc,bte)@
@@ -512,10 +507,6 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	if (BATcount(l) > BATcount(r)/10)
 		BATaccessBegin(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:hashjoin(simple,chr,tloc,chr)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:hashjoin(simple,bte,tloc,bte)@
@@ -595,7 +586,6 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 #define T@1put(bn,dst)	*(@1*) (dst) = *(@1*) (BUNtloc(ri,r_cur))
 @
 @c
-@:SIMPLEput(chr)@
 @:SIMPLEput(bte)@
 @:SIMPLEput(sht)@
 @:SIMPLEput(int)@
@@ -736,7 +726,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @
 @c
 @= fetchjoin2
-	@:fetchjoin(@1,chr)@
 	@:fetchjoin(@1,bte)@
 	@:fetchjoin(@1,sht)@
 	@:fetchjoin(@1,int)@
@@ -745,7 +734,6 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	@:fetchjoin(@1,LATOM)@
 @
 @c
-@:fetchjoin2(chr)@
 @:fetchjoin2(bte)@
 @:fetchjoin2(sht)@
 @:fetchjoin2(int)@
@@ -755,9 +743,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @:fetchjoin2(LATOM)@
 
 @= fetchjoin_switch_rtt
-	if (ATOMstorage(rtt) == TYPE_chr) {
-		bn = @1fetchjoin_@2_chr(bn, l, r);
-	} else if (ATOMstorage(rtt) == TYPE_bte) {
+	if (ATOMstorage(rtt) == TYPE_bte) {
 		bn = @1fetchjoin_@2_bte(bn, l, r);
 	} else if (ATOMstorage(rtt) == TYPE_sht) {
 		bn = @1fetchjoin_@2_sht(bn, l, r);
@@ -785,9 +771,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @
 @c
 @= fetchjoin_switch_lht
-	if (ATOMstorage(lht) == TYPE_chr) {
-		@:fetchjoin_switch_rtt(@1,chr)@
-	} else if (ATOMstorage(lht) == TYPE_bte) {
+	if (ATOMstorage(lht) == TYPE_bte) {
 		@:fetchjoin_switch_rtt(@1,bte)@
 	} else if (ATOMstorage(lht) == TYPE_sht) {
 		@:fetchjoin_switch_rtt(@1,sht)@
@@ -1140,9 +1124,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		dst = BUNfirst(bn);
 
-		if (ATOMstorage(tpe) == TYPE_chr) {
-			@:voidfetchjoin(Tchr)@
-		} else if (ATOMstorage(tpe) == TYPE_bte) {
+		if (ATOMstorage(tpe) == TYPE_bte) {
 			@:voidfetchjoin(Tbte)@
 		} else if (ATOMstorage(tpe) == TYPE_sht) {
 			@:voidfetchjoin(Tsht)@
@@ -1699,10 +1681,6 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		}
 @= outerjoinswitch
 		switch (any) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:outerjoinloop(simple,chr,@1,@2,chr)@
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:outerjoinloop(simple,bte,@1,@2,bte)@
@@ -1913,9 +1891,6 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 			goto bunins_failed;
 		break;
 @= nlthetajoin_tpe
-#ifndef NOEXPAND_CHR
-	@:nlthetajoin_@1(chr,@2,@3)@
-#endif
 #ifndef NOEXPAND_BTE
 	@:nlthetajoin_@1(bte,@2,@3)@
 #endif
@@ -2137,10 +2112,6 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	}
 
 	switch (loc = var = ATOMstorage(l->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:binsemijoin(loc,chr,simple)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:binsemijoin(loc,bte,simple)@
@@ -2303,10 +2274,6 @@ BATrevsemijoin(BAT *l, BAT *r)
 		return NULL;
 
 	switch (any = ATOMstorage(l->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:revsemijoin(simple,chr,hloc,chr)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:revsemijoin(simple,bte,hloc,bte)@
@@ -2605,7 +2572,6 @@ bunins_failed:
 	return NULL;
 }
 @= antijoin1
-	@:antijoin2(@1,chr)@
 	@:antijoin2(@1,bte)@
 	@:antijoin2(@1,sht)@
 	@:antijoin2(@1,int)@
@@ -2614,7 +2580,6 @@ bunins_failed:
 	@:antijoin2(@1,LATOM)@
 @
 @c
-@:antijoin1(chr)@
 @:antijoin1(bte)@
 @:antijoin1(sht)@
 @:antijoin1(int)@
@@ -2628,9 +2593,7 @@ bunins_failed:
 	int rtt = r->ttype;
 	int rts = ATOMstorage(rtt);
 
-	if (rts == TYPE_chr) {
-		bn = antijoin_@1_chr(bn, l, r);
-	} else if (rts == TYPE_bte) {
+	if (rts == TYPE_bte) {
 		bn = antijoin_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = antijoin_@1_sht(bn, l, r);
@@ -2661,9 +2624,7 @@ bunins_failed:
 	int lht = l->htype;
 	int lhs = ATOMstorage(lht);
 
-	if (lhs == TYPE_chr) {
-		@:antijoin_switch_rtt(chr)@
-	} else if (lhs == TYPE_bte) {
+	if (lhs == TYPE_bte) {
 		@:antijoin_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:antijoin_switch_rtt(sht)@
@@ -2783,7 +2744,6 @@ bunins_failed:
 	return NULL;
 }
 @= cross1
-	@:cross2(@1,chr)@
 	@:cross2(@1,bte)@
 	@:cross2(@1,sht)@
 	@:cross2(@1,int)@
@@ -2792,7 +2752,6 @@ bunins_failed:
 	@:cross2(@1,LATOM)@
 @
 @c
-@:cross1(chr)@
 @:cross1(bte)@
 @:cross1(sht)@
 @:cross1(int)@
@@ -2806,9 +2765,7 @@ bunins_failed:
 	int rtt = r->ttype;
 	int rts = ATOMstorage(rtt);
 
-	if (rts == TYPE_chr) {
-		bn = cross_@1_chr(bn, l, r);
-	} else if (rts == TYPE_bte) {
+	if (rts == TYPE_bte) {
 		bn = cross_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = cross_@1_sht(bn, l, r);
@@ -2839,9 +2796,7 @@ bunins_failed:
 	int lht = l->htype;
 	int lhs = ATOMstorage(lht);
 
-	if (lhs == TYPE_chr) {
-		@:cross_switch_rtt(chr)@
-	} else if (lhs == TYPE_bte) {
+	if (lhs == TYPE_bte) {
 		@:cross_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:cross_switch_rtt(sht)@

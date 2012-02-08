@@ -134,7 +134,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int j1, int j6, int j7)
 		setFunctionId(q, uselectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, a);
-		q = pushChr(mb, q, 'o');  /* deref requires object */
+		q = pushBte(mb, q, 'o');  /* deref requires object */
 		a = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -291,9 +291,9 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 			q = pushArgument(mb, q, b);
 			/* boolean conditions can only be j_equals or j_nequal */
 			if (t->tval2->cval == j_equals) {
-				q = pushChr(mb, q, t->tval3->nval == 0 ? 'f' : 't');
+				q = pushBte(mb, q, t->tval3->nval == 0 ? 'f' : 't');
 			} else {
-				q = pushChr(mb, q, t->tval3->nval != 0 ? 'f' : 't');
+				q = pushBte(mb, q, t->tval3->nval != 0 ? 'f' : 't');
 			}
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
@@ -464,7 +464,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, c);
-		q = pushChr(mb, q, 't');
+		q = pushBte(mb, q, 't');
 		e = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -472,7 +472,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, c);
-		q = pushChr(mb, q, 'f');
+		q = pushBte(mb, q, 'f');
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -489,7 +489,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, d);
-		q = pushChr(mb, q, 't');
+		q = pushBte(mb, q, 't');
 		e = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -497,7 +497,7 @@ dumpcomp(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, i
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, d);
-		q = pushChr(mb, q, 'f');
+		q = pushBte(mb, q, 'f');
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -1612,7 +1612,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 	setFunctionId(q, projectRef);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, r);
-	q = pushChr(mb, q, 'o');
+	q = pushBte(mb, q, 'o');
 	l = getArg(q, 0);
 	pushInstruction(mb, q);
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -1850,13 +1850,13 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, c);
 			if (t->type == j_num) {
-				q = pushChr(mb, q, 'i');
+				q = pushBte(mb, q, 'i');
 				d = *j3;
 			} else if (t->type == j_dbl) {
-				q = pushChr(mb, q, 'd');
+				q = pushBte(mb, q, 'd');
 				d = *j4;
 			} else {
-				q = pushChr(mb, q, 's');
+				q = pushBte(mb, q, 's');
 				d = *j2;
 			}
 			e = getArg(q, 0);
@@ -1934,7 +1934,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, c);
-			q = pushChr(mb, q, 'n');
+			q = pushBte(mb, q, 'n');
 			c = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -2498,7 +2498,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, j);
-			q = pushChr(mb, q, 'n');
+			q = pushBte(mb, q, 'n');
 			r = getArg(q, 0);
 			pushInstruction(mb, q);
 			if (h != -1) {
@@ -2507,7 +2507,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 				setFunctionId(q, projectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, h);
-				q = pushChr(mb, q, 'i');
+				q = pushBte(mb, q, 'i');
 				h = getArg(q, 0);
 				pushInstruction(mb, q);
 			}
@@ -2516,7 +2516,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, i);
-			q = pushChr(mb, q, 'd');
+			q = pushBte(mb, q, 'd');
 			i = getArg(q, 0);
 			pushInstruction(mb, q);
 
@@ -2761,7 +2761,7 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			setFunctionId(q, projectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, d);
-			q = pushChr(mb, q, g == 2 ? 'o' : 'a');
+			q = pushBte(mb, q, g == 2 ? 'o' : 'a');
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -2864,7 +2864,7 @@ dumpgetvar(MalBlkPtr mb, const char *v, int *j1, int *j2, int *j3, int *j4, int 
 	setModuleId(q, putName("jaql", 4));
 	setFunctionId(q, putName("getVar", 6));
 	q = pushReturn(mb, q,
-			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_chr)));
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bte)));
 	*j1 = getArg(q, 0);
 	setVarUDFtype(mb, *j1);
 	q = pushReturn(mb, q,
@@ -2999,7 +2999,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setModuleId(q, putName("json", 4));
 				setFunctionId(q, putName("shred", 5));
 				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_chr)));
+						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bte)));
 				j1 = getArg(q, 0);
 				setVarUDFtype(mb, j1);
 				q = pushReturn(mb, q,
@@ -3171,7 +3171,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, uselectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, a);
-				q = pushChr(mb, q, 'a');  /* only arrays match expand */
+				q = pushBte(mb, q, 'a');  /* only arrays match expand */
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 				/* construct json with these elements in the outermost
@@ -3240,7 +3240,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, selectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
-				q = pushChr(mb, q, 'a');
+				q = pushBte(mb, q, 'a');
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 
@@ -3286,7 +3286,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, projectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, f);
-				q = pushChr(mb, q, 'o');
+				q = pushBte(mb, q, 'o');
 				f = getArg(q, 0);
 				pushInstruction(mb, q);
 				/* cleanup and append to kinds */
@@ -3524,8 +3524,8 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setModuleId(q, batRef);
 				setFunctionId(q, newRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushType(mb, q, TYPE_chr);
-				q = pushType(mb, q, TYPE_chr);
+				q = pushType(mb, q, TYPE_bte);
+				q = pushType(mb, q, TYPE_bte);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -3533,8 +3533,8 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
-				q = pushChr(mb, q, 's');
-				q = pushChr(mb, q, 's');
+				q = pushBte(mb, q, 's');
+				q = pushBte(mb, q, 's');
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -3542,8 +3542,8 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
-				q = pushChr(mb, q, 'i');
-				q = pushChr(mb, q, 'i');
+				q = pushBte(mb, q, 'i');
+				q = pushBte(mb, q, 'i');
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -3551,8 +3551,8 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
-				q = pushChr(mb, q, 'd');
-				q = pushChr(mb, q, 'd');
+				q = pushBte(mb, q, 'd');
+				q = pushBte(mb, q, 'd');
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -3598,7 +3598,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 					setFunctionId(q, putName("==", 2));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, f);
-					q = pushChr(mb, q, l[lw][1]);
+					q = pushBte(mb, q, l[lw][1]);
 					d = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newAssignment(mb);

@@ -539,7 +539,7 @@ comment "Fill the tail with a constant, e.g. [0~b]";
 @
 @mal
 	@:projectGrp(bit)@
-	@:projectGrp(chr)@
+	@:projectGrp(bte)@
 	@:projectGrp(str)@
 	@:projectGrp(oid)@
 	@:projectGrp(int)@
@@ -1092,7 +1092,7 @@ algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
 @:project_export(flt)@
 @:project_export(dbl)@
 @:project_export(str)@
-@:project_export(chr)@
+@:project_export(bte)@
 @:project_export(bit)@
 
 algebra_export str ALGidentity(int *ret, int *bid);
@@ -1267,12 +1267,9 @@ BAT@1(BAT *b, ptr aggr)
 	s = BATcount(b);
 	t = b->ttype;
 	if (BATtvoid(b)) {
-		@:aggr@1(chr,loc,simple,chr,void)@
+		@:aggr@1(bte,loc,simple,bte,void)@
 	} else {
 		switch(ATOMstorage(t)) {
-		case TYPE_chr:
-			@:aggr@1(chr,loc,simple,chr,atom)@
-			break;
 		case TYPE_bte:
 			@:aggr@1(bte,loc,simple,bte,atom)@
 			break;
@@ -1293,10 +1290,10 @@ BAT@1(BAT *b, ptr aggr)
 			break;
 		default:
 			if (b->tvarsized) {
-				@:aggr@1(chr,var,atom,t,atom)@
+				@:aggr@1(bte,var,atom,t,atom)@
 				break;
 			} else {
-				@:aggr@1(chr,loc,atom,t,atom)@
+				@:aggr@1(bte,loc,atom,t,atom)@
 				break;
 			}
 		}
@@ -3757,7 +3754,7 @@ bunins_failed:
 @:projectImpl(flt)@
 @:projectImpl(dbl)@
 @:projectImpl(str)@
-@:projectImpl(chr)@
+@:projectImpl(bte)@
 @:projectImpl(bit)@
 
 

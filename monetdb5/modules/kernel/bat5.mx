@@ -2830,7 +2830,6 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_chr: @:shrinkloop(chr)@ break;
 	case TYPE_bte: @:shrinkloop(bte)@ break;
 	case TYPE_sht: @:shrinkloop(sht)@ break;
 	case TYPE_int: @:shrinkloop(int)@ break;
@@ -3011,7 +3010,6 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
     BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_chr: @:reuseloop(chr)@ break;
 	case TYPE_bte: @:reuseloop(bte)@ break;
 	case TYPE_sht: @:reuseloop(sht)@ break;
 	case TYPE_int: @:reuseloop(int)@ break;

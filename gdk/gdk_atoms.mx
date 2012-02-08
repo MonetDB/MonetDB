@@ -111,8 +111,6 @@ gdk_export int shtFromStr(str src, int *len, sht **dst);
 gdk_export int shtToStr(str *dst, int *len, sht *src);
 gdk_export int bteFromStr(str src, int *len, bte **dst);
 gdk_export int bteToStr(str *dst, int *len, bte *src);
-gdk_export int chrFromStr(str src, int *len, chr **dst);
-gdk_export int chrToStr(str *dst, int *len, chr *src);
 gdk_export int fltFromStr(str src, int *len, flt **dst);
 gdk_export int fltToStr(str *dst, int *len, flt *src);
 gdk_export int dblFromStr(str src, int *len, dbl **dst);
@@ -134,12 +132,6 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 #include "gdk.h"
 #include "gdk_private.h"
 #include <math.h>		/* for INFINITY and NAN */
-
-static int
-chrCmp(chr *l, chr *r)
-{
-	return simple_CMP(l, r, chr);
-}
 
 static int
 bteCmp(bte *l, bte *r)
@@ -181,12 +173,6 @@ dblCmp(dbl *l, dbl *r)
  * @- inline hash routines
  * Return some positive integer derived from one atom value.
  */
-static BUN
-chrHash(chr *v)
-{
-	return (BUN) *(unsigned char *) v;
-}
-
 static BUN
 bteHash(bte *v)
 {
@@ -452,8 +438,6 @@ ATOMisdescendant(int tpe, int parent)
  */
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
-#define GDK_chr_max ((chr) SCHAR_MAX)
-#define GDK_chr_min ((chr) SCHAR_MIN)
 #define GDK_bte_max ((bte) SCHAR_MAX)
 #define GDK_bte_min ((bte) SCHAR_MIN)
 #define GDK_sht_max ((sht) SHRT_MAX)
@@ -469,7 +453,6 @@ ATOMisdescendant(int tpe, int parent)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
 /* representation of the nil */
-gdk_export const chr chr_nil;
 gdk_export const bte bte_nil;
 gdk_export const sht sht_nil;
 gdk_export const int int_nil;
@@ -482,7 +465,7 @@ gdk_export const char str_nil[2];
 gdk_export const ptr ptr_nil;
 
 /* derived NIL values - OIDDEPEND */
-#define bit_nil	((bit) chr_nil)
+#define bit_nil	((bit) bte_nil)
 #define bat_nil	((bat) int_nil)
 #if SIZEOF_WRD == SIZEOF_INT
 #define GDK_wrd_max ((wrd) GDK_int_max)
@@ -499,7 +482,6 @@ gdk_export const ptr ptr_nil;
 
 #define void_nil	oid_nil
 @c
-const chr chr_nil = (chr) '\200';
 const bte bte_nil = GDK_bte_min;
 const sht sht_nil = GDK_sht_min;
 const int int_nil = GDK_int_min;
@@ -508,7 +490,7 @@ const dbl dbl_nil = GDK_dbl_min;
 const lng lng_nil = GDK_lng_min;
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const wrd wrd_nil = GDK_wrd_min;
-const char str_nil[2] = { GDK_chr_min, 0 };
+const char str_nil[2] = { '\200', 0 };
 const ptr ptr_nil = NULL;
 
 ptr
@@ -527,14 +509,14 @@ ATOMnil(int t)
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types
- * ( chr, bte, sht, int, wrd, flt, dbl, lng, str). They respectively represent
+ * ( bte, sht, int, wrd, flt, dbl, lng, str). They respectively represent
  * an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
  * a 64-bit int, and a pointer-sized location of a char-buffer (ended by
  * a zero char).
  *
  * In contrast, the types (bit, ptr, bat, oid) are derived types. They
  * do not occur in the switches. The ATOMstorage macro maps them respectively
- * onto a @code{ chr}, @code{ int} (pointers are 32-bit), @code{ int}, and
+ * onto a @code{ bte}, @code{ int} (pointers are 32-bit), @code{ int}, and
  * @code{ int}. OIDs are 32-bit.
  *
  * This approach makes it tractable to switch to 64-bits OIDs,
@@ -551,7 +533,7 @@ ATOMnil(int t)
  * the only two ADT operations specific for a derived type are FROMSTR
  * and TOSTR.
  * @item [identity]
- * (a @code{ bit} is really of a different type than @code{ chr}). The set of
+ * (a @code{ bit} is really of a different type than @code{ bte}). The set of
  * operations on derived type values or BATs of such types may differ
  * from the sets of operations on the father type.
  * @end table
@@ -707,10 +689,6 @@ int
 ATOMcmp(int t, ptr l, ptr r)
 {
 	switch (ATOMstorage(t)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		return simple_CMP(l, r, chr);
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		return simple_CMP(l, r, bte);
@@ -883,247 +861,6 @@ voidWrite(void *a, stream *s, size_t cnt)
 	(void) s;
 	(void) cnt;
 	return GDK_SUCCEED;
-}
-
-int
-chrFromStr(char *src, int *len, chr **dst)
-{
-	unsigned char *p = (unsigned char *) src;
-	unsigned int base = 0;
-	int error = 0;
-
-	@:atommem(chr,sizeof(chr))@
-
-	while (GDKisspace(*p))
-		p++;
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		base = chr_nil;
-		p += 3;
-	} else {
-		int q = p[0] == '\'' && p[1] != 0;
-
-		if (q)
-			p++;
-		error = 1;	/* until proved otherwise */
-		if ((*p & 0x80) == 0) {
-			if (q && *p == '\\' && p[1] != 0) {
-				/* interpret backslash escape but only in a single-quoted string */
-				p++;
-				switch (*p) {
-				case '0':
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-				case '5':
-				case '6':
-				case '7':
-					/* \ with up to three octal digits */
-					base = base08(*p);
-					if (num08(p[1])) {
-						p++;
-						base = mult08(base) + base08(*p);
-						if (num08(p[1])) {
-							p++;
-							base = mult08(base) + base08(*p);
-						}
-					}
-					error = 0;
-					break;
-				case 'x':
-					/* \x with one or two hexadecimal digits */
-					if (num16(p[1])) {
-						p++;
-						base = base16(*p);
-						if (num16(p[1])) {
-							p++;
-							base = mult16(base) + base16(*p);
-						}
-						error = 0;
-					}
-					break;
-				case 'a':
-					base = '\a';
-					error = 0;
-					break;
-				case 'b':
-					base = '\b';
-					error = 0;
-					break;
-				case 'f':
-					base = '\f';
-					error = 0;
-					break;
-				case 'n':
-					base = '\n';
-					error = 0;
-					break;
-				case 'r':
-					base = '\r';
-					error = 0;
-					break;
-				case 't':
-					base = '\t';
-					error = 0;
-					break;
-				case '\0':
-					/* cannot happen */
-					break;
-				case '\'':
-				case '\\':
-					/* \' and \\ can be handled by the default case */
-				default:
-					/* unrecognized \ escape, just copy the backslashed character */
-					base = *p;
-					error = 0;
-					break;
-				}
-				p++;
-			} else {
-				base = *p++;
-				error = 0;
-			}
-#ifndef ASCII_CHR
-		} else if ((*p & 0xC0) == 0x80) {
-			/* illegal UTF-8 sequence */
-		} else if ((*p & 0xE0) == 0xC0) {
-			base = (*p++ & 0x1F) << 6;
-			if (base && (*p & 0xC0) == 0x80) {
-				base |= *p++ & 0x3F;
-				error = 0;
-			}
-#if 0 /* not needed until chr supports the whole Unicode range */
-		} else if ((*p & 0xF0) == 0xE0) {
-			base = (*p++ & 0x0F) << 12;
-			if (base && (*p & 0xC0) == 0x80) {
-				base |= (*p++ & 0x3F) << 6;
-				if ((*p & 0xC0) == 0x80) {
-					base |= *p++ & 0x3F;
-					error = 0;
-				}
-			}
-		} else if ((*p & 0xF8) == 0xF0) {
-			base = (*p++ & 0x07) << 18;
-			if (base && (*p & 0xC0) == 0x80) {
-				base |= (*p++ & 0x3F) << 12;
-				if ((*p & 0xC0) == 0x80) {
-					base |= (*p++ & 0x3F) << 6;
-					if ((*p & 0xC0) == 0x80) {
-						base |= *p++ & 0x3F;
-						error = 0;
-					}
-				}
-			}
-		} else if ((*p & 0xFC) == 0xF8) {
-			base = (*p++ & 0x03) << 24;
-			if (base && (*p & 0xC0) == 0x80) {
-				base |= (*p++ & 0x3F) << 18;
-				if ((*p & 0xC0) == 0x80) {
-					base |= (*p++ & 0x3F) << 12;
-					if ((*p & 0xC0) == 0x80) {
-						base |= (*p++ & 0x3F) << 6;
-						if ((*p & 0xC0) == 0x80) {
-							base |= *p++ & 0x3F;
-							error = 0;
-						}
-					}
-				}
-			}
-		} else if ((*p & 0xFE) == 0xFC) {
-			base = (*p++ & 0x01) << 30;
-			if (base && (*p & 0xC0) == 0x80) {
-				base |= (*p++ & 0x3F) << 24;
-				if ((*p & 0xC0) == 0x80) {
-					base |= (*p++ & 0x3F) << 18;
-					if ((*p & 0xC0) == 0x80) {
-						base |= (*p++ & 0x3F) << 12;
-						if ((*p & 0xC0) == 0x80) {
-							base |= (*p++ & 0x3F) << 6;
-							if ((*p & 0xC0) == 0x80) {
-								base |= *p++ & 0x3F;
-								error = 0;
-							}
-						}
-					}
-				}
-			}
-#endif
-#endif
-		}
-		if (!error && q && *p != '\'')
-			error = 1;
-#ifdef ASCII_CHR
-		if (!error && base >= 128)
-			error = 1;
-#else
-		if (!error && (base >= 256 || base == 128))
-			error = 1;
-#endif
-		if (error)
-			p = (unsigned char *) src;
-	}
-	**dst = error ? chr_nil : (chr) base;
-	return (int) (p - (unsigned char *) src);
-}
-
-
-int
-chrToStr(str *dst, int *len, chr *src)
-{
-	@:atommem(char,chrStrlen)@
-
-	if (*src == chr_nil) {
-		strncpy(*dst, "nil", *len);
-		return 3;
-	} else {
-		str p = *dst;
-
-		*p++ = '\'';
-		if (*src & 0x80) {
-#ifdef ASCII_CHR
-			strncpy(*dst, "nil", *len);
-			return 3;
-#else
-			*p++ = 0xC0 | ((*src >> 6) & 0x03);
-			*p++ = 0x80 | (*src & 0x3F);
-#endif
-		} else {
-			if (*src < ' ' || *src == 127) {
-				snprintf(p, chrStrlen - 3, "\\%03o", *(unsigned char *) src);
-				p += 4;
-			} else if (*src == '\\' || *src == '\'') {
-				*p++ = '\\';
-				*p++ = *src;
-			} else {
-				*p++ = *src;
-			}
-		}
-		*p++ = '\'';
-		*p = 0;
-		return (int) (p - *dst);
-	}
-}
-
-static chr *
-chrRead(chr *a, stream *s, size_t cnt)
-{
-	mnstr_read(s, (char *) a, 1, cnt);
-#ifdef ASCII_CHR
-	/* only accept ASCII characters */
-	return mnstr_errnr(s) ? NULL : (*a & 0x80 ? NULL : a);
-#else
-	/* effectively read latin-1 (ISO-8859-1) character data */
-	return mnstr_errnr(s) ? NULL : a;
-#endif
-}
-
-static int
-chrWrite(chr *a, stream *s, size_t cnt)
-{
-	if (mnstr_write(s, (char *) a, 1, cnt) == (ssize_t) cnt)
-		return GDK_SUCCEED;
-	else
-		return GDK_FAIL;
 }
 
 int
@@ -1569,7 +1306,7 @@ strElimDoubles(Heap *h)
  * should follow 'unsigned char' doctrine (like in the AIX native compiler). In this semantics, though
  * we have to take corrective action to ensure that str(nil) is the smallest value of the domain.
  */
-#define GDK_STRNIL(s)    ((s) == NULL || *(chr*) (s) == GDK_chr_min)
+#define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
                           (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
@@ -2353,17 +2090,11 @@ atomDesc BATatoms[MAXATOMS] = {
 	 (BUN (*)(ptr)) lngHash, 0,
 #endif
 	 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{"bit", TYPE_chr, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &chr_nil,
+	{"bit", TYPE_bte, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &bte_nil,
 	 (int (*)(str, int *, ptr *)) bitFromStr, (int (*)(str *, int *, ptr)) bitToStr,
 	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(void *, stream *, size_t)) bitWrite,
-	 (int (*)(ptr, ptr)) chrCmp,
-	 (BUN (*)(ptr)) chrHash, 0,
-	 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{"chr", TYPE_chr, 1, sizeof(chr), sizeof(chr), 0, 0, (ptr) &chr_nil,
-	 (int (*)(str, int *, ptr *)) chrFromStr, (int (*)(str *, int *, ptr)) chrToStr,
-	 (void *(*)(void *, stream *, size_t)) chrRead, (int (*)(void *, stream *, size_t)) chrWrite,
-	 (int (*)(ptr, ptr)) chrCmp,
-	 (BUN (*)(ptr)) chrHash, 0,
+	 (int (*)(ptr, ptr)) bteCmp,
+	 (BUN (*)(ptr)) bteHash, 0,
 	 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(bte), 0, 0, (ptr) &bte_nil,
 	 (int (*)(str, int *, ptr *)) bteFromStr, (int (*)(str *, int *, ptr)) bteToStr,

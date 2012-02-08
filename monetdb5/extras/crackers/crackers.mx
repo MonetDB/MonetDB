@@ -117,7 +117,7 @@ All Rights Reserved.
 @:@1(@2,date)@
 @
 @= TypeSwitch_1
-@:@1(@2,chr)@
+@:@1(@2,bte)@
 @:@1(@2,sht)@
 @:@1(@2,int)@
 @:@1(@2,lng)@

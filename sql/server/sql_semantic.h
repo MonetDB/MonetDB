@@ -39,8 +39,8 @@
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 typedef struct exp_kind_t {
-	chr type;
-	chr card;
+	bte type;
+	bte card;
 	bit reduce;	
 } exp_kind;
 

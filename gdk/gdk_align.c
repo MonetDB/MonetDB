@@ -448,7 +448,7 @@ BATmaterializeh(BAT *b)
 	Heap head;
 	BUN p, q;
 	oid h, *x;
-	chr tshift;
+	bte tshift;
 
 	BATcheck(b, "BATmaterialize");
 	assert(!isVIEW(b));

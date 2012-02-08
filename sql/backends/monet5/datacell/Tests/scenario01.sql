@@ -33,7 +33,7 @@ call datacell.protocol('datacell.bsktout','udp');
 call datacell.resume('datacell.bsktout');
 
 -- externally, activate the actuator server to listen
--- nc -u localhost 50601 
+-- nc -l -u 50601 
 
 -- compile the continous query
 call datacell.query('datacell.pass', 'insert into datacell.bsktout select * from datacell.bsktin;');

@@ -1,12 +1,12 @@
-	x := bat.new(:oid,:chr);
-	bat.insert(x,1@0,'a');
-	bat.insert(x,2@0,'a');
-	bat.insert(x,3@0,'b');
-	bat.insert(x,4@0,'b');
-	bat.insert(x,5@0,'b');
-	bat.insert(x,6@0,'b');
-	bat.insert(x,7@0,'c');
-	bat.insert(x,8@0,'c');
+	x := bat.new(:oid,:bte);
+	bat.insert(x,1@0,1:bte);
+	bat.insert(x,2@0,1:bte);
+	bat.insert(x,3@0,2:bte);
+	bat.insert(x,4@0,2:bte);
+	bat.insert(x,5@0,2:bte);
+	bat.insert(x,6@0,2:bte);
+	bat.insert(x,7@0,3:bte);
+	bat.insert(x,8@0,3:bte);
 
 	y := bat.new(:oid,:dbl);
 	le_a := calc.dbl(1.0);

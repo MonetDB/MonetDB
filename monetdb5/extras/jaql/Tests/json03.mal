@@ -58,7 +58,7 @@ ro := bat.reverse(ro);
 r6 := bat.insert(r6, ro);
 
 # their kind entries
-kind := algebra.project(ro, 'o');
+kind := algebra.project(ro, 111:bte); # 'o'
 
 # and the outermost array
 objs := algebra.project(ro, 0@0);

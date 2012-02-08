@@ -67,7 +67,6 @@ mal_export str parseError(Client cntxt, str msg);
 mal_export int idLength(Client cntxt);
 mal_export int stringLength(Client cntxt);
 mal_export int cstToken(Client cntxt, ValPtr val);
-mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
 mal_export int MALkeyword(Client cntxt, str kw, int length);
@@ -441,8 +440,6 @@ int cstToken(Client cntxt, ValPtr cst)
 			cst->len = (int) strlen(cst->val.sval);
 		else cst->len = 0;
 		return i;
-	case '\'':
-		return charCst(cntxt,cst);
 	case '-':
 		i++;
 		s++;
@@ -591,7 +588,7 @@ handleInts:
 	if( strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
 			*(s+5)!= '_'){
 		cst->vtype = TYPE_bit;
-		cst->val.cval[0] = 0;
+		cst->val.btval = 0;
 		cst->len = 1;
 		return 5;
 	}
@@ -600,7 +597,7 @@ handleInts:
 	if( strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
 			*(s+4)!= '_'){
 		cst->vtype = TYPE_bit;
-		cst->val.cval[0] = 1;
+		cst->val.btval = 1;
 		cst->len = 1;
 		return 4;
 	}
@@ -760,61 +757,6 @@ static inline int typeElm(Client cntxt, int def)
 	if (currChar(cntxt) != ':')
 		return def;	/* no type qualifier */
 	return parseTypeId(cntxt,def);
-}
-/*
- * @-
- * Character constants may be escaped.
- */
-int
-charCst(Client cntxt, ValPtr cst) 
-{
-	int i;
-	str v = CURRENT(cntxt);
-
-	if (*v != '\'')
-		return 0;
-	cst->vtype = TYPE_chr;
-	cst->val.cval[1]= 0;
-	cst->val.cval[2]= 0;
-	cst->val.cval[3]= 0;
-	v++;
-	i = 1;
-	if (*v == '\\') {
-		v++; i++;
-		switch(*v){
-		case 'n':
-			v++; i++;
-			cst->val.cval[0]= '\n';
-			break;
-		case 'r':
-			v++; i++;
-			cst->val.cval[0]= '\r';
-			break;
-		case 't':
-			v++; i++;
-			cst->val.cval[0]= '\t';
-			break;
-		case '\\':
-			v++;i++;
-			cst->val.cval[0]= *v;
-			break;
-		default:
-			cst->val.cval[0]= (char) strtol(v,NULL,0);
-			if (isdigit(*v)) {
-				i++; v++;
-			}
-			if (isdigit(*v)) {
-				i++; v++;
-			}
-			if (isdigit(*v)) {
-				i++; v++;
-			}
-		}
-	} else {
-		cst->val.cval[0]= *v;
-		i++; v++;
-	}
-	return i+1;
 }
 /*
  * @+ The Parser

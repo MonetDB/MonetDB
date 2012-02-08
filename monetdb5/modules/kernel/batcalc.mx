@@ -262,7 +262,6 @@ module batcalc;
 @mal
 # @-
 @:unaryISNIL(bit)@
-@:unaryISNIL(chr)@
 @:unaryISNIL(bte)@
 @:unaryISNIL(oid)@
 @:unaryISNIL(sht)@
@@ -1285,7 +1284,6 @@ str CMDunaryISNIL(int *ret, int *bid)
 	o = (bit*)Tloc(bn,BUNfirst(bn)); 
 	switch(BATttype(b)){
 	case TYPE_bit: @:accumUnaryISNIL(bit)@ break;
-	case TYPE_chr: @:accumUnaryISNIL(chr)@ break;
 	case TYPE_bte: @:accumUnaryISNIL(bte)@ break;
 	case TYPE_oid: @:accumUnaryISNIL(oid)@ break;
 	case TYPE_sht: @:accumUnaryISNIL(sht)@ break;
@@ -1310,7 +1308,7 @@ str CMDunaryISNIL(int *ret, int *bid)
 				}
 			BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 		} break;
-	default : throw(MAL, "batcalc.isnil", ILLEGAL_ARGUMENT " Expected {oid,chr,bit,bte,sht,int,wrd,lng,flt,dbl,str}");
+	default : throw(MAL, "batcalc.isnil", ILLEGAL_ARGUMENT " Expected {oid,bit,bte,sht,int,wrd,lng,flt,dbl,str}");
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;

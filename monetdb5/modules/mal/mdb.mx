@@ -394,7 +394,7 @@ MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) cntxt;
 	(void) mb;		/* still unused */
-	b = *(chr *) getArgReference(stk, p, 1);
+	b = *(bit *) getArgReference(stk, p, 1);
 	MDBtraceFlag(cntxt, stk, (b? (int) 't':0));
 	return MAL_SUCCEED;
 }
@@ -459,7 +459,7 @@ MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int b;
 
 	(void) mb;		/* still unused */
-	b = *(chr *) getArgReference(stk, p, 1);
+	b = *(bit *) getArgReference(stk, p, 1);
 	stk->cmd = cntxt->itrace = (b? (int) 'C':0);
 	return MAL_SUCCEED;
 }

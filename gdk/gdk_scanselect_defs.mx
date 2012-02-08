@@ -184,12 +184,9 @@ Expand on output-head-type; usually inherited from input-head-type.
 */
 @= DEFseqscanHTput
 #ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_CHR
-	@:DEFseqscanTTput(@1,@2,@3,@4,@5,chr,chr,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_CHR */
 #ifndef NOEXPAND_BTE
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_CHR */
+#endif	/* NOEXPAND_BTE */
 #ifndef NOEXPAND_SHT
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),,@[10])@
 #endif	/* NOEXPAND_SHT */

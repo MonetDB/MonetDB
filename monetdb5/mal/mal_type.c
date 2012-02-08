@@ -152,10 +152,6 @@ getTypeIndex(str nme, int len, int deftype)
 			if (qt("bte"))
 				return TYPE_bte;
 			break;
-		case 'c':
-			if (qt("chr"))
-				return TYPE_chr;
-			break;
 		case 'd':
 			if (qt("dbl"))
 				return TYPE_dbl;

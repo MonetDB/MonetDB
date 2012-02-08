@@ -128,7 +128,7 @@ fits2mtype(int t)
 		return TYPE_bit;
 	case TBYTE:
 	case TSBYTE:
-		return TYPE_chr;
+		return TYPE_bte;
 	case TSTRING:
 		return TYPE_str;
 	case TUSHORT:

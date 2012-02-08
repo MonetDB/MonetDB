@@ -17,19 +17,19 @@
 
 module json;
 
-command shred(json:str)(kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
+command shred(json:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JSONshred
 comment "Parse the given JSON object into internal shredded representation";
 
-command print(o:streams, kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
+command print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
 address JSONprint
 comment "Serialise the given JSON pointer into JSON format";
 
-command store(nme:str, kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
+command store(nme:str, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
 address JSONstore
 comment "Store the JSON object in the database as name";
 
-command load(nme:str)(kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
+command load(nme:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JSONload
 comment "Load the JSON object name from the database";
 
@@ -37,6 +37,6 @@ command drop(nme:str):void
 address JSONdrop
 comment "Drop the JSON object name from the database";
 
-command extract(k:bat[:oid,:chr],s:bat[:oid,:str],i:bat[:oid,:lng],d:bat[:oid,:dbl],a:bat[:oid,:oid],o:bat[:oid,:oid],n:bat[:oid,:str],elems:bat[:oid,:oid],start:oid)(kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
+command extract(k:bat[:oid,:bte],s:bat[:oid,:str],i:bat[:oid,:lng],d:bat[:oid,:dbl],a:bat[:oid,:oid],o:bat[:oid,:oid],n:bat[:oid,:str],elems:bat[:oid,:oid],start:oid)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JSONextract
 comment "Extract the given elems (kind id) from the given JSON object";

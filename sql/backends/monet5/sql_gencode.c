@@ -2252,10 +2252,7 @@ static void setCommitProperty(MalBlkPtr mb){
 	if ( varGetProp(mb, getArg(mb->stmt[0],0), PropertyIndex("autoCommit")) )
 		return; /* already set */
 	cst.vtype= TYPE_bit;
-	cst.val.cval[0]= TRUE;
-	cst.val.cval[1]= 0;
-	cst.val.cval[2]= 0;
-	cst.val.cval[3]= 0;
+	cst.val.btval= TRUE;
 	varSetProperty(mb, getArg(getInstrPtr(mb,0),0), "autoCommit","=", &cst);
 }
 

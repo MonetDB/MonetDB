@@ -16,9 +16,6 @@ io.printf("# int from bit\n");
 bi:= true:int; io.print(bi);
 bi:= false:int; io.print(bi);
 
-io.printf("# int from chr\n");
-io.print('a':int);
-
 io.printf("# int from sht\n");
 sh:= 1:sht; si:= calc.int(sh); io.print(si);
 sh:= 32767:sht; si:= calc.int(sh); io.print(si);
@@ -109,12 +106,6 @@ io.printf("# bit from bit\n");
 io.print(true:bit);
 io.print(false:bit);
 
-io.printf("# bit from chr\n");
-io.print('a':bit);
-c:= 0:chr;
-b:= calc.bit(c);
-io.print(b);
-
 io.printf("# bit from sht\n");
 j:= 0:sht; b:= calc.bit(j); io.print(b);
 j:= 1:sht; b:= calc.bit(j); io.print(b);
@@ -169,10 +160,6 @@ io.printf("# to sht\n");
 io.printf("# sht from bit\n");
 io.print(true:sht);
 io.print(false:sht);
-
-io.printf("# sht from chr\n");
-io.print('a':sht);
-c:= 0:chr; cs:= calc.sht(c); io.print(cs);
 
 io.printf("# sht from int\n");
 io.print(0:sht);
@@ -269,9 +256,6 @@ io.print(-9223372036854775809LL);
 io.printf("# lng from bit\n");
 io.print(true:lng);
 io.print(false:lng);
-
-io.printf("# lng from chr\n");
-io.print('a':lng);
 
 io.printf("# lng from sht\n");
 ls:= 1:sht; ll:= calc.lng(ls); io.print(ll);
@@ -376,9 +360,6 @@ io.printf("# to flt\n");
 io.printf("# flt from bit\n");
 io.print(true:flt);
 io.print(false:flt);
-
-io.printf("# flt from chr\n");
-io.print('a':flt);
 
 io.printf("# flt from sht\n");
 s1:= 1:sht; f1:= calc.flt(s1); io.print(f1);
@@ -543,9 +524,6 @@ io.printf("# to dbl\n");
 io.printf("# dbl from bit\n");
 io.print(true:dbl);
 io.print(false:dbl);
-
-io.printf("# dbl from chr\n");
-io.print('a':dbl);
 
 io.printf("# from sht\n");
 a:= 1:sht;
@@ -724,9 +702,6 @@ io.printf("# from bit\n");
 io.print(true:oid);
 io.print(false:oid);
 
-io.printf("# from chr\n");
-io.print('a':oid);
-
 io.printf("# from sht\n");
 o1:= 1:sht; o2:= calc.oid(o1); io.print(o2);
 o1:= 32767:sht; o2:= calc.oid(o1); io.print(o2);
@@ -815,9 +790,6 @@ io.printf("# to str\n");
 io.printf("# from bit\n");
 io.print(true:str);
 io.print(false:str);
-
-io.printf("# from chr\n");
-io.print('a':str);
 
 io.printf("# from sht\n");
 s4:= 1:sht; s5:= calc.str(s4); io.print(s5);

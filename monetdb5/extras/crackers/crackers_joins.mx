@@ -319,11 +319,6 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	r_start = r_end = BUNfirst(r);
 
 	switch (loc) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:mergejoin(simple,loc,loc,chr)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:mergejoin(simple,loc,loc,bte)@
@@ -426,10 +421,6 @@ CRKjoin(BAT *bn, BAT *l, BAT *r) {
 	BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:hashjoin(simple,chr,tloc,chr)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:hashjoin(simple,bte,tloc,bte)@
@@ -1411,7 +1402,7 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 @
 @= printVarTypes
 {
-/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+/* @1: the type; e.g., bte sht int oid wrd flt dbl lng str */
 	str MyBuf = NULL;
 	int MyBufLen = 0;
 	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));

@@ -805,12 +805,6 @@ bte|bte,*|*,bte|*,bte,*|all)
 	;;
 esac
 case $enable_noexpand in
-chr|chr,*|*,chr|*,chr,*|all)
-	AC_DEFINE(NOEXPAND_CHR, 1, [Define if you don't want to expand the chr type])
-	noexpand="$noexpand chr"
-	;;
-esac
-case $enable_noexpand in
 dbl|dbl,*|*,dbl|*,dbl,*|all)
 	AC_DEFINE(NOEXPAND_DBL, 1, [Define if you don't want to expand the dbl type])
 	noexpand="$noexpand dbl"

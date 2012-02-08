@@ -25,10 +25,10 @@ pattern x(jaql:str):void
 address JAQLexecute
 comment "execute() alias for the lazy";
 
-pattern getVar(nme:str)(kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
+pattern getVar(nme:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JAQLgetVar
 comment "Retrieve value of JSON variable";
 
-pattern setVar(nme:str, kind:bat[:oid,:chr],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
+pattern setVar(nme:str, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
 address JAQLsetVar
 comment "Set or overwrite value of JSON variable";

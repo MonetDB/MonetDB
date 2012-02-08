@@ -60,7 +60,7 @@ All Rights Reserved.
 	@5:	"BUNhloc(b,p)" for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
 
-	@6:	chr / sht / int / lng / any		b/bn-tail-storage-type
+	@6:	bte / sht / int / lng / any		b/bn-tail-storage-type
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
@@ -170,7 +170,7 @@ All Rights Reserved.
 	@5:	"BUNhloc(b,p)" for  (oid) b-head-type,		b-head access
 		"&bhsb; bhsb++" for (void) b-head-type
 
-	@6:	chr / sht / int / lng / any		b/bn-tail-storage-type
+	@6:	bte / sht / int / lng / any		b/bn-tail-storage-type
 	@7:	"loc" for fixsized b/bn-tail-type,		b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 
@@ -281,7 +281,7 @@ All Rights Reserved.
 /*	extreme_typed
 	@1:	min/max
 	@2:	 < / >
-	@3:	b/bn-tail-storage-type			chr/bte/sht/int/lng/any
+	@3:	b/bn-tail-storage-type			bte/sht/int/lng/any
 	@4:	"loc" for fixsized b/bn-tail-type,	b/bn-tail-access
 		"var" for varsized b/bn-tail-type
 	@5:	ptr/oid					void/any
@@ -407,7 +407,6 @@ bunins_failed:
 int
 CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e);
 @= extreme3_c
-@:extreme3_typed(@1,@2,chr,loc,ptr,@3)@
 @:extreme3_typed(@1,@2,bte,loc,ptr,@3)@
 @:extreme3_typed(@1,@2,sht,loc,ptr,@3)@
 @:extreme3_typed(@1,@2,int,loc,ptr,@3)@
@@ -434,8 +433,6 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	if (b->ttype == TYPE_void) {
 		rtrn = aggrX3_@13_any_var_oid(ret, b, g, e);
-	} else if (tt == TYPE_chr) {
-		rtrn = aggrX3_@13_chr_loc_ptr(ret, b, g, e);
 	} else if (tt == TYPE_bte) {
 		rtrn = aggrX3_@13_bte_loc_ptr(ret, b, g, e);
 	} else if (tt == TYPE_sht) {

@@ -463,8 +463,6 @@ IOprintf_(str *res, str format, ...)
 				if (dotseen) {
 					va_end(ap);
 					return_error(format_error);
-				} else if (type == TYPE_chr) {
-					ival = (int) *(chr *) p;
 				} else if (type == TYPE_bte) {
 					ival = (int) *(bte *) p;
 				} else if (type == TYPE_sht) {
@@ -493,9 +491,7 @@ IOprintf_(str *res, str format, ...)
 					return_error(format_error);
 				}
 			largetypes:
-				if (type == TYPE_chr) {
-					lval = (lng) *(chr *) p;
-				} else if (type == TYPE_bte) {
+				if (type == TYPE_bte) {
 					lval = (lng) *(bte *) p;
 				} else if (type == TYPE_sht) {
 					lval = (lng) *(sht *) p;
@@ -618,8 +614,7 @@ tstagain:
 	switch(tpe){
 	/* switch(ATOMstorage(v->vtype)) */
 	case TYPE_void: val= (ptr) & v->val.ival; break;
-	case TYPE_bit: val= (ptr) & v->val.cval[0]; break;
-	case TYPE_chr: val= (ptr) & v->val.cval[0]; break;
+	case TYPE_bit: val= (ptr) & v->val.btval; break;
 	case TYPE_sht: val= (ptr) & v->val.shval; break;
 	case TYPE_bat: val= (ptr) & v->val.bval; break;
 	case TYPE_int: val= (ptr) & v->val.ival; break;

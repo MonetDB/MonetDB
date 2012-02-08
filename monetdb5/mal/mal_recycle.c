@@ -1427,9 +1427,6 @@ intLen(ValPtr l, ValPtr h)
 	double len;
 
     switch (ATOMstorage(l->vtype)) {
-    case TYPE_chr:
-        len =  *(chr *)VALget(h) -  *(chr *)VALget(l) + 1;
-		break;
     case TYPE_bte:
         len =  *(bte *)VALget(h) -  *(bte *)VALget(l) + 1;
 		break;
@@ -1462,9 +1459,6 @@ VALadd(ValPtr y, ValPtr v, dbl x)
 	VALcopy(y,v);
 
     switch (ATOMstorage(y->vtype)) {
-    case TYPE_chr:
-		y->val.cval[0] = (chr)(y->val.cval[0] + (chr) x);
-        break;
     case TYPE_bte:
 		y->val.btval = (bte)(y->val.btval + (bte) x);
         break;

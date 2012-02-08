@@ -388,7 +388,7 @@ JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *obj
 	memset(&jb, 0, sizeof(jsonbat));
 
 	/* initialise all bats */
-	jb.kind = BATnew(TYPE_void, TYPE_chr, BATTINY);
+	jb.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
 	jb.kind = BATseqbase(jb.kind, (oid)0);
 	jb.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
 	jb.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
@@ -731,10 +731,10 @@ static oid
 json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia, BATiter bio, BATiter bin, oid start, oid v, jsonbat *jb, jsonbat *jbr)
 {
 	oid w, x;
-	chr k;
+	bte k;
 
 	BUNfndOID(w, bik, &v);
-	k = *(chr *)BUNtail(bik, w);
+	k = *(bte *)BUNtail(bik, w);
 	BUNappend(jbr->kind, &k, FALSE);
 
 	w = BUNlast(jbr->kind) - 1 + start;
@@ -820,7 +820,7 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	memset(&jbr, 0, sizeof(jsonbat));
 
 	/* initialise all bats */
-	jbr.kind = BATnew(TYPE_void, TYPE_chr, BATTINY);
+	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
 	jbr.kind = BATseqbase(jbr.kind, *startoid);
 	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
 	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);

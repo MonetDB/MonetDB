@@ -32,8 +32,8 @@ bat.insert(bo,5,nil:oid);
 fo:= batcalc.isnil(bo);
 io.print(fo);
 
-bc:= bat.new(:int,:chr);
-bat.insert(bc,6,'a');
-bat.insert(bc,6,nil:chr);
+bc:= bat.new(:int,:bte);
+bat.insert(bc,6,2:bte);
+bat.insert(bc,6,nil:bte);
 fc:= batcalc.isnil(bc);
 io.print(fc);

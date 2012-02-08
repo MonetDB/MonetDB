@@ -938,8 +938,7 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == NULL)
 		throw(SQL,"centipede.vector","Can not access BAT");
     switch ( ATOMtype(b->ttype)) {
-    case TYPE_bit: @:histo(bit,cval[0])@ break;
-    case TYPE_chr: @:histo(chr,cval[0])@ break;
+    case TYPE_bit: @:histo(bit,btval)@ break;
     case TYPE_bte: @:histo(bte,btval)@ break;
     case TYPE_sht: @:histo(sht,shval)@ break;
     case TYPE_int: @:histo(int,ival)@ break;

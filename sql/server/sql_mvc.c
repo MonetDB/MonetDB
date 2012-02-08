@@ -1521,9 +1521,9 @@ stack_set_number(mvc *sql, char *name, lng val)
 			v->val.lval = (bte) val;
 		if (v->vtype == TYPE_bit) {
 			if (val)
-				v->val.cval[0] = 1;
+				v->val.btval = 1;
 			else 
-				v->val.cval[0] = 0;
+				v->val.btval = 0;
 		}
 	}
 }
@@ -1543,7 +1543,7 @@ stack_get_number(mvc *sql, char *name)
 		if (v->vtype == TYPE_bte) 
 			return v->val.btval;
 		if (v->vtype == TYPE_bit) 
-			if (v->val.cval[0])
+			if (v->val.btval)
 				return 1;
 			return 0;
 	}

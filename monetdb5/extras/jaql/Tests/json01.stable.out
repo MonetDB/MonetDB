@@ -34,13 +34,13 @@ end main;
 # h	t	  # name
 # void	chr	  # type
 #-----------------#
-[ 0@0,	  'i'	  ]
+[ 0@0,	  105	  ]
 1
 #-----------------#
 # h	t	  # name
 # void	chr	  # type
 #-----------------#
-[ 0@0,	  'n'	  ]
+[ 0@0,	  110	  ]
 null
 !MALException:json.shred:invalid JSON data, trailing characters: , null
 

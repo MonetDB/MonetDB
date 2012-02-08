@@ -133,7 +133,6 @@
 mkey_export str  MKEYrotate(wrd *ret, wrd *v, int *nbits);
 mkey_export str  MKEYhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mkey_export str  MKEYhash_bit(wrd *ret, bit *v);
-mkey_export str  MKEYhash_chr(wrd *ret, chr *v);
 mkey_export str  MKEYhash_bte(wrd *ret, bte *v);
 mkey_export str  MKEYhash_sht(wrd *ret, sht *v);
 mkey_export str  MKEYhash_int(wrd *ret, int *v);

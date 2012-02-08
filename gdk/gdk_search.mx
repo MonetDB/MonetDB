@@ -149,7 +149,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			break;						\
 		}							\
 }
-@:hashfnd(chr)@
 @:hashfnd(bte)@
 @:hashfnd(sht)@
 @:hashfnd(int)@
@@ -223,7 +222,6 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHinsvar(h,i,v)	HASHins_any(h,i,v)
 #define HASHinsloc(h,i,v)	HASHins_any(h,i,v)
 
-@:hashins(chr)@
 @:hashins(bte)@
 @:hashins(sht)@
 @:hashins(int)@
@@ -454,10 +452,6 @@ BAThash(BAT *b, BUN masksize)
 			}
 
 			switch (tpe) {
-#ifndef NOEXPAND_CHR
-			case TYPE_chr:
-				@:starthash(chr)@
-#endif
 #ifndef NOEXPAND_BTE
 			case TYPE_bte:
 				@:starthash(bte)@
@@ -494,10 +488,6 @@ BAThash(BAT *b, BUN masksize)
 		/* finish the hashtable with the current mask */
 		p = r;
 		switch (tpe) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:finishhash(chr)@
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:finishhash(bte)@
@@ -546,10 +536,6 @@ BUN
 HASHprobe(Hash *h, ptr v)
 {
 	switch (ATOMstorage(h->type)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		return hash_chr(h, v);
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		return hash_bte(h, v);
@@ -799,10 +785,6 @@ SORTfnd@2(BAT *b, ptr v)
 {
 	if (b && b->@1sorted & 1) {
 		switch(ATOMstorage(b->@1type)) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			return SORTfnd@2_chr(b, v);
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			return SORTfnd@2_bte(b, v);
@@ -839,7 +821,6 @@ SORTfnd@2(BAT *b, ptr v)
 }
 @
 @c
-@:SORTfnd(loc,chr,simple,chr)@
 @:SORTfnd(loc,bte,simple,bte)@
 @:SORTfnd(loc,sht,simple,sht)@
 @:SORTfnd(loc,int,simple,int)@

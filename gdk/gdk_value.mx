@@ -58,12 +58,6 @@ ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
 	switch (ATOMstorage(v->vtype = t)) {
-	case TYPE_chr:
-		v->val.cval[0] = *(chr *) p;
-		v->val.cval[1] = 0;
-		v->val.cval[2] = 0;
-		v->val.cval[3] = 0;
-		break;
 	case TYPE_bte:
 		v->val.btval = *(bte *) p;
 		break;
@@ -102,8 +96,6 @@ void *
 VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_chr:
-		return (void *) &v->val.cval[0];
 	case TYPE_bte:
 		return (void *) &v->val.btval;
 	case TYPE_sht:
@@ -156,7 +148,7 @@ VALcopy(ValPtr d, ValPtr s)
 	} else if (s->vtype == TYPE_bit) {
 		d->vtype = s->vtype;
 		d->len = 1;
-		d->val.cval[0] = s->val.cval[0];
+		d->val.btval = s->val.btval;
 	} else {
 		ptr p = s->val.pval;
 
@@ -237,9 +229,6 @@ VALformat(char **buf, ValPtr res)
 	/* dbl always fits; flt almost always fits */
 	switch (src_tpe) {
 	case TYPE_bit:
-	case TYPE_chr:
-		@1 = (@2) src->val.cval[0];
-		break;
 	case TYPE_bte:
 		@1 = (@2) src->val.btval;
 		break;
@@ -317,10 +306,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					if (ABS(src->val.cval[0]) <= BBPsize)
-						bid = (bat) src->val.cval[0];
-					break;
 				case TYPE_bte:
 					if (ABS(src->val.btval) <= BBPsize)
 						bid = (bat) src->val.btval;
@@ -365,79 +350,38 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 				/* bits are funny: true iff value != 0 */
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.cval[0] = (src->val.cval[0] != 0);
-					break;
 				case TYPE_bte:
-					dst->val.cval[0] = (src->val.btval != 0);
+					dst->val.btval = (src->val.btval != 0);
 					break;
 				case TYPE_sht:
-					dst->val.cval[0] = (src->val.shval != 0);
+					dst->val.btval = (src->val.shval != 0);
 					break;
 				case TYPE_int:
-					dst->val.cval[0] = (src->val.ival != 0);
+					dst->val.btval = (src->val.ival != 0);
 					break;
 				case TYPE_bat:
-					dst->val.cval[0] = (src->val.bval != 0);
+					dst->val.btval = (src->val.bval != 0);
 					break;
 				case TYPE_oid:
-					dst->val.cval[0] = (src->val.oval != 0);
+					dst->val.btval = (src->val.oval != 0);
 					break;
 				case TYPE_wrd:
-					dst->val.cval[0] = (src->val.wval != 0);
+					dst->val.btval = (src->val.wval != 0);
 					break;
 				case TYPE_lng:
-					dst->val.cval[0] = (src->val.lval != 0);
+					dst->val.btval = (src->val.lval != 0);
 					break;
 				case TYPE_flt:
-					dst->val.cval[0] = (src->val.fval != 0);
+					dst->val.btval = (src->val.fval != 0);
 					break;
 				case TYPE_dbl:
-					dst->val.cval[0] = (src->val.dval != 0);
-					break;
-				}
-				break;
-			case TYPE_chr:
-				switch (src_tpe) {
-				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.cval[0] = (chr) src->val.cval[0];
-					break;
-				case TYPE_bte:
-					dst->val.cval[0] = (chr) src->val.btval;
-					break;
-				case TYPE_sht:
-					dst->val.cval[0] = @:valcheck(src->val.shval,chr,lng)@;
-					break;
-				case TYPE_int:
-					dst->val.cval[0] = @:valcheck(src->val.ival,chr,lng)@;
-					break;
-				case TYPE_bat:
-					dst->val.cval[0] = @:valcheck(src->val.bval,chr,lng)@;
-					break;
-				case TYPE_oid:
-					dst->val.cval[0] = @:valcheck_r(src->val.oval,chr,lng)@;
-					break;
-				case TYPE_wrd:
-					dst->val.cval[0] = @:valcheck(src->val.wval,chr,lng)@;
-					break;
-				case TYPE_lng:
-					dst->val.cval[0] = @:valcheck(src->val.lval,chr,lng)@;
-					break;
-				case TYPE_flt:
-					dst->val.cval[0] = @:valcheck(src->val.fval,chr,dbl)@;
-					break;
-				case TYPE_dbl:
-					dst->val.cval[0] = @:valcheck(src->val.dval,chr,dbl)@;
+					dst->val.btval = (src->val.dval != 0);
 					break;
 				}
 				break;
 			case TYPE_bte:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.btval = (bte) src->val.cval[0];
-					break;
 				case TYPE_bte:
 					dst->val.btval = (bte) src->val.btval;
 					break;
@@ -470,9 +414,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			case TYPE_sht:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.shval = (sht) src->val.cval[0];
-					break;
 				case TYPE_bte:
 					dst->val.shval = (sht) src->val.btval;
 					break;
@@ -505,9 +446,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			case TYPE_int:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.ival = (int) src->val.cval[0];
-					break;
 				case TYPE_bte:
 					dst->val.ival = (int) src->val.btval;
 					break;
@@ -544,9 +482,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			case TYPE_oid:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.oval = @:valcheck_l(src->val.cval[0],oid,lng)@;
-					break;
 				case TYPE_bte:
 					dst->val.oval = @:valcheck_l(src->val.btval,oid,lng)@;
 					break;
@@ -583,9 +518,6 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			case TYPE_wrd:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.wval = (wrd) src->val.cval[0];
-					break;
 				case TYPE_bte:
 					dst->val.wval = (wrd) src->val.btval;
 					break;
@@ -622,14 +554,11 @@ VALconvert1(int typ, ValPtr src, ValPtr dst)
 			case TYPE_lng:
 				switch (src_tpe) {
 				case TYPE_bit:
-				case TYPE_chr:
-					dst->val.lval = (lng) src->val.cval[0];
+				case TYPE_bte:
+					dst->val.lval = (lng) src->val.btval;
 					break;
 				case TYPE_sht:
 					dst->val.lval = (lng) src->val.shval;
-					break;
-				case TYPE_bte:
-					dst->val.lval = (lng) src->val.btval;
 					break;
 				case TYPE_int:
 					dst->val.lval = (lng) src->val.ival;
