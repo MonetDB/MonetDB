@@ -25,7 +25,7 @@
 #include <string.h>
 
 #ifdef WIN32
-#ifndef LIB_LSST
+#ifndef LIBLSST
 #define lsst_export extern __declspec(dllimport)
 #else
 #define lsst_export extern __declspec(dllexport)
