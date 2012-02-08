@@ -21,6 +21,6 @@
 #define SQL_READLINETOOLS_H_INCLUDED
 
 #include "mal_client.h"
-mal_export int SQLreadConsole(Client cntxt);
+sql5_export int SQLreadConsole(Client cntxt);
 
 #endif /* SQL_READLINETOOLS_H_INCLUDED */
