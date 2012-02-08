@@ -137,10 +137,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	 * or (2) omitting statements or (3) introducing new statements.
 	 */
 
-	/* this should not be needed, 'impossible'
-	if (mb == NULL)
-		return 0;
-	*/
+	/* check for logical error: mb must never be NULL */
+	assert (mb != NULL);
 
 	/* safe the old stage of the MAL block */
 	old = mb->stmt;
