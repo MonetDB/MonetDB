@@ -213,7 +213,6 @@ Some other useful ``configure`` options are:
 --enable-optimize       enable extra optimization default=[see `Configure defaults and recommendations`_ below]
 --enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
 --enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
---enable-warning        enable extended compiler warnings default=off
 
 You can also add options such as ``CC=<compiler>`` to specify the
 compiler and compiler flags to use.
