@@ -670,6 +670,30 @@ HASHgonebad(BAT *b, ptr v)
  * @`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
  */
 /* type specific binary search implementations */
+gdk_export BUN SORTfnd_bte(BAT *b, ptr v);
+gdk_export BUN SORTfnd_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfnd_flt(BAT *b, ptr v);
+gdk_export BUN SORTfnd_int(BAT *b, ptr v);
+gdk_export BUN SORTfnd_lng(BAT *b, ptr v);
+gdk_export BUN SORTfnd_loc(BAT *b, ptr v);
+gdk_export BUN SORTfnd_sht(BAT *b, ptr v);
+gdk_export BUN SORTfnd_var(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_bte(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_flt(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_int(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_lng(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_loc(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_sht(BAT *b, ptr v);
+gdk_export BUN SORTfndfirst_var(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_bte(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_dbl(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_flt(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_int(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_lng(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_loc(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_sht(BAT *b, ptr v);
+gdk_export BUN SORTfndlast_var(BAT *b, ptr v);
 
 #endif /* _GDK_SEARCH_H_ */
 
