@@ -31,7 +31,6 @@ command put()     address BLOBput;
 command del()     address BLOBdel;
 command length()  address BLOBlength;
 command heap()    address BLOBheap;
-command destroy() address BLOBdestroy;
 
 command blob(s:blob):blob
 address BLOBblob_blob

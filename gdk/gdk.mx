@@ -2108,7 +2108,6 @@ typedef struct {
 	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (ptr atom);
 	int (*atomUnfix) (ptr atom);
-	void (*atomDestroy) (ptr atom);
 
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, ptr src);

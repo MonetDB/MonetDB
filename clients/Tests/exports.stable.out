@@ -981,7 +981,6 @@ str BLOBblob_blob(blob **d, blob **s);
 str BLOBblob_fromstr(blob **b, str *d);
 void BLOBconvert(blob *b, int direction);
 void BLOBdel(Heap *h, var_t *index);
-void BLOBdestroy(blob *b);
 str BLOBeoln(char *src, char *end);
 str BLOBfromblob(str *retval, blob **b);
 str BLOBfromidx(str *retval, blob **binp, int *index);
