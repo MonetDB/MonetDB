@@ -64,7 +64,6 @@ All Rights Reserved.
  * @- maximum atomic string lengths
  */
 #define bitStrlen	8
-#define chrStrlen	8
 #define bteStrlen	8
 #define shtStrlen	12
 #define intStrlen	24

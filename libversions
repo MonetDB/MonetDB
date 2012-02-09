@@ -27,6 +27,9 @@
 #     0;
 # BRK if there are also incompatible API changes (interfaces removed or
 #     changed), increment CURRENT, and set AGE and REVISION to 0.
+#     IMPORTANT: also change debian package names for the relevant
+#     library.  This involves renaming the file in debian/ and
+#     updating references to the package in debian/control.
 
 # the numbers are: <CURRENT>:<REVISION>:<AGE>
 

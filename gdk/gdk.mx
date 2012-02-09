@@ -969,7 +969,9 @@ typedef int (*GDKfcn) ();
  * These routines should be used to alloc free or extend heaps;
  * they isolate you from the different ways heaps can be accessed.
  */
+gdk_export int HEAPfree(Heap *h);
 gdk_export int HEAPextend(Heap *h, size_t size);
+gdk_export int HEAPcopy(Heap *dst, Heap *src);
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 
@@ -2242,6 +2244,8 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
+gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
+
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
@@ -2747,8 +2751,11 @@ gdk_export BAT *BATpropcheck(BAT *b, int mode);
 
 gdk_export BAT *VIEWcreate(BAT *h, BAT *t);
 gdk_export BAT *VIEWcreate_(BAT *h, BAT *t, int stable);
+gdk_export BAT *VIEWhead(BAT *b);
+gdk_export BAT *VIEWhead_(BAT *b, int mode);
 gdk_export BAT *VIEWcombine(BAT *b);
 gdk_export BAT *BATmaterialize(BAT *b);
+gdk_export BAT *BATmaterializeh(BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
 /* low level functions */
@@ -2821,9 +2828,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @item HASHloop_bit
  * @tab
  *  (BAT *b; Hash *h, size_t idx; bit *value, BUN w)
- * @item HASHloop_chr
- * @tab
- *  (BAT *b; Hash *h, size_t idx; char *value, BUN w)
  * @item HASHloop_bte
  * @tab
  *  (BAT *b; Hash *h, size_t idx; bte *value, BUN w)
@@ -3075,7 +3079,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
 @:sortloop(wrd,lng,wrd,simple,&wrd_nil)@
 #endif
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_chr(b,p,q,tl,th)
+#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
 /*
  * @+ Common BAT Operations
