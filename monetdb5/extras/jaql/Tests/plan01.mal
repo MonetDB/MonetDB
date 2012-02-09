@@ -1,0 +1,3 @@
+jaql.x("plan a -> transform { \"a\":$.j };");
+jaql.x("plan a -> transform { \"a\":$.j[1] };");
+jaql.x("plan a -> transform { \"a\":$.j[*].k };");

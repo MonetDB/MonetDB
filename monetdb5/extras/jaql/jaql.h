@@ -75,6 +75,7 @@ enum treetype {
 	j_operation,
 	j_pred,
 	j_sort_arg,
+	j_arr_idx,
 	j_pair,
 	j_var,
 	j_num,
@@ -126,11 +127,12 @@ tree *make_jaql_join(tree *inputs, tree *pred, tree *tmpl);
 tree *make_jaql_sort(tree *var, tree *expr);
 tree *make_jaql_top(long long int num);
 tree *make_unroll(tree *var);
+tree *make_array_index(long long int idx, char isstar);
 tree *make_pred(tree *var, tree *comp, tree *value);
 tree *make_sort_arg(tree *var, char asc);
 tree *append_sort_arg(tree *osarg, tree *nsarg);
-tree *make_varname(char *ident);
-tree *append_varname(tree *var, char *ident);
+tree *make_varname(char *ident, tree *arridx);
+tree *append_varname(tree *var, char *ident, tree *arridx);
 tree *make_pair(char *name, tree *val);
 tree *append_pair(tree *opair, tree *npair);
 tree *append_elem(tree *oelem, tree *nelem);

@@ -37,7 +37,7 @@
 	predicate variable and_or opt_not comparison value literal
 	opt_each opt_command sort_arg arith_op val_var_arith
 	obj_list arr_list obj_pair json_value join_var_refs join_var_ref
-	opt_join_in
+	opt_join_in opt_arr_ind
 %type <j_ident> ident
 %type <j_number> opt_asc_desc opt_preserve
 
@@ -111,7 +111,7 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	| _IDENT _ASSIGN jaqlpipe   {$$ = append_jaql_pipe($3, make_json_output($1));}
 	;
 
-jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1), $2);}
+jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $2);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
 		| JOIN join_var_refs WHERE predicates INTO json_value
@@ -140,7 +140,7 @@ join_var_refs: join_var_refs ',' join_var_ref  {$$ = append_join_input($1, $3);}
 			 ;
 
 join_var_ref: opt_preserve _IDENT opt_join_in
-			     {$$ = make_join_input($1 == PRESERVE, make_varname($2), $3);}
+			     {$$ = make_join_input($1 == PRESERVE, make_varname($2, NULL), $3);}
 			;
 
 opt_preserve: /* empty */           {$$ = 0;}
@@ -148,17 +148,17 @@ opt_preserve: /* empty */           {$$ = 0;}
 			;
 
 opt_join_in: /* empty */            {$$ = NULL;}
-		   | IN _IDENT              {$$ = make_varname($2);}
+		   | IN _IDENT              {$$ = make_varname($2, NULL);}
 		   ;
 
 opt_command: /* empty */            {$$ = NULL;}
 		   | variable               {$$ = $1;}
 		   | UNROLL variable        {$$ = make_unroll($2);}
-		   | '(' ident actions ')'  {$$ = append_jaql_pipe(make_varname($2), $3);}
+		   | '(' ident actions ')'  {$$ = append_jaql_pipe(make_varname($2, NULL), $3);}
 		   ;
 
-opt_each: /* empty */  {$$ = make_varname(GDKstrdup("$"));}
-		| EACH _IDENT  {$$ = make_varname($2);}
+opt_each: /* empty */  {$$ = make_varname(GDKstrdup("$"), NULL);}
+		| EACH _IDENT  {$$ = make_varname($2, NULL);}
 		;
 
 sort_arg: variable opt_asc_desc
@@ -191,9 +191,19 @@ predicate: opt_not variable
 		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 ;
 
-variable: ident                 {$$ = make_varname($1);}
-		| variable _DOT _IDENT  {$$ = append_varname($1, $3);}
+variable: ident opt_arr_ind     {$$ = make_varname($1, $2);}
+		| variable _DOT _IDENT opt_arr_ind
+		                        {$$ = append_varname($1, $3, $4);}
 		;
+
+opt_arr_ind: /* empty */        {$$ = NULL;}
+		   | '[' '*' ']'        {$$ = make_array_index(0, 1);}
+		   | '[' _NUMBER ']'    {$$ = make_array_index($2, 0);}
+		   ;
+
+/*
+varx: variable _DOT '*';
+	*/
 
 and_or: _AND  {$$ = make_comp(j_and);}
 	  | _OR   {$$ = make_comp(j_or);}

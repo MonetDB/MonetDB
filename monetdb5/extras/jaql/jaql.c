@@ -503,6 +503,26 @@ make_jaql_top(long long int num)
 	return res;
 }
 
+tree *
+make_array_index(long long int idx, char isstar)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	if (idx < 0) {
+		res->type = j_error;
+		res->sval = GDKstrdup("variable: array index must be a "
+				"positive integer value");
+		return res;
+	}
+
+	res->type = j_arr_idx;
+	res->nval = idx;
+	if (isstar)
+		res->nval = -1;
+
+	return res;
+}
+
 /* create predicate between left and right which can be predicates on
  * their own, or variables and values */
 tree *
@@ -584,21 +604,22 @@ append_sort_arg(tree *osarg, tree *nsarg)
 	return osarg;
 }
 
-/* create a variable name from ident */
+/* create a variable name from ident, with optional array indirection */
 tree *
-make_varname(char *ident)
+make_varname(char *ident, tree *arridx)
 {
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_var;
 	res->sval = ident;
+	res->tval2 = arridx;
 
 	return res;
 }
 
 /* append an object indirection to the variable in var with the name
- * from ident */
+ * from ident, with optional array indirection */
 tree *
-append_varname(tree *var, char *ident)
+append_varname(tree *var, char *ident, tree *arridx)
 {
 	tree *t = var;
 
@@ -608,6 +629,7 @@ append_varname(tree *var, char *ident)
 	t = t->tval1 = GDKzalloc(sizeof(tree));
 	t->type = j_var;
 	t->sval = ident;
+	t->tval2 = arridx;
 
 	return var;
 }
@@ -697,7 +719,7 @@ make_join_input(char preserve, tree *var, tree *invar)
 	res->nval = preserve;
 	res->tval2 = var;
 	if (invar == NULL) {
-		res->tval1 = make_varname(GDKstrdup(var->sval));
+		res->tval1 = make_varname(GDKstrdup(var->sval), NULL);
 	} else {
 		res->tval1 = invar;
 	}
@@ -1193,8 +1215,27 @@ printtree(tree *t, int level, char op)
 						printtree(t->tval1, level + step, op);
 					printf(") ");
 				} else {
-					printf("%s%c", t->sval, t->tval1 != NULL ? '.' : ' ');
+					printf("%s", t->sval);
+					printtree(t->tval2, level + step, op);
+					printf("%c", t->tval1 != NULL ? '.' : ' ');
 					printtree(t->tval1, level + step, op);
+				}
+				break;
+			case j_arr_idx:
+				if (op) {
+					printf("j_arr_idx( ");
+					if (t->nval == -1) {
+						printf("* ");
+					} else {
+						printf("%lld ", t->nval);
+					}
+					printf(") ");
+				} else {
+					if (t->nval == -1) {
+						printf("[*]");
+					} else {
+						printf("[%lld]", t->nval);
+					}
 				}
 				break;
 			case j_num:

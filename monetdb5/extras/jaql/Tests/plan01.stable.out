@@ -1,0 +1,31 @@
+stdout of test 'plan01` in directory 'extras/jaql` itself:
+
+
+# 16:07:48 >  
+# 16:07:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-jacqueline-sofia.ins.cwi.nl/five/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=35544" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_jaql" "plan01.mal"
+# 16:07:48 >  
+
+# MonetDB 5 server v11.8.0 "jacqueline-b000083da0f8+483c1f04dd5b+"
+# Serving database 'mTests_extras_jaql', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sofia.ins.cwi.nl:35544/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell module not loaded: MALException:jaql.context:JAQL environment not found
+function user.main():void;
+    jaql.x("plan a -> transform { \"a\":$.j };");
+    jaql.x("plan a -> transform { \"a\":$.j[1] };");
+    jaql.x("plan a -> transform { \"a\":$.j[*].k };");
+end main;
+a as $ -> transform: { "a": $.j } 
+a as $ -> transform: { "a": $.j[1] } 
+a as $ -> transform: { "a": $.j[*].k } 
+
+# 16:07:49 >  
+# 16:07:49 >  "Done."
+# 16:07:49 >  
+
