@@ -1855,8 +1855,8 @@ CMDpositionBUN(wrd *retval, BAT *b, ptr val, ptr tval)
 }
 
 @= putTail
-	if (b->ttype && b->T->vheap) {
-		ptr _src = BUNtvar(bi,@1);
+	if (ATOMextern(b->ttype)) {
+		ptr _src = BUNtail(bi,@1);
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		memcpy(_dst, _src, _len);

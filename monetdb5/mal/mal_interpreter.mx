@@ -1860,10 +1860,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				stamp = BBPcurstamp();
 #endif
 			} else if (i < pci->retc &&
-					   (stk->stk[a].vtype == TYPE_str ||
-						(0 < stk->stk[a].vtype &&
-						 stk->stk[a].vtype < TYPE_any &&
-						 strcmp(BATatoms[stk->stk[a].vtype].name, "blob") == 0))) {
+					   0 < stk->stk[a].vtype &&
+					   stk->stk[a].vtype < TYPE_any &&
+					   ATOMextern(stk->stk[a].vtype)) {
 				backup[i] = stk->stk[a];
 			}
 		}
@@ -1932,17 +1931,17 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (i < pci->retc &&
 					   0 < stk->stk[a].vtype &&
 					   stk->stk[a].vtype < TYPE_any &&
-					   (stk->stk[a].vtype == TYPE_str ||
-						strcmp(BATatoms[stk->stk[a].vtype].name, "blob") == 0)) {
-				if (backup[i].val.sval && backup[i].val.sval != stk->stk[a].val.sval) {
-					if (backup[i].val.sval)
-						GDKfree(backup[i].val.sval);
+					   ATOMextern(stk->stk[a].vtype)) {
+				if (backup[i].val.pval &&
+					backup[i].val.pval != stk->stk[a].val.pval) {
+					if (backup[i].val.pval)
+						GDKfree(backup[i].val.pval);
 					if (i >= pci->retc) {
-						stk->stk[a].val.sval = 0;
+						stk->stk[a].val.pval = 0;
 						stk->stk[a].len = 0;
 					}
 					backup[i].len = 0;
-					backup[i].val.sval = 0;
+					backup[i].val.pval = 0;
 				}
 			}
 		}
@@ -2475,10 +2474,11 @@ void garbageElement(Client cntxt, ValPtr v)
 		if (cntxt && cntxt->flags & bigfootFlag)
 			updateBigFoot(cntxt, bid, FALSE);
 		BBPdecref(bid, TRUE);
-	} else if (0 < v->vtype && v->vtype < TYPE_any &&
-			   strcmp(BATatoms[v->vtype].name, "blob") == 0) {
-		GDKfree(v->val.pval);
+	} else if (0 < v->vtype && v->vtype < TYPE_any && ATOMextern(v->vtype)) {
+		if (v->val.pval)
+			GDKfree(v->val.pval);
 		v->val.pval = 0;
+		v->len = 0;
 	}
 }
 /*
