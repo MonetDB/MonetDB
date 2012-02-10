@@ -492,7 +492,7 @@ geom_export str mbrFromString(mbr **w, str *src);
 str
 mbrFromString(mbr **w, str *src)
 {
-	int len = 0;
+	int len = *w ? (int) sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
