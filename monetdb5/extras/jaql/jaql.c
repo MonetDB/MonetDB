@@ -642,13 +642,12 @@ tree *
 make_pair(char *name, tree *val)
 {
 	tree *res = GDKzalloc(sizeof(tree));
+	tree *w;
 
 	assert(val != NULL);
 	assert(name != NULL || val->type == j_var);
 
 	if (name == NULL) {
-		tree *w;
-
 		if (val->tval1 == NULL) {
 			/* we can't do arithmetic with these */
 			res->type = j_error;
@@ -658,9 +657,29 @@ make_pair(char *name, tree *val)
 		}
 
 		/* find last var in val */
-		for (w = val; w->tval1 != NULL; w = w->tval1)
-			;
+		for (w = val; w->tval1 != NULL; w = w->tval1) {
+			if (w->tval2 != NULL && w->tval1 == NULL) {
+				/* array as last, doesn't have a name */
+				res->type = j_error;
+				res->sval = GDKstrdup("transform: cannot deduce pair name "
+						"from array member(s)");
+				freetree(val);
+				return res;
+			}
+		}
 		name = GDKstrdup(w->sval);
+	}
+
+	for (w = val; w->tval1 != NULL; w = w->tval1) {
+		if (w->tval2 != NULL && w->tval2->nval == -1) {
+			/* expansion is impossible here */
+			res->type = j_error;
+			res->sval = GDKstrdup("transform: cannot perform array expansion "
+					"in a pair value (needs to be single value)");
+			freetree(val);
+			GDKfree(name);
+			return res;
+		}
 	}
 
 	res->type = j_pair;
