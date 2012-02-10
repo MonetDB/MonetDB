@@ -89,6 +89,7 @@ str UDFBATreverse ( bat *ret , bat *bid )
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn, left->hseqbase);
 
 	/* create BAT iterator */
 	li = bat_iterator(left);
