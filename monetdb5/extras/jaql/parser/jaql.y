@@ -260,9 +260,3 @@ json_value: val_var_arith             {$$ = $1;}
 		  | '{' obj_list '}'          {$$ = make_json_object($2);}
 		  | '[' arr_list ']'          {$$ = make_json_array($2);}
 		  ;
-
-/*
-json_fragment: '[' {j->expect_json = '[';} _ARRAY   {$$ = make_json($3);}
-			 | '{' {j->expect_json = '{';} _OBJECT  {$$ = make_json($3);}
-			 ;
-*/
