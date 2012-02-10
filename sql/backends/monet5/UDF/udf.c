@@ -77,12 +77,19 @@ str UDFBATreverse ( bat *ret , bat *bid )
 	if ((left = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
+	/* check tail type */
+	if (left->ttype != TYPE_str) {
+		BBPreleaseref(left->batCacheid);
+		throw(MAL, "batudf.reverse", "tail-type of input BAT must be TYPE_str");
+	}
+
 	/* allocate result BAT */
 	bn = BATnew(left->htype, TYPE_str, BATcount(left));
 	if (bn == NULL) {
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(bn, left->hseqbase);
 
 	/* create BAT iterator */
 	li = bat_iterator(left);
