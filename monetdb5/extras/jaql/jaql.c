@@ -219,7 +219,7 @@ make_jaql_transform(tree *var, tree *tmpl)
 	}
 
 	if (tmpl->type == j_var && tmpl->tval1 == NULL && tmpl->tval2 == NULL) {
-		/* simple variable, hence not performing any change, so null-op */
+		/* simple variable, hence not performing any change so null-op */
 		freetree(var);
 		freetree(tmpl);
 		return NULL;
