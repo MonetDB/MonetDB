@@ -41,6 +41,7 @@ lib_mal = {
 		mal_instruction.mx \
 		mal_interpreter.mx \
 		mal_linker.c mal_linker.h \
+		mal_listing.c mal_listing.h \
 		mal_module.c mal_module.h \
 		mal_namespace.c mal_namespace.h \
 		mal_parser.mx \

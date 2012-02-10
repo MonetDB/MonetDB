@@ -66,6 +66,7 @@
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_listing.h"
 #include "mal_namespace.h"
 
 Symbol newFunction(str mod, str nme,int kind){

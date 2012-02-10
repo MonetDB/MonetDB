@@ -130,6 +130,7 @@ comment "Collect the environment variables.";
 #include "mal_exception.h"
 #include "mal_debugger.h"
 #include "mal_interpreter.h"
+#include "mal_listing.h"
 #include "mal_namespace.h"
 
 #ifdef WIN32

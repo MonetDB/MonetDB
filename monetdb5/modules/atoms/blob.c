@@ -68,7 +68,6 @@ blob_export int BLOBnitems(int *ret, blob *b);
 blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 blob_export blob * BLOBread(blob *a, stream *s, size_t cnt);
 blob_export int BLOBwrite(blob *a, stream *s, size_t cnt);
-blob_export void BLOBdestroy(blob *b);
 
 blob_export str BLOBblob_blob(blob **d, blob **s);
 blob_export str BLOBblob_fromstr(blob **b, str *d);
@@ -740,12 +739,6 @@ void
 BLOBheap(Heap *heap, size_t capacity)
 {
 	blob_heap(heap, capacity);
-}
-
-void
-BLOBdestroy(blob *b)
-{
-	GDKfree(b);
 }
 
 var_t

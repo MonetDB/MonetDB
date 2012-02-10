@@ -108,12 +108,18 @@ pcre
     monetdb5 and sql.  Most prominently, complex SQL LIKE expressions are
     evaluated with help of the pcre library.
 
+openssl
+    The `OpenSSL`__ toolkit implementing SSL v2/v3 and TLS protocols is used
+    for its with full-strength world-wide cryptography functions.  The
+    client-server login procedures make use of these functions.
+
 __ http://dev.monetdb.org/downloads/sources/
 __ http://www.gnu.org/software/autoconf/
 __ http://www.gnu.org/software/automake/
 __ http://www.gnu.org/software/libtool/
 __ http://www.xmlsoft.org/
 __ http://www.pcre.org/
+__ http://www.openssl.org/
 
 Space Requirements
 ~~~~~~~~~~~~~~~~~~
@@ -207,7 +213,6 @@ Some other useful ``configure`` options are:
 --enable-optimize       enable extra optimization default=[see `Configure defaults and recommendations`_ below]
 --enable-assert         enable assertions in the code default=[see `Configure defaults and recommendations`_ below]
 --enable-strict         enable strict compiler flags default=[see `Configure defaults and recommendations`_ below]
---enable-warning        enable extended compiler warnings default=off
 
 You can also add options such as ``CC=<compiler>`` to specify the
 compiler and compiler flags to use.

@@ -59,6 +59,7 @@
 #include "mal_namespace.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_listing.h"
 
 Module mal_scope;    /* the root of the tree */
 Module scopeJump[256][256];  /* to speedup access to correct scope */
@@ -547,14 +548,14 @@ void dumpManual(stream *f, Module s, int recursive){
 
 			if(op==0 || strcmp(op,t->name)){
 			    if(endtag) mnstr_printf(f,"  </%s>\n",endtag);
-			    mnstr_printf(f,"  <%s",fcnClass(sig));
+			    mnstr_printf(f,"  <%s",operatorName(sig->token));
 			    op = t->name;
 			    mnstr_printf(f,"  name=\"%s\">\n",xmlChr(op));
 			    if(t->def->help)
 			    mnstr_printf(f,"    <comment>%s</comment>\n",
 			        xmlChr(t->def->help));
 			    op= t->name;
-			    endtag= fcnClass(sig);
+			    endtag= operatorName(sig->token);
 			}
 
 			ps= instruction2str(t->def,0,sig,0);

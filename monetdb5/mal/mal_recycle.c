@@ -68,6 +68,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 
 static MT_Lock recycleLock ;
 MalBlkPtr recycleBlk = NULL;

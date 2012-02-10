@@ -394,6 +394,7 @@ replication_export BAT *SLAVEtable(void);
 #include "algebra.h"
 #include <mal_sabaoth.h>
 #include <mtime.h>
+#include "mal_listing.h"
 
 /*
  * @-

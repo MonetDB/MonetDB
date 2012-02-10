@@ -687,11 +687,6 @@ typedef struct {
  * the size of this piece of memory.
  */
 typedef struct {
-	bat id;
-	int stamp;
-} batrec;
-
-typedef struct {
 	union {			/* storage is first in the record */
 		int ival;
 		oid oval;
@@ -702,7 +697,6 @@ typedef struct {
 		ptr pval;
 		struct BAT *Bval; /* this field is only used by mel */
 		bat bval;
-		batrec br;	/* bval + stamp */
 		str sval;
 		dbl dval;
 		lng lval;
@@ -2114,7 +2108,6 @@ typedef struct {
 	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (ptr atom);
 	int (*atomUnfix) (ptr atom);
-	void (*atomDestroy) (ptr atom);
 
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, ptr src);

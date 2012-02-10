@@ -204,15 +204,15 @@ getTypeIndex(str nme, int len, int deftype)
 }
 /*
  * @-
- * Literal constants are not necessary type specific, e.g.
- * the value '0' could represent sht,wrd,int,lng.
- * If the value is potential ambiguous then it should
+ * Literal constants are not necessarily type specific, e.g.
+ * the value '0' could represent bte,sht,wrd,int,lng.
+ * If the value is potentially ambiguous, it should
  * be made type specific in listings
  */
 int
 isAmbiguousType(int type){
 	switch(type){
-	case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
+		case TYPE_bte: case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
 		return type != TYPE_int;
 	}
 	return 0;

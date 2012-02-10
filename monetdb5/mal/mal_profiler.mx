@@ -305,6 +305,7 @@ mal_export void _initTrace(void);
  */
 #include "monetdb_config.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 #include "mal_profiler.h"
 #include "mal_debugger.h"
 

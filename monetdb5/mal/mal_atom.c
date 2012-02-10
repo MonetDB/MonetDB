@@ -118,11 +118,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			setAtomName(pci);
 			return 1;
 		}
-		if (idcmp("destroy", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomDestroy = (void (*)(void *))pci->fcn;
-			setAtomName(pci);
-			return 1;
-		}
 		break;
 	case 'c':
 		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
