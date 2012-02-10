@@ -82,6 +82,7 @@ All Rights Reserved.
 
 #include "mal_exception.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 #include "mal_exception.h"
 
 /*

@@ -32,6 +32,7 @@
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 #include "mal_recycle.h"
 #include "recycle.h"
 #include "algebra.h"

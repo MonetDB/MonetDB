@@ -68,6 +68,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 @c
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "mal_listing.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
 #include "mal_type.h"
