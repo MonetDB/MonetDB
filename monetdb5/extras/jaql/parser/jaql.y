@@ -192,6 +192,7 @@ predicate: opt_not variable
 		 ;
 
 variable: ident opt_arr_ind     {$$ = make_varname($1, $2);}
+		| variable _DOT '*'     {$$ = append_varname($1, NULL, NULL);}
 		| variable _DOT _IDENT opt_arr_ind
 		                        {$$ = append_varname($1, $3, $4);}
 		;
@@ -200,10 +201,6 @@ opt_arr_ind: /* empty */        {$$ = NULL;}
 		   | '[' '*' ']'        {$$ = make_array_index(0, 1);}
 		   | '[' _NUMBER ']'    {$$ = make_array_index($2, 0);}
 		   ;
-
-/*
-varx: variable _DOT '*';
-	*/
 
 and_or: _AND  {$$ = make_comp(j_and);}
 	  | _OR   {$$ = make_comp(j_or);}

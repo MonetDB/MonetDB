@@ -667,7 +667,8 @@ make_pair(char *name, tree *val)
 				return res;
 			}
 		}
-		name = GDKstrdup(w->sval);
+		if (w->sval != NULL)
+			name = GDKstrdup(w->sval);
 	}
 
 	for (w = val; w->tval1 != NULL; w = w->tval1) {
@@ -677,7 +678,8 @@ make_pair(char *name, tree *val)
 			res->sval = GDKstrdup("transform: cannot perform array expansion "
 					"in a pair value (needs to be single value)");
 			freetree(val);
-			GDKfree(name);
+			if (name != NULL)
+				GDKfree(name);
 			return res;
 		}
 	}
@@ -973,11 +975,20 @@ printtree(tree *t, int level, char op)
 				break;
 			case j_pair:
 				if (op) {
-					printf("j_pair( \"%s\", ", t->sval);
+					printf("j_pair( ");
+					if (t->sval != NULL) {
+						printf("\"%s\", ", t->sval);
+					} else {
+						printf("<deduced_name>, ");
+					}
 					printtree(t->tval1, level + step, op);
 					printf(") ");
 				} else {
-					printf("\"%s\": ", t->sval);
+					if (t->sval == NULL) {
+						printf("<to be deduced from expansion> ");
+					} else {
+						printf("\"%s\": ", t->sval);
+					}
 					printtree(t->tval1, level + step, op);
 					if (t->next != NULL)
 						printf(", ");
@@ -1229,12 +1240,13 @@ printtree(tree *t, int level, char op)
 			case j_var:
 				if (op) {
 					printf("j_var( %s%s ",
-							t->sval, t->tval1 != NULL ? "." : "");
+							t->sval == NULL ? "*" : t->sval,
+							t->tval1 != NULL ? "." : "");
 					if (t->tval1 != NULL)
 						printtree(t->tval1, level + step, op);
 					printf(") ");
 				} else {
-					printf("%s", t->sval);
+					printf("%s", t->sval == NULL ? "*" : t->sval);
 					printtree(t->tval2, level + step, op);
 					printf("%c", t->tval1 != NULL ? '.' : ' ');
 					printtree(t->tval1, level + step, op);

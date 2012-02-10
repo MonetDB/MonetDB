@@ -20,11 +20,17 @@ function user.main():void;
     jaql.x("plan a -> transform { \"a\":$.j };");
     jaql.x("plan a -> transform { \"a\":$.j[1] };");
     jaql.x("plan a -> transform { \"a\":$.j[*].k };");
+    jaql.x("plan a -> transform { \"a\":$.* };");
+    jaql.x("plan a -> transform { $.* };");
+    jaql.x("plan a -> transform { $.*.foo };");
 end main;
 a as $ -> transform: { "a": $.j } 
 a as $ -> transform: { "a": $.j[1] } 
 !transform: cannot perform array expansion in a pair value (needs to be single value)
 
+a as $ -> transform: { "a": $.* } 
+a as $ -> transform: { <to be deduced from expansion> $.* } 
+a as $ -> transform: { "foo": $.*.foo } 
 
 # 16:07:49 >  
 # 16:07:49 >  "Done."
