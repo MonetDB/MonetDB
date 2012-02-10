@@ -208,9 +208,9 @@ getTypeIndex(str nme, int len, int deftype)
 }
 /*
  * @-
- * Literal constants are not necessary type specific, e.g.
+ * Literal constants are not necessarily type specific, e.g.
  * the value '0' could represent bte,sht,wrd,int,lng.
- * If the value is potential ambiguous then it should
+ * If the value is potentially ambiguous, it should
  * be made type specific in listings
  */
 int
