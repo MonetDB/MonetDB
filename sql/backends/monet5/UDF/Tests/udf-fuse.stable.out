@@ -1,0 +1,207 @@
+stdout of test 'udf-fuse` in directory 'backends/monet5/UDF` itself:
+
+
+# 18:49:07 >  
+# 18:49:07 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=31089" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_UDF" "--set" "mal_listing=0"
+# 18:49:07 >  
+
+# MonetDB 5 server v11.8.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_UDF', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:31089/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:49:07 >  
+# 18:49:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=31089"
+# 18:49:07 >  
+
+#explain select fuse(1,2);
+% .explain # table_name
+% mal # name
+% clob # type
+% 76 # length
+function user.s1_1{autoCommit=true}(A0:bte,A1:bte):void;
+    X_5 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"smallint",16,0,6,X_5,"");
+end s1_1;
+#select fuse(1,2);
+% . # table_name
+% fuse_single_value # name
+% smallint # type
+% 3 # length
+[ 258	]
+#explain select fuse(1000,2000);
+% .explain # table_name
+% mal # name
+% clob # type
+% 71 # length
+function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
+    X_5 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"int",32,0,6,X_5,"");
+end s3_1;
+#select fuse(1000,2000);
+% . # table_name
+% fuse_single_value # name
+% int # type
+% 8 # length
+[ 65538000	]
+#explain select fuse(1000000,2000000);
+% .explain # table_name
+% mal # name
+% clob # type
+% 74 # length
+function user.s5_1{autoCommit=true}(A0:int,A1:int):void;
+    X_5 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"bigint",64,0,6,X_5,"");
+end s5_1;
+#select fuse(1000000,2000000);
+% . # table_name
+% fuse_single_value # name
+% bigint # type
+% 16 # length
+[ 4294967298000000	]
+#create table udf_fuse ( a tinyint , b tinyint , c smallint , d smallint , e integer , f integer );
+#insert into udf_fuse values  (1,2,1000,2000,1000000,2000000);
+[ 1	]
+#insert into udf_fuse values  (3,4,3000,4000,3000000,4000000);
+[ 1	]
+#insert into udf_fuse values  (5,6,5000,6000,5000000,6000000);
+[ 1	]
+#insert into udf_fuse values  (7,8,7000,8000,7000000,8000000);
+[ 1	]
+#select * from udf_fuse;
+% sys.udf_fuse,	sys.udf_fuse,	sys.udf_fuse,	sys.udf_fuse,	sys.udf_fuse,	sys.udf_fuse # table_name
+% a,	b,	c,	d,	e,	f # name
+% tinyint,	tinyint,	smallint,	smallint,	int,	int # type
+% 1,	1,	4,	4,	7,	7 # length
+[ 1,	2,	1000,	2000,	1000000,	2000000	]
+[ 3,	4,	3000,	4000,	3000000,	4000000	]
+[ 5,	6,	5000,	6000,	5000000,	6000000	]
+[ 7,	8,	7000,	8000,	7000000,	8000000	]
+#explain select fuse(a,b) from udf_fuse;
+% .explain # table_name
+% mal # name
+% clob # type
+% 65 # length
+function user.s12_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_12:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",0);
+    X_10:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",2);
+    X_14 := algebra.kdifference(X_12,X_10);
+    X_15 := algebra.kunion(X_14,X_10);
+    X_9:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",1);
+    X_16 := algebra.kunion(X_15,X_9);
+    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_8 := bat.reverse(X_5);
+    X_17 := algebra.kdifference(X_16,X_8);
+    X_21:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",0);
+    X_20:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",2);
+    X_22 := algebra.kdifference(X_21,X_20);
+    X_23 := algebra.kunion(X_22,X_20);
+    X_19:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",1);
+    X_24 := algebra.kunion(X_23,X_19);
+    X_25 := algebra.kdifference(X_24,X_8);
+    X_26:bat[:oid,:sht]  := batudf.fuse(X_17,X_25);
+    X_27 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_27,"sys.","fuse_a":str,"smallint",16,0,X_26);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_27);
+end s12_1;
+#explain select fuse(c,d) from udf_fuse;
+% .explain # table_name
+% mal # name
+% clob # type
+% 65 # length
+function user.s13_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_12:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",0);
+    X_10:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",2);
+    X_14 := algebra.kdifference(X_12,X_10);
+    X_15 := algebra.kunion(X_14,X_10);
+    X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",1);
+    X_16 := algebra.kunion(X_15,X_9);
+    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_8 := bat.reverse(X_5);
+    X_17 := algebra.kdifference(X_16,X_8);
+    X_21:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",0);
+    X_20:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",2);
+    X_22 := algebra.kdifference(X_21,X_20);
+    X_23 := algebra.kunion(X_22,X_20);
+    X_19:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",1);
+    X_24 := algebra.kunion(X_23,X_19);
+    X_25 := algebra.kdifference(X_24,X_8);
+    X_26:bat[:oid,:int]  := batudf.fuse(X_17,X_25);
+    X_27 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_27,"sys.","fuse_c":str,"int",32,0,X_26);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_27);
+end s13_1;
+#explain select fuse(e,f) from udf_fuse;
+% .explain # table_name
+% mal # name
+% clob # type
+% 65 # length
+function user.s14_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_12:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",0);
+    X_10:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",2);
+    X_14 := algebra.kdifference(X_12,X_10);
+    X_15 := algebra.kunion(X_14,X_10);
+    X_9:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",1);
+    X_16 := algebra.kunion(X_15,X_9);
+    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_8 := bat.reverse(X_5);
+    X_17 := algebra.kdifference(X_16,X_8);
+    X_21:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",0);
+    X_20:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",2);
+    X_22 := algebra.kdifference(X_21,X_20);
+    X_23 := algebra.kunion(X_22,X_20);
+    X_19:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",1);
+    X_24 := algebra.kunion(X_23,X_19);
+    X_25 := algebra.kdifference(X_24,X_8);
+    X_26:bat[:oid,:lng]  := batudf.fuse(X_17,X_25);
+    X_27 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_27,"sys.","fuse_e":str,"bigint",64,0,X_26);
+    X_33 := io.stdout();
+    sql.exportResult(X_33,X_27);
+end s14_1;
+#select fuse(a,b) from udf_fuse;
+% sys. # table_name
+% fuse_a # name
+% smallint # type
+% 4 # length
+[ 258	]
+[ 772	]
+[ 1286	]
+[ 1800	]
+#select fuse(c,d) from udf_fuse;
+% sys. # table_name
+% fuse_c # name
+% int # type
+% 9 # length
+[ 65538000	]
+[ 196612000	]
+[ 327686000	]
+[ 458760000	]
+#select fuse(e,f) from udf_fuse;
+% sys. # table_name
+% fuse_e # name
+% bigint # type
+% 17 # length
+[ 4294967298000000	]
+[ 12884901892000000	]
+[ 21474836486000000	]
+[ 30064771080000000	]
+
+# 18:49:07 >  
+# 18:49:07 >  "Done."
+# 18:49:07 >  
+
