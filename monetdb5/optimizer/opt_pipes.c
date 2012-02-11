@@ -33,21 +33,24 @@
  */
 #include "monetdb_config.h"
 #include "opt_pipes.h"
+#include "mal_instruction.h"
+#include "mal_function.h"
 
 #define MAXOPTPIPES 64
 
 struct PIPELINES{
 	char name[50];
 	char def[256];
+	MalBlkPtr mb;
 } pipes[MAXOPTPIPES] ={
 /* The minimal pipeline necessary by the server to operate correctly*/
-{ "minimal_pipe",	"inline,remap,deadcode,multiplex,garbageCollector"},
+{ "minimal_pipe",	"inline,remap,deadcode,multiplex,garbageCollector", 0},
 
 /*
  * The default pipe line contains as of Feb2010 mitosis-mergetable-reorder,
  * aimed at large tables and improved access locality
 */
-{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" },
+{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0},
 
 /*
  * The no_mitosis pipe line is (and should be kept!) identical to the default pipeline,
@@ -55,55 +58,55 @@ struct PIPELINES{
  * deterministically, and to check / debug whether "unexpected" problems are related to
  * mitosis (and/or mergetable).
 */
-{ "no_mitosis_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" },
+{ "no_mitosis_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0},
 
 /* The sequential pipe line is (and should be kept!) identical to the default pipeline,
  * except that optimizers mitosis & dataflow are omitted.  It is use mainly to make some
  * tests work deterministically, i.e., avoid ambigious output, by avoiding parallelism.
 */
-{ "sequential_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,accumulators,garbageCollector" },
+{ "sequential_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,accumulators,garbageCollector" , 0},
 
 /* The default pipeline used in the November 2009 release*/
-{ "nov2009_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector" },
+{ "nov2009_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector" , 0},
 
 /*
  * Experimental pipelines stressing various components under development
  * Do not use any of these pipelines in production settings!
 */
-{"replication_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector" },
+{"replication_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector" , 0},
 
-{"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"},
+{"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector", 0},
 
-{"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,commonTerms,joinPath,deadcode,recycle,reduce,history,multiplex,garbageCollector"},
+{"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,commonTerms,joinPath,deadcode,recycle,reduce,history,multiplex,garbageCollector", 0},
 
-{"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
-{"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
+{"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
+{"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
 
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
 */
-{"octopus_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,costModel,octopus,reduce,dataflow,history,multiplex,garbageCollector"},
+{"octopus_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,costModel,octopus,reduce,dataflow,history,multiplex,garbageCollector", 0},
 
 {"datacell_pipe",
             "inline,remap,datacell,garbageCollector,evaluate,costModel,coercions,emptySet,aliases,mitosis,"
             "mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,"
-            "history,multiplex,accumulators,garbageCollector" },
+            "history,multiplex,accumulators,garbageCollector" , 0},
 /* The default + datacyclotron*/
-{"datacyclotron_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector"},
+{"datacyclotron_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector", 0},
 
 /* The default + derivePath" */
-{"derive_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
+{"derive_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
 
 /* The default + dictionary*/
-{"dictionary_pipe",	"inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector"},
+{"dictionary_pipe",	"inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
 
 /* The default + compression */
-{"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector"},
+{"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector", 0},
 
 /* 
  * The centipede pipe line aims at a map-reduce style of query processing
 */
-{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" }
+{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0}
 
 };
 /*
@@ -168,5 +171,61 @@ getPipeCatalog(int *nme, int *def)
 
 	BBPkeepref(*nme= b->batCacheid);
 	BBPkeepref(*def= b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+validateOptimizerPipes(str *optimizers){
+	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
+	int i;
+
+	mal_set_lock(mal_contextLock,"optimizer validation");
+	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
+		mal_unset_lock(mal_contextLock,"optimizer validation");
+		throw(MAL,"optimizer.validate","'inline' should be the first\n");
+	}
+
+	/* deadcode should be used */
+	for ( i=0; optimizers[i]; i++)
+		if (strcmp(optimizers[i],"deadcode") == 0)
+			deadcode= TRUE;
+		else
+		if (strcmp(optimizers[i],"mitosis") == 0)
+			mitosis= TRUE;
+		else
+		if (strcmp(optimizers[i],"mergetable") == 0)
+			mergetable= TRUE;
+		else
+		if (strcmp(optimizers[i],"multiplex") == 0)
+			multiplex= TRUE;
+		else
+		if (strcmp(optimizers[i],"garbageCollector") == 0 && optimizers[i+1] == 0)
+			garbage= TRUE;
+
+#ifdef WIN32
+		else
+		if (strcmp(optimizers[i],"octopus") == 0){
+			mal_unset_lock(mal_contextLock,"optimizer validation");
+			throw(MAL,"optimizer.validate","'octopus' needs monetdbd\n");
+		}
+#endif
+	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
+		mal_unset_lock(mal_contextLock,"optimizer validation");
+		throw(MAL,"optimizer.validate","'mitosis' needs 'mergetable'\n");
+	}
+
+	if (optimizers[0] && multiplex == 0){
+		mal_unset_lock(mal_contextLock,"optimizer validation");
+		throw(MAL,"optimizer.validate","'multiplex' should be used\n");
+	}
+	if (optimizers[0] && deadcode == FALSE ){
+		mal_unset_lock(mal_contextLock,"optimizer validation");
+		throw(MAL,"optimizeri.validate","'deadcode' should be used at least once\n");
+	}
+	if (optimizers[0] && garbage == FALSE ){
+		mal_unset_lock(mal_contextLock,"optimizer validation");
+		throw(MAL,"optimizer.validate","'garbageCollector' should be used as the last one\n");
+	}
+	mal_unset_lock(mal_contextLock,"optimizer validation");
 	return MAL_SUCCEED;
 }

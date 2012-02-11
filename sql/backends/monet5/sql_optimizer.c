@@ -440,60 +440,8 @@ static str previouspipe = 0;	/* fall back position */
 
 str
 SQLvalidatePipeline(void){
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
-	int i;
-
-	mal_set_lock(sql_contextLock,"SQL optimizer");
-	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'inline' should be the first\n");
-	}
-
-	/* deadcode should be used */
-	for ( i=0; optimizers[i]; i++)
-		if (strcmp(optimizers[i],"deadcode") == 0)
-			deadcode= TRUE;
-		else
-		if (strcmp(optimizers[i],"mitosis") == 0)
-			mitosis= TRUE;
-		else
-		if (strcmp(optimizers[i],"mergetable") == 0)
-			mergetable= TRUE;
-		else
-		if (strcmp(optimizers[i],"multiplex") == 0)
-			multiplex= TRUE;
-		else
-		if (strcmp(optimizers[i],"garbageCollector") == 0 && optimizers[i+1] == 0)
-			garbage= TRUE;
-
-#ifdef WIN32
-		else
-		if (strcmp(optimizers[i],"octopus") == 0){
-			mal_unset_lock(sql_contextLock,"SQL optimizer");
-			throw(SQL,"optimizer","SET OPTIMIZER: 'octopus' needs monetdbd\n");
-		}
-#endif
-	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'mitosis' needs 'mergetable'\n");
-	}
-
-	if (optimizers[0] && multiplex == 0){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'multiplex' should be used\n");
-	}
-	if (optimizers[0] && deadcode == FALSE ){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," SET OPTIMIZER: 'deadcode' should be used at least once\n");
-	}
-	if (optimizers[0] && garbage == FALSE ){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'garbageCollector' should be used as the last one\n");
-	}
-	mal_unset_lock(sql_contextLock,"SQL optimizer");
-	return MAL_SUCCEED;
+	return validateOptimizerPipes(optimizers);
 }
-
 /*
  * @-
  * The prevalent optimizer pipeline is a global variable. All clients

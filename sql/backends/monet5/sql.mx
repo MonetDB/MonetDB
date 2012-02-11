@@ -1465,6 +1465,7 @@ sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 #include <bbp.h>
 #include <cluster.h>
 #include <opt_dictionary.h>
+#include <opt_pipes.h>
 #ifdef HAVE_RAPTOR
 # include <rdf.h>
 #endif

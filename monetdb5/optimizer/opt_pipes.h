@@ -26,5 +26,6 @@
 opt_export str getPipeDefinition(str name);
 opt_export str getPipeCatalog(int *nme, int *def);
 opt_export str addPipeDefinition(str name, str pipe);
+opt_export str validateOptimizerPipes(str *optimizers);
 
 #endif
