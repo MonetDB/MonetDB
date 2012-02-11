@@ -22,6 +22,5 @@ expand01
 #todo
 #group01
 join01
-#fail until we implement complex comparator and array refs
-#sort01
+sort01
 top01
