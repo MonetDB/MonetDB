@@ -235,7 +235,7 @@ address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
 command sortReverse( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhsort_rev
-comment "Returns a BAT copy reversely sorted on the tail column.";
+comment "Returns a BAT copy reversely sorted on the head column.";
 
 command sortTail( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGtsort

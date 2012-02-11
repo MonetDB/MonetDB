@@ -144,7 +144,7 @@ Description: MonetDB Ruby client module
 
 Package: monetdb-client-testing
 Architecture: any
-Depends: ${shlibs:Depends}, libmonetdb-client-odbc1, monetdb5-server, perl-monetdb-client, php5-monetdb-client, python-monetdb, monetdb5-sql
+Depends: ${shlibs:Depends}, libmonetdb-client-odbc, monetdb5-server, perl-monetdb-client, php5-monetdb-client, python-monetdb, monetdb5-sql
 Description: MonetDB client testing tools
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
