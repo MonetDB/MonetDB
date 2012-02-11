@@ -205,7 +205,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		cnt = mb->stop / 128 < 32? 32 : mb->stop/128;	/* limit search depth */
 		if ( !prop)
 		for (; cnt > 0 && j ; cnt--, j = list[j]) 
-			if ( (q=getInstrPtr(mb,j))->fcn == p->fcn  ){
+			if ( getFunctionId(q=getInstrPtr(mb,j)) == getFunctionId(p) && getModuleId(q) == getModuleId(p)  ){
 #ifdef DEBUG_OPT_COMMONTERMS_MORE
 			mnstr_printf(cntxt->fdout,"#CANDIDATE %d, %d  %d %d ", i, j, 
 				hasSameSignature(mb, p, q, p->retc), 
