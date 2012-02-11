@@ -192,7 +192,6 @@ predicate: opt_not variable
 		 ;
 
 variable: ident opt_arr_ind     {$$ = make_varname($1, $2);}
-		| variable _DOT '*'     {$$ = append_varname($1, NULL, NULL);}
 		| variable _DOT _IDENT opt_arr_ind
 		                        {$$ = append_varname($1, $3, $4);}
 		;
@@ -250,6 +249,7 @@ arr_list: arr_list ',' val_var_arith  {$$ = append_elem($1, $3);}
 		;
 
 obj_pair: variable                    {$$ = make_pair(NULL, $1);}
+		| variable _DOT '*'           {$$ = make_pair(NULL, append_varname($1, NULL, NULL));}
 		| _STRING ':' val_var_arith   {$$ = make_pair($1, $3);}
 		;
 
