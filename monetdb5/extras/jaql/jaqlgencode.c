@@ -2841,6 +2841,60 @@ dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems,
 			return a;
 		}
 		case j_pair:
+			if (t->sval == NULL) {
+				tree *w;
+				assert(t->tval1->type == j_var);
+				for (w = t; w->tval1->tval1 != NULL; w = w->tval1)
+					;
+				assert(w->tval1->sval == NULL);
+				GDKfree(w->tval1);
+				w->tval1 = NULL;
+
+				/* find all possible array member names */
+				a = dumprefvar(mb, t->tval1, elems, j1, j5, j6, j7);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, a);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, uselectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushBte(mb, q, 'o');
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, *j6);
+				q = pushArgument(mb, q, c);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				c = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, joinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				q = pushArgument(mb, q, a);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				return a;
+			}
+
 			b = dumpvariabletransformation(mb, t->tval1, elems,
 					j1, j2, j3, j4, j5, j6, j7);
 			/* only need to copy if tval1 is a var, otherwise we have a
