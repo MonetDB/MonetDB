@@ -671,19 +671,6 @@ make_pair(char *name, tree *val)
 			name = GDKstrdup(w->sval);
 	}
 
-	for (w = val; w->tval1 != NULL; w = w->tval1) {
-		if (w->tval2 != NULL && w->tval2->nval == -1) {
-			/* expansion is impossible here */
-			res->type = j_error;
-			res->sval = GDKstrdup("transform: cannot perform array expansion "
-					"in a pair value (needs to be single value)");
-			freetree(val);
-			if (name != NULL)
-				GDKfree(name);
-			return res;
-		}
-	}
-
 	res->type = j_pair;
 	res->tval1 = val;
 	res->sval = name;
