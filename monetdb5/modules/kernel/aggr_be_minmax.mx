@@ -338,7 +338,6 @@ bunins_failed:
 int
 CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e);
 @= extreme_c
-@:extreme_typed(@1,@2,chr,loc,ptr,@3)@
 @:extreme_typed(@1,@2,bte,loc,ptr,@3)@
 @:extreme_typed(@1,@2,sht,loc,ptr,@3)@
 @:extreme_typed(@1,@2,int,loc,ptr,@3)@
@@ -356,8 +355,6 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 		BATgetId(b),BATgetId(e));
 	if (b->ttype == TYPE_void) {
 		rtrn = aggrX3_@1_any_var_oid(ret, b, e);
-	} else if (tt == TYPE_chr) {
-		rtrn = aggrX3_@1_chr_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_bte) {
 		rtrn = aggrX3_@1_bte_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_sht) {

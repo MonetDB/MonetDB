@@ -453,9 +453,6 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_lng:
 			bn->T->nonil = *(lng*)val==lng_nil?FALSE:TRUE;
 			break;
-		case TYPE_chr:
-			bn->T->nonil = *(chr*)val==chr_nil?FALSE:TRUE;
-			break;
 		case TYPE_str:
 			bn->T->nonil = (strcmp(*(str*)val, str_nil) == 0)?FALSE:TRUE;
 			break;

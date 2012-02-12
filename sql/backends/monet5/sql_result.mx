@@ -854,7 +854,7 @@ convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, ch
 	int l = 0;
 
 	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
-		(*buf)[0] = GDK_chr_min;
+		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len, mtype, p);

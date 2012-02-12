@@ -82,6 +82,7 @@ All Rights Reserved.
 
 #include "mal_exception.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 #include "mal_exception.h"
 
 /*
@@ -529,8 +530,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 		isaBatType(@1) ||
 		findGDKtype(@1) == TYPE_str ||
 		(!isPolyType(@1) && @1 < TYPE_any &&
-		 @1 >= 0 && (ATOMstorage(@1) == TYPE_str ||
-					 BATatoms[@1].atomDestroy))) {
+		 @1 >= 0 && ATOMextern(@1))) {
 		getInstrPtr(@3, 0)->gc |= GARBAGECONTROL;
 		setVarCleanup(mb, getArg(p, @2));
 		p->gc |= GARBAGECONTROL;
@@ -785,8 +785,7 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 		if (findGDKtype(tpe) == TYPE_bat ||
 			findGDKtype(tpe) == TYPE_str ||
 			(!isPolyType(tpe) && tpe< TYPE_any &&
-			 (ATOMstorage(tpe) == TYPE_str ||
-			  BATatoms[tpe].atomDestroy)))
+			 ATOMextern(tpe)))
 			setVarCleanup(mb,getArg(p,k));
 	}
 }

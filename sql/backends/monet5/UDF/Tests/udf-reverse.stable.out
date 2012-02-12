@@ -1,0 +1,115 @@
+stdout of test 'udf-reverse` in directory 'backends/monet5/UDF` itself:
+
+
+# 18:44:21 >  
+# 18:44:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-debug_--enable-optimize_--disable-assert/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36851" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_UDF" "--set" "mal_listing=0"
+# 18:44:21 >  
+
+# MonetDB 5 server v11.8.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_UDF', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rome.ins.cwi.nl:36851/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 18:44:21 >  
+# 18:44:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36851"
+# 18:44:21 >  
+
+#explain select reverse('MonetDB');
+% .explain # table_name
+% mal # name
+% clob # type
+% 74 # length
+function user.s1_1{autoCommit=true}(A0:str):void;
+    X_4 := udf.reverse(A0);
+    sql.exportValue(1,".","reverse_single_value":str,"clob",0,0,4,X_4,"");
+end s1_1;
+#select reverse('MonetDB');
+% . # table_name
+% reverse_single_value # name
+% clob # type
+% 7 # length
+[ "BDtenoM"	]
+#create table udf_reverse ( x string );
+#insert into udf_reverse values ('MonetDB');
+[ 1	]
+#insert into udf_reverse values ('Database Architecture');
+[ 1	]
+#insert into udf_reverse values ('Information Systems');
+[ 1	]
+#insert into udf_reverse values ('Centrum Wiskunde & Informatica');
+[ 1	]
+#select * from udf_reverse;
+% sys.udf_reverse # table_name
+% x # name
+% clob # type
+% 30 # length
+[ "MonetDB"	]
+[ "Database Architecture"	]
+[ "Information Systems"	]
+[ "Centrum Wiskunde & Informatica"	]
+#explain select reverse(x) from udf_reverse;
+% .explain # table_name
+% mal # name
+% clob # type
+% 68 # length
+function user.s8_1{autoCommit=true}():void;
+    X_2 := sql.mvc();
+    X_13:bat[:oid,:str]  := sql.bind(X_2,"sys","udf_reverse","x",0);
+    X_11:bat[:oid,:str]  := sql.bind(X_2,"sys","udf_reverse","x",2);
+    X_15 := algebra.kdifference(X_13,X_11);
+    X_16 := algebra.kunion(X_15,X_11);
+    X_10:bat[:oid,:str]  := sql.bind(X_2,"sys","udf_reverse","x",1);
+    X_17 := algebra.kunion(X_16,X_10);
+    X_6:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_reverse",1);
+    X_9 := bat.reverse(X_6);
+    X_18 := algebra.kdifference(X_17,X_9);
+    X_19:bat[:oid,:str]  := batudf.reverse(X_18);
+    X_20 := sql.resultSet(1,1,X_19);
+    sql.rsColumn(X_20,"sys.","reverse_x","clob",0,0,X_19);
+    X_24 := io.stdout();
+    sql.exportResult(X_24,X_20);
+end s8_1;
+#select reverse(x) from udf_reverse;
+% sys. # table_name
+% reverse_x # name
+% clob # type
+% 30 # length
+[ "BDtenoM"	]
+[ "erutcetihcrA esabataD"	]
+[ "smetsyS noitamrofnI"	]
+[ "acitamrofnI & ednuksiW murtneC"	]
+
+# 18:44:22 >  
+# 18:44:22 >  "Done."
+# 18:44:22 >  
+

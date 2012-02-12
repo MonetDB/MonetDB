@@ -40,7 +40,6 @@ function user.main():void;
     s := "hello";
     i := 1;
     f := 3.1400001;
-    c := 'a';
     b := true;
     w := 1:wrd;
     B := 2:bte;
@@ -51,8 +50,6 @@ function user.main():void;
     io.printf("%s\n",it);
     ft := inspect.getType(f);
     io.printf("%s\n",ft);
-    ct := inspect.getType(c);
-    io.printf("%s\n",ct);
     bt := inspect.getType(b);
     io.printf("%s\n",bt);
     wt := inspect.getType(w);
@@ -66,7 +63,6 @@ end main;
 str
 int
 flt
-chr
 bit
 wrd
 bte

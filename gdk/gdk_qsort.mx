@@ -129,7 +129,6 @@ typedef struct {
 
 @
 @c
-@:register_swap(chr)@
 @:register_swap(bte)@
 @:register_swap(sht)@
 @:register_swap(int)@
@@ -142,7 +141,7 @@ typedef struct {
 #define offset_any_SWAP(TYPE, a, b, s)			\
 	do {						\
 		switch (s) {				\
-		case 1: chr_SWAP(TYPE, a, b, s); break; \
+		case 1: bte_SWAP(TYPE, a, b, s); break; \
 		case 2: sht_SWAP(TYPE, a, b, s); break; \
 		case 4: int_SWAP(TYPE, a, b, s); break; \
 		case 8: lng_SWAP(TYPE, a, b, s); break; \
@@ -154,7 +153,7 @@ typedef struct {
 #define offset_any_multi_SWAP(TYPE, a, b, n, nt, s) 		\
 	do {							\
 		switch (s) {					\
-		case 1: tpe_SWAP(chr, a, b, (nt)); break;	\
+		case 1: tpe_SWAP(bte, a, b, (nt)); break;	\
 		case 2: tpe_SWAP(sht, a, b, (nt)>>1); break;	\
 		case 4: tpe_SWAP(int, a, b, (nt)>>2); break;	\
 		case 8: tpe_SWAP(lng, a, b, (nt)>>3); break;	\
@@ -189,7 +188,7 @@ typedef struct {
  * 	in order to factor out a type-specific check, or a function call for each
  * 	value comparison, we separate different qsort implementations by the comparison
  * 	type, of which each has the comparison hard-coded. We factor out the types
- * 	@{chr,bte,sht,int,wrd,flt,lng,dbl,any@} (the latter uses an adt function call).
+ * 	@{bte,sht,int,wrd,flt,lng,dbl,any@} (the latter uses an adt function call).
  * @item storage:2
  * 	denoted @{direct,offset@}, means whether the array to be sorted contains the
  * 	(fixed-width) values itself, or whether it contains integer byte-offsets, that point
@@ -234,9 +233,6 @@ typedef lng ptrdiff_t;
 
 @:qsort_L_or_G_direction(any)@
 
-#ifndef NOEXPAND_CHR
-@:qsort_cmpdef(chr)@
-#endif
 #ifndef NOEXPAND_BTE
 @:qsort_cmpdef(bte)@
 #endif
@@ -478,10 +474,6 @@ GDKqsort@1(void *h, void *t, void* base, size_t n, int hs, int ts, int tpe)
 
 	/* factorization by comparsion type */
 	switch (ATOMstorage(tpe)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:call_iterate_or_register_swapmethod(@1,chr)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:call_iterate_or_register_swapmethod(@1,bte)@

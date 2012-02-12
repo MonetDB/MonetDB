@@ -27,8 +27,6 @@ comment "compute a hash int number from any value";
 
 command hash(v:bit):wrd
 address MKEYhash_bit;
-command hash(v:chr):wrd
-address MKEYhash_chr;
 command hash(v:bte):wrd
 address MKEYhash_bte;
 command hash(v:sht):wrd

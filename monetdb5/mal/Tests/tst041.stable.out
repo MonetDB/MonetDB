@@ -121,12 +121,6 @@ function user.main():void;
     e := nil:str;
     io.print(e);
     io.print(nil:str);
-    f := 'Z';
-    io.print(f);
-    f := calc.chr(nil);
-    io.print(f);
-    f := calc.chr("X");
-    io.print(f);
     o := nil:blob;
     io.print(o);
     o := calc.blob(nil:blob);
@@ -165,9 +159,6 @@ end main;
 [ "nil" ]
 [ nil ]
 [ nil ]
-[ 'Z' ]
-[ nil ]
-[ 'X' ]
 [ nil ]
 [ nil ]
 [ nil ]

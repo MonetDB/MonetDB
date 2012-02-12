@@ -34,7 +34,7 @@ All Rights Reserved.
  * @- Type expansion
  */
 @= TypeSwitch
-@:@1(chr,simple,)@
+@:@1(bte,simple,)@
 @:@1(sht,simple,)@
 @:@1(int,simple,)@
 @:@1(lng,simple,)@

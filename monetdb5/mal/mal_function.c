@@ -66,6 +66,7 @@
 #include "mal_function.h"
 #include "mal_resolve.h"	/* for isPolymorphic() & chkProgram() */
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_listing.h"
 #include "mal_namespace.h"
 
 Symbol newFunction(str mod, str nme,int kind){
@@ -199,7 +200,6 @@ void chkFlow(MalBlkPtr mb)
 			    getVarType(mb,v) != TYPE_oid &&
 			    getVarType(mb,v) != TYPE_sht &&
 			    !isaBatType(getVarType(mb,v)) &&
-			    getVarType(mb,v) != TYPE_chr &&
 			    getVarType(mb,v) != TYPE_bte &&
 			    getVarType(mb,v) != TYPE_wrd
 				){

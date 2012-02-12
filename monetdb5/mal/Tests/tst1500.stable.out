@@ -28,15 +28,15 @@ stdout of test 'tst1500` in directory 'mal` itself:
 #print("hb1 becomes"); print(hb1);
 #
 function user.main():void;
-    x := bat.new(:oid,:chr);
-    de_a := bat.insert(x,1@0,'a');
-    ee_a := bat.insert(x,2@0,'a');
-    fe_a := bat.insert(x,3@0,'b');
-    ge_a := bat.insert(x,4@0,'b');
-    he_a := bat.insert(x,5@0,'b');
-    ie_a := bat.insert(x,6@0,'b');
-    je_a := bat.insert(x,7@0,'c');
-    ke_a := bat.insert(x,8@0,'c');
+    x := bat.new(:oid,:bte);
+    de_a := bat.insert(x,1@0,1:bte);
+    ee_a := bat.insert(x,2@0,1:bte);
+    fe_a := bat.insert(x,3@0,2:bte);
+    ge_a := bat.insert(x,4@0,2:bte);
+    he_a := bat.insert(x,5@0,2:bte);
+    ie_a := bat.insert(x,6@0,2:bte);
+    je_a := bat.insert(x,7@0,3:bte);
+    ke_a := bat.insert(x,8@0,3:bte);
     io.print("group x");
     io.print(x);
 #b1 := group.new(x); 
@@ -51,14 +51,14 @@ end main;
 # h	tmp_4	  # name
 # oid	chr	  # type
 #-----------------#
-[ 1@0,	  'a'	  ]
-[ 2@0,	  'a'	  ]
-[ 3@0,	  'b'	  ]
-[ 4@0,	  'b'	  ]
-[ 5@0,	  'b'	  ]
-[ 6@0,	  'b'	  ]
-[ 7@0,	  'c'	  ]
-[ 8@0,	  'c'	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  1	  ]
+[ 3@0,	  2	  ]
+[ 4@0,	  2	  ]
+[ 5@0,	  2	  ]
+[ 6@0,	  2	  ]
+[ 7@0,	  3	  ]
+[ 8@0,	  3	  ]
 [ "b1 becomes" ]
 #-----------------#
 # h	tmp_5	  # name

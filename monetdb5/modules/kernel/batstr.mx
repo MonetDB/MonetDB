@@ -124,13 +124,6 @@ command batstr.string(b:bat[:oid,:str],offset:int) :bat[:oid,:str]
 address STRbatTailcst
 comment "Return the tail s[offset..n] of a string s[0..n].";
 
-command batstr.chrAt( s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:chr]
-address STRbatChrAt
-comment "String array lookup operation.";
-command batstr.chrAt( s:bat[:oid,:str], index:int) :bat[:oid,:chr]
-address STRbatChrAtcst
-comment "String array lookup operation.";
-
 command batstr.substring( s:bat[:oid,:str], start:bat[:oid,:int], 
 	index:bat[:oid,:int]) :bat[:oid,:str]
 address STRbatsubstring
@@ -620,7 +613,6 @@ bunins_failed:
 @:binarySTRstr(Concat,str,str,STRConcat,"+",v,GDKfree(v))@
 @:binarySTR(Tail,str,int,strTail,"tail",v,GDKfree(v))@
 @:binarySTR(WChrAt,int,int,strWChrAt,"chrAt",vp,)@
-@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt",vp,)@
 
 batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str

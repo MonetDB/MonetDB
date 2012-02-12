@@ -32,7 +32,7 @@ All Rights Reserved.
  * @- Type expansion
  */
 @= TypeSwitch
-@:@1(chr,simple,,@2)@
+@:@1(bte,simple,,@2)@
 @:@1(sht,simple,,@2)@
 @:@1(int,simple,,@2)@
 @:@1(lng,simple,,@2)@
@@ -805,7 +805,7 @@ CRKcrackUnorderedThreeHybrid_@2_@3_@1( BAT *slice, @1 low, @1 hgh, oid *posl, oi
 @
 @= printVarTypes
 {
-/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+/* @1: the type; e.g., bte sht int oid wrd flt dbl lng str */
 	str MyBuf = NULL;
 	int MyBufLen = 0;
 	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));

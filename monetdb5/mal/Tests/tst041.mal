@@ -33,10 +33,6 @@ e:= calc.str("nil");	io.print(e);
 e:= nil:str; io.print(e);
 io.print(nil:str);
 
-f:= 'Z';	io.print(f);
-f:= calc.chr(nil);	io.print(f);
-f:= calc.chr("X");	io.print(f);
-
 o:= nil:blob;
 io.print(o);
 o:= calc.blob(nil:blob);

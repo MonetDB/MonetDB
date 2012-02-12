@@ -181,10 +181,6 @@ All Rights Reserved.
 	}
 @= elim_doubles
 	switch (ATOMstorage(b->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:elim(@1,loc,_chr,simple_CMP(h,BUNhloc(bi,r),chr))@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:elim(@1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte))@
@@ -516,7 +512,6 @@ BATsunique(BAT *b)
 @c
 #define DIRECT_MAX 256
 
-#define chr_EQ(x,y) simple_EQ(x,y,chr)
 #define bte_EQ(x,y) simple_EQ(x,y,bte)
 #define sht_EQ(x,y) simple_EQ(x,y,sht)
 #define int_EQ(x,y) simple_EQ(x,y,int)
@@ -759,10 +754,6 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		@:voidcheck(@2,@1)@
 	} else {
 		switch(ATOMstorage(r->htype)) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:check(@2,loc,chr,simple_CMP(h,h2,chr),@1,chr_EQ)@
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:check(@2,loc,bte,simple_CMP(h,h2,bte),@1,bte_EQ)@

@@ -32,7 +32,7 @@ All Rights Reserved.
  * @- Type expansion
  */
 @= TypeSwitch
-@:@1(chr,simple,,chr)@
+@:@1(bte,simple,,bte)@
 @:@1(sht,simple,,sht)@
 @:@1(int,simple,,int)@
 @:@1(lng,simple,,lng)@
@@ -89,7 +89,7 @@ CRKselectCrackMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, 
  * @- Local support functions and macros
 @= printVarTypes
 {
-/* @1: the type; e.g., chr bte sht int oid wrd flt dbl lng str */
+/* @1: the type; e.g., bte sht int oid wrd flt dbl lng str */
 	str MyBuf = NULL;
 	int MyBufLen = 0;
 	(void)(*BATatoms[TYPE_@1].atomToStr) (&MyBuf, &MyBufLen, (ptr)(&@2));

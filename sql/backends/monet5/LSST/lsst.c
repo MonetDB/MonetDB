@@ -64,7 +64,7 @@ static double _qserv_angSep(double ra1, double dec1, double ra2, double dec2) {
   * @li If dec1 or dec2 lies outside of [-90, 90], this is an error
   *     and NULL is returned.
   */
-sql5_export str 
+str 
 qserv_angSep(dbl *sep, dbl *ra1, dbl *dec1, dbl *ra2, dbl *dec2)
 {
 	/* If any input is null, the result is null. */

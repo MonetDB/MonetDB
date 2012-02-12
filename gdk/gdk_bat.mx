@@ -210,10 +210,10 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	return NULL;
 }
 
-chr
+bte
 ATOMelmshift(int sz)
 {
-	chr sh;
+	bte sh;
 	int i = sz >> 1;
 
 	for (sh = 0; i != 0; sh++) {
@@ -984,7 +984,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			else
 				bn->T->heap.free = bunstocopy * Tsize(bn);
 
-			if (tpe == TYPE_chr || tpe == TYPE_bte) {
+			if (tpe == TYPE_bte) {
 				bte *src = (bte *) cur, *dst = (bte *) d;
 
 				while (bunstocopy--) {
@@ -1978,9 +1978,6 @@ BUNfnd(BAT *b, ptr v)
 			return (BUN) SORTfnd(b, v);
 	}
 	switch (ATOMstorage(b->htype)) {
-	case TYPE_chr:
-		HASHfnd_chr(r, bi, v);
-		break;
 	case TYPE_bte:
 		HASHfnd_bte(r, bi, v);
 		break;
@@ -2018,7 +2015,7 @@ BUNfnd(BAT *b, ptr v)
 		bi.b = b = BATmirror(b);	\
 	} while (0)
 
-#define dohash(hp)        (ATOMstorage(hp->type) != TYPE_chr &&		\
+#define dohash(hp)        (ATOMstorage(hp->type) != TYPE_bte &&		\
 			   (ATOMstorage(hp->type) != TYPE_str ||	\
 			    !GDK_ELIMDOUBLES(hp->vheap)))
 
@@ -2220,11 +2217,12 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		return BUN_NONE;
 	}
 
-	/* linear check; we get here for small ranges, [chr,chr] bats, and hash alloc failure */
-	if (ATOMstorage(b->htype) == TYPE_chr && ATOMstorage(b->ttype) == TYPE_chr) {
+	/* linear check; we get here for small ranges, [bte,bte] bats,
+	 * and hash alloc failure */
+	if (ATOMstorage(b->htype) == TYPE_bte && ATOMstorage(b->ttype) == TYPE_bte) {
 		for (; p < q; p++)
-			if (*(chr *) BUNhloc(bi, p) == *(chr *) x &&
-			    *(chr *) BUNtloc(bi, p) == *(chr *) y)
+			if (*(bte *) BUNhloc(bi, p) == *(bte *) x &&
+			    *(bte *) BUNtloc(bi, p) == *(bte *) y)
 				return p;
 	} else if (hint && tint) {
 		for (; p < q; p++)
@@ -3353,10 +3351,6 @@ BATpropcheck(BAT *b, int mode)
 	 * Merge scan check to see if head values are sorted (&key)
 	 */
 	switch (ATOMstorage(tpe)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:merge_disprove(simple,chr,loc)@
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:merge_disprove(simple,bte,loc)@
@@ -3459,10 +3453,6 @@ BATpropcheck(BAT *b, int mode)
 					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): could not allocate hash table for key test\n", BATgetId(b), b->batCacheid);
 				} else {
 					switch (ATOMstorage(tpe)) {
-#ifndef NOEXPAND_CHR
-					case TYPE_chr:
-						@:hash_disprove(_chr,loc)@
-#endif
 #ifndef NOEXPAND_BTE
 					case TYPE_bte:
 						@:hash_disprove(_bte,loc)@

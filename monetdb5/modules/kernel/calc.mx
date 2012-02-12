@@ -26,7 +26,7 @@ All Rights Reserved.
  * @+ Basic arithmetic
  * This module is an extended version of the V4 arithmetic module.
  * It implements the arithmetic operations on the built-in types,
- * @emph{chr}, @emph{bte}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
+ * @emph{bte}, @emph{sht}, @emph{int}, @emph{flt}, @emph{dbl} and @emph{lng}.
  * All combinations are implemented. Limited combinations are implemented
  * for @emph{bit}, @emph{oid} and @emph{str}.
  *
@@ -100,7 +100,6 @@ All Rights Reserved.
 module calc;
 
 	@:mal_isnil(bit)@
-	@:mal_isnil(chr)@
 	@:mal_isnil(bte)@
 	@:mal_isnil(sht)@
 	@:mal_isnil(int)@
@@ -151,48 +150,35 @@ comment "is a value not equal to nil?";
 		@:cmp_ops(dbl,dbl)@
 
 		@:eq_ops(bit,bit)@
-		@:eq_ops(bit,chr)@
 		@:eq_ops(bit,bte)@
 		@:eq_ops(bit,sht)@
 		@:eq_ops(bit,int)@
 		@:eq_ops(bit,lng)@
 
-		@:cmp_ops(chr,chr)@
-		@:cmp_ops(chr,bte)@
-		@:cmp_ops(chr,sht)@
-		@:cmp_ops(chr,int)@
-		@:cmp_ops(chr,wrd)@
-		@:cmp_ops(chr,lng)@
-
-		@:cmp_ops(bte,chr)@
 		@:cmp_ops(bte,bte)@
 		@:cmp_ops(bte,sht)@
 		@:cmp_ops(bte,int)@
 		@:cmp_ops(bte,wrd)@
 		@:cmp_ops(bte,lng)@
 
-		@:cmp_ops(sht,chr)@
 		@:cmp_ops(sht,bte)@
 		@:cmp_ops(sht,sht)@
 		@:cmp_ops(sht,wrd)@
 		@:cmp_ops(sht,int)@
 		@:cmp_ops(sht,lng)@
 
-		@:cmp_ops(wrd,chr)@
 		@:cmp_ops(wrd,bte)@
 		@:cmp_ops(wrd,sht)@
 		@:cmp_ops(wrd,wrd)@
 		@:cmp_ops(wrd,int)@
 		@:cmp_ops(wrd,lng)@
 
-		@:cmp_ops(int,chr)@
 		@:cmp_ops(int,wrd)@
 		@:cmp_ops(int,bte)@
 		@:cmp_ops(int,sht)@
 		@:cmp_ops(int,int)@
 		@:cmp_ops(int,lng)@
 
-		@:cmp_ops(lng,chr)@
 		@:cmp_ops(wrd,bte)@
 		@:cmp_ops(lng,sht)@
 		@:cmp_ops(lng,int)@
@@ -229,17 +215,7 @@ comment "Concatenate two strings";
 @= calc_ops
 	@:@1_calc_ops(oid,oid,oid,oid)@
 
-	@:@1_calc_ops(chr,chr,chr,chr)@
-	@:@1_calc_ops(chr,bte,bte,bte)@
-	@:@1_calc_ops(chr,sht,sht,sht)@
-	@:@1_calc_ops(chr,int,int,int)@
-	@:@1_calc_ops(chr,wrd,wrd,wrd)@
-	@:@1_calc_ops(chr,lng,lng,lng)@
-	@:@1_calc_ops(chr,flt,flt,flt)@
-	@:@1_calc_ops(chr,dbl,dbl,dbl)@
-
 	@:@1_calc_ops(bte,bte,bte,bte)@
-	@:@1_calc_ops(bte,chr,bte,chr)@
 	@:@1_calc_ops(bte,sht,sht,sht)@
 	@:@1_calc_ops(bte,int,int,int)@
 	@:@1_calc_ops(bte,wrd,wrd,wrd)@
@@ -247,7 +223,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(bte,flt,flt,flt)@
 	@:@1_calc_ops(bte,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(sht,chr,sht,chr)@
 	@:@1_calc_ops(sht,bte,sht,bte)@
 	@:@1_calc_ops(sht,sht,sht,sht)@
 	@:@1_calc_ops(sht,int,int,int)@
@@ -256,7 +231,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(sht,flt,flt,flt)@
 	@:@1_calc_ops(sht,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(int,chr,int,chr)@
 	@:@1_calc_ops(int,bte,int,bte)@
 	@:@1_calc_ops(int,sht,int,sht)@
 	@:@1_calc_ops(int,int,int,int)@
@@ -265,7 +239,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(int,flt,flt,flt)@
 	@:@1_calc_ops(int,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(wrd,chr,wrd,chr)@
 	@:@1_calc_ops(wrd,bte,wrd,bte)@
 	@:@1_calc_ops(wrd,sht,wrd,sht)@
 	@:@1_calc_ops(wrd,int,wrd,int)@
@@ -274,7 +247,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(wrd,flt,flt,flt)@
 	@:@1_calc_ops(wrd,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(flt,chr,flt,flt)@
 	@:@1_calc_ops(flt,bte,flt,flt)@
 	@:@1_calc_ops(flt,sht,flt,flt)@
 	@:@1_calc_ops(flt,int,flt,flt)@
@@ -283,7 +255,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(flt,flt,flt,flt)@
 	@:@1_calc_ops(flt,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(dbl,chr,dbl,dbl)@
 	@:@1_calc_ops(dbl,bte,dbl,dbl)@
 	@:@1_calc_ops(dbl,sht,dbl,dbl)@
 	@:@1_calc_ops(dbl,int,dbl,dbl)@
@@ -292,7 +263,6 @@ comment "Concatenate two strings";
 	@:@1_calc_ops(dbl,flt,dbl,dbl)@
 	@:@1_calc_ops(dbl,dbl,dbl,dbl)@
 
-	@:@1_calc_ops(lng,chr,lng,chr)@
 	@:@1_calc_ops(lng,bte,lng,bte)@
 	@:@1_calc_ops(lng,sht,lng,sht)@
 	@:@1_calc_ops(lng,int,lng,int)@
@@ -318,7 +288,6 @@ comment "Concatenate two strings";
 @mal
 # @-
 	@:mal_binary_ops(bit,bit)@
-	@:mal_binary_ops(chr,chr)@
 	@:mal_binary_ops(bte,bte)@
 	@:mal_binary_ops(sht,sht)@
 	@:mal_binary_ops(int,int)@
@@ -346,7 +315,6 @@ comment "Concatenate two strings";
 		comment "Returns +1, 0, -1 based on the sign of the given expression";
 @= unary_ops
 	@:@1_unary_ops(bit)@
-	@:@1_unary_ops(chr)@
 	@:@1_unary_ops(bte)@
 	@:@1_unary_ops(sht)@
 	@:@1_unary_ops(int)@
@@ -369,7 +337,6 @@ comment "Concatenate two strings";
 @= scalar_coercion
 	@:mal_coercion(@1,oid)@
 	@:mal_coercion(@1,bit)@
-	@:mal_coercion(@1,chr)@
 	@:mal_coercion(@1,bte)@
 	@:mal_coercion(@1,sht)@
 	@:mal_coercion(@1,int)@
@@ -380,7 +347,6 @@ comment "Concatenate two strings";
 @
 @mal
 	@:scalar_coercion(bit)@
-	@:scalar_coercion(chr)@
 	@:scalar_coercion(bte)@
 	@:scalar_coercion(wrd)@
 	@:scalar_coercion(lng)@
@@ -419,13 +385,6 @@ comment "Concatenate two strings";
 	@:mal_coercion(str,flt)@
 	@:mal_coercion(str,dbl)@
 
-	@:mal_coercion(chr,chr)@
-	@:mal_coercion(chr,bte)@
-	@:mal_coercion(chr,sht)@
-	@:mal_coercion(chr,int)@
-	@:mal_coercion(chr,lng)@
-
-	@:mal_coercion(bte,chr)@
 	@:mal_coercion(bte,bte)@
 	@:mal_coercion(bte,sht)@
 	@:mal_coercion(bte,int)@
@@ -444,7 +403,7 @@ pattern ifthenelse(b:bit,t:any_1,f:any_1):any_1
 address CALCswitchbit;
 
 # @+ Bitwise operations
-# Cardinal numerical types (inclusing @emph{chr} can be regarded as a bit
+# Cardinal numerical types can be regarded as a bit
 # array. Specific operations work with this interpretation.
 @= mal_bitwise_ops
 		command or(left:@1, right:@1) :@1 
@@ -461,7 +420,6 @@ address CALCswitchbit;
 		address CALCbinaryRSH@1int;
 @
 @mal
-	@:mal_bitwise_ops(chr)@
 	@:mal_bitwise_ops(bte)@
 	@:mal_bitwise_ops(sht)@
 	@:mal_bitwise_ops(int)@
@@ -489,7 +447,6 @@ address CALCswitchbit;
 @:convertCmd(dbl)@
 @:convertCmd(bit)@
 @:convertCmd(ptr)@
-@:convertCmd(chr)@
 @:convertCmd(bte)@
 
 command bat(v:str):bat[:any_1,:any_2] 
@@ -687,7 +644,6 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @c
 
 @:calc_min_max(bit)@
-@:calc_min_max(chr)@
 @:calc_min_max(bte)@
 @:calc_min_max(sht)@
 @:calc_min_max(int)@
@@ -697,13 +653,11 @@ str CALCbinary@1_NO_NIL@3(@3 *res , @3 *a, @3 *b ) {
 @:calc_min_max(dbl)@
 @:calc_min_max(lng)@
 
-@:c_bitwise_ops(chr)@
 @:c_bitwise_ops(bte)@
 @:c_bitwise_ops(sht)@
 @:c_bitwise_ops(int)@
 @:c_bitwise_ops(lng)@
 
-@:c_shift_ops(chr)@
 @:c_shift_ops(bte)@
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
@@ -928,14 +882,6 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,flt,dbl,@2)@
 		@:c_comp_op(@1,dbl,dbl,@2)@
 
-		@:c_comp_op(@1,chr,chr,@2)@
-		@:c_comp_op(@1,chr,bte,@2)@
-		@:c_comp_op(@1,chr,sht,@2)@
-		@:c_comp_op(@1,chr,int,@2)@
-		@:c_comp_op(@1,chr,wrd,@2)@
-		@:c_comp_op(@1,chr,lng,@2)@
-
-		@:c_comp_op(@1,bte,chr,@2)@
 		@:c_comp_op(@1,bte,bte,@2)@
 		@:c_comp_op(@1,bte,sht,@2)@
 		@:c_comp_op(@1,bte,wrd,@2)@
@@ -943,35 +889,30 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 		@:c_comp_op(@1,bte,lng,@2)@
 
 		@:c_comp_op(@1,bit,bit,@2)@
-		@:c_comp_op(@1,bit,chr,@2)@
 		@:c_comp_op(@1,bit,bte,@2)@
 		@:c_comp_op(@1,bit,sht,@2)@
 		@:c_comp_op(@1,bit,wrd,@2)@
 		@:c_comp_op(@1,bit,int,@2)@
 		@:c_comp_op(@1,bit,lng,@2)@
 
-		@:c_comp_op(@1,sht,chr,@2)@
 		@:c_comp_op(@1,sht,bte,@2)@
 		@:c_comp_op(@1,sht,sht,@2)@
 		@:c_comp_op(@1,sht,int,@2)@
 		@:c_comp_op(@1,sht,wrd,@2)@
 		@:c_comp_op(@1,sht,lng,@2)@
 
-		@:c_comp_op(@1,int,chr,@2)@
 		@:c_comp_op(@1,int,bte,@2)@
 		@:c_comp_op(@1,int,sht,@2)@
 		@:c_comp_op(@1,int,int,@2)@
 		@:c_comp_op(@1,int,wrd,@2)@
 		@:c_comp_op(@1,int,lng,@2)@
 
-		@:c_comp_op(@1,wrd,chr,@2)@
 		@:c_comp_op(@1,wrd,bte,@2)@
 		@:c_comp_op(@1,wrd,sht,@2)@
 		@:c_comp_op(@1,wrd,int,@2)@
 		@:c_comp_op(@1,wrd,wrd,@2)@
 		@:c_comp_op(@1,wrd,lng,@2)@
 
-		@:c_comp_op(@1,lng,chr,@2)@
 		@:c_comp_op(@1,lng,bte,@2)@
 		@:c_comp_op(@1,lng,sht,@2)@
 		@:c_comp_op(@1,lng,int,@2)@
@@ -1001,7 +942,6 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 }
 @
 @c
-@:c_between_op(chr)@
 @:c_between_op(bte)@
 @:c_between_op(sht)@
 @:c_between_op(int)@
@@ -1072,7 +1012,6 @@ str CALCnil2@1(@1 *retval, ptr val){
 @
 @c
 @:c_isnil(bit)@
-@:c_isnil(chr)@
 @:c_isnil(bte)@
 @:c_isnil(sht)@
 @:c_isnil(int)@
@@ -1328,7 +1267,6 @@ str CALC@22@1(@1 *res, @2 *a)
  */
 @:mal_coercion_impl(bit,bit, , *a != 0)@
 @:mal_coercion_impl(bit,oid, , *a != 0)@
-@:mal_coercion_impl(bit,chr, , *a != 0)@
 @:mal_coercion_impl(bit,bte, , *a != 0)@
 @:mal_coercion_impl(bit,sht, , *a != 0)@
 @:mal_coercion_impl(bit,int, , *a != 0)@
@@ -1338,7 +1276,6 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(bit,dbl, , *a != 0)@
 
 @:mal_coercion_impl(lng,oid,, (lng) *a)@
-@:mal_coercion_impl(lng,chr,, (lng) *a)@
 @:mal_coercion_impl(lng,bte,, (lng) *a)@
 @:mal_coercion_impl(lng,bit,, (lng) *a)@
 @:mal_coercion_impl(lng,sht,, (lng) *a)@
@@ -1350,7 +1287,6 @@ str CALC@22@1(@1 *res, @2 *a)
 
 @:mal_coercion_impl(sht,oid, || *a > GDK_sht_max, (sht) *a)@
 @:mal_coercion_impl(sht,bit, , (sht) *a)@
-@:mal_coercion_impl(sht,chr, , (sht) *a)@
 @:mal_coercion_impl(sht,bte, , (sht) *a)@
 @:mal_coercion_impl(sht,sht, ,       *a)@
 @:mal_coercion_impl(sht,int, || *a < GDK_sht_min || *a > GDK_sht_max, (sht) *a)@
@@ -1365,7 +1301,6 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(int,oid, || *a > GDK_int_max, (int) *a)@
 #endif
 @:mal_coercion_impl(int,bit, , (int) *a)@
-@:mal_coercion_impl(int,chr, , (int) *a)@
 @:mal_coercion_impl(int,bte, , (int) *a)@
 @:mal_coercion_impl(int,sht, , (int) *a)@
 @:mal_coercion_impl(int,int, ,       *a)@
@@ -1380,7 +1315,6 @@ str CALC@22@1(@1 *res, @2 *a)
 
 @:mal_coercion_impl(wrd,oid, , (wrd) *a)@
 @:mal_coercion_impl(wrd,bit, , (wrd) *a)@
-@:mal_coercion_impl(wrd,chr, , (wrd) *a)@
 @:mal_coercion_impl(wrd,bte, , (wrd) *a)@
 @:mal_coercion_impl(wrd,sht, , (wrd) *a)@
 @:mal_coercion_impl(wrd,int, , (wrd) *a)@
@@ -1394,7 +1328,6 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(wrd,dbl, || *a < GDK_wrd_min || *a > GDK_wrd_max, (wrd) *a)@
 
 @:mal_coercion_impl(oid,bit, || *a < 0 , (oid) *a)@
-@:mal_coercion_impl(oid,chr, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,bte, || *a < 0 , (oid) *a)@
 @:mal_coercion_impl(oid,oid, , *a)@
 #if SIZEOF_OID == SIZEOF_LNG
@@ -1413,7 +1346,6 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(flt,flt, ,       *a)@
 @:mal_coercion_impl(flt,dbl, || *a < GDK_flt_min || *a > GDK_flt_max, (flt) *a)@
 @:mal_coercion_impl(flt,sht, , (flt) *a)@
-@:mal_coercion_impl(flt,chr, , (flt) *a)@
 @:mal_coercion_impl(flt,bte, , (flt) *a)@
 @:mal_coercion_impl(flt,int, , (flt) *a)@
 @:mal_coercion_impl(flt,wrd, , (flt) *a)@
@@ -1424,23 +1356,10 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(dbl,sht, , (dbl) *a)@
 @:mal_coercion_impl(dbl,int, , (dbl) *a)@
 @:mal_coercion_impl(dbl,wrd, , (dbl) *a)@
-@:mal_coercion_impl(dbl,chr, , (dbl) *a)@
 @:mal_coercion_impl(dbl,bte, , (dbl) *a)@
 @:mal_coercion_impl(dbl,lng, , (dbl) *a)@
 
-@:mal_coercion_impl(chr,bit, , (chr) *a)@
-@:mal_coercion_impl(chr,chr, ,       *a)@
-@:mal_coercion_impl(chr,bte, , (chr) *a)@
-@:mal_coercion_impl(chr,oid, || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,flt, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,dbl, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,sht, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,int, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,wrd, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-@:mal_coercion_impl(chr,lng, || *a < GDK_chr_min || *a > GDK_chr_max, (chr) *a)@
-
 @:mal_coercion_impl(bte,bit, , (bte) *a)@
-@:mal_coercion_impl(bte,chr, , (bte) *a)@
 @:mal_coercion_impl(bte,bte, ,       *a)@
 @:mal_coercion_impl(bte,oid, || *a > GDK_bte_max, (bte) *a)@
 @:mal_coercion_impl(bte,flt, || *a < GDK_bte_min || *a > GDK_bte_max, (bte) *a)@
@@ -1627,7 +1546,6 @@ CALCbatid2bat(int *bid, int *ret)
 @:convertImpl(bit)@
 @:convertImpl(ptr)@
 @:convertImpl(bat)@
-@:convertImpl(chr)@
 @:convertImpl(bte)@
 
 /*

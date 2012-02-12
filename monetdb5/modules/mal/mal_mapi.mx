@@ -184,9 +184,9 @@ command fetch_field(hdl:int,fnr:int):oid
 address SERVERfetch_field_oid
 comment "Retrieve a single void field.";
 
-command fetch_field(hdl:int,fnr:int):chr
-address SERVERfetch_field_chr
-comment "Retrieve a single chr field.";
+command fetch_field(hdl:int,fnr:int):bte
+address SERVERfetch_field_bte
+comment "Retrieve a single bte field.";
 
 command fetch_field_array(hdl:int):bat[:int,:str]
 address SERVERfetch_field_bat
@@ -318,7 +318,7 @@ mal_mapi_export str SERVERfetch_field_lng(lng *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_sht(sht *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_void(oid *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_field_oid(oid *ret, int *idx, int *fnr);
-mal_mapi_export str SERVERfetch_field_chr(chr *ret, int *idx, int *fnr);
+mal_mapi_export str SERVERfetch_field_bte(bte *ret, int *idx, int *fnr);
 mal_mapi_export str SERVERfetch_line(str *ret, int *key);
 mal_mapi_export str SERVERnext_result(int *ret, int *key);
 mal_mapi_export str SERVERfetch_reset(int *ret, int *key);
@@ -378,7 +378,7 @@ static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 
 static void generateChallenge(str buf, int min, int max) {
 	size_t size;
-	size_t chr;
+	size_t bte;
 	size_t i;
 
 	/* don't seed the randomiser here, or you get the same challenge
@@ -386,9 +386,9 @@ static void generateChallenge(str buf, int min, int max) {
 	size = rand();
 	size = (size % (max - min)) + min;
 	for (i = 0; i < size; i++) {
-		chr = rand();
-		chr %= 62;
-		buf[i] = seedChars[chr];
+		bte = rand();
+		bte %= 62;
+		buf[i] = seedChars[bte];
 	}
 	buf[i] = '\0';
 }
@@ -1465,18 +1465,18 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 }
 
 str 
-SERVERfetch_field_chr(chr *ret, int *key, int *fnr){
+SERVERfetch_field_bte(bte *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
 	str fld;
 	@:accessTest(*key,fetch_field)@
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	if( mapi_error(mid) ) 
-		throw(MAL, "mapi.fetch_field_chr", "%s",
+		throw(MAL, "mapi.fetch_field_bte", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	if(fld==0 || strcmp(fld,"nil")==0)
-		*(chr*) ret= chr_nil;
-	else *(chr*) ret = *fld;
+		*(bte*) ret= bte_nil;
+	else *(bte*) ret = *fld;
 	return MAL_SUCCEED;
 }
 
@@ -1601,25 +1601,19 @@ static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	case TYPE_bit:
 		if(fld== 0 || strcmp(fld,"nil")==0)
-			v->val.cval[0]= bit_nil;
+			v->val.btval= bit_nil;
 		else
 		if(strcmp(fld,"true")==0)
-			v->val.cval[0]= TRUE;
+			v->val.btval= TRUE;
 		else
 		if(strcmp(fld,"false")==0)
-			v->val.cval[0]= FALSE;
-		v->val.cval[1]= 0;
-		v->val.cval[2]= 0;
-		v->val.cval[3]= 0;
+			v->val.btval= FALSE;
 		break;
-	case TYPE_chr:
+	case TYPE_bte:
 		if(fld==0 || strcmp(fld,"nil")==0)
-			v->val.cval[0]= chr_nil;
+			v->val.btval= bte_nil;
 		else
-			v->val.cval[0]= *fld;
-		v->val.cval[1]= 0;
-		v->val.cval[2]= 0;
-		v->val.cval[3]= 0;
+			v->val.btval= *fld;
 		break;
 	case TYPE_sht:
 		if(fld==0 || strcmp(fld,"nil")==0)
@@ -1709,7 +1703,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_void:
 			case TYPE_oid:
 			case TYPE_bit:
-			case TYPE_chr:
+			case TYPE_bte:
 			case TYPE_sht:
 			case TYPE_int:
 			case TYPE_wrd:

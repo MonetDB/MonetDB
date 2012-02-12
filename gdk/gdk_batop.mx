@@ -942,11 +942,6 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	}
 @= hashselect
 	switch(ATOMstorage(b->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:valselect(@1,_chr)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:valselect(@1,_bte)@
@@ -1588,11 +1583,6 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	m = mark;
 	i = mark;
 	switch (ATOMstorage(t = b->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:restrict1(simple,chr,loc)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:restrict1(simple,bte,loc)@
@@ -1635,11 +1625,6 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 	/* second phase */
 	if (b->hvarsized) {
 		switch (ATOMstorage(t = b->ttype)) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:restrict2(simple,chr,var,loc)@
-			break;
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:restrict2(simple,bte,var,loc)@
@@ -1680,11 +1665,6 @@ BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
 		}
 	} else {
 		switch (ATOMstorage(t = b->ttype)) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:restrict2(simple,chr,loc,loc)@
-			break;
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:restrict2(simple,bte,loc,loc)@
@@ -1820,7 +1800,6 @@ chk_order@1@3_@4(@4*__r col)
 @:sort_key_tpe(,@2=,@3,@1)@
 
 @= sort
-@:sort_tpe(chr,@5,@3)@
 @:sort_tpe(bte,@5,@3)@
 @:sort_tpe(sht,@5,@3)@
 @:sort_tpe(int,@5,@3)@
@@ -1848,9 +1827,7 @@ BATordered@3(BAT* b)
 		}
 
 		/* for [tpe,void] bats, we have fast 128-at-a-time routines */
-		if (ATOMstorage(b->htype) == TYPE_chr) {
-			@:chk_order(chr,@3,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_bte) {
+		if (ATOMstorage(b->htype) == TYPE_bte) {
 			@:chk_order(bte,@3,@5)@
 		} else if (ATOMstorage(b->htype) == TYPE_sht) {
 			@:chk_order(sht,@3,@5)@
@@ -2380,11 +2357,6 @@ BATrangesplit(BAT *b, BUN n, int unary)
 				goto bunins_failed;
 		}
 		switch (tpe = ATOMstorage(b->ttype)) {
-#ifndef NOEXPAND_CHR
-		case TYPE_chr:
-			@:rangesplit(simple,loc,chr)@
-			break;
-#endif
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:rangesplit(simple,loc,bte)@
@@ -2972,11 +2944,6 @@ found@3@2:		(* (int *) BUNtloc(bni, r))++;
 	BATiter bi = bat_iterator(b);
 
 	switch (ATOMstorage(tt=bn->htype)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:histoloop_inner(loc,_chr,simple,chr)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:histoloop_inner(loc,_bte,simple,bte)@
@@ -3109,11 +3076,6 @@ BATcount_no_nil(BAT *b)
 	tt = b->ttype;
 	nil = ATOMnilptr(tt);
 	switch (ATOMstorage(tt)) {
-#ifndef NOEXPAND_CHR
-	case TYPE_chr:
-		@:cntloop(simple,loc,chr)@
-		break;
-#endif
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:cntloop(simple,loc,bte)@

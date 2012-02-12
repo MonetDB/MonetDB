@@ -61,7 +61,7 @@
  */
 
 static int
-CLRhextoint(chr h, chr l)
+CLRhextoint(char h, char l)
 {
 	int r = 0;
 
@@ -114,7 +114,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 
 			**c = (color) (r << 16 | g << 8 | b);
 		} else
-			**c = chr_nil;
+			**c = color_nil;
 	}
 
 #ifdef DEBUG_COLOR

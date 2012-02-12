@@ -17,8 +17,8 @@
  * All Rights Reserved.
 */
 
-#ifndef _SQL_UDF_H_
-#define _SQL_UDF_H_
+#ifndef _SQL_LSST_H_
+#define _SQL_LSST_H_
 #include "sql.h"
 #define _USE_MATH_DEFINES	/* needed for WIN32 to define M_PI */
 #include <math.h>
@@ -41,4 +41,4 @@ lsst_export str qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, db
 lsst_export str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 lsst_export str LSSTxmatch(int *ret, int *lid, int *rid, int *delta);
-#endif /* _SQL_UDF_H_ */
+#endif /* _SQL_LSST_H_ */

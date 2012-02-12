@@ -200,21 +200,6 @@ pushBte(MalBlkPtr mb, InstrPtr q, bte val)
 }
 
 InstrPtr
-pushChr(MalBlkPtr mb, InstrPtr q, chr val)
-{
-	int _t;
-	ValRecord cst;
-
-	cst.vtype= TYPE_chr;
-	cst.val.cval[0]= val;
-	cst.val.cval[1]= 0;
-	cst.val.cval[2]= 0;
-	cst.val.cval[3]= 0;
-	_t = defConstant(mb, TYPE_chr,&cst);
-	return pushArgument(mb, q, _t);
-}
-
-InstrPtr
 pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 {
 	int _t;
@@ -294,10 +279,7 @@ pushBit(MalBlkPtr mb, InstrPtr q, bit val)
 	ValRecord cst;
 
 	cst.vtype= TYPE_bit;
-	cst.val.cval[0]= val;
-	cst.val.cval[1]= 0;
-	cst.val.cval[2]= 0;
-	cst.val.cval[3]= 0;
+	cst.val.btval= val;
 	_t = defConstant(mb,TYPE_bit,&cst);
 
 	return pushArgument(mb, q, _t);
