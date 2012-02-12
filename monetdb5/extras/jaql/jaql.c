@@ -301,16 +301,18 @@ make_jaql_expand(tree *var, tree *expr)
 	return res;
 }
 
-/* create a group by expression, performing groupi or co-grouping on
- * inputs, producing results according to the given tmpl */
+/* create a group by expression, performing group or co-grouping on
+ * inputs, producing results according to the given tmpl
+ * all references in inputs must be to var (which is discarded) */
 tree *
-make_jaql_group(tree *inputs, tree *tmpl)
+make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 {
 	tree *res;
 	tree *w;
 
-	assert(inputs != NULL && inputs->type == j_group_input);
+	assert(inputs == NULL || inputs->type == j_group_input);
 	assert(tmpl != NULL);
+	assert(var != NULL && var->type == j_var);
 
 	if (tmpl->type == j_error) {
 		freetree(inputs);
@@ -319,27 +321,66 @@ make_jaql_group(tree *inputs, tree *tmpl)
 
 	res = GDKzalloc(sizeof(tree));
 
-	for (w = inputs; w->next != NULL; w = w->next) {
-		/* when multiple inputs are given, the groupkeyvar must for each
-		 * input the same, its expression may differ */
-		assert(w->sval != NULL && w->next->sval != NULL);
-		if (strcmp(w->sval, w->next->sval) != 0) {
-			res->type = j_error;
-			res->sval = GDKstrdup("group: groupkeyvar of multiple group "
-					"inputs must be equal");
-			freetree(inputs);
-			freetree(tmpl);
-			return res;
+	if (inputs != NULL) {
+		size_t i;
+		const char **vars;
+
+		/* when multiple inputs are given, the groupkeyvar must be for
+		 * each input the same, its expression may differ */
+		for (i = 1, w = inputs; w->next != NULL; w = w->next, i++) {
+			assert(w->sval != NULL && w->next->sval != NULL);
+			if (strcmp(w->sval, w->next->sval) != 0) {
+				res->type = j_error;
+				res->sval = GDKstrdup("group: groupkeyvar of multiple group "
+						"inputs must be equal");
+				freetree(inputs);
+				freetree(tmpl);
+				return res;
+			}
+			if (strcmp(w->tval2->sval, var->sval) != 0) {
+				char buf[128];
+				snprintf(buf, sizeof(buf), "group: unknown variable: %s",
+						w->tval2->sval);
+				res->type = j_error;
+				res->sval = GDKstrdup(buf);
+				freetree(inputs);
+				freetree(tmpl);
+				return res;
+			}
 		}
 		/* the alias of each group result must be unique, otherwise you
 		 * can't reference them */
-		if (strcmp(w->tval3->sval, w->next->tval3->sval) == 0) {
-			res->type = j_error;
-			res->sval = GDKstrdup("group: groupvar of multiple group "
-					"inputs must be unique (for use in 'into' expression)");
+		for (w = inputs; w->next != NULL; w = w->next) {
+			tree *v;
+			for (v = w->next; v != NULL; v = v->next) {
+				if (strcmp(w->tval3->sval, v->tval3->sval) == 0) {
+					res->type = j_error;
+					res->sval = GDKstrdup("group: groupvar of multiple group "
+							"inputs must be unique (for use in 'into' expression)");
+					freetree(inputs);
+					freetree(tmpl);
+					return res;
+				}
+			}
+		}
+
+		vars = GDKmalloc(sizeof(char *) * (i + 2 + 1));
+		vars[0] = var->sval;
+		vars[1] = inputs->sval;
+		for (i = 2, w = inputs; w != NULL; w = w->next, i++)
+			vars[i] = w->tval3->sval;
+		vars[i] = NULL;
+
+		if ((w = _check_exp_var("group", vars, tmpl)) != NULL) {
 			freetree(inputs);
 			freetree(tmpl);
-			return res;
+			return w;
+		}
+	} else {
+		if ((w = _check_exp_var1("group", var->sval, tmpl)) != NULL) {
+			freetree(inputs);
+			freetree(tmpl);
+			return w;
 		}
 	}
 
@@ -460,7 +501,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 
 	for (i = 0, res = inputs; res != NULL; res = res->next, i++)
 		;
-	vars = GDKmalloc(sizeof(char *) * i + 1);
+	vars = GDKmalloc(sizeof(char *) * (i + 1));
 	for (i = 0, res = inputs; res != NULL; res = res->next, i++)
 		vars[i] = res->tval2->sval;
 	vars[i] = NULL;
@@ -1164,22 +1205,26 @@ printtree(tree *t, int level, char op)
 				if (op) {
 					tree *i;
 					printf("j_group( ");
-					printtree(t->tval1, level + step, op);
-					for (i = t->tval1->next; i != NULL; i = i->next) {
-						printf(", ");
-						printtree(i, level + step, op);
+					if (t->tval1 != NULL) {
+						printtree(t->tval1, level + step, op);
+						for (i = t->tval1->next; i != NULL; i = i->next) {
+							printf(", ");
+							printtree(i, level + step, op);
+						}
 					}
 					printf("), ");
 					printtree(t->tval2, level + step, op);
 				} else {
 					tree *i;
-					if (t->tval1->next == NULL)
+					if (t->tval1 == NULL || t->tval1->next == NULL)
 						printf("-> ");
 					printf("group by: ( ");
-					printtree(t->tval1, level + step, op);
-					for (i = t->tval1->next; i != NULL; i = i->next) {
-						printf(", ");
-						printtree(i, level + step, op);
+					if (t->tval1 != NULL) {
+						printtree(t->tval1, level + step, op);
+						for (i = t->tval1->next; i != NULL; i = i->next) {
+							printf(", ");
+							printtree(i, level + step, op);
+						}
 					}
 					printf(") into ");
 					printtree(t->tval2, level + step, op);
@@ -1309,8 +1354,8 @@ printtree(tree *t, int level, char op)
 					}
 					printf(") ");
 				} else {
-					printf("each ");
 					printtree(t->tval1, level + step, op);
+					printf("each %s ", t->tval2->sval);
 					if (t->sval != NULL) {
 						printf("by %s = ", t->sval);
 						printtree(t->tval2, level + step, op);

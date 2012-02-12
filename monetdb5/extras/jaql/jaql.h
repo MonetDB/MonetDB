@@ -125,7 +125,7 @@ tree *append_jaql_pipe(tree *oaction, tree *naction);
 tree *make_jaql_filter(tree *var, tree *pred);
 tree *make_jaql_transform(tree *var, tree *tmpl);
 tree *make_jaql_expand(tree *var, tree *expr);
-tree *make_jaql_group(tree *inputs, tree *tmpl);
+tree *make_jaql_group(tree *inputs, tree *tmpl, tree *var);
 tree *make_jaql_join(tree *inputs, tree *pred, tree *tmpl);
 tree *make_jaql_sort(tree *var, tree *expr);
 tree *make_jaql_top(long long int num);

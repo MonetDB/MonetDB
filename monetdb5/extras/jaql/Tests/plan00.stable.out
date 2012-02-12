@@ -66,10 +66,10 @@ A as $ -> expand: $.ids => <result>
 as users in users , pages in pages -> join: where ( ( users.id == pages.userid ) ) into { "name": users.name , "url": pages.url } 
 as u in users , p in pages -> join: where ( ( u.id == p.userid ) ) into { "name": u.name , "url": p.url } 
 as preserve u in users , p in pages -> join: where ( ( u.id == p.userid ) ) into { "name": u.name , "url": p.url } 
-employees -> group by: ( each $ ) into $ 
+employees -> group by: ( ) into $ 
 employees -> group by: ( each $ by d = $.dept as $ ) into { "d": d , "total": $[*].income } 
 employees -> group by: ( each emp by d = emp.dept as deptEmps ) into { "d": d , "total": deptEmps[*].income } 
-group by: ( each employees by g = $.dept as es , each depts by g = $.did as ds ) into { "dept": g , "deptName": ds[0].name , "emps": es[*].id , "numEmps": es } 
+group by: ( employees each $ by g = $.dept as es , depts each $ by g = $.did as ds ) into { "dept": g , "deptName": ds[0].name , "emps": es[*].id , "numEmps": es } 
 
 # 21:19:49 >  
 # 21:19:49 >  "Done."

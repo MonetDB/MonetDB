@@ -116,7 +116,7 @@ jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
 		| GROUP group_var_refs INTO json_value
-		                        {$$ = make_jaql_group($2, $4);}
+		    {$$ = make_jaql_group($2, $4, make_varname(GDKstrdup("$"), NULL));}
 		| JOIN join_var_refs WHERE predicates INTO json_value
 		                        {$$ = make_jaql_join($2, $4, $6);}
 		;
@@ -133,7 +133,7 @@ action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TRANSFORM opt_each json_value     {$$ = make_jaql_transform($2, $3);}
 	  | EXPAND opt_each opt_command       {$$ = make_jaql_expand($2, $3);}
 	  | GROUP opt_each opt_group_by INTO json_value
-	        {$$ = make_jaql_group(set_group_input_var($3, $2), $5);}
+	                                      {$$ = make_jaql_group($3, $5, $2);}
 	  | SORT opt_each BY '[' sort_arg ']' {$$ = make_jaql_sort($2, $5);}
 	  | TOP _NUMBER                       {$$ = make_jaql_top($2);}
 	  | TOP _NUMBER opt_each BY '[' sort_arg ']'
