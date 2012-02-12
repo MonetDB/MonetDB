@@ -88,7 +88,11 @@ end filler_;
 #address ARRAYtilesAvg
 #comment "Construct the average over all tiles";
 
-pattern sum(val:any_1, any...):any_1
+pattern sum(val:any, any...):lng
+address ARRAYtilesSum
+comment "Construct the sum over all tiles";
+
+pattern sum(val:any, any...):dbl
 address ARRAYtilesSum
 comment "Construct the sum over all tiles";
 
@@ -99,7 +103,11 @@ comment "Construct the average over all tiles";
 module batarray;
 
 # The BAT version of the AGGR functions over array tiles
-pattern sum(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+pattern sum(val:bat[:oid,:any], any...):bat[:oid,:lng]
+address ARRAYtilesSum
+comment "Construct the sum over all tiles";
+
+pattern sum(val:bat[:oid,:any], any...):bat[:oid,:dbl]
 address ARRAYtilesSum
 comment "Construct the sum over all tiles";
 
@@ -734,7 +742,8 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
 	BATiter bValI, *bDimsI = NULL, *bOffsetsI = NULL;
 	BUN p, q, tmpbun, r, s;
-	@1 sum = 0, elm = 0;
+	@1 elm = 0;
+	@2 sum = 0;
 	/* FIXME: this code only deal with INT dimensions */
 	int os = 0, cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL, *apidx = NULL;
 	oid tid = 0, osid = 0, vid = 0, mul = 0;
@@ -783,7 +792,7 @@ ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* For each anchor piont, compute all cells belong to this tile (bVal.head
 	 * is the group nr.) and compute the SUM */
-	bRes = 	BATnew(TYPE_oid, TYPE_@1, BATcount(bVal));
+	bRes = 	BATnew(TYPE_oid, TYPE_@2, BATcount(bVal));
 	BATloop(bVal, p, q) {
 		sum = 0;
 		tid = *(oid*) BUNhead(bValI, p);

@@ -66,8 +66,8 @@ create function array_avg(val real,     dim1 int, offsets1 int, size1 int) retur
 create function array_avg(val double,   dim1 int, offsets1 int, size1 int) returns double external name "array".avg;
 
 create function array_sum(val tinyint,  dim1 int, offsets1 int, size1 int) returns bigint external name "array".sum;
-create function array_sum(val smallint, dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
-create function array_sum(val int,      dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
+create function array_sum(val smallint, dim1 int, offsets1 int, size1 int) returns bigint external name "array".sum;
+create function array_sum(val int,      dim1 int, offsets1 int, size1 int) returns bigint external name "array".sum;
 create function array_sum(val bigint,   dim1 int, offsets1 int, size1 int) returns bigint external name "array".sum;
 create function array_sum(val real,     dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
 create function array_sum(val double,   dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
@@ -80,8 +80,8 @@ create function array_avg(val real,     dim1 int, offsets1 int, size1 int, dim2 
 create function array_avg(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
 
 create function array_sum(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".sum;
-create function array_sum(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
-create function array_sum(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
+create function array_sum(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".sum;
+create function array_sum(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".sum;
 create function array_sum(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".sum;
 create function array_sum(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
 create function array_sum(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
