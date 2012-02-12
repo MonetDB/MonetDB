@@ -37,7 +37,8 @@
 	predicate variable and_or opt_not comparison value literal
 	opt_each opt_command sort_arg arith_op val_var_arith
 	obj_list arr_list obj_pair json_value join_var_refs join_var_ref
-	opt_join_in opt_arr_ind
+	opt_join_in opt_arr_ind group_var_refs group_var_ref opt_group_by
+	group_by opt_group_as
 %type <j_ident> ident
 %type <j_number> opt_asc_desc opt_preserve
 
@@ -114,6 +115,8 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $2);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
+		| GROUP group_var_refs INTO json_value
+		                        {$$ = make_jaql_group($2, $4);}
 		| JOIN join_var_refs WHERE predicates INTO json_value
 		                        {$$ = make_jaql_join($2, $4, $6);}
 		;
@@ -129,6 +132,8 @@ actions: _ARROW action          {$$ = $2;}
 action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TRANSFORM opt_each json_value     {$$ = make_jaql_transform($2, $3);}
 	  | EXPAND opt_each opt_command       {$$ = make_jaql_expand($2, $3);}
+	  | GROUP opt_each opt_group_by INTO json_value
+	        {$$ = make_jaql_group(set_group_input_var($3, $2), $5);}
 	  | SORT opt_each BY '[' sort_arg ']' {$$ = make_jaql_sort($2, $5);}
 	  | TOP _NUMBER                       {$$ = make_jaql_top($2);}
 	  | TOP _NUMBER opt_each BY '[' sort_arg ']'
@@ -142,6 +147,25 @@ join_var_refs: join_var_refs ',' join_var_ref  {$$ = append_join_input($1, $3);}
 join_var_ref: opt_preserve _IDENT opt_join_in
 			     {$$ = make_join_input($1 == PRESERVE, make_varname($2, NULL), $3);}
 			;
+
+group_var_refs: group_var_refs ',' group_var_ref
+			                        {$$ = append_group_input($1, $3);}
+			  | group_var_ref       {$$ = $1;}
+			  ;
+
+group_var_ref: _IDENT group_by
+			     {$$ = set_group_input_var($2, make_varname($1, NULL));}
+			 ;
+
+opt_group_by: /* empty */           {$$ = NULL;}
+			| group_by              {$$ = $1;}
+			;
+
+group_by: BY _IDENT _ASSIGN variable opt_group_as
+		                   {$$ = make_group_input($2, $4, $5);};
+
+opt_group_as: /* empty */  {$$ = make_varname(GDKstrdup("$"), NULL);}
+			| AS _IDENT    {$$ = make_varname($2, NULL);}
 
 opt_preserve: /* empty */           {$$ = 0;}
 			| PRESERVE              {$$ = PRESERVE;}

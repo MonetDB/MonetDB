@@ -23,3 +23,9 @@ jaql.x("plan [1,2,3] -> transform ($ * 2.0) / 4;");
 jaql.x("plan join users, pages where users.id == pages.userid into {users.name, pages.url};");
 jaql.x("plan join u in users, p in pages where u.id == p.userid into {u.name, p.url};");
 jaql.x("plan join preserve u in users, p in pages where u.id == p.userid into {u.name, p.url};");
+
+jaql.x("plan employees -> group into $;");
+jaql.x("plan employees -> group by d = $.dept into {d, \"total\": $[*].income};");
+jaql.x("plan employees -> group each emp by d = emp.dept as deptEmps into {d, \"total\": deptEmps[*].income};");
+
+jaql.x("plan group employees by g = $.dept as es, depts by g = $.did as ds into { \"dept\": g, \"deptName\": ds[0].name, \"emps\": es[*].id, \"numEmps\": es };");
