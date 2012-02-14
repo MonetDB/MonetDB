@@ -135,6 +135,10 @@ public class Control {
 			ms.connect(host, port, "monetdb", passphrase);
 			min = ms.getReader();
 			mout = ms.getWriter();
+		} catch (MCLParseException e) {
+			throw new MerovingianException(e.getMessage());
+		} catch (MCLException e) {
+			throw new MerovingianException(e.getMessage());
 		} catch (AssertionError e) { // mcl panics
 			ms.close();
 			
@@ -212,7 +216,7 @@ public class Control {
 			throw new MerovingianException(e.getMessage());
 		}
 
-		mout.writeLine(database + " " + command +"\n");
+		mout.writeLine(database + " " + command + "\n");
 		ArrayList<String> l = new ArrayList<String>();
 		String tmpLine = min.readLine();
 		int linetype = min.getLineType();
