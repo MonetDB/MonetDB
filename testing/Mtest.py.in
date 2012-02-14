@@ -1560,6 +1560,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
 def CategorizeResult(TST, SockTime):
+    l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.out.diff.html" % TST):
         pass
     if   l[:14] == '<!--NoDiffs-->':
@@ -1574,6 +1575,7 @@ def CategorizeResult(TST, SockTime):
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         o = F_ERROR
+    l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in open("%s.err.diff.html" % TST):
         pass
     if   l[:14] == '<!--NoDiffs-->':
