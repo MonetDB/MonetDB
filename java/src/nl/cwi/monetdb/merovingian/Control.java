@@ -210,10 +210,6 @@ public class Control {
 				out.close();
 				s.close();
 			}
-		} catch (MCLException e) {
-			throw new MerovingianException(e.getMessage());
-		} catch (MCLParseException e) {
-			throw new MerovingianException(e.getMessage());
 		}
 
 		mout.writeLine(database + " " + command + "\n");
