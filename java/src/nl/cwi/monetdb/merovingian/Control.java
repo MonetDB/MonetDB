@@ -60,6 +60,8 @@ public class Control {
 	private final int port;
 	/** The passphrase to use when connecting */
 	private final String passphrase;
+	/** The file we should write MapiSocket debuglog to */
+	private String debug;
 
 
 	/**
@@ -74,6 +76,18 @@ public class Control {
 		this.host = host;
 		this.port = port;
 		this.passphrase = passphrase;
+	}
+
+	/**
+	 * Instructs to write a MCL protocol debug log to the given file.
+	 * This affects any newly performed command, and can be changed
+	 * inbetween commands.  Passing null to this method disables the
+	 * debug log.
+	 *
+	 * @param filename the filename to write debug information to, or null
+	 */
+	public void setDebug(String filename) {
+		this.debug = filename;
 	}
 
 	private String controlHash(String pass, String salt) {
@@ -115,11 +129,16 @@ public class Control {
 		MapiSocket ms = new MapiSocket();
 		ms.setDatabase("merovingian");
 		ms.setLanguage("control");
-		ms.debug("test.log");
+		if (debug != null)
+			ms.debug(debug);
 		try {
 			ms.connect(host, port, "monetdb", passphrase);
 			min = ms.getReader();
 			mout = ms.getWriter();
+		} catch (MCLParseException e) {
+			throw new MerovingianException(e.getMessage());
+		} catch (MCLException e) {
+			throw new MerovingianException(e.getMessage());
 		} catch (AssertionError e) { // mcl panics
 			ms.close();
 			
@@ -191,13 +210,9 @@ public class Control {
 				out.close();
 				s.close();
 			}
-		} catch (MCLException e) {
-			throw new MerovingianException(e.getMessage());
-		} catch (MCLParseException e) {
-			throw new MerovingianException(e.getMessage());
 		}
 
-		mout.writeLine(database + " " + command +"\n");
+		mout.writeLine(database + " " + command + "\n");
 		ArrayList<String> l = new ArrayList<String>();
 		String tmpLine = min.readLine();
 		int linetype = min.getLineType();

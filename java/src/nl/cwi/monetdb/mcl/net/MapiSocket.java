@@ -795,10 +795,12 @@ public final class MapiSocket {
 		 * on the BufferedInputStream.  We want to benefit from the
 		 * Buffered pre-fetching, but not dealing with half blocks.
 		 * Changing this class to be able to use the partially received
-		 * data will greatly complicate matters, while an performance
+		 * data will greatly complicate matters, while a performance
 		 * improvement is debatable given the relatively small size of
 		 * our blocks.  Maybe it does speed up on slower links, then
 		 * consider this method a quick bug fix/workaround.
+		 *
+		 * @return false if reading the block failed due to EOF
 		 */
 		private boolean _read(byte[] b, int len) throws IOException {
 			int s;
@@ -818,6 +820,8 @@ public final class MapiSocket {
 								con.getInetAddress().getHostName() + ":" +
 								con.getPort() + ": Incomplete block read from stream");
 					}
+					if (debug)
+						logRd("server closed the connection (EOF)");
 					return(false);
 				}
 				len -= s;
@@ -850,12 +854,10 @@ public final class MapiSocket {
 		 * If the stream is not positioned correctly, hell will break
 		 * loose.
 		 */
-		private void readBlock() throws IOException {
+		private int readBlock() throws IOException {
 			// read next two bytes (short)
-			if (!_read(blklen, 2)) throw
-				new IOException("Read from " +
-						con.getInetAddress().getHostName() + ":" +
-						con.getPort() + ": End of stream reached");
+			if (!_read(blklen, 2))
+				return(-1);
 
 			// Get the short-value and store its value in blockLen.
 			blockLen = (short)(
@@ -879,13 +881,10 @@ public final class MapiSocket {
 						"larger than BLOCKsize: " +
 						blockLen + " > " + block.length);
 			if (!_read(block, blockLen))
-				new IOException("Read from " +
-						con.getInetAddress().getHostName() + ":" +
-						con.getPort() + ": End of stream reached");
+				return(-1);
 
-			if (debug) {
+			if (debug)
 				logRx(new String(block, 0, blockLen, "UTF-8"));
-			}
 
 			// if this is the last block, make it end with a newline and
 			// prompt
@@ -900,13 +899,19 @@ public final class MapiSocket {
 				if (debug)
 					logRd("inserting prompt");
 			}
+
+			return(blockLen);
 		}
 
 		public int read() throws IOException {
-			if (available() == 0)
-				readBlock();
+			if (available() == 0) {
+				if (readBlock() == -1)
+					return(-1);
+			}
+				
 			if (debug)
 				logRx(new String(block, readPos, 1, "UTF-8"));
+
 			return((int)block[readPos++]);
 		}
 
@@ -915,22 +920,19 @@ public final class MapiSocket {
 		}
 
 		public int read(byte[] b, int off, int len) throws IOException {
-			int t = available();
-			boolean hasAvailable = t + super.available() > 0;
+			int t;
 			int size = 0;
 			while (size < len) {
+				t = available();
 				if (t == 0) {
-					if (hasAvailable || size == 0) {
-						// shortcut some instructions, but make sure we
-						// always read *something* (block) for a read
-						// call, unless size == 0
-						readBlock();
-						t = available();
-					} else {
-						// nothing here, nothing waiting return what we
-						// have
+					if (size != 0)
+						break;
+					if (readBlock() == -1) {
+						if (size == 0)
+							size = -1;
 						break;
 					}
+					t = available();
 				}
 				if (len > t) {
 					System.arraycopy(block, readPos, b, off, t);
@@ -944,8 +946,6 @@ public final class MapiSocket {
 					size += len;
 					break;
 				}
-				t = available();
-				hasAvailable = t + super.available() > 0;
 			}
 			return(size);
 		}
