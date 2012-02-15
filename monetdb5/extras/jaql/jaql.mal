@@ -32,3 +32,35 @@ comment "Retrieve value of JSON variable";
 pattern setVar(nme:str, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
 address JAQLsetVar
 comment "Set or overwrite value of JSON variable";
+
+function range(size:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(0, size - 1);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end range;
+
+function range(start:lng, end:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(start, end, 1);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end range;
+
+function range(start:lng, end:lng, skip:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	r2 := bat.new(:oid,:str);
+	r4 := bat.new(:oid,:dbl);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	# use array.series from sciql
+	r3 := array.series(start, skip, end, 1, 1);
+	r3 := algebra.markH(r3, 1@0);
+
+	r5 := algebra.project(r3, 0@0);
+	r5 := bat.reverse(r5);
+
+	r1 := bat.new(:oid,:bte);
+	r1 := bat.insert(0@0, 'a':bte);
+	k := algebra.project(r3, 'i':bte);
+	r1 := bat.insert(r1, k);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end range;
+
