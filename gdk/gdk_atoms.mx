@@ -886,6 +886,8 @@ bitFromStr(str src, int *len, bit **dst)
 		p += 5;
 	} else if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		p += 3;
+	} else {
+		p = src;
 	}
 	return (int) (p - src);
 }
@@ -939,7 +941,7 @@ batFromStr(char *src, int *len, bat **dst)
 	while ((c = *t) && (c == '_' || GDKisalnum(c)))
 		t++;
 
-	if (strcmp(r,"nil")== 0 ){
+	if (strcmp(r, "nil") == 0) {
 		**dst = 0;
 		return (int) (t + (c == '>') - src);
 	}
@@ -952,7 +954,7 @@ batFromStr(char *src, int *len, bat **dst)
 		GDKfree(s);
 	}
 	**dst = bid == 0 ? bat_nil : bid;
-	return (int) (t + (c == '>') - src);
+	return bid == 0 ? 0 : (int) (t + (c == '>') - src);
 }
 
 int
@@ -1003,43 +1005,45 @@ int
 {
 	int sign = 1;
 	@1 base = 0;
-	str q, p = src;
+	str p = src;
 
 	@:atommem(@1,sizeof(@1))@
 	while (GDKisspace(*p))
-		p++; 
+		p++;
+	**dst = @1_nil;
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		**dst = @1_nil;
 		p += 3;
 	} else {
 		if (!num10(*p) ) {
-			if ( *p == '-') {
+			if (*p == '-') {
 				sign = -1;
 				p++;
-			} else
-			if ( *p == '+') {
+			} else if (*p == '+') {
 				p++;
 			} else {
 				/* all else is an error */
-				**dst = @1_nil;
 				return 0;
 			}
 		}
-		while (*p == '0')
-			p++;
-		for (q = p; num10(*p); p++) {
+		if (!num10(*p)) {
+			/* no number */
+			return 0;
+		}
+		while (num10(*p)) {
+			if (base > @2 / 10 ||
+			    (base == @2 / 10 && num10(*p) > @2 % 10)) {
+				/* overflow */
+				return 0;
+			}
 			base = mult10(base) + base10(*p);
+			p++;
 		}
 		**dst = sign * base;
-		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0)){
-			**dst = @1_nil;
-			sign = -1;
-		} else sign = 1;
 		if (p[0] == 'L' && p[1] == 'L' && sizeof(@1) == 8) {
 			p += 2;
 		}
 	}
-	return sign * (int) (p - src);
+	return (int) (p - src);
 }
 @
 @c
@@ -1057,19 +1061,19 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
 @
 @c
 
-@:numfromstr(bte,3,127)@
+@:numfromstr(bte,127)@
 @:atomtostr(bte,"%hhd",bte)@
 @:atom_io(bte,Bte,bte)@
 
-@:numfromstr(sht,5,32767)@
+@:numfromstr(sht,32767)@
 @:atomtostr(sht,"%hd",sht)@
 @:atom_io(sht,Sht,sht)@
 
-@:numfromstr(int,10,2147483647)@
+@:numfromstr(int,2147483647)@
 @:atomtostr(int,"%d",int)@
 @:atom_io(int,Int,int)@
 
-@:numfromstr(lng,19,9223372036854775807)@
+@:numfromstr(lng,9223372036854775807)@
 @:atomtostr(lng,LLFMT,lng)@
 
 @:atom_io(lng,Lng,lng)@
@@ -1093,7 +1097,6 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
 int
 ptrFromStr(char *src, int *len, ptr **dst)
 {
-	int error = 0;
 	size_t base = 0;
 	str p = src;
 
@@ -1101,29 +1104,27 @@ ptrFromStr(char *src, int *len, ptr **dst)
 
 	while (GDKisspace(*p))
 		p++;
+	**dst = ptr_nil;
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		error = 1;
 		p += 3;
 	} else {
 		if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
 			p += 2;
 		}
 		if (!num16(*p)) {
-			error = 1;
-			p = src;
+			/* not a number */
+			return 0;
 		}
-		while (error == 0) {
-			size_t val = mult16(base) + base16(*p);
-
-			if (val < base)
-				error = 1;
-			base = val;
+		while (num16(*p)) {
+			if (base >= ((size_t) 1 << (8 * sizeof(size_t) - 4))) {
+				/* overflow */
+				return 0;
+			}
+			base = mult16(base) + base16(*p);
 			p++;
-			if (!num16(*p))
-				break;
 		}
+		**dst = (ptr) base;
 	}
-	**dst = error ? (ptr) ptr_nil : (ptr) base;
 	return (int) (p - src);
 }
 
@@ -1160,8 +1161,9 @@ dblFromStr(char *src, int *len, dbl **dst)
 		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
 			**dst = dbl_nil; /* default return value is nil */
 			p = src;
-		} else
+		} else {
 			**dst = (dbl) d;
+		}
 	}
 	return (int) (p - src);
 }
@@ -2029,11 +2031,10 @@ OIDfromStr(char *src, int *len, oid **dst)
 {
 #if SIZEOF_OID == SIZEOF_INT
 	int ui = 0, *uip = &ui;
-	int l = (int) sizeof(int);
 #else
 	lng ui = 0, *uip = &ui;
-	int l = (int) sizeof(lng);
 #endif
+	int l = (int) sizeof(ui);
 	int pos = 0;
 	str p = src;
 
@@ -2049,6 +2050,7 @@ OIDfromStr(char *src, int *len, oid **dst)
 		pos = lngFromStr(p, &l, &uip);
 #endif
 		if (pos > 0 && p[pos] == '@') {
+			pos++;
 			while (GDKisdigit(p[pos]))
 				pos++;
 		}

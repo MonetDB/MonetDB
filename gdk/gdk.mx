@@ -704,7 +704,7 @@ typedef struct {
 	int len, vtype;
 } *ValPtr, ValRecord;
 
-#define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
+/* definition of VALptr lower down in file after include of gdk_atoms.h */
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
 
 /* interface definitions */
@@ -2335,6 +2335,27 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #define putenv _putenv
 #endif
 
+static inline void *
+VALptr(ValPtr v)
+{
+	switch (ATOMstorage(v->vtype)) {
+	case TYPE_void: return (void *) &v->val.oval;
+	case TYPE_bit: return (void *) &v->val.btval;
+	case TYPE_bte: return (void *) &v->val.btval;
+	case TYPE_sht: return (void *) &v->val.shval;
+	case TYPE_bat: return (void *) &v->val.bval;
+	case TYPE_int: return (void *) &v->val.ival;
+	case TYPE_oid: return (void *) &v->val.oval;
+	case TYPE_wrd: return (void *) &v->val.wval;
+	case TYPE_ptr: return (void *) v->val.pval;
+	case TYPE_flt: return (void *) &v->val.fval;
+	case TYPE_dbl: return (void *) &v->val.dval;
+	case TYPE_lng: return (void *) &v->val.lval;
+	case TYPE_str: return (void *) v->val.sval;
+	default:       return (void *) v->val.pval;
+	}
+}
+
 /*
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of the following debug options.
@@ -3239,6 +3260,101 @@ gdk_export BAT *BATsunion(BAT *b, BAT *c);
 gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
+
+gdk_export BAT *BATcalcnegate(BAT *b, int accum);
+gdk_export BAT *BATcalcabsolute(BAT *b, int accum);
+gdk_export BAT *BATcalcincr(BAT *b, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdecr(BAT *b, int accum, int abort_on_error);
+gdk_export BAT *BATcalciszero(BAT *b);
+gdk_export BAT *BATcalcsign(BAT *b);
+gdk_export BAT *BATcalcisnil(BAT *b);
+gdk_export BAT *BATcalcnot(BAT *b, int accum);
+gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcxor(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcxorcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstxor(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalcor(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcorcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstor(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalcand(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcandcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstand(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
+gdk_export BAT *BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error);
+gdk_export BAT *BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
+gdk_export BAT *BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error);
+gdk_export BAT *BATcalclt(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcltcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstlt(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcle(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalclecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstle(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcgt(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcgtcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstgt(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcge(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcgecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstge(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalceq(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcne(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b);
+
+gdk_export int VARcalcnot(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcnegate(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcabsolute(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int VARcalciszero(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcsign(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcisnil(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcisnotnil(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi);
+gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi);
+gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi);
+gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi);
+gdk_export int VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi);
+
+gdk_export BAT *BATconvert(BAT *b, int tp, int abort_on_error);
+gdk_export int VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]
