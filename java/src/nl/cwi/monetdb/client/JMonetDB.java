@@ -59,12 +59,9 @@ public class JMonetDB {
 				"Use the given hash algorithm during challenge response.  " +
 				"Supported algorithm names: SHA256, SHA1, MD5.");
 		// arguments which can have zero or one argument(s)
-		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ZERO_ONE, null,
+		copts.addOption(null, "Xdebug", CmdLineOpts.CAR_ONE, null,
 				"Writes a transmission log to disk for debugging purposes.  " +
-				"If a file name is given, it is used, otherwise a file " +
-				"called monet<timestamp>.log is created.  A given file " +
-				"never be overwritten; instead a unique variation of the " +
-				"file is used.");
+				"A file name must be given.");
 
 		try {
 			copts.processArgs(args);
@@ -132,6 +129,11 @@ copts.produceHelpMessage()
 			System.exit(-1);
 		}
 		// FIXME: Control needs to respect Xhash
+
+		if (copts.getOption("Xdebug").isPresent()) {
+			String fname = copts.getOption("Xdebug").getArgument();
+			ctl.setDebug(fname);
+		}
 
 		String[] commands = copts.getOption("command").getArguments();
 		if (commands[0].equals("status")) {

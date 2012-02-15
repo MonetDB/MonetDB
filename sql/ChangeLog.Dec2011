@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Feb 15 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Stripped off implementation-specific parts from error messages before
+  they get presented to the user.
+
