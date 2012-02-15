@@ -33,16 +33,6 @@ pattern setVar(nme:str, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:o
 address JAQLsetVar
 comment "Set or overwrite value of JSON variable";
 
-function range(size:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
-	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(0, size - 1);
-	return (r1,r2,r3,r4,r5,r6,r7);
-end range;
-
-function range(start:lng, end:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
-	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(start, end, 1);
-	return (r1,r2,r3,r4,r5,r6,r7);
-end range;
-
 function range(start:lng, end:lng, skip:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
 	r2 := bat.new(:oid,:str);
 	r4 := bat.new(:oid,:dbl);
@@ -50,17 +40,87 @@ function range(start:lng, end:lng, skip:lng)(kind:bat[:oid,:bte],string:bat[:oid
 	r7 := bat.new(:oid,:str);
 
 	# use array.series from sciql
-	r3 := array.series(start, skip, end, 1, 1);
+#	r3 := array.series(start, skip, end, 1, 1);
+	r3 := bat.new(:oid,:lng);
 	r3 := algebra.markH(r3, 1@0);
 
 	r5 := algebra.project(r3, 0@0);
 	r5 := bat.reverse(r5);
 
 	r1 := bat.new(:oid,:bte);
-	r1 := bat.insert(0@0, 'a':bte);
-	k := algebra.project(r3, 'i':bte);
+	r1 := bat.insert(r1, 0@0, 97:bte); # a
+	k := algebra.project(r3, 105:bte); # i
 	r1 := bat.insert(r1, k);
 
 	return (r1,r2,r3,r4,r5,r6,r7);
 end range;
 
+function range(start:lng, end:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(start, end, 1:lng);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end range;
+
+function range(size:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	s := size - 1;
+	(r1,r2,r3,r4,r5,r6,r7) := jaql.range(0:lng, s);
+	return (r1,r2,r3,r4,r5,r6,r7);
+end range;
+
+# generate a JSON record by merging two JSON arrays
+function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str],kindv:bat[:oid,:bte],stringv:bat[:oid,:str],integerv:bat[:oid,:lng],doublev:bat[:oid,:dbl],arrayv:bat[:oid,:oid],objectv:bat[:oid,:oid],namev:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	r1 := bat.new(:oid,:bte);
+	r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	elemsn := algebra.selectH(arrayn, 0@0);
+	elemsn := bat.reverse(elemsn);
+	k1 := algebra.semijoin(kindn, elemsn);
+	# we can only have string values
+	k2 := algebra.select(k1, 115:bte); # s
+	k3 := algebra.markH(k2, 1@0);
+	k4 := algebra.markT(k2, 1@0);
+
+	elemsv := algebra.selectH(arrayv, 0@0);
+	e1 := algebra.markH(elemsv, 1@0);
+	e2 := algebra.join(k4, e1);
+
+	# create nulls for missing values
+	i1 := bat.reverse(kindv);
+	i2 := aggr.max(i1);
+	i3 := calc.wrd(i2);
+	i4 := calc.+(i3, 1);
+	i5 := calc.oid(i4);
+	e3 := algebra.kdifference(k4, e2);
+	e4 := algebra.project(e3, 110:bte); # n
+	e5 := algebra.markH(e4, i5);
+
+	# copy the value JSON data
+	r1 := bat.insert(r1, 0@0, 111:bte); # o
+	k10 := algebra.kdifference(kindv, r1);
+	r1 := bat.insert(r1, k10);
+	r1 := bat.insert(r1, e5);
+	r2 := bat.insert(r2, stringv);
+	r3 := bat.insert(r3, integerv);
+	r4 := bat.insert(r4, doublev);
+	a1 := algebra.kdifference(arrayv, elemsv);
+	r5 := bat.insert(r5, a1);
+	r6 := bat.insert(r6, objectv);
+	r7 := bat.insert(r7, namev);
+
+	# construct the top level object
+	e10 := algebra.markH(e3, i5);
+	e11 := algebra.markT(e10, i5);
+	e2 := bat.insert(e2, e11);
+	o1 := algebra.project(0@0, e2);
+	e12 := bat.reverse(e2);
+	s1 := algebra.join(e12, stringn);
+	# add object and the pair names
+	r6 := bat.insert(r6, o1);
+	r7 := bat.insert(r7, s1);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end arrayToRecord;
