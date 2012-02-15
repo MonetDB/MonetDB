@@ -1667,7 +1667,7 @@ cleanup_engine:
 			be->language = oldlang;
 			c->glb = oldglb;
 			return SQLrecompile(c, be);
-		} else if (type == SQL) {
+		} else {
 			/* don't print exception decoration, just the message */
 			char *n = NULL;
 			char *o = msg;
@@ -1678,8 +1678,6 @@ cleanup_engine:
 			}
 			if (strlen(o) != 0)
 				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
-		} else {
-			dumpExceptionsToStream(c->fdout, msg);
 		}
 		showErrors(c);
 		m->session->status = -10;
