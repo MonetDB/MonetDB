@@ -71,18 +71,18 @@ stderr of test 'geom_mbr` in directory 'sql` itself:
 # 18:34:07 >  mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32754 
 # 18:34:07 >  
 
-MAPI  = monetdb@ottar:32754
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO mbrs values (mbr('POINT(10)'));
-ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected number but encountered ')'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO mbrs values (mbr('POINT()'));
-ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected number but encountered ')'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO mbrs values (mbr('POINT'));
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO mbrs values (mbr(''));
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
+ERROR = !ParseException: Expected word but encountered end of stream
 
 
 # 21:15:17 >  

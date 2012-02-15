@@ -81,18 +81,18 @@ stderr of test 'geom_point` in directory 'sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = monetdb@ottar:32754
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO points values ('POINT(10)');
-ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected number but encountered ')'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO points values ('POINT()');
-ERROR = !MALException:wkb.FromText:ParseException: Expected number but encountered ')'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected number but encountered ')'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO points values ('POINT');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO points values ('');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
+ERROR = !ParseException: Expected word but encountered end of stream
 
 # 21:15:13 >  
 # 21:15:13 >  Done.
