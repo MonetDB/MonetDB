@@ -10,7 +10,7 @@ stderr of test 'copy_into_crash.SF-1975402` in directory 'BugTracker` itself:
 # 11:37:42 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=30423 
 # 11:37:42 >  
 
-MAPI  = monetdb@sofia:31266
+MAPI  = monetdb@madrid:30163
 QUERY = COPY 1 RECORDS INTO nodes from STDIN USING DELIMITERS ',', '\n';
         45111956, 'POINT(52.0697 4.3723)'
         
