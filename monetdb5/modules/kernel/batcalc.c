@@ -385,10 +385,15 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b;
-	int tp1, tp2;
+	int tp1;
+#ifndef NDEBUG
+	int tp2;
+#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
+#ifndef NDEBUG
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
+#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		assert(tp2 != TYPE_bat && !isaBatType(tp2));
@@ -449,10 +454,15 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b;
-	int tp1, tp2;
+	int tp1;
+#ifndef NDEBUG
+	int tp2;
+#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
+#ifndef NDEBUG
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
+#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		assert(tp2 != TYPE_bat && !isaBatType(tp2));
@@ -511,10 +521,15 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 {
 	bat *bid;
 	BAT *bn, *b;
-	int tp1, tp2;
+	int tp1;
+#ifndef NDEBUG
+	int tp2;
+#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
+#ifndef NDEBUG
 	tp2 = stk->stk[getArg(pci, 2)].vtype;
+#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		assert(tp2 != TYPE_bat && !isaBatType(tp2));
