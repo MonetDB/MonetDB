@@ -3241,6 +3241,48 @@ changetmplrefsjoin(tree *t)
 	}
 }
 
+static void
+dumpjsonshred(MalBlkPtr mb, char *json,
+		int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
+{
+	InstrPtr q;
+
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, putName("json", 4));
+	setFunctionId(q, putName("shred", 5));
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bte)));
+	*j1 = getArg(q, 0);
+	setVarUDFtype(mb, *j1);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
+	*j2 = getArg(q, 1);
+	setVarUDFtype(mb, *j2);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_lng)));
+	*j3 = getArg(q, 2);
+	setVarUDFtype(mb, *j3);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl)));
+	*j4 = getArg(q, 3);
+	setVarUDFtype(mb, *j4);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+	*j5 = getArg(q, 4);
+	setVarUDFtype(mb, *j5);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
+	*j6 = getArg(q, 5);
+	setVarUDFtype(mb, *j6);
+	q = pushReturn(mb, q,
+			newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
+	*j7 = getArg(q, 6);
+	setVarUDFtype(mb, *j7);
+
+	q = pushStr(mb, q, json);
+	pushInstruction(mb, q);
+}
+
 int
 dumptree(jc *j, MalBlkPtr mb, tree *t)
 {
@@ -3290,40 +3332,7 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_json:
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("json", 4));
-				setFunctionId(q, putName("shred", 5));
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bte)));
-				j1 = getArg(q, 0);
-				setVarUDFtype(mb, j1);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
-				j2 = getArg(q, 1);
-				setVarUDFtype(mb, j2);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_lng)));
-				j3 = getArg(q, 2);
-				setVarUDFtype(mb, j3);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl)));
-				j4 = getArg(q, 3);
-				setVarUDFtype(mb, j4);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-				j5 = getArg(q, 4);
-				setVarUDFtype(mb, j5);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid)));
-				j6 = getArg(q, 5);
-				setVarUDFtype(mb, j6);
-				q = pushReturn(mb, q,
-						newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str)));
-				j7 = getArg(q, 6);
-				setVarUDFtype(mb, j7);
-
-				q = pushStr(mb, q, t->sval);
-				pushInstruction(mb, q);
+				dumpjsonshred(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
 				break;
 			case j_var:
 				/* j_var at top level is always _IDENT */
@@ -4069,6 +4078,84 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
+			case j_func: {
+				tree *w;
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaql", 4));
+				setFunctionId(q, putName(t->sval, strlen(t->sval)));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				if (j1 != 0) {
+					/* treat pipe as first input */
+					q = pushArgument(mb, q, j1);
+					q = pushArgument(mb, q, j2);
+					q = pushArgument(mb, q, j3);
+					q = pushArgument(mb, q, j4);
+					q = pushArgument(mb, q, j5);
+					q = pushArgument(mb, q, j6);
+					q = pushArgument(mb, q, j7);
+				}
+				for (w = t->tval1; w != NULL; w = w->next) {
+					int a1, a2, a3, a4, a5, a6, a7;
+					char buf[64];
+
+					assert(w->type == j_func_arg);
+					assert(w->tval1 != NULL);
+
+					/* transform the argument in a json struct (7 BATs)
+					 * if not already */
+					switch (w->tval1->type) {
+						case j_str:
+						case j_json:
+							dumpjsonshred(mb, w->tval1->sval,
+									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							break;
+						case j_num:
+							snprintf(buf, sizeof(buf), "%lld", w->tval1->nval);
+							dumpjsonshred(mb, buf,
+									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							break;
+						case j_dbl:
+							snprintf(buf, sizeof(buf), "%f", w->tval1->dval);
+							dumpjsonshred(mb, buf,
+									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							break;
+						case j_bool:
+							snprintf(buf, sizeof(buf), "%s",
+									w->tval1->nval == 1 ? "true" : "false");
+							dumpjsonshred(mb, buf,
+									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							break;
+						case j_var: /* TODO */
+						default:
+							snprintf(j->err, sizeof(j->err),
+									"unhandled argument type (1)");
+							return -1;
+					}
+
+					q = pushArgument(mb, q, a1);
+					q = pushArgument(mb, q, a2);
+					q = pushArgument(mb, q, a3);
+					q = pushArgument(mb, q, a4);
+					q = pushArgument(mb, q, a5);
+					q = pushArgument(mb, q, a6);
+					q = pushArgument(mb, q, a7);
+				}
+				j1 = getArg(q, 0);
+				j2 = getArg(q, 1);
+				j3 = getArg(q, 2);
+				j4 = getArg(q, 3);
+				j5 = getArg(q, 4);
+				j6 = getArg(q, 5);
+				j7 = getArg(q, 6);
+				pushInstruction(mb, q);
+			} break;
 			case j_error:
 				snprintf(j->err, sizeof(j->err), "%s", t->sval);
 				break;

@@ -124,3 +124,41 @@ function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[
 
 	return (r1,r2,r3,r4,r5,r6,r7);
 end arrayToRecord;
+
+# perform sum over the input array
+function sum(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	# expect an array of ints or dbls
+	e1 := algebra.selectH(arrayn, 0@0);
+	e2 := bat.reverse(e1);
+
+	i1 := algebra.semijoin(kindn, e2);
+	i2 := algebra.select(i1, 105:bte); # i
+	i3 := algebra.semijoin(integern, i2);
+
+	d2 := algebra.select(i1, 100:bte); # d
+	d3 := algebra.semijoin(doublen, d2);
+	d4 := aggr.count(d3);
+
+	r1 := bat.new(:oid,:bte);
+	r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	s1 := aggr.sum(i3);
+	barrier hd := calc.>(d4, 0);
+		s2 := aggr.sum(d3);
+		s4 := calc.+(s1, s2);
+		r1 := bat.insert(r1, 0@0, 100:bte); # d
+		r4 := bat.insert(r4, 0@0, s4);
+	exit hd;
+	barrier nd := calc.==(d4, 0);
+		s3 := calc.lng(s1);
+		r1 := bat.insert(r1, 0@0, 105:bte); # i
+		r3 := bat.insert(r3, 0@0, s3);
+	exit nd;
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end sum;
