@@ -33,24 +33,53 @@
  */
 #include "monetdb_config.h"
 #include "opt_pipes.h"
+#include "mal_client.h"
 #include "mal_instruction.h"
 #include "mal_function.h"
+#include "mal_listing.h"
 
 #define MAXOPTPIPES 64
 
 struct PIPELINES{
-	char name[50];
-	char def[256];
+	char *name;
+	char *def;
 	MalBlkPtr mb;
 } pipes[MAXOPTPIPES] ={
 /* The minimal pipeline necessary by the server to operate correctly*/
-{ "minimal_pipe",	"inline,remap,deadcode,multiplex,garbageCollector", 0},
+{ "minimal_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.deadcode();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();", 
+	0},
 
 /*
  * The default pipe line contains as of Feb2010 mitosis-mergetable-reorder,
  * aimed at large tables and improved access locality
 */
-{ "default_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0},
+{ "default_pipe",
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mitosis();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+	 0},
 
 /*
  * The no_mitosis pipe line is (and should be kept!) identical to the default pipeline,
@@ -58,57 +87,371 @@ struct PIPELINES{
  * deterministically, and to check / debug whether "unexpected" problems are related to
  * mitosis (and/or mergetable).
 */
-{ "no_mitosis_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0},
+{ "no_mitosis_pipe",
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+	0},
 
 /* The sequential pipe line is (and should be kept!) identical to the default pipeline,
  * except that optimizers mitosis & dataflow are omitted.  It is use mainly to make some
  * tests work deterministically, i.e., avoid ambigious output, by avoiding parallelism.
 */
-{ "sequential_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,history,multiplex,accumulators,garbageCollector" , 0},
+{ "sequential_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+	 0 },
 
-/* The default pipeline used in the November 2009 release*/
-{ "nov2009_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector" , 0},
+/* The default pipeline used in the November 2009 release
+{ "nov2009_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.constants();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
+*/
 
 /*
  * Experimental pipelines stressing various components under development
  * Do not use any of these pipelines in production settings!
 */
-{"replication_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector" , 0},
+/* Not yet compiled
+{"replication_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.constants();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.replication();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	 0 },
+*/
 
-{"accumulator_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector", 0},
+{"accumulator_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.constants();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+	0},
 
-{"recycler_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,deadcode,commonTerms,joinPath,deadcode,recycle,reduce,history,multiplex,garbageCollector", 0},
+{"recycler_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.recycle();"
+	"optimizer.reduce();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
 
-{"cracker_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,selcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
-{"sidcrack_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,sidcrack,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
+/* Not compiled in by default
+{"cracker_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.selcrack();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
 
+{"sidcrack_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.sidcrack();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
+
+*/
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
 */
-{"octopus_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,costModel,octopus,reduce,dataflow,history,multiplex,garbageCollector", 0},
+#ifdef WIN32
+{"octopus_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mitosis();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.costModel();"
+	"optimizer.octopus();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0 },
+#endif
 
 {"datacell_pipe",
-            "inline,remap,datacell,garbageCollector,evaluate,costModel,coercions,emptySet,aliases,mitosis,"
-            "mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,"
-            "history,multiplex,accumulators,garbageCollector" , 0},
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.datacell();"
+	"optimizer.garbageCollector();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mitosis();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+	0},
+
 /* The default + datacyclotron*/
-{"datacyclotron_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,datacyclotron,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,replication,multiplex,garbageCollector", 0},
+{"datacyclotron_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.datacyclotron();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	/* "optimizer.replication();" not used */
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
 
 /* The default + derivePath" */
-{"derive_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,derivePath,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
+{"derive_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mitosis();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.derivePath();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
 
 /* The default + dictionary*/
-{"dictionary_pipe",	"inline,remap,dictionary,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,history,multiplex,garbageCollector", 0},
+{"dictionary_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.dictionary();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.constants();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	0},
 
 /* The default + compression */
-{"compression_pipe",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,mergetable,deadcode,constants,commonTerms,joinPath,deadcode,reduce,dataflow,compression,dataflow,history,multiplex,garbageCollector", 0},
+{"compression_pipe",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.constants();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.compression();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+#ifdef WIN32
+	0},
 
 /* 
  * The centipede pipe line aims at a map-reduce style of query processing
 */
-{ "centipede",	"inline,remap,evaluate,costModel,coercions,emptySet,aliases,centipede,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector" , 0}
-
+{ "centipede",	
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.centipede();"
+	"optimizer.mergetable();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.accumulators();"
+	"optimizer.garbageCollector();",
+#endif
+	0 }
 };
+#ifdef WIN32
+static int builtinoptimizers = 8;
+#else
+static int builtinoptimizers = 11;
+#endif
 /*
  * @-
  * Debugging the optimizer pipeline",
@@ -122,20 +465,37 @@ struct PIPELINES{
  */
 #include "opt_pipes.h"
 
+/* the session_pipe is the one defined by the user */
 str
 addPipeDefinition(str name, str pipe)
 {
 	int i;
-	for( i =0; i< MAXOPTPIPES; i++)
+	for( i =0; i< MAXOPTPIPES && pipes[i].name; i++)
 	if ( pipes[i].name && strcmp(name,pipes[i].name)==0)
-		return NULL;
-	else
-	if ( pipes[i].name == 0){
-		snprintf(pipes[i].name,50,"%s",name);
-		snprintf(pipes[i].def,256,"%s",pipe);
-		return NULL;
-	}
-	return NULL;
+		break;
+
+	if ( i < builtinoptimizers)
+		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed" );
+	if ( i == MAXOPTPIPES )
+		throw(MAL, "optimizer.addPipeDefinition", "Out of slots" );
+	if ( pipes[i].name )
+		GDKfree(pipes[i].name);
+	if ( pipes[i].def )
+		GDKfree(pipes[i].def);
+	pipes[i].name = GDKstrdup(name);
+	pipes[i].def = GDKstrdup(pipe);
+	return MAL_SUCCEED;
+}
+
+int
+isOptimizerPipe(str name)
+{
+	int i;
+
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
+		if ( strcmp(name, pipes[i].name) == 0)
+			return TRUE;
+	return FALSE;
 }
 
 str
@@ -143,7 +503,7 @@ getPipeDefinition(str name)
 {
 	int i;
 
-	for( i=0; i < MAXOPTPIPES && *pipes[i].name; i++)
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if ( strcmp(name, pipes[i].name) == 0)
 			return GDKstrdup(pipes[i].def);
 	return NULL;
@@ -164,68 +524,127 @@ getPipeCatalog(int *nme, int *def)
 	}
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
-	for( i=0; i < MAXOPTPIPES && *pipes[i].name; i++){
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++){
 		BUNappend(b,pipes[i].name, FALSE);
 		BUNappend(bn,pipes[i].def, FALSE);
 	}
 
 	BBPkeepref(*nme= b->batCacheid);
-	BBPkeepref(*def= b->batCacheid);
+	BBPkeepref(*def= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str
-validateOptimizerPipes(str *optimizers){
+static str
+validatePipe(MalBlkPtr mb){
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
-	mal_set_lock(mal_contextLock,"optimizer validation");
-	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
-		mal_unset_lock(mal_contextLock,"optimizer validation");
+	if ( idcmp(getFunctionId( getInstrPtr(mb,1)), "inline" ) )
 		throw(MAL,"optimizer.validate","'inline' should be the first\n");
-	}
 
 	/* deadcode should be used */
-	for ( i=0; optimizers[i]; i++)
-		if (strcmp(optimizers[i],"deadcode") == 0)
+	for ( i=1; i < mb->stop -1; i++)
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"deadcode") == 0)
 			deadcode= TRUE;
 		else
-		if (strcmp(optimizers[i],"mitosis") == 0)
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"mitosis") == 0)
 			mitosis= TRUE;
 		else
-		if (strcmp(optimizers[i],"mergetable") == 0)
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"mergetable") == 0)
 			mergetable= TRUE;
 		else
-		if (strcmp(optimizers[i],"multiplex") == 0)
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"multiplex") == 0)
 			multiplex= TRUE;
 		else
-		if (strcmp(optimizers[i],"garbageCollector") == 0 && optimizers[i+1] == 0)
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"garbageCollector") == 0 && i == mb->stop - 2)
 			garbage= TRUE;
 
 #ifdef WIN32
 		else
-		if (strcmp(optimizers[i],"octopus") == 0){
-			mal_unset_lock(mal_contextLock,"optimizer validation");
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"octopus") == 0)
 			throw(MAL,"optimizer.validate","'octopus' needs monetdbd\n");
-		}
+		else
+		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"centipede") == 0)
+			throw(MAL,"optimizer.validate","'octopus' needs monetdbd\n");
 #endif
-	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
-		mal_unset_lock(mal_contextLock,"optimizer validation");
+	if (mitosis == TRUE && mergetable == FALSE) 
 		throw(MAL,"optimizer.validate","'mitosis' needs 'mergetable'\n");
-	}
 
-	if (optimizers[0] && multiplex == 0){
-		mal_unset_lock(mal_contextLock,"optimizer validation");
+	if (multiplex == 0)
 		throw(MAL,"optimizer.validate","'multiplex' should be used\n");
-	}
-	if (optimizers[0] && deadcode == FALSE ){
-		mal_unset_lock(mal_contextLock,"optimizer validation");
+	if (deadcode == FALSE )
 		throw(MAL,"optimizeri.validate","'deadcode' should be used at least once\n");
-	}
-	if (optimizers[0] && garbage == FALSE ){
-		mal_unset_lock(mal_contextLock,"optimizer validation");
+	if (garbage == FALSE )
 		throw(MAL,"optimizer.validate","'garbageCollector' should be used as the last one\n");
+	
+	return MAL_SUCCEED;
+}
+
+static str
+validateOptimizerPipes(void){
+	int i;
+	str msg = MAL_SUCCEED;
+
+	mal_set_lock(mal_contextLock,"optimizer validation");
+	for ( i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
+	if ( pipes[i].mb) {
+		msg = validatePipe(pipes[i].mb);
+		if ( msg != MAL_SUCCEED)
+			break;
 	}
 	mal_unset_lock(mal_contextLock,"optimizer validation");
+	return msg;
+}
+
+/*
+ * Compile (the first time) an optimizer pipe string
+ * then copy the statements to the end of the MAL plan
+*/
+str
+addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
+	int i, j, k;
+	InstrPtr p;
+	Symbol sym;
+	str msg;
+	Client c;
+	
+	(void) cntxt;
+
+	/* compile pipes first */
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
+	if ( pipes[i].mb == 0){
+		/* precompile the pipeline as MAL string */
+		c= MCinitClient((oid)1,0,0);
+		assert(c != NULL);
+		c->nspace = newModule(NULL, putName("user", 4));
+		c->father = cntxt;	/* to avoid conflicts on GDKin */
+		if (setScenario(c,"mal")) 
+			throw(MAL,"optimizer.addOptimizerPipe","failed to set scenario");
+
+		for ( j =0; j < MAXOPTPIPES && pipes[j].def; j++)
+		if ( pipes[j].mb == NULL) {
+			MSinitClientPrg(c, "user", pipes[j].name);
+			(void)MCinitClientThread(c);
+			msg = compileString(&sym, c, pipes[j].def);
+			if ( msg != MAL_SUCCEED)
+				return msg;
+			pipes[j].mb = copyMalBlk(sym->def);
+		}
+		MCcloseClient(c); 
+		msg = validateOptimizerPipes();
+		if ( msg != MAL_SUCCEED)
+			return msg;
+	}
+
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
+	if ( strcmp(pipes[i].name, name) == 0 && pipes[i].mb) {
+		for ( j =1; j < pipes[i].mb->stop-1; j++) {
+			p =  copyInstruction(pipes[i].mb->stmt[j]);
+			for ( k =0; k < p->argc; k++) 
+				getArg(p,k) = cloneVariable(mb, pipes[i].mb, getArg(p,k));
+			typeChecker(cntxt->nspace, mb, p, FALSE);
+			pushInstruction(mb,p);
+		}
+	}
 	return MAL_SUCCEED;
 }
