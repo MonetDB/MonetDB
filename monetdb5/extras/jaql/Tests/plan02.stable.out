@@ -24,7 +24,7 @@ function user.main():void;
     jaql.x("plan arrayToRecord(range(1,5)->transform(strcat(\"s\", $)), range(1,5));");
 end main;
 [1,2,3] -> sum( ) => <result> 
-sum( [1,2,3] ) => <result> 
+sum( [1,2,3] ) as $ -> transform: { "sum": $ } 
 [[1,2,3]] as $ -> transform: { "sum": sum( $[*] ) } 
 arrayToRecord( range( 1 , 5 ) as $ -> transform: strcat( 's' , $ ) , range( 1 , 5 ) ) => <result> 
 

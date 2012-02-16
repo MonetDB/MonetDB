@@ -113,7 +113,7 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	;
 
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $2);}
-		| func_call opt_actions {$$ = append_jaql_pipe($1, NULL);}
+		| func_call opt_actions {$$ = append_jaql_pipe($1, $2);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
 		| GROUP group_var_refs INTO json_value opt_actions
