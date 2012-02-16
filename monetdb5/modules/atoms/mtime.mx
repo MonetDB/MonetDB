@@ -2244,7 +2244,7 @@ date_extract_weekofyear(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-/* Returns the current day  of the week where 1=monday, .., 7=sunday */
+/* Returns the current day  of the week where 1=sunday, .., 7=saturday */
 static inline str
 date_extract_dayofweek(int *ret, date *v)
 {
