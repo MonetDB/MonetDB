@@ -6157,7 +6157,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		   void *dst, int tp, BUN cnt,
 		   int abort_on_error, const char *func)
 {
-	BUN nils = BUN_NONE;
+	BUN nils;
 
 	switch (ATOMstorage(tp1)) {
 	case TYPE_bte:
@@ -6683,6 +6683,8 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			goto unsupported;
 		}
 		break;
+	default:
+		goto unsupported;
 	}
 
 	if (nils == BUN_NONE)
