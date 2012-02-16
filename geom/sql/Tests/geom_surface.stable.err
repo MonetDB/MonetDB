@@ -81,30 +81,30 @@ stderr of test 'geom_surface` in directory 'sql` itself:
 # 20:49:34 >  mclient -lsql -umonetdb -Pmonetdb --host=koolmees --port=38689 
 # 20:49:34 >  
 
-MAPI  = monetdb@ottar:32754
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20)');
-ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@ottar:32754
+ERROR = !Geometry type 'Polygon' not found
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('LINESTRING(10 10, 20 20, 30 40)');
-ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@ottar:32754
+ERROR = !Geometry type 'Polygon' not found
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('POINT(10 10)');
-ERROR = !MALException:wkb.FromText:Geometry type 'Polygon' not found
-MAPI  = monetdb@ottar:32754
+ERROR = !Geometry type 'Polygon' not found
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('POLYGON(10 10)');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected word but encountered number: '10'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('POLYGON(10)');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered number: '10'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected word but encountered number: '10'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('POLYGON()');
-ERROR = !MALException:wkb.FromText:ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : ')'
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected 'Z', 'M', 'ZM', 'EMPTY' or '(' but encountered : ')'
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('POLYGON');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
-MAPI  = monetdb@ottar:32754
+ERROR = !ParseException: Expected word but encountered end of stream
+MAPI  = monetdb@madrid:30163
 QUERY = INSERT INTO surfaces values ('');
-ERROR = !MALException:wkb.FromText:ParseException: Expected word but encountered end of stream
+ERROR = !ParseException: Expected word but encountered end of stream
 
 # 21:15:15 >  
 # 21:15:15 >  Done.

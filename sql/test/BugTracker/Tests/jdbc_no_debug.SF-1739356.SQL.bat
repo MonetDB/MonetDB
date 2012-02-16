@@ -3,8 +3,6 @@
 echo user=monetdb>	.monetdb
 echo password=monetdb>>	.monetdb
 
-set LANG=en_US.UTF-8
-
 prompt # $t $g  
 echo on
 
