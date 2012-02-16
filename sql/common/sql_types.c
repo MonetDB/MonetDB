@@ -1219,16 +1219,15 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sql_add", "calc", "+", *t, *t, *t, SCALE_FIX);
 		sql_create_func(sa, "sql_mul", "calc", "*", *t, *t, *t, SCALE_MUL);
 		sql_create_func(sa, "sql_div", "calc", "/", *t, *t, *t, SCALE_DIV);
-		sql_create_func(sa, "bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
-		sql_create_func(sa, "bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
-		sql_create_func(sa, "bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
-		sql_create_func(sa, "bit_not", "calc", "not", *t, NULL, *t, SCALE_FIX);
 		if (t < floats) {
+			sql_create_func(sa, "bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
+			sql_create_func(sa, "bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
+			sql_create_func(sa, "bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
+			sql_create_func(sa, "bit_not", "calc", "not", *t, NULL, *t, SCALE_FIX);
 			sql_create_func(sa, "left_shift", "calc", "<<", *t, INT, *t, SCALE_FIX);
 			sql_create_func(sa, "right_shift", "calc", ">>", *t, INT, *t, SCALE_FIX);
 		}
 		sql_create_func(sa, "sql_neg", "calc", "-", *t, NULL, *t, INOUT);
-		sql_create_func(sa, "sql_pos", "calc", "+", *t, NULL, *t, INOUT);
 		sql_create_func(sa, "abs", "calc", "abs", *t, NULL, *t, SCALE_FIX);
 		sql_create_func(sa, "sign", "calc", "sign", *t, NULL, INT, SCALE_NONE);
 		/* scale fixing for all numbers */

@@ -176,13 +176,17 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	printf("exception:%s:%s\n",fcn,format);
 #endif
 	message = GDKmalloc(GDKMAXERRLEN);
-	if (!message)
+	if (message == NULL)
 		return M5OutOfMemory;
-	len = snprintf(message, GDKMAXERRLEN - 1, "%s:%s:",
-			exceptionNames[type], fcn);
-	len += vsnprintf(message + len, GDKMAXERRLEN - 1 - len, format, ap);
-	message[len] = '\0';
-	return(message);
+	len = snprintf(message, GDKMAXERRLEN, "%s:%s:", exceptionNames[type], fcn);
+	if (len >= GDKMAXERRLEN)	/* shouldn't happen */
+		return message;
+	len += vsnprintf(message + len, GDKMAXERRLEN - len, format, ap);
+	/* realloc to reduce amount of allocated memory (GDKMAXERRLEN is
+	 * way more than what is normally needed) */
+	if (len < GDKMAXERRLEN)
+		message = GDKrealloc(message, len + 1);
+	return message;
 }
 
 /**
@@ -352,27 +356,34 @@ getExceptionType(str exception)
 }
 
 /**
- * Returns the location the exception was raised, if known.  It depends
- * on the how the exception was created, what the location looks like.
- * The returned string is mallocced with GDKmalloc, and hence needs to
- * be GDKfreed.
+ * Returns the location the exception was raised, if known.  It
+ * depends on how the exception was created, what the location looks
+ * like.  The returned string is mallocced with GDKmalloc, and hence
+ * needs to be GDKfreed.
  */
 str
 getExceptionPlace(str exception)
 {
-	str ret;
-	str s, t;
+	str ret, s, t;
+	enum malexception i;
+	size_t l;
 
-	if ((s = strchr(exception, ':')) != NULL &&
-			(t = strchr(s + 1, ':')) != NULL)
-	{
-		*t = '\0';
-		ret = GDKstrdup(s + 1);
-		*t = ':';
-		return(ret);
-	} else {
-		return(GDKstrdup("(unknown)"));
+	for (i = MAL; exceptionNames[i] != NULL; i++) {
+		l = strlen(exceptionNames[i]);
+		if (strncmp(exceptionNames[i], exception, l) == 0 &&
+			exception[l] == ':') {
+			s = exception + l + 1;
+			if ((t = strchr(s, ':')) != NULL) {
+				if ((ret = GDKmalloc(t - s + 1)) == NULL)
+					return NULL;
+				strncpy(ret, s, t - s);
+				ret[t - s] = 0;
+				return ret;
+			}
+			break;
+		}
 	}
+	return GDKstrdup("(unknown)");
 }
 
 /**
@@ -382,15 +393,22 @@ str
 getExceptionMessage(str exception)
 {
 	str s, t;
+	enum malexception i;
+	size_t l;
 
-	if ((s = strchr(exception, ':')) != NULL) {
-		/* skip the place, if there */
-		if ((t = strchr(s + 1, ':')) != NULL)
-			s = t;
-		return(s + 1);
-	} else {
-		return(exception);
+	for (i = MAL; exceptionNames[i] != NULL; i++) {
+		l = strlen(exceptionNames[i]);
+		if (strncmp(exceptionNames[i], exception, l) == 0 &&
+			exception[l] == ':') {
+			s = exception + l + 1;
+			if ((t = strchr(s, ':')) != NULL)
+				return t + 1;
+			return s;
+		}
 	}
+	if (strncmp(exception, "!ERROR: ", 8) == 0)
+		return exception + 8;
+	return exception;
 }
 
 /**
