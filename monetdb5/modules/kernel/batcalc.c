@@ -386,17 +386,12 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b;
 	int tp1;
-#ifndef NDEBUG
-	int tp2;
-#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
-#ifndef NDEBUG
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
-		assert(tp2 != TYPE_bat && !isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype != TYPE_bat &&
+			   !isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 1);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
@@ -404,7 +399,8 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], accum, abort_on_error);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
-		assert(tp2 == TYPE_bat || isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype == TYPE_bat ||
+			   isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 2);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
@@ -455,17 +451,12 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b;
 	int tp1;
-#ifndef NDEBUG
-	int tp2;
-#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
-#ifndef NDEBUG
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
-		assert(tp2 != TYPE_bat && !isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype != TYPE_bat &&
+			   !isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 1);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
@@ -473,7 +464,8 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], accum);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
-		assert(tp2 == TYPE_bat || isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype == TYPE_bat ||
+			   isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 2);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
@@ -522,17 +514,12 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 	bat *bid;
 	BAT *bn, *b;
 	int tp1;
-#ifndef NDEBUG
-	int tp2;
-#endif
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
-#ifndef NDEBUG
-	tp2 = stk->stk[getArg(pci, 2)].vtype;
-#endif
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
-		assert(tp2 != TYPE_bat && !isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype != TYPE_bat &&
+			   !isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 1);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
@@ -540,7 +527,8 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)]);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
-		assert(tp2 == TYPE_bat || isaBatType(tp2));
+		assert(stk->stk[getArg(pci, 2)].vtype == TYPE_bat ||
+			   isaBatType(stk->stk[getArg(pci, 2)].vtype));
 		bid = getArgReference(stk, pci, 2);
 		b = BATdescriptor(*bid);
 		if (b == NULL)
