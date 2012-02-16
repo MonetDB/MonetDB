@@ -1066,6 +1066,56 @@ make_bool(char b)
 	return res;
 }
 
+/* creates a function call, with the optional arguments given */
+tree *
+make_func_call(char *name, tree *args)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+
+	assert(name != NULL);
+
+	res->type = j_func;
+	res->sval = name;
+	res->tval1 = args;
+
+	return res;
+}
+
+tree *
+make_func_arg(tree *arg) {
+	tree *res = GDKzalloc(sizeof(tree));
+	res->type = j_func_arg;
+	res->tval1 = arg;
+
+	return res;
+}
+
+tree *
+append_func_arg(tree *oarg, tree *narg)
+{
+	tree *w = oarg;
+
+	assert(oarg != NULL && oarg->type == j_func_arg);
+	assert(narg != NULL && narg->type == j_func_arg);
+
+	while (w->next != NULL)
+		w = w->next;
+
+	w->next = narg;
+
+	return oarg;
+}
+
+tree *
+set_func_input_from_pipe(tree *func)
+{
+	assert(func != NULL && func->type == j_func);
+
+	func->nval = 1;
+
+	return func;
+}
+
 
 void
 printtree(tree *t, int level, char op)
@@ -1485,6 +1535,35 @@ printtree(tree *t, int level, char op)
 				break;
 			case j_bool:
 				printf("%s ", t->nval == 0 ? "false" : "true");
+				break;
+			case j_func: {
+				tree *i;
+				if (op) {
+					printf("j_func( %s, ", t->sval);
+				} else {
+					if (t->nval == 1)
+						printf("-> ");
+					printf("%s( ", t->sval);
+				}
+				if (t->tval1 != NULL) {
+					printtree(t->tval1, level + step, op);
+					for (i = t->tval1->next; i != NULL; i = i->next) {
+						printf(", ");
+						printtree(i, level + step, op);
+					}
+				}
+				printf(") ");
+			}	break;
+			case j_func_arg:
+				if (op) {
+					printf("j_func_arg( ");
+					printtree(t->tval1, level + step, op);
+					printf(") ");
+				} else {
+					printtree(t->tval1, level + step, op);
+				}
+				/* avoid re-recursion after j_func */
+				t = NULL;
 				break;
 			case j_error:
 				if (op) {

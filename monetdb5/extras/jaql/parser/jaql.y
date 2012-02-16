@@ -38,7 +38,7 @@
 	opt_each opt_command sort_arg arith_op val_var_arith
 	obj_list arr_list obj_pair json_value join_var_refs join_var_ref
 	opt_join_in opt_arr_ind group_var_refs group_var_ref opt_group_by
-	group_by opt_group_as
+	group_by opt_group_as func_call opt_func_args func_args func_arg
 %type <j_ident> ident
 %type <j_number> opt_asc_desc opt_preserve
 
@@ -113,12 +113,13 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	;
 
 jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $2);}
+		| func_call opt_actions {$$ = append_jaql_pipe($1, NULL);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
-		| GROUP group_var_refs INTO json_value
-		    {$$ = make_jaql_group($2, $4, make_varname(GDKstrdup("$"), NULL));}
-		| JOIN join_var_refs WHERE predicates INTO json_value
-		                        {$$ = make_jaql_join($2, $4, $6);}
+		| GROUP group_var_refs INTO json_value opt_actions
+		    {$$ = append_jaql_pipe(make_jaql_group($2, $4, make_varname(GDKstrdup("$"), NULL)), $5);}
+		| JOIN join_var_refs WHERE predicates INTO json_value opt_actions
+		    {$$ = append_jaql_pipe(make_jaql_join($2, $4, $6), $7);}
 		;
 
 opt_actions: /* empty */        {$$ = NULL;}
@@ -138,6 +139,7 @@ action: FILTER opt_each predicates        {$$ = make_jaql_filter($2, $3);}
 	  | TOP _NUMBER                       {$$ = make_jaql_top($2);}
 	  | TOP _NUMBER opt_each BY '[' sort_arg ']'
 	        {$$ = append_jaql_pipe(make_jaql_sort($3, $6), make_jaql_top($2));}
+	  | func_call                         {$$ = set_func_input_from_pipe($1);}
 	  ;
 
 join_var_refs: join_var_refs ',' join_var_ref  {$$ = append_join_input($1, $3);}
@@ -199,6 +201,25 @@ opt_asc_desc: /* empty */  {$$ = ASC;}
 ident: _IDENT   {$$ = $1;}
 	 | _DOLLAR  {$$ = GDKstrdup("$");}
 	 ;
+
+func_call: _IDENT '(' opt_func_args ')'  {$$ = make_func_call($1, $3);}
+		 ;
+
+opt_func_args: /* empty */  {$$ = NULL;}
+			 | func_args    {$$ = $1;}
+			 ;
+
+func_args: func_arg                {$$ = make_func_arg($1);}
+		 | func_args ',' func_arg  {$$ = append_func_arg($1, make_func_arg($3));}
+		 ;
+
+func_arg: val_var_arith            {$$ = $1;}
+		| val_var_arith actions    {$$ = append_jaql_pipe($1, $2);}
+		| '[' {j->expect_json = '[';}
+		  _ARRAY                   {$$ = make_json($3);}
+		| '{' {j->expect_json = '{';}
+		  _OBJECT                  {$$ = make_json($3);}
+		;
 
 predicates: opt_not predicate  {$$ = make_pred(NULL, $1, $2);}
 		  | opt_not '(' predicates ')' 
@@ -262,6 +283,7 @@ val_var_arith: val_var_arith arith_op val_var_arith
 			                                 {$$ = make_operation($1, $2, $3);}
 			 | '(' val_var_arith ')'         {$$ = $2;}
 			 | value                         {$$ = $1;}
+			 | func_call                     {$$ = $1;}
 			 ;
 
 obj_list: obj_list ',' obj_pair       {$$ = append_pair($1, $3);}
