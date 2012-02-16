@@ -1312,7 +1312,6 @@ sqltypeinit(void)
 			sql_create_func("right_shift", "calc", ">>", *t, INT, *t, SCALE_FIX);
 		}
 		sql_create_func("sql_neg", "calc", "-", *t, NULL, *t, INOUT);
-		sql_create_func("sql_pos", "calc", "+", *t, NULL, *t, INOUT);
 		sql_create_func("abs", "calc", "abs", *t, NULL, *t, SCALE_FIX);
 		sql_create_func("sign", "calc", "sign", *t, NULL, INT, SCALE_NONE);
 		/* scale fixing for all numbers */
