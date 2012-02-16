@@ -345,6 +345,9 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
+command optimizers()(:bat[:oid,:str],:bat[:oid,:str])
+address getPipeCatalog;
+
 function times(elaps:int,inblock:lng, oublock:lng):void;
 	io.printf("#times %d ms",elaps);
 	io.printf(" %d reads",inblock);
@@ -2473,17 +2476,18 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
-		msg = setOptimizers(*(str *) getArgReference(stk,pci,3));
-		if ( msg != NULL && strcmp(msg, "default_pipe") == 0 ) {
+		str newopt;
+		newopt = setOptimizer( *(str *) getArgReference(stk,pci,3));
+		if ( newopt)
+			msg = addOptimizerPipe(cntxt, mb, newopt);
+		if ( msg )
+			return msg;
+		if ( newopt != NULL ) {
 			if (stack_find_var(m, varname)) 
-				stack_set_string(m, varname, "default_pipe");
+				stack_set_string(m, varname, newopt);
 			return MAL_SUCCEED;
 		}
-		msg = SQLvalidatePipeline();
-		if ( msg ){
-			setOptimizers("default_pipe");
-			return msg;
-		}
+		throw(SQL, "sql.setVariable", "Failed to initialize optimizer pipeline");
 	}
 	src = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {

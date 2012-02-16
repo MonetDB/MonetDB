@@ -296,7 +296,7 @@ global_variables(mvc *sql, char *user, char *schema)
 		optimizer= GDKgetenv("sql_optimizer");
 	if (optimizer == NULL)
 		optimizer= "default_pipe";
-	SQLglobal("optimizer", setOptimizers(optimizer));
+	SQLglobal("optimizer", setOptimizer(optimizer));
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";

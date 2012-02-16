@@ -1,23 +1,14 @@
 -- show behavior of optimizer plans
 set optimizer='default_pipe'; -- overrule others
 
-select optimizer;
-set optimizer='off';
-select optimizer;
-set optimizer='off';
+set optimizer='minimal_pipe';
 select optimizer;
 
-set optimizer='on';
-select optimizer;
-set optimizer='on';
-select optimizer;
-
-set optimizer='nov2009_pipe';
+set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.history(); optimizer.multiplex(); optimizer.accumulators(); optimizer.garbageCollector();'
 select optimizer;
 
 -- and some errors
-set optimizer='default,costModel';
-select optimizer;
-
 set optimizer='myfamous_pipe';
 select optimizer;
+
+select * from optimizers();

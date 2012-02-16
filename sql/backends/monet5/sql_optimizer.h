@@ -26,8 +26,7 @@
 sql5_export void addQueryToCache(Client c);
 sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
-sql5_export str setOptimizers(str optimizer);
-sql5_export str SQLvalidatePipeline(void);
+sql5_export str setOptimizer(str optimizer);
 
 sql5_export str optimizerpipe;		/* the active pipeline */
 sql5_export void addOptimizers(Client c,MalBlkPtr mb, int flag);

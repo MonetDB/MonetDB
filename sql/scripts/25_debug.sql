@@ -32,6 +32,10 @@ create procedure querylog(filename string)
 	external name sql.logfile;
 
 -- MONETDB KERNEL SECTION
+-- optimizer pipe catalog
+create function optimizers () 
+	returns table (name string, def string)
+	external name sql.optimizers;
 
 -- The environment table
 create function environment()
