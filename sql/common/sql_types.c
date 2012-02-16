@@ -1303,11 +1303,11 @@ sqltypeinit(void)
 		sql_create_func("sql_add", "calc", "+", *t, *t, *t, SCALE_FIX);
 		sql_create_func("sql_mul", "calc", "*", *t, *t, *t, SCALE_MUL);
 		sql_create_func("sql_div", "calc", "/", *t, *t, *t, SCALE_DIV);
-		sql_create_func("bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
-		sql_create_func("bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
-		sql_create_func("bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
-		sql_create_func("bit_not", "calc", "not", *t, NULL, *t, SCALE_FIX);
 		if (t < floats) {
+			sql_create_func("bit_and", "calc", "and", *t, *t, *t, SCALE_FIX);
+			sql_create_func("bit_or", "calc", "or", *t, *t, *t, SCALE_FIX);
+			sql_create_func("bit_xor", "calc", "xor", *t, *t, *t, SCALE_FIX);
+			sql_create_func("bit_not", "calc", "not", *t, NULL, *t, SCALE_FIX);
 			sql_create_func("left_shift", "calc", "<<", *t, INT, *t, SCALE_FIX);
 			sql_create_func("right_shift", "calc", ">>", *t, INT, *t, SCALE_FIX);
 		}
