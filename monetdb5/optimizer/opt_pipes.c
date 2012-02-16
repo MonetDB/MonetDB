@@ -620,11 +620,11 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 		c->father = cntxt;	/* to avoid conflicts on GDKin */
 		if (setScenario(c,"mal")) 
 			throw(MAL,"optimizer.addOptimizerPipe","failed to set scenario");
+		(void)MCinitClientThread(c);
 
 		for ( j =0; j < MAXOPTPIPES && pipes[j].def; j++)
 		if ( pipes[j].mb == NULL) {
 			MSinitClientPrg(c, "user", pipes[j].name);
-			(void)MCinitClientThread(c);
 			msg = compileString(&sym, c, pipes[j].def);
 			if ( msg != MAL_SUCCEED)
 				return msg;
