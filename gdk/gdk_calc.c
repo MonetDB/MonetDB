@@ -175,15 +175,9 @@ BATcalcnot(BAT *b, int accum)
 		UNARY_2TYPE_FUNC(sht, sht, NOT);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(int, int, NOT);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(lng, lng, NOT);
 		break;
 	default:
@@ -239,18 +233,12 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 			ret->val.shval = ~v->val.shval;
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (v->val.ival == int_nil)
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = ~v->val.ival;
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (v->val.lval == lng_nil)
 			ret->val.lval = lng_nil;
 		else
@@ -302,15 +290,9 @@ BATcalcnegate(BAT *b, int accum)
 		UNARY_2TYPE_FUNC(sht, sht, NEGATE);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(int, int, NEGATE);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(lng, lng, NEGATE);
 		break;
 	case TYPE_flt:
@@ -365,18 +347,12 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 			ret->val.shval = -v->val.shval;
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (v->val.ival == int_nil)
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = -v->val.ival;
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (v->val.lval == lng_nil)
 			ret->val.lval = lng_nil;
 		else
@@ -440,15 +416,9 @@ BATcalcabsolute(BAT *b, int accum)
 		UNARY_2TYPE_FUNC(sht, sht, ABSOLUTE);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(int, int, ABSOLUTE);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(lng, lng, ABSOLUTE);
 		break;
 	case TYPE_flt:
@@ -504,18 +474,12 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 			ret->val.shval = ABSOLUTE(v->val.shval);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (v->val.ival == int_nil)
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = ABSOLUTE(v->val.ival);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (v->val.lval == lng_nil)
 			ret->val.lval = lng_nil;
 		else
@@ -568,15 +532,9 @@ BATcalciszero(BAT *b)
 		UNARY_2TYPE_FUNC(sht, bit, ISZERO);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(int, bit, ISZERO);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(lng, bit, ISZERO);
 		break;
 	case TYPE_flt:
@@ -632,18 +590,12 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 			ret->val.btval = ISZERO(v->val.shval);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (v->val.ival == int_nil)
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.ival);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (v->val.lval == lng_nil)
 			ret->val.btval = bit_nil;
 		else
@@ -696,15 +648,9 @@ BATcalcsign(BAT *b)
 		UNARY_2TYPE_FUNC(sht, bte, SIGN);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(int, bte, SIGN);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		UNARY_2TYPE_FUNC(lng, bte, SIGN);
 		break;
 	case TYPE_flt:
@@ -760,18 +706,12 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 			ret->val.btval = SIGN(v->val.shval);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (v->val.ival == int_nil)
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.ival);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (v->val.lval == lng_nil)
 			ret->val.btval = bte_nil;
 		else
@@ -841,21 +781,9 @@ BATcalcisnil(BAT *b)
 		break;
 	case TYPE_int:
 	case TYPE_bat:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		ISNIL_TYPE(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		ISNIL_TYPE(lng);
 		break;
 	case TYPE_flt:
@@ -912,21 +840,9 @@ VARcalcisnil(ValPtr ret, const ValRecord *v)
 		break;
 	case TYPE_int:
 	case TYPE_bat:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		ret->val.btval = (bit) (v->val.ival == int_nil);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		ret->val.btval = (bit) (v->val.lval == lng_nil);
 		break;
 	case TYPE_flt:
@@ -958,21 +874,9 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 		break;
 	case TYPE_int:
 	case TYPE_bat:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		ret->val.btval = (bit) (v->val.ival != int_nil);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		ret->val.btval = (bit) (v->val.lval != lng_nil);
 		break;
 	case TYPE_flt:
@@ -1188,16 +1092,10 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1222,17 +1120,11 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1250,22 +1142,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1284,14 +1167,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1350,17 +1227,11 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1385,17 +1256,11 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1413,22 +1278,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1447,14 +1303,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1504,24 +1354,15 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1542,17 +1383,11 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1571,22 +1406,13 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = add_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -1605,14 +1431,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1662,16 +1482,10 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1693,9 +1507,6 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1715,14 +1526,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1742,14 +1547,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = add_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -1831,9 +1630,6 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = add_flt_int_flt(lft, incr1, rgt, incr2,
@@ -1849,9 +1645,6 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = add_flt_lng_flt(lft, incr1, rgt, incr2,
@@ -1921,9 +1714,6 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = add_dbl_int_dbl(lft, incr1, rgt, incr2,
@@ -1935,9 +1725,6 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = add_dbl_lng_dbl(lft, incr1, rgt, incr2,
@@ -2442,16 +2229,10 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2476,17 +2257,11 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2504,22 +2279,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2538,14 +2304,8 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2604,17 +2364,11 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2639,17 +2393,11 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2667,22 +2415,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2701,14 +2440,8 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2758,24 +2491,15 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2796,17 +2520,11 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2825,22 +2543,13 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = sub_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -2859,14 +2568,8 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2916,16 +2619,10 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2947,9 +2644,6 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2969,14 +2663,8 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -2996,14 +2684,8 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = sub_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -3085,9 +2767,6 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = sub_flt_int_flt(lft, incr1, rgt, incr2,
@@ -3103,9 +2782,6 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = sub_flt_lng_flt(lft, incr1, rgt, incr2,
@@ -3175,9 +2851,6 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = sub_dbl_int_dbl(lft, incr1, rgt, incr2,
@@ -3189,9 +2862,6 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = sub_dbl_lng_dbl(lft, incr1, rgt, incr2,
@@ -3777,16 +3447,10 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -3811,17 +3475,11 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -3839,22 +3497,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -3873,14 +3522,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -3939,17 +3582,11 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -3974,17 +3611,11 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -4002,22 +3633,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -4036,14 +3658,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4093,24 +3709,15 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -4131,17 +3738,11 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -4160,22 +3761,13 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = mul_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt);
 				break;
@@ -4194,14 +3786,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4251,16 +3837,10 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4282,9 +3862,6 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4304,14 +3881,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4331,14 +3902,8 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = mul_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -4420,9 +3985,6 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = mul_flt_int_flt(lft, incr1, rgt, incr2,
@@ -4438,9 +4000,6 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = mul_flt_lng_flt(lft, incr1, rgt, incr2,
@@ -4510,9 +4069,6 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = mul_dbl_int_dbl(lft, incr1, rgt, incr2,
@@ -4524,9 +4080,6 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = mul_dbl_lng_dbl(lft, incr1, rgt, incr2,
@@ -4959,17 +4512,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5003,17 +4550,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5034,9 +4575,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_bte:
 				nils = div_bte_int_bte(lft, incr1, rgt, incr2,
@@ -5050,17 +4588,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5081,9 +4613,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_bte:
 				nils = div_bte_lng_bte(lft, incr1, rgt, incr2,
@@ -5097,17 +4626,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_bte_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5169,17 +4692,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5208,17 +4725,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5239,9 +4750,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_sht:
 				nils = div_sht_int_sht(lft, incr1, rgt, incr2,
@@ -5250,17 +4758,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5281,9 +4783,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_sht:
 				nils = div_sht_lng_sht(lft, incr1, rgt, incr2,
@@ -5292,17 +4791,11 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_sht_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5354,25 +4847,16 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5395,18 +4879,12 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5427,23 +4905,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5464,23 +4933,14 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-			case TYPE_wrd:
-#endif
 				nils = div_int_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5532,16 +4992,10 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5563,9 +5017,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 		case TYPE_sht:
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5585,14 +5036,8 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5612,14 +5057,8 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-			case TYPE_wrd:
-#endif
 				nils = div_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -5704,9 +5143,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = div_flt_int_flt(lft, incr1, rgt, incr2,
@@ -5723,9 +5159,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_flt:
 				nils = div_flt_lng_flt(lft, incr1, rgt, incr2,
@@ -5797,9 +5230,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = div_dbl_int_dbl(lft, incr1, rgt, incr2,
@@ -5811,9 +5241,6 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_dbl:
 				nils = div_dbl_lng_dbl(lft, incr1, rgt, incr2,
@@ -6176,17 +5603,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6210,17 +5631,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6231,9 +5646,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_bte:
 				nils = mod_bte_int_bte(lft, incr1, rgt, incr2,
@@ -6247,17 +5659,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6268,9 +5674,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_bte:
 				nils = mod_bte_lng_bte(lft, incr1, rgt, incr2,
@@ -6284,17 +5687,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_bte_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6324,17 +5721,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6353,17 +5744,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6374,9 +5759,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_sht:
 				nils = mod_sht_int_sht(lft, incr1, rgt, incr2,
@@ -6385,17 +5767,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6406,9 +5782,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_sht:
 				nils = mod_sht_lng_sht(lft, incr1, rgt, incr2,
@@ -6417,17 +5790,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_sht_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6442,9 +5809,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
@@ -6460,17 +5824,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6489,17 +5847,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6510,23 +5862,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6537,23 +5880,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_lng_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_int_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6568,9 +5902,6 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			switch (ATOMstorage(tp)) {
@@ -6586,17 +5917,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 						       abort_on_error);
 				break;
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_bte_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_bte_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6615,17 +5940,11 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_sht_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_sht_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6636,23 +5955,14 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_int:
-#if SIZEOF_INT == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_int_int(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;
 #ifdef FULL_IMPLEMENTATION
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_int_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6663,14 +5973,8 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			}
 			break;
 		case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-		case TYPE_wrd:
-#endif
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
-#if SIZEOF_LNG == SIZEOF_WRD
-			case TYPE_wrd:
-#endif
 				nils = mod_lng_lng_lng(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
@@ -6911,18 +6215,12 @@ xor_typeswitchloop(const void *lft, int incr1,
 			BINARY_3TYPE_FUNC(sht, sht, sht, XOR);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(int, int, int, XOR);
 		else
 			BINARY_3TYPE_FUNC(int, int, int, XOR);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, XOR);
 		else
@@ -7188,18 +6486,12 @@ or_typeswitchloop(const void *lft, int incr1,
 			BINARY_3TYPE_FUNC(sht, sht, sht, OR);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(int, int, int, OR);
 		else
 			BINARY_3TYPE_FUNC(int, int, int, OR);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, OR);
 		else
@@ -7461,18 +6753,12 @@ and_typeswitchloop(const void *lft, int incr1,
 			BINARY_3TYPE_FUNC(sht, sht, sht, AND);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(int, int, int, AND);
 		else
 			BINARY_3TYPE_FUNC(int, int, int, AND);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, AND);
 		else
@@ -7714,15 +7000,9 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH, SHIFT_CHECK);
 			break;
 		default:
@@ -7738,15 +7018,9 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH, SHIFT_CHECK);
 			break;
 		default:
@@ -7754,9 +7028,6 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH, SHIFT_CHECK);
@@ -7765,15 +7036,9 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH, SHIFT_CHECK);
 			break;
 		default:
@@ -7781,9 +7046,6 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH, SHIFT_CHECK);
@@ -7792,15 +7054,9 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH, SHIFT_CHECK);
 			break;
 		default:
@@ -8004,15 +7260,9 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, RSH, SHIFT_CHECK);
 			break;
 		default:
@@ -8028,15 +7278,9 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, RSH, SHIFT_CHECK);
 			break;
 		default:
@@ -8044,9 +7288,6 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, RSH, SHIFT_CHECK);
@@ -8055,15 +7296,9 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(int, sht, int, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(int, int, int, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, RSH, SHIFT_CHECK);
 			break;
 		default:
@@ -8071,9 +7306,6 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, RSH, SHIFT_CHECK);
@@ -8082,15 +7314,9 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, RSH, SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, RSH, SHIFT_CHECK);
 			break;
 		default:
@@ -8333,11 +7559,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8347,11 +7569,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8391,11 +7609,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8405,11 +7619,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8435,11 +7645,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -8475,11 +7681,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -8489,11 +7691,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8519,11 +7717,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -8559,11 +7753,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8573,11 +7763,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -8617,11 +7803,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8631,11 +7813,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8675,11 +7853,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8689,11 +7863,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8944,11 +8114,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -8958,11 +8124,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9002,11 +8164,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9016,11 +8174,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9046,11 +8200,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -9086,11 +8236,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -9100,11 +8246,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9130,11 +8272,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -9170,11 +8308,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9184,11 +8318,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -9228,11 +8358,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9242,11 +8368,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9286,11 +8408,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9300,11 +8418,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9555,11 +8669,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9569,11 +8679,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9613,11 +8719,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9627,11 +8729,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9657,11 +8755,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -9697,11 +8791,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -9711,11 +8801,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9741,11 +8827,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -9781,11 +8863,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9795,11 +8873,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -9839,11 +8913,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9853,11 +8923,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9897,11 +8963,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -9911,11 +8973,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10166,11 +9224,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10180,11 +9234,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10224,11 +9274,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10238,11 +9284,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10268,11 +9310,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -10308,11 +9346,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -10322,11 +9356,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10352,11 +9382,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -10392,11 +9418,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10406,11 +9428,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -10450,11 +9468,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10464,11 +9478,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10508,11 +9518,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10522,11 +9528,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10777,11 +9779,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10791,11 +9789,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10835,11 +9829,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10849,11 +9839,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10879,11 +9865,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -10919,11 +9901,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -10933,11 +9911,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -10963,11 +9937,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -11003,11 +9973,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11017,11 +9983,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -11061,11 +10023,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11075,11 +10033,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11119,11 +10073,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11133,11 +10083,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11386,11 +10332,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11400,11 +10342,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11444,11 +10382,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11458,11 +10392,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11488,11 +10418,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -11528,11 +10454,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -11542,11 +10464,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11572,11 +10490,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -11612,11 +10526,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11626,11 +10536,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -11670,11 +10576,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11684,11 +10586,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11728,11 +10626,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11742,11 +10636,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -11997,11 +10887,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(bte, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12011,11 +10897,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(bte, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12055,11 +10937,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(sht, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12069,11 +10947,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(sht, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12099,11 +10973,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -12139,11 +11009,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(int, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -12153,11 +11019,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(int, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12183,11 +11045,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
 		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
 			oid v;
 
@@ -12223,11 +11081,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(lng, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12237,11 +11091,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(lng, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
 				goto unsupported;
 #endif
@@ -12281,11 +11131,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(flt, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12295,11 +11141,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(flt, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12339,11 +11181,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(dbl, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_INT
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12353,11 +11191,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(dbl, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-		case TYPE_wrd:
-#endif
 #if SIZEOF_OID == SIZEOF_LNG
-		case TYPE_oid:
 			if (tp2 == TYPE_oid)
 				goto unsupported;
 #endif
@@ -12591,21 +11425,9 @@ BATcalcbetween_intern(const void *src, int incr1,
 		BETWEEN_LOOP_TYPE(sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		BETWEEN_LOOP_TYPE(int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		BETWEEN_LOOP_TYPE(lng);
 		break;
 	case TYPE_flt:
@@ -12788,21 +11610,9 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRec
 		ret->val.btval = BETWEEN(v->val.shval, lo->val.shval, hi->val.shval, sht);
 		break;
 	case TYPE_int:
-#if SIZEOF_WRD == SIZEOF_INT
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-	case TYPE_oid:
-#endif
 		ret->val.btval = BETWEEN(v->val.ival, lo->val.ival, hi->val.ival, int);
 		break;
 	case TYPE_lng:
-#if SIZEOF_WRD == SIZEOF_LNG
-	case TYPE_wrd:
-#endif
-#if SIZEOF_OID == SIZEOF_LNG
-	case TYPE_oid:
-#endif
 		ret->val.btval = BETWEEN(v->val.lval, lo->val.lval, hi->val.lval, lng);
 		break;
 	case TYPE_flt:
