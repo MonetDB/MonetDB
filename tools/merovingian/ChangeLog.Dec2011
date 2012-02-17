@@ -1,5 +1,9 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
-# This file is updated with mchangelog
+# This file is updated with Maddlog
+
+* Fri Feb 17 2012 Fabian Groffen <fabian@cwi.nl>
+- Fixed a bug in the multiplex-funnel where certain clients would abort
+  on responses for update queries.
 
 * Mon Jan 30 2012 Fabian Groffen <fabian@cwi.nl>
 - Fixed problem where version and mserver properties for monetdbd were

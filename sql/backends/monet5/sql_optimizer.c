@@ -416,12 +416,10 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	optimizerCheck(cntxt,mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
 /*
- * @-
  * Optimizers steps are identified by a list of identifiers and given
  * a pipeline name. The default pipeline in the distribution has been
  * tested extensively and should provide overall good performance.
  * Additional pipelines are defined in the opt_pipes.mx file.
- * The optimizers can be turned on/off, leaving a minimal plan active.
  *
  * A few optimizations are always needed. First, the multiplex
  * code should be turned into a proper MAL blocks before
@@ -431,174 +429,52 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
  * care of.
  *
  * The first error in the optimizer string is shown.
+ *
+ * The prevalent optimizer pipeline is a global variable. Note, that no concurrency
+ * control is implemented to isolate the clients in playing with the optimizers.
  */
-str minimalPipe= "minimal_pipe";
-
-static str optimizers[256];		/* the broken down optimizer pipeline */
 str optimizerpipe;		/* the active pipeline */
-static str previouspipe = 0;	/* fall back position */
 
 str
-SQLvalidatePipeline(void){
-	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
-	int i;
-
-	mal_set_lock(sql_contextLock,"SQL optimizer");
-	if (optimizers[0] &&  strcmp(optimizers[0],"inline") ) {
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'inline' should be the first\n");
-	}
-
-	/* deadcode should be used */
-	for ( i=0; optimizers[i]; i++)
-		if (strcmp(optimizers[i],"deadcode") == 0)
-			deadcode= TRUE;
-		else
-		if (strcmp(optimizers[i],"mitosis") == 0)
-			mitosis= TRUE;
-		else
-		if (strcmp(optimizers[i],"mergetable") == 0)
-			mergetable= TRUE;
-		else
-		if (strcmp(optimizers[i],"multiplex") == 0)
-			multiplex= TRUE;
-		else
-		if (strcmp(optimizers[i],"garbageCollector") == 0 && optimizers[i+1] == 0)
-			garbage= TRUE;
-
-#ifdef WIN32
-		else
-		if (strcmp(optimizers[i],"octopus") == 0){
-			mal_unset_lock(sql_contextLock,"SQL optimizer");
-			throw(SQL,"optimizer","SET OPTIMIZER: 'octopus' needs monetdbd\n");
-		}
-#endif
-	if (optimizers[0] && mitosis == TRUE && mergetable == FALSE) {
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'mitosis' needs 'mergetable'\n");
-	}
-
-	if (optimizers[0] && multiplex == 0){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'multiplex' should be used\n");
-	}
-	if (optimizers[0] && deadcode == FALSE ){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer"," SET OPTIMIZER: 'deadcode' should be used at least once\n");
-	}
-	if (optimizers[0] && garbage == FALSE ){
-		mal_unset_lock(sql_contextLock,"SQL optimizer");
-		throw(SQL,"optimizer","SET OPTIMIZER: 'garbageCollector' should be used as the last one\n");
-	}
-	mal_unset_lock(sql_contextLock,"SQL optimizer");
-	return MAL_SUCCEED;
-}
-
-/*
- * @-
- * The prevalent optimizer pipeline is a global variable. All clients
- * are affected. Clients can overrule the pipe-line setting temporarily,
- * re-setting it to the previous one. Note, however, that no concurrency
- * control is implemented to isolate the clients in playing with the
- * optimizers.
- */
-str
-setOptimizers(str optimizer)
+setOptimizer(str newopt)
 {
-	int top=0;
-	char *base=0, *nxt, *nme, *pipe="notdefined";
-	char *pipedef = NULL;
+	char *pipe;
 
 	/* do nothing if the pipe line is already set */
-	if ( optimizerpipe && optimizer && strcmp(optimizerpipe,optimizer) == 0  && strcmp(optimizer,"off") )
-		return optimizerpipe;
+	if ( optimizerpipe && newopt && strcmp(optimizerpipe,newopt) == 0 )
+		return GDKstrdup(optimizerpipe);
 
-	/* catch  minimal pipes */
-	if (optimizer == NULL || *optimizer == 0 ) {
-		pipe = GDKgetenv(minimalPipe);
+	if (newopt == NULL || *newopt == 0 ){
+		pipe = GDKgetenv("sql_optimizer");
 		if ( pipe == NULL)
-			pipedef = pipe= getPipeDefinition(optimizer);
-		if ( pipe )
-			optimizer = pipe;
-	} else if(strcmp(optimizer,"off")==0 ) {
-		/* optimizers can be temporarily turned on/off */
-		if ( previouspipe )
-			return optimizerpipe;
-		previouspipe = optimizerpipe;  /* give reference away */
-		optimizerpipe = NULL;
-		pipedef = pipe= getPipeDefinition(minimalPipe);
-		if ( pipe )
-			optimizer = pipe;
-	} else if (strcmp(optimizer,"on")==0){
-		if ( previouspipe == NULL)
-			return optimizerpipe;
-		optimizer= previouspipe;
-		previouspipe = 0;
+			newopt = GDKstrdup("minimal_pipe");
+		else newopt= GDKstrdup(pipe);
 	} else {
-		/* the optimizer may be an environment alias */
-		pipe = GDKgetenv(optimizer);
-		if ( pipe == NULL)
-			pipedef = pipe= getPipeDefinition(optimizer);
-		if ( pipe )
-			optimizer = pipe;
-	}
-
-	/* always strdup the value assigned to optimizerpipe, so we
-	   need to also free the old value, making sure we don't first
-	   free the value that maybe we want to strdup (in case
-	   optimizer==optimizerpipe) */
-	if (!pipedef) /* pipedef is already strdupped */
-		optimizer = GDKstrdup(optimizer);
-	if (base)		/* free old value of previouspipe */
-		GDKfree(base);
-	if (optimizerpipe)
-		GDKfree(optimizerpipe);
-	optimizerpipe = optimizer;
-	base = optimizer = GDKstrdup(optimizer);
-
-	/* An optimizer pipe is a comma separated list of names */
-	while (optimizer && *optimizer ) {
-		nxt = strchr(optimizer,',');
-		if (nxt){
-			*nxt = 0;
-			nxt++;
-		}
-		if ((nme = putName(optimizer,strlen(optimizer))) == 0)
-			showException(SQL,"optimizer"," '%s' pipeline does not exist\n",optimizer);
-		else if (top<256)
-			optimizers[top++] = nme;
-		else
-			break;
-		optimizer = nxt;
-	}
-	GDKfree(base);
-	if (top == 256){
-		showException(SQL,"optimizer","Too many optimizer steps, use default pipe instead\n");
-		setOptimizers("default_pipe");
-		return "default_pipe";
-	}
-	optimizers[top] = 0;
-	if (top <= 1  && pipe == NULL){
-		showException(SQL,"optimizer","Optimizer '%s' pipeline does not exist, use default pipe instead\n", optimizerpipe?optimizerpipe:"undefined");
-		setOptimizers("default_pipe");
-		return "default_pipe";
-	}
-	return optimizerpipe;
+		if ( optimizerpipe)
+			GDKfree(optimizerpipe);
+		/* add/test user defined optimizerpath */
+		if ( !isOptimizerPipe(newopt) )
+			addPipeDefinition("user", newopt);
+		optimizerpipe = GDKstrdup(newopt);
+	} 
+	return GDKstrdup(optimizerpipe);
 }
 
 void
-addOptimizers(Client c,MalBlkPtr mb, int flag)
+addOptimizers(Client c, MalBlkPtr mb, int flag)
 {
 	int i;
+	InstrPtr q;
 
-	/* add the optimizers to the query plan */
-	for (i = 0; optimizers[i]; i++) {
-		InstrPtr p;
-
-		if (flag && (strcmp(optimizers[i], "mitosis")==0 || strcmp(optimizers[i], "dataflow")==0))
-			continue;
-		p = newFcnCall(mb, "optimizer", optimizers[i]);
-		typeChecker(c->nspace, mb, p, FALSE);
+	addOptimizerPipe(c, mb,optimizerpipe);
+	/* point queries do not require mitosis and dataflow */
+	if ( flag)
+	for( i = mb->stop -1; i > 0; i--){
+		q= getInstrPtr(mb,i);
+		if (q->token == ENDsymbol)
+			break;
+		if ( getFunctionId(q) == mitosisRef || getFunctionId(q) == dataflowRef)
+			q->token = REMsymbol;	/* they are ignored */
 	}
 }
 

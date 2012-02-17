@@ -638,13 +638,13 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			 * complement the transparency created for Q_TABLE results,
 			 * but forget about last id data (wouldn't make sense if
 			 * we'd emit multiple update counts either) */
-			mnstr_printf(fout, "&%d %lld -1", Q_UPDATE, rlen);
+			mnstr_printf(fout, "&%d %lld -1\n", Q_UPDATE, rlen);
 			break;
 		case Q_SCHEMA:
-			mnstr_printf(fout, "&%d", Q_SCHEMA);
+			mnstr_printf(fout, "&%d\n", Q_SCHEMA);
 			break;
 		case Q_TRANS:
-			mnstr_printf(fout, "&%d %c", Q_TRANS, fcnt ? 't' : 'f');
+			mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
 			break;
 	}
 	mnstr_flush(fout);
@@ -661,7 +661,7 @@ multiplexThread(void *d)
 	fd_set fds;
 	multiplex_client *c;
 	int msock = -1;
-	char buf[BLOCK + 1];
+	char buf[10 * BLOCK + 1];
 	ssize_t len;
 	int r, i;
 	dpair p, q;
@@ -721,7 +721,7 @@ multiplexThread(void *d)
 		for (c = m->clients; c != NULL; c = c->next) {
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
-			if ((len = mnstr_read(c->fdin, buf, 1, BLOCK)) < 0) {
+			if ((len = mnstr_read(c->fdin, buf, 1, 10 * BLOCK)) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
 				/* don't crash on now stale c */

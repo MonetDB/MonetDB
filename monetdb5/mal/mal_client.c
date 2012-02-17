@@ -404,7 +404,8 @@ void freeClient(Client c)
 	c->promptlength=-1;
 	if(c->errbuf){
 		GDKsetbuf(0);
-		GDKfree(c->errbuf);
+		if ( c->father == NULL)
+			GDKfree(c->errbuf);
 		c->errbuf=0;
 	}
 	c->father = 0;
