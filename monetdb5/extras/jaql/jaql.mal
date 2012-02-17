@@ -39,9 +39,14 @@ function range(start:lng, end:lng, skip:lng)(kind:bat[:oid,:bte],string:bat[:oid
 	r6 := bat.new(:oid,:oid);
 	r7 := bat.new(:oid,:str);
 
-	# use array.series from sciql
+	# TODO: use array.series from sciql
 #	r3 := array.series(start, skip, end, 1, 1);
 	r3 := bat.new(:oid,:lng);
+	iend := calc.+(end, 1);
+	barrier (v,i) := language.newRange(start);
+			r3 := bat.append(r3, i);
+			redo (v,i) := language.nextElement(skip, iend);
+	exit (v,i);
 	r3 := algebra.markH(r3, 1@0);
 
 	r5 := algebra.project(r3, 0@0);
