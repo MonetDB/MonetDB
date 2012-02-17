@@ -655,7 +655,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	*o = *m;
 
 	/* create private allocator */
-	assert(m->sa == NULL);
+	m->sa = NULL;
 	SQLtrans(m);
 	status = m->session->status;
 
@@ -786,6 +786,7 @@ endofcompile:
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
 		sa_destroy(m->sa);
+	m->sa = NULL;
 	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	status = m->session->status;
