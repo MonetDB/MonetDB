@@ -914,7 +914,7 @@ SQLreader(Client c)
 	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "SQL client finished\n");
+	mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
 		c->mode = FINISHING;
 		return NULL;
@@ -960,7 +960,7 @@ SQLreader(Client c)
 
 		if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "Switch to backup stream\n");
+			mnstr_printf(GDKout, "#Switch to backup stream\n");
 #endif
 			in = c->fdin;
 			blocked = isa_block_stream(in->s);
@@ -1515,9 +1515,9 @@ SQLparser(Client c)
 finalize:
 	if (m->emod & mod_explain && !msg) {
 		if (be->q && be->q->code)
-			printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (c->curprg && c->curprg->def)
-			printFunction(GDKout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 	}
 	if (m->emod & mod_dot && !msg) {
 		if (be->q && be->q->code)
@@ -1904,7 +1904,7 @@ SQLCacheRemove(Client c, str nme)
 	Symbol s;
 
 #ifdef _SQL_CACHE_DEBUG
-	mnstr_printf(GDKout, "SQLCacheRemove %s\n", nme);
+	mnstr_printf(GDKout, "#SQLCacheRemove %s\n", nme);
 #endif
 
 	s= findSymbolInModule(c->nspace, nme);
