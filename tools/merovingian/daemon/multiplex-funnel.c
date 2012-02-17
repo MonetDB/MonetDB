@@ -638,13 +638,13 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			 * complement the transparency created for Q_TABLE results,
 			 * but forget about last id data (wouldn't make sense if
 			 * we'd emit multiple update counts either) */
-			mnstr_printf(fout, "&%d %lld -1", Q_UPDATE, rlen);
+			mnstr_printf(fout, "&%d %lld -1\n", Q_UPDATE, rlen);
 			break;
 		case Q_SCHEMA:
-			mnstr_printf(fout, "&%d", Q_SCHEMA);
+			mnstr_printf(fout, "&%d\n", Q_SCHEMA);
 			break;
 		case Q_TRANS:
-			mnstr_printf(fout, "&%d %c", Q_TRANS, fcnt ? 't' : 'f');
+			mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
 			break;
 	}
 	mnstr_flush(fout);
