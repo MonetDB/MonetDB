@@ -273,7 +273,7 @@ struct PIPELINES{
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
 */
-#ifdef WIN32
+#ifndef WIN32
 {"octopus_pipe",	
 	"optimizer.inline();"
 	"optimizer.remap();"
@@ -417,7 +417,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-#ifdef WIN32
+#ifndef WIN32
 	0},
 
 /* 
