@@ -482,8 +482,11 @@ addPipeDefinition(str name, str pipe)
 		GDKfree(pipes[i].name);
 	if ( pipes[i].def )
 		GDKfree(pipes[i].def);
+	if ( pipes[i].mb)
+		freeMalBlk(pipes[i].mb);
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
+	pipes[i].mb = NULL;
 	return MAL_SUCCEED;
 }
 
@@ -539,11 +542,12 @@ validatePipe(MalBlkPtr mb){
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
-	if ( idcmp(getFunctionId( getInstrPtr(mb,1)), "inline" ) )
+	if ( getFunctionId(getInstrPtr(mb,1)) == NULL || idcmp(getFunctionId( getInstrPtr(mb,1)), "inline" ) )
 		throw(MAL,"optimizer.validate","'inline' should be the first\n");
 
 	/* deadcode should be used */
 	for ( i=1; i < mb->stop -1; i++)
+	if ( getFunctionId(getInstrPtr(mb,i)) != NULL){
 		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"deadcode") == 0)
 			deadcode= TRUE;
 		else
@@ -567,6 +571,9 @@ validatePipe(MalBlkPtr mb){
 		if (strcmp(getFunctionId(getInstrPtr(mb,i)),"centipede") == 0)
 			throw(MAL,"optimizer.validate","'octopus' needs monetdbd\n");
 #endif
+	} else
+			throw(MAL,"optimizer.validate","Missing optimizer call\n");
+
 	if (mitosis == TRUE && mergetable == FALSE) 
 		throw(MAL,"optimizer.validate","'mitosis' needs 'mergetable'\n");
 
@@ -626,12 +633,14 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 		if ( pipes[j].mb == NULL) {
 			MSinitClientPrg(c, "user", pipes[j].name);
 			msg = compileString(&sym, c, pipes[j].def);
-			if ( msg != MAL_SUCCEED)
+			if ( msg != MAL_SUCCEED){
+				MCcloseClient(c); 
 				return msg;
+			}
 			pipes[j].mb = copyMalBlk(sym->def);
 		}
 		MCcloseClient(c); 
-		msg = validateOptimizerPipes();
+		validateOptimizerPipes();
 		if ( msg != MAL_SUCCEED)
 			return msg;
 	}
