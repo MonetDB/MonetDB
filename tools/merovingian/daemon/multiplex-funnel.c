@@ -661,7 +661,7 @@ multiplexThread(void *d)
 	fd_set fds;
 	multiplex_client *c;
 	int msock = -1;
-	char buf[BLOCK + 1];
+	char buf[10 * BLOCK + 1];
 	ssize_t len;
 	int r, i;
 	dpair p, q;
@@ -721,7 +721,7 @@ multiplexThread(void *d)
 		for (c = m->clients; c != NULL; c = c->next) {
 			if (!FD_ISSET(c->sock, &fds))
 				continue;
-			if ((len = mnstr_read(c->fdin, buf, 1, BLOCK)) < 0) {
+			if ((len = mnstr_read(c->fdin, buf, 1, 10 * BLOCK)) < 0) {
 				/* error, or some garbage */
 				multiplexRemoveClient(m, c);
 				/* don't crash on now stale c */
