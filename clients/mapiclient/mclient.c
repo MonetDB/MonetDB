@@ -1014,6 +1014,8 @@ SQLdebugRendering(MapiHdl hdl)
 		mnstr_printf(toConsole, "%s\n", reply);
 		if (strncmp(reply, "mdb>#EOD", 8) == 0) {
 			cnt = 0;
+			while ((reply = fetch_line(hdl)))
+				mnstr_printf(toConsole, "%s\n", reply);
 			break;
 		}
 	}
