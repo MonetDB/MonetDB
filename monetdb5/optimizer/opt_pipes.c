@@ -605,7 +605,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 	int i, j, k;
 	InstrPtr p;
 	Symbol sym;
-	str msg;
+	str msg = MAL_SUCCEED;
 	Client c;
 	
 	(void) cntxt;
