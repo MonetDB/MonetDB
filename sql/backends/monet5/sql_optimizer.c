@@ -453,9 +453,11 @@ setOptimizer(str newopt)
 		if ( optimizerpipe)
 			GDKfree(optimizerpipe);
 		/* add/test user defined optimizerpath */
-		if ( !isOptimizerPipe(newopt) )
+		if ( !isOptimizerPipe(newopt) ) {
 			addPipeDefinition("user", newopt);
-		optimizerpipe = GDKstrdup(newopt);
+			optimizerpipe = GDKstrdup("user");
+		} else
+			optimizerpipe = GDKstrdup(newopt);
 	} 
 	return GDKstrdup(optimizerpipe);
 }
