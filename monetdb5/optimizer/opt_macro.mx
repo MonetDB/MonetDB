@@ -557,7 +557,7 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			else
 				break;
 		}
-	chkProgram(cntxt->nspace, mb);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	return msg;
 }
 

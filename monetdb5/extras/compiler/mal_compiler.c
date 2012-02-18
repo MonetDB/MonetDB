@@ -552,7 +552,7 @@ mccMultiplex(Client cntxt, stream *f, MalBlkPtr mb, InstrPtr p)
 	setModuleId(pn, NULL);
 	setFunctionId(pn, GDKstrdup(getVarConstant(mb, pn->argv[pn->retc]).val.sval));
 	delArgument(pn, pn->retc);
-	typeChecker(cntxt->nspace, mb, pn, TRUE);
+	typeChecker(cntxt->fdout, cntxt->nspace, mb, pn, TRUE);
 
 	mnstr_printf(f, "{\tlng mloop;\n\tptr h,t;\n");
 	mnstr_printf(f, "init todo\n");
@@ -816,7 +816,7 @@ MCloadFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	loadLibrary(*fname,FALSE);
 	snprintf(buf,1024,"MCC%s_%s", *mod,*fcn);
 	sig=getInstrPtr(t->def,0);
-	sig->fcn = getAddress(*fname,*mod, buf,0);
+	sig->fcn = getAddress(cntxt->fdout, *fname,*mod, buf,0);
 	if(sig->fcn)
 		sig->token= COMMANDsymbol;
 	(void) ret;

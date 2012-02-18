@@ -85,7 +85,7 @@ All Rights Reserved.
 #include "monetdb_config.h"
 #include "opt_heuristics.h"
 static int
-SPcombi000(MalBlkPtr mb, int pc1, int pc2)
+SPcombi000(stream *out, MalBlkPtr mb, int pc1, int pc2)
 {
 	InstrPtr p, q;
 
@@ -100,8 +100,8 @@ SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 				p = pushArgument(mb, p, q->argv[2]);
 				(void) pushArgument(mb, p, q->argv[3]);
 				removeInstruction(mb, q);
-				chkFlow(mb);
-				chkDeclarations(mb);
+				chkFlow(out, mb);
+				chkDeclarations(out, mb);
 				return 1;
 			}
 		}
@@ -133,7 +133,7 @@ OPTheuristicsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* process the combinators */
 	for (i = 0; i < mb->stop - 1; i++) {
 		for (k = i + 1; k < mb->stop; k++)
-			if (SPcombi000(mb, i, k)) {
+			if (SPcombi000(cntxt->fdout, mb, i, k)) {
 				combis++;
 				k--;	/* an instruction has been removed */
 			}

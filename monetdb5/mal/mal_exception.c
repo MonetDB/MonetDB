@@ -172,9 +172,6 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 	char *message;
 	int len;
 
-#ifdef _DEBUG_EXCEPTION_
-	printf("exception:%s:%s\n",fcn,format);
-#endif
 	message = GDKmalloc(GDKMAXERRLEN);
 	if (message == NULL)
 		return M5OutOfMemory;
@@ -239,8 +236,7 @@ dumpExceptionsToStream(stream *out, str whatever) {
 }
 
 /**
- * Dump an error message using the exception structure using the primary
- * console as defined by GDKout.
+ * Dump an error message using the exception structure 
  */
 void
 showException(stream *out, enum malexception type, const char *fcn, const char *format, ...)
@@ -312,7 +308,7 @@ createScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *
  * createScriptException(mb, pc, type, NULL, format, ...) to a stream
  */
 void
-showScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
+showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
 {
 	va_list ap;
 	str msg;
@@ -321,7 +317,7 @@ showScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *fo
 	msg = createScriptExceptionInternal(mb, pc, type, NULL, format, ap);
 	va_end(ap);
 
-	dumpExceptionsToStream(GDKout,msg);
+	dumpExceptionsToStream(out,msg);
 	GDKfree(msg);
 }
 

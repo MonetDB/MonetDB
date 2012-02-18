@@ -1427,9 +1427,9 @@ SQLparser(Client c)
 			curBlk = c->curprg->def;
 
 			p = newFcnCall(curBlk, "optimizer", "remap");
-			typeChecker(c->nspace, curBlk, p, FALSE);
+			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
 			p = newFcnCall(curBlk, "optimizer", "multiplex");
-			typeChecker(c->nspace, curBlk, p, FALSE);
+			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
 			optimizeMALBlock(c, curBlk);
 			c->curprg->def = curBlk;
 		} else {
@@ -1490,9 +1490,9 @@ SQLparser(Client c)
 		if (be->q)
 			pushEndInstruction(c->curprg->def);
 
-		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
+		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case than
-		    chkProgram(c->nspace, c->curprg->def); */
+		    chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			if (m->emod & mod_debug) {
 				/* switch to differnt language mode */
@@ -1769,7 +1769,7 @@ SQLrecompile(Client c, backend *be)
 
 	pushEndInstruction(c->curprg->def);
 
-	chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
+	chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE); /* resolve types */
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		/* restore the state */

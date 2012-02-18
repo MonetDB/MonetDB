@@ -67,7 +67,7 @@ malBootstrap(void)
 		return 0;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->nspace, c->curprg->def);
+	chkProgram(c->fdout, c->nspace, c->curprg->def);
 	if (c->curprg->def->errors)
 		showErrors(c);
 	s = MALengine(c);
@@ -558,7 +558,7 @@ MALparser(Client c)
 		throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->nspace, c->curprg->def);
+	chkProgram(c->fdout, c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		if( c->listing)

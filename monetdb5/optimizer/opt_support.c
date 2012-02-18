@@ -652,9 +652,9 @@ str
 optimizerCheck(Client cntxt, MalBlkPtr mb, str name, int actions, lng usec, int flag)
 {
 	if( actions > 0){
-		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->nspace, mb, FALSE);
-		if( flag & OPT_CHECK_FLOW) chkFlow(mb);
-		if( flag & OPT_CHECK_DECL) chkDeclarations(mb);
+		if( flag & OPT_CHECK_TYPES) chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+		if( flag & OPT_CHECK_FLOW) chkFlow(cntxt->fdout, mb);
+		if( flag & OPT_CHECK_DECL) chkDeclarations(cntxt->fdout, mb);
 	}
 	if( cntxt->debugOptimizer){
 		/* keep the actions take as post block comments */

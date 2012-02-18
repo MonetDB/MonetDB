@@ -489,7 +489,7 @@ addQueryToCache(Client c)
 	trimMalBlk(c->curprg->def);
 	c->blkmode = 0;
 	mb = c->curprg->def;
-	chkProgram(c->nspace, mb);
+	chkProgram(c->fdout, c->nspace, mb);
 	m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");

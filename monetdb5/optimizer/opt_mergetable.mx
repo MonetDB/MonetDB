@@ -2313,7 +2313,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	 * For the time being, they are no-ops.
 	 */
 	(void) stk; 
-	chkTypes(cntxt->nspace,mb, TRUE);
+	chkTypes(cntxt->fdout, cntxt->nspace,mb, TRUE);
 
 	OPTDEBUGmergetable {
 		mnstr_printf(GDKout,"#Result of multi table optimizer\n");

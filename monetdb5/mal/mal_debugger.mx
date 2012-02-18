@@ -1965,7 +1965,7 @@ printBatDetails(stream *f, int bid)
 	MALfcn fcn;
 
 	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress("bat","bat","BKCinfo", 0);
+	fcn = getAddress(f,"bat","bat","BKCinfo", 0);
 	if (fcn)  {
 		(*fcn) (&ret, &bid);
 		b = BATdescriptor(ret);
@@ -1991,7 +1991,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		MALfcn fcn;
 		BUN p;
 
-		fcn = getAddress("bat","bat","BKCinfo", 0);
+		fcn = getAddress(f,"bat","bat","BKCinfo", 0);
 		if (fcn) {
 			BAT *b;
 

@@ -666,7 +666,7 @@ RCgenerator(Receptor rc)
 	p = newFcnCall(mb, rc->modnme, rc->fcnnme);
 	pc = getPC(mb, p);
 	pushEndInstruction(mb);
-	chkProgram(cntxt->nspace, mb);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	if (mb->errors) {
 		mnstr_printf(RCout, "Receptor Controller found errors\n");
 		return;
