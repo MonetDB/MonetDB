@@ -970,7 +970,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				break;
 			}
 			if (strncmp("call", b, 3) == 0) {
-				showException(MAL,"mdb.command", "call instruction not yet implemented");
+				showException(cntxt->fdout, MAL,"mdb.command", "call instruction not yet implemented");
 				break;
 			}
 			stk->cmd = 'c';
@@ -2056,10 +2056,8 @@ memProfileVector(stream *out, int cells)
 	long granule = 0;
 #endif
 
-	if (cells <= 0) {
-		showException(MAL,"memProfileVector", "positive argument expected");
+	if (cells <= 0)
 		return GDKstrdup("");
-	}
 	v = GDKmalloc(cells + 1);
 	if (v == 0)
 		return NULL;

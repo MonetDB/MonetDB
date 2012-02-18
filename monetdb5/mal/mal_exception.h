@@ -19,6 +19,7 @@
 
 #ifndef _MAL_EXCEPTION_H
 #define _MAL_EXCEPTION_H
+#include "monetdb_config.h"
 #include "mal_instruction.h"
 
 /* #define _DEBUG_EXCEPTION_		trace the exception handling */
@@ -54,9 +55,9 @@ enum malexception {
 mal_export str	createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
-mal_export void	showException(enum malexception, const char *,
+mal_export void	showException(stream *out, enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	__attribute__((__format__(__printf__, 4, 5)));
 mal_export str	createScriptException(MalBlkPtr, int, enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 5, 6)));

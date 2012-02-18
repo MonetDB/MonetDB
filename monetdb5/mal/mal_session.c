@@ -313,7 +313,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 				"client thread), please try again later\n");
 		mnstr_flush(fout);
-		showException(MAL, "initClient", "cannot fork new client thread");
+		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
 		return;
 	}
 }
@@ -420,7 +420,7 @@ MSserveClient(void *dummy)
 	if ( c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if ( c->glb == NULL){
-		showException(MAL, "serveClient", MAL_MALLOC_FAIL);
+		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
 		c->mode = FINISHING + 1; /* == CLAIMED */
 	} else {
 		c->glb->stktop = mb->vtop;
@@ -430,7 +430,7 @@ MSserveClient(void *dummy)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		showException(MAL, "serveClient", "could not initialize default scenario");
+		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
 		c->mode = FINISHING + 1; /* == CLAIMED */
 	} else {
 		do {

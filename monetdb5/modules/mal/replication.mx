@@ -1021,7 +1021,7 @@ MASTERsend(void *arg)
 		bs = bstream_create(s, 128 * BLOCK);
 		if (bstream_next(bs) < 0) {
 			bstream_destroy(bs);
-			showException(MAL, "master.send", "read error");
+			showException(GDKout, MAL, "master.send", "read error");
 			break;
 		}
 		hdl = mapi_query(masterstatus[idx].m, bs->buf);
@@ -1030,7 +1030,7 @@ MASTERsend(void *arg)
 			mal_unset_lock(repLck, "replication");
 		close_stream(s);
 		if (mapi_result_error(hdl)) {
-			showException(getExceptionType(mapi_result_error(hdl)),
+			showException(GDKout, getExceptionType(mapi_result_error(hdl)),
 				"master.send",
 				"%s", getExceptionMessage(mapi_result_error(hdl)));
 			break; /* all errors are fatal */

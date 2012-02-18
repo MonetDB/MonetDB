@@ -172,7 +172,7 @@ MCnewClient(void)
 	Client c;
 	mal_set_lock(mal_contextLock, "newClient");
 	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHING) {
-		showException(MAL, "newClient", "system shutdown in progress");
+		/*system shutdown in progress */
 		mal_unset_lock(mal_contextLock, "newClient");
 		return NULL;
 	}
@@ -308,7 +308,7 @@ int MCinitClientThread(Client c)
 	c->mypid = MT_getpid();
 	t = THRnew(c->mypid,cname);
 	if ( t==0) {
-		showException(MAL, "initClientThread", "Failed to initialize client");
+		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}

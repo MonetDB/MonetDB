@@ -749,7 +749,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
  	if (THRhighwater()) {
 		if (sql->client->exception_buf_initialized)
 			longjmp(sql->client->exception_buf, -1);
-		showException(SQL, "sql", "too many nested operators");
+		showException(GDKout,SQL, "sql", "too many nested operators");
 		assert(0);
 	}
 
@@ -1102,7 +1102,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 					break;
 				default:
-					showException(SQL,"sql","Unknown operator");
+					showException(GDKout,SQL,"sql","Unknown operator");
 				}
 
 				/* select on join */
@@ -1240,7 +1240,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, ">=");
 					break;
 				default:
-					showException(SQL,"sql","SQL2MAL: error impossible\n");
+					showException(GDKout,SQL,"sql","SQL2MAL: error impossible\n");
 				}
 			}
 			if ( q )
@@ -1441,7 +1441,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				break;
 			default:
-				showException(SQL,"sql","SQL2MAL: error impossible\n");
+				showException(GDKout,SQL,"sql","SQL2MAL: error impossible\n");
 			}
 			if (q)
 				s->nr = getDestVar(q);

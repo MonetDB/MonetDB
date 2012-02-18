@@ -160,7 +160,7 @@ getFreeScenario(void)
 		;
 
 	if (i == MAXSCEN) {
-		showException(MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
+		showException(GDKout, MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
 	} else {
 		scen = scenarioRec + i;
 	}

@@ -157,7 +157,7 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 			return adr; /* found it */
 	}
 	if( !silent)
-		showException(MAL,"MAL.getAddress", "address of '%s.%s' not found",
+		showException(GDKout, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
 	return NULL;
 }
@@ -291,7 +291,7 @@ loadLibrary(str filename, int flag)
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
-		showException(MAL,"loadModule", "internal error, too many modules loaded");
+		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = GDKstrdup(nme);
