@@ -459,8 +459,11 @@ addPipeDefinition(str name, str pipe)
 		GDKfree(pipes[i].def);
 	if ( pipes[i].mb)
 		freeMalBlk(pipes[i].mb);
+	if ( pipes[i].status )
+		GDKfree(pipes[i].status);
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
+	pipes[i].status = GDKstrdup("experimental");
 	pipes[i].mb = NULL;
 	return MAL_SUCCEED;
 }
