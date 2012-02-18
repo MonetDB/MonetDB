@@ -88,8 +88,6 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 
 	if (msg) {
-		fprintf(stdout, "# MonetDB/DataCell module not loaded: %s\n", msg);
-		fflush(stdout); /* make merovingian see this *now* */
 		GDKfree(msg);
 		return MAL_SUCCEED;
 	}
