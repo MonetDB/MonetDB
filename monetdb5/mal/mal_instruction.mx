@@ -226,7 +226,6 @@ mal_export void prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb, str marker);
-mal_export void showMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
 mal_export MalBlkPtr gotoMalBlkMarker(MalBlkPtr mb, str marker);
 mal_export MalBlkPtr getMalBlkMarker(MalBlkPtr mb, str marker);

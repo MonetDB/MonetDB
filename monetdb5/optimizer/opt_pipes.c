@@ -618,8 +618,11 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 	
 	(void) cntxt;
 
-	/* compile pipes first */
 	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
+	if ( strcmp(pipes[i].name, name) == 0)
+		break;
+
+	/* compile pipes first */
 	if ( pipes[i].mb == 0){
 		/* precompile the pipeline as MAL string */
 		c= MCinitClient((oid)1,0,0);
@@ -649,8 +652,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 			return msg;
 	}
 
-	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
-	if ( strcmp(pipes[i].name, name) == 0 && pipes[i].mb) {
+	if ( pipes[i].mb) {
 		for ( j =1; j < pipes[i].mb->stop-1; j++) {
 			p =  copyInstruction(pipes[i].mb->stmt[j]);
 			for ( k =0; k < p->argc; k++) 

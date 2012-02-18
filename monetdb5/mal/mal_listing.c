@@ -689,7 +689,7 @@ printSignature(stream *fd, Symbol s, int flg)
  * For clarity we show the last optimizer applied
  * also as the last of the list, although it is linked with mb.
 */
-void showMalBlkHistory(MalBlkPtr mb)
+void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
 	InstrPtr p,sig;
@@ -703,7 +703,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 		if( p->token == REMsymbol){
 			msg= instruction2str(m, 0, p, FALSE);
 			if (msg ) {
-				mnstr_printf(GDKout,"%s.%s[%2d] %s\n", 
+				mnstr_printf(out,"%s.%s[%2d] %s\n", 
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 			}
@@ -714,7 +714,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 	if( p->token == REMsymbol){
 		msg= instruction2str(mb, 0, p, FALSE);
 		if (msg) {
-			mnstr_printf(GDKout,"%s.%s[%2d] %s\n", 
+			mnstr_printf(out,"%s.%s[%2d] %s\n", 
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 		}

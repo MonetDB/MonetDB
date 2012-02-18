@@ -1552,9 +1552,9 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			if (*b) {
 				mdot=mdbLocateMalBlk(cntxt,mb,b,out);
 				if(mdot != NULL)
-					showMalBlkHistory(mdot);
+					showMalBlkHistory(out,mdot);
 			} else
-				showMalBlkHistory(mb);
+				showMalBlkHistory(out,mb);
 			break;
 		}
 		case 'r':	/* reset program counter */
