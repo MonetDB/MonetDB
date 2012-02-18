@@ -49,8 +49,8 @@ Ready.
 % . # table_name
 % single_value # name
 % varchar # type
-% 188 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,garbageCollector"	]
+% 12 # length
+[ "default_pipe"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -69,8 +69,8 @@ end s2_1;
 % . # table_name
 % single_value # name
 % varchar # type
-% 199 # length
-[ "inline,remap,evaluate,costModel,coercions,emptySet,aliases,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,history,multiplex,accumulators,sql_append,garbageCollector"	]
+% 452 # length
+[ "optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
