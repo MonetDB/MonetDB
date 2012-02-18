@@ -442,7 +442,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	"OPTcompression",0}
+	"OPTcompress",0}
 
 };
 #ifdef WIN32
