@@ -903,12 +903,12 @@ AC_ARG_ENABLE(instrument,
 
 dnl check whether no (explictly chosen) mutual exclusive combinations
 dnl were made, compatability matrix:
-dnl                 deb  ass  opt  war  pro  ins
-dnl   debug          \    C    X    C    C    C
-dnl   assert         C    \    C    C    C    C
-dnl   optimize       X    C    \    C    X    X
-dnl   profile        C    C    X    C    \    C
-dnl   instrument     C    C    X    C    C    \
+dnl                 deb  ass  opt  pro  ins
+dnl   debug          \    C    X    C    C
+dnl   assert         C    \    C    C    C
+dnl   optimize       X    C    \    X    X
+dnl   profile        C    C    X    \    C
+dnl   instrument     C    C    X    C    \
 
 case "x$enable_debug.$enable_optim.$enable_prof.$enable_instrument" in
 	# find conflicts
