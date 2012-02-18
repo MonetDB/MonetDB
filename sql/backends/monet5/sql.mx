@@ -345,7 +345,7 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
-command optimizers()(:bat[:oid,:str],:bat[:oid,:str])
+command optimizers()(:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:str])
 address getPipeCatalog;
 
 function times(elaps:int,inblock:lng, oublock:lng):void;

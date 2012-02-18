@@ -44,6 +44,7 @@
 struct PIPELINES{
 	char *name;
 	char *def;
+	char *status;
 	char *prerequisite;
 	MalBlkPtr mb;
 } pipes[MAXOPTPIPES] ={
@@ -54,7 +55,7 @@ struct PIPELINES{
 	"optimizer.deadcode();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();", 
-	0,0},
+	"stable",0,0},
 
 /*
  * The default pipe line contains as of Feb2010 mitosis-mergetable-reorder,
@@ -81,7 +82,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	 0,0},
+	 "stable",0,0},
 
 /*
  * The no_mitosis pipe line is (and should be kept!) identical to the default pipeline,
@@ -109,7 +110,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	0,0},
+	"stable",0,0},
 
 /* The sequential pipe line is (and should be kept!) identical to the default pipeline,
  * except that optimizers mitosis & dataflow are omitted.  It is use mainly to make some
@@ -134,7 +135,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	 0,0 },
+	"stable", 0,0 },
 
 /* The default pipeline used in the November 2009 release
 { "nov2009_pipe",	
@@ -156,7 +157,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	0,0},
+	"stable",0,0},
 */
 
 /*
@@ -184,7 +185,7 @@ struct PIPELINES{
 	"optimizer.replication();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	 0,0 },
+	"experimental",0,0 },
 */
 
 {"accumulator_pipe",	
@@ -207,7 +208,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	0,0},
+     "stable",0,0},
 
 {"recycler_pipe",	
 	"optimizer.inline();"
@@ -226,49 +227,49 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	0,0},
+	"experimental",0,0},
 
 {"cracker_pipe",	
-"optimizer.inline();"
-"optimizer.remap();"
-"optimizer.evaluate();"
-"optimizer.costModel();"
-"optimizer.coercions();"
-"optimizer.emptySet();"
-"optimizer.aliases();"
-"optimizer.selcrack();"
-"optimizer.deadcode();"
-"optimizer.commonTerms();"
-"optimizer.joinPath();"
-"optimizer.reorder();"
-"optimizer.deadcode();"
-"optimizer.reduce();"
-"optimizer.dataflow();"
-"optimizer.history();"
-"optimizer.multiplex();"
-"optimizer.garbageCollector();",
-"OPTselcrack",0},
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.selcrack();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	"experimental","OPTselcrack",0},
 
 {"sidcrack_pipe",	
-"optimizer.inline();"
-"optimizer.remap();"
-"optimizer.evaluate();"
-"optimizer.costModel();"
-"optimizer.coercions();"
-"optimizer.emptySet();"
-"optimizer.aliases();"
-"optimizer.sidcrack();"
-"optimizer.deadcode();"
-"optimizer.commonTerms();"
-"optimizer.joinPath();"
-"optimizer.reorder();"
-"optimizer.deadcode();"
-"optimizer.reduce();"
-"optimizer.dataflow();"
-"optimizer.history();"
-"optimizer.multiplex();"
-"optimizer.garbageCollector();",
-"OPTsidcrack",0},
+	"optimizer.inline();"
+	"optimizer.remap();"
+	"optimizer.evaluate();"
+	"optimizer.costModel();"
+	"optimizer.coercions();"
+	"optimizer.emptySet();"
+	"optimizer.aliases();"
+	"optimizer.sidcrack();"
+	"optimizer.deadcode();"
+	"optimizer.commonTerms();"
+	"optimizer.joinPath();"
+	"optimizer.reorder();"
+	"optimizer.deadcode();"
+	"optimizer.reduce();"
+	"optimizer.dataflow();"
+	"optimizer.history();"
+	"optimizer.multiplex();"
+	"optimizer.garbageCollector();",
+	"experimental","OPTsidcrack",0},
 
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
@@ -296,7 +297,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	"OPToctopus",0 },
+	"experimental", "OPToctopus",0 },
 /* 
  * The centipede pipe line aims at a map-reduce style of query processing
 */
@@ -321,7 +322,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	"OPTcentipede",0 },
+	"experimental", "OPTcentipede",0 },
 #endif
 
 {"datacell_pipe",
@@ -347,7 +348,7 @@ struct PIPELINES{
 	"optimizer.multiplex();"
 	"optimizer.accumulators();"
 	"optimizer.garbageCollector();",
-	"OPTdatacell",0},
+	"experimental", "OPTdatacell",0},
 
 /* The default + datacyclotron*/
 {"datacyclotron_pipe",	
@@ -371,31 +372,7 @@ struct PIPELINES{
 	/* "optimizer.replication();" not used */
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	"OPTdatacyclotron",0},
-
-/* The default + derivePath" */
-{"derive_pipe",	
-	"optimizer.inline();"
-	"optimizer.remap();"
-	"optimizer.evaluate();"
-	"optimizer.costModel();"
-	"optimizer.coercions();"
-	"optimizer.emptySet();"
-	"optimizer.aliases();"
-	"optimizer.mitosis();"
-	"optimizer.mergetable();"
-	"optimizer.deadcode();"
-	"optimizer.commonTerms();"
-	"optimizer.derivePath();"
-	"optimizer.joinPath();"
-	"optimizer.reorder();"
-	"optimizer.deadcode();"
-	"optimizer.reduce();"
-	"optimizer.dataflow();"
-	"optimizer.history();"
-	"optimizer.multiplex();"
-	"optimizer.garbageCollector();",
-	"OPTderivePath",0},
+	"experimental", "OPTdatacyclotron",0},
 
 /* The default + dictionary*/
 {"dictionary_pipe",	
@@ -418,7 +395,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	"OPTdictionary",0},
+	"experimental","OPTdictionary",0},
 
 /* The default + compression */
 {"compression_pipe",	
@@ -442,7 +419,7 @@ struct PIPELINES{
 	"optimizer.history();"
 	"optimizer.multiplex();"
 	"optimizer.garbageCollector();",
-	"OPTcompress",0}
+	"experimental","OPTcompress",0}
 
 };
 #ifdef WIN32
@@ -511,30 +488,42 @@ getPipeDefinition(str name)
 }
 
 str
-getPipeCatalog(int *nme, int *def)
+getPipeCatalog(int *nme, int *def, int *stat)
 {
-	BAT *b,*bn;
+	BAT *b,*bn, *bs;
 	int i;
 	b= BATnew(TYPE_void, TYPE_str, 20);
 	if ( b == NULL)
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL );
+
 	bn= BATnew(TYPE_void, TYPE_str, 20);
 	if ( bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL );
 	}
+
+	bs= BATnew(TYPE_void, TYPE_str, 20);
+	if ( bs == NULL){
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(bn->batCacheid);
+		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL );
+	}
+
 	BATseqbase(b,0);
 	BATseqbase(bn,0);
+	BATseqbase(bs,0);
 	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++){
 		if ( pipes[i].prerequisite &&
 			getAddress(GDKout, NULL, optimizerRef, pipes[i].prerequisite, TRUE) == NULL)
 		continue;
 		BUNappend(b,pipes[i].name, FALSE);
 		BUNappend(bn,pipes[i].def, FALSE);
+		BUNappend(bs,pipes[i].status, FALSE);
 	}
 
 	BBPkeepref(*nme= b->batCacheid);
 	BBPkeepref(*def= bn->batCacheid);
+	BBPkeepref(*stat= bs->batCacheid);
 	return MAL_SUCCEED;
 }
 
