@@ -1,17 +1,18 @@
 stdout of test 'casts` in directory 'tests/gdkTests` itself:
 
 
-# 11:08:56 >  
-# 11:08:56 >   mserver5 "--config=C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\etc\monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\lib\MonetDB5;C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\lib\MonetDB5\lib;C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\lib\MonetDB5\bin" --set "gdk_dbfarm=C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\var\MonetDB5\dbfarm" --set "sql_logdir=C:\Documents and Settings\sjoerd\My Documents\src\stable\vs64\NT64\var\MonetDB5\sql_logs"   --set mapi_open=true --set xrpc_open=true --set mapi_port=36798 --set xrpc_port=44314 --set monet_prompt= --trace  --dbname=mTests_tests_gdkTests  casts.mal
-# 11:08:56 >  
+# 23:39:53 >  
+# 23:39:53 >  Mtimeout -timeout 60 mserver5 "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/dblogs" --set mapi_port=38963 --set monet_prompt= --trace --dbname=mTests_tests_gdkTests  casts.mal < /dev/null
+# 23:39:53 >  
 
-# MonetDB server v5.10.2, based on kernel v1.28.2
-# Serving database 'mTests_tests_gdkTests', using 1 thread
-# Compiled for i686-pc-win32/64bit with 32bit OIDs dynamically linked
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# MonetDB Server v4.99.19
+# Copyright (c) 1993-2006 CWI, all rights reserved
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs dynamically linked
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_gdkTests
 # Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://duif:36798/
+# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
     io.printf("# casting to int\n");
     io.print(0:int);
@@ -891,6 +892,7 @@ function user.main():void;
     io.print("random string":str);
 end main;
 # casting to int
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -902,15 +904,19 @@ end main;
 [ -2147483647 ]
 [ -2147483648 ]
 [ -2147483649 ]
-# int from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
-# int from chr
+
+# from chr
 [ 97 ]
-# int from sht
+
+# from sht
 [ 1 ]
 [ 32767 ]
-# int from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -922,7 +928,8 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# int from lng
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ nil ]
@@ -930,7 +937,8 @@ end main;
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-# int from flt
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -946,7 +954,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# int from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -962,13 +971,15 @@ end main;
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-# int from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
-# int from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -980,48 +991,57 @@ end main;
 [ nil ]
 [ nil ]
 # to bit
-# bit from bit
+
+# from bit
 [ true ]
 [ false ]
-# bit from chr
+
+# from chr
 [ true ]
 [ false ]
-# bit from sht
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-# bit from int
+
+# from sht
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-# bit from lng
+
+# from int
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-# bit from flt
+
+# from lng
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-[ true ]
-[ true ]
-# bit from dbl
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-# bit from oid
+
+# from flt
 [ false ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
-# bit from str
+[ true ]
+
+# from dbl
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from oid
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from str
 [ true ]
 [ false ]
 [ false ]
@@ -1029,13 +1049,16 @@ end main;
 [ nil ]
 [ nil ]
 # to sht
-# sht from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
-# sht from chr
+
+# from chr
 [ 97 ]
 [ 0 ]
-# sht from int
+
+# from int
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -1044,7 +1067,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# sht from lng
+
+# from lng
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -1053,7 +1077,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# sht from flt
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1069,7 +1094,8 @@ end main;
 [ -32767 ]
 [ nil ]
 [ nil ]
-# sht from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1085,13 +1111,15 @@ end main;
 [ -32767 ]
 [ nil ]
 [ nil ]
-# sht from oid
+
+# from oid
 [ 0 ]
 [ 1 ]
 [ 4096 ]
 [ nil ]
 [ nil ]
-# sht from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -1102,6 +1130,7 @@ end main;
 [ nil ]
 [ nil ]
 # to long
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -1119,15 +1148,19 @@ end main;
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
-# lng from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
-# lng from chr
+
+# from chr
 [ 97 ]
-# lng from sht
+
+# from sht
 [ 1 ]
 [ 32767 ]
-# lng from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1139,8 +1172,9 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# lng from lng
-# lng from flt
+
+# from lng
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1162,7 +1196,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# lng from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1184,7 +1219,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# lng from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
@@ -1193,7 +1229,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# lng from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -1210,16 +1247,21 @@ end main;
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
+
 # to flt
-# flt from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
-# flt from chr
+
+# from chr
 [ 97 ]
-# flt from sht
+
+# from sht
 [ 1 ]
 [ 32767 ]
-# flt from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1245,7 +1287,8 @@ end main;
 [ -9.22337204e+018 ]
 [ nil ]
 [ nil ]
-# flt from dbl
+
+# from dbl
 [ 0 ]
 [ 0.100000001 ]
 [ 0.5 ]
@@ -1267,7 +1310,8 @@ end main;
 [ 2.14748365e+009 ]
 [ nil ]
 [ nil ]
-# flt from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2.14748365e+009 ]
@@ -1360,16 +1404,21 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # to dbl
-# dbl from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
-# dbl from chr
+
+# from chr
 [ 97 ]
+
 # from sht
 [ 1 ]
 [ 32767 ]
-# dbl from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1381,7 +1430,8 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# dbl from lng
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ 2147483648 ]
@@ -1395,7 +1445,8 @@ end main;
 [ -9.2233720368547758e+018 ]
 [ nil ]
 [ nil ]
-# dbl from flt
+
+# from flt
 [ 0 ]
 [ 0.10000000149011612 ]
 [ 0.5 ]
@@ -1411,13 +1462,15 @@ end main;
 [ -2147483648 ]
 [ -2147483648 ]
 [ -2147483648 ]
-# dbl from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
-# dbl from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -1519,15 +1572,20 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # to oid
+
 # from bit
 [ 1@0 ]
 [ 0@0 ]
+
 # from chr
 [ 97@0 ]
+
 # from sht
 [ 1@0 ]
 [ 32767@0 ]
+
 # from int
 [ 1@0 ]
 [ 32767@0 ]
@@ -1540,6 +1598,7 @@ end main;
 [ nil ]
 # should this produce nil (overflow)?
 [ 2147483647@0 ]
+
 # from lng
 [ 1@0 ]
 [ 2147483647@0 ]
@@ -1551,6 +1610,7 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # from flt
 [ 0@0 ]
 [ 0@0 ]
@@ -1567,6 +1627,7 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # from dbl
 [ 0@0 ]
 [ 0@0 ]
@@ -1583,12 +1644,14 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # from oid
 [ 2@0 ]
 [ 2@0 ]
 [ 2147483647@0 ]
 [ nil ]
 [ nil ]
+
 # from str
 [ 0@0 ]
 [ 32767@0 ]
@@ -1601,14 +1664,18 @@ end main;
 [ nil ]
 [ nil ]
 # to str
+
 # from bit
 [ "true" ]
 [ "false" ]
+
 # from chr
 [ "a" ]
+
 # from sht
 [ "1" ]
 [ "32767" ]
+
 # from int
 [ "1" ]
 [ "32767" ]
@@ -1621,6 +1688,7 @@ end main;
 [ "-2147483647" ]
 # should this produce nil (overflow)?
 [ "2147483647" ]
+
 # from lng
 [ "1" ]
 [ "2147483647" ]
@@ -1629,6 +1697,7 @@ end main;
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
 # from flt
 [ "0" ]
 [ "0.100000001" ]
@@ -1661,12 +1730,14 @@ end main;
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
 # from oid
 [ "2@0" ]
 [ "2@0" ]
 [ "2147483647@0" ]
 [ nil ]
 [ nil ]
+
 # from str
 [ "0" ]
 [ "32767" ]
@@ -1679,7 +1750,7 @@ end main;
 [ "" ]
 [ "random string" ]
 
-# 11:08:59 >  
-# 11:08:59 >  Done.
-# 11:08:59 >  
+# 14:56:01 >  
+# 14:56:01 >  Done.
+# 14:56:01 >  
 

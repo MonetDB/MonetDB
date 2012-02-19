@@ -18,9 +18,9 @@ stdout of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'test/BugTracker-20
 
 Ready.
 
-# 09:45:45 >  
-# 09:45:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=localhost" "--port=34941"
-# 09:45:45 >  
+# 12:42:07 >  
+# 12:42:07 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=32243"
+# 12:42:07 >  
 
 #prepare select count(*) from _tables having count(*) = ?;
 #prepare select count(*) from _tables having count(*) = ?;
