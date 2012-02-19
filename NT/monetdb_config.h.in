@@ -703,9 +703,6 @@
 /* Define if you don't want to expand the bte type */
 /* #undef NOEXPAND_BTE */
 
-/* Define if you don't want to expand the chr type */
-/* #undef NOEXPAND_CHR */
-
 /* Define if you don't want to expand the dbl type */
 /* #undef NOEXPAND_DBL */
 
