@@ -2358,13 +2358,13 @@ static char *
 create_trigger( mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s;
+	sql_schema *s = NULL;
 	sql_table *t;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
 
-	if (!schema_privs(sql->role_id, s)) 
+	if (s && !schema_privs(sql->role_id, s)) 
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if ((tri = mvc_bind_trigger(sql, s, triggername )) != NULL) 
 		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
