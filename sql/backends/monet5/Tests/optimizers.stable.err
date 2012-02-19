@@ -1,20 +1,44 @@
 stderr of test 'optimizers` in directory 'backends/monet5` itself:
 
 
-# 08:05:50 >  
-# 08:05:50 >  Mtimeout -timeout 180  mserver5 "--config=/ufs/mk/monet5stable/Linux/etc/monetdb5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5stable//Linux/lib/MonetDB5:/ufs/mk/monet5stable//Linux/lib/MonetDB5/lib:/ufs/mk/monet5stable//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5stable//dbfarm" --set "sql_logdir=/ufs/mk/monet5stable//dblogs/logs/sql" --set "xquery_logdir=/ufs/mk/monet5stable//Linux/var/MonetDB5/xquery_logs" --set mapi_open=true --set mapi_port=35043 --set xrpc_port=43626 --set monet_prompt= --trace "--dbname=mTests_src_backends_monet5" --dbinit=' include sql;' ; echo ; echo Over..
-# 08:05:50 >  
+# 03:16:16 >  
+# 03:16:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36613" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5" "--set" "mal_listing=0"
+# 03:16:16 >  
 
-#warning: please don't forget to set your vault key!
-#(see /ufs/mk/monet5stable/Linux/etc/monetdb5.conf)
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /ufs/manegold/_/Monet/HG/default/prefix/--disable-assert_--disable-debug_--enable-optimize/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36613
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_backends_monet5
+# cmdline opt 	mal_listing = 0
 
-# 08:05:50 >  
-# 08:05:50 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=gio --port=35043 
-# 08:05:50 >  
+# 03:16:16 >  
+# 03:16:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=36613"
+# 03:16:16 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@rome:32064
+QUERY = set optimizer='off';
+ERROR = !Syntax error detected.See documentation for details
+MAPI  = monetdb@rome:32064
+QUERY = set optimizer='on';
+ERROR = !Syntax error detected.See documentation for details
+MAPI  = monetdb@rome:32064
 QUERY = set optimizer='';
-ERROR = !SQLException:optimizer:Optimizer '' pipeline does not exist, use default pipe instead
+ERROR = !Syntax error detected.See documentation for details
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='costModel,coercions,emptySet,accessmode,aliases,commonTerms,accumulators,joinPath,deadcode,reduce,garbageCollector';
 ERROR = !SET OPTIMIZER: 'inline' should be the first
@@ -55,7 +79,7 @@ MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='costModel,coercions,emptySet,accessmode,commonTerms,accumulators,joinPath,deadcode,garbageCollector';
 ERROR = !SET OPTIMIZER: 'inline' should be the first
 
-# 08:05:51 >  
-# 08:05:51 >  Done.
-# 08:05:51 >  
+# 03:16:17 >  
+# 03:16:17 >  "Done."
+# 03:16:17 >  
 
