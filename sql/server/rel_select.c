@@ -4629,7 +4629,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 
 	/* if within the selection, keep the current projections */
-	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer)) {
+	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer) && outer->l) {
 		/* keep projections the hard way, ie don't rename them */
 		assert(rel->l == outer);
 
