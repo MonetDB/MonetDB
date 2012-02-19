@@ -62,7 +62,7 @@ Ready.
 % mal # name
 % clob # type
 % 175 # length
-function user.s3_1{autoCommit=true}():void;
+function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/tmp/xyz":str,-1:lng,0:lng,0:int);
     X_9 := sql.append(X_2,"sys","ttt","a",X_6);
@@ -70,7 +70,7 @@ function user.s3_1{autoCommit=true}():void;
     X_14 := sql.append(X_11,"sys":str,"ttt":str,"c",X_8);
     X_16 := aggr.count(X_8);
     sql.affectedRows(X_14,X_16,"");
-end s3_1;
+end s2_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #select optimizer;
@@ -90,7 +90,7 @@ end s3_1;
 % mal # name
 % clob # type
 % 175 # length
-function user.s11_1{autoCommit=true}():void;
+function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/tmp/xyz":str,-1:lng,0:lng,0:int);
     X_9 := sql.append(X_2,"sys","ttt","a",X_6);
@@ -98,7 +98,7 @@ function user.s11_1{autoCommit=true}():void;
     X_16 := aggr.count(X_8);
     X_14 := sql.append(X_11,"sys":str,"ttt":str,"c",X_8);
     sql.affectedRows(X_14,X_16,"");
-end s11_1;
+end s5_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
 #drop table ttt;
