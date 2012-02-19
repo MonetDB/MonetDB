@@ -20,9 +20,9 @@ Ready.
 #end main;
 
 
-# 22:44:14 >  
-# 22:44:14 >  mclient -lsql -ftest -i -e --host=build-t1000-sol10 --port=31931 
-# 22:44:14 >  
+# 22:26:13 >  
+# 22:26:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35561 
+# 22:26:13 >  
 
 #select cast(power(2,63) as bigint);
 % . # table_name
@@ -31,7 +31,7 @@ Ready.
 % 19 # length
 [ 9223372036854775807	]
 
-# 22:44:15 >  
-# 22:44:15 >  Done.
-# 22:44:15 >  
+# 22:26:13 >  
+# 22:26:13 >  Done.
+# 22:26:13 >  
 

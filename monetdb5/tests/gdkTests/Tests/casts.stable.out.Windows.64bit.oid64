@@ -870,6 +870,7 @@ function user.main():void;
     io.print("random string":str);
 end main;
 # casting to int
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -881,13 +882,15 @@ end main;
 [ -2147483647 ]
 [ -2147483648 ]
 [ -2147483649 ]
-# int from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
 # int from sht
 [ 1 ]
 [ 32767 ]
-# int from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -899,7 +902,8 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# int from lng
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ nil ]
@@ -907,7 +911,8 @@ end main;
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-# int from flt
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -923,7 +928,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# int from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -939,13 +945,15 @@ end main;
 [ -2147483647 ]
 [ nil ]
 [ nil ]
-# int from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
 [ nil ]
 [ nil ]
-# int from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
@@ -960,42 +968,49 @@ end main;
 # bit from bit
 [ true ]
 [ false ]
-# bit from sht
+
+# from sht
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-# bit from int
+
+# from int
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-# bit from lng
+
+# from lng
 [ false ]
 [ true ]
 [ true ]
 [ true ]
-# bit from flt
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-# bit from dbl
-[ false ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-[ true ]
-# bit from oid
+
+# from flt
 [ false ]
 [ true ]
 [ true ]
 [ true ]
 [ true ]
-# bit from str
+[ true ]
+
+# from dbl
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from oid
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ true ]
+
+# from str
 [ true ]
 [ false ]
 [ false ]
@@ -1003,7 +1018,8 @@ end main;
 [ nil ]
 [ nil ]
 # to sht
-# sht from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
 # sht from int
@@ -1015,7 +1031,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# sht from lng
+
+# from lng
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -1024,7 +1041,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# sht from flt
+
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1040,7 +1058,8 @@ end main;
 [ -32767 ]
 [ nil ]
 [ nil ]
-# sht from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1056,13 +1075,15 @@ end main;
 [ -32767 ]
 [ nil ]
 [ nil ]
-# sht from oid
+
+# from oid
 [ 0 ]
 [ 1 ]
 [ 4096 ]
 [ nil ]
 [ nil ]
-# sht from str
+
+# from str
 [ 0 ]
 [ 32767 ]
 [ nil ]
@@ -1073,6 +1094,7 @@ end main;
 [ nil ]
 [ nil ]
 # to long
+
 [ 0 ]
 [ 1 ]
 [ 32767 ]
@@ -1096,7 +1118,8 @@ end main;
 # lng from sht
 [ 1 ]
 [ 32767 ]
-# lng from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1108,8 +1131,9 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# lng from lng
-# lng from flt
+
+# from lng
+# from flt
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1131,7 +1155,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# lng from dbl
+
+# from dbl
 [ 0 ]
 [ 0 ]
 [ 0 ]
@@ -1153,7 +1178,8 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
-# lng from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
@@ -1179,14 +1205,17 @@ end main;
 [ -9223372036854775807 ]
 [ nil ]
 [ nil ]
+
 # to flt
-# flt from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
 # flt from sht
 [ 1 ]
 [ 32767 ]
-# flt from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1212,7 +1241,8 @@ end main;
 [ -9.22337204e+018 ]
 [ nil ]
 [ nil ]
-# flt from dbl
+
+# from dbl
 [ 0 ]
 [ 0.100000001 ]
 [ 0.5 ]
@@ -1327,14 +1357,17 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # to dbl
-# dbl from bit
+
+# from bit
 [ 1 ]
 [ 0 ]
 # from sht
 [ 1 ]
 [ 32767 ]
-# dbl from int
+
+# from int
 [ 1 ]
 [ 32767 ]
 [ 32768 ]
@@ -1346,7 +1379,8 @@ end main;
 [ -2147483647 ]
 # should this produce nil (overflow)?
 [ 2147483647 ]
-# dbl from lng
+
+# from lng
 [ 1 ]
 [ 2147483647 ]
 [ 2147483648 ]
@@ -1360,7 +1394,8 @@ end main;
 [ -9.2233720368547758e+018 ]
 [ nil ]
 [ nil ]
-# dbl from flt
+
+# from flt
 [ 0 ]
 [ 0.10000000149011612 ]
 [ 0.5 ]
@@ -1376,7 +1411,8 @@ end main;
 [ -2147483648 ]
 [ -2147483648 ]
 [ -2147483648 ]
-# dbl from oid
+
+# from oid
 [ 2 ]
 [ 2 ]
 [ 2147483647 ]
@@ -1484,13 +1520,16 @@ end main;
 [ nil ]
 [ nil ]
 [ nil ]
+
 # to oid
+
 # from bit
 [ 1@0 ]
 [ 0@0 ]
 # from sht
 [ 1@0 ]
 [ 32767@0 ]
+
 # from int
 [ 1@0 ]
 [ 32767@0 ]
@@ -1503,6 +1542,7 @@ end main;
 [ nil ]
 # should this produce nil (overflow)?
 [ 2147483647@0 ]
+
 # from lng
 [ 1@0 ]
 [ 2147483647@0 ]
@@ -1564,12 +1604,14 @@ end main;
 [ nil ]
 [ nil ]
 # to str
+
 # from bit
 [ "true" ]
 [ "false" ]
 # from sht
 [ "1" ]
 [ "32767" ]
+
 # from int
 [ "1" ]
 [ "32767" ]
@@ -1582,6 +1624,7 @@ end main;
 [ "-2147483647" ]
 # should this produce nil (overflow)?
 [ "2147483647" ]
+
 # from lng
 [ "1" ]
 [ "2147483647" ]
@@ -1590,6 +1633,7 @@ end main;
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
 # from flt
 [ "0" ]
 [ "0.100000001" ]
@@ -1622,6 +1666,7 @@ end main;
 [ "-2147483647" ]
 [ "-2147483648" ]
 [ "-2147483649" ]
+
 # from oid
 [ "2@0" ]
 [ "2@0" ]
@@ -1640,7 +1685,7 @@ end main;
 [ "" ]
 [ "random string" ]
 
-# 10:26:16 >  
-# 10:26:16 >  Done.
-# 10:26:16 >  
+# 14:56:01 >  
+# 14:56:01 >  Done.
+# 14:56:01 >  
 
