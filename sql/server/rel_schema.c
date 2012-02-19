@@ -23,8 +23,6 @@
 #include "rel_select.h"
 #include "rel_updates.h"
 #include "rel_exp.h"
-#include "rel_bin.h"
-#include "rel_subquery.h"
 #include "rel_schema.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
@@ -927,24 +925,10 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				return NULL;
 			}
 			return rel_table(sql, DDL_CREATE_VIEW, s->base.name, t, SQL_PERSIST);
-		} else {
-			t = mvc_bind_table(sql, s, name);
 		}
-
+		t = mvc_bind_table(sql, s, name);
 		if (!persistent && column_spec) 
 			sq = view_rename_columns( sql, name, sq, column_spec);
-
-		if (deps && sq && persistent) {
-			stmt *sqs = rel_bin(sql, sq);
-			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
-			list *id_l = stmt_list_dependencies(sql->sa, sqs, COLUMN_DEPENDENCY);
-			list *func_id_l = stmt_list_dependencies(sql->sa, sqs, FUNC_DEPENDENCY);
-			mvc_create_dependencies(sql, id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, view_id_l, t->base.id, VIEW_DEPENDENCY);
-			mvc_create_dependencies(sql, func_id_l, t->base.id, VIEW_DEPENDENCY);
-			rel_destroy(sq);
-			return rel_project(sql->sa, NULL, NULL);
-		}
 		return sq;
 	}
 	return NULL;
@@ -1750,7 +1734,6 @@ rel_schemas(mvc *sql, symbol *s)
 	default:
 		return sql_error(sql, 01, "42000!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
-
 
 	sql->last = NULL;
 	sql->type = Q_SCHEMA;

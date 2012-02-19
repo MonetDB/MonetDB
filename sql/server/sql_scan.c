@@ -121,10 +121,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("INSERT", INSERT);
 	keywords_insert("UPDATE", UPDATE);
-	keywords_insert("CONNECT", CONNECT);
-	keywords_insert("DISCONNECT", DISCONNECT);
 	keywords_insert("DATABASE", DATABASE);
-	keywords_insert("PORT", PORT);
 	keywords_insert("DELETE", sqlDELETE);
 
 	keywords_insert("ACTION", ACTION);

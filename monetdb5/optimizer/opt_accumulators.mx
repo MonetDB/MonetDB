@@ -131,7 +131,7 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			p= pushBit(mb,p, b1);
 			p= pushBit(mb,p, b2);
 
-			typeChecker(scope, mb, p, TRUE);
+			typeChecker(cntxt->fdout, scope, mb, p, TRUE);
 			if (mb->errors || p->typechk == TYPE_UNKNOWN) {
 				OPTDEBUGaccumulators{
 					mnstr_printf(cntxt->fdout,"# Failed typecheck");

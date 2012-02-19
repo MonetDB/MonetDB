@@ -212,7 +212,6 @@ head_column(stmt *st)
 	case st_control_end:
 	case st_return:
 	case st_assign:
-	case st_connection:
 		fprintf(stderr, "missing head column %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
 		return NULL;
@@ -895,7 +894,6 @@ rel2bin(mvc *c, stmt *s)
 		 * and user authentication.
 		 */
 	case st_none:
-	case st_connection:
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:

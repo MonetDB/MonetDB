@@ -126,7 +126,7 @@ void initNamespace(void) {
 		 namespace.hit == NULL ||
 		 namespace.length == NULL) {
 		/* absolute an error we can not recover from */
-		showException(MAL,"initNamespace",MAL_MALLOC_FAIL);
+		showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
 		mal_exit();
 	}
 	namespace.size = MAXIDENTIFIERS;
@@ -142,7 +142,7 @@ void initNamespace(void) {
 		 backup.hit == NULL ||
 		 backup.length == NULL) {
 		/* absolute an error we can not recover from */
-		showException(MAL,"initNamespace",MAL_MALLOC_FAIL);
+		showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
 		mal_exit();
 	}
 	backup.size = MAXIDENTIFIERS;

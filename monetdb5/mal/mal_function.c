@@ -151,7 +151,7 @@ int getPC(MalBlkPtr mb, InstrPtr p)
  */
 #define DEPTH 128
 
-void chkFlow(MalBlkPtr mb)
+void chkFlow(stream *out, MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
 	int  var[DEPTH];
@@ -174,7 +174,7 @@ void chkFlow(MalBlkPtr mb)
 		case BARRIERsymbol:
 		case CATCHsymbol:
 			if(btop== DEPTH){
-			    showScriptException(mb,i,SYNTAX,
+			    showScriptException(out, mb,i,SYNTAX,
 					"Too many nested MAL blocks");
 			    mb->errors++;
 			    return;
@@ -185,7 +185,7 @@ void chkFlow(MalBlkPtr mb)
 
 			for(j=btop-1;j>=0;j--)
 			if( v==var[j]){
-			    showScriptException(mb,i,SYNTAX,
+			    showScriptException(out, mb,i,SYNTAX,
 					"recursive %s[%d] shields %s[%d]",
 						getVarName(mb,v), pc[j],
 						getFcnName(mb),pc[i]);
@@ -203,7 +203,7 @@ void chkFlow(MalBlkPtr mb)
 			    getVarType(mb,v) != TYPE_bte &&
 			    getVarType(mb,v) != TYPE_wrd
 				){
-			    showScriptException(mb,i,TYPE,
+			    showScriptException(out, mb,i,TYPE,
 					"barrier '%s' should be of type bit, str or number",
 					getVarName(mb, v));
 					mb->errors++;
@@ -215,12 +215,12 @@ void chkFlow(MalBlkPtr mb)
 			v= getDestVar(p);
 			if( btop>0 && var[btop-1] != v){
 			    mb->errors++;
-			    showScriptException(mb,i,SYNTAX,
+			    showScriptException(out, mb,i,SYNTAX,
 					"exit-label '%s' doesnot match '%s'",
 					getVarName(mb,v), getVarName(mb,var[btop-1]));
 			}
 			if(btop==0){
-			    showScriptException(mb,i,SYNTAX,
+			    showScriptException(out, mb,i,SYNTAX,
 					"exit-label '%s' without begin-label",
 					getVarName(mb,v));
 			    mb->errors++;
@@ -252,7 +252,7 @@ void chkFlow(MalBlkPtr mb)
 			if( var[j]==v) break;
 			if(j<0){
 				str nme= getVarName(mb,v);
-			    showScriptException(mb,i,SYNTAX,
+			    showScriptException(out, mb,i,SYNTAX,
 					"label '%s' not in guarded block",nme);
 			    mb->errors++;
 			} else
@@ -261,7 +261,7 @@ void chkFlow(MalBlkPtr mb)
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    showScriptException(mb,i,SYNTAX,"yield misplaced!");
+			    showScriptException(out, mb,i,SYNTAX,"yield misplaced!");
 			    mb->errors++;
 			}
 			yieldseen= TRUE;
@@ -273,7 +273,7 @@ void chkFlow(MalBlkPtr mb)
 				if (p->barrier == RETURNsymbol)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
-					showScriptException(mb, i, SYNTAX,
+					showScriptException(out, mb, i, SYNTAX,
 							"invalid return target!");
 					mb->errors++;
 				} else 
@@ -281,7 +281,7 @@ void chkFlow(MalBlkPtr mb)
 					for (e = 0; e < p->retc; e++) {
 						if (resolveType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
 							str tpname = getTypeName(getArgType(mb, p, e));
-							showScriptException(mb, i, TYPE,
+							showScriptException(out, mb, i, TYPE,
 									"%s type mismatch at type '%s'",
 									(p->barrier == RETURNsymbol ? "RETURN" : "YIELD"), tpname);
 							GDKfree(tpname);
@@ -301,7 +301,7 @@ void chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if( i) {
 					str msg=instruction2str(mb,0,p,TRUE);
-					showScriptException(mb,i,SYNTAX,"signature misplaced\n!%s",msg);
+					showScriptException(out, mb,i,SYNTAX,"signature misplaced\n!%s",msg);
 					GDKfree(msg);
 					mb->errors++;
 				}
@@ -309,33 +309,33 @@ void chkFlow(MalBlkPtr mb)
 		}
 	}
 	if( lastInstruction < mb->stop-1 ){
-		showScriptException(mb,lastInstruction,SYNTAX,
+		showScriptException(out, mb,lastInstruction,SYNTAX,
 			"instructions after END");
 #ifdef DEBUG_MAL_FCN
-		printFunction(GDKout, mb, 0, LIST_MAL_ALL);
+		printFunction(out, mb, 0, LIST_MAL_ALL);
 #endif
 		mb->errors++;
 	}
 	for(btop--; btop>=0;btop--){
-		showScriptException(mb,lastInstruction, SYNTAX,
+		showScriptException(out, mb,lastInstruction, SYNTAX,
 			"barrier '%s' without exit in %s[%d]",
 				getVarName(mb,var[btop]),getFcnName(mb),i);
 		mb->errors++;
 	}
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p)){
-		showScriptException(mb,0,SYNTAX,"signature missing");
+		showScriptException(out, mb,0,SYNTAX,"signature missing");
 		mb->errors++;
 	}
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-			showScriptException(mb,0,SYNTAX,"RETURN missing");
+			showScriptException(out, mb,0,SYNTAX,"RETURN missing");
 			mb->errors++;
 		}
 	}
 	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void){
-			showScriptException(mb,0,SYNTAX,"RETURN missing");
+			showScriptException(out, mb,0,SYNTAX,"RETURN missing");
 		mb->errors++;
 	}
 	if( mb->errors == 0 )
@@ -501,23 +501,23 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
  * Upon cloning a function we should remove all the polymorphic flags.
  * Otherwise we may end up with a recursive clone.
  */
-Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+Symbol  cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 	Symbol new;
 	int i,v;
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
-	mnstr_printf(GDKout,"clone the function %s to scope %s\n",
+	mnstr_printf(out,"clone the function %s to scope %s\n",
 			proc->name,scope->name);
-	printInstruction(GDKout,mb,0,p,LIST_MAL_ALL);
+	printInstruction(out,mb,0,p,LIST_MAL_ALL);
 #endif
 	new= newFunction(scope->name, proc->name, getSignature(proc)->token );
 	freeMalBlk(new->def);
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
-	mnstr_printf(GDKout,"CLONED VERSION\n");
-	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
+	mnstr_printf(out,"CLONED VERSION\n");
+	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
@@ -536,7 +536,7 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	}
 #ifdef DEBUG_MAL_FCN
-	else mnstr_printf(GDKout,"%d remains %s\n",i, getTypeName(v));
+	else mnstr_printf(out,"%d remains %s\n",i, getTypeName(v));
 #endif
 	/* include the function at the proper place in the scope */
 	insertSymbol(scope,new);
@@ -551,24 +551,24 @@ Symbol  cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
 		clrVarFixed(new->def,i);
 
 #ifdef DEBUG_MAL_FCN
-	mnstr_printf(GDKout,"FUNCTION TO BE CHECKED\n");
-	printFunction(GDKout, new->def, 0, LIST_MAL_ALL);
+	mnstr_printf(out,"FUNCTION TO BE CHECKED\n");
+	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
 	if(proc->def->errors == 0) {
-		chkProgram(scope,new->def);
+		chkProgram(out, scope,new->def);
 		if( new->def->errors){
-			showScriptException(new->def,0,MAL,"Error in cloned function");
+			showScriptException(out, new->def,0,MAL,"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
-			printFunction(GDKout,new->def, 0, LIST_MAL_ALL);
+			printFunction(out,new->def, 0, LIST_MAL_ALL);
 #endif
 		}
 	}
 #ifdef DEBUG_CLONE
-	mnstr_printf(GDKout,"newly cloned function added to %s %d \n",scope->name,i);
-	printFunction(GDKout,new->def, 0, LIST_MAL_ALL);
+	mnstr_printf(out,"newly cloned function added to %s %d \n",scope->name,i);
+	printFunction(out,new->def, 0, LIST_MAL_ALL);
 #endif
 	return new;
 }
@@ -827,7 +827,7 @@ void clrDeclarations(MalBlkPtr mb){
 	}
 }
 
-void chkDeclarations(MalBlkPtr mb){
+void chkDeclarations(stream *out, MalBlkPtr mb){
 	int pc,i, k,l;
 	InstrPtr p;
 	short blks[MAXDEPTH], top= 0, blkId=1;
@@ -835,7 +835,7 @@ void chkDeclarations(MalBlkPtr mb){
 
 	decl = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if ( decl == NULL) {
-		showScriptException(mb,0,SYNTAX, MAL_MALLOC_FAIL);
+		showScriptException(out, mb,0,SYNTAX, MAL_MALLOC_FAIL);
 		mb->errors = 1;
 		return;
 	}
@@ -870,7 +870,7 @@ void chkDeclarations(MalBlkPtr mb){
 				} else
 				if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
-					showScriptException(mb,pc,TYPE,
+					showScriptException(out, mb,pc,TYPE,
 						"'%s' may not be used before being initialized",
 						getVarName(mb,l));
 					mb->errors++;
@@ -882,7 +882,7 @@ void chkDeclarations(MalBlkPtr mb){
 					if( blks[i] == decl[l] )
 						break;
 			    if( i> top || blks[i]!= decl[l] ){
-			            showScriptException(mb,pc,TYPE,
+			            showScriptException(out, mb,pc,TYPE,
 							"'%s' used outside scope",
 							getVarName(mb,l));
 			        mb->errors++;
@@ -908,7 +908,7 @@ void chkDeclarations(MalBlkPtr mb){
 				else
 					decl[l] = blks[top];
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(GDKout,"defined %s in block %d\n",
+				mnstr_printf(out,"defined %s in block %d\n",
 					getVarName(mb,l),decl[l]);
 #endif
 			}
@@ -921,10 +921,10 @@ void chkDeclarations(MalBlkPtr mb){
 				if( top <MAXDEPTH-2){
 					blks[++top]= ++blkId;
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(GDKout,"new block %d at top %d\n",blks[top], top);
+				mnstr_printf(out,"new block %d at top %d\n",blks[top], top);
 #endif
 				} else {
-					showScriptException(mb,pc,SYNTAX, "too deeply nested  MAL program");
+					showScriptException(out, mb,pc,SYNTAX, "too deeply nested  MAL program");
 					mb->errors++;
 					GDKfree(decl);
 					return;
@@ -933,7 +933,7 @@ void chkDeclarations(MalBlkPtr mb){
 			if( blockExit(p) && top > 0 &&
 			varGetProp(mb, getArg(p,0), PropertyIndex("transparent")) == NULL){
 #ifdef DEBUG_MAL_FCN
-				mnstr_printf(GDKout,"leave block %d at top %d\n",blks[top], top);
+				mnstr_printf(out,"leave block %d at top %d\n",blks[top], top);
 #endif
 				/*
 				 * @-
@@ -1092,12 +1092,14 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		} /* see printf before this mapimode if, last line ends with \n */
 
 		/* write mapi header */
-		mnstr_printf(GDKout, "&1 0 " SZFMT " 1 " SZFMT "\n",
-				/* type id rows columns tuples */ rows, rows);
-		mnstr_printf(GDKout, "%% .dot # table_name\n");
-		mnstr_printf(GDKout, "%% dot # name\n");
-		mnstr_printf(GDKout, "%% clob # type\n");
-		mnstr_printf(GDKout, "%% " SZFMT " # length\n", maxlen);
+		if ( f == GDKout) {
+			mnstr_printf(f, "&1 0 " SZFMT " 1 " SZFMT "\n",
+					/* type id rows columns tuples */ rows, rows);
+			mnstr_printf(f, "%% .dot # table_name\n");
+			mnstr_printf(f, "%% dot # name\n");
+			mnstr_printf(f, "%% clob # type\n");
+			mnstr_printf(f, "%% " SZFMT " # length\n", maxlen);
+		}
 		oline = buf;
 		while ((line = strchr(oline, '\n')) != NULL) {
 			*line++ = '\0';

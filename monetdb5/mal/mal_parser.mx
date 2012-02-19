@@ -87,7 +87,7 @@ mal_export long position(Client cntxt);
 #include "mal_parser.h"
 #include "mal_resolve.h"
 #include "mal_linker.h"
-#include "mal_atom.h"       /* for malAtomDefinition(), malAtomArray(), malAtomProperty() */
+#include "mal_atom.h"       /* for malAtomDefinition(), malAtomProperty() */
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
@@ -572,7 +572,7 @@ handleInts:
 		int len = (int) sizeof(lng);
 		lng *pval = &l;
 		if (lngFromStr(CURRENT(cntxt),&len,&pval) <= 0 || l == lng_nil) {
-			showException(SYNTAX, "convertConstant", "integer parse error");
+			showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
 			l = lng_nil;
 		}
 		if (INT_MIN < l && l <= INT_MAX) {
@@ -812,7 +812,7 @@ parseAtom(Client cntxt)
 	if (currChar(cntxt) != ':')
 		tpe= TYPE_void;	/* no type qualifier */
 	else tpe = parseTypeId(cntxt, TYPE_int);
-	malAtomDefinition( modnme, tpe);
+	malAtomDefinition(cntxt->fdout, modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
 	skipSpace(cntxt);
@@ -1255,7 +1255,7 @@ static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	else
 		parseError(cntxt,"<module> not found\n");
 	trimMalBlk(curBlk);
-	chkProgram(cntxt->nspace,curBlk);
+	chkProgram(cntxt->fdout, cntxt->nspace,curBlk);
 	if( cntxt->backup){
 		cntxt->curprg = cntxt->backup;
 		cntxt->backup = 0;
@@ -1287,7 +1287,7 @@ static MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 			setModuleId(curInstr, NULL);
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
-		curInstr->fcn = getAddress(cntxt->srcFile, modnme, nme,TRUE);
+		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, modnme, nme,TRUE);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) {
 			if (curInstr->fcn == NULL) {
@@ -1329,7 +1329,7 @@ static MalBlkPtr parseFunction(Client cntxt, int kind){
 			return 0;
 		}
 		nme = idCopy(cntxt,i);
-		curInstr->fcn = getAddress(cntxt->srcFile, cntxt->nspace->name, nme,TRUE);
+		curInstr->fcn = getAddress(cntxt->fdout, cntxt->srcFile, cntxt->nspace->name, nme,TRUE);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
 			parseError(cntxt, "<address> not found\n");
@@ -1380,7 +1380,7 @@ static int parseEnd(Client cntxt)
 		trimMalBlk(cntxt->curprg->def);
 		cntxt->blkmode =0;
 		curBlk->typefixed=0;
-		chkProgram(cntxt->nspace, cntxt->curprg->def);
+		chkProgram(cntxt->fdout, cntxt->nspace, cntxt->curprg->def);
 		if( cntxt->backup){
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
@@ -1546,8 +1546,6 @@ parseAssign(Client cntxt, int cntrl)
 			}
 		}
 		
-		if (currChar(cntxt) != ';')
-			parseError(cntxt,"';' expected\n");
 		goto part3;
 	} 
 	if (currChar(cntxt) == '('){
@@ -1766,7 +1764,7 @@ parseTuple(Client cntxt) {
 	sprintf(buf,"input%d",(int)(cntxt-mal_clients));
 	f = fopen(buf,"w");
 	if (f==NULL)
-		showException(SYNTAX, "parser", "temp file not writeable");
+		showException(cntxt->fdout, SYNTAX, "parser", "temp file not writeable");
 	while( (c=currChar(cntxt)) == '[' && c){
 		do {
 			if (f && c) fputc(c, f);
@@ -1775,8 +1773,8 @@ parseTuple(Client cntxt) {
 		if (f && c && fputc(c, f)  == EOF){
 			(void)fclose(f);
 			if (unlink(buf) < 0)
-				showException(SYNTAX, "parser", "out of temp file space and unable to unlink");
-			showException(SYNTAX, "parser", "out of temp file space");
+				showException(cntxt->fdout, SYNTAX, "parser", "out of temp file space and unable to unlink");
+			showException(cntxt->fdout, SYNTAX, "parser", "out of temp file space");
 			return;
 		}
 		nextChar(cntxt);
@@ -1978,7 +1976,7 @@ str parseError(Client cntxt, str msg)
 	*s++= '\n';
 	*s = 0;
 	if( s != buf+1 && strlen(buf)<1024){
-		showException(SYNTAX, "parseError", "%s", buf);
+		showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 		/* produce the position marker*/
 		s= buf;
 		i = position(cntxt) -1;
@@ -1992,6 +1990,6 @@ str parseError(Client cntxt, str msg)
 	if( msg && strlen(msg))
 		snprintf(s,1020,"%s", msg);
 	skipToEnd(cntxt);
-	showException(SYNTAX, "parseError", "%s", buf);
+	showException(cntxt->fdout, SYNTAX, "parseError", "%s", buf);
 	return 0;
 }

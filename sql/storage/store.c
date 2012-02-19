@@ -3580,6 +3580,28 @@ sql_trans_create_type(sql_trans *tr, sql_schema * s, char *sqlname, int digits, 
 }
 
 sql_func *
+create_sql_func(sql_allocator *sa, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
+{
+	sql_func *t = SA_ZNEW(sa, sql_func);
+
+	base_init(sa, &t->base, next_oid(), TR_NEW, func);
+	assert(impl && mod);
+	t->imp = (impl)?sa_strdup(sa, impl):NULL;
+	t->mod = (mod)?sa_strdup(sa, mod):NULL; 
+	t->type = type;
+	t->sql = (query)?1:0;
+	t->side_effect = res?FALSE:TRUE;
+	t->ops = args;
+	t->res.scale = t->res.digits = 0;
+	t->res.type = NULL;
+	t->query = (query)?sa_strdup(sa, query):NULL;
+	if (res)
+		t->res = *res;
+	t->s = NULL;
+	return t;
+}
+
+sql_func *
 sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
 {
 	sql_func *t = SA_ZNEW(tr->sa, sql_func);

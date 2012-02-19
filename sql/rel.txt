@@ -134,3 +134,15 @@ e_column
 	-> type 
 
 	
+e_psm
+	-> flag
+		psm_declare 	name 
+				type
+		psm_set		name 
+				->l value_exp
+		psm_if		->l cond_exp, 
+				->r then_exp_list 
+				->f else_exp_list
+		psm_while	->l cond_exp
+				->r loop_exp_list
+		psm_return	->l return_exp

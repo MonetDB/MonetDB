@@ -655,7 +655,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 	*o = *m;
 
 	/* create private allocator */
-	assert(m->sa == NULL);
+	m->sa = NULL;
 	SQLtrans(m);
 	status = m->session->status;
 
@@ -725,7 +725,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
 		r = sql_symbol2relation(m, m->sym);
-		s = sql_symbol2stmt(m, r, m->sym);
+		s = sql_relation2stmt(m, r);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout,"#SQLstatement:\n");
 #endif
@@ -786,6 +786,7 @@ endofcompile:
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
 		sa_destroy(m->sa);
+	m->sa = NULL;
 	m->sym = NULL;
 	/* variable stack maybe resized, ie we need to keep the new stack */
 	status = m->session->status;
@@ -914,7 +915,7 @@ SQLreader(Client c)
 	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "SQL client finished\n");
+	mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
 		c->mode = FINISHING;
 		return NULL;
@@ -960,7 +961,7 @@ SQLreader(Client c)
 
 		if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "Switch to backup stream\n");
+			mnstr_printf(GDKout, "#Switch to backup stream\n");
 #endif
 			in = c->fdin;
 			blocked = isa_block_stream(in->s);
@@ -1188,7 +1189,7 @@ SQLshowDot(Client c)
 }
 
 
-#define MAX_QUERY 	(16*1024*1024)
+#define MAX_QUERY 	(64*1024*1024)
 
 static int 
 cachable( mvc *m, stmt *s ) 
@@ -1401,7 +1402,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r = sql_symbol2relation(m, m->sym);
-		stmt *s = sql_symbol2stmt(m, r, m->sym);
+		stmt *s = sql_relation2stmt(m, r);
 
 		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
@@ -1427,9 +1428,9 @@ SQLparser(Client c)
 			curBlk = c->curprg->def;
 
 			p = newFcnCall(curBlk, "optimizer", "remap");
-			typeChecker(c->nspace, curBlk, p, FALSE);
+			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
 			p = newFcnCall(curBlk, "optimizer", "multiplex");
-			typeChecker(c->nspace, curBlk, p, FALSE);
+			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
 			optimizeMALBlock(c, curBlk);
 			c->curprg->def = curBlk;
 		} else {
@@ -1490,9 +1491,9 @@ SQLparser(Client c)
 		if (be->q)
 			pushEndInstruction(c->curprg->def);
 
-		chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
+		chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE); /* resolve types */
 		/* we know more in this case than
-		    chkProgram(c->nspace, c->curprg->def); */
+		    chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
 			if (m->emod & mod_debug) {
 				/* switch to differnt language mode */
@@ -1515,9 +1516,9 @@ SQLparser(Client c)
 finalize:
 	if (m->emod & mod_explain && !msg) {
 		if (be->q && be->q->code)
-			printFunction(GDKout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 		else if (c->curprg && c->curprg->def)
-			printFunction(GDKout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
 	}
 	if (m->emod & mod_dot && !msg) {
 		if (be->q && be->q->code)
@@ -1763,13 +1764,13 @@ SQLrecompile(Client c, backend *be)
 	int oldstop = c->curprg->def->stop;
 
 	SQLCacheRemove(c, be->q->name);
-	s = sql_symbol2stmt(m, be->q->rel, be->q->s);
+	s = sql_relation2stmt(m, be->q->rel);
 	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
 
 	pushEndInstruction(c->curprg->def);
 
-	chkTypes(c->nspace, c->curprg->def, TRUE); /* resolve types */
+	chkTypes(c->fdout, c->nspace, c->curprg->def, TRUE); /* resolve types */
 	if (c->curprg->def->errors) {
 		showErrors(c);
 		/* restore the state */
@@ -1904,7 +1905,7 @@ SQLCacheRemove(Client c, str nme)
 	Symbol s;
 
 #ifdef _SQL_CACHE_DEBUG
-	mnstr_printf(GDKout, "SQLCacheRemove %s\n", nme);
+	mnstr_printf(GDKout, "#SQLCacheRemove %s\n", nme);
 #endif
 
 	s= findSymbolInModule(c->nspace, nme);

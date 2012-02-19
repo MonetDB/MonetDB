@@ -98,7 +98,6 @@ int yydebug=1;
 
 	/* symbolic tokens */
 %type <sym>
-	user_passwd
 	alter_statement
 	assignment
 	create_statement
@@ -144,10 +143,7 @@ int yydebug=1;
 	and_exp
 	not_exp
 	update_statement
-	sql_connections_statement
 	update_stmt
-	connect_stmt
-	disconnect_stmt
 	control_statement
 	select_statement_single_row
 	call_statement
@@ -274,8 +270,6 @@ int yydebug=1;
 	interval_type
 
 %type <sval>
-	opt_lang
-	opt_db_alias
 	opt_constraint_name
 	non_reserved_word
 	ident
@@ -408,7 +402,6 @@ int yydebug=1;
 	opt_match
 	opt_match_type
 	opt_on_commit
-	opt_port
 	opt_ref_action
 	opt_sign
 	opt_temp
@@ -483,7 +476,7 @@ int yydebug=1;
 
 %token	USER CURRENT_USER SESSION_USER LOCAL LOCKED
 %token  CURRENT_ROLE sqlSESSION
-%token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE CONNECT DISCONNECT PORT 
+%token <sval> sqlDELETE UPDATE SELECT INSERT DATABASE 
 %token <sval> LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
@@ -2374,7 +2367,6 @@ drop_action:
 sql:
    transaction_statement
  | update_statement
- | sql_connections_statement
  ;
 
 update_statement: 
@@ -2385,10 +2377,6 @@ update_statement:
  | copyfrom_stmt
  ;
 
-sql_connections_statement:
-   connect_stmt
- | disconnect_stmt
-;
 transaction_statement:
    _transaction_stmt
 	{ mvc *m = (mvc*)parm;
@@ -2571,54 +2559,6 @@ update_stmt:
 	  append_list(l, $4);
 	  append_symbol(l, $5);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
- ;
-
-connect_stmt:
-    CONNECT TO DEFAULT		{ $$ = _symbol_create_list(SQL_CONNECT, L()); }
- |  CONNECT TO string opt_port DATABASE string opt_db_alias user_passwd opt_lang
-
-	{ dlist *l = L();
-	  append_string(l, $3);
-	  append_int(l, $4);
-	  append_string(l, $6);
-	  append_string(l, $7);
-	  append_symbol(l, $8);
-	  append_string(l, $9);
-	  $$ = _symbol_create_list( SQL_CONNECT, l ); }
- ;
-
-disconnect_stmt:
-    DISCONNECT string		{ dlist *l = L(); 
-				 append_string(l, $2);
-				 append_int(l, 0);
-				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
-				}
- |  DISCONNECT ALL		{ dlist *l = L();
-				 $$ = _symbol_create_list(SQL_DISCONNECT, l);
-				}
- ;
-
-opt_port:
-    /*empty*/		{ $$ = 0; }
- |  PORT intval		{ $$ = $2; }
- ;
-
-opt_db_alias:
-    /*empty*/		{ $$ = NULL; }
- |  AS string		{ $$ = $2; }
- ;
-
-user_passwd:
- USER string PASSWORD string		{ dlist *l = L(); 
-					append_string(l, $2);
-					append_string(l, $4);
-					$$ = _symbol_create_list(SQL_USER, l);
-					}
- ;
-
-opt_lang:
-    /*empty*/		{ $$ = NULL; }
- |  LANGUAGE string	{ $$ = $2; }
  ;
 
 /* todo merge statment 
@@ -5450,10 +5390,7 @@ char *token2string(int token)
 	SQL(CROSS);
 	SQL(JOIN);
 	SQL(SELECT);
-	SQL(CONNECT);
-	SQL(DISCONNECT);
 	SQL(DATABASE);
-	SQL(PORT);
 	SQL(WHERE);
 	SQL(FROM);
 	SQL(UNIONJOIN);

@@ -1102,6 +1102,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		break;
 	}	
 	case e_atom:
+	case e_psm:
 		return e;
 	}
 	if (ne && e->p)
@@ -1224,6 +1225,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}	
 	case e_atom:
+	case e_psm:
 		return e;
 	}
 	return NULL;
@@ -1834,6 +1836,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
 	}	
 	case e_atom:
+	case e_psm:
 		return e;
 	}
 	return NULL;
@@ -3844,6 +3847,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		list_split_aggr_and_project(sql, aexps, e->l);
 	case e_column: /* constants and columns shouldn't be rewriten */
 	case e_atom:
+	case e_psm:
 		return e;
 	}
 	return NULL;
@@ -4096,6 +4100,9 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		e->used = 1;
 		/* return 0 as constants may require a full column ! */
 		return 0;
+	case e_psm:
+		e->used = 1;
+		break;
 	}
 	if (ne) {
 		ne->used = 1;

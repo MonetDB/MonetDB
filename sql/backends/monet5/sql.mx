@@ -65,6 +65,18 @@ pattern catalog(type:int,sname:str,name:str,action:int):void
 address SQLcatalog
 comment "a catalog statement";
 
+pattern catalog(type:int,sname:str,name:str,funcid:int,ft:int,action:int):void
+address SQLcatalog
+comment "a catalog statement";
+
+pattern catalog(type:int,sname:str,name:str,tname:str,time:int,o:int,event:int,oname:str,nname:str,condition:str,query:str):void
+address SQLcatalog
+comment "a catalog statement";
+
+pattern catalog(type:int,sname:str,t:ptr):void
+address SQLcatalog
+comment "a catalog statement";
+
 pattern catalog(type:int,sname:str,t:ptr,temp:int):void
 address SQLcatalog
 comment "a catalog statement";
@@ -345,7 +357,7 @@ comment "return not unique oids" ;
 command not_uniques( b:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address not_unique_oids ;
 
-command optimizers()(:bat[:oid,:str],:bat[:oid,:str])
+command optimizers()(:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:str])
 address getPipeCatalog;
 
 function times(elaps:int,inblock:lng, oublock:lng):void;
@@ -1166,7 +1178,6 @@ sql.prelude();
 #include <mkey.h>
 #include <str.h>
 #include "sql_privileges.h"
-#include "sql_semantic.h"
 #include "sql_rel2bin.h"
 #include <bin_optimizer.h>
 #include "sql_decimal.h"
@@ -1210,7 +1221,7 @@ extern void backend_destroy(backend *b);
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);
-extern stmt *sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym);
+extern stmt *sql_relation2stmt(mvc *c, sql_rel *r);
 
 extern BAT *mvc_bind(mvc *m, char *sname, char *tname, char *cname, int access);
 extern BAT *mvc_bind_dbat(mvc *m, char *sname, char *tname, int access);
@@ -1621,19 +1632,11 @@ rel_need_distinct_query( sql_rel *rel)
 sql_rel *
 sql_symbol2relation(mvc *c, symbol *sym)
 {
-	int status;
 	sql_rel *r;
 
-	status = c->session->status;
 	r = rel_semantic(c, sym);
-	if (!r) {
-		if (c->errstr[0]) {
-			return NULL;
-		} else {
-			c->session->status = status;
-			return NULL;
-		}
-	}
+	if (!r) 
+		return NULL;
 	if (r) {
 		r = rel_optimizer(c, r);
 		r = rel_distribute(c, r);
@@ -1644,21 +1647,12 @@ sql_symbol2relation(mvc *c, symbol *sym)
 }
 
 stmt *
-sql_symbol2stmt(mvc *c, sql_rel *r, symbol *sym)
+sql_relation2stmt(mvc *c, sql_rel *r)
 {
 	stmt *s = NULL;
 
 	if (!r) {
-		if (c->errstr[0]) {
-			return NULL;
-		} else {
-			/*printf("# falling back to direct mode \n");*/
-			s = output_semantic(c, sym);
-			if (s) {
-				s = rel2bin(c, s);
-				s = bin_optimizer(c, s);
-			}
-		}
+		return NULL;
 	} else {
 		if (c->emode == m_plan) {
 			rel_print(c, r, 0);
@@ -1911,16 +1905,23 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 			mvc_copy_key(sql, nt, k);
 		}
 	}
-	/* TODO copy triggers */
 	/* also create dependencies */
-	if (t->query && isView(t)) {
+	if (nt->query && isView(nt)) {
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
-		r = rel_parse(sql, t->query, m_deps); 
-		rel_destroy(r);
+		r = rel_parse(sql, nt->query, m_deps); 
+		if (r) {
+			stmt *sqs = rel_bin(sql, r);
+			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
+			list *id_l = stmt_list_dependencies(sql->sa, sqs, COLUMN_DEPENDENCY);
+			list *func_id_l = stmt_list_dependencies(sql->sa, sqs, FUNC_DEPENDENCY);
+
+			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
+			mvc_create_dependencies(sql, view_id_l, nt->base.id, VIEW_DEPENDENCY);
+			mvc_create_dependencies(sql, func_id_l, nt->base.id, VIEW_DEPENDENCY);
+		}
 		sa_destroy(sql->sa);
-		sql->sa = NULL;
 	}
 	sql->sa = osa;
 	return MAL_SUCCEED;
@@ -2037,9 +2038,6 @@ alter_table( mvc *sql, char *sname, sql_table *t)
 			mvc_copy_key(sql, nt, k);
 		}
 	}
-
-	/* TODO copy triggers */
-	/* also create dependencies */
 	return MAL_SUCCEED;
 }
 
@@ -2121,7 +2119,7 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 	} else if (t->system) {
 		return sql_message("42000!DROP VIEW: cannot drop system view '%s'", tname);
 	} else if (! drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-			return sql_message("42000!DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
+		return sql_message("42000!DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
 	} else {
 		mvc_drop_table(sql, ss, t, drop_action);
 		return MAL_SUCCEED;
@@ -2273,6 +2271,165 @@ drop_seq(mvc *sql, char *sname, char *name)
 	return NULL;
 }
 
+static str
+drop_func( mvc *sql, char *sname, char *name, int fid, int type, int action)
+{
+	sql_schema *s = NULL;
+	char is_aggr = (type == F_AGGR);
+	char is_func = (type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *f = is_aggr?"aggregate":(is_func?"function":"procedure");
+	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
+	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_message("3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+	if (!s)
+		s = cur_schema(sql);
+	if (fid >= 0) {
+		node *n = find_sql_func_node(s, NULL, fid);
+		if (n) {
+			sql_func *func = n->data;
+
+			if (!schema_privs(sql->role_id, s)) {
+				return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+	}
+			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+	
+			if (is_func && func->res.comp_type) 
+				mvc_drop_table(sql, func->res.comp_type->s, func->res.comp_type, 0);
+			mvc_drop_func(sql, s, func, action); 
+		}
+	} else {
+		node *n = NULL;
+		list *list_func = schema_bind_func(sql, s, name, type);
+
+		if (!schema_privs(sql->role_id, s)) {
+			list_destroy(list_func);
+			return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+		}
+		for( n = list_func->h ; n; n = n->next) {
+			sql_func *func = n->data;
+
+			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
+				list_destroy(list_func);
+				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+			}
+		}
+		mvc_drop_all_func(sql, s, list_func, action);
+		list_destroy(list_func);
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+create_func( mvc *sql, char *sname, sql_func *f )
+{
+	sql_func *nf;
+	sql_schema *s = NULL;
+	char is_aggr = (f->type == F_AGGR);
+	char is_func = (f->type != F_PROC);
+	char *F = is_aggr?"AGGREGATE":(is_func?"FUNCTION":"PROCEDURE");
+	char *KF = f->type==F_FILT?"FILTER ": f->type==F_UNION?"UNION ": "";
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
+	if (!s)
+		s = cur_schema(sql);
+	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, &f->res, f->type, f->mod, f->imp, f->query);
+	if (nf && nf->query) {
+		char buf[BUFSIZ];
+		sql_rel *r = NULL;
+		sql_allocator *sa = sql->sa;
+
+		sql->sa = sa_create();
+		snprintf(buf, BUFSIZ, "%s", nf->query);
+		r = rel_parse(sql, buf, m_deps); 
+		if (r) {
+			stmt *sb = rel_bin(sql, r);
+			list *id_col_l = stmt_list_dependencies(sql->sa, sb, COLUMN_DEPENDENCY);
+			list *id_func_l = stmt_list_dependencies(sql->sa, sb, FUNC_DEPENDENCY);
+			list *view_id_l = stmt_list_dependencies(sql->sa, sb, VIEW_DEPENDENCY);
+
+			mvc_create_dependencies(sql, id_col_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+			mvc_create_dependencies(sql, id_func_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+			mvc_create_dependencies(sql, view_id_l, nf->base.id, !IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY);
+		}
+		sa_destroy(sql->sa);
+		sql->sa = sa;
+	} else {
+		if (!backend_resolve_function(sql, nf)) 
+			return sql_message("3F000!CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+create_trigger( mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
+{
+	sql_trigger *tri = NULL;
+	sql_schema *s = NULL;
+	sql_table *t;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
+	if (!s)
+		s = cur_schema(sql);
+	if (!schema_privs(sql->role_id, s)) 
+		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	if ((tri = mvc_bind_trigger(sql, s, triggername )) != NULL) 
+		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
+	
+	if (!(t = mvc_bind_table(sql, s, tname)))
+		return sql_message("3F000!CREATE TRIGGER: unknown table '%s'", tname);
+
+	if (isView(t)) 
+		return sql_message("3F000!CREATE TRIGGER: cannot create trigger on view '%s'", tname);
+
+	tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query);
+	if (tri) {
+		char buf[BUFSIZ];
+		sql_rel *r = NULL;
+		sql_allocator *sa = sql->sa;
+
+		sql->sa = sa_create();
+		snprintf(buf, BUFSIZ, "%s", query);
+		r = rel_parse(sql, buf, m_deps); 
+		if (r) {
+			stmt *sqs = rel_bin(sql, r);
+			list *col_l = stmt_list_dependencies(sql->sa, sqs, COLUMN_DEPENDENCY);
+			list *func_l = stmt_list_dependencies(sql->sa, sqs, FUNC_DEPENDENCY);
+			list *view_id_l = stmt_list_dependencies(sql->sa, sqs, VIEW_DEPENDENCY);
+
+			mvc_create_dependencies(sql, col_l, tri->base.id, TRIGGER_DEPENDENCY);
+			mvc_create_dependencies(sql, func_l, tri->base.id, TRIGGER_DEPENDENCY);
+			mvc_create_dependencies(sql, view_id_l, tri->base.id, TRIGGER_DEPENDENCY);
+		}
+		sa_destroy(sql->sa);
+		sql->sa = sa;
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
+drop_trigger( mvc *sql, char *sname, char *tname)
+{
+	sql_trigger *tri = NULL;
+	sql_schema *s = NULL;
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
+	if (!s)
+		s = cur_schema(sql);
+	if (s && !schema_privs(sql->role_id, s)) 
+		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+
+	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
+		return sql_message("3F000!DROP TRIGGER: unknown trigger %s\n", tname);
+	mvc_drop_trigger(sql, s, tri);
+	return MAL_SUCCEED;
+}
 
 static char *
 SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
@@ -2460,6 +2617,35 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *iname = *(str*)getArgReference(stk, pci, 3);
 		msg = drop_index( sql, sname, iname );
 	} 	break;
+	case DDL_DROP_FUNCTION: {
+		char *fname = *(str*)getArgReference(stk, pci, 3);
+		int fid = *(int*)getArgReference(stk, pci, 4);
+		int type = *(int*)getArgReference(stk, pci, 5);
+		int action = *(int*)getArgReference(stk, pci, 6);
+		msg = drop_func( sql, sname, fname, fid, type, action );
+	} 	break;
+	case DDL_CREATE_FUNCTION: {
+		sql_func *f = *(sql_func**)getArgReference(stk, pci, 3);
+		msg = create_func(sql, sname, f);
+	} 	break;
+	case DDL_CREATE_TRIGGER: {
+		char *tname = *(str*)getArgReference(stk, pci, 3);
+		char *triggername = *(str*)getArgReference(stk, pci, 4);
+		int time = *(int*)getArgReference(stk, pci, 5);
+		int orientation = *(int*)getArgReference(stk, pci, 6);
+		int event = *(int*)getArgReference(stk, pci, 7);
+		char *old_name = *(str*)getArgReference(stk, pci, 8);
+		char *new_name = *(str*)getArgReference(stk, pci, 9);
+		char *condition = *(str*)getArgReference(stk, pci, 10);
+		char *query = *(str*)getArgReference(stk, pci, 11);
+
+		msg = create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, query);
+	} 	break;
+	case DDL_DROP_TRIGGER: {
+		char *triggername = *(str*)getArgReference(stk, pci, 3);
+
+		msg = drop_trigger(sql, sname, triggername);
+	} 	break;
 	default:
 		throw(SQL, "sql.catalog", "catalog unknown type");
 	}
@@ -2492,7 +2678,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		if ( newopt != NULL ) {
 			if (stack_find_var(m, varname)) 
-				stack_set_string(m, varname, newopt);
+				stack_set_string(m, varname, "user");
 			return MAL_SUCCEED;
 		}
 		throw(SQL, "sql.setVariable", "Failed to initialize optimizer pipeline");
@@ -2780,11 +2966,12 @@ mvc_bind_dbat(mvc *m, char *sname, char *tname, int access)
 	BAT *b = NULL;
 	sql_schema *s = NULL;
 	sql_table *t = NULL;
+
 	s = mvc_bind_schema(m, sname);
-	if ( s == NULL)
+	if (s == NULL)
 		return NULL;
 	t = mvc_bind_table(m, s, tname);
-	if ( t == NULL)
+	if (t == NULL)
 		return NULL;
 
 	b = store_funcs.bind_del(tr, t, access);

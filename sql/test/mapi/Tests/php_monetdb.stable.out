@@ -79,19 +79,19 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 2130	idxs	2102		0	true	2	false	0	
 2135	triggers	2102		0	true	2	false	0	
 2146	objects	2102		0	true	2	false	0	
-5037	tables	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	1	true	0	false	0	
-5047	columns	2000	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	1	true	0	false	0	
-5067	db_user_info	2000		0	true	0	false	0	
-5075	users	2000	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	1	true	0	false	0	
-5079	user_role	2000		0	true	0	false	0	
-5082	auths	2000		0	true	0	false	0	
-5086	privileges	2000		0	true	0	false	0	
-5207	queryhistory	2000		0	true	0	false	0	
-5221	callhistory	2000		0	true	0	false	0	
-5238	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
-5681	systemfunctions	2000		0	true	0	false	0	
+4965	tables	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	1	true	0	false	0	
+4975	columns	2000	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	1	true	0	false	0	
+4995	db_user_info	2000		0	true	0	false	0	
+5003	users	2000	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	1	true	0	false	0	
+5007	user_role	2000		0	true	0	false	0	
+5010	auths	2000		0	true	0	false	0	
+5014	privileges	2000		0	true	0	false	0	
+5167	queryhistory	2000		0	true	0	false	0	
+5181	callhistory	2000		0	true	0	false	0	
+5198	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
+5742	systemfunctions	2000		0	true	0	false	0	
 
-# 23:55:16 >  
-# 23:55:16 >  Done.
-# 23:55:16 >  
+# 10:38:53 >  
+# 10:38:53 >  "Done."
+# 10:38:53 >  
 

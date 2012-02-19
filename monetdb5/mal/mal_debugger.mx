@@ -970,7 +970,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 				break;
 			}
 			if (strncmp("call", b, 3) == 0) {
-				showException(MAL,"mdb.command", "call instruction not yet implemented");
+				showException(cntxt->fdout, MAL,"mdb.command", "call instruction not yet implemented");
 				break;
 			}
 			stk->cmd = 'c';
@@ -1552,9 +1552,9 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 			if (*b) {
 				mdot=mdbLocateMalBlk(cntxt,mb,b,out);
 				if(mdot != NULL)
-					showMalBlkHistory(mdot);
+					showMalBlkHistory(out,mdot);
 			} else
-				showMalBlkHistory(mb);
+				showMalBlkHistory(out,mb);
 			break;
 		}
 		case 'r':	/* reset program counter */
@@ -1965,7 +1965,7 @@ printBatDetails(stream *f, int bid)
 	MALfcn fcn;
 
 	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress("bat","bat","BKCinfo", 0);
+	fcn = getAddress(f,"bat","bat","BKCinfo", 0);
 	if (fcn)  {
 		(*fcn) (&ret, &bid);
 		b = BATdescriptor(ret);
@@ -1991,7 +1991,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		MALfcn fcn;
 		BUN p;
 
-		fcn = getAddress("bat","bat","BKCinfo", 0);
+		fcn = getAddress(f,"bat","bat","BKCinfo", 0);
 		if (fcn) {
 			BAT *b;
 
@@ -2056,10 +2056,8 @@ memProfileVector(stream *out, int cells)
 	long granule = 0;
 #endif
 
-	if (cells <= 0) {
-		showException(MAL,"memProfileVector", "positive argument expected");
+	if (cells <= 0)
 		return GDKstrdup("");
-	}
 	v = GDKmalloc(cells + 1);
 	if (v == 0)
 		return NULL;

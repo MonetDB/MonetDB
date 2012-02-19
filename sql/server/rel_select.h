@@ -22,7 +22,6 @@
 
 #include "rel_semantic.h"
 #include "sql_semantic.h"
-#include "rel_subquery.h"
 
 extern sql_rel* rel_create(sql_allocator *sa);
 extern sql_rel* rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);

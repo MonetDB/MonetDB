@@ -50,7 +50,6 @@
 #include <sql_rel2bin.h>
 #include <rel_select.h>
 #include <rel_optimizer.h>
-#include <rel_subquery.h>
 #include <rel_prop.h>
 #include <rel_exp.h>
 #include <rel_bin.h>
@@ -680,61 +679,6 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
-static char*
-reconnect(MalBlkPtr mb, list *l)
-{
-	InstrPtr q = NULL;
-	char *db_alias = NULL;
-
-	node* n = l->h;
-	int i = 0;
-
-	n = n->next;
-
-	/*create the mserver reconnect*/
-	q = newStmt1(mb,mapiRef,reconnectRef);
-	setVarUDFtype(mb,getArg(q,0));
-	setVarType(mb, getArg(q, 0), TYPE_int);
-
-	while (n) {
-		if (i == 1)
-			q = pushInt(mb, q, *(int *) n->data);
-		else {
-			if (i == 3) {
-				db_alias = (char *) n->data;
-				q = pushStr(mb, q, (char *) n->data);
-			}
-			else
-				if(i != 2)
-					q = pushStr(mb, q, (char *) n->data);
-		}
-		n = n->next;
-		i++;
-	}
-
-	return db_alias;
-}
-
-
-static void
-disconnect(MalBlkPtr mb, list *l)
-{
-	InstrPtr q = NULL;
-
-	node* n = l->h;
-
-
-	/*create the mserver disconnect*/
-	q = newStmt1(mb,mapiRef,disconnectRef);
-	setVarUDFtype(mb,getArg(q,0));
-	setVarType(mb, getArg(q, 0), TYPE_int);
-
-	if (list_length(l) == 2) {
-		(void) pushStr(mb, q, (char *) n->next->data);
-	}
-
-}
-
 /*
  * @-
  * The big code generation switch.
@@ -746,13 +690,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 	InstrPtr q = NULL;
 	node *n;
 
- 	if (THRhighwater()) {
-		if (sql->client->exception_buf_initialized)
-			longjmp(sql->client->exception_buf, -1);
-		showException(SQL, "sql", "too many nested operators");
-		assert(0);
-	}
-
 	if (s) {
 		if (s->nr > 0)
 			return s->nr;	/* stmt already handled */
@@ -762,13 +699,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newAssignment(mb);
 			s->nr = getDestVar(q);
 			(void) pushInt(mb, q, 1);
-		}	break;
-		case st_connection: {
-			if (list_length(s->op4.lval) < 3)
-				disconnect(mb, s->op4.lval);
-			else
-				reconnect(mb, s->op4.lval);
-			s->nr = 1;
 		}	break;
 		case st_var:{
 			if (s->op1) {
@@ -816,22 +746,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_oid;
 			int tt = s->op4.typeval.type->localtype;
 			int val = _dumpstmt(sql, mb, s->op1);
-/*
-			int temp, val = _dumpstmt(sql, mb, s->op1);
 
-			q = newStmt1(mb, batRef, "new");
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			setVarUDFtype(mb,getArg(q,0));
-			q = pushType(mb, q, ht);
-			q = pushType(mb, q, tt);
-
-			temp = getDestVar(q);
-			q = newStmt2(mb, batRef, appendRef);
-			q = pushArgument(mb, q, temp);
-			q = pushArgument(mb, q, val);
-			q = pushBit(mb, q, TRUE);
-			s->nr = getDestVar(q);
-*/
 			q = newStmt1(mb, sqlRef, "single");
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushArgument(mb, q, val);
@@ -1102,7 +1017,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				}
 					break;
 				default:
-					showException(SQL,"sql","Unknown operator");
+					showException(GDKout, SQL,"sql","Unknown operator");
 				}
 
 				/* select on join */
@@ -1240,7 +1155,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushStr(mb, q, ">=");
 					break;
 				default:
-					showException(SQL,"sql","SQL2MAL: error impossible\n");
+					showException(GDKout, SQL,"sql","SQL2MAL: error impossible\n");
 				}
 			}
 			if ( q )
@@ -1441,7 +1356,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				break;
 			default:
-				showException(SQL,"sql","SQL2MAL: error impossible\n");
+				showException(GDKout, SQL,"sql","SQL2MAL: error impossible\n");
 			}
 			if (q)
 				s->nr = getDestVar(q);

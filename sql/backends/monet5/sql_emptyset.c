@@ -303,7 +303,7 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* newStmt(mb,optimizerRef,putName("recycle",7));*/
 	if( actions ){
 		clrAllTypes(mb);	 /* force a complete resolve */
-		chkProgram(cntxt->nspace,mb);
+		chkProgram(cntxt->fdout, cntxt->nspace, mb);
 #ifdef DEBUG_SQL_EMPTYSET
 		if (mb->errors){
 			printf("FINAL STAGE compile errors\n");

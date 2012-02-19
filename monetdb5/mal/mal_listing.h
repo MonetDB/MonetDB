@@ -34,5 +34,6 @@ mal_export void promptInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, Instr
 mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p, int hidden);
 mal_export str mal2str(MalBlkPtr mb, int flg, int first, int last);
 mal_export str function2str(MalBlkPtr mb, int flg);
+mal_export void showMalBlkHistory(stream *out, MalBlkPtr mb);
 
 #endif /*  _MAL_LIST_H */

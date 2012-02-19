@@ -27,4 +27,6 @@ extern stmt * exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp,
 extern stmt * rel_bin(mvc *sql, sql_rel *rel);
 extern stmt * output_rel_bin(mvc *sql, sql_rel *rel);
 
+extern stmt * sql_parse(mvc *m, sql_allocator *sa, char *query, char mode);
+
 #endif /*_REL_BIN_H_*/

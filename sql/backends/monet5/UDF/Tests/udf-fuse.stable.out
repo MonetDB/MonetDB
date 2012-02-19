@@ -28,10 +28,12 @@ Ready.
 % mal # name
 % clob # type
 % 76 # length
-function user.s1_1{autoCommit=true}(A0:bte,A1:bte):void;
+function user.s0_1{autoCommit=true}(A0:bte,A1:bte):void;
     X_5 := udf.fuse(A0,A1);
     sql.exportValue(1,".","fuse_single_value":str,"smallint",16,0,6,X_5,"");
-end s1_1;
+end s0_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #select fuse(1,2);
 % . # table_name
 % fuse_single_value # name
@@ -43,10 +45,12 @@ end s1_1;
 % mal # name
 % clob # type
 % 71 # length
-function user.s3_1{autoCommit=true}(A0:sht,A1:sht):void;
+function user.s2_1{autoCommit=true}(A0:sht,A1:sht):void;
     X_5 := udf.fuse(A0,A1);
     sql.exportValue(1,".","fuse_single_value":str,"int",32,0,6,X_5,"");
-end s3_1;
+end s2_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #select fuse(1000,2000);
 % . # table_name
 % fuse_single_value # name
@@ -58,10 +62,12 @@ end s3_1;
 % mal # name
 % clob # type
 % 74 # length
-function user.s5_1{autoCommit=true}(A0:int,A1:int):void;
+function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
     X_5 := udf.fuse(A0,A1);
     sql.exportValue(1,".","fuse_single_value":str,"bigint",64,0,6,X_5,"");
-end s5_1;
+end s4_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #select fuse(1000000,2000000);
 % . # table_name
 % fuse_single_value # name
@@ -91,7 +97,7 @@ end s5_1;
 % mal # name
 % clob # type
 % 65 # length
-function user.s12_1{autoCommit=true}():void;
+function user.s11_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_12:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",0);
     X_10:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",2);
@@ -114,13 +120,15 @@ function user.s12_1{autoCommit=true}():void;
     sql.rsColumn(X_27,"sys.","fuse_a":str,"smallint",16,0,X_26);
     X_33 := io.stdout();
     sql.exportResult(X_33,X_27);
-end s12_1;
+end s11_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #explain select fuse(c,d) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 65 # length
-function user.s13_1{autoCommit=true}():void;
+function user.s12_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_12:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",0);
     X_10:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",2);
@@ -143,13 +151,15 @@ function user.s13_1{autoCommit=true}():void;
     sql.rsColumn(X_27,"sys.","fuse_c":str,"int",32,0,X_26);
     X_33 := io.stdout();
     sql.exportResult(X_33,X_27);
-end s13_1;
+end s12_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #explain select fuse(e,f) from udf_fuse;
 % .explain # table_name
 % mal # name
 % clob # type
 % 65 # length
-function user.s14_1{autoCommit=true}():void;
+function user.s13_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_12:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",0);
     X_10:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",2);
@@ -172,7 +182,9 @@ function user.s14_1{autoCommit=true}():void;
     sql.rsColumn(X_27,"sys.","fuse_e":str,"bigint",64,0,X_26);
     X_33 := io.stdout();
     sql.exportResult(X_33,X_27);
-end s14_1;
+end s13_1;
+# optimizer.mitosis()
+# optimizer.dataflow()
 #select fuse(a,b) from udf_fuse;
 % sys. # table_name
 % fuse_a # name

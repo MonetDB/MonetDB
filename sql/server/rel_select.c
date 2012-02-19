@@ -4262,10 +4262,17 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
-			if (e->card > CARD_ATOM) {
+			if (e->card > CARD_ATOM && e->card > ek.card) {
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				if (!*rel) {
+					int processed = is_processed(r);
+					r = rel_groupby(sql->sa, r, NULL);
+					e = rel_groupby_add_aggr(sql, r, e);
+					if (processed)
+						set_processed(r);
+				}
 			}
 			if (*rel) {
 				/* current projection list */
@@ -4611,7 +4618,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 
 	/* if within the selection, keep the current projections */
-	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer)) {
+	if (outer && is_project(outer->op) && !is_processed(outer) && !rel_is_ref(outer) && outer->l) {
 		/* keep projections the hard way, ie don't rename them */
 		assert(rel->l == outer);
 

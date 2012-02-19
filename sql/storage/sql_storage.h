@@ -377,6 +377,8 @@ extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
 
 extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, char *nme, idx_type it);
 extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
+extern sql_func *create_sql_func(sql_allocator *sa, char *func, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query);
+
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);
 extern void drop_sql_column(sql_table *t, int id, int drop_action);

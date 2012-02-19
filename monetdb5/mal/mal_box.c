@@ -249,7 +249,7 @@ newBox(str name)
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
 			if ( obj->val == NULL)
-				showException(MAL,"box.new", MAL_MALLOC_FAIL);
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[i] = obj;
 			break;
@@ -262,7 +262,7 @@ newBox(str name)
 			obj->sym=  newMalBlk(MAXVARS,STMT_INCREMENT);
 			obj->val = newGlobalStack(MAXVARS);
 			if ( obj->val == NULL)
-				showException(MAL,"box.new", MAL_MALLOC_FAIL);
+				showException(GDKout, MAL,"box.new", MAL_MALLOC_FAIL);
 			MT_lock_init(&obj->lock,"M5_box_lock");
 			malbox[topbox++] = obj;
 		} else
@@ -601,14 +601,14 @@ boxFileName(Box box, str backup)
 
 	snprintf(boxfile, PATHLENGTH, "%s%c%s%cbox", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
 	if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
-		showException(MAL,"box.fileName", "can not create box directory");
+		showException(GDKout, MAL,"box.fileName", "can not create box directory");
 		return NULL;
 	}
 	i = strlen(boxfile);
 	if (backup) {
 		snprintf(boxfile + i, PATHLENGTH - i, "%c%s", DIR_SEP, backup);
 		if (mkdir(boxfile, 0755) < 0 && errno != EEXIST) {
-			showException(MAL,"box.fileName", "can not create box directory");
+			showException(GDKout, MAL,"box.fileName", "can not create box directory");
 			return NULL;
 		}
 		i += strlen(backup) + 1;
@@ -635,7 +635,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 #ifdef DEBUG_MAL_BOX
 		mnstr_printf(GDKout, "saveBox:can not rename %s to %s\n", *boxfile, *boxfilebak);
 #endif
-		showException(MAL,"box.saveBox", "can not rename backup");
+		showException(GDKout, MAL,"box.saveBox", "can not rename backup");
 		GDKfree(*boxfile); *boxfile = NULL;
 		GDKfree(*boxfilebak); *boxfilebak = NULL;
 		return 0;
@@ -649,7 +649,7 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 	if (f != NULL)
 		chmod(*boxfile, (S_IRUSR | S_IWUSR));
 	else
-		showException(MAL,"box.saveBox", "can not create box file");
+		showException(GDKout, MAL,"box.saveBox", "can not create box file");
 	if (f == NULL) {
 		GDKfree(*boxfile); *boxfile= NULL;
 		GDKfree(*boxfilebak); *boxfilebak= NULL;
@@ -670,7 +670,7 @@ saveBox(Box box, int flag)
 	if( box->dirty== FALSE)
 		return 0;
 	if ( box->val == NULL){
-		showException(MAL,"box.save","No box storage");
+		showException(GDKout, MAL,"box.save","No box storage");
 		return 0;
 	}
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);

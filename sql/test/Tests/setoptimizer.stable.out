@@ -15,54 +15,69 @@ stdout of test 'setoptimizer` in directory 'test` itself:
 # MonetDB/SQL module v2.27.0 loaded
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
-
-
-
-
-
-
-
-
-
-
-
-
-# 23:37:05 >  
-# 23:37:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=33555"
-# 23:37:05 >  
+# 02:57:35 >  
+# 02:57:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=30272"
+# 02:57:35 >  
 
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 12 # length
-[ "minimal_pipe"	]
+% 4 # length
+[ "user"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 12 # length
-[ "minimal_pipe"	]
+% 4 # length
+[ "user"	]
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 4 # length
+[ "user"	]
 #select * from optimizers();
-% .,	. # table_name
-% name,	def # name
-% clob,	clob # type
-% 18,	479 # length
-[ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();"	]
-[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();"	]
-[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();"	]
-[ "accumulator_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();"	]
-[ "recycler_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.recycle();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "datacell_pipe",	"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();"	]
-[ "datacyclotron_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.datacyclotron();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "derive_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.derivePath();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "dictionary_pipe",	"optimizer.inline();optimizer.remap();optimizer.dictionary();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "compression_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.compression();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
-[ "user",	"myfamous_pipe"	]
+% .,	.,	. # table_name
+% name,	def,	status # name
+% clob,	clob,	clob # type
+% 18,	446,	12 # length
+[ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();",	"stable"	]
+[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "accumulator_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "recycler_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.recycle();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "octopus_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.costModel();optimizer.octopus();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "centipede",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.centipede();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"experimental"	]
+[ "datacyclotron_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.datacyclotron();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "dictionary_pipe",	"optimizer.inline();optimizer.remap();optimizer.dictionary();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "compression_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.compression();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "user",	"myfamous_pipe",	"experimental"	]
 
-# 23:37:05 >  
-# 23:37:05 >  "Done."
-# 23:37:05 >  
+# 02:57:35 >  
+# 02:57:35 >  "Done."
+# 02:57:35 >  
 

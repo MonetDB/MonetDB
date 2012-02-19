@@ -461,7 +461,7 @@ PNcontroller(void *dummy)
 	}
 	pushEndInstruction(mb);
 	/*printf("\n1 mb->vtop:%d\n",mb->vtop);*/
-	chkProgram(cntxt->nspace, mb);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	if (mb->errors) {
 		mnstr_printf(cntxt->fdout, "#Petrinet Controller found errors\n");
 		return;
