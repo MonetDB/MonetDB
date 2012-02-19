@@ -2404,7 +2404,7 @@ static char *
 drop_trigger( mvc *sql, char *sname, char *tname)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s;
+	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
