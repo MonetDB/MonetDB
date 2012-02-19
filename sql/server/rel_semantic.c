@@ -26,6 +26,7 @@
 #include "rel_updates.h"
 #include "rel_trans.h"
 #include "rel_schema.h"
+#include "rel_psm.h"
 #include "rel_sequence.h"
 #include "rel_exp.h"
 
@@ -202,17 +203,15 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_SEQ:
 		return rel_sequences(sql, s);
 
-	case SQL_CREATE_TRIGGER:
-	case SQL_DROP_TRIGGER:
-	case SQL_CONNECT:
-	case SQL_DISCONNECT:
-
 	case SQL_CREATE_FUNC:
 	case SQL_DROP_FUNC:
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
-		return NULL;
+
+	case SQL_CREATE_TRIGGER:
+	case SQL_DROP_TRIGGER:
+		return rel_psm(sql, s);
 
 	case SQL_INSERT:
 	case SQL_UPDATE:

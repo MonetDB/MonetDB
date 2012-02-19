@@ -21,14 +21,12 @@ Ready.
 #end main;
 
 
-# 15:15:36 >  
-# 15:15:36 >  ./explain.SF-1739353.SQL.sh explain.SF-1739353 
-# 15:15:36 >  
+Operation successful
 
 +---------------------------------------------------------------------+
 | mal    |
 +=====================================================================+
-| function user.s2_1{autoCommit=true}():void; |
+| function user.s0_1{autoCommit=true}():void;                         |
 |     X_48:bat[:oid,:str]  := bat.new(nil:oid,nil:str); |
 |     X_2 := sql.mvc(); |
 |     X_37:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0); |
@@ -67,7 +65,7 @@ Ready.
 |     sql.rsColumn(X_54,".tables","name":str,"varchar",1024,0,X_53); |
 |     X_60 := io.stdout(); |
 |     sql.exportResult(X_60,X_54); |
-| end s2_1; |
+| end s0_1;                                                           |
 +---------------------------------------------------------------------+
 40 rows
 

@@ -34,7 +34,7 @@ Ready.
 % mal # name
 % clob # type
 % 65 # length
-function user.s2_1{autoCommit=true}(A0:flt):void;
+function user.s1_1{autoCommit=true}(A0:flt):void;
     X_24 := nil:bat[:oid,:dbl];
 barrier X_56 := language.dataflow();
     X_3 := sql.mvc();
@@ -58,7 +58,7 @@ exit X_56;
     sql.rsColumn(X_25,"sys.tab_2826","d","double",53,0,X_24);
     X_31 := io.stdout();
     sql.exportResult(X_31,X_25);
-end s2_1;
+end s1_1;
 #select * from tab_2826 where func_2826(d) > 1;   
 % sys.tab_2826 # table_name
 % d # name

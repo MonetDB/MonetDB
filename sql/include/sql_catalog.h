@@ -518,5 +518,5 @@ extern node *find_sql_table_node(sql_schema *s, char *tname, int id);
 extern node *find_sql_sequence_node(sql_schema *s, char *sname, int id);
 extern node *find_sql_schema_node(sql_trans *t, char *sname, int id);
 extern node *find_sql_type_node(sql_schema * s, char *tname, int id);
-extern node *find_sql_func_node(sql_schema * s, char *tname, int id);
+extern node *find_sql_func_node(sql_schema * s, char *fname, int id);
 #endif /* SQL_CATALOG_H */

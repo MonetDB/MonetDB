@@ -224,6 +224,9 @@ mvc_commit(mvc *m, int chain, char *name)
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
 		store_unlock();
 		m->type = Q_TRANS;
+		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions allready exists, concurrent mal will
+build up the hash (not copyied in the trans dup)) */ 
+			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		m->last = NULL;
 		if (mvc_debug)
@@ -626,7 +629,7 @@ mvc_bind_table(mvc *m, sql_schema *s, char *tname)
 
 	if (!s) { /* Declared tables during query compilation have no schema */
 		sql_subtype *tpe = stack_find_type(m, tname);
-		if (tpe) { 
+		if (tpe) {
 			t = tpe->comp_type;
 		} else { /* during exection they are in the declared table schema */
 			s = mvc_bind_schema(m, dt_schema);
@@ -792,14 +795,17 @@ mvc_create_type(mvc *sql, sql_schema * s, char *name, int digits, int scale, int
 }
 
 sql_func *
-mvc_create_func(mvc *sql, sql_schema * s, char *name, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
+mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema * s, char *name, list *args, sql_subtype *res, int type, char *mod, char *impl, char *query)
 {
 	sql_func *f = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_func %s\n", name);
-
-	f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, mod, impl, query);
+	if (sa) {
+		f = create_sql_func(sa, name, args, res, type, mod, impl, query);
+		f->s = s;
+	} else 
+		f = sql_trans_create_func(sql->session->tr, s, name, args, res, type, mod, impl, query);
 	return f;
 }
 
@@ -981,8 +987,7 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
 
-	if (persistence == SQL_DECLARED_TABLE) {
-		/* declared tables should not end up in the catalog */
+	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
 		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
 		t->s = s;
 	} else {
@@ -1071,7 +1076,7 @@ mvc_create_column(mvc *m, sql_table *t, char *name, sql_subtype *tpe)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_column %s %s %s\n", t->base.name, name, tpe->type->sqlname);
-	if (t->persistence == SQL_DECLARED_TABLE)
+	if (t->persistence == SQL_DECLARED_TABLE && (!t->s || strcmp(t->s->base.name, dt_schema))) 
 		/* declared tables should not end up in the catalog */
 		return create_sql_column(m->sa, t, name, tpe);
 	else

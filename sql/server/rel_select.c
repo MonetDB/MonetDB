@@ -4262,10 +4262,17 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
-			if (e->card > CARD_ATOM) {
+			if (e->card > CARD_ATOM && e->card > ek.card) {
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
+				if (!*rel) {
+					int processed = is_processed(r);
+					r = rel_groupby(sql->sa, r, NULL);
+					e = rel_groupby_add_aggr(sql, r, e);
+					if (processed)
+						set_processed(r);
+				}
 			}
 			if (*rel) {
 				/* current projection list */

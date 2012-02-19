@@ -31,7 +31,8 @@ typedef enum expression_type {
 	e_cmp,
 	e_func,
 	e_aggr,
-	e_convert
+	e_convert,
+	e_psm
 } expression_type;
 
 #define CARD_ATOM 1
@@ -73,6 +74,7 @@ typedef struct expression {
 /* todo make enum */
 #define DDL_OUTPUT	1
 #define DDL_LIST	2	
+#define DDL_PSM		3	
 
 #define DDL_CREATE_SEQ  5
 #define DDL_ALTER_SEQ   6
@@ -114,9 +116,6 @@ typedef struct expression {
 #define DDL_RENAME_USER 58
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
-
-#define DDL_CONNECT 	61
-#define DDL_DISCONNECT 	62
 
 #define MAXOPS 20
 

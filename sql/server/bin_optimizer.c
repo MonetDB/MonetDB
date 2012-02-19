@@ -179,7 +179,6 @@ _bin_optimizer(mvc *c, stmt *s)
 		 * and user authentication.
 		 */
 	case st_none:
-	case st_connection:
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:

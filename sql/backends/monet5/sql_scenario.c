@@ -725,7 +725,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
 		r = sql_symbol2relation(m, m->sym);
-		s = sql_symbol2stmt(m, r, m->sym);
+		s = sql_relation2stmt(m, r);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout,"#SQLstatement:\n");
 #endif
@@ -1189,7 +1189,7 @@ SQLshowDot(Client c)
 }
 
 
-#define MAX_QUERY 	(16*1024*1024)
+#define MAX_QUERY 	(64*1024*1024)
 
 static int 
 cachable( mvc *m, stmt *s ) 
@@ -1402,7 +1402,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else {
 		sql_rel *r = sql_symbol2relation(m, m->sym);
-		stmt *s = sql_symbol2stmt(m, r, m->sym);
+		stmt *s = sql_relation2stmt(m, r);
 
 		if (s == 0 || (err = mvc_status(m) && m->type != Q_TRANS)) {
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
@@ -1764,7 +1764,7 @@ SQLrecompile(Client c, backend *be)
 	int oldstop = c->curprg->def->stop;
 
 	SQLCacheRemove(c, be->q->name);
-	s = sql_symbol2stmt(m, be->q->rel, be->q->s);
+	s = sql_relation2stmt(m, be->q->rel);
 	be->q->code = (backend_code)backend_dumpproc(be, c, be->q, s);
 	be->q->stk = 0;
 

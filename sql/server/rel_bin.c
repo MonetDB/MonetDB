@@ -21,11 +21,11 @@
 
 #include "rel_bin.h"
 #include "rel_exp.h"
+#include "rel_psm.h"
 #include "rel_prop.h"
-/* needed for recursion (ie triggers) */
 #include "rel_select.h"
 #include "rel_updates.h"
-#include "rel_subquery.h"
+#include "rel_optimizer.h"
 
 static stmt * subrel_bin(mvc *sql, sql_rel *rel, list *refs);
 
@@ -316,6 +316,22 @@ value_list( mvc *sql, list *vals)
 	return s;
 }
 
+static stmt *
+exp_list( mvc *sql, list *exps, stmt *l, stmt *r, group *grp, stmt *sel) 
+{
+	node *n;
+	list *nl = sa_list(sql->sa);
+
+	/* create bat append values */
+	for( n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(sql, e, l, r, grp, sel);
+		
+		append(nl, i);
+	}
+	return stmt_list(sql->sa, nl);
+}
+
 stmt *
 exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel) 
 {
@@ -327,6 +343,62 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 	}
 
 	switch(e->type) {
+	case e_psm:
+		if (e->flag & PSM_SET) {
+			stmt *r = exp_bin(sql, e->l, left, right, grp, sel);
+			return stmt_assign(sql->sa, e->name, r, GET_PSM_LEVEL(e->flag));
+		} else if (e->flag & PSM_VAR) {
+			return stmt_var(sql->sa, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
+		} else if (e->flag & PSM_RETURN) {
+			sql_exp *l = e->l;
+			stmt *r = exp_bin(sql, l, left, right, grp, sel);
+
+			/* handle table returning functions */
+			if (l->type == e_psm && l->flag & PSM_REL) {
+				stmt *lst = r->op1;
+                		if (r->type == st_table && lst->nrcols == 0 && lst->key) {
+                        		node *n;
+                        		list *l = sa_list(sql->sa);
+	
+                        		for(n=lst->op4.lval->h; n; n = n->next)
+                                		list_append(l, const_column(sql->sa, (stmt*)n->data));
+                        		r = stmt_list(sql->sa, l);
+				}
+				if (r->type == st_list)
+					r = stmt_table(sql->sa, r, 1);
+			}
+			return stmt_return(sql->sa, r, GET_PSM_LEVEL(e->flag));
+		} else if (e->flag & PSM_WHILE) {
+			stmt *cond = exp_bin(sql, e->l, left, right, grp, sel);
+			stmt *stmts = exp_list(sql, e->r, left, right, grp, sel);
+			return stmt_while(sql->sa, cond, stmts);
+		} else if (e->flag & PSM_IF) {
+			stmt *cond = exp_bin(sql, e->l, left, right, grp, sel);
+			stmt *stmts = exp_list(sql, e->r, left, right, grp, sel);
+			stmt *estmts = NULL;
+			if (e->f)
+				estmts = exp_list(sql, e->f, left, right, grp, sel);
+			return stmt_if(sql->sa, cond, stmts, estmts);
+		} else if (e->flag & PSM_REL) {
+			sql_rel *rel = e->l;
+			stmt *r = rel_bin(sql, rel);
+
+#if 0
+                	if (r->type == st_list && r->nrcols == 0 && r->key) {
+                        	/* row to columns */
+                        	node *n;
+                        	list *l = sa_list(sql->sa);
+	
+                        	for(n=r->op4.lval->h; n; n = n->next)
+                               		list_append(l, const_column(sql->sa, (stmt*)n->data));
+                        	r = stmt_list(sql->sa, l);
+			}
+#endif
+			if (is_modify(rel->op) || is_ddl(rel->op)) 
+				return r;
+			return stmt_table(sql->sa, r, 1);
+		}
+		break;
 	case e_atom: {
 		if (e->l) { 			/* literals */
 			atom *a = e->l;
@@ -690,6 +762,319 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 	 }	break;
 	default:
 		;
+	}
+	return s;
+}
+
+static stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
+
+static stmt *
+check_table_types(mvc *sql, sql_table *ct, stmt *s, check_type tpe)
+{
+	char *tname;
+	stmt *tab = s;
+	int temp = 0;
+
+	if (s->type != st_table) {
+		char *t = (ct->type==tt_generated)?"table":"unknown";
+		return sql_error(
+			sql, 03,
+			"single value and complex type '%s' are not equal", t);
+	}
+	tab = s->op1;
+	temp = s->flag;
+	if (tab->type == st_var) {
+		sql_table *tbl = tail_type(tab)->comp_type;
+		stmt *base = stmt_basetable(sql->sa, tbl, tab->op1->op4.aval->data.val.sval);
+		node *n, *m;
+		list *l = sa_list(sql->sa);
+		
+		stack_find_var(sql, tab->op1->op4.aval->data.val.sval);
+
+		for (n = ct->columns.set->h, m = tbl->columns.set->h; 
+			n && m; n = n->next, m = m->next) 
+		{
+			sql_column *c = n->data;
+			sql_column *dtc = m->data;
+			stmt *dtcs = stmt_bat(sql->sa, dtc, base, RDONLY);
+			stmt *r = check_types(sql, &c->type, dtcs, tpe);
+			if (!r) 
+				return NULL;
+			r = stmt_alias(sql->sa, r, sa_strdup(sql->sa, tbl->base.name), sa_strdup(sql->sa, c->base.name));
+			list_append(l, r);
+		}
+	 	return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
+	} else if (tab->type == st_list) {
+		node *n, *m;
+		list *l = sa_list(sql->sa);
+		for (n = ct->columns.set->h, m = tab->op4.lval->h; 
+			n && m; n = n->next, m = m->next) 
+		{
+			sql_column *c = n->data;
+			stmt *r = check_types(sql, &c->type, m->data, tpe);
+			if (!r) 
+				return NULL;
+			tname = table_name(sql->sa, r);
+			r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
+			list_append(l, r);
+		}
+		return stmt_table(sql->sa, stmt_list(sql->sa, l), temp);
+	} else { /* single column/value */
+		sql_column *c;
+		stmt *r;
+		sql_subtype *st = tail_type(tab);
+
+		if (list_length(ct->columns.set) != 1) {
+			stmt *res = sql_error(
+				sql, 03,
+				"single value of type %s and complex type '%s' are not equal",
+				st->type->sqlname,
+				(ct->type==tt_generated)?"table":"unknown"
+			);
+			return res;
+		}
+		c = ct->columns.set->h->data;
+		r = check_types(sql, &c->type, tab, tpe);
+		tname = table_name(sql->sa, r);
+		r = stmt_alias(sql->sa, r, tname, sa_strdup(sql->sa, c->base.name));
+		return stmt_table(sql->sa, r, temp);
+	}
+}
+
+static void
+sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
+{
+	atom *a = sql_bind_arg(sql, nr);
+
+	if (atom_null(a)) {
+		if (a->data.vtype != rt->type->localtype) {
+			ptr p;
+
+			a->data.vtype = rt->type->localtype;
+			p = ATOMnilptr(a->data.vtype);
+			VALset(&a->data, a->data.vtype, p);
+		}
+	}
+	a->tpe = *rt;
+}
+
+/* try to do an inplace convertion 
+ * 
+ * inplace conversion is only possible if the s is an variable.
+ * This is only done to be able to map more cached queries onto the same 
+ * interface.
+ */
+static stmt *
+inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
+{
+	atom *a;
+
+	/* exclude named variables */
+	if (s->type != st_var || (s->op1 && s->op1->op4.aval->data.val.sval) || 
+		(ct->scale && ct->type->eclass != EC_FLT))
+		return s;
+
+	a = sql_bind_arg(sql, s->flag);
+	if (atom_cast(a, ct)) {
+		stmt *r = stmt_varnr(sql->sa, s->flag, ct);
+		sql_convert_arg(sql, s->flag, ct);
+		return r;
+	}
+	return s;
+}
+
+static int
+stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
+{
+	if (!type || !param || param->type != st_var)
+		return -1;
+
+	if (set_type_param(sql, type, param->flag) == 0) {
+		param->op4.typeval = *type;
+		return 0;
+	}
+	return -1;
+}
+
+/* check_types tries to match the ct type with the type of s if they don't
+ * match s is converted. Returns NULL on failure.
+ */
+static stmt *
+check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
+{
+	int c = 0;
+	sql_subtype *t = NULL, *st = NULL;
+
+	if (ct->comp_type) 
+		return check_table_types(sql, ct->comp_type, s, tpe);
+
+ 	st = tail_type(s);
+	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
+		return s;
+	} else if (!st) {
+                return sql_error(sql, 02, "statement has no type information");
+	}
+
+	/* first try cheap internal (inplace) convertions ! */
+	s = inplace_convert(sql, ct, s);
+	t = st = tail_type(s);
+
+	/* check if the types are the same */
+	if (t && subtype_cmp(t, ct) != 0) {
+		t = NULL;
+	}
+
+	if (!t) {	/* try to convert if needed */
+		c = sql_type_convert(st->type->eclass, ct->type->eclass);
+		if (!c || (c == 2 && tpe == type_set) || 
+                   (c == 3 && tpe != type_cast)) { 
+			s = NULL;
+		} else {
+			s = stmt_convert(sql->sa, s, st, ct);
+		}
+	} 
+	if (!s) {
+		stmt *res = sql_error(
+			sql, 03,
+			"types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+			st->type->sqlname,
+			st->digits,
+			st->scale,
+			st->type->base.name,
+			ct->type->sqlname,
+			ct->digits,
+			ct->scale,
+			ct->type->base.name
+		);
+		return res;
+	}
+	return s;
+}
+
+static stmt *
+sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs)
+{
+	sql_subtype *rt = NULL;
+	sql_subfunc *f = NULL;
+
+	if (!s)
+		s = sql->session->schema;
+	rt = tail_type(rs);
+	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
+	/* try to find the function without a type, and convert
+	 * the value to the type needed by this function!
+	 */
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC)) != NULL) {
+		sql_arg *a = f->func->ops->h->data;
+
+		rs = check_types(sql, &a->type, rs, type_equal);
+		if (!rs) 
+			f = NULL;
+	}
+	if (f) {
+		if (f->func->res.scale == INOUT) {
+			f->res.digits = rt->digits;
+			f->res.scale = rt->scale;
+		}
+		return stmt_unop(sql->sa, rs, f);
+	} else if (rs) {
+		char *type = tail_type(rs)->type->sqlname;
+
+		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
+	}
+	return NULL;
+}
+
+static stmt *
+sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
+{
+	list *sl = sa_list(sql->sa);
+	list *tl = sa_list(sql->sa);
+	sql_subfunc *f = NULL;
+
+	list_append(sl, a1);
+	list_append(tl, tail_type(a1));
+	list_append(sl, a2);
+	list_append(tl, tail_type(a2));
+	list_append(sl, a3);
+	list_append(tl, tail_type(a3));
+	if (a4) {
+		list_append(sl, a4);
+		list_append(tl, tail_type(a4));
+	}
+
+	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl, F_FUNC);
+	if (f)
+		return stmt_Nop(sql->sa, stmt_list(sql->sa, sl), f);
+	return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+}
+
+static stmt *
+rel_parse_value(mvc *m, char *query, char emode)
+{
+	mvc o = *m;
+	stmt *s = NULL;
+	buffer *b;
+	char *n;
+	int len = _strlen(query);
+	exp_kind ek = {type_value, card_value, FALSE};
+	stream *sr;
+
+	m->qc = NULL;
+
+	m->caching = 0;
+	m->emode = emode;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	sr = buffer_rastream(b, "sqlstatement");
+	scanner_init(&m->scanner, bstream_create(sr, b->len), NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	m->params = NULL;
+	/*m->args = NULL;*/
+	m->argc = 0;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB;
+
+	(void) sqlparse(m);	/* blindly ignore errors */
+	
+	/* get out the single value as we don't want an enclosing projection! */
+	if (m->sym->token == SQL_SELECT) {
+		SelectNode *sn = (SelectNode *)m->sym;
+		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
+			int is_last = 0;
+			sql_rel *rel = NULL;
+			sql_exp *e = rel_value_exp2(m, &rel, sn->selection->h->data.sym->data.lval->h->data.sym, sql_sel, ek, &is_last);
+
+			if (!rel)
+				s = exp_bin(m, e, NULL, NULL, NULL, NULL); 
+		}
+	}
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
+		char errstr[ERRSIZE];
+
+		strcpy(errstr, m->errstr);
+		*m = o;
+		m->session->status = status;
+		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
 	}
 	return s;
 }
@@ -1419,7 +1804,6 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		rs = stmt_join(sql->sa, stmt_mark(sql->sa, s,0),rs,cmp_equal);
 
  		sub = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", tail_type(ls), tail_type(rs), F_FUNC);
-		/*s = sql_binop_(sql, NULL, "sql_sub", ls, rs);*/
 		s = stmt_binop(sql->sa, ls, rs, sub);
 		s = stmt_select(sql->sa, s, stmt_atom_wrd(sql->sa, 0), cmp_gt);
 
@@ -1543,7 +1927,6 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 		rs = stmt_join(sql->sa, stmt_mark(sql->sa, s,0),rs,cmp_equal);
 
  		min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", tail_type(ls), tail_type(rs), F_FUNC);
-		/*s = sql_binop_(sql, NULL, "sql_min", ls, rs);*/
 		s = stmt_binop(sql->sa, ls, rs, min);
 		/* A ids */
 		s = stmt_join(sql->sa, stmt_reverse(sql->sa, lm), s, cmp_equal);
@@ -2136,6 +2519,105 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 	}
 	sub = stmt_list(sql->sa, newl);
 	return sub;
+}
+
+stmt *
+sql_parse(mvc *m, sql_allocator *sa, char *query, char mode)
+{
+	mvc *o = NULL;
+	stmt *sq = NULL;
+	buffer *b;
+	char *n;
+	int len = _strlen(query);
+	stream *buf;
+
+ 	if (THRhighwater())
+		return sql_error(m, 10, "SELECT: too many nested operators");
+
+	o = NEW(mvc);
+	if (!o)
+		return NULL;
+	*o = *m;
+
+	m->qc = NULL;
+	m->last = NULL;
+
+	m->caching = 0;
+	m->emode = mode;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	buf = buffer_rastream(b, "sqlstatement");
+	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	m->params = NULL;
+	m->argc = 0;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	m->errstr[ERRSIZE-1] = '\0';
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB;
+
+	/* create private allocator */
+	m->sa = (sa)?sa:sa_create();
+
+	if (sqlparse(m) || !m->sym) {
+		/* oops an error */
+		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
+				"internal query: %s", query);
+	} else {
+		sql_rel *r = rel_semantic(m, m->sym);
+
+		if (r) {
+			r = rel_optimizer(m, r);
+			sq = rel_bin(m, r);
+		}
+	}
+
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+	if (m->sa && m->sa != sa)
+		sa_destroy(m->sa);
+	m->sym = NULL;
+	{
+		char *e = NULL;
+		int status = m->session->status;
+		int sizevars = m->sizevars, topvars = m->topvars;
+		sql_var *vars = m->vars;
+		/* cascade list maybe removed */
+		list *cascade_action = m->cascade_action;
+
+		if (m->session->status || m->errstr[0]) {
+			e = _STRDUP(m->errstr);
+			if (!e) {
+				_DELETE(o);
+				return NULL;
+			}
+		}
+		*m = *o;
+		m->sizevars = sizevars;
+		m->topvars = topvars;
+		m->vars = vars;
+		m->session->status = status;
+		m->cascade_action = cascade_action;
+		if (e) {
+			strncpy(m->errstr, e, ERRSIZE);
+			m->errstr[ERRSIZE - 1] = '\0';
+			_DELETE(e);
+		}
+	}
+	_DELETE(o);
+	m->last = NULL;
+	return sq;
 }
 
 static stmt *
@@ -3599,6 +4081,25 @@ rel2bin_list(mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
+rel2bin_psm(mvc *sql, sql_rel *rel) 
+{
+	node *n;
+	list *l = sa_list(sql->sa);
+	stmt *sub = NULL;
+
+	for(n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *s = exp_bin(sql, e, sub, NULL, NULL, NULL);
+
+		if (s && s->type == st_table) /* relational statement */
+			sub = s->op1;
+		else
+			append(l, s);
+	}
+	return stmt_list(sql->sa, l);
+}
+
+static stmt *
 rel2bin_seq(mvc *sql, sql_rel *rel, list *refs) 
 {
 	node *en = rel->exps->h;
@@ -3706,6 +4207,8 @@ rel2bin_ddl(mvc *sql, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 	} else if (rel->flag <= DDL_LIST) {
 		s = rel2bin_list(sql, rel, refs);
+	} else if (rel->flag <= DDL_PSM) {
+		s = rel2bin_psm(sql, rel);
 	} else if (rel->flag <= DDL_ALTER_SEQ) {
 		s = rel2bin_seq(sql, rel, refs);
 		sql->type = Q_SCHEMA;
@@ -3833,7 +4336,7 @@ rel_bin(mvc *sql, sql_rel *rel)
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
 
-	if (s && s->type == st_list) {
+	if (s && s->type == st_list && s->op4.lval->t) {
 		stmt *cnt = s->op4.lval->t->data;
 		if (cnt && cnt->type == st_affected_rows)
 			list_remove_data(s->op4.lval, cnt);

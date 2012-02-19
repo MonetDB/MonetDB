@@ -41,6 +41,6 @@ UDFfuse_scalar_decl(bte,sht);
 UDFfuse_scalar_decl(sht,int);
 UDFfuse_scalar_decl(int,lng);
 
-udf_export str UDFBATfuse(int *ret, int *one, int *two);
+udf_export str UDFBATfuse(bat *ret, bat *one, bat *two);
 
 #endif /* _SQL_UDF_H_ */
