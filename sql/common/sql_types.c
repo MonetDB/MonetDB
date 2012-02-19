@@ -734,13 +734,16 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
 
 					fres->func = f;
-					for (n = ops->h; n; n = n->next) {
-						sql_subtype *a = n->data;
+					if (f->fix_scale > SCALE_NONE) {
+						for (n = ops->h; n; n = n->next) {
+							sql_subtype *a = n->data;
 
-						/* same scale as the input */
-						if (a && a->scale > scale)
-							scale = a->scale;
-					}
+							/* same scale as the input */
+							if (a && a->scale > scale)
+								scale = a->scale;
+						}
+					} else if (f->res.scale) 
+						scale = f->res.scale;
 					if (IS_FUNC(f)) {
 						sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 						if (f->res.comp_type) 
