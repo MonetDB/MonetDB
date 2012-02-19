@@ -2276,6 +2276,8 @@ drop_func( mvc *sql, char *sname, char *name, int fid, int type, int action)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+	if (!s)
+		s = cur_schema(sql);
 	if (fid >= 0) {
 		node *n = find_sql_func_node(s, NULL, fid);
 		if (n) {
@@ -2325,7 +2327,8 @@ create_func( mvc *sql, char *sname, sql_func *f )
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
-
+	if (!s)
+		s = cur_schema(sql);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, &f->res, f->type, f->mod, f->imp, f->query);
 	if (nf && nf->query) {
 		char buf[BUFSIZ];
@@ -2358,12 +2361,13 @@ static char *
 create_trigger( mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s;
+	sql_schema *s = NULL;
 	sql_table *t;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
-
+	if (!s)
+		s = cur_schema(sql);
 	if (!schema_privs(sql->role_id, s)) 
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if ((tri = mvc_bind_trigger(sql, s, triggername )) != NULL) 
@@ -2408,7 +2412,8 @@ drop_trigger( mvc *sql, char *sname, char *tname)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
-
+	if (!s)
+		s = cur_schema(sql);
 	if (s && !schema_privs(sql->role_id, s)) 
 		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
