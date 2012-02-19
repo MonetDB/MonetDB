@@ -67,7 +67,7 @@ stderr of test 'overflow.SF-2853458` in directory 'test/BugTracker-2009` itself:
 # 22:26:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35561 
 # 22:26:13 >  
 
-MAPI  = monetdb@alf:35561
+MAPI  = monetdb@sofia:38256
 QUERY = select cast(power(2,64) as bigint);
 ERROR = !value (18446744073709551616.000000) exceeds limits of type lng
 
