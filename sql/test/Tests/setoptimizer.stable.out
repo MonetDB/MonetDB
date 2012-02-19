@@ -15,69 +15,69 @@ stdout of test 'setoptimizer` in directory 'test` itself:
 # MonetDB/SQL module v2.27.0 loaded
 
 Ready.
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-# falling back to direct mode 
-#function user.main():void;
-#    clients.quit();
-#end main;
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
 
+# 02:57:35 >  
+# 02:57:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=rome" "--port=30272"
+# 02:57:35 >  
 
-# 20:30:45 >  
-# 20:30:45 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=39627 
-# 20:30:45 >  
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 4 # length
+[ "user"	]
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 4 # length
+[ "user"	]
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 4 # length
+[ "user"	]
+#select * from optimizers();
+% .,	.,	. # table_name
+% name,	def,	status # name
+% clob,	clob,	clob # type
+% 18,	446,	12 # length
+[ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();",	"stable"	]
+[ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "sequential_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "accumulator_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
+[ "recycler_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.recycle();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "octopus_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.costModel();optimizer.octopus();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "centipede",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.centipede();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"experimental"	]
+[ "datacyclotron_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.datacyclotron();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "dictionary_pipe",	"optimizer.inline();optimizer.remap();optimizer.dictionary();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "compression_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.compression();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
+[ "user",	"myfamous_pipe",	"experimental"	]
 
-% . # table_name
-% single_value # name
-% varchar # type
-% 12 # length
-[ "default_pipe"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 3 # length
-[ "off"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 3 # length
-[ "off"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 2 # length
-[ "on"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 2 # length
-[ "on"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 12 # length
-[ "nov2009_pipe"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 12 # length
-[ "nov2009_pipe"	]
-#select optimizer;
-% . # table_name
-% single_value # name
-% varchar # type
-% 12 # length
-[ "default_pipe"	]
-
-# 20:30:45 >  
-# 20:30:45 >  Done.
-# 20:30:45 >  
+# 02:57:35 >  
+# 02:57:35 >  "Done."
+# 02:57:35 >  
 

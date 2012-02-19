@@ -80,12 +80,9 @@ stderr of test 'setoptimizer` in directory 'test` itself:
 # 12:49:31 >  mclient -lsql -i --host=eir --port=36907 
 # 12:49:31 >  
 
-MAPI  = monetdb@sofia:38256
-QUERY = set optimizer='default,costModel';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@rome:30272
 QUERY = set optimizer='myfamous_pipe';
-ERROR = !SQLException:optimizer:Optimizer 'myfamous_pipe' pipeline does not exist, use default pipe instead
+ERROR = !Syntax error detected.See documentation for details
 
 # 19:12:49 >  
 # 19:12:49 >  Done.
