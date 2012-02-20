@@ -1551,7 +1551,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		if (catalog != null)
 			query += "AND LOWER('" + cat + "') LIKE '" + escapeQuotes(catalog).toLowerCase() + "' ";
 		if (schemaPattern != null)
-			query += "AND LOWER(\"TABLE_SCHEM\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
+			query += "AND LOWER(\"name\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		query += "ORDER BY \"TABLE_SCHEM\"";
 
 		return(getStmt().executeQuery(query));
