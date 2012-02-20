@@ -1,6 +1,10 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
+* Mon Feb 20 2012 Fabian Groffen <fabian@cwi.nl>
+- Fixed bug in DatabaseMetaData.getSchemas() method that caused an SQL
+  error when called with catalog and schema argument.
+
 * Tue Feb 14 2012 Fabian Groffen <fabian@cwi.nl>
 - Resolved a bug where JDBC and Control connections could terminate
   abruptly with 'Connection closed' messages
