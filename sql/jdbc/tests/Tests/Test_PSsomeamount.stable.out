@@ -1,4 +1,4 @@
-stdout of test 'Test_PSlargeamount` in directory 'jdbc/tests` itself:
+stdout of test 'Test_PSsomeamount` in directory 'jdbc/tests` itself:
 
 
 # 10:38:37 >  
@@ -37,98 +37,8 @@ Ready.
 7000, true
 8000, true
 9000, true
-10000, true
-11000, true
-12000, true
-13000, true
-14000, true
-15000, true
-16000, true
-17000, true
-18000, true
-19000, true
-20000, true
-21000, true
-22000, true
-23000, true
-24000, true
-25000, true
-26000, true
-27000, true
-28000, true
-29000, true
-30000, true
-31000, true
-32000, true
-33000, true
-34000, true
-35000, true
-36000, true
-37000, true
-38000, true
-39000, true
-40000, true
-41000, true
-42000, true
-43000, true
-44000, true
-45000, true
-46000, true
-47000, true
-48000, true
-49000, true
-50000, true
-51000, true
-52000, true
-53000, true
-54000, true
-55000, true
-56000, true
-57000, true
-58000, true
-59000, true
-60000, true
-61000, true
-62000, true
-63000, true
-64000, true
-65000, true
-66000, true
-67000, true
-68000, true
-69000, true
-70000, true
-71000, true
-72000, true
-73000, true
-74000, true
-75000, true
-76000, true
-77000, true
-78000, true
-79000, true
-80000, true
-81000, true
-82000, true
-83000, true
-84000, true
-85000, true
-86000, true
-87000, true
-88000, true
-89000, true
-90000, true
-91000, true
-92000, true
-93000, true
-94000, true
-95000, true
-96000, true
-97000, true
-98000, true
-99000, true
 
-# 10:52:24 >  
-# 10:52:24 >  Done.
-# 10:52:24 >  
+# 18:56:08 >  
+# 18:56:08 >  "Done."
+# 18:56:08 >  
 
