@@ -32,7 +32,7 @@ stderr of test '00_syntax_error_05` in directory 'test/sciql` itself:
 
 MAPI  = monetdb@jarl:38366
 QUERY = CREATE ARRAY err(x INTEGER DIMENSION[1:10:1]);
-ERROR = !MALException:array.series:illegal range
+ERROR = !illegal range
 
 # 13:48:15 >  
 # 13:48:15 >  Done.
