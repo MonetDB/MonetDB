@@ -1324,7 +1324,23 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
          */
 	if (rel->exps) {
 		int idx = 0;
+		list *jexps = sa_list(sql->sa);
 		list *jns = sa_list(sql->sa);
+
+		/* get equi-joins first */
+		if (list_length(rel->exps) > 1) {
+			for( en = rel->exps->h; en; en = en->next ) {
+				sql_exp *e = en->data;
+				if (e->type == e_cmp && e->flag == cmp_equal)
+					append(jexps, e);
+			}
+			for( en = rel->exps->h; en; en = en->next ) {
+				sql_exp *e = en->data;
+				if (e->type != e_cmp || e->flag != cmp_equal)
+					append(jexps, e);
+			}
+			rel->exps = jexps;
+		}
 
 		/* generate a relational join */
 		for( en = rel->exps->h; en; en = en->next ) {
