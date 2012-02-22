@@ -1665,7 +1665,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (j->err[0] != '\0')
 					break;
 
-				chkProgram(cntxt->nspace, prg->def);
+				chkProgram(cntxt->fdout, cntxt->nspace, prg->def);
 				if (j->explain == 1) {
 					printFunction(cntxt->fdout, prg->def, 0,
 							LIST_MAL_STMT | LIST_MAPI);
