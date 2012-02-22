@@ -1659,7 +1659,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* we do not return anything */
 				setVarType(prg->def, 0, TYPE_void);
 				setVarUDFtype(prg->def, 0);
-				(void)dumptree(j, prg->def, j->p);
+				(void)dumptree(j, cntxt, prg->def, j->p);
 				pushEndInstruction(prg->def);
 				/* codegen could report an error */
 				if (j->err[0] != '\0')

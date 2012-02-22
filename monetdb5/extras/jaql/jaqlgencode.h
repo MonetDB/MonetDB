@@ -23,7 +23,7 @@
 #include "jaql.h"
 #include "mal_builder.h"
 
-int dumptree(jc *j, MalBlkPtr mb, tree *t);
+int dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t);
 
 #endif
 

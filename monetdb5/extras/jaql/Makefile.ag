@@ -51,7 +51,7 @@ headers_json_mal = {
 headers_jaql_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = jaql.mal
+	SOURCES = jaql.mal jaqlfunc.mal
 }
 
 headers_autoload = {

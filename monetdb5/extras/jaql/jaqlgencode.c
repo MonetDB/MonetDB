@@ -3284,7 +3284,7 @@ dumpjsonshred(MalBlkPtr mb, char *json,
 }
 
 int
-dumptree(jc *j, MalBlkPtr mb, tree *t)
+dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
@@ -4080,9 +4080,34 @@ dumptree(jc *j, MalBlkPtr mb, tree *t)
 				break;
 			case j_func: {
 				tree *w;
+				Symbol s;
+
+				/* lookup the function we need */
+				s = findSymbol(cntxt->nspace,
+						putName("jaqlfunc", 8),
+						putName(t->sval, strlen(t->sval)));
+				if (s == NULL) {
+					snprintf(j->err, sizeof(j->err), "no such function: %s",
+							t->sval);
+					break;
+				}
+
+				do {
+					if (idcmp(s->name, t->sval) == 0) {
+						InstrPtr f = getSignature(s);
+						if (f->retc == 7)
+							break;
+					}
+					s = s->peer;
+				} while (s != NULL);
+				if (s == NULL) {
+					snprintf(j->err, sizeof(j->err), "no such function "
+							"with matching signature for: %s", t->sval);
+					break;
+				}
 
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, putName("jaqlfunc", 8));
 				setFunctionId(q, putName(t->sval, strlen(t->sval)));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));

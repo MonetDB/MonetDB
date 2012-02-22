@@ -17,3 +17,4 @@
 
 include json;
 include jaql;
+include jaqlfunc;
