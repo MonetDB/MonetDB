@@ -116,7 +116,7 @@ str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
 
 #define QRYinsertI "INSERT INTO mseedCatalog(mseed, seqno, dataquality, network, \
 	 station, location, channel, starttime , samplerate, sampleindex, samplecnt, sampletype, minval,maxval) \
-	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%d,'%s',%d,%d);"
+	 VALUES(%d, %d,'%c','%s', '%s','%s','%s','%s',%f,%d,%ld,'%s',%d,%d);"
 
 str
 MseedImport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
