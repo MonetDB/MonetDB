@@ -1,0 +1,5 @@
+module miniseed;
+
+pattern mount{unsafe}(entry:str)(:bat[:oid,:timestamp],:bat[:oid,:int])
+address MiniseedMount
+comment "Mount the content of a mseed file into BATs";
