@@ -185,7 +185,7 @@ pipeline_export str debugScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 @= schedulerCleanup
 	if(@1) {
 		removeInstruction(mb,@1);
-		chkFlow(mb);
+		chkFlow(cntxt->fdout, mb);
 	}
 @
 @c

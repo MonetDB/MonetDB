@@ -614,21 +614,21 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 }
 
 str
-function2str(MalBlkPtr mb, int flg)
+mal2str(MalBlkPtr mb, int flg, int first, int last)
 {
 	str ps, *txt;
 	int i, *len, totlen = 0;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
 	len = GDKmalloc(sizeof(int) * mb->stop);
-	for (i = 0; i < mb->stop; i++) {
+	for (i = first; i < last; i++) {
 		txt[i] = instruction2str(mb, 0, getInstrPtr(mb, i), flg);
 		if ( txt[i])
 			totlen += len[i] = (int)strlen(txt[i]);
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	totlen = 0;
-	for (i = 0; i < mb->stop; i++) 
+	for (i = first; i < last; i++) 
 	if( txt[i]){
 		strncpy(ps + totlen, txt[i], len[i]);
 		ps[totlen + len[i]] = '\n';
@@ -639,6 +639,11 @@ function2str(MalBlkPtr mb, int flg)
 	GDKfree(len);
 	GDKfree(txt);
 	return ps;
+}
+
+str
+function2str(MalBlkPtr mb, int flg){
+	return mal2str(mb,flg,0,mb->stop);
 }
 
 void
@@ -684,7 +689,7 @@ printSignature(stream *fd, Symbol s, int flg)
  * For clarity we show the last optimizer applied
  * also as the last of the list, although it is linked with mb.
 */
-void showMalBlkHistory(MalBlkPtr mb)
+void showMalBlkHistory(stream *out, MalBlkPtr mb)
 {
 	MalBlkPtr m=mb;
 	InstrPtr p,sig;
@@ -698,7 +703,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 		if( p->token == REMsymbol){
 			msg= instruction2str(m, 0, p, FALSE);
 			if (msg ) {
-				mnstr_printf(GDKout,"%s.%s[%2d] %s\n", 
+				mnstr_printf(out,"%s.%s[%2d] %s\n", 
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 			}
@@ -709,7 +714,7 @@ void showMalBlkHistory(MalBlkPtr mb)
 	if( p->token == REMsymbol){
 		msg= instruction2str(mb, 0, p, FALSE);
 		if (msg) {
-			mnstr_printf(GDKout,"%s.%s[%2d] %s\n", 
+			mnstr_printf(out,"%s.%s[%2d] %s\n", 
 				getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
 		}

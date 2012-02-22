@@ -689,7 +689,7 @@ wkbFromText(wkb **w, str *wkt, int *tpe)
 	*w = NULL;
 	if (wkbFROMSTR(*wkt, &len, w) &&
 	    (wkb_isnil(*w) || *tpe == wkbGeometryCollection ||
-	     (te = (((*w)->data[1]) & 0x0f)) == *tpe))
+	     (te = *((*w)->data + 1) & 0x0f) == *tpe))
 		return MAL_SUCCEED;
 	if (!(*w))
 		*w = (wkb *) GDKmalloc(sizeof(wkb));
@@ -721,7 +721,7 @@ wkbHASH(wkb *w)
 	BUN h = 0;
 
 	for (i = 0; i < (w->len - 1); i += 2) {
-		int a = w->data[i], b = w->data[i + 1];
+		int a = *(w->data + i), b = *(w->data + i + 1);
 		h = (h << 3) ^ (h >> 11) ^ (h >> 17) ^ (b << 8) ^ a;
 	}
 	return h;

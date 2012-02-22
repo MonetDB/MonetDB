@@ -130,6 +130,7 @@ str mdbRef;
 str min_no_nilRef;
 str minRef;
 str mirrorRef;
+str mitosisRef;
 str mkeyRef;
 str mmathRef;
 str multiplexRef;
@@ -351,6 +352,7 @@ void optimizerInit(void){
 		min_no_nilRef = putName("min_no_nil", 10);
 		minRef = putName("min", 3);
 		mirrorRef = putName("mirror", 6);
+		mitosisRef = putName("mitosis", 7);
 		mkeyRef = putName("mkey", 4);
 		mmathRef = putName("mmath", 5);
 		multiplexRef = putName("multiplex", 9);

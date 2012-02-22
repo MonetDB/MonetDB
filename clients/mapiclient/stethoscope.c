@@ -45,12 +45,6 @@
 # endif
 #endif
 
-enum modes {
-    MAL,
-    SQL
-};
-static enum modes mode = SQL;
-
 #define COUNTERSDEFAULT "ISTest"
 
 static struct {
@@ -325,7 +319,6 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *user = NULL;
 	char *password = NULL;
- 	char *language = NULL;
 
 	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
 	struct stat statb;
@@ -390,22 +383,6 @@ main(int argc, char **argv)
 				user = strdup(q);	/* leak */
 			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
 				password = strdup(q);	/* leak */
-			} else if (strcmp(buf, "language") == 0) {
-				language = strdup(q);	/* leak */
-				if (strcmp(language, "sql") == 0) {
-					mode = SQL;
-				} else if (strcmp(language, "mal") == 0) {
-					mode = MAL;
-				} else {
-					/* make sure we don't set garbage */
-					fprintf(stderr,
-						  "%s:%d: unsupported "
-						  "language: %s\n",
-						  mnstr_name(config),
-						  line, q);
-					free(language);
-					language = NULL;
-				}
 			}
 		}
 		mnstr_destroy(config);

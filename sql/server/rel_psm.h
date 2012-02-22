@@ -17,23 +17,28 @@
  * All Rights Reserved.
  */
 
-#ifndef _REL_SUBQUERY_H_
-#define _REL_SUBQUERY_H_
+#ifndef _REL_PSM_H_
+#define _REL_PSM_H_
 
-#include "rel_semantic.h"
-#include "sql_semantic.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <sql_list.h>
+#include <sql_relation.h>
+#include "sql_symbol.h"
+#include "sql_mvc.h"
 
-extern stmt *select_into(mvc *sql, symbol *sq, exp_kind ek );
+/* We need bit wise exclusive numbers as we merge the level also in the flag */
+#define PSM_SET 1
+#define PSM_VAR 2
+#define PSM_RETURN 4
+#define PSM_WHILE 8
+#define PSM_IF 16
+#define PSM_REL 32
 
-extern stmt *value_exp(mvc *sql, symbol *se, int f, exp_kind knd);
-extern stmt *logical_value_exp(mvc *sql, symbol *sc, int f, exp_kind knd);
+#define SET_PSM_LEVEL(level)	(level<<8)
+#define GET_PSM_LEVEL(level)	(level>>8)
 
-extern stmt *sql_unop_(mvc *sql, sql_schema *s, char *fname, stmt *rs);
-extern stmt *sql_binop_(mvc *sql, sql_schema *s, char *fname, stmt *ls, stmt *rs);
-extern stmt *sql_Nop_(mvc *sql, char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4);
+extern sql_rel *rel_psm(mvc *sql, symbol *sym);
+extern list *sequential_block(mvc *sql, sql_subtype *res, dlist *blk, char *opt_name, int is_func);
 
-extern stmt *rel_parse_value(mvc *m, char *query, char emode);
-extern sql_exp * rel_parse_val(mvc *m, char *query, char emode);
-
-#endif /*_REL_SUBQUERY_H_*/
-
+#endif /*_REL_PSM_H_*/

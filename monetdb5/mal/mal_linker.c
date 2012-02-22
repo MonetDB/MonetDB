@@ -106,7 +106,7 @@ static int lastfile = 0;
  * Search for occurrence of the function in the library identified by the filename.
  */
 MALfcn
-getAddress(str filename, str modnme, str fcnname, int silent)
+getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 {
 	void *dl = 0;
 	MALfcn adr;
@@ -157,7 +157,7 @@ getAddress(str filename, str modnme, str fcnname, int silent)
 			return adr; /* found it */
 	}
 	if( !silent)
-		showException(MAL,"MAL.getAddress", "address of '%s.%s' not found",
+		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
 	return NULL;
 }
@@ -291,7 +291,7 @@ loadLibrary(str filename, int flag)
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
-		showException(MAL,"loadModule", "internal error, too many modules loaded");
+		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = GDKstrdup(nme);

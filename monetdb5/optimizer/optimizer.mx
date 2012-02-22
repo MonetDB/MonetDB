@@ -259,8 +259,8 @@ str QOT@1optimizerSymbol( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				if( msg) return msg;
 		}
 	}
-	chkFlow(mb);
-	chkDeclarations(mb);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 	return msg;
 }
 opt_export str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -291,8 +291,8 @@ str QOT@1optimizerModule( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				if( msg) break;
 		}
 	}
-	chkFlow(mb);
-	chkDeclarations(mb);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 	return msg;
 }
 opt_export str QOT@1optimizer( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -321,8 +321,8 @@ str QOT@1optimizer( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 	}
 	(void) stk; 
-	chkFlow(mb);
-	chkDeclarations(mb);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 	return msg;
 }
 @

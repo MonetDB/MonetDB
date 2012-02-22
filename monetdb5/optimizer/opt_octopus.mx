@@ -503,7 +503,7 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	clrDeclarations(tmb);
-	chkProgram(cntxt->nspace,tmb);
+	chkProgram(cntxt->fdout, cntxt->nspace, tmb);
 	OPTDEBUGoctopus{
 	printFunction(cntxt->fdout, tmb, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS);
 	/*		printFunction(cntxt->fdout, tmb, 0, LIST_MAL_ALL); */
@@ -826,7 +826,7 @@ OCTnewBidding(Client cntxt, int tcnt)
 	pushEndInstruction(sm);
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	clrDeclarations(sm);
-	chkProgram(cntxt->nspace,sm);
+	chkProgram(cntxt->fdout, cntxt->nspace, sm);
 	OPTDEBUGoctopus{
 		/*		printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS ); */
 	}
@@ -955,7 +955,7 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	pushEndInstruction(sm);
 	insertSymbol(findModule(cntxt->nspace,octopusRef),s);
 	clrDeclarations(sm);
-	chkProgram(cntxt->nspace,sm);
+	chkProgram(cntxt->fdout, cntxt->nspace,sm);
 	OPTDEBUGoctopus{
 				printFunction(cntxt->fdout, sm, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAL_PROPS );
 	}
@@ -979,7 +979,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	optDebug |= 1 << DEBUG_OPT_OCTOPUS;
 	OPTDEBUGoctopus{ 
 		mnstr_printf(cntxt->fdout, "#Octopus optimizer called\n");
-		chkProgram(cntxt->nspace,mb);  
+		chkProgram(cntxt->fdout, cntxt->nspace,mb);  
 		/*		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 
@@ -1261,7 +1261,7 @@ OPToctopusImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	clrDeclarations(mb);
 	OPTDEBUGoctopus{
-		chkProgram(cntxt->nspace,mb); 
+		chkProgram(cntxt->fdout, cntxt->nspace,mb); 
 		/*		printFunction(cntxt->fdout, mb, 0,  LIST_MAL_STMT | LIST_MAL_TYPE | LIST_MAPI);*/
 	}
 

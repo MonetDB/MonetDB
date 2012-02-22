@@ -180,7 +180,7 @@ OPTpeepholeImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	GDKfree(old);
 	GDKfree(part);
 	if (doit) {
-		chkProgram(cntxt->nspace, mb);
+		chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	}
 	GDKfree(span);
 	return actions;

@@ -139,7 +139,6 @@ st_type2string(st_type type)
 		ST(aggr);
 
 		ST(alias);
-		ST(connection);
 
 		ST(list);
 	
@@ -425,7 +424,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_uselect2:
 		case st_uselectN:
 		case st_semijoin:
-		case st_connection:
 			if (s->op1)
 				push(s->op1);
 			if (s->op2)
@@ -1417,31 +1415,6 @@ stmt_affected_rows(sql_allocator *sa, stmt *l)
 	stmt *s = stmt_create(sa, st_affected_rows);
 
 	s->op1 = l;
-	return s;
-}
-
-stmt*
-stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, char * db_alias, char *user, char *passwd, char *lang)
-{
-	stmt *s = stmt_create(sa, st_connection);
-	s->op4.lval = sa_list(sa);
-
-	if (*id != 0)
-		list_append(s->op4.lval, id);
-	if (server)
-		list_append(s->op4.lval, server);
-	if (*port != -1)
-		list_append(s->op4.lval, port);
-	if (db)
-		list_append(s->op4.lval, db);
-	if (db_alias)
-		list_append(s->op4.lval, db_alias);
-	if (user)
-		list_append(s->op4.lval, user);
-	if (passwd)
-		list_append(s->op4.lval, passwd);
-	if (lang)
-		list_append(s->op4.lval, lang);
 	return s;
 }
 

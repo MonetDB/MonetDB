@@ -20,35 +20,32 @@
 import java.sql.*;
 import java.util.*;
 
-public class Test_Dobjects {
-	private static void dumpResultSet(ResultSet rs) throws SQLException {
-		ResultSetMetaData rsmd = rs.getMetaData();
-		System.out.println("Resultset with " + rsmd.getColumnCount() + " columns");
-		for (int col = 1; col <= rsmd.getColumnCount(); col++) {
-			System.out.print(rsmd.getColumnName(col) + "\t");
-		}
-		System.out.println();
-		while (rs.next()) {
-			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
-				System.out.print(rs.getString(col) + "\t");
-			}
-			System.out.println();
-		}
-	}
+/* Create a lot of PreparedStatements, to emulate webloads such as those
+ * from Hibernate. */
 
+public class Test_PSsomeamount {
 	public static void main(String[] args) throws Exception {
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
 		PreparedStatement pstmt;
-		DatabaseMetaData dbmd = con.getMetaData();
+
+		// >> true: auto commit should be on
+		System.out.println("0. true\t" + con.getAutoCommit());
 
 		try {
-			// inspect the catalog by use of dbmd functions
-			dumpResultSet(dbmd.getCatalogs());
-			dumpResultSet(dbmd.getSchemas());
-			dumpResultSet(dbmd.getSchemas(null, "sys"));
-			dumpResultSet(dbmd.getTables(null, null, null, null));
+			System.out.println("1. Preparing and executing a unique statement");
+			for (int i = 0; i < 10000; i++) {
+				pstmt = con.prepareStatement("select " + i + ", " + i + " = ?");
+				pstmt.setInt(1, i);
+				ResultSet rs = pstmt.executeQuery();
+				if (rs.next() && i % 1000 == 0) {
+					System.out.println(rs.getInt(1) + ", " + rs.getBoolean(2));
+				}
+				/* this call should cause resources on the server to be
+				 * freed */
+				pstmt.close();
+			}
 		} catch (SQLException e) {
 			System.out.println("FAILED :( "+ e.getMessage());
 			System.out.println("ABORTING TEST!!!");

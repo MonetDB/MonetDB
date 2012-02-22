@@ -23,7 +23,6 @@
 #include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_exp.h"
-#include "rel_subquery.h"
 #include "sql_privileges.h"
 
 static sql_exp *
@@ -1238,6 +1237,73 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 	return rel_output(sql, r, tsep_e, rsep_e, ssep_e, ns_e, fname_e);
 }
 
+sql_exp *
+rel_parse_val(mvc *m, char *query, char emode)
+{
+	mvc o = *m;
+	sql_exp *e = NULL;
+	buffer *b;
+	char *n;
+	int len = _strlen(query);
+	exp_kind ek = {type_value, card_value, FALSE};
+	stream *s;
+
+	m->qc = NULL;
+
+	m->caching = 0;
+	m->emode = emode;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	s = buffer_rastream(b, "sqlstatement");
+	scanner_init(&m->scanner, bstream_create(s, b->len), NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	m->params = NULL;
+	/*m->args = NULL;*/
+	m->argc = 0;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB;
+
+	(void) sqlparse(m);	
+	
+	/* get out the single value as we don't want an enclosing projection! */
+	if (m->sym && m->sym->token == SQL_SELECT) {
+		SelectNode *sn = (SelectNode *)m->sym;
+		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
+			int is_last = 0;
+			sql_rel *r = NULL;
+			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
+			e = rel_value_exp2(m, &r, sq, sql_sel, ek, &is_last);
+		}
+	}
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
+	if (m->session->status || m->errstr[0]) {
+		int status = m->session->status;
+		char errstr[ERRSIZE];
+
+		strcpy(errstr, m->errstr);
+		*m = o;
+		m->session->status = status;
+		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
+	}
+	return e;
+}
 
 sql_rel *
 rel_updates(mvc *sql, symbol *s)

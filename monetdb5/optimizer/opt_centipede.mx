@@ -755,7 +755,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	smb = OPTplanStub(cntxt, mb, nmb, plantag);
 	msg= optimizeMALBlock(cntxt, smb);
 	if ( smb) 
-		chkProgram(cntxt->nspace, smb);
+		chkProgram(cntxt->fdout, cntxt->nspace, smb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#stub plan errors %d %s \n",smb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
@@ -765,7 +765,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	cmb = OPTplanCntrl(cntxt,mb,nmb, slices, plantag);
 	msg= optimizeMALBlock(cntxt, cmb);
 	if ( cmb) 
-		chkProgram(cntxt->nspace, cmb);
+		chkProgram(cntxt->fdout, cntxt->nspace, cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
@@ -780,7 +780,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, nmb);
-	chkProgram(cntxt->nspace, nmb);
+	chkProgram(cntxt->fdout, cntxt->nspace, nmb);
 	mnstr_printf(cntxt->fdout,"#remote plan error %d %s\n", nmb->errors, msg?msg:"");
 	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
@@ -866,7 +866,7 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 #endif
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, mb);
-	chkProgram(cntxt->nspace, mb);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	mnstr_printf(cntxt->fdout,"#partition %s.%s.%s type %d %s\n",
 		slices.schema,
 		slices.table,

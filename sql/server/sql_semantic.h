@@ -50,9 +50,6 @@ typedef struct exp_kind_t {
 #define sql_sel   3	
 
 
-extern stmt *semantic(mvc *sql, symbol *sym);
-extern stmt *output_semantic(mvc *sql, symbol *s);
-
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 extern char *qname_schema(dlist *qname);
@@ -69,14 +66,6 @@ typedef enum {
 	type_cast	/* also truncate */
 } check_type;
 
-extern int convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing, check_type tpe);
-
-extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
-extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
-extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *sql_parse(mvc *m, sql_allocator *sql, char *query, char mode);
-
 /* literals in the parser are kept outside of the abstract syntax tree
    in the arg array, this to allow for more reuse of cached queries */
 
@@ -92,7 +81,6 @@ extern sql_arg *sql_bind_param(mvc *sql, char *name);
 /* once the type of the '?' parameters is known its set using the set_type
  * function */
 extern int set_type_param(mvc *sql, sql_subtype *type, int nr);
-extern int stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param);
 extern void sql_destroy_params(mvc *sql);	/* used in backend */
 
 extern char *symbol2string(mvc *sql, symbol *s, char **err);
