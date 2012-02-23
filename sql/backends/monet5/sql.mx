@@ -1696,7 +1696,6 @@ sqlcleanup(mvc *c, int err)
 	c->label = 0;
 	c->point_query = 0;
 	scanner_query_processed(&(c->scanner));
-	c->point_query = 0;
 	return err;
 }
 
