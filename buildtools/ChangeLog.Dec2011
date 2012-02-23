@@ -1,6 +1,11 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed Feb 22 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Fixed some of the package names for Debian/Ubuntu.  Packages for
+  libraries should contain the major number of the library version number.
+  This was not always the case.
+
 * Tue Feb  7 2012 Sjoerd Mullender <sjoerd@acm.org>
 - On Debian and Ubuntu, install Python modules in dist-packages instead
   of site-packages.  This fixed bug 2997.

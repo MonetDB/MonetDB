@@ -1042,43 +1042,73 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
    join expression.
  */
 sql_rel *
-rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
+rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e)
 {
 	list *l = rel_bind_path(sa, rel, ls);
 	list *r = rel_bind_path(sa, rel, rs);
+	list *r2 = NULL; 
 	node *ln, *rn;
-	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
+	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
-	if (!l || !r) 
+	if (rs2)
+		r2 = rel_bind_path(sa, rel, rs2);
+	if (!l || !r || (rs2 && !r2)) 
 		return NULL;
 
 	p = rel;
-	for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
-		lrel = ln->data;
-		rrel = rn->data;
-		
-		if (rel_is_ref(lrel) || rel_is_ref(rrel))
-			break;
+	if (r2) {
+		node *rn2;
 
-		/* push down as long as the operators allow this
-			and the relation is equal.
-		 */
-		if (lrel != rrel ||
+		for (ln = l->h, rn = r->h, rn2 = r2->h; ln && rn && rn2; ln = ln->next, rn = rn->next, rn2 = rn2->next ) {
+			lrel = ln->data;
+			rrel = rn->data;
+			rrel2 = rn2->data;
+			
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2))
+				break;
+
+			/* push down as long as the operators allow this
+				and the relation is equal.
+		 	*/
+			if (lrel != rrel || lrel != rrel2 ||
 				(!is_select(lrel->op) &&
 				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
 				 lrel->op != op_join &&
 				 lrel->op != op_left))
-			break;
-		/* pushing through left head of a left join is allowed */
-		if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
-			break;
-		p = lrel;
+				break;
+			/* pushing through left head of a left join is allowed */
+			if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
+				break;
+			p = lrel;
+		}
+	} else {
+		for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
+			lrel = ln->data;
+			rrel = rn->data;
+			
+			if (rel_is_ref(lrel) || rel_is_ref(rrel))
+				break;
+
+			/* push down as long as the operators allow this
+				and the relation is equal.
+		 	*/
+			if (lrel != rrel ||
+				(!is_select(lrel->op) &&
+				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+				 lrel->op != op_join &&
+				 lrel->op != op_left))
+				break;
+			/* pushing through left head of a left join is allowed */
+			if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
+				break;
+			p = lrel;
+		}
 	}
-	if (!lrel || !rrel)
+	if (!lrel || !rrel || (r2 && !rrel2))
 		return NULL;
 
 	/* filter on columns of this relation */
-	if ((lrel == rrel && lrel->op != op_join) || rel_is_ref(p)) {
+	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
 		if (lrel->op == op_select && !rel_is_ref(lrel)) {
 			rel_select_add_exp(lrel, e);
 		} else if (p && p->op == op_select && !rel_is_ref(p)) {
@@ -2075,7 +2105,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql->sa, rel, L, R, e);
+		return rel_push_join(sql->sa, rel, L, R, rs2, e);
 	}
 }
 
@@ -2126,8 +2156,20 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			} else if ((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, ls)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			}
+			if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
+				rel->r = rel_push_select(sql->sa, rel->r, L, e);
+				return rel;
+			} else if (is_right(rel->op) && rel_find_exp(rel->l, ls)) {
+				rel->l = rel_push_select(sql->sa, rel->l, L, e);
+				return rel;
+			}
 		}
 		/* push select into the given relation */
 		return rel_push_select(sql->sa, rel, L, e);
@@ -2137,7 +2179,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql->sa, rel, L, R, e);
+		return rel_push_join(sql->sa, rel, L, R, rs2, e);
 	}
 }
 
