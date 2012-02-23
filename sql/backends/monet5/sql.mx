@@ -1694,6 +1694,7 @@ sqlcleanup(mvc *c, int err)
 	if (err < 0)
 		c->session->status = err;
 	c->label = 0;
+	c->point_query = 0;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
