@@ -654,6 +654,8 @@ def CreateHtmlIndex (env, *body) :
         os.chdir(BACK)
 ### CreateHtmlIndex (env, *body) #
 
+bugre = re.compile(r'\.(sf|bug)-(?P<bugno>[1-9]\d+)', re.I)
+
 def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
     WHAT = stableWHAT[7:11]
     TSTDIR    = env['TSTDIR']
@@ -797,6 +799,15 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
                           'target': target},
                     Text('src')),
             Text(')')])
+    res = bugre.search(TST)
+    if res is not None:
+        bugno = res.group('bugno')
+        text.addchildren([
+                Text(' ('),
+                Element('a', {'href': 'http://bugs.monetdb.org/%s' % bugno,
+                              'target': '_blank'},
+                        Text('Bugzilla')),
+                Text(')')])
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {},

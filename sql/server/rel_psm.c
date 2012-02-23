@@ -960,7 +960,6 @@ stack_push_table(mvc *sql, char *tname, sql_table *t)
 static sql_rel *
 create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *table_name, dlist *opt_ref, dlist *triggered_action)
 {
-	sql_trigger *trigger = NULL;
 	char *tname = qname_table(qname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
@@ -988,7 +987,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, char *ta
 	}
 	if (create && !schema_privs(sql->role_id, ss)) 
 		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (create && (trigger = mvc_bind_trigger(sql, ss, tname )) != NULL) 
+	if (create && mvc_bind_trigger(sql, ss, tname) != NULL) 
 		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", tname);
 	
 	if (create && !(t = mvc_bind_table(sql, ss, table_name)))
