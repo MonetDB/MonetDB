@@ -82,8 +82,8 @@ stderr of test 'offset_limited_32bit.SF-2950579` in directory 'test/BugTracker-2
 
 MAPI  = monetdb@maggie:35536
 QUERY = SELECT * from tables OFFSET 2147483647; -- never finishes
-ERROR = !MALException:algebra.slice:GDK reported error.
-        !ERROR: CMDslice: argument out of range
+ERROR = !GDK reported error.
+        !CMDslice: argument out of range
 
 # 09:37:07 >  
 # 09:37:07 >  Done.
