@@ -1296,7 +1296,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 					return exp_compare2(sql->sa, l, r, r2, e->flag);
 			} else if (l && r) {
 				if (l->card < r->card)
-					return exp_compare(sql->sa, r, l, swap_compare(e->flag));
+					return exp_compare(sql->sa, r, l, swap_compare((comp_type)e->flag));
 				else
 					return exp_compare(sql->sa, l, r, e->flag);
 			}
