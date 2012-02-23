@@ -72,7 +72,7 @@ stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'test/BugTracker-20
 # 09:32:45 >  
 
 MAPI  = monetdb@localhost:34941
-QUERY = exec 0(2.3);
+QUERY = exec  0(2.3);
 ERROR = !EXEC: wrong type for argument 1 of prepared statement: decimal, expected wrd
 
 # 09:32:45 >  
