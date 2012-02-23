@@ -1866,6 +1866,8 @@ check_tiling_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 	return 1;
 }
 
+#define ARRAY_TILING_MAX_DIMS 2
+
 static list *
 rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 {
@@ -1902,14 +1904,14 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 	if (!s) s = cur_schema(sql);
 	if (!(a = mvc_bind_table(sql, s, aname)))
 		return sql_error(sql, 02, "42S02!SELECT: no such array '%s.%s'", s->base.name, aname);
-	if (a->ndims > 2)
-		return sql_error(sql, 02, "SELECT: TODO: array tiling over arrays with >2 dimensions");
+	if (a->ndims > ARRAY_TILING_MAX_DIMS)
+		return sql_error(sql, 02, "SELECT: TODO: array tiling over arrays with >%d dimensions", ARRAY_TILING_MAX_DIMS);
 
 	idx_exps = tile_def->data.lval->h->next->data.lval;
 	if (dlist_length(idx_exps) > a->ndims)
 		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling larger than #dimensions (%d) in the array", dlist_length(idx_exps), a->ndims);
-	if (dlist_length(idx_exps) > 2)
-		return sql_error(sql, 02, "SELECT: TODO: array tiling over >2 dimensions");
+	if (dlist_length(idx_exps) > ARRAY_TILING_MAX_DIMS)
+		return sql_error(sql, 02, "SELECT: TODO: array tiling over >%d dimensions", ARRAY_TILING_MAX_DIMS);
 	for (n = idx_exps->h; n; n = n->next) {
 		sql_exp *exp = NULL, *exp_os_sta = NULL, *exp_os_ste = NULL, *exp_os_sto = NULL;
 		sql_column *dim = NULL;
