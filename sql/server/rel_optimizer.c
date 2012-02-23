@@ -834,7 +834,8 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables 
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || !is_complex_exp(cje->flag)) {
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag) /*||
+		   (cje->type == e_cmp && cje->f == NULL)*/) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
 		}
@@ -1294,7 +1295,10 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				if (l && r && r2)
 					return exp_compare2(sql->sa, l, r, r2, e->flag);
 			} else if (l && r) {
-				return exp_compare(sql->sa, l, r, e->flag);
+				if (l->card < r->card)
+					return exp_compare(sql->sa, r, l, swap_compare(e->flag));
+				else
+					return exp_compare(sql->sa, l, r, e->flag);
 			}
 		}
 		return NULL;
@@ -2671,7 +2675,7 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *re = e->r;
 
 				if (re->card >= CARD_AGGR) {
-					rel->l = rel_push_join(sql->sa, r, e->l, re, e);
+					rel->l = rel_push_join(sql->sa, r, e->l, re, NULL, e);
 				} else {
 					rel->l = rel_push_select(sql->sa, r, e->l, e);
 				}

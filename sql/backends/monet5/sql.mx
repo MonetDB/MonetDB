@@ -1693,6 +1693,7 @@ sqlcleanup(mvc *c, int err)
 	if (err < 0)
 		c->session->status = err;
 	scanner_query_processed(&(c->scanner));
+	c->point_query = 0;
 	return err;
 }
 

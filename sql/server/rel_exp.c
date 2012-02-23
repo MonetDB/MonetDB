@@ -781,7 +781,7 @@ exp_is_join(sql_exp *e)
 {
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
-	 */ 
+	 */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_filter && e->l && e->r && e->card >= CARD_AGGR)

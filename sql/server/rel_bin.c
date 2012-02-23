@@ -899,39 +899,34 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			}
 			if (join_idx != sql->opt_stats[0])
 				idx = 1;
-			if (!join) {
-				join = s;
-			/* stop on first non equality join */
-			} else if (s->type != st_join && 
-				   s->type != st_join2 && 
-				   s->type != st_joinN) {
-				if (s->type == st_reverse) {
-					stmt *rs = s->op1;
 
-					if (rs->type == st_join || 
-				   	    rs->type == st_join2 || 
-				   	    rs->type == st_joinN) { 
-						list_append(jns, s);
-						continue;
-					}
+			if (s->type != st_join && 
+			    s->type != st_join2 && 
+			    s->type != st_joinN) {
+				/* predicate */
+				if (!list_length(jns) && s->nrcols == 0) { 
+					stmt *l = bin_first_column(sql->sa, left);
+					stmt *r = bin_first_column(sql->sa, right);
+
+					l = stmt_uselect(sql->sa, stmt_const(sql->sa, l, stmt_bool(sql->sa, 1)), s, cmp_equal);
+					join = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_all);
+					continue;
 				}
-				/* handle select expressions */
-				/*assert(0);*/
-				/* should be handled by join list (reljoin) */
-				if (s->h == join->h) {
-					join = stmt_semijoin(sql->sa, join,s);
-				} else {
-					join = stmt_reverse(sql->sa, join);
-					join = stmt_semijoin(sql->sa, join,s);
-					join = stmt_reverse(sql->sa, join);
+				if (!join) {
+					stmt *l = bin_first_column(sql->sa, left);
+					stmt *r = bin_first_column(sql->sa, right);
+					join = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_all); 
 				}
-				continue;
+				break;
 			}
+
+			if (!join) 
+				join = s;
 			list_append(jns, s);
 		}
 		if (list_length(jns) > 1) {
 			join = stmt_releqjoin(sql->sa, jns);
-		} else {
+		} else if (!join) {
 			join = jns->h->data; 
 		}
 	} else {
