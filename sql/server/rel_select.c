@@ -1866,7 +1866,7 @@ check_tiling_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 	return 1;
 }
 
-#define ARRAY_TILING_MAX_DIMS 2
+#define ARRAY_TILING_MAX_DIMS 3
 
 static list *
 rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
