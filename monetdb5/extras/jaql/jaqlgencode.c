@@ -4081,6 +4081,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 			case j_func: {
 				tree *w;
 				Symbol s;
+				InstrPtr f;
+#define MAXJAQLARG 23
+				enum treetype coltypes[MAXJAQLARG + 1];
+				int coltpos = 0;
+				int i;
 
 				/* lookup the function we need */
 				s = findSymbol(cntxt->nspace,
@@ -4092,10 +4097,113 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					break;
 				}
 
+				if (j1 != 0) {
+					/* treat pipe as first input of type json array */
+					coltypes[coltpos++] = j_json_arr;
+				}
+				/* check what arguments were provided */
+				for (w = t->tval1; w != NULL; w = w->next) {
+					assert(w->type == j_func_arg);
+					assert(w->tval1 != NULL);
+
+					if (coltpos > MAXJAQLARG) {
+						snprintf(j->err, sizeof(j->err), "too many arguments");
+						break;
+					}
+
+					switch (w->tval1->type) {
+						case j_str:
+						case j_num:
+						case j_dbl:
+						case j_bool:
+						case j_var:
+							coltypes[coltpos++] = w->tval1->type;
+							break;
+						case j_json:
+							if (*w->tval1->sval == '[') {
+								coltypes[coltpos++] = j_json;
+							} else { /* must be '{' */
+								coltypes[coltpos++] = j_str;
+							}
+							break;
+						default:
+							snprintf(j->err, sizeof(j->err),
+									"unhandled argument type (1)");
+							break;
+					}
+				}
+				if (j->err[0] != '\0')
+					break;
+
 				do {
 					if (idcmp(s->name, t->sval) == 0) {
-						InstrPtr f = getSignature(s);
-						if (f->retc == 7)
+						char match = 0;
+						int itype;
+						int argoff = 0;
+
+						/* Function resolution is done based on the
+						 * input arguments only; we cannot consider the
+						 * return type, because we don't know what is
+						 * expected from us.  We go by the assumption
+						 * here that functions are constructed in such a
+						 * way that their return value is not considered
+						 * while looking for their uniqueness (like in
+						 * Java). */
+						f = getSignature(s);
+						for (i = 0; i < coltpos; i++) {
+							match = 0;
+							if (f->argc - f->retc - argoff < 1)
+								break;
+							itype = getArgType(s->def, f, f->retc + argoff);
+							if (!isaBatType(itype) ||
+									getHeadType(itype) != TYPE_oid)
+								break;
+							switch (coltypes[i]) {
+								case j_json:
+								case j_json_arr:
+									if (f->argc - f->retc - argoff < 7)
+										break;
+									/* out of laziness, we only check
+									 * the first argument to be a bat,
+									 * and of the right type */
+									if (getTailType(itype) != TYPE_bte)
+										break;
+									match = 1;
+									argoff += 7;
+									break;
+								case j_str:
+									if (getTailType(itype) == TYPE_str)
+										match = 1;
+									argoff += 1;
+									break;
+								case j_num:
+									if (getTailType(itype) == TYPE_lng)
+										match = 1;
+									argoff += 1;
+									break;
+								case j_dbl:
+									if (getTailType(itype) == TYPE_dbl)
+										match = 1;
+									argoff += 1;
+									break;
+								case j_bool:
+									if (getTailType(itype) == TYPE_bit)
+										match = 1;
+									argoff += 1;
+									break;
+								case j_var:
+									/* assume ok, since we found a BAT
+									 * argument in place already */
+									match = 1;
+									argoff += 1;
+									break;
+								default:
+									assert(0);
+							}
+							if (match == 0)
+								break;
+						}
+						if (match == 1 && f->argc - f->retc - argoff == 0)
 							break;
 					}
 					s = s->peer;
@@ -4109,15 +4217,24 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, putName("jaqlfunc", 8));
 				setFunctionId(q, putName(t->sval, strlen(t->sval)));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				if (f->retc == 7) {
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				} else if (f->retc == 1 && isaBatType(getArgType(s->def, f, 0))) {
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				} else {
+					snprintf(j->err, sizeof(j->err), " function return type"
+							"unhandled for: %s", t->sval);
+					break;
+				}
 				if (j1 != 0) {
-					/* treat pipe as first input */
+					/* treat pipe as first input, signature check above
+					 * should guarantee this is ok */
 					q = pushArgument(mb, q, j1);
 					q = pushArgument(mb, q, j2);
 					q = pushArgument(mb, q, j3);
@@ -4128,7 +4245,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 				for (w = t->tval1; w != NULL; w = w->next) {
 					int a1, a2, a3, a4, a5, a6, a7;
-					char buf[64];
 
 					assert(w->type == j_func_arg);
 					assert(w->tval1 != NULL);
@@ -4136,49 +4252,51 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					/* transform the argument in a json struct (7 BATs)
 					 * if not already */
 					switch (w->tval1->type) {
-						case j_str:
 						case j_json:
 							dumpjsonshred(mb, w->tval1->sval,
 									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							q = pushArgument(mb, q, a1);
+							q = pushArgument(mb, q, a2);
+							q = pushArgument(mb, q, a3);
+							q = pushArgument(mb, q, a4);
+							q = pushArgument(mb, q, a5);
+							q = pushArgument(mb, q, a6);
+							q = pushArgument(mb, q, a7);
+							break;
+						case j_str:
+							q = pushStr(mb, q, w->tval1->sval);
 							break;
 						case j_num:
-							snprintf(buf, sizeof(buf), "%lld", w->tval1->nval);
-							dumpjsonshred(mb, buf,
-									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							q = pushLng(mb, q, w->tval1->nval);
 							break;
 						case j_dbl:
-							snprintf(buf, sizeof(buf), "%f", w->tval1->dval);
-							dumpjsonshred(mb, buf,
-									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							q = pushDbl(mb, q, w->tval1->dval);
 							break;
 						case j_bool:
-							snprintf(buf, sizeof(buf), "%s",
-									w->tval1->nval == 1 ? "true" : "false");
-							dumpjsonshred(mb, buf,
-									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							q = pushBit(mb, q, w->tval1->nval == 1);
 							break;
 						case j_var: /* TODO */
+							/* j_var is actually impossible at this level */
 						default:
 							snprintf(j->err, sizeof(j->err),
 									"unhandled argument type (1)");
 							return -1;
 					}
-
-					q = pushArgument(mb, q, a1);
-					q = pushArgument(mb, q, a2);
-					q = pushArgument(mb, q, a3);
-					q = pushArgument(mb, q, a4);
-					q = pushArgument(mb, q, a5);
-					q = pushArgument(mb, q, a6);
-					q = pushArgument(mb, q, a7);
 				}
-				j1 = getArg(q, 0);
-				j2 = getArg(q, 1);
-				j3 = getArg(q, 2);
-				j4 = getArg(q, 3);
-				j5 = getArg(q, 4);
-				j6 = getArg(q, 5);
-				j7 = getArg(q, 6);
+				if (f->retc == 7) {
+					j1 = getArg(q, 0);
+					j2 = getArg(q, 1);
+					j3 = getArg(q, 2);
+					j4 = getArg(q, 3);
+					j5 = getArg(q, 4);
+					j6 = getArg(q, 5);
+					j7 = getArg(q, 6);
+				} else {
+					/* this is top-level (in a JAQL pipe), so it should
+					 * always return a JSON struct */
+					/* TODO: create array with values from the BAT we
+					 * have returned */
+				}
 				pushInstruction(mb, q);
 			} break;
 			case j_error:
