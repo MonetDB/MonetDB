@@ -1910,6 +1910,8 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 	idx_exps = tile_def->data.lval->h->next->data.lval;
 	if (dlist_length(idx_exps) > a->ndims)
 		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling larger than #dimensions (%d) in the array", dlist_length(idx_exps), a->ndims);
+	if (dlist_length(idx_exps) < a->ndims)
+		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling fewer than #dimensions (%d) in the array --- not supported (yet?)", dlist_length(idx_exps), a->ndims);
 	if (dlist_length(idx_exps) > ARRAY_TILING_MAX_DIMS)
 		return sql_error(sql, 02, "SELECT: TODO: array tiling over >%d dimensions", ARRAY_TILING_MAX_DIMS);
 	for (n = idx_exps->h; n; n = n->next) {
