@@ -1,3 +1,79 @@
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Fri, 24 Feb 2012 13:06:00 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * buildtools: Fixed some of the package names for Debian/Ubuntu.  Packages for
+    libraries should contain the major number of the library version number.
+    This was not always the case.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 22 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * java: Fixed bug in DatabaseMetaData.getSchemas() method that caused an SQL
+    error when called with catalog and schema argument.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 20 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * merovingian: Fixed a bug in the multiplex-funnel where certain clients would abort
+    on responses for update queries.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 17 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * sql: Fixed a crash that happened at the end of a database upgrade to the
+    Dec2011 database scheme.  The crash happened during cleanup after the
+    database was upgraded, so it was merely inconvenient.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 17 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * sql: Stripped off implementation-specific parts from error messages before
+    they get presented to the user.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 15 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * java: Resolved a bug where JDBC and Control connections could terminate
+    abruptly with 'Connection closed' messages
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 14 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * monetdb5: Fixed potential crash by dealing better with non-standard types.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 9 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * buildtools: On Debian and Ubuntu, install Python modules in dist-packages instead
+    of site-packages.  This fixed bug 2997.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 7 Feb 2012 13:05:59 +0100
+
+monetdb (11.7.7-20120224) unstable; urgency=low
+
+  * merovingian: Fixed problem where version and mserver properties for monetdbd were
+    not always successfully retrieved.  Bug #2982.
+  * merovingian: Fixed problem where shutdown of monetdbd would lead to shutting down
+    database 'control' which does not exist.  Bug #2983.
+  * merovingian: Fixed issue causing (harmless) 'error reading from control channel'
+    messages.  Bug #2984.
+  * merovingian: Resolved problem where remote start/stop/etc. commands with monetdb
+    would report error 'OK'.  Bug #2984.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 30 Jan 2012 13:05:59 +0100
+
 monetdb (11.7.5-20120120) unstable; urgency=low
 
   * Rebuilt.

@@ -27,7 +27,7 @@ JAVA_HOME = @JAVA_HOME@
 ant_distjdbc = {
 	COND = HAVE_JAVAJDBC
 	DIR = datadir/monetdb/lib
-	FILES = monetdb-mcl-1.6.jar monetdb-jdbc-2.0.jar jdbcclient.jar
+	FILES = monetdb-mcl-1.7.jar monetdb-jdbc-2.1.jar jdbcclient.jar
 }
 
 ant_distmerocontrol = {

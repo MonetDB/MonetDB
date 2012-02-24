@@ -1367,7 +1367,7 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			mnstr_printf(out, "!07003:EXEC: no prepared statement with id: %d\n",
+			mnstr_printf(out, "!07003!EXEC: no prepared statement with id: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
 					"no prepared statement with id: %d",
@@ -1377,7 +1377,7 @@ SQLparser(Client c)
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			mnstr_printf(out, "!07005:EXEC: given handle id is not for a "
+			mnstr_printf(out, "!07005!EXEC: given handle id is not for a "
 					"prepared statement: %d\n",
 					m->sym->data.lval->h->data.i_val);
 			msg = createException(SQL, "PREPARE",
