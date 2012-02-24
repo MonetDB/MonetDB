@@ -302,7 +302,8 @@ url_getContent(str *retval, /* put string: pointer to char here. */
 static str
 url_getContext(str *retval, url Str1)
 {
-	str s, d;
+	const char *s;
+	str d;
 
 	if (Str1 == 0)
 		throw(ILLARG, "url.getContext", "url missing");
@@ -315,11 +316,10 @@ url_getContext(str *retval, url Str1)
 
 	s = strchr(s, '/');
 	if (s == 0)
-		s= (str) str_nil;
-	d = GDKmalloc(strlen(Str1) - (s - Str1) + 1);
+		s = str_nil;
+	d = GDKstrdup(s);
 	if (d == NULL)
 		throw(MAL, "url.getContext", "Allocation failed");
-	strcpy(d, s);
 	*retval = d;
 	return MAL_SUCCEED;
 }
