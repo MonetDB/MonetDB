@@ -863,3 +863,119 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 	*rname = jbr.name->batCacheid;
 	return MAL_SUCCEED;
 }
+
+str
+JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *elems)
+{
+	jsonbat jbr;
+	BAT *e;
+	BATiter bie;
+	BUN p, q;
+	oid v, w;
+	bte k;
+	str s;
+	lng i;
+	dbl d;
+	bit b;
+
+	e = BBPquickdesc(ABS(*elems), FALSE);
+	if (*elems < 0)
+		e = BATmirror(e);
+
+	/* figure out what type this is */
+	switch (e->ttype) {
+		case TYPE_str:
+		case TYPE_lng:
+		case TYPE_dbl:
+		case TYPE_bit:
+			break;
+		default:
+			throw(MAL, "json.wrap", "unsupported tail type");
+	}
+
+	BBPfix(*elems);
+	bie = bat_iterator(e);
+
+	memset(&jbr, 0, sizeof(jsonbat));
+
+	/* initialise all bats */
+	jbr.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
+	jbr.kind = BATseqbase(jbr.kind, (oid)0);
+	jbr.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jbr.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
+	jbr.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
+	jbr.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jbr.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jbr.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+
+	/* return all elems as the outermost array */
+	v = BUNlast(jbr.kind);
+	BUNappend(jbr.kind, "a", FALSE);
+	w = BUNlast(jbr.kind);
+
+	BATloop(e, p, q) {
+		switch (e->ttype) {
+			case TYPE_str:
+				s = (str)BUNtail(bie, p);
+				k = 's';
+				if (strcmp(s, str_nil) == 0) {
+					k = 'n';
+				} else {
+					BUNins(jbr.string, &w, s, FALSE);
+				}
+				break;
+			case TYPE_lng:
+				i = *(lng *)BUNtail(bie, p);
+				k = 'i';
+				if (i == lng_nil) {
+					k = 'n';
+				} else {
+					BUNins(jbr.integer, &w, &i, FALSE);
+				}
+				break;
+			case TYPE_dbl:
+				d = *(dbl *)BUNtail(bie, p);
+				k = 'd';
+				if (d == dbl_nil) {
+					k = 'n';
+				} else {
+					BUNins(jbr.doble, &w, &d, FALSE);
+				}
+				break;
+			case TYPE_bit:
+				b = *(bit *)BUNtail(bie, p);
+				if (b == bit_nil) {
+					k = 'n';
+				} else if (b != 0) {
+					k = 't';
+				} else {
+					k = 'f';
+				}
+				break;
+			default:
+				assert(0);
+		}
+		BUNins(jbr.array, &v, &w, FALSE);
+		BUNappend(jbr.kind, &k, FALSE);
+		w = BUNlast(jbr.kind);
+	}
+
+	BBPunfix(*elems);
+
+	BBPkeepref(jbr.kind->batCacheid);
+	*rkind = jbr.kind->batCacheid;
+	BBPkeepref(jbr.string->batCacheid);
+	*rstring = jbr.string->batCacheid;
+	BBPkeepref(jbr.integer->batCacheid);
+	*rinteger = jbr.integer->batCacheid;
+	BBPkeepref(jbr.doble->batCacheid);
+	*rdoble = jbr.doble->batCacheid;
+	BBPkeepref(jbr.array->batCacheid);
+	*rarray = jbr.array->batCacheid;
+	BBPkeepref(jbr.object->batCacheid);
+	*robject = jbr.object->batCacheid;
+	BBPkeepref(jbr.name->batCacheid);
+	*rname = jbr.name->batCacheid;
+	return MAL_SUCCEED;
+}
+

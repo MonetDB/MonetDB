@@ -40,3 +40,7 @@ comment "Drop the JSON object name from the database";
 command extract(k:bat[:oid,:bte],s:bat[:oid,:str],i:bat[:oid,:lng],d:bat[:oid,:dbl],a:bat[:oid,:oid],o:bat[:oid,:oid],n:bat[:oid,:str],elems:bat[:oid,:oid],start:oid)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JSONextract
 comment "Extract the given elems (kind id) from the given JSON object";
+
+command wrap(elems:bat[:oid,:any])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
+address JSONwrap
+comment "Wrap the given BAT inside a JSON array";
