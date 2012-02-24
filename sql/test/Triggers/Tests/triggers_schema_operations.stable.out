@@ -34,8 +34,8 @@ Ready.
 % .tables # table_name
 % name # name
 % varchar # type
-% 2 # length
-[ "t2"	]
+% 5 # length
+[ "t_7_2"	]
 % .tables # table_name
 % name # name
 % varchar # type

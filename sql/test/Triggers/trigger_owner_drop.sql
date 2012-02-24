@@ -1,10 +1,10 @@
 --test the owner restriction for triggers
 
-create trigger test2 after insert on t2
-	insert into t1 values(12);
+create trigger test_6_2 after insert on t_6_2
+	insert into t_6_1 values(12);
 
-drop trigger test1;
-drop trigger test2;
-drop table t1;
-drop table t2;
+drop trigger test_6_1;
+drop trigger test_6_2;
+drop table t_6_1;
+drop table t_6_2;
 drop user user_test;
