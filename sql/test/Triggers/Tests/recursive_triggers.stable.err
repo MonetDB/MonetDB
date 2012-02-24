@@ -16,9 +16,6 @@ ERROR = !DROP TRIGGER: unknown trigger test_0
 MAPI  = monetdb@niels:33936
 QUERY = drop trigger test_1;
 ERROR = !DROP TRIGGER: unknown trigger test_1
-MAPI  = monetdb@niels:33936
-QUERY = drop trigger test_2;
-ERROR = !DROP TRIGGER: unknown trigger test_2
 
 # 15:06:05 >  
 # 15:06:05 >  Done.
