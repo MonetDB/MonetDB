@@ -838,6 +838,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		node *n;
+		set_processed(top);
 		top = rel_select(sql->sa, top, NULL);
 		for(n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -2702,7 +2703,9 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			return rel;
 
 		/* introduce selects under the join (if needed) */
-		if (!is_select(jl->op))
+		set_processed(jl);
+		set_processed(jr);
+		if (!is_select(jl->op)) 
 			r->l = jl = rel_select(sql->sa, jl, NULL);
 		if (!is_select(jr->op))
 			r->r = jr = rel_select(sql->sa, jr, NULL);
@@ -2763,6 +2766,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = new_exp_list(sql->sa); 
 		pl = r->l;
 		/* introduce selects under the project (if needed) */
+		set_processed(pl);
 		if (!is_select(pl->op))
 			r->l = pl = rel_select(sql->sa, pl, NULL);
 
@@ -3368,6 +3372,8 @@ rel_push_select_down_union(int *changes, mvc *sql, sql_rel *rel)
 		}	
 
 		/* introduce selects under the set (if needed) */
+		set_processed(ul);
+		set_processed(ur);
 		ul = rel_select(sql->sa, ul, NULL);
 		ur = rel_select(sql->sa, ur, NULL);
 		

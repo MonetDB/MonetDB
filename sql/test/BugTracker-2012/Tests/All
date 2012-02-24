@@ -11,3 +11,4 @@ outerjoin_predicate.Bug-2964
 innerjoin_subquery.Bug-3034
 rangejoin.Bug-3017
 outerjoin_select.Bug-2946
+leftjoin-Bug.3041
