@@ -1,8 +1,8 @@
 RELEASE NOTES
-MonetDB JDBC driver version 2.0 (Liberica/MCL-1.6)
+MonetDB JDBC driver version 2.1 (Liberica/MCL-1.7)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
-Release date: 2011-10-14
+Release date: 2012-02-24
 
 
 This JDBC driver is designed for use with MonetDB, a main-memory
