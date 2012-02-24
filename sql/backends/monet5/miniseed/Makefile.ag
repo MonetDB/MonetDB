@@ -41,23 +41,33 @@ lib__miniseed = {
 	$(MSEED_LIBS)
 }
 
+lib__registrar = {
+	MODULE
+	COND = HAVE_MSEED
+	DIR = libdir/monetdb5
+	SOURCES = registrar.c registrar.h
+	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
+		   ../../../../gdk/libbat \
+	$(MSEED_LIBS)
+}
+
 headers_mal = {
 	COND = HAVE_MSEED
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = miniseed.mal
+	SOURCES = miniseed.mal registrar.mal
 }
 
 headers_sql = {
 	HEADERS = sql
 	DIR = libdir/monetdb5/createdb
-	SOURCES = 81_miniseed.sql
+	SOURCES = 81_miniseed.sql 79_registrar.sql
 }
 
 headers_autoload = {
 	HEADERS = mal
 	DIR = libdir/monetdb5/autoload
-	SOURCES = 81_miniseed.mal
+	SOURCES = 81_miniseed.mal 79_registrar.mal
 }
 
-EXTRA_DIST = miniseed.mal miniseed.h 81_miniseed.mal
+EXTRA_DIST = miniseed.mal miniseed.h 81_miniseed.mal registrar.mal registrar.h 79_registrar.mal
