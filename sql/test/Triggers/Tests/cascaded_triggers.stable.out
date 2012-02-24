@@ -25,36 +25,36 @@ Ready.
 # 14:51:08 >  
 
 [ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
+% sys.t_0_1,	sys.t_0_1,	sys.t_0_1 # table_name
 % id,	name,	age # name
 % int,	varchar,	int # type
 % 1,	2,	2 # length
 [ 1,	"mo",	25	]
-% sys.t2,	sys.t2 # table_name
+% sys.t_0_2,	sys.t_0_2 # table_name
 % id,	age # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	25	]
 [ 1	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
+% sys.t_0_1,	sys.t_0_1,	sys.t_0_1 # table_name
 % id,	name,	age # name
 % int,	varchar,	int # type
 % 1,	2,	2 # length
 [ 3,	"mo",	27	]
-% sys.t2,	sys.t2 # table_name
+% sys.t_0_2,	sys.t_0_2 # table_name
 % id,	age # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	25	]
 [ 3,	27	]
 [ 0	]
-% sys.t1,	sys.t1,	sys.t1 # table_name
+% sys.t_0_1,	sys.t_0_1,	sys.t_0_1 # table_name
 % id,	name,	age # name
 % int,	varchar,	int # type
 % 1,	2,	2 # length
 [ 3,	"mo",	27	]
 [ 1,	"mo",	25	]
-% sys.t2,	sys.t2 # table_name
+% sys.t_0_2,	sys.t_0_2 # table_name
 % id,	age # name
 % int,	int # type
 % 1,	2 # length
