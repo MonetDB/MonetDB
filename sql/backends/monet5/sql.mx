@@ -2672,7 +2672,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		if ( newopt != NULL ) {
 			if (stack_find_var(m, varname)) 
-				stack_set_string(m, varname, "user");
+				stack_set_string(m, varname, newopt);
 			return MAL_SUCCEED;
 		}
 		throw(SQL, "sql.setVariable", "Failed to initialize optimizer pipeline");
