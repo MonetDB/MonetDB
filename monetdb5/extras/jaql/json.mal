@@ -44,3 +44,7 @@ comment "Extract the given elems (kind id) from the given JSON object";
 command wrap(elems:bat[:oid,:any])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
 address JSONwrap
 comment "Wrap the given BAT inside a JSON array";
+
+pattern unwrap(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])(:bat[:oid,:any])
+address JSONunwrap
+comment "Return the outermost JSON array elements as BAT performing the necessary casts";

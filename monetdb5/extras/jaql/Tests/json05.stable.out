@@ -1,0 +1,62 @@
+stdout of test 'json05` in directory 'extras/jaql` itself:
+
+
+# 14:25:21 >  
+# 14:25:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-jacqueline-sofia.ins.cwi.nl/five/dbfarm" "--set" "mapi_open=true" "--set" "mapi_port=34265" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_jaql" "json05.mal"
+# 14:25:21 >  
+
+# MonetDB 5 server v11.8.0 "jacqueline-461699c362de"
+# Serving database 'mTests_extras_jaql', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://sofia.ins.cwi.nl:34265/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+# Test the unwrapping of JSON arrays 
+    (j1,j2,j3,j4,j5,j6,j7) := json.shred("[false,1,2,null,4]");
+    a := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+    io.print(a);
+    (j1,j2,j3,j4,j5,j6,j7) := json.shred("[1,true,2.3,null,4]");
+    b := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+    io.print(b);
+    (j1,j2,j3,j4,j5,j6,j7) := json.shred("[1,2.3,null,4,\"4\",true]");
+    c := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+    io.print(c);
+end main;
+#-----------------#
+# h	t	  # name
+# oid	lng	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 0@0,	  1	  ]
+[ 0@0,	  2	  ]
+[ 0@0,	  nil	  ]
+[ 0@0,	  4	  ]
+#---------------------------------#
+# h	t			  # name
+# oid	dbl			  # type
+#---------------------------------#
+[ 0@0,	  1			  ]
+[ 0@0,	  1			  ]
+[ 0@0,	  2.2999999999999998	  ]
+[ 0@0,	  nil			  ]
+[ 0@0,	  4			  ]
+#---------------------------------#
+# h	t			  # name
+# oid	str			  # type
+#---------------------------------#
+[ 0@0,	  "long('1')"		  ]
+[ 0@0,	  "double('2.300000')"	  ]
+[ 0@0,	  nil			  ]
+[ 0@0,	  "long('4')"		  ]
+[ 0@0,	  "4"			  ]
+[ 0@0,	  "bool('true')"	  ]
+
+# 14:25:21 >  
+# 14:25:21 >  "Done."
+# 14:25:21 >  
+

@@ -979,3 +979,162 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 	return MAL_SUCCEED;
 }
 
+str
+JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	int *kind = (int *)getArgReference(stk, pci, 1);
+	int *string = (int *)getArgReference(stk, pci, 2);
+	int *integer = (int *)getArgReference(stk, pci, 3);
+	int *doble = (int *)getArgReference(stk, pci, 4);
+	int *array = (int *)getArgReference(stk, pci, 5);
+	int *object = (int *)getArgReference(stk, pci, 6);
+	int *name = (int *)getArgReference(stk, pci, 7);
+	jsonbat jb;
+	BATiter bi, bis, bii, bid;
+	BAT *b, *r;
+	BUN p, q;
+	oid v = 0, x;
+	lng l;
+	dbl d;
+	str s;
+	char buf[24];
+	enum typeorder {tlng, tdbl, tstr} totype = tlng;
+
+	(void)mb;
+	(void)cntxt;
+
+	loadbats();
+
+	/* find types of outermost array */
+	bi = bat_iterator(jb.kind);
+	if (*(bte *)BUNtail(bi, BUNfirst(jb.kind)) != 'a') {
+		unloadbats();
+		throw(MAL, "json.unwrap", "JSON value must be an array");
+	}
+	b = BATselect(BATmirror(jb.array),
+					BUNhead(bi, BUNfirst(jb.kind)),
+					BUNhead(bi, BUNfirst(jb.kind)));
+	b = BATsemijoin(jb.kind, b);
+	bi = bat_iterator(b);
+	BATloop(b, p, q) {
+		switch (*(bte *)BUNtail(bi, p)) {
+			case 't':
+			case 'f':
+			case 'n':
+			case 'i':
+				/* lower than or equal to the minimum type (lng) */
+				break;
+			case 'd':
+				if (totype < tdbl)
+					totype = tdbl;
+				break;
+			default:
+				totype = tstr;
+				break;
+		}
+	}
+	
+	bis = bat_iterator(jb.string);
+	bii = bat_iterator(jb.integer);
+	bid = bat_iterator(jb.doble);
+	switch (totype) {
+		case tstr:
+			r = BATnew(TYPE_oid, TYPE_str, BATcount(b));
+			BATloop(b, p, q) {
+				switch (*(bte *)BUNtail(bi, p)) {
+					case 's':
+						BUNfndOID(x, bis, BUNhead(bi, p));
+						BUNins(r, &v, BUNtail(bis, x), FALSE);
+						break;
+					case 'i':
+						BUNfndOID(x, bii, BUNhead(bi, p));
+						snprintf(buf, sizeof(buf), "long('%lld')",
+								*(lng *)BUNtail(bii, x));
+						BUNins(r, &v, buf, FALSE);
+						break;
+					case 'd':
+						BUNfndOID(x, bid, BUNhead(bi, p));
+						snprintf(buf, sizeof(buf), "double('%f')",
+								*(dbl *)BUNtail(bid, x));
+						BUNins(r, &v, buf, FALSE);
+						break;
+					case 't':
+						snprintf(buf, sizeof(buf), "bool('true')");
+						BUNins(r, &v, buf, FALSE);
+						break;
+					case 'f':
+						snprintf(buf, sizeof(buf), "bool('false')");
+						BUNins(r, &v, buf, FALSE);
+						break;
+					case 'n':
+						BUNins(r, &v, (ptr)str_nil, FALSE);
+						break;
+					default:
+						/* JSON piece (object/array), serialise */
+						(void)s;
+						/* TODO: implement right call */;
+						BUNins(r, &v, (ptr)str_nil, FALSE);
+						break;
+				}
+			}
+			break;
+		case tdbl:
+			r = BATnew(TYPE_oid, TYPE_dbl, BATcount(b));
+			BATloop(b, p, q) {
+				switch (*(bte *)BUNtail(bi, p)) {
+					case 'i':
+						BUNfndOID(x, bii, BUNhead(bi, p));
+						d = (dbl)*(lng *)BUNtail(bii, x);
+						BUNins(r, &v, &d, FALSE);
+						break;
+					case 'd':
+						BUNfndOID(x, bid, BUNhead(bi, p));
+						BUNins(r, &v, BUNtail(bid, x), FALSE);
+						break;
+					case 't':
+						d = 1.0;
+						BUNins(r, &v, &d, FALSE);
+						break;
+					case 'f':
+						d = 0.0;
+						BUNins(r, &v, &d, FALSE);
+						break;
+					case 'n':
+						d = dbl_nil;
+						BUNins(r, &v, &d, FALSE);
+						break;
+				}
+			}
+			break;
+		case tlng:
+			r = BATnew(TYPE_oid, TYPE_lng, BATcount(b));
+			BATloop(b, p, q) {
+				switch (*(bte *)BUNtail(bi, p)) {
+					case 'i':
+						BUNfndOID(x, bii, BUNhead(bi, p));
+						BUNins(r, &v, BUNtail(bii, x), FALSE);
+						break;
+					case 't':
+						l = 1;
+						BUNins(r, &v, &l, FALSE);
+						break;
+					case 'f':
+						l = 0;
+						BUNins(r, &v, &l, FALSE);
+						break;
+					case 'n':
+						l = lng_nil;
+						BUNins(r, &v, &l, FALSE);
+						break;
+				}
+			}
+			break;
+	}
+
+	unloadbats();
+
+	BBPkeepref(r->batCacheid);
+	*ret = r->batCacheid;
+	return MAL_SUCCEED;
+}
