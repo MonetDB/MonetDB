@@ -2730,11 +2730,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 	default: {
 		sql_exp *re, *le = rel_value_exp(sql, rel, sc, f, ek);
+		sql_subtype bt;
 
 		if (!le)
 			return NULL;
 		re = exp_atom_bool(sql->sa, 1);
-		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) 
+		sql_find_subtype(&bt, "boolean", 0, 0);
+		if ((le = rel_check_type(sql, &bt, le, type_equal)) == NULL) 
 			return NULL;
 		return rel_binop_(sql, le, re, NULL, "=", 0);
 	}
