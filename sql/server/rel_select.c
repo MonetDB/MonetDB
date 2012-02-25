@@ -1215,10 +1215,49 @@ rel_subquery_optname(mvc *sql, sql_rel *rel, symbol *query)
 	return rel_table_optname(sql, sq, sn->name);
 }
 
+sql_rel *
+rel_with_query(mvc *sql, symbol *q ) 
+{
+	dnode *d = q->data.lval->h;
+	symbol *select = d->next->data.sym;
+	sql_rel *rel;
+
+	stack_push_frame(sql, "WITH");
+	/* first handle all with's (ie inlined views) */
+	for (d = d->data.lval->h; d; d = d->next) {
+		symbol *sym = d->data.sym;
+		dnode *dn = sym->data.lval->h;
+		char *name = qname_table(dn->data.lval);
+		sql_rel *nrel;
+
+		if (frame_find_var(sql, name)) {
+			return sql_error(sql, 01, "Variable '%s' allready declared", name);
+		}
+		nrel = rel_semantic(sql, sym);
+		if (!nrel) {  
+			stack_pop_frame(sql);
+			return NULL;
+		}
+		stack_push_rel_view(sql, name, nrel);
+		assert(is_project(nrel->op));
+		if (is_project(nrel->op) && nrel->exps) {
+			node *ne = nrel->exps->h;
+
+			for (; ne; ne = ne->next) 
+				noninternexp_setname(sql->sa, ne->data, name, NULL );
+		}
+	}
+	rel = rel_semantic(sql, select);
+	stack_pop_frame(sql);
+	return rel;
+}
+
 static sql_rel *
 query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
+	case SQL_WITH:
+		return rel_with_query(sql, q);
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
