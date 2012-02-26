@@ -4359,7 +4359,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		if (r) {
 			sql_exp *e;
 
-			rel_setsubquery(r);
+			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
+				return sql_error(sql, 02, "SELECT: subquery must return only one column");
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
@@ -4390,16 +4391,19 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 						l = list_merge(l, r->exps, (fdup)NULL);
 						r->exps = l;
 						(*rel)->exps = NULL;
+						need_preproj = 1;
 
 					/* but also project ( project[] [x], [x]) */
 					} else if (is_project(r->op) && l && !list_length(l)) {
 						need_preproj = 1;
 					}
 					rel_destroy(*rel);
+					rel_setsubquery(*rel);
 					*rel = r;
 					if (need_preproj)
 						*rel = rel_project(sql->sa, *rel, pre_proj);
 				} else {
+					rel_setsubquery(r);
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					*rel = rel_project(sql->sa, *rel, pre_proj);
 				}
