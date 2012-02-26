@@ -4740,6 +4740,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			if (!gbe)
 				return NULL;
+			if (outer && pre_prj)
+				list_merge(gbe, pre_prj, (fdup)NULL);
 			rel = rel_groupby(sql->sa, rel, gbe);
 			aggr = 1;
 		}
