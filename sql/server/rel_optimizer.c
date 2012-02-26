@@ -5361,18 +5361,6 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->r = rewrite(sql, rel->r, rewriter, has_changes);
 		break;
 	}
-	//if (rel_is_ref(rel)) {
-		/*
-		int refs = rel->ref.refcnt;
-		sql_rel *r = rewriter(&changes, sql, rel);
-
-		if (changes && r != rel) {
-			*rel = *r;
-			rel->ref.refcnt = refs;
-		}
-		*/
-		//return rel;
-	//}
 	rel = rewriter(&changes, sql, rel);
 	if (changes) {
 		(*has_changes)++;
@@ -5387,7 +5375,6 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	if (!rel)
 		return rel;
 
-	//if (!rel_is_ref(rel))
 	rel = rewriter(has_changes, sql, rel);
 	switch (rel->op) {
 	case op_basetable:

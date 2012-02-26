@@ -1909,7 +1909,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_alias:
 		return column_name(sa, st->op3 );
 	case st_bat:
-		//return sa_strdup(sa, st->op4.cval->base.name);
 		return st->op4.cval->base.name;
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str)
@@ -1984,21 +1983,17 @@ _table_name(sql_allocator *sa, stmt *st)
 		if (st->op2)
 			return table_name(sa, st->op2);
 	case st_table_clear:
-		//return sa_strdup(sa, st->op4.tval->base.name);
 		return st->op4.tval->base.name;
 	case st_bat:
 		return table_name(sa, st->h);
 	case st_alias:
 		if (st->tname)
 			return st->tname;
-		//if (st->op2)
-			//return table_name(sa, st->op2);
 		else
 			/* there are no table aliases, ie look into the base column */
 			return table_name(sa, st->op1);
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str && st->op4.aval->data.val.sval && _strlen(st->op4.aval->data.val.sval))
-			//return atom2string(sa, st->op4.aval);
 			return st->op4.aval->data.val.sval;
 
 	case st_var:
@@ -2053,7 +2048,6 @@ schema_name(sql_allocator *sa, stmt *st)
 		/* there are no schema aliases, ie look into the base column */
 		return schema_name(sa, st->op1);
 	case st_bat:
-		//return sa_strdup(sa, st->op4.cval->t->s->base.name);
 		return st->op4.cval->t->s->base.name;
 	case st_atom:
 		return NULL;

@@ -2755,7 +2755,6 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	//set_intern(e);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
 	return rel;

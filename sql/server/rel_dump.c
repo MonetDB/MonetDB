@@ -81,17 +81,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 		return;
 	switch(e->type) {
 	case e_convert: {
-		//list *l = e->r;
-		//sql_subtype *f = l->h->data;
 		char *to_type = sql_subtype_string(&e->tpe);
-		//char *from_type = sql_subtype_string(f);
-		//mnstr_printf(fout, "convert(");
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, 0, 0);
-		//mnstr_printf(fout, " from %s to %s)", from_type, to_type);
 		mnstr_printf(fout, "]");
 		_DELETE(to_type);
-		//_DELETE(from_type);
 	 	break;
 	}
 	case e_atom: {
@@ -997,7 +991,6 @@ rel_read(mvc *sql, char *r, int *pos)
 			/* scan aliases */
 			exps = read_exps(sql, rel, NULL, r, pos, '[', 0);
 			if (exps && list_length(exps))
-				//rel = rel_project(sql->sa, rel, exps);
 				rel->exps = exps;
 			return rel;
 		} else { /* top N */
@@ -1096,7 +1089,7 @@ rel_read(mvc *sql, char *r, int *pos)
 			exps = read_exps(sql, nrel, NULL, r, pos, '[', 0);
 			rel = rel_select_copy(sql->sa, nrel, exps);
 			return rel;
-			// semijoin or antijoin
+			/* semijoin or antijoin */
 		} else if (r[*pos+1] == 'e' || r[*pos+1] == 'n') {
 			j = op_semi;
 

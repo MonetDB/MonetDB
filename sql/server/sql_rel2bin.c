@@ -695,9 +695,6 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal);
 
-		//cmp = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, cmp, 0));
-		//l = stmt_project(sql->sa, cmp, l);
-		//r = stmt_project(sql->sa, cmp, r);
 		/* TODO the semijoin may break the order!! */
 		l = stmt_semijoin(sql->sa, l, cmp);
 		r = stmt_semijoin(sql->sa, r, cmp);
