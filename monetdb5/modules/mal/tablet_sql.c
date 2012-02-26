@@ -785,7 +785,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	}
 
 	if (task->b->pos < task->b->len && cnt < (BUN) maxrow && task->ateof) {
-		GDKerror("Incomplete record at end of file.\n");
+		showException(task->out, MAL, "copy_from", "Incomplete record at end of file.\n");
 		/* indicate that we did read everything (even if we couldn't
 		 * deal with it */
 		task->b->pos = task->b->len;
