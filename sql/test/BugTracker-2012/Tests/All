@@ -15,3 +15,4 @@ leftjoin-Bug.3041
 with_in_derived_table.Bug-3043
 boolean_coersion.Bug-3012
 correlated_groupby_in_selection.Bug-3011
+multicolumn_join.Bug-2998
