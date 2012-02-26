@@ -373,6 +373,11 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 	push(s);
 	while((s=pop()) != NULL) {
 	   if ((dir < 0 && s->optimized < 0) || (dir >=0 && s->optimized >= 0)){
+		/* only add dependency once */
+	    	if (dir < 0)
+			s->optimized = 0;
+	    	else
+			s->optimized = -1;
 		switch (s->type) {
 		case st_list:
 			list_deps(dep_list, s->op4.lval, depend_type, dir);
@@ -497,10 +502,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		sz *= 2;
 		stack = RENEW_ARRAY(stmt*, stack, sz);
 	    }
-	    if (dir < 0)
-		s->optimized = 0;
-	    else
-		s->optimized = -1;
 	}
 	_DELETE(stack);
 }

@@ -1626,7 +1626,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			for (n = exps->h; n; n = n->next)
 				noninternexp_setname(sql->sa, n->data, tname, NULL);
 			return temp_table;
-		} else if (isView(t) /*&& sql->emode != m_instantiate */) {
+		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
 			sql_rel *rel;
