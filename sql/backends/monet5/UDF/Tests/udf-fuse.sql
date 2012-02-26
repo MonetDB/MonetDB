@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe';
+
 explain select fuse(1,2);
 select fuse(1,2);
 

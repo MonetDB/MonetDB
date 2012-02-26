@@ -12,3 +12,5 @@ innerjoin_subquery.Bug-3034
 rangejoin.Bug-3017
 outerjoin_select.Bug-2946
 leftjoin-Bug.3041
+with_in_derived_table.Bug-3043
+boolean_coersion.Bug-3012

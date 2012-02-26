@@ -106,6 +106,7 @@ int yydebug=1;
 	set_statement
 	sql
 	sqlstmt
+	with_query
 	schema
 	opt_schema_default_char_set
 	opt_path_specification
@@ -2791,7 +2792,11 @@ join_spec:
 
 RECURSIVE and <search or cycle clause> are currently not supported
 */
-sql:
+
+sql: with_query
+	;
+
+with_query:
 	WITH with_list query_expression
 	{
 		dlist *l = L();
@@ -2799,7 +2804,7 @@ sql:
 	  	append_symbol(l, $3);
 	  	$$ = _symbol_create_list( SQL_WITH, l ); 
 	}
- ;
+  ;
 
 with_list:
 	with_list ',' with_list_element	 { $$ = append_symbol($1, $3); }
@@ -3309,6 +3314,8 @@ subquery:
     '(' select_no_parens ')'	{ $$ = $2; }
  |  '(' VALUES row_commalist ')'	
 				{ $$ = _symbol_create_list( SQL_VALUES, $3); }
+ |  '(' with_query ')'	
+				{ $$ = $2; }
  ;
 
 	/* simple_scalar expressions */
