@@ -1,13 +1,19 @@
 # Test the unwrapping of JSON arrays
 
 (j1,j2,j3,j4,j5,j6,j7) := json.shred("[false,1,2,null,4]");
-a := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+t := json.unwraptype(j1,j2,j3,j4,j5,j6,j7);
+io.print(t);
+a := json.unwrap(j1,j2,j3,j4,j5,j6,j7,0:lng);
 io.print(a);
 
 (j1,j2,j3,j4,j5,j6,j7) := json.shred("[1,true,2.3,null,4]");
-b := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+t := json.unwraptype(j1,j2,j3,j4,j5,j6,j7);
+io.print(t);
+b := json.unwrap(j1,j2,j3,j4,j5,j6,j7,0:dbl);
 io.print(b);
 
 (j1,j2,j3,j4,j5,j6,j7) := json.shred("[1,2.3,null,4,\"4\",true]");
-c := json.unwrap(j1,j2,j3,j4,j5,j6,j7);
+t := json.unwraptype(j1,j2,j3,j4,j5,j6,j7);
+io.print(t);
+c := json.unwrap(j1,j2,j3,j4,j5,j6,j7,"":str);
 io.print(c);
