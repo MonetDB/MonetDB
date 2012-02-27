@@ -1732,6 +1732,7 @@ rel2bin_predicate(mvc *sql)
 static stmt *
 rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en ) 
 {
+	node *n;
 	sql_subtype *it = sql_bind_localtype("int");
 	sql_subtype *wrd = sql_bind_localtype("wrd");
 	stmt *h = NULL;
@@ -1740,8 +1741,8 @@ rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en )
 	sql_exp *l = e->l;
 	stmt *idx = bin_find_column(sql->sa, sub, l->l, sa_strconcat(sql->sa, "%", i->base.name));
 
-	/* TODO should be in key order! */
-	for( en = rel->exps->h; en; en = en->next ) {
+	/* should be in key order! */
+	for( en = rel->exps->h, n = i->columns->h; en && n; en = en->next, n = n->next ) {
 		sql_exp *e = en->data;
 		stmt *s = NULL;
 
@@ -1770,7 +1771,7 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
 	node *en, *n;
-	stmt *sub = NULL, *sel = NULL;
+	stmt *sub = NULL, *sel = NULL, *s = NULL;
 	stmt *predicate = NULL;
 
 	if (!rel->exps) {
@@ -1800,26 +1801,26 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		if ((p=find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			sql_idx *i = p->value;
 			
-			sel = rel2bin_hash_lookup(sql, rel, sub, i, en);
+			s = rel2bin_hash_lookup(sql, rel, sub, i, en);
 		}
 	} 
-	if (!sel) {
-		sel = stmt_relselect_init(sql->sa);
-		for( en = rel->exps->h; en; en = en->next ) {
-			/*stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);*/
-			stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
-	
-			if (!s) {
-				assert(0);
-				return NULL;
-			}
-			if (s->nrcols == 0){ 
-				if (!predicate) 
-					predicate = rel2bin_predicate(sql);
-				predicate = stmt_select(sql->sa, predicate, s, cmp_equal);
-			} else {
-				stmt_relselect_fill(sel, s);
-			}
+	sel = stmt_relselect_init(sql->sa);
+	if (s)
+		stmt_relselect_fill(sel, s);
+	for( en = rel->exps->h; en; en = en->next ) {
+		/*stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, sel);*/
+		stmt *s = exp_bin(sql, en->data, sub, NULL, NULL, NULL);
+
+		if (!s) {
+			assert(0);
+			return NULL;
+		}
+		if (s->nrcols == 0){ 
+			if (!predicate) 
+				predicate = rel2bin_predicate(sql);
+			predicate = stmt_select(sql->sa, predicate, s, cmp_equal);
+		} else {
+			stmt_relselect_fill(sel, s);
 		}
 	}
 
