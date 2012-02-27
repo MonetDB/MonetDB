@@ -4873,18 +4873,18 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						switch (coltypes[i]) {
 							case j_json:
 							case j_json_arr:
-								pushArgument(mb, q, dynaarg[i][0]);
-								pushArgument(mb, q, dynaarg[i][1]);
-								pushArgument(mb, q, dynaarg[i][2]);
-								pushArgument(mb, q, dynaarg[i][3]);
-								pushArgument(mb, q, dynaarg[i][4]);
-								pushArgument(mb, q, dynaarg[i][5]);
-								pushArgument(mb, q, dynaarg[i][6]);
+								q = pushArgument(mb, q, dynaarg[i][0]);
+								q = pushArgument(mb, q, dynaarg[i][1]);
+								q = pushArgument(mb, q, dynaarg[i][2]);
+								q = pushArgument(mb, q, dynaarg[i][3]);
+								q = pushArgument(mb, q, dynaarg[i][4]);
+								q = pushArgument(mb, q, dynaarg[i][5]);
+								q = pushArgument(mb, q, dynaarg[i][6]);
 								break;
 							case j_sort_arg:
 								assert(0);
 							default:
-								pushArgument(mb, q, dynaarg[i][0]);
+								q = pushArgument(mb, q, dynaarg[i][0]);
 								break;
 						}
 					}
