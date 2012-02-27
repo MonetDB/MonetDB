@@ -2846,7 +2846,7 @@ typedef struct {
 	bat bid;		/* bat id */
 	BUN cnt;		/* bat count */
 	int next;		/* next position in list */
-#if SIZEOF_SIZE_T == 8
+#if SIZEOF_OID == 8
 	size_t dummy;		/* round up */
 #endif
 } bbptrim_t;

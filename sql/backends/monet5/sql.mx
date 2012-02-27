@@ -1694,6 +1694,7 @@ sqlcleanup(mvc *c, int err)
 	if (err < 0)
 		c->session->status = err;
 	c->label = 0;
+	c->point_query = 0;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -1864,10 +1865,11 @@ create_table_or_view( mvc *sql, char *sname, sql_table *t, int temp)
 		sql_column *c = n->data;
 
 		if (c->def) {
-			char buf[BUFSIZ];
+			char *buf;
 			sql_rel *r = NULL;
 
 			sql->sa = sa_create();
+			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, buf, m_deps); 
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL) 
@@ -2331,12 +2333,12 @@ create_func( mvc *sql, char *sname, sql_func *f )
 		s = cur_schema(sql);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, &f->res, f->type, f->mod, f->imp, f->query);
 	if (nf && nf->query) {
-		char buf[BUFSIZ];
+		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
-		snprintf(buf, BUFSIZ, "%s", nf->query);
+		buf = sa_strdup(sql->sa, nf->query);
 		r = rel_parse(sql, buf, m_deps); 
 		if (r) {
 			stmt *sb = rel_bin(sql, r);
@@ -2381,12 +2383,12 @@ create_trigger( mvc *sql, char *sname, char *tname, char *triggername, int time,
 
 	tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query);
 	if (tri) {
-		char buf[BUFSIZ];
+		char *buf;
 		sql_rel *r = NULL;
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
-		snprintf(buf, BUFSIZ, "%s", query);
+		buf = sa_strdup(sql->sa, query);
 		r = rel_parse(sql, buf, m_deps); 
 		if (r) {
 			stmt *sqs = rel_bin(sql, r);
@@ -2670,7 +2672,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 		if ( newopt != NULL ) {
 			if (stack_find_var(m, varname)) 
-				stack_set_string(m, varname, "user");
+				stack_set_string(m, varname, newopt);
 			return MAL_SUCCEED;
 		}
 		throw(SQL, "sql.setVariable", "Failed to initialize optimizer pipeline");

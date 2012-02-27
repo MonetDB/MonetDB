@@ -6,4 +6,14 @@ sticky-precision.Bug-2969
 url_script_test.Bug-2972
 date_script_test.Bug-2973
 nested-select-crash.Bug-3009
-combination_of_theta_and_equijoins.Bug-3004.sql
+combination_of_theta_and_equijoins.Bug-3004
+outerjoin_predicate.Bug-2964
+innerjoin_subquery.Bug-3034
+rangejoin.Bug-3017
+outerjoin_select.Bug-2946
+leftjoin-Bug.3041
+with_in_derived_table.Bug-3043
+boolean_coersion.Bug-3012
+correlated_groupby_in_selection.Bug-3011
+multicolumn_join.Bug-2998
+simple_select.Bug-2988

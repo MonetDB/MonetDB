@@ -606,7 +606,6 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 	InstrPtr p;
 	Symbol sym;
 	str msg = MAL_SUCCEED;
-	Client c;
 	
 	(void) cntxt;
 
@@ -617,19 +616,19 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 	/* compile pipes first */
 	if ( pipes[i].mb == 0){
 		/* precompile the pipeline as MAL string */
-		c= MCinitClient((oid)1,0,0);
+		Client c = MCinitClient((oid)1,0,0);
 		assert(c != NULL);
 		c->nspace = newModule(NULL, putName("user", 4));
 		c->father = cntxt;	/* to avoid conflicts on GDKin */
+		c->fdout = cntxt->fdout;
 		if (setScenario(c,"mal")) 
 			throw(MAL,"optimizer.addOptimizerPipe","failed to set scenario");
 		(void)MCinitClientThread(c);
-
 		for ( j =0; j < MAXOPTPIPES && pipes[j].def; j++)
-		if ( pipes[j].mb == NULL) {
-			if ( pipes[j].prerequisite &&
-				getAddress(cntxt->fdout, NULL, optimizerRef, pipes[j].prerequisite, TRUE) == NULL)
-			continue;
+		if (pipes[j].mb == NULL) {
+
+			if (pipes[j].prerequisite && getAddress(c->fdout, NULL, optimizerRef, pipes[j].prerequisite, TRUE) == NULL)
+				continue;
 			MSinitClientPrg(c, "user", pipes[j].name);
 			msg = compileString(&sym, c, pipes[j].def);
 			if ( msg != MAL_SUCCEED){
@@ -639,7 +638,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 			pipes[j].mb = copyMalBlk(sym->def);
 		}
 		MCcloseClient(c); 
-		validateOptimizerPipes();
+		msg = validateOptimizerPipes();
 		if ( msg != MAL_SUCCEED)
 			return msg;
 	}

@@ -1,12 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Fri Feb 17 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a crash that happened at the end of a database upgrade to the
-  Dec2011 database scheme.  The crash happened during cleanup after the
-  database was upgraded, so it was merely inconvenient.
-
-* Wed Feb 15 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Stripped off implementation-specific parts from error messages before
-  they get presented to the user.
-

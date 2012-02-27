@@ -1765,6 +1765,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 	enum hmyesno hassysfuncs = UNKNOWN;
 	FILE *fp;
 	char *prompt = NULL;
+	int prepno = 0;
 
 	(void) save_history;	/* not used if no readline */
 	if (strcmp(file, "-") == 0) {
@@ -1961,6 +1962,18 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 			switch (*line) {
 			case '\n':
 			case '\0':
+				break;
+			case 'e':
+				/* a bit of a hack for prepare/exec
+				 * tests: replace "exec **" with the
+				 * ID of the last prepared
+				 * statement */
+				if (mode == SQL &&
+				    formatter == TESTformatter &&
+				    strncmp(line, "exec **", 7) == 0) {
+					line[5] = prepno < 10 ? ' ' : prepno / 10 + '0';
+					line[6] = prepno % 10 + '0';
+				}
 				break;
 			case '\\':
 				switch (line[1]) {
@@ -2447,6 +2460,11 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 		}
 		CHECK_RESULT(mid, hdl, buf, continue);
 
+		if (mapi_get_querytype(hdl) == Q_PREPARE) {
+			prepno = mapi_get_tableid(hdl);
+			assert(prepno < 100);
+		}
+
 		rc = format_result(mid, hdl, interactive);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
@@ -2473,19 +2491,19 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 static void
 set_timezone(Mapi mid)
 {
-#ifdef HAVE_TIMEZONE
-#ifdef _MSC_VER
-#define timezone _timezone
-#endif
 	char buf[128];
-	struct tm *tm;
-	time_t t;
+	time_t t, lt, gt;
+	struct tm *tmp;
 	long tzone;
 	MapiHdl hdl;
 
+	/* figure out our current timezone */
 	t = time(NULL);
-	tm = localtime(&t);
-	tzone = timezone - 3600 * tm->tm_isdst;
+	tmp = gmtime(&t);
+	gt = mktime(tmp);
+	tmp = localtime(&t);
+	lt = mktime(tmp);
+	tzone = (long) (gt - lt);
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
@@ -2500,9 +2518,6 @@ set_timezone(Mapi mid)
 		return;
 	}
 	mapi_close_handle(hdl);
-#else
-	(void) mid;
-#endif
 }
 
 static void usage(const char *prog, int xit)

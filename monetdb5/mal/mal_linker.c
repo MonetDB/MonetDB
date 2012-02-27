@@ -115,9 +115,9 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 
 	(void) modnme;
 	if( prev >= 0){
-			adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
-			if( adr != NULL)
-				return adr; /* found it */
+		adr = (MALfcn) dlsym(filesLoaded[prev].handle, fcnname);
+		if( adr != NULL)
+			return adr; /* found it */
 	}
 	if( filename && prev >= 0) {
 		if( strcmp(filename, filesLoaded[prev].filename)==0) {
@@ -156,7 +156,7 @@ getAddress(stream *out, str filename, str modnme, str fcnname, int silent)
 		if( adr != NULL)
 			return adr; /* found it */
 	}
-	if( !silent)
+	if (!silent)
 		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
 			(modnme?modnme:"<unknown>"), fcnname);
 	return NULL;

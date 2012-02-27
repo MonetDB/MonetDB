@@ -738,7 +738,8 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables 
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || !is_complex_exp(cje->flag)) {
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag) /*||
+		   (cje->type == e_cmp && cje->f == NULL)*/) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
 		}
@@ -837,6 +838,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		node *n;
+		set_processed(top);
 		top = rel_select(sql->sa, top, NULL);
 		for(n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -1199,7 +1201,10 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				if (l && r && r2)
 					return exp_compare2(sql->sa, l, r, r2, e->flag);
 			} else if (l && r) {
-				return exp_compare(sql->sa, l, r, e->flag);
+				if (l->card < r->card)
+					return exp_compare(sql->sa, r, l, swap_compare((comp_type)e->flag));
+				else
+					return exp_compare(sql->sa, l, r, e->flag);
 			}
 		}
 		return NULL;
@@ -2698,7 +2703,9 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 			return rel;
 
 		/* introduce selects under the join (if needed) */
-		if (!is_select(jl->op))
+		set_processed(jl);
+		set_processed(jr);
+		if (!is_select(jl->op)) 
 			r->l = jl = rel_select(sql->sa, jl, NULL);
 		if (!is_select(jr->op))
 			r->r = jr = rel_select(sql->sa, jr, NULL);
@@ -2759,6 +2766,7 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = new_exp_list(sql->sa); 
 		pl = r->l;
 		/* introduce selects under the project (if needed) */
+		set_processed(pl);
 		if (!is_select(pl->op))
 			r->l = pl = rel_select(sql->sa, pl, NULL);
 
@@ -2805,7 +2813,7 @@ rel_push_select_down_join(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *re = e->r;
 
 				if (re->card >= CARD_AGGR) {
-					rel->l = rel_push_join(sql->sa, r, e->l, re, e);
+					rel->l = rel_push_join(sql->sa, r, e->l, re, NULL, e);
 				} else {
 					rel->l = rel_push_select(sql->sa, r, e->l, e);
 				}
@@ -3364,6 +3372,8 @@ rel_push_select_down_union(int *changes, mvc *sql, sql_rel *rel)
 		}	
 
 		/* introduce selects under the set (if needed) */
+		set_processed(ul);
+		set_processed(ur);
 		ul = rel_select(sql->sa, ul, NULL);
 		ur = rel_select(sql->sa, ur, NULL);
 		
@@ -5351,18 +5361,6 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->r = rewrite(sql, rel->r, rewriter, has_changes);
 		break;
 	}
-	//if (rel_is_ref(rel)) {
-		/*
-		int refs = rel->ref.refcnt;
-		sql_rel *r = rewriter(&changes, sql, rel);
-
-		if (changes && r != rel) {
-			*rel = *r;
-			rel->ref.refcnt = refs;
-		}
-		*/
-		//return rel;
-	//}
 	rel = rewriter(&changes, sql, rel);
 	if (changes) {
 		(*has_changes)++;
@@ -5377,7 +5375,6 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	if (!rel)
 		return rel;
 
-	//if (!rel_is_ref(rel))
 	rel = rewriter(has_changes, sql, rel);
 	switch (rel->op) {
 	case op_basetable:

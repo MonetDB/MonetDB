@@ -58,19 +58,19 @@
 static void
 set_timezone(Mapi mid)
 {
-#ifdef HAVE_TIMEZONE
-#ifdef _MSC_VER
-#define timezone _timezone
-#define daylight _daylight
-#define tzset _tzset
-#endif
 	char buf[128];
+	time_t t, lt, gt;
+	struct tm *tmp;
 	long tzone;
 	MapiHdl hdl;
 
-	/* timezone and daylight are POSIX-defined variables */
-	tzset();
-	tzone = timezone - 3600 * daylight;
+	/* figure out our current timezone */
+	t = time(NULL);
+	tmp = gmtime(&t);
+	gt = mktime(tmp);
+	tmp = localtime(&t);
+	lt = mktime(tmp);
+	tzone = (long) (gt - lt);
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
@@ -81,9 +81,6 @@ set_timezone(Mapi mid)
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) != NULL)
 		mapi_close_handle(hdl);
-#else
-	(void) mid;
-#endif
 }
 
 static void

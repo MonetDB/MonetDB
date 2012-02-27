@@ -590,9 +590,6 @@
 /* Define to 1 if you have the <time.h> header file. */
 #define HAVE_TIME_H 1
 
-/* Define to 1 if you have the timezone and daylight variables. */
-#define HAVE_TIMEZONE 1
-
 /* Define to 1 if you have the `trunc' function. */
 /* #undef HAVE_TRUNC */
 

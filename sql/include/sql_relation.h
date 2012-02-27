@@ -160,6 +160,12 @@ typedef enum operator_type {
 	(rel->op == op_ddl && rel->flag == DDL_OUTPUT)
 #define is_outerjoin(op) \
 	(op == op_left || op == op_right || op == op_full)
+#define is_left(op) \
+	(op == op_left)
+#define is_right(op) \
+	(op == op_right)
+#define is_full(op) \
+	(op == op_full)
 #define is_join(op) \
 	(op == op_join || is_outerjoin(op))
 #define is_semi(op) \

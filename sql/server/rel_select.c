@@ -1042,43 +1042,73 @@ rel_push_select(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *e)
    join expression.
  */
 sql_rel *
-rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *e)
+rel_push_join(sql_allocator *sa, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e)
 {
 	list *l = rel_bind_path(sa, rel, ls);
 	list *r = rel_bind_path(sa, rel, rs);
+	list *r2 = NULL; 
 	node *ln, *rn;
-	sql_rel *lrel = NULL, *rrel = NULL, *p = NULL;
+	sql_rel *lrel = NULL, *rrel = NULL, *rrel2 = NULL, *p = NULL;
 
-	if (!l || !r) 
+	if (rs2)
+		r2 = rel_bind_path(sa, rel, rs2);
+	if (!l || !r || (rs2 && !r2)) 
 		return NULL;
 
 	p = rel;
-	for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
-		lrel = ln->data;
-		rrel = rn->data;
-		
-		if (rel_is_ref(lrel) || rel_is_ref(rrel))
-			break;
+	if (r2) {
+		node *rn2;
 
-		/* push down as long as the operators allow this
-			and the relation is equal.
-		 */
-		if (lrel != rrel ||
+		for (ln = l->h, rn = r->h, rn2 = r2->h; ln && rn && rn2; ln = ln->next, rn = rn->next, rn2 = rn2->next ) {
+			lrel = ln->data;
+			rrel = rn->data;
+			rrel2 = rn2->data;
+			
+			if (rel_is_ref(lrel) || rel_is_ref(rrel) || rel_is_ref(rrel2))
+				break;
+
+			/* push down as long as the operators allow this
+				and the relation is equal.
+		 	*/
+			if (lrel != rrel || lrel != rrel2 ||
 				(!is_select(lrel->op) &&
 				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
 				 lrel->op != op_join &&
 				 lrel->op != op_left))
-			break;
-		/* pushing through left head of a left join is allowed */
-		if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
-			break;
-		p = lrel;
+				break;
+			/* pushing through left head of a left join is allowed */
+			if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
+				break;
+			p = lrel;
+		}
+	} else {
+		for (ln = l->h, rn = r->h; ln && rn; ln = ln->next, rn = rn->next ) {
+			lrel = ln->data;
+			rrel = rn->data;
+			
+			if (rel_is_ref(lrel) || rel_is_ref(rrel))
+				break;
+
+			/* push down as long as the operators allow this
+				and the relation is equal.
+		 	*/
+			if (lrel != rrel ||
+				(!is_select(lrel->op) &&
+				 !(is_semi(lrel->op) && !rel_is_ref(lrel->l)) &&
+				 lrel->op != op_join &&
+				 lrel->op != op_left))
+				break;
+			/* pushing through left head of a left join is allowed */
+			if (lrel->op == op_left && (!ln->next || lrel->l != ln->next->data))
+				break;
+			p = lrel;
+		}
 	}
-	if (!lrel || !rrel)
+	if (!lrel || !rrel || (r2 && !rrel2))
 		return NULL;
 
 	/* filter on columns of this relation */
-	if ((lrel == rrel && lrel->op != op_join) || rel_is_ref(p)) {
+	if ((lrel == rrel && (!r2 || lrel == rrel2) && lrel->op != op_join) || rel_is_ref(p)) {
 		if (lrel->op == op_select && !rel_is_ref(lrel)) {
 			rel_select_add_exp(lrel, e);
 		} else if (p && p->op == op_select && !rel_is_ref(p)) {
@@ -1167,10 +1197,49 @@ rel_subquery_optname(mvc *sql, sql_rel *rel, symbol *query)
 	return rel_table_optname(sql, sq, sn->name);
 }
 
+sql_rel *
+rel_with_query(mvc *sql, symbol *q ) 
+{
+	dnode *d = q->data.lval->h;
+	symbol *select = d->next->data.sym;
+	sql_rel *rel;
+
+	stack_push_frame(sql, "WITH");
+	/* first handle all with's (ie inlined views) */
+	for (d = d->data.lval->h; d; d = d->next) {
+		symbol *sym = d->data.sym;
+		dnode *dn = sym->data.lval->h;
+		char *name = qname_table(dn->data.lval);
+		sql_rel *nrel;
+
+		if (frame_find_var(sql, name)) {
+			return sql_error(sql, 01, "Variable '%s' allready declared", name);
+		}
+		nrel = rel_semantic(sql, sym);
+		if (!nrel) {  
+			stack_pop_frame(sql);
+			return NULL;
+		}
+		stack_push_rel_view(sql, name, nrel);
+		assert(is_project(nrel->op));
+		if (is_project(nrel->op) && nrel->exps) {
+			node *ne = nrel->exps->h;
+
+			for (; ne; ne = ne->next) 
+				noninternexp_setname(sql->sa, ne->data, name, NULL );
+		}
+	}
+	rel = rel_semantic(sql, select);
+	stack_pop_frame(sql);
+	return rel;
+}
+
 static sql_rel *
 query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
+	case SQL_WITH:
+		return rel_with_query(sql, q);
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
@@ -1557,7 +1626,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			for (n = exps->h; n; n = n->next)
 				noninternexp_setname(sql->sa, n->data, tname, NULL);
 			return temp_table;
-		} else if (isView(t) /*&& sql->emode != m_instantiate */) {
+		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
 			sql_rel *rel;
@@ -2075,7 +2144,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql->sa, rel, L, R, e);
+		return rel_push_join(sql->sa, rel, L, R, rs2, e);
 	}
 }
 
@@ -2126,8 +2195,20 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, ls)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			} else if ((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, ls)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			}
+			if (is_left(rel->op) && rel_find_exp(rel->r, ls)) {
+				rel->r = rel_push_select(sql->sa, rel->r, L, e);
+				return rel;
+			} else if (is_right(rel->op) && rel_find_exp(rel->l, ls)) {
+				rel->l = rel_push_select(sql->sa, rel->l, L, e);
+				return rel;
+			}
 		}
 		/* push select into the given relation */
 		return rel_push_select(sql->sa, rel, L, e);
@@ -2137,7 +2218,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 			return rel;
 		}
 		/* push join into the given relation */
-		return rel_push_join(sql->sa, rel, L, R, e);
+		return rel_push_join(sql->sa, rel, L, R, rs2, e);
 	}
 }
 
@@ -2649,11 +2730,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 	default: {
 		sql_exp *re, *le = rel_value_exp(sql, rel, sc, f, ek);
+		sql_subtype bt;
 
 		if (!le)
 			return NULL;
 		re = exp_atom_bool(sql->sa, 1);
-		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) 
+		sql_find_subtype(&bt, "boolean", 0, 0);
+		if ((le = rel_check_type(sql, &bt, le, type_equal)) == NULL) 
 			return NULL;
 		return rel_binop_(sql, le, re, NULL, "=", 0);
 	}
@@ -2672,7 +2755,6 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	//set_intern(e);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
 	return rel;
@@ -4258,7 +4340,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		if (r) {
 			sql_exp *e;
 
-			rel_setsubquery(r);
+			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
+				return sql_error(sql, 02, "SELECT: subquery must return only one column");
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
@@ -4296,16 +4379,19 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 						l = list_merge(l, r->exps, (fdup)NULL);
 						r->exps = l;
 						(*rel)->exps = NULL;
+						need_preproj = 1;
 
 					/* but also project ( project[] [x], [x]) */
 					} else if (is_project(r->op) && l && !list_length(l)) {
 						need_preproj = 1;
 					}
 					rel_destroy(*rel);
+					rel_setsubquery(*rel);
 					*rel = r;
 					if (need_preproj)
 						*rel = rel_project(sql->sa, *rel, pre_proj);
 				} else {
+					rel_setsubquery(r);
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					*rel = rel_project(sql->sa, *rel, pre_proj);
 				}
@@ -4646,6 +4732,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			if (!gbe)
 				return NULL;
+			if (outer && pre_prj)
+				list_merge(gbe, pre_prj, (fdup)NULL);
 			rel = rel_groupby(sql->sa, rel, gbe);
 			aggr = 1;
 		}

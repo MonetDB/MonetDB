@@ -1,3 +1,5 @@
+set optimizer = 'sequential_pipe';
+
 explain select reverse('MonetDB');
 select reverse('MonetDB');
 

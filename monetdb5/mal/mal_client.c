@@ -563,8 +563,8 @@ int MCreadClient(Client c){
 	if (in->pos >= in->len || in->mode) {
 		ssize_t rd, sum = 0;
 
-		if (in->eof || !isa_block_stream(in->s)) {
-			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
+		if (in->eof || !isa_block_stream(c->fdout)) {
+			if (!isa_block_stream(c->fdout) && c->promptlength > 0) 
 				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
 			mnstr_flush(c->fdout);
 			in->eof = 0;

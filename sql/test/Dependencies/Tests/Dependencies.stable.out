@@ -262,7 +262,6 @@ Dependencies between database objects
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
@@ -357,8 +356,9 @@ Dependencies between database objects
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 5,	12,	11 # length
+% 6,	12,	11 # length
 [ "<>",	"trigger_test",	"DEP_TRIGGER"	]
+[ "isnull",	"trigger_test",	"DEP_TRIGGER"	]
 [ "count",	"trigger_test",	"DEP_TRIGGER"	]
 % sys.k,	sys.fk,	. # table_name
 % name,	name,	single_value # name
@@ -594,7 +594,6 @@ Cleanup
 [ "rkey",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "rkey",	"dependencies_tables_on_foreignkeys",	"DEP_FUNC"	]
 [ "id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
-[ "id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "table_id",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ "name",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]

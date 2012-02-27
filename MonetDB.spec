@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2011/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2011-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -626,6 +626,52 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Feb 24 2012 Fabian Groffen <fabian@monetdb.org> - 11.7.7-20120224
+- Rebuilt.
+
+* Wed Feb 22 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.7-20120224
+- buildtools: Fixed some of the package names for Debian/Ubuntu.  Packages for
+  libraries should contain the major number of the library version number.
+  This was not always the case.
+
+* Mon Feb 20 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.7-20120224
+- java: Fixed bug in DatabaseMetaData.getSchemas() method that caused an SQL
+  error when called with catalog and schema argument.
+
+* Fri Feb 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.7-20120224
+- merovingian: Fixed a bug in the multiplex-funnel where certain clients would abort
+  on responses for update queries.
+
+* Fri Feb 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.7-20120224
+- sql: Fixed a crash that happened at the end of a database upgrade to the
+  Dec2011 database scheme.  The crash happened during cleanup after the
+  database was upgraded, so it was merely inconvenient.
+
+* Wed Feb 15 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.7-20120224
+- sql: Stripped off implementation-specific parts from error messages before
+  they get presented to the user.
+
+* Tue Feb 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.7-20120224
+- java: Resolved a bug where JDBC and Control connections could terminate
+  abruptly with 'Connection closed' messages
+
+* Thu Feb  9 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.7-20120224
+- monetdb5: Fixed potential crash by dealing better with non-standard types.
+
+* Tue Feb  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.7-20120224
+- buildtools: On Debian and Ubuntu, install Python modules in dist-packages instead
+  of site-packages.  This fixed bug 2997.
+
+* Mon Jan 30 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.7-20120224
+- merovingian: Fixed problem where version and mserver properties for monetdbd were
+  not always successfully retrieved.  Bug #2982.
+- merovingian: Fixed problem where shutdown of monetdbd would lead to shutting down
+  database 'control' which does not exist.  Bug #2983.
+- merovingian: Fixed issue causing (harmless) 'error reading from control channel'
+  messages.  Bug #2984.
+- merovingian: Resolved problem where remote start/stop/etc. commands with monetdb
+  would report error 'OK'.  Bug #2984.
+
 * Fri Jan 20 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.7.5-20120120
 - Rebuilt.
 
