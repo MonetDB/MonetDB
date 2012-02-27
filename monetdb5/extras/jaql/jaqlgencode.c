@@ -3355,13 +3355,13 @@ conditionalcall(int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7,
 		switch (coltypes[i]) {
 			case j_json:
 			case j_json_arr:
-				pushArgument(mb, q, dynaarg[i][0]);
-				pushArgument(mb, q, dynaarg[i][1]);
-				pushArgument(mb, q, dynaarg[i][2]);
-				pushArgument(mb, q, dynaarg[i][3]);
-				pushArgument(mb, q, dynaarg[i][4]);
-				pushArgument(mb, q, dynaarg[i][5]);
-				pushArgument(mb, q, dynaarg[i][6]);
+				q = pushArgument(mb, q, dynaarg[i][0]);
+				q = pushArgument(mb, q, dynaarg[i][1]);
+				q = pushArgument(mb, q, dynaarg[i][2]);
+				q = pushArgument(mb, q, dynaarg[i][3]);
+				q = pushArgument(mb, q, dynaarg[i][4]);
+				q = pushArgument(mb, q, dynaarg[i][5]);
+				q = pushArgument(mb, q, dynaarg[i][6]);
 				break;
 			case j_sort_arg:
 				a = dynaarg[i][0];
@@ -3438,7 +3438,7 @@ conditionalcall(int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7,
 				}
 				return;
 			default:
-				pushArgument(mb, q, dynaarg[i][0]);
+				q = pushArgument(mb, q, dynaarg[i][0]);
 				break;
 		}
 	}
@@ -4827,7 +4827,27 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						case j_dbl:
 						case j_bool:
 							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, batRef);
+							setFunctionId(q, newRef);
 							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushType(mb, q, TYPE_oid);
+							if (coltypes[i] == j_str) {
+								q = pushType(mb, q, TYPE_str);
+							} else if (coltypes[i] == j_num) {
+								q = pushType(mb, q, TYPE_lng);
+							} else if (coltypes[i] == j_dbl) {
+								q = pushType(mb, q, TYPE_dbl);
+							} else /* j_bool */ {
+								q = pushType(mb, q, TYPE_bit);
+							}
+							a = getArg(q, 0);
+							pushInstruction(mb, q);
+							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, batRef);
+							setFunctionId(q, insertRef);
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushArgument(mb, q, a);
+							q = pushOid(mb, q, (oid)0);
 							if (coltypes[i] == j_str) {
 								q = pushStr(mb, q, w->tval1->sval);
 							} else if (coltypes[i] == j_num) {

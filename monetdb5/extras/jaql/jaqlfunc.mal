@@ -18,43 +18,6 @@
 # This module contains all functions that can be used from jaql
 module jaqlfunc;
 
-function range(start:lng, end:lng, skip:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
-	r2 := bat.new(:oid,:str);
-	r4 := bat.new(:oid,:dbl);
-	r6 := bat.new(:oid,:oid);
-	r7 := bat.new(:oid,:str);
-
-	# TODO: use array.series from sciql
-#	r3 := array.series(start, skip, end, 1, 1);
-	r3 := bat.new(:oid,:lng);
-	iend := calc.+(end, 1);
-	barrier (v,i) := language.newRange(start);
-			r3 := bat.append(r3, i);
-			redo (v,i) := language.nextElement(skip, iend);
-	exit (v,i);
-	r3 := algebra.markH(r3, 1@0);
-
-	r5 := algebra.project(r3, 0@0);
-	r5 := bat.reverse(r5);
-
-	r1 := bat.new(:oid,:bte);
-	r1 := bat.insert(r1, 0@0, 97:bte); # a
-	k := algebra.project(r3, 105:bte); # i
-	r1 := bat.insert(r1, k);
-
-	return (r1,r2,r3,r4,r5,r6,r7);
-end range;
-
-function range(start:lng, end:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
-	(r1,r2,r3,r4,r5,r6,r7) := jaqlfunc.range(start, end, 1:lng);
-	return (r1,r2,r3,r4,r5,r6,r7);
-end range;
-
-function range(size:lng)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
-	s := size - 1;
-	(r1,r2,r3,r4,r5,r6,r7) := jaqlfunc.range(0:lng, s);
-	return (r1,r2,r3,r4,r5,r6,r7);
-end range;
 
 # generate a JSON record by merging two JSON arrays
 function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str],kindv:bat[:oid,:bte],stringv:bat[:oid,:str],integerv:bat[:oid,:lng],doublev:bat[:oid,:dbl],arrayv:bat[:oid,:oid],objectv:bat[:oid,:oid],namev:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
@@ -137,3 +100,34 @@ function count(v:bat[:oid,:any]):bat[:oid,:lng];
 	r := batcalc.lng(x);
 	return r;
 end count;
+
+function range(start:bat[:oid,:lng], vend:bat[:oid,:lng], skip:bat[:oid,:lng]):bat[:oid,:lng];
+	ret := bat.new(:oid,:lng);
+	barrier (b,h,t) := bat.newIterator(start);
+		iend := algebra.fetch(vend, h);
+		iskip := algebra.fetch(skip, h);
+		# TODO: use array.series from sciql
+#		ret := array.series(t, iskip, iend, 1, 1);
+		iend := calc.+(iend, 1);
+		barrier (v,i) := language.newRange(t);
+				ret := bat.insert(ret, h, i);
+				redo (v,i) := language.nextElement(iskip, iend);
+		exit (v,i);
+		redo (b,h,t) := bat.hasMoreElements(start);
+	exit (b,h,t);
+
+	return ret;
+end range;
+
+function range(start:bat[:oid,:lng], vend:bat[:oid,:lng]):bat[:oid,:lng];
+	step := algebra.project(start, 1:lng);
+	ret := jaqlfunc.range(start, vend, step);
+	return ret;
+end range;
+
+function range(size:bat[:oid,:lng]):bat[:oid,:lng];
+	start := algebra.project(size, 0:lng);
+	vend := batcalc.-(size,1);
+	ret := jaqlfunc.range(start, vend);
+	return ret;
+end range;
