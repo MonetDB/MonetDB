@@ -79,8 +79,8 @@ public class SQLcopyinto {
 
 			query = "COPY INTO example FROM STDIN USING DELIMITERS ',','\\n';";
 			// the leading 's' is essential, since it is a protocol
-			// marker that should not be ommitted, as much as the
-			// trailing semi-colon
+			// marker that should not be omitted, likewise the
+			// trailing semicolon
 			out.write('s');
 			out.write(query);
 			out.newLine();
