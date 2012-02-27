@@ -51,7 +51,7 @@ typedef struct _jgvar {
 static int dumpvariabletransformation(MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7);
 static int dumpnextid(MalBlkPtr mb, int j1);
 
-/* returns a bat with subset from kind bat (:oid,:chr) which are
+/* returns a bat with subset from kind bat (:oid,:bte) which are
  * referenced by the first array of the JSON structure (oid 0@0 of kind
  * bat, pointing to array, so all oids from array bat that have head oid
  * value 0@0) */
@@ -3241,6 +3241,68 @@ changetmplrefsjoin(tree *t)
 	}
 }
 
+static int
+dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
+		int j1, int j2, int j3, int j4, int j5)
+{
+	InstrPtr q;
+	int a;
+
+	a = dumpwalkvar(mb, j1, j5);
+
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, algebraRef);
+	setFunctionId(q, selectRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushArgument(mb, q, a);
+	switch (tpe) {
+		case j_str:
+			q = pushBte(mb, q, 's');
+			break;
+		case j_num:
+			q = pushBte(mb, q, 'i');
+			break;
+		case j_dbl:
+			q = pushBte(mb, q, 'd');
+			break;
+		default:
+			assert(0);
+	}
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, algebraRef);
+	setFunctionId(q, semijoinRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	switch (tpe) {
+		case j_str:
+			q = pushArgument(mb, q, j2);
+			break;
+		case j_num:
+			q = pushArgument(mb, q, j3);
+			break;
+		case j_dbl:
+			q = pushArgument(mb, q, j4);
+			break;
+		default:
+			assert(0);
+	}
+	q = pushArgument(mb, q, a);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, algebraRef);
+	setFunctionId(q, projectRef);
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	q = pushOid(mb, q, 0);
+	q = pushArgument(mb, q, a);
+	a = getArg(q, 0);
+	pushInstruction(mb, q);
+	return a;
+}
+
 static void
 dumpjsonshred(MalBlkPtr mb, char *json,
 		int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
@@ -3282,6 +3344,125 @@ dumpjsonshred(MalBlkPtr mb, char *json,
 	q = pushStr(mb, q, json);
 	pushInstruction(mb, q);
 }
+
+static void
+conditionalcall(int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7,
+		MalBlkPtr mb, tree *t, enum treetype coltypes[], int dynaarg[][7], int coltpos, InstrPtr q)
+{
+	InstrPtr r;
+	int a, b, i;
+	for (i = 0; i < coltpos; i++) {
+		switch (coltypes[i]) {
+			case j_json:
+			case j_json_arr:
+				pushArgument(mb, q, dynaarg[i][0]);
+				pushArgument(mb, q, dynaarg[i][1]);
+				pushArgument(mb, q, dynaarg[i][2]);
+				pushArgument(mb, q, dynaarg[i][3]);
+				pushArgument(mb, q, dynaarg[i][4]);
+				pushArgument(mb, q, dynaarg[i][5]);
+				pushArgument(mb, q, dynaarg[i][6]);
+				break;
+			case j_sort_arg:
+				a = dynaarg[i][0];
+				if (dynaarg[i][1] > 0) {
+					r = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(r, calcRef);
+					setFunctionId(r, putName("==", 2));
+					r->barrier = BARRIERsymbol;
+					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
+					r = pushArgument(mb, r, a);
+					r = pushStr(mb, r, "str");
+					b = getArg(r, 0);
+					pushInstruction(mb, r);
+
+					r = copyInstruction(q);
+					r = pushArgument(mb, r, dynaarg[i][1]);
+
+					conditionalcall(j1, j2, j3, j4, j5, j6, j7,
+							mb, t, &coltypes[i + 1], &dynaarg[i + 1],
+							coltpos - (i + 1), r);
+
+					r = newAssignment(mb);
+					getArg(r, 0) = b;
+					r->argc = r->retc = 1;
+					r->barrier = EXITsymbol;
+				}
+
+				if (dynaarg[i][2] > 0) {
+					r = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(r, calcRef);
+					setFunctionId(r, putName("==", 2));
+					r->barrier = BARRIERsymbol;
+					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
+					r = pushArgument(mb, r, a);
+					r = pushStr(mb, r, "dbl");
+					b = getArg(r, 0);
+					pushInstruction(mb, r);
+
+					r = copyInstruction(q);
+					r = pushArgument(mb, r, dynaarg[i][2]);
+
+					conditionalcall(j1, j2, j3, j4, j5, j6, j7,
+							mb, t, &coltypes[i + 1], &dynaarg[i + 1],
+							coltpos - (i + 1), r);
+
+					r = newAssignment(mb);
+					getArg(r, 0) = b;
+					r->argc = r->retc = 1;
+					r->barrier = EXITsymbol;
+				}
+
+				if (dynaarg[i][3] > 0) {
+					r = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(r, calcRef);
+					setFunctionId(r, putName("==", 2));
+					r->barrier = BARRIERsymbol;
+					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
+					r = pushArgument(mb, r, a);
+					r = pushStr(mb, r, "lng");
+					b = getArg(r, 0);
+					pushInstruction(mb, r);
+
+					r = copyInstruction(q);
+					r = pushArgument(mb, r, dynaarg[i][3]);
+
+					conditionalcall(j1, j2, j3, j4, j5, j6, j7,
+							mb, t, &coltypes[i + 1], &dynaarg[i + 1],
+							coltpos - (i + 1), r);
+
+					r = newAssignment(mb);
+					getArg(r, 0) = b;
+					r->argc = r->retc = 1;
+					r->barrier = EXITsymbol;
+				}
+				return;
+			default:
+				pushArgument(mb, q, dynaarg[i][0]);
+				break;
+		}
+	}
+
+	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+	pushInstruction(mb, q);
+
+	/* this is for top-level (in a JAQL pipe), so it should always
+	 * return a JSON struct, hence create an array with values from the
+	 * BAT we have returned */
+	r = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(r, putName("json", 4));
+	setFunctionId(r, putName("wrap", 4));
+	r = pushReturn(mb, r, *j1);
+	r = pushReturn(mb, r, *j2);
+	r = pushReturn(mb, r, *j3);
+	r = pushReturn(mb, r, *j4);
+	r = pushReturn(mb, r, *j5);
+	r = pushReturn(mb, r, *j6);
+	r = pushReturn(mb, r, *j7);
+	r = pushArgument(mb, r, getArg(q, 0));
+	pushInstruction(mb, r);
+}
+
 
 int
 dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
@@ -4084,8 +4265,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				InstrPtr f;
 #define MAXJAQLARG 23
 				enum treetype coltypes[MAXJAQLARG + 1];
+				int dynaarg[MAXJAQLARG][7];
 				int coltpos = 0;
-				int i;
+				int i, funcretc = 0;
 
 				/* lookup the function we need */
 				s = findSymbol(cntxt->nspace,
@@ -4135,11 +4317,20 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				if (j->err[0] != '\0')
 					break;
 
+				for (i = 0; i < coltpos; i++) {
+					/* initialise as "not in use" */
+					dynaarg[i][1] = -1;
+					dynaarg[i][2] = -1;
+					dynaarg[i][3] = -1;
+				}
+
 				do {
 					if (idcmp(s->name, t->sval) == 0) {
 						char match = 0;
 						int itype;
 						int argoff = 0;
+						int orgoff, odyn1, odyn2, odyn3;
+						enum treetype ocoltype;
 
 						/* Function resolution is done based on the
 						 * input arguments only; we cannot consider the
@@ -4152,24 +4343,66 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						f = getSignature(s);
 						for (i = 0; i < coltpos; i++) {
 							match = 0;
+							orgoff = argoff;
+							odyn1 = dynaarg[i][1];
+							odyn2 = dynaarg[i][2];
+							odyn3 = dynaarg[i][3];
+							ocoltype = coltypes[i];
+
 							if (f->argc - f->retc - argoff < 1)
 								break;
 							itype = getArgType(s->def, f, f->retc + argoff);
 							if (!isaBatType(itype) ||
 									getHeadType(itype) != TYPE_oid)
 								break;
+
 							switch (coltypes[i]) {
 								case j_json:
 								case j_json_arr:
-									if (f->argc - f->retc - argoff < 7)
-										break;
+								case j_sort_arg:
+								case j_func_arg:
 									/* out of laziness, we only check
-									 * the first argument to be a bat,
+									 * the first argument to be a BAT,
 									 * and of the right type */
-									if (getTailType(itype) != TYPE_bte)
+									if (f->argc - f->retc - argoff >= 7 &&
+											getTailType(itype) == TYPE_bte)
+									{
+										match = 1;
+										argoff += 7;
 										break;
-									match = 1;
-									argoff += 7;
+									}
+
+									switch (getTailType(itype)) {
+										case TYPE_str:
+											dynaarg[i][1] = 0;
+											coltypes[i] = j_sort_arg;
+											match = 1;
+											argoff += 1;
+											break;
+										case TYPE_lng:
+											dynaarg[i][3] = 0;
+											coltypes[i] = j_sort_arg;
+											match = 1;
+											argoff += 1;
+											break;
+										case TYPE_dbl:
+											dynaarg[i][2] = 0;
+											coltypes[i] = j_sort_arg;
+											match = 1;
+											argoff += 1;
+											break;
+										case TYPE_bit:
+											coltypes[i] = j_bool;
+											match = 1;
+											argoff += 1;
+											break;
+										case TYPE_any:
+											coltypes[i] = j_func_arg;
+											match = 1;
+											argoff += 1;
+											break;
+										/* other types just don't match */
+									}
 									break;
 								case j_str:
 									if (getTailType(itype) == TYPE_str)
@@ -4203,77 +4436,391 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							if (match == 0)
 								break;
 						}
-						if (match == 1 && f->argc - f->retc - argoff == 0)
-							break;
+						if (match != 1 || f->argc - f->retc - argoff != 0 ||
+								(f->retc != 7 && f->retc != 1) ||
+								!isaBatType(getArgType(s->def, f, 0)))
+						{
+							argoff = orgoff;
+							dynaarg[i][1] = odyn1;
+							dynaarg[i][2] = odyn2;
+							dynaarg[i][3] = odyn3;
+							coltypes[i] = ocoltype;
+						} else {
+							funcretc = f->retc;
+						}
 					}
 					s = s->peer;
 				} while (s != NULL);
-				if (s == NULL) {
+				if (funcretc == 0) {
 					snprintf(j->err, sizeof(j->err), "no such function "
 							"with matching signature for: %s", t->sval);
 					break;
 				}
 
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaqlfunc", 8));
-				setFunctionId(q, putName(t->sval, strlen(t->sval)));
-				if (f->retc == 7) {
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				} else if (f->retc == 1 && isaBatType(getArgType(s->def, f, 0))) {
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				} else {
-					snprintf(j->err, sizeof(j->err), " function return type"
-							"unhandled for: %s", t->sval);
-					break;
-				}
+				i = 0;
 				if (j1 != 0) {
-					/* treat pipe as first input, signature check above
-					 * should guarantee this is ok */
-					q = pushArgument(mb, q, j1);
-					q = pushArgument(mb, q, j2);
-					q = pushArgument(mb, q, j3);
-					q = pushArgument(mb, q, j4);
-					q = pushArgument(mb, q, j5);
-					q = pushArgument(mb, q, j6);
-					q = pushArgument(mb, q, j7);
+					/* treat pipe as first input */
+					switch (coltypes[i]) {
+						case j_json_arr:
+							dynaarg[i][0] = j1;
+							dynaarg[i][1] = j2;
+							dynaarg[i][2] = j3;
+							dynaarg[i][3] = j4;
+							dynaarg[i][4] = j5;
+							dynaarg[i][5] = j6;
+							dynaarg[i][6] = j7;
+							break;
+						case j_bool:
+							a = dumpvalsfromarr(mb, coltypes[i],
+									j1, j2, j3, j4, j5);
+							dynaarg[i][0] = a;
+							break;
+						case j_sort_arg:
+							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, putName("json", 4));
+							setFunctionId(q, putName("unwraptype", 10));
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushArgument(mb, q, j1);
+							q = pushArgument(mb, q, j2);
+							q = pushArgument(mb, q, j3);
+							q = pushArgument(mb, q, j4);
+							q = pushArgument(mb, q, j5);
+							q = pushArgument(mb, q, j6);
+							q = pushArgument(mb, q, j7);
+							a = getArg(q, 0);
+							dynaarg[i][0] = a;
+							pushInstruction(mb, q);
+
+							if (dynaarg[i][1] == 0) {
+								c = newBatType(TYPE_oid, TYPE_str);
+								q = newInstruction(mb, ASSIGNsymbol);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, c));
+								q = pushNil(mb, q, c);
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("==", 2));
+								q->barrier = BARRIERsymbol;
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, a);
+								q = pushStr(mb, q, "str");
+								b = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, putName("json", 4));
+								setFunctionId(q, putName("unwrap", 6));
+								q = pushReturn(mb, q, c);
+								q = pushArgument(mb, q, j1);
+								q = pushArgument(mb, q, j2);
+								q = pushArgument(mb, q, j3);
+								q = pushArgument(mb, q, j4);
+								q = pushArgument(mb, q, j5);
+								q = pushArgument(mb, q, j6);
+								q = pushArgument(mb, q, j7);
+								q = pushStr(mb, q, "");
+								dynaarg[i][1] = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newAssignment(mb);
+								getArg(q, 0) = b;
+								q->argc = q->retc = 1;
+								q->barrier = EXITsymbol;
+							}
+
+							if (dynaarg[i][2] == 0) {
+								c = newBatType(TYPE_oid, TYPE_dbl);
+								q = newInstruction(mb, ASSIGNsymbol);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, c));
+								q = pushNil(mb, q, c);
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("==", 2));
+								q->barrier = BARRIERsymbol;
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, a);
+								q = pushStr(mb, q, "dbl");
+								b = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, putName("json", 4));
+								setFunctionId(q, putName("unwrap", 6));
+								q = pushReturn(mb, q, d);
+								q = pushArgument(mb, q, j1);
+								q = pushArgument(mb, q, j2);
+								q = pushArgument(mb, q, j3);
+								q = pushArgument(mb, q, j4);
+								q = pushArgument(mb, q, j5);
+								q = pushArgument(mb, q, j6);
+								q = pushArgument(mb, q, j7);
+								q = pushDbl(mb, q, 0.0);
+								dynaarg[i][2] = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newAssignment(mb);
+								getArg(q, 0) = b;
+								q->argc = q->retc = 1;
+								q->barrier = EXITsymbol;
+							}
+
+							if (dynaarg[i][3] == 0) {
+								c = newBatType(TYPE_oid, TYPE_lng);
+								q = newInstruction(mb, ASSIGNsymbol);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, c));
+								q = pushNil(mb, q, c);
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("==", 2));
+								q->barrier = BARRIERsymbol;
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, a);
+								q = pushStr(mb, q, "lng");
+								b = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, putName("json", 4));
+								setFunctionId(q, putName("unwrap", 6));
+								q = pushReturn(mb, q, d);
+								q = pushArgument(mb, q, j1);
+								q = pushArgument(mb, q, j2);
+								q = pushArgument(mb, q, j3);
+								q = pushArgument(mb, q, j4);
+								q = pushArgument(mb, q, j5);
+								q = pushArgument(mb, q, j6);
+								q = pushArgument(mb, q, j7);
+								q = pushLng(mb, q, 0);
+								dynaarg[i][3] = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newAssignment(mb);
+								getArg(q, 0) = b;
+								q->argc = q->retc = 1;
+								q->barrier = EXITsymbol;
+							}
+							break;
+						case j_func_arg:
+							a = dumpwalkvar(mb, j1, j5);
+							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, algebraRef);
+							setFunctionId(q, projectRef);
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushOid(mb, q, 0);
+							q = pushArgument(mb, q, a);
+							a = getArg(q, 0);
+							pushInstruction(mb, q);
+							dynaarg[i][0] = a;
+							break;
+						default:
+							assert(0);
+					}
+					i++;
 				}
-				for (w = t->tval1; w != NULL; w = w->next) {
+				for (w = t->tval1; w != NULL; w = w->next, i++) {
 					int a1, a2, a3, a4, a5, a6, a7;
 
 					assert(w->type == j_func_arg);
 					assert(w->tval1 != NULL);
 
-					/* transform the argument in a json struct (7 BATs)
-					 * if not already */
 					switch (w->tval1->type) {
 						case j_json:
 							dumpjsonshred(mb, w->tval1->sval,
 									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
-							q = pushArgument(mb, q, a1);
-							q = pushArgument(mb, q, a2);
-							q = pushArgument(mb, q, a3);
-							q = pushArgument(mb, q, a4);
-							q = pushArgument(mb, q, a5);
-							q = pushArgument(mb, q, a6);
-							q = pushArgument(mb, q, a7);
+							switch (coltypes[i]) {
+								case j_json:
+									dynaarg[i][0] = a1;
+									dynaarg[i][1] = a2;
+									dynaarg[i][2] = a3;
+									dynaarg[i][3] = a4;
+									dynaarg[i][4] = a5;
+									dynaarg[i][5] = a6;
+									dynaarg[i][6] = a7;
+									break;
+								case j_bool:
+									a = dumpvalsfromarr(mb, coltypes[i],
+											a1, a2, a3, a4, a5);
+									dynaarg[i][0] = a;
+									break;
+								case j_sort_arg:
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, putName("json", 4));
+									setFunctionId(q, putName("unwraptype", 10));
+									q = pushReturn(mb, q,
+											newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, a1);
+									q = pushArgument(mb, q, a2);
+									q = pushArgument(mb, q, a3);
+									q = pushArgument(mb, q, a4);
+									q = pushArgument(mb, q, a5);
+									q = pushArgument(mb, q, a6);
+									q = pushArgument(mb, q, a7);
+									a = getArg(q, 0);
+									dynaarg[i][0] = a;
+									pushInstruction(mb, q);
+
+									if (dynaarg[i][1] == 0) {
+										c = newBatType(TYPE_oid, TYPE_str);
+										q = newInstruction(mb, ASSIGNsymbol);
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, c));
+										q = pushNil(mb, q, c);
+										d = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+
+										setModuleId(q, calcRef);
+										setFunctionId(q, putName("==", 2));
+										q->barrier = BARRIERsymbol;
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, TYPE_any));
+										q = pushArgument(mb, q, a);
+										q = pushStr(mb, q, "str");
+										b = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+										setModuleId(q, putName("json", 4));
+										setFunctionId(q, putName("unwrap", 6));
+										q = pushReturn(mb, q, c);
+										q = pushArgument(mb, q, a1);
+										q = pushArgument(mb, q, a2);
+										q = pushArgument(mb, q, a3);
+										q = pushArgument(mb, q, a4);
+										q = pushArgument(mb, q, a5);
+										q = pushArgument(mb, q, a6);
+										q = pushArgument(mb, q, a7);
+										q = pushStr(mb, q, "");
+										dynaarg[i][1] = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newAssignment(mb);
+										getArg(q, 0) = b;
+										q->argc = q->retc = 1;
+										q->barrier = EXITsymbol;
+									}
+
+									if (dynaarg[i][2] == 0) {
+										c = newBatType(TYPE_oid, TYPE_dbl);
+										q = newInstruction(mb, ASSIGNsymbol);
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, c));
+										q = pushNil(mb, q, c);
+										d = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+
+										q = newInstruction(mb, ASSIGNsymbol);
+										setModuleId(q, calcRef);
+										setFunctionId(q, putName("==", 2));
+										q->barrier = BARRIERsymbol;
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, TYPE_any));
+										q = pushArgument(mb, q, a);
+										q = pushStr(mb, q, "dbl");
+										b = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+										setModuleId(q, putName("json", 4));
+										setFunctionId(q, putName("unwrap", 6));
+										q = pushReturn(mb, q, d);
+										q = pushArgument(mb, q, a1);
+										q = pushArgument(mb, q, a2);
+										q = pushArgument(mb, q, a3);
+										q = pushArgument(mb, q, a4);
+										q = pushArgument(mb, q, a5);
+										q = pushArgument(mb, q, a6);
+										q = pushArgument(mb, q, a7);
+										q = pushDbl(mb, q, 0.0);
+										dynaarg[i][2] = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newAssignment(mb);
+										getArg(q, 0) = b;
+										q->argc = q->retc = 1;
+										q->barrier = EXITsymbol;
+									}
+
+									if (dynaarg[i][3] == 0) {
+										c = newBatType(TYPE_oid, TYPE_lng);
+										q = newInstruction(mb, ASSIGNsymbol);
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, c));
+										q = pushNil(mb, q, c);
+										d = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+
+										q = newInstruction(mb, ASSIGNsymbol);
+										setModuleId(q, calcRef);
+										setFunctionId(q, putName("==", 2));
+										q->barrier = BARRIERsymbol;
+										q = pushReturn(mb, q,
+												newTmpVariable(mb, TYPE_any));
+										q = pushArgument(mb, q, a);
+										q = pushStr(mb, q, "lng");
+										b = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newInstruction(mb, ASSIGNsymbol);
+										setModuleId(q, putName("json", 4));
+										setFunctionId(q, putName("unwrap", 6));
+										q = pushReturn(mb, q, d);
+										q = pushArgument(mb, q, a1);
+										q = pushArgument(mb, q, a2);
+										q = pushArgument(mb, q, a3);
+										q = pushArgument(mb, q, a4);
+										q = pushArgument(mb, q, a5);
+										q = pushArgument(mb, q, a6);
+										q = pushArgument(mb, q, a7);
+										q = pushLng(mb, q, 0);
+										dynaarg[i][3] = getArg(q, 0);
+										pushInstruction(mb, q);
+										q = newAssignment(mb);
+										getArg(q, 0) = b;
+										q->argc = q->retc = 1;
+										q->barrier = EXITsymbol;
+									}
+									break;
+								case j_func_arg:
+									a = dumpwalkvar(mb, a1, a5);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, algebraRef);
+									setFunctionId(q, projectRef);
+									q = pushReturn(mb, q,
+											newTmpVariable(mb, TYPE_any));
+									q = pushOid(mb, q, 0);
+									q = pushArgument(mb, q, a);
+									a = getArg(q, 0);
+									pushInstruction(mb, q);
+									dynaarg[i][0] = a;
+									break;
+								default:
+									assert(0);
+							}
 							break;
 						case j_str:
-							q = pushStr(mb, q, w->tval1->sval);
-							break;
 						case j_num:
-							q = pushLng(mb, q, w->tval1->nval);
-							break;
 						case j_dbl:
-							q = pushDbl(mb, q, w->tval1->dval);
-							break;
 						case j_bool:
-							q = pushBit(mb, q, w->tval1->nval == 1);
+							q = newInstruction(mb, ASSIGNsymbol);
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							if (coltypes[i] == j_str) {
+								q = pushStr(mb, q, w->tval1->sval);
+							} else if (coltypes[i] == j_num) {
+								q = pushLng(mb, q, w->tval1->nval);
+							} else if (coltypes[i] == j_dbl) {
+								q = pushDbl(mb, q, w->tval1->dval);
+							} else /* j_bool */ {
+								q = pushBit(mb, q, w->tval1->nval == 1);
+							}
+							a = getArg(q, 0);
+							pushInstruction(mb, q);
+							dynaarg[i][0] = a;
 							break;
 						case j_var: /* TODO */
 							/* j_var is actually impossible at this level */
@@ -4283,7 +4830,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							return -1;
 					}
 				}
-				if (f->retc == 7) {
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaqlfunc", 8));
+				setFunctionId(q, putName(t->sval, strlen(t->sval)));
+				if (funcretc == 7) {
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					/* only single BAT returning functions can be dynatyped */
 					j1 = getArg(q, 0);
 					j2 = getArg(q, 1);
 					j3 = getArg(q, 2);
@@ -4291,13 +4850,67 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					j5 = getArg(q, 4);
 					j6 = getArg(q, 5);
 					j7 = getArg(q, 6);
+					for (i = 0; i < coltpos; i++) {
+						switch (coltypes[i]) {
+							case j_json:
+							case j_json_arr:
+								pushArgument(mb, q, dynaarg[i][0]);
+								pushArgument(mb, q, dynaarg[i][1]);
+								pushArgument(mb, q, dynaarg[i][2]);
+								pushArgument(mb, q, dynaarg[i][3]);
+								pushArgument(mb, q, dynaarg[i][4]);
+								pushArgument(mb, q, dynaarg[i][5]);
+								pushArgument(mb, q, dynaarg[i][6]);
+								break;
+							case j_sort_arg:
+								assert(0);
+							default:
+								pushArgument(mb, q, dynaarg[i][0]);
+								break;
+						}
+					}
+					pushInstruction(mb, q);
 				} else {
-					/* this is top-level (in a JAQL pipe), so it should
-					 * always return a JSON struct */
-					/* TODO: create array with values from the BAT we
-					 * have returned */
+					InstrPtr r;
+					r = newInstruction(mb, ASSIGNsymbol);
+					j1 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_bte));
+					r = pushReturn(mb, r, j1);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_bte));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j2 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str));
+					r = pushReturn(mb, r, j2);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_str));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j3 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_lng));
+					r = pushReturn(mb, r, j3);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_lng));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j4 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_dbl));
+					r = pushReturn(mb, r, j4);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_dbl));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j5 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+					r = pushReturn(mb, r, j5);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_oid));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j6 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+					r = pushReturn(mb, r, j6);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_oid));
+					pushInstruction(mb, r);
+					r = newInstruction(mb, ASSIGNsymbol);
+					j7 = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_str));
+					r = pushReturn(mb, r, j7);
+					r = pushNil(mb, r, newBatType(TYPE_oid, TYPE_str));
+					pushInstruction(mb, r);
+
+					conditionalcall(&j1, &j2, &j3, &j4, &j5, &j6, &j7,
+							mb, t->tval1, coltypes, dynaarg, coltpos, q);
 				}
-				pushInstruction(mb, q);
 			} break;
 			case j_error:
 				snprintf(j->err, sizeof(j->err), "%s", t->sval);
