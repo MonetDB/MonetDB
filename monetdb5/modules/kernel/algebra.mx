@@ -3711,7 +3711,8 @@ str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
 	bn->T->nonil = b->T->nonil;
 bunins_failed:
 	BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	if (!(bn->batDirty&2))
+		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -3736,7 +3737,8 @@ str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
 	bn->T->nonil = (ATOMcmp(bn->ttype, val, ATOMnilptr(bn->ttype))); 
 bunins_failed:
 	BATaccessEnd(b,USE_HEAD,MMAP_SEQUENTIAL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
+	if (!(bn->batDirty&2))
+		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	BBPreleaseref(b->batCacheid);

@@ -1,0 +1,4 @@
+# test of groupable functions
+jaql.x("[1,2,3] -> sum();");
+jaql.x("sum([1.2,2.4,3.6]);");
+jaql.x("count([1.2,5,3.6,8,\"bla\"]);");
