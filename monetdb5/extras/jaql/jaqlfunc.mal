@@ -93,6 +93,18 @@ function sum(v:bat[:oid,:dbl]):bat[:oid,:dbl];
 	return r;
 end sum;
 
+# perform average over the input array
+function avg(v:bat[:oid,:lng]):bat[:oid,:dbl];
+	k := algebra.kunique(v);
+	r := aggr.avg(v, k);
+	return r;
+end avg;
+function avg(v:bat[:oid,:dbl]):bat[:oid,:dbl];
+	k := algebra.kunique(v);
+	r := aggr.avg(v, k);
+	return r;
+end avg;
+
 # perform count over the input array
 function count(v:bat[:oid,:any]):bat[:oid,:lng];
 	k := algebra.kunique(v);

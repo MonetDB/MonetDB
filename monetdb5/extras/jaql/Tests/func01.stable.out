@@ -18,7 +18,9 @@ stdout of test 'func01` in directory 'extras/jaql` itself:
 function user.main():void;
 # test of groupable functions 
     jaql.x("[1,2,3] -> sum();");
+    jaql.x("[1,2,3] -> avg();");
     jaql.x("sum([1.2,2.4,3.6]);");
+    jaql.x("avg([1.2,2.4,3.6]);");
     jaql.x("count([1.2,5,3.6,8,\"bla\"]);");
 # groupable, but with singleton arguments 
     jaql.x("range(6);");
@@ -26,7 +28,9 @@ function user.main():void;
     jaql.x("range(3,11,3);");
 end main;
 [ 6 ]
+[ 2.000000 ]
 [ 7.200000 ]
+[ 2.400000 ]
 [ 5 ]
 [ 0, 1, 2, 3, 4, 5 ]
 [ 4, 5, 6, 7, 8 ]
