@@ -1081,8 +1081,8 @@ algebra_export str ALGselectNotNil(int *result, int *bid);
 algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 
 @= project_export
-algebra_export str ALGprojecthead_@1(int *ret,ptr *val, int *bid);
-algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
+algebra_export str ALGprojecthead_@1(int *ret, @1 *val, int *bid);
+algebra_export str ALGprojecttail_@1(int *ret, int *bid, @1 *val);
 @
 @h
 @:project_export(int)@
@@ -3693,7 +3693,7 @@ ALGprojectNIL(int *ret, int *bid)
  */
 @= projectImpl
 str
-ALGprojecthead_@1(int *ret,ptr *val, int *bid)
+ALGprojecthead_@1(int *ret, @1 *val, int *bid)
 {
 	BAT *b, *bn;
 
@@ -3712,7 +3712,7 @@ ALGprojecthead_@1(int *ret,ptr *val, int *bid)
 	return MAL_SUCCEED;
 }
 str
-ALGprojecttail_@1(int *ret,int *bid, ptr *val)
+ALGprojecttail_@1(int *ret, int *bid, @1 *val)
 {
 	BAT *b, *bn;
 
