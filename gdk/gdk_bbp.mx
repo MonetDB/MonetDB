@@ -2489,6 +2489,10 @@ BBPkeepref(bat i)
 		i = -i;
 	if (BBPcheck(i, "BBPkeepref")) {
 		int lock = locked_by ? BBP_getpid() != locked_by : 1;
+		BAT *b;
+
+		if ((b = BBPdescriptor(i)) != NULL)
+			BATsettrivprop(b);
 
 		incref(i, TRUE, lock);
 		assert(BBP_refs(i));

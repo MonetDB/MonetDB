@@ -9,4 +9,5 @@ parser.SF-2051309
 mal_var_persistent_over_sessions.SF-2581675
 merge-join_properties.SF-2952191
 joinpath-loop.Bug-2965
+thetajoin-properties.Bug-2974
 algebra_project.Bug-3045
