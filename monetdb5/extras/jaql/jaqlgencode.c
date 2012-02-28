@@ -4452,8 +4452,45 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					s = s->peer;
 				} while (s != NULL);
 				if (funcretc == 0) {
+					char argbuf[256];
+					int pos = 0;
+					for (i = 0; i < coltpos; i++) {
+						if (i > 0)
+							pos += snprintf(argbuf + pos,
+									sizeof(argbuf) - pos, ", ");
+						switch (coltypes[i]) {
+							case j_json:
+							case j_json_arr:
+							case j_func_arg:
+							case j_sort_arg:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "json");
+								break;
+							case j_num:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "num");
+								break;
+							case j_dbl:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "dbl");
+								break;
+							case j_str:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "str");
+								break;
+							case j_bool:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "bool");
+								break;
+							default:
+								pos += snprintf(argbuf + pos,
+										sizeof(argbuf) - pos, "unknown");
+								break;
+						}
+					}
 					snprintf(j->err, sizeof(j->err), "no such function "
-							"with matching signature for: %s", t->sval);
+							"with matching signature for: %s(%s)",
+							t->sval, argbuf);
 					break;
 				}
 
