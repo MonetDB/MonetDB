@@ -745,14 +745,10 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				restype = result_type(sql, sf, fname, res);
 
 		 	if (body) {		/* sql func */
-				char emode = sql->emode;
 				list *b = NULL;
 	
-				if (create) /* for subtable we only need direct dependencies */
-					sql->emode = m_deps;
 				b = sequential_block(sql, restype, body, NULL, is_func);
 				sql->params = NULL;
-				sql->emode = emode;
 				if (!b) 
 					return NULL;
 			

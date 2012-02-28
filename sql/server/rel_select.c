@@ -1197,10 +1197,49 @@ rel_subquery_optname(mvc *sql, sql_rel *rel, symbol *query)
 	return rel_table_optname(sql, sq, sn->name);
 }
 
+sql_rel *
+rel_with_query(mvc *sql, symbol *q ) 
+{
+	dnode *d = q->data.lval->h;
+	symbol *select = d->next->data.sym;
+	sql_rel *rel;
+
+	stack_push_frame(sql, "WITH");
+	/* first handle all with's (ie inlined views) */
+	for (d = d->data.lval->h; d; d = d->next) {
+		symbol *sym = d->data.sym;
+		dnode *dn = sym->data.lval->h;
+		char *name = qname_table(dn->data.lval);
+		sql_rel *nrel;
+
+		if (frame_find_var(sql, name)) {
+			return sql_error(sql, 01, "Variable '%s' allready declared", name);
+		}
+		nrel = rel_semantic(sql, sym);
+		if (!nrel) {  
+			stack_pop_frame(sql);
+			return NULL;
+		}
+		stack_push_rel_view(sql, name, nrel);
+		assert(is_project(nrel->op));
+		if (is_project(nrel->op) && nrel->exps) {
+			node *ne = nrel->exps->h;
+
+			for (; ne; ne = ne->next) 
+				noninternexp_setname(sql->sa, ne->data, name, NULL );
+		}
+	}
+	rel = rel_semantic(sql, select);
+	stack_pop_frame(sql);
+	return rel;
+}
+
 static sql_rel *
 query_exp_optname(mvc *sql, sql_rel *r, symbol *q)
 {
 	switch (q->token) {
+	case SQL_WITH:
+		return rel_with_query(sql, q);
 	case SQL_UNION:
 	case SQL_EXCEPT:
 	case SQL_INTERSECT:
@@ -1587,7 +1626,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 			for (n = exps->h; n; n = n->next)
 				noninternexp_setname(sql->sa, n->data, tname, NULL);
 			return temp_table;
-		} else if (isView(t) /*&& sql->emode != m_instantiate */) {
+		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
 			sql_rel *rel;
@@ -2691,11 +2730,13 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 	}
 	default: {
 		sql_exp *re, *le = rel_value_exp(sql, rel, sc, f, ek);
+		sql_subtype bt;
 
 		if (!le)
 			return NULL;
 		re = exp_atom_bool(sql->sa, 1);
-		if (rel_convert_types(sql, &le, &re, 1, type_equal) < 0) 
+		sql_find_subtype(&bt, "boolean", 0, 0);
+		if ((le = rel_check_type(sql, &bt, le, type_equal)) == NULL) 
 			return NULL;
 		return rel_binop_(sql, le, re, NULL, "=", 0);
 	}
@@ -2714,7 +2755,6 @@ rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 	e = rel_unop_(sql, rel->exps->h->data, NULL, "identity", card_value);
-	//set_intern(e);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
 	return rel;
@@ -4300,7 +4340,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		if (r) {
 			sql_exp *e;
 
-			rel_setsubquery(r);
+			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
+				return sql_error(sql, 02, "SELECT: subquery must return only one column");
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
@@ -4338,16 +4379,19 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 						l = list_merge(l, r->exps, (fdup)NULL);
 						r->exps = l;
 						(*rel)->exps = NULL;
+						need_preproj = 1;
 
 					/* but also project ( project[] [x], [x]) */
 					} else if (is_project(r->op) && l && !list_length(l)) {
 						need_preproj = 1;
 					}
 					rel_destroy(*rel);
+					rel_setsubquery(*rel);
 					*rel = r;
 					if (need_preproj)
 						*rel = rel_project(sql->sa, *rel, pre_proj);
 				} else {
+					rel_setsubquery(r);
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					*rel = rel_project(sql->sa, *rel, pre_proj);
 				}
@@ -4688,6 +4732,8 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 			if (!gbe)
 				return NULL;
+			if (outer && pre_prj)
+				list_merge(gbe, pre_prj, (fdup)NULL);
 			rel = rel_groupby(sql->sa, rel, gbe);
 			aggr = 1;
 		}

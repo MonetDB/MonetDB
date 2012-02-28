@@ -39,4 +39,20 @@ set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();
 
 set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
 
+set optimizer='optimizer.inline();';
+
+set optimizer='optimizer.inline();optimizer.multiplex();';
+
+set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();';
+
+set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();';
+
+set optimizer='optimizer.deadcode();optimizer.inline();optimizer.multiplex();optimizer.garbageCollector();';
+
+set optimizer='optimizer.inline();optimizer.deadcode();optimizer.garbageCollector();optimizer.multiplex();';
+
+set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();optimizer.garbageCollector();';
+
+set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();';
+
 select 'done';

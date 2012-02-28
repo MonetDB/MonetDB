@@ -895,7 +895,6 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 	} else if (create && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
-		char emode = sql->emode;
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
 
@@ -908,10 +907,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				return sql_error(sql, 01, "42000!CREATE VIEW: ORDER BY not supported");
 		}
 
-		if (create) /* for subtable we only need direct dependencies */
-			sql->emode = m_deps;
 		sq = rel_selects(sql, query);
-		sql->emode = emode;
 		if (!sq)
 			return NULL;
 

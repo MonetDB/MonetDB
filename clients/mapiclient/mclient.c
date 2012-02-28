@@ -2491,19 +2491,19 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 static void
 set_timezone(Mapi mid)
 {
-#ifdef HAVE_TIMEZONE
-#ifdef _MSC_VER
-#define timezone _timezone
-#endif
 	char buf[128];
-	struct tm *tm;
-	time_t t;
+	time_t t, lt, gt;
+	struct tm *tmp;
 	long tzone;
 	MapiHdl hdl;
 
+	/* figure out our current timezone */
 	t = time(NULL);
-	tm = localtime(&t);
-	tzone = timezone - 3600 * tm->tm_isdst;
+	tmp = gmtime(&t);
+	gt = mktime(tmp);
+	tmp = localtime(&t);
+	lt = mktime(tmp);
+	tzone = (long) (gt - lt);
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
 			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
@@ -2518,9 +2518,6 @@ set_timezone(Mapi mid)
 		return;
 	}
 	mapi_close_handle(hdl);
-#else
-	(void) mid;
-#endif
 }
 
 static void usage(const char *prog, int xit)
