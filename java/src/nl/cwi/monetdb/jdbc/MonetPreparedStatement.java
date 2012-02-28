@@ -1702,8 +1702,15 @@ public class MonetPreparedStatement
 				default:
 					throw new SQLException("Conversion not allowed", "M1M05");
 			}
-		} else if (x instanceof BigDecimal) {
-			BigDecimal num = (BigDecimal)x;
+		} else if (x instanceof BigDecimal ||
+				x instanceof Byte ||
+				x instanceof Short ||
+				x instanceof Integer ||
+				x instanceof Long ||
+				x instanceof Float ||
+				x instanceof Double)
+		{
+			Number num = (Number)x;
 			switch (targetSqlType) {
 				case Types.TINYINT:
 					setByte(parameterIndex, num.byteValue());
@@ -1715,7 +1722,12 @@ public class MonetPreparedStatement
 					setInt(parameterIndex, num.intValue());
 				break;
 				case Types.BIGINT:
-					setLong(parameterIndex, num.setScale(scale, BigDecimal.ROUND_HALF_UP).longValue());
+					if (x instanceof BigDecimal) {
+						BigDecimal bd = (BigDecimal)x;
+						setLong(parameterIndex, bd.setScale(scale, BigDecimal.ROUND_HALF_UP).longValue());
+					} else {
+						setLong(parameterIndex, num.longValue());
+					}
 				break;
 				case Types.REAL:
 					setFloat(parameterIndex, num.floatValue());
@@ -1726,7 +1738,12 @@ public class MonetPreparedStatement
 				break;
 				case Types.DECIMAL:
 				case Types.NUMERIC:
-					setBigDecimal(parameterIndex, num);
+					if (x instanceof BigDecimal) {
+						setBigDecimal(parameterIndex, (BigDecimal)x);
+					} else {
+						setBigDecimal(parameterIndex,
+							new BigDecimal(num.doubleValue()));
+					}
 				break;
 				case Types.BIT:
 				case Types.BOOLEAN:
@@ -1735,20 +1752,6 @@ public class MonetPreparedStatement
 					} else {
 						setBoolean(parameterIndex, false);
 					}
-				break;
-				case Types.CHAR:
-				case Types.VARCHAR:
-				case Types.LONGVARCHAR:
-					setString(parameterIndex, x.toString());
-				break;
-				default:
-					throw new SQLException("Conversion not allowed", "M1M05");
-			}
-		} else if (x instanceof BigInteger) {
-			BigInteger num = (BigInteger)x;
-			switch (targetSqlType) {
-				case Types.BIGINT:
-					setLong(parameterIndex, num.longValue());
 				break;
 				case Types.CHAR:
 				case Types.VARCHAR:
@@ -1799,6 +1802,20 @@ public class MonetPreparedStatement
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
 					setString(parameterIndex, "" + val);
+				break;
+				default:
+					throw new SQLException("Conversion not allowed", "M1M05");
+			}
+		} else if (x instanceof BigInteger) {
+			BigInteger num = (BigInteger)x;
+			switch (targetSqlType) {
+				case Types.BIGINT:
+					setLong(parameterIndex, num.longValue());
+				break;
+				case Types.CHAR:
+				case Types.VARCHAR:
+				case Types.LONGVARCHAR:
+					setString(parameterIndex, x.toString());
 				break;
 				default:
 					throw new SQLException("Conversion not allowed", "M1M05");
@@ -1879,24 +1896,24 @@ public class MonetPreparedStatement
 			setBlob(parameterIndex, (Blob)x);
 		} else if (x instanceof Clob) {
 			setClob(parameterIndex, (Clob)x);
-		} else if (x instanceof NClob) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!", "0A000");
 		} else if (x instanceof Struct) {
 			// I have no idea how to do this...
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Struct currently not supported!", "0A000");
 		} else if (x instanceof Ref) {
 			setRef(parameterIndex, (Ref)x);
-		} else if (x instanceof RowId) {
-			setRowId(parameterIndex, (RowId)x);
 		} else if (x instanceof java.net.URL) {
 			setURL(parameterIndex, (java.net.URL)x);
-		} else if (x instanceof SQLData) {
+		} else if (x instanceof RowId) {
+			setRowId(parameterIndex, (RowId)x);
+		} else if (x instanceof NClob) {
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type NClob currently not supported!", "0A000");
+		} else if (x instanceof SQLXML) {
+			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
+		} else if (x instanceof SQLData) { // not in JDBC4.1???
 			// do something with:
 			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
 			// needs an SQLOutput stream... bit too far away from reality
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!", "0A000");
-		} else if (x instanceof SQLXML) {
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
 		} else {	// java Class
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!", "0A000");
 		}
