@@ -590,9 +590,6 @@
 /* Define to 1 if you have the <time.h> header file. */
 #define HAVE_TIME_H 1
 
-/* Define to 1 if you have the timezone and daylight variables. */
-#define HAVE_TIMEZONE 1
-
 /* Define to 1 if you have the `trunc' function. */
 /* #undef HAVE_TRUNC */
 
@@ -702,9 +699,6 @@
 
 /* Define if you don't want to expand the bte type */
 /* #undef NOEXPAND_BTE */
-
-/* Define if you don't want to expand the chr type */
-/* #undef NOEXPAND_CHR */
 
 /* Define if you don't want to expand the dbl type */
 /* #undef NOEXPAND_DBL */

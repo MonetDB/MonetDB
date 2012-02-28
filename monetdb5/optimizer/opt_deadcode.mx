@@ -106,7 +106,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 
 	clrDeclarations(mb);
-	chkDeclarations(mb);
+	chkDeclarations(cntxt->fdout, mb);
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)

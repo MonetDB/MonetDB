@@ -21,8 +21,6 @@
 #include "monetdb_config.h"
 #include "udf.h"
 
-
-
 /* Reverse a string */
 str UDFreverse ( str *ret , str *arg )
 {
@@ -167,13 +165,14 @@ UDFfuse_scalar_impl(int,unsigned int  ,lng,32)
  * Type-expanded optimized version,
  * accessing value arrays directly.
  */
-str UDFBATfuse ( bat *ires , bat *ione , bat *itwo)
+str 
+UDFBATfuse ( bat *ires , bat *ione , bat *itwo)
 {
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
 
 	/* assert calling sanity */
-	assert(ires != NULL && ione != NULL && itwo == NULL);
+	assert(ires != NULL && ione != NULL && itwo != NULL);
 
 	/* bat-id -> BAT-descriptor */
 	if ((bone = BATdescriptor(*ione)) == NULL)

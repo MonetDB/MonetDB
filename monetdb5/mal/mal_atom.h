@@ -23,7 +23,7 @@
 /* #define MAL_ATOM_DEBUG  */
 
 #include "mal_instruction.h"
-mal_export void malAtomDefinition(str name,int tpe);
+mal_export void malAtomDefinition(stream *out, str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
 mal_export int malAtomFixed(int size, int align, char *name);

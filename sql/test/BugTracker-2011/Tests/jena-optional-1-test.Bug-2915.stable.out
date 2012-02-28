@@ -98,12 +98,8 @@ Ready.
 % .r_1,	.r_1,	.r_1,	.r_1,	.r_2,	.r_2,	.r_2,	.r_2 # table_name
 % v_1_lex,	v_1_datatype,	v_1_lang,	v_1_type,	v_2_lex,	v_2_datatype,	v_2_lang,	v_2_type # name
 % clob,	varchar,	varchar,	int,	clob,	varchar,	varchar,	int # type
-% 16,	0,	0,	1,	16,	40,	0,	1 # length
-[ "http://example/x",	"",	"",	2,	"1",	"http://www.w3.org/2001/XMLSchema#integer",	"",	5	]
-[ "http://example/x",	"",	"",	2,	"2",	"http://www.w3.org/2001/XMLSchema#integer",	"",	5	]
-[ "http://example/x",	"",	"",	2,	"3",	"http://www.w3.org/2001/XMLSchema#integer",	"",	5	]
-[ "http://example/x",	"",	"",	2,	"http://example/a",	"",	"",	2	]
-[ "http://example/x",	"",	"",	2,	"http://example/b",	"",	"",	2	]
+% 16,	0,	0,	1,	0,	0,	0,	1 # length
+[ "http://example/x",	"",	"",	2,	NULL,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 
 # 20:59:27 >  

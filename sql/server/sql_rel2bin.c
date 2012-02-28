@@ -212,7 +212,6 @@ head_column(stmt *st)
 	case st_control_end:
 	case st_return:
 	case st_assign:
-	case st_connection:
 		fprintf(stderr, "missing head column %u: %s\n", st->type, st_type2string(st->type));
 		assert(0);
 		return NULL;
@@ -696,9 +695,6 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal);
 
-		//cmp = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, cmp, 0));
-		//l = stmt_project(sql->sa, cmp, l);
-		//r = stmt_project(sql->sa, cmp, r);
 		/* TODO the semijoin may break the order!! */
 		l = stmt_semijoin(sql->sa, l, cmp);
 		r = stmt_semijoin(sql->sa, r, cmp);
@@ -895,7 +891,6 @@ rel2bin(mvc *c, stmt *s)
 		 * and user authentication.
 		 */
 	case st_none:
-	case st_connection:
 	case st_rs_column:
 	case st_dbat:
 	case st_basetable:

@@ -172,7 +172,7 @@ MCnewClient(void)
 	Client c;
 	mal_set_lock(mal_contextLock, "newClient");
 	if (mal_clients[CONSOLE].user && mal_clients[CONSOLE].mode == FINISHING) {
-		showException(MAL, "newClient", "system shutdown in progress");
+		/*system shutdown in progress */
 		mal_unset_lock(mal_contextLock, "newClient");
 		return NULL;
 	}
@@ -308,7 +308,7 @@ int MCinitClientThread(Client c)
 	c->mypid = MT_getpid();
 	t = THRnew(c->mypid,cname);
 	if ( t==0) {
-		showException(MAL, "initClientThread", "Failed to initialize client");
+		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -404,7 +404,8 @@ void freeClient(Client c)
 	c->promptlength=-1;
 	if(c->errbuf){
 		GDKsetbuf(0);
-		GDKfree(c->errbuf);
+		if ( c->father == NULL)
+			GDKfree(c->errbuf);
 		c->errbuf=0;
 	}
 	c->father = 0;
@@ -562,8 +563,8 @@ int MCreadClient(Client c){
 	if (in->pos >= in->len || in->mode) {
 		ssize_t rd, sum = 0;
 
-		if (in->eof || !isa_block_stream(in->s)) {
-			if (!isa_block_stream(c->fdout) && c->promptlength > 0)
+		if (in->eof || !isa_block_stream(c->fdout)) {
+			if (!isa_block_stream(c->fdout) && c->promptlength > 0) 
 				mnstr_write(c->fdout, c->prompt, c->promptlength, 1);
 			mnstr_flush(c->fdout);
 			in->eof = 0;

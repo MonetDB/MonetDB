@@ -125,7 +125,7 @@ comment "Garbage collector optimizer";
 	q= pushArgument(mb,q,getArg(p,j));
 	getArg(q,0) = newTmpVariable(mb,TYPE_any);
 	pushInstruction(mb,q);
-	typeChecker(s,mb,q,TRUE);
+	typeChecker(cntxt->fdout, s,mb,q,TRUE);
 }
 @
  * @-
@@ -149,7 +149,7 @@ comment "Garbage collector optimizer";
 	q= pushArgument(mb,q,getArg(p,j));
 	getArg(q,0) = getArg(p,j);
 	pushInstruction(mb,q);
-	typeChecker(s,mb,q,TRUE);
+	typeChecker(cntxt->fdout, s,mb,q,TRUE);
 	actions++;
 }
 @

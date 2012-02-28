@@ -160,7 +160,7 @@ getFreeScenario(void)
 		;
 
 	if (i == MAXSCEN) {
-		showException(MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
+		showException(GDKout, MAL,"freeScenario", "no scenario space left (%d); adjust MAXSCEN and recompile", MAXSCEN);
 	} else {
 		scen = scenarioRec + i;
 	}
@@ -190,7 +190,7 @@ initScenario(Client c, Scenario s)
 	/* prepare for conclicts */
 	mal_set_lock(mal_contextLock, "Scenario");
 	if (s->initSystem && s->initSystemCmd == 0) {
-		s->initSystemCmd = (MALfcn) getAddress(l, l, s->initSystem,1);
+		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->initSystem,1);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		} else {
@@ -205,21 +205,21 @@ initScenario(Client c, Scenario s)
 	}
 
 	if (s->exitSystem && s->exitSystemCmd == 0)
-		s->exitSystemCmd = (MALfcn) getAddress(l, l, s->exitSystem,1);
+		s->exitSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitSystem,1);
 	if (s->initClient && s->initClientCmd == 0)
-		s->initClientCmd = (MALfcn) getAddress(l, l, s->initClient,1);
+		s->initClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->initClient,1);
 	if (s->exitClient && s->exitClientCmd == 0)
-		s->exitClientCmd = (MALfcn) getAddress(l, l, s->exitClient,1);
+		s->exitClientCmd = (MALfcn) getAddress(c->fdout, l, l, s->exitClient,1);
 	if (s->reader && s->readerCmd == 0)
-		s->readerCmd = (MALfcn) getAddress(l, l, s->reader,1);
+		s->readerCmd = (MALfcn) getAddress(c->fdout, l, l, s->reader,1);
 	if (s->parser && s->parserCmd == 0)
-		s->parserCmd = (MALfcn) getAddress(l, l, s->parser,1);
+		s->parserCmd = (MALfcn) getAddress(c->fdout, l, l, s->parser,1);
 	if (s->optimizer && s->optimizerCmd == 0)
-		s->optimizerCmd = (MALfcn) getAddress(l, l, s->optimizer,1);
+		s->optimizerCmd = (MALfcn) getAddress(c->fdout, l, l, s->optimizer,1);
 	if (s->tactics && s->tacticsCmd == 0)
-		s->tacticsCmd = (MALfcn) getAddress(l, l, s->tactics,1);
+		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, l, s->tactics,1);
 	if (s->engine && s->engineCmd == 0)
-		s->engineCmd = (MALfcn) getAddress(l, l, s->engine,1);
+		s->engineCmd = (MALfcn) getAddress(c->fdout, l, l, s->engine,1);
 	mal_unset_lock(mal_contextLock, "Scenario");
 	return(fillScenario(c, s));
 }

@@ -24,12 +24,12 @@ Ready.
 # 20:24:58 >  
 
 [ 1	]
-% sys.t1,	sys.t1 # table_name
+% sys.t_8_1,	sys.t_8_1 # table_name
 % id,	name # name
 % int,	varchar # type
 % 1,	7 # length
 [ 1,	"testing"	]
-% sys.t2 # table_name
+% sys.t_8_2 # table_name
 % id # name
 % int # type
 % 1 # length

@@ -48,43 +48,35 @@ Ready.
 % htype,	ttype,	count # name
 % clob,	clob,	bigint # type
 % 3,	3,	4 # length
-[ "int",	"int",	16	]
+[ "int",	"int",	8	]
 [ "int",	"lng",	2	]
 [ "int",	"str",	149	]
-[ "oid",	"bit",	1215	]
-[ "oid",	"bit",	1215	]
 [ "oid",	"int",	19	]
 [ "oid",	"int",	19	]
-[ "oid",	"int",	1215	]
-[ "oid",	"int",	1215	]
-[ "oid",	"int",	1215	]
-[ "oid",	"int",	1215	]
-[ "oid",	"int",	3571	]
-[ "oid",	"int",	3571	]
-[ "oid",	"int",	3571	]
-[ "oid",	"int",	3571	]
-[ "oid",	"int",	3571	]
+[ "oid",	"int",	1186	]
+[ "oid",	"int",	3500	]
+[ "oid",	"int",	3500	]
+[ "oid",	"int",	3500	]
+[ "oid",	"int",	3500	]
+[ "oid",	"int",	3500	]
 [ "oid",	"lng",	19	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	1	]
 [ "oid",	"str",	19	]
-[ "oid",	"str",	1215	]
-[ "oid",	"str",	1215	]
-[ "oid",	"str",	1215	]
-[ "oid",	"str",	3571	]
-[ "oid",	"str",	3571	]
+[ "oid",	"str",	3500	]
+[ "oid",	"str",	3500	]
 #select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 9,	3 # length
-[ "transient",	527	]
+[ "transient",	535	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L1,	.bbp # table_name
 % L1,	L2 # name
 % char,	wrd # type
 % 10,	2 # length
-[ "persistent",	25	]
+[ "persistent",	17	]
 
 # 22:02:15 >  
 # 22:02:15 >  Done.

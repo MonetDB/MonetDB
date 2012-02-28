@@ -10,25 +10,13 @@ stderr of test 'recursive_triggers` in directory 'test/Triggers` itself:
 # 15:06:05 >  Mtimeout -timeout 60 MapiClient -lsql -umonetdb -Pmonetdb --host=localhost --port=38417  < recursive_triggers.sql
 # 15:06:05 >  
 
-MAPI  = monetdb@sofia:38256
-QUERY = create trigger test_0 after insert on t1
-        	insert into t1 values(3, 'mo', 27);
-ERROR = !SELECT: too many nested operators
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@niels:33936
 QUERY = drop trigger test_0;
 ERROR = !DROP TRIGGER: unknown trigger test_0
-MAPI  = monetdb@sofia:38256
-QUERY = create trigger test_1 after insert on t2
-        	insert into t1 values(3, 'mo', 27);
-ERROR = !SELECT: too many nested operators
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@niels:33936
 QUERY = drop trigger test_1;
 ERROR = !DROP TRIGGER: unknown trigger test_1
-MAPI  = monetdb@sofia:38256
-QUERY = create trigger test_2 after delete on t2
-        	insert into t1 values(3, 'mo', 27);
-ERROR = !SELECT: too many nested operators
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@niels:33936
 QUERY = drop trigger test_2;
 ERROR = !DROP TRIGGER: unknown trigger test_2
 

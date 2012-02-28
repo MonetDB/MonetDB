@@ -112,6 +112,7 @@ All Rights Reserved.
     <antcall target="Test_PSgeneratedkeys" />
     <antcall target="Test_PSlargeresponse" />
     <antcall target="Test_PSlargeamount" />
+    <antcall target="Test_PSsomeamount" />
     <antcall target="Test_PSlargebatchval" />
     <antcall target="Test_PStimedate" />
     <antcall target="Test_PStimezone" />
@@ -216,6 +217,12 @@ All Rights Reserved.
   <target name="Test_PSlargeamount">
     <antcall target="test_class">
       <param name="test.class" value="Test_PSlargeamount" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSsomeamount">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSsomeamount" />
     </antcall>
   </target>
 

@@ -214,6 +214,8 @@ isAmbiguousType(int type){
 	switch(type){
 		case TYPE_bte: case TYPE_sht: case TYPE_wrd: case TYPE_int: case TYPE_lng:
 		return type != TYPE_int;
+		case TYPE_flt: case TYPE_dbl:
+		return type != TYPE_flt;
 	}
 	return 0;
 }

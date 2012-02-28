@@ -47,6 +47,7 @@ public class Test_Dobjects {
 			// inspect the catalog by use of dbmd functions
 			dumpResultSet(dbmd.getCatalogs());
 			dumpResultSet(dbmd.getSchemas());
+			dumpResultSet(dbmd.getSchemas(null, "sys"));
 			dumpResultSet(dbmd.getTables(null, null, null, null));
 		} catch (SQLException e) {
 			System.out.println("FAILED :( "+ e.getMessage());

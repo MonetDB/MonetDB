@@ -21,6 +21,7 @@
 #include "sql_semantic.h"
 #include "rel_semantic.h"
 #include "rel_exp.h"
+#include "rel_psm.h"
 #include "rel_prop.h" /* for prop_copy() */
 
 static sql_exp * 
@@ -345,6 +346,71 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 		set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
+	return e;
+}
+
+sql_exp *
+exp_set(sql_allocator *sa, char *name, sql_exp *val, int level)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->name = name;
+	e->l = val;
+	e->flag = PSM_SET + SET_PSM_LEVEL(level);
+	return e;
+}
+
+sql_exp * 
+exp_var(sql_allocator *sa, char *name, sql_subtype *type, int level)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->name = name;
+	e->tpe = *type;
+	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
+	return e;
+}
+
+sql_exp *
+exp_return(sql_allocator *sa, sql_exp *val, int level)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->l = val;
+	e->flag = PSM_RETURN + SET_PSM_LEVEL(level);
+	return e;
+}
+
+sql_exp * 
+exp_while(sql_allocator *sa, sql_exp *cond, list *stmts)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->l = cond;
+	e->r = stmts;
+	e->flag = PSM_WHILE;
+	return e;
+}
+
+sql_exp * 
+exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->l = cond;
+	e->r = if_stmts;
+	e->f = else_stmts;
+	e->flag = PSM_IF;
+	return e;
+}
+
+sql_exp * 
+exp_rel(sql_allocator *sa, sql_rel *rel)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->l = rel;
+	e->flag = PSM_REL;
 	return e;
 }
 
@@ -727,6 +793,8 @@ exp_is_complex_select( sql_exp *e )
 	case e_column:
 	case e_cmp:
 		return 0;
+	case e_psm:
+		return 1;
 	}
 	return 0;
 }
@@ -799,7 +867,7 @@ exp_is_join(sql_exp *e)
 {
 	/* only simple compare expressions, ie not or lists
 		or range expressions (e->f)
-	 */ 
+	 */
 	if (e->type == e_cmp && !is_complex_exp(e->flag) && e->l && e->r && !e->f && e->card >= CARD_AGGR && !complex_select(e))
 		return 0;
 	if (e->type == e_cmp && e->flag == cmp_filter && e->l && e->r && e->card >= CARD_AGGR)
@@ -854,6 +922,7 @@ rel_find_exp_( sql_rel *rel, sql_exp *e)
 			return ne;
 		}
 	case e_cmp:	
+	case e_psm:	
 		return NULL;
 	case e_atom:
 		return e;
@@ -946,6 +1015,7 @@ exp_is_atom( sql_exp *e )
 	}
 	case e_column:
 	case e_cmp:
+	case e_psm:
 		return 0;
 	}
 	return 0;
@@ -1232,6 +1302,10 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 			ne = exp_atom_ref(sa, e->flag, &e->tpe);
 		else 
 			ne = exp_param(sa, e->r, &e->tpe, e->flag);
+		break;
+	case e_psm:
+		if (e->flag == PSM_SET) 
+			ne = exp_set(sa, e->name, exp_copy(sa, e->l), GET_PSM_LEVEL(e->flag));
 		break;
 	}
 	if (ne && e->p)

@@ -341,7 +341,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				}
 			}
 			OPTDEBUGjoinPath {
-				chkTypes(cntxt->nspace,mb,TRUE);
+				chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 				mnstr_printf(cntxt->fdout,"#new [left]joinPath instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, q, LIST_MAL_ALL);
 			}

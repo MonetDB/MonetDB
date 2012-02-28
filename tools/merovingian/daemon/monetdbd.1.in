@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 "OCTOBRE 2011" MonetDB "MonetDB Applications"
+.TH MONETDBD 1 "FEBRUARY 2012" MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -360,6 +360,21 @@ receives from the databases.  This results in e.g. as many return tuples
 for a
 .I SELECT COUNT(*)
 query, as there are databases defined.
+.P
+Due to the two above mentioned characteristics, a multiplex-funnel has
+some limitations.  As mentioned before, transactions over multiple
+queries are likely not to result in the desired behaviour.  This is due
+to each query to the funnel is required to be self-contained.  Further,
+since for each query, the results from multiple servers have to be
+combined into one, that query must only return a single response, i.e.
+multi-statement queries are most likely causing the funnel to respond
+with an error, or return garbled results.  Last, the size of each query
+is limited to currently about 80K.  While this size should be sufficient
+for most queries, it is likely not enough for e.g. COPY INTO statements.
+Apart from the data transfer implications, such statements should not be
+used with the funnel, as the results will be undefined due to the
+limited query buffer.  Applications using the funnel should aim for
+short and single-statement queries that require no transactions.
 .P
 See the
 .I create

@@ -197,6 +197,15 @@ database makes that database unusable as noone is any longer able to
 login.  If you use
 .BR monetdbd (1),
 a per-database vault key is set.
+.IP "max_clients"
+Controls how many client slots are allocated for clients to connect.
+This settings limits the maximum number of connected clients at the same
+time.  Note that MonetDB is not designed to handle massive amounts of
+connected clients.  The funnel capability from
+.BR monetdbd (1)
+might be a more suitable solution for such workloads.
+
+Default 64.
 
 .SH "SQL PARAMETERS"
 The SQL component of MonetDB 5 runs on top of the MAL environment.  It

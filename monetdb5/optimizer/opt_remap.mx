@@ -117,7 +117,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 		printInstruction(cntxt->fdout,mb,0,p,LIST_MAL_ALL);
 
 	/* now see if we can resolve the instruction */
-	typeChecker(scope,mb,p,TRUE);
+	typeChecker(cntxt->fdout, scope,mb,p,TRUE);
 	if( p->typechk== TYPE_UNKNOWN) {
 		OPTDEBUGremap {
 			mnstr_printf(cntxt->fdout,"#type error\n");
@@ -296,7 +296,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 
 					actions++;
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->nspace,mq,q,TRUE);
+					typeChecker(cntxt->fdout, cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
@@ -311,7 +311,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 					getArg(q,1)= refbat;
 				
 					actions++;
-					typeChecker(cntxt->nspace,mq,q,TRUE);
+					typeChecker(cntxt->fdout, cntxt->nspace,mq,q,TRUE);
 					if( q->typechk== TYPE_UNKNOWN)
 						goto terminateMX;
 					break;
@@ -521,7 +521,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (doit) {
-		chkTypes(cntxt->nspace,mb,TRUE);
+		chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
 		/* clean out on errors by resetting the block */
 		if ( mb->errors)
 		for( i=1;i<slimit; i++){

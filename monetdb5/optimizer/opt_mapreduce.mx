@@ -352,7 +352,7 @@ MRdistributework(
 	}
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 0
-	chkProgram(cntxt->nspace, reduce);
+	chkProgram(cntxtx->fdout, cntxtx->fdout, cntxt->nspace, reduce);
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 
@@ -986,11 +986,11 @@ OPTmapreduceImplementation(
 
 #if defined(_DEBUG_OPT_MAPREDUCE) && _DEBUG_OPT_MAPREDUCE == 10
 	mnstr_printf(cntxt->fdout, "MAP program\n");
-	chkProgram(cntxt->nspace, map);
+	chkProgram(cntxtx->fdout, cntxt->nspace, map);
 	printFunction(cntxt->fdout, map, 0, LIST_MAL_STMT | LIST_MAPI);
 
 	mnstr_printf(cntxt->fdout, "REDUCE program\n");
-	chkProgram(cntxt->nspace, reduce);
+	chkProgram(cntxtx->fdout, cntxt->nspace, reduce);
 	printFunction(cntxt->fdout, reduce, 0, LIST_MAL_STMT | LIST_MAPI);
 #endif
 

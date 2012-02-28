@@ -461,7 +461,7 @@ out:
 			mnstr_printf(cntxt->fdout,"DATA CYCLOTRON FAILED\n");
 		else
 			mnstr_printf(cntxt->fdout,"LEAVING DATA CYCLOTRON \n");
-		chkProgram(cntxt->nspace,mb);
+		chkProgram(cntxt->fdout, cntxt->nspace, mb);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL);
 	}
 

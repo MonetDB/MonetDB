@@ -256,20 +256,20 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
  * acceptable for the kernel.
  */
 
-void malAtomDefinition(str name, int tpe)
+void malAtomDefinition(stream *out, str name, int tpe)
 {
 	int i;
 
 	if (strlen(name) >= IDLENGTH) {
-		showException(SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
+		showException(out, SYNTAX, "atomDefinition", "Atom name '%s' too long", name);
 		return;
 	}
 	if (ATOMindex(name) >= 0) {
-		showException(TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
+		showException(out, TYPE, "atomDefinition", "Redefinition of atom '%s'", name);
 		return;
 	}
 	if (tpe < 0 || tpe >= GDKatomcnt) {
-		showException(TYPE, "atomDefinition", "Undefined atom inheritance '%s'", name);
+		showException(out, TYPE, "atomDefinition", "Undefined atom inheritance '%s'", name);
 		return;
 	}
 
@@ -317,33 +317,6 @@ int malAtomSize(int size, int align, char *name)
 	BATatoms[i].size = size;
 	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
 	BATatoms[i].align = align;
-	return i;
-}
-int malAtomArray(int tpe, int size)
-{
-	int i;
-	char name[IDLENGTH];
-	str nme;
-
-	nme = getTypeName(tpe);
-	snprintf(name, IDLENGTH, "%s_", nme);
-	i = (int)strlen(name);
-	snprintf(name + i, IDLENGTH - i, "%d", size);
-	GDKfree(nme);
-	if (strlen(name) >= IDLENGTH) {
-		showException(SYNTAX, "atomArray", "Atom name '%s' too long", name);
-		return -1;  /* ERROR! */
-	}
-	ATOMproperty(name, "", (int (*)()) 0, 0);
-	if (strlen(name) >= sizeof(BATatoms[0].name))
-		return -1;
-	i = ATOMindex(name);
-	BATatoms[i] = BATatoms[tpe];
-	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
-	BATatoms[i].storage = tpe;
-	BATatoms[i].size *= size;
-	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
-	BATatoms[i].linear = FALSE;
 	return i;
 }
 

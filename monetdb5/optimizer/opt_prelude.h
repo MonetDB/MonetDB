@@ -129,6 +129,7 @@ opt_export  str mdbRef;
 opt_export  str min_no_nilRef;
 opt_export  str minRef;
 opt_export  str mirrorRef;
+opt_export	str mitosisRef;
 opt_export  str mkeyRef;
 opt_export  str mmathRef;
 opt_export  str multiplexRef;

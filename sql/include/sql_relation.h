@@ -31,7 +31,8 @@ typedef enum expression_type {
 	e_cmp,
 	e_func,
 	e_aggr,
-	e_convert
+	e_convert,
+	e_psm
 } expression_type;
 
 #define CARD_ATOM 1
@@ -73,6 +74,7 @@ typedef struct expression {
 /* todo make enum */
 #define DDL_OUTPUT	1
 #define DDL_LIST	2	
+#define DDL_PSM		3	
 
 #define DDL_CREATE_SEQ  5
 #define DDL_ALTER_SEQ   6
@@ -116,12 +118,9 @@ typedef struct expression {
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
 
-#define DDL_CONNECT 	61
-#define DDL_DISCONNECT 	62
 
 #define DDL_CREATE_ARRAY 63
 #define DDL_CREATE_VIEW_ARRAY 65
-
 #define MAXOPS 20
 
 typedef enum operator_type {
@@ -165,6 +164,12 @@ typedef enum operator_type {
 	(rel->op == op_ddl && rel->flag == DDL_OUTPUT)
 #define is_outerjoin(op) \
 	(op == op_left || op == op_right || op == op_full)
+#define is_left(op) \
+	(op == op_left)
+#define is_right(op) \
+	(op == op_right)
+#define is_full(op) \
+	(op == op_full)
 #define is_join(op) \
 	(op == op_join || is_outerjoin(op))
 #define is_semi(op) \

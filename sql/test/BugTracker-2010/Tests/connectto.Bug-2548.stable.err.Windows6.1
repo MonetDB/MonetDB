@@ -71,13 +71,13 @@ stderr of test 'connectto.Bug-2548` in directory 'test/BugTracker-2010` itself:
 # 13:12:55 >  mclient -lsql -ftest -i -e --host=rig --port=39884 
 # 13:12:55 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@madrid:37072
 QUERY = connect to default;
 ERROR = !CONNECT TO: DEFAULT is not supported!
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@madrid:37072
 QUERY = connect to 'whatever' port 50001 database 'nonexisting' USER 'monetdb' PASSWORD 'monetdb' LANGUAGE 'mal';
-ERROR = !IOException:mapi.connect:Could not connect: getaddrinfo failed: The requested name is valid, but no data of the requested type was found. 
-MAPI  = monetdb@sofia:38256
+ERROR = !Could not connect: getaddrinfo failed: The requested name is valid, but no data of the requested type was found. 
+MAPI  = monetdb@madrid:37072
 QUERY = disconnect 'whatever';
 ERROR = !DISCONNECT CATALOG: no such db_alias 'whatever'
 

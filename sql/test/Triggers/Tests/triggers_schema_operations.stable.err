@@ -11,58 +11,58 @@ stderr of test 'triggers_schema_operations` in directory 'test/Triggers` itself:
 # 14:01:52 >  
 
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test1
-        	after update on t1
-        	create table t2 (id int);
-ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test1
-        !	after update on t1
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	create table t_7_2 (id int);
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
         !	create"
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test1;
-ERROR = !DROP TRIGGER: unknown trigger test1
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test1
-        	after update on t1
-        	drop table t2;
-ERROR = !syntax error, unexpected DROP, expecting WHILE in: "create trigger test1
-        !	after update on t1
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	drop table t_7_2;
+ERROR = !syntax error, unexpected DROP, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
         !	drop"
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test1;
-ERROR = !DROP TRIGGER: unknown trigger test1
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test1
-        	after update on t1
-        	alter table t2 add column (name varchar(1024));
-ERROR = !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test1
-        !	after update on t1
+QUERY = create trigger test_7_1
+        	after update on t_7_1
+        	alter table t_7_2 add column (name varchar(1024));
+ERROR = !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
         !	alter"
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test2
-        	after update on t1
-        	create trigger test2_1
-        		after update on t1
-        		alter table t2 add column (name varchar(1024));
-ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test2
-        !	after update on t1
+QUERY = create trigger test_7_2
+        	after update on t_7_1
+        	create trigger test_7_2_1
+        		after update on t_7_1
+        		alter table t_7_2 add column (name varchar(1024));
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_2
+        !	after update on t_7_1
         !	create"
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test3
-        	after update on t1
-        	create view v1 as select * from t1;
-ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test3
-        !	after update on t1
+QUERY = create trigger test_7_3
+        	after update on t_7_1
+        	create view v1 as select * from t_7_1;
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_3
+        !	after update on t_7_1
         !	create"
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test4
-        	after update on t1
+QUERY = create trigger test_7_4
+        	after update on t_7_1
         	create function f1 (id int)
         	returns boolean
         	BEGIN
         		if (id >0)
         			then return true;
-ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test4
-        !	after update on t1
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_4
+        !	after update on t_7_1
         !	create"
 MAPI  = monetdb@sofia:38256
 QUERY = else return false;
@@ -74,27 +74,27 @@ MAPI  = monetdb@sofia:38256
 QUERY = END;
 ERROR = !syntax error, unexpected END in: "end"
 MAPI  = monetdb@sofia:38256
-QUERY = create trigger test5
-        	after update on t1
-        	create index id_index on t2(id);
-ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test5
-        !	after update on t1
+QUERY = create trigger test_7_5
+        	after update on t_7_1
+        	create index id_index on t_7_2(id);
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_5
+        !	after update on t_7_1
         !	create"
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test1;
-ERROR = !DROP TRIGGER: unknown trigger test1
+QUERY = drop trigger test_7_1;
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test2;
-ERROR = !DROP TRIGGER: unknown trigger test2
+QUERY = drop trigger test_7_2;
+ERROR = !DROP TRIGGER: unknown trigger test_7_2
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test3;
-ERROR = !DROP TRIGGER: unknown trigger test3
+QUERY = drop trigger test_7_3;
+ERROR = !DROP TRIGGER: unknown trigger test_7_3
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test4;
-ERROR = !DROP TRIGGER: unknown trigger test4
+QUERY = drop trigger test_7_4;
+ERROR = !DROP TRIGGER: unknown trigger test_7_4
 MAPI  = monetdb@sofia:38256
-QUERY = drop trigger test5;
-ERROR = !DROP TRIGGER: unknown trigger test5
+QUERY = drop trigger test_7_5;
+ERROR = !DROP TRIGGER: unknown trigger test_7_5
 
 # 14:01:52 >  
 # 14:01:52 >  Done.

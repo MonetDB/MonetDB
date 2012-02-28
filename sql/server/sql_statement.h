@@ -113,8 +113,6 @@ typedef enum stmt_type {
 
 	st_alias,
 
-	st_connection,		/*To handle support sql connections*/
-
 	/* used internally only */
 	st_list,
 
@@ -269,7 +267,6 @@ extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_list(sql_allocator *sa, list *l);
 extern void stmt_set_nrcols(stmt *s);
-extern stmt *stmt_connection(sql_allocator *sa, int *id, char *server, int *port, char *db, char *db_alias, char *user, char *passwd, char *lang);
 
 /* raise exception incase the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int errcode);

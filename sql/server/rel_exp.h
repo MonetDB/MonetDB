@@ -65,6 +65,13 @@ extern sql_exp * exp_values(sql_allocator *sa, list *exps);
 
 extern sql_exp * exp_column(sql_allocator *sa, char *rname, char *name, sql_subtype *t, int card, int has_nils, int intern);
 extern sql_exp * exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern);
+extern sql_exp * exp_set(sql_allocator *sa, char *name, sql_exp *val, int level);
+extern sql_exp * exp_var(sql_allocator *sa, char *name, sql_subtype *type, int level);
+extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
+extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
+extern sql_exp * exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts);
+extern sql_exp * exp_rel(sql_allocator *sa, sql_rel * r);
+
 extern void exp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name );
 extern void noninternexp_setname(sql_allocator *sa, sql_exp *e, char *rname, char *name );
 extern sql_exp* exp_label(sql_allocator *sa, sql_exp *e, int nr);

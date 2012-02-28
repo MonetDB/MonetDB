@@ -27,14 +27,14 @@ Ready.
 [ 1	]
 [ 1	]
 [ 1	]
-% sys.t1,	sys.t1 # table_name
+% sys.t_5_1,	sys.t_5_1 # table_name
 % id,	name # name
 % int,	varchar # type
-% 2,	17 # length
+% 2,	20 # length
 [ 20,	"monet"	]
 [ 11,	"mo"	]
-[ 10,	"update_from_test3"	]
-[ 30,	"update_from_test4"	]
+[ 10,	"update_from_test_5_3"	]
+[ 30,	"update_from_test_5_4"	]
 [ 4	]
 
 # 15:21:32 >  
