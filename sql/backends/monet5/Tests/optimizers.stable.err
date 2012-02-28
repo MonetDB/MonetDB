@@ -41,43 +41,43 @@ QUERY = set optimizer='';
 ERROR = !Syntax error detected.See documentation for details
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.emptySet();optimizer.accessmode();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.accessmode();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.garbageCollector();';
-ERROR = !SQLException:optimizer:Optimizer 'garbageCollector' pipeline does not exist, use default pipe instead
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
-ERROR = !SET OPTIMIZER: 'inline' should be the first
+ERROR = !'inline' should be the first
 
 # 03:16:17 >  
 # 03:16:17 >  "Done."
