@@ -78,6 +78,23 @@ ERROR = !'inline' should be the first
 MAPI  = monetdb@sofia:38256
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.accessmode();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first
+QUERY = set optimizer='optimizer.inline();';
+ERROR = !'multiplex' should be used
+MAPI  = monetdb@rome:38178
+QUERY = set optimizer='optimizer.inline();optimizer.multiplex();';
+ERROR = !'deadcode' should be used at least once
+MAPI  = monetdb@rome:38178
+QUERY = set optimizer='optimizer.inline();optimizer.multiplex();optimizer.deadcode();';
+ERROR = !'garbageCollector' should be used as the last one
+MAPI  = monetdb@rome:38178
+QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.multiplex();';
+ERROR = !'garbageCollector' should be used as the last one
+MAPI  = monetdb@rome:38178
+QUERY = set optimizer='optimizer.deadcode();optimizer.inline();optimizer.multiplex();optimizer.garbageCollector();';
+ERROR = !'inline' should be the first
+MAPI  = monetdb@rome:38178
+QUERY = set optimizer='optimizer.inline();optimizer.deadcode();optimizer.garbageCollector();optimizer.multiplex();';
+ERROR = !'garbageCollector' should be used as the last one
 
 # 03:16:17 >  
 # 03:16:17 >  "Done."
