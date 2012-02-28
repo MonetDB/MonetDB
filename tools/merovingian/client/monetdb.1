@@ -186,17 +186,8 @@ file, or a local override.
 Sets property to value for the given database.  For a list of
 properties, run
 .BR "monetdb get all" .
-Most properties require the database to be stopped when set.  The
-following properties have special values, or do not have an equivalent
-option for
-.BR mserver5 (1).
-.IP "  forward=<redirect|proxy>"
-When set to redirect, monetdbd tells each connecting client to make a
-new connection directly to the database the client looks for.  This
-requires that the separate mserver5 processes are reachable by the ports
-they use.  Since this may not be the case due to a firewall, when set to
-proxy, monetdbd tunnels the client to the right database.
-.IP "  share=<yes|no|tag>"
+Most properties require the database to be stopped when set.
+.IP "  shared=<yes|no|tag>"
 Defines if and how the database is being announced to other monetdbds
 or not.  If not set to
 .I "yes"
@@ -211,6 +202,19 @@ in the
 .BR monetdbd (1)
 manpage.  Note that this property can be set for a running database, and
 that a change takes immediate effect in the network.
+.IP "  nthreads=<number>"
+Defines how many worker threads the server should use to perform main
+processing.  Normally, this number equals the number of available CPU
+cores in the system.  Reducing this number forces the server to use less
+parallelism when executing queries, or none at all if set to
+.IR 1 .
+.IP "  optpipe=<string>"
+Each server operates with a given optimiser pipeline.  While the default
+usually is the best setting, for some experimental uses the pipeline can
+be changed.  See the
+.BR mserver5 (1)
+manpage for available pipelines.  Changing this setting is discouraged
+at all times.
 .IP "  master=<yes|no|id>"
 Defines if the database is to be started as a replication master 
 .RI ( yes ", " id "), or not (" no ).
@@ -233,7 +237,15 @@ A valid URI looks like
 .BI mapi:monetdb:// hostname : port / database
 which is a regular mapi URI.
 .IP "  readonly=<yes|no>"
-Defines if the database has to be started in readonly mode.
+Defines if the database has to be started in readonly mode.  Updates are
+rejected in this mode, and the server employs some read-only
+optimisations that can lead to improved performance.
+.IP "  nclients=<number>"
+Sets the maximum amount of clients that can connect to this database at
+the same time.  Setting this to a high value is discouraged.  A
+multiplex-funnel may be more performant, see
+.I MULTIPLEX-FUNNEL
+below.
 .IP "inherit property database [database ...]"
 Like set, but unsets the database-local value, and reverts to inherit
 from the default again.

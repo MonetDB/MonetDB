@@ -368,5 +368,27 @@ Enable auto commit mode.
 .TP
 \fB\ea\fP
 Disable auto commit mode.
+.SH EXAMPLES
+Efficiently import data from a CSV (comma-separated values) file into
+a table.  The file must be readable by the server.  $file is the
+absolute path name of the file, $table is the name of the table, $db
+is the name of the database.
+.PP
+mclient -d $db -s "COPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e"'"
+.PP
+Efficiently import data from a CSV file into a table when the file is
+to be read by mclient (e.g. the server has no access to the file).
+$file is the (absolute or relative) path name of the file, $table is
+the name of the table, $db is the name of the database.
+.PP
+mclient -d $db -s "COPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e"'" - < $file
+.PP
+Note that in this latter case, if a count of records is supplied, it
+should be at least as large as the number of records actually present
+in the CSV file.  This, because otherwise the remainder of the file
+will be interpreted as SQL queries.
+.PP
+See http://www.monetdb.org/Documentation/Manuals/SQLreference/CopyInto
+for more information about the COPY INTO query.
 .SH SEE ALSO
 .IR msqldump (1)

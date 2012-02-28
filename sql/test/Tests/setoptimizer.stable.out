@@ -45,8 +45,9 @@ Ready.
 % . # table_name
 % single_value # name
 % varchar # type
-% 4 # length
-[ "user"	]
+% 12 # length
+[ "minimal_pipe"	]
+#set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.history(); optimizer.multiplex(); optimizer.accumulators(); optimizer.garbageCollector();';
 #select optimizer;
 % . # table_name
 % single_value # name
