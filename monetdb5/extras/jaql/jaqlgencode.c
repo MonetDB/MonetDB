@@ -4262,7 +4262,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 			case j_func: {
 				tree *w;
 				Symbol s;
-				InstrPtr f;
+				InstrPtr func;
 #define MAXJAQLARG 23
 				enum treetype coltypes[MAXJAQLARG + 1];
 				int dynaarg[MAXJAQLARG][7];
@@ -4340,7 +4340,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						 * way that their return value is not considered
 						 * while looking for their uniqueness (like in
 						 * Java). */
-						f = getSignature(s);
+						func = getSignature(s);
 						for (i = 0; i < coltpos; i++) {
 							match = 0;
 							orgoff = argoff;
@@ -4349,9 +4349,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							odyn3 = dynaarg[i][3];
 							ocoltype = coltypes[i];
 
-							if (f->argc - f->retc - argoff < 1)
+							if (func->argc - func->retc - argoff < 1)
 								break;
-							itype = getArgType(s->def, f, f->retc + argoff);
+							itype = getArgType(s->def, func, func->retc + argoff);
 							if (!isaBatType(itype) ||
 									getHeadType(itype) != TYPE_oid)
 								break;
@@ -4364,7 +4364,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 									/* out of laziness, we only check
 									 * the first argument to be a BAT,
 									 * and of the right type */
-									if (f->argc - f->retc - argoff >= 7 &&
+									if (func->argc - func->retc - argoff >= 7 &&
 											getTailType(itype) == TYPE_bte)
 									{
 										match = 1;
@@ -4436,9 +4436,10 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							if (match == 0)
 								break;
 						}
-						if (match != 1 || f->argc - f->retc - argoff != 0 ||
-								(f->retc != 7 && f->retc != 1) ||
-								!isaBatType(getArgType(s->def, f, 0)))
+						if (match != 1 ||
+								func->argc - func->retc - argoff != 0 ||
+								(func->retc != 7 && func->retc != 1) ||
+								!isaBatType(getArgType(s->def, func, 0)))
 						{
 							argoff = orgoff;
 							dynaarg[i][1] = odyn1;
@@ -4446,7 +4447,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							dynaarg[i][3] = odyn3;
 							coltypes[i] = ocoltype;
 						} else {
-							funcretc = f->retc;
+							funcretc = func->retc;
 						}
 					}
 					s = s->peer;
@@ -4528,6 +4529,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							dynaarg[i][0] = a;
 							pushInstruction(mb, q);
 
+							e = -1;
 							if (dynaarg[i][1] == 0) {
 								c = newBatType(TYPE_oid, TYPE_str);
 								q = newInstruction(mb, ASSIGNsymbol);
@@ -4545,7 +4547,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, a);
 								q = pushStr(mb, q, "str");
-								b = getArg(q, 0);
+								e = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, putName("json", 4));
@@ -4562,11 +4564,12 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								dynaarg[i][1] = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newAssignment(mb);
-								getArg(q, 0) = b;
+								getArg(q, 0) = e;
 								q->argc = q->retc = 1;
 								q->barrier = EXITsymbol;
 							}
 
+							f = -1;
 							if (dynaarg[i][2] == 0) {
 								c = newBatType(TYPE_oid, TYPE_dbl);
 								q = newInstruction(mb, ASSIGNsymbol);
@@ -4584,7 +4587,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, a);
 								q = pushStr(mb, q, "dbl");
-								b = getArg(q, 0);
+								f = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, putName("json", 4));
@@ -4601,11 +4604,12 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								dynaarg[i][2] = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newAssignment(mb);
-								getArg(q, 0) = b;
+								getArg(q, 0) = f;
 								q->argc = q->retc = 1;
 								q->barrier = EXITsymbol;
 							}
 
+							g = -1;
 							if (dynaarg[i][3] == 0) {
 								c = newBatType(TYPE_oid, TYPE_lng);
 								q = newInstruction(mb, ASSIGNsymbol);
@@ -4623,7 +4627,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, a);
 								q = pushStr(mb, q, "lng");
-								b = getArg(q, 0);
+								g = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, putName("json", 4));
@@ -4640,10 +4644,57 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								dynaarg[i][3] = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newAssignment(mb);
-								getArg(q, 0) = b;
+								getArg(q, 0) = g;
 								q->argc = q->retc = 1;
 								q->barrier = EXITsymbol;
 							}
+
+							if (e >= 0 && f >= 0) {
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("or", 2));
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, e);
+								q = pushArgument(mb, q, f);
+								f = getArg(q, 0);
+								pushInstruction(mb, q);
+							} else if (e >= 0) {
+								f = e;
+							}
+							if (f >= 0 && g >= 0) {
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("or", 2));
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, f);
+								q = pushArgument(mb, q, g);
+								g = getArg(q, 0);
+								pushInstruction(mb, q);
+							} else if (f >= 0) {
+								g = f;
+							}
+							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, calcRef);
+							setFunctionId(q, putName("not", 3));
+							q->barrier = BARRIERsymbol;
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushArgument(mb, q, g);
+							b = getArg(q, 0);
+							pushInstruction(mb, q);
+							q = newInstruction(mb, ASSIGNsymbol);
+							setModuleId(q, languageRef);
+							setFunctionId(q, putName("raise", 5));
+							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+							q = pushStr(mb, q, "function does not support maximum "
+									"type from JSON array");
+							pushInstruction(mb, q);
+							q = newAssignment(mb);
+							getArg(q, 0) = b;
+							q->argc = q->retc = 1;
+							q->barrier = EXITsymbol;
+
 							break;
 						case j_func_arg:
 							a = dumpwalkvar(mb, j1, j5);
