@@ -70,7 +70,8 @@ All Rights Reserved.
 */
 @= aggrX3_avg
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
-	if (@1 && range > 0) {
+#if @1
+	if (range > 0) {
 		/* create tmp. sums array */
 		sums = (dbl*) GDKzalloc(range*sizeof(dbl));
 		if (sums == NULL) {
@@ -79,24 +80,33 @@ All Rights Reserved.
 			return GDK_FAIL;
 		}
 	}
-	if (@2 && BATprepareHash(bn)) {
+#endif
+#if @2
+	if (BATprepareHash(bn)) {
 		GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(bn) failed");
-		if (@1 && sums)
+#if @1
+		if (sums)
 			GDKfree(sums);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
+#endif
 	cnt = (BUN*) GDKzalloc(slots*sizeof(cnt[0]));
 	if (cnt == NULL) {
 		GDKerror("aggrX3_avg(@1,@2,@3,@4,@5,@6,@7,@8,@9): cnt = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(cnt[0]));
-		if (@1 && sums)
+#if @1
+		if (sums)
 			GDKfree(sums);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
-	if (!(@1 && sums))
+#if @1
+	if (!sums)
+#endif
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
@@ -133,11 +143,13 @@ All Rights Reserved.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-	if (!(@1 && sums))
+#if @1
+	if (!sums)
+#endif
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	/* postprocess by dividing sums by counts */
-	if (@1) {
-	    if (sums) {
+#if @1
+	if (sums) {
 		/* sums in sums-array */
 		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -151,8 +163,9 @@ All Rights Reserved.
 		}
 		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(sums);
-	    }
-	} else {
+	}
+#else
+	{
 		/* sums in-place */
 		BUN yy = 0;
 		BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
@@ -166,8 +179,8 @@ All Rights Reserved.
 			yy++;
 		}
 		BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
-
 	}
+#endif
 	if (cnt)
 		GDKfree(cnt);
 @

@@ -242,10 +242,12 @@ SQLinit(void)
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
-	if (0 && !GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
+#if 0
+	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
+#endif
 	return MAL_SUCCEED;
 }
 

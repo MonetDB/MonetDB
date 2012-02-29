@@ -146,8 +146,9 @@ st_type2string(st_type type)
 		ST(control_end);
 		ST(return);
 		ST(assign);
+	default:
+		return "unknown"; /* just needed for broken compilers ! */
 	}
-	return "unknown";	/* just needed for broken compilers ! */
 }
 
 /* #TODO make proper traversal operations */
