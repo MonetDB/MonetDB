@@ -2664,18 +2664,15 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mtype < 0 || mtype >= 255)
 		throw(SQL, "sql.setVariable", "failed");
 	if ( strcmp("optimizer",  varname)== 0) {
-		str newopt;
-		newopt = setOptimizer( *(str *) getArgReference(stk,pci,3));
-		if ( newopt)
+		str newopt = *(str *) getArgReference(stk,pci,3);
+		if ( newopt) {
 			msg = addOptimizerPipe(cntxt, mb, newopt);
-		if ( msg )
-			return msg;
-		if ( newopt != NULL ) {
+			if ( msg )
+				return msg;
 			if (stack_find_var(m, varname)) 
 				stack_set_string(m, varname, newopt);
-			return MAL_SUCCEED;
 		}
-		throw(SQL, "sql.setVariable", "Failed to initialize optimizer pipeline");
+		return MAL_SUCCEED;
 	}
 	src = &stk->stk[getArg(pci, 3)];
 	if (stack_find_var(m, varname)) {
