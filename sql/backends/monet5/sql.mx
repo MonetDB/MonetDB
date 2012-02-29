@@ -2667,11 +2667,15 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str newopt = *(str *) getArgReference(stk,pci,3);
 		if ( newopt) {
 			snprintf(buf,BUFSIZ,"user_%d",cntxt->idx);
-			msg = addPipeDefinition(cntxt, buf, newopt);
-			if ( msg )
-				return msg;
-			if (stack_find_var(m, varname)) 
-				stack_set_string(m, varname, buf);
+			if ( ! isOptimizerPipe(newopt) || strcmp(buf,newopt) == 0){
+				msg = addPipeDefinition(cntxt, buf, newopt);
+				if ( msg )
+					return msg;
+				if (stack_find_var(m, varname)) 
+					stack_set_string(m, varname, buf);
+			} else
+				if (stack_find_var(m, varname)) 
+					stack_set_string(m, varname, newopt);
 		}
 		return MAL_SUCCEED;
 	}
