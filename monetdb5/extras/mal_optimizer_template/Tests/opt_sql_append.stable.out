@@ -77,8 +77,8 @@ end s2_1;
 % . # table_name
 % single_value # name
 % varchar # type
-% 4 # length
-[ "user"	]
+% 6 # length
+[ "user_1"	]
 #select def from optimizers() where name = optimizer;
 % . # table_name
 % def # name
