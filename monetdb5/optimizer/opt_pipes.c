@@ -651,6 +651,7 @@ str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 	int i, j, k;
 	InstrPtr p;
+	str msg= MAL_SUCCEED;
 	
 	(void) cntxt;
 
@@ -659,7 +660,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 		break;
 
 	if ( pipes[i].mb == NULL) 
-		(void) compileOptimizer(cntxt,name);
+		msg =  compileOptimizer(cntxt,name);
 	
 	if ( pipes[i].mb) {
 		for ( j =1; j < pipes[i].mb->stop-1; j++) {
@@ -670,5 +671,5 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 			pushInstruction(mb,p);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
