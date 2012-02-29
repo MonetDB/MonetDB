@@ -242,10 +242,12 @@ SQLinit(void)
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
-	if (0 && !GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
+#if 0
+	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
 		mal_unset_lock(sql_contextLock,"SQL init");
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -278,7 +280,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
-	str optimizer;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -290,13 +291,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
 	/* inherit the optimizer from the server */
-	if (optimizerpipe )
-		optimizer= optimizerpipe;
-	else
-		optimizer= GDKgetenv("sql_optimizer");
-	if (optimizer == NULL)
-		optimizer= "default_pipe";
-	SQLglobal("optimizer", setOptimizer(optimizer));
+	SQLglobal("optimizer", initSQLoptimizer());
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";

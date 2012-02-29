@@ -25,8 +25,9 @@
 
 opt_export str getPipeDefinition(str name);
 opt_export str getPipeCatalog(int *nme, int *def, int *stat);
-opt_export str addPipeDefinition(str name, str pipe);
+opt_export str addPipeDefinition(Client cntxt, str name, str pipe);
 opt_export int isOptimizerPipe(str name);
 opt_export str addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name);
+opt_export str compileOptimizer(Client cntxt, str name);
 
 #endif

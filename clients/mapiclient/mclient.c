@@ -2878,9 +2878,10 @@ main(int argc, char **argv)
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
 			usage(argv[0], strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
-			break;
+			/* not reached */
 		default:
 			usage(argv[0], -1);
+			/* not reached */
 		}
 	}
 #ifdef HAVE_ICONV

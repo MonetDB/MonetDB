@@ -1121,12 +1121,12 @@ during the final phase reshuffle the return values to the beginning (?)
 				setPolymorphic(curInstr,type,TRUE);
 			setVarType(curBlk,varid,type);
 			@:propList(varid)@
-		} else 
-		if( @1){
+		} else {
+#if @1
 			parseError(cntxt,"Argument defined twice\n");
 			typeElm(cntxt,getVarType(curBlk,varid));
 			@:propList(varid)@
-		} else {
+#else
 			advance(cntxt,l);
 			type= typeElm(cntxt,getVarType(curBlk,varid));
 			if( type != getVarType(curBlk,varid))
@@ -1135,6 +1135,7 @@ during the final phase reshuffle the return values to the beginning (?)
 				setPolymorphic(curInstr,type,TRUE);
 			setVarType(curBlk,varid,type);
 			@:propList(varid)@
+#endif
 		}
 	} else if( currChar(cntxt)== ':' ){
 		type= typeElm(cntxt,TYPE_any);

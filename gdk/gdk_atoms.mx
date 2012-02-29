@@ -1039,9 +1039,11 @@ int
 			p++;
 		}
 		**dst = sign * base;
-		if (p[0] == 'L' && p[1] == 'L' && sizeof(@1) == 8) {
+#if @3 == 8
+		if (p[0] == 'L' && p[1] == 'L') {
 			p += 2;
 		}
+#endif
 	}
 	return (int) (p - src);
 }
@@ -1061,19 +1063,19 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
 @
 @c
 
-@:numfromstr(bte,127)@
+@:numfromstr(bte,127,1)@
 @:atomtostr(bte,"%hhd",bte)@
 @:atom_io(bte,Bte,bte)@
 
-@:numfromstr(sht,32767)@
+@:numfromstr(sht,32767,2)@
 @:atomtostr(sht,"%hd",sht)@
 @:atom_io(sht,Sht,sht)@
 
-@:numfromstr(int,2147483647)@
+@:numfromstr(int,2147483647,SIZEOF_INT)@
 @:atomtostr(int,"%d",int)@
 @:atom_io(int,Int,int)@
 
-@:numfromstr(lng,9223372036854775807)@
+@:numfromstr(lng,9223372036854775807,SIZEOF_LNG)@
 @:atomtostr(lng,LLFMT,lng)@
 
 @:atom_io(lng,Lng,lng)@

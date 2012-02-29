@@ -442,9 +442,11 @@ static int builtinoptimizers = 11;
 
 /* the session_pipe is the one defined by the user */
 str
-addPipeDefinition(str name, str pipe)
+addPipeDefinition(Client cntxt, str name, str pipe)
 {
 	int i;
+	str msg;
+
 	for( i =0; i< MAXOPTPIPES && pipes[i].name; i++)
 	if ( pipes[i].name && strcmp(name,pipes[i].name)==0)
 		break;
@@ -465,7 +467,12 @@ addPipeDefinition(str name, str pipe)
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
 	pipes[i].mb = NULL;
-	return MAL_SUCCEED;
+	msg = compileOptimizer(cntxt, name);
+	if ( msg){
+		GDKfree(pipes[i].status);
+		pipes[i].status = GDKstrdup(msg);
+	}
+	return msg;
 }
 
 int
@@ -601,20 +608,15 @@ validateOptimizerPipes(void){
  * then copy the statements to the end of the MAL plan
 */
 str
-addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
-	int i, j, k;
-	InstrPtr p;
+compileOptimizer(Client cntxt, str name){
+	int i, j;
 	Symbol sym;
 	str msg = MAL_SUCCEED;
 	
 	(void) cntxt;
 
 	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
-	if ( strcmp(pipes[i].name, name) == 0)
-		break;
-
-	/* compile pipes first */
-	if ( pipes[i].mb == 0){
+	if ( strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0){
 		/* precompile the pipeline as MAL string */
 		Client c = MCinitClient((oid)1,0,0);
 		assert(c != NULL);
@@ -642,7 +644,24 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 		if ( msg != MAL_SUCCEED)
 			return msg;
 	}
+	return MAL_SUCCEED;
+}
 
+str
+addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
+	int i, j, k;
+	InstrPtr p;
+	str msg= MAL_SUCCEED;
+	
+	(void) cntxt;
+
+	for( i=0; i < MAXOPTPIPES && pipes[i].name; i++)
+	if ( strcmp(pipes[i].name, name) == 0)
+		break;
+
+	if ( pipes[i].mb == NULL) 
+		msg =  compileOptimizer(cntxt,name);
+	
 	if ( pipes[i].mb) {
 		for ( j =1; j < pipes[i].mb->stop-1; j++) {
 			p =  copyInstruction(pipes[i].mb->stmt[j]);
@@ -652,5 +671,5 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name){
 			pushInstruction(mb,p);
 		}
 	}
-	return MAL_SUCCEED;
+	return msg;
 }

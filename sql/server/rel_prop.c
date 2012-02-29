@@ -100,13 +100,11 @@ propvalue2string( prop *p)
 			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
 			   return _STRDUP(buf);
 			}
-			break;
 		case PROP_REMOTE: {
 			   char *uri = p->value;
 
 			   return _STRDUP(uri);
 			}
-			break;
 		default:
 			break;
 		}

@@ -1543,7 +1543,6 @@ BATsample(BAT *b, BUN size)
 			}
 		}
 	}
-	break;
 @
 @c
 BAT *

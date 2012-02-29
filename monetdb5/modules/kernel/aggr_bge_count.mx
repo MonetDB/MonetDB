@@ -65,7 +65,8 @@ All Rights Reserved.
 */
 @= aggrX3_count3
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3(@1,@2,@3,@4,@5,@6);\n");
-	if (@1 && range > 0) {
+#if @1
+	if (range > 0) {
 		/* create tmp. cnt array */
 		cnt = (wrd*) GDKzalloc(range*sizeof(wrd));
 		if (cnt == NULL) {
@@ -74,13 +75,18 @@ All Rights Reserved.
 			return GDK_FAIL;
 		}
 	}
-	if (@2 && BATprepareHash(bn)) {
+#endif
+#if @2
+	if (BATprepareHash(bn)) {
 		GDKerror("aggrX3_count3(@1,@2,@3,@4,@5,@6,@6): BATprepareHash(bn) failed");
-		if (@1 && cnt)
+#if @1
+		if (cnt)
 			GDKfree(cnt);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
+#endif
 	/* scan b & g, and increment counts in-place or in cnt-array */
 	base = BUNfirst(g);
 	gh_offset = (ssize_t) base - (ssize_t) g->hseqbase;
@@ -132,7 +138,8 @@ All Rights Reserved.
 			}
 		}
 	}
-	if (@1 && cnt) {
+#if @1
+	if (cnt) {
 		/* copy cnt array to final result */
 		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -142,6 +149,7 @@ All Rights Reserved.
 		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(cnt);
 	}
+#endif
 @
 @c
 /*	aggrX3_count3_loop
@@ -165,7 +173,9 @@ All Rights Reserved.
 */
 @= aggrX3_count3_loop_body
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,@8);\n");
-	if (!(@1 && cnt))
+#if @1
+	if (!cnt)
+#endif
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
@@ -187,7 +197,9 @@ All Rights Reserved.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-	if (!(@1 && cnt))
+#if @1
+	if (!cnt)
+#endif
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 @
 @h

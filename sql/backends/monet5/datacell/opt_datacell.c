@@ -229,7 +229,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (actions)
 	{
-		addPipeDefinition("datacell_pipe",
+		addPipeDefinition(cntxt, "datacell_pipe",
 			"inline,remap,datacell,evaluate,costModel,coercions,emptySet,aliases,mitosis,"
 			"mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,"
 			"history,multiplex,accumulators,garbageCollector");
