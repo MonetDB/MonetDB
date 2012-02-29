@@ -3532,31 +3532,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 								break;
 							case j_func_arg:
-								/* WORKAROUND: using project(0@0, b)
-								 * causes misc propcheck errors, so
-								 * reverse twice */
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, batRef);
-								setFunctionId(q, reverseRef);
-								q = pushReturn(mb, q,
-										newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, b);
-								b = getArg(q, 0);
-								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, algebraRef);
 								setFunctionId(q, projectRef);
 								q = pushReturn(mb, q,
 										newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, b);
 								q = pushOid(mb, q, 0);
-								b = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, batRef);
-								setFunctionId(q, reverseRef);
-								q = pushReturn(mb, q,
-										newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, b);
 								b = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -5733,31 +5714,12 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 									break;
 								case j_func_arg:
 									a = dumpwalkvar(mb, a1, a5);
-									/* WORKAROUND: using project(0@0, b)
-									 * causes misc propcheck errors, so
-									 * reverse twice */
-									q = newInstruction(mb, ASSIGNsymbol);
-									setModuleId(q, batRef);
-									setFunctionId(q, reverseRef);
-									q = pushReturn(mb, q,
-											newTmpVariable(mb, TYPE_any));
-									q = pushArgument(mb, q, a);
-									a = getArg(q, 0);
-									pushInstruction(mb, q);
 									q = newInstruction(mb, ASSIGNsymbol);
 									setModuleId(q, algebraRef);
 									setFunctionId(q, projectRef);
 									q = pushReturn(mb, q,
 											newTmpVariable(mb, TYPE_any));
-									q = pushArgument(mb, q, a);
 									q = pushOid(mb, q, 0);
-									a = getArg(q, 0);
-									pushInstruction(mb, q);
-									q = newInstruction(mb, ASSIGNsymbol);
-									setModuleId(q, batRef);
-									setFunctionId(q, reverseRef);
-									q = pushReturn(mb, q,
-											newTmpVariable(mb, TYPE_any));
 									q = pushArgument(mb, q, a);
 									a = getArg(q, 0);
 									pushInstruction(mb, q);
