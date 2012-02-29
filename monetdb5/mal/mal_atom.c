@@ -199,9 +199,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		}
 		break;
 	case 's':
-		if (idcmp("storage", name) || pci->argc != 1)
-			return 0;
-		else {
+		if (idcmp("storage", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].storage = (*(long (*)(void))pci->fcn)();
 			setAtomName(pci);
 			return 1;
@@ -222,9 +220,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		}
 		break;
 	case 'v':
-		if (idcmp("varsized", name) || pci->argc != 1)
-			return 0;
-		else {
+		if (idcmp("varsized", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].varsized = (*(long (*)(void))pci->fcn)();
 			setAtomName(pci);
 			return 1;

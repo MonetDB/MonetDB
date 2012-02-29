@@ -992,13 +992,15 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 	int i, k;
 
 	/* find last use, needed for operations with side effects */
-	for (i = pc -1; i >= 0; i-- ){
+	for (i = pc -1; i >= 0; i--) {
 		p = getInstrPtr(mb, i);
-		for (k = 0; k < p->argc; k++)
-			if (p->argv[k] == varid )
-				mnstr_printf(f, "n%d -> n%d\n",i, pc);
+		for (k = 0; k < p->argc; k++) {
+			if (p->argv[k] == varid ) {
+				mnstr_printf(f, "n%d -> n%d\n", i, pc);
 				return;
 			}
+		}
+	}
 }
 
 /*

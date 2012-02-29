@@ -353,7 +353,7 @@ main(int argc, char **av)
 				break;
 			}
 			usage(prog);
-			break;
+			/* not reached */
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;

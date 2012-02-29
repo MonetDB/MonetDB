@@ -2944,7 +2944,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			ro2 = sc->data.lval->h->next->next->next->data.sym;
 		return rel_compare(sql, rel, lo, ro, ro2, filter_op, f, ek);
 	}
-		break;
 	case SQL_COMPARE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
@@ -2954,7 +2953,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		   quantifiers (all and any/some) */
 		return rel_compare(sql, rel, lo, ro, NULL, compare_op, f, ek);
 	}
-		break;
 	/* Set Member ship */
 	case SQL_IN:
 	case SQL_NOT_IN:
@@ -4453,7 +4451,6 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
 	}
-		break;
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:

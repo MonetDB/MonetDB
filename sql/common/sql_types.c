@@ -1164,11 +1164,13 @@ sqltypeinit(void)
 	SHT = *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
-	if (sizeof(wrd) == sizeof(int))
-		WRD = *t++ = sql_create_type("WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
+#if SIZEOF_WRD == SIZEOF_INT
+	WRD = *t++ = sql_create_type("WRD", 32, SCALE_FIX, 2, EC_NUM, "wrd");
+#endif
 	LNG = *t++ = sql_create_type("BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
-	if (sizeof(wrd) == sizeof(lng))
-		WRD = *t++ = sql_create_type("WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
+#if SIZEOF_WRD == SIZEOF_LNG
+	WRD = *t++ = sql_create_type("WRD", 64, SCALE_FIX, 2, EC_NUM, "wrd");
+#endif
 
 	decimals = t;
 	/* decimal(d,s) (d indicates nr digits,

@@ -83,7 +83,6 @@ propvalue2string( prop *p)
 			   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
 			   return _STRDUP(buf);
 			}
-			break;
 		default:
 			break;
 		}

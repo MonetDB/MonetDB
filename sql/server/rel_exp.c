@@ -708,9 +708,9 @@ exp_is_complex_select( sql_exp *e )
 	}
 	case e_column:
 	case e_cmp:
+	default:
 		return 0;
 	}
-	return 0;
 }
 
 static int

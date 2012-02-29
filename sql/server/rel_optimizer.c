@@ -4237,9 +4237,9 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_semi: 
 	case op_anti: 
 	case op_ddl:
+	default:
 		return rel;
 	}
-	return rel;
 }
 
 static sql_rel *

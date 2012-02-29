@@ -4496,7 +4496,8 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 	}
 
 	/* should we switch to oph_idx ? */
-	if (0 && i->type == hash_idx && list_length(i->columns) == 1 &&
+#if 0
+	if (i->type == hash_idx && list_length(i->columns) == 1 &&
 	    store_funcs.count_col(ic->c) && store_funcs.sorted_col(tr, ic->c)) {
 		sql_table *sysidx = find_sql_table(syss, "idxs");
 		sql_column *sysidxid = find_sql_column(sysidx, "id");
@@ -4507,6 +4508,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 		i->type = no_idx;
 		table_funcs.column_update_value(tr, sysidxtype, rid, &i->type);
 	}
+#endif
 
 	table_funcs.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &nr);
 	sysic->base.wtime = sysic->s->base.wtime = tr->wtime = tr->stime;

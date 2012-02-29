@@ -1269,17 +1269,16 @@ int
 
 	@:atommem(@1,sizeof(@1))@
 	while (GDKisspace(*p))
-		p++; 
+		p++;
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = @1_nil;
 		p += 3;
 	} else {
 		if (!num10(*p) ) {
-			if ( *p == '-') {
+			if (*p == '-') {
 				sign = -1;
 				p++;
-			} else
-			if ( *p == '+') {
+			} else if (*p == '+') {
 				p++;
 			} else {
 				/* all else is an error */
@@ -1296,10 +1295,13 @@ int
 		if (p - q > @2 || (p - q == @2 && strncmp(q, "@3", @2) > 0)){
 			**dst = @1_nil;
 			sign = -1;
-		} else sign = 1;
-		if (p[0] == 'L' && p[1] == 'L' && sizeof(@1) == 8) {
+		} else
+			sign = 1;
+#if @4 == 8
+		if (p[0] == 'L' && p[1] == 'L') {
 			p += 2;
 		}
+#endif
 	}
 	return sign * (int) (p - src);
 }
@@ -1319,19 +1321,19 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
 @
 @c
 
-@:numfromstr(bte,3,127)@
+@:numfromstr(bte,3,127,1)@
 @:atomtostr(bte,"%hhd",bte)@
 @:atom_io(bte,Bte,bte)@
 
-@:numfromstr(sht,5,32767)@
+@:numfromstr(sht,5,32767,2)@
 @:atomtostr(sht,"%hd",sht)@
 @:atom_io(sht,Sht,sht)@
 
-@:numfromstr(int,10,2147483647)@
+@:numfromstr(int,10,2147483647,SIZEOF_INT)@
 @:atomtostr(int,"%d",int)@
 @:atom_io(int,Int,int)@
 
-@:numfromstr(lng,19,9223372036854775807)@
+@:numfromstr(lng,19,9223372036854775807,SIZEOF_LNG)@
 @:atomtostr(lng,LLFMT,lng)@
 
 @:atom_io(lng,Lng,lng)@
