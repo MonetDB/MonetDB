@@ -542,6 +542,8 @@ validatePipe(MalBlkPtr mb){
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
+	if ( mb == NULL || getInstrPtr(mb,1) == 0)
+		throw(MAL,"optimizer.validate","improper optimizer mal block\n");
 	if ( getFunctionId(getInstrPtr(mb,1)) == NULL || idcmp(getFunctionId( getInstrPtr(mb,1)), "inline" ) )
 		throw(MAL,"optimizer.validate","'inline' should be the first\n");
 
