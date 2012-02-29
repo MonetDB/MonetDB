@@ -1081,8 +1081,8 @@ algebra_export str ALGselectNotNil(int *result, int *bid);
 algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 
 @= project_export
-algebra_export str ALGprojecthead_@1(int *ret,ptr *val, int *bid);
-algebra_export str ALGprojecttail_@1(int *ret,int *bid, ptr *val);
+algebra_export str ALGprojecthead_@1(int *ret, @1 *val, int *bid);
+algebra_export str ALGprojecttail_@1(int *ret, int *bid, @1 *val);
 @
 @h
 @:project_export(int)@
@@ -1523,12 +1523,6 @@ static int
 CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 {
 	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDthetajoin(BAT **result, BAT *left, BAT *right, int *mode, lng *estimate)
-{
-	return (*result = BATthetajoin(left, right, *mode, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 static int
@@ -2606,8 +2600,8 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 		BBPreleaseref(left->batCacheid);
 		BBPreleaseref(right->batCacheid);
 		throw(MAL, "algebra.thetajoin", ILLEGAL_ARGUMENT " Theta comparison <> not yet supported");
-	} 
-	CMDthetajoin(&bn, left, right, opc, estimate);
+	}
+	bn = BATthetajoin(left, right, *opc, *estimate == lng_nil || *estimate < 0 ? BUN_NONE : (*estimate >= (lng) BUN_MAX ? BUN_MAX : (BUN) *estimate));
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
@@ -3692,25 +3686,18 @@ ALGprojectNIL(int *ret, int *bid)
  * The constant versions are typed by the parser
  */
 @= projectImpl
-str ALGprojecthead_@1(int *ret,ptr *val, int *bid){
+str
+ALGprojecthead_@1(int *ret, @1 *val, int *bid)
+{
 	BAT *b, *bn;
-	BUN p,q;
-	BATiter bi;
 
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
-	bn= BATnew(TYPE_@1,BATttype(b),BATcount(b));
+	b = BATmirror(b);
+	bn = BATconst(b, TYPE_@1, val);
+	bn = BATmirror(bn);
+
 	@:tstBAT("algebra.project")@
-	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_TAIL,MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		ptr v = BUNtail(bi,p);
-		bunfastins(bn, val,v);
-	}
-	bn->H->nonil = (ATOMcmp(bn->htype, val, ATOMnilptr(bn->htype))); 
-	bn->T->nonil = b->T->nonil;
-bunins_failed:
-	BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
@@ -3718,25 +3705,16 @@ bunins_failed:
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str ALGprojecttail_@1(int *ret,int *bid, ptr *val){
+str
+ALGprojecttail_@1(int *ret, int *bid, @1 *val)
+{
 	BAT *b, *bn;
-	BUN p,q;
-	BATiter bi;
 
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
-	bn= BATnew(BAThtype(b),TYPE_@1,BATcount(b));
+	bn = BATconst(b, TYPE_@1, val);
+
 	@:tstBAT("algebra.project")@
-	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD,MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		ptr v = BUNhead(bi,p);
-		bunfastins(bn,v, val);
-	}
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = (ATOMcmp(bn->ttype, val, ATOMnilptr(bn->ttype))); 
-bunins_failed:
-	BATaccessEnd(b,USE_HEAD,MMAP_SEQUENTIAL);
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;

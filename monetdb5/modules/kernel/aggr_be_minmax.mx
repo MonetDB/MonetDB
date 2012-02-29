@@ -68,11 +68,13 @@ All Rights Reserved.
 */
 @= aggrX3_minmax_ptr
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
-	if (@2 && BATprepareHash(e)) {
+#if @2
+	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
 		BBPreclaim(e);
 		return GDK_FAIL;
 	}
+#endif
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (ptr*) GDKzalloc(slots*sizeof(ptr));
 	if (extremes == NULL) {
@@ -150,11 +152,13 @@ All Rights Reserved.
 */
 @= aggrX3_minmax_oid
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
-	if (@2 && BATprepareHash(e)) {
+#if @2
+	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
 		BBPreclaim(e);
 		return GDK_FAIL;
 	}
+#endif
 	/* init: create extremes and set all to the zero pointer */
 	extremes = (oid*) GDKmalloc(slots*sizeof(oid));
 	if (extremes == NULL) {

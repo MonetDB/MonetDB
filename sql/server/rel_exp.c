@@ -778,11 +778,11 @@ exp_is_complex_select( sql_exp *e )
 	}
 	case e_column:
 	case e_cmp:
+	default:
 		return 0;
 	case e_psm:
 		return 1;
 	}
-	return 0;
 }
 
 static int

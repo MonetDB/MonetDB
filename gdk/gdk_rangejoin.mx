@@ -328,11 +328,11 @@ break;
 			BUN g = MAX(ll-lp, 1024*1024);
 			BATsetcount(bn, o);
 			if (limit) {
-                              *limit = o * (lc<rc)?((rp-rc)/MAX(1,rc)):((lp-lc)/MAX(1,lc));
+                              *limit = o && lc < rc ? (rp - rc) / MAX(1, rc) : (lp - lc) / MAX(1, lc);
 			      break;
-                        }                                    
+                        }
 			if (BATextend(bn, BATcapacity(bn)+g) == NULL)
-			      goto failed; 
+			      goto failed;
 		}
 		bnh = (oid*)Hloc(bn, bnf);
 		bnt = (oid*)Tloc(bn, bnf);
