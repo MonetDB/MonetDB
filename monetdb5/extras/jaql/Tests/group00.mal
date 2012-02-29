@@ -1,0 +1,6 @@
+
+jaql.x("[1,2,3]->group into count($);");
+jaql.x("[1,2,3]->group into sum($);");
+
+jaql.x("[{\"a\":1.1},2,3.7,false,null]->group into count($);");
+jaql.x("[{\"a\":1},{\"a\":2.4},{\"a\":3}]->group into sum($.a);");

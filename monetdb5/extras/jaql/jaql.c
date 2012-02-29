@@ -1820,3 +1820,25 @@ JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = 0;
 	return MAL_SUCCEED;
 }
+
+str
+JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	int *b = (int *)getArgReference(stk, pci, 1);
+	ValPtr t = getArgReference(stk, pci, 2);
+	BAT *in;
+
+	(void)mb;
+	(void)cntxt;
+
+	in = BBPquickdesc(ABS(*b), FALSE);
+	if (*b < 0)
+		in = BATmirror(in);
+
+	if (in->ttype != t->vtype)
+		throw(MAL, "jaql.cast", "BAT tail is not of required type");
+
+	*ret = *b;
+	return MAL_SUCCEED;
+}

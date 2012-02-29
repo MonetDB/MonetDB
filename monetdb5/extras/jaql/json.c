@@ -1019,6 +1019,8 @@ JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *
 		}
 	}
 
+	unloadbats();
+
 	if (totype == tlng) {
 		*ret = GDKstrdup("lng");
 	} else if (totype == tdbl) {
