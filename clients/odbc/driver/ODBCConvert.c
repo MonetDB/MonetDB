@@ -1894,7 +1894,7 @@ ODBCFetch(ODBCStmt *stmt,
 			addStmtError(stmt, "07006", NULL, 0);
 			return SQL_ERROR;
 		}
-		break;
+		/* break;  -- not reached */
 	case SQL_C_BIT:
 		if (ardrec && row > 0)
 			ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(unsigned char) : bind_type));

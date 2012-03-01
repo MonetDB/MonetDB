@@ -45,20 +45,21 @@ Ready.
 % . # table_name
 % single_value # name
 % varchar # type
-% 4 # length
-[ "user"	]
+% 12 # length
+[ "minimal_pipe"	]
+#set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.history(); optimizer.multiplex(); optimizer.accumulators(); optimizer.garbageCollector();';
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 4 # length
-[ "user"	]
+% 6 # length
+[ "user_1"	]
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 4 # length
-[ "user"	]
+% 6 # length
+[ "user_1"	]
 #select * from optimizers();
 % .,	.,	. # table_name
 % name,	def,	status # name
@@ -75,7 +76,7 @@ Ready.
 [ "datacyclotron_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.datacyclotron();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
 [ "dictionary_pipe",	"optimizer.inline();optimizer.remap();optimizer.dictionary();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
 [ "compression_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.constants();optimizer.commonTerms();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.compression();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();",	"experimental"	]
-[ "user",	"myfamous_pipe",	"experimental"	]
+[ "user_1",	"myfamous_pipe",	"experimental"	]
 
 # 02:57:35 >  
 # 02:57:35 >  "Done."

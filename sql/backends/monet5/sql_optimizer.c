@@ -416,61 +416,39 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 	optimizerCheck(cntxt,mb,"optimizer.SQLgetstatistics",actions,GDKusec()-clk,0);
 }
 /*
- * Optimizers steps are identified by a list of identifiers and given
- * a pipeline name. The default pipeline in the distribution has been
+ * Optimizers steps are identified by a pipeline name. The default pipeline in the distribution has been
  * tested extensively and should provide overall good performance.
  * Additional pipelines are defined in the opt_pipes.mx file.
  *
- * A few optimizations are always needed. First, the multiplex
- * code should be turned into a proper MAL blocks before
- * other optimizations take place.
- * And before we actually execute the program, we should
- * expand the macros (unless this has already been taken
- * care of.
- *
- * The first error in the optimizer string is shown.
- *
- * The prevalent optimizer pipeline is a global variable. Note, that no concurrency
- * control is implemented to isolate the clients in playing with the optimizers.
  */
-str optimizerpipe;		/* the active pipeline */
+static str optimizerpipe;		/* the active pipeline */
 
 str
-setOptimizer(str newopt)
+initSQLoptimizer(void)
 {
 	char *pipe;
 
 	/* do nothing if the pipe line is already set */
-	if ( optimizerpipe && newopt && strcmp(optimizerpipe,newopt) == 0 )
-		return GDKstrdup(optimizerpipe);
-
-	if (newopt == NULL || *newopt == 0 ){
+	if (optimizerpipe == NULL ){
 		pipe = GDKgetenv("sql_optimizer");
 		if ( pipe == NULL)
-			newopt = GDKstrdup("minimal_pipe");
-		else newopt= GDKstrdup(pipe);
-	} else {
-		if ( optimizerpipe)
-			GDKfree(optimizerpipe);
-		/* add/test user defined optimizerpath */
-		if ( !isOptimizerPipe(newopt) ) {
-			addPipeDefinition("user", newopt);
-			optimizerpipe = GDKstrdup("user");
-		} else
-			optimizerpipe = GDKstrdup(newopt);
+			optimizerpipe = GDKstrdup("default_pipe");
+		else optimizerpipe= GDKstrdup(pipe);
 	} 
 	return GDKstrdup(optimizerpipe);
 }
 
 void
-addOptimizers(Client c, MalBlkPtr mb, int flag)
+addOptimizers(Client c, MalBlkPtr mb, backend *be)
 {
 	int i;
 	InstrPtr q;
+	ValRecord *val;
 
-	addOptimizerPipe(c, mb,optimizerpipe);
+	val = stack_get_var(be->mvc,"optimizer");
+	addOptimizerPipe(c, mb, val? val->val.sval:"default_pipe");
 	/* point queries do not require mitosis and dataflow */
-	if ( flag)
+	if ( be->mvc->point_query)
 	for( i = mb->stop -1; i > 0; i--){
 		q= getInstrPtr(mb,i);
 		if (q->token == ENDsymbol)
@@ -514,7 +492,7 @@ addQueryToCache(Client c)
 			runMALDebugger(c,c->curprg);
 		return;
 	}
-	addOptimizers(c,mb, be->mvc->point_query);
+	addOptimizers(c,mb, be);
 	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");

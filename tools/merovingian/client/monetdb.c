@@ -663,7 +663,6 @@ command_status(int argc, char *argv[])
 									fprintf(stderr, "status: unknown flag for -s: -%c\n", *p);
 									command_help(2, &argv[-1]);
 									exit(1);
-								break;
 							}
 						}
 						p--;

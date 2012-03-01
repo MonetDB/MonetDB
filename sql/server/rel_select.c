@@ -2903,7 +2903,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			ro2 = sc->data.lval->h->next->next->next->data.sym;
 		return rel_compare(sql, rel, lo, ro, ro2, filter_op, f, ek);
 	}
-		break;
 	case SQL_COMPARE:
 	{
 		symbol *lo = sc->data.lval->h->data.sym;
@@ -2913,7 +2912,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		   quantifiers (all and any/some) */
 		return rel_compare(sql, rel, lo, ro, NULL, compare_op, f, ek);
 	}
-		break;
 	/* Set Member ship */
 	case SQL_IN:
 	case SQL_NOT_IN:
@@ -4340,7 +4338,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		if (r) {
 			sql_exp *e;
 
-			rel_setsubquery(r);
+			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
+				return sql_error(sql, 02, "SELECT: subquery must return only one column");
 			e = rel_lastexp(sql, r);
 
 			/* group by needed ? */
@@ -4378,16 +4377,19 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 						l = list_merge(l, r->exps, (fdup)NULL);
 						r->exps = l;
 						(*rel)->exps = NULL;
+						need_preproj = 1;
 
 					/* but also project ( project[] [x], [x]) */
 					} else if (is_project(r->op) && l && !list_length(l)) {
 						need_preproj = 1;
 					}
 					rel_destroy(*rel);
+					rel_setsubquery(*rel);
 					*rel = r;
 					if (need_preproj)
 						*rel = rel_project(sql->sa, *rel, pre_proj);
 				} else {
+					rel_setsubquery(r);
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					*rel = rel_project(sql->sa, *rel, pre_proj);
 				}
@@ -4437,7 +4439,6 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
 	}
-		break;
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:
