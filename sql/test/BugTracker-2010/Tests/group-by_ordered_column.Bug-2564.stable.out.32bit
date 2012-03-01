@@ -70,7 +70,7 @@ function user.s4_1{autoCommit=true}():void;
     X_42 := bat.mirror(ext59);
     X_43:bat[:oid,:wrd]  := aggr.count(grp57,grp57,X_42);
     X_44 := sql.resultSet(1,1,X_43);
-    sql.rsColumn(X_44,"sys.t2564","L4":str,"wrd",32,0,X_43);
+    sql.rsColumn(X_44,"sys.t2564","L1":str,"wrd",32,0,X_43);
     X_52 := io.stdout();
     sql.exportResult(X_52,X_44);
 end s4_1;
