@@ -20,11 +20,13 @@ function user.main():void;
     jaql.x("[1,2,3]->group into sum($);");
     jaql.x("[{\"a\":1.1},2,3.7,false,null]->group into count($);");
     jaql.x("[{\"a\":1},{\"a\":2.4},{\"a\":3}]->group into sum($.a);");
+    jaql.x("[[1,2,3]] -> transform {\"sum\": sum($[*])};");
 end main;
 [ 3 ]
 [ 6 ]
 [ 5 ]
 [ 6.400000 ]
+[ { "sum": 6 } ]
 
 # 21:51:36 >  
 # 21:51:36 >  "Done."

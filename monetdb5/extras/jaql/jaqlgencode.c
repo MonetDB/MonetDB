@@ -3183,7 +3183,15 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				assert(w->tval1 != NULL);
 
 				switch (w->tval1->type) {
+					enum treetype oarrtrg = j_invalid;
 					case j_var:
+						if (w->tval1->tval2 != NULL &&
+								w->tval1->tval2->nval == -1)
+						{
+							oarrtrg = coltypes[i];
+							coltypes[i] = j_json_arr;
+						}
+
 						b = dumpvariabletransformation(j, cntxt, mb, w->tval1, elems,
 								j1, j2, j3, j4, j5, j6, j7);
 						switch (coltypes[i]) {
@@ -3213,6 +3221,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								q = pushArgument(mb, q, *j6);
 								q = pushArgument(mb, q, *j7);
 								q = pushArgument(mb, q, b);
+								q = pushOid(mb, q, (oid)0);
 								dynaarg[i][0] = getArg(q, 0);
 								dynaarg[i][1] = getArg(q, 1);
 								dynaarg[i][2] = getArg(q, 2);
@@ -3222,74 +3231,34 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								dynaarg[i][6] = getArg(q, 6);
 								pushInstruction(mb, q);
 								break;
-							case j_bool:
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, semijoinRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
-								q = pushArgument(mb, q, b);
-								b = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, selectRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, b);
-								q = pushBte(mb, q, 't');
-								c = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, selectRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, b);
-								q = pushBte(mb, q, 'f');
-								d = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, batRef);
-								setFunctionId(q, insertRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, c);
-								q = pushArgument(mb, q, d);
-								c = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, putName("kdifference", 11));
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, b);
-								q = pushArgument(mb, q, c);
-								d = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, projectRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, d);
-								q = pushBte(mb, q, 'n');
-								d = getArg(q, 0);
-								pushInstruction(mb, q);
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, batRef);
-								setFunctionId(q, insertRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, c);
-								q = pushArgument(mb, q, d);
-								c = getArg(q, 0);
-								pushInstruction(mb, q);
-								dynaarg[i][0] = c;
-								break;
 							case j_sort_arg:
-								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, algebraRef);
-								setFunctionId(q, semijoinRef);
-								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
-								q = pushArgument(mb, q, b);
-								a = getArg(q, 0);
-								pushInstruction(mb, q);
+							case j_json_arr:
+								if (coltypes[i] == j_json_arr) {
+									coltypes[i] = oarrtrg;
+
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, batRef);
+									setFunctionId(q, reverseRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
+									b = getArg(q, 0);
+									pushInstruction(mb, q);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, algebraRef);
+									setFunctionId(q, joinRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
+									q = pushArgument(mb, q, *j5);
+									b = getArg(q, 0);
+									pushInstruction(mb, q);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, batRef);
+									setFunctionId(q, reverseRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
+									b = getArg(q, 0);
+									pushInstruction(mb, q);
+								}
 
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, batRef);
@@ -3307,6 +3276,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								q = pushOid(mb, q, (oid)0);
 								q = pushBte(mb, q, 'a');
 								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, putName("kdifference", 11));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, c);
+								a = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, batRef);
@@ -3510,6 +3487,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								} else if (f >= 0) {
 									g = f;
 								}
+								assert(g >= 0);
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, calcRef);
 								setFunctionId(q, putName("not", 3));
@@ -3542,6 +3520,65 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								b = getArg(q, 0);
 								pushInstruction(mb, q);
 								dynaarg[i][0] = b;
+								break;
+							case j_bool:
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, semijoinRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, b);
+								b = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, selectRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, b);
+								q = pushBte(mb, q, 't');
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, selectRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, b);
+								q = pushBte(mb, q, 'f');
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, batRef);
+								setFunctionId(q, insertRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, c);
+								q = pushArgument(mb, q, d);
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, putName("kdifference", 11));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, b);
+								q = pushArgument(mb, q, c);
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, projectRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, d);
+								q = pushBte(mb, q, 'n');
+								d = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, batRef);
+								setFunctionId(q, insertRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, c);
+								q = pushArgument(mb, q, d);
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								dynaarg[i][0] = c;
 								break;
 							default:
 								assert(0);
@@ -5513,6 +5550,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							} else if (f >= 0) {
 								g = f;
 							}
+							assert(g >= 0);
 							q = newInstruction(mb, ASSIGNsymbol);
 							setModuleId(q, calcRef);
 							setFunctionId(q, putName("not", 3));
