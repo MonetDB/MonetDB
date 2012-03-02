@@ -456,6 +456,7 @@ main(int argc, char **argv)
 		 * the function never terminates... at least on Linux */
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 		walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
+		WaitForSingleObject(walk->id, INFINITE);
 		CloseHandle(walk->id);
 #else
 		pthread_create(&walk->id, NULL, &doProfile, walk);
@@ -488,6 +489,7 @@ main(int argc, char **argv)
 		free(oalts);
 		for (walk = thds; walk != NULL; walk = walk->next) {
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+			WaitForSingleObject(walk->id, INFINITE);
 			CloseHandle(walk->id);
 #else
 			pthread_join(walk->id, NULL);
