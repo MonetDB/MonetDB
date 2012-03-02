@@ -227,8 +227,9 @@ doProfile(void *d)
 	wthread *wthr = (wthread*)d;
 	int i;
 	size_t a;
+	ssize_t n;
 	char *response, *x;
-	char buf[BUFSIZ];
+	char buf[BUFSIZ + 1];
 	char *e;
 	char *mod, *fcn;
 	char *host;
@@ -322,7 +323,8 @@ doProfile(void *d)
 	fflush(NULL);
 
 	i = 0;
-	while (mnstr_read(wthr->s, buf, 1, BUFSIZ)) {
+	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ)) > 0) {
+		buf[n] = 0;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
