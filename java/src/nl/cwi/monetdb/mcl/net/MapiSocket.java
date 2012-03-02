@@ -19,15 +19,35 @@
 
 package nl.cwi.monetdb.mcl.net;
 
-import java.io.*;
-import java.nio.*;
-import java.net.*;
-import java.util.*;
-import java.sql.*;
-import java.security.*;
-import nl.cwi.monetdb.mcl.*;
-import nl.cwi.monetdb.mcl.io.*;
-import nl.cwi.monetdb.mcl.parser.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.EOFException;
+import java.io.FileWriter;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import nl.cwi.monetdb.mcl.MCLException;
+import nl.cwi.monetdb.mcl.io.BufferedMCLReader;
+import nl.cwi.monetdb.mcl.io.BufferedMCLWriter;
+import nl.cwi.monetdb.mcl.parser.MCLParseException;
 
 /**
  * A Socket for communicating with the MonetDB database in MAPI block
@@ -106,15 +126,10 @@ public final class MapiSocket {
 	/** Whether we are debugging or not */
 	private boolean debug = false;
 	/** The Writer for the debug log-file */
-	private FileWriter log;
+	private Writer log;
 
 	/** The blocksize (hardcoded in compliance with stream.mx) */
 	public final static int BLOCK = 8 * 1024 - 2;
-
-	/** A buffer which holds the blocks read */
-	private StringBuffer readBuffer;
-	/** The number of available bytes to read */
-	private short readState = 0;
 
 	/** A short in two bytes for holding the block size in bytes */
 	private byte[] blklen = new byte[2];
@@ -123,7 +138,6 @@ public final class MapiSocket {
 	 * Constructs a new MapiSocket.
 	 */
 	public MapiSocket() {
-		readBuffer = new StringBuffer();
 		con = null;
 	}
 
@@ -208,7 +222,7 @@ public final class MapiSocket {
 	 * @return the currently in use timeout in milliseconds
 	 */
 	public int getSoTimeout() throws SocketException {
-		return(con.getSoTimeout());
+		return con.getSoTimeout();
 	}
 
 	/**
@@ -220,25 +234,23 @@ public final class MapiSocket {
 	 * @param port the port number
 	 * @param user the username
 	 * @param pass the password
-	 * @return A List with informational (warning) messages, or null
-	 *         if there aren't any
+	 * @return A List with informational (warning) messages. If this 
+	 * 		list is empty; then there are no warnings.
 	 * @throws IOException if an I/O error occurs when creating the
 	 *         socket
 	 * @throws MCLParseException if bogus data is received
 	 * @throws MCLException if an MCL related error occurs
 	 */
-	public List connect(String host, int port, String user, String pass)
-		throws IOException, MCLParseException, MCLException
-	{
+	public List<String> connect(String host, int port, String user, String pass)
+		throws IOException, MCLParseException, MCLException {
 		// Wrap around the internal connect that needs to know if it
 		// should really make a TCP connection or not.
-		return(connect(host, port, user, pass, true));
+		return connect(host, port, user, pass, true);
 	}
 
-	private List connect(String host, int port, String user, String pass,
+	private List<String> connect(String host, int port, String user, String pass,
 			boolean makeConnection)
-		throws IOException, MCLParseException, MCLException
-	{
+		throws IOException, MCLParseException, MCLException {
 		if (ttl-- <= 0)
 			throw new MCLException("Maximum number of redirects reached, aborting connection attempt.  Sorry.");
 
@@ -274,8 +286,8 @@ public final class MapiSocket {
 				);
 
 		// read monet response till prompt
-		List redirects = null;
-		ArrayList warns = new ArrayList();
+		List<String> redirects = new ArrayList<String>();
+		List<String> warns = new ArrayList<String>();
 		String err = "", tmp;
 		int lineType;
 		do {
@@ -288,8 +300,6 @@ public final class MapiSocket {
 			} else if (lineType == BufferedMCLReader.INFO) {
 				warns.add(tmp.substring(1));
 			} else if (lineType == BufferedMCLReader.REDIRECT) {
-				if (redirects == null)
-					redirects = new ArrayList();
 				redirects.add(tmp.substring(1));
 			}
 		} while (lineType != BufferedMCLReader.PROMPT);
@@ -297,7 +307,7 @@ public final class MapiSocket {
 			close();
 			throw new MCLException(err.trim());
 		}
-		if (redirects != null) {
+		if (!redirects.isEmpty()) {
 			if (followRedirects) {
 				// Ok, server wants us to go somewhere else.  The list
 				// might have multiple clues on where to go.  For now we
@@ -355,7 +365,6 @@ public final class MapiSocket {
 					}
 				}
 
-				List w = null;
 				if (u.getScheme().equals("monetdb")) {
 					// this is a redirect to another (monetdb) server,
 					// which means a full reconnect
@@ -370,37 +379,32 @@ public final class MapiSocket {
 					tmp = u.getPath();
 					if (tmp != null && tmp.length() != 0) {
 						tmp = tmp.substring(1).trim();
-						if (!tmp.equals("")) {
-							if (!tmp.equals(database)) {
-								warns.add("redirect points to different " +
-										"database: " + tmp);
-								setDatabase(tmp);
-							}
+						if (!tmp.isEmpty() && !tmp.equals(database)) {
+							warns.add("redirect points to different " +
+								"database: " + tmp);
+							setDatabase(tmp);
 						}
 					}
 					int p = u.getPort();
-					w = connect(u.getHost(), p == -1 ? port : p,
-							user, pass, true);
+					warns.addAll(connect(u.getHost(), p == -1 ? port : p,
+							user, pass, true));
 					warns.add("Redirect by " + host + ":" + port + " to " + suri);
 				} else if (u.getScheme().equals("merovingian")) {
 					// reuse this connection to inline connect to the
 					// right database that Merovingian proxies for us
-					w = connect(host, port, user, pass, false);
+					warns.addAll(connect(host, port, user, pass, false));
 				} else {
 					throw new MCLException("unsupported scheme in redirect: " + suri);
 				}
-				if (w != null)
-					warns.addAll(w);
 			} else {
-				String msg = "The server sent a redirect for this connection:";
-				for (Iterator it = redirects.iterator(); it.hasNext(); ) {
-					msg += " [" + it.next().toString() + "]";
+				StringBuilder msg = new StringBuilder("The server sent a redirect for this connection:");
+				for (String it : redirects) {
+					msg.append(" [" + it + "]");
 				}
-				throw new MCLException(msg);
+				throw new MCLException(msg.toString());
 			}
 		}
-
-		return(warns.size() == 0 ? null : warns);
+		return warns;
 	}
 
 	/**
@@ -448,7 +452,7 @@ public final class MapiSocket {
 			case 9:
 				// proto 9 is like 8, but uses a hash instead of the
 				// plain password, the server tells us which hash in the
-				// challenge after the byteorder
+				// challenge after the byte-order
 
 				/* NOTE: Java doesn't support RIPEMD160 :( */
 				if (chaltok[5].equals("SHA512")) {
@@ -485,35 +489,36 @@ public final class MapiSocket {
 				// the byte-order is reported in the challenge string,
 				// which makes sense, since only blockmode is supported.
 				// proto 8 made this obsolete, but retained the
-				// byteorder report for future "binary" transports.  In
-				// proto 8, the byteorder of the blocks is always little
+				// byte-order report for future "binary" transports.  In
+				// proto 8, the byte-order of the blocks is always little
 				// endian because most machines today are.
 				String hashes = (hash == null ? chaltok[3] : hash);
+				Set<String> hashesSet = new HashSet<String>(Arrays.asList(hashes.toUpperCase().split("[, ]")));
+
 				// if we deal with merovingian, mask our credentials
-				if (servert.equals("merovingian") &&
-						!language.equals("control"))
-				{
+				if (servert.equals("merovingian") && !language.equals("control")) {
 					username = "merovingian";
 					password = "merovingian";
 				}
 				String pwhash;
 				algo = null;
-				if (hashes.indexOf("SHA512") != -1) {
+				
+				if (hashesSet.contains("SHA512")) {
 					algo = "SHA-512";
 					pwhash = "{SHA512}";
-				} else if (hashes.indexOf("SHA384") != -1) {
+				} else if (hashesSet.contains("SHA384")) {
 					algo = "SHA-384";
 					pwhash = "{SHA384}";
-				} else if (hashes.indexOf("SHA256") != -1) {
+				} else if (hashesSet.contains("SHA256")) {
 					algo = "SHA-256";
 					pwhash = "{SHA256}";
-				} else if (hashes.indexOf("SHA1") != -1) {
+				} else if (hashesSet.contains("SHA1")) {
 					algo = "SHA-1";
 					pwhash = "{SHA1}";
-				} else if (hashes.indexOf("MD5") != -1) {
+				} else if (hashesSet.contains("MD5")) {
 					algo = "MD5";
 					pwhash = "{MD5}";
-				} else if (version == 8 && hashes.indexOf("plain") != -1) {
+				} else if (version == 8 && hashesSet.contains("PLAIN")) {
 					pwhash = "{plain}" + password + challenge;
 				} else {
 					throw new MCLException("no supported password hashes in " + hashes);
@@ -545,9 +550,15 @@ public final class MapiSocket {
 				response = "BIG:";	// JVM byte-order is big-endian
 				response += username + ":" + pwhash + ":" + language;
 				response += ":" + (database == null ? "" : database) + ":";
-
-				return(response);
+				
+				return response;
 		}
+	}
+	
+	private static char hexChar(int n) {
+		return (n > 9) 
+				? (char) ('a' + (n - 10))
+				: (char) ('0' + n);
 	}
 
 	/**
@@ -558,14 +569,13 @@ public final class MapiSocket {
 	 * @return the byte array as hexadecimal string
 	 */
 	private static String toHex(byte[] digest) {
-		StringBuffer r = new StringBuffer(digest.length * 2);
+		char[] result = new char[digest.length * 2];
+		int pos = 0;
 		for (int i = 0; i < digest.length; i++) {
-			// zero out higher bits to get unsigned conversion
-			int b = digest[i] << 24 >>> 24;
-			if (b < 16) r.append("0");
-			r.append(Integer.toHexString(b));
+			result[pos++] = hexChar((digest[i] & 0xf0) >> 4);
+			result[pos++] = hexChar(digest[i] & 0x0f);
 		}
-		return(r.toString());
+		return new String(result);
 	}
 
 	/**
@@ -575,7 +585,7 @@ public final class MapiSocket {
 	 * @return an input stream that reads from this open connection
 	 */
 	public InputStream getInputStream() {
-		return(fromMonet);
+		return fromMonet;
 	}
 
 	/**
@@ -584,7 +594,7 @@ public final class MapiSocket {
 	 * @return an output stream for writing bytes to this MapiSocket
 	 */
 	public OutputStream getOutputStream() {
-		return(toMonet);
+		return toMonet;
 	}
 
 	/**
@@ -595,7 +605,7 @@ public final class MapiSocket {
 	 * @return a BufferedMCLReader connected to this MapiSocket
 	 */
 	public BufferedMCLReader getReader() {
-		return(reader);
+		return reader;
 	}
 
 	/**
@@ -606,7 +616,7 @@ public final class MapiSocket {
 	 * @return a BufferedMCLWriter connected to this MapiSocket
 	 */
 	public BufferedMCLWriter getWriter() {
-		return(writer);
+		return writer;
 	}
 
 	/**
@@ -617,7 +627,7 @@ public final class MapiSocket {
 	 * @return the mapi protocol version
 	 */
 	public int getProtocolVersion() {
-		return(version);
+		return version;
 	}
 
 	/**
@@ -630,7 +640,33 @@ public final class MapiSocket {
 	 * @throws IOException if the file could not be opened for writing
 	 */
 	public void debug(String filename) throws IOException {
-		log = new FileWriter(filename);
+		debug(new FileWriter(filename));
+	}
+	
+	/**
+	 * Enables logging to a stream what is read and written from and to
+	 * the server.  Logging can be enabled at any time.  However, it is
+	 * encouraged to start debugging before actually connecting the
+	 * socket.
+	 *
+	 * @param out to write the log to
+	 * @throws IOException if the file could not be opened for writing
+	 */
+	public void debug(PrintStream out) throws IOException {
+		debug(new PrintWriter(out));
+	}
+	
+	/**
+	 * Enables logging to a stream what is read and written from and to
+	 * the server.  Logging can be enabled at any time.  However, it is
+	 * encouraged to start debugging before actually connecting the
+	 * socket.
+	 *
+	 * @param out to write the log to
+	 * @throws IOException if the file could not be opened for writing
+	 */
+	public void debug(Writer out) throws IOException {
+		log = out;
 		debug = true;
 	}
 
@@ -775,11 +811,11 @@ public final class MapiSocket {
 		}
 
 		public int available() {
-			return(blockLen - readPos);
+			return blockLen - readPos;
 		}
 
 		public boolean markSupported() {
-			return(false);
+			return false;
 		}
 
 		public void mark(int readlimit) {
@@ -822,13 +858,13 @@ public final class MapiSocket {
 					}
 					if (debug)
 						logRd("server closed the connection (EOF)");
-					return(false);
+					return false;
 				}
 				len -= s;
 				off += s;
 			}
 
-			return(true);
+			return true;
 		}
 
 		/**
@@ -911,12 +947,11 @@ public final class MapiSocket {
 				
 			if (debug)
 				logRx(new String(block, readPos, 1, "UTF-8"));
-
-			return((int)block[readPos++]);
+			return (int)block[readPos++];
 		}
 
 		public int read(byte[] b) throws IOException {
-			return(read(b, 0, b.length));
+			return read(b, 0, b.length);
 		}
 
 		public int read(byte[] b, int off, int len) throws IOException {
@@ -947,7 +982,7 @@ public final class MapiSocket {
 					break;
 				}
 			}
-			return(size);
+			return size;
 		}
 
 		public long skip(long n) throws IOException {
@@ -964,7 +999,7 @@ public final class MapiSocket {
 					break;
 				}
 			}
-			return(n);
+			return n;
 		}
 	}
 
@@ -979,7 +1014,7 @@ public final class MapiSocket {
 			if (fromMonet != null) fromMonet.close();
 			if (toMonet != null) toMonet.close();
 			if (con != null) con.close();
-			if (debug) log.close();
+			if (debug && log instanceof FileWriter) log.close();
 		} catch (IOException e) {
 			// ignore it
 		}

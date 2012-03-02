@@ -21,6 +21,7 @@ package nl.cwi.monetdb.util;
 
 import java.io.*;
 import java.sql.*;
+import java.util.Arrays;
 
 
 public abstract class Exporter {
@@ -57,7 +58,7 @@ public abstract class Exporter {
 	 * @return the quoted string
 	 */
 	protected static String dq(String in) {
-		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
+		return "\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"";
 	}
 
 	/**
@@ -68,7 +69,7 @@ public abstract class Exporter {
 	 * @return the quoted string
 	 */
 	protected static String q(String in) {
-		return("'" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'");
+		return "'" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'";
 	}
 
 	/**
@@ -80,9 +81,8 @@ public abstract class Exporter {
 	 * @return a String holding cnt times chr
 	 */
 	protected static String repeat(char chr, int cnt) {
-		if (cnt < 0) return("");
-		StringBuffer sb = new StringBuffer(cnt);
-		for (int i = 0; i < cnt; i++) sb.append(chr);
-		return(sb.toString());
+		char[] buf = new char[cnt];
+		Arrays.fill(buf, chr);
+		return new String(buf);
 	}
 }

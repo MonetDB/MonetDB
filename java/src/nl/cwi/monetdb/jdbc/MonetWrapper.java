@@ -54,7 +54,7 @@ public class MonetWrapper implements Wrapper {
 	 *         interface.
 	 */
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
-		return(false);
+		return false;
 	}
 
 	/**

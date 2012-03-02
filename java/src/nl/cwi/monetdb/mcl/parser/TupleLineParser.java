@@ -19,8 +19,6 @@
 
 package nl.cwi.monetdb.mcl.parser;
 
-import java.util.*;
-
 /**
  * The TupleLineParser extracts the values from a given tuple.  The
  * number of values that are expected are known upfront to speed up
@@ -67,13 +65,13 @@ public class TupleLineParser extends MCLParser {
 			// reset colnr
 			reset();
 
-			return(0);
+			return 0;
 		}
 
 		// extract separate fields by examining string, char for char
 		boolean inString = false, escaped = false;
 		int cursor = 2, column = 0, i = 2;
-		StringBuffer uesc = new StringBuffer();
+		StringBuilder uesc = new StringBuilder();
 		for (; i < len; i++) {
 			switch(chrLine[i]) {
 				default:
@@ -114,7 +112,7 @@ public class TupleLineParser extends MCLParser {
 						if (chrLine[cursor] == '"' &&
 							chrLine[i - 2] == '"')
 						{
-							// reuse the StringBuffer by cleaning it
+							// reuse the StringBuilder by cleaning it
 							uesc.delete(0, uesc.length());
 							// prevent capacity increasements
 							uesc.ensureCapacity((i - 2) - (cursor + 1));
@@ -188,6 +186,6 @@ public class TupleLineParser extends MCLParser {
 		// reset colnr
 		reset();
 		
-		return(0);
+		return 0;
 	}
 }

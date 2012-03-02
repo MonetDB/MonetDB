@@ -33,7 +33,7 @@ public class SQLRestore {
 		_dbName = dbName;
 	}
 	
-	private class ServerResponseReader implements Runnable {
+	private static class ServerResponseReader implements Runnable {
 		private final BufferedMCLReader _is;
 		private final AtomicBoolean _errorState = new AtomicBoolean(false);
 		private String _errorMessage = null; 

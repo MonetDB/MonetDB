@@ -19,21 +19,49 @@
 
 package nl.cwi.monetdb.jdbc;
 
-import java.sql.*;
-import java.util.*;
-import java.io.*;
-import java.nio.*;
-import java.security.*;
-import java.util.concurrent.Executor;
+import java.io.File;
+import java.io.IOException;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import nl.cwi.monetdb.mcl.io.*;
-import nl.cwi.monetdb.mcl.net.*;
-import nl.cwi.monetdb.mcl.parser.*;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.NClob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLWarning;
+import java.sql.SQLXML;
+import java.sql.Savepoint;
+import java.sql.Statement;
+import java.sql.Struct;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import nl.cwi.monetdb.mcl.MCLException;
+import nl.cwi.monetdb.mcl.io.BufferedMCLReader;
+import nl.cwi.monetdb.mcl.io.BufferedMCLWriter;
+import nl.cwi.monetdb.mcl.net.MapiSocket;
+import nl.cwi.monetdb.mcl.parser.HeaderLineParser;
+import nl.cwi.monetdb.mcl.parser.MCLParseException;
+import nl.cwi.monetdb.mcl.parser.StartOfHeaderParser;
 
 /**
- * A Connection suitable for the MonetDB database.
+ * A {@link Connection} suitable for the MonetDB database.
  * <br /><br />
  * This connection represents a connection (session) to a MonetDB
  * database. SQL statements are executed and results are returned within
@@ -87,12 +115,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	private SQLWarning warnings = null;
 	/** The Connection specific mapping of user defined types to Java
 	 * types (not used) */
-	private Map typeMap = new HashMap();
+	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>();
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)
 	/** A Map containing all (active) Statements created from this Connection */
-	private Map statements = new WeakHashMap();
+	private Map<Statement,?> statements = new WeakHashMap<Statement, Object>();
 
 	/** The number of results we receive from the server at once */
 	private int curReplySize = -1;	// the server by default uses -1 (all)
@@ -126,8 +154,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database error occurs
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
-	MonetConnection(
-		Properties props)
+	MonetConnection(Properties props)
 		throws SQLException, IllegalArgumentException
 	{
 		this.hostname = props.getProperty("host");
@@ -197,14 +224,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		}
 
 		try {
-			List warning = 
+			List<String> warnings = 
 				server.connect(hostname, port, username, password);
-			if (warning != null) {
-				for (Iterator it = warning.iterator(); it.hasNext(); ) {
-					addWarning(it.next().toString(), "01M02");
-				}
+			for (String warning : warnings) {
+				addWarning(warning, "01M02");
 			}
-
+			
 			// apply NetworkTimeout value from legacy (pre 4.1) driver
 			// so_timeout calls
 			server.setSoTimeout(sockTimeout);
@@ -298,18 +323,19 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * closed is a no-op.
 	 */
 	public void close() {
-		Iterator it = statements.keySet().iterator();
-		while (it.hasNext()) {
-			try {
-				((Statement)it.next()).close();
-			} catch (SQLException e) {
-				// better luck next time!
+		synchronized (server) {
+			for (Statement st : statements.keySet()) {
+				try {
+					st.close();
+				} catch (SQLException e) {
+					// better luck next time!
+				}
 			}
+			// close the socket
+			server.close();
+			// report ourselves as closed
+			closed = true;
 		}
-		// close the socket
-		server.close();
-		// report ourselves as closed
-		closed = true;
 	}
 
 	/**
@@ -393,10 +419,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Statement createStatement() throws SQLException {
-		return(createStatement(
+		return createStatement(
 					ResultSet.TYPE_FORWARD_ONLY,
 					ResultSet.CONCUR_READ_ONLY,
-					ResultSet.HOLD_CURSORS_OVER_COMMIT));
+					ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	/**
@@ -419,10 +445,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			int resultSetConcurrency)
 		throws SQLException
 	{
-		return(createStatement(
+		return createStatement(
 					resultSetType,
 					resultSetConcurrency,
-					ResultSet.HOLD_CURSORS_OVER_COMMIT));
+					ResultSet.HOLD_CURSORS_OVER_COMMIT);
 	}
 
 	/**
@@ -464,7 +490,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				);
 			// store it in the map for when we close...
 			statements.put(ret, null);
-			return(ret);
+			return ret;
 		} catch (IllegalArgumentException e) {
 			throw new SQLException(e.toString(), "M0M03");
 		}
@@ -559,7 +585,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public boolean getAutoCommit() throws SQLException {
-		return(autoCommit);
+		return autoCommit;
 	}
 
 	/**
@@ -576,12 +602,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		// this is a dirty hack, but it works as long as MonetDB
 		// only handles one catalog (dbfarm) at a time
 		ResultSet rs = getMetaData().getCatalogs();
-		if (rs.next()) {
-			String ret = rs.getString(1);
+		try {
+			return rs.next() ? rs.getString(1) : null;
+		} finally {
 			rs.close();
-			return(ret);
-		} else {
-			return(null);
 		}
 	}
 	
@@ -594,7 +618,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public String getClientInfo(String name) {
 		// This method will also return null if the specified client
 		// info property name is not supported by the driver.
-		return(null);
+		return null;
 	}
 
 	/**
@@ -605,7 +629,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         the driver.
 	 */
 	public Properties getClientInfo() {
-		return(new Properties());
+		return new Properties();
 	}
 
 	/**
@@ -620,7 +644,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public int getHoldability() {
 		// TODO: perhaps it is better to have the server implement
 		//       CLOSE_CURSORS_AT_COMMIT
-		return(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -637,7 +661,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (lang != LANG_SQL)
 			throw new SQLException("This method is only supported in SQL mode", "M0M04");
 
-		return(new MonetDatabaseMetaData(this));
+		return new MonetDatabaseMetaData(this);
 	}
 
 	/**
@@ -648,7 +672,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         Connection.TRANSACTION_SERIALIZABLE
 	 */
 	public int getTransactionIsolation() {
-		return(TRANSACTION_SERIALIZABLE);
+		return TRANSACTION_SERIALIZABLE;
 	}
 
 	/**
@@ -659,8 +683,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return the java.util.Map object associated with this Connection
 	 *         object
 	 */
-	public Map getTypeMap() {
-		return(typeMap);
+	public Map<String,Class<?>> getTypeMap() {
+		return typeMap;
 	}
 
 	/**
@@ -685,7 +709,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
-		return(warnings);
+		return warnings;
 	}
 
 	/**
@@ -704,7 +728,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 *         still open
 	 */
 	public boolean isClosed() {
-		return(closed);
+		return closed;
 	}
 
 	/**
@@ -716,7 +740,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
 	public boolean isReadOnly() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -741,24 +765,24 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (timeout < 0)
 			throw new SQLException("timeout is less than 0", "M1M05");
 		if (closed)
-			return(false);
+			return false;
 		// ping db using select 1;
 		try {
 			Statement stmt = createStatement();
-			ResultSet rs = stmt.executeQuery("SELECT 1");
+			stmt.executeQuery("SELECT 1");
 			stmt.close();
-			return(true);
+			return true;
 		} catch (SQLException e) {
 			// close this connection
 			close();
 		}
-		return(false);
+		return false;
 	}
 
-	public String nativeSQL(String sql) {return(sql);}
-	public CallableStatement prepareCall(String sql) {return(null);}
-	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {return(null);}
-	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
+	public String nativeSQL(String sql) {return sql;}
+	public CallableStatement prepareCall(String sql) {return null;}
+	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {return null;}
+	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return null;}
 
 	/**
 	 * Creates a PreparedStatement object for sending parameterized SQL
@@ -788,13 +812,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
-		return(
-			prepareStatement(
+		return prepareStatement(
 					sql,
 					ResultSet.TYPE_FORWARD_ONLY,
 					ResultSet.CONCUR_READ_ONLY,
 					ResultSet.HOLD_CURSORS_OVER_COMMIT
-			)
 		);
 	}
 
@@ -824,13 +846,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			int resultSetConcurrency)
 		throws SQLException
 	{
-		return(
-			prepareStatement(
+		return prepareStatement(
 					sql,
 					resultSetType,
 					resultSetConcurrency,
 					ResultSet.HOLD_CURSORS_OVER_COMMIT
-			)
 		);
 	}
 
@@ -877,7 +897,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			);
 			// store it in the map for when we close...
 			statements.put(ret, null);
-			return(ret);
+			return ret;
 		} catch (IllegalArgumentException e) {
 			throw new SQLException(e.toString(), "M0M03");
 		}
@@ -929,17 +949,15 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		
 		/* MonetDB has no way to disable this, so just do the normal
 		 * thing ;) */
-		return(
-			prepareStatement(
+		return prepareStatement(
 					sql,
 					ResultSet.TYPE_FORWARD_ONLY,
 					ResultSet.CONCUR_READ_ONLY
-			)
 		);
 	}
 
-	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) {return(null);}
-	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return(null);}
+	public PreparedStatement prepareStatement(String sql, int[] columnIndexes) {return null;}
+	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return null;}
 
 	/**
 	 * Removes the given Savepoint object from the current transaction.
@@ -1098,9 +1116,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param properties the list of client info properties to set
 	 */
 	public void setClientInfo(Properties props) {
-		Set entries = props.entrySet();
-		for (Iterator it = entries.iterator(); it.hasNext(); ) {
-			Map.Entry entry = (Map.Entry)(it.next());
+		for (Entry<Object, Object> entry : props.entrySet()) {
 			setClientInfo(entry.getKey().toString(),
 					entry.getValue().toString());
 		}
@@ -1152,7 +1168,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			l.close();
 		}
 
-		return(sp);
+		return sp;
 	}
 
 	/**
@@ -1191,7 +1207,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			l.close();
 		}
 
-		return(sp);
+		return sp;
 	}
 
 	/**
@@ -1222,7 +1238,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @param map the java.util.Map object to install as the replacement for
 	 *        this Connection  object's default type map
 	 */
-	public void setTypeMap(Map map) {
+	public void setTypeMap(Map<String, Class<?>> map) {
 		typeMap = map;
 	}
 
@@ -1235,9 +1251,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	public String toString() {
 		String language = "";
 		if (lang == LANG_MAL) language = "?language=mal";
-		return("MonetDB Connection (jdbc:monetdb://" + hostname +
+		return "MonetDB Connection (jdbc:monetdb://" + hostname +
 				":" + port + "/" + database + language + ") " + 
-				(closed ? "connected" : "disconnected"));
+				(closed ? "connected" : "disconnected");
 	}
 
 	//== 1.7 methods (JDBC 4.1)
@@ -1266,9 +1282,13 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		if (closed)
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
 		ResultSet rs = createStatement().executeQuery("SELECT CURRENT_SCHEMA");
-		if (!rs.next())
-			throw new SQLException("Row expected", "02000");
-		return(rs.getString(1));
+		try { 
+			if (!rs.next())
+				throw new SQLException("Row expected", "02000");
+			return rs.getString(1);
+		} finally {
+			rs.close();
+		}
 	}
 
 	/**
@@ -1351,7 +1371,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			throw new SQLException("Cannot call on closed Connection", "M1M20");
 
 		try {
-			return(server.getSoTimeout());
+			return server.getSoTimeout();
 		} catch (SocketException e) {
 			throw new SQLException(e.getMessage(), "08000");
 		}
@@ -1363,7 +1383,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * Returns whether the BLOB type should be mapped to BINARY type.
 	 */
 	boolean getBlobAsBinary() {
-		return(blobIsBinary);
+		return blobIsBinary;
 	}
 
 	/**
@@ -1564,12 +1584,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @param seq the query sequence number
 		 */
 		ResultSetResponse(
-			int id,
-			int tuplecount,
-			int columncount,
-			int rowcount,
-			MonetConnection.ResponseList parent,
-			int seq)
+				int id,
+				int tuplecount,
+				int columncount,
+				int rowcount,
+				MonetConnection.ResponseList parent,
+				int seq)
 			throws SQLException
 		{
 			isSet = new boolean[7];
@@ -1624,14 +1644,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		// {{{ addLine
 		public String addLine(String tmpLine, int linetype) {
-			if (isSet[LENS] && isSet[TYPES] &&
-					isSet[TABLES] && isSet[NAMES])
-			{
-				return(resultBlocks[0].addLine(tmpLine, linetype));
+			if (isSet[LENS] && isSet[TYPES] && isSet[TABLES] && isSet[NAMES]) {
+				return resultBlocks[0].addLine(tmpLine, linetype);
 			}
 
 			if (linetype != BufferedMCLReader.HEADER)
-				return("header expected, got: " + tmpLine);
+				return "header expected, got: " + tmpLine;
 
 			// depending on the name of the header, we continue
 			try {
@@ -1654,11 +1672,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					break;
 				}
 			} catch (MCLParseException e) {
-				return(e.getMessage());
+				return e.getMessage();
 			}
 
 			// all is well
-			return(null);
+			return null;
 		}
 		// }}}
 
@@ -1668,12 +1686,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * first DataBlockResponse reports to want more.
 		 */
 		public boolean wantsMore() {
-			if (isSet[LENS] && isSet[TYPES] &&
-					isSet[TABLES] && isSet[NAMES])
-			{
-				return(resultBlocks[0].wantsMore());
+			if (isSet[LENS] && isSet[TYPES] && isSet[TABLES] && isSet[NAMES]) {
+				return resultBlocks[0].wantsMore();
 			} else {
-				return(true);
+				return true;
 			}
 		}
 
@@ -1700,7 +1716,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			// at the left over part
 			values[elem++] = new String(chrLine, start, stop - start);
 
-			return(values);
+			return values;
 		}
 
 		/**
@@ -1737,7 +1753,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the names of the columns
 		 */
 		String[] getNames() {
-			return(name);
+			return name;
 		}
 
 		/**
@@ -1746,7 +1762,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the types of the columns
 		 */
 		String[] getTypes() {
-			return(type);
+			return type;
 		}
 
 		/**
@@ -1755,7 +1771,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the tables of the columns
 		 */
 		String[] getTableNames() {
-			return(tableNames);
+			return tableNames;
 		}
 
 		/**
@@ -1764,7 +1780,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the lengths of the columns
 		 */
 		int[] getColumnLengths() {
-			return(columnLengths);
+			return columnLengths;
 		}
 
 		/**
@@ -1773,7 +1789,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the cache size
 		 */
 		int getCacheSize() {
-			return(cacheSize);
+			return cacheSize;
 		}
 
 		/**
@@ -1782,7 +1798,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the current block offset
 		 */
 		int getBlockOffset() {
-			return(blockOffset);
+			return blockOffset;
 		}
 
 		/**
@@ -1791,7 +1807,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the ResultSet type
 		 */
 		int getRSType() {
-			return(parent.rstype);
+			return parent.rstype;
 		}
 
 		/**
@@ -1800,7 +1816,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return the ResultSet concurrency
 		 */
 		int getRSConcur() {
-			return(parent.rsconcur);
+			return parent.rsconcur;
 		}
 
 		/**
@@ -1883,7 +1899,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					new AssertionError("block " + block + " should have been fetched by now :(");
 			}
 
-			return(rawr.getRow(blockLine));
+			return rawr.getRow(blockLine);
 		}
 
 		/**
@@ -1916,7 +1932,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @return whether this Response is closed
 		 */
 		boolean isClosed() {
-			return(closed);
+			return closed;
 		}
 	}
 	// }}}
@@ -1939,9 +1955,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * object, it is possible for threads to get the same data.
 	 */
 	// {{{ DataBlockResponse class implementation
-	class DataBlockResponse implements Response {
+	static class DataBlockResponse implements Response {
 		/** The String array to keep the data in */
-		private String[] data;
+		private final String[] data;
 
 		/** The counter which keeps the current position in the data array */
 		private int pos;
@@ -1972,12 +1988,12 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		public String addLine(String line, int linetype) {
 			if (linetype != BufferedMCLReader.RESULT)
-				return("protocol violation: unexpected line in data block: " + line);
+				return "protocol violation: unexpected line in data block: " + line;
 			// add to the backing array
 			data[++pos] = line;
 
 			// all is well
-			return(null);
+			return null;
 		}
 
 		/**
@@ -1988,7 +2004,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		public boolean wantsMore() {
 			// remember: pos is the value already stored
-			return(pos + 1 < data.length);
+			return pos + 1 < data.length;
 		}
 
 		/**
@@ -2027,9 +2043,9 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			if (forwardOnly) {
 				String ret = data[line];
 				data[line] = null;
-				return(ret);
+				return ret;
 			} else {
-				return(data[line]);
+				return data[line];
 			}
 		}
 	}
@@ -2044,7 +2060,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * <tt>&amp;2 0 -1</tt>
 	 */
 	// {{{ UpdateResponse class implementation
-	class UpdateResponse implements Response {
+	static class UpdateResponse implements Response {
 		public final int count;
 		public final String lastid;
 		
@@ -2055,11 +2071,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		}
 
 		public String addLine(String line, int linetype) {
-			return("Header lines are not supported for an UpdateResponse");
+			return "Header lines are not supported for an UpdateResponse";
 		}
 
 		public boolean wantsMore() {
-			return(false);
+			return false;
 		}
 
 		public void complete() {
@@ -2086,11 +2102,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		public final int state = Statement.SUCCESS_NO_INFO;
 		
 		public String addLine(String line, int linetype) {
-			return("Header lines are not supported for a SchemaResponse");
+			return "Header lines are not supported for a SchemaResponse";
 		}
 
 		public boolean wantsMore() {
-			return(false);
+			return false;
 		}
 
 		public void complete() {
@@ -2138,10 +2154,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		final int seqnr;
 		/** A list of the Responses associated with the query,
 		 *  in the right order */
-		private List responses;
+		private List<Response> responses;
 		/** A map of ResultSetResponses, used for additional
 		 *  DataBlockResponse mapping */
-		private Map rsresponses;
+		private Map<Integer, ResultSetResponse> rsresponses;
 
 		/** The current header returned by getNextResponse() */
 		private int curResponse;
@@ -2166,7 +2182,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			this.maxrows = maxrows;
 			this.rstype = rstype;
 			this.rsconcur = rsconcur;
-			responses = new ArrayList();
+			responses = new ArrayList<Response>();
 			curResponse = -1;
 			seqnr = MonetConnection.seqCounter++;
 		}
@@ -2181,7 +2197,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			if (rstype == ResultSet.TYPE_FORWARD_ONLY) {
 				// free resources if we're running forward only
 				if (curResponse >= 0 && curResponse < responses.size()) {
-					Response tmp = (Response)(responses.get(curResponse));
+					Response tmp = responses.get(curResponse);
 					if (tmp != null) tmp.close();
 					responses.set(curResponse, null);
 				}
@@ -2190,10 +2206,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			if (curResponse >= responses.size()) {
 				// ResponseList is obviously completed so, there are no
 				// more responses
-				return(null);
+				return null;
 			} else {
 				// return this response
-				return((Response)(responses.get(curResponse)));
+				return responses.get(curResponse);
 			}
 		}
 
@@ -2204,7 +2220,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 */
 		void closeResponse(int i) {
 			if (i < 0 || i >= responses.size()) return;
-			Response tmp = (Response)(responses.set(i, null));
+			Response tmp = responses.set(i, null);
 			if (tmp != null)
 				tmp.close();
 		}
@@ -2240,11 +2256,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * Responses.
 		 */
 		boolean hasUnclosedResponses() {
-			for (int i = 0; i < responses.size(); i++) {
-				if (responses.get(i) != null)
-					return(true);
+			for (Response r : responses) {
+				if (r != null)
+					return true;
 			}
-			return(false);
+			return false;
 		}
 
 		/**
@@ -2279,7 +2295,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					// lines.  Ignore errors from previous result sets.
 					in.waitForPrompt();
 
-					int size;
 					// {{{ set reply size
 					/**
 					 * Change the reply size of the server.  If the given
@@ -2287,7 +2302,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					 * then ignore this call.  If it is set to 0 we get a
 					 * prompt after the server sent it's header.
 					 */
-					size = cachesize == 0 ? DEF_FETCHSIZE : cachesize;
+					int size = cachesize == 0 ? DEF_FETCHSIZE : cachesize;
 					size = maxrows != 0 ? Math.min(maxrows, size) : size;
 					// don't do work if it's not needed
 					if (lang == LANG_SQL && size != curReplySize && templ != commandTempl) {
@@ -2357,10 +2372,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 											// have an additional datablock
 											if (rowcount < tuplecount) {
 												if (rsresponses == null)
-													rsresponses = new HashMap();
+													rsresponses = new HashMap<Integer, ResultSetResponse>();
 												rsresponses.put(
-														new Integer(id),
-														res
+														Integer.valueOf(id),
+														(ResultSetResponse) res
 												);
 											}
 										} break;
@@ -2392,7 +2407,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 											int rowcount = sohp.getNextAsInt();
 											int offset = sohp.getNextAsInt();
 											ResultSetResponse t =
-												(ResultSetResponse)rsresponses.get(new Integer(id));
+												rsresponses.get(Integer.valueOf(id));
 											if (t == null) {
 												error = "M0M12!no ResultSetResponse with id " + id + " found";
 												break;
@@ -2472,6 +2487,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 								// expect/understand, let's make it an error
 								// message
 								tmpLine = "!M0M10!protocol violation, unexpected line: " + tmpLine;
+								// don't break; fall through...
 							case BufferedMCLReader.ERROR:
 								// read everything till the prompt (should be
 								// error) we don't know if we ignore some
@@ -2543,7 +2559,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * can be avoided.
 	 */
 	// {{{ SendThread class implementation
-	class SendThread extends Thread {
+	static class SendThread extends Thread {
 		/** The state WAIT represents this thread to be waiting for
 		 *  something to do */
 		private final static int WAIT = 0;
@@ -2555,6 +2571,10 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		private BufferedMCLWriter out;
 		private String error;
 		private int state = WAIT;
+		
+		final Lock sendLock = new ReentrantLock();
+		final Condition queryAvailable = sendLock.newCondition(); 
+		final Condition waiting = sendLock.newCondition();
 
 		/**
 		 * Constructor which immediately starts this thread and sets it
@@ -2569,35 +2589,39 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			start();
 		}
 
-		public synchronized void run() {
-			while (true) {
-				while (state == WAIT) {
-					try {
-						// wait requires the object to be exclusive
-						// (synchronized)
-						this.wait();
-					} catch (InterruptedException e) {
-						// woken up, eh?
+		public void run() {
+			sendLock.lock();
+			try {
+				while (true) {
+					
+					while (state == WAIT) {
+						try {
+							queryAvailable.await();
+						} catch (InterruptedException e) {
+							// woken up, eh?
+						}
 					}
-				}
 
-				// state is QUERY here
-				try {
-					// we issue notify here, so incase we get blocked on IO
-					// the thread that waits on us in runQuery can continue
-					this.notify();
-					out.writeLine(
-							(templ[0] == null ? "" : templ[0]) +
-							query +
-							(templ[1] == null ? "" : templ[1]));
-				} catch (IOException e) {
-					error = e.getMessage();
-				}
+					// state is QUERY here
+					try {
+						// we issue notify here, so incase we get blocked on IO
+						// the thread that waits on us in runQuery can continue
+//						this.notify();
+						out.writeLine(
+								(templ[0] == null ? "" : templ[0]) +
+								query +
+								(templ[1] == null ? "" : templ[1]));
+					} catch (IOException e) {
+						error = e.getMessage();
+					}
 
-				// update our state, and notify, maybe someone is waiting
-				// for us in throwErrors
-				state = WAIT;
-				this.notify();
+					// update our state, and notify, maybe someone is waiting
+					// for us in throwErrors
+					state = WAIT;
+					waiting.signal();
+				}
+			} finally {
+				sendLock.unlock();
 			}
 		}
 
@@ -2610,29 +2634,27 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @param query the query itself
 		 * @throws SQLException if this SendThread is already in use
 		 */
-		public synchronized void runQuery(String[] templ, String query) 
-			throws SQLException
-		{
-			if (state != WAIT) throw
-				new SQLException("SendThread already in use!", "M0M03");
-
-			this.templ = templ;
-			this.query = query;
-
-			// let the thread know there is some work to do
-			state = QUERY;
-			this.notify();
-
-			// implement the following behaviour:
-			// - let the SendThread first try to send whatever it can over
-			//   the socket
-			// - return as soon as the SendThread gets blocked
-			// the effect is a relatively high chance of data waiting to be
-			// read when returning from this method.
+		public void runQuery(String[] templ, String query) throws SQLException {
+			sendLock.lock();
 			try {
-				this.wait();
-			} catch (InterruptedException e) {
-				// Woken up, eh?  Let's hope it's all good
+				if (state != WAIT) 
+					throw new SQLException("SendThread already in use!", "M0M03");
+
+				this.templ = templ;
+				this.query = query;
+
+				// let the thread know there is some work to do
+				state = QUERY;
+				queryAvailable.signal();
+
+				// implement the following behaviour:
+				// - let the SendThread first try to send whatever it can over
+				//   the socket
+				// - return as soon as the SendThread gets blocked
+				// the effect is a relatively high chance of data waiting to be
+				// read when returning from this method.
+			} finally {
+				sendLock.unlock();
 			}
 		}
 
@@ -2641,16 +2663,21 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 *
 		 * @return the errors or null if none
 		 */
-		public synchronized String getErrors() {
-			// make sure the thread is in WAIT state, not QUERY
-			while (state != WAIT) {
-				try {
-					this.wait();
-				} catch (InterruptedException e) {
-					// just try again
+		public String getErrors() {
+			sendLock.lock();
+			try {
+				// make sure the thread is in WAIT state, not QUERY
+				while (state != WAIT) {
+					try {
+						waiting.await();
+					} catch (InterruptedException e) {
+						// just try again
+					}
 				}
+			} finally {
+				sendLock.unlock();
 			}
-			return (error);
+			return error;
 		}
 	}
 	// }}}

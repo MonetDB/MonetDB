@@ -19,7 +19,7 @@
 
 package nl.cwi.monetdb.mcl.parser;
 
-import java.text.*;
+import java.text.ParseException;
 
 /**
  * When an MCLParseException is thrown, the MCL protocol is violated by
