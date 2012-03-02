@@ -32,7 +32,7 @@ import java.util.*;
 public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaData {
 	private Connection con;
 	private Driver driver;
-	private static Map envs = new HashMap();
+	private static Map<Connection, Map<String,String>> envs = new HashMap<Connection, Map<String,String>>();
 
 	public MonetDatabaseMetaData(Connection parent) {
 		con = parent;
@@ -43,9 +43,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		// use Statement which allows scrolling both directions through results
 		// cannot reuse stmt here, as people may request multiple
 		// queries, see for example bug #2703
-		return(con.createStatement(
+		return con.createStatement(
 					ResultSet.TYPE_SCROLL_INSENSITIVE,
-					ResultSet.CONCUR_READ_ONLY));
+					ResultSet.CONCUR_READ_ONLY);
 	}
 
 	/**
@@ -54,27 +54,32 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * value is read, it is kept in a Map for reuse.
 	 */
 	private synchronized String getEnv(String key) {
-		String ret;
+		
 
 		// if due to concurrency on this Class envs is assigned twice, I
 		// just don't care here
-		Map menvs = (Map)(envs.get(con));
+		Map<String,String> menvs = envs.get(con);
 		if (menvs == null) {
 			// make the env map, insert all entries from env()
-			menvs = new HashMap();
+			menvs = new HashMap<String,String>();
 			try {
 				ResultSet env = getStmt().executeQuery(
 						"SELECT \"name\", \"value\" FROM sys.env() as env");
-				while (env.next()) {
-					menvs.put(env.getString("name"), env.getString("value"));
+				try {
+					while (env.next()) {
+						menvs.put(env.getString("name"), env.getString("value"));
+					}
+				} finally {
+					env.close();
 				}
-				env.close();
 			} catch (SQLException e) {
 				// ignore
 			}
 			envs.put(con, menvs);
 		}
-		if ((ret = (String)(menvs.get(key))) == null) {
+		
+		String ret = menvs.get(key);
+		if (ret == null) {
 			// It might be some key from the "sessions" table, which is
 			// no longer there, but available as variables.  Just query
 			// for the variable, and hope that it is ok (not a user
@@ -85,17 +90,19 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			try {
 				ResultSet env = getStmt().executeQuery(
 						"SELECT @\"" + key + "\" AS \"value\"");
-				if (env.next()) {
-					ret = env.getString("value");
-					menvs.put(key, ret);
+				try {
+					if (env.next()) {
+						ret = env.getString("value");
+						menvs.put(key, ret);
+					}
+				} finally {
+					env.close();
 				}
-				env.close();
 			} catch (SQLException e) {
 				// ignore
 			}
 		}
-
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -105,7 +112,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean allProceduresAreCallable() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -115,7 +122,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true because we only have one user a.t.m.
 	 */
 	public boolean allTablesAreSelectable() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -125,9 +132,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getURL() throws SQLException {
-		return("jdbc:monetdb://" + getEnv("host") +
+		return "jdbc:monetdb://" + getEnv("host") +
 			":" + getEnv("mapi_port") + "/" +
-			getEnv("gdk_dbname"));
+			getEnv("gdk_dbname");
 	}
 
 	/**
@@ -137,7 +144,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getUserName() throws SQLException {
-		return(getEnv("current_user"));
+		return getEnv("current_user");
 	}
 
 	/**
@@ -146,7 +153,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return always false for now
 	 */
 	public boolean isReadOnly() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -155,7 +162,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true because MonetDB puts NULL values on top upon ORDER BY
 	 */
 	public boolean nullsAreSortedHigh() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -165,7 +172,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @see #nullsAreSortedHigh()
 	 */
 	public boolean nullsAreSortedLow() {
-		return(!nullsAreSortedHigh());
+		return !nullsAreSortedHigh();
 	}
 
 	/**
@@ -174,7 +181,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return false, since MonetDB doesn't do this
 	 */
 	public boolean nullsAreSortedAtStart() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -183,7 +190,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return false, since MonetDB doesn't do this
 	 */
 	public boolean nullsAreSortedAtEnd() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -203,7 +210,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getDatabaseProductVersion() throws SQLException {
-		return(getEnv("monet_version"));
+		return getEnv("monet_version");
 	}
 
 	/**
@@ -213,7 +220,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the JDBC driver name
 	 */
 	public String getDriverName() {
-		return("MonetDB Native Driver");
+		return "MonetDB Native Driver";
 	}
 
 	/**
@@ -223,7 +230,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the JDBC driver name.
 	 */
 	public String getDriverVersion() {
-		return(MonetDriver.getDriverVersion());
+		return MonetDriver.getDriverVersion();
 	}
 
 	/**
@@ -232,7 +239,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the JDBC driver major version
 	 */
 	public int getDriverMajorVersion() {
-		return(driver.getMajorVersion());
+		return driver.getMajorVersion();
 	}
 
 	/**
@@ -241,7 +248,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the JDBC driver minor version
 	 */
 	public int getDriverMinorVersion() {
-		return(driver.getMinorVersion());
+		return driver.getMinorVersion();
 	}
 
 	/**
@@ -251,7 +258,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return false because that's what MonetDB is for
 	 */
 	public boolean usesLocalFiles() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -261,7 +268,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return false for it doesn't
 	 */
 	public boolean usesLocalFilePerTable() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -272,7 +279,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return false
 	 */
 	public boolean supportsMixedCaseIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -282,7 +289,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesUpperCaseIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -292,7 +299,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesLowerCaseIdentifiers() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -302,7 +309,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesMixedCaseIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -313,7 +320,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsMixedCaseQuotedIdentifiers() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -323,7 +330,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesUpperCaseQuotedIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -333,7 +340,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesLowerCaseQuotedIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -343,7 +350,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean storesMixedCaseQuotedIdentifiers() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -354,7 +361,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the quoting string
 	 */
 	public String getIdentifierQuoteString() {
-		return("\"");
+		return "\"";
 	}
 
 	/**
@@ -366,23 +373,23 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return a comma separated list of keywords we use (none)
 	 */
 	public String getSQLKeywords() {
-		return("");
+		return "";
 	}
 
 	public String getNumericFunctions() {
-		return("");
+		return "";
 	}
 
 	public String getStringFunctions() {
-		return("");
+		return "";
 	}
 
 	public String getSystemFunctions() {
-		return("");
+		return "";
 	}
 
 	public String getTimeDateFunctions() {
-		return("");
+		return "";
 	}
 
 	/**
@@ -392,7 +399,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the string used to escape wildcard characters
 	 */
 	public String getSearchStringEscape() {
-		return("\\");
+		return "\\";
 	}
 
 	/**
@@ -403,7 +410,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return a string containing the extra characters
 	 */
 	public String getExtraNameCharacters() {
-		return("");
+		return "";
 	}
 
 	/**
@@ -412,7 +419,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsAlterTableWithAddColumn() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -422,7 +429,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsAlterTableWithDropColumn() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -444,7 +451,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean supportsColumnAliasing() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -455,15 +462,15 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public boolean nullPlusNonNullIsNull() {
-		return(true);
+		return true;
 	}
 
 	public boolean supportsConvert() {
-		return(false);
+		return false;
 	}
 
 	public boolean supportsConvert(int fromType, int toType) {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -473,7 +480,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsTableCorrelationNames() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -483,7 +490,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsDifferentTableCorrelationNames() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -496,7 +503,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsExpressionsInOrderBy() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -506,7 +513,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsOrderByUnrelated() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -516,7 +523,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsGroupBy() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -526,7 +533,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsGroupByUnrelated() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -539,7 +546,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsGroupByBeyondSelect() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -549,7 +556,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsLikeEscapeClause() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -558,7 +565,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsMultipleResultSets() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -570,7 +577,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsMultipleTransactions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -580,7 +587,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsNonNullableColumns() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -593,7 +600,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsMinimumSQLGrammar() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -603,7 +610,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCoreSQLGrammar() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -614,7 +621,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsExtendedSQLGrammar() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -625,7 +632,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsANSI92EntryLevelSQL() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -636,7 +643,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsANSI92IntermediateSQL() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -647,7 +654,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsANSI92FullSQL() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -657,7 +664,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsIntegrityEnhancementFacility() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -667,7 +674,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsOuterJoins(){
-		return(true);
+		return true;
 	}
 
 	/**
@@ -677,7 +684,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsFullOuterJoins() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -687,7 +694,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean supportsLimitedOuterJoins() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -697,7 +704,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the vendor term
 	 */
 	public String getSchemaTerm() {
-		return("schema");
+		return "schema";
 	}
 
 	/**
@@ -707,7 +714,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the vendor term
 	 */
 	public String getProcedureTerm() {
-		return("function");
+		return "function";
 	}
 
 	/**
@@ -718,7 +725,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the vendor term
 	 */
 	public String getCatalogTerm() {
-		return("database");
+		return "database";
 	}
 
 	/**
@@ -731,7 +738,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public boolean isCatalogAtStart() {
 		// return true here; we return false for every other catalog function
 		// so it won't matter what we return here
-		return(true);
+		return true;
 	}
 
 	/**
@@ -742,7 +749,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public String getCatalogSeparator() {
 		// Give them something to work with here
 		// everything else returns false so it won't matter what we return here
-		return(".");
+		return ".";
 	}
 
 	/**
@@ -751,7 +758,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInDataManipulation() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -761,7 +768,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInProcedureCalls() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -770,7 +777,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInTableDefinitions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -779,7 +786,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInIndexDefinitions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -788,7 +795,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsSchemasInPrivilegeDefinitions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -797,7 +804,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInDataManipulation() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -806,7 +813,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInProcedureCalls() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -815,7 +822,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInTableDefinitions() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -824,7 +831,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInIndexDefinitions() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -833,7 +840,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsCatalogsInPrivilegeDefinitions() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -842,7 +849,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsPositionedDelete() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -851,7 +858,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsPositionedUpdate() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -861,7 +868,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsSelectForUpdate(){
-		return(false);
+		return false;
 	}
 
 	/**
@@ -871,7 +878,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsStoredProcedures() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -881,7 +888,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsSubqueriesInComparisons() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -891,7 +898,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsSubqueriesInExists() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -901,7 +908,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsSubqueriesInIns() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -914,7 +921,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsSubqueriesInQuantifieds() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -926,7 +933,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsCorrelatedSubqueries() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -936,7 +943,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsUnion() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -946,7 +953,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsUnionAll() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -956,7 +963,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsOpenCursorsAcrossCommit() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -965,7 +972,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsOpenCursorsAcrossRollback() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -977,7 +984,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if they always remain open; false otherwise
 	 */
 	public boolean supportsOpenStatementsAcrossCommit() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -988,7 +995,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if they always remain open; false otherwise
 	 */
 	public boolean supportsOpenStatementsAcrossRollback() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -998,7 +1005,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max literal length
 	 */
 	public int getMaxBinaryLiteralLength() {
-		return(0); // no limit
+		return 0; // no limit
 	}
 
 	/**
@@ -1008,7 +1015,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max literal length
 	 */
 	public int getMaxCharLiteralLength() {
-		return(0); // no limit
+		return 0; // no limit
 	}
 
 	/**
@@ -1018,7 +1025,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the maximum column name length
 	 */
 	public int getMaxColumnNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1027,7 +1034,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max number of columns
 	 */
 	public int getMaxColumnsInGroupBy() {
-		return(0); // no limit
+		return 0; // no limit
 	}
 
 	/**
@@ -1036,7 +1043,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return max number of columns
 	 */
 	public int getMaxColumnsInIndex() {
-		return(0);	// unlimited I guess
+		return 0;	// unlimited I guess
 	}
 
 	/**
@@ -1045,7 +1052,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max columns
 	 */
 	public int getMaxColumnsInOrderBy() {
-		return(0); // unlimited I guess
+		return 0; // unlimited I guess
 	}
 
 	/**
@@ -1054,7 +1061,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max columns
 	 */
 	public int getMaxColumnsInSelect() {
-		return(0); // unlimited I guess
+		return 0; // unlimited I guess
 	}
 
 	/**
@@ -1064,7 +1071,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max columns
 	 */
 	public int getMaxColumnsInTable() {
-		return(0);
+		return 0;
 	}
 
 	/**
@@ -1079,7 +1086,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the maximum number of connections
 	 */
 	public int getMaxConnections() {
-		return(16);
+		return 16;
 	}
 
 	/**
@@ -1090,7 +1097,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return max cursor name length in bytes
 	 */
 	public int getMaxCursorNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1102,7 +1109,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *         means that there is no limit or the limit is not known
 	 */
 	public int getMaxIndexLength() {
-		return(0); // I assume it is large, but I don't know
+		return 0; // I assume it is large, but I don't know
 	}
 
 	/**
@@ -1113,7 +1120,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *         limit is unknown.
 	 */
 	public int getMaxSchemaNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1122,7 +1129,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max name length in bytes
 	 */
 	public int getMaxProcedureNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1131,7 +1138,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the max length
 	 */
 	public int getMaxCatalogNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1140,7 +1147,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return max row size in bytes
 	 */
 	public int getMaxRowSize() {
-		return(0);	// very long I hope...
+		return 0;	// very long I hope...
 	}
 
 	/**
@@ -1151,7 +1158,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean doesMaxRowSizeIncludeBlobs() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -1162,7 +1169,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return max length in bytes
 	 */
 	public int getMaxStatementLength() {
-		return(0);		// actually whatever fits in size_t
+		return 0;		// actually whatever fits in size_t
 	}
 
 	/**
@@ -1173,7 +1180,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the maximum
 	 */
 	public int getMaxStatements() {
-		return(0);
+		return 0;
 	}
 
 	/**
@@ -1182,7 +1189,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return max name length in bytes
 	 */
 	public int getMaxTableNameLength() {
-		return(1024);
+		return 1024;
 	}
 
 	/**
@@ -1192,7 +1199,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the maximum
 	 */
 	public int getMaxTablesInSelect() {
-		return(0); // no limit
+		return 0; // no limit
 	}
 
 	/**
@@ -1202,7 +1209,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public int getMaxUserNameLength() {
-		return(512);
+		return 512;
 	}
 
 	/**
@@ -1214,7 +1221,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @see Connection
 	 */
 	public int getDefaultTransactionIsolation() {
-		return(Connection.TRANSACTION_SERIALIZABLE);
+		return Connection.TRANSACTION_SERIALIZABLE;
 	}
 
 	/**
@@ -1225,7 +1232,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if transactions are supported
 	 */
 	public boolean supportsTransactions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -1237,7 +1244,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @see Connection
 	 */
 	public boolean supportsTransactionIsolationLevel(int level) {
-		return(level == Connection.TRANSACTION_SERIALIZABLE);
+		return level == Connection.TRANSACTION_SERIALIZABLE;
 	}
 
 	/**
@@ -1249,7 +1256,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsDataDefinitionAndDataManipulationTransactions() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -1259,7 +1266,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean supportsDataManipulationTransactionsOnly() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -1281,7 +1288,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so
 	 */
 	public boolean dataDefinitionCausesTransactionCommit() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -1291,7 +1298,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @exception SQLException if a database access error occurs
 	 */
 	public boolean dataDefinitionIgnoredInTransactions() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -1342,7 +1349,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"'' AS \"REMARKS\", cast(0 AS smallint) AS \"PROCEDURE_TYPE\" " +
 			"WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -1396,8 +1403,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		String schemaPattern,
 		String procedureNamePattern,
 		String columnNamePattern
-	) throws SQLException
-	{
+	) throws SQLException {
 		String query =
 			"SELECT cast(null AS varchar(1)) AS \"PROCEDURE_CAT\", " +
 				"cast(null AS varchar(1)) AS \"PROCEDURE_SCHEM\", " +
@@ -1409,7 +1415,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"cast(0 AS smallint) AS \"NULLABLE\", '' AS \"REMARKS\" " +
 			"WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	//== this is a helper method which does not belong to the interface
@@ -1422,7 +1428,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the escaped string
 	 */
 	private static final String escapeQuotes(String in) {
-		return(in.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'"));
+		return in.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'");
 	}
 
 	/**
@@ -1432,8 +1438,9 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @param in the string to quote
 	 * @return the quoted string
 	 */
+	@SuppressWarnings("unused")
 	private static final String dq(String in) {
-		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
+		return "\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"";
 	}
 
 	//== end helper methods
@@ -1514,7 +1521,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		orderby = "ORDER BY \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\" ";
 
-		return(getStmt().executeQuery(select + orderby));
+		return getStmt().executeQuery(select + orderby);
 	}
 
 	/**
@@ -1554,7 +1561,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			query += "AND LOWER(\"name\") LIKE '" + escapeQuotes(schemaPattern).toLowerCase() + "' ";
 		query += "ORDER BY \"TABLE_SCHEM\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -1578,7 +1585,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"SELECT '" + ((String)env.get("gdk_dbname")) + "' AS \"TABLE_CAT\"";
 			// some applications need a database or catalog...
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 		*/
 		
 		String[] columns, types;
@@ -1593,7 +1600,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		results[0][0] = getEnv("gdk_dbname");
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -1634,7 +1641,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		results[7][0] = "SESSION VIEW";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -1740,7 +1747,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"ORDINAL_POSITION\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -1823,7 +1830,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"COLUMN_NAME\", \"PRIVILEGE\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -1899,7 +1906,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"TABLE_SCHEM\", \"TABLE_NAME\", \"PRIVILEGE\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -1984,8 +1991,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"int", "int", "int"
 		};
 
-		String[][] results;
-		ArrayList tmpRes = new ArrayList();
+		List<String[]> tmpRes = new ArrayList<String[]>();
 
 		ResultSet rs = getStmt().executeQuery(query);
 		while (rs.next()) {
@@ -2002,10 +2008,10 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		}
 		rs.close();
 
-		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
+		String[][] results = tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -2049,20 +2055,20 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		// I don't know of columns which update themselves, except maybe on the
 		// system tables
 
-		String columns[] = {
+		final String columns[] = {
 			"SCOPE", "COLUMN_NAME", "DATA_TYPE", "TYPE_NAME", "COLUMN_SIZE",
 			"BUFFER_LENGTH", "DECIMAL_DIGITS", "PSEUDO_COLUMN"
 		};
 
-		String types[] = {
+		final String types[] = {
 			"int", "varchar", "int", "varchar", "int",
 			"int", "int", "int"
 		};
 
-		String[][] results = new String[0][columns.length];
+		final String[][] results = new String[0][columns.length];
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -2119,7 +2125,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"COLUMN_NAME\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	final static String keyQuery =
@@ -2142,7 +2148,8 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"\"fkkeycol\".\"nr\" = \"pkkeycol\".\"nr\" ";
 
 	static String keyQuery(String cat) {
-		return("SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery);
+		// FIXME: cat should probably be single-quote-escaped
+		return "SELECT '" + cat + "' AS \"PKTABLE_CAT\", '" + cat + "' AS \"FKTABLE_CAT\"" + keyQuery;
 	}
 
 	/**
@@ -2212,7 +2219,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"PKTABLE_CAT\", \"PKTABLE_SCHEM\", \"PKTABLE_NAME\", \"PK_NAME\", \"KEY_SEQ\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2282,7 +2289,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2373,7 +2380,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"FKTABLE_CAT\", \"FKTABLE_SCHEM\", \"FKTABLE_NAME\", \"FK_NAME\", \"KEY_SEQ\"";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2465,7 +2472,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 				"\"radix\" AS \"NUM_PREC_RADIX\" " +
 			"FROM \"sys\".\"types\"";
 			
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2568,60 +2575,62 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		query += "ORDER BY \"NON_UNIQUE\", \"TYPE\", \"INDEX_NAME\", \"ORDINAL_POSITION\"";
 
-		String columns[] = {
+		final String columns[] = {
 			"TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
 			"INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION",
 			"COLUMN_NAME", "ASC_OR_DESC", "CARDINALITY", "PAGES",
 			"FILTER_CONDITION"
 		};
 
-		String types[] = {
+		final String types[] = {
 			"varchar", "varchar", "varchar", "boolean",
 			"varchar", "varchar", "int", "int",
 			"varchar", "varchar", "int", "int", "varchar"
 		};
 
-		String[][] results;
-		ArrayList tmpRes = new ArrayList();
+		List<String[]> tmpRes = new ArrayList<String[]>();
 
 		Statement sub = null;
 		if (!approximate) sub = con.createStatement();
 
 		ResultSet rs = getStmt().executeQuery(query);
-		while (rs.next()) {
-			String[] result = new String[13];
-			result[0]  = null;
-			result[1]  = rs.getString("table_schem");
-			result[2]  = rs.getString("table_name");
-			result[3]  = rs.getString("non_unique");
-			result[4]  = rs.getString("index_qualifier");
-			result[5]  = rs.getString("index_name");
-			result[6]  = rs.getString("type");
-			result[7]  = rs.getString("ordinal_position");
-			result[8]  = rs.getString("column_name");
-			result[9]  = rs.getString("asc_or_desc");
-			if (approximate) {
-				result[10] = "0";
-			} else {
-				ResultSet count = sub.executeQuery("SELECT COUNT(*) AS \"CARDINALITY\" FROM \"" + rs.getString("table_schem") + "\".\"" + rs.getString("table_name") + "\"");
-				if (count.next()) {
-					result[10] = count.getString("cardinality");
-				} else {
+		try {
+			while (rs.next()) {
+				String[] result = new String[13];
+				result[0]  = null;
+				result[1]  = rs.getString("table_schem");
+				result[2]  = rs.getString("table_name");
+				result[3]  = rs.getString("non_unique");
+				result[4]  = rs.getString("index_qualifier");
+				result[5]  = rs.getString("index_name");
+				result[6]  = rs.getString("type");
+				result[7]  = rs.getString("ordinal_position");
+				result[8]  = rs.getString("column_name");
+				result[9]  = rs.getString("asc_or_desc");
+				if (approximate) {
 					result[10] = "0";
+				} else {
+					ResultSet count = sub.executeQuery("SELECT COUNT(*) AS \"CARDINALITY\" FROM \"" + rs.getString("table_schem") + "\".\"" + rs.getString("table_name") + "\"");
+					if (count.next()) {
+						result[10] = count.getString("cardinality");
+					} else {
+						result[10] = "0";
+					}
 				}
+				result[11] = rs.getString("pages");
+				result[12] = rs.getString("filter_condition");
+				tmpRes.add(result);
 			}
-			result[11] = rs.getString("pages");
-			result[12] = rs.getString("filter_condition");
-			tmpRes.add(result);
+
+			if (!approximate) sub.close();
+		} finally {
+			rs.close();
 		}
 
-		if (!approximate) sub.close();
-		rs.close();
-
-		results = (String[][])tmpRes.toArray(new String[tmpRes.size()][]);
+		String[][] results = tmpRes.toArray(new String[tmpRes.size()][]);
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -2638,7 +2647,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public boolean supportsResultSetType(int type) throws SQLException {
 		// The only type we don't support
-		return(type != ResultSet.TYPE_SCROLL_SENSITIVE);
+		return type != ResultSet.TYPE_SCROLL_SENSITIVE;
 	}
 
 
@@ -2656,59 +2665,59 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	{
 		// These combinations are not supported!
 		if (type == ResultSet.TYPE_SCROLL_SENSITIVE)
-			return(false);
+			return false;
 
 		// We do only support Read Only ResultSets
 		if (concurrency != ResultSet.CONCUR_READ_ONLY)
-			return(false);
+			return false;
 
 		// Everything else we do (well, what's left of it :) )
-		return(true);
+		return true;
 	}
 
 
 	/* lots of unsupported stuff... (no updatable ResultSet!) */
 	public boolean ownUpdatesAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean ownDeletesAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean ownInsertsAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean othersUpdatesAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean othersDeletesAreVisible(int i) {
-		return(false);
+		return false;
 	}
 
 	public boolean othersInsertsAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean updatesAreDetected(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean deletesAreDetected(int i) {
-		return(false);
+		return false;
 	}
 
 	public boolean insertsAreDetected(int type) {
-		return(false);
+		return false;
 	}
 
 	/**
 	 * Indicates whether the driver supports batch updates.
 	 */
 	public boolean supportsBatchUpdates() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -2730,7 +2739,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"'java.lang.Object' AS \"CLASS_NAME\", 0 AS \"DATA_TYPE\", " +
 			"'' AS \"REMARKS\", 0 AS \"BASE_TYPE\" WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 
@@ -2740,16 +2749,16 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return the connection that produced this metadata object
 	 */
 	public Connection getConnection() {
-		return(con);
+		return con;
 	}
 
 	/* I don't find these in the spec!?! */
 	public boolean rowChangesAreDetected(int type) {
-		return(false);
+		return false;
 	}
 
 	public boolean rowChangesAreVisible(int type) {
-		return(false);
+		return false;
 	}
 
 	//== 1.4 methods (JDBC 3)
@@ -2761,7 +2770,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		   <code>false</code> otherwise
 	 */
 	public boolean supportsSavepoints() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -2772,7 +2781,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		   <code>false</code> otherwise
 	 */
 	public boolean supportsNamedParameters() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -2785,7 +2794,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		   simultaneously; <code>false</code> otherwise
 	 */
 	public boolean supportsMultipleOpenResults() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -2796,7 +2805,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		   after a statement has executed; <code>false</code> otherwise
 	 */
 	public boolean supportsGetGeneratedKeys() {
-		return(true);
+		return true;
 	}
 
 	/**
@@ -2850,7 +2859,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"'' AS \"SUPERTYPE_CAT\", '' AS \"SUPERTYPE_SCHEM\", " +
 			"'' AS \"SUPERTYPE_NAME\" WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2896,7 +2905,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"SELECT '" + cat + "' AS \"TABLE_CAT\", '' AS \"TABLE_SCHEM\", '' AS \"TABLE_NAME\", " +
 			"'' AS \"SUPERTABLE_NAME\" WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -2986,7 +2995,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			"'' AS \"SCOPE_CATALOG\", '' AS \"SCOPE_SCHEMA\", '' AS \"SCOPE_TABLE\", " +
 			"0 AS \"SOURCE_DATA_TYPE\" WHERE 1 = 0";
 
-		return(getStmt().executeQuery(query));
+		return getStmt().executeQuery(query);
 	}
 
 	/**
@@ -3001,7 +3010,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	public boolean supportsResultSetHoldability(int holdability) {
 		// we don't close ResultSets at commit; and we don't do updateable
 		// result sets, so comes closest to hold cursors over commit
-		return(holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		return holdability == ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -3013,7 +3022,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 *		   <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
 	 */
 	public int getResultSetHoldability() {
-		return(ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		return ResultSet.HOLD_CURSORS_OVER_COMMIT;
 	}
 
 	/**
@@ -3031,7 +3040,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			// baaaaaaaaaa
 		}
 
- 		return(major);
+ 		return major;
 	}
 
 	/**
@@ -3050,7 +3059,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 			// baaaaaaaaaa
 		}
 
- 		return(minor);
+ 		return minor;
 	}
 
 	/**
@@ -3060,7 +3069,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version major number
 	 */
 	public int getJDBCMajorVersion() {
-		return(4); // This class implements JDBC 4.1 (at least we try to)
+		return 4; // This class implements JDBC 4.1 (at least we try to)
 	}
 
 	/**
@@ -3070,7 +3079,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return JDBC version minor number
 	 */
 	public int getJDBCMinorVersion() {
-		return(1); // This class implements JDBC 4.1 (at least we try to)
+		return 1; // This class implements JDBC 4.1 (at least we try to)
 	}
 
 	/**
@@ -3082,7 +3091,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public int getSQLStateType() {
 		// At least this driver conforms with SQLSTATE to the SQL:2003 standard
-		return(DatabaseMetaData.sqlStateSQL);
+		return DatabaseMetaData.sqlStateSQL;
 	}
 
 	/**
@@ -3093,7 +3102,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public boolean locatorsUpdateCopy() {
 		// not that we have it, but in a transaction it will be copy-on-write
-		return(true);
+		return true;
 	}
 
 	/**
@@ -3104,7 +3113,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public boolean supportsStatementPooling() {
 		// For the moment, I don't think so
-		return(false);
+		return false;
 	}
 
 	//== 1.6 methods (JDBC 4)
@@ -3118,7 +3127,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 */
 	public RowIdLifetime getRowIdLifetime() {
 		// I believe we don't do rowids
-		return(RowIdLifetime.ROWID_UNSUPPORTED);
+		return RowIdLifetime.ROWID_UNSUPPORTED;
 	}
 
 	/**
@@ -3136,7 +3145,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database error occurs
 	 */
 	public ResultSet getSchemas() throws SQLException {
-		return(getSchemas(null, null));
+		return getSchemas(null, null);
 	}
 
 	/**
@@ -3146,7 +3155,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @return true if so; false otherwise
 	 */
 	public boolean supportsStoredFunctionsUsingCallSyntax() {
-		return(false);
+		return false;
 	}
 
 	/**
@@ -3164,7 +3173,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		// The driver caches most of it, and as far as I knoww the
 		// server doesn't close outstanding result handles on commit
 		// failure either.
-		return(false);
+		return false;
 	}
 
 	/**
@@ -3204,7 +3213,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		types[3] = "varchar";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -3284,7 +3293,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 
 		orderby = "ORDER BY \"FUNCTION_SCHEM\", \"FUNCTION_NAME\", \"SPECIFIC_NAME\"";
 
-		return(getStmt().executeQuery(select + orderby));
+		return getStmt().executeQuery(select + orderby);
 	}
 
 	/**
@@ -3379,7 +3388,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 		types[11] = "varchar";
 
 		try {
-			return(new MonetVirtualResultSet(columns, types, results));
+			return new MonetVirtualResultSet(columns, types, results);
 		} catch (IllegalArgumentException e) {
 			throw new SQLException("Internal driver error: " + e.getMessage(), "M0M03");
 		}
@@ -3396,7 +3405,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException - if a database access error occurs
 	 */
 	public boolean generatedKeyAlwaysReturned() throws SQLException {
-		return(true);
+		return true;
 	}
 
 	//== end methods interface DatabaseMetaData
@@ -3450,13 +3459,13 @@ class MonetVirtualResultSet extends MonetResultSet {
 		curRow = row;
 
 		// see if we have the row
-		if (row < 1 || row > tupleCount) return(false);
+		if (row < 1 || row > tupleCount) return false;
 
 		for (int i = 0; i < results[row - 1].length; i++) {
 			tlp.values[i] = results[row - 1][i];
 		}
 
-		return(true);
+		return true;
 	}
 
 	/**
@@ -3480,6 +3489,6 @@ class MonetVirtualResultSet extends MonetResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getFetchSize() throws SQLException {
-		return(0);
+		return 0;
 	}
 }

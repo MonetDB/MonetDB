@@ -20,12 +20,13 @@
 package nl.cwi.monetdb.jdbc;
 
 import java.sql.*;
+import java.util.Arrays;
 import java.io.*;
 
 /**
- * The MonetBlob class implements the java.sql.Blob interface.  Because
+ * The MonetBlob class implements the {@link java.sql.Blob} interface.  Because
  * MonetDB/SQL currently has no support for streams, this class is a
- * shallow wrapper of a StringBuffer.  It is more or less supplied to
+ * shallow wrapper of a {@link StringBuilder}.  It is more or less supplied to
  * enable an application that depends on it to run.  It may be obvious
  * that it is a real resource expensive workaround that contradicts the
  * benefits for a Blob: avoidance of huge resource consumption.
@@ -35,12 +36,18 @@ import java.io.*;
 public class MonetBlob implements Blob {
 	private byte[] buf;
 
-	protected MonetBlob(String in) {
+	protected MonetBlob(byte[] data) {
+		buf = data;
+	}
+	
+	static MonetBlob create(String in) {
 		int len = in.length() / 2;
-		buf = new byte[len];
+		byte[] buf = new byte[len];
 		for (int i = 0; i < len; i++)
 			buf[i] = (byte)Integer.parseInt(in.substring(2 * i, (2 * i) + 2), 16);
+		return new MonetBlob(buf);
 	}
+	
 
 	//== begin interface Blob
 	
@@ -74,7 +81,7 @@ public class MonetBlob implements Blob {
 	public InputStream getBinaryStream() throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Blob object has been freed", "M1M20");
-		return(new ByteArrayInputStream(buf));
+		return new ByteArrayInputStream(buf);
 	}
 
 	/**
@@ -105,7 +112,7 @@ public class MonetBlob implements Blob {
 			throw new SQLException("pos is greater than the number of bytes in the Blob", "M1M05");
 		if (pos - 1 + length > buf.length)
 			throw new SQLException("pos + length is greater than the number of bytes in the Blob", "M1M05");
-		return(new ByteArrayInputStream(buf, (int)(pos - 1), (int)length));
+		return new ByteArrayInputStream(buf, (int)(pos - 1), (int)length);
 	}
 
 	/**
@@ -126,10 +133,7 @@ public class MonetBlob implements Blob {
 		if (buf == null)
 			throw new SQLException("This Blob object has been freed", "M1M20");
 		try {
-			byte[] r = new byte[length];
-			for (int i = 0; i < length; i++)
-				r[i] = buf[(int)pos - 1 + i];
-			return(r);
+			return Arrays.copyOfRange(buf, (int) pos - 1, (int) pos - 1 + length);
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException(e.getMessage(), "M0M10");
 		}
@@ -146,7 +150,7 @@ public class MonetBlob implements Blob {
 	public long length() throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Blob object has been freed", "M1M20");
-		return((long)buf.length);
+		return (long)buf.length;
 	}
 
 	/**
@@ -163,7 +167,7 @@ public class MonetBlob implements Blob {
 	 *         BLOB value
 	 */
 	public long position(Blob pattern, long start) throws SQLException {
-		return(position(pattern.getBytes(1L, (int)pattern.length()), start));
+		return position(pattern.getBytes(1L, (int)pattern.length()), start);
 	}
 
 	/**
@@ -189,12 +193,12 @@ public class MonetBlob implements Blob {
 						break;
 				}
 				if (j == pattern.length)
-					return(i);
+					return i;
 			}
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException(e.getMessage(), "M0M10");
 		}
-		return(-1);
+		return -1;
 	}
 
 	/**
@@ -237,7 +241,7 @@ public class MonetBlob implements Blob {
 	 *         BLOB value
 	 */
 	public int setBytes(long pos, byte[] bytes) throws SQLException {
-		return(setBytes(pos, bytes, 1, bytes.length));
+		return setBytes(pos, bytes, 1, bytes.length);
 	}
 
 	/**
@@ -270,7 +274,7 @@ public class MonetBlob implements Blob {
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException(e.getMessage(), "M0M10");
 		}
-		return(len);
+		return len;
 	}
 
 	/**

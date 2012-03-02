@@ -28,7 +28,7 @@ import java.math.*;	// BigDecimal, etc.
 import java.text.SimpleDateFormat;
 
 /**
- * A PreparedStatement suitable for the MonetDB database.
+ * A {@link PreparedStatement} suitable for the MonetDB database.
  * <br /><br />
  * This implementation of the PreparedStatement interface uses the
  * capabilities of the MonetDB/SQL backend to prepare and execute
@@ -66,7 +66,7 @@ public class MonetPreparedStatement
 	private final int rscolcnt;
 
 	private final String[] values;
-	private final StringBuffer buf;
+	private final StringBuilder buf;
 	
 	private final MonetConnection connection;
 
@@ -90,11 +90,11 @@ public class MonetPreparedStatement
 	/**
 	 * MonetPreparedStatement constructor which checks the arguments for
 	 * validity.  A MonetPreparedStatement is backed by a
-	 * MonetStatement, which deals with most of the required stuff of
+	 * {@link MonetStatement}, which deals with most of the required stuff of
 	 * this class.
 	 *
 	 * @param connection the connection that created this Statement
-	 * @param resultSetType type of ResultSet to produce
+	 * @param resultSetType type of {@link ResultSet} to produce
 	 * @param resultSetConcurrency concurrency of ResultSet to produce
 	 * @param prepareQuery the query string to prepare
 	 * @throws SQLException if an error occurs during login
@@ -132,7 +132,7 @@ public class MonetPreparedStatement
 		table = new String[size];
 		column = new String[size];
 		values = new String[size];
-		buf = new StringBuffer(6 + 12 * size);
+		buf = new StringBuilder(6 + 12 * size);
 
 		this.connection = connection;
 
@@ -244,7 +244,7 @@ public class MonetPreparedStatement
 	 *                      is supplied to this method
 	 */
 	public boolean execute() throws SQLException {
-		return(super.execute(transform()));
+		return super.execute(transform());
 	}
 
 	/** override the execute from the Statement to throw an SQLException */
@@ -265,7 +265,7 @@ public class MonetPreparedStatement
 		if (execute() != true)
 			throw new SQLException("Query did not produce a result set", "M1M19");
 
-		return(getResultSet());
+		return getResultSet();
 	}
 
 	/** override the executeQuery from the Statement to throw an SQLException*/
@@ -287,7 +287,7 @@ public class MonetPreparedStatement
 		if (execute() != false)
 			throw new SQLException("Query produced a result set", "M1M17");
 
-		return(getUpdateCount());
+		return getUpdateCount();
 	}
 
 	/** override the executeUpdate from the Statement to throw an SQLException*/
@@ -306,7 +306,7 @@ public class MonetPreparedStatement
 				continue;
 			curcol++;
 			if (curcol == colnr)
-				return(i);
+				return i;
 		}
 		throw new SQLException("No such column with index: " + colnr, "M1M05");
 	}
@@ -331,15 +331,15 @@ public class MonetPreparedStatement
 	 */
 	public ResultSetMetaData getMetaData() {
 		if (rscolcnt == 3)
-			return(null); // not sufficient data with pre-Dec2011 PREPARE
+			return null; // not sufficient data with pre-Dec2011 PREPARE
 
 		// return inner class which implements the ResultSetMetaData interface
-		return(new rsmdw() {
+		return new rsmdw() {
 			// for the more expensive methods, we provide a simple cache
 			// for the most expensive part; getting the ResultSet which
 			// contains the data
 			private DatabaseMetaData dbmd = null;
-			private Map colrs = new HashMap();
+			private Map<Integer, ResultSet> colrs = new HashMap<Integer, ResultSet>();
 
 			/**
 			 * Returns the number of columns in this ResultSet object.
@@ -354,7 +354,7 @@ public class MonetPreparedStatement
 						cnt++;
 				}
 				
-				return(cnt);
+				return cnt;
 			}
 
 			/**
@@ -370,9 +370,9 @@ public class MonetPreparedStatement
 				// with datatype oid
 				// avoid nullpointer exception here
 				if ("oid".equals(monetdbType[getColumnIdx(column)])) {
-					return(true);
+					return true;
 				} else {
-					return(false);
+					return false;
 				}
 			}
 
@@ -385,7 +385,7 @@ public class MonetPreparedStatement
 			 * @returns false
 			 */
 			public boolean isCaseSensitive(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -401,7 +401,7 @@ public class MonetPreparedStatement
 			 * @returns true
 			 */
 			public boolean isSearchable(int column) {
-				return(true);
+				return true;
 			}
 
 			/**
@@ -415,7 +415,7 @@ public class MonetPreparedStatement
 			 * @returns false
 			 */
 			public boolean isCurrency(int column) {
-				return(false);
+				return false;
 			}
 			
 			/**
@@ -438,14 +438,14 @@ public class MonetPreparedStatement
 					case Types.REAL:
 					case Types.FLOAT:
 					case Types.DOUBLE:
-						return(true);
+						return true;
 					case Types.BIT: // we don't use type BIT, it's here for completeness
 					case Types.BOOLEAN:
 					case Types.DATE:
 					case Types.TIME:
 					case Types.TIMESTAMP:
 					default:
-						return(false);
+						return false;
 				}
 			}
 
@@ -459,7 +459,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public int getColumnDisplaySize(int column) throws SQLException {
-				return(digits[getColumnIdx(column)]);
+				return digits[getColumnIdx(column)];
 			}
 
 			/**
@@ -470,7 +470,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getSchemaName(int column) throws SQLException {
-				return(schema[getColumnIdx(column)]);
+				return schema[getColumnIdx(column)];
 			}
 
 			/**
@@ -480,7 +480,7 @@ public class MonetPreparedStatement
 			 * @return table name or "" if not applicable
 			 */
 			public String getTableName(int col) throws SQLException {
-				return(column[getColumnIdx(col)]);
+				return column[getColumnIdx(col)];
 			}
 
 			/**
@@ -494,7 +494,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getPrecision(int column) throws SQLException {
-				return(digits[getColumnIdx(column)]);
+				return digits[getColumnIdx(column)];
 			}
 
 			/**
@@ -508,7 +508,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getScale(int column) throws SQLException {
-				return(scale[getColumnIdx(column)]);
+				return scale[getColumnIdx(column)];
 			}
 
 			/**
@@ -522,7 +522,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int isNullable(int column) throws SQLException {
-				return(columnNullableUnknown);
+				return columnNullableUnknown;
 			}
 
 			/**
@@ -535,7 +535,7 @@ public class MonetPreparedStatement
 			 *         column appears or "" if not applicable
 			 */
 			public String getCatalogName(int column) throws SQLException {
-				return(getConnection().getCatalog());
+				return getConnection().getCatalog();
 			}
 
 			/**
@@ -547,7 +547,7 @@ public class MonetPreparedStatement
 			 * @return true if so; false otherwise
 			 */
 			public boolean isReadOnly(int column) {
-				return(true);
+				return true;
 			}
 
 			/**
@@ -558,7 +558,7 @@ public class MonetPreparedStatement
 			 * @return true if so; false otherwise
 			 */
 			public boolean isWritable(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -569,7 +569,7 @@ public class MonetPreparedStatement
 			 * @return true if so; false otherwise
 			 */
 			public boolean isDefinitelyWritable(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -588,9 +588,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public String getColumnClassName(int column) throws SQLException {
-				return(
-					MonetResultSet.getClassForType(javaType[getColumnIdx(column)]).getName()
-				);
+				return MonetResultSet.getClassForType(javaType[getColumnIdx(column)]).getName();
 			}
 
 			/**
@@ -603,7 +601,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public String getColumnLabel(int column) throws SQLException {
-				return(getColumnName(column));
+				return getColumnName(column);
 			}
 
 			/**
@@ -614,7 +612,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public String getColumnName(int col) throws SQLException {
-				return(column[getColumnIdx(col)]);
+				return column[getColumnIdx(col)];
 			}
 
 			/**
@@ -625,7 +623,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public int getColumnType(int column) throws SQLException {
-				return(javaType[getColumnIdx(column)]);
+				return javaType[getColumnIdx(column)];
 			}
 
 			/**
@@ -638,7 +636,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if there is no such column
 			 */
 			public String getColumnTypeName(int column) throws SQLException {
-				return(monetdbType[getColumnIdx(column)]);
+				return monetdbType[getColumnIdx(column)];
 			}
 
 			/**
@@ -651,10 +649,11 @@ public class MonetPreparedStatement
 			 * @return Metadata ResultSet
 			 * @throws SQLException if a database error occurs
 			 */
+			@SuppressWarnings("unused")
 			private ResultSet getColumnResultSet(int col)
 				throws SQLException
 			{
-				if (!colrs.containsKey("" + col)) {
+				if (!colrs.containsKey(col)) {
 					if (dbmd == null)
 						dbmd = getConnection().getMetaData();
 					ResultSet rscol = 
@@ -664,14 +663,14 @@ public class MonetPreparedStatement
 								table[getColumnIdx(col)],
 								column[getColumnIdx(col)]
 							);
-					colrs.put("" + col, rscol);
+					colrs.put(col, rscol);
 				}
 
-				ResultSet res = (ResultSet)(colrs.get("" + col));
+				ResultSet res = (ResultSet)(colrs.get(col));
 				res.beforeFirst();
-				return(res);
+				return res;
 			}
-		});
+		};
 	}
 
 	/* helper class for the anonymous class in getParameterMetaData */
@@ -686,7 +685,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return(new pmdw() {
+		return new pmdw() {
 			/**
 			 * Retrieves the number of parameters in the
 			 * PreparedStatement object for which this ParameterMetaData
@@ -696,7 +695,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterCount() throws SQLException {
-				return(size);
+				return size;
 			}
 
 			/**
@@ -713,7 +712,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int isNullable(int param) throws SQLException {
-				return(ParameterMetaData.parameterNullableUnknown);
+				return ParameterMetaData.parameterNullableUnknown;
 			}
 
 			/**
@@ -740,14 +739,14 @@ public class MonetPreparedStatement
 					case Types.REAL:
 					case Types.FLOAT:
 					case Types.DOUBLE:
-						return(true);
+						return true;
 					case Types.BIT: // we don't use type BIT, it's here for completeness
 					case Types.BOOLEAN:
 					case Types.DATE:
 					case Types.TIME:
 					case Types.TIMESTAMP:
 					default:
-						return(false);
+						return false;
 				}
 			}
 
@@ -763,7 +762,7 @@ public class MonetPreparedStatement
 				if (param < 1 || param > size)
 					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
-				return(digits[param - 1]);
+				return digits[param - 1];
 			}
 
 			/**
@@ -778,7 +777,7 @@ public class MonetPreparedStatement
 				if (param < 1 || param > size)
 					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
-				return(scale[param - 1]);
+				return scale[param - 1];
 			}
 
 			/**
@@ -792,7 +791,7 @@ public class MonetPreparedStatement
 				if (param < 1 || param > size)
 					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
-				return(javaType[param - 1]);
+				return javaType[param - 1];
 			}
 
 			/**
@@ -809,7 +808,7 @@ public class MonetPreparedStatement
 				if (param < 1 || param > size)
 					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
-				return(monetdbType[param - 1]);
+				return monetdbType[param - 1];
 			}
 
 			/**
@@ -829,7 +828,7 @@ public class MonetPreparedStatement
 				if (param < 1 || param > size)
 					throw new SQLException("No such parameter with index: " + param, "M1M05");
 
-				return(MonetResultSet.getClassForType(javaType[param - 1]).getName());
+				return MonetResultSet.getClassForType(javaType[param - 1]).getName();
 			}
 
 			/**
@@ -845,9 +844,9 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterMode(int param) throws SQLException {
-				return(ParameterMetaData.parameterModeUnknown);
+				return ParameterMetaData.parameterModeUnknown;
 			}
-		});
+		};
 	}
 
 	/**
@@ -1110,7 +1109,7 @@ public class MonetPreparedStatement
 			return;
 		}
 
-		StringBuffer hex = new StringBuffer(x.length * 2);
+		StringBuilder hex = new StringBuilder(x.length * 2);
 		byte b;
 		for (int i = 0; i < x.length; i++) {
 			b = x[i];
@@ -2221,6 +2220,6 @@ public class MonetPreparedStatement
 		}
 		buf.append(")");
 		
-		return(buf.toString());
+		return buf.toString();
 	}
 }

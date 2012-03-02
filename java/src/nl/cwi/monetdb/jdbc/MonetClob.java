@@ -23,9 +23,9 @@ import java.sql.*;
 import java.io.*;
 
 /**
- * The MonetClob class implements the java.sql.Clob interface.  Because
+ * The MonetClob class implements the {@link java.sql.Clob} interface.  Because
  * MonetDB/SQL currently has no support for streams, this class is a
- * shallow wrapper of a StringBuffer.  It is more or less supplied to
+ * shallow wrapper of a {@link StringBuilder}.  It is more or less supplied to
  * enable an application that depends on it to run.  It may be obvious
  * that it is a real resource expensive workaround that contradicts the
  * sole reason for a Clob: avoidance of huge resource consumption.
@@ -34,10 +34,11 @@ import java.io.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetClob implements Clob {
-	private StringBuffer buf;
+	
+	private StringBuilder buf;
 
 	protected MonetClob(String in) {
-		buf = new StringBuffer(in);
+		buf = new StringBuilder(in);
 	}
 
 	//== begin interface Clob
@@ -115,7 +116,7 @@ public class MonetClob implements Clob {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
 		try {
-			return(buf.substring((int)(pos - 1), (int)(pos - 1 + length)));
+			return buf.substring((int)(pos - 1), (int)(pos - 1 + length));
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException(e.getMessage());
 		}
@@ -132,7 +133,7 @@ public class MonetClob implements Clob {
 	public long length() throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
-		return((long)buf.length());
+		return (long)buf.length();
 	}
 
 	/**
@@ -149,7 +150,7 @@ public class MonetClob implements Clob {
 	 *         CLOB value
 	 */
 	public long position(Clob searchstr, long start) throws SQLException {
-		return(position(searchstr.getSubString(1L, (int)(searchstr.length())), start));
+		return position(searchstr.getSubString(1L, (int)(searchstr.length())), start);
 	}
 
 	/**
@@ -168,7 +169,7 @@ public class MonetClob implements Clob {
 	public long position(String searchstr, long start) throws SQLException {
 		if (buf == null)
 			throw new SQLException("This Clob has been freed", "M1M20");
-		return((long)(buf.indexOf(searchstr, (int)(start - 1))));
+		return (long)(buf.indexOf(searchstr, (int)(start - 1)));
 	}
 
 	public OutputStream setAsciiStream(long pos) throws SQLException {
@@ -196,7 +197,7 @@ public class MonetClob implements Clob {
 	 *         CLOB value
 	 */
 	public int setString(long pos, String str) throws SQLException {
-		return(setString(pos, str, 1, str.length()));
+		return setString(pos, str, 1, str.length());
 	}
 
 	/**
@@ -225,9 +226,9 @@ public class MonetClob implements Clob {
 		
 		if (retlen > 0) {
 			buf.replace((int)(pos - 1), (int)(pos + retlen), str.substring(offset - 1, (offset + len)));
-			return(retlen);
+			return retlen;
 		} else {
-			return(0);
+			return 0;
 		}
 	}
 
@@ -255,7 +256,7 @@ public class MonetClob implements Clob {
 	 */
 	public String toString() {
 		if (buf == null)
-			return("<a freed MonetClob instance>");
-		return(buf.toString());
+			return "<a freed MonetClob instance>";
+		return buf.toString();
 	}
 }
