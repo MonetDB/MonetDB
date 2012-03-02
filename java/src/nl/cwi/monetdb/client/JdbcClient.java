@@ -195,7 +195,6 @@ copts.produceHelpMessage()
 				System.exit(1);
 			}
 			pass = String.valueOf(tmp);
-			System.out.println("");
 		}
 
 		user = copts.getOption("user").getArgument();
