@@ -67,7 +67,7 @@ public class JMonetDB {
 			copts.processArgs(args);
 		} catch (OptionsException e) {
 			System.err.println("Error: " + e.getMessage());
-			System.exit(-1);
+			System.exit(1);
 		}
 
 		if (copts.getOption("help").isPresent()) {
@@ -92,14 +92,12 @@ copts.produceHelpMessage()
 		// we need the password from the user, fetch it with a pseudo
 		// password protector
 		if (pass == null) {
-			try {
-				char[] tmp = PasswordField.getPassword(System.in, "passhrase: ");
-				if (tmp != null) pass = String.valueOf(tmp);
-			} catch (IOException ioe) {
+			char[] tmp = System.console().readPassword("passphrase: ");
+			if (tmp == null) {
 				System.err.println("Invalid passphrase!");
-				System.exit(-1);
+				System.exit(1);
 			}
-			System.out.println("");
+			pass = String.valueOf(tmp);
 		}
 
 		// build the hostname
@@ -118,7 +116,7 @@ copts.produceHelpMessage()
 
 		if (!copts.getOption("command").isPresent()) {
 			System.err.println("need a command to execute (-c)");
-			System.exit(-1);
+			System.exit(1);
 		}
 
 		Control ctl = null;
@@ -126,7 +124,7 @@ copts.produceHelpMessage()
 			ctl = new Control(host, port, pass);
 		} catch (IllegalArgumentException e) {
 			System.err.println(e.getMessage());
-			System.exit(-1);
+			System.exit(1);
 		}
 		// FIXME: Control needs to respect Xhash
 
