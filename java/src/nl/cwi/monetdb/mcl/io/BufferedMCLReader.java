@@ -19,7 +19,12 @@
 
 package nl.cwi.monetdb.mcl.io;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Read text from a character-input stream, buffering characters so as
@@ -115,9 +120,9 @@ public class BufferedMCLReader extends BufferedReader {
 		setLineType(r);
 		if (lineType == ERROR && !r.matches("^![0-9A-Z]{5}!.+"))
 			r = "!22000!" + r.substring(1);
-		return(r);
+		return r;
 	}
-
+	
 	/**
 	 * Sets the linetype to the type of the string given.  If the string
 	 * is null, lineType is set to UNKNOWN.
@@ -167,7 +172,7 @@ public class BufferedMCLReader extends BufferedReader {
 	 *         RESULT, REDIRECT, INFO
 	 */
 	public int getLineType() {
-		return(lineType);
+		return lineType;
 	}
 
 	/**
@@ -182,6 +187,8 @@ public class BufferedMCLReader extends BufferedReader {
 	 *
 	 * @return a string containing error messages, or null if there aren't any
 	 * @throws IOException if an IO exception occurs while talking to the server
+	 * 
+	 * TODO(Wouter): should probably not have to be synchronized. + StringBuilder...
 	 */
 	final public synchronized String waitForPrompt() throws IOException {
 		String ret = "", tmp;
@@ -191,7 +198,7 @@ public class BufferedMCLReader extends BufferedReader {
 			if (lineType == ERROR)
 				ret += "\n" + tmp.substring(1);
 		}
-		return(ret == "" ? null : ret.trim());
+		return ret == "" ? null : ret.trim();
 	}
 
 }

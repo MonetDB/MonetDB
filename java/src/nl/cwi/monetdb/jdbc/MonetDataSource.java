@@ -54,7 +54,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	// private String role;
 
 
-	private MonetDriver driver;
+	private final MonetDriver driver;
 
 	/**
 	 * Constructor of a MonetDataSource which uses default settings for a
@@ -76,7 +76,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @throws SQLException if connecting to the database fails
 	 */
 	public Connection getConnection() throws SQLException {
-		return(getConnection(user, password));
+		return getConnection(user, password);
 	}
 
 	/**
@@ -98,7 +98,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 		props.put("user", username);
 		props.put("password", password);
 
-		return(driver.connect(url, props));
+		return driver.connect(url, props);
 	}
 
 
@@ -109,7 +109,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return login timeout default is 0 (infinite)
 	 */
 	public int getLoginTimeout() {
-		return(loginTimeout);
+		return loginTimeout;
 	}
 
 	/**
@@ -128,7 +128,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return null, since there is no log writer
 	 */
 	public PrintWriter getLogWriter() {
-		return(null);
+		return null;
 	}
 
 	/**
@@ -156,7 +156,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return the username
 	 */
 	public String getUser() {
-		return(user);
+		return user;
 	}
 
 	/**
@@ -174,7 +174,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return the connection URL
 	 */
 	public String getURL() {
-		return(url);
+		return url;
 	}
 
 	/**
@@ -192,7 +192,7 @@ public class MonetDataSource extends MonetWrapper implements DataSource {
 	 * @return the description
 	 */
 	public String getDescription() {
-		return(description);
+		return description;
 	}
 
 	/**

@@ -19,7 +19,6 @@
 
 package nl.cwi.monetdb.mcl.parser;
 
-import java.util.*;
 
 /**
  * Interface for parsers in MCL.  The parser family in MCL is set up as
@@ -84,7 +83,7 @@ public abstract class MCLParser {
 	 * @see #nextInt()
 	 */
 	final public boolean hasNext() {
-		return(colnr < values.length);
+		return colnr < values.length;
 	}
 
 	/**
@@ -98,7 +97,7 @@ public abstract class MCLParser {
 	 * @see #hasNext()
 	 */
 	final public String next() {
-		return(values[colnr++]);
+		return values[colnr++];
 	}
 
 	/**
@@ -111,6 +110,6 @@ public abstract class MCLParser {
 	 * @see #next()
 	 */
 	final public int nextInt() {
-		return(intValues[colnr++]);
+		return intValues[colnr++];
 	}
 }

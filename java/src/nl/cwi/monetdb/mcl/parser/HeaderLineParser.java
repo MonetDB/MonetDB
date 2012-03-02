@@ -19,8 +19,6 @@
 
 package nl.cwi.monetdb.mcl.parser;
 
-import java.util.*;
-import nl.cwi.monetdb.mcl.*;
 
 /**
  * The HeaderLineParser is a generic MCLParser that extracts values from
@@ -133,7 +131,7 @@ public class HeaderLineParser extends MCLParser {
 		// adjust colno
 		reset();
 
-		return(type);
+		return type;
 	}
 
 	/**
@@ -177,7 +175,7 @@ public class HeaderLineParser extends MCLParser {
 			if (chrLine[i] == ',' && chrLine[i + 1] == '\t') {
 				intValues[elem++] = tmp;
 				tmp = 0;
-				start = ++i;
+				start = i++;
 			} else {
 				tmp *= 10;
 				// note: don't use Character.isDigit() here, because
