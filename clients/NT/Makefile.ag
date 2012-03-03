@@ -18,5 +18,5 @@
 scripts_bat = {
 	EXT = bat
 	DIR = prefix
-	SOURCES = mclient.bat msqldump.bat
+	SOURCES = mclient.bat msqldump.bat stethoscope.bat
 }
