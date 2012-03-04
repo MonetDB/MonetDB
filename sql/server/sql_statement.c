@@ -1602,23 +1602,6 @@ stmt_aggr(sql_allocator *sa, stmt *op1, group *grp, sql_subaggr *op, int reduce)
 }
 
 stmt *
-stmt_aggr2(sql_allocator *sa, stmt *op1, stmt *op2, sql_subaggr *op)
-{
-	stmt *s = stmt_create(sa, st_aggr);
-
-	s->op1 = op1;
-	s->op2 = op2;
-	s->nrcols = 1;
-	s->nrcols = 0;
-	s->h = op1->h;
-	s->key = 1;
-	s->aggr = 1;
-	s->op4.aggrval = op;
-	s->flag = 1;
-	return s;
-}
-
-stmt *
 stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *alias)
 {
 	stmt *s = stmt_create(sa, st_alias);
@@ -1997,6 +1980,10 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str && st->op4.aval->data.val.sval && _strlen(st->op4.aval->data.val.sval))
 			return st->op4.aval->data.val.sval;
+	case st_list:
+		if (list_length(st->op4.lval) && st->op4.lval->h)
+			return table_name(sa, st->op4.lval->h->data);
+		return NULL;
 
 	case st_var:
 	case st_temp:

@@ -310,6 +310,30 @@ exp_values(sql_allocator *sa, list *exps)
 	return e;
 }
 
+list * 
+exp_types(sql_allocator *sa, list *exps) 
+{
+	list *l = sa_list(sa);
+	node *n;
+
+	for ( n = exps->h; n; n = n->next)
+		append(l, exp_subtype(n->data));
+	return l;
+}
+
+int
+have_nil(list *exps)
+{
+	int has_nil = 0;
+	node *n;
+
+	for ( n = exps->h; n && !has_nil; n = n->next) {
+		sql_exp *e = n->data;
+		has_nil |= has_nil(e);
+	}
+	return has_nil;
+}
+
 sql_exp * 
 exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
 {
