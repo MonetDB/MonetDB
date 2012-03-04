@@ -398,6 +398,14 @@ subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2)
 	return -1;
 }
 
+static int
+arg_subtype_cmp(sql_arg *a, sql_subtype *t)
+{
+	if (a->type.type->eclass == EC_ANY)
+		return 0;
+	return (is_subtype(t, &a->type )?0:-1);
+}
+
 sql_subaggr *
 sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *type)
 {
@@ -450,6 +458,76 @@ sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *sqlaname, sql_subtype *typ
 			if (strcmp(a->base.name, sqlaname) == 0 && (!arg ||
 		    	 	arg->type.type->eclass == EC_ANY || 
 		    		(type && is_subtype(type, &arg->type )))) {
+				int scale = 0;
+				int digits = 0;
+				sql_subaggr *ares = SA_ZNEW(sa, sql_subaggr);
+		
+				ares->aggr = a;
+				digits = a->res.digits;
+				scale = a->res.scale;
+				/* same scale as the input */
+				if (type) {
+					digits = type->digits;
+					scale = type->scale;
+				}
+				/* same type as the input */
+				if (a->res.type->eclass == EC_ANY) 
+					sql_init_subtype(&ares->res, type->type, digits, scale);
+				else
+					sql_init_subtype(&ares->res, a->res.type, digits, scale);
+				return ares;
+			}
+		}
+	}
+	return NULL;
+}
+
+sql_subaggr *
+sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *sqlaname, list *ops)
+{
+	node *n = aggrs->h;
+	sql_subtype *type = NULL;
+
+	if (ops->h)
+		type = ops->h->data;
+
+	while (n) {
+		sql_func *a = n->data;
+
+		if (strcmp(a->base.name, sqlaname) == 0 &&  
+		    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0) { 
+			int scale = 0;
+			int digits = 0;
+			sql_subaggr *ares = SA_ZNEW(sa, sql_subaggr);
+
+			ares->aggr = a;
+			digits = a->res.digits;
+			scale = a->res.scale;
+			/* same scale as the input */
+			if (type) {
+				digits = type->digits;
+				scale = type->scale;
+			}
+			/* same type as the input */
+			if (a->res.type->eclass == EC_ANY) 
+				sql_init_subtype(&ares->res, type->type, digits, scale);
+			else
+				sql_init_subtype(&ares->res, a->res.type, digits, scale);
+			return ares;
+		}
+		n = n->next;
+	}
+	if (s) {
+		node *n;
+
+		if (s->funcs.set) for (n=s->funcs.set->h; n; n = n->next) {
+			sql_func *a = n->data;
+
+			if ((!IS_AGGR(a) || !a->res.type))
+				continue;
+
+			if (strcmp(a->base.name, sqlaname) == 0 && 
+		    	    list_cmp(a->ops, ops, (fcmp) &arg_subtype_cmp) == 0) { 
 				int scale = 0;
 				int digits = 0;
 				sql_subaggr *ares = SA_ZNEW(sa, sql_subaggr);
@@ -657,14 +735,6 @@ sql_bind_func3(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *tp
 
 	fres = sql_bind_func_(sa, s, sqlfname, l, type);
 	return fres;
-}
-
-static int
-arg_subtype_cmp(sql_arg *a, sql_subtype *t)
-{
-	if (a->type.type->eclass == EC_ANY)
-		return 0;
-	return (is_subtype(t, &a->type )?0:-1);
 }
 
 sql_subfunc *
@@ -919,6 +989,19 @@ sql_create_aggr(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *t
 }
 
 sql_func *
+sql_create_aggr2(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tp1, sql_type *tp2, sql_type *res)
+{
+	list *l = sa_list(sa);
+	sql_subtype sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tp1, 0, 0)));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tp2, 0, 0)));
+	assert(res);
+	sql_init_subtype(&sres, res, 0, 0);
+	return sql_create_func_(sa, name, mod, imp, l, &sres, FALSE, TRUE, SCALE_NONE);
+}
+
+sql_func *
 sql_create_func(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
 {
 	list *l = sa_list(sa);
@@ -1147,6 +1230,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "sql_min", "calc", "min", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_func(sa, "sql_max", "calc", "max", ANY, ANY, ANY, SCALE_FIX);
 	sql_create_aggr(sa, "median", "aggr", "median", ANY, ANY);
+	sql_create_aggr2(sa, "corr", "aggr", "corr", ANY, ANY, ANY);
 	sql_create_func3(sa, "ifthenelse", "calc", "ifthenelse", BIT, ANY, ANY, ANY, SCALE_FIX);
 
 	/* sum for numerical and decimals */
@@ -1205,12 +1289,20 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "percent_rank", "calc", "precent_rank_grp", ANY, NULL, INT, SCALE_NONE);
 	sql_create_func(sa, "cume_dist", "calc", "cume_dist_grp", ANY, NULL, ANY, SCALE_NONE);
 	sql_create_func(sa, "row_number", "calc", "mark_grp", ANY, NULL, INT, SCALE_NONE);
+	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, NULL, ANY, SCALE_NONE);
+	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, NULL, ANY, SCALE_NONE);
+	sql_create_func(sa, "lag", "calc", "lag_grp", ANY, INT, ANY, SCALE_NONE);
+	sql_create_func(sa, "lead", "calc", "lead_grp", ANY, INT, ANY, SCALE_NONE);
 
 	sql_create_func3(sa, "rank", "calc", "rank_grp", ANY, OID, OID, INT, SCALE_NONE);
 	sql_create_func3(sa, "dense_rank", "calc", "dense_rank_grp", ANY, OID, OID, INT, SCALE_NONE);
 	sql_create_func3(sa, "percent_rank", "calc", "precent_rank_grp", ANY, OID, OID, INT, SCALE_NONE);
 	sql_create_func3(sa, "cume_dist", "calc", "cume_dist_grp", ANY, OID, OID, ANY, SCALE_NONE);
 	sql_create_func3(sa, "row_number", "calc", "mark_grp", ANY, OID, OID, INT, SCALE_NONE);
+	sql_create_func3(sa, "lag", "calc", "lag_grp", ANY, OID, OID, ANY, SCALE_NONE);
+	sql_create_func3(sa, "lead", "calc", "lead_grp", ANY, OID, OID, ANY, SCALE_NONE);
+	sql_create_func4(sa, "lag", "calc", "lag_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
+	sql_create_func4(sa, "lead", "calc", "lead_grp", ANY, INT, OID, OID, ANY, SCALE_NONE);
 
 	sql_create_func(sa, "and", "calc", "and", BIT, BIT, BIT, SCALE_FIX);
 	sql_create_func(sa, "or",  "calc",  "or", BIT, BIT, BIT, SCALE_FIX);

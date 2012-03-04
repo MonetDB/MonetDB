@@ -1705,7 +1705,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			s->rewritten = (void*)q;
 		} break;
 		case st_aggr:{
-			int l = _dumpstmt(sql, mb, s->op1);
+			int g = 0, e = 0, l = _dumpstmt(sql, mb, s->op1); /* maybe a list */
 			char *mod, *aggrfunc;
 			int restype = s->op4.aggrval->res.type->localtype;
 			int output_type_needed = 0;
@@ -1714,33 +1714,35 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			mod = s->op4.aggrval->aggr->mod;
 			aggrfunc = s->op4.aggrval->aggr->imp;
 			if (strcmp(aggrfunc, "sum") == 0 ||
-					strcmp(aggrfunc, "prod") == 0)
+			    strcmp(aggrfunc, "prod") == 0)
 				output_type_needed = 1;
 
-			if (s->flag) {
-				int l2 = _dumpstmt(sql, mb, s->op2);
-
-				q = newStmt(mb, mod, aggrfunc);
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, l2);
-
-			} else if (s->op3) {
-				int g = _dumpstmt(sql, mb, s->op2);
-				int e = _dumpstmt(sql, mb, s->op3);
+			if (s->op3) {
+				g = _dumpstmt(sql, mb, s->op2);
+				e = _dumpstmt(sql, mb, s->op3);
 
 				q = newStmt(mb, mod, aggrfunc);
 				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
 				setVarUDFtype(mb, getArg(q, 0));
-				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, g);
-				q = pushArgument(mb, q, e);
 			} else {
 				q = newStmt(mb, mod, aggrfunc);
 				if (output_type_needed){
 					setVarType(mb, getArg(q, 0), restype);
 					setVarUDFtype(mb, getArg(q, 0));
 				}
+			}
+			if (s->op1->type != st_list) {
 				q = pushArgument(mb, q, l);
+			} else {
+				for (n = s->op1->op4.lval->h; n; n = n->next) {
+					stmt *op = n->data;
+
+					q = pushArgument(mb, q, op->nr);
+				}
+			}
+			if (g) {
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, e);
 			}
 			s->nr = getDestVar(q);
 		}
