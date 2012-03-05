@@ -196,7 +196,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		// store it
 		curRow = row;
 
-		if (tmpLine == null) return(false);
+		if (tmpLine == null) return false;
 		try {
 			tlp.parse(tmpLine);
 		} catch (MCLParseException e) {
@@ -206,7 +206,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		// reset lastColumnRead
 		lastColumnRead = -1;
 
-		return(true);
+		return true;
 	}
 
 	/**
@@ -266,7 +266,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public int findColumn(String columnName) throws SQLException {
 		for (int i = 0; i < columns.length; i++) {
-			if (columns[i].equalsIgnoreCase(columnName)) return(i + 1);
+			if (columns[i].equalsIgnoreCase(columnName)) return i + 1;
 		}
 		throw new SQLException("No such column name: " + columnName, "M1M05");
 	}
@@ -280,7 +280,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         set type is TYPE_FORWARD_ONLY
 	 */
 	public boolean first() throws SQLException {
-		return(absolute(1));
+		return absolute(1);
 	}
 
 	public Array getArray(int i) throws SQLException { throw new SQLFeatureNotSupportedException("Method getArray not implemented yet, sorry!", "0A000"); }
@@ -318,15 +318,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.BLOB:
 				Blob blob = getBlob(columnIndex);
 				if (blob == null)
-					return(null);
-				return(blob.getBinaryStream());
+					return null;
+				return blob.getBinaryStream();
 			case Types.BINARY:
 			case Types.VARBINARY:
 			case Types.LONGVARBINARY:
 				byte[] bte = getBytes(columnIndex);
 				if (bte == null)
-					return(null);
-				return(new ByteArrayInputStream(bte));
+					return null;
+				return new ByteArrayInputStream(bte);
 		}
 		throw new SQLException("Cannot operate on " +
 				types[columnIndex - 1] + " type", "M1M05");
@@ -355,7 +355,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * result set
 	 */
 	public InputStream getBinaryStream(String columnName) throws SQLException {
-		return(getBinaryStream(findColumn(columnName)));
+		return getBinaryStream(findColumn(columnName));
 	}
 
 	/**
@@ -371,7 +371,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Reader getCharacterStream(int columnIndex) throws SQLException {
 		String tmp = getString(columnIndex);
 		if (tmp == null)
-			return(null);
+			return null;
 		return new StringReader(tmp);
 	}
 
@@ -386,7 +386,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Reader getCharacterStream(String columnName) throws SQLException {
-		return(getCharacterStream(findColumn(columnName)));
+		return getCharacterStream(findColumn(columnName));
 	}
 
 	/**
@@ -422,7 +422,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public Reader getNCharacterStream(String columnName) throws SQLException {
-		return(getNCharacterStream(findColumn(columnName)));
+		return getNCharacterStream(findColumn(columnName));
 	}
 
 	/**
@@ -438,9 +438,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Blob getBlob(int i) throws SQLException {
 		String tmp = getString(i);
 		if (tmp == null) {
-			return(null);
+			return null;
 		} else {
-			return(new MonetBlob(tmp));
+			return MonetBlob.create(tmp);
 		}
 	}
 
@@ -456,7 +456,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Blob getBlob(String colName) throws SQLException {
-		return(getBlob(findColumn(colName)));
+		return getBlob(findColumn(colName));
 	}
 
 	/**
@@ -472,9 +472,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Clob getClob(int i) throws SQLException {
 		String tmp = getString(i);
 		if (tmp == null) {
-			return(null);
+			return null;
 		} else {
-			return(new MonetClob(tmp));
+			return new MonetClob(tmp);
 		}
 	}
 
@@ -506,7 +506,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Clob getClob(String colName) throws SQLException {
-		return(getClob(findColumn(colName)));
+		return getClob(findColumn(colName));
 	}
 
 	/**
@@ -523,7 +523,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public NClob getNClob(String colName) throws SQLException {
-		return(getNClob(findColumn(colName)));
+		return getNClob(findColumn(colName));
 	}
 
 	/**
@@ -538,12 +538,12 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
 		String decimal = getString(columnIndex);
 		if (decimal == null) {
-			return(null);
+			return null;
 		} else {
 			try {
-				return(new BigDecimal(decimal));
+				return new BigDecimal(decimal);
 			} catch (NumberFormatException e) {
-				return(new BigDecimal("0"));
+				return BigDecimal.ZERO;
 			}
 		}
 	}
@@ -563,16 +563,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	{
 		String decimal = getString(columnIndex);
 		if (decimal == null) {
-			return(null);
+			return null;
 		} else {
 			BigDecimal bd;
 			try {
 				bd = new BigDecimal(decimal);
 			} catch (NumberFormatException e) {
-				bd = new BigDecimal("0");
+				bd = BigDecimal.ZERO;
 			}
-			bd.setScale(scale);
-			return(bd);
+			return bd.setScale(scale);
 		}
 	}
 
@@ -586,7 +585,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public BigDecimal getBigDecimal(String columnName) throws SQLException {
-		return(getBigDecimal(findColumn(columnName)));
+		return getBigDecimal(findColumn(columnName));
 	}
 
 	/**
@@ -602,7 +601,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public BigDecimal getBigDecimal(String columnName, int scale)
 		throws SQLException
 	{
-		return(getBigDecimal(findColumn(columnName), scale));
+		return getBigDecimal(findColumn(columnName), scale);
 	}
 
 	// See Sun JDBC Specification 3.0 Table B-6
@@ -623,26 +622,26 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			dataType == Types.BIGINT)
 		{
 			if (getLong(columnIndex) == 0L) {
-				return(false);
+				return false;
 			} else {
-				return(true);
+				return true;
 			}
 		} else if (dataType == Types.REAL ||
 			dataType == Types.FLOAT ||
 			dataType == Types.DOUBLE)
 		{
 			if (getDouble(columnIndex) == 0.0) {
-				return(false);
+				return false;
 			} else {
-				return(true);
+				return true;
 			}
 		} else if (dataType == Types.DECIMAL ||
 			dataType == Types.NUMERIC)
 		{
 			if (getBigDecimal(columnIndex).compareTo(new BigDecimal(0.0)) == 0) {
-				return(false);
+				return false;
 			} else {
-				return(true);
+				return true;
 			}
 		} else if (dataType == Types.BIT ||
 			dataType == Types.BOOLEAN ||
@@ -650,7 +649,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			dataType == Types.VARCHAR ||
 			dataType == Types.LONGVARCHAR)
 		{
-			return((Boolean.valueOf(getString(columnIndex))).booleanValue());
+			return (Boolean.valueOf(getString(columnIndex))).booleanValue();
 		} else {
 			throw new SQLException("Conversion from " + types[columnIndex - 1] + " to boolean type not supported", "M1M05");
 		}
@@ -666,7 +665,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public boolean getBoolean(String columnName) throws SQLException {
-		return(getBoolean(findColumn(columnName)));
+		return getBoolean(findColumn(columnName));
 	}
 
 	/**
@@ -681,9 +680,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public byte getByte(int columnIndex) throws SQLException {
 		String bytes = getString(columnIndex);
 		if (bytes == null || bytes.length() == 0) {
-			return((byte)0);
+			return (byte)0;
 		} else {
-			return(bytes.getBytes()[0]);
+			return bytes.getBytes()[0];
 		}
 	}
 
@@ -697,7 +696,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public byte getByte(String columnName) throws SQLException {
-		return(getByte(findColumn(columnName)));
+		return getByte(findColumn(columnName));
 	}
 
 	/**
@@ -726,14 +725,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		String tmp = getString(columnIndex);
 		if (tmp == null) {
-			return(null);
+			return null;
 		} else {
 			// unpack the HEX (BLOB) notation to real bytes
 			int len = tmp.length() / 2;
 			byte[] buf = new byte[len];
 			for (int j = 0; j < len; j++)
 				buf[j] = (byte)Integer.parseInt(tmp.substring(2 * j, (2 * j) + 2), 16);
-			return(buf);
+			return buf;
 		}
 	}
 
@@ -753,7 +752,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public byte[] getBytes(String columnName) throws SQLException {
-		return(getBytes(findColumn(columnName)));
+		return getBytes(findColumn(columnName));
 	}
 
 	/**
@@ -767,7 +766,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         ResultSet.CONCUR_UPDATABLE
 	 */
 	public int getConcurrency() {
-		return(concurrency);
+		return concurrency;
 	}
 
 	/**
@@ -794,7 +793,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public String getCursorName() throws SQLException {
 		throw new SQLException("Positioned updates not supported for this " +
 							   "cursor (" + tableID + ")", "0AM21");
-		//return("" + tableID);
+		//return "" + tableID;
 	}
 
 	/**
@@ -818,7 +817,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			// do not catch SQLException for it is declared to be thrown
 		}
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -831,7 +830,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public double getDouble(String columnName) throws SQLException {
-		return(getDouble(findColumn(columnName)));
+		return getDouble(findColumn(columnName));
 	}
 
 	/**
@@ -842,7 +841,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getHoldability() throws SQLException {
-		return(getStatement().getConnection().getHoldability());
+		return getStatement().getConnection().getHoldability();
 	}
 
 	/**
@@ -852,7 +851,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return the current fetch direction for this ResultSet object
 	 */
 	public int getFetchDirection() {
-		return(FETCH_FORWARD);
+		return FETCH_FORWARD;
 	}
 
 	/**
@@ -862,7 +861,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public int getFetchSize() throws SQLException {
-		return(header.getCacheSize());
+		return header.getCacheSize();
 	}
 
 	/**
@@ -886,7 +885,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			// do not catch SQLException for it is declared to be thrown
 		}
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -899,7 +898,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public float getFloat(String columnName) throws SQLException {
-		return(getFloat(findColumn(columnName)));
+		return getFloat(findColumn(columnName));
 	}
 
 	/**
@@ -922,7 +921,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		// do not catch SQLException for it is declared to be thrown
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -935,7 +934,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public int getInt(String columnName) throws SQLException {
-		return(getInt(findColumn(columnName)));
+		return getInt(findColumn(columnName));
 	}
 
 	/**
@@ -958,7 +957,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		// do not catch SQLException for it is declared to be thrown
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -971,7 +970,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public long getLong(String columnName) throws SQLException {
-		return(getLong(findColumn(columnName)));
+		return getLong(findColumn(columnName));
 	}
 
 	/* helper for the anonymous class inside getMetaData */
@@ -984,7 +983,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
-		return(new rsmdw() {
+		return new rsmdw() {
 			// for the more expensive methods, we provide a simple cache
 			// for the most expensive part; getting the ResultSet which
 			// contains the data
@@ -997,7 +996,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @returns the number of columns
 			 */
 			public int getColumnCount() {
-				return(columns.length);
+				return columns.length;
 			}
 
 			/**
@@ -1013,9 +1012,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// with datatype oid
 				// avoid nullpointer exception here
 				if ("oid".equals(getColumnTypeName(column))) {
-					return(true);
+					return true;
 				} else {
-					return(false);
+					return false;
 				}
 			}
 
@@ -1028,7 +1027,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @returns false
 			 */
 			public boolean isCaseSensitive(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -1044,7 +1043,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @returns true
 			 */
 			public boolean isSearchable(int column) {
-				return(true);
+				return true;
 			}
 
 			/**
@@ -1058,7 +1057,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @returns false
 			 */
 			public boolean isCurrency(int column) {
-				return(false);
+				return false;
 			}
 			
 			/**
@@ -1081,14 +1080,14 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					case Types.REAL:
 					case Types.FLOAT:
 					case Types.DOUBLE:
-						return(true);
+						return true;
 					case Types.BIT: // we don't use type BIT, it's here for completeness
 					case Types.BOOLEAN:
 					case Types.DATE:
 					case Types.TIME:
 					case Types.TIMESTAMP:
 					default:
-						return(false);
+						return false;
 				}
 			}
 
@@ -1109,7 +1108,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
 				
-				return(ret);
+				return ret;
 			}
 
 			/**
@@ -1135,7 +1134,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				if (dot == -1) throw
 					new AssertionError("table_name is not fully qualified! (" + schema + ")");
 
-				return(schema.substring(0, dot));
+				return schema.substring(0, dot);
 			}
 
 			/**
@@ -1160,7 +1159,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				if (dot == -1) throw
 					new AssertionError("table_name is not fully qualified! (" + table + ")");
 
-				return(table.substring(dot + 1));
+				return table.substring(dot + 1);
 			}
 
 			/**
@@ -1181,7 +1180,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// schema, table and column should be unique...
 				if (col.next()) precision = col.getInt("COLUMN_SIZE");
 
-				return(precision);
+				return precision;
 			}
 
 			/**
@@ -1202,7 +1201,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// schema, table and column should be unique...
 				if (col.next()) scale = col.getInt("DECIMAL_DIGITS");
 
-				return(scale);
+				return scale;
 			}
 
 			/**
@@ -1223,7 +1222,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				// schema, table and column should be unique...
 				if (col.next()) ret = col.getInt("NULLABLE");
 
-				return(ret);
+				return ret;
 			}
 
 			/**
@@ -1237,9 +1236,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getCatalogName(int column) throws SQLException {
 				if (getTableName(column) != "") {
-					return(getStatement().getConnection().getCatalog());
+					return getStatement().getConnection().getCatalog();
 				} else {
-					return("");
+					return "";
 				}
 			}
 
@@ -1252,7 +1251,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @return true if so; false otherwise
 			 */
 			public boolean isReadOnly(int column) {
-				return(true);
+				return true;
 			}
 
 			/**
@@ -1263,7 +1262,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @return true if so; false otherwise
 			 */
 			public boolean isWritable(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -1274,7 +1273,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @return true if so; false otherwise
 			 */
 			public boolean isDefinitelyWritable(int column) {
-				return(false);
+				return false;
 			}
 
 			/**
@@ -1294,11 +1293,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getColumnClassName(int column) throws SQLException {
 				try {
-					return(
-						getClassForType(
+					return getClassForType(
 							getJavaType(types[column - 1])
-						).getName()
-					);
+						).getName();
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
@@ -1314,7 +1311,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 * @throws SQLException if there is no such column
 			 */
 			public String getColumnLabel(int column) throws SQLException {
-				return(getColumnName(column));
+				return getColumnName(column);
 			}
 
 			/**
@@ -1326,7 +1323,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getColumnName(int column) throws SQLException {
 				try {
-					return(columns[column - 1]);
+					return columns[column - 1];
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
@@ -1342,7 +1339,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			public int getColumnType(int column) throws SQLException {
 				String type = getColumnTypeName(column);
 
-				return(getJavaType(type));
+				return getJavaType(type);
 			}
 
 			/**
@@ -1356,7 +1353,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getColumnTypeName(int column) throws SQLException {
 				try {
-					return(types[column - 1]);
+					return types[column - 1];
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
@@ -1392,9 +1389,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				}
 
 				colrs[column - 1].beforeFirst();
-				return(colrs[column - 1]);
+				return colrs[column - 1];
 			}
-		});
+		};
 	}
 
 	/**
@@ -1419,7 +1416,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Object getObject(int columnIndex) throws SQLException {
-		return(getObject(columnIndex, this.getStatement().getConnection().getTypeMap()));
+		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
 	/**
@@ -1439,11 +1436,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Object getObject(int i, Map<String,Class<?>> map)
 		throws SQLException
 	{
-		Class type;
+		Class<?> type;
 
 		if (tlp.values[i - 1] == null) {
 			lastColumnRead = i - 1;
-			return(null);
+			return null;
 		}
 
 		if (map.containsKey(types[i - 1])) {
@@ -1453,33 +1450,33 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 
 		if (type == String.class) {
-			return(getString(i));
+			return getString(i);
 		} else if (type == BigDecimal.class) {
-			return(getBigDecimal(i));
+			return getBigDecimal(i);
 		} else if (type == Boolean.class) {
-			return(Boolean.valueOf(getBoolean(i)));
+			return Boolean.valueOf(getBoolean(i));
 		} else if (type == Integer.class) {
-			return(new Integer(getInt(i)));
+			return Integer.valueOf(getInt(i));
 		} else if (type == Long.class) {
-			return(new Long(getLong(i)));
+			return Long.valueOf(getLong(i));
 		} else if (type == Float.class) {
-			return(new Float(getFloat(i)));
+			return Float.valueOf(getFloat(i));
 		} else if (type == Double.class) {
-			return(new Double(getDouble(i)));
+			return Double.valueOf(getDouble(i));
 		} else if (type == byte[].class) {
-			return(getBytes(i));
+			return getBytes(i);
 		} else if (type == java.sql.Date.class) {
-			return(getDate(i));
+			return getDate(i);
 		} else if (type == Time.class) {
-			return(getTime(i));
+			return getTime(i);
 		} else if (type == Timestamp.class) {
-			return(getTimestamp(i));
+			return getTimestamp(i);
 		} else if (type == Clob.class) {
-			return(getClob(i));
+			return getClob(i);
 		} else if (type == Blob.class) {
-			return(getBlob(i));
+			return getBlob(i);
 		} else {
-			return(getString(i));
+			return getString(i);
 		}
 	}
 
@@ -1527,7 +1524,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public <T> T getObject(String columnLabel, Class<T> type)
 		throws SQLException
 	{
-		return(getObject(findColumn(columnLabel), type));
+		return getObject(findColumn(columnLabel), type);
 	}
 
 	/**
@@ -1537,7 +1534,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @param type a value from java.sql.Types
 	 * @return a Class object from which an instance would be returned
 	 */
-	static Class getClassForType(int type) {
+	static Class<?> getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Oracle's JDBC specification 4.1
@@ -1547,42 +1544,42 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			case Types.CHAR:
 			case Types.VARCHAR:
 			case Types.LONGVARCHAR:
-				return(String.class);
+				return String.class;
 			case Types.NUMERIC:
 			case Types.DECIMAL:
-				return(BigDecimal.class);
+				return BigDecimal.class;
 			case Types.BIT: // we don't use type BIT, it's here for completeness
 			case Types.BOOLEAN:
-				return(Boolean.class);
+				return Boolean.class;
 			case Types.TINYINT:
 			case Types.SMALLINT:
 			case Types.INTEGER:
-				return(Integer.class);
+				return Integer.class;
 			case Types.BIGINT:
-				return(Long.class);
+				return Long.class;
 			case Types.REAL:
-				return(Float.class);
+				return Float.class;
 			case Types.FLOAT:
 			case Types.DOUBLE:
-				return(Double.class);
+				return Double.class;
 			case Types.BINARY:      // MonetDB currently does not support these
 			case Types.VARBINARY:   // see treat_blob_as_binary property
 			case Types.LONGVARBINARY:
-				return(byte[].class);
+				return byte[].class;
 			case Types.DATE:
-				return(java.sql.Date.class);
+				return java.sql.Date.class;
 			case Types.TIME:
-				return(Time.class);
+				return Time.class;
 			case Types.TIMESTAMP:
-				return(Timestamp.class);
+				return Timestamp.class;
 			case Types.CLOB:
-				return(Clob.class);
+				return Clob.class;
 			case Types.BLOB:
-				return(Blob.class);
+				return Blob.class;
 
 			// all the rest are currently not implemented and used
 			default:
-				return(String.class);
+				return String.class;
 		}
 	}
 
@@ -1610,7 +1607,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Object getObject(String columnName) throws SQLException {
-		return(getObject(columnName, this.getStatement().getConnection().getTypeMap()));
+		return getObject(columnName, this.getStatement().getConnection().getTypeMap());
 	}
 
 	/**
@@ -1625,8 +1622,8 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return an Object representing the SQL value in the specified column
 	 * @throws SQLException if a database access error occurs
 	 */
-	public Object getObject(String colName, Map map) throws SQLException {
-		return(getObject(findColumn(colName), map));
+	public Object getObject(String colName, Map<String,Class<?>> map) throws SQLException {
+		return getObject(findColumn(colName), map);
 	}
 
 	public Ref getRef(int i) throws SQLException { throw new SQLException("Method getRef not implemented yet, sorry!", "0A000"); }
@@ -1639,7 +1636,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return the current row number; 0 if there is no current row
 	 */
 	public int getRow() {
-		return(curRow);
+		return curRow;
 	}
 
 	/**
@@ -1671,7 +1668,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public RowId getRowId(String columnName) throws SQLException {
-		return(getRowId(findColumn(columnName)));
+		return getRowId(findColumn(columnName));
 	}
 
 	/**
@@ -1692,7 +1689,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		}
 		// do not catch SQLException for it is declared to be thrown
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -1705,7 +1702,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public short getShort(String columnName) throws SQLException {
-		return(getShort(findColumn(columnName)));
+		return getShort(findColumn(columnName));
 	}
 
 	/**
@@ -1717,7 +1714,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         if the result set was produced some other way
 	 */
 	public Statement getStatement() {
-		return(statement);
+		return statement;
 	}
 
 	/**
@@ -1736,7 +1733,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		try {
 			String ret = tlp.values[columnIndex - 1];
 			lastColumnRead = columnIndex - 1;
-			return(ret);
+			return ret;
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException("No such column " + columnIndex, "M1M05");
 		}
@@ -1752,7 +1749,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if the ResultSet object does not contain columnName
 	 */
 	public String getString(String columnName) throws SQLException {
-		return(getString(findColumn(columnName)));
+		return getString(findColumn(columnName));
 	}
 
 	/**
@@ -1786,7 +1783,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public String getNString(String columnName) throws SQLException {
-		return(getNString(findColumn(columnName)));
+		return getNString(findColumn(columnName));
 	}
 
 	/**
@@ -1818,7 +1815,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         not support this method
 	 */
 	public SQLXML getSQLXML(String colName) throws SQLException {
-		return(getSQLXML(findColumn(colName)));
+		return getSQLXML(findColumn(colName));
 	}
 
 	// This behaviour is according table B-6 of Sun JDBC Specification 3.0
@@ -1855,7 +1852,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 
 		String monetDate = getString(col);
 		if (monetDate == null)
-			return(-1);
+			return -1;
 
 		int nanos = 0;
 		TimeZone ptz = cal.getTimeZone();
@@ -1895,7 +1892,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				addWarning("unsupported data type", "01M03");
 				cal.clear();
 				nanos = 0;
-				return(nanos);
+				return nanos;
 			case Types.DATE:
 				pdate = d.parse(monetDate, ppos);
 				break;
@@ -1923,7 +1920,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			// default value
 			cal.clear();
 			nanos = 0;
-			return(nanos);
+			return nanos;
 		}
 		cal.setTime(pdate);
 
@@ -1963,7 +1960,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 				}
 			}
 		}
-		return(nanos);
+		return nanos;
 	}
 
 	/**
@@ -1982,7 +1979,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		// note: don't use Character.isDigit() here, because
 		// we only want ISO-LATIN-1 digits
 		if (c >= '0' && c <= '9') {
-			return((int)c - (int)'0');
+			return (int)c - (int)'0';
 		} else {
 			throw new MCLParseException("Expected a digit", pos);
 		}
@@ -2000,7 +1997,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @see #getDate(int col, Calendar cal)
 	 */
 	public java.sql.Date getDate(int columnIndex) throws SQLException {
-		return(getDate(columnIndex,	Calendar.getInstance()));
+		return getDate(columnIndex,	Calendar.getInstance());
 	}
 
 	/**
@@ -2020,7 +2017,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throws SQLException
 	{
 		int ret = getJavaDate(cal, columnIndex, Types.DATE);
-		return(ret == -1 ? null : new java.sql.Date(cal.getTimeInMillis()));
+		return ret == -1 ? null : new java.sql.Date(cal.getTimeInMillis());
 	}
 
 	/**
@@ -2035,7 +2032,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public java.sql.Date getDate(String columnName) throws SQLException {
-		return(getDate(columnName, Calendar.getInstance()));
+		return getDate(columnName, Calendar.getInstance());
 	}
 
 	/**
@@ -2055,7 +2052,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public java.sql.Date getDate(String columnName, Calendar cal)
 		throws SQLException
 	{
-		return(getDate(findColumn(columnName), cal));
+		return getDate(findColumn(columnName), cal);
 	}
 
 	/**
@@ -2069,7 +2066,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Time getTime(int columnIndex) throws SQLException {
-		return(getTime(columnIndex, Calendar.getInstance()));
+		return getTime(columnIndex, Calendar.getInstance());
 	}
 
 	/**
@@ -2091,7 +2088,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throws SQLException
 	{
 		int ret = getJavaDate(cal, columnIndex, Types.TIME);
-		return(ret == -1 ? null : new Time(cal.getTimeInMillis()));
+		return ret == -1 ? null : new Time(cal.getTimeInMillis());
 	}
 
 	/**
@@ -2105,7 +2102,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Time getTime(String columnName) throws SQLException {
-		return(getTime(columnName, Calendar.getInstance()));
+		return getTime(columnName, Calendar.getInstance());
 	}
 
 	/**
@@ -2126,7 +2123,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Time getTime(String columnName, Calendar cal)
 		throws SQLException
 	{
-		return(getTime(findColumn(columnName), cal));
+		return getTime(findColumn(columnName), cal);
 	}
 
 	/**
@@ -2140,7 +2137,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Timestamp getTimestamp(int columnIndex) throws SQLException {
-		return(getTimestamp(columnIndex, Calendar.getInstance()));
+		return getTimestamp(columnIndex, Calendar.getInstance());
 	}
 
 	/**
@@ -2162,11 +2159,11 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		throws SQLException
 	{
 		int nanos = getJavaDate(cal, columnIndex, Types.TIMESTAMP);
-		if (nanos == -1) return(null);
+		if (nanos == -1) return null;
 		Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		ts.setNanos(nanos);
 
-		return(ts);
+		return ts;
 	}
 
 	/**
@@ -2180,7 +2177,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @throws SQLException if a database access error occurs
 	 */
 	public Timestamp getTimestamp(String columnName) throws SQLException {
-		return(getTimestamp(columnName, Calendar.getInstance()));
+		return getTimestamp(columnName, Calendar.getInstance());
 	}
 
 	/**
@@ -2201,7 +2198,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	public Timestamp getTimestamp(String columnName, Calendar cal)
 		throws SQLException
 	{
-		return(getTimestamp(findColumn(columnName), cal));
+		return getTimestamp(findColumn(columnName), cal);
 	}
 
 	/**
@@ -2212,7 +2209,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         or ResultSet.TYPE_SCROLL_SENSITIVE
 	 */
 	public int getType() {
-		return(type);
+		return type;
 	}
 
 	/**
@@ -2230,9 +2227,9 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 */
 	public URL getURL(int columnIndex) throws SQLException {
 		String url = getString(columnIndex);	
-		if (url == null) return(null);
+		if (url == null) return null;
 		try {
-			return(new URL(url));
+			return new URL(url);
 		} catch (MalformedURLException e) {
 			throw new SQLException(e.getMessage(), "M1M05");
 		}
@@ -2251,7 +2248,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         URL is malformed
 	 */
 	public URL getURL(String columnName) throws SQLException {
-		return(getURL(findColumn(columnName)));
+		return getURL(findColumn(columnName));
 	}
 
 	/**
@@ -2275,7 +2272,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 
 		// if there are no warnings, this will be null, which fits with the
 		// specification.
-		return(warnings);
+		return warnings;
 	}
 
 	/**
@@ -2286,7 +2283,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         at any other position or the result set contains no rows
 	 */
 	public boolean isAfterLast() {
-		return(curRow == tupleCount + 1);
+		return curRow == tupleCount + 1;
 	}
 
 	/**
@@ -2297,7 +2294,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         is at any other position or the result set contains no rows
 	 */
 	public boolean isBeforeFirst() {
-		return(curRow == 0);
+		return curRow == 0;
 	}
 
 	/**
@@ -2309,7 +2306,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         still open
 	 */
 	public boolean isClosed() {
-		return(header.isClosed());
+		return header.isClosed();
 	}
 
 	/**
@@ -2319,7 +2316,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return true if the cursor is on the first row; false otherwise
 	 */
 	public boolean isFirst() {
-		return(curRow == 1);
+		return curRow == 1;
 	}
 
 	/**
@@ -2328,7 +2325,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 * @return true if the cursor is on the last row; false otherwise
 	 */
 	public boolean isLast() {
-		return(curRow == tupleCount);
+		return curRow == tupleCount;
 	}
 
 	/**
@@ -2340,7 +2337,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         type is TYPE_FORWARD_ONLY
 	 */
 	public boolean last() throws SQLException {
-		return(absolute(-1));
+		return absolute(-1);
 	}
 
 	/**
@@ -2359,7 +2356,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         closed
 	 */
 	public boolean next() throws SQLException {
-		return(relative(1));
+		return relative(1);
 	}
 
 	/**
@@ -2371,7 +2368,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         closed or the result set type is TYPE_FORWARD_ONLY
 	 */
 	public boolean previous() throws SQLException {
-		return(relative(-1));
+		return relative(-1);
 	}
 
 	/**
@@ -2392,7 +2389,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *         row, or the result set type is TYPE_FORWARD_ONLY
 	 */
 	public boolean relative(int rows) throws SQLException {
-		return(absolute(curRow + rows));
+		return absolute(curRow + rows);
 	}
 
 	/* these methods are all related to updateable result sets, which we
@@ -2505,7 +2502,7 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 	 *          otherwise
 	 */
 	public boolean wasNull() {
-		return(lastColumnRead != -1 ? tlp.values[lastColumnRead] == null : false);
+		return lastColumnRead != -1 ? tlp.values[lastColumnRead] == null : false;
 	}
 
 	//== end methods of interface ResultSet
@@ -2544,6 +2541,6 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			if (type == Types.BLOB)
 				type = Types.BINARY;
 		}
-		return(type);
+		return type;
 	}
 }

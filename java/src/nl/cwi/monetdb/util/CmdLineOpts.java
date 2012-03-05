@@ -24,9 +24,9 @@ import java.io.*;
 
 public class CmdLineOpts {
 	/** the arguments we handle */
-	private Map opts = new HashMap();
+	private Map<String, OptionContainer> opts = new HashMap<String, OptionContainer>();
 	/** the options themself */
-	private List options = new ArrayList();
+	private List<OptionContainer> options = new ArrayList<OptionContainer>();
 	
 	/** no arguments */
 	public static int CAR_ZERO		= 0;
@@ -48,8 +48,7 @@ public class CmdLineOpts {
 			int type,
 			String defaulta,
 			String descriptiona)
-		throws OptionsException
-	{
+		throws OptionsException {
 		OptionContainer oc =
 			new OptionContainer(
 				shorta,
@@ -63,19 +62,19 @@ public class CmdLineOpts {
 	}
 
 	public void removeOption(String name) {
-		OptionContainer oc = null;
-		if ((oc = (OptionContainer)(opts.get(name))) != null) {
+		OptionContainer oc = opts.get(name);
+		if (oc != null) {
 			opts.remove(oc.shorta);
 			opts.remove(oc.longa);
 		}
 	}
 
 	public OptionContainer getOption(String key) throws OptionsException {
-		OptionContainer ret = (OptionContainer)(opts.get(key));
+		OptionContainer ret = opts.get(key);
 		if (ret == null) throw
 			new OptionsException("No such option: " + key);
 
-		return(ret);
+		return ret;
 	}
 
 	public void processFile(File file) throws OptionsException {
@@ -83,12 +82,15 @@ public class CmdLineOpts {
 		Properties prop = new Properties();
 		try {
 			FileInputStream in = new FileInputStream(file);
-			prop.load(in);
-			in.close();
+			try {
+				prop.load(in);
+			} finally {
+				in.close();
+			}
 
-			for (Enumeration e = prop.propertyNames(); e.hasMoreElements(); ) {
-				String key = (String)(e.nextElement());
-				OptionContainer option = ((OptionContainer)opts.get(key));
+			for (Enumeration<?> e = prop.propertyNames(); e.hasMoreElements(); ) {
+				String key = (String) e.nextElement();
+				OptionContainer option = opts.get(key);
 				if (option == null) throw
 					new OptionsException("Unknown option: " + key);
 				option.resetArguments();
@@ -203,12 +205,9 @@ public class CmdLineOpts {
 	 * @return the help message
 	 */
 	public String produceHelpMessage() {
-		List ocs = options;
-
 		// first calculate how much space is necessary for the options
 		int maxlen = 0;
-		for (int i = 0; i < ocs.size(); i++) {
-			OptionContainer oc = (OptionContainer)(ocs.get(i));
+		for (OptionContainer oc : options) {
 			String shorta = oc.getShort();
 			String longa = oc.getLong();
 			int len = 0;
@@ -219,13 +218,12 @@ public class CmdLineOpts {
 		}
 		
 		// get the individual strings
-		StringBuffer ret = new StringBuffer();
-		for (int i = 0; i < ocs.size(); i++) {
-			OptionContainer oc = (OptionContainer)(ocs.get(i));
+		StringBuilder ret = new StringBuilder();
+		for (OptionContainer oc : options) {
 			ret.append(produceHelpMessage(oc, maxlen));
 		}
 
-		return(ret.toString());
+		return ret.toString();
 	}
 
 	/**
@@ -240,7 +238,7 @@ public class CmdLineOpts {
 	 */
 	public String produceHelpMessage(OptionContainer oc, int indentwidth) {
 		String desc = oc.getDescription();
-		if (desc == null) return("");
+		if (desc == null) return "";
 
 		String shorta = oc.getShort();
 		String longa = oc.getLong();
@@ -252,7 +250,7 @@ public class CmdLineOpts {
 		// default to with of command line flags if no width given
 		if (indentwidth <= 0) indentwidth = optwidth;
 
-		StringBuffer ret = new StringBuffer();
+		StringBuilder ret = new StringBuilder();
 
 		// add the command line flags
 		if (shorta != null) ret.append('-').append(shorta).append(' ');
@@ -287,14 +285,14 @@ public class CmdLineOpts {
 			lastpos = pos;
 		}
 
-		return(ret.toString());
+		return ret.toString();
 	}
 
 	public class OptionContainer {
 		int cardinality;
 		String shorta;
 		String longa;
-		List values;
+		List<String> values = new ArrayList<String>();
 		String name;
 		String defaulta;
 		String descriptiona;
@@ -328,19 +326,12 @@ public class CmdLineOpts {
 			if ((cardinality == CAR_ZERO ||
 					cardinality == CAR_ZERO_ONE ||
 					cardinality == CAR_ZERO_MANY) &&
-					defaulta != null)
-			{
+					defaulta != null) {
 				throw new IllegalArgumentException("cannot specify a default for a (possible) zero argument option");
 			}
 
-			values = new ArrayList();
-
-			if (longa != null) {
-				name = longa;
-			} else {
-				name = shorta;
-			}
-
+			name = (longa != null) ? longa : shorta;
+			
 			options.add(this);
 		}
 
@@ -353,8 +344,7 @@ public class CmdLineOpts {
 				throw new OptionsException("option " + name + " does not allow arguments");
 			} else if ((cardinality == CAR_ONE ||
 					cardinality == CAR_ZERO_ONE) &&
-					values.size() >= 1)
-			{
+					values.size() >= 1) {
 				throw new OptionsException("option " + name + " does at max allow only one argument");
 			}
 			// we can add it
@@ -367,43 +357,43 @@ public class CmdLineOpts {
 		}
 
 		public boolean isPresent() {
-			return(present);
+			return present;
 		}
 
 		public int getCardinality() {
-			return(cardinality);
+			return cardinality;
 		}
 
 		public int getArgumentCount() {
-			return(values.size());
+			return values.size();
 		}
 
 		public String getArgument() {
 			String ret = getArgument(1);
 			if (ret == null) ret = defaulta;
-			return(ret);
+			return ret;
 		}
 
 		public String getArgument(int index) {
 			String[] args = getArguments();
-			if (index < 1 || index > args.length) return(null);
-			return(args[index - 1]);
+			if (index < 1 || index > args.length) return null;
+			return args[index - 1];
 		}
 
 		public String[] getArguments() {
-			return((String[])(values.toArray(new String[values.size()])));
+			return values.toArray(new String[values.size()]);
 		}
 
 		public String getShort() {
-			return(shorta);
+			return shorta;
 		}
 
 		public String getLong() {
-			return(longa);
+			return longa;
 		}
 
 		public String getDescription() {
-			return(descriptiona);
+			return descriptiona;
 		}
 	}
 }

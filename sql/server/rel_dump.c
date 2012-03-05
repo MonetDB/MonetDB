@@ -262,8 +262,9 @@ op2string(operator_type op)
 	case op_update: 
 	case op_delete: 
 		return "modify op";
+	default:
+		return "unknown";
 	}
-	return "unknown";
 }
 
 static int 

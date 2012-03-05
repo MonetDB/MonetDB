@@ -70,7 +70,8 @@ All Rights Reserved.
 */
 @= aggrX3_sum
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
-	if (@1 && range > 0) {
+#if @1
+	if (range > 0) {
 		/* create tmp. sums array */
 		sums = (@9*) GDKzalloc(range*sizeof(@9));
 		if (sums == NULL) {
@@ -79,25 +80,34 @@ All Rights Reserved.
 			return GDK_FAIL;
 		}
 	}
-	if (@2 && BATprepareHash(bn)) {
+#endif
+#if @2
+	if (BATprepareHash(bn)) {
 		GDKerror("aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): BATprepareHash(bn) failed");
-		if (@1 && sums)
+#if @1
+		if (sums)
 			GDKfree(sums);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
+#endif
 	hit = (bit*) GDKzalloc(slots*sizeof(bit));
 	if (hit == NULL) {
 		GDKerror("aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
-		if (@1 && sums)
+#if @1
+		if (sums)
 			GDKfree(sums);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 
 	/* scan b, and add values to sums in-place or in sums-array */
 	bhsb = b->hseqbase - 1;
-	if (!(@1 && sums))
+#if @1
+	if (!sums)
+#endif
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
@@ -134,10 +144,12 @@ All Rights Reserved.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-	if (!(@1 && sums))
+#if @1
+	if (!sums)
+#endif
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (@1) {
-	    if (sums) {
+#if @1
+	if (sums) {
 		/* copy sums array to final result */
 		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -151,8 +163,9 @@ All Rights Reserved.
 		}
 		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(sums);
-	    } 
-	} else {
+	}
+#else
+	{
 		BUN yy = 0;
 		BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -164,6 +177,7 @@ All Rights Reserved.
 		}
 		BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
 	}
+#endif
 	if (hit)
 		GDKfree(hit);
 @

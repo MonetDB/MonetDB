@@ -261,6 +261,7 @@ char *
 datetime_field(itype f)
 {
 	switch (f) {
+	default:
 	case iyear:
 		return "year";
 	case imonth:
@@ -274,7 +275,6 @@ datetime_field(itype f)
 	case isec:
 		return "second";
 	}
-	return "year";
 }
 
 int inttype2digits( int sk, int ek )

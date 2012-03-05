@@ -99,7 +99,7 @@ id	name	schema_id	query	type	system	commit_action	readonly	fixed	nr_dimensions	t
 5240	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	true	0	0	
 6374	systemfunctions	2000		0	true	0	false	true	0	0	
 
-# 11:23:05 >  
-# 11:23:05 >  "Done."
-# 11:23:05 >  
+# 14:42:45 >  
+# 14:42:45 >  "Done."
+# 14:42:45 >  
 

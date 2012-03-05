@@ -353,11 +353,11 @@ PropertyOperatorString( prop_op_t op )
 	switch(op) {
 	case op_lt: return "<";
 	case op_lte: return "<=";
+	default:
 	case op_eq: return "=";
 	case op_gte: return ">=";
 	case op_gt: return ">";
 	case op_ne: return "!=";
 	}
-	return "=";
 }
 

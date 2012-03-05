@@ -75,7 +75,8 @@ All Rights Reserved.
 */
 @= aggrX3_prod3
 	ALGODEBUG THRprintf(GDKout, "#aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
-	if (@1 && range > 0) {
+#if @1
+	if (range > 0) {
 		/* create tmp. prods array */
 		oid i;
 		prods = (@9*) GDKmalloc(range*sizeof(@9));
@@ -87,18 +88,25 @@ All Rights Reserved.
 		for (i = 0; i < range; i++)
 			prods[i] = (@9) 1;
 	}
-	if (@2 && BATprepareHash(bn)) {
+#endif
+#if @2
+	if (BATprepareHash(bn)) {
 		GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9,@[10]): BATprepareHash(bn) failed");
-		if (@1 && prods)
+#if @1
+		if (prods)
 			GDKfree(prods);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
+#endif
 	hit = (bit*) GDKzalloc(slots*sizeof(bit));
 	if (hit == NULL) {
 		GDKerror("aggrX3_prod3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]): hit = GDKzalloc("OIDFMT"*"SZFMT") failed", slots, sizeof(bit));
-		if (@1 && prods)
+#if @1
+		if (prods)
 			GDKfree(prods);
+#endif
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
@@ -109,7 +117,9 @@ All Rights Reserved.
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-	if (!(@1 && prods))
+#if @1
+	if (!prods)
+#endif
 		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
@@ -122,10 +132,12 @@ All Rights Reserved.
 	}
 	if (b_use)
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-	if (!(@1 && prods))
+#if @1
+	if (!prods)
+#endif
 		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (@1) {
-	    if (prods) {
+#if @1
+	if (prods) {
 		/* copy prods array to final result */
 		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -139,8 +151,9 @@ All Rights Reserved.
 		}
 		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(prods);
-	    }
-	} else {
+	}
+#else
+	{
 		BUN yy = 0;
 		BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
@@ -152,6 +165,7 @@ All Rights Reserved.
 		}
 		BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
 	}
+#endif
 	if (hit)
 		GDKfree(hit);
 @

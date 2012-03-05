@@ -19,13 +19,23 @@
 
 package nl.cwi.monetdb.util;
 
-import java.io.*;
-import java.sql.*;
-import java.util.*;
+import java.io.PrintWriter;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.Stack;
+import java.util.TreeMap;
 
 public class SQLExporter extends Exporter {
 	private int outputMode;
-	private Stack lastSchema;
+	private Stack<String> lastSchema;
 
 	public final static int TYPE_OUTPUT		= 1;
 	public final static int VALUE_INSERT	= 0;
@@ -153,11 +163,11 @@ public class SQLExporter extends Exporter {
 				schema,
 				name);
 		// first make an 'index' of the KEY_SEQ column
-		SortedMap seqIndex = new TreeMap();
+		SortedMap<Integer, Integer> seqIndex = new TreeMap<Integer, Integer>();
 		for (i = 1; cols.next(); i++) {
 			seqIndex.put(
-					new Integer(cols.getInt("KEY_SEQ")),
-					new Integer(i));
+					Integer.valueOf(cols.getInt("KEY_SEQ")),
+					Integer.valueOf(i));
 		}
 		if (seqIndex.size() > 0) {
 			// terminate the previous line
@@ -166,11 +176,11 @@ public class SQLExporter extends Exporter {
 			out.print("\tCONSTRAINT " + dq(cols.getString("PK_NAME")) +
 				" PRIMARY KEY (");
 			i = 0;
-			for (Iterator it = seqIndex.entrySet().iterator();
+			for (Iterator<Map.Entry<Integer, Integer>> it = seqIndex.entrySet().iterator();
 					it.hasNext(); i++)
 			{
-				Map.Entry e = (Map.Entry)(it.next());
-				cols.absolute(((Integer)(e.getValue())).intValue());
+				Map.Entry<Integer, Integer> e = it.next();
+				cols.absolute(e.getValue().intValue());
 				if (i > 0) out.print(", ");
 				out.print(dq(cols.getString("COLUMN_NAME")));
 			}
@@ -188,8 +198,7 @@ public class SQLExporter extends Exporter {
 
 			boolean next;
 			while ((next = cols.next()) && idxname != null &&
-				idxname.equals(cols.getString("INDEX_NAME")))
-			{
+				idxname.equals(cols.getString("INDEX_NAME"))) {
 				out.print(", " + dq(cols.getString("COLUMN_NAME")));
 			}
 			// go back one, we've gone one too far
@@ -206,9 +215,9 @@ public class SQLExporter extends Exporter {
 			out.print("\tCONSTRAINT " + dq(cols.getString("FK_NAME")) + " FOREIGN KEY (");
 
 			boolean next;
-			Set fk = new LinkedHashSet();
+			Set<String> fk = new LinkedHashSet<String>();
 			fk.add(cols.getString("FKCOLUMN_NAME").intern());
-			Set pk = new LinkedHashSet();
+			Set<String> pk = new LinkedHashSet<String>();
 			pk.add(cols.getString("PKCOLUMN_NAME").intern());
 
 			while ((next = cols.next()) &&
@@ -220,7 +229,7 @@ public class SQLExporter extends Exporter {
 			// go back one
 			if (next) cols.previous();
 
-			Iterator it = fk.iterator();
+			Iterator<String> it = fk.iterator();
 			for (i = 0; it.hasNext(); i++) {
 				if (i > 0) out.print(", ");
 				out.print(dq((String)it.next()));
@@ -309,7 +318,7 @@ public class SQLExporter extends Exporter {
 	public int getProperty(int type) throws Exception {
 		switch (type) {
 			case TYPE_OUTPUT:
-				return(outputMode);
+				return outputMode;
 			default:
 				throw new Exception("Illegal type " + type);
 		}
@@ -460,7 +469,7 @@ public class SQLExporter extends Exporter {
 
 	private void changeSchema(String schema) {
 		if (lastSchema == null) {
-			lastSchema = new Stack();
+			lastSchema = new Stack<String>();
 			lastSchema.push(null);
 		}
 
