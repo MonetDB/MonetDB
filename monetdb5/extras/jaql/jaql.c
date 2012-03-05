@@ -1400,7 +1400,7 @@ printtree(tree *t, int level, char op)
 						printf(", %s , ", t->sval);
 						printtree(t->tval2, level + step, op);
 						printf(", ");
-						printtree(t->tval2, level + step, op);
+						printtree(t->tval3, level + step, op);
 					}
 					printf(") ");
 				} else {
