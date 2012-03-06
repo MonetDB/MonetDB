@@ -408,7 +408,7 @@ sql_update_dec2011( Client c, mvc *m )
 }
 
 static str
-sql_update_apr2012( Client c, mvc *m )
+sql_update_apr2012(Client c)
 {
 	char *buf = GDKmalloc(2048), *err = NULL;
 	size_t bufsize = 2048, pos = 0;
@@ -562,7 +562,7 @@ SQLinitClient(Client c)
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "int", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "median", &tp, NULL, F_AGGR )) {
-			if ((err = sql_update_apr2012(c, m)) != NULL)
+			if ((err = sql_update_apr2012(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
 	}
