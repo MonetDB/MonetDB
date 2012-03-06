@@ -2400,7 +2400,9 @@ bs_flush(stream *ss)
 #ifdef WORDS_BIGENDIAN
 		blksize = short_int_SWAP(blksize);
 #endif
-		if ((!mnstr_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
+		if ((!mnstr_writeSht(s->s, blksize) ||
+		     (s->nr > 0 &&
+		      s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			ss->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
