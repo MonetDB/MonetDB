@@ -4395,8 +4395,8 @@ daytime_2time_daytime( daytime *res, daytime *v, int *digits )
 	/* correct fraction */
 	*res = *v;
 	if (!daytime_isnil(*v) && d < 3) {
-		*res /= scales[3-d];
-		*res *= scales[3-d];
+		*res = (daytime) (*res / scales[3-d]);
+		*res = (daytime) (*res * scales[3-d]);
 	}
 	return MAL_SUCCEED;
 }
@@ -4431,8 +4431,8 @@ timestamp_2_daytime( daytime *res, timestamp *v, int *digits )
 
 	/* correct fraction */
 	if (d < 3 && msec) {
-		msec /= scales[3-d];
-		msec *= scales[3-d];
+		msec = (int) (msec / scales[3-d]);
+		msec = (int) (msec * scales[3-d]);
 	}
 	*res = msec;
 	return MAL_SUCCEED;
@@ -4457,8 +4457,8 @@ timestamp_2time_timestamp( timestamp *res, timestamp *v, int *digits )
 	if (d < 3) {
 		int msec = res->msecs;
 		if (msec) {
-			msec /= scales[3-d];
-			msec *= scales[3-d];
+			msec = (int) (msec / scales[3-d]);
+			msec = (int) (msec * scales[3-d]);
 		}
 		res->msecs = msec;
 	}
@@ -6988,7 +6988,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
  * Assume val is id,oid sorted. 
  */
 @h
-sql_export str SQLmiddle(bat *res,  bat *val, bat *hist);
+sql5_export str SQLmiddle(bat *res,  bat *val, bat *hist);
 @c
 str
 SQLmiddle(bat *res,  bat *val, bat *hist)

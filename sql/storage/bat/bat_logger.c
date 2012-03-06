@@ -30,6 +30,7 @@ bl_preversion( int oldversion, int newversion)
 #define CATALOG_OCT2010 51000
 #define CATALOG_APR2011 51100
 #define CATALOG_AUG2011 51101
+#define CATALOG_DEC2011 52000
 
 	(void)newversion;
 	if (oldversion == CATALOG_OCT2010) {
@@ -41,6 +42,10 @@ bl_preversion( int oldversion, int newversion)
 		return 0;
 	}
 	if (oldversion == CATALOG_AUG2011) {
+		catalog_version = oldversion;
+		return 0;
+	}
+	if (oldversion == CATALOG_DEC2011) {
 		catalog_version = oldversion;
 		return 0;
 	}
