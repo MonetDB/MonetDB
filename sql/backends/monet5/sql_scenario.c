@@ -1710,11 +1710,12 @@ cleanup_engine:
 			char *n = NULL;
 			char *o = msg;
 			while ((n = strchr(o, '\n')) != NULL) {
-				*n++ = '\0';
+				*n = '\0';
 				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+				*n++ = '\n';
 				o = n;
 			}
-			if (strlen(o) != 0)
+			if (*o != 0)
 				mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		}
 		showErrors(c);

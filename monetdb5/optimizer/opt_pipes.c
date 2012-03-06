@@ -636,11 +636,17 @@ compileOptimizer(Client cntxt, str name){
 			MSinitClientPrg(c, "user", pipes[j].name);
 			msg = compileString(&sym, c, pipes[j].def);
 			if ( msg != MAL_SUCCEED){
+				c->errbuf = NULL;
+				c->mythread = 0;
 				MCcloseClient(c); 
 				return msg;
 			}
 			pipes[j].mb = copyMalBlk(sym->def);
 		}
+		/* don't cleanup thread info since the thread continues to
+		 * exist, just this client record is closed */
+		c->errbuf = NULL;
+		c->mythread = 0;
 		MCcloseClient(c); 
 		msg = validateOptimizerPipes();
 		if ( msg != MAL_SUCCEED)
