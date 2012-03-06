@@ -8007,7 +8007,7 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
-			      NULL, 0, 
+			      NULL, 0,
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcltcst");
