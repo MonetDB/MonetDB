@@ -6988,7 +6988,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
  * Assume val is id,oid sorted. 
  */
 @h
-sql_export str SQLmiddle(bat *res,  bat *val, bat *hist);
+sql5_export str SQLmiddle(bat *res,  bat *val, bat *hist);
 @c
 str
 SQLmiddle(bat *res,  bat *val, bat *hist)
