@@ -542,6 +542,8 @@ validatePipe(MalBlkPtr mb){
 	int mitosis= FALSE, deadcode= FALSE, mergetable= FALSE, multiplex=FALSE, garbage=FALSE;
 	int i;
 
+	if ( mb == NULL || getInstrPtr(mb,1) == 0)
+		throw(MAL,"optimizer.validate","improper optimizer mal block\n");
 	if ( getFunctionId(getInstrPtr(mb,1)) == NULL || idcmp(getFunctionId( getInstrPtr(mb,1)), "inline" ) )
 		throw(MAL,"optimizer.validate","'inline' should be the first\n");
 
@@ -634,11 +636,17 @@ compileOptimizer(Client cntxt, str name){
 			MSinitClientPrg(c, "user", pipes[j].name);
 			msg = compileString(&sym, c, pipes[j].def);
 			if ( msg != MAL_SUCCEED){
+				c->errbuf = NULL;
+				c->mythread = 0;
 				MCcloseClient(c); 
 				return msg;
 			}
 			pipes[j].mb = copyMalBlk(sym->def);
 		}
+		/* don't cleanup thread info since the thread continues to
+		 * exist, just this client record is closed */
+		c->errbuf = NULL;
+		c->mythread = 0;
 		MCcloseClient(c); 
 		msg = validateOptimizerPipes();
 		if ( msg != MAL_SUCCEED)

@@ -126,7 +126,7 @@ public class JdbcClient {
 				copts.processFile(pref);
 			} catch (OptionsException e) {
 				System.err.println("Error in " + pref.getAbsolutePath() + ": " + e.getMessage());
-				System.exit(-1);
+				System.exit(1);
 			}
 			user = copts.getOption("user").getArgument();
 			pass = copts.getOption("password").getArgument();
@@ -139,7 +139,7 @@ public class JdbcClient {
 			copts.processArgs(args);
 		} catch (OptionsException e) {
 			System.err.println("Error: " + e.getMessage());
-			System.exit(-1);
+			System.exit(1);
 		}
 		// we can actually compare pointers (objects) here
 		if (user != copts.getOption("user").getArgument()) pass = null;
@@ -189,14 +189,12 @@ copts.produceHelpMessage()
 		// we need the password from the user, fetch it with a pseudo
 		// password protector
 		if (pass == null) {
-			try {
-				char[] tmp = PasswordField.getPassword(System.in, "password: ");
-				if (tmp != null) pass = String.valueOf(tmp);
-			} catch (IOException ioe) {
+			char[] tmp = System.console().readPassword("password: ");
+			if (tmp == null) {
 				System.err.println("Invalid password!");
-				System.exit(-1);
+				System.exit(1);
 			}
-			System.out.println("");
+			pass = String.valueOf(tmp);
 		}
 
 		user = copts.getOption("user").getArgument();
@@ -253,7 +251,7 @@ copts.produceHelpMessage()
 			con.clearWarnings();
 		} catch (SQLException e) {
 			System.err.println("Database connect failed: " + e.getMessage());
-			System.exit(-1);
+			System.exit(1);
 		}
 		try {
 			dbmd = con.getMetaData();
@@ -281,7 +279,7 @@ copts.produceHelpMessage()
 			// request the tables available in the database
 			tbl = dbmd.getTables(null, null, null, types);
 
-			LinkedList tables = new LinkedList();
+			List<Table> tables = new LinkedList<Table>();
 			while (tbl.next()) {
 				tables.add(new Table(
 					tbl.getString("TABLE_CAT"),
@@ -341,14 +339,14 @@ copts.produceHelpMessage()
 				// search for cycles of type a -> (x ->)+ b probably not
 				// the most optimal way, but it works by just scanning
 				// every table for loops in a recursive manor
-				for (int i = 0; i < tables.size(); i++) {
-					Table.checkForLoop((Table)(tables.get(i)), new ArrayList());
+				for (Table t : tables) {
+					Table.checkForLoop(t, new ArrayList<Table>());
 				}
 
 				// find the graph, at this point we know there are no
 				// cycles, thus a solution exists
 				for (int i = 0; i < tables.size(); i++) {
-					List needs = ((Table)(tables.get(i))).requires(tables.subList(0, i + 1));
+					List<Table> needs = tables.get(i).requires(tables.subList(0, i + 1));
 					if (needs.size() > 0) {
 						tables.removeAll(needs);
 						tables.addAll(i, needs);
@@ -360,9 +358,8 @@ copts.produceHelpMessage()
 				}
 
 				// we now have the right order to dump tables
-				for (int i = 0; i < tables.size(); i++) {
+				for (Table t : tables) {
 					// dump the table
-					Table t = (Table)(tables.get(i));
 					doDump(out, t, dbmd, stmt);
 				}
 			}
@@ -395,7 +392,7 @@ copts.produceHelpMessage()
 					in = getReader(tmp);
 				} catch (Exception e) {
 					System.err.println("Error: " + e.getMessage());
-					System.exit(-1);
+					System.exit(1);
 				}
 
 				// check for batch mode
@@ -448,7 +445,7 @@ copts.produceHelpMessage()
 			} catch (SQLException ex) {
 				// ok... nice try
 			}
-			System.exit(-1);
+			System.exit(1);
 		}
 	}
 
@@ -503,7 +500,7 @@ copts.produceHelpMessage()
 			throw new Exception("Invalid URL: " + e.getMessage());
 		}
 
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -833,7 +830,7 @@ copts.produceHelpMessage()
 
 	/**
 	 * Starts a processing loop optimized for processing (large) chunks of
-	 * continous data, such as input from a file.  Unlike in the interactive
+	 * continuous data, such as input from a file.  Unlike in the interactive
 	 * loop above, queries are sent only to the database if a certain batch
 	 * amount is reached.  No client side query checks are made, but everything
 	 * is sent to the server as-is.
@@ -843,7 +840,7 @@ copts.produceHelpMessage()
 	 * @throws IOException if an IO exception occurs.
 	 */
 	public static void processBatch(int batchSize) throws IOException {
-		StringBuffer query = new StringBuffer();
+		StringBuilder query = new StringBuilder();
 		String curLine;
 		int i = 0;
 		try {
@@ -917,8 +914,8 @@ copts.produceHelpMessage()
 	 * @return a prompt which consist of a username plus the top of the stack
 	 */
 	private static String getPrompt(String user, SQLStack stack, boolean compl) {
-		return(user + (compl ? "-" : "=") +
-			(stack.empty() ? ">" : "" + stack.peek()) + " ");
+		return user + (compl ? "-" : "=") +
+			(stack.empty() ? ">" : "" + stack.peek()) + " ";
 	}
 
 	/**
@@ -1025,22 +1022,22 @@ copts.produceHelpMessage()
 
 		if (start == stop) {
 			// we have an empty string
-			return(new QueryPart(false, null, stack.peek() ==  '\'' || stack.peek() == '"'));
+			return new QueryPart(false, null, stack.peek() ==  '\'' || stack.peek() == '"');
 		} else if (stack.peek() ==  '\'' || stack.peek() == '"') {
 			// we have an open quote
-			return(new QueryPart(false, query.substring(start, stop), true));
+			return new QueryPart(false, query.substring(start, stop), true);
 		} else {
 			// see if the string is complete
 			if (scolonterm && query.charAt(stop - 1) == ';') {
-				return(new QueryPart(true, query.substring(start, stop), false));
+				return new QueryPart(true, query.substring(start, stop), false);
 			} else {
-				return(new QueryPart(false, query.substring(start, stop), false));
+				return new QueryPart(false, query.substring(start, stop), false);
 			}
 		}
 	}
 
 	public static String dq(String in) {
-		return("\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"");
+		return "\"" + in.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"") + "\"";
 	}
 }
 
@@ -1061,19 +1058,19 @@ class QueryPart {
 	}
 
 	public boolean isEmpty() {
-		return(query == null);
+		return query == null;
 	}
 
 	public boolean isComplete() {
-		return(complete);
+		return complete;
 	}
 
 	public String getQuery() {
-		return(query);
+		return query;
 	}
 
 	public boolean hasOpenQuote() {
-		return(open);
+		return open;
 	}
 }
 
@@ -1082,17 +1079,13 @@ class QueryPart {
  * (single and double) quotes in an SQL query.
  */
 class SQLStack {
-	StringBuffer stack;
-
-	public SQLStack() {
-		stack = new StringBuffer();
-	}
+	StringBuilder stack = new StringBuilder();
 
 	public char peek() {
 		if (empty()) {
-			return('\0');
+			return '\0';
 		} else {
-			return(stack.charAt(stack.length() - 1));
+			return stack.charAt(stack.length() - 1);
 		}
 	}
 
@@ -1101,16 +1094,16 @@ class SQLStack {
 		if (tmp != '\0') {
 			stack.setLength(stack.length() - 1);
 		}
-		return(tmp);
+		return tmp;
 	}
 
 	public char push(char item) {
 		stack.append(item);
-		return(item);
+		return item;
 	}
 
 	public boolean empty() {
-		return(stack.length() == 0);
+		return stack.length() == 0;
 	}
 }
 
@@ -1125,7 +1118,7 @@ class Table {
 	final String name;
 	final String type;
 	final String fqname;
-	List needs;
+	List<Table> needs = new ArrayList<Table>();
 
 	Table(String cat, String schem, String name, String type) {
 		this.cat = cat;
@@ -1133,8 +1126,6 @@ class Table {
 		this.name = name;
 		this.type = type;
 		this.fqname = schem + "." + name;
-
-		needs = new ArrayList();
 	}
 
 	void addDependancy(Table dependsOn) throws Exception {
@@ -1147,66 +1138,66 @@ class Table {
 		if (!needs.contains(dependsOn)) needs.add(dependsOn);
 	}
 
-	List requires(List existingTables) {
-		if (existingTables == null || existingTables.size() == 0)
-			return(new ArrayList(needs));
+	List<Table> requires(List<Table> existingTables) {
+		if (existingTables == null || existingTables.isEmpty())
+			return new ArrayList<Table>(needs);
 
-		List req = new ArrayList();
-		for (int i = 0; i < needs.size(); i++) {
-			if (!existingTables.contains(needs.get(i)))
-				req.add(needs.get(i));
+		List<Table> req = new ArrayList<Table>();
+		for (Table n : needs) {
+			if (!existingTables.contains(n))
+				req.add(n);
 		}
 
-		return(req);
+		return req;
 	}
 
 	String getCat() {
-		return(cat);
+		return cat;
 	}
 
 	String getSchem() {
-		return(schem);
+		return schem;
 	}
 
 	String getSchemQ() {
-		return(JdbcClient.dq(schem));
+		return JdbcClient.dq(schem);
 	}
 
 	String getName() {
-		return(name);
+		return name;
 	}
 
 	String getNameQ() {
-		return(JdbcClient.dq(name));
+		return JdbcClient.dq(name);
 	}
 
 	String getType() {
-		return(type);
+		return type;
 	}
 
 	String getFqname() {
-		return(fqname);
+		return fqname;
 	}
 
 	String getFqnameQ() {
-		return(getSchemQ() + "." + getNameQ());
+		return getSchemQ() + "." + getNameQ();
 	}
 
 	public String toString() {
-		return(fqname);
+		return fqname;
 	}
 
 
-	static Table findTable(String fqname, List list) {
-		for (int i = 0; i < list.size(); i++) {
-			if (((Table)(list.get(i))).fqname.equals(fqname))
-				return((Table)(list.get(i)));
+	static Table findTable(String fqname, List<Table> list) {
+		for (Table l : list) {
+			if (l.fqname.equals(fqname))
+				return l;
 		}
 		// not found
-		return(null);
+		return null;
 	}
 
-	static void checkForLoop(Table table, List parents) throws Exception {
+	static void checkForLoop(Table table, List<Table> parents) throws Exception {
 		parents.add(table);
 		for (int i = 0; i < table.needs.size(); i++) {
 			Table child = (Table)(table.needs.get(i));

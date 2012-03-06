@@ -62,7 +62,7 @@ public class XMLExporter extends Exporter {
 
 		ResultSet cols = dbmd.getColumns(catalog, schema, name, null);
 		String ident;
-		Set types = new HashSet();
+		Set<String> types = new HashSet<String>();
 		// walk through the ResultSet and create the types
 		// for a bit of a clue on the types, see this url:
 		// http://books.xmlschemata.org/relaxng/relax-CHP-19.html
@@ -401,7 +401,7 @@ public class XMLExporter extends Exporter {
 	public int getProperty(int type) throws Exception {
 		switch (type) {
 			case TYPE_NIL:
-				return(useNil ? VALUE_XSI : VALUE_OMIT);
+				return useNil ? VALUE_XSI : VALUE_OMIT;
 			default:
 				throw new Exception("Illegal type " + type);
 		}

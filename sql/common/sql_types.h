@@ -92,8 +92,10 @@ extern void type_destroy(sql_type *t);
 extern sql_arg *arg_dup(sql_allocator *sa, sql_arg *a);
 
 extern sql_subaggr *sql_bind_aggr(sql_allocator *sa, sql_schema *s, char *name, sql_subtype *type);
+extern sql_subaggr *sql_bind_aggr_(sql_allocator *sa, sql_schema *s, char *name, list *types);
 extern sql_subaggr *sql_find_aggr(sql_allocator *sa, sql_schema *s, char *name);
 extern sql_func *sql_create_aggr(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tpe, sql_type *res);
+extern sql_func *sql_create_aggr2(sql_allocator *sa, char *name, char *mod, char *imp, sql_type *tp1, sql_type *tp2, sql_type *res);
 extern int subaggr_cmp( sql_subaggr *a1, sql_subaggr *a2);
 
 extern int subfunc_cmp( sql_subfunc *f1, sql_subfunc *f2);

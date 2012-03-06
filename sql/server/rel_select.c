@@ -3328,7 +3328,7 @@ rel_unop_(mvc *sql, sql_exp *e, sql_schema *s, char *fname, int card)
 	return NULL;
 }
 
-static sql_exp * _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int f);
+static sql_exp * _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *arguments, int f);
 
 static sql_exp *
 rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
@@ -3354,7 +3354,7 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	if (!f)
 		f = sql_bind_func(sql->sa, s, fname, t, NULL, F_AGGR);
 	if (f && IS_AGGR(f->func))
-		return _rel_aggr(sql, rel, 0, fname, l->next->data.sym, fs);
+		return _rel_aggr(sql, rel, 0, fname, l->next, fs);
 	return rel_unop_(sql, e, s, fname, ek.card);
 }
 
@@ -3631,16 +3631,17 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 }
 
 static sql_exp *
-_rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int f)
+_rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int f)
 {
+	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
 	int no_nil = 0;
-	sql_exp *e = NULL, *exp = NULL;
-	sql_rel *groupby = *rel;
+	sql_rel *groupby = *rel, *gr;
+	list *exps = NULL;
 
 	if (!groupby) {
 		char *uaggrstr = malloc(strlen(aggrstr) + 1);
-		e = sql_error(sql, 02, "%s: missing group by",
+		sql_exp *e = sql_error(sql, 02, "%s: missing group by",
 				toUpperCopy(uaggrstr, aggrstr));
 		free(uaggrstr);
 		return e;
@@ -3670,17 +3671,18 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 
 	if (f == sql_where) {
 		char *uaggrstr = malloc(strlen(aggrstr) + 1);
-		e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
+		sql_exp *e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
 				toUpperCopy(uaggrstr, aggrstr));
 		free(uaggrstr);
 		return e;
 	}
 	
-	if (!sym) {	/* count(*) case */
+	if (!args->data.sym) {	/* count(*) case */
+		sql_exp *e;
 
 		if (strcmp(aggrstr, "count") != 0) {
 			char *uaggrstr = malloc(strlen(aggrstr) + 1);
-			e = sql_error(sql, 02, "%s: unable to perform '%s(*)'",
+			sql_exp *e = sql_error(sql, 02, "%s: unable to perform '%s(*)'",
 					toUpperCopy(uaggrstr, aggrstr), aggrstr);
 			free(uaggrstr);
 			return e;
@@ -3697,7 +3699,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 			if (i->exps && f == sql_sel && is_join(i->op)) {
 				sql_rel *j = i->r;
 
-				e = j->exps->h->data;
+				sql_exp *e = j->exps->h->data;
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
 				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
 				return e;
@@ -3707,51 +3709,66 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, symbol *sym, int
 		if (*rel == groupby && f == sql_sel) /* selection */
 			return e;
 		return rel_groupby_add_aggr(sql, groupby, e);
-	} else {
-		exp_kind ek = {type_value, card_column, FALSE};
+	} 
 
-		/* use cnt as nils shouldn't be counted */
-		sql_rel *gr = groupby->l;
+	exps = sa_list(sql->sa);
 
-		no_nil = 1;
-		e = rel_value_exp(sql, &gr, sym, f, ek);
+	/* use cnt as nils shouldn't be counted */
+	gr = groupby->l;
+
+	no_nil = 1;
+	for (	; args; args = args->next ) {
+		sql_exp *e = rel_value_exp(sql, &gr, args->data.sym, f, ek);
+
 		if (gr && e && is_project(gr->op) && !is_set(gr->op) && e->type != e_column) {
 			rel_project_add_exp(sql, gr, e);
 			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e, 0);
 		}
-		groupby->l = gr;
+		if (!e)
+			return NULL;
+		list_append(exps, e);
 	}
+	groupby->l = gr;
 
-	if (!e)
-		return NULL;
-	a = sql_bind_aggr(sql->sa, sql->session->schema, aggrstr, exp_subtype(e));
+	a = sql_bind_aggr_(sql->sa, sql->session->schema, aggrstr, exp_types(sql->sa, exps));
 	if (!a) { /* find aggr + convert */
-
 		a = sql_find_aggr(sql->sa, sql->session->schema, aggrstr);
 		if (a) {
-			sql_arg *arg = a->aggr->ops->h->data;
+			node *n, *op = a->aggr->ops->h;
+			list *nexps = sa_list(sql->sa);
 
-			e = rel_check_type(sql, &arg->type, e, type_equal);
-			if (!e)
-				a = NULL;
+			for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
+				sql_arg *arg = op->data;
+				sql_exp *e = n->data;
+
+				e = rel_check_type(sql, &arg->type, e, type_equal);
+				if (!e)
+					a = NULL;
+				list_append(nexps, e);
+			}
+			if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+				exps = nexps;
 		}
 	}
+	/* TODO: convert to single super type (iff |exps| > 1) */
 	if (a) {
 		/* type may have changed, ie. need to fix_scale */
-		sql_subtype *t = exp_subtype(e);
+		sql_exp *fe = exps->h->data;
+		sql_subtype *t = exp_subtype(fe);
+		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
-		e = exp_aggr1(sql->sa, e, a, distinct, no_nil, groupby->card, has_nil(e));
-		exp = e;
 		if (*rel != groupby || f != sql_sel) /* selection */
-			exp = rel_groupby_add_aggr(sql, groupby, exp);
-		return exp_fix_scale(sql, t, exp, 1,
-					(t->type->scale == SCALE_FIX));
+			e = rel_groupby_add_aggr(sql, groupby, e);
+		return exp_fix_scale(sql, t, e, 1, (t->type->scale == SCALE_FIX));
 	} else {
+		sql_exp *e;
 		char *type = "unknown";
 		char *uaggrstr = malloc(strlen(aggrstr) + 1);
 
-		if (e) 
+		if (exps->h) {
+			sql_exp *e = exps->h->data;
 			type = exp_subtype(e)->type->sqlname;
+		}
 
 		e = sql_error(sql, 02, "%s: no such operator '%s(%s)'",
 				toUpperCopy(uaggrstr, aggrstr), aggrstr, type);
@@ -3769,7 +3786,7 @@ rel_aggr(mvc *sql, sql_rel **rel, symbol *se, int f)
 	char *aggrstr = l->h->data.sval;
 
 	assert(l->h->next->type == type_int);
-	return _rel_aggr( sql, rel, distinct, aggrstr, l->h->next->next->data.sym, f);
+	return _rel_aggr( sql, rel, distinct, aggrstr, l->h->next->next, f);
 }
 
 static sql_exp *

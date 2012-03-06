@@ -19,9 +19,19 @@
 
 package nl.cwi.monetdb.jdbc;
 
-import java.sql.*;
-import java.util.*;
-import java.net.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -85,7 +95,7 @@ final public class MonetDriver implements Driver {
 	 * @return true if this driver understands the given URL; false otherwise
 	 */
 	public boolean acceptsURL(String url) {
-		return(url != null && url.startsWith(MONETURL));
+		return url != null && url.startsWith(MONETURL);
 	}
 
 	/**
@@ -124,7 +134,7 @@ final public class MonetDriver implements Driver {
 		info = props;
 
 		// url should be of style jdbc:monetdb://<host>/<database>
-		if (!acceptsURL(url)) return(null);
+		if (!acceptsURL(url)) return null;
 
 		// remove leading "jdbc:" so the rest is a valid hierarchical URI
 		URI uri;
@@ -158,7 +168,7 @@ final public class MonetDriver implements Driver {
 		}
 
 		// finally return the Connection as requested
-		return(new MonetConnection(info));
+		return new MonetConnection(info);
 	}
 
 	/**
@@ -167,7 +177,7 @@ final public class MonetDriver implements Driver {
 	 * @return this driver's major version number
 	 */
 	public int getMajorVersion() {
-		return(DRIVERMAJOR);
+		return DRIVERMAJOR;
 	}
 
 	/**
@@ -176,7 +186,7 @@ final public class MonetDriver implements Driver {
 	 * @return this driver's minor version number
 	 */
 	public int getMinorVersion() {
-		return(DRIVERMINOR);
+		return DRIVERMINOR;
 	}
 
 	/**
@@ -197,12 +207,12 @@ final public class MonetDriver implements Driver {
 	 *         are required.
 	 */
 	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
-		if (!acceptsURL(url)) return(null);
+		if (!acceptsURL(url)) 
+			return null;
 
-		ArrayList props = new ArrayList();
-		DriverPropertyInfo prop;
+		List<DriverPropertyInfo> props = new ArrayList<DriverPropertyInfo>();
 
-		prop = new DriverPropertyInfo("user", info.getProperty("user"));
+		DriverPropertyInfo prop = new DriverPropertyInfo("user", info.getProperty("user"));
 		prop.required = true;
 		prop.description = "The username to use when authenticating on the database";
 		props.add(prop);
@@ -248,7 +258,7 @@ final public class MonetDriver implements Driver {
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
-		return((DriverPropertyInfo[])props.toArray(dpi));
+		return props.toArray(dpi);
 	}
 
 	/**
@@ -270,37 +280,37 @@ final public class MonetDriver implements Driver {
 	 * @return true if this driver is JDBC Compliant; false otherwise
 	 */
 	public boolean jdbcCompliant() {
-		return(MONETJDBCCOMPLIANT);
+		return MONETJDBCCOMPLIANT;
 	}
 
 	//== end methods of interface driver
 
 	/** A Map containing the mapping between MonetDB types and Java SQL types */
-	static java.util.Map typeMap = new java.util.HashMap();
+	static java.util.Map<String, Integer> typeMap = new java.util.HashMap<String, Integer>();
 	static {
 		// fill the typeMap once
-		typeMap.put("bigint", new Integer(Types.BIGINT));
-		typeMap.put("blob", new Integer(Types.BLOB));
-		typeMap.put("boolean", new Integer(Types.BOOLEAN));
-		typeMap.put("char", new Integer(Types.CHAR));
-		typeMap.put("clob", new Integer(Types.CLOB));
-		typeMap.put("date", new Integer(Types.DATE));
-		typeMap.put("decimal", new Integer(Types.DECIMAL));
-		typeMap.put("double", new Integer(Types.DOUBLE));
-		typeMap.put("int", new Integer(Types.INTEGER));
-		typeMap.put("month_interval", new Integer(Types.INTEGER));
-		typeMap.put("oid", new Integer(Types.OTHER));
-		typeMap.put("real", new Integer(Types.REAL));
-		typeMap.put("sec_interval", new Integer(Types.DECIMAL));
-		typeMap.put("smallint", new Integer(Types.SMALLINT));
-		typeMap.put("table", new Integer(Types.ARRAY));
-		typeMap.put("time", new Integer(Types.TIME));
-		typeMap.put("timestamp", new Integer(Types.TIMESTAMP));
-		typeMap.put("timestamptz", new Integer(Types.TIMESTAMP));
-		typeMap.put("timetz", new Integer(Types.TIME));
-		typeMap.put("tinyint", new Integer(Types.TINYINT));
-		typeMap.put("varchar", new Integer(Types.VARCHAR));
-		typeMap.put("wrd", new Integer(Types.BIGINT));
+		typeMap.put("bigint", Integer.valueOf(Types.BIGINT));
+		typeMap.put("blob", Integer.valueOf(Types.BLOB));
+		typeMap.put("boolean", Integer.valueOf(Types.BOOLEAN));
+		typeMap.put("char", Integer.valueOf(Types.CHAR));
+		typeMap.put("clob", Integer.valueOf(Types.CLOB));
+		typeMap.put("date", Integer.valueOf(Types.DATE));
+		typeMap.put("decimal", Integer.valueOf(Types.DECIMAL));
+		typeMap.put("double", Integer.valueOf(Types.DOUBLE));
+		typeMap.put("int", Integer.valueOf(Types.INTEGER));
+		typeMap.put("month_interval", Integer.valueOf(Types.INTEGER));
+		typeMap.put("oid", Integer.valueOf(Types.OTHER));
+		typeMap.put("real", Integer.valueOf(Types.REAL));
+		typeMap.put("sec_interval", Integer.valueOf(Types.DECIMAL));
+		typeMap.put("smallint", Integer.valueOf(Types.SMALLINT));
+		typeMap.put("table", Integer.valueOf(Types.ARRAY));
+		typeMap.put("time", Integer.valueOf(Types.TIME));
+		typeMap.put("timestamp", Integer.valueOf(Types.TIMESTAMP));
+		typeMap.put("timestamptz", Integer.valueOf(Types.TIMESTAMP));
+		typeMap.put("timetz", Integer.valueOf(Types.TIME));
+		typeMap.put("tinyint", Integer.valueOf(Types.TINYINT));
+		typeMap.put("varchar", Integer.valueOf(Types.VARCHAR));
+		typeMap.put("wrd", Integer.valueOf(Types.BIGINT));
 	}
 
 	/**
@@ -312,14 +322,14 @@ final public class MonetDriver implements Driver {
 	 */
 	static int getJavaType(String type) {
 		// match the column type on a java.sql.Types constant
-		Integer tp;
-		if ((tp = (Integer)(typeMap.get(type.toLowerCase()))) != null) {
-			return(tp.intValue());
+		Integer tp = typeMap.get(type.toLowerCase());
+		if (tp != null) {
+			return tp.intValue();
 		} else {
 			// this should not be able to happen
 			// do not assert, since maybe future versions introduce
 			// new types
-			return(Types.OTHER);
+			return Types.OTHER;
 		}
 	}
 
@@ -334,15 +344,13 @@ final public class MonetDriver implements Driver {
 	 * @return a SQL CASE statement
 	 */
 	static String getSQLTypeMap(String column) {
+		// TODO: StringBuilder?...
 		String ret = "CASE " + column + " ";
-		Iterator it = typeMap.keySet().iterator();
-		while (it.hasNext()) {
-			String key = (String)it.next();
-			ret += "WHEN '" + key + "' THEN " + typeMap.get(key).toString() + " ";
+		for (Entry<String, Integer> entry : typeMap.entrySet()) {
+			ret += "WHEN '" + entry.getKey() + "' THEN " + entry.getValue().toString() + " ";
 		}
 		ret += "ELSE " + Types.OTHER + " END";
-		
-		return(ret);
+		return ret;
 	}
 
 	/**
@@ -351,7 +359,7 @@ final public class MonetDriver implements Driver {
 	 * @return the version string
 	 */
 	public static String getDriverVersion() {
-		return("" + DRIVERMAJOR + "." + DRIVERMINOR + " (" + DRIVERVERSIONSUFFIX + ")");
+		return "" + DRIVERMAJOR + "." + DRIVERMINOR + " (" + DRIVERVERSIONSUFFIX + ")";
 	}
 
 	/**

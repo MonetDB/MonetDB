@@ -19,8 +19,7 @@
 
 package nl.cwi.monetdb.mcl.parser;
 
-import java.util.*;
-import java.nio.*;
+import java.nio.CharBuffer;
 
 /**
  * The StartOfHeaderParser allows easy examination of a start of header
@@ -91,11 +90,11 @@ public class StartOfHeaderParser {
 			break;
 		}
 		pos = 0;
-		return(type);
+		return type;
 	}
 
 	public final boolean hasNext() {
-		return(pos < len);
+		return pos < len;
 	}
 
 	/**
@@ -129,7 +128,7 @@ public class StartOfHeaderParser {
 			}
 		}
 
-		return(tmp);
+		return tmp;
 	}
 
 	public final String getNextAsString() throws MCLParseException {
@@ -144,6 +143,6 @@ public class StartOfHeaderParser {
 
 		soh.reset();
 
-		return(soh.subSequence(0, cnt).toString());
+		return soh.subSequence(0, cnt).toString();
 	}
 }

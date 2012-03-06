@@ -3101,7 +3101,7 @@ str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt){ int slice_ret
 void _initTrace(void);
 str activateCounter(str name);
 str addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name);
-str addPipeDefinition(str name, str pipe);
+str addPipeDefinition(Client cntxt, str name, str pipe);
 str addRegWrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 DCYcatalog *addRegist(str sch, str tab, str col, int acc, int part, int f_bun, int l_bun);
 void addtoMalBlkHistory(MalBlkPtr mb, str marker);
@@ -3178,6 +3178,7 @@ int color_tostr(char **colorStr, int *len, color *c);
 str columnBindRef;
 str columnRef;
 str commitRef;
+str compileOptimizer(Client cntxt, str name);
 str compileString(Symbol *fcn, Client c, str s);
 str compressRef;
 str connectRef;
