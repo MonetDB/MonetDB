@@ -20,7 +20,7 @@ create aggregate corr(e1 INTEGER, e2 INTEGER) returns INTEGER
 	external name "aggr"."corr";
 create aggregate corr(e1 BIGINT, e2 BIGINT) returns BIGINT
 	external name "aggr"."corr";
-create aggregate corr(e1 REAL, e2 REAL) returns FLOAT
+create aggregate corr(e1 REAL, e2 REAL) returns REAL
 	external name "aggr"."corr";
 create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "aggr"."corr";
