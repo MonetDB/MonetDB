@@ -49,6 +49,26 @@ Ready.
 [ 3,	-2,	3.7	]
 [ 3,	-3,	3.7	]
 [ 3,	-4,	3.7	]
+#CREATE ARRAY ary1(x TINYINT DIMENSION, y BIGINT DIMENSION, v FLOAT DEFAULT 3.7);
+#SELECT * FROM ary1;
+% sys.ary1,	sys.ary1,	sys.ary1 # table_name
+% x,	y,	v # name
+% tinyint,	bigint,	double # type
+% 1,	1,	24 # length
+#CREATE ARRAY ary2(x TINYINT DIMENSION[4], y BIGINT DIMENSION, z BIGINT DIMENSION[-5], v FLOAT DEFAULT 3.7);
+#SELECT * FROM ary2;
+% sys.ary2,	sys.ary2,	sys.ary2,	sys.ary2 # table_name
+% x,	y,	z,	v # name
+% tinyint,	bigint,	bigint,	double # type
+% 1,	1,	1,	24 # length
+#SELECT * FROM _tables WHERE type = 7 OR fixed_array = TRUE;
+% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions # name
+% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int # type
+% 4,	4,	4,	0,	1,	5,	1,	5,	5,	1 # length
+[ 6461,	"ary",	2000,	NULL,	7,	false,	0,	false,	true,	2	]
+[ 6466,	"ary1",	2000,	NULL,	7,	false,	0,	false,	false,	2	]
+[ 6472,	"ary2",	2000,	NULL,	7,	false,	0,	false,	false,	3	]
 #DROP ARRAY ary;
 
 # 13:50:46 >  

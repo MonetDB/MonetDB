@@ -314,7 +314,7 @@ extern void reset_functions(sql_trans *tr);
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id, int owner);
 extern void sql_trans_drop_schema(sql_trans *tr, int id, int drop_action);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit *fixed, int *ndims);
+extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit fixed, int ndims);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
@@ -368,7 +368,7 @@ extern int sql_trans_connect_catalog(sql_trans *tr, char *server, int port, char
 extern int sql_trans_disconnect_catalog(sql_trans *tr, char *db_alias);
 extern int sql_trans_disconnect_catalog_ALL(sql_trans *tr);
 
-extern sql_table *create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action, bit *fixed, int *ndims);
+extern sql_table *create_sql_table(sql_allocator *sa, char *name, sht type, bit system, int persistence, int commit_action, bit fixed, int ndims);
 extern sql_column *create_sql_column(sql_allocator *sa, sql_table *t, char *name, sql_subtype *tpe);
 extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, char *nme, key_type kt);
 extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );

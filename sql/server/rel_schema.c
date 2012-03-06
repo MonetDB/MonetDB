@@ -729,7 +729,9 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				cs->dim->step = GDKstrdup("");
 				cs->dim->stop = GDKstrdup("");
 			}
-			t->fixed = isFixedDim(cs->dim);
+			if (!(isFixedDim(cs->dim)))
+				t->fixed = 0;
+
 			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
@@ -992,6 +994,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		int i = 0, j = 0, cnt = 0, *N = NULL, *M = NULL;
 		lng cntall = 1;
 
+		if (isArray(t))
+			t->fixed = 1;
 		for (n = columns->h; n; n = n->next) {
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
