@@ -42,4 +42,3 @@ scripts_bat = {
 	NOINST
 	SOURCES = RunMapprove.bat.in RunMserver.bat.in RunMtest.bat.in
 }
-
