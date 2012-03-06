@@ -2556,6 +2556,7 @@ usage(const char *prog, int xit)
 
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
+	fprintf(stderr, " -a          | --autocommit       turn off autocommit mode\n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
