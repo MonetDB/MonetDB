@@ -434,6 +434,7 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 {
 	int i;
 	str msg;
+	struct PIPELINES oldpipe;
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (pipes[i].name && strcmp(name, pipes[i].name) == 0)
@@ -444,22 +445,31 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	if (i == MAXOPTPIPES)
 		throw(MAL, "optimizer.addPipeDefinition", "Out of slots");
 
-	if (pipes[i].name)
-		GDKfree(pipes[i].name);
-	if (pipes[i].def)
-		GDKfree(pipes[i].def);
-	if (pipes[i].mb)
-		freeMalBlk(pipes[i].mb);
-	if (pipes[i].status)
-		GDKfree(pipes[i].status);
+	/* save old value */
+	oldpipe = pipes[i];
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
 	pipes[i].mb = NULL;
 	msg = compileOptimizer(cntxt, name);
 	if (msg) {
+		/* failed: restore old value */
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		if (pipes[i].mb)
+			freeMalBlk(pipes[i].mb);
 		GDKfree(pipes[i].status);
-		pipes[i].status = GDKstrdup(msg);
+		pipes[i] = oldpipe;
+	} else {
+		/* succeeded: destroy old value */
+		if (oldpipe.name)
+			GDKfree(oldpipe.name);
+		if (oldpipe.def)
+			GDKfree(oldpipe.def);
+		if (oldpipe.mb)
+			freeMalBlk(oldpipe.mb);
+		if (oldpipe.status)
+			GDKfree(oldpipe.status);
 	}
 	return msg;
 }
