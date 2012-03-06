@@ -445,7 +445,8 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 {
 	node *cn = NULL;
 	dnode *idx_exp = NULL, *idx_term = NULL;
-	sql_rel *rel_tbl = rel_basetable(sql, t, tname), *rel =  rel_basetable(sql, t, tname);
+	/* initial a new rel_select with selection expressions to be added later*/
+	sql_rel *rel = rel_select(sql->sa, rel_basetable(sql, t, tname), NULL);
 	sql_exp *col_exp = NULL, *slc_val = NULL, *expin = NULL;
 	sql_column *col = NULL;
 	sql_subfunc *sf = NULL;
@@ -517,18 +518,17 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 		}
 
 		/* <col_exp> IN '(' <slc_val> ')' */
-		col_exp = exp_column(sql->sa, t->base.name, col->base.name, &col->type, CARD_MULTI, 0, 0);
+		col_exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0);
 		exp_label(sql->sa, slc_val, ++sql->label);
 		expin = exp_in(sql->sa, col_exp, append(new_exp_list(sql->sa), slc_val), cmp_in);
-		rel = rel_select(sql->sa, rel, expin);
+		rel_select_add_exp(rel, expin);
 	}
-
+	
 	/* the number of sliced dimensions must be smaller than or equal to the number of dimensions */
 	if (idx_exp)
 		return sql_error(sql, 02, "array slicing over too many columns");
 
-	rel->card = rel->card > exps_card(rel_tbl->exps) ? rel->card : exps_card(rel_tbl->exps);
-	return rel_project(sql->sa, rel, rel_tbl->exps);
+	return rel;
 }
 
 sql_rel *

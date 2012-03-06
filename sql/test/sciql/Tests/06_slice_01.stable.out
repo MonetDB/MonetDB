@@ -84,8 +84,8 @@ Ready.
 [ 1,	2,	-1	]
 [ 2,	2,	0	]
 [ 3,	2,	5	]
-#SELECT * FROM matrix3[3][*];
-% sys.matrix3,	sys.matrix3,	sys.matrix3 # table_name
+#SELECT m.x, m.y, m.v FROM matrix3[3][*] AS m;
+% sys.m,	sys.m,	sys.m # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length
@@ -93,8 +93,8 @@ Ready.
 [ 3,	1,	4	]
 [ 3,	2,	5	]
 [ 3,	3,	0	]
-#SELECT * FROM matrix3[*][*];
-% sys.matrix3,	sys.matrix3,	sys.matrix3 # table_name
+#SELECT m.x, m.y, m.v  FROM matrix3[*][*] AS m;
+% sys.m,	sys.m,	sys.m # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length
@@ -123,8 +123,8 @@ Ready.
 [ 2,	2,	0	]
 [ 3,	1,	4	]
 [ 3,	2,	5	]
-#SELECT * FROM matrix3[2:*][1:3]; 
-% sys.matrix3,	sys.matrix3,	sys.matrix3 # table_name
+#SELECT m.x, m.y, m.v FROM matrix3[2:*][1:3] AS m;
+% sys.m,	sys.m,	sys.m # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length
@@ -152,8 +152,8 @@ Ready.
 [ 0,	2,	-2	]
 [ 2,	1,	3	]
 [ 2,	2,	0	]
-#SELECT * FROM matrix3[0:2:4][*:1:3];
-% sys.matrix3,	sys.matrix3,	sys.matrix3 # table_name
+#SELECT m.x, m.y, m.v FROM matrix3[0:2:4][*:1:3] AS m;
+% sys.m,	sys.m,	sys.m # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length
@@ -176,8 +176,8 @@ Ready.
 [ 2,	2,	0	]
 [ 3,	1,	4	]
 [ 3,	2,	5	]
-#SELECT * FROM matrix3[0:2:4][1:1:*];
-% sys.matrix3,	sys.matrix3,	sys.matrix3 # table_name
+#SELECT m.x, m.y, m.v FROM matrix3[0:2:4][1:1:*] AS m;
+% sys.m,	sys.m,	sys.m # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length
