@@ -4257,7 +4257,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 
 	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->type == e_column && ((sql_exp*)((list*)groupby->r)->h->data)->f) {
 		/* e_column->f has been "misused" => an aggragation over array tiles */
-		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, sym, f);
+		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, args->data.sym, f);
 	}
 
 	if (!args->data.sym) {	/* count(*) case */
