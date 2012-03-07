@@ -2247,12 +2247,12 @@ drop_seq(mvc *sql, char *sname, char *name)
 	if (!s)
 		s = cur_schema(sql);
 	if (!(seq = find_sql_sequence(s, name))) {
-		return sql_message("DROP SEQUENCE: no such sequence '%s'", name);
+		return sql_message("42M35!DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_message("42000!DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
-		return sql_message("DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
+		return sql_message("2B000!DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
 
 	sql_trans_drop_sequence(sql->session->tr, s, seq, 0);
 	return NULL;
@@ -2281,7 +2281,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (STORE_READONLY(active_store_type)) 
-		return sql_message("SQLException:sql.catalog: schema statements cannot be executed on a readonly database.");
+		return sql_message("25006!schema statements cannot be executed on a readonly database.");
 
 	switch (type) {
 	case DDL_CREATE_SEQ:
@@ -2296,7 +2296,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (getArgType(mb, pci, 4) == TYPE_lng) 
 			val = getArgReference(stk, pci, 4);
 		if (val == NULL || *val == lng_nil)
-			msg = sql_message("ALTER SEQUENCE: cannot (re)start with NULL");
+			msg = sql_message("42M36!ALTER SEQUENCE: cannot (re)start with NULL");
 		else
 			msg = alter_seq(sql, sname, s, val);
 	} 	break;
@@ -2310,13 +2310,13 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int auth_id = sql->role_id;
 
 		if (name && (auth_id = sql_find_auth(sql, name)) < 0) {
-			msg = sql_message("CREATE SCHEMA: no such authorization '%s'", name);
+			msg = sql_message("42M32!CREATE SCHEMA: no such authorization '%s'", name);
 		}
 		if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
 			msg = sql_message("42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		}
 		if (mvc_bind_schema(sql, sname)) {
-			msg = sql_message("CREATE SCHEMA: name '%s' already in use", sname);
+			msg = sql_message("3F000!CREATE SCHEMA: name '%s' already in use", sname);
 		} else {
 			(void)mvc_create_schema(sql, sname, auth_id, sql->user_id);
 		}
@@ -2326,15 +2326,15 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s = mvc_bind_schema(sql, sname);
 
 		if (!s) {
-			msg = sql_message("DROP SCHEMA: name %s does not exist", sname);
+			msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
 		} else if (!schema_privs(sql->role_id, s)) {
-			msg = sql_message("DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+			msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 		} else if (s == cur_schema(sql)) {
-			msg = sql_message("DROP SCHEMA: cannot drop current schema");
+			msg = sql_message("42000!DROP SCHEMA: cannot drop current schema");
 		} else if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
-			msg = sql_message("DROP SCHEMA: access denied for '%s'", sname);
+			msg = sql_message("42000!DROP SCHEMA: access denied for '%s'", sname);
 		} else if (sql_schema_has_user(sql, s)) {
-			msg = sql_message("DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
+			msg = sql_message("2BM37!DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
 		} else {
 			mvc_drop_schema(sql, s, action);
 		}
@@ -2372,10 +2372,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_CREATE_TYPE: {
 		char *impl = *(str*) getArgReference(stk, pci, 3);
 		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl)) 
-			msg = sql_message("CREATE TYPE: unknown external type '%s'", impl);
+			msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
 	} 	break;
 	case DDL_DROP_TYPE: {
-		msg = sql_message("DROP TYPE: not implemented ('%s')", sname);
+		msg = sql_message("0A000!DROP TYPE: not implemented ('%s')", sname);
 	} 	break;
 	case DDL_GRANT_ROLES: {
 		char *auth = SaveArgReference(stk, pci, 3);

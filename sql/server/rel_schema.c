@@ -106,7 +106,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	}
 	if (n || m) {
 		list_destroy(l);
-		return sql_error(sql, 02, "Column lists do not match");
+		return sql_error(sql, 02, "M0M03!Column lists do not match");
 	}
 	(void)name;
 	sq = rel_project(sql->sa, sq, l);
@@ -277,11 +277,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		sql_key *k;
 
 		if (kt == pkey && t->pkey) {
-			(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			(void) sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: key %s already exists", name);
 			return res;
 		}
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
@@ -302,17 +302,17 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		assert(n->next->next->next->type == type_int);
 /*
 		if (isTempTable(t)) {
-			(void) sql_error(sql, 02, "CONSTRAINT: constraints on temporary tables are not supported\n");
+			(void) sql_error(sql, 02, "42000!CONSTRAINT: constraints on temporary tables are not supported\n");
 			return res;
 		}
 */
 		rt = _bind_table(t, ss, cur_schema(sql), rtname);
 		if (!rt) {
-			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
+			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
 
@@ -327,7 +327,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			rk = &rt->pkey->k;
 		}
 		if (!rk) {
-			(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s\n", rtname);
+			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s\n", rtname);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -343,7 +343,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, "M0M03!unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -411,7 +411,7 @@ column_option(
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, "M0M03!unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -453,7 +453,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 		assert(n->next->next->next->next->type == type_int);
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "Create Key failed, key %s already exists", name);
+			sql_error(sql, 02, "42000!Create Key failed, key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -471,7 +471,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			rk = &ft->pkey->k;
 		}
 		if (!rk) {
-			sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
+			sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 			return SQL_ERR;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -487,7 +487,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			mvc_create_fkc(sql, fk, c);
 		}
 		if (nms || fnms) {
-			sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 			return SQL_ERR;
 		}
 	}
@@ -507,11 +507,11 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		sql_key *k;
 
 		if (kt == pkey && t->pkey) {
-			sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "CONSTRAINT %s: key %s already exists",
+			sql_error(sql, 02, "42000!CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
@@ -536,7 +536,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		break;
 	}
 	if (!res) {
-		sql_error(sql, 02, "table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "M0M03!table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -560,7 +560,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	}
 
 	if (!res) {
-		sql_error(sql, 02, "table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "M0M03!table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -577,7 +577,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 (void)ss;
 	if (alter && !isTable(t)) {
-		sql_error(sql, 02, "ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+		sql_error(sql, 02, "42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -597,7 +597,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	}
 
 	if (res == SQL_ERR) 
-		sql_error(sql, 02, "CREATE: column type or name");
+		sql_error(sql, 02, "42000!CREATE: column type or name");
 	return res;
 }
 
@@ -638,7 +638,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, "42000!ALTER TABLE: cannot %s %s '%s'\n",
 				msg, 
 				isMergeTable(t)?"MERGE TABLE":"VIEW",
 				t->base.name);
@@ -760,7 +760,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return SQL_ERR;
 		}
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
-			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
+			sql_error(sql, 02, "2BM37!ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
 			return SQL_ERR;
 		}
 		if (!drop_action  && t->keys.set) {
@@ -771,7 +771,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;
 					if (strcmp(kc->c->base.name, cname) == 0) {
-						sql_error(sql, 02, "ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
+						sql_error(sql, 02, "2BM37!ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
 						return SQL_ERR;
 					}
 				}
@@ -783,7 +783,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		assert(0);
 	}
 	if (res == SQL_ERR) {
-		sql_error(sql, 02, "unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "M0M03!unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -824,7 +824,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 		return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
 	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
 		sql_table *t = (tt == tt_remote)?
@@ -895,7 +895,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
 		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
 	} else if (create && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
-		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		char emode = sql->emode;
 		sql_rel *sq = NULL;
@@ -905,7 +905,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			SelectNode *sn = (SelectNode *) query;
 
 			if (sn->limit)
-				return sql_error(sql, 01, "42000!CREATE VIEW: LIMIT not supported");
+				return sql_error(sql, 01, "0A000!42000!CREATE VIEW: LIMIT not supported");
 			if (sn->orderby)
 				return sql_error(sql, 01, "42000!CREATE VIEW: ORDER BY not supported");
 		}
@@ -1012,15 +1012,15 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	int auth_id = sql->role_id;
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
-		sql_error(sql, 02, "CREATE SCHEMA: no such authorization '%s'", auth);
+		sql_error(sql, 02, "28000!CREATE SCHEMA: no such authorization '%s'", auth);
 		return NULL;
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		sql_error(sql, 02, "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
+		sql_error(sql, 02, "42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		return NULL;
 	}
 	if (mvc_bind_schema(sql, name)) {
-		sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
+		sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
 		return NULL;
 	} else {
 		sql_schema *os = sql->session->schema;
@@ -1301,7 +1301,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *gra
 				break;
 			case SQL_EXECUTE:
 			default:
-				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
+				return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
 			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
@@ -1334,7 +1334,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, char *fname, dlist *gran
 	(void) grantees;
 	(void) grant;
 	(void) grantor;
-	return sql_error(sql, 02, "GRANT Table/Function name %s doesn't exist", fname);
+	return sql_error(sql, 02, "42000!GRANT Table/Function name %s doesn't exist", fname);
 }
 
 
@@ -1355,7 +1355,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	case SQL_NAME:
 		return rel_grant_func(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
 	default:
-		return sql_error(sql, 02, "Grant: unknown token %d", token);
+		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
 	}
 }
 
@@ -1402,7 +1402,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, char *tname, dlist *gr
 
 			case SQL_EXECUTE:
 			default:
-				return sql_error(sql, 02, "Cannot GRANT EXECUTE on table name %s", tname);
+				return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
 			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
@@ -1455,7 +1455,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	case SQL_NAME:
 		return rel_revoke_func(sql, cur, obj_privs, obj->data.sval, grantees, grant, grantor);
 	default:
-		return sql_error(sql, 02, "Grant: unknown token %d", token);
+		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
 	}
 }
 
@@ -1541,7 +1541,7 @@ rel_schemas(mvc *sql, symbol *s)
 	sql_rel *ret = NULL;
 
 	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
-		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
+		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
@@ -1722,7 +1722,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_schema2(sql->sa, DDL_DROP_TYPE, s->data.sval, NULL, 0);
 	} 	break;
 	default:
-		return sql_error(sql, 01, "42000!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
 
