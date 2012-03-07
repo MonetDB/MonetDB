@@ -1510,7 +1510,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-			gbl = rel_groupby(sql->sa, rel_dup(srel), NULL);
+			gbl = rel_groupby(sql, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbl, e);
 			append(args, cnt);
 		}
@@ -1522,7 +1522,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 
 			exp_label(sql->sa, e, ++sql->label);
 			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-			gbr = rel_groupby(sql->sa, rel_dup(srel), NULL);
+			gbr = rel_groupby(sql, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbr, e);
 			append(args, cnt);
 		}
@@ -2552,13 +2552,13 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 			lgbe = exps_copy(sql->sa, gbe);
 			rgbe = exps_copy(sql->sa, gbe);
 		}
-		ul = rel_groupby(sql->sa, ul, NULL);
+		ul = rel_groupby(sql, ul, NULL);
 		ul->r = lgbe;
 		ul->nrcols = g->nrcols;
 		ul->card = g->card;
 		ul->exps = exps_copy(sql->sa, g->exps);
 
-		ur = rel_groupby(sql->sa, ur, NULL);
+		ur = rel_groupby(sql, ur, NULL);
 		ur->r = rgbe;
 		ur->nrcols = g->nrcols;
 		ur->card = g->card;
