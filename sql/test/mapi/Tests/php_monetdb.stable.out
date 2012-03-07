@@ -63,43 +63,43 @@ queryhistory
 callhistory
 querylog
 systemfunctions
-id	name	schema_id	query	type	system	commit_action	readonly	fixed	nr_dimensions	temporary 	
-2001	schemas	2000		0	true	0	false	true	0	0	
-2006	types	2000		0	true	0	false	true	0	0	
-2015	functions	2000		0	true	0	false	true	0	0	
-2024	args	2000		0	true	0	false	true	0	0	
-2032	sequences	2000		0	true	0	false	true	0	0	
-2042	dependencies	2000		0	true	0	false	true	0	0	
-2046	connections	2000		0	true	0	false	true	0	0	
-2055	_tables	2000		0	true	0	false	true	0	0	
-2066	_columns	2000		0	true	0	false	true	0	0	
-2077	_dimensions	2000		0	true	0	false	true	0	0	
-2082	keys	2000		0	true	0	false	true	0	0	
-2089	idxs	2000		0	true	0	false	true	0	0	
-2094	triggers	2000		0	true	0	false	true	0	0	
-2105	objects	2000		0	true	0	false	true	0	0	
-2110	_tables	2109		0	true	2	false	true	0	0	
-2121	_columns	2109		0	true	2	false	true	0	0	
-2132	_dimensions	2109		0	true	2	false	true	0	0	
-2137	keys	2109		0	true	2	false	true	0	0	
-2144	idxs	2109		0	true	2	false	true	0	0	
-2149	triggers	2109		0	true	2	false	true	0	0	
-2160	objects	2109		0	true	2	false	true	0	0	
-4979	tables	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	1	true	0	false	true	0	0	
-4991	columns	2000	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	1	true	0	false	true	0	0	
-5002	arrays	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p WHERE nr_dimensions > 0 UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t WHERE nr_dimensions > 0) AS arrays;	1	true	0	false	true	0	0	
-5014	dimensions	2000	SELECT * FROM (SELECT pc.*, "pd"."start", pd.step, pd.stop FROM "sys"."_columns" AS pc, "sys"."_dimensions" AS pd WHERE pc.id = pd.column_id UNION ALL SELECT tc.*, "td"."start", td.step, td.stop FROM "tmp"."_columns" AS tc, "tmp"."_dimensions" AS td WHERE tc.id = td.column_id) AS dimensions;	1	true	0	false	true	0	0	
-5037	db_user_info	2000		0	true	0	false	true	0	0	
-5045	users	2000	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	1	true	0	false	true	0	0	
-5049	user_role	2000		0	true	0	false	true	0	0	
-5052	auths	2000		0	true	0	false	true	0	0	
-5056	privileges	2000		0	true	0	false	true	0	0	
-5209	queryhistory	2000		0	true	0	false	true	0	0	
-5223	callhistory	2000		0	true	0	false	true	0	0	
-5240	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	true	0	0	
-6374	systemfunctions	2000		0	true	0	false	true	0	0	
+id	name	schema_id	query	type	system	commit_action	readonly	fixed_array	nr_dimensions	temporary 	
+2001	schemas	2000		0	true	0	false	false	0	0	
+2006	types	2000		0	true	0	false	false	0	0	
+2015	functions	2000		0	true	0	false	false	0	0	
+2024	args	2000		0	true	0	false	false	0	0	
+2032	sequences	2000		0	true	0	false	false	0	0	
+2042	dependencies	2000		0	true	0	false	false	0	0	
+2046	connections	2000		0	true	0	false	false	0	0	
+2055	_tables	2000		0	true	0	false	false	0	0	
+2066	_columns	2000		0	true	0	false	false	0	0	
+2077	_dimensions	2000		0	true	0	false	false	0	0	
+2082	keys	2000		0	true	0	false	false	0	0	
+2089	idxs	2000		0	true	0	false	false	0	0	
+2094	triggers	2000		0	true	0	false	false	0	0	
+2105	objects	2000		0	true	0	false	false	0	0	
+2110	_tables	2109		0	true	2	false	false	0	0	
+2121	_columns	2109		0	true	2	false	false	0	0	
+2132	_dimensions	2109		0	true	2	false	false	0	0	
+2137	keys	2109		0	true	2	false	false	0	0	
+2144	idxs	2109		0	true	2	false	false	0	0	
+2149	triggers	2109		0	true	2	false	false	0	0	
+2160	objects	2109		0	true	2	false	false	0	0	
+5007	tables	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t) AS tables where tables.type < 2;	1	true	0	false	false	0	0	
+5019	columns	2000	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	1	true	0	false	false	0	0	
+5030	arrays	2000	SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_tables" AS p WHERE nr_dimensions > 0 UNION ALL SELECT t.*, 1 AS "temporary" FROM "tmp"."_tables" AS t WHERE nr_dimensions > 0) AS arrays;	1	true	0	false	false	0	0	
+5042	dimensions	2000	SELECT * FROM (SELECT pc.*, "pd"."start", pd.step, pd.stop FROM "sys"."_columns" AS pc, "sys"."_dimensions" AS pd WHERE pc.id = pd.column_id UNION ALL SELECT tc.*, "td"."start", td.step, td.stop FROM "tmp"."_columns" AS tc, "tmp"."_dimensions" AS td WHERE tc.id = td.column_id) AS dimensions;	1	true	0	false	false	0	0	
+5065	db_user_info	2000		0	true	0	false	false	0	0	
+5073	users	2000	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	1	true	0	false	false	0	0	
+5077	user_role	2000		0	true	0	false	false	0	0	
+5080	auths	2000		0	true	0	false	false	0	0	
+5084	privileges	2000		0	true	0	false	false	0	0	
+5237	queryhistory	2000		0	true	0	false	false	0	0	
+5251	callhistory	2000		0	true	0	false	false	0	0	
+5268	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	false	0	0	
+6456	systemfunctions	2000		0	true	0	false	false	0	0	
 
-# 14:42:45 >  
-# 14:42:45 >  "Done."
-# 14:42:45 >  
+# 11:23:43 >  
+# 11:23:43 >  "Done."
+# 11:23:43 >  
 

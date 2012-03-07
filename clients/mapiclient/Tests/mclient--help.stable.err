@@ -32,6 +32,7 @@ Options are:
 
 SQL specific opions 
  -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes
+ -a          | --autocommit       turn off autocommit mode
  -r nr       | --rows=nr          for pagination
  -w nr       | --width=nr         for pagination
  -D          | --dump             create an SQL dump
