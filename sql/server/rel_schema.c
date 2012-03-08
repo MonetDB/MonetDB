@@ -1075,7 +1075,6 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				if (!sf)
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
 				func_exp = exp_op(sql->sa, args, sf);
-				/* TODO: what are the correct values for card and intern? */
 				if (!id_l) {
 					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
 					append(col_exps, id_l);
