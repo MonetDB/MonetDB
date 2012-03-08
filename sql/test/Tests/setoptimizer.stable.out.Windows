@@ -64,7 +64,7 @@ Ready.
 % .,	.,	. # table_name
 % name,	def,	status # name
 % clob,	clob,	clob # type
-% 18,	446,	12 # length
+% 18,	431,	12 # length
 [ "minimal_pipe",	"optimizer.inline();optimizer.remap();optimizer.deadcode();optimizer.multiplex();optimizer.garbageCollector();",	"stable"	]
 [ "default_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
 [ "no_mitosis_pipe",	"optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();",	"stable"	]
