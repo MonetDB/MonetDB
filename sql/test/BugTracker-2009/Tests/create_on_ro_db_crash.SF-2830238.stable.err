@@ -5,9 +5,9 @@ stderr of test 'create_on_ro_db_crash.SF-2830238` in directory 'test/BugTracker-
 # 21:37:20 >  /usr/bin/python create_on_ro_db_crash.SF-2830238.py create_on_ro_db_crash.SF-2830238 
 # 21:37:20 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = create table t2 (a int);
-ERROR = ! schema statements cannot be executed on a readonly database.
+ERROR = !schema statements cannot be executed on a readonly database.
 # builtin opt 	gdk_dbname = demo
 # builtin opt 	gdk_dbfarm = /ufs/fabian/scratch/ssd/monetdb/Dec2011/program-x86_64/var/lib/monetdb5/dbfarm
 # builtin opt 	gdk_debug = 0
