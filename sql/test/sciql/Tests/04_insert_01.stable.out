@@ -71,8 +71,8 @@ Ready.
 [ 3,	3,	600	]
 #INSERT INTO matrix SELECT x-1, y, v FROM matrix WHERE x > 2;
 [ 4	]
-#SELECT * FROM matrix;
-% sys.matrix,	sys.matrix,	sys.matrix # table_name
+#SELECT * FROM matrix_0401;
+% sys.matrix_0401,	sys.matrix_0401,	sys.matrix_0401 # table_name
 % x,	y,	v # name
 % int,	int,	double # type
 % 1,	1,	24 # length

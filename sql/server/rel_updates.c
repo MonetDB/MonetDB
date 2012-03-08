@@ -339,14 +339,10 @@ rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
 		sql_column *c = m->data; /* column from base array */
 		sql_exp *eOld = NULL, *eNew = NULL, *e = n->data; /* column exp in INSERT stmt */
 
-		if(!exp_relname(e))
+		if (!(e->type == e_atom && (e->l && ((atom*)e->l)->isnull))) {
 			exp_label(sql->sa, e, ++sql->label);
-		if (!(e->type == e_atom && !e->name && ((atom*)e->l)->isnull)) {
-			eOld = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0);
-			eNew = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), ins->card, has_nil(e), is_intern(e));
-			if(!exp_relname(eNew))
-				exp_label(sql->sa, eNew, ++sql->label);
-
+			eOld = exp_column(sql->sa, c->t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			eNew = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), ins->card, has_nil(e), is_intern(e));
 			if (c->dim) {
 				rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, eOld, eNew, cmp_equal));
 			} else {

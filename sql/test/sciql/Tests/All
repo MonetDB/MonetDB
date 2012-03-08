@@ -36,11 +36,11 @@
 
 03_delete_01
 
-#04_insert_01
+04_insert_01
 04_insert_02
-#04_insert_03
-#04_insert_04
-#04_insert_05
+#04_insert_03 # check in column DEFAULT not implemented yet.
+#04_insert_04 # check in column DEFAULT not implemented yet.
+#04_insert_05 # dimensions of type timestamp not implemented yet.
 04_insert_06
 04_insert_07
 
