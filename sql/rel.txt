@@ -127,7 +127,8 @@ for aggr
 	-> flag DISTINCT and NO_NIL could be set
 
 e_column
-	-> name alias for the expression (ie used by higher expressions)
+	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)
+	-> name alias for the expression (i.e., alias of ->r, used by higher expressions)
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
