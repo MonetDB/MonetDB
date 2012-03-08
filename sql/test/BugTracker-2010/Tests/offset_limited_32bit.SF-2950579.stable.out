@@ -27,12 +27,12 @@ Ready.
 
 #SELECT * from tables OFFSET 2147483647; -- never finishes
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed,	nr_dimensions,	temporary # name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint # type
 % 1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1 # length
 #SELECT * from tables OFFSET 2147483646; -- returns instantly
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed,	nr_dimensions,	temporary # name
+% id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint # type
 % 1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1 # length
 

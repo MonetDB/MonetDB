@@ -32,7 +32,7 @@ Ready.
 #  AND "tables"."system" = FALSE
 #  AND "keys"."type" = 0;
 % .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed,	nr_dimensions,	temporary,	id,	name,	authorization,	owner # name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1,	1,	0,	1,	1 # length
 #SELECT *
@@ -44,7 +44,7 @@ Ready.
 #  AND "keys"."type" = 0
 #ORDER BY "objects"."name";
 % .keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.objects,	.objects,	.objects,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.schemas,	.schemas,	.schemas,	.schemas # table_name
-% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed,	nr_dimensions,	temporary,	id,	name,	authorization,	owner # name
+% id,	table_id,	type,	name,	rkey,	action,	id,	name,	nr,	id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions,	temporary,	id,	name,	authorization,	owner # name
 % int,	int,	int,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int,	tinyint,	int,	varchar,	int,	int # type
 % 1,	1,	1,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0,	1,	5,	1,	5,	5,	1,	1,	1,	0,	1,	1 # length
 
