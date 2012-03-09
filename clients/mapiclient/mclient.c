@@ -2556,6 +2556,7 @@ usage(const char *prog, int xit)
 
 	fprintf(stderr, "\nSQL specific opions \n");
 	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
+	fprintf(stderr, " -a          | --autocommit       turn off autocommit mode\n");
 	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
 	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
 	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
@@ -2586,10 +2587,12 @@ main(int argc, char **argv)
 	int has_fileargs = 0;
 	int option_index = 0;
 	int settz = 1;
+	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
 	static struct option long_options[] = {
+		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
 		{"dump", 0, 0, 'D'},
 		{"inserts", 0, 0, 'N'},
@@ -2733,7 +2736,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "DNd:e"
+	while ((c = getopt_long(argc, argv, "aDNd:e"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
@@ -2754,6 +2757,9 @@ main(int argc, char **argv)
 				(void) pager;	/* will be further used later */
 			}
 #endif
+			break;
+		case 'a':
+			autocommit = 0;
 			break;
 		case 'e':
 			echoquery = 1;
@@ -2949,6 +2955,9 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
+
+	if (!autocommit)
+		mapi_setAutocommit(mid, autocommit);
 
 	if (logfile)
 		mapi_log(mid, logfile);

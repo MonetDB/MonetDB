@@ -51,3 +51,6 @@ RETURNS string
 BEGIN
         RETURN CAST(num as string);
 END;
+
+CREATE FUNCTION alpha(pdec double, pradius double)
+RETURNS double EXTERNAL NAME sql.alpha;

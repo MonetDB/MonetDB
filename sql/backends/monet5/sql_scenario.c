@@ -407,6 +407,33 @@ sql_update_dec2011( Client c, mvc *m )
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_apr2012(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val TINYINT) returns TINYINT external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val SMALLINT) returns SMALLINT external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val INTEGER) returns INTEGER external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val BIGINT) returns BIGINT external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val REAL) returns REAL external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val DOUBLE) returns DOUBLE external name \"aggr\".\"median\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 TINYINT, e2 TINYINT) returns TINYINT external name \"aggr\".\"corr\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns SMALLINT external name \"aggr\".\"corr\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 INTEGER, e2 INTEGER) returns INTEGER external name \"aggr\".\"corr\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 BIGINT, e2 BIGINT) returns BIGINT external name \"aggr\".\"corr\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 REAL, e2 REAL) returns REAL external name \"aggr\".\"corr\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE external name \"aggr\".\"corr\";\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('median', 'corr') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -519,14 +546,23 @@ SQLinitClient(Client c)
 		} else
 			fprintf(stderr, "!could not read createdb.sql\n");
 	} else { /* handle upgrades */
-		sql_subtype clob; 
+		sql_subtype tp;
+		char *err;
 
-        	sql_find_subtype(&clob, "clob", 0, 0);
 		if (!m->sa)
 			m->sa = sa_create();
-		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &clob, &clob, &clob, F_FILT )) {
-			char *err;
+		/* if filter function sys.like(str,str,str) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "clob", 0, 0);
+		if (!sql_bind_func3(m->sa, mvc_bind_schema(m,"sys"), "like", &tp, &tp, &tp, F_FILT )) {
 			if ((err = sql_update_dec2011(c, m)) != NULL)
+				fprintf(stderr, "!%s\n", err);
+		}
+		/* if aggregate function sys.median(int) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "int", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "median", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_apr2012(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
 	}

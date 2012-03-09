@@ -110,8 +110,9 @@ SQLFetch_(ODBCStmt *stmt)
 			case MTIMEOUT:
 				if (statusp)
 					*statusp = SQL_ROW_ERROR;
-				/* Communication link failure */
-				addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+				/* Timeout expired / Communication
+				 * link failure */
+				addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			default:
 				if (statusp)
