@@ -170,7 +170,7 @@ static void ctl_handle_client(
 	 * over of the socket such that a separate (controlrunner) thread is
 	 * going to handle the traffic and negotiations, instead of the
 	 * client thread that just goes inside this program here. */
-	char buf[256];
+	char buf[8096];
 	char buf2[8096];
 	char *p, *q;
 	sabdb *stats;
