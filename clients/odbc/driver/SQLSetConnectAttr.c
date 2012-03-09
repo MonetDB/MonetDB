@@ -96,11 +96,15 @@ SQLSetConnectAttr_(ODBCDbc *dbc,
 			free(dbc->dbname);
 		dbc->dbname = dupODBCstring(ValuePtr, StringLength);
 		break;
+	case SQL_ATTR_CONNECTION_TIMEOUT:
+		dbc->sql_attr_connection_timeout = (SQLUINTEGER) (size_t) ValuePtr;
+		if (dbc->mid)
+			mapi_timeout(dbc->mid, dbc->sql_attr_connection_timeout);
+		break;
 
 		/* TODO: implement connection attribute behavior */
 	case SQL_ATTR_ACCESS_MODE:
 	case SQL_ATTR_ASYNC_ENABLE:
-	case SQL_ATTR_CONNECTION_TIMEOUT:
 	case SQL_ATTR_LOGIN_TIMEOUT:
 	case SQL_ATTR_ODBC_CURSORS:
 	case SQL_ATTR_PACKET_SIZE:

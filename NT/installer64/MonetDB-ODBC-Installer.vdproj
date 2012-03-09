@@ -566,8 +566,8 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB ODBC Driver"
-        "ProductCode" = "8:{BCA28DEE-33C4-4897-85D5-98DA9747054A}"
-        "PackageCode" = "8:{D107C833-4867-4471-B5E7-36C3A5C26F2E}"
+        "ProductCode" = "8:{0DD096EA-A791-4D97-AD3C-5EC69F2A495E}"
+        "PackageCode" = "8:{B6C87B73-7277-46B8-B443-65665B5A634C}"
         "UpgradeCode" = "8:{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
