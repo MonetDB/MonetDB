@@ -464,7 +464,7 @@ int yydebug=1;
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
-	IDENT aTYPE ALIAS AGGR RANK sqlINT HEXADECIMAL INTNUM APPROXNUM 
+	IDENT aTYPE ALIAS AGGR AGGR2 RANK sqlINT HEXADECIMAL INTNUM APPROXNUM 
 	USING 
 	ALL ANY SOME GLOBAL CAST CONVERT
 	CHARACTER VARYING LARGE OBJECT VARCHAR CLOB sqlTEXT BINARY sqlBLOB
@@ -3804,12 +3804,14 @@ aggr_ref:
   		  append_int(l, FALSE);
   		  append_symbol(l, NULL);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+/*
  |  AGGR '(' DISTINCT column_ref ')'
 		{ dlist *l = L();
   		  append_string(l, $1);
   		  append_int(l, TRUE);
   		  append_symbol(l, _symbol_create_list(SQL_COLUMN, $4));
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+*/
  |  AGGR '(' DISTINCT case_scalar_exp ')'
 		{ dlist *l = L();
   		  append_string(l, $1);
@@ -3827,6 +3829,13 @@ aggr_ref:
   		  append_string(l, $1);
   		  append_int(l, FALSE);
   		  append_symbol(l, $3);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  AGGR2 '(' case_scalar_exp ',' case_scalar_exp ')'
+		{ dlist *l = L();
+  		  append_string(l, $1);
+  		  append_int(l, FALSE);
+  		  append_symbol(l, $3);
+  		  append_symbol(l, $5);
 		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  XML_aggregate
  ;
@@ -4649,6 +4658,7 @@ restricted_ident:
  |  aTYPE	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  ;
 
@@ -4658,6 +4668,7 @@ ident:
  |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  AGGR	{ $$ = $1; } 	/* without '(' */
+ |  AGGR2	{ $$ = $1; } 	/* without '(' */
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
  ;

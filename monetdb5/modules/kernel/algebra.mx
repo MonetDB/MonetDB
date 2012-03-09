@@ -701,6 +701,7 @@ comment "Return the lowest tail value or nil.";
 command max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany
 comment "Return the highest tail value or nil.";
+
 # @+ Type-Specific Sum, Prod, Max and Min
 # For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
 # aggregate functions using a macro.
@@ -2110,7 +2111,7 @@ ALGmaxany(ptr result, int *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
 	}
 	if (CMDmaxany(result, b) == GDK_SUCCEED) {
 		BBPreleaseref(b->batCacheid);
@@ -2119,7 +2120,6 @@ ALGmaxany(ptr result, int *bid)
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.max", GDK_EXCEPTION);
 }
-
 
 str
 ALGtopN(int *res, int *bid, lng *top)

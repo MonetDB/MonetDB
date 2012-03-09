@@ -715,9 +715,9 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 		if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
 			mb->errors++;
 			if( !silent) {
-				char errsig[2 * BUFSIZ]="";
+				char errsig[4 * PATHLENGTH]="";
 
-				instructionCall(mb,p,errsig,errsig, 2 * BUFSIZ - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) -strlen(errsig));
+				instructionCall(mb,p,errsig,errsig, sizeof(errsig) - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) -strlen(errsig));
 				showScriptException(out, mb,getPC(mb,p),TYPE,
 						"'%s%s%s' undefined in: %s", 
 						(getModuleId(p)?getModuleId(p):""),

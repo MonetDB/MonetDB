@@ -5,13 +5,13 @@ stderr of test 'mserver5-sql-readonly-view` in directory 'test/mserver5-sql-read
 # 09:35:13 >  /usr/bin/python mserver5-sql-readonly-view.py mserver5-sql-readonly-view 
 # 09:35:13 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = insert into v1 (a) values ( 2 );
 ERROR = !INSERT INTO: cannot insert into view 'v1'
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = update v1 set a = 3 where a = 2;
 ERROR = !UPDATE: cannot update view 'v1'
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = delete from v1 where a = 3;
 ERROR = !DELETE FROM: cannot delete from view 'v1'
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu
@@ -75,19 +75,19 @@ ERROR = !DELETE FROM: cannot delete from view 'v1'
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_test_mserver5-sql-readonly
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = create view v2 as select * from t1;
-ERROR = ! schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@sofia:38256
+ERROR = !schema statements cannot be executed on a readonly database.
+MAPI  = monetdb@sofia:38972
 QUERY = drop view v1;
 ERROR = !schema statements cannot be executed on a readonly database.
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = insert into v1 (a) values ( 1 );
 ERROR = !INSERT INTO: cannot insert into view 'v1'
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = update v1 set a = 2 where a = 1;
 ERROR = !UPDATE: cannot update view 'v1'
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@sofia:38972
 QUERY = delete from v1 where a = 1;
 ERROR = !DELETE FROM: cannot delete from view 'v1'
 # builtin opt 	gdk_arch = 64bitx86_64-unknown-linux-gnu

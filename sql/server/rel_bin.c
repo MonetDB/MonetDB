@@ -486,22 +486,48 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			s = stmt_Nop(sql->sa, stmt_list(sql->sa, l), e->f); 
 	} 	break;
 	case e_aggr: {
-		sql_exp *at = NULL;
 		list *attr = e->l; 
 		stmt *as = NULL;
-		stmt *as2 = NULL;
 		sql_subaggr *a = e->f;
 		group *g = grp;
 
 		assert(sel == NULL);
 		if (attr && attr->h) { 
-			at = attr->h->data;
-			as = exp_bin(sql, at, left, right, NULL, sel);
-			if (list_length(attr) == 2)
-				as2 = exp_bin(sql, attr->h->next->data, left, right, NULL, sel);
-			/* insert single value into a column */
-			if (as && as->nrcols <= 0 && !left)
-				as = const_column(sql->sa, as);
+			node *en;
+			list *l = sa_list(sql->sa);
+
+			for (en = attr->h; en; en = en->next) {
+				sql_exp *at = en->data;
+
+				as = exp_bin(sql, at, left, right, NULL, sel);
+
+				if (as && as->nrcols <= 0 && left) 
+					as = stmt_const(sql->sa, bin_first_column(sql->sa, left), as);
+				/* insert single value into a column */
+				if (as && as->nrcols <= 0 && !left)
+					as = const_column(sql->sa, as);
+
+				if (!as) 
+					return NULL;	
+				/* inconsistent sql requires NULL != NULL, ie unknown
+		 		 * but also NULL means no values, which means 'ignore'
+		 		 *
+		 		 * so here we need to ignore NULLs
+		 		 */
+				if (need_no_nil(e) && at && has_nil(at) && attr) {
+					sql_subtype *t = exp_subtype(at);
+					stmt *n = stmt_atom(sql->sa, atom_general(sql->sa, t, NULL));
+					as = stmt_select2(sql->sa, as, n, n, 0);
+				}
+				if (need_distinct(e)){ 
+					if (g)
+						as = stmt_unique(sql->sa, as, grp);
+					else
+						as = stmt_unique(sql->sa, as, NULL);
+				}
+				append(l, as);
+			}
+			as = stmt_list(sql->sa, l);
 		} else {
 			/* count(*) may need the default group (relation) and
 			   and/or an attribute to count */
@@ -515,31 +541,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 				as = const_column(sql->sa, as);
 			}
 		}
-		if (!as) 
-			return NULL;	
-
-		if (as->nrcols <= 0 && left) 
-			as = stmt_const(sql->sa, bin_first_column(sql->sa, left), as);
-		/* inconsistent sql requires NULL != NULL, ie unknown
-		 * but also NULL means no values, which means 'ignore'
-		 *
-		 * so here we need to ignore NULLs
-		 */
-		if (need_no_nil(e) && at && has_nil(at) && attr) {
-			sql_subtype *t = exp_subtype(at);
-			stmt *n = stmt_atom(sql->sa, atom_general(sql->sa, t, NULL));
-			as = stmt_select2(sql->sa, as, n, n, 0);
-		}
-		if (need_distinct(e)){ 
-			if (g)
-				as = stmt_unique(sql->sa, as, grp);
-			else
-				as = stmt_unique(sql->sa, as, NULL);
-		}
-		if (as2) 
-			s = stmt_aggr2(sql->sa, stmt_reverse(sql->sa, as), as2, a );
-		else
-			s = stmt_aggr(sql->sa, as, g, a, 1 );
+		s = stmt_aggr(sql->sa, as, g, a, 1 );
 		/* HACK: correct cardinality for window functions */
 		if (e->card > CARD_AGGR)
 			s->nrcols = 2;

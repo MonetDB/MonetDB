@@ -190,7 +190,7 @@ Save client/server interaction in the specified file.
 Execute the specified query.  The query is run before any queries from
 files specified on the command line are run.
 .TP
-\fB\--timezone\fP (\fB\-z\fP)
+\fB\-\-timezone\fP (\fB\-z\fP)
 Do not tell the client's timezone to the server.
 .TP
 \fB\-\-Xdebug\fP (\fB\-X\fP)
@@ -217,6 +217,10 @@ represented by the string "null" in the sql output format, and as the
 empty string in the csv and tab output formats.
 Note that an argument is required, so in order to use the empty
 string, use \fB\-n ""\fP (with the space) or \fB\-\-null=\fP.
+.TP
+\fB\-\-autocommit\fP (\fB\-a\fP)
+Switch autocommit mode off.
+By default, autocommit mode is on.
 .TP
 \fB\-\-rows=\fP\fInr\fP (\fB\-r\fP \fInr\fP)
 If specified, query results will be paged by an internal pager at the

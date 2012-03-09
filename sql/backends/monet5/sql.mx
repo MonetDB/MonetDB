@@ -2254,12 +2254,12 @@ drop_seq(mvc *sql, char *sname, char *name)
 	if (!s)
 		s = cur_schema(sql);
 	if (!(seq = find_sql_sequence(s, name))) {
-		return sql_message("DROP SEQUENCE: no such sequence '%s'", name);
+		return sql_message("42M35!DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, s)) {
 		return sql_message("42000!DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"),  s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
-		return sql_message("DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
+		return sql_message("2B000!DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
 
 	sql_trans_drop_sequence(sql->session->tr, s, seq, 0);
 	return NULL;
@@ -2447,7 +2447,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if (STORE_READONLY(active_store_type)) 
-		return sql_message("SQLException:sql.catalog: schema statements cannot be executed on a readonly database.");
+		return sql_message("25006!schema statements cannot be executed on a readonly database.");
 
 	switch (type) {
 	case DDL_CREATE_SEQ:
@@ -2462,7 +2462,7 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (getArgType(mb, pci, 4) == TYPE_lng) 
 			val = getArgReference(stk, pci, 4);
 		if (val == NULL || *val == lng_nil)
-			msg = sql_message("ALTER SEQUENCE: cannot (re)start with NULL");
+			msg = sql_message("42M36!ALTER SEQUENCE: cannot (re)start with NULL");
 		else
 			msg = alter_seq(sql, sname, s, val);
 	} 	break;
@@ -2476,13 +2476,13 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int auth_id = sql->role_id;
 
 		if (name && (auth_id = sql_find_auth(sql, name)) < 0) {
-			msg = sql_message("CREATE SCHEMA: no such authorization '%s'", name);
+			msg = sql_message("42M32!CREATE SCHEMA: no such authorization '%s'", name);
 		}
 		if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
 			msg = sql_message("42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		}
 		if (mvc_bind_schema(sql, sname)) {
-			msg = sql_message("CREATE SCHEMA: name '%s' already in use", sname);
+			msg = sql_message("3F000!CREATE SCHEMA: name '%s' already in use", sname);
 		} else {
 			(void)mvc_create_schema(sql, sname, auth_id, sql->user_id);
 		}
@@ -2492,15 +2492,15 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s = mvc_bind_schema(sql, sname);
 
 		if (!s) {
-			msg = sql_message("DROP SCHEMA: name %s does not exist", sname);
+			msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
 		} else if (!schema_privs(sql->role_id, s)) {
-			msg = sql_message("DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+			msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 		} else if (s == cur_schema(sql)) {
-			msg = sql_message("DROP SCHEMA: cannot drop current schema");
+			msg = sql_message("42000!DROP SCHEMA: cannot drop current schema");
 		} else if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
-			msg = sql_message("DROP SCHEMA: access denied for '%s'", sname);
+			msg = sql_message("42000!DROP SCHEMA: access denied for '%s'", sname);
 		} else if (sql_schema_has_user(sql, s)) {
-			msg = sql_message("DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
+			msg = sql_message("2BM37!DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
 		} else {
 			mvc_drop_schema(sql, s, action);
 		}
@@ -2538,10 +2538,10 @@ SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case DDL_CREATE_TYPE: {
 		char *impl = *(str*) getArgReference(stk, pci, 3);
 		if (!mvc_create_type(sql, sql->session->schema, sname, 0, 0, 0, impl)) 
-			msg = sql_message("CREATE TYPE: unknown external type '%s'", impl);
+			msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
 	} 	break;
 	case DDL_DROP_TYPE: {
-		msg = sql_message("DROP TYPE: not implemented ('%s')", sname);
+		msg = sql_message("0A000!DROP TYPE: not implemented ('%s')", sname);
 	} 	break;
 	case DDL_GRANT_ROLES: {
 		char *auth = SaveArgReference(stk, pci, 3);
@@ -4395,8 +4395,8 @@ daytime_2time_daytime( daytime *res, daytime *v, int *digits )
 	/* correct fraction */
 	*res = *v;
 	if (!daytime_isnil(*v) && d < 3) {
-		*res /= scales[3-d];
-		*res *= scales[3-d];
+		*res = (daytime) (*res / scales[3-d]);
+		*res = (daytime) (*res * scales[3-d]);
 	}
 	return MAL_SUCCEED;
 }
@@ -4431,8 +4431,8 @@ timestamp_2_daytime( daytime *res, timestamp *v, int *digits )
 
 	/* correct fraction */
 	if (d < 3 && msec) {
-		msec /= scales[3-d];
-		msec *= scales[3-d];
+		msec = (int) (msec / scales[3-d]);
+		msec = (int) (msec * scales[3-d]);
 	}
 	*res = msec;
 	return MAL_SUCCEED;
@@ -4457,8 +4457,8 @@ timestamp_2time_timestamp( timestamp *res, timestamp *v, int *digits )
 	if (d < 3) {
 		int msec = res->msecs;
 		if (msec) {
-			msec /= scales[3-d];
-			msec *= scales[3-d];
+			msec = (int) (msec / scales[3-d]);
+			msec = (int) (msec * scales[3-d]);
 		}
 		res->msecs = msec;
 	}
@@ -6988,7 +6988,7 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
  * Assume val is id,oid sorted. 
  */
 @h
-sql_export str SQLmiddle(bat *res,  bat *val, bat *hist);
+sql5_export str SQLmiddle(bat *res,  bat *val, bat *hist);
 @c
 str
 SQLmiddle(bat *res,  bat *val, bat *hist)
@@ -7067,3 +7067,113 @@ function aggr.median(a:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat
 	sid := algebra.leftjoin(id, mv);
 	return algebra.leftjoin(sid, a);
 end aggr.median;
+
+# assume nil's are removed
+# (sum (e1 * e2) - (sum(e1) * sum(e2)/count(e1))) / count(e1)
+
+@= analytic
+function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
+	e0:bat[:oid,:@1] := batcalc.*(e1,e2);
+	s0:@1 := aggr.sum(e0);
+	s1:@1 := aggr.sum(e1);
+	s2:@1 := aggr.sum(e2);
+	v2:@1 := calc.*(s1,s2);
+	c := aggr.count(e1);
+	n:@1 := calc.@1(c);
+	v3:@1 := calc./(v2,n);
+	v1:@1 := calc.-(s0,v3);
+	v:@1 := calc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.stddev(e:bat[:oid,:@1]):@1;
+	a:dbl := aggr.avg(e);
+	ed := batcalc.dbl(e);
+	ea := batcalc.-(ed,a);
+	ea2 := batcalc.*(ea,ea);
+	es := aggr.sum(ea2);
+	c := aggr.count(e);
+	v:dbl := calc./(es,c);
+	r := mmath.sqrt(v);
+	res:@1 := calc.@1(r);
+	return res;
+end aggr.stddev;
+
+function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
+	cv:@1 := aggr.covar(e1,e2);
+	sd1:@1 := aggr.stddev(e1);
+	sd2:@1 := aggr.stddev(e2);
+	sd := calc.*(sd1,sd2);
+	r := calc./(cv,sd);
+	res := calc.@1(r);
+	return res;
+end aggr.corr;
+
+function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
+	e0:bat[:oid,:@1] := batcalc.*(e1,e2);
+	s0:bat[:oid,:@1] := aggr.sum(e0,g,e);
+	s1:bat[:oid,:@1] := aggr.sum(e1,g,e);
+	s2:bat[:oid,:@1] := aggr.sum(e2,g,e);
+	v2:bat[:oid,:@1] := batcalc.*(s1,s2);
+	c := aggr.count(e1,g,e);
+	n:bat[:oid,:@1] := batcalc.@1(c);
+	v3:bat[:oid,:@1] := batcalc./(v2,n);
+	v1:bat[:oid,:@1] := batcalc.-(s0,v3);
+	v:bat[:oid,:@1] := batcalc./(v1,n);
+	return v;
+end aggr.covar;
+
+function aggr.stddev(v:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
+	a:bat[:oid,:dbl] := aggr.avg(v,g,e);
+	ed := batcalc.dbl(v);
+	ea := algebra.leftjoin(g,a);
+	va := batcalc.-(ed,ea);
+	ea2 := batcalc.*(va,va);
+	es := aggr.sum(ea2,g,e);
+	c := aggr.count(v,g,e);
+	cr := batcalc.dbl(c);
+	ev:bat[:oid,:dbl] := batcalc./(es,cr);
+	r := batmmath.sqrt(ev);
+	res:bat[:oid,:@1] := batcalc.@1(r);
+	return res;
+end aggr.stddev;
+
+# var_pop(expr) = (sum(expr) - sum(expr)/count(expr)) /count(expr)
+# stddev_pop(expr) = sqrt(var_pop(expr))
+function aggr.stddev_pop(v:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
+	v2 := batcalc.*(v,v);
+	a1 := aggr.sum(v2,g,e);
+	a := aggr.sum(v,g,e);
+	a2 := batcalc.*(a,a);
+	c := aggr.count(v,g,e);
+	ad1 := batcalc.dbl(a1);
+	ad2 := batcalc.dbl(a2);
+	cd := batcalc.dbl(c);
+	sc := batcalc./(ad2,cd);
+	ssc := batcalc.-(ad1,sc);
+	sc2 := batcalc./(ssc,cd);
+	r := batmmath.sqrt(sc2);
+	res:bat[:oid,:@1] := batcalc.@1(r);
+	return res;
+end aggr.stddev_pop;
+
+function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:@1];
+	cv:bat[:oid,:@1] := aggr.covar(e1,e2,g,e);
+	sd1:bat[:oid,:@1] := aggr.stddev_pop(e1,g,e);
+	sd2:bat[:oid,:@1] := aggr.stddev_pop(e2,g,e);
+	sd := batcalc.*(sd1,sd2);
+	sdn := batcalc.==(sd,0:@1);
+	sds := batcalc.ifthenelse(sdn,1:@1,sd);
+	r := batcalc./(cv,sds);
+	res := batcalc.@1(r);
+	return res;
+end aggr.corr;
+
+@mal
+@:analytic(bte)@
+@:analytic(sht)@
+@:analytic(int)@
+@:analytic(lng)@
+@:analytic(flt)@
+@:analytic(dbl)@
+

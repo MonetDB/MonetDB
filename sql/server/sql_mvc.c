@@ -210,7 +210,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
 	if (m->session->status < 0) {
-		(void)sql_error(m, 010, "COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -247,7 +247,7 @@ build up the hash (not copyied in the trans dup)) */
 	cur -> parent = tr;
 	tr = cur;
 	if (ok != SQL_OK) {
-		(void)sql_error(m, 010, "COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -268,13 +268,13 @@ build up the hash (not copyied in the trans dup)) */
 	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
+			char *msg = sql_message("40000!COMMIT: transation commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
