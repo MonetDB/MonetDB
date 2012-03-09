@@ -593,26 +593,6 @@ make_jaql_top(long long int num)
 	return res;
 }
 
-tree *
-make_array_index(long long int idx, char isstar)
-{
-	tree *res = GDKzalloc(sizeof(tree));
-
-	if (idx < 0) {
-		res->type = j_error;
-		res->sval = GDKstrdup("variable: array index must be a "
-				"positive integer value");
-		return res;
-	}
-
-	res->type = j_arr_idx;
-	res->nval = idx;
-	if (isstar)
-		res->nval = -1;
-
-	return res;
-}
-
 /* create predicate between left and right which can be predicates on
  * their own, or variables and values */
 tree *
@@ -694,22 +674,21 @@ append_sort_arg(tree *osarg, tree *nsarg)
 	return osarg;
 }
 
-/* create a variable name from ident, with optional array indirection */
+/* create a variable name from ident */
 tree *
-make_varname(char *ident, tree *arridx)
+make_varname(char *ident)
 {
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_var;
 	res->sval = ident;
-	res->tval2 = arridx;
 
 	return res;
 }
 
 /* append an object indirection to the variable in var with the name
- * from ident, with optional array indirection */
+ * from ident */
 tree *
-append_varname(tree *var, char *ident, tree *arridx)
+append_varname(tree *var, char *ident)
 {
 	tree *t = var;
 
@@ -719,7 +698,32 @@ append_varname(tree *var, char *ident, tree *arridx)
 	t = t->tval1 = GDKzalloc(sizeof(tree));
 	t->type = j_var;
 	t->sval = ident;
-	t->tval2 = arridx;
+
+	return var;
+}
+
+tree *
+append_vararray(tree *var, long long int idx, char isstar)
+{
+	tree *t = var;
+
+	if (idx < 0) {
+		freetree(var);
+		t = GDKzalloc(sizeof(tree));
+		t->type = j_error;
+		t->sval = GDKstrdup("variable: array index must be a "
+				"positive integer value");
+		return t;
+	}
+
+	/* find last in chain to append to */
+	while (t->tval1 != NULL)
+		t = t->tval1;
+	t = t->tval1 = GDKzalloc(sizeof(tree));
+	t->type = j_arr_idx;
+	t->nval = idx;
+	if (isstar)
+		t->nval = -1;
 
 	return var;
 }
@@ -884,7 +888,7 @@ make_join_input(char preserve, tree *var, tree *invar)
 	res->nval = preserve;
 	res->tval2 = var;
 	if (invar == NULL) {
-		res->tval1 = make_varname(GDKstrdup(var->sval), NULL);
+		res->tval1 = make_varname(GDKstrdup(var->sval));
 	} else {
 		res->tval1 = invar;
 	}
@@ -1494,17 +1498,21 @@ printtree(tree *t, int level, char op)
 				break;
 			case j_var:
 				if (op) {
-					printf("j_var( %s%s ",
-							t->sval == NULL ? "*" : t->sval,
-							t->tval1 != NULL ? "." : "");
-					if (t->tval1 != NULL)
+					printf("j_var( %s ", t->sval == NULL ? "*" : t->sval);
+					if (t->tval1 != NULL) {
+						printf(", ");
 						printtree(t->tval1, level + step, op);
+					}
 					printf(") ");
 				} else {
 					printf("%s", t->sval == NULL ? "*" : t->sval);
-					printtree(t->tval2, level + step, op);
-					printf("%c", t->tval1 != NULL ? '.' : ' ');
-					printtree(t->tval1, level + step, op);
+					if (t->tval1 != NULL) {
+						if (t->tval1->type == j_var)
+							printf(".");
+						printtree(t->tval1, level + step, op);
+					} else {
+						printf(" ");
+					}
 				}
 				break;
 			case j_arr_idx:
@@ -1515,12 +1523,23 @@ printtree(tree *t, int level, char op)
 					} else {
 						printf("%lld ", t->nval);
 					}
+					if (t->tval1 != NULL) {
+						printf(", ");
+						printtree(t->tval1, level + step, op);
+					}
 					printf(") ");
 				} else {
 					if (t->nval == -1) {
 						printf("[*]");
 					} else {
 						printf("[%lld]", t->nval);
+					}
+					if (t->tval1 != NULL) {
+						if (t->tval1->type == j_var)
+							printf(".");
+						printtree(t->tval1, level + step, op);
+					} else {
+						printf(" ");
 					}
 				}
 				break;

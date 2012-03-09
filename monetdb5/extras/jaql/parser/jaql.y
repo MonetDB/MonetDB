@@ -37,7 +37,7 @@
 	predicate variable and_or opt_not comparison value literal
 	opt_each opt_command sort_arg arith_op val_var_arith
 	obj_list arr_list obj_pair json_value join_var_refs join_var_ref
-	opt_join_in opt_arr_ind group_var_refs group_var_ref opt_group_by
+	opt_join_in group_var_refs group_var_ref opt_group_by
 	group_by opt_group_as func_call opt_func_args func_args func_arg
 %type <j_ident> ident
 %type <j_number> opt_asc_desc opt_preserve
@@ -112,12 +112,12 @@ jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL
 	| _IDENT _ASSIGN jaqlpipe   {$$ = append_jaql_pipe($3, make_json_output($1));}
 	;
 
-jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1, NULL), $2);}
+jaqlpipe: _IDENT opt_actions    {$$ = append_jaql_pipe(make_varname($1), $2);}
 		| func_call opt_actions {$$ = append_jaql_pipe($1, $2);}
 		| '[' {j->expect_json = '[';}
 		  _ARRAY opt_actions    {$$ = append_jaql_pipe(make_json($3), $4);}
 		| GROUP group_var_refs INTO json_value opt_actions
-		    {$$ = append_jaql_pipe(make_jaql_group($2, $4, make_varname(GDKstrdup("$"), NULL)), $5);}
+		    {$$ = append_jaql_pipe(make_jaql_group($2, $4, make_varname(GDKstrdup("$"))), $5);}
 		| JOIN join_var_refs WHERE predicates INTO json_value opt_actions
 		    {$$ = append_jaql_pipe(make_jaql_join($2, $4, $6), $7);}
 		;
@@ -147,7 +147,7 @@ join_var_refs: join_var_refs ',' join_var_ref  {$$ = append_join_input($1, $3);}
 			 ;
 
 join_var_ref: opt_preserve _IDENT opt_join_in
-			     {$$ = make_join_input($1 == PRESERVE, make_varname($2, NULL), $3);}
+			     {$$ = make_join_input($1 == PRESERVE, make_varname($2), $3);}
 			;
 
 group_var_refs: group_var_refs ',' group_var_ref
@@ -156,7 +156,7 @@ group_var_refs: group_var_refs ',' group_var_ref
 			  ;
 
 group_var_ref: _IDENT group_by
-			     {$$ = set_group_input_var($2, make_varname($1, NULL));}
+			     {$$ = set_group_input_var($2, make_varname($1));}
 			 ;
 
 opt_group_by: /* empty */           {$$ = NULL;}
@@ -166,25 +166,25 @@ opt_group_by: /* empty */           {$$ = NULL;}
 group_by: BY _IDENT _ASSIGN variable opt_group_as
 		                   {$$ = make_group_input($2, $4, $5);};
 
-opt_group_as: /* empty */  {$$ = make_varname(GDKstrdup("$"), NULL);}
-			| AS _IDENT    {$$ = make_varname($2, NULL);}
+opt_group_as: /* empty */  {$$ = make_varname(GDKstrdup("$"));}
+			| AS _IDENT    {$$ = make_varname($2);}
 
 opt_preserve: /* empty */           {$$ = 0;}
 			| PRESERVE              {$$ = PRESERVE;}
 			;
 
 opt_join_in: /* empty */            {$$ = NULL;}
-		   | IN _IDENT              {$$ = make_varname($2, NULL);}
+		   | IN _IDENT              {$$ = make_varname($2);}
 		   ;
 
 opt_command: /* empty */            {$$ = NULL;}
 		   | variable               {$$ = $1;}
 		   | UNROLL variable        {$$ = make_unroll($2);}
-		   | '(' ident actions ')'  {$$ = append_jaql_pipe(make_varname($2, NULL), $3);}
+		   | '(' ident actions ')'  {$$ = append_jaql_pipe(make_varname($2), $3);}
 		   ;
 
-opt_each: /* empty */  {$$ = make_varname(GDKstrdup("$"), NULL);}
-		| EACH _IDENT  {$$ = make_varname($2, NULL);}
+opt_each: /* empty */  {$$ = make_varname(GDKstrdup("$"));}
+		| EACH _IDENT  {$$ = make_varname($2);}
 		;
 
 sort_arg: variable opt_asc_desc
@@ -236,15 +236,11 @@ predicate: opt_not variable
 		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 ;
 
-variable: ident opt_arr_ind     {$$ = make_varname($1, $2);}
-		| variable _DOT _IDENT opt_arr_ind
-		                        {$$ = append_varname($1, $3, $4);}
+variable: ident                     {$$ = make_varname($1);}
+		| variable _DOT _IDENT      {$$ = append_varname($1, $3);}
+		| variable '[' '*' ']'      {$$ = append_vararray($1, 0, 1);}
+		| variable '[' _NUMBER ']'  {$$ = append_vararray($1, $3, 0);}
 		;
-
-opt_arr_ind: /* empty */        {$$ = NULL;}
-		   | '[' '*' ']'        {$$ = make_array_index(0, 1);}
-		   | '[' _NUMBER ']'    {$$ = make_array_index($2, 0);}
-		   ;
 
 and_or: _AND  {$$ = make_comp(j_and);}
 	  | _OR   {$$ = make_comp(j_or);}
@@ -295,7 +291,7 @@ arr_list: arr_list ',' val_var_arith  {$$ = append_elem($1, $3);}
 		;
 
 obj_pair: variable                    {$$ = make_pair(NULL, $1);}
-		| variable _DOT '*'           {$$ = make_pair(NULL, append_varname($1, NULL, NULL));}
+		| variable _DOT '*'           {$$ = make_pair(NULL, append_varname($1, NULL));}
 		| _STRING ':' val_var_arith   {$$ = make_pair($1, $3);}
 		;
 

@@ -117,7 +117,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
 
-	if (t->tval2->nval == -1 && t->tval1 == NULL) {
+	if (t->nval == -1 && t->tval1 == NULL) {
 		/* all array members (return as a single array) */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -126,7 +126,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		q = pushArgument(mb, q, a);
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
-	} else if (t->tval2->nval == -1 && t->tval1 != NULL) {
+	} else if (t->nval == -1 && t->tval1 != NULL) {
 		/* all array members of which objects will be dereferenced */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);
@@ -200,8 +200,8 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, b);
-		q = pushOid(mb, q, (oid)t->tval2->nval);
-		q = pushOid(mb, q, (oid)t->tval2->nval);
+		q = pushOid(mb, q, (oid)t->nval);
+		q = pushOid(mb, q, (oid)t->nval);
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -252,22 +252,6 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 
 	assert(t && t->type == j_var);
 
-	if (t->tval1 == NULL) {
-		if (t->tval2 != NULL) {
-			b = dumparrrefvar(mb, t, elems, *j5);
-		} else {
-			/* just var, has no derefs or anything, so all */
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, batRef);
-			setFunctionId(q, mirrorRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, elems);
-			b = getArg(q, 0);
-			pushInstruction(mb, q);
-		}
-		return b;
-	}
-
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, batRef);
 	setFunctionId(q, mirrorRef);
@@ -276,97 +260,13 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 	b = getArg(q, 0);
 	pushInstruction(mb, q);
 
+	/* just var, has no derefs or anything, so all */
+	if (t->tval1 == NULL)
+		return b;
+
 	a = elems;
-	if (t->tval2 != 0) {
-		c = dumparrrefvar(mb, t, a, *j5);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, joinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, c);
-		q = pushArgument(mb, q, b);
-		b = getArg(q, 0);
-		pushInstruction(mb, q);
-		/* re-retrieve kinds now we've updated again */
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, semijoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j1);
-		q = pushArgument(mb, q, b);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		if (t->tval2->nval == -1)
-			encapsulate = 1;
-	}
 	for (t = t->tval1; t != NULL; t = t->tval1) {
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, uselectRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, a);
-		q = pushBte(mb, q, 'o');  /* deref requires object */
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, semijoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j6);
-		q = pushArgument(mb, q, a);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, batRef);
-		setFunctionId(q, reverseRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, a);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, joinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, a);
-		q = pushArgument(mb, q, b);
-		b = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, semijoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j7);
-		q = pushArgument(mb, q, a);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, uselectRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, a);
-		q = pushStr(mb, q, t->sval);
-		a = getArg(q, 0);
-		pushInstruction(mb, q);
-		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, semijoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, b);
-		q = pushArgument(mb, q, a);
-		b = getArg(q, 0);
-		pushInstruction(mb, q);
-		/* retrieve kinds on multiple indirections */
-		if (a != elems && (t->tval1 != NULL || t->tval2 != NULL)) {
-			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, semijoinRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
-			q = pushArgument(mb, q, b);
-			a = getArg(q, 0);
-			pushInstruction(mb, q);
-		}
-		if (t->tval2 != NULL) {
+		if (t->type == j_arr_idx) {
 			c = dumparrrefvar(mb, t, a, *j5);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
@@ -385,8 +285,75 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 			q = pushArgument(mb, q, b);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
-			if (t->tval1 != NULL && t->tval2->nval == -1)
+			if (t->tval1 != NULL && t->nval == -1)
 				encapsulate = 1;
+		} else {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, uselectRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			q = pushBte(mb, q, 'o');  /* deref requires object */
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, semijoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, *j6);
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, joinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			q = pushArgument(mb, q, b);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, semijoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, *j7);
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, uselectRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			q = pushStr(mb, q, t->sval);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, semijoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, b);
+			q = pushArgument(mb, q, a);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+		}
+		/* retrieve kinds on multiple indirections */
+		if (a != elems && t->tval1 != NULL) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, semijoinRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, b);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
 		}
 	}
 	if (encapsulate) {
@@ -3207,8 +3174,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				switch (w->tval1->type) {
 					enum treetype oarrtrg = j_invalid;
 					case j_var:
-						if (w->tval1->tval2 != NULL &&
-								w->tval1->tval2->nval == -1)
+						if (w->tval1->tval1 != NULL &&
+								w->tval1->tval1->type == j_arr_idx)
 						{
 							oarrtrg = coltypes[i];
 							coltypes[i] = j_json_arr;
