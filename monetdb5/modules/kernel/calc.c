@@ -635,10 +635,10 @@ CMDsetoid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-calc_export str CALCbat2batid(int *ret, int *bid);
+calc_export str CALCbat2batid(int *ret, bat *bid);
 
 str
-CALCbat2batid(bat *ret, int *bid)
+CALCbat2batid(bat *ret, bat *bid)
 {
 	BAT *b;
 

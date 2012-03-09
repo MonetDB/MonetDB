@@ -56,7 +56,7 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 }
 
 static str
-CMDbatUNARY(int *ret, int *bid, BAT *(*batfunc)(BAT *), const char *malfunc)
+CMDbatUNARY(bat *ret, bat *bid, BAT *(*batfunc)(BAT *), const char *malfunc)
 {
 	BAT *bn, *b;
 
@@ -71,7 +71,7 @@ CMDbatUNARY(int *ret, int *bid, BAT *(*batfunc)(BAT *), const char *malfunc)
 }
 
 static str
-CMDbatUNARY1(int *ret, int *bid, int accum,
+CMDbatUNARY1(bat *ret, bat *bid, int accum,
 			 BAT *(*batfunc)(BAT *, int), const char *malfunc)
 {
 	BAT *bn, *b;
@@ -87,7 +87,7 @@ CMDbatUNARY1(int *ret, int *bid, int accum,
 }
 
 static str
-CMDbatUNARY2(int *ret, int *bid, int accum, int abort_on_error,
+CMDbatUNARY2(bat *ret, bat *bid, int accum, int abort_on_error,
 			 BAT *(*batfunc)(BAT *, int, int), const char *malfunc)
 {
 	BAT *bn, *b;
@@ -102,106 +102,106 @@ CMDbatUNARY2(int *ret, int *bid, int accum, int abort_on_error,
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbatISZERO(int *ret, int *bid);
+batcalc_export str CMDbatISZERO(bat *ret, bat *bid);
 
 str
-CMDbatISZERO(int *ret, int *bid)
+CMDbatISZERO(bat *ret, bat *bid)
 {
 	return CMDbatUNARY(ret, bid, BATcalciszero, "batcalc.iszero");
 }
 
-batcalc_export str CMDbatISNIL(int *ret, int *bid);
+batcalc_export str CMDbatISNIL(bat *ret, bat *bid);
 
 str
-CMDbatISNIL(int *ret, int *bid)
+CMDbatISNIL(bat *ret, bat *bid)
 {
 	return CMDbatUNARY(ret, bid, BATcalcisnil, "batcalc.isnil");
 }
 
-batcalc_export str CMDbatNOT(int *ret, int *bid);
+batcalc_export str CMDbatNOT(bat *ret, bat *bid);
 
 str
-CMDbatNOT(int *ret, int *bid)
+CMDbatNOT(bat *ret, bat *bid)
 {
 	return CMDbatUNARY1(ret, bid, 0, BATcalcnot, "batcalc.not");
 }
 
-batcalc_export str CMDbatNOTaccum(int *ret, int *bid, int *accum);
+batcalc_export str CMDbatNOTaccum(bat *ret, bat *bid, int *accum);
 
 str
-CMDbatNOTaccum(int *ret, int *bid, int *accum)
+CMDbatNOTaccum(bat *ret, bat *bid, int *accum)
 {
 	return CMDbatUNARY1(ret, bid, *accum, BATcalcnot, "batcalc.not");
 }
 
-batcalc_export str CMDbatABS(int *ret, int *bid);
+batcalc_export str CMDbatABS(bat *ret, bat *bid);
 
 str
-CMDbatABS(int *ret, int *bid)
+CMDbatABS(bat *ret, bat *bid)
 {
 	return CMDbatUNARY1(ret, bid, 0, BATcalcabsolute, "batcalc.abs");
 }
 
-batcalc_export str CMDbatABSaccum(int *ret, int *bid, int *accum);
+batcalc_export str CMDbatABSaccum(bat *ret, bat *bid, int *accum);
 
 str
-CMDbatABSaccum(int *ret, int *bid, int *accum)
+CMDbatABSaccum(bat *ret, bat *bid, int *accum)
 {
 	return CMDbatUNARY1(ret, bid, *accum, BATcalcabsolute, "batcalc.abs");
 }
 
-batcalc_export str CMDbatINCR(int *ret, int *bid);
+batcalc_export str CMDbatINCR(bat *ret, bat *bid);
 
 str
-CMDbatINCR(int *ret, int *bid)
+CMDbatINCR(bat *ret, bat *bid)
 {
 	return CMDbatUNARY2(ret, bid, 0, 1, BATcalcincr, "batcalc.incr");
 }
 
-batcalc_export str CMDbatINCRaccum(int *ret, int *bid, int *accum);
+batcalc_export str CMDbatINCRaccum(bat *ret, bat *bid, int *accum);
 
 str
-CMDbatINCRaccum(int *ret, int *bid, int *accum)
+CMDbatINCRaccum(bat *ret, bat *bid, int *accum)
 {
 	return CMDbatUNARY2(ret, bid, *accum, 1, BATcalcincr, "batcalc.incr");
 }
 
-batcalc_export str CMDbatDECR(int *ret, int *bid);
+batcalc_export str CMDbatDECR(bat *ret, bat *bid);
 
 str
-CMDbatDECR(int *ret, int *bid)
+CMDbatDECR(bat *ret, bat *bid)
 {
 	return CMDbatUNARY2(ret, bid, 0, 1, BATcalcdecr, "batcalc.decr");
 }
 
-batcalc_export str CMDbatDECRaccum(int *ret, int *bid, int *accum);
+batcalc_export str CMDbatDECRaccum(bat *ret, bat *bid, int *accum);
 
 str
-CMDbatDECRaccum(int *ret, int *bid, int *accum)
+CMDbatDECRaccum(bat *ret, bat *bid, int *accum)
 {
 	return CMDbatUNARY2(ret, bid, *accum, 1, BATcalcdecr, "batcalc.decr");
 }
 
-batcalc_export str CMDbatNEG(int *ret, int *bid);
+batcalc_export str CMDbatNEG(bat *ret, bat *bid);
 
 str
-CMDbatNEG(int *ret, int *bid)
+CMDbatNEG(bat *ret, bat *bid)
 {
 	return CMDbatUNARY1(ret, bid, 0, BATcalcnegate, "batcalc.neg");
 }
 
-batcalc_export str CMDbatNEGaccum(int *ret, int *bid, int *accum);
+batcalc_export str CMDbatNEGaccum(bat *ret, bat *bid, int *accum);
 
 str
-CMDbatNEGaccum(int *ret, int *bid, int *accum)
+CMDbatNEGaccum(bat *ret, bat *bid, int *accum)
 {
 	return CMDbatUNARY1(ret, bid, *accum, BATcalcnegate, "batcalc.neg");
 }
 
-batcalc_export str CMDbatSIGN(int *ret, int *bid);
+batcalc_export str CMDbatSIGN(bat *ret, bat *bid);
 
 str
-CMDbatSIGN(int *ret, int *bid)
+CMDbatSIGN(bat *ret, bat *bid)
 {
 	return CMDbatUNARY(ret, bid, BATcalcsign, "batcalc.sign");
 }
@@ -283,7 +283,7 @@ calcmodtype(int tp1, int tp2)
 }
 
 static str
-CMDbatBINARY3(int *ret, int *bid1, int *bid2,
+CMDbatBINARY3(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *, int, int, int),
 			  int (*typefunc)(int, int),
 			  int accum, int abort_on_error,
@@ -351,7 +351,7 @@ CMDbatBINARY3cst(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-CMDbatBINARY2(int *ret, int *bid1, int *bid2,
+CMDbatBINARY2(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *, int, int),
 			  int accum, int abort_on_error,
 			  const char *malfunc)
@@ -416,7 +416,7 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-CMDbatBINARY1(int *ret, int *bid1, int *bid2,
+CMDbatBINARY1(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *, int),
 			  int accum,
 			  const char *malfunc)
@@ -481,7 +481,7 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-CMDbatBINARY0(int *ret, int *bid1, int *bid2,
+CMDbatBINARY0(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *),
 			  const char *malfunc)
 {
@@ -543,37 +543,37 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 	return MAL_SUCCEED;
 }
 
-batcalc_export str CMDbatADD(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatADD(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatADD(int *ret, int *bid1, int *bid2)
+CMDbatADD(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcadd,
 						 calctype, 0, 0, "batcalc.add_noerror");
 }
 
-batcalc_export str CMDbatADDsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatADDsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatADDsignal(int *ret, int *bid1, int *bid2)
+CMDbatADDsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcadd,
 						 calctype, 0, 1, "batcalc.+");
 }
 
-batcalc_export str CMDbatADDsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatADDsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatADDsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatADDsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcadd,
 						 calctype, *accum, 1, "batcalc.+");
 }
 
-batcalc_export str CMDbatADDenlarge(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatADDenlarge(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatADDenlarge(int *ret, int *bid1, int *bid2)
+CMDbatADDenlarge(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcadd,
 						 calctypeenlarge, 0, 1, "batcalc.add_enlarge");
@@ -617,37 +617,37 @@ CMDbatADDcstenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							calctypeenlarge, 0, 1, "batcalc.add_enlarge");
 }
 
-batcalc_export str CMDbatSUB(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatSUB(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatSUB(int *ret, int *bid1, int *bid2)
+CMDbatSUB(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcsub,
 						 calctype, 0, 0, "batcalc.sub_noerror");
 }
 
-batcalc_export str CMDbatSUBsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatSUBsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatSUBsignal(int *ret, int *bid1, int *bid2)
+CMDbatSUBsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcsub,
 						 calctype, 0, 1, "batcalc.-");
 }
 
-batcalc_export str CMDbatSUBsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatSUBsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatSUBsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatSUBsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcsub,
 						 calctype, *accum, 1, "batcalc.-");
 }
 
-batcalc_export str CMDbatSUBenlarge(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatSUBenlarge(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatSUBenlarge(int *ret, int *bid1, int *bid2)
+CMDbatSUBenlarge(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcsub,
 						 calctypeenlarge, 0, 1, "batcalc.sub_enlarge");
@@ -691,37 +691,37 @@ CMDbatSUBcstenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							calctypeenlarge, 0, 1, "batcalc.sub_enlarge");
 }
 
-batcalc_export str CMDbatMUL(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatMUL(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatMUL(int *ret, int *bid1, int *bid2)
+CMDbatMUL(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmul,
 						 calctype, 0, 0, "batcalc.mul_noerror");
 }
 
-batcalc_export str CMDbatMULsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatMULsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatMULsignal(int *ret, int *bid1, int *bid2)
+CMDbatMULsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmul,
 						 calctype, 0, 1, "batcalc.*");
 }
 
-batcalc_export str CMDbatMULsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatMULsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatMULsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatMULsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmul,
 						 calctype, *accum, 1, "batcalc.*");
 }
 
-batcalc_export str CMDbatMULenlarge(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatMULenlarge(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatMULenlarge(int *ret, int *bid1, int *bid2)
+CMDbatMULenlarge(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmul,
 						 calctypeenlarge, 0, 1, "batcalc.mul_enlarge");
@@ -765,28 +765,28 @@ CMDbatMULcstenlarge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							calctypeenlarge, 0, 1, "batcalc.mul_enlarge");
 }
 
-batcalc_export str CMDbatDIV(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIV(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIV(int *ret, int *bid1, int *bid2)
+CMDbatDIV(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtype, 0, 0, "batcalc.div_noerror");
 }
 
-batcalc_export str CMDbatDIVsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIVsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIVsignal(int *ret, int *bid1, int *bid2)
+CMDbatDIVsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtype, 0, 1, "batcalc./");
 }
 
-batcalc_export str CMDbatDIVsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatDIVsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatDIVsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatDIVsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtype, *accum, 1, "batcalc./");
@@ -819,65 +819,65 @@ CMDbatDIVcstsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #if 0
-batcalc_export str CMDbatDIVflt(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIVflt(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIVflt(int *ret, int *bid1, int *bid2)
+CMDbatDIVflt(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtypeflt, 0, 0, "batcalc.div_fltnoerror");
 }
 
-batcalc_export str CMDbatDIVfltsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIVfltsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIVfltsignal(int *ret, int *bid1, int *bid2)
+CMDbatDIVfltsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtypeflt, 0, 1, "batcalc.div_flt");
 }
 
-batcalc_export str CMDbatDIVdbl(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIVdbl(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIVdbl(int *ret, int *bid1, int *bid2)
+CMDbatDIVdbl(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtypedbl, 0, 0, "batcalc.div_dblnoerror");
 }
 
-batcalc_export str CMDbatDIVdblsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatDIVdblsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatDIVdblsignal(int *ret, int *bid1, int *bid2)
+CMDbatDIVdblsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcdiv,
 						 calcdivtypedbl, 0, 1, "batcalc.div_dbl");
 }
 #endif
 
-batcalc_export str CMDbatMOD(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatMOD(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatMOD(int *ret, int *bid1, int *bid2)
+CMDbatMOD(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmod,
 						 calcmodtype, 0, 0, "batcalc.mod_noerror");
 }
 
-batcalc_export str CMDbatMODsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatMODsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatMODsignal(int *ret, int *bid1, int *bid2)
+CMDbatMODsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmod,
 						 calcmodtype, 0, 1, "batcalc.%");
 }
 
-batcalc_export str CMDbatMODsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatMODsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatMODsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatMODsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY3(ret, bid1, bid2, BATcalcmod,
 						 calcmodtype, *accum, 1, "batcalc.%");
@@ -909,18 +909,18 @@ CMDbatMODcstsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							calcmodtype, accum, 1, "batcalc.%");
 }
 
-batcalc_export str CMDbatXOR(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatXOR(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatXOR(int *ret, int *bid1, int *bid2)
+CMDbatXOR(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcxor, 0, "batcalc.xor");
 }
 
-batcalc_export str CMDbatXORaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatXORaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatXORaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatXORaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcxor, *accum, "batcalc.xor");
 }
@@ -939,18 +939,18 @@ CMDbatXORcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.xor");
 }
 
-batcalc_export str CMDbatOR(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatOR(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatOR(int *ret, int *bid1, int *bid2)
+CMDbatOR(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcor, 0, "batcalc.or");
 }
 
-batcalc_export str CMDbatORaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatORaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatORaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatORaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcor, *accum, "batcalc.or");
 }
@@ -969,18 +969,18 @@ CMDbatORcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.or");
 }
 
-batcalc_export str CMDbatAND(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatAND(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatAND(int *ret, int *bid1, int *bid2)
+CMDbatAND(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcand, 0, "batcalc.and");
 }
 
-batcalc_export str CMDbatANDaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatANDaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatANDaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatANDaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY1(ret, bid1, bid2, BATcalcand, *accum, "batcalc.and");
 }
@@ -999,10 +999,10 @@ CMDbatANDcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.and");
 }
 
-batcalc_export str CMDbatLSH(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatLSH(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatLSH(int *ret, int *bid1, int *bid2)
+CMDbatLSH(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalclsh, 0, 0, "batcalc.lsh_noerror");
 }
@@ -1019,18 +1019,18 @@ CMDbatLSHcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.lsh_noerror");
 }
 
-batcalc_export str CMDbatLSHsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatLSHsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatLSHsignal(int *ret, int *bid1, int *bid2)
+CMDbatLSHsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalclsh, 0, 1, "batcalc.<<");
 }
 
-batcalc_export str CMDbatLSHsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatLSHsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatLSHsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatLSHsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalclsh, *accum, 1, "batcalc.<<");
 }
@@ -1049,10 +1049,10 @@ CMDbatLSHcstsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.<<");
 }
 
-batcalc_export str CMDbatRSH(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatRSH(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatRSH(int *ret, int *bid1, int *bid2)
+CMDbatRSH(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalcrsh, 0, 0, "batcalc.rsh_noerror");
 }
@@ -1069,18 +1069,18 @@ CMDbatRSHcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.rsh_noerror");
 }
 
-batcalc_export str CMDbatRSHsignal(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatRSHsignal(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatRSHsignal(int *ret, int *bid1, int *bid2)
+CMDbatRSHsignal(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalcrsh, 0, 1, "batcalc.>>");
 }
 
-batcalc_export str CMDbatRSHsignalaccum(int *ret, int *bid1, int *bid2, int *accum);
+batcalc_export str CMDbatRSHsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum);
 
 str
-CMDbatRSHsignalaccum(int *ret, int *bid1, int *bid2, int *accum)
+CMDbatRSHsignalaccum(bat *ret, bat *bid1, bat *bid2, int *accum)
 {
 	return CMDbatBINARY2(ret, bid1, bid2, BATcalcrsh, *accum, 1, "batcalc.>>");
 }
@@ -1099,10 +1099,10 @@ CMDbatRSHcstsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.>>");
 }
 
-batcalc_export str CMDbatLT(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatLT(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatLT(int *ret, int *bid1, int *bid2)
+CMDbatLT(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalclt, "batcalc.<");
 }
@@ -1119,10 +1119,10 @@ CMDbatLTcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.<");
 }
 
-batcalc_export str CMDbatLE(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatLE(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatLE(int *ret, int *bid1, int *bid2)
+CMDbatLE(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalcle, "batcalc.<=");
 }
@@ -1139,10 +1139,10 @@ CMDbatLEcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.<=");
 }
 
-batcalc_export str CMDbatGT(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatGT(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatGT(int *ret, int *bid1, int *bid2)
+CMDbatGT(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalcgt, "batcalc.>");
 }
@@ -1159,10 +1159,10 @@ CMDbatGTcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.>");
 }
 
-batcalc_export str CMDbatGE(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatGE(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatGE(int *ret, int *bid1, int *bid2)
+CMDbatGE(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalcge, "batcalc.>=");
 }
@@ -1179,10 +1179,10 @@ CMDbatGEcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.>=");
 }
 
-batcalc_export str CMDbatEQ(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatEQ(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatEQ(int *ret, int *bid1, int *bid2)
+CMDbatEQ(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalceq, "batcalc.==");
 }
@@ -1199,10 +1199,10 @@ CMDbatEQcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.==");
 }
 
-batcalc_export str CMDbatNE(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatNE(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatNE(int *ret, int *bid1, int *bid2)
+CMDbatNE(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalcne, "batcalc.!=");
 }
@@ -1219,10 +1219,10 @@ CMDbatNEcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							"batcalc.!=");
 }
 
-batcalc_export str CMDbatCMP(int *ret, int *bid1, int *bid2);
+batcalc_export str CMDbatCMP(bat *ret, bat *bid1, bat *bid2);
 
 str
-CMDbatCMP(int *ret, int *bid1, int *bid2)
+CMDbatCMP(bat *ret, bat *bid1, bat *bid2)
 {
 	return CMDbatBINARY0(ret, bid1, bid2, BATcalccmp, "batcalc.cmp");
 }
