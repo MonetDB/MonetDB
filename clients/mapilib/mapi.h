@@ -207,7 +207,7 @@ mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_quick_response(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
 
-mapi_export MapiMsg mapi_timeout(Mapi mid, int time);
+mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
 mapi_export mapi_int64 mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);

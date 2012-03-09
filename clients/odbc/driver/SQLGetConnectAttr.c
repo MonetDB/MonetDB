@@ -74,7 +74,7 @@ SQLGetConnectAttr_(ODBCDbc *dbc,
 		*(SQLUINTEGER *) ValuePtr = dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE;
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:
-		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
+		*(SQLUINTEGER *) ValuePtr = dbc->sql_attr_connection_timeout;
 		break;
 	case SQL_ATTR_LOGIN_TIMEOUT:
 		*(SQLUINTEGER *) ValuePtr = 0;	/* no timeout */
