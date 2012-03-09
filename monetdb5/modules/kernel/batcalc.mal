@@ -11894,3 +11894,53 @@ pattern between(b:bat[:oid,:oid],lo:oid,hi:oid) :bit
 address CMDbatBETWEENcst
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
+
+command avg(b:bat[:oid,:bte]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:bte]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:sht]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:sht]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:int]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:int]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:wrd]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:wrd]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:lng]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:lng]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:flt]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:flt]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+command avg(b:bat[:oid,:dbl]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:dbl]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+

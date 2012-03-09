@@ -1298,3 +1298,31 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
 }
+
+batcalc_export str CMDcalcavg2(dbl *avg, lng *vals, bat *bid);
+
+str
+CMDcalcavg2(dbl *avg, lng *vals, bat *bid)
+{
+	BAT *b;
+	int ret;
+	BUN v;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+	ret = BATcalcavg(b, avg, &v);
+	BBPreleaseref(b->batCacheid);
+	if (ret == GDK_FAIL)
+		return mythrow(MAL, "aggr.avg", OPERATION_FAILED);
+	if (vals)
+		*vals = (lng) v;
+	return MAL_SUCCEED;
+}
+
+batcalc_export str CMDcalcavg(dbl *avg, bat *bid);
+
+str
+CMDcalcavg(dbl *avg, bat *bid)
+{
+	return CMDcalcavg2(avg, NULL, bid);
+}

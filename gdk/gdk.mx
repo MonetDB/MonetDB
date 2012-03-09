@@ -3355,6 +3355,7 @@ gdk_export int VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *l
 
 gdk_export BAT *BATconvert(BAT *b, int tp, int abort_on_error);
 gdk_export int VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]

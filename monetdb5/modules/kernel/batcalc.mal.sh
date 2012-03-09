@@ -463,3 +463,16 @@ comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 EOF
 done
+echo
+
+for tp in $numeric; do
+    cat <<EOF
+command avg(b:bat[:oid,:$tp]) :dbl
+address CMDcalcavg
+comment "average of non-nil values of B";
+command avg2(b:bat[:oid,:$tp]) (:dbl, :lng)
+address CMDcalcavg2
+comment "average and number of non-nil values of B";
+
+EOF
+done
