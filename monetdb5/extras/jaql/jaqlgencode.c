@@ -277,6 +277,28 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 	pushInstruction(mb, q);
 
 	a = elems;
+	if (t->tval2 != 0) {
+		c = dumparrrefvar(mb, t, a, *j5);
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, joinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, c);
+		q = pushArgument(mb, q, b);
+		b = getArg(q, 0);
+		pushInstruction(mb, q);
+		/* re-retrieve kinds now we've updated again */
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, algebraRef);
+		setFunctionId(q, semijoinRef);
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, *j1);
+		q = pushArgument(mb, q, b);
+		a = getArg(q, 0);
+		pushInstruction(mb, q);
+		if (t->tval2->nval == -1)
+			encapsulate = 1;
+	}
 	for (t = t->tval1; t != NULL; t = t->tval1) {
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);

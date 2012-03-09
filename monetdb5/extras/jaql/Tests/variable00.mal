@@ -13,3 +13,8 @@ jaql.x("m -> transform each n (n.a[1]);");
 jaql.x("m -> transform each n (n.a[*]);");
 jaql.x("m -> transform each n (n.a[*].b);");
 jaql.x("m -> transform each n (n.a[2].b);");
+jaql.x("o = [ [{\"a\":3},{\"a\":65}], [{\"a\":5},{\"a\":98}] ];");
+jaql.x("o -> transform each o (o);");
+jaql.x("o -> transform each o (o[1].a);");
+jaql.x("o -> transform each o (o[2].a);");
+jaql.x("o -> transform each o (o[*].a);");

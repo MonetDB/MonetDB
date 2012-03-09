@@ -32,6 +32,11 @@ function user.main():void;
     jaql.x("m -> transform each n (n.a[*]);");
     jaql.x("m -> transform each n (n.a[*].b);");
     jaql.x("m -> transform each n (n.a[2].b);");
+    jaql.x("o = [ [{\"a\":3},{\"a\":65}], [{\"a\":5},{\"a\":98}] ];");
+    jaql.x("o -> transform each o (o);");
+    jaql.x("o -> transform each o (o[1].a);");
+    jaql.x("o -> transform each o (o[2].a);");
+    jaql.x("o -> transform each o (o[*].a);");
 end main;
 [ 1, 2, 4, { "a": 5 } ]
 [ 1, 2 ]
@@ -45,6 +50,10 @@ end main;
 [ [ 3, 65, { "b": 8 }, 72 ], [ 5, { "b": 98 }, 2, 65 ] ]
 [ [ 8 ], [ 98 ] ]
 [ 8, null ]
+[ [ { "a": 3 }, { "a": 65 } ], [ { "a": 5 }, { "a": 98 } ] ]
+[ 65, 98 ]
+[ null, null ]
+[ [ 3, 65 ], [ 5, 98 ] ]
 
 # 21:12:04 >  
 # 21:12:04 >  "Done."
