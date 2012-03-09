@@ -25,7 +25,7 @@ Ready.
 
 #CREATE ARRAY ary (x INTEGER DIMENSION, v FLOAT DEFAULT 3.7);
 #SELECT * FROM ary;
-% sys.ary,	sys.ary # table_name
+% ts.ary,	ts.ary # table_name
 % x,	v # name
 % int,	double # type
 % 1,	24 # length

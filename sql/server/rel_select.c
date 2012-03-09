@@ -511,7 +511,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			/* Only create 1 group and repeat the numbers once */
 			append(args, exp_atom_int(sql->sa, 1));
 			append(args, exp_atom_int(sql->sa, 1));
-			sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(args), F_FUNC);
+			sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series1", exps_subtype(args), F_FUNC);
 			if (!sf)
 				return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 			slc_val = exp_op(sql->sa, args, sf);
@@ -4177,7 +4177,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(srs_args, os_sto[i]);
 		append(srs_args, nrep[i]);
 		append(srs_args, ngrp[i]);
-		if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series1", exps_subtype(srs_args), F_FUNC)))
+		if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series1", exps_subtype(srs_args), F_FUNC)))
 			return sql_error(sql, 02, "failed to bind to the SQL function \"array_series1\"");
 
 		append(aggr_args, dim[i]);
@@ -4193,7 +4193,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
 	}
-	if (!(sf = sql_bind_func_(sql->sa, sql->session->schema, aggrstr2, aggr_types, F_FUNC)))
+	if (!(sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), aggrstr2, aggr_types, F_FUNC)))
 		return sql_error(sql, 02, "failed to bind to the SQL function \"%s\"", aggrstr2);
 	exp = exp_op(sql->sa, aggr_args, sf);
 	if (!exp->name) {

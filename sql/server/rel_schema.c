@@ -1071,7 +1071,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop)));
 				append(args, exp_atom_int(sql->sa, N[i]));
 				append(args, exp_atom_int(sql->sa, M[i]));
-				sf = sql_bind_func_(sql->sa, sql->session->schema, "array_series", exps_subtype(args), F_FUNC);
+				sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series", exps_subtype(args), F_FUNC);
 				if (!sf)
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
 				func_exp = exp_op(sql->sa, args, sf);
@@ -1098,7 +1098,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				}
 				append(args, exp_atom_lng(sql->sa, cntall));
 				append(args, e);
-				sf = sql_bind_func_(sql->sa, sql->session->schema, "array_filler", exps_subtype(args), F_FUNC);
+				sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_filler", exps_subtype(args), F_FUNC);
 				if (!sf)
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_filler\"");
 				func_exp = exp_op(sql->sa, args, sf);
