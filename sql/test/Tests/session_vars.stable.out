@@ -102,7 +102,7 @@ Ready.
 % single_value # name
 % boolean # type
 % 5 # length
-[ NULL	]
+[ true	]
 
 # 12:30:00 >  
 # 12:30:00 >  Done.

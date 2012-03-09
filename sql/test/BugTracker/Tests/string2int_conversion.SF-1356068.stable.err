@@ -79,12 +79,12 @@ stderr of test 'string2int_conversion.SF-1356068` in directory 'test/BugTracker`
 # 19:33:07 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33470 
 # 19:33:07 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = monetdb@madrid:34599
 QUERY = insert into test values ('');
-ERROR = !conversion of string '' failed
-MAPI  = monetdb@sofia:39182
+ERROR = !conversion of string '' to type sht failed.
+MAPI  = monetdb@madrid:34599
 QUERY = insert into test values ('');
-ERROR = !conversion of string '' failed
+ERROR = !conversion of string '' to type sht failed.
 
 # 19:33:07 >  
 # 19:33:07 >  Done.

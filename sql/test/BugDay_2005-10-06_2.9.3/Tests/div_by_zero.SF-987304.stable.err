@@ -79,12 +79,12 @@ stderr of test 'div_by_zero.SF-987304` in directory 'test/BugDay_2005-10-06_2.9.
 # 19:22:52 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=32644 
 # 19:22:52 >  
 
-MAPI  = monetdb@madrid:31650
+MAPI  = monetdb@madrid:34599
 QUERY = select 1/0;
-ERROR = !Illegal argument Division by zero
-MAPI  = monetdb@madrid:31650
+ERROR = !division by zero.
+MAPI  = monetdb@madrid:34599
 QUERY = select x/y from a;
-ERROR = !Division by zero
+ERROR = !division by zero.
 
 # 19:22:52 >  
 # 19:22:52 >  Done.
