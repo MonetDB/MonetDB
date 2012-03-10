@@ -980,7 +980,7 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 }
 
 str
-JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
+JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *arrid)
 {
 	jsonbat jb;
 	BAT *b;
@@ -992,13 +992,12 @@ JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *
 
 	/* find types of outermost array */
 	bi = bat_iterator(jb.kind);
-	if (*(bte *)BUNtail(bi, BUNfirst(jb.kind)) != 'a') {
+	BUNfndOID(p, bi, arrid);
+	if (*(bte *)BUNtail(bi, p) != 'a') {
 		unloadbats();
 		throw(MAL, "json.unwraptype", "JSON value must be an array");
 	}
-	b = BATselect(BATmirror(jb.array),
-					BUNhead(bi, BUNfirst(jb.kind)),
-					BUNhead(bi, BUNfirst(jb.kind)));
+	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -1042,7 +1041,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *array = (int *)getArgReference(stk, pci, 5);
 	int *object = (int *)getArgReference(stk, pci, 6);
 	int *name = (int *)getArgReference(stk, pci, 7);
-	ValPtr tpe = getArgReference(stk, pci, 8);
+	oid *arrid = (oid *)getArgReference(stk, pci, 8);
+	ValPtr tpe = getArgReference(stk, pci, 9);
 	jsonbat jb;
 	BATiter bi, bis, bii, bid;
 	BAT *b, *r;
@@ -1071,13 +1071,12 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* find types of outermost array */
 	bi = bat_iterator(jb.kind);
-	if (*(bte *)BUNtail(bi, BUNfirst(jb.kind)) != 'a') {
+	BUNfndOID(p, bi, arrid);
+	if (*(bte *)BUNtail(bi, p) != 'a') {
 		unloadbats();
-		throw(MAL, "json.unwraptype", "JSON value must be an array");
+		throw(MAL, "json.wraptype", "JSON value must be an array");
 	}
-	b = BATselect(BATmirror(jb.array),
-					BUNhead(bi, BUNfirst(jb.kind)),
-					BUNhead(bi, BUNfirst(jb.kind)));
+	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
 

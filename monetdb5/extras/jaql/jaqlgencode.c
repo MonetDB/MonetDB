@@ -3327,6 +3327,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								q = pushArgument(mb, q, b);
 								q = pushArgument(mb, q, *j6);
 								q = pushArgument(mb, q, *j7);
+								q = pushOid(mb, q, (oid)0);
 								dynaarg[i][0] = getArg(q, 0);
 								pushInstruction(mb, q);
 
@@ -3361,6 +3362,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, b);
 									q = pushArgument(mb, q, *j6);
 									q = pushArgument(mb, q, *j7);
+									q = pushOid(mb, q, (oid)0);
 									q = pushStr(mb, q, "");
 									dynaarg[i][1] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -3401,6 +3403,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, b);
 									q = pushArgument(mb, q, *j6);
 									q = pushArgument(mb, q, *j7);
+									q = pushOid(mb, q, (oid)0);
 									q = pushDbl(mb, q, 0.0);
 									dynaarg[i][2] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -3441,6 +3444,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, b);
 									q = pushArgument(mb, q, *j6);
 									q = pushArgument(mb, q, *j7);
+									q = pushOid(mb, q, (oid)0);
 									q = pushLng(mb, q, 0);
 									dynaarg[i][3] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -5581,6 +5585,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							q = pushArgument(mb, q, j5);
 							q = pushArgument(mb, q, j6);
 							q = pushArgument(mb, q, j7);
+							q = pushOid(mb, q, (oid)0);
 							a = getArg(q, 0);
 							dynaarg[i][0] = a;
 							pushInstruction(mb, q);
@@ -5616,6 +5621,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j5);
 								q = pushArgument(mb, q, j6);
 								q = pushArgument(mb, q, j7);
+								q = pushOid(mb, q, (oid)0);
 								q = pushStr(mb, q, "");
 								dynaarg[i][1] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -5656,6 +5662,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j5);
 								q = pushArgument(mb, q, j6);
 								q = pushArgument(mb, q, j7);
+								q = pushOid(mb, q, (oid)0);
 								q = pushDbl(mb, q, 0.0);
 								dynaarg[i][2] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -5696,6 +5703,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j5);
 								q = pushArgument(mb, q, j6);
 								q = pushArgument(mb, q, j7);
+								q = pushOid(mb, q, (oid)0);
 								q = pushLng(mb, q, 0);
 								dynaarg[i][3] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -5808,6 +5816,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 									q = pushArgument(mb, q, a5);
 									q = pushArgument(mb, q, a6);
 									q = pushArgument(mb, q, a7);
+									q = pushOid(mb, q, (oid)0);
 									a = getArg(q, 0);
 									dynaarg[i][0] = a;
 									pushInstruction(mb, q);
@@ -5842,6 +5851,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										q = pushArgument(mb, q, a5);
 										q = pushArgument(mb, q, a6);
 										q = pushArgument(mb, q, a7);
+										q = pushOid(mb, q, (oid)0);
 										q = pushStr(mb, q, "");
 										dynaarg[i][1] = getArg(q, 0);
 										pushInstruction(mb, q);
@@ -5882,6 +5892,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										q = pushArgument(mb, q, a5);
 										q = pushArgument(mb, q, a6);
 										q = pushArgument(mb, q, a7);
+										q = pushOid(mb, q, (oid)0);
 										q = pushDbl(mb, q, 0.0);
 										dynaarg[i][2] = getArg(q, 0);
 										pushInstruction(mb, q);
@@ -5922,6 +5933,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 										q = pushArgument(mb, q, a5);
 										q = pushArgument(mb, q, a6);
 										q = pushArgument(mb, q, a7);
+										q = pushOid(mb, q, (oid)0);
 										q = pushLng(mb, q, 0);
 										dynaarg[i][3] = getArg(q, 0);
 										pushInstruction(mb, q);

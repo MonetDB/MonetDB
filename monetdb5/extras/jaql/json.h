@@ -42,7 +42,7 @@ json_export str JSONload(int *kind, int *string, int *integer, int *doble, int *
 json_export str JSONdrop(int *ret, str *name);
 json_export str JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, int *elems, oid *startoid);
 json_export str JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *elems);
-json_export str JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name);
+json_export str JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *arrid);
 json_export str JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
