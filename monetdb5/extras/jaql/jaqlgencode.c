@@ -4095,6 +4095,37 @@ changetmplrefsjoin(tree *t)
 	}
 }
 
+static void
+changetmplrefsgroup(tree *t, char *groupkeyvar, tree *groupexpr)
+{
+	tree *w;
+
+	for (w = t; w != NULL; w = w->next) {
+		if (w->type == j_var && strcmp(w->sval, groupkeyvar) == 0) {
+			/* inject [0].groupexpr indirection to match the group output */
+			tree *l, *m, *n = GDKzalloc(sizeof(tree));
+			l = n;
+			n->type = j_arr_idx;
+			n->nval = 0;
+			for (m = groupexpr->tval1; m != NULL; m = m->tval1) {
+				n = n->tval1 = GDKzalloc(sizeof(tree));
+				n->type = m->type;
+				n->sval = m->sval != NULL ? GDKstrdup(m->sval) : NULL;
+				n->nval = m->nval;
+			}
+			n->tval1 = w->tval1;
+			w->tval1 = l;
+			continue;
+		}
+		if (w->tval1 != NULL)
+			changetmplrefsgroup(w->tval1, groupkeyvar, groupexpr);
+		if (w->tval2 != NULL)
+			changetmplrefsgroup(w->tval2, groupkeyvar, groupexpr);
+		if (w->tval3 != NULL)
+			changetmplrefsgroup(w->tval3, groupkeyvar, groupexpr);
+	}
+}
+
 static int
 dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
 		int j1, int j2, int j3, int j4, int j5)
@@ -5225,6 +5256,22 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				} else {
 					/* co-group */
 				}
+
+				/* because all groups are contained in an array now, the
+				 * groupkeyvar is represented by "(sval)[0](tval2)",
+				 * e.g. $[0].a if the walk alias is $ and the var to
+				 * group on is $.a */
+				changetmplrefsgroup(t->tval2, t->tval1->sval, t->tval1->tval2);
+
+				/* transform this node into a transform one, and force
+				 * re-iteration so we simulate a pipe */
+				t->type = j_transform;
+				freetree(t->tval1);
+				t->tval1 = GDKzalloc(sizeof(tree));
+				t->tval1->type = j_var;
+				t->tval1->sval = GDKstrdup("$");
+
+				continue;
 			} break;
 			case j_sort: {
 				int l[4][2] = {{j2, 's'}, {j3, 'i'}, {j4, 'd'}, {0, 0}};
