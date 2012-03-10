@@ -3049,12 +3049,14 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
-mapi_timeout(Mapi mid, int timeout)
+mapi_timeout(Mapi mid, unsigned int timeout)
 {
 	mapi_check(mid, "mapi_timeout");
 	if (mid->trace == MAPI_TRACE)
-		printf("Set timeout to %d\n", timeout);
-	return mapi_setError(mid, "Operation not yet implemented", "mapi_timeout", MERROR);
+		printf("Set timeout to %u\n", timeout);
+	mnstr_settimeout(mid->to, timeout);
+	mnstr_settimeout(mid->from, timeout);
+	return MOK;
 }
 
 static MapiMsg

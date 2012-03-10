@@ -80,6 +80,7 @@ newODBCDbc(ODBCEnv *env)
 	dbc->Connected = 0;
 	dbc->sql_attr_autocommit = SQL_AUTOCOMMIT_ON;	/* default is autocommit */
 	dbc->sql_attr_metadata_id = SQL_FALSE;
+	dbc->sql_attr_connection_timeout = 0;
 	dbc->mid = NULL;
 	dbc->major = 0;
 	dbc->minor = 0;
