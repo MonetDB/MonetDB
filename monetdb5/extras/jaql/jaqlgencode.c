@@ -3172,15 +3172,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				assert(w->tval1 != NULL);
 
 				switch (w->tval1->type) {
-					enum treetype oarrtrg = j_invalid;
 					case j_var:
-						if (w->tval1->tval1 != NULL &&
-								w->tval1->tval1->type == j_arr_idx)
-						{
-							oarrtrg = coltypes[i];
-							coltypes[i] = j_json_arr;
-						}
-
 						b = dumpvariabletransformation(j, cntxt, mb, w->tval1, elems,
 								j1, j2, j3, j4, j5, j6, j7);
 						switch (coltypes[i]) {
@@ -3221,34 +3213,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								pushInstruction(mb, q);
 								break;
 							case j_sort_arg:
-							case j_json_arr:
-								if (coltypes[i] == j_json_arr) {
-									coltypes[i] = oarrtrg;
-
-									q = newInstruction(mb, ASSIGNsymbol);
-									setModuleId(q, batRef);
-									setFunctionId(q, reverseRef);
-									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-									q = pushArgument(mb, q, b);
-									b = getArg(q, 0);
-									pushInstruction(mb, q);
-									q = newInstruction(mb, ASSIGNsymbol);
-									setModuleId(q, algebraRef);
-									setFunctionId(q, joinRef);
-									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-									q = pushArgument(mb, q, b);
-									q = pushArgument(mb, q, *j5);
-									b = getArg(q, 0);
-									pushInstruction(mb, q);
-									q = newInstruction(mb, ASSIGNsymbol);
-									setModuleId(q, batRef);
-									setFunctionId(q, reverseRef);
-									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-									q = pushArgument(mb, q, b);
-									b = getArg(q, 0);
-									pushInstruction(mb, q);
-								}
-
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, batRef);
 								setFunctionId(q, newRef);

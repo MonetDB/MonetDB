@@ -1000,6 +1000,15 @@ JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *
 	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
+
+	/* special case for when the argument is a single array */
+	if (BATcount(b) == 1 && *(bte *)BUNtail(bi, BUNfirst(b)) == 'a') {
+		p = BUNfirst(b);
+		b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
+		b = BATsemijoin(jb.kind, b);
+		bi = bat_iterator(b);
+	}
+
 	BATloop(b, p, q) {
 		switch (*(bte *)BUNtail(bi, p)) {
 			case 't':
@@ -1074,11 +1083,19 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNfndOID(p, bi, arrid);
 	if (*(bte *)BUNtail(bi, p) != 'a') {
 		unloadbats();
-		throw(MAL, "json.wraptype", "JSON value must be an array");
+		throw(MAL, "json.unwrap", "JSON value must be an array");
 	}
 	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
+
+	/* special case for when the argument is a single array */
+	if (BATcount(b) == 1 && *(bte *)BUNtail(bi, BUNfirst(b)) == 'a') {
+		p = BUNfirst(b);
+		b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
+		b = BATsemijoin(jb.kind, b);
+		bi = bat_iterator(b);
+	}
 
 	bis = bat_iterator(jb.string);
 	bii = bat_iterator(jb.integer);
