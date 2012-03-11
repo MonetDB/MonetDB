@@ -45,8 +45,8 @@ command wrap(elems:bat[:oid,:any])(kind:bat[:oid,:bte],string:bat[:oid,:str],int
 address JSONwrap
 comment "Wrap the given BAT inside a JSON array";
 
-command unwraptype(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid):str
-address JSONunwraptype
+pattern unwraptype(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid):str
+address JSONunwrap
 comment "Retrieve the type necessary to unwrap the given JSON array to";
 
 pattern unwrap(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str],arrid:oid,tpe:any_1)(:bat[:oid,:any_1])

@@ -3212,7 +3212,57 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								dynaarg[i][6] = getArg(q, 6);
 								pushInstruction(mb, q);
 								break;
-							case j_sort_arg:
+							case j_sort_arg: /* bat[:oid,:num] */
+								/* check that b consists of arrays */
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, semijoinRef);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, b);
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, algebraRef);
+								setFunctionId(q, putName("antiuselect", 11));
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, c);
+								q = pushBte(mb, q, 'a');
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, aggrRef);
+								setFunctionId(q, countRef);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, c);
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, calcRef);
+								setFunctionId(q, putName("!=", 2));
+								q->barrier = BARRIERsymbol;
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, c);
+								q = pushWrd(mb, q, 0);
+								c = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, languageRef);
+								setFunctionId(q, putName("raise", 5));
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								q = pushStr(mb, q, 
+										"function requires array argument");
+								pushInstruction(mb, q);
+								q = newAssignment(mb);
+								getArg(q, 0) = c;
+								q->argc = q->retc = 1;
+								q->barrier = EXITsymbol;
+
 								q = newInstruction(mb, ASSIGNsymbol);
 								setModuleId(q, batRef);
 								setFunctionId(q, newRef);
@@ -5071,7 +5121,77 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					assert(t->tval1 == NULL ||
 							(t->tval1->next == NULL && t->tval1->tval1 == NULL));
 					w = t->tval1;
-					if (w == NULL) { /* simple "into" query */
+					if (w == NULL) {
+						/* simple "into" query: equivalent of a single group */
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("selectH", 7));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j5);
+						q = pushOid(mb, q, (oid)0);
+						a = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, putName("kdifference", 11));
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, a);
+						j5 = getArg(q, 0);
+						pushInstruction(mb, q);
+						b = dumpnextid(mb, j1);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, projectRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushOid(mb, q, b);
+						q = pushArgument(mb, q, a);
+						a = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, a);
+						q = pushOid(mb, q, (oid)0);
+						q = pushArgument(mb, q, b);
+						a = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, a);
+						q = pushArgument(mb, q, j5);
+						j5 = getArg(q, 0);
+						pushInstruction(mb, q);
+
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, newRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushType(mb, q, TYPE_oid);
+						q = pushType(mb, q, TYPE_bte);
+						c = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, c);
+						q = pushArgument(mb, q, j1);
+						j1 = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j1);
+						q = pushArgument(mb, q, b);
+						q = pushBte(mb, q, 'a');
+						j1 = getArg(q, 0);
+						pushInstruction(mb, q);
+
 						t->type = j_transform;
 						t->tval1 = GDKzalloc(sizeof(tree));
 						t->tval1->type = j_var;
@@ -5221,15 +5341,16 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						j1 = getArg(q, 0);
 						pushInstruction(mb, q);
 					}
+
+					/* because all groups are contained in an array now, the
+					 * groupkeyvar is represented by "(sval)[0](tval2)",
+					 * e.g. $[0].a if the walk alias is $ and the var to
+					 * group on is $.a */
+					changetmplrefsgroup(t->tval2,
+							t->tval1->sval, t->tval1->tval2);
 				} else {
 					/* co-group */
 				}
-
-				/* because all groups are contained in an array now, the
-				 * groupkeyvar is represented by "(sval)[0](tval2)",
-				 * e.g. $[0].a if the walk alias is $ and the var to
-				 * group on is $.a */
-				changetmplrefsgroup(t->tval2, t->tval1->sval, t->tval1->tval2);
 
 				/* transform this node into a transform one, and force
 				 * re-iteration so we simulate a pipe */
@@ -6022,9 +6143,10 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					conditionalcall(&a, mb, t->tval1,
 							coltypes, dynaarg, coltpos, q);
 
-					/* this is for top-level (in a JAQL pipe), so it should always
-					 * return a JSON struct, hence create an array with values from the
-					 * BAT we have returned */
+					/* this is for top-level (in a JAQL pipe), so it
+					 * should always return a JSON struct, hence create
+					 * an array with values from the BAT we have
+					 * returned */
 					r = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(r, putName("json", 4));
 					setFunctionId(r, putName("wrap", 4));

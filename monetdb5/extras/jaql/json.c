@@ -980,69 +980,10 @@ JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int 
 }
 
 str
-JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *arrid)
-{
-	jsonbat jb;
-	BAT *b;
-	BATiter bi;
-	BUN p, q;
-	enum typeorder {tlng, tdbl, tstr} totype = tlng;
-
-	loadbats();
-
-	/* find types of outermost array */
-	bi = bat_iterator(jb.kind);
-	BUNfndOID(p, bi, arrid);
-	if (*(bte *)BUNtail(bi, p) != 'a') {
-		unloadbats();
-		throw(MAL, "json.unwraptype", "JSON value must be an array");
-	}
-	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
-	b = BATsemijoin(jb.kind, b);
-	bi = bat_iterator(b);
-
-	/* special case for when the argument is a single array */
-	if (BATcount(b) == 1 && *(bte *)BUNtail(bi, BUNfirst(b)) == 'a') {
-		p = BUNfirst(b);
-		b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
-		b = BATsemijoin(jb.kind, b);
-		bi = bat_iterator(b);
-	}
-
-	BATloop(b, p, q) {
-		switch (*(bte *)BUNtail(bi, p)) {
-			case 't':
-			case 'f':
-			case 'n':
-			case 'i':
-				/* lower than or equal to the minimum type (lng) */
-				break;
-			case 'd':
-				if (totype < tdbl)
-					totype = tdbl;
-				break;
-			default:
-				totype = tstr;
-				break;
-		}
-	}
-
-	unloadbats();
-
-	if (totype == tlng) {
-		*ret = GDKstrdup("lng");
-	} else if (totype == tdbl) {
-		*ret = GDKstrdup("dbl");
-	} else {
-		*ret = GDKstrdup("str");
-	}
-	return MAL_SUCCEED;
-}
-
-str
 JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int *)getArgReference(stk, pci, 0);
+	str *rets = (str *)getArgReference(stk, pci, 0);
 	int *kind = (int *)getArgReference(stk, pci, 1);
 	int *string = (int *)getArgReference(stk, pci, 2);
 	int *integer = (int *)getArgReference(stk, pci, 3);
@@ -1051,7 +992,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *object = (int *)getArgReference(stk, pci, 6);
 	int *name = (int *)getArgReference(stk, pci, 7);
 	oid *arrid = (oid *)getArgReference(stk, pci, 8);
-	ValPtr tpe = getArgReference(stk, pci, 9);
+	ValPtr tpe;
 	jsonbat jb;
 	BATiter bi, bis, bii, bid;
 	BAT *b, *r;
@@ -1061,19 +1002,24 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dbl d;
 	str s;
 	char buf[24];
+	char isUnwrap = strcmp(pci->fcnname, "unwrap") == 0;
+	enum typeorder {tlng, tdbl, tstr} totype = tlng;
 
 	(void)mb;
 	(void)cntxt;
 
-	switch (tpe->vtype) {
-		case TYPE_str:
-		case TYPE_dbl:
-		case TYPE_lng:
-			/* ok, can do these */
-			break;
-		default:
-			throw(MAL, "json.unwrap", "can only unwrap to "
-					"str, dbl and lng values");
+	if (isUnwrap) {
+		tpe = getArgReference(stk, pci, 9);
+		switch (tpe->vtype) {
+			case TYPE_str:
+			case TYPE_dbl:
+			case TYPE_lng:
+				/* ok, can do these */
+				break;
+			default:
+				throw(MAL, "json.unwrap", "can only unwrap to "
+						"str, dbl and lng values");
+		}
 	}
 
 	loadbats();
@@ -1095,6 +1041,37 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATselect(BATmirror(jb.array), BUNhead(bi, p), BUNhead(bi, p));
 		b = BATsemijoin(jb.kind, b);
 		bi = bat_iterator(b);
+	}
+
+	if (!isUnwrap) {
+		BATloop(b, p, q) {
+			switch (*(bte *)BUNtail(bi, p)) {
+				case 't':
+				case 'f':
+				case 'n':
+				case 'i':
+					/* lower than or equal to the minimum type (lng) */
+					break;
+				case 'd':
+					if (totype < tdbl)
+						totype = tdbl;
+					break;
+				default:
+					totype = tstr;
+					break;
+			}
+		}
+
+		unloadbats();
+
+		if (totype == tlng) {
+			*rets = GDKstrdup("lng");
+		} else if (totype == tdbl) {
+			*rets = GDKstrdup("dbl");
+		} else {
+			*rets = GDKstrdup("str");
+		}
+		return MAL_SUCCEED;
 	}
 
 	bis = bat_iterator(jb.string);
