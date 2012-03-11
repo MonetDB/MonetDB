@@ -445,6 +445,9 @@ addOptimizers(Client c, MalBlkPtr mb, backend *be)
 	InstrPtr q;
 	ValRecord *val;
 
+	if ( be == 0)
+		be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+
 	val = stack_get_var(be->mvc,"optimizer");
 	addOptimizerPipe(c, mb, val? val->val.sval:"default_pipe");
 	/* point queries do not require mitosis and dataflow */

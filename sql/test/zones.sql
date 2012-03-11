@@ -2,21 +2,10 @@
 declare epsilon double;
 set epsilon=0.00001;
 
-create function Alpha(theta double, decl double) returns double
-    begin
-    if abs(decl)+theta > 89.9 then return cast(180.0 as double);
-    else 
-    return(degrees(abs(atan(sin(radians(theta)) /
-                             sqrt(abs( cos(radians(decl-theta))
-                                      * cos(radians(decl+theta))
-           )       )   )   )     ));
-	end if;
-    end;
-
 create table alphatest(expected double, computed double);
-insert into alphatest values(1.1547200925865859,Alpha(cast(1.0 as double),cast(30.0 as double)));
-insert into alphatest values(1.4142854109042293,Alpha(cast(1.0 as double),cast(45.0 as double)));
-insert into alphatest values(2.0003048809350625,Alpha(cast(1.0 as double),cast(60.0 as double)));
+insert into alphatest values(1.1547200925865859,Alpha(cast(30.0 as double),cast(1.0 as double)));
+insert into alphatest values(1.4142854109042293,Alpha(cast(45.0 as double),cast(1.0 as double)));
+insert into alphatest values(2.0003048809350625,Alpha(cast(60.0 as double),cast(1.0 as double)));
 
 select abs(expected - computed) as err
 from alphatest 

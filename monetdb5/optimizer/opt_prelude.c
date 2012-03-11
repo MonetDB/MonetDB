@@ -284,7 +284,7 @@ void optimizerInit(void){
 		copyRef = putName("copy",4);
 		copy_fromRef = putName("copy_from",9);
 		count_no_nilRef = putName("count_no_nil",12);
-		crossRef = putName("cross",5);
+		crossRef = putName("crossproduct",12);
 		createRef = putName("create",6);
 		datacellRef = putName("datacell",8);
 		dataflowRef = putName("dataflow",8);

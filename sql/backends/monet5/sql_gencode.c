@@ -627,7 +627,7 @@ dump_crossproduct(MalBlkPtr mb, int l, int r)
 	q = pushArgument(mb, q, z);
 	l = getDestVar(q);
 
-	q = newStmt2(mb, algebraRef, joinRef);
+	q = newStmt2(mb, algebraRef, crossRef);
 	q = pushArgument(mb, q, l);
 	q = pushArgument(mb, q, r);
 	return q;

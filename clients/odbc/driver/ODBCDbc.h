@@ -67,6 +67,7 @@ typedef struct tODBCDRIVERDBC {
 	int Connected;		/* 1 is Yes, 0 is No */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
+	SQLUINTEGER sql_attr_connection_timeout;
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */

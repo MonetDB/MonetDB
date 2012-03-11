@@ -130,6 +130,7 @@ struct stream {
 	short access;		/* read/write */
 	short type;		/* ascii/binary */
 	char *name;
+	unsigned int timeout;
 	union {
 		void *p;
 		int i;
@@ -146,6 +147,7 @@ struct stream {
 	int (*fsync) (stream *s);
 	int (*fgetpos) (stream *s, lng *p);
 	int (*fsetpos) (stream *s, lng p);
+	void (*update_timeout) (stream *s);
 };
 
 int
@@ -223,6 +225,14 @@ mnstr_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	if (s->errnr)
 		return s->errnr;
 	return (*s->write) (s, buf, elmsize, cnt);
+}
+
+void
+mnstr_settimeout(stream *s, unsigned int secs)
+{
+	s->timeout = secs;
+	if (s->update_timeout)
+		(*s->update_timeout)(s);
 }
 
 void
@@ -466,6 +476,8 @@ create_stream(const char *name)
 	s->fsync = NULL;
 	s->fgetpos = NULL;
 	s->fsetpos = NULL;
+	s->timeout = 0;
+	s->update_timeout = NULL;
 #ifdef STREAM_DEBUG
 	printf("create_stream %s -> " PTRFMT "\n", name ? name : "<unnamed>", PTRFMTCAST s);
 #endif
@@ -1350,7 +1362,8 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 #else
 		((nr = write(s->stream_data.s, ((const char *) buf + res), size - res)) > 0)
 #endif
-		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+		|| (s->timeout == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		|| errno == EINTR)
 		) {
 		errno = 0;
 		if (nr > 0)
@@ -1383,7 +1396,8 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 #else
 		((nr = read(s->stream_data.s, (void *) ((char *) buf + res), size - res)) > 0)
 #endif
-		|| errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+		|| (s->timeout == 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		|| errno == EINTR)
 		) {
 		errno = 0;
 		if (nr > 0)
@@ -1438,6 +1452,18 @@ socket_close(stream *s)
 	s->stream_data.s = INVALID_SOCKET;
 }
 
+static void
+socket_update_timeout(stream *s)
+{
+	SOCKET fd = s->stream_data.s;
+	struct timeval tv;
+
+	tv.tv_sec = s->timeout;
+	tv.tv_usec = 0;
+	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, (socklen_t) sizeof(tv));
+	setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, (socklen_t) sizeof(tv));
+}
+
 static stream *
 socket_open(SOCKET sock, const char *name)
 {
@@ -1452,6 +1478,7 @@ socket_open(SOCKET sock, const char *name)
 	s->close = socket_close;
 	s->flush = NULL;
 	s->stream_data.s = sock;
+	s->update_timeout = socket_update_timeout;
 
 	errno = 0;
 #if defined(SO_DOMAIN)
@@ -2030,6 +2057,18 @@ ic_close(stream *s)
 	s->stream_data.p = NULL;
 }
 
+static void
+ic_update_timeout(stream *s)
+{
+	struct icstream *ic = (struct icstream *) s->stream_data.p;
+
+	if (ic && ic->s) {
+		ic->s->timeout = s->timeout;
+		if (ic->s->update_timeout)
+			(*ic->s->update_timeout)(ic->s);
+	}
+}
+
 static stream *
 ic_open(iconv_t cd, stream *ss, const char *name)
 {
@@ -2042,6 +2081,7 @@ ic_open(iconv_t cd, stream *ss, const char *name)
 	s->write = ic_write;
 	s->close = ic_close;
 	s->flush = ic_flush;
+	s->update_timeout = ic_update_timeout;
 	s->stream_data.p = malloc(sizeof(struct icstream));
 	if (s->stream_data.p == NULL) {
 		mnstr_destroy(s);
@@ -2529,6 +2569,17 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	return (ssize_t) (cnt / elmsize);
 }
 
+static void
+bs_update_timeout(stream *ss)
+{
+	bs *s = ss->stream_data.p;
+	if (s && s->s) {
+		s->s->timeout = ss->timeout;
+		if (s->s->update_timeout)
+			(*s->s->update_timeout)(s->s);
+	}
+}
+
 /* Read the next bit of a block.  If this was the last bit of the
    current block, set the value pointed to by last to 1, otherwise set
    it to 0. */
@@ -2599,6 +2650,7 @@ block_stream(stream *s)
 	ns->close = bs_close;
 	ns->flush = bs_flush;
 	ns->destroy = bs_destroy;
+	ns->update_timeout = bs_update_timeout;
 	ns->stream_data.p = (void *) b;
 
 	return ns;
@@ -3156,6 +3208,17 @@ wbs_destroy(stream *s)
 	destroy(s);
 }
 
+static void
+wbs_update_timeout(stream *s)
+{
+	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
+	if (wbs && wbs->s) {
+		wbs->s->timeout = s->timeout;
+		if (wbs->s->update_timeout)
+			(*wbs->s->update_timeout)(wbs->s);
+	}
+}
+
 stream *
 wbstream(stream *s, size_t buflen)
 {
@@ -3169,6 +3232,7 @@ wbstream(stream *s, size_t buflen)
 			ns->flush = wbs_flush;
 			ns->close = wbs_close;
 			ns->destroy = wbs_destroy;
+			ns->update_timeout = wbs_update_timeout;
 			ns->stream_data.p = (void *) wbs;
 			wbs->s = s;
 			wbs->pos = 0;
