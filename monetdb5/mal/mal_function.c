@@ -497,81 +497,86 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	}
 }
 /*
- * @-
  * Upon cloning a function we should remove all the polymorphic flags.
  * Otherwise we may end up with a recursive clone.
  */
-Symbol  cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p){
+Symbol
+cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
+{
 	Symbol new;
 	int i,v;
 	InstrPtr pp;
 
 #ifdef DEBUG_CLONE
 	mnstr_printf(out,"clone the function %s to scope %s\n",
-			proc->name,scope->name);
+				 proc->name,scope->name);
 	printInstruction(out,mb,0,p,LIST_MAL_ALL);
 #endif
-	new= newFunction(scope->name, proc->name, getSignature(proc)->token );
+	new = newFunction(scope->name, proc->name, getSignature(proc)->token);
 	freeMalBlk(new->def);
 	new->def = copyMalBlk(proc->def);
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
-	mnstr_printf(out,"CLONED VERSION\n");
+	mnstr_printf(out, "CLONED VERSION\n");
 	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 	/* check for errors after fixation , TODO*/
 	pp = getSignature(new);
-	for(i=0;i<pp->argc;i++)
-	if( isPolymorphic(v= getArgType(new->def,pp,i)) ){
-		int t = getArgType(mb,p,i);
+	for (i = 0; i < pp->argc; i++)
+		if (isPolymorphic(v = getArgType(new->def,pp, i))) {
+			int t = getArgType(mb, p, i);
 
-		if ( v== TYPE_any)
-			replaceTypeVar(new->def, pp, v, t);
-		if( isaBatType(v) ){
-			if( getHeadIndex(v) )
-				replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
-			if( getTailIndex(v) )
-				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
-		} else
-			replaceTypeVar(new->def, pp, getTailIndex(v), t);
-	}
+			if (v == TYPE_any)
+				replaceTypeVar(new->def, pp, v, t);
+			if (isaBatType(v)) {
+				if (getHeadIndex(v))
+					replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
+				if (getTailIndex(v))
+					replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
+			} else
+				replaceTypeVar(new->def, pp, getTailIndex(v), t);
+		}
 #ifdef DEBUG_MAL_FCN
-	else mnstr_printf(out,"%d remains %s\n",i, getTypeName(v));
+		else
+			mnstr_printf(out,"%d remains %s\n", i, getTypeName(v));
 #endif
 	/* include the function at the proper place in the scope */
 	insertSymbol(scope,new);
 	/* clear polymorphic and type to force analysis*/
-	for(i=0;i<new->def->stop;i++) {
-		pp= getInstrPtr(new->def,i);
-	    pp->typechk= TYPE_UNKNOWN;
-		pp->polymorphic= 0;
+	for (i = 0; i < new->def->stop; i++) {
+		pp = getInstrPtr(new->def, i);
+	    pp->typechk = TYPE_UNKNOWN;
+		pp->polymorphic = 0;
 	}
 	/* clear type fixations */
-	for(i=0;i< new->def->vtop; i++)
-		clrVarFixed(new->def,i);
+	for (i = 0; i < new->def->vtop; i++)
+		clrVarFixed(new->def, i);
 
 #ifdef DEBUG_MAL_FCN
-	mnstr_printf(out,"FUNCTION TO BE CHECKED\n");
+	mnstr_printf(out, "FUNCTION TO BE CHECKED\n");
 	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 
 	/* check for errors after fixation , TODO*/
 	/* beware, we should now ignore any cloning */
-	if(proc->def->errors == 0) {
+	if (proc->def->errors == 0) {
 		chkProgram(out, scope,new->def);
-		if( new->def->errors){
-			showScriptException(out, new->def,0,MAL,"Error in cloned function");
+		if (new->def->errors) {
+			showScriptException(out, new->def, 0, MAL,
+								"Error in cloned function");
 #ifdef DEBUG_MAL_FCN
-			printFunction(out,new->def, 0, LIST_MAL_ALL);
+			printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 		}
 	}
 #ifdef DEBUG_CLONE
-	mnstr_printf(out,"newly cloned function added to %s %d \n",scope->name,i);
-	printFunction(out,new->def, 0, LIST_MAL_ALL);
+	mnstr_printf(out, "newly cloned function added to %s %d \n",
+				 scope->name, i);
+	printFunction(out, new->def, 0, LIST_MAL_ALL);
 #endif
 	return new;
 }
+
 /*
  * @-
  * For commands we do not have to clone the routine. We merely have to
