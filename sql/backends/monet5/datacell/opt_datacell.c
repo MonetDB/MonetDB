@@ -290,7 +290,7 @@ str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 	actions = OPTdatacellImplementation(cntxt, mb, stk, p);
-	addOptimizers(cntxt,mb,0);
+	addOptimizers(cntxt,mb);
 	if ( msg == MAL_SUCCEED)
 		msg = optimizeMALBlock(cntxt,mb);
 	if ( msg == MAL_SUCCEED)

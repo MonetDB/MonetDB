@@ -28,6 +28,6 @@ sql5_export str SQLoptimizer(Client c);
 sql5_export void SQLsetAccessMode(Client c);
 sql5_export str initSQLoptimizer(void);
 
-sql5_export void addOptimizers(Client c,MalBlkPtr mb, backend *be);
+sql5_export void addOptimizers(Client c,MalBlkPtr mb);
 #endif /* _SQL_OPTIMIZER_H_ */
 

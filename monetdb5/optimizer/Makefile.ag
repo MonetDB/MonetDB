@@ -41,12 +41,12 @@ lib_optimizer = {
 		opt_datacyclotron.mx \
 		opt_dataflow.mx \
 		opt_deadcode.mx \
-		opt_derivepath.mx \
 		opt_dictionary.mx \
 		opt_emptySet.mx \
 		opt_evaluate.mx \
 		opt_factorize.mx \
 		opt_garbageCollector.mx \
+		opt_groups.mx \
 		opt_heuristics.mx \
 		opt_history.mx \
 		opt_inline.mx \
@@ -90,7 +90,7 @@ headers_mal = {
 		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
 		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_derivepath.mx \
+		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_groups.mx \
 		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mal opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx opt_origin.mx \

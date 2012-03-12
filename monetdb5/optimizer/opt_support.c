@@ -563,6 +563,7 @@ struct OPTcatalog {
 } optcatalog[]= {
 {"accessmode",	0,	0,	0,	DEBUG_OPT_ACCESSMODE},
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
+{"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
 {"cluster",		0,	0,	0,	DEBUG_OPT_CLUSTER},
 {"coercion",	0,	0,	0,	DEBUG_OPT_COERCION},
@@ -575,7 +576,6 @@ struct OPTcatalog {
 {"datacyclotron",0,	0,	0,	DEBUG_OPT_DATACYCLOTRON},
 {"dataflow",	0,	0,	0,	DEBUG_OPT_DATAFLOW},
 {"deadcode",	0,	0,	0,	DEBUG_OPT_DEADCODE},
-{"derivePath",	0,	0,	0,	DEBUG_OPT_DERIVEPATH},
 {"dictionary",	0,	0,	0,	DEBUG_OPT_DICTIONARY},
 {"emptySet",	0,	0,	0,	DEBUG_OPT_EMPTYSET},
 {"evaluate",	0,	0,	0,	DEBUG_OPT_EVALUATE},

@@ -80,7 +80,7 @@ stderr of test 'setoptimizer` in directory 'test` itself:
 # 12:49:31 >  mclient -lsql -i --host=eir --port=36907 
 # 12:49:31 >  
 
-MAPI  = monetdb@madrid:35214
+MAPI  = monetdb@vienna:30908
 QUERY = set optimizer='myfamous_pipe';
 ERROR = !SyntaxException:parseError:
         !';' expected
