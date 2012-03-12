@@ -496,6 +496,46 @@ static void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #endif
 	}
 }
+
+/* insert a symbol into the symbol table just before the symbol
+ * "before". */
+static void
+insertSymbolBefore(Module scope, Symbol prg, Symbol before)
+{
+	InstrPtr sig;
+	int t;
+	Symbol s;
+
+	assert(strcmp(prg->name, before->name) == 0);
+	sig = getSignature(prg);
+	if (getModuleId(sig) && getModuleId(sig) != scope->name) {
+		Module c = findModule(scope, getModuleId(sig));
+		if (c)
+			scope = c;
+	}
+	t = getSubScope(getFunctionId(sig));
+	assert(scope->subscope != NULL);
+	assert(scope->subscope[t] != NULL);
+	s = scope->subscope[t];
+	prg->skip = before->skip;
+	prg->peer = before;
+	if (s == before) {
+		scope->subscope[t] = prg;
+	} else {
+		for (;;) {
+			assert(s != NULL);
+			if (s->skip == before) {
+				s->skip = prg;
+			}
+			if (s->peer == before) {
+				s->peer = prg;
+				break;
+			}
+			s = s->peer;
+		}
+	}
+}
+
 /*
  * Upon cloning a function we should remove all the polymorphic flags.
  * Otherwise we may end up with a recursive clone.
@@ -541,7 +581,7 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			mnstr_printf(out,"%d remains %s\n", i, getTypeName(v));
 #endif
 	/* include the function at the proper place in the scope */
-	insertSymbol(scope,new);
+	insertSymbolBefore(scope, new, proc);
 	/* clear polymorphic and type to force analysis*/
 	for (i = 0; i < new->def->stop; i++) {
 		pp = getInstrPtr(new->def, i);
