@@ -1,7 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Tue Feb 28 2012 Fabian Groffen <fabian@cwi.nl>
-- Implemented missing Number types support in
-  PreparedStatement.setObject()
-
