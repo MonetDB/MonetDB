@@ -1143,6 +1143,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNins(r, &v, &d, FALSE);
 								break;
 							case 'n':
+							default:
 								d = dbl_nil;
 								BUNins(r, &v, &d, FALSE);
 								break;
@@ -1177,6 +1178,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNins(r, &v, &l, FALSE);
 								break;
 							case 'n':
+							default:
 								l = lng_nil;
 								BUNins(r, &v, &l, FALSE);
 								break;
