@@ -1054,7 +1054,7 @@ rel_read(mvc *sql, char *r, int *pos)
 		skipWS(r, pos);
 		exps = read_exps(sql, nrel, NULL, r, pos, '[', 1);
 
-		rel = rel_groupby(sql->sa, nrel, gexps);
+		rel = rel_groupby(sql, nrel, gexps);
 		rel->exps = exps;
 		return rel;
 	case 's':

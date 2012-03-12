@@ -31,7 +31,7 @@
 #include "rel_schema.h"
 #include "rel_sequence.h"
 
-#define rel_groupby_gbe(sa,r,e) rel_groupby(sa, r, append(new_exp_list(sa), e))
+#define rel_groupby_gbe(m,r,e) rel_groupby(m, r, append(new_exp_list(m->sa), e))
 #define ERR_AMBIGUOUS		050000
 
 sql_rel *
@@ -872,10 +872,10 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 }
 
 sql_rel *
-rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
+rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 {
-	sql_rel *rel = rel_create(sa);
-	list *aggrs = new_exp_list(sa);
+	sql_rel *rel = rel_create(sql->sa);
+	list *aggrs = new_exp_list(sql->sa);
 	node *en;
 
 	rel->card = CARD_ATOM;
@@ -886,7 +886,9 @@ rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
 
 			/* after the group by the cardinality reduces */
 			e->card = rel->card;
-			ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+			if (!exp_name(e))
+				exp_label(sql->sa, e, ++sql->label);
+			ne = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
 			append(aggrs, ne);
 		}
 	}
@@ -4366,7 +4368,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
 				if (!*rel) {
 					int processed = is_processed(r);
-					r = rel_groupby(sql->sa, r, NULL);
+					r = rel_groupby(sql, r, NULL);
 					e = rel_groupby_add_aggr(sql, r, e);
 					if (processed)
 						set_processed(r);
@@ -4748,7 +4750,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 				return NULL;
 			if (outer && pre_prj)
 				list_merge(gbe, pre_prj, (fdup)NULL);
-			rel = rel_groupby(sql->sa, rel, gbe);
+			rel = rel_groupby(sql, rel, gbe);
 			aggr = 1;
 		}
 
@@ -4785,7 +4787,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 							e->card = CARD_AGGR;
 						}
 					}
-					rel = rel_groupby_gbe(sql->sa, rel, e);
+					rel = rel_groupby_gbe(sql, rel, e);
 				}
 			} else {
 				node *m;
@@ -4803,7 +4805,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 				}
 	
 				/* now create a groupby on the inner */
-				inner = rel_groupby(sql->sa, rel_dup(rel->r), gbexps);
+				inner = rel_groupby(sql, rel_dup(rel->r), gbexps);
 				inner = rel_label(sql, inner);
 				for (n = ce->h, m = gbexps->h; n && m; n = n->next, m = m->next) {
 					sql_exp *e = n->data;
@@ -4825,7 +4827,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (sn->having) {
 		/* having implies group by, ie if not supplied do a group by */
 		if (rel->op != op_groupby)
-			rel = rel_groupby(sql->sa,  rel, NULL);
+			rel = rel_groupby(sql,  rel, NULL);
 		aggr = 1;
 	}
 
