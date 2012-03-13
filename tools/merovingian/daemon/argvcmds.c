@@ -308,6 +308,14 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			} else {
 				value = "no monetdbd is serving this dbfarm";
 			}
+		} else if (strcmp(p, "logfile") == 0 || strcmp(p, "pidfile") == 0) {
+			kv = findConfKey(ckv, p);
+			if (kv->val != NULL && kv->val[0] != '/') {
+				snprintf(buf, sizeof(buf), "%s/%s", dbfarm, kv->val);
+				value = buf;
+			} else {
+				value = kv->val;
+			}
 		} else {
 			kv = findConfKey(ckv, p);
 			if (kv == NULL) {

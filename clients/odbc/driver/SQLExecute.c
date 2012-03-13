@@ -456,8 +456,8 @@ SQLExecute_(ODBCStmt *stmt)
 	case MOK:
 		break;
 	case MTIMEOUT:
-		/* Communication link failure */
-		addStmtError(stmt, "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		/* Timeout expired / Communication link failure */
+		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
 		/* reuse variable query for error message */

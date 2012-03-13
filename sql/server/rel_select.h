@@ -78,7 +78,7 @@ extern void rel_destroy(sql_rel *rel);
 /* TODO shouldn't be needed (isn't save) ! */
 extern char * rel_name( sql_rel *r );
 
-extern sql_rel *rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps );
+extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
 extern sql_rel *rel_with_query(mvc *sql, symbol *q);

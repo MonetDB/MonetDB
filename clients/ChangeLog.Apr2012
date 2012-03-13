@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Mar  9 2012 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Implemented the SQL_ATTR_CONNECTION_TIMEOUT attribute.
+
 * Tue Mar  6 2012 Sjoerd Mullender <sjoerd@acm.org>
 - mclient now has a -a (--autocommit) option to turn off autocommit mode.
 
