@@ -393,7 +393,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			if (!cname)
 				cname = number2name(name, 16, ++sql->label);
 			if (!isproject) 
-				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+				/* FIXME: should we retrieve the dimension range from ce? */
+				e = exp_column(sql->sa, exp_relname(e), cname, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 			e = rel_check_type(sql, &ce->type, e, type_equal);
 			if (!e)
 				return NULL;
@@ -414,7 +415,17 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;
-			sql_exp *e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			sql_exp *e = NULL;
+
+			if (c->dim) {
+				list *rng_exps = new_exp_list(sql->sa); assert(rng_exps);
+				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
+				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
+				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, list_append(sa_list(sql->sa), rng_exps));
+			} else {
+				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
+			}
 
 			e = rel_check_type(sql, &ce->type, e, type_equal);
 			if (!e)

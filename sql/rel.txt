@@ -132,10 +132,11 @@ e_column
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
-	-> f	only used by SciQL group by.
-			If an array tiling involves this column, ->f is a list of
-			three expressions to denote respectively the start, step and stop
-			of the tiles.
+	-> f	a list of three lists of range expressions for a dimensional column
+			->h->data: a list of [orig_start:orig_step:orig_stop]
+			->h->next->data: a list of [sliced_start:sliced_step:sliced_stop],
+				is an empty list if there is no slicing but structured group by.
+			->h->next->next->data: a list of [grpby_start:grpby_step:grpby_stop]
 	-> type 
 
 	

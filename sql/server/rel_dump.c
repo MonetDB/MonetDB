@@ -149,6 +149,21 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 		if (!e->rname && e->name && strcmp(e->name, e->r)==0)
 			alias = 0;
+		if (e->f) { /* the dimension constraints */
+			/* If a slicing has been applied on this dimension, print the sliced range; otherwise the original range */
+			list *range = ((list*)e->f)->h->next?((list*)e->f)->h->next->data:((list*)e->f)->h->data;
+			mnstr_printf(fout, "[");
+#define PRINT_DIM_CONSTRAINT(EXP, C) \
+			if (EXP->data) \
+			  exp_print(sql, fout, (sql_exp*)EXP->data, depth, alias, 1); \
+			else \
+				mnstr_printf(fout, "*"); \
+			mnstr_printf(fout, C);
+
+			PRINT_DIM_CONSTRAINT(range->h, ":"); /* start */
+			PRINT_DIM_CONSTRAINT(range->h->next, ":"); /* step */
+			PRINT_DIM_CONSTRAINT(range->h->next->next, "]"); /* stop */
+		}
 	 	break;
 	case e_cmp: 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -737,7 +752,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 			if (!exp && rrel)
 				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 		} else {
-			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL));
+			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL), NULL);
 		}
 		*e = old;
 		break;

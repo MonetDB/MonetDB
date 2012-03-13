@@ -335,7 +335,7 @@ have_nil(list *exps)
 }
 
 sql_exp * 
-exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *org_cname, sql_subtype *t, int card, int has_nils, int intern, list *drngs) 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -351,11 +351,19 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 		set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
+	if (drngs) { /* dimension ranges */
+		node *n = NULL;
+
+		e->f = sa_list(sa);
+		for (n = drngs->h; n; n = n->next) {
+			list_append(e->f, exps_copy(sa, n->data));
+		}
+	}
 	return e;
 }
 
 sql_exp * 
-exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern) 
+exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card, int has_nils, int intern, list *drngs) 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
@@ -370,6 +378,14 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 		set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
+	if (drngs) { /* dimension range */
+		node *n = NULL;
+
+		e->f = sa_list(sa);
+		for (n = drngs->h; n; n = n->next) {
+			list_append(e->f, exps_copy(sa, n->data));
+		}
+	}
 	return e;
 }
 
@@ -1265,7 +1281,7 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 
 	switch(e->type){
 	case e_column:
-		ne = exp_column(sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		ne = exp_column(sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e), e->f);
 		ne->flag = e->flag;
 		break;
 	case e_cmp:

@@ -93,7 +93,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 	       
 		if (!exp_is_atom(e) && !e->name)
 			exp_setname(sql->sa, e, NULL, cname);
-		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e));
+		n = exp_is_atom(e)?e:exp_column(sql->sa, exp_relname(e), e->name, exp_subtype(e), sq->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 
 		exp_setname(sql->sa, n, NULL, cname);
 		list_append(l, n);
@@ -1059,16 +1059,20 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		/* create and fill all columns */
 		for (col = t->columns.set->h, i = 0; col; col = col->next){
 			sql_column *sc = (sql_column *) col->data;
-			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa);
-			sql_exp *e = NULL, *func_exp = NULL;
+			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa), *rng_exps = new_exp_list(sql->sa);
+			sql_exp *e = NULL, *func_exp = NULL, *estrt = NULL, *estep = NULL, *estop = NULL;
 			sql_subtype *oid_tpe = sql_bind_localtype("oid");
 			sql_subfunc *sf = NULL;
 
 			if (sc->dim){
 				/* TODO: can we avoid computing these 'atom_general' twice? */
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->start)));
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->step)));
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop)));
+				estrt = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->start));
+				estep = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->step));
+				estop = exp_atom(sql->sa, atom_general(sql->sa, &sc->type, sc->dim->stop));
+
+				append(args, estrt);
+				append(args, estep);
+				append(args, estop);
 				append(args, exp_atom_int(sql->sa, N[i]));
 				append(args, exp_atom_int(sql->sa, M[i]));
 				sf = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), "array_series", exps_subtype(args), F_FUNC);
@@ -1076,14 +1080,17 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_series\"");
 				func_exp = exp_op(sql->sa, args, sf);
 				if (!id_l) {
-					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
 					append(col_exps, id_l);
 				} else {
-					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
 					append(col_exps, id_r);
 				}
-				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
-				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
+				append(rng_exps, estrt);
+				append(rng_exps, estep);
+				append(rng_exps, estop);
+				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
+				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
 				i++;
 			} else {
 				if (sc->def) {
@@ -1103,15 +1110,15 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 					return sql_error(sql, 02, "failed to bind to the SQL function \"array_filler\"");
 				func_exp = exp_op(sql->sa, args, sf);
 				if (!id_l) {
-					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					id_l = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
 					append(col_exps, id_l);
 				} else {
-					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0);
+					id_r = exp_column(sql->sa, sc->base.name, "id", oid_tpe, CARD_MULTI, 0, 0, NULL);
 					append(col_exps, id_r);
 
 				}
-				append(col_exps, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
-				append(rp, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0));
+				append(col_exps, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0, NULL));
+				append(rp, exp_column(sql->sa, sc->base.name, "cellval", &sc->type, CARD_MULTI, (!sc->dim && !sc->def)?1:0, 0, NULL));
 			}
 			if (!joinl) {
 				joinl = rel_table_func(sql->sa, NULL, func_exp, col_exps);
@@ -1403,12 +1410,13 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		/* new columns need update with default values */
 		updates = table_update_array(sql, nt);
-		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL);
 		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 		if (nt->columns.nelm) {
 			list *cols = new_exp_list(sql->sa);
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
+
 				if (c->def) {
 					char *d = sql_message("select %s;", c->def);
 					e = rel_parse_val(sql, d, sql->emode);
@@ -1420,7 +1428,15 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					rel_destroy(r);
 					return NULL;
 				}
-				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+				if(c->dim) {
+					list *rng_exps = new_exp_list(sql->sa); assert(rng_exps);
+					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
+					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
+					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
+				} else {
+					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, NULL));
+				}
 
 				assert(!updates[c->colnr]);
 				exp_setname(sql->sa, e, c->t->base.name, c->base.name);

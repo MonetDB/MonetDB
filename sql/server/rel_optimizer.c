@@ -1379,7 +1379,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 							append(r->exps, ne);
 						else
 							append(l->exps, ne);
-						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne), ne->type == e_column?ne->f:NULL);
 					}
 					e->l = ne;
 
@@ -1392,7 +1392,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 							append(r->exps, ne);
 						else
 							append(l->exps, ne);
-						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne), ne->type == e_column?ne->f:NULL);
 					}
 					e->r = ne;
 
@@ -1406,7 +1406,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(r->exps, ne);
 							else
 								append(l->exps, ne);
-							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne), ne->type == e_column?ne->f:NULL);
 						}
 						e->f = ne;
 					}
@@ -1509,7 +1509,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
-			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), NULL);
 			gbl = rel_groupby(sql->sa, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbl, e);
 			append(args, cnt);
@@ -1521,7 +1521,7 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 			sql_exp *cnt, *e = exp_aggr(sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(sql->sa, e, ++sql->label);
-			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), NULL);
 			gbr = rel_groupby(sql->sa, rel_dup(srel), NULL);
 			rel_groupby_add_aggr(sql, gbr, e);
 			append(args, cnt);
@@ -1788,7 +1788,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (ne->type == e_atom) 
 			e = exp_copy(sql->sa, ne);
 		else
-			e = exp_alias(sql->sa, e->rname, exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			e = exp_alias(sql->sa, e->rname, exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 		return e;
 	case e_cmp: 
 		if (e->flag == cmp_or) {
@@ -2329,7 +2329,7 @@ rel_project_cse(int *changes, mvc *sql, sql_rel *rel)
 					sql_exp *e2 = m->data;
 				
 					if (exp_name(e2) && exp_match_exp(e1, e2)) {
-						sql_exp *ne = exp_alias(sql->sa, e1->rname, exp_name(e1), e2->rname, exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
+						sql_exp *ne = exp_alias(sql->sa, e1->rname, exp_name(e1), e2->rname, exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1), NULL);
 						e1 = ne;
 						break;
 					}
@@ -2600,7 +2600,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 
 				ne = list_find_exp( u->exps, e);
 				assert(ne);
-				ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+				ne = exp_column(sql->sa, exp_find_rel_name(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne), ne->type == e_column?ne->f:NULL);
 				append(gbe, ne);
 			}
 		}
@@ -2617,10 +2617,10 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				/* union of aggr result may have nils 
 			   	 * because sum/count of empty set */
 				set_has_nil(e);
-				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
 			} else {
-				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 			}
 			exp_setname(sql->sa, ne, exp_find_rel_name(oa), exp_name(oa));
 			append(exps, ne);
@@ -3487,7 +3487,7 @@ rel_find_aggr_exp(sql_allocator *sa, sql_rel *rel, list *exps, sql_exp *e, char 
 				    strcmp(aae->l, eae->l) == 0)) &&
 				    (aae->r && eae->r &&
 				    strcmp(aae->r, eae->r) == 0)) 
-					return exp_column(sa, a->rname, exp_name(a), exp_subtype(a), a->card, has_nil(a), is_intern(a));
+					return exp_column(sa, a->rname, exp_name(a), exp_subtype(a), a->card, has_nil(a), is_intern(a), e->type == e_column?e->f:NULL);
 			}
 		}
 	}
@@ -3546,7 +3546,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 
 				exp_label(sql->sa, e, ++sql->label);
 				append(nexps, e);
-				cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				cnt = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), NULL);
 			}
 			if (!sum) {
 				list *l = avg->l;
@@ -3555,7 +3555,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 
 				exp_label(sql->sa, e, ++sql->label);
 				append(nexps, e);
-				sum = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				sum = exp_column(sql->sa, NULL, exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), NULL);
 			}
 			/* create new sum/cnt exp */
 
@@ -3608,7 +3608,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			if (e->type == e_column && !rel_find_exp(rel->l, e))  
 				append(pexps, e);
 			else 
-				append(pexps, exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e)));
+				append(pexps, exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL));
 		}
 		rel->exps = nexps;
 		rel = rel_project(sql->sa, rel, pexps);
@@ -3772,7 +3772,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 						if (scores[l] == 1) {
 							sql_column *c = exp_find_column_(rel, e, -2, &bt);
 							
-							sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+							sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 							append(r->exps, rs);
 
 							e = exp_compare(sql->sa, e, rs, cmp_equal);
@@ -3792,7 +3792,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 
 							if (scores[l] == -1 && exp_match_exp(e,gb)) {
 								sql_column *c = exp_find_column_(rel, e, -2, &bt);
-								sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+								sql_exp *rs = exp_column(sql->sa, rnme, c->base.name, exp_subtype(e), rel->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 								exp_setname(sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								append(r->exps, rs);
 								fnd = 1;
@@ -3846,7 +3846,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 			e->rname = e->name;
 		}
 		list_append(aexps, e);
-		return exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+		return exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), NULL);
 	case e_cmp:
 		/* e_cmp's shouldn't exist in an aggr expression list */
 		assert(0);
@@ -4039,7 +4039,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				break;
 			default: /* simple alias */
 				list_append(aexps, e);
-				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 				list_append(pexps, ne);
 				break;
 			}

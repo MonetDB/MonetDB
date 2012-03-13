@@ -168,7 +168,7 @@ rel_label( mvc *sql, sql_rel *r)
 }
 
 static sql_exp *
-exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old, int settname)
+exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *old, int settname, list *drngs)
 {
 	sql_exp *ne = NULL;
 
@@ -179,7 +179,7 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		tname = old->l;
 
 	if (!cname && exp_name(old) && exp_name(old)[0] == 'L') {
-		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, exp_relname(old), exp_name(old), exp_subtype(old), orel->card, has_nil(old), is_intern(old), drngs);
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
 	} else if (!cname) {
@@ -187,13 +187,13 @@ exp_alias_or_copy( mvc *sql, char *tname, char *cname, sql_rel *orel, sql_exp *o
 		nme = number2name(name, 16, ++sql->label);
 
 		exp_setname(sql->sa, old, nme, nme);
-		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+		ne = exp_column(sql->sa, nme, nme, exp_subtype(old), orel->card, has_nil(old), is_intern(old), drngs);
 		ne->p = prop_copy(sql->sa, old->p);
 		return ne;
 	} else if (cname && !old->name) {
 		exp_setname(sql->sa, old, tname, cname);
 	}
-	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old));
+	ne = exp_column(sql->sa, tname, cname, exp_subtype(old), orel->card, has_nil(old), is_intern(old), drngs);
 	ne->p = prop_copy(sql->sa, old->p);
 	return ne;
 }
@@ -247,9 +247,9 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname )
 				sql_exp *e = en->data;
 				/* first check alias */
 				if (!is_intern(e) && e->rname && strcmp(e->rname, tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1));
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1, e->type == e_column?e->f:NULL));
 				if (!is_intern(e) && !e->rname && e->l && strcmp(e->l, tname) == 0)
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1));
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, 1, e->type == e_column?e->f:NULL));
 			}
 			if (exps && list_length(exps))
 				return exps;
@@ -372,7 +372,7 @@ rel_projections(mvc *sql, sql_rel *rel, char *tname, int settname, int intern )
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 				if (intern || !is_intern(e))
-					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname));
+					append(exps, exp_alias_or_copy(sql, tname, exp_name(e), rel, e, settname, e->type == e_column?e->f:NULL));
 			}
 			return exps;
 		}
@@ -464,7 +464,7 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 	 */
 	for (cn = t->columns.set->h, idx_exp = dimref->data.lval->h->next->data.lval->h;
 			cn && idx_exp; cn = cn->next, idx_exp = idx_exp->next) {
-		list *args = new_exp_list(sql->sa);
+		list *args = new_exp_list(sql->sa), *rng_exps = NULL, *srng_exps = NULL;
 		int skip = 1;
 
 		col = (sql_column *) cn->data;
@@ -478,10 +478,23 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 			if (idx_term->data.sym) skip = 0;
 		if (skip) continue;
 
+
+		rng_exps  = new_exp_list(sql->sa); assert(rng_exps );
+		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start)));
+		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
+		append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop)));
+
 		/* build the slc_val expression, which is going to compute a list of to be sliced dimensional values. */
+		/* FIXME: some expressions of rng_exps and the slc_val are reused, because exp_column makes a complete copy of its input drngs? */
 		idx_term = idx_exp->data.lval->h;
+		srng_exps  = new_exp_list(sql->sa); assert(srng_exps );
 		if (idx_exp->data.lval->cnt == 1) {
 			slc_val = rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast);
+			append(srng_exps, slc_val); /* sliced start */
+			append(srng_exps, rng_exps->h->next->data); /* sliced step == original step */
+			append(srng_exps, exp_binop( /* sliced stop = sliced start + original step */
+						sql->sa, slc_val, exp_atom(sql->sa, rng_exps->h->next->data),
+						sql_bind_func(sql->sa, sql->session->schema, "sql_add", &col->type, &col->type, F_FUNC)));
 		} else {
 			/* If the value of start/step/stop is omitted, we get its value from the dimension definition.
 			 */
@@ -489,24 +502,31 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 				return sql_error(sql, 02, "TODO: slicing over unbounded dimension");
 
 			/* the first <exp> is always the start */
-			append(args, idx_term->data.sym ? /* check for '*' */
+			slc_val = idx_term->data.sym ? /* check for '*' */
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start)));
-
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->start));
+			append(args, slc_val);
+			append(srng_exps, slc_val);
 
 			if (idx_exp->data.lval->cnt == 2) {
-				append(args, exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
+				slc_val = exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step));
+				append(args, slc_val);
+				append(srng_exps, slc_val);
 			} else {
 				idx_term = idx_term->next;
-				append(args, idx_term->data.sym ?
+				slc_val = idx_term->data.sym ?
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step)));
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->step));
+				append(args, slc_val);
+				append(srng_exps, slc_val);
 			}
 
 			idx_term = idx_term->next;
-			append(args, idx_term->data.sym ?
+			slc_val = idx_term->data.sym ?
 					rel_check_type(sql, &col->type, rel_value_exp(sql, &rel, idx_term->data.sym, sql_where, ek), type_cast) :
-					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop)));
+					exp_atom(sql->sa, atom_general(sql->sa, &col->type, col->dim->stop));
+			append(args, slc_val);
+			append(srng_exps, slc_val);
 
 			/* Only create 1 group and repeat the numbers once */
 			append(args, exp_atom_int(sql->sa, 1));
@@ -518,7 +538,8 @@ rel_arrayslice(mvc *sql, sql_table *t, char *tname, symbol *dimref)
 		}
 
 		/* <col_exp> IN '(' <slc_val> ')' */
-		col_exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0);
+		col_exp = exp_column(sql->sa, tname, col->base.name, &col->type, CARD_MULTI, 0, 0,
+				list_append(list_append(sa_list(sql->sa), rng_exps), srng_exps));
 		exp_label(sql->sa, slc_val, ++sql->label);
 		expin = exp_in(sql->sa, col_exp, append(new_exp_list(sql->sa), slc_val), cmp_in);
 		rel_select_add_exp(rel, expin);
@@ -547,13 +568,23 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
 		sql_column *c = cn->data;
-		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		sql_exp *e = NULL;
+
+		if (c->dim) {
+			list *rng_exps = new_exp_list(sql->sa); assert(rng_exps );
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, list_append(sa_list(sql->sa), rng_exps));
+		} else {
+			e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
+		}
 
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c)
 			e->p = prop_create(sa, PROP_HASHIDX, e->p);
 		append(rel->exps, e);
 	}
-	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL));
 
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
@@ -564,7 +595,7 @@ rel_basetable(mvc *sql, sql_table *t, char *atname)
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
 			/* index names are prefixed, to make them independent */
-			append(rel->exps, exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1));
+			append(rel->exps, exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1, NULL));
 		}
 	}
 
@@ -828,7 +859,7 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (e->type == e_column)
 		tname = e->l;
 	ne = exp_column(sql->sa, tname, m->name, exp_subtype(m),
-			rel->card, has_nil(m), is_intern(m));
+			rel->card, has_nil(m), is_intern(m), e->type == e_column?e->f:NULL);
 	exp_setname(sql->sa, ne, NULL, e->name);
 	return ne;
 }
@@ -867,10 +898,10 @@ rel_lastexp(mvc *sql, sql_rel *rel )
 		rel = rel_parent(rel);
 	assert(list_length(rel->exps));
 	if (rel->op == op_project)
-		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data, 1);
+		return exp_alias_or_copy(sql, NULL, NULL, rel, rel->exps->t->data, 1, ((sql_exp*)rel->exps->t->data)->type == e_column?((sql_exp*)rel->exps->t->data)->f:NULL);
 	assert(is_project(rel->op));
 	e = rel->exps->t->data;
-	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 }
 
 static sql_exp *
@@ -983,7 +1014,7 @@ rel_groupby(sql_allocator *sa, sql_rel *l, list *groupbyexps )
 			if (e->type == e_column && e->f)
 				rel->card = CARD_MULTI;
 			e->card = rel->card;
-			ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+			ne = exp_column(sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0, e->type == e_column?e->f:NULL);
 			append(aggrs, ne);
 		}
 	}
@@ -1473,7 +1504,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, char *cname, int f )
 	if ((is_project(rel->op) || is_base(rel->op)) && rel->exps) {
 		sql_exp *e = exps_bind_column(rel->exps, cname, NULL);
 		if (e)
-			return exp_alias_or_copy(sql, e->rname, cname, rel, e, 1);
+			return exp_alias_or_copy(sql, e->rname, cname, rel, e, 1, e->type == e_column?e->f:NULL);
 	}
 	return NULL;
 }
@@ -1490,7 +1521,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, char *tname, char *cname, int f )
 	if (rel->exps && (is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = exps_bind_column2(rel->exps, tname, cname);
 		if (e)
-			return exp_alias_or_copy(sql, tname, cname, rel, e, 1);
+			return exp_alias_or_copy(sql, tname, cname, rel, e, 1, e->type == e_column?e->f:NULL);
 	}
 	if (is_project(rel->op) && rel->l) {
 		if (!is_processed(rel))
@@ -1536,7 +1567,16 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query)
 	exps = new_exp_list(sql->sa);
 	for (m = st->comp_type->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
-		append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+
+		if (c->dim) {
+			list *rng_exps = new_exp_list(sql->sa); assert(rng_exps );
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
+			append(rng_exps , exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
+			append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, list_append(sa_list(sql->sa), rng_exps)));
+		} else {
+			append(exps, exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL));
+		}
 	}
 	return rel_table_func(sql->sa, rel, e, exps);
 }
@@ -1589,7 +1629,7 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 	exps = new_exp_list(sql->sa);
 	for (en = sq->exps->h; en; en = en->next) {
 		sql_exp *e = en->data;
-		append(exps, exp_column(sql->sa, tname, exp_name(e), exp_subtype(e), CARD_MULTI, has_nil(e), 0));
+		append(exps, exp_column(sql->sa, tname, exp_name(e), exp_subtype(e), CARD_MULTI, has_nil(e), 0, e->type == e_column?e->f:NULL));
 	}
 	return rel_relational_func(sql->sa, sq, exps);
 }
@@ -2092,7 +2132,18 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		}
 		append(append(append(offsets, exp_os_sta), exp_os_ste), exp_os_sto);
 		/* use the free 'f' in e_column to pass the tiling ranges */
-		exp->f = offsets;
+		if(!exp->f)
+			return sql_error(sql, 02, "dimension \"%s.%s\" does not have range expressions", exp_relname(exp)?exp_relname(exp):"", exp_name(exp)?exp_name(exp):"");
+		if(list_length(exp->f) == 1) {
+			append(exp->f, new_exp_list(sql->sa));
+			append(exp->f, offsets);
+		} else if(list_length(exp->f) == 2) {
+			append(exp->f, offsets);
+		} else if(list_length(exp->f) == 3) {
+			((list*)exp->f)->h->next->next->data = offsets;
+		} else {
+			return sql_error(sql, 02, "dimension \"%s.%s\" has too many (%d) range expressions, should be < 4", exp_relname(exp)?exp_relname(exp):"", exp_name(exp)?exp_name(exp):"", list_length(exp->f));
+		}
 		append(exps, exp);
 	}
 	(*rel)->card = CARD_MULTI;
@@ -4090,9 +4141,10 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		atom *d_sta = NULL, *d_ste = NULL, *d_sto = NULL;
 
 		dim[i] = cn->data;
-		os_sta[i] = (sql_exp*)((list*)dim[i]->f)->h->data;
-		os_ste[i] = (sql_exp*)((list*)dim[i]->f)->h->next->data;
-		os_sto[i] = (sql_exp*)((list*)dim[i]->f)->h->next->next->data;
+		assert(list_length(dim[i]->f) == 3);
+		os_sta[i] = (sql_exp*)((list*)((list*)dim[i]->f)->h->next->next->data)->h->data;
+		os_ste[i] = (sql_exp*)((list*)((list*)dim[i]->f)->h->next->next->data)->h->next->data;
+		os_sto[i] = (sql_exp*)((list*)((list*)dim[i]->f)->h->next->next->data)->h->next->next->data;
 
 		/* immediately compute the |dim[i]| */
 		if (!(sc = get_dimension(sql, t, dim[i]->name))) {
@@ -4255,7 +4307,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 		return e;
 	}
 
-	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->type == e_column && ((sql_exp*)((list*)groupby->r)->h->data)->f) {
+	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->type == e_column && ((sql_exp*)((list*)groupby->r)->h->data)->f && list_length(((sql_exp*)((list*)groupby->r)->h->data)->f) == 3) {
 		/* e_column->f has been "misused" => an aggragation over array tiles */
 		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, args->data.sym, f);
 	}
@@ -4283,7 +4335,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 				sql_rel *j = i->r;
 
 				sql_exp *e = j->exps->h->data;
-				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0);
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), 0, e->type == e_column?e->f:NULL);
 				e = exp_aggr1(sql->sa, e, a, distinct, 1, groupby->card, 0);
 				return e;
 			}
@@ -4305,7 +4357,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 
 		if (gr && e && is_project(gr->op) && !is_set(gr->op) && e->type != e_column) {
 			rel_project_add_exp(sql, gr, e);
-			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e, 0);
+			e = exp_alias_or_copy(sql, exp_relname(e), exp_name(e), gr->l, e, 0, e->type == e_column?e->f:NULL);
 		}
 		if (!e)
 			return NULL;
@@ -4807,7 +4859,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						e = exps_get_exp(rel->exps, nr);
 						if (!e)
 							return NULL;
-						e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
+						e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
 					} else {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 					}
@@ -5453,7 +5505,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					sql_exp *gbe = m->data;
 	
 					assert(e->type == e_cmp);
-					gbe = exp_column(sql->sa, rel_name(inner), exp_name(gbe), exp_subtype(gbe), inner->card, has_nil(gbe), is_intern(gbe));
+					gbe = exp_column(sql->sa, rel_name(inner), exp_name(gbe), exp_subtype(gbe), inner->card, has_nil(gbe), is_intern(gbe), gbe->type == e_column?gbe->f:NULL);
 					e = exp_compare(sql->sa, e->l, gbe, e->flag);
 					append(jexps, e);
 				}
