@@ -19,3 +19,4 @@ multicolumn_join.Bug-2998
 simple_select.Bug-2988
 interval_timestamp.Bug-3002
 hash_select.Bug-2947
+server-crash.Bug-3046
