@@ -51,7 +51,7 @@ pattern optimizer.groups(mod:str, fcn:str):str
 address OPTgroups
 comment "Join path constructor";
 
-pattern group.new(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
+pattern group.multicolumn(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
 address GRPmulticolumngroup
 comment "Derive a group index over multiple columns.";
 @h
@@ -104,7 +104,7 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if (getModuleId(p) == groupRef && p->argc == 3 && getFunctionId(p) == newRef ){
-				setFunctionId(p,newRef);
+				setFunctionId(p, multicolumnsRef);
 				pc[getArg(p,0)] = i;
 				pc[getArg(p,1)] = i;
 				actions++;
