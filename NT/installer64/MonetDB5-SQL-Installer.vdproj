@@ -417,7 +417,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_56D88A2735E8478BA1FAD87ED15592E3"
+        "MsmKey" = "8:_565B70022BCB405E9CB242A3FBE5C7D2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2623,10 +2623,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_56D88A2735E8478BA1FAD87ED15592E3"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_565B70022BCB405E9CB242A3FBE5C7D2"
             {
-            "SourcePath" = "8:lib\\monetdb5\\opt_derivepath.mal"
-            "TargetName" = "8:opt_derivepath.mal"
+            "SourcePath" = "8:lib\\monetdb5\\opt_groups.mal"
+            "TargetName" = "8:opt_groups.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
