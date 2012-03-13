@@ -134,6 +134,7 @@ str mitosisRef;
 str mkeyRef;
 str mmathRef;
 str multiplexRef;
+str multicolumnsRef;
 str mvcRef;
 str newRef;
 str notRef;
@@ -356,6 +357,7 @@ void optimizerInit(void){
 		mkeyRef = putName("mkey", 4);
 		mmathRef = putName("mmath", 5);
 		multiplexRef = putName("multiplex", 9);
+		multicolumnsRef = putName("multicolumns", 12);
 		mvcRef = putName("mvc", 3);
 		newRef = putName("new",3);
 		notRef = putName("not",3);
