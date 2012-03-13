@@ -115,15 +115,6 @@ getTypeIdentifier(malType tpe){
  * Use the information that identifiers are at least one character
  * and are terminated by a null to speedup comparison
  */
-inline int
-idcmp(str n, str m)
-{
-	assert(n != NULL);
-	assert(m != NULL);
-	if (*n == *m)
-		return strcmp(n, m);
-	return -1;
-}
 
 /*
  * @-
@@ -194,8 +185,8 @@ getTypeIndex(str nme, int len, int deftype)
 		nme[k] = 0;
 	}
 	for(i= TYPE_str; i< GDKatomcnt; i++)
-	if( BATatoms[i].name[0]==nme[0] &&
-		strcmp(nme,BATatoms[i].name)==0) break;
+		if( BATatoms[i].name[0]==nme[0] &&
+			strcmp(nme,BATatoms[i].name)==0) break;
 	if( len > 0)
 		nme[k]=old;
 	if (i == GDKatomcnt)

@@ -3085,8 +3085,8 @@ BATmode(BAT *b, int mode)
 /*
  * @+ BATpropcheck
  *
- * This is a low-cost routine that smartly tries to deduce as
- * much properties possible on the head column of its BAT parameter.
+ * This is a low-cost routine that smartly tries to deduce as many
+ * properties as possible on the head column of its BAT parameter.
  *
  * with PROPDEBUG (-d8) enabled, it is also a powerful tool
  * to check whether all properties of a BAT are set correctly.

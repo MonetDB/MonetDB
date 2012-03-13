@@ -17,12 +17,12 @@ Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 @
 
-@f opt_derivepath
+@f opt_groups
 
 @c
 /*
- * @- Group derive paths
- * The routine @sc{optimizer.derivepaths()}
+ * @- Compact aggregate operations.
+ * The routine @sc{optimizer.groups()}
  * walks through the program looking for grouping operations
  * and cascades them into a single multiple group paths.
  * To illustrate, consider
@@ -33,63 +33,45 @@ All Rights Reserved.
  * @end verbatim
  * The result becomes.
  * @verbatim
- * 	(ext3,grp3) := group.derivepath(b,c,d);
+ * 	(ext3,grp3) := group.new(b,c,d);
  * @end verbatim
  *
+ * It is a prepatory step for a new collection of aggregate implementations.
  * The implementation of this operator can freely re-order the BATs
  * for reduced intermediate results or as a basis for parallel scanning
  * all BATs involved to derive their group id.
  *
- * The collection can be extended to immediately aim for group counting
- * or summation, avoiding the materialisation of the group id table.
+ * An immediate benefit is that dataflow related instructions
+ * are grouped together avoiding shuffling intermediates to disk.
  */
 @mal
-pattern optimizer.derivePath():str
-address OPTderivePath;
-pattern optimizer.derivePath(mod:str, fcn:str):str
-address OPTderivePath
+pattern optimizer.groups():str
+address OPTgroups;
+pattern optimizer.groups(mod:str, fcn:str):str
+address OPTgroups
 comment "Join path constructor";
 
-pattern group.derivePath(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
-address ALGderivePath
-comment "Derive a group index.";
-
-pattern group.deriveCount(l:bat[:oid,:any]...):bat[:oid,:wrd]
-address ALGderiveCount
-comment "Derive a group count.";
-
-pattern group.deriveSum(s:bat[:oid,:int],l:bat[:oid,:any]...):bat[:oid,:int]
-address ALGderiveSum
-comment "Derive a group sum.";
-pattern group.deriveSum(s:bat[:oid,:lng],l:bat[:oid,:any]...):bat[:oid,:lng]
-address ALGderiveSum
-comment "Derive a group sum.";
-pattern group.deriveSum(s:bat[:oid,:flt],l:bat[:oid,:any]...):bat[:oid,:flt]
-address ALGderiveSum
-comment "Derive a group sum.";
-pattern group.deriveSum(s:bat[:oid,:dbl],l:bat[:oid,:any]...):bat[:oid,:dbl]
-address ALGderiveSum
-comment "Derive a group sum.";
+pattern group.multicolumns(l:bat[:oid,:any]...)(grp:bat[:oid,:any],ext:bat[:oid,:any])
+address GRPmulticolumngroup
+comment "Derive a group index over multiple columns.";
 @h
-#ifndef _OPT_DERIVEPATH_
-#define _OPT_DERIVEPATH_
+#ifndef _OPT_GROUPS_
+#define _OPT_GROUPS_
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 
-opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-#define OPTDEBUGderivePath  if ( optDebug & ((lng)1 <<DEBUG_OPT_DERIVEPATH) )
+#define OPTDEBUGgroups  if ( optDebug & ((lng)1 <<DEBUG_OPT_GROUPS) )
 
 @c
 #include "monetdb_config.h"
-#include "opt_derivepath.h"
+#include "opt_groups.h"
 #include "group.h"
 
 static int
-OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0;
 	int *pc;
@@ -122,12 +104,12 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if (getModuleId(p) == groupRef && p->argc == 3 && getFunctionId(p) == newRef ){
-				setFunctionId(p,derivePathRef);
+				setFunctionId(p, multicolumnsRef);
 				pc[getArg(p,0)] = i;
 				pc[getArg(p,1)] = i;
 				actions++;
-				OPTDEBUGderivePath {
-					mnstr_printf(cntxt->fdout,"#new derivePath instruction\n");
+				OPTDEBUGgroups {
+					mnstr_printf(cntxt->fdout,"#new groups instruction\n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 				}
 		}
@@ -146,8 +128,8 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pc[getArg(q,1)] = i;
 				freeInstruction(p);
 				p= q;
-				OPTDEBUGderivePath{
-					mnstr_printf(cntxt->fdout,"#new derivePath instruction extension\n");
+				OPTDEBUGgroups{
+					mnstr_printf(cntxt->fdout,"#new groups instruction extension\n");
 					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 				}
 			}
@@ -160,80 +142,51 @@ OPTderivePathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	GDKfree(old);
 	GDKfree(pc);
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_derivepath: %d statements glued\n",actions);
+		mnstr_printf(cntxt->fdout,"#opt_groups: %d statements glued\n",actions);
 	return actions;
 }
 @include optimizerWrapper.mx
 @h
-@:exportOptimizer(derivePath,OPT_CHECK_ALL)@
+@:exportOptimizer(groups,OPT_CHECK_ALL)@
 #endif
-opt_export str ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "opt_statistics.h"
-@:wrapOptimizer(derivePath,OPT_CHECK_ALL)@
+@:wrapOptimizer(groups,OPT_CHECK_ALL)@
 /*
  * @-
- * The derive path optimizer takes a derivation sequence and attempts to minimize the intermediate result.
+ * The groups optimizer takes a sequence and attempts to minimize the intermediate result.
  * The choice depends on a good estimate of intermediate results using properties.
- * For the time being, we use a simplistic model, based on the assumption that most joins are foreign key joins anyway.
+ * We start by just performing the underlying MAL instructions in sequence as requested
+ * This will lead to better locality of BAT access.
  */
 typedef struct{
 	int *arg;
 	BAT *b;
 } Elm;
 str
-ALGderivePath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *grp = (int*) getArgReference(stk,pci,0);
 	int *ext = (int*) getArgReference(stk,pci,1);
-	Elm *path = (Elm *) GDKzalloc(pci->argc * sizeof(Elm));
 	int i, newgrp, newext;
 	str msg = MAL_SUCCEED;
 
-	if ( path == NULL)
-		throw(MAL,"group.derivePath",MAL_MALLOC_FAIL);
-	/* collect the properties (histograms) for all columns */
-	for ( i = 2; i < pci->argc; i++){
-		path[i].arg = (int*) getArgReference(stk,pci,i);
-	}
-	/* determine an optimal order for derivation by reshuffling */
+	/* (grp,ext) := group.new(..) */
+	msg = GRPgroup(grp, ext, (int*) getArgReference(stk,pci,2));
 
-	msg = GRPgroup(grp, ext, path[2].arg);
+	/* (grp,ext) := group.derive(grp,ext,arg) */
+	/* (grp,ext) := group.done(grp,ext,arg) */
 	for ( i=3; msg == MAL_SUCCEED && i < pci->argc; i++){
-		msg = GRPderive(&newgrp, &newext, grp, ext, path[i].arg);
+		newgrp= *grp;
+		newext= *ext;
+		msg = GRPderive(grp, ext, &newgrp, &newext, (int*) getArgReference(stk,pci,i));
 		if ( msg == MAL_SUCCEED){
-			BBPreleaseref(*grp);
-			BBPreleaseref(*ext);
-			*grp = newgrp;
-			*ext = newext;
+			BBPdecref(newgrp, TRUE);
+			BBPdecref(newext, TRUE);
 		}
 	}
-	/* remove the histograms */
-	for ( i = 2; i < pci->argc; i++){
-	}
-	GDKfree(path);
 	(void) cntxt;
 	(void) mb;
 	return msg;
 }
-
-str
-ALGderiveCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL,"group.deriveCount",PROGRAM_NYI);
-}
-
-str
-ALGderiveSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	throw(MAL,"group.deriveSum",PROGRAM_NYI);
-}
-

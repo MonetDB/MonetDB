@@ -140,7 +140,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	/* check for logical error: mb must never be NULL */
 	assert (mb != NULL);
 
-	/* safe the old stage of the MAL block */
+	/* save the old stage of the MAL block */
 	old = mb->stmt;
 	limit= mb->stop;
 	slimit = mb->ssize;
@@ -202,7 +202,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 */
 			/* an expensive loop, better would be to remember that v0 has a different role.
 			 * A typical method is to keep a map from variable -> instruction where it was
-			 * detected. The you can check each assignment for use of v0
+			 * detected. Then you can check each assignment for use of v0
 			*/
 			for (j = i+1; !found  && j < limit; j++)
 				for (k = old[j]->retc; !found && k < old[j]->argc; k++)
@@ -218,7 +218,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				/* push new v1 := aggr.count( v0 ); unless already available */
 				if (q1 == NULL) {
-					/* use mal_buil.mx primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
+					/* use mal_builder.h primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
 					/* it will be added to the block and even my re-use MAL instructions */
 					q1 = newInstruction(mb,ASSIGNsymbol);
 					getArg(q1,0) = newTmpVariable(mb, TYPE_wrd);
@@ -229,7 +229,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 
 				/* push new v2 := algebra.slice( v0, 0, v1 ); */
-				/* use mal_buil.mx primitives q1 = newStmt(mb, algebraRef,sliceRef); */
+				/* use mal_builder.h primitives q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,ASSIGNsymbol);
 				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
 				setModuleId(q2, algebraRef);

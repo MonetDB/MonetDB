@@ -5588,7 +5588,6 @@ int hlbProp;
 int horiginProp;
 int hubProp;
 int idLength(Client cntxt);
-int idcmp(str n, str m);
 str identityRef;
 str ifthenelseRef;
 str ilikeselectRef;

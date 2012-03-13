@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2011-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Dec2011-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -626,6 +626,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Mon Mar 12 2012 Fabian Groffen <fabian@monetdb.org> - 11.7.9-20120312
+- Rebuilt.
+
+* Tue Feb 28 2012 Fabian Groffen <fabian@cwi.nl> - 11.7.9-20120312
+- java: Implemented missing Number types support in
+  PreparedStatement.setObject()
+
 * Fri Feb 24 2012 Fabian Groffen <fabian@monetdb.org> - 11.7.7-20120224
 - Rebuilt.
 

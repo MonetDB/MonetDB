@@ -49,7 +49,7 @@ lib_mal = {
 		mal_properties.c mal_properties.h \
 		mal_readline.c mal_readline.h \
 		mal_recycle.c mal_recycle.h \
-		mal_resolve.mx \
+		mal_resolve.c mal_resolve.h \
 		mal_sabaoth.c mal_sabaoth.h \
 		mal_scenario.c mal_scenario.h \
 		mal_session.c mal_session.h \
