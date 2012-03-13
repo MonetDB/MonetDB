@@ -1,23 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
  * @a M. Kersten
  * @v 1.0
@@ -40,7 +39,7 @@ All Rights Reserved.
  *    y := io.print(val);
  * end sample;
  * @end example
- * @-
+ *
  * The function definition is polymorphic typed on the 2nd argument,
  * it becomes a concrete type upon invocation. The system could attempt
  * a type check, but quickly runs into assumptions that generally do not hold.
@@ -76,31 +75,6 @@ All Rights Reserved.
  * TYPE_RESOLVED implies that the type of the instruction is fully
  * resolved, it is marked TYPE_DYNAMIC otherwise.
  */
-@h
-#ifndef _MAL_RESOLVE_H
-#define _MAL_RESOLVE_H
-
-#include "mal_exception.h"
-#include "mal_function.h"
-#include "mal_listing.h"
-#include "mal_exception.h"
-
-/*
-#define DEBUG_MAL_RESOLVE 1 
-*/
-#define MAXTYPEVAR  10
-
-mal_export void chkProgram(stream *out, Module s, MalBlkPtr mb);
-mal_export void chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
-mal_export void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent);
-mal_export void typeChecker(stream *out,  Module scope, MalBlkPtr mb, InstrPtr p, int silent);
-mal_export int fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p);
-
-extern str traceFcnName;
-mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
-
-#endif /*  _MAL_RESOLVE_H*/
-@c
 /*
  * @- Function call resolution
  * Search the first definition of the operator in the current module
@@ -129,6 +103,75 @@ void polyInit(void){
 }
 #endif
 
+/*
+ * We found the proper function. Copy some properties. In particular,
+ * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
+ * Beware that polymorphic functions may produce type-incorrect clones.
+ * This piece of code may be shared by the separate binder
+ */
+#define bindFunction(s, p, mb, out)									\
+	do {															\
+		if (s->def->errors) {										\
+			p->typechk = TYPE_UNKNOWN;								\
+			mb->errors++;											\
+			goto wrapup;											\
+		}															\
+		if (p->token == ASSIGNsymbol) {								\
+			switch (getSignature(s)->token) {						\
+			case COMMANDsymbol:										\
+				p->token = CMDcall;									\
+				p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */ \
+				if (p->fcn == NULL) {								\
+					showScriptException(out, mb, getPC(mb, p), TYPE, \
+										"object code for command %s.%s missing", \
+										p->modname, p->fcnname);	\
+					p->typechk = TYPE_UNKNOWN;						\
+					mb->errors++;									\
+					goto wrapup;									\
+				}													\
+				break;												\
+			case PATTERNsymbol:										\
+				p->token = PATcall;									\
+				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
+				break;												\
+			case FACTORYsymbol:										\
+				p->token = FACcall;									\
+				p->fcn = getSignature(s)->fcn;      /* C implementation optional */	\
+				break;												\
+			case FUNCTIONsymbol:									\
+				p->token = FCNcall;									\
+				if (getSignature(s)->fcn)							\
+					p->fcn = getSignature(s)->fcn;     /* C implementation optional */ \
+				break;												\
+			default: {												\
+				if (!silent)										\
+					showScriptException(out, mb, getPC(mb, p), MAL,	\
+										"MALresolve: unexpected token type"); \
+				mb->errors++;										\
+				goto wrapup;										\
+			}														\
+			}														\
+			p->blk = s->def;										\
+		}															\
+	} while (0)
+
+/*
+ * Since we now know the storage type of the receiving variable, we can
+ * set the garbage collection flag.
+ */
+#define prepostProcess(tp, p, b, mb)					\
+	do {												\
+		if (findGDKtype(tp) == TYPE_bat ||				\
+			isaBatType(tp) ||							\
+			findGDKtype(tp) == TYPE_str ||				\
+			(!isPolyType(tp) && tp < TYPE_any &&		\
+			 tp >= 0 && ATOMextern(tp))) {				\
+			getInstrPtr(mb, 0)->gc |= GARBAGECONTROL;	\
+			setVarCleanup(mb, getArg(p, b));			\
+			p->gc |= GARBAGECONTROL;					\
+		}												\
+	} while (0)
+
 static malType
 findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent)
 {
@@ -140,7 +183,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	int polytype[MAXTYPEVAR];
 	int *returntype= NULL;
 	/*
-	 * @-
 	 * Within a module find the subscope to locate the element in its list
 	 * of symbols. A skiplist is used to speed up the search for the
 	 * definition of the function.
@@ -168,7 +210,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			s = s->skip; continue;
 		}
 		/*
-		 * @-
 		 * Perform a strong type-check on the actual arguments. If it turns
 		 * out to be a polymorphic MAL function, we have to clone it.
 		 * Provided the actual/formal parameters are compliant throughout
@@ -197,7 +238,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		}
 #endif
 		/*
-		 * @-
 		 * The simple case could be taken care of separately to speedup processing
 		 * However, it turned out not to make a big difference.
 		 * The first time we encounter a polymorphic argument in the
@@ -224,7 +264,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 
 			for (k = 0; k < limit; k++) polytype[k] = TYPE_any;
 			/*
-			 * @-
 			 * Most polymorphic functions don;t have a variable argument
 			 * list. So we save some instructions factoring this caise out.
 			 * Be careful, the variable number of return arguments should
@@ -238,7 +277,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				if (k == sig->argc - 1 && sig->varargs & VARARGS)
 					k--;
 				/*
-				 * @-
 				 * Take care of variable argument lists.
 				 * They are allowed as the last in the signature only.
 				 * Furthermore, for patterns if the formal type is 'any' then all remaining arguments
@@ -254,7 +292,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				}
 				formal = getPolyType(formal, polytype);
 				/*
-				 * @-
 				 * Collect the polymorphic types and resolve them.
 				 * If it fails, we know this isn;t the function we are
 				 * looking for.
@@ -265,7 +302,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				}
 			}
 			/*
-			 * @-
 			 * The last argument/result type could be a polymorphic variable list.
 			 * It should only be allowed for patterns, where it can deal with the stack.
 			 * If the type is specified as :any then any mix of arguments is allowed.
@@ -296,7 +332,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			}
 		} else {
 			/*
-			 * @-
 			 * We have to check the argument types to determine a
 			 * possible match for the non-polymorphic case.
 			 */
@@ -319,7 +354,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			}
 		}
 /*
- * @-
  * It is possible that you may have to coerce the value to another type.
  * We assume that coercions are explicit at the MAL
  * level. (e.g. var2:= var0:int). This avoids repeated type analysis
@@ -349,7 +383,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			s = s->peer; continue;
 		}
 		/*
-		 * @-
 		 * At this stage we know all arguments are type compatible with the
 		 * signature.
 		 * We should assure that also the target variables have the proper types
@@ -398,7 +431,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			s = s->peer; continue;
 		}
 		/*
-		 * @-
 		 * If the return types are correct, copy them in place.
 		 * Beware that signatures should be left untouched, which
 		 * means that we may not overwrite any formal argument.
@@ -420,10 +452,9 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				setVarType(mb, getArg(p, i), ts);
 				setVarFixed(mb, getArg(p, i));
 			}
-			@:prepostProcess(ts,i,mb)@
+			prepostProcess(ts, p, i, mb);
 		}
 		/*
-		 * @-
 		 * Also the arguments may contain constants
 		 * to be garbage collected.
 		 */
@@ -437,7 +468,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 				p->gc |= GARBAGECONTROL;
 			}
 		/*
-		 * @-
 		 * It may happen that an argument was still untyped and as a result of
 		 * the polymorphism matching became strongly typed. This should be
 		 * reflected in the symbol table.
@@ -445,7 +475,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		s1 = returntype[0];     /* for those interested */
 		/* foundbutwrong = 0;*/
 		/*
-		 * @-
 		 * If the call refers to a polymorphic function, we
 		 * clone it to arrive at a bounded instance. Polymorphic patterns and
 		 * commands are responsible for type resolution themselves.
@@ -465,76 +494,8 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 					goto wrapup;
 			}
 		}
-/*
- * @-
- * We found the proper function. Copy some properties. In particular,
- * determine the calling strategy, i.e. FCNcall, CMDcall, FACcall, PATcall
- * Beware that polymorphic functions may produce type-incorrect clones.
- * This piece of code may be shared by the separate binder
- */
-@= bindFunction
-	if (s->def->errors) {
-		p->typechk = TYPE_UNKNOWN;
-		mb->errors++;
-		goto wrapup;
-	}
-	if (p->token == ASSIGNsymbol) {
-		switch (getSignature(s)->token) {
-		case COMMANDsymbol:
-			p->token = CMDcall;
-			p->fcn = getSignature(s)->fcn;      /* C implementation mandatory */
-			if (p->fcn == NULL) {
-				showScriptException(out, mb, getPC(mb, p), TYPE,
-					"object code for command %s.%s missing",
-					p->modname, p->fcnname);
-				p->typechk = TYPE_UNKNOWN;
-				mb->errors++;
-				goto wrapup;
-			}
-			break;
-		case PATTERNsymbol:
-			p->token = PATcall;
-			p->fcn = getSignature(s)->fcn;      /* C implementation optional */
-			break;
-		case FACTORYsymbol:
-			p->token = FACcall;
-			p->fcn = getSignature(s)->fcn;      /* C implementation optional */
-			break;
-		case FUNCTIONsymbol:
-			p->token = FCNcall;
-			if (getSignature(s)->fcn)
-				p->fcn = getSignature(s)->fcn;     /* C implementation optional */
-			break;
-		default: {
-			if (!silent)
-				showScriptException(out, mb, getPC(mb, p), MAL,
-					"MALresolve: unexpected token type");
-			mb->errors++;
-			goto wrapup;
-		}
-		}
-		p->blk = s->def;
-	}
-@
-@c
-		@:bindFunction@
-/*
- * @-
- * Since we now know the storage type of the receiving variable, we can
- * set the garbage collection flag.
- */
-@= prepostProcess
-	if (findGDKtype(@1) == TYPE_bat ||
-		isaBatType(@1) ||
-		findGDKtype(@1) == TYPE_str ||
-		(!isPolyType(@1) && @1 < TYPE_any &&
-		 @1 >= 0 && ATOMextern(@1))) {
-		getInstrPtr(@3, 0)->gc |= GARBAGECONTROL;
-		setVarCleanup(mb, getArg(p, @2));
-		p->gc |= GARBAGECONTROL;
-	}
-@
-@c
+		bindFunction(s, p, mb, out);
+
 #ifdef DEBUG_MAL_RESOLVE
 		if (tracefcn) {
 			printInstruction(out, mb, 0mp, LIST_MAL_ALL);
@@ -546,7 +507,6 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 		return s1;
 	} /* while */
 	/*
-	 * @-
 	 * We haven;t found the correct function.  To ease debugging, we may reveal
 	 * that we found an instruction with the proper arguments, but that clashes
 	 * with one of the target variables.
@@ -563,19 +523,7 @@ wrapup:
 	return -3;
 }
 
-@h
-/*
- * @- Type resolution algorithm.
- * Every actual argument of a function call should be type compatible
- * with the formal argument, and the function result type should be
- * compatible with the destination variable.
- * In both cases the 'receiving' variable may not be fully qualified,
- * i.e. of type 'any'. The type resolution algorithm creates the concrete
- * type for subsequent use.
- */
-mal_export int resolveType(int dsttype, int srctype);
-@c
-int resolveType(int dsttype, int srctype){  
+int resolveType(int dsttype, int srctype){
 #ifdef DEBUG_MAL_RESOLVE
 	if( tracefcn){
 		mnstr_printf(GDKout,"resolveType dst %s (%d) %s(%d)\n",
@@ -587,7 +535,6 @@ int resolveType(int dsttype, int srctype){
 	if( dsttype == TYPE_any) return srctype;
 	if( srctype == TYPE_any) return dsttype;
 	/*
-	 * @-
 	 * A bat reference can be coerced to bat type.
 	 */
 	if(isaBatType(srctype) && dsttype == TYPE_bat) return srctype;
@@ -598,7 +545,7 @@ int resolveType(int dsttype, int srctype){
 		h2= getHeadType(srctype);
 		if( h1 == h2) h3= h1; else
 		if( h1 == TYPE_any) h3= h2; else
-		if( h2 == TYPE_any) h3= h1; 
+		if( h2 == TYPE_any) h3= h1;
 		else {
 #ifdef DEBUG_MAL_RESOLVE
 			if(tracefcn) mnstr_printf(GDKout,"Head can not be resolved \n");
@@ -636,7 +583,6 @@ int resolveType(int dsttype, int srctype){
 }
 
 /*
- * @-
  * We try to clear the type check flag by looking up the
  * functions. Errors are simply ignored at this point of the game,
  * because they may be resolved as part of the calling sequence.
@@ -649,7 +595,7 @@ typeMismatch(stream *out, MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent
 	if (!silent) {
 		n1 = getTypeName(lhs);
 		n2 = getTypeName(rhs);
-		showScriptException(out, mb, getPC(mb, p), TYPE, 
+		showScriptException(out, mb, getPC(mb, p), TYPE,
 				"type mismatch %s := %s", n1, n2);
 		GDKfree(n1);
 		GDKfree(n2);
@@ -658,7 +604,6 @@ typeMismatch(stream *out, MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent
 	p->typechk= TYPE_UNKNOWN;
 }
 /*
- * @-
  * A function search should inspect all modules unless a specific module
  * is given. Preference is given to the lower scopes.
  * The type check is set to TYPE_UNKNOWN first to enforce a proper
@@ -686,7 +631,7 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 		for(k=0;k<p->argc;k++)
 			setVarFixed(mb,getArg(p,k));
 		for(k=p->retc;k<p->argc;k++){
-			@:prepostProcess(getArgType(mb,p,k),k,mb)@
+			prepostProcess(getArgType(mb, p, k), p, k, mb);
 		}
 		p->typechk= TYPE_RESOLVED;
 		for(k=0; k<p->retc;k++)
@@ -701,7 +646,6 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 		s1= findFunctionType(out, m,mb,p,silent);
 		if( s1>= 0) return;
 		/*
-		 * @-
 		 * Could not find a function that statisfies the constraints.
 		 * If the instruction is just a function header we may continue.
 		 * Likewise, the function and module may refer to string variables
@@ -719,7 +663,7 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 
 				instructionCall(mb,p,errsig,errsig, sizeof(errsig) - 20 - 2 * strlen(getModuleId(p)) - strlen(getFunctionId(p)) -strlen(errsig));
 				showScriptException(out, mb,getPC(mb,p),TYPE,
-						"'%s%s%s' undefined in: %s", 
+						"'%s%s%s' undefined in: %s",
 						(getModuleId(p)?getModuleId(p):""),
 						(getModuleId(p)?".":""),
 						getFunctionId(p), errsig);
@@ -754,9 +698,8 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 				typeMismatch(out, mb,p,lhs,rhs,silent);
 				return;
 			}
-		} else 
+		} else
 		/*
-		 * @-
 		 * The language permits assignment of 'nil' to any variable,
 		 * using the target type.
 		 */
@@ -764,18 +707,18 @@ void typeChecker(stream *out, Module scope, MalBlkPtr mb, InstrPtr p,int silent)
 			ValRecord cst;
 			cst.vtype= TYPE_void;
 			cst.val.oval= void_nil;
-			
+
 			rhs= isaBatType(lhs)?TYPE_bat:lhs;
 			p->argv[i]= defConstant(mb, rhs, &cst);
 			rhs= lhs;
-		} 
+		}
 
 		if( !isVarFixed(mb,getArg(p,k))) {
 			setVarType(mb,getArg(p,k),rhs);
 			setVarFixed(mb,getArg(p,k));
 		}
-		@:prepostProcess(s1,i,mb)@
-		@:prepostProcess(s1,k,mb)@
+		prepostProcess(s1, p, i, mb);
+		prepostProcess(s1, p, k, mb);
 	}
 	/* the case where we have no rhs */
 	if (p->barrier && p->retc == p->argc)
@@ -812,14 +755,13 @@ int fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p){
 		if( getFunctionId(p)==s->name &&
 			p->argc == getSignature(s)->argc ){
 			/* found it */
-			@:bindFunction@
+			bindFunction(s, p, mb, out);
 		}
 	}
 wrapup:
 	return 0;
 }
 /*
- * @-
  * After the parser finishes, we have to look for semantic errors,
  * such as flow of control problems and possible typeing conflicts.
  * The nesting of BARRIER and CATCH statements with their associated
@@ -828,7 +770,7 @@ wrapup:
  * and leads to flagging the function as erroneous.
  * Also check general conformaty of the ML block structure.
  * It should start with a signature and finish with and ENDsymbol
- * @-
+ *
  * Type checking a program is limited to those instructions that are
  * not resolved yet. Once the program is completely checked, further calls
  * should be ignored. This should be separately administered for the flow
@@ -851,7 +793,6 @@ void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent){
 	}
 }
 /*
- * @-
  * Type checking an individual instruction is dangerous,
  * because it ignores data flow and declarations issues.
  * It is only to be used in isolated cases.
@@ -886,7 +827,6 @@ int typeKind(MalBlkPtr mb, InstrPtr p, int i){
 	return TYPE_RESOLVED;
 }
 /*
- * @-
  * For a polymorphic commands we do not generate a cloned version.
  * It suffices to determine the actual return value taking into
  * account the type variable constraints.
@@ -908,7 +848,6 @@ malType getPolyType(malType t,int *polytype){
 	return tail;
 }
 /*
- * @-
  * Each argument is checked for binding of polymorphic arguments.
  * This routine assumes that the type index is indeed smaller than maxarg.
  * (The parser currently enforces a single digit from 1-9 )
@@ -929,7 +868,7 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 #endif
 
 	if( (h=getTailIndex(formal))  ){
-		if( isaBatType(actual) && !isaBatType(formal) && 
+		if( isaBatType(actual) && !isaBatType(formal) &&
 		   (polytype[h]== TYPE_any || polytype[h]== actual)){
 			polytype[h]= actual;
 			ret=0;
@@ -959,7 +898,7 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 				}
 			}
 		}
-	} 
+	}
 updLabel:
 #ifdef DEBUG_MAL_RESOLVE
 	mnstr_printf(GDKout,"updateTypeMap returns: %d\n",ret);
