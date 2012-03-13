@@ -82,7 +82,7 @@ mal_export str getTypeIdentifier(malType tpe);
 mal_export int getTypeIndex(str nme, int len, int deftpe);
 mal_export malType reverseBatType(malType v);
 mal_export malType malAnyBatType(malType t1, malType t2);
-mal_export int idcmp(str n, str m);
+#define idcmp(n, m)	strcmp(n, m)
 mal_export str newTmpName(char tag, int i);
 mal_export int isTmpName(str n);
 mal_export int isTypeName(str n);
