@@ -4075,12 +4075,13 @@ bindjsonvars(MalBlkPtr mb, tree *t)
 }
 
 static void
-changetmplrefsjoin(tree *t)
+changetmplrefsjoin(tree *t, char *except)
 {
 	tree *w;
 
 	for (w = t; w != NULL; w = w->next) {
-		if (w->type == j_var) {
+		if (w->type == j_var && except != NULL && strcmp(w->sval, except) != 0)
+		{
 			/* inject an indirection to match the join output */
 			tree *n = GDKzalloc(sizeof(tree));
 			n->type = j_var;
@@ -4088,14 +4089,21 @@ changetmplrefsjoin(tree *t)
 			w->tval1 = n;
 			n->sval = w->sval;
 			w->sval = GDKstrdup("$");
+			if (except != NULL) {
+				n = GDKzalloc(sizeof(tree));
+				n->type = j_arr_idx;
+				n->nval = -1;
+				n->tval1 = w->tval1;
+				w->tval1 = n;
+			}
 			continue;
 		}
 		if (w->tval1 != NULL)
-			changetmplrefsjoin(w->tval1);
+			changetmplrefsjoin(w->tval1, except);
 		if (w->tval2 != NULL)
-			changetmplrefsjoin(w->tval2);
+			changetmplrefsjoin(w->tval2, except);
 		if (w->tval3 != NULL)
-			changetmplrefsjoin(w->tval3);
+			changetmplrefsjoin(w->tval3, except);
 	}
 }
 
@@ -5084,7 +5092,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				dumppredjoin(mb, js, t, &j1, &j2, &j3, &j4, &j5, &j6 ,&j7);
 
 				/* then transform the output with a modified into clause */
-				changetmplrefsjoin(t->tval3);
+				changetmplrefsjoin(t->tval3, NULL);
 
 				/* transform this node into a transform one, and force
 				 * re-iteration so we simulate a pipe */
@@ -5334,19 +5342,75 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					 * group on is $.a */
 					changetmplrefsgroup(t->tval2,
 							t->tval1->sval, t->tval1->tval2);
-				} else {
-					/* co-group */
+
+					/* transform this node into a transform one, and force
+					 * re-iteration so we simulate a pipe */
+					t->type = j_transform;
+					freetree(t->tval1);
+					t->tval1 = GDKzalloc(sizeof(tree));
+					t->tval1->type = j_var;
+					t->tval1->sval = GDKstrdup("$");
+
+					continue;
+				} else { /* co-group */
+					json_var *js;
+					tree *w, *preds, *pw;
+					int i;
+
+					/* first compute with join */
+					for (i = 0, w = t->tval1; w != NULL; w = w->next, i++)
+						;
+					js = GDKmalloc(sizeof(json_var) * (i + 1));
+					for (i = 0, w = t->tval1; w != NULL; w = w->next, i++) {
+						js[i].name = w->tval3->sval; /* always _IDENT */
+						js[i].preserve = 0;
+						dumpgetvar(mb, w->tval1->sval,
+								&js[i].j1, &js[i].j2, &js[i].j3, &js[i].j4,
+								&js[i].j5, &js[i].j6, &js[i].j7);
+					}
+					js[i].name = NULL;
+
+					preds = GDKzalloc(sizeof(tree));
+					preds->type = j_join;
+					pw = preds->tval2 = GDKzalloc(sizeof(tree));
+					GDKfree(t->tval1->tval2->sval);
+					t->tval1->tval2->sval = GDKstrdup(t->tval1->tval3->sval);
+					for (w = t->tval1; w != NULL && w->next != NULL; w = w->next) {
+						GDKfree(w->next->tval2->sval);
+						w->next->tval2->sval = GDKstrdup(w->next->tval3->sval);
+						pw->tval1 = w->tval2;
+						pw->tval2 = GDKzalloc(sizeof(tree));
+						pw->tval2->type = j_comp;
+						pw->tval2->cval = j_equals;
+						pw->tval3 = w->next->tval2;
+						if (w->next->next != NULL)
+							pw = pw->next = GDKzalloc(sizeof(tree));
+					}
+
+					dumppredjoin(mb, js, preds,
+							&j1, &j2, &j3, &j4, &j5, &j6, &j7);
+
+					for (pw = preds->tval2; pw != NULL; pw = pw->next)
+						pw->tval1 = pw->tval3 = NULL;
+					freetree(preds);
+					GDKfree(js);
+
+					/* demote to single-input group, but mangle the
+					 * transforms and the groupkey */
+					changetmplrefsjoin(t->tval2, t->tval1->sval);
+					printtree(t->tval2, 0, 0);
+					printf("\n");
+					fflush(NULL);
+					w = t->tval1->tval2;
+					t->tval1->tval2 = make_varname(GDKstrdup("$"));
+					t->tval1->tval2->tval1 = w;
+					freetree(t->tval1->next);
+					t->tval1->next = NULL;
+					freetree(t->tval1->tval1);
+					t->tval1->tval1 = NULL;
+					continue; /* reevaluate this group */
 				}
-
-				/* transform this node into a transform one, and force
-				 * re-iteration so we simulate a pipe */
-				t->type = j_transform;
-				freetree(t->tval1);
-				t->tval1 = GDKzalloc(sizeof(tree));
-				t->tval1->type = j_var;
-				t->tval1->sval = GDKstrdup("$");
-
-				continue;
+				assert(0);
 			} break;
 			case j_sort: {
 				int l[4][2] = {{j2, 's'}, {j3, 'i'}, {j4, 'd'}, {0, 0}};
