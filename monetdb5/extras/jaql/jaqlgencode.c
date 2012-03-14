@@ -4080,7 +4080,7 @@ changetmplrefsjoin(tree *t, char *except)
 	tree *w;
 
 	for (w = t; w != NULL; w = w->next) {
-		if (w->type == j_var && except != NULL && strcmp(w->sval, except) != 0)
+		if (w->type == j_var && (except == NULL || strcmp(w->sval, except) != 0))
 		{
 			/* inject an indirection to match the join output */
 			tree *n = GDKzalloc(sizeof(tree));
