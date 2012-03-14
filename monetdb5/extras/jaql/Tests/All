@@ -23,8 +23,7 @@ plan02
 filter01
 transform01
 expand01
-#todo
-#group01
+group01
 join01
 sort01
 top01
