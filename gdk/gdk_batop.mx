@@ -2678,14 +2678,14 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 			}
 			BATsetcount(gc, BATcount(g));
 			gc->hdense = BAThdense(g);
-			if (BAThdense(gc)) {
+			if (gc->hdense) {
 				BATseqbase(gc, g->hseqbase);
 				gc->hsorted = GDK_SORTED;
 			} else {
 				gc->hsorted = BAThordered(g);
 			}
-			BATkey(gc, TRUE);
-			gc->H->nonil = gc->H->nonil;
+			BATkey(gc, (gc->hdense || g->hkey != FALSE));
+			gc->H->nonil = g->H->nonil;
 			gc->T->nonil = 1;
 		} else {
 			gc = BATcopy(g, g->htype, g->ttype, TRUE);
@@ -2706,7 +2706,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	ALIGNsetH(bn, b);
 	bn->hsorted = (trivprop ? GDK_SORTED : BAThordered(b));
 	bn->hdense = BAThdense(b) || (trivprop && b->htype == TYPE_oid);
-	if (BAThdense(bn)) {
+	if (bn->hdense) {
 		BATseqbase(bn, b->hseqbase);
 	}
 	BATkey(bn, (bn->hdense || b->hkey != FALSE));
@@ -2717,7 +2717,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 		BATseqbase(BATmirror(bn), *(oid *) BUNtloc(bni, BUNfirst(bn)));
 	}
 	BATkey(BATmirror(bn), trivprop);
-	bn->H->nonil = bn->H->nonil;
+	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = 1;
 
 	if (gc)
