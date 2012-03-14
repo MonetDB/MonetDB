@@ -214,12 +214,12 @@ void freeModuleList(Module s){
 		s=t;
 	}
 }
+
 /*
- * @-
- * After filling in a structure it is added to the multi-level
- * symbol table. We keep a skip list of similar named function
- * symbols. This speeds up searching provided the modules adhire
- * to the structure group the functions as well.
+ * After filling in a structure it is added to the multi-level symbol
+ * table.  We keep a skip list of similarly named function symbols.
+ * This speeds up searching provided the modules adhere to the
+ * structure and group the functions as well.
  */
 void insertSymbol(Module scope, Symbol prg){
 	InstrPtr sig;

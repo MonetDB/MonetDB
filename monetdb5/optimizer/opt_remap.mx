@@ -31,7 +31,7 @@ All Rights Reserved.
  * already highly tuned multiplex implementations.
  * They have to be located amongst the modules.
  *
- * The mapping policy adhired to in the libraries is to store the
+ * The mapping policy adhered to in the libraries is to store the
  * multiplex variants for module M in batM.
  *
  * An illustrative example is the following MAL snippet:
