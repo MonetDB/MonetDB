@@ -151,11 +151,11 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			alias = 0;
 		if (e->f) { /* the dimension constraints */
 			/* If a slicing has been applied on this dimension, print the sliced range; otherwise the original range */
-			list *range = ((list*)e->f)->h->next?((list*)e->f)->h->next->data:((list*)e->f)->h->data;
+			list *range = ((list*)e->f)->h->next && list_length(((list*)e->f)->h->next->data) > 0 ?((list*)e->f)->h->next->data:((list*)e->f)->h->data;
 			mnstr_printf(fout, "[");
 #define PRINT_DIM_CONSTRAINT(EXP, C) \
 			if (EXP->data) \
-			  exp_print(sql, fout, (sql_exp*)EXP->data, depth, alias, 1); \
+			  exp_print(sql, fout, (sql_exp*)EXP->data, depth, 0, alias); \
 			else \
 				mnstr_printf(fout, "*"); \
 			mnstr_printf(fout, C);

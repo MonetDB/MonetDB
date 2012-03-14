@@ -1011,7 +1011,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			sql_exp *e = en->data, *ne;
 
 			/* the cardinality only reduces after a normal SQL group by */
-			if (e->type == e_column && e->f)
+			if (e->type == e_column && e->f && list_length(e->f) == 3)
 				rel->card = CARD_MULTI;
 			e->card = rel->card;
 			if (!exp_name(e))
@@ -4310,7 +4310,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 	}
 
 	if (groupby->r && ((list*)groupby->r)->h && ((sql_exp*)((list*)groupby->r)->h->data)->type == e_column && ((sql_exp*)((list*)groupby->r)->h->data)->f && list_length(((sql_exp*)((list*)groupby->r)->h->data)->f) == 3) {
-		/* e_column->f has been "misused" => an aggragation over array tiles */
+		/* ((sql_exp*)((list*)groupby->r)->h->data) is a dimensional column with three range lists => an aggragation over array tiles */
 		return _rel_tiling_aggr(sql, rel, groupby, distinct, aggrstr, args->data.sym, f);
 	}
 
@@ -5384,7 +5384,7 @@ is_tiling_groupby (sql_exp *e)
 			return 1;
 		return 0;
 	} else if (e->type == e_column) {
-		if (e->f)
+		if (e->f && list_length(e->f) == 3)
 			return 1;
 	}
 	return 0;
