@@ -4090,11 +4090,23 @@ changetmplrefsjoin(tree *t, char *except)
 			n->sval = w->sval;
 			w->sval = GDKstrdup("$");
 			if (except != NULL) {
-				n = GDKzalloc(sizeof(tree));
-				n->type = j_arr_idx;
-				n->nval = -1;
-				n->tval1 = w->tval1;
-				w->tval1 = n;
+				if (w->tval1->tval1 == NULL || w->tval1->tval1->type != j_arr_idx) {
+					/* tval1->tval1->type should never be a j_var, but
+					 * for the sake of the else case, just put [*] in
+					 * front of it here ... it can't match anything
+					 * since the base var here is defined as an array */
+					n = GDKzalloc(sizeof(tree));
+					n->type = j_arr_idx;
+					n->nval = -1;
+					n->tval1 = w->tval1;
+					w->tval1 = n;
+				} else {
+					assert(w->tval1->tval1->type == j_arr_idx);
+					n = w->tval1->tval1;
+					w->tval1->tval1 = n->tval1;
+					n->tval1 = w->tval1;
+					w->tval1 = n;
+				}
 			}
 			continue;
 		}
@@ -5398,9 +5410,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					/* demote to single-input group, but mangle the
 					 * transforms and the groupkey */
 					changetmplrefsjoin(t->tval2, t->tval1->sval);
-					printtree(t->tval2, 0, 0);
-					printf("\n");
-					fflush(NULL);
 					w = t->tval1->tval2;
 					t->tval1->tval2 = make_varname(GDKstrdup("$"));
 					t->tval1->tval2->tval1 = w;
