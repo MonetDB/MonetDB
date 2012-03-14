@@ -55,10 +55,10 @@ http://www.usualcoding.eu/post/2007/09/03/Building-a-reentrant-parser-in-C-with-
 
 #define YYLEX_PARAM j->scanner
 
-int yylex(YYSTYPE* lvalp, YYLTYPE* llocp, void *scanner);
+int jaqllex(YYSTYPE* lvalp, YYLTYPE* llocp, void *scanner);
 
 void
-yyerror(YYLTYPE* locp, struct _jc* j, char const *msg)
+jaqlerror(YYLTYPE* locp, struct _jc* j, char const *msg)
 {
 	if (j->err[0] == '\0')
 		snprintf(j->err, sizeof(j->err), "%s at or around %d",

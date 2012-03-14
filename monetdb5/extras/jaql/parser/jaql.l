@@ -11,7 +11,7 @@
 #include "jaql.h"
 
 YYSTYPE yylval;
-extern void yyerror(YYLTYPE* locp, jc* j, char const *msg);
+extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 
 /* set line numbers each time a token is recognised */
 #define YY_USER_ACTION yylloc->first_line = yylineno;
@@ -136,7 +136,7 @@ false      return _FALSE;
 .                      {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);
-	yyerror(yylloc_param, yyextra, buf);
+	jaqlerror(yylloc_param, yyextra, buf);
 	return LEX_ERROR;
 	}
 %%

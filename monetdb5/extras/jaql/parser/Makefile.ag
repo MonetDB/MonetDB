@@ -22,8 +22,8 @@ INCLUDES = ../ \
 		   ../../../../common/stream \
 		   ../../../../gdk
 
-AM_YFLAGS = -d
-AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c --header-file=$(LEX_OUTPUT_ROOT).h
+AM_YFLAGS = -d -p jaql
+AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c --header-file=$(LEX_OUTPUT_ROOT).h -P jaql
 
 # flex' and bison's output aren't up to the strictness of our flags
 X_CFLAGS = #$(X_CFLAGS:-Werror=) <- recursive
