@@ -1135,7 +1135,7 @@ rel2bin_sql_table(mvc *sql, sql_table *t)
 		char *rnme = sa_strdup(sql->sa, tname);
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
+			stmt *sc = stmt_idxbat(sql->sa, i, ts, RDONLY);
 
 			/* index names are prefixed, to make them independent */
 			sc = stmt_alias(sql->sa, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
@@ -1175,7 +1175,7 @@ rel2bin_basetable( mvc *sql, sql_rel *rel, list *refs)
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			stmt *sc = stmt_idxbat(sql->sa, i, RDONLY);
+			stmt *sc = stmt_idxbat(sql->sa, i, ts, RDONLY);
 			char *rnme = sa_strdup(sql->sa, t->base.name);
 
 			/* index names are prefixed, to make them independent */
@@ -1304,6 +1304,77 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 }
 
 static stmt *
+rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *left, stmt *right, sql_idx *i, node *en ) 
+{
+	node *n;
+	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *wrd = sql_bind_localtype("wrd");
+	stmt *h = NULL;
+	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1));
+	sql_exp *e = en->data;
+	sql_exp *l = e->l;
+	stmt *idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+	int swap_exp = 0, swap_rel = 0;
+
+	if (!idx) {
+		swap_exp = 1;
+		l = e->r;
+		idx = bin_find_column(sql->sa, left, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+	}
+	if (!idx) {
+		swap_exp = 0;
+		swap_rel = 1;
+		l = e->l;
+		idx = bin_find_column(sql->sa, right, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+	}
+	if (!idx) {
+		swap_exp = 1;
+		swap_rel = 1;
+		l = e->r;
+		idx = bin_find_column(sql->sa, right, l->l, sa_strconcat(sql->sa, "%", i->base.name));
+	}
+	if (!idx)
+		return NULL;
+	/* should be in key order! */
+	for( en = rel->exps->h, n = i->columns->h; en && n; en = en->next, n = n->next ) {
+		sql_exp *e = en->data;
+		stmt *s = NULL;
+
+		if (e->type == e_cmp && e->flag == cmp_equal) {
+			sql_exp *ee = (swap_exp)?e->l:e->r;
+			if (swap_rel)
+				s = exp_bin(sql, ee, left, NULL, NULL, NULL);
+			else
+				s = exp_bin(sql, ee, right, NULL, NULL, NULL);
+		}
+
+		if (!s) 
+			return NULL;
+		if (h) {
+			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
+
+			h = stmt_Nop(sql->sa, stmt_list(sql->sa, list_append( list_append(
+				list_append(sa_list(sql->sa), h), bits), s)), xor);
+		} else {
+			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
+
+			h = stmt_unop(sql->sa, s, hf);
+		}
+	}
+	if (h->nrcols) {
+		if (!swap_rel) {
+			h = stmt_reverse(sql->sa, h);
+			return stmt_join(sql->sa, idx, h, cmp_equal);
+		} else {
+			idx = stmt_reverse(sql->sa, idx);
+			return stmt_join(sql->sa, h, idx, cmp_equal);
+		}
+	} else
+		return stmt_uselect(sql->sa, idx, h, cmp_equal);
+}
+
+
+static stmt *
 rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
@@ -1325,6 +1396,7 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
  	 * 	second selects/filters 
          */
 	if (rel->exps) {
+		int use_hash = 0;
 		int idx = 0;
 		list *jexps = sa_list(sql->sa);
 		list *jns = sa_list(sql->sa);
@@ -1349,12 +1421,25 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 			int join_idx = sql->opt_stats[0];
 			sql_exp *e = en->data;
 			stmt *s = NULL;
+			prop *p;
 
 			/* only handle simple joins here */		
-			if (list_length(jns) && (idx || !e->type == e_cmp || e->flag != cmp_equal))
+			if (list_length(jns) && (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
 
-			s = exp_bin(sql, en->data, left, right, NULL, NULL);
+			/* handle possible index lookups */
+			/* expressions are in index order ! */
+			if (!join &&
+			    (p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
+				sql_idx *i = p->value;
+			
+				join = s = rel2bin_hash_lookup(sql, rel, left, right, i, en);
+				assert(s);
+				list_append(jns, s);
+				use_hash = 1;
+			}
+
+			s = exp_bin(sql, e, left, right, NULL, NULL);
 			if (!s) {
 				assert(0);
 				return NULL;
@@ -1388,6 +1473,8 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		}
 		if (list_length(jns) > 1) {
 			join = stmt_releqjoin(sql->sa, jns);
+			if (use_hash)
+				join->flag = NO_HASH;
 		} else if (!join) {
 			join = jns->h->data; 
 		}
@@ -2191,43 +2278,6 @@ rel2bin_predicate(mvc *sql)
 }
 
 static stmt *
-rel2bin_hash_lookup( mvc *sql, sql_rel *rel, stmt *sub, sql_idx *i, node *en ) 
-{
-	node *n;
-	sql_subtype *it = sql_bind_localtype("int");
-	sql_subtype *wrd = sql_bind_localtype("wrd");
-	stmt *h = NULL;
-	stmt *bits = stmt_atom_int(sql->sa, 1 + ((sizeof(wrd)*8)-1)/(list_length(i->columns)+1));
-	sql_exp *e = en->data;
-	sql_exp *l = e->l;
-	stmt *idx = bin_find_column(sql->sa, sub, l->l, sa_strconcat(sql->sa, "%", i->base.name));
-
-	/* should be in key order! */
-	for( en = rel->exps->h, n = i->columns->h; en && n; en = en->next, n = n->next ) {
-		sql_exp *e = en->data;
-		stmt *s = NULL;
-
-		if (e->type == e_cmp && e->flag == cmp_equal)
-			s = exp_bin(sql, e->r, NULL, NULL, NULL, NULL);
-
-		if (!s) 
-			return NULL;
-		if (h) {
-			sql_subfunc *xor = sql_bind_func_result3(sql->sa, sql->session->schema, "rotate_xor_hash", wrd, it, tail_type(s), wrd);
-
-			h = stmt_Nop(sql->sa, stmt_list(sql->sa, list_append( list_append(
-				list_append(sa_list(sql->sa), h), bits), s)), xor);
-		} else {
-			sql_subfunc *hf = sql_bind_func_result(sql->sa, sql->session->schema, "hash", tail_type(s), NULL, wrd);
-
-			h = stmt_unop(sql->sa, s, hf);
-		}
-	}
-	return stmt_uselect(sql->sa, idx, h, cmp_equal);
-}
-
-
-static stmt *
 rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 {
 	list *l; 
@@ -2259,10 +2309,10 @@ rel2bin_select( mvc *sql, sql_rel *rel, list *refs)
 		sql_exp *e = en->data;
 		prop *p;
 
-		if ((p=find_prop(e->p, PROP_HASHIDX)) != NULL) {
+		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
 			
-			s = rel2bin_hash_lookup(sql, rel, sub, i, en);
+			s = rel2bin_hash_lookup(sql, rel, sub, NULL, i, en);
 		}
 	} 
 	sel = stmt_relselect_init(sql->sa);
@@ -2672,7 +2722,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		if (s->key && s->nrcols == 0) {
 			s = stmt_relselect_init(sql->sa);
 			if (k->idx && hash_index(k->idx->type))
-				stmt_relselect_fill(s, stmt_uselect(sql->sa, stmt_idxbat(sql->sa, k->idx, RDONLY), idx_inserts, cmp_equal));
+				stmt_relselect_fill(s, stmt_uselect(sql->sa, stmt_idxbat(sql->sa, k->idx, ts, RDONLY), idx_inserts, cmp_equal));
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
@@ -2686,8 +2736,9 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			}
 		} else {
 			s = stmt_releqjoin_init(sql->sa);
-			if (k->idx && hash_index(k->idx->type))
-				stmt_releqjoin_fill(s, stmt_idxbat(sql->sa, k->idx, RDONLY), idx_inserts);
+			s->flag = NO_HASH;
+			if (k->idx && hash_index(k->idx->type)) 
+				stmt_releqjoin_fill(s, stmt_idxbat(sql->sa, k->idx, ts, RDONLY), idx_inserts);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 
@@ -3071,8 +3122,9 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 		/* TODO split null removal and join/group (to make mkey save) */
 		if (!isNew(k)) {
 			s = stmt_releqjoin_init(sql->sa);
+			s->flag = NO_HASH;
 			if (k->idx && hash_index(k->idx->type))
-				stmt_releqjoin_fill(s, stmt_diff(sql->sa, stmt_idxbat(sql->sa, k->idx, RDONLY), idx_updates), idx_updates);
+				stmt_releqjoin_fill(s, stmt_diff(sql->sa, stmt_idxbat(sql->sa, k->idx, ts, RDONLY), idx_updates), idx_updates);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
 				stmt *upd, *l;
@@ -3259,8 +3311,9 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 
 	fts = stmt_basetable(sql->sa, k->idx->t, k->idx->t->base.name);
 	s = stmt_releqjoin_init(sql->sa);
+	s->flag = NO_HASH;
 
-	rows = stmt_idxbat(sql->sa, k->idx, RDONLY);
+	rows = stmt_idxbat(sql->sa, k->idx, fts, RDONLY);
 	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
 	rows = stmt_reverse(sql->sa, rows);
 
@@ -3356,7 +3409,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_key *k, int updcol, stmt **updates, int a
 	stmt *rows;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
 
-	rows = stmt_idxbat(sql->sa, k->idx, RDONLY);
+	rows = stmt_idxbat(sql->sa, k->idx, NULL, RDONLY);
 	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
 	rows = stmt_reverse(sql->sa, rows);
 		
@@ -3933,7 +3986,7 @@ sql_delete_ukey(mvc *sql, stmt *deletes, sql_key *k, list *l)
 			sql_key *fk = n->data;
 			stmt *s;
 
-			s = stmt_idxbat(sql->sa, fk->idx, RDONLY);
+			s = stmt_idxbat(sql->sa, fk->idx, NULL, RDONLY);
 			s = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, s), deletes);
 			switch (((sql_fkey*)fk)->on_delete) {
 				case ACT_NO_ACTION: 
