@@ -38,6 +38,7 @@ int concatenate_strs(str* words_to_concat, int num_words_to_concat, str* ret_con
 str prepare_insertion(Client cntxt, temp_container* tc);
 str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc);
 str SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output);
+str register_clean_up(temp_container* tc);
 
 /*
  * returns number of lines in a file.
@@ -313,7 +314,7 @@ str prepare_insertion(Client cntxt, temp_container* tc)
 		}
 		
 		q = (str)GDKmalloc(512*sizeof(char));
-		sprintf(q, "CREATE FUNCTION %s_%s_reg(ticket bigint, table_idx int) RETURNS table(%s) external name registrar.register_table;\nCOMMIT;\n", tc->schema_name, tc->table_names[t], concatenated);
+		sprintf(q, "CREATE FUNCTION %s_%s_reg(ticket bigint, table_idx int) RETURNS table(%s) external name registrar.register_table;\n", tc->schema_name, tc->table_names[t], concatenated);
 		
 		if((msg =SQLstatementIntern(cntxt,&q,"registrar.create.function",TRUE,FALSE))!= MAL_SUCCEED)
 		{//create function query not succeeded, what to do
@@ -341,10 +342,10 @@ str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc)
 	int t;
 	long ticket = (long) tc;
 	mvc *m = NULL;
+	str msg;
 
 	for(t = 0; t < tc->num_tables; t++)
 	{
-		str msg;
 		str q = (str)GDKmalloc(512*sizeof(char));
 		sprintf(q, "INSERT INTO %s.%s SELECT * FROM %s_%s_reg(%ld, %d);\n", tc->schema_name, tc->table_names[t], tc->schema_name, tc->table_names[t], ticket, t);
 
@@ -352,21 +353,56 @@ str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc)
 		{//insert into query not succeeded, what to do
 			return msg;
 		}
-		
-		if((msg = getContext(cntxt, mb, &m, NULL))!= MAL_SUCCEED)
-		{//getting mvc failed, what to do
-			return msg;
-		}
-		
-		if(mvc_commit(m, 0, NULL) < 0)
-		{//committing failed
-			throw(MAL,"registrar.insert_into_vault", "committing failed\n");
-		}
 
+	}
+	
+	if((msg = getContext(cntxt, mb, &m, NULL))!= MAL_SUCCEED)
+	{//getting mvc failed, what to do
+		return msg;
+	}
+	
+	if(mvc_commit(m, 0, NULL) < 0)
+	{//committing failed
+		throw(MAL,"registrar.insert_into_vault", "committing failed\n");
 	}
 
 	return MAL_SUCCEED;
 }
+
+
+/*
+ * frees the memory that tc occupies and releases the references to the BATs
+ * 
+ * returns MAL_SUCCEED.
+ */
+str register_clean_up(temp_container* tc)
+{
+	int t, c;
+	
+	for(t = 0; t < tc->num_tables; t++)
+	{	
+		for(c = 0; c < tc->num_columns[t]; c++)
+		{
+			BBPreleaseref(tc->tables_columns[t].column_bats[c]);
+			GDKfree(tc->tables_columns[t].column_names[c]);
+			GDKfree(tc->tables_columns[t].column_types_strs[c]);
+		}
+		
+		GDKfree(tc->tables_columns[t].column_bats);
+		GDKfree(tc->table_names[t]);
+		
+	}
+	
+	GDKfree(tc->tables_columns);
+// 	GDKfree(tc->schema_name);
+	GDKfree(tc->table_names);
+	GDKfree(tc->num_columns);
+	
+	GDKfree(tc);
+	
+	return MAL_SUCCEED;
+}
+
 
 /*
  * appends the metadata of the input "mseed" file provided in the file_path,
@@ -535,11 +571,11 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed: %s\n", err);
 	}
 	
-// 	err = register_clean_up(tc);
-// 	if(err != MAL_SUCCEED)
-// 	{//inserting the temp_container into one of the tables failed, what to do
-// 		throw(MAL,"registrar.register_repo", "Cleaning up the temp_container failed: %s\n", err);
-// 	}
+	err = register_clean_up(tc);
+	if(err != MAL_SUCCEED)
+	{//inserting the temp_container into one of the tables failed, what to do
+		throw(MAL,"registrar.register_repo", "Cleaning up the temp_container failed: %s\n", err);
+	}
 	
 	return MAL_SUCCEED;
 }
