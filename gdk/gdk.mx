@@ -3261,7 +3261,6 @@ gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
-<<<<<<< /ufs/lsidir/develop/monet/current/MonetDB/gdk/gdk.mx
 gdk_export BAT *BATcalcnegate(BAT *b, int accum);
 gdk_export BAT *BATcalcabsolute(BAT *b, int accum);
 gdk_export BAT *BATcalcincr(BAT *b, int accum, int abort_on_error);
@@ -3321,19 +3320,7 @@ gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b);
 gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2);
 gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v);
 gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b);
-=======
-/*
- * @- BAT sample operators
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT *
- * @tab BATsample (BAT *b, n)
- * @end multitable
- */
-gdk_export BAT *BATsample1(BAT *b, BUN n);
->>>>>>> /tmp/gdk.mx~other.R3THkP
 
-<<<<<<< /ufs/lsidir/develop/monet/current/MonetDB/gdk/gdk.mx
 gdk_export int VARcalcnot(ValPtr ret, const ValRecord *v);
 gdk_export int VARcalcnegate(ValPtr ret, const ValRecord *v);
 gdk_export int VARcalcabsolute(ValPtr ret, const ValRecord *v);
@@ -3365,16 +3352,21 @@ gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecor
 gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi);
 gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi);
 gdk_export int VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi);
-=======
->>>>>>> /tmp/gdk.mx~other.R3THkP
 
-<<<<<<< /ufs/lsidir/develop/monet/current/MonetDB/gdk/gdk.mx
 gdk_export BAT *BATconvert(BAT *b, int tp, int abort_on_error);
 gdk_export int VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);
 gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
 
-=======
->>>>>>> /tmp/gdk.mx~other.R3THkP
+/*
+ * @- BAT sample operators
+ *
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT *
+ * @tab BATsample (BAT *b, n)
+ * @end multitable
+ */
+gdk_export BAT *BATsample1(BAT *b, BUN n);
+
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]
 #define MULTIJOIN_KEY(r)	((char*) &r)[1]
