@@ -51,7 +51,7 @@ exit (v,i);
     mdb.setDebug(dbgmsk_restore);
     c := algebra.copy(b);
     t2 := alarm.usec();
-    x := batcalc.+(b,c,true,false);
+    x := batcalc.+(b,c);
     t3 := alarm.usec();
     d1 := calc.-(t1,t0);
     d2 := calc.-(t3,t2);

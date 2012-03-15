@@ -29,7 +29,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     bat.insert(b,1,1);                  #  2 _3:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _4:int, _4:int) {G}
     X_10 := bat.new(nil:int,nil:int);   #  3 _10:bat[:int,:int] := CMDBATnew(_11:int, _11:int) {G}
 barrier (X_13,X_14,X_15) := bat.newIterator(b);#  4 (_13:lng, _14:int, _15:int) := CHPbunIterator(b:bat[:int,:int]) {GJ8}
-    X_17 := calc.+(X_15,1);             #  5 _17:int := CALCbinaryADDintint(_15:int, _4:int) 
+    X_17 := calc.+(X_15,1);             #  5 _17:int := CMDvarADDsignal(_15:int, _4:int) 
     bat.insert(X_10,X_14,X_17);         #  6 _18:bat[:int,:int] := BKCinsert_bun(_10:bat[:int,:int], _14:int, _17:int) {G}
     redo (X_13,X_14,X_15) := bat.hasMoreElements(b);#  7 (_13:lng, _14:int, _15:int) := CHPbunHasMoreElements(b:bat[:int,:int]) {GJ5}
 exit (X_13,X_14,X_15);                  #  8 (_13:lng, _14:int, _15:int) 

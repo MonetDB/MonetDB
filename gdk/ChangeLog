@@ -1,3 +1,6 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Mar 15 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented proper overflow checking on all arithmetic operations.
+

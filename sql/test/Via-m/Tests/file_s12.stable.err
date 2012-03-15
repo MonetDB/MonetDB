@@ -67,7 +67,7 @@ stderr of test 'file_s12` in directory 'test/Via-m` itself:
 # 10:55:23 >  mclient -lsql -umonetdb -Pmonetdb --host=yngling --port=35218 
 # 10:55:23 >  
 
-MAPI  = monetdb@sofia:38256
+MAPI  = monetdb@madrid:34599
 QUERY = set return_id = i_add_video_file('dummy description',
                                          'fabchannel2007',
                                          'identifier4',
@@ -78,7 +78,7 @@ QUERY = set return_id = i_add_video_file('dummy description',
                                          125,
                                          'codec 1',
                                          2000);
-ERROR = !conversion of string 'identifier4' failed
+ERROR = !conversion of string 'identifier4' to type lng failed.
 
 # 10:55:23 >  
 # 10:55:23 >  Done.

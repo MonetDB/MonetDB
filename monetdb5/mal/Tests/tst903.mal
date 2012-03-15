@@ -14,7 +14,7 @@ r:= mmath.srand(0);
 barrier (go,i):= language.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.lng(k);
-	bat.insert(b,nil:oid,l);
+	bat.append(b,l);
 	redo (go,i):= language.nextElement(1:lng,1000000:lng);
 exit (go,i);
 

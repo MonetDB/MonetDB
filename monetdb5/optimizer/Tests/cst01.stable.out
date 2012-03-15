@@ -22,7 +22,7 @@ end main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # test constant expressions 
     X16 := mmath.pi();                  #  2 X16:dbl := MATHpi() 
-    X17 := calc./(180:dbl,X16);         #  3 X17:dbl := CALCbinarycheckDIVdbldbl(_14:dbl, X16:dbl) 
+    X17 := calc./(180:dbl,X16);         #  3 X17:dbl := CMDvarDIVsignal(_14:dbl, X16:dbl) 
     io.print(X17);                      #  4 _9:void := IOprint_val(X17:dbl) 
     mdb.List();                         #  5 _12:void := MDBlistDetail() 
 end main;                               #  6  

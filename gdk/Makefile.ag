@@ -43,6 +43,7 @@ lib_gdk = {
 		gdk_posix.c gdk_logger.c \
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_tm.h gdk_storage.h \
+		gdk_calc.c \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

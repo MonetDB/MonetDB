@@ -64,21 +64,21 @@ stdout of test 'tst1505` in directory 'mal` itself:
 function user.main():void;
     y := bat.new(:oid,:dbl);
     le_a := calc.dbl(1);
-    bat.append(y,le_a);
+    y := bat.append(y,le_a);
     ne_a := calc.dbl(2);
-    bat.append(y,ne_a);
+    y := bat.append(y,ne_a);
     pe_a := calc.dbl(2);
-    bat.append(y,pe_a);
+    y := bat.append(y,pe_a);
     re_a := calc.dbl(2);
-    bat.append(y,re_a);
+    y := bat.append(y,re_a);
     te_a := calc.dbl(2);
-    bat.append(y,te_a);
+    y := bat.append(y,te_a);
     ve_a := calc.dbl(3);
-    bat.append(y,ve_a);
+    y := bat.append(y,ve_a);
     xe_a := calc.dbl(1);
-    bat.append(y,xe_a);
+    y := bat.append(y,xe_a);
     af_a := calc.dbl(1);
-    bat.append(y,af_a);
+    y := bat.append(y,af_a);
     io.print(y);
     z := batcalc.<(y,2:dbl);
     io.print(z);
@@ -86,16 +86,16 @@ function user.main():void;
     io.print("count");
     io.print(c);
     x := bat.new(:oid,:bit);
-    bat.append(x,true);
-    bat.append(x,false);
-    bat.append(x,true);
-    bat.append(x,false);
+    x := bat.append(x,true);
+    x := bat.append(x,false);
+    x := bat.append(x,true);
+    x := bat.append(x,false);
     io.print(x);
     A := bat.new(:oid,:bit);
-    bat.append(A,true);
-    bat.append(A,true);
-    bat.append(A,false);
-    bat.append(A,false);
+    A := bat.append(A,true);
+    A := bat.append(A,true);
+    A := bat.append(A,false);
+    A := bat.append(A,false);
     io.print(A);
     xn := batcalc.not(x);
     io.print(x,xn);
@@ -115,7 +115,7 @@ function user.main():void;
     xif4 := batcalc.ifthenelse(x,1,2);
     io.print(x,xif4);
     io.print("accumulators");
-    x2 := batcalc.not(x,x);
+    x2 := batcalc.not(x,1);
     io.print(x,x2);
     x3 := batcalc.and(x,A);
     io.print(x,A,x3);
@@ -227,24 +227,24 @@ end main;
 [ 3@0,	  false,  2	  ]
 [ "accumulators" ]
 #-------------------------#
-# h	tmp_6	tmp_6	  # name
-# oid	bit	bit	  # type
+# h	t	t	  # name
+# void	bit	bit	  # type
 #-------------------------#
 [ 0@0,	  false,  false	  ]
 [ 1@0,	  true,	  true	  ]
 [ 2@0,	  false,  false	  ]
 [ 3@0,	  true,	  true	  ]
 #---------------------------------#
-# h	tmp_6	tmp_7	tmp_16	  # name
-# oid	bit	bit	bit	  # type
+# h	t	t	t	  # name
+# void	bit	bit	bit	  # type
 #---------------------------------#
 [ 0@0,	  false,  true,	  false	  ]
 [ 1@0,	  true,	  true,	  true	  ]
 [ 2@0,	  false,  false,  false	  ]
 [ 3@0,	  true,	  false,  false	  ]
 #---------------------------------#
-# h	tmp_6	tmp_7	tmp_17	  # name
-# oid	bit	bit	bit	  # type
+# h	t	t	t	  # name
+# void	bit	bit	bit	  # type
 #---------------------------------#
 [ 0@0,	  false,  true,	  true	  ]
 [ 1@0,	  true,	  true,	  true	  ]
