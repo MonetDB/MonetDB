@@ -199,9 +199,9 @@ extern stmt *stmt_basetable(sql_allocator *sa, sql_table *t, char *tname);
 extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, int i, sql_subtype *tpe);
 
 extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
+extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access);
 extern stmt *stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
-extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx * i, int access);
-extern stmt *stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * i, int access);
+extern stmt *stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access);
 
 extern stmt *stmt_append_col(sql_allocator *sa, sql_column *c, stmt *b);
 extern stmt *stmt_append_idx(sql_allocator *sa, sql_idx *i, stmt *b);
@@ -247,6 +247,8 @@ extern stmt *stmt_semijoin(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_relselect_init(sql_allocator *sa);
 extern void stmt_relselect_fill(stmt *relselect, stmt *select);
 
+#define NEED_HASH 0
+#define NO_HASH 1
 extern stmt *stmt_releqjoin_init(sql_allocator *sa);
 extern void stmt_releqjoin_fill(stmt *releqjoin, stmt *lc, stmt *rc);
 extern stmt *stmt_releqjoin(sql_allocator *sa, list *joins);

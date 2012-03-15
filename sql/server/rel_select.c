@@ -73,7 +73,6 @@ rel_destroy(sql_rel *rel)
 	if (sql_ref_dec(&rel->ref) > 0)
 		return;
 	rel_destroy_(rel);
-	/*_DELETE(rel); TODO pass back to the rel list ! */
 }
 
 sql_rel*
@@ -438,6 +437,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 sql_rel *
 _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 {
+	prop *p = NULL;
 	node *cn;
 	sql_rel *rel = rel_create(sa);
 	char *tname = t->base.name;
@@ -452,22 +452,35 @@ _rel_basetable(sql_allocator *sa, sql_table *t, char *atname)
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
-		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c)
-			e->p = prop_create(sa, PROP_HASHIDX, e->p);
+		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value = c->t->pkey;
+		}
 		append(rel->exps, e);
 	}
 	append(rel->exps, exp_alias(sa, atname, "%TID%", tname, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+			sql_exp *e;
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("wrd"); /* hash "wrd" */
 			char *iname = sa_strconcat( sa, "%", i->base.name);
 
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
+
+			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1);
 			/* index names are prefixed, to make them independent */
-			append(rel->exps, exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1));
+			if (hash_index(i->type)) {
+				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
+				p->value = i;
+			}
+			if (i->type == join_idx) {
+				p = e->p = prop_create(sa, PROP_JOINIDX, e->p);
+				p->value = i;
+			}
+			append(rel->exps, e);
 		}
 	}
 

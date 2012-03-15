@@ -623,20 +623,21 @@ stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int acce
 }
 
 stmt *
-stmt_idxbat(sql_allocator *sa, sql_idx * i, int access)
+stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access)
 {
 	stmt *s = stmt_create(sa, st_idxbat);
 
 	s->op4.idxval = i;
 	s->nrcols = 1;
 	s->flag = access;
+	s->h = basetable;	/* oid's used from this basetable */
 	return s;
 }
 
 stmt *
-stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, int access)
+stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, stmt *basetable, int access)
 {
-	stmt *s = stmt_idxbat(sa, idx, access);
+	stmt *s = stmt_idxbat(sa, idx, basetable, access);
 
 	if (idx->t->readonly)
 		return s;
@@ -644,8 +645,8 @@ stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, int access)
 	if (isTable(idx->t) &&
 	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
-		stmt *i = stmt_idxbat(sa, idx, RD_INS);
-		stmt *u = stmt_idxbat(sa, idx, RD_UPD);
+		stmt *i = stmt_idxbat(sa, idx, basetable, RD_INS);
+		stmt *u = stmt_idxbat(sa, idx, basetable, RD_UPD);
 
 		s = stmt_diff(sa, s, u);
 		s = stmt_union(sa, s, u);

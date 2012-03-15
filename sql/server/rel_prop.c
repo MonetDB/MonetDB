@@ -64,6 +64,7 @@ propkind2string( prop *p)
 		PT(JOINIDX);
 		PT(HASHIDX);
 		PT(SORTIDX);
+		PT(HASHCOL);
 		PT(FETCH);
 		PT(USED);
 	}
