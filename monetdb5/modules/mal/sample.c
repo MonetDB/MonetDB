@@ -76,79 +76,23 @@
  *
  * INSERT INTO sample_table (SELECT * FROM mysample());
  *
- * The implementation of the uniform sampling is based on the algorithm A as
- * described in the paper "Faster Methods for Random Sampling" by Jeffrey Scott
- * Vitter. Algorithm A is not the fastest one, but it only makes s calls in
- * function random() and it is simpler than the other more complex and CPU
- * intensive algorithms in the literature.
- *
- * Algorithm A instead of performing one random experiment for each row to
- * decide if it should be included in the sample or not, it skips S rows
- * and includes the S+1 row. The algorithm scans the input relation
- * sequentially and maintains the unique and sort properties. The sample is
- * without replacement.
  */
 
 sample_export str
 SAMPLEuniform(bat *r, bat *b, ptr s) {
 	BAT *br, *bb;
-	BUN p, sz = *(wrd *)s, top, N, n, jump;
-	BATiter iter;
-	double v, quot;
 
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
 	}
-
-	N = BATcount(bb);
-	if  (sz > N) { /* if the sample is bigger than the input relation */
-		BBPkeepref(*r = bb->batCacheid);
-		return MAL_SUCCEED;
-	}
-
-	if ((br = BATnew(TYPE_oid, bb->ttype, sz)) == NULL) {
-		BBPunfix(bb->batCacheid);
-		throw(MAL, "sample.uniform", MAL_MALLOC_FAIL);
-	}
-
-	n = sz;
-	top = N-n;
-	p = BUNfirst(bb)-1;
-	iter = bat_iterator(bb);
-	while (n-->1) { /* loop until only 1 free spot is left for the sample */
-		v = DRAND;
-		jump = 0;
-		quot = (double)top/(double)N;
-		while (quot > v) { /* determine how many positions to jump */
-			jump++;
-			top--;
-			N--;
-			quot *= (double)top/(double)N;
-		}
-		p += (jump+1);
-		N--;
-		bunfastins(br, BUNhead(iter, p), BUNtail(iter,p));
-	}
-	/* 1 row left to be added in the sample */
-	p += (BUN) rand() % N;
-	bunfastins(br, BUNhead(iter, p+1), BUNtail(iter,p+1));
-
-	br->tsorted = bb->tsorted;
-	br->hsorted = bb->hsorted;
-	br->tkey = bb->tkey;
-	br->hkey = bb->hkey;
-	br->hdense = FALSE;
-	BATseqbase(br, bb->hseqbase);
-	BATsetcount(br, sz);
+	br = BATsample1(bb,*(BUN *)s);
+	if (br == NULL)
+		throw(MAL, "sample.uniform", OPERATION_FAILED);
 
 	BBPunfix(bb->batCacheid);
 	BBPkeepref(*r = br->batCacheid);
 	return MAL_SUCCEED;
 
-	bunins_failed:
-	BBPunfix(bb->batCacheid);
-	BBPunfix(br->batCacheid);
-	throw(MAL, "sample.uniform", OPERATION_FAILED "bunfastins");
 }
 
 sample_export str
@@ -158,12 +102,12 @@ SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
 	wrd s;
 
 	if ( pr < 0.0 || pr > 1.0 ) {
-		throw(MAL, "sample.uniform", ILLEGAL_ARGUMENT " p should be between 0 and 1.0" );
+		throw(MAL, "sample.uniform", ILLEGAL_ARGUMENT
+				" p should be between 0 and 1.0" );
 	} else if (pr == 0) {/* special case */
 		s = 0;
 		return SAMPLEuniform(r, b, (ptr)&s);
 	}
-
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
 	}
