@@ -34,7 +34,7 @@ lib_gdk = {
 		gdk_scanselect_defs_str.mx \
 		gdk_scanselect_defs_fix.mx \
 		gdk_scanselect_defs_var.mx \
-		gdk_scanselect.mx gdk.mx gdk_batop.mx \
+		gdk_scanselect.mx gdk.h gdk_batop.mx \
 		gdk_search.mx gdk_tm.c gdk_align.c gdk_bbp.mx \
 		gdk_heap.c gdk_setop.mx gdk_utils.mx gdk_atoms.mx \
 		gdk_qsort.mx gdk_ssort.mx gdk_storage.c gdk_bat.mx \
