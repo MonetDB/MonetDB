@@ -662,9 +662,9 @@ join_hash_key( mvc *sql, list *l )
 
 /* TODO find out if the columns have an (hash) index */
 static stmt *
-releqjoin( mvc *sql, list *l1, list *l2 )
+releqjoin( mvc *sql, int flag, list *l1, list *l2 )
 {
-	node *n1, *n2;
+	node *n1 = l1->h, *n2 = l2->h;
 	stmt *l, *r, *res;
 
 	if (list_length(l1) <= 1) {
@@ -672,12 +672,20 @@ releqjoin( mvc *sql, list *l1, list *l2 )
 		r = l2->h->data;
 		return stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_equal);
 	}
-	l = join_hash_key(sql, l1);
-	r = join_hash_key(sql, l2);
-	res = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_equal);
+	if (flag == NO_HASH) {
+		l = n1->data;
+		r = n2->data;
+		n1 = n1->next;
+		n2 = n2->next;
+		res = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_equal);
+	} else { /* need hash */
+		l = join_hash_key(sql, l1);
+		r = join_hash_key(sql, l2);
+		res = stmt_join(sql->sa, l, stmt_reverse(sql->sa, r), cmp_equal);
+	}
 	l = stmt_mark(sql->sa, stmt_reverse(sql->sa, res), 4);
 	r = stmt_mark(sql->sa, res, 4);
-	for (n1 = l1->h, n2 = l2->h; n1 && n2; n1 = n1->next, n2 = n2->next) {
+	for (; n1 && n2; n1 = n1->next, n2 = n2->next) {
 		stmt *ld = n1->data;
 		stmt *rd = n2->data;
 		stmt *le = stmt_project(sql->sa, l, ld );
@@ -913,7 +921,7 @@ rel2bin(mvc *c, stmt *s)
 			list_append(l1, rel2bin(c, n1->data));
 			list_append(l2, rel2bin(c, n2->data));
 		}
-		res = releqjoin(c, l1, l2);
+		res = releqjoin(c, s->flag, l1, l2);
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -1108,7 +1116,7 @@ rel2bin(mvc *c, stmt *s)
 			!mvc_debug_on(c, 32) &&
 			!mvc_debug_on(c, 64) &&
 			!mvc_debug_on(c, 8192)) {
-			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op4.idxval, s->flag);
+			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op4.idxval, s->h, s->flag);
 			assert(s->rewritten==NULL);
 			s->rewritten = res;
 			s->optimized = res->optimized = 2;
