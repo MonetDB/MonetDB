@@ -36,6 +36,9 @@ M0M29 assert
 42M32 user/role not found
 08M33 connection timeout
 0AM34 Java generics not supported
+42M35 sequence not found
+42M36 cannot restart sequence with NULL
+2BM37 dependent objects still exist
 
 TODO:
 JDBC 4.1 suggests the following SQLException subclass mapping:

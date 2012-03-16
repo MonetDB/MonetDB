@@ -1337,7 +1337,7 @@ mvc_export_head(mvc *m, stream *s, int res_id, int only_header)
 		return export_error(order);
 
 	/* row count, min(count, reply_size) */
-	if (!mvc_send_int(s, (BUN) m->reply_size < count ? m->reply_size : (int) count)) 
+	if (!mvc_send_int(s, (m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count)) 
 		return export_error(order);
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
@@ -1463,7 +1463,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		return -1;
 
 	count = m->reply_size;
-	if (count == 0 || count >= BATcount(order)) {
+	if (count <= 0 || count >= BATcount(order)) {
 		count = BATcount(order);
 		clean = 1;
 	}
