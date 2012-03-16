@@ -44,7 +44,7 @@ json_export str JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble
 json_export str JSONwrap(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, int *robject, int *rname, int *elems);
 json_export str JSONunwraptype(str *ret, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *arrid);
 json_export str JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-json_export str JSONnextid(oid *ret, int *kind, int *string, int *integer,  int *doble, int *array, int *object, int *name);
+json_export str JSONnextid(oid *ret, int *kind);
 
 #endif
 

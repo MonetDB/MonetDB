@@ -1209,13 +1209,13 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-JSONnextid(oid *ret, int *kind, int *string, int *integer,  int *doble, int *array, int *object, int *name)
+JSONnextid(oid *ret, int *kind)
 {
 	jsonbat jb;
 	BATiter bi;
 	oid lastid = 0;
 
-	loadbats();
+	loadbat(kind);
 
 	bi = bat_iterator(jb.kind);
 	if (BAThordered(jb.kind)) {
@@ -1230,7 +1230,7 @@ JSONnextid(oid *ret, int *kind, int *string, int *integer,  int *doble, int *arr
 		}
 	}
 
-	unloadbats();
+	unloadbat(kind);
 
 	*ret = lastid + 1;
 	return MAL_SUCCEED;

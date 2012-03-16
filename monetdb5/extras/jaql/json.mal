@@ -53,6 +53,6 @@ pattern unwrap(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],
 address JSONunwrap
 comment "Return the JSON array with oid arrid elements as BAT with tail type tpe performing the necessary casts";
 
-command nextid(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):oid
+command nextid(kind:bat[:oid,:bte]):oid
 address JSONnextid
 comment "Returns the next free id for the kind BAT";
