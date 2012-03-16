@@ -3129,7 +3129,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec * BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export BAT *BATsample(BAT *b, BUN n);
+gdk_export BAT *BATsample_deprecated(BAT *b, BUN n);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
 
@@ -3368,7 +3368,7 @@ gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
  * @tab BATsample (BAT *b, n)
  * @end multitable
  */
-gdk_export BAT *BATsample1(BAT *b, BUN n);
+gdk_export BAT *BATsample(BAT *b, BUN n);
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]

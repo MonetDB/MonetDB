@@ -85,7 +85,7 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 	if ((bb = BATdescriptor(*b)) == NULL) {
 		throw(MAL, "sample.uniform", INTERNAL_BAT_ACCESS);
 	}
-	br = BATsample1(bb,*(BUN *)s);
+	br = BATsample(bb,*(BUN *)s);
 	if (br == NULL)
 		throw(MAL, "sample.uniform", OPERATION_FAILED);
 

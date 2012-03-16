@@ -1374,7 +1374,7 @@ BATtopN(BAT *b, BUN topN)
  * @- Random Selections
  */
 BAT *
-BATsample(BAT *b, BUN size)
+BATsample_deprecated(BAT *b, BUN size)
 {
 	BUN cnt, i, r = 0, n, j;
 	BUN *choice = NULL, *dst;
