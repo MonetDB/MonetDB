@@ -17,9 +17,7 @@ json.print(s, r1,r2,r3,r4,r5,r6,r7);
 
 elems := bat.reverse(elems);
 
-t := bat.reverse(r1);
-lastid := aggr.max(t);
-lastid := lastid + 1:oid;
+lastid := json.nextid(r1,r2,r3,r4,r5,r6,r7);
 
 (l1,l2,l3,l4,l5,l6,l7) := json.extract(l1,l2,l3,l4,l5,l6,l7,elems,lastid);
 json.print(s, l1,l2,l3,l4,l5,l6,l7);
@@ -40,9 +38,7 @@ l5 := algebra.kdifference(l5, cleanup);
 r5 := algebra.kdifference(r5, cleanup);
 
 # get next id for new objects to create
-t := bat.reverse(l1);
-lastid := aggr.max(t);
-lastid := lastid + 1:oid;
+lastid := json.nextid(l1,l2,l3,l4,l5,l6,l7);
 
 # create objects
 ln := algebra.project(lo, "l");
