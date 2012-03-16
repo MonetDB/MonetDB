@@ -38,8 +38,6 @@
 #define sample_export extern
 #endif
 
-#define DRAND ((double)rand()/(double)RAND_MAX)
-
 sample_export str
 SAMPLEuniform(bat *r, bat *b, ptr s);
 

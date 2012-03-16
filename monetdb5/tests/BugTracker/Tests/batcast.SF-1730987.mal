@@ -15,7 +15,7 @@ bat.append(v,false);
 io.print(v);
 
 algebra.reuse(v);
-v := batcalc.and(v,v,v);
+v := batcalc.and(v,v);
 
 io.print(v);
 v2 := batcalc.int(v);

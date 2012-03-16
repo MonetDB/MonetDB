@@ -563,9 +563,9 @@ address SQLbat_alpha
 comment "BAT implementation of astronomy alpha function";
 
 @= mal_cast
-command calc.@1( v:str ) :@1 
-address str_2_@1
-comment "Cast to @1";
+# command calc.@1( v:str ) :@1 
+# address str_2_@1
+# comment "Cast to @1";
 command calc.@1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
@@ -619,7 +619,15 @@ comment "cast @1 to @1 and check for overflow";
 @:mal_casttime(timestamp)@
 @:mal_casttime(daytime)@
 
-@= mal_castfromstr
+@= mal_castfromstr1
+command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+address batstr_2_@1
+comment "cast to @1";
+command calc.str( v:@1 ) :str 
+address SQL@1_2_str
+comment "cast @1 to str";
+@
+@= mal_castfromstr2
 command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "cast to @1";
@@ -631,15 +639,15 @@ address SQL@1_2_str
 comment "cast @1 to str";
 @
 @mal
-@:mal_castfromstr(wrd)@
-@:mal_castfromstr(flt)@
-@:mal_castfromstr(dbl)@
-@:mal_castfromstr(date)@
-@:mal_castfromstr(sqlblob)@
+@:mal_castfromstr1(wrd)@
+@:mal_castfromstr1(flt)@
+@:mal_castfromstr1(dbl)@
+@:mal_castfromstr2(date)@
+@:mal_castfromstr2(sqlblob)@
 
-command calc.str( v:str) :str 
-address CALCstr2str
-comment "Idempotent cast of strings";
+# command calc.str( v:str) :str 
+# address CALCstr2str
+# comment "Idempotent cast of strings";
 
 # @+ bit conversion (why?)
 # command calc.str( v:bit) :str

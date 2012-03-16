@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk
-
-@h
 /*
  * @t The Goblin Database Kernel
  * @v Version 3.05
@@ -704,7 +701,7 @@ typedef struct {
 	int len, vtype;
 } *ValPtr, ValRecord;
 
-#define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)
+/* definition of VALptr lower down in file after include of gdk_atoms.h */
 #define VALnil(v,t) VALset(v,t,ATOMextern(t)?ATOMnil(t):ATOMnilptr(t))
 
 /* interface definitions */
@@ -828,13 +825,13 @@ typedef struct {
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bunwidth */
 	bit sorted;		/* 0=false, 1=true; */
-	unsigned int 
+	unsigned int
 	 varsized:1,		/* varsized(>0) or fixedsized(0). */
 	 key:2,			/* duplicates allowed? */
-	 dense:1,		
+	 dense:1,
 	 nonil:1, 		/* nonil isn't propchecked yet */
 	 nil:1,			/* nil is set when we found one nil (propcheck) */
-	 unused:2; 
+	 unused:2;
 	oid align;		/* OID for sync alignment */
 	BUN nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
@@ -1418,7 +1415,7 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
  * storage space, but could tolerate more padding).  It would mostly
  * work, only the sort routine and strPut/strLocate (which do not see
  * the BAT header) extra parameters would be needed in their APIs.
- */ 
+ */
 typedef unsigned short stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_SHORT
 #define GDK_VARSHIFT 3
@@ -1456,7 +1453,7 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 #define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
 
 static inline BATiter
-bat_iterator(BAT *b) 
+bat_iterator(BAT *b)
 {
 	BATiter bi;
 
@@ -1764,8 +1761,8 @@ gdk_export int BATordered_rev(BAT *b);
 gdk_export BAT *BATssort(BAT *b);
 gdk_export BAT *BATssort_rev(BAT *b);
 
-gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
-gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe); 
+gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 
 #define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
 #define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
@@ -2335,6 +2332,27 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #define putenv _putenv
 #endif
 
+static inline void *
+VALptr(ValPtr v)
+{
+	switch (ATOMstorage(v->vtype)) {
+	case TYPE_void: return (void *) &v->val.oval;
+	case TYPE_bit: return (void *) &v->val.btval;
+	case TYPE_bte: return (void *) &v->val.btval;
+	case TYPE_sht: return (void *) &v->val.shval;
+	case TYPE_bat: return (void *) &v->val.bval;
+	case TYPE_int: return (void *) &v->val.ival;
+	case TYPE_oid: return (void *) &v->val.oval;
+	case TYPE_wrd: return (void *) &v->val.wval;
+	case TYPE_ptr: return (void *) v->val.pval;
+	case TYPE_flt: return (void *) &v->val.fval;
+	case TYPE_dbl: return (void *) &v->val.dval;
+	case TYPE_lng: return (void *) &v->val.lval;
+	case TYPE_str: return (void *) v->val.sval;
+	default:       return (void *) v->val.pval;
+	}
+}
+
 /*
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of the following debug options.
@@ -2518,8 +2536,8 @@ static inline char *
 Hpos(BATiter *bi, BUN p)
 {
 	bi->hvid = bi->b->hseqbase;
-	if (bi->hvid != oid_nil) 
-		bi->hvid += p - BUNfirst(bi->b); 
+	if (bi->hvid != oid_nil)
+		bi->hvid += p - BUNfirst(bi->b);
 	return (char*)&bi->hvid;
 }
 
@@ -2527,8 +2545,8 @@ static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
-	if (bi->tvid != oid_nil) 
-		bi->tvid += p - BUNfirst(bi->b); 
+	if (bi->tvid != oid_nil)
+		bi->tvid += p - BUNfirst(bi->b);
 	return (char*)&bi->tvid;
 }
 
@@ -2973,43 +2991,40 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * (HASHlooploc) or variable-sized (HASHloopvar).
  */
 #define HASHlooploc(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe((h), v)];			\
+	for (hb = (h)->hash[HASHprobe(h, v)];			\
 	     hb != BUN_NONE;					\
 	     hb = (h)->link[hb])				\
 		if (ATOMcmp(h->type, v, BUNhloc(bi, hb)) == 0)
 #define HASHloopvar(bi, h, hb, v)				\
-	for (hb = (h)->hash[HASHprobe((h), v)];			\
+	for (hb = (h)->hash[HASHprobe(h, v)];			\
 	     hb != BUN_NONE;					\
 	     hb = (h)->link[hb])				\
 		if (ATOMcmp(h->type, v, BUNhvar(bi, hb)) == 0)
 
-@:hashloop(bit,bte,simple,bte,hloc)@
-@:hashloop(bte,bte,simple,bte,hloc)@
-@:hashloop(sht,sht,simple,sht,hloc)@
-@:hashloop(int,int,simple,int,hloc)@
+#define HASHloop_TYPE(bi, h, hb, v, TYPE)			\
+	for (hb = (h)->hash[hash_##TYPE(h, v)];			\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
+		if (simple_EQ(v, BUNhloc(bi, hb), TYPE))
 
-@:hashloop(oid,oid,simple,oid,hloc)@
-@:hashloop(wrd,wrd,simple,wrd,hloc)@
-@:hashloop(bat,int,simple,int,hloc)@
+#define HASHloop_bit(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
+#define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)
+#define HASHloop_int(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, int)
+#define HASHloop_wrd(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, wrd)
+#define HASHloop_lng(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, lng)
+#define HASHloop_oid(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, oid)
+#define HASHloop_bat(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bat)
+#define HASHloop_flt(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, flt)
+#define HASHloop_dbl(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, dbl)
+#define HASHloop_ptr(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, ptr)
 
-#if SIZEOF_VOID_P == SIZEOF_INT
-@:hashloop(ptr,int,simple,int,hloc)@
-#else /* SIZEOF_VOID_P == SIZEOF_LNG */
-@:hashloop(ptr,lng,simple,lng,hloc)@
-#endif
-@:hashloop(flt,int,simple,int,hloc)@
-@:hashloop(lng,lng,simple,lng,hloc)@
-@:hashloop(dbl,lng,simple,lng,hloc)@
-@:hashloop(any,any,atom,(bi).b->htype,head)@
+#define HASHloop_any(bi, h, hb, v)				\
+	for (hb = (h)->hash[hash_any(h, v)];			\
+	     hb != BUN_NONE;					\
+	     hb = (h)->link[hb])				\
+		if (atom_EQ(v, BUNhead(bi, hb), (bi).b->htype))
 
-@= hashloop
-#define HASHloop_@1(bi, h, hb, v)			\
-	for (hb = (h)->hash[hash_@2((h), v)];		\
-	     hb != BUN_NONE;				\
-	     hb = (h)->link[hb])			\
-		if (@3_EQ(v, BUN@5(bi, hb), @4))
-@
-@h
 /*
  * @- loop over a BAT with ordered tail
  * Here we loop over a BAT with an ordered tail column (see for instance
@@ -3029,48 +3044,57 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 		  p < q;						\
 		  p++)
 
-@:sortloop(bte,bte,bte,simple,&bte_nil)@
-@:sortloop(sht,sht,sht,simple,&sht_nil)@
-@:sortloop(int,int,int,simple,&int_nil)@
-@:sortloop(flt,flt,flt,simple,&flt_nil)@
-@:sortloop(lng,lng,lng,simple,&lng_nil)@
-@:sortloop(dbl,dbl,dbl,simple,&dbl_nil)@
-@:sortloop(loc,loc,(b)->ttype,atom,ATOMnilptr((b)->ttype))@
-@:sortloop(var,var,(b)->ttype,atom,ATOMnilptr((b)->ttype))@
-
-@= sortloop
-#define SORTloop_@1(b,p,q,tl,th)					\
+#define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
 	if (!(BATtordered(b) & 1))					\
-		GDKerror("SORTloop_@1: BAT not sorted.\n");		\
-	else for (p = @4_EQ(tl, @5, @3) ? BUNfirst(b) : SORTfndfirst_@2(b, tl), \
-		  q = @4_EQ(th, @5, @3) ? BUNfirst(b) : SORTfndlast_@2(b, th); \
+		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
+	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst_##TYPE(b, tl), \
+		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast_##TYPE(b, th); \
 		  p < q;						\
 		  p++)
-@
-@h
+
+#define SORTloop_bte(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, bte)
+#define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
+#define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
+#define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
+#define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
+#define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
+#define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)
+#define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
+
+#define SORTloop_loc(b,p,q,tl,th)					\
+	if (!(BATtordered(b) & 1))					\
+		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
+	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_loc(b, tl), \
+			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_loc(b, th); \
+		  p < q;						\
+		  p++)
+
+#define SORTloop_var(b,p,q,tl,th)					\
+	if (!(BATtordered(b) & 1))					\
+		GDKerror("SORTloop_var: BAT not sorted.\n");		\
+	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_var(b, tl), \
+			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_var(b, th); \
+		  p < q;						\
+		  p++)
 
 /* OIDDEPEND */
 #if SIZEOF_OID == SIZEOF_INT
 #define SORTfnd_oid(b,v)	SORTfnd_int(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v)
-@:sortloop(oid,int,oid,simple,&oid_nil)@
 #else
 #define SORTfnd_oid(b,v)	SORTfnd_lng(b,v)
 #define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
-@:sortloop(oid,lng,oid,simple,&oid_nil)@
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
 #define SORTfnd_wrd(b,v)	SORTfnd_int(b,v)
 #define SORTfndfirst_wrd(b,v)	SORTfndfirst_int(b,v)
 #define SORTfndlast_wrd(b,v)	SORTfndlast_int(b,v)
-@:sortloop(wrd,int,wrd,simple,&wrd_nil)@
 #else
 #define SORTfnd_wrd(b,v)	SORTfnd_lng(b,v)
 #define SORTfndfirst_wrd(b,v)	SORTfndfirst_lng(b,v)
 #define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
-@:sortloop(wrd,lng,wrd,simple,&wrd_nil)@
 #endif
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
@@ -3239,6 +3263,112 @@ gdk_export BAT *BATsunion(BAT *b, BAT *c);
 gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
+
+gdk_export BAT *BATcalcnegate(BAT *b, int accum);
+gdk_export BAT *BATcalcabsolute(BAT *b, int accum);
+gdk_export BAT *BATcalcincr(BAT *b, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdecr(BAT *b, int accum, int abort_on_error);
+gdk_export BAT *BATcalciszero(BAT *b);
+gdk_export BAT *BATcalcsign(BAT *b);
+gdk_export BAT *BATcalcisnil(BAT *b);
+gdk_export BAT *BATcalcnot(BAT *b, int accum);
+gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
+gdk_export BAT *BATcalcxor(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcxorcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstxor(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalcor(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcorcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstor(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalcand(BAT *b1, BAT *b2, int accum);
+gdk_export BAT *BATcalcandcst(BAT *b, const ValRecord *v, int accum);
+gdk_export BAT *BATcalccstand(const ValRecord *v, BAT *b, int accum);
+gdk_export BAT *BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
+gdk_export BAT *BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error);
+gdk_export BAT *BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
+gdk_export BAT *BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error);
+gdk_export BAT *BATcalclt(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcltcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstlt(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcle(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalclecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstle(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcgt(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcgtcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstgt(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcge(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcgecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstge(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalceq(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalceqcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccsteq(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcne(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcnecst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstne(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalccmp(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalccmpcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstcmp(const ValRecord *v, BAT *b);
+
+gdk_export int VARcalcnot(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcnegate(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcabsolute(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int VARcalciszero(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcsign(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcisnil(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcisnotnil(ValPtr ret, const ValRecord *v);
+gdk_export int VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error);
+gdk_export int VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export int VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
+gdk_export BAT *BATcalcbetween(BAT *b, BAT *lo, BAT *hi);
+gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi);
+gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi);
+gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi);
+gdk_export int VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi);
+
+gdk_export BAT *BATconvert(BAT *b, int tp, int abort_on_error);
+gdk_export int VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);
+gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
+
+/*
+ * @- BAT sample operators
+ *
+ * @multitable @columnfractions 0.08 0.7
+ * @item BAT *
+ * @tab BATsample (BAT *b, n)
+ * @end multitable
+ */
+gdk_export BAT *BATsample1(BAT *b, BUN n);
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]

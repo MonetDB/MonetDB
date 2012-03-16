@@ -25,19 +25,19 @@ stdout of test 'tst225` in directory 'mal` itself:
 function user.main():void;
 #testing reference counting inliners 
     a := bat.new(:oid,:int);
-    bat.insert(a,1@0,1);
+    a := bat.insert(a,1@0,1);
     b := algebra.copy(a);
-    z := batcalc.+(a,b,true,false);
+    z := batcalc.+(a,b,1);
     io.print(a);
     bat.setGarbage(b);
     bat.setGarbage(a);
-    z := batcalc.+(a,b,true,false);
+    z := batcalc.+(a,b,1);
 end main;
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1@0,	  1	  ]
+[ 1@0,	  2	  ]
 !MALException:batcalc.+:Object not found
 
 

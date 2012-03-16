@@ -173,6 +173,18 @@ exp_find_column_( sql_rel *rel, sql_exp *exp, int pnr, sql_rel **bt )
 	return NULL;
 }
 
+static sql_column *
+sjexp_col(sql_exp *e, sql_rel *r) 
+{
+	sql_column *res = NULL;
+
+	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
+		res = exp_find_column(r, e->l, -2);
+		if (!res)
+			res = exp_find_column(r, e->r, -2);
+	}
+	return res;
+}
 
 static sql_exp *
 list_find_exp( list *exps, sql_exp *e)
@@ -341,6 +353,8 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 	if (!e)
 		return 0;
 	if (find_prop(e->p, PROP_JOINIDX))
+		*cnt += 100;
+	if (find_prop(e->p, PROP_HASHCOL)) 
 		*cnt += 100;
 	if (find_prop(e->p, PROP_HASHIDX)) 
 		*cnt += 100;
@@ -2574,7 +2588,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 			for (n = ((list*)rel->r)->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
 
-				if (find_prop(gbe->p, PROP_HASHIDX)) {
+				if (find_prop(gbe->p, PROP_HASHCOL)) {
 					fcmp cmp = (fcmp)&kc_column_cmp;
 					sql_column *c = exp_find_column(rel->l, gbe, -2);
 
@@ -3023,7 +3037,7 @@ rel_is_join_on_pkey( sql_rel *rel )
 		sql_exp *je = n->data;
 
 		if (je->type == e_cmp && je->flag == cmp_equal &&
-		    find_prop(((sql_exp*)je->l)->p, PROP_HASHIDX)) { /* aligned PKEY JOIN */
+		    find_prop(((sql_exp*)je->l)->p, PROP_HASHCOL)) { /* aligned PKEY JOIN */
 			fcmp cmp = (fcmp)&kc_column_cmp;
 			sql_exp *e = je->l;
 			sql_column *c = exp_find_column(rel, e, -2);
@@ -3395,7 +3409,7 @@ exps_unique( list *exps )
 	if ((n = exps->h) != NULL) {
 		sql_exp *e = n->data;
 
-		if (e && find_prop(e->p, PROP_HASHIDX))
+		if (e && find_prop(e->p, PROP_HASHCOL))
 			return 1;
 	}
 	return 0;
@@ -3404,7 +3418,7 @@ exps_unique( list *exps )
 static sql_rel *
 rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
-	if (rel->op == op_project && rel->l && rel->exps && !rel->r) {
+	if (rel->op == op_project && rel->l && rel->exps && !rel->r && !project_unsafe(rel)) {
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
@@ -3735,8 +3749,8 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 						/* pkey based group by */
 						if (scores[l] == 1 && ((all || 
 						   /* first of key */
-						   (c == exp_find_column(rel, e, -2))) && !find_prop(e->p, PROP_HASHIDX)))
-							e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
+						   (c == exp_find_column(rel, e, -2))) && !find_prop(e->p, PROP_HASHCOL)))
+							e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 					}
 					for (m = rel->exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
@@ -3745,8 +3759,8 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 							sql_exp *gb = n->data;
 
 							/* pkey based group by */
-							if (scores[l] == 1 && exp_match_exp(e,gb) && find_prop(gb->p, PROP_HASHIDX) && !find_prop(e->p, PROP_HASHIDX)) {
-								e->p = prop_create(sql->sa, PROP_HASHIDX, e->p);
+							if (scores[l] == 1 && exp_match_exp(e,gb) && find_prop(gb->p, PROP_HASHCOL) && !find_prop(e->p, PROP_HASHCOL)) {
+								e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 								break;
 							}
 
@@ -4586,45 +4600,10 @@ index_exp(sql_exp *e, sql_idx *i)
 	return -1;
 }
 
-static sql_column *
-selectexp_col(sql_exp *e, sql_rel *r) 
-{
-	sql_table *t = r->l;
-
-	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
-		sql_exp *ec = e->l;
-
-		if (ec->type == e_column) {
-			char *name = ec->name;
-			node *cn;
-
-			if (r->exps) { /* use alias */
-				for (cn = r->exps->h; cn; cn = cn->next) {
-					sql_exp *ce = cn->data;
-					if (strcmp(ce->name, name) == 0) {
-						name = ce->r;
-						break;
-					}
-				}
-			}
-			for (cn = t->columns.set->h; cn; cn = cn->next) {
-				sql_column *c = cn->data;
-				if (strcmp(c->base.name, name) == 0) 
-					return c;
-			}
-		}
-	}
-	return NULL;
-}
-
 static sql_idx *
-find_index(sql_allocator *sa, sql_rel *r, list **EXPS)
+find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 {
-	sql_rel *b;
-	sql_table *t;
-
-	if ((b = find_basetable(r)) == NULL) 
-		return NULL;
+	node *n;
 
 	/* any (partial) match of the expressions with the index columns */
 	/* Depending on the index type we may need full matches and only
@@ -4632,23 +4611,25 @@ find_index(sql_allocator *sa, sql_rel *r, list **EXPS)
 	/* Depending on the index type we should (in the rel_bin) generate
 	   more code, ie for spatial index add post filter etc, for hash
 	   compute hash value and use index */
- 	t = b->l;
-	if (t->idxs.set) {
-		node *in;
+	if (sub->exps && rel->exps) 
+	for(n = sub->exps->h; n; n = n->next) {
+		prop *p;
+		sql_exp *e = n->data;
 
-		/* find the columns involved in the selection over this base table*/
-	   	for(in = t->idxs.set->h; in; in = in->next) {
+		if ((p = find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			list *exps, *cols;
-	    		sql_idx *i = in->data;
+	    		sql_idx *i = p->value;
 			fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 			/* join indices are only interesting for joins */
 			if (i->type == join_idx || list_length(i->columns) <= 1)
 				continue;
 			/* based on the index type, find qualifying exps */
-			exps = list_select(r->exps, i, (fcmp) &index_exp, (fdup)NULL);
+			exps = list_select(rel->exps, i, (fcmp) &index_exp, (fdup)NULL);
+			if (!exps || !list_length(exps))
+				continue;
 			/* now we obtain the columns, move into sql_column_kc_cmp! */
-			cols = list_map(exps, b, (fmap) &selectexp_col);
+			cols = list_map(exps, sub, (fmap) &sjexp_col);
 
 			/* Match the index columns with the expression columns. 
 			   TODO, Allow partial matches ! */
@@ -4679,25 +4660,30 @@ find_index(sql_allocator *sa, sql_rel *r, list **EXPS)
 }
 
 static sql_rel *
-rel_select_use_index(int *changes, mvc *sql, sql_rel *rel) 
+rel_use_index(int *changes, mvc *sql, sql_rel *rel) 
 {
 	(void)changes;
 	(void)sql;
-	if (is_select(rel->op)) {
+	if (is_select(rel->op) || is_join(rel->op)) {
 		list *exps = NULL;
-		sql_idx *i = find_index(sql->sa, rel, &exps);
+		sql_idx *i = find_index(sql->sa, rel, rel, &exps);
+
+		if (!i && is_join(rel->op))
+			i = find_index(sql->sa, rel, rel->l, &exps);
+		if (!i && is_join(rel->op))
+			i = find_index(sql->sa, rel, rel->r, &exps);
 			
 		if (i) {
 			prop *p;
 			node *n;
 	
-			/* add PROP_HASHIDX to all column exps */
+			/* add PROP_HASHCOL to all column exps */
 			for( n = exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
-				p = find_prop(e->p, PROP_HASHIDX);
+				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
-					e->p = p = prop_create(sql->sa, PROP_HASHIDX, e->p);
+					e->p = p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 				p->value = i;
 			}
 			/* add the remaining exps to the new exp list */
@@ -5526,8 +5512,8 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	if (gp.cnt[op_select]) 
 		rel = rewrite(sql, rel, &rel_select_order, &changes); 
 
-	if (gp.cnt[op_select])
-		rel = rewrite(sql, rel, &rel_select_use_index, &changes); 
+	if (gp.cnt[op_select] || gp.cnt[op_join])
+		rel = rewrite(sql, rel, &rel_use_index, &changes); 
 
 	if (gp.cnt[op_project])
 		rel = rewrite(sql, rel, &rel_push_project_down_union, &changes);

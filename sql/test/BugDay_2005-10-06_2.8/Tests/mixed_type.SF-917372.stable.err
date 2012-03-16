@@ -79,12 +79,12 @@ stderr of test 'mixed_type.SF-917372` in directory 'test/BugDay_2005-10-06_2.8` 
 # 19:21:06 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=33392 
 # 19:21:06 >  
 
-MAPI  = monetdb@sofia:39182
+MAPI  = monetdb@madrid:34599
 QUERY = select 'a'+1;
-ERROR = !conversion of string 'a' failed
-MAPI  = monetdb@sofia:39182
+ERROR = !conversion of string 'a' to type bte failed.
+MAPI  = monetdb@madrid:34599
 QUERY = select 1-'a';
-ERROR = !conversion of string 'a' failed
+ERROR = !conversion of string 'a' to type bte failed.
 
 # 19:21:06 >  
 # 19:21:06 >  Done.

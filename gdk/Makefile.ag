@@ -34,15 +34,16 @@ lib_gdk = {
 		gdk_scanselect_defs_str.mx \
 		gdk_scanselect_defs_fix.mx \
 		gdk_scanselect_defs_var.mx \
-		gdk_scanselect.mx gdk.mx gdk_batop.mx \
+		gdk_scanselect.mx gdk.h gdk_batop.mx \
 		gdk_search.mx gdk_tm.c gdk_align.c gdk_bbp.mx \
 		gdk_heap.c gdk_setop.mx gdk_utils.mx gdk_atoms.mx \
 		gdk_qsort.mx gdk_ssort.mx gdk_storage.c gdk_bat.mx \
 		gdk_delta.c gdk_relop.mx gdk_system.c gdk_value.mx \
 		gdk_rangejoin.mx \
-		gdk_posix.c gdk_logger.c \
+		gdk_posix.c gdk_logger.c gdk_sample.c \
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_tm.h gdk_storage.h \
+		gdk_calc.c \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

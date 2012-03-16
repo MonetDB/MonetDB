@@ -61,7 +61,7 @@ function user.s1_1{autoCommit=true}():void;
     X_6:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","sf_2596114",1);
     X_9 := bat.reverse(X_6);
     X_18 := algebra.kdifference(X_17,X_9);
-    X_19:bat[:oid,:dbl]  := batcalc.*(X_18,X_18,true,true);
+    X_19:bat[:oid,:dbl]  := batcalc.*(X_18,X_18);
     X_20 := sql.resultSet(1,1,X_19);
     sql.rsColumn(X_20,"sys.","sql_mul_x","double",53,0,X_19);
     X_25 := io.stdout();

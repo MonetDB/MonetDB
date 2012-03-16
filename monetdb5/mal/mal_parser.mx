@@ -571,15 +571,16 @@ handleInts:
 	if( cst->vtype == TYPE_int || cst->vtype == TYPE_lng){
 		int len = (int) sizeof(lng);
 		lng *pval = &l;
-		lngFromStr(CURRENT(cntxt),&len,&pval);
+		if (lngFromStr(CURRENT(cntxt),&len,&pval) <= 0 || l == lng_nil) {
+			showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
+			l = lng_nil;
+		}
 		if (INT_MIN < l && l <= INT_MAX) {
 			cst->vtype = TYPE_int;
 			cst->val.ival = (int) l;
 		} else {
 			cst->vtype = TYPE_lng;
 			cst->val.lval = l;
-			if (l == lng_nil)
-				showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
 		}
 	}
 	return i;
