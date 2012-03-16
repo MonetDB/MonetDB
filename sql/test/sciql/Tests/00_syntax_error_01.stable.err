@@ -30,7 +30,7 @@ stderr of test '00_syntax_error_01` in directory 'test/sciql` itself:
 # 13:37:16 >  mclient -lsql -ftest -i -e --host=jarl --port=38847 
 # 13:37:16 >  
 
-MAPI  = monetdb@jarl:34134
+MAPI  = monetdb@riga:39460
 QUERY = create array err(payload float);
 ERROR = !CREATE ARRAY: an array must have at least one dimension
 

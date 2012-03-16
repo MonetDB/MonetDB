@@ -1,0 +1,55 @@
+stdout of test '08_subquery_01` in directory 'test/sciql` itself:
+
+
+# 18:14:48 >  
+# 18:14:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/zhang/monet-install/sciql/debug/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=37833" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_sciql" "--set" "mal_listing=0"
+# 18:14:48 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_test_sciql', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:37833/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:14:48 >  
+# 18:14:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=37833"
+# 18:14:48 >  
+
+#set optimizer='no_mitosis_pipe';
+#CREATE ARRAY ary(x INT DIMENSION[4], y INT DIMENSION[-5], v FLOAT DEFAULT 3.7);
+#SELECT  x, SUM(v), COUNT(*) FROM (SELECT * FROM ary[1:3]) AS a GROUP BY x;
+% sys.a,	sys.a,	sys.a # table_name
+% x,	L2,	L3 # name
+% int,	double,	wrd # type
+% 1,	24,	1 # length
+[ 1,	18.5,	5	]
+[ 2,	18.5,	5	]
+#SELECT  x, SUM(v) FROM (SELECT * FROM ary[1:3]) AS a GROUP BY a[x-1:x+1][y+1:y-1];
+% sys.a,	sys. # table_name
+% x,	L2 # name
+% int,	double # type
+% 1,	24 # length
+[ 1,	3.7	]
+[ 1,	7.4	]
+[ 1,	7.4	]
+[ 1,	7.4	]
+[ 1,	7.4	]
+[ 2,	7.4	]
+[ 2,	14.8	]
+[ 2,	14.8	]
+[ 2,	14.8	]
+[ 2,	14.8	]
+#DROP ARRAY ary;
+
+# 18:14:48 >  
+# 18:14:48 >  "Done."
+# 18:14:48 >  
+

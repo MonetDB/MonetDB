@@ -30,9 +30,12 @@ stderr of test '00_syntax_error_05` in directory 'test/sciql` itself:
 # 13:48:15 >  mclient -lsql -ftest -i -e --host=jarl --port=38366 
 # 13:48:15 >  
 
-MAPI  = monetdb@jarl:38366
+MAPI  = monetdb@riga:33209
 QUERY = CREATE ARRAY err(x INTEGER DIMENSION[1:10:1]);
-ERROR = !illegal range
+ERROR = !Illegal dimension range, [start:step:stop] have values: [1:10:1]
+
+
+
 
 # 13:48:15 >  
 # 13:48:15 >  Done.

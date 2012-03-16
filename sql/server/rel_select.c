@@ -1954,6 +1954,22 @@ get_dimension(mvc *sql, sql_table *a, char *dname)
 	return sql_error(sql, 02, "SELECT: dimension '%s' not found in array '%s'", dname, a->base.name);
 }
 
+static sql_column *
+get_nth_dimension(sql_table *a, int nth)
+{
+	int i = 0;
+	node *cn = a->columns.set->h;
+
+	for (; cn; cn = cn->next) {
+		if(((sql_column *) cn->data)->dim) {
+			if (i == nth)
+				return cn->data;
+			i++;
+		}
+	}
+	return NULL;
+}
+
 static int
 check_tiling_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 {
@@ -1977,6 +1993,96 @@ check_tiling_dimension(mvc *sql, char *dimnm, symbol *dim_ref)
 	return 1;
 }
 
+static char *
+_get_base_name(sql_exp *exp, char *alias)
+{
+	char *bnm = NULL;
+	node *n = NULL;
+
+	if (!exp || !alias)
+		return NULL;
+
+	switch(exp->type) {
+	case e_func:
+	case e_aggr:
+		for (n = ((list*)exp->l)->h; n; n = n->next) {
+			bnm = _get_base_name(n->data, alias);
+			if (bnm)
+				return bnm;
+		}
+		return NULL;
+	case e_convert:
+		return _get_base_name(exp->l, alias);
+	case e_cmp:
+		if(!(bnm = _get_base_name(exp->l, alias)))
+			return _get_base_name(exp->r, alias);
+		return bnm;
+	case e_column:
+		if (exp->rname && strcmp(exp->rname, alias) == 0) {
+			return exp->l;
+		}
+		return NULL;
+	default:
+		return NULL;
+	}
+	return NULL;
+}
+
+/* Given the alias of a table/array, find in all expressions contained in 'rel'
+ * the original name of the base table/array.
+ */
+static char *
+get_base_name(sql_rel *rel, char *alias)
+{
+	char *bnm = NULL;
+	node *n = rel->exps->h;
+
+	if (!rel || !alias)
+		return NULL;
+
+	for ( ; n; n = n->next) {
+		bnm = _get_base_name(n->data, alias);
+		if (bnm)
+			return bnm;
+	}
+
+	switch(rel->op) {
+	case op_select:
+	case op_topn:
+	case op_sample:
+		return get_base_name(rel->l, alias);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_union:
+	case op_except:
+	case op_inter:
+		if(!(bnm = get_base_name(rel->l, alias)))
+			return get_base_name(rel->r, alias);
+		break;
+	case op_table:
+	case op_project:
+	case op_groupby:
+		if(!(bnm = get_base_name(rel->l, alias))) {
+			if (!rel->r || !((list*)rel->r)->h)
+				return NULL;
+			for (n = ((list*)rel->r)->h; n; n = n->next) {
+				bnm = _get_base_name(n->data, alias);
+				if (bnm)
+					return bnm;
+			}
+		}
+		break;
+	default:
+		return NULL;
+	}
+	return bnm;
+}
+
 #define ARRAY_TILING_MAX_DIMS 3
 
 static list *
@@ -1984,11 +2090,12 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 {
 	list *exps = new_exp_list(sql->sa), *offsets = NULL;
 	dlist *qname = NULL, *idx_exps = NULL;
-	char *sname = NULL, *aname = NULL, *opnm = NULL;
+	char *sname = NULL, *aname = NULL, *aalias = NULL, *opnm = NULL;
 	dnode *n =  NULL;
 	symbol *sym_tsta = NULL, *sym_tsto =  NULL, *opl = NULL, *opr = NULL;
 	sql_schema *s = NULL;
 	sql_table *a = NULL;
+	int nth = 0; /* the n-th tiled dimension, needed for the '[*]' case, in which we don't have the dimension name */
 
 	assert(rel && *rel && tile_def->token == SQL_ARRAY_DIM_SLICE && tile_def->type == type_list && dlist_length(tile_def->data.lval) == 2);
 	
@@ -1996,12 +2103,12 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 	switch(dlist_length(qname)) {
 	case 1:
 		assert(qname->h->type == type_string);
-		aname = qname->h->data.sval;
+		aalias = qname->h->data.sval;
 		break;
 	case 2:
 		assert(qname->h->type == type_string && qname->h->next->type == type_string);
 		sname = qname->h->data.sval;
-		aname = qname->h->next->data.sval;
+		aalias = qname->h->next->data.sval;
 		break;
 	case 3:
 		return sql_error(sql, 02, "SELECT: array names of level > 2 not supported");
@@ -2013,8 +2120,11 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 	if (sname && !(s=mvc_bind_schema(sql,sname)))
 		return sql_error(sql, 02, "3F000!SELECT: no such schema '%s'", sname);
 	if (!s) s = cur_schema(sql);
-	if (!(a = mvc_bind_table(sql, s, aname)))
-		return sql_error(sql, 02, "42S02!SELECT: no such array '%s.%s'", s->base.name, aname);
+	if (!(a = mvc_bind_table(sql, s, aalias))) {
+		if (!(aname = get_base_name(*rel, aalias)) || !(a = mvc_bind_table(sql, s, aname))) {
+			return sql_error(sql, 02, "42S02!SELECT: no such array '%s.%s'", s->base.name, aalias);
+		}
+	}
 	if (a->ndims > ARRAY_TILING_MAX_DIMS)
 		return sql_error(sql, 02, "SELECT: TODO: array tiling over arrays with >%d dimensions", ARRAY_TILING_MAX_DIMS);
 
@@ -2025,112 +2135,123 @@ rel_arraytiling(mvc *sql, sql_rel **rel, symbol *tile_def, int f)
 		return sql_error(sql, 02, "SELECT: #dimensions (%d) in array tiling fewer than #dimensions (%d) in the array --- not supported (yet?)", dlist_length(idx_exps), a->ndims);
 	if (dlist_length(idx_exps) > ARRAY_TILING_MAX_DIMS)
 		return sql_error(sql, 02, "SELECT: TODO: array tiling over >%d dimensions", ARRAY_TILING_MAX_DIMS);
-	for (n = idx_exps->h; n; n = n->next) {
+	for (n = idx_exps->h; n; n = n->next, nth++) {
 		sql_exp *exp = NULL, *exp_os_sta = NULL, *exp_os_ste = NULL, *exp_os_sto = NULL;
 		sql_column *dim = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 		offsets = new_exp_list(sql->sa);
 
 		assert(n->type == type_list);
-		/* The first is always the start of the range, to handle the first 'index_term':
-		 * 1) extract and bind the dimension, which also checks if the
-		 *    dimension exists in the array 'aname';
-		 * 2) extract the start-offset expression from the 'index_term',
-		 *    create an exp_atom with "0" if not specified (case
-		 *    SQL_COLUMN), and append it to 'exp->f'.
-		 */
-		sym_tsta = n->data.lval->h->data.sym;
-		switch (sym_tsta->token) {
-			case SQL_COLUMN: /* '<column>' */
-				if (!(exp = get_tiling_dimension(sql, *rel, aname, sym_tsta, f)))
-					return NULL;
-				if (!(dim = get_dimension(sql, a, exp->name)))
-					return NULL;
-				exp_os_sta = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, "0"));
-				break;
-			case SQL_BINOP: /* '<column> <BINOP> <exp>' or '<exp> <BINOP> <column>' */
-				/* sym_tsta->data.lval->h: a list of a single string, operator name
-				 * sym_tsta->data.lval->h->next: the symbol of the left operand
-				 * sym_tsta->data.lval->h->next->next: the symbol of the right operand
-				 */
-				opnm = sym_tsta->data.lval->h->data.lval->h->data.sval;
-				opl = sym_tsta->data.lval->h->next->data.sym;
-				opr = sym_tsta->data.lval->h->next->next->data.sym;
-				/* the <exp> could also be a SQL_COLUMN, but then opl->data.sym->data.lval->h->type == type_int */
-				if (opl->token == SQL_COLUMN && opl->data.lval->h->type == type_string) { /* '<column> +/- <exp>' */
-					if (!(exp = get_tiling_dimension(sql, *rel, aname, opl, f)))
+		if (n->data.lval->h->data.sym) {
+			sym_tsta = n->data.lval->h->data.sym;
+			/* The first is always the start of the range, to handle the first 'index_term':
+			 * 1) extract and bind the dimension, which also checks if the
+			 *    dimension exists in the array 'aname';
+			 * 2) extract the start-offset expression from the 'index_term',
+			 *    create an exp_atom with "0" if not specified (case
+			 *    SQL_COLUMN), and append it to 'exp->f'.
+			 */
+			switch (sym_tsta->token) {
+				case SQL_COLUMN: /* '<column>' */
+					if (!(exp = get_tiling_dimension(sql, *rel, aalias, sym_tsta, f)))
 						return NULL;
 					if (!(dim = get_dimension(sql, a, exp->name)))
 						return NULL;
-					if (is_addition(opnm)) {
-						exp_os_sta = rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
-					} else if (is_substraction(opnm)){
-						exp_os_sta = exp_unop(sql->sa, rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast), sql_bind_func(sql->sa, sql->session->schema, "sql_neg", &dim->type, NULL, F_FUNC));
+					exp_os_sta = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, "0"));
+					break;
+				case SQL_BINOP: /* '<column> <BINOP> <exp>' or '<exp> <BINOP> <column>' */
+					/* sym_tsta->data.lval->h: a list of a single string, operator name
+					 * sym_tsta->data.lval->h->next: the symbol of the left operand
+					 * sym_tsta->data.lval->h->next->next: the symbol of the right operand
+					 */
+					opnm = sym_tsta->data.lval->h->data.lval->h->data.sval;
+					opl = sym_tsta->data.lval->h->next->data.sym;
+					opr = sym_tsta->data.lval->h->next->next->data.sym;
+					/* the <exp> could also be a SQL_COLUMN, but then opl->data.sym->data.lval->h->type == type_int */
+					if (opl->token == SQL_COLUMN && opl->data.lval->h->type == type_string) { /* '<column> +/- <exp>' */
+						if (!(exp = get_tiling_dimension(sql, *rel, aalias, opl, f)))
+							return NULL;
+						if (!(dim = get_dimension(sql, a, exp->name)))
+							return NULL;
+						if (is_addition(opnm)) {
+							exp_os_sta = rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
+						} else if (is_substraction(opnm)){
+							exp_os_sta = exp_unop(sql->sa, rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast), sql_bind_func(sql->sa, sql->session->schema, "sql_neg", &dim->type, NULL, F_FUNC));
+						} else {
+							return sql_error(sql, 02, "SELECT: binary expressions other than '+' and '-' in array tiling offset not supported yet");
+						}
+					} else if (opr->token == SQL_COLUMN && opr->data.lval->h->type == type_string) { /* '<exp> +/- <column>' */
+						return sql_error(sql, 02, "SELECT: TODO: implement the '<exp> +/- <column>' case in array tiling!");
 					} else {
-						return sql_error(sql, 02, "SELECT: binary expressions other than '+' and '-' in array tiling offset not supported yet");
+						return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
 					}
-				} else if (opr->token == SQL_COLUMN && opr->data.lval->h->type == type_string) { /* '<exp> +/- <column>' */
-					return sql_error(sql, 02, "SELECT: TODO: implement the '<exp> +/- <column>' case in array tiling!");
-				} else {
+					break;
+				default: /* '<exp> '*/
 					return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
-				}
-				break;
-			default: /* '<exp> '*/
-				return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
-		}
-
-		/* If a step is specified, we don't care what it exactly is, just treat
-		 * it as an expression; otherwise get the value from dimension
-		 * specification. */
-		exp_os_ste = (dlist_length(n->data.lval) == 3) ?
-			rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, n->data.lval->h->next->data.sym, sql_where, ek), type_cast):
-			exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->step));
-
-		/* array tiling range stop, which, in case of a single <index_term>, is
-		 * just 'start+step' to make the range only include '0'.
-		 * Otherwise, it is given by the second or third 'index_term', which is
-		 * handled by
-		 * 1) extract and _check_ if the dimension name matches the dimension
-		 *    name in the first 'index_term'.
-		 * 2) extract the stop-offset expression from the 'index_term', create
-		 *    an exp_atom with "0" if not specified (case SQL_COLUMN), and
-		 *    append it to 'exp->f'.
-		 */
-		if (dlist_length(n->data.lval) == 1) {
-			exp_os_sto = exp_binop(sql->sa, exp_os_sta,
-					exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->step)),
-					sql_bind_func(sql->sa, sql->session->schema, "sql_add", &dim->type, &dim->type, F_FUNC));
-		} else {
-			sym_tsto = (dlist_length(n->data.lval) == 2) ? n->data.lval->h->next->data.sym : n->data.lval->h->next->next->data.sym;
-			switch (sym_tsto->token) {
-			case SQL_COLUMN: /* '<column>' */
-				if (!check_tiling_dimension(sql, exp->name, sym_tsto))
-					return NULL;
-				exp_os_sto = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, "0"));
-				break;
-			case SQL_BINOP: /* '<column> <BINOP> <exp>' or '<exp> <BINOP> <column>' */
-				opnm = sym_tsto->data.lval->h->data.lval->h->data.sval;
-				opl = sym_tsto->data.lval->h->next->data.sym;
-				opr = sym_tsto->data.lval->h->next->next->data.sym;
-				if (opl->token == SQL_COLUMN && opl->data.lval->h->type == type_string) { /* '<column> +/- <exp>' */
-					if (!check_tiling_dimension(sql, exp->name, opl))
-						return NULL;
-					if (is_addition(opnm)) {
-						exp_os_sto = rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
-					} else if (is_substraction(opnm)){
-						exp_os_sto = exp_unop(sql->sa, rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast), sql_bind_func(sql->sa, sql->session->schema, "sql_neg", &dim->type, NULL, F_FUNC));
-					} else {
-						return sql_error(sql, 02, "SELECT: binary expressions other than '+' and '-' in array tiling offset not supported yet");
-					}
-				} else if (opr->token == SQL_COLUMN && opr->data.lval->h->type == type_string) { /* '<exp> +/- <column>' */
-					return sql_error(sql, 02, "SELECT: TODO: implement the '<exp> +/- <column>' case!");
-				} else {
-					return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
-				}
-				break;
-			default: /* '<exp>' */
-				return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
 			}
+
+			/* If a step is specified, we don't care what it exactly is, just treat
+			 * it as an expression; otherwise get the value from dimension
+			 * specification. */
+			exp_os_ste = (dlist_length(n->data.lval) == 3) ?
+				rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, n->data.lval->h->next->data.sym, sql_where, ek), type_cast):
+				exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->step));
+
+			/* array tiling range stop, which, in case of a single <index_term>, is
+			 * just 'start+step' to make the range only include '0'.
+			 * Otherwise, it is given by the second or third 'index_term', which is
+			 * handled by
+			 * 1) extract and _check_ if the dimension name matches the dimension
+			 *    name in the first 'index_term'.
+			 * 2) extract the stop-offset expression from the 'index_term', create
+			 *    an exp_atom with "0" if not specified (case SQL_COLUMN), and
+			 *    append it to 'exp->f'.
+			 */
+			if (dlist_length(n->data.lval) == 1) {
+				exp_os_sto = exp_binop(sql->sa, exp_os_sta,
+						exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->step)),
+						sql_bind_func(sql->sa, sql->session->schema, "sql_add", &dim->type, &dim->type, F_FUNC));
+			} else {
+				sym_tsto = (dlist_length(n->data.lval) == 2) ? n->data.lval->h->next->data.sym : n->data.lval->h->next->next->data.sym;
+				switch (sym_tsto->token) {
+					case SQL_COLUMN: /* '<column>' */
+						if (!check_tiling_dimension(sql, exp->name, sym_tsto))
+							return NULL;
+						exp_os_sto = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, "0"));
+						break;
+					case SQL_BINOP: /* '<column> <BINOP> <exp>' or '<exp> <BINOP> <column>' */
+						opnm = sym_tsto->data.lval->h->data.lval->h->data.sval;
+						opl = sym_tsto->data.lval->h->next->data.sym;
+						opr = sym_tsto->data.lval->h->next->next->data.sym;
+						if (opl->token == SQL_COLUMN && opl->data.lval->h->type == type_string) { /* '<column> +/- <exp>' */
+							if (!check_tiling_dimension(sql, exp->name, opl))
+								return NULL;
+							if (is_addition(opnm)) {
+								exp_os_sto = rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast);
+							} else if (is_substraction(opnm)){
+								exp_os_sto = exp_unop(sql->sa, rel_check_type(sql, &dim->type, rel_value_exp(sql, rel, opr, sql_where, ek), type_cast), sql_bind_func(sql->sa, sql->session->schema, "sql_neg", &dim->type, NULL, F_FUNC));
+							} else {
+								return sql_error(sql, 02, "SELECT: binary expressions other than '+' and '-' in array tiling offset not supported yet");
+							}
+						} else if (opr->token == SQL_COLUMN && opr->data.lval->h->type == type_string) { /* '<exp> +/- <column>' */
+							return sql_error(sql, 02, "SELECT: TODO: implement the '<exp> +/- <column>' case!");
+						} else {
+							return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
+						}
+						break;
+					default: /* '<exp>' */
+						return sql_error(sql, 02, "SELECT: absolute array tiling offset not supported yet");
+				}
+			}
+		} else { /* the [*] case */
+			dim = get_nth_dimension(a, nth);
+			if (!dim)
+				return sql_error(sql, 02, "SELECT: cannot find %d-th dimension of array %s.%s", nth, s->base.name, a->base.name);
+			if (!(exp = rel_bind_column2(sql, *rel, aalias, dim->base.name, f)))
+				return sql_error(sql, 02, "SELECT: cannot find dimension \"%s\" of array %s.%s", dim->base.name, s->base.name, a->base.name);
+			exp_os_sta = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->start));
+			exp_os_ste = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->step));
+			exp_os_sto = exp_atom(sql->sa, atom_general(sql->sa, &dim->type, dim->dim->stop));
 		}
 		append(append(append(offsets, exp_os_sta), exp_os_ste), exp_os_sto);
 		/* use the free 'f' in e_column to pass the tiling ranges */
@@ -4010,26 +4131,24 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
  * 'exps' list if it is not already in 'exps'.
  */
 static list *
-add_columns(mvc *sql, list *exps, sql_exp *exp)
+add_columns(list *exps, sql_exp *exp)
 {
 	bit notexist = 1;
 	node *n;
 
 	switch(exp->type) {
-	case e_atom: /* nothing to add */
-		break;
 	case e_func:
 	case e_aggr:
 		for (n = ((list*)exp->l)->h; n; n = n->next) {
-			add_columns(sql, exps, (sql_exp*)n->data);
+			add_columns(exps, (sql_exp*)n->data);
 		}
 		break;
 	case e_convert:
-		add_columns(sql, exps, exp->l);
+		add_columns(exps, exp->l);
 		break;
 	case e_cmp:
-		add_columns(sql, exps, exp->l);
-		add_columns(sql, exps, exp->r);
+		add_columns(exps, exp->l);
+		add_columns(exps, exp->r);
 		break;
 	case e_column:
 		for (n = exps->h; n; n = n->next) {
@@ -4042,8 +4161,7 @@ add_columns(mvc *sql, list *exps, sql_exp *exp)
 			append(exps, exp);
 		break;
 	default:
-		return sql_error(sql, 02, "SELECT: invalid expression type %d", exp->type);
-		break;
+		return exps;
 	}
 	return exps;
 }
@@ -4098,18 +4216,21 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 	if(((sql_rel*)groupby->l)->op == op_basetable) {
 		t = (sql_table*)((sql_rel*)groupby->l)->l;
 	} else {
-		char *aname = NULL;
+		char *aname = NULL, *aalias = NULL;
 		sql_schema *s = NULL;
 
 		if (!(s = cur_schema(sql))) /* should not happen */
 			return sql_error(sql, 02, "SELECT: could not find current schema");
 
-		if (!(aname = exp_relname((sql_exp*)((list*)groupby->r)->h->data)))
-			return sql_error(sql, 02, "SELECT: cannot find base array name in array tiling definitino");
-		if (!(t = mvc_bind_table(sql, s, aname)))
-			return sql_error(sql, 02, "SELECT: no such array '%s.%s'", s->base.name, aname);
+		if (!(aalias = exp_relname((sql_exp*)((list*)groupby->r)->h->data)))
+			return sql_error(sql, 02, "SELECT: cannot find array name in array tiling definitino");
+		if (!(t = mvc_bind_table(sql, s, aalias))) {
+			if (!(aname = get_base_name(groupby, aalias)) || !(t = mvc_bind_table(sql, s, aname))) {
+				return sql_error(sql, 02, "SELECT: no such array '%s.%s'", s->base.name, aalias);
+			}
+		}
 		if (!t->ndims)
-			return sql_error(sql, 02, "SELECT: array tiling not allowed over non-array '%s.%s'", s->base.name, aname);
+			return sql_error(sql, 02, "SELECT: array tiling not allowed over non-array '%s.%s'", s->base.name, aalias);
 	}
 
 	if (!sym) {	/* AGGR(*) case, but only "count" is allowed */
@@ -4123,7 +4244,7 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		exp_kind ek = {type_value, card_value, FALSE};
 		if (!(exp = rel_value_exp(sql, rel, sym, sql_where, ek)))
 			return NULL;
-		add_columns(sql, groupby->exps, exp);
+		add_columns(groupby->exps, exp);
 		append(aggr_args, exp);
 		append(aggr_types, exp_subtype(exp));
 	}
@@ -4170,11 +4291,11 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 				dsize[i] = ceil((*(lng *)VALget(&d_sto->data) * 1.0 - *(lng *)VALget(&d_sta->data)) / *(lng *)VALget(&d_ste->data));
 				break;
 			case TYPE_flt:
-				dsize[i] = ceil((*(flt *)VALget(&d_sto->data) * 1.0 - *(flt *)VALget(&d_sta->data)) / *(flt *)VALget(&d_ste->data));
+				dsize[i] = ceil((*(flt *)VALget(&d_sto->data) - *(flt *)VALget(&d_sta->data)) / *(flt *)VALget(&d_ste->data));
 				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
 				break;
 			case TYPE_dbl:
-				dsize[i] = ceil((*(dbl *)VALget(&d_sto->data) * 1.0 - *(dbl *)VALget(&d_sta->data)) / *(dbl *)VALget(&d_ste->data));
+				dsize[i] = ceil((*(dbl *)VALget(&d_sto->data) - *(dbl *)VALget(&d_sta->data)) / *(dbl *)VALget(&d_ste->data));
 				return sql_error(sql, 02, "SELECT: unsupported data type \"%s\" of tiling dimension", sc->type.type->sqlname);
 				break;
 			default: /* should not reach here */

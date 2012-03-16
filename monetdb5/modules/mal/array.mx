@@ -49,7 +49,6 @@ end series_;
 
 @mal
 module array;
-@:array_mdefs(oid)@
 @:array_mdefs(bte)@
 @:array_mdefs(sht)@
 @:array_mdefs(int)@
@@ -58,6 +57,7 @@ module array;
 @:array_mdefs(dbl)@
 @-
 to be dealt with differently
+@:array_mdefs(oid)@
 @:array_mdefs(date)@
 @:array_mdefs(daytime)@
 @:array_mdefs(timestamp)@
@@ -206,7 +206,6 @@ array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *gr
 array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
-@:array_defs(oid)@
 @:array_defs(bte)@
 @:array_defs(sht)@
 @:array_defs(int)@
@@ -215,6 +214,7 @@ array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @:array_defs(dbl)@
 @-
 to be dealt with differently
+@:array_defs(oid)@
 @:array_defs(date)@
 @:array_defs(daytime)@
 @:array_defs(timestamp)@
@@ -245,13 +245,15 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	BUN cnt= 0;
 	int s,g;
 
-	if ( *start < *stop && *step > 0) {
+	if ( *group < 1 )
+		throw(MAL, "array.series", "#groups must be > 0,  got (%d)", *group);
+	if ( *series < 1 )
+		throw(MAL, "array.series", "#series must be > 0,  got (%d)", *series);
+
+	if ( (*start < *stop && *step > 0) || (*start > *stop && *step < 0) ) {
 		cnt =  (BUN) ceil(((*stop * 1.0 - *start) / *step)) * *group * *series ;
 	} else
-	if ( abs(*start) < abs(*stop) && abs(*step) > 0) {
-		cnt =  (BUN) ceil(((*stop * 1.0 + *start) / *step)) * *group * *series ;
-	} else
-		throw(MAL, "array.series", "illegal range");
+		throw(MAL, "array.series", "Illegal dimension range, [start:step:stop] have values: [@2:@2:@2]", *start, *step, *stop);
 	bn = BATnew(TYPE_void, TYPE_@1, cnt);
 	if ( bn == NULL)
 		throw(MAL, "array.series", MAL_MALLOC_FAIL);
@@ -285,15 +287,15 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 }
 
 @c
-@:dim_wrapper_impl(oid)@
-@:dim_wrapper_impl(bte)@
-@:dim_wrapper_impl(sht)@
-@:dim_wrapper_impl(int)@
-@:dim_wrapper_impl(lng)@
-@:dim_wrapper_impl(flt)@
-@:dim_wrapper_impl(dbl)@
+@:dim_wrapper_impl(bte,%d)@
+@:dim_wrapper_impl(sht,%d)@
+@:dim_wrapper_impl(int,%d)@
+@:dim_wrapper_impl(lng,%lld)@
+@:dim_wrapper_impl(flt,%f)@
+@:dim_wrapper_impl(dbl,%f)@
 @-
 to be dealt with differently
+@:dim_wrapper_impl(oid," OIDFMT ")@
 @:dim_wrapper_impl(date)@
 @:dim_wrapper_impl(daytime)@
 @:dim_wrapper_impl(timestamp)@
