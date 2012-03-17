@@ -47,7 +47,7 @@
  */
 
 BAT *
-BATsample1(BAT *b, BUN n)
+BATsample(BAT *b, BUN n)
 {
 	BAT *bn;
 	BUN cnt;
