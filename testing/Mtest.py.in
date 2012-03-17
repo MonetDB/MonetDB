@@ -267,6 +267,7 @@ CONDITIONALS = {
     'HAVE_JAVA'            : "@HAVE_JAVA_FALSE@",
     'HAVE_JAVAJDBC'        : "@HAVE_JAVAJDBC_FALSE@",
     'HAVE_JAVAMEROCONTROL' : "@HAVE_JAVAMEROCONTROL_FALSE@",
+    'HAVE_JAQL'            : "@HAVE_JAQL_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
     'HAVE_MONETDB5'        : "@HAVE_MONETDB5_FALSE@",
@@ -1678,6 +1679,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".sql"
         CALL = "sqlXp"
         SERVER = "SQL"
+    elif os.path.isfile(TST+".jaql"):  # deliberately kept simple for now
+        EXT = ".jaql"
+        CALL = "jaql"
+        SERVER = "JAQL"
         #TODO:
         #elif [ -f "$TST.java"       ] ; then  EXT="java" ; CALL="Java   "+TST+" "+EXT
         #elif [ -f "${TST}_s00.java" ] ; then  EXT="java" ; CALL="JavaXs "+TST+" "+EXT
@@ -1728,7 +1733,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif SERVER in ["MAL", "SQL"] and not env['exe']['Mserver'][0]:
+    elif EXT == ".jaql" and not env['exe']['JAQL_Client'][0]:
+        reason = "as %s is not available." % env['JAQLCLIENT'].split(None, 1)[0]
+        elem = SkipTest(env, TST, EXT, reason, length)
+    elif SERVER in ["MAL", "SQL", "JAQL"] and not env['exe']['Mserver'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".malS" and not env['exe']['Mserver'][0]:
@@ -1749,7 +1757,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
     elif CALL == "sqlXp":
         reason = "as multiple SQL clients in parallel are currently not supported by %s." % THISFILE
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif SERVER in ["MAL", "SQL"] and "MAPI" in BusyPorts:
+    elif SERVER in ["MAL", "SQL", "JAQL"] and "MAPI" in BusyPorts:
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
@@ -1849,12 +1857,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             for f in d:
                 if test.match(f):
                     CTIMEOUT = CTIMEOUT + TIMEOUT
-        elif CALL in ["mal", "malC", "sql"]:
+        elif CALL in ["mal", "malC", "sql", "jaql"]:
             CTIMEOUT = CTIMEOUT + TIMEOUT
         if  CTIMEOUT < TIMEOUT:
             CTIMEOUT = TIMEOUT
         STIMEOUT = CTIMEOUT
-        if  SERVER in ["MAL", "SQL"] and TIMEOUT > 0:
+        if  SERVER in ["MAL", "SQL", "JAQL"] and TIMEOUT > 0:
             STIMEOUT = STIMEOUT + TIMEOUT + min(TIMEOUT, par['TIMEOUT'])
 
         ME = ""
@@ -2270,10 +2278,12 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
         env['exe']['MAL_Client']    = env['exe']['MAL_Client'][0]    , env['exe']['MAL_Client'][1].replace(op, np)
         env['exe']['SQL_Client']    = env['exe']['SQL_Client'][0]    , env['exe']['SQL_Client'][1].replace(op, np)
         env['exe']['SQL_Dump']      = env['exe']['SQL_Dump'][0]      , env['exe']['SQL_Dump'][1].replace(op, np)
+        env['exe']['JAQL_Client']   = env['exe']['JAQL_Client'][0]   , env['exe']['JAQL_Client'][1].replace(op, np)
         os.environ['MSERVER']       = os.environ['MSERVER'].replace(op, np)
         os.environ['MAL_CLIENT']    = os.environ['MAL_CLIENT'].replace(op, np)
         os.environ['SQL_CLIENT']    = os.environ['SQL_CLIENT'].replace(op, np)
         os.environ['SQL_DUMP']      = os.environ['SQL_DUMP'].replace(op, np)
+        os.environ['JAQL_CLIENT']   = os.environ['JAQL_CLIENT'].replace(op, np)
         Smsg = Smsg + """
 ! Using new %sPORT=%s !
 """ % (SERVER, env[SERVER+'PORT'])
@@ -2473,7 +2483,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     pSrvr = None
     pSrvrTimer = None
     try:
-        if SERVER in ["MAL", "SQL"]:
+        if SERVER in ["MAL", "SQL", "JAQL"]:
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = open(SrvrOutFile,"w")
@@ -2500,6 +2510,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 Srvr.extend(DBINIT)
             if SERVER == "SQL":
                 lang="sql"
+                Srvr.extend(['--set', 'mal_listing=0'])
+                Srvr.extend(DBINIT)
+            if SERVER == "JAQL":
+                lang="jaql"
                 Srvr.extend(['--set', 'mal_listing=0'])
                 Srvr.extend(DBINIT)
             Srvr.extend(PROLOGUE)
@@ -2583,13 +2597,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                     returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
+            elif CALL == "jaql":
+                Clnt = splitcommand(exe['JAQL_Client'][1])
+                RunIt(Clnt, open(TST+EXT), ClntOut, ClntErr, TIMEOUT)
         else:
             for fp in ClntOut,ClntErr:
                 fp.write('\n\n! Server not ready; skipping attempt to start client!\n\n')
         ClntOut.close()
         ClntErr.close()
 
-        if SERVER in ["MAL", "SQL"]:
+        if SERVER in ["MAL", "SQL", "JAQL"]:
             EPILOGUE = None
             if os.path.isfile(TST+".epilogue5"):
                 EPILOGUE = open(TST+".epilogue5",'r')
@@ -3056,7 +3073,7 @@ def main(argv) :
 
     vars = ['TSTSRCBASE', 'TSTTRGBASE']
     if THISFILE == "Mtest.py":
-        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP']    #, 'MONETDB_MOD_PATH' ]
+        vars = vars + [ 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'JAQLCLIENT']    #, 'MONETDB_MOD_PATH' ]
 
     env = {}
     env['DIRSEP'] = os.sep
@@ -3074,6 +3091,7 @@ def main(argv) :
         dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
+        dft['JAQLCLIENT']     = "'mclient -ljaql -ftest -Eutf-8'"
 
     #par = {}
     # get current environment
@@ -3134,6 +3152,8 @@ def main(argv) :
              'default: %s' % dft['SQLCLIENT']),
             ('SQLDUMP', None, 'SQLDUMP', '<sql-dump program>',
              'default: %s' % dft['SQLDUMP']),
+            ('JAQLCLIENT', None, 'JAQLCLIENT', '<jaql-client program>',
+             'default: %s' % dft['JAQLCLIENT']),
             ('concurrent', None, 'concurrent', None,
              'There are concurrent Mtest runs using the same MonetDB installation'),
             ('dbg', None, 'dbg', '<debugger/valgrind>',
@@ -3484,6 +3504,7 @@ def main(argv) :
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
         exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
+        exe['JAQL_Client']   = CheckExec(env['JAQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['JAQLCLIENT'], HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
