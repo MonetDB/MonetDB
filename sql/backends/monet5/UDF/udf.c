@@ -277,7 +277,7 @@ do {	/* type-specific core algorithm */				\
 	bres->hdense = TRUE;		/* result head is dense */
 	BATseqbase(bres, bone->hseqbase); /* result head has same seqbase as input */
 	bres->hsorted = GDK_SORTED;	/* result head is sorted */
-	BATkey(bone, TRUE);		/* result head is key (unique) */
+	BATkey(bres, TRUE);		/* result head is key (unique) */
 
 	/* Result tail is sorted, if the left/first input tail is
 	 * sorted and key (unique), or if the left/first input tail is
