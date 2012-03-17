@@ -80,10 +80,14 @@ JAQLinitClient(Client c)
 	str msg = MAL_SUCCEED;
 
 	j = GDKzalloc(sizeof(jc));
-	c->state[MAL_SCENARIO_OPTIMIZE] = j;
 	jaqllex_init_extra(j, &j->scanner);
 
 	optimizerInit();  /* for all xxxRef vars in dumpcode */
+
+	/* Set state, this indicates an initialized client scenario */
+	c->state[MAL_SCENARIO_READER] = c;
+	c->state[MAL_SCENARIO_PARSER] = c;
+	c->state[MAL_SCENARIO_OPTIMIZE] = j;
 
 	return msg;
 }
@@ -91,14 +95,16 @@ JAQLinitClient(Client c)
 str
 JAQLexitClient(Client c)
 {
-	if (c->state[MAL_SCENARIO_PARSER] != NULL) {
-		jc *j = (jc *) c->state[MAL_SCENARIO_PARSER];
+	if (c->state[MAL_SCENARIO_OPTIMIZE] != NULL) {
+		jc *j = (jc *) c->state[MAL_SCENARIO_OPTIMIZE];
 
 		jaqllex_destroy(j->scanner);
 		j->scanner = NULL;
 		freevars(j->vars);
 
+		c->state[MAL_SCENARIO_READER] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
+		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
 	}
 
 	return MAL_SUCCEED;
