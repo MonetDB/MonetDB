@@ -53,6 +53,7 @@ typedef struct _jc {
 	void *scanner;
 	char explain;
 	jvar *vars;
+	int vtop;
 } jc;
 
 enum treetype {
@@ -160,6 +161,8 @@ tree *append_func_arg(tree *oarg, tree *narg);
 tree *set_func_input_from_pipe(tree *func);
 void printtree (tree *t, int level, char op);
 void freetree(tree *t);
+void freevars(jvar *v);
+str getContext(Client cntxt, jc **c);
 
 
 jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

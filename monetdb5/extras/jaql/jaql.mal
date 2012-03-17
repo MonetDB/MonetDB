@@ -36,3 +36,12 @@ comment "Set or overwrite value of JSON variable";
 pattern cast(b:bat[:oid,:any], t:any_1):bat[:oid,:any_1]
 address JAQLcast
 comment "Return BAT b as BAT with tail type of t, if the BAT tail in reality is of that type";
+
+# scenario functions and init call
+command prelude()
+address JAQLprelude;
+
+command epilogue()
+address JAQLepilogue;
+
+jaql.prelude();

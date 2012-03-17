@@ -23,6 +23,7 @@ INCLUDES = ../../mal \
 		   ../../optimizer \
 		   ../../../common/options \
 		   ../../../common/stream \
+		   ../../../common/utils \
 		   ../../../gdk
 
 lib__json = {
@@ -36,7 +37,7 @@ lib__json = {
 lib__jaql = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h
+	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h jaqlscenario.c
 
 	# the ./ is necessary for autogen not to generate garbage
 	LIBS = ./parser/libjaqlp ../../tools/libmonetdb5

@@ -1621,7 +1621,8 @@ freetree(tree *j)
 }
 
 void
-freevars(jvar *v) {
+freevars(jvar *v)
+{
 	jvar *n;
 	while (v != NULL) {
 		GDKfree(v->vname);
