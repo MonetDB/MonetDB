@@ -137,6 +137,9 @@ false      return _FALSE;
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);
 	jaqlerror(yylloc_param, yyextra, buf);
-	return LEX_ERROR;
+	yyextra->buf = NULL;
+	YY_FLUSH_BUFFER;
+	BEGIN(0);
+	return EOF;
 	}
 %%

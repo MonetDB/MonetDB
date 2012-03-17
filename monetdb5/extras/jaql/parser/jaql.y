@@ -18,8 +18,6 @@
 
 %start stmt
 
-%token LEX_ERROR
-
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
 %token SORT TOP DESC ASC EXPLAIN PLAN PLANF UNROLL PRESERVE
 
@@ -91,11 +89,6 @@ stmt: jaql _SCOLON
 		j->p = $$ = $2;
 		j->explain = 3;
 		YYACCEPT;
-	}
-	| LEX_ERROR
-	{
-		j->p = $$ = NULL;
-		YYABORT;
 	}
 	| _SCOLON
 	{
