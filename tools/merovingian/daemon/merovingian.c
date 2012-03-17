@@ -840,15 +840,13 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	/* end upgrades to conf-file in place */
 
-	kv = findConfKey(_mero_props, "pidfile");
-	pidfilename = kv->val;
+	pidfilename = getConfVal(_mero_props, "pidfile");
 
-	kv = findConfKey(_mero_props, "forward");
-	if (strcmp(kv->val, "redirect") != 0 &&
-			strcmp(kv->val, "proxy") != 0)
-	{
+	p = getConfVal(_mero_props, "forward");
+	if (strcmp(p, "redirect") != 0 && strcmp(p, "proxy") != 0) {
 		Mfprintf(stderr, "invalid forwarding mode: %s, defaulting to proxy\n",
-				kv->val);
+				p);
+		kv = findConfKey(_mero_props, "forward");
 		setConfVal(kv, "proxy");
 		writeProps(_mero_props, ".");
 	}
@@ -862,8 +860,7 @@ main(int argc, char *argv[])
 	}
 	port = (unsigned short)kv->ival;
 
-	kv = findConfKey(_mero_props, "discovery");
-	discovery = kv->ival;
+	discovery = getConfNum(_mero_props, "discovery");
 
 	/* check and trim the hash-algo from the passphrase for easy use
 	 * lateron */

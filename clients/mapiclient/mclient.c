@@ -654,7 +654,9 @@ CSVrenderer(MapiHdl hdl)
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				s = nullstring == default_nullstring ? "" : nullstring;
-			if (strchr(s, *sep) != NULL || strchr(s, '\n') != NULL || strchr(s, '"') != NULL) {
+			if (strchr(s, *sep) != NULL ||
+			    strchr(s, '\n') != NULL ||
+			    strchr(s, '"') != NULL) {
 				mnstr_printf(toConsole, "%s\"",
 					      i == 0 ? "" : sep);
 				while (*s) {
@@ -675,8 +677,6 @@ CSVrenderer(MapiHdl hdl)
 						mnstr_write(toConsole, "\"\"", 1, 2);
 						break;
 					default:
-						if (*s == *sep)
-							mnstr_write(toConsole, "\\", 1, 1);
 						mnstr_write(toConsole, s, 1, 1);
 						break;
 					}
