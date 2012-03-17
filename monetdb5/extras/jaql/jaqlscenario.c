@@ -168,7 +168,6 @@ JAQLparser(Client c)
 	if ((errmsg = getContext(c, &j)) != MAL_SUCCEED) {
 		/* tell the client */
 		mnstr_printf(out, "!%s, aborting\n", errmsg);
-		mnstr_flush(out);
 		/* leave a message in the log */
 		fprintf(stderr, "%s, cannot handle client!\n", errmsg);
 		/* stop here, instead of printing the exception below to the
@@ -185,18 +184,17 @@ JAQLparser(Client c)
 	j->buf = in->buf + in->pos;
 
 	jaqlparse(j);
-	if (j->err[0] != '\0') {
-		in->pos = in->len;
-		c->yycur = 0;
-		/* tell the client */
-		mnstr_printf(out, "!%s\n", j->err);
-		mnstr_flush(out);
-		throw(PARSE, "JAQLparser", "%s", j->err);
-	}
 	
 	/* now the parsing is done we should advance the stream */
 	in->pos = in->len;
 	c->yycur = 0;
+
+	if (j->err[0] != '\0') {
+		/* tell the client */
+		mnstr_printf(out, "!%s\n", j->err);
+		j->err[0] = '\0';
+		return MAL_SUCCEED;
+	}
 
 	if (j->p == NULL) { /* there was nothing to parse, EOF */
 		c->mode = FINISHING;
@@ -213,7 +211,6 @@ JAQLparser(Client c)
 			freeVariables(c, prg->def, c->glb, oldvtop);
 			prg->def->errors = 0;
 			mnstr_printf(out, "!%s\n", j->err);
-			mnstr_flush(out);
 			throw(PARSE, "JAQLparse", "%s", j->err);
 		}
 
@@ -222,7 +219,6 @@ JAQLparser(Client c)
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");
 			printFunction(out, c->curprg->def, 0, LIST_MAPI);
-			mnstr_flush(out);
 			
 			/* restore the state */
 			MSresetInstructions(prg->def, oldstop);
