@@ -131,6 +131,7 @@ false      return _FALSE;
 "}"        return '}';
 "{"        return '{';
 [ \t\r\n]+ /* ignore whitespace */;
+("#"|"//").*\n /* ignore comments */;
 [a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return _IDENT;}
 <<EOF>>    {yyextra->buf = NULL; return EOF;}
 .                      {
