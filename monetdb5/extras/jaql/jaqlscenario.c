@@ -196,10 +196,8 @@ JAQLparser(Client c)
 		return MAL_SUCCEED;
 	}
 
-	if (j->p == NULL) { /* there was nothing to parse, EOF */
-		c->mode = FINISHING;
+	if (j->p == NULL) /* there was nothing to parse, EOF */
 		return MAL_SUCCEED;
-	}
 
 	if (j->explain < 2) {
 		Symbol prg = c->curprg;
