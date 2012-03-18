@@ -2989,10 +2989,13 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
-		if (mode == SQL)
+		if (mode == SQL) {
 			lang = "/SQL";
-		else
+		} else if (mode == JAQL) {
+			lang = "/JAQL";
+		} else {
 			lang = "";
+		}
 
 		mnstr_printf(toConsole,
 			      "Welcome to mclient, the MonetDB%s "
