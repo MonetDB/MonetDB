@@ -444,8 +444,84 @@ JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *obj
 	return MAL_SUCCEED;
 }
 
+static size_t
+strlen_json_value(jsonbat *jb, oid id)
+{
+	BATiter bi;
+	oid v;
+	size_t ret = 0;
+
+	bi = bat_iterator(jb->kind);
+
+	BUNfndOID(v, bi, &id);
+	switch (*(char *)BUNtail(bi, v)) {
+		case 'i':
+			bi = bat_iterator(jb->integer);
+			BUNfndOID(v, bi, &id);
+			ret += snprintf(NULL, 0, "%lld", *(lng *)BUNtail(bi, v));
+			break;
+		case 'd':
+			bi = bat_iterator(jb->doble);
+			BUNfndOID(v, bi, &id);
+			ret += snprintf(NULL, 0, "%f", *(dbl *)BUNtail(bi, v));
+			break;
+		case 's':
+			bi = bat_iterator(jb->string);
+			BUNfndOID(v, bi, &id);
+			ret += 2 + strlen(BUNtail(bi, v));
+			break;
+		case 't':
+			ret += 4;
+			break;
+		case 'f':
+			ret += 5;
+			break;
+		case 'n':
+			ret += 4;
+			break;
+		case 'a':
+		{
+			BAT *elems;
+			BUN p, q;
+			elems = BATmirror(BATselect(BATmirror(jb->array), &id, &id));
+			bi = bat_iterator(elems);
+			ret += 2;
+			BATloop (elems, p, q) {
+				ret += strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				if (p < q - 1)
+					ret += 2;
+			}
+			ret += 2;
+			BBPunfix(elems->batCacheid);
+			break;
+		}
+		case 'o':
+		{
+			BATiter ni;
+			BAT *objects = BATmirror(BATselect(BATmirror(jb->object), &id, &id));
+			BUN p, q;
+			oid n;
+			ret += 2;
+			bi = bat_iterator(objects);
+			ni = bat_iterator(jb->name);
+			BATloop (objects, p, q) {
+				BUNfndOID(n, ni, BUNtail(bi, p));
+				ret += 2 + strlen(BUNtail(ni, n)) + 2;
+				ret += strlen_json_value(jb, *(oid *)BUNtail(bi, p));
+				if (p < q - 1)
+					ret += 2;
+			}
+			ret += 2;
+			BBPunfix(objects->batCacheid);
+			break;
+		}
+	}
+
+	return ret;
+}
+
 static void
-print_json_value(jsonbat *jb, stream *s, oid id)
+print_json_value(jsonbat *jb, stream *s, oid id, int indent)
 {
 	BATiter bi;
 	oid v;
@@ -456,26 +532,32 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 		case 'i':
 			bi = bat_iterator(jb->integer);
 			BUNfndOID(v, bi, &id);
-			mnstr_printf(s, "%lld", *(lng *)BUNtail(bi, v));
+			mnstr_printf(s, "%*s%lld",
+					indent >= 0 ? indent : 0, "",
+					*(lng *)BUNtail(bi, v));
 			break;
 		case 'd':
 			bi = bat_iterator(jb->doble);
 			BUNfndOID(v, bi, &id);
-			mnstr_printf(s, "%f", *(dbl *)BUNtail(bi, v));
+			mnstr_printf(s, "%*s%f",
+					indent >= 0 ? indent : 0, "",
+					*(dbl *)BUNtail(bi, v));
 			break;
 		case 's':
 			bi = bat_iterator(jb->string);
 			BUNfndOID(v, bi, &id);
-			mnstr_printf(s, "\"%s\"", BUNtail(bi, v));
+			mnstr_printf(s, "%*s\"%s\"",
+					indent >= 0 ? indent : 0, "",
+					BUNtail(bi, v));
 			break;
 		case 't':
-			mnstr_printf(s, "true");
+			mnstr_printf(s, "%*strue", indent >= 0 ? indent : 0, "");
 			break;
 		case 'f':
-			mnstr_printf(s, "false");
+			mnstr_printf(s, "%*sfalse", indent >= 0 ? indent : 0, "");
 			break;
 		case 'n':
-			mnstr_printf(s, "null");
+			mnstr_printf(s, "%*snull", indent >= 0 ? indent : 0, "");
 			break;
 		case 'a':
 		{
@@ -483,33 +565,62 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 			BUN p, q;
 			elems = BATmirror(BATselect(BATmirror(jb->array), &id, &id));
 			bi = bat_iterator(elems);
-			mnstr_printf(s, "[ ");
-			BATloop (elems, p, q) {
-				print_json_value(jb, s, *(oid *)BUNtail(bi, p));
-				if (p < q - 1)
-					mnstr_printf(s, ", ");
+			if (indent >= 0) {
+				mnstr_printf(s, "%*s[\n", indent, "");
+			} else {
+				mnstr_printf(s, "[ ");
 			}
-			mnstr_printf(s, " ]");
+			BATloop (elems, p, q) {
+				print_json_value(jb, s, *(oid *)BUNtail(bi, p),
+						indent >= 0 ? indent + 2 : indent);
+				if (p < q - 1)
+					mnstr_printf(s, ",");
+				mnstr_printf(s, "%c", indent >= 0 ? '\n' : ' ');
+			}
+			mnstr_printf(s, "%*s]", indent >= 0 ? indent : 0, "");
 			BBPunfix(elems->batCacheid);
 			break;
 		}
 		case 'o':
 		{
-			BATiter ni;
+			BATiter oi, ni;
 			BAT *objects = BATmirror(BATselect(BATmirror(jb->object), &id, &id));
 			BUN p, q;
 			oid n;
-			mnstr_printf(s, "{ ");
-			bi = bat_iterator(objects);
+			if (indent >= 0) {
+				mnstr_printf(s, "%*s{\n", indent, "");
+			} else {
+				mnstr_printf(s, "{ ");
+			}
+			oi = bat_iterator(objects);
 			ni = bat_iterator(jb->name);
 			BATloop (objects, p, q) {
-				BUNfndOID(n, ni, BUNtail(bi, p));
-				mnstr_printf(s, "\"%s\": ", BUNtail(ni, n));
-				print_json_value(jb, s, *(oid *)BUNtail(bi, p));
+				BUNfndOID(n, ni, BUNtail(oi, p));
+				if (indent >= 0) {
+					mnstr_printf(s, "%*s\"%s\":",
+							indent + 2, "", BUNtail(ni, n));
+					BUNfndOID(v, bi, BUNtail(oi, p));
+					switch (*(char *)BUNtail(bi, v)) {
+						case 'o':
+						case 'a':
+							mnstr_printf(s, "\n");
+							print_json_value(jb, s, *(oid *)BUNtail(oi, p),
+									indent + 2);
+							break;
+						default:
+							mnstr_printf(s, " ");
+							print_json_value(jb, s, *(oid *)BUNtail(oi, p), -1);
+							break;
+					}
+				} else {
+					mnstr_printf(s, "\"%s\": ", BUNtail(ni, n));
+					print_json_value(jb, s, *(oid *)BUNtail(oi, p), indent);
+				}
 				if (p < q - 1)
-					mnstr_printf(s, ", ");
+					mnstr_printf(s, ",");
+				mnstr_printf(s, "%c", indent >= 0 ? '\n' : ' ');
 			}
-			mnstr_printf(s, " }");
+			mnstr_printf(s, "%*s}", indent >= 0 ? indent : 0, "");
 			BBPunfix(objects->batCacheid);
 			break;
 		}
@@ -517,7 +628,7 @@ print_json_value(jsonbat *jb, stream *s, oid id)
 }
 
 str
-JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
+JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, bit *pretty)
 {
 	jsonbat jb;
 	BATiter bi;
@@ -526,8 +637,50 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 
 	bi = bat_iterator(jb.kind);
 
-	print_json_value(&jb, *s, *(oid *)BUNhead(bi, BUNfirst(jb.kind)));
-	mnstr_printf(*s, "\n");
+	if (*pretty == TRUE && *(char *)BUNtail(bi, BUNfirst(jb.kind)) == 'a') {
+		/* look into the first array's members to see if breaking up is
+		 * going to be necessary */
+		BAT *elems;
+		BUN p, q;
+		size_t esize, fsize;
+		int indent;
+		oid *id = (oid *)BUNhead(bi, BUNfirst(jb.kind));
+		elems = BATmirror(BATselect(BATmirror(jb.array), id, id));
+		bi = bat_iterator(elems);
+		fsize = 4;
+		BATloop (elems, p, q) {
+			esize = strlen_json_value(&jb, *(oid *)BUNtail(bi, p));
+			if (esize > 80)
+				break;
+			fsize += esize;
+			if (p < q - 1)
+				fsize += 2;
+			if (fsize > 80)
+				break;
+		}
+		if (esize > 80 || fsize > 80) {
+			mnstr_printf(*s, "[\n");
+			indent = 2;
+		} else {
+			mnstr_printf(*s, "[ ");
+			indent = -1;
+		}
+		BATloop (elems, p, q) {
+			if (indent >= 0 && esize <= 80) {
+				mnstr_printf(*s, "%*s", indent, "");
+				print_json_value(&jb, *s, *(oid *)BUNtail(bi, p), -1);
+			} else {
+				print_json_value(&jb, *s, *(oid *)BUNtail(bi, p), indent);
+			}
+			if (p < q - 1)
+				mnstr_printf(*s, ",%c", indent >= 0 ? '\n' : ' ');
+		}
+		mnstr_printf(*s, "%c]\n", indent >= 0 ? '\n' : ' ');
+		BBPunfix(elems->batCacheid);
+	} else {
+		print_json_value(&jb, *s, *(oid *)BUNhead(bi, BUNfirst(jb.kind)), -1);
+		mnstr_printf(*s, "\n");
+	}
 
 	unloadbats();
 
