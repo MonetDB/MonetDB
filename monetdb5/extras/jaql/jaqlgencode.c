@@ -4590,19 +4590,35 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("json", 4));
-				setFunctionId(q, printRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
-				q = pushArgument(mb, q, a);
-				q = pushArgument(mb, q, j1);
-				q = pushArgument(mb, q, j2);
-				q = pushArgument(mb, q, j3);
-				q = pushArgument(mb, q, j4);
-				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, j6);
-				q = pushArgument(mb, q, j7);
-				pushInstruction(mb, q);
+				if (j->explain & 64) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, putName("jaql", 4));
+					setFunctionId(q, putName("exportResult", 12));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
+					q = pushArgument(mb, q, a);
+					q = pushArgument(mb, q, j1);
+					q = pushArgument(mb, q, j2);
+					q = pushArgument(mb, q, j3);
+					q = pushArgument(mb, q, j4);
+					q = pushArgument(mb, q, j5);
+					q = pushArgument(mb, q, j6);
+					q = pushArgument(mb, q, j7);
+					pushInstruction(mb, q);
+				} else {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, putName("json", 4));
+					setFunctionId(q, printRef);
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
+					q = pushArgument(mb, q, a);
+					q = pushArgument(mb, q, j1);
+					q = pushArgument(mb, q, j2);
+					q = pushArgument(mb, q, j3);
+					q = pushArgument(mb, q, j4);
+					q = pushArgument(mb, q, j5);
+					q = pushArgument(mb, q, j6);
+					q = pushArgument(mb, q, j7);
+					pushInstruction(mb, q);
+				}
 				break;
 			case j_json:
 				dumpjsonshred(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);

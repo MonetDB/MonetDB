@@ -169,6 +169,7 @@ jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 jaql_export str JAQLgetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 jaql_export str JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 jaql_export str JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+jaql_export str JAQLexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name);
 
 #endif
 

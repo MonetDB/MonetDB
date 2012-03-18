@@ -201,7 +201,9 @@ JAQLparser(Client c)
 
 	if (j->explain < 2) {
 		Symbol prg = c->curprg;
+		j->explain |= 64;  /* request dumping in MAPI mode */
 		(void)dumptree(j, c, prg->def, j->p);
+		j->explain |= ~64;
 		pushEndInstruction(prg->def);
 		/* codegen could report an error */
 		if (j->err[0] != '\0') {
