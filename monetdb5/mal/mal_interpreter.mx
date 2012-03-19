@@ -2050,6 +2050,72 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			(ptr)getArgReference(stk, pci, 10),
 			(ptr)getArgReference(stk, pci, 11));
 		break;
+	case 13: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10),
+			(ptr)getArgReference(stk, pci, 11),
+			(ptr)getArgReference(stk, pci, 12));
+		break;
+	case 14: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10),
+			(ptr)getArgReference(stk, pci, 11),
+			(ptr)getArgReference(stk, pci, 12),
+			(ptr)getArgReference(stk, pci, 13));
+		break;
+	case 15: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10),
+			(ptr)getArgReference(stk, pci, 11),
+			(ptr)getArgReference(stk, pci, 12),
+			(ptr)getArgReference(stk, pci, 13),
+			(ptr)getArgReference(stk, pci, 14));
+		break;
+	case 16: ret = (str)(*pci->fcn)(
+			(ptr)getArgReference(stk, pci, 0),
+			(ptr)getArgReference(stk, pci, 1),
+			(ptr)getArgReference(stk, pci, 2),
+			(ptr)getArgReference(stk, pci, 3),
+			(ptr)getArgReference(stk, pci, 4),
+			(ptr)getArgReference(stk, pci, 5),
+			(ptr)getArgReference(stk, pci, 6),
+			(ptr)getArgReference(stk, pci, 7),
+			(ptr)getArgReference(stk, pci, 8),
+			(ptr)getArgReference(stk, pci, 9),
+			(ptr)getArgReference(stk, pci, 10),
+			(ptr)getArgReference(stk, pci, 11),
+			(ptr)getArgReference(stk, pci, 12),
+			(ptr)getArgReference(stk, pci, 13),
+			(ptr)getArgReference(stk, pci, 14),
+			(ptr)getArgReference(stk, pci, 15));
+		break;
 	default:
 		ret = createScriptException(mb, stkpc, MAL, NULL,
 			"too many arguments for command call");

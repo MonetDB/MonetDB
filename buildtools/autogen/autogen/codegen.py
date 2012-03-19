@@ -77,7 +77,7 @@ end_code_extract = { 'mx': e_mx, 'mx.in': e_mx }
 # direct rules
 code_gen = {'y':        [ '.tab.c', '.tab.h' ],
             'tab.c':    [ '.tab.o' ],
-            'l':        [ '.yy.c' ],
+            'l':        [ '.yy.c', '.yy.h' ],
             'yy.c':     [ '.yy.o' ],
             'mt':       [ '.symbols.h', '.c' ],
             'brg':      [ '.c' ],

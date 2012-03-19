@@ -1,0 +1,145 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2012 MonetDB B.V.
+# All Rights Reserved.
+
+# This module contains all functions that can be used from jaql
+module jaqlfunc;
+
+
+# generate a JSON record by merging two JSON arrays
+function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str],kindv:bat[:oid,:bte],stringv:bat[:oid,:str],integerv:bat[:oid,:lng],doublev:bat[:oid,:dbl],arrayv:bat[:oid,:oid],objectv:bat[:oid,:oid],namev:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	r1 := bat.new(:oid,:bte);
+	r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	elemsn := algebra.selectH(arrayn, 0@0);
+	elemsn := bat.reverse(elemsn);
+	k1 := algebra.semijoin(kindn, elemsn);
+	# we can only have string values
+	k2 := algebra.select(k1, 115:bte); # s
+	k3 := algebra.markH(k2, 1@0);
+	k4 := algebra.markT(k2, 1@0);
+
+	elemsv := algebra.selectH(arrayv, 0@0);
+	e1 := algebra.markH(elemsv, 1@0);
+	e2 := algebra.join(k4, e1);
+
+	# create nulls for missing values
+	i1 := bat.reverse(kindv);
+	i2 := aggr.max(i1);
+	i3 := calc.wrd(i2);
+	i4 := calc.+(i3, 1);
+	i5 := calc.oid(i4);
+	e3 := algebra.kdifference(k4, e2);
+	e4 := algebra.project(e3, 110:bte); # n
+	e5 := algebra.markH(e4, i5);
+
+	# copy the value JSON data
+	r1 := bat.insert(r1, 0@0, 111:bte); # o
+	k10 := algebra.kdifference(kindv, r1);
+	r1 := bat.insert(r1, k10);
+	r1 := bat.insert(r1, e5);
+	r2 := bat.insert(r2, stringv);
+	r3 := bat.insert(r3, integerv);
+	r4 := bat.insert(r4, doublev);
+	a1 := algebra.kdifference(arrayv, elemsv);
+	r5 := bat.insert(r5, a1);
+	r6 := bat.insert(r6, objectv);
+	r7 := bat.insert(r7, namev);
+
+	# construct the top level object
+	e10 := algebra.markH(e3, i5);
+	e11 := algebra.markT(e10, i5);
+	e2 := bat.insert(e2, e11);
+	o1 := algebra.project(0@0, e2);
+	e12 := bat.reverse(e2);
+	s1 := algebra.join(e12, stringn);
+	# add object and the pair names
+	r6 := bat.insert(r6, o1);
+	r7 := bat.insert(r7, s1);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end arrayToRecord;
+
+# these are groupable functions, they receive their input as :oid,:any_1
+# and return the per :oid group result as :oid,:any_2
+
+# perform sum over the input array
+function sum(v:bat[:oid,:lng]):bat[:oid,:lng];
+	k := algebra.kunique(v);
+	r:bat[:oid,:lng] := aggr.sum(v, k);
+	return r;
+end sum;
+function sum(v:bat[:oid,:dbl]):bat[:oid,:dbl];
+	k := algebra.kunique(v);
+	r:bat[:oid,:dbl] := aggr.sum(v, k);
+	return r;
+end sum;
+
+# perform average over the input array
+function avg(v:bat[:oid,:lng]):bat[:oid,:dbl];
+	k := algebra.kunique(v);
+	r := aggr.avg(v, k);
+	return r;
+end avg;
+function avg(v:bat[:oid,:dbl]):bat[:oid,:dbl];
+	k := algebra.kunique(v);
+	r := aggr.avg(v, k);
+	return r;
+end avg;
+
+# perform count over the input array
+function count(v:bat[:oid,:any]):bat[:oid,:lng];
+	k := algebra.kunique(v);
+	x := aggr.count(v, k, false);
+	r := batcalc.lng(x);
+	return r;
+end count;
+
+function range(start:bat[:oid,:lng], vend:bat[:oid,:lng], skip:bat[:oid,:lng]):bat[:oid,:lng];
+	ret := bat.new(:oid,:lng);
+	barrier (b,h,t) := bat.newIterator(start);
+		iend := algebra.fetch(vend, h);
+		iskip := algebra.fetch(skip, h);
+		# TODO: use array.series from sciql
+#		ret := array.series(t, iskip, iend, 1, 1);
+		iend := calc.+(iend, 1);
+		barrier (v,i) := language.newRange(t);
+				ret := bat.insert(ret, h, i);
+				redo (v,i) := language.nextElement(iskip, iend);
+		exit (v,i);
+		redo (b,h,t) := bat.hasMoreElements(start);
+	exit (b,h,t);
+
+	return ret;
+end range;
+
+function range(start:bat[:oid,:lng], vend:bat[:oid,:lng]):bat[:oid,:lng];
+	step := algebra.project(start, 1:lng);
+	ret := jaqlfunc.range(start, vend, step);
+	return ret;
+end range;
+
+function range(size:bat[:oid,:lng]):bat[:oid,:lng];
+	start := algebra.project(size, 0:lng);
+	vend := batcalc.-(size,1);
+	ret := jaqlfunc.range(start, vend);
+	return ret;
+end range;

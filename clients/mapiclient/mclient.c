@@ -83,7 +83,8 @@
 
 enum modes {
 	MAL,
-	SQL
+	SQL,
+	JAQL
 };
 
 static enum modes mode = SQL;
@@ -112,7 +113,8 @@ enum formatters {
 	TABLEformatter,
 	CSVformatter,
 	XMLformatter,
-	TESTformatter
+	TESTformatter,
+	CLEANformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
@@ -969,6 +971,21 @@ TESTrenderer(MapiHdl hdl)
 }
 
 static void
+CLEANrenderer(MapiHdl hdl)
+{
+	char *reply;
+
+	SQLqueryEcho(hdl);
+	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
+		if (*reply == '%')
+			continue;
+		if (*reply == '=')
+			reply++;
+		mnstr_printf(toConsole, "%s\n", reply);
+	}
+}
+
+static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
@@ -1304,6 +1321,8 @@ setFormatter(char *s)
 #endif
 	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
+	} else if (strcmp(s, "jaql") == 0) {
+		formatter = CLEANformatter;
 	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup(",");
@@ -1414,7 +1433,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter) {
+			if (formatter == TABLEformatter || formatter == CLEANformatter) {
 				fprintf(stderr, "%s", reply);
 			} else {
 				mapi_explain_result(hdl, stderr);
@@ -1526,6 +1545,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			case TESTformatter:
 				TESTrenderer(hdl);
+				break;
+			case CLEANformatter:
+				CLEANrenderer(hdl);
 				break;
 			case TABLEformatter:
 				switch (specials) {
@@ -2411,6 +2433,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						case TESTformatter:
 							mnstr_printf(toConsole, "test\n");
 							break;
+						case CLEANformatter:
+							mnstr_printf(toConsole, "jaql\n");
+							break;
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
@@ -2699,6 +2724,9 @@ main(int argc, char **argv)
 				} else if (strcmp(language, "mal") == 0) {
 					mode = MAL;
 					q = NULL;
+				} else if (strcmp(language, "jaql") == 0) {
+					mode = JAQL;
+					q = NULL;
 				} else {
 					/* make sure we don't set garbage */
 					mnstr_printf(stderr_stream,
@@ -2775,14 +2803,22 @@ main(int argc, char **argv)
 		case 'l':
 			/* accept unambiguous prefix of language */
 			if (strcmp(optarg, "sql") == 0 ||
-			    strcmp(optarg, "sq") == 0 || strcmp(optarg, "s") == 0 ||
-				strcmp(optarg, "sql") == 0) {
+			    strcmp(optarg, "sq") == 0 ||
+				strcmp(optarg, "s") == 0)
+			{
 				language = optarg;
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
 				language = "mal";
 				mode = MAL;
+			} else if (strcmp(optarg, "jaql") == 0 ||
+					strcmp(optarg, "jaq") == 0 ||
+					strcmp(optarg, "ja") == 0 ||
+					strcmp(optarg, "j") == 0)
+			{
+				language = "jaql";
+				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
 				language = "msql";
 				mode = MAL;
@@ -2968,6 +3004,8 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
+		} else if (mode == JAQL) {
+			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
@@ -2977,10 +3015,13 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
-		if (mode == SQL)
+		if (mode == SQL) {
 			lang = "/SQL";
-		else
+		} else if (mode == JAQL) {
+			lang = "/JAQL";
+		} else {
 			lang = "";
+		}
 
 		mnstr_printf(toConsole,
 			      "Welcome to mclient, the MonetDB%s "
