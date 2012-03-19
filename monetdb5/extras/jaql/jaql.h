@@ -162,7 +162,7 @@ tree *set_func_input_from_pipe(tree *func);
 void printtree (tree *t, int level, char op);
 void freetree(tree *t);
 void freevars(jvar *v);
-str getContext(Client cntxt, jc **c);
+str getJAQLContext(Client cntxt, jc **c);
 
 
 jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

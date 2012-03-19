@@ -165,7 +165,7 @@ JAQLparser(Client c)
 	int oldvtop, oldstop;
 	str errmsg;
 
-	if ((errmsg = getContext(c, &j)) != MAL_SUCCEED) {
+	if ((errmsg = getJAQLContext(c, &j)) != MAL_SUCCEED) {
 		/* tell the client */
 		mnstr_printf(out, "!%s, aborting\n", errmsg);
 		/* leave a message in the log */
@@ -238,7 +238,7 @@ JAQLengine(Client c)
 	MalStkPtr oldglb = c->glb;
 	jc *j;
 
-	if ((msg = getContext(c, &j)) != MAL_SUCCEED)
+	if ((msg = getJAQLContext(c, &j)) != MAL_SUCCEED)
 		return msg;
 
 	/* FIXME: if we don't run this, any barrier will cause an endless loop

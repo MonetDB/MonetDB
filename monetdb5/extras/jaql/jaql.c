@@ -36,7 +36,7 @@
 
 extern int jaqlparse(jc *j);
 void freetree(tree *j);
-str getContext(Client c, jc **j);
+str getJAQLContext(Client c, jc **j);
 
 /* assign the output of action (a 1 or more stage pipe) to ident, if
  * ident is NULL, the result should be outputted to the screen, if
@@ -1650,7 +1650,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	
-	if ((err = getContext(cntxt, &j)) != MAL_SUCCEED)
+	if ((err = getJAQLContext(cntxt, &j)) != MAL_SUCCEED)
 		GDKfree(err);
 
 	if (j == NULL) {
@@ -1724,7 +1724,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-getContext(Client cntxt, jc **c)
+getJAQLContext(Client cntxt, jc **c)
 {
 	*c = ((jc *) cntxt->state[MAL_SCENARIO_OPTIMIZE]); 
 	if (*c == NULL)
@@ -1736,7 +1736,7 @@ str
 JAQLgetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	jc *j;
-	str msg = getContext(cntxt, &j);
+	str msg = getJAQLContext(cntxt, &j);
 	int *j1 = (int *)getArgReference(stk, pci, 0);
 	int *j2 = (int *)getArgReference(stk, pci, 1);
 	int *j3 = (int *)getArgReference(stk, pci, 2);
@@ -1782,7 +1782,7 @@ str
 JAQLsetVar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	jc *j;
-	str msg = getContext(cntxt, &j);
+	str msg = getJAQLContext(cntxt, &j);
 	int *ret = (int *)getArgReference(stk, pci, 0);
 	str var = *(str *)getArgReference(stk, pci, 1);
 	int *j1 = (int *)getArgReference(stk, pci, 2);
