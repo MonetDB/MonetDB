@@ -68,7 +68,7 @@
  * These examples give little room to achieve our prime objective, i.e.
  * a fast and early type resolution scheme. Any non-polymorphic function
  * can be type checked and marked type-safe upon completion.
- * Type checking polymorphic functions are post-poned until a concrete
+ * Type checking polymorphic functions are postponed until a concrete
  * type instance is known. It leads to a clone, which can be type checked
  * and is entered into the symbol table.
  * The type resolution status is marked in each instruction.

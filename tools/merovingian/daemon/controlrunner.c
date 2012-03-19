@@ -548,12 +548,8 @@ static void ctl_handle_client(
 					val = NULL;
 
 				if ((doshare = !strcmp(p, "shared"))) {
-					confkeyval *kv;
-
 					/* bail out if we don't do discovery at all */
-					kv = findConfKey(_mero_props, "discovery");
-					if (kv->ival == 0) {
-						/* can't do much */
+					if (getConfNum(_mero_props, "discovery") == 0) {
 						len = snprintf(buf2, sizeof(buf2),
 								"discovery service is globally disabled, "
 								"enable it first\n");

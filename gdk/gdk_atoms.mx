@@ -1075,7 +1075,7 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
 @:atomtostr(int,"%d",int)@
 @:atom_io(int,Int,int)@
 
-@:numfromstr(lng,9223372036854775807,SIZEOF_LNG)@
+@:numfromstr(lng,LL_CONSTANT(9223372036854775807),SIZEOF_LNG)@
 @:atomtostr(lng,LLFMT,lng)@
 
 @:atom_io(lng,Lng,lng)@
