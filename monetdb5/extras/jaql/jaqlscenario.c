@@ -241,9 +241,13 @@ JAQLengine(Client c)
 	if ((msg = getContext(c, &j)) != MAL_SUCCEED)
 		return msg;
 
+	/* FIXME: if we don't run this, any barrier will cause an endless loop
+	 * (program jumps back to first frame), so this is kind of a
+	 * workaround that maybe can go once we run the optimiser stack */
+	chkProgram(c->fdout, c->nspace, c->curprg->def);
+
 	c->glb = 0;
 	if (j->explain == 1) {
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
 	} else if (j->explain == 2 || j->explain == 3) {
 		printtree(j->p, 0, j->explain == 3);
