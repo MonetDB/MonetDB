@@ -91,13 +91,11 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(msg);
 		return MAL_SUCCEED;
 	}
-	if (m == NULL) {
-		fprintf(stdout, "# MonetDB/DataCell module loaded\n");
-		fflush(stdout); /* make merovingian see this *now* */
-		return MAL_SUCCEED;
-	}
+	assert(m != NULL);
 
-	msg = getContext(cntxt, mb, &m, NULL);
+	fprintf(stdout, "# MonetDB/DataCell module loaded\n");
+	fflush(stdout); /* make merovingian see this *now* */
+
 	s = mvc_bind_schema(m, schema_default);
 	if (s == NULL)
 		throw(SQL, "datacell.prelude", "Schema missing");
