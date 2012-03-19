@@ -69,6 +69,7 @@ asc        return ASC;
 explain    return EXPLAIN;
 plan       return PLAN;
 planf      return PLANF;
+debug      return DEBUG;
 
  /* language constructs */
 "->"       return _ARROW;

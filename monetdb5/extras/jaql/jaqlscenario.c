@@ -199,7 +199,7 @@ JAQLparser(Client c)
 	if (j->p == NULL) /* there was nothing to parse, EOF */
 		return MAL_SUCCEED;
 
-	if (j->explain < 2) {
+	if (j->explain < 2 || j->explain == 4) {
 		Symbol prg = c->curprg;
 		j->explain |= 64;  /* request dumping in MAPI mode */
 		(void)dumptree(j, c, prg->def, j->p);
@@ -245,14 +245,16 @@ JAQLengine(Client c)
 	if (j->explain == 1) {
 		chkProgram(c->fdout, c->nspace, c->curprg->def);
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
-	} else if (j->explain >= 2) {
+	} else if (j->explain == 2 || j->explain == 3) {
 		printtree(j->p, 0, j->explain == 3);
 		printf("\n");
 		return MAL_SUCCEED;  /* don't have a plan generated */
+	} else if (j->explain == 4) {
+		msg = runMALDebugger(c, c->curprg);
 	} else if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = runMAL(c, c->curprg->def, 1, 0, 0, 0);
 	}
 
 	if (msg) {
