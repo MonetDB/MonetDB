@@ -113,7 +113,8 @@ enum formatters {
 	TABLEformatter,
 	CSVformatter,
 	XMLformatter,
-	TESTformatter
+	TESTformatter,
+	CLEANformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
@@ -970,6 +971,21 @@ TESTrenderer(MapiHdl hdl)
 }
 
 static void
+CLEANrenderer(MapiHdl hdl)
+{
+	char *reply;
+
+	SQLqueryEcho(hdl);
+	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
+		if (*reply == '%')
+			continue;
+		if (*reply == '=')
+			reply++;
+		mnstr_printf(toConsole, "%s\n", reply);
+	}
+}
+
+static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
@@ -1305,6 +1321,8 @@ setFormatter(char *s)
 #endif
 	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
+	} else if (strcmp(s, "jaql") == 0) {
+		formatter = CLEANformatter;
 	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup(",");
@@ -1415,7 +1433,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		/* handle errors first */
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter) {
+			if (formatter == TABLEformatter || formatter == CLEANformatter) {
 				fprintf(stderr, "%s", reply);
 			} else {
 				mapi_explain_result(hdl, stderr);
@@ -1527,6 +1545,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			case TESTformatter:
 				TESTrenderer(hdl);
+				break;
+			case CLEANformatter:
+				CLEANrenderer(hdl);
 				break;
 			case TABLEformatter:
 				switch (specials) {
@@ -2412,6 +2433,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 						case TESTformatter:
 							mnstr_printf(toConsole, "test\n");
 							break;
+						case CLEANformatter:
+							mnstr_printf(toConsole, "jaql\n");
+							break;
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
@@ -2980,6 +3004,8 @@ main(int argc, char **argv)
 	} else {
 		if (mode == SQL) {
 			setFormatter("sql");
+		} else if (mode == JAQL) {
+			setFormatter("jaql");
 		} else {
 			setFormatter("raw");
 		}
