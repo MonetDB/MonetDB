@@ -3979,6 +3979,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 		}
 		default:
 			assert(0);
+			return -1;
 	}
 }
 
