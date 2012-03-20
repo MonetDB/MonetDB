@@ -249,6 +249,12 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		}
 		break;
 
+	case SQL_ATTR_ROW_NUMBER: /* read-only attribute */
+	default:
+		/* Invalid attribute/option identifier */
+		addStmtError(stmt, "HY092", NULL, 0);
+		return SQL_ERROR;
+
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CURSOR_SENSITIVITY:
@@ -258,15 +264,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 	case SQL_ATTR_MAX_LENGTH:
 	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_QUERY_TIMEOUT:
-	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
-	default:
-		/* Invalid attribute/option identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 
