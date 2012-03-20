@@ -149,8 +149,9 @@ ODBCInitResult(ODBCStmt *stmt)
 	stmt->rowcount = (SQLULEN) mapi_rows_affected(hdl);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("ODBCInitResult: querytype %s\n",
-		translatequerytype(stmt->querytype));
+	ODBCLOG("ODBCInitResult: querytype %s, rowcount %lu\n",
+		translatequerytype(stmt->querytype),
+		(unsigned long) stmt->rowcount);
 #endif
 
 	switch (stmt->querytype) {
