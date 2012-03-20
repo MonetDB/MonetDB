@@ -57,18 +57,11 @@ SQLFetchScroll_(ODBCStmt *stmt,
 		return SQL_ERROR;
 	}
 #define RowSetSize	(stmt->ApplRowDescr->sql_desc_array_size)
-	/* set currentRow to be the row number of the last row in the
-	 * result set */
-	stmt->currentRow = stmt->startRow + stmt->rowSetSize;
-	stmt->rowSetSize = 0;
 
+	assert(stmt->startRow >= 0);
 	switch (FetchOrientation) {
 	case SQL_FETCH_NEXT:
-		if (stmt->currentRow >= (SQLLEN) stmt->rowcount) {
-			stmt->State = FETCHED;
-			return SQL_NO_DATA;
-		}
-		stmt->startRow = stmt->currentRow;
+		stmt->startRow += stmt->rowSetSize;
 		break;
 	case SQL_FETCH_FIRST:
 		stmt->startRow = 0;
@@ -76,13 +69,14 @@ SQLFetchScroll_(ODBCStmt *stmt,
 	case SQL_FETCH_LAST:
 		if (stmt->rowcount < RowSetSize)
 			stmt->startRow = 0;
-
 		else
 			stmt->startRow = stmt->rowcount - RowSetSize;
 		break;
 	case SQL_FETCH_PRIOR:
 		if (stmt->startRow == 0) {
+			/* before start */
 			stmt->startRow = 0;
+			stmt->rowSetSize = 0;
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
@@ -95,36 +89,50 @@ SQLFetchScroll_(ODBCStmt *stmt,
 			stmt->startRow = stmt->startRow - RowSetSize;
 		break;
 	case SQL_FETCH_RELATIVE:
-		if ((stmt->currentRow != 0 || FetchOffset <= 0) &&
-		    (stmt->currentRow != (SQLLEN) stmt->rowcount ||
+		if ((stmt->startRow > 0 || stmt->rowSetSize > 0 ||
+		     FetchOffset <= 0) &&
+		    ((SQLULEN) stmt->startRow < stmt->rowcount ||
 		     FetchOffset >= 0)) {
-			if ((stmt->currentRow == 0 && FetchOffset <= 0) ||
-			    (stmt->startRow == 0 && FetchOffset < 0) ||
+			if ((stmt->startRow == 0 && stmt->rowSetSize == 0 &&
+			     FetchOffset <= 0) ||
+			    (stmt->startRow == 0 && stmt->rowSetSize > 0 &&
+			     FetchOffset < 0) ||
 			    (stmt->startRow > 0 &&
-			     (int) stmt->startRow + FetchOffset < 0 &&
-			     /* FetchOffset must be negative, so cast works */
-			     (unsigned int) -FetchOffset > RowSetSize)) {
+			     stmt->startRow + FetchOffset < 1 &&
+			     (FetchOffset > (SQLLEN) RowSetSize ||
+			      -FetchOffset > (SQLLEN) RowSetSize))) {
+				/* before start */
 				stmt->startRow = 0;
+				stmt->rowSetSize = 0;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
 			}
 			if (stmt->startRow > 0 &&
-			    (int) stmt->startRow + FetchOffset < 0) {
-				stmt->startRow = 0;
-
+			    stmt->startRow + FetchOffset < 1 &&
+			    FetchOffset <= (SQLLEN) RowSetSize &&
+			    -FetchOffset <= (SQLLEN) RowSetSize) {
 				/* Attempt to fetch before the result
 				 * set returned the first rowset */
 				addStmtError(stmt, "01S06", NULL, 0);
+				stmt->startRow = 0;
+				break;
+			}
+			if (stmt->startRow + FetchOffset >= 0 &&
+			    stmt->startRow + FetchOffset < (SQLLEN) stmt->rowcount) {
+				stmt->startRow += FetchOffset;
 				break;
 			}
 			if (stmt->startRow + FetchOffset >= (SQLLEN) stmt->rowcount ||
-			    stmt->currentRow == (SQLLEN) stmt->rowcount) {
+			    (stmt->startRow >= (SQLLEN) stmt->rowcount &&
+			     FetchOffset >= 0)) {
+				/* after end */
 				stmt->startRow = stmt->rowcount;
+				stmt->rowSetSize = 0;
 				stmt->State = FETCHED;
 				return SQL_NO_DATA;
 			}
-			stmt->startRow = stmt->startRow + FetchOffset;
-			break;
+			/* all bases should have been covered above */
+			assert(0);
 		}
 		/* fall through */
 	case SQL_FETCH_ABSOLUTE:
@@ -134,9 +142,10 @@ SQLFetchScroll_(ODBCStmt *stmt,
 				break;
 			}
 			stmt->startRow = 0;
-
 			if ((unsigned int) -FetchOffset > RowSetSize) {
+				/* before start */
 				stmt->State = FETCHED;
+				stmt->rowSetSize = 0;
 				return SQL_NO_DATA;
 			}
 			/* Attempt to fetch before the result set
@@ -145,12 +154,16 @@ SQLFetchScroll_(ODBCStmt *stmt,
 			break;
 		}
 		if (FetchOffset == 0) {
+			/* before start */
 			stmt->startRow = 0;
+			stmt->rowSetSize = 0;
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}
 		if ((SQLULEN) FetchOffset > stmt->rowcount) {
+			/* after end */
 			stmt->startRow = stmt->rowcount;
+			stmt->rowSetSize = 0;
 			stmt->State = FETCHED;
 			return SQL_NO_DATA;
 		}

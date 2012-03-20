@@ -54,13 +54,15 @@ SQLFetch_(ODBCStmt *stmt)
 	SQLINTEGER offset;
 	SQLUSMALLINT *statusp;
 
+	/* stmt->startRow is the (0 based) index of the first row we
+	 * stmt->need to fetch */
+
 	ard = stmt->ApplRowDescr;
 	ird = stmt->ImplRowDescr;
 
 	stmt->retrieved = 0;
 	stmt->currentCol = 0;
 
-	stmt->startRow += stmt->rowSetSize;
 	stmt->rowSetSize = 0;
 	stmt->currentRow = stmt->startRow + 1;
 	if (mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET) != MOK) {
@@ -100,8 +102,6 @@ SQLFetch_(ODBCStmt *stmt)
 		offset = 0;
 	for (row = 0; row < ard->sql_desc_array_size; row++) {
 		if (mapi_fetch_row(stmt->hdl) == 0) {
-			if (ird->sql_desc_rows_processed_ptr)
-				*ird->sql_desc_rows_processed_ptr = row;
 			switch (mapi_error(stmt->Dbc->mid)) {
 			case MOK:
 				if (row == 0)
@@ -157,11 +157,6 @@ SQLFetch_(ODBCStmt *stmt)
 		while (row++ < ard->sql_desc_array_size)
 			*statusp++ = SQL_ROW_NOROW;
 
-	if (stmt->rowSetSize > 1) {
-		mapi_seek_row(stmt->hdl, stmt->startRow, MAPI_SEEK_SET);
-		mapi_fetch_row(stmt->hdl);
-	}
-
 	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
@@ -192,6 +187,8 @@ SQLFetch(SQLHSTMT StatementHandle)
 		addStmtError(stmt, "24000", NULL, 0);
 		return SQL_ERROR;
 	}
+
+	stmt->startRow += stmt->rowSetSize;
 
 	return SQLFetch_(stmt);
 }
