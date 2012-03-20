@@ -2715,7 +2715,7 @@ ODBCStore(ODBCStmt *stmt,
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;
-	SQLLEN *indicator_ptr;
+	SQLLEN *strlen_or_ind_ptr;
 	SQLUINTEGER bind_type;
 	SQLSMALLINT ctype, sqltype;
 	char *sval = NULL;
@@ -2742,11 +2742,11 @@ ODBCStore(ODBCStmt *stmt,
 	ptr = apdrec->sql_desc_data_ptr;
 	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
-	indicator_ptr = apdrec->sql_desc_indicator_ptr;
-	if (indicator_ptr && offset)
-		indicator_ptr = (SQLLEN *) ((char *) indicator_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+	strlen_or_ind_ptr = apdrec->sql_desc_indicator_ptr;
+	if (strlen_or_ind_ptr && offset)
+		strlen_or_ind_ptr = (SQLLEN *) ((char *) strlen_or_ind_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (ptr == NULL &&
-	    (indicator_ptr == NULL || *indicator_ptr != SQL_NULL_DATA)) {
+	    (strlen_or_ind_ptr == NULL || *strlen_or_ind_ptr != SQL_NULL_DATA)) {
 		/* COUNT field incorrect */
 		addStmtError(stmt, "07002", NULL, 0);
 		return SQL_ERROR;
@@ -2771,7 +2771,7 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
-	if (indicator_ptr != NULL && *indicator_ptr == SQL_NULL_DATA) {
+	if (strlen_or_ind_ptr != NULL && *strlen_or_ind_ptr == SQL_NULL_DATA) {
 		assigns(buf, bufpos, buflen, "NULL", stmt);
 		*bufp = buf;
 		*bufposp = bufpos;
@@ -2779,16 +2779,20 @@ ODBCStore(ODBCStmt *stmt,
 		return SQL_SUCCESS;
 	}
 
+	strlen_or_ind_ptr = apdrec->sql_desc_octet_length_ptr;
+	if (strlen_or_ind_ptr && offset)
+		strlen_or_ind_ptr = (SQLLEN *) ((char *) strlen_or_ind_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+
 	switch (ctype) {
 	case SQL_C_CHAR:
 	case SQL_C_BINARY:
-		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
+		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		sval = (char *) ptr;
 		fixODBCstring(sval, slen, SQLLEN, addStmtError, stmt, return SQL_ERROR);
 		break;
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:
-		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
+		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		sval = (char *) ptr;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
