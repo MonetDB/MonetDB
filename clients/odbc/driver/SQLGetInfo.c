@@ -22,7 +22,7 @@
  * This code is LGPL. Please ensure that this message remains in future
  * distributions and uses of this code (thats about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
- * 
+ *
  * This file has been modified for the MonetDB project.  See the file
  * Copyright in this directory for more information.
  */
@@ -539,7 +539,7 @@ SQLGetInfo_(ODBCDbc *dbc,
 			SQL_FN_STR_RIGHT |
 			SQL_FN_STR_RTRIM |
 			SQL_FN_STR_SOUNDEX |
-			SQL_FN_STR_SPACE | 
+			SQL_FN_STR_SPACE |
 			SQL_FN_STR_UCASE;
 		len = sizeof(SQLUINTEGER);
 		break;

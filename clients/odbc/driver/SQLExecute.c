@@ -22,7 +22,7 @@
  * This code is LGPL. Please ensure that this message remains in future
  * distributions and uses of this code (thats about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
- * 
+ *
  * This file has been modified for the MonetDB project.  See the file
  * Copyright in this directory for more information.
  */
@@ -149,8 +149,9 @@ ODBCInitResult(ODBCStmt *stmt)
 	stmt->rowcount = (SQLULEN) mapi_rows_affected(hdl);
 
 #ifdef ODBCDEBUG
-	ODBCLOG("ODBCInitResult: querytype %s\n",
-		translatequerytype(stmt->querytype));
+	ODBCLOG("ODBCInitResult: querytype %s, rowcount %lu\n",
+		translatequerytype(stmt->querytype),
+		(unsigned long) stmt->rowcount);
 #endif
 
 	switch (stmt->querytype) {

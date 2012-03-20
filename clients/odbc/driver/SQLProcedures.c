@@ -22,7 +22,7 @@
  * This code is LGPL. Please ensure that this message remains in future
  * distributions and uses of this code (thats about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
- * 
+ *
  * This file has been modified for the MonetDB project.  See the file
  * Copyright in this directory for more information.
  */
@@ -137,7 +137,7 @@ SQLProcedures_(ODBCStmt *stmt,
 		 "from \"sys\".\"schemas\" as \"s\","
 		 "     \"sys\".\"env\"() as \"e\","
 		 "     \"sys\".\"functions\" as \"p\" left outer join \"sys\".\"args\" as \"a\""
-		 "     	       on \"p\".\"id\" = \"a\".\"func_id\" and \"a\".\"name\" = 'result'"
+		 "             on \"p\".\"id\" = \"a\".\"func_id\" and \"a\".\"name\" = 'result'"
 		 "where \"p\".\"schema_id\" = \"s\".\"id\" and"
 		 "      \"p\".\"sql\" = true and"
 		 "      \"e\".\"name\" = 'gdk_dbname'",
