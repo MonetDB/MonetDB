@@ -28,8 +28,8 @@ function user.main():void;              #  0 main:void := user.main() {G}
     b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
     c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
     d := algebra.select(b,0,100);       #  5 d:bat[:int,:int] := ALGselect(b:bat[:int,:int], _9:int, _10:int) {G}
-    l := calc.+(24,27);                 #  6 l:int := CALCbinaryADDintint(_13:int, _15:int) 
-    l3 := calc.+(l,24);                 #  7 l3:int := CALCbinaryADDintint(l:int, _13:int) 
+    l := calc.+(24,27);                 #  6 l:int := CMDvarADDsignal(_13:int, _15:int) 
+    l3 := calc.+(l,24);                 #  7 l3:int := CMDvarADDsignal(l:int, _13:int) 
     mdb.List();                         #  8 _19:void := MDBlistDetail() 
 end main;                               #  9  
 

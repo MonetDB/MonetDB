@@ -62,7 +62,7 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *empty;
 	int limit;
 	InstrPtr p= NULL, *old;
-	str msg = getContext(cntxt,mb, &m, NULL);
+	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	BAT *b;
 
 	(void) stk;

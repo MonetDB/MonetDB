@@ -27,7 +27,7 @@ function user.main():void;              #  0 main:void := user.main() {G}
     t2 := array.grid(132000,8,1,0);     #  2 t2:bat[:oid,:int] := ARRAYgrid_int(_5:int, _6:int, _7:int, _8:int) {G}
     t3 := array.grid(1,100,10560,0);    #  3 t3:bat[:oid,:int] := ARRAYgrid_int(_7:int, _10:int, _11:int, _8:int) {G}
     t4 := array.grid(1,100,10560,0,8);  #  4 t4:bat[:oid,:int] := ARRAYgridShift_int(_7:int, _10:int, _11:int, _8:int, _6:int) {G}
-    t5 := batcalc.+(t2,t4);             #  5 t5:bat[:oid,:int] := CMDbatADD_int_int_int(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
+    t5 := batcalc.+(t2,t4);             #  5 t5:bat[:oid,:int] := CMDbatADDsignal(t2:bat[:oid,:int], t4:bat[:oid,:int]) {G}
     t6 := batcalc.oid(t5);              #  6 t6:bat[:oid,:oid] := CMDconvert_int_oid(t5:bat[:oid,:int]) {G}
     t7 := algebra.join(t6,t1);          #  7 t7:bat[:oid,:int] := ALGjoin(t6:bat[:oid,:oid], t1:bat[:oid,:int]) {G}
     mdb.List();                         #  8 _17:void := MDBlistDetail() 

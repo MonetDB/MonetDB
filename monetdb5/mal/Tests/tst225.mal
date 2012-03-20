@@ -1,9 +1,9 @@
 #testing reference counting inliners
 a:= bat.new(:oid,:int);
-bat.insert(a,1@0,1);
+a:= bat.insert(a,1@0,1);
 b:= algebra.copy(a);
-z:= batcalc.+(a,b,true,false);
+z:= batcalc.+(a,b,1);
 io.print(a);
 bat.setGarbage(b);
 bat.setGarbage(a);
-z:= batcalc.+(a,b,true,false);
+z:= batcalc.+(a,b,1);

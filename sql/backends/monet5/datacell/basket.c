@@ -163,7 +163,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema  *s;
 	sql_table   *t;
 	mvc *m = NULL;
-	str msg = getContext(cntxt, mb, &m, NULL);
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr;
 	char buf[BUFSIZ], *lsch, *ltbl;
 	str tbl;

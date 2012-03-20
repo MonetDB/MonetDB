@@ -147,8 +147,8 @@ function user.main():void;
 #	io.print(""); 
 #	io.print(""); 
     b1 := bat.new(:oid,nil:int);
-    fa_a := bat.insert(b1,0@0,0);
-    ga_a := bat.insert(b1,0@0,1);
+    fa_a := bat.append(b1,0);
+    ga_a := bat.append(b1,1);
     bn := user.tst(b1);
     ha_a := io.print(bn);
     ia_a := clients.quit();
@@ -158,7 +158,7 @@ end main;
 # int	int	  # type
 #-----------------#
 [ 0@0,	  2	  ]
-[ 0@0,	  3	  ]
+[ 1@0,	  3	  ]
 
 # 07:27:16 >  
 # 07:27:16 >  Done.

@@ -1373,6 +1373,9 @@ mapi_ping(Mapi mid)
 	case LANG_MAL:
 		hdl = mapi_query(mid, "io.print(1);");
 		break;
+	case LANG_JAQL:
+		hdl = mapi_query(mid, "[1];");
+		break;
 	}
 	if (hdl)
 		mapi_close_handle(hdl);
@@ -1912,6 +1915,8 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "jaql") == lang)
+		mid->languageId = LANG_JAQL;
 	if (mid->database)
 		free(mid->database);
 	mid->database = NULL;
@@ -2116,6 +2121,8 @@ mapi_mapi(const char *host, int port, const char *username,
 		mid->languageId = LANG_MAL;
 	else if (strstr(lang, "sql") == lang)
 		mid->languageId = LANG_SQL;
+	else if (strstr(lang, "jaql") == lang)
+		mid->languageId = LANG_JAQL;
 
 	if (mid->database)
 		free(mid->database);
@@ -2197,6 +2204,8 @@ parse_uri_query(Mapi mid, char *uri)
 					mid->languageId = LANG_MAL;
 				else if (strstr(val, "sql") == val)
 					mid->languageId = LANG_SQL;
+				else if (strstr(val, "jaql") == val)
+					mid->languageId = LANG_JAQL;
 			} else if (strcmp("user", uri) == 0) {
 				/* until we figure out how this can be
 				   done safely wrt security, ignore */
@@ -2803,7 +2812,7 @@ mapi_start_talking(Mapi mid)
 
 	if (mid->trace == MAPI_TRACE)
 		printf("connection established\n");
-	if (mid->languageId == LANG_MAL)
+	if (mid->languageId != LANG_SQL)
 		return mid->error;
 
 	/* tell server about cachelimit */
@@ -3195,8 +3204,13 @@ mapi_param_store(MapiHdl hdl)
 		hdl->query[k] = 0;
 
 		if (hdl->params[i].inparam == 0) {
+			char *nullstr = "NULL";
 			checkSpace(5);
-			strcpy(hdl->query + k, hdl->mid->languageId == LANG_SQL ? "NULL" : "nil");
+			if (hdl->mid->languageId == LANG_MAL)
+				nullstr = "nil";
+			else if (hdl->mid->languageId == LANG_JAQL)
+				nullstr = "null";
+			strcpy(hdl->query + k, nullstr);
 		} else {
 			void *src = hdl->params[i].inparam;	/* abbrev */
 

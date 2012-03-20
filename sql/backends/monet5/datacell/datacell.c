@@ -52,7 +52,7 @@ static str
 DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 {
 	mvc *m = NULL;
-	str msg = getContext(cntxt, mb, &m, NULL);
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_schema  *s;
 	backend *be;
 	node *o;
@@ -80,7 +80,7 @@ str
 DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
-	str msg = getContext(cntxt, mb, &m, NULL);
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_schema  *s;
 	node *o;
 	sql_table *t;
@@ -91,13 +91,11 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(msg);
 		return MAL_SUCCEED;
 	}
-	if (m == NULL) {
-		fprintf(stdout, "# MonetDB/DataCell module loaded\n");
-		fflush(stdout); /* make merovingian see this *now* */
-		return MAL_SUCCEED;
-	}
+	assert(m != NULL);
 
-	msg = getContext(cntxt, mb, &m, NULL);
+	fprintf(stdout, "# MonetDB/DataCell module loaded\n");
+	fflush(stdout); /* make merovingian see this *now* */
+
 	s = mvc_bind_schema(m, schema_default);
 	if (s == NULL)
 		throw(SQL, "datacell.prelude", "Schema missing");

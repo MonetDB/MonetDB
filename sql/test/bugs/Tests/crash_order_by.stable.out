@@ -25,8 +25,8 @@ Ready.
 # 12:49:59 >  
 
 #select row_number() over (order by name) as row, '1' from tables limit 10;
-% .,	.L1 # table_name
-% row,	L1 # name
+% .,	. # table_name
+% row,	single_value # name
 % int,	char # type
 % 2,	1 # length
 [ 1,	"1"	]

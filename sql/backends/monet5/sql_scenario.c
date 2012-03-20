@@ -467,7 +467,7 @@ SQLinitClient(Client c)
 	if (c->state[MAL_SCENARIO_PARSER] == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		global_variables(m, "monetdb", "sys");
-		if (isAdministrator(c))  /* console should return everything */
+		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)  /* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 	} else {
