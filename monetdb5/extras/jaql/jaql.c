@@ -254,7 +254,7 @@ make_jaql_expand(tree *var, tree *expr)
 		expr->type = j_var;
 		expr->sval = GDKstrdup(var->sval);
 	} else {
-		char *v;
+		char *v = NULL;
 		if (expr->type == j_var)
 			v = expr->sval;
 		if (expr->type == j_unroll && expr->tval1->type == j_var)

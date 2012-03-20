@@ -1029,7 +1029,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 	int a, b, c, d, l, r;
 	tree *pred;
 	json_var *vars, *ljv, *rjv;
-	join_result *jrs = NULL, *jrw, *jrl, *jrr, *jrn, *jrv, *jrp;
+	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
 
 	jgvar *jgraph = NULL;
 
@@ -2211,9 +2211,10 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			return b;
 		case j_operation: {
 			int r, s;
-			int u, v;
-			int h, i, k, l, m;
+			int u = -1, v;
+			int h, i, k = -1, l = -1, m;
 			InstrPtr p;
+			b = -1;
 			switch (t->tval1->type) {
 				case j_var:
 				case j_operation:
@@ -2240,6 +2241,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				default:
 					assert(0);
 			}
+			assert(b != -1);  /* to help the compiler */
 			/* d:int and e:dbl are values from val1 */
 
 			switch (t->tval3->type) {
@@ -3138,6 +3140,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				return a;
 			}
 
+			b = -1;
 			for (i = 0, w = t->tval1; w != NULL; w = w->next, i++) {
 				assert(w->type == j_func_arg);
 				assert(w->tval1 != NULL);
@@ -4231,7 +4234,7 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 	Symbol s;
 	InstrPtr f;
 	tree *w;
-	int i, funcretc;
+	int i, funcretc = 0;
 
 	/* lookup the function we need */
 	s = findSymbol(cntxt->nspace,
@@ -4289,8 +4292,8 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 			char match = 0;
 			int itype;
 			int argoff = 0;
-			int orgoff, odyn1, odyn2, odyn3;
-			enum treetype ocoltype;
+			int orgoff, odyn1 = -1, odyn2 = -1, odyn3 = -1;
+			enum treetype ocoltype = j_invalid;
 
 			/* Function resolution is done based on the
 			 * input arguments only; we cannot consider the

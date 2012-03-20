@@ -642,7 +642,7 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 		 * going to be necessary */
 		BAT *elems;
 		BUN p, q;
-		size_t esize, fsize;
+		size_t esize = 0, fsize = 0;
 		int indent;
 		oid *id = (oid *)BUNhead(bi, BUNfirst(jb.kind));
 		elems = BATmirror(BATselect(BATmirror(jb.array), id, id));
@@ -1145,7 +1145,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *object = (int *)getArgReference(stk, pci, 6);
 	int *name = (int *)getArgReference(stk, pci, 7);
 	oid *arrid = (oid *)getArgReference(stk, pci, 8);
-	ValPtr tpe;
+	ValPtr tpe = NULL;
 	jsonbat jb;
 	BATiter bi, bis, bii, bid, ci;
 	BAT *b, *c, *r = NULL;
