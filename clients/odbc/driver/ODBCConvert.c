@@ -520,7 +520,7 @@ parseoptionalbracketednumber(char **svalp,
 		sval = eptr;
 		*val2p = val;
 	}
-		
+
 	if (slen == 0 || *sval != ')')
 		return SQL_ERROR;
 	slen--;
@@ -529,7 +529,7 @@ parseoptionalbracketednumber(char **svalp,
 	*slenp = slen;
 	return SQL_SUCCESS;
 }
-	
+
 static SQLRETURN
 parsemonthintervalstring(char **svalp,
 			 SQLLEN *slenp,
@@ -3671,7 +3671,7 @@ ODBCStore(ODBCStmt *stmt,
 			fval = (double) (60 * (60 * (24 * ival.intval.day_second.day + ival.intval.day_second.hour) + ival.intval.day_second.minute) + ival.intval.day_second.second);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
 				int f = 1;
-				
+
 				for (i = 0; i < ivalprec; i++)
 					f *= 10;
 				fval += ival.intval.day_second.fraction / (double) f;
