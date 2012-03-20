@@ -25,6 +25,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
+#include <float.h>		/* for FLT_MAX */
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
@@ -2256,13 +2257,12 @@ ODBCFetch(ODBCStmt *stmt,
 		if (type == SQL_C_FLOAT) {
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
-			*(float *) ptr = (float) fval;
-
-			if ((double) *(float *) ptr != fval) {
+			if (fval < -FLT_MAX || fval > FLT_MAX) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
+			*(float *) ptr = (float) fval;
 			if (lenp)
 				*lenp = sizeof(float);
 		} else {
