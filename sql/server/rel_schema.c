@@ -1059,7 +1059,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		/* create and fill all columns */
 		for (col = t->columns.set->h, i = 0; col; col = col->next){
 			sql_column *sc = (sql_column *) col->data;
-			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa), *rng_exps = new_exp_list(sql->sa);
+			list *args = new_exp_list(sql->sa), *col_exps = new_exp_list(sql->sa), *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
 			sql_exp *e = NULL, *func_exp = NULL, *estrt = NULL, *estep = NULL, *estop = NULL;
 			sql_subtype *oid_tpe = sql_bind_localtype("oid");
 			sql_subfunc *sf = NULL;
@@ -1089,8 +1089,11 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				append(rng_exps, estrt);
 				append(rng_exps, estep);
 				append(rng_exps, estop);
-				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
-				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
+				list_append(drngs, rng_exps);
+				list_append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				list_append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				append(col_exps, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, drngs));
+				append(rp, exp_column(sql->sa, sc->base.name, "dimval", &sc->type, CARD_MULTI, 0, 0, drngs));
 				i++;
 			} else {
 				if (sc->def) {
@@ -1429,11 +1432,16 @@ rel_alter_table(mvc *sql, dlist *qname, symbol *te)
 					return NULL;
 				}
 				if(c->dim) {
-					list *rng_exps = new_exp_list(sql->sa); assert(rng_exps);
+					list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+					assert(rng_exps && drngs);
+
 					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
 					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
 					append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
-					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, list_append(sa_list(sql->sa), rng_exps)));
+					append(drngs, rng_exps);
+					append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+					append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, drngs));
 				} else {
 					list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, NULL));
 				}

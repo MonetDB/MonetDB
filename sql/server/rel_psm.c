@@ -418,11 +418,16 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 			sql_exp *e = NULL;
 
 			if (c->dim) {
-				list *rng_exps = new_exp_list(sql->sa); assert(rng_exps);
+				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
+				assert(rng_exps && drngs);
+
 				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->start)));
 				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->step)));
 				append(rng_exps, exp_atom(sql->sa, atom_general(sql->sa, &c->type, c->dim->stop)));
-				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, list_append(sa_list(sql->sa), rng_exps));
+				append(drngs, rng_exps);
+				append(drngs, new_exp_list(sql->sa)); /* empty lists for slicing and */
+				append(drngs, new_exp_list(sql->sa)); /* tiling ranges */
+				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, drngs);
 			} else {
 				e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0, NULL);
 			}

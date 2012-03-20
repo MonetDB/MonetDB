@@ -354,10 +354,15 @@ exp_alias(sql_allocator *sa, char *arname, char *acname, char *org_rname, char *
 	if (drngs) { /* dimension ranges */
 		node *n = NULL;
 
+		assert(list_length(drngs) == 3);
+
 		e->f = sa_list(sa);
-		for (n = drngs->h; n; n = n->next) {
-			list_append(e->f, exps_copy(sa, n->data));
-		}
+		n = drngs->h;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
+		n = drngs->h->next;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
+		n = drngs->h->next->next;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
 	}
 	return e;
 }
@@ -378,13 +383,18 @@ exp_column(sql_allocator *sa, char *rname, char *cname, sql_subtype *t, int card
 		set_has_no_nil(e);
 	if (intern)
 		set_intern(e);
-	if (drngs) { /* dimension range */
+	if (drngs) { /* dimension ranges */
 		node *n = NULL;
 
+		assert(list_length(drngs) == 3);
+
 		e->f = sa_list(sa);
-		for (n = drngs->h; n; n = n->next) {
-			list_append(e->f, exps_copy(sa, n->data));
-		}
+		n = drngs->h;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
+		n = drngs->h->next;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
+		n = drngs->h->next->next;
+		list_append(e->f, n->data?exps_copy(sa, n->data):sa_list(sa));
 	}
 	return e;
 }

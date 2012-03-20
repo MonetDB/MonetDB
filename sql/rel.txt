@@ -132,11 +132,11 @@ e_column
 		l,r names of refered expression
 	-> l 	optional relation name 
 	-> r	expression name
-	-> f	a list of three lists of range expressions for a dimensional column
-			->h->data: a list of [orig_start:orig_step:orig_stop]
-			->h->next->data: a list of [sliced_start:sliced_step:sliced_stop],
-				is an empty list if there is no slicing but structured group by.
-			->h->next->next->data: a list of [grpby_start:grpby_step:grpby_stop]
+	-> f	only used by the dimensional columns of the arrays
+			a list of three lists, with each of them containing three expressions denoting the [start:step:stop] values
+			->h->data: the original range
+			->h->next->data: the slicing range, is empty if there has been no slicing
+			->h->next->next->data: the tiling ranges, is empty if there has been no tiling
 	-> type 
 
 	
