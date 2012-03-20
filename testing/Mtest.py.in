@@ -2205,8 +2205,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 ### RunTest(env, TST, BusyPorts, COND, oktests) #
 
 def CheckPort(port) :
-    # Since 'localhost' and $HOST (i.e., `hostname`) are usually different interfaces,
-    # we check both, unless $HOST (`hostname`) appears to be merely an alias for 'localhost'.
+    # Since 'localhost' and $HOST (i.e., `hostname`) are usually
+    # different interfaces, we check both, unless $HOST (`hostname`)
+    # appears to be merely an alias for 'localhost'.  That is, if the
+    # hostname works, we prefer it over localhost, but don't require it,
+    # such as e.g. on interwebless laptops.
     busy = 0
     Serrno = 0
     Serrstr = ""
@@ -2214,22 +2217,19 @@ def CheckPort(port) :
     S1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     S0.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     S1.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    host = 'localhost'
+
+    host = os.environ['HOST']
     try:
-        S0.bind((host,port))
+        S1.bind((host,port))
     except socket.error, (Serrno,Serrstr):
-        busy = 1
-    if not busy:
-        host = os.environ['HOST']
+        S1.close();
+        host = 'localhost'
         try:
-            S1.bind((host,port))
+            S0.bind((host,port))
         except socket.error, (Serrno,Serrstr):
-            # $HOST just alias for 'localhost'?
             S0.close()
-            try:
-                S1.bind((host,port))
-            except socket.error, (Serrno,Serrstr):
-                busy = 1
+            busy = 1
+
     return busy, host, Serrno, Serrstr, (S0, S1)
 ### CheckPort(port) #
 
@@ -2246,7 +2246,7 @@ def randomPort(l,h) :
             rpt = rpt + 1
         else:
             break
-    return port
+    return (port,host)
 ### randomPort(l,h) #
 
 def CheckSocket2(env,SERVER) :  #,SrvrErr) :
@@ -2910,6 +2910,9 @@ if os.environ.has_key('DOMAIN'):
 else:
     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
+# check the host port actually works
+_, HOST = randomPort(30000,39999);
+os.environ['HOST'] = HOST
 
 if os.name == "nt":
     SYST    = "Windows"
@@ -3087,7 +3090,7 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
-        dft['MAPIPORT']       = "str(randomPort(30000,39999))"
+        dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
         dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
