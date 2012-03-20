@@ -18,7 +18,7 @@
  */
 
 #include "monetdb_config.h"
-/*#include "jaql_scenario.h"*/
+#include "jaqlscenario.h"
 #include "jaql.h"
 #include "jaqlgencode.h"
 #include "msabaoth.h"
@@ -111,7 +111,7 @@ JAQLexitClient(Client c)
 }
 
 
-void
+static void
 freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, j;

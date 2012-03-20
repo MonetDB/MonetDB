@@ -37,7 +37,8 @@ lib__json = {
 lib__jaql = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h jaqlscenario.c
+	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h \
+			  jaqlscenario.c jaqlscenario.h
 
 	# the ./ is necessary for autogen not to generate garbage
 	LIBS = ./parser/libjaqlp ../../tools/libmonetdb5
