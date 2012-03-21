@@ -1,7 +1,7 @@
-expand
-group
-top
-filter
-join
-sort
-transform
+HAVE_JAQL?expand
+HAVE_JAQL?group
+HAVE_JAQL?top
+HAVE_JAQL?filter
+HAVE_JAQL?join
+HAVE_JAQL?sort
+HAVE_JAQL?transform
