@@ -2014,7 +2014,7 @@ static int
 dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, e, f, g = 0, h;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0;
 
 	assert (t != NULL);
 
