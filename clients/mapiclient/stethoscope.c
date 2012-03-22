@@ -102,6 +102,7 @@ typedef struct _wthread {
 } wthread;
 
 static wthread *thds = NULL;
+static char hostname[128];
 
 static void
 usage(void)
@@ -238,10 +239,11 @@ doProfile(void *d)
 		goto stop_cleanup;
 	}
 
-	printf("-- %sopened UDP profile stream for %s:%d\n", id, host, portnr);
+	printf("-- %sopened UDP profile stream %s:%d for %s\n",
+			id, hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			host, portnr);
+			hostname, portnr);
 	doQ(buf);
 
 	/* Set Filters */
@@ -446,6 +448,9 @@ main(int argc, char **argv)
 	signal(SIGTERM, stopListening);
 
 	close(0); /* get rid of stdin */
+
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
 
 	/* try and find multiple options, we assume that we always need a
 	 * local merovingian for that, in the future we probably need to fix
