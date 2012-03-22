@@ -896,26 +896,21 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
  * @-
  */
 @= histo
-	{ @1 *vv;
-		vv= (@1 *) getArgReference(stk, pci, 0 );
-		*vv = @1_nil;
-		vx = (ptr) &max.val.@2;
-		BATmax(b, vx);
-		vv= (ptr) getArgReference(stk, pci, pci->retc -1 );
-		*vv = @1_nil;
-		vm = (ptr) &min.val.@2;
-		BATmin(b, vm);
-		if ( pci->retc > 2)
-			step.val.@2 = (max.val.@2 - min.val.@2) / (pci->retc - 2);
-		else
-		if ( step.val.@2 == 0)
-				step.val.@2 = max.val.@2;
-		for ( i = 1; i < pci->retc-1; i++) {
-			vx= (ptr) getArgReference(stk, pci, i );
-			((ValPtr) vx ) ->val.@2 = min.val.@2 + i * step.val.@2;
+	{ 	@1 *vv;
+		@1 *p = (@1*)Hloc(uniq, BUNfirst(uniq));
+		int step = (int) (BATcount(uniq) / (pci->retc-1));
+
+		/* extract split points from the sample */
+		/* bounds are unspecified */
+		for ( j=step, i = 0; i < pci->retc; i++) {
+			vv= (@1 *) getArgReference(stk, pci, i );
+			if ( i > 0 && i< pci->retc-1){
+				*vv = p[j]; j+= step;
+			} else
+				*vv = @1_nil;
 		}
 	}
-@
+
 @c
 
 /* the min/max bounds are null values */
@@ -923,13 +918,11 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str
 OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	BAT *b;
+	BAT *b, *sample, *uniq;
 	int bid = *(int*) getArgReference(stk,pci, pci->argc-1);
-	ValRecord min,max, step;
 	int i, j;
-	ptr vx,vm;
+	ptr vx;
 
-	memset( (char*) &step, 0, sizeof(step));
 	(void) cntxt;
 	(void) mb;
 	if ( pci->retc < 2)
@@ -937,16 +930,18 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(SQL,"centipede.vector","Can not access BAT");
+	sample= BATsample(b,1000);
+	uniq = BATkunique(BATmirror(sample));
     switch ( ATOMtype(b->ttype)) {
-    case TYPE_bit: @:histo(bit,btval)@ break;
-    case TYPE_bte: @:histo(bte,btval)@ break;
-    case TYPE_sht: @:histo(sht,shval)@ break;
-    case TYPE_int: @:histo(int,ival)@ break;
+    case TYPE_bit: @:histo(bit,"%d")@ break;
+    case TYPE_bte: @:histo(bte,"%d")@ break;
+    case TYPE_sht: @:histo(sht,"%d")@ break;
+    case TYPE_int: @:histo(int,"%d")@ break;
     case TYPE_wrd: @:histo(wrd,wval)@ break;
-    case TYPE_lng: @:histo(lng,lval)@ break;
-    case TYPE_oid: @:histo(oid,oval)@ break;
-    case TYPE_flt: @:histo(flt,fval)@ break;
-    case TYPE_dbl: @:histo(dbl,dval)@ break;
+    case TYPE_lng: @:histo(lng,"%d")@ break;
+    case TYPE_oid: @:histo(oid,OIDFMT)@ break;
+    case TYPE_flt: @:histo(flt,"%f")@ break;
+    case TYPE_dbl: @:histo(dbl,"%f")@ break;
 	case TYPE_str:
 		/* fake split, ignore the data distribution */
 
@@ -963,6 +958,8 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 
 	BBPreleaseref(bid);
+	BBPreleaseref(sample->batCacheid);
+	BBPreleaseref(uniq->batCacheid);
 	return MAL_SUCCEED;
 }
 

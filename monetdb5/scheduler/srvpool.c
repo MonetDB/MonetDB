@@ -78,6 +78,7 @@ typedef struct {
 	str conn;	/* remote handle */
 } Server;
 
+#define DEBUG_RUN_SRVPOOL
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Server servers[MAXSITES];	/* registry of servers */
 static int srvtop = 0;
