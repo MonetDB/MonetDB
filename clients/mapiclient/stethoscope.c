@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/**
- * stethoscope
- * author Martin Kersten
- */
-
 #include "monetdb_config.h"
 #include "monet_options.h"
 #include <mapi.h>
@@ -507,7 +502,6 @@ main(int argc, char **argv)
 			if (*alts == NULL)
 				break;
 			walk = walk->next = malloc(sizeof(wthread));
-			printf("Alternative route created '%s'\n",walk->uri);
 		}
 		walk->next = NULL;
 		free(oalts);
