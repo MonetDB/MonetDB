@@ -105,7 +105,7 @@ static int
 dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 {
 	InstrPtr q;
-	int a, b, c, d;
+	int a = 0, b = 0, c = 0, d = 0;
 
 	/* array indirection, entries must be arrays */
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -247,7 +247,7 @@ static int
 dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c;
+	int a = 0, b = 0, c = 0;
 	char encapsulate = 0;
 
 	assert(t && t->type == j_var);
@@ -428,7 +428,7 @@ static int
 dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, e, f, g;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
 
 	assert(t != NULL);
 	assert(t->tval1->type == j_var || t->tval1->type == j_operation);
@@ -1026,7 +1026,7 @@ static void
 dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, l, r;
+	int a = 0, b = 0, c = 0, d = 0, l = 0, r = 0;
 	tree *pred;
 	json_var *vars, *ljv, *rjv;
 	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
@@ -4462,7 +4462,7 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 		int dynaarg[MAXJAQLARG][7], int coltpos, InstrPtr q)
 {
 	InstrPtr r;
-	int a, b, i;
+	int a = 0, b = 0, i = 0;
 	for (i = 0; i < coltpos; i++) {
 		switch (coltypes[i]) {
 			case j_json:
@@ -4565,7 +4565,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
-	int a, b, c, d, e, f, g;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
