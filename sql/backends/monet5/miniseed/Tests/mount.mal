@@ -1,0 +1,2 @@
+(file_loc:bat[:oid,:str], seq_no:bat[:oid,:int], stamp:bat[:oid,:timestamp], val:bat[:oid,:int]) := miniseed.mount("/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed");
+io.print(file_loc, seq_no, stamp, val);

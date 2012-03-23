@@ -1,0 +1,5 @@
+/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed
+/net/singha/export/data1/knmi/ORFEUS/2010/005/RO_TESR__BHN.2010.005.12.15.30.mseed
+/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed
+/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ANTF_00_BHN.2010.005.04.55.39.mseed
+/net/singha/export/data1/knmi/ORFEUS/2010/005/PL_OJC__BHZ.2010.005.13.11.43.mseed

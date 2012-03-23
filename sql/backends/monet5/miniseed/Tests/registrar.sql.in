@@ -1,0 +1,5 @@
+\< $TSTSRCBASE/$TSTDIR/mseed_schema.sql
+CALL register_repo('$TSTSRCDIR/file_list_example.txt');
+
+SELECT * FROM mseed.files;
+SELECT * FROM mseed.catalog;

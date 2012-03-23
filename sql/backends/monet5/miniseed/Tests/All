@@ -1,0 +1,2 @@
+HAVE_MSEED?registrar
+HAVE_MSEED?mount

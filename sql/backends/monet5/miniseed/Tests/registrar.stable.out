@@ -1,0 +1,143 @@
+stdout of test 'registrar` in directory 'backends/monet5/miniseed` itself:
+
+
+# 15:31:11 >  
+# 15:31:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/kargin/_/Monet/dft_miniseed/PREFIX/DFT/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=34242" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_miniseed" "--set" "mal_listing=0"
+# 15:31:11 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_miniseed', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:34242/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 79_registrar.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 81_miniseed.sql
+# loading sql script: 99_system.sql
+num_file_paths: 5
+
+# 15:31:11 >  
+# 15:31:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lodz" "--port=34242"
+# 15:31:11 >  
+
+#CREATE SCHEMA mseed;
+#CREATE TABLE "mseed"."files" (
+#--	"file_id"  INTEGER,
+#	"file_location" STRING,
+#-- 	"file_last_modified"	TIMESTAMP,
+#	"dataquality"	CHAR(1),
+#	"network"	VARCHAR(10),
+#	"station"	VARCHAR(10),
+#	"location"	VARCHAR(10),
+#	"channel"	VARCHAR(10),
+#	"encoding"	TINYINT,
+#	"byte_order"	BOOLEAN,
+#--	CONSTRAINT "files_pkey_file_id" PRIMARY KEY (file_id)
+#	CONSTRAINT "files_pkey_file_loc" PRIMARY KEY (file_location)
+#);
+#CREATE TABLE "mseed"."catalog" (
+#--	"file_id" INTEGER,	
+#	"file_location" STRING,
+#	"seq_no"	INTEGER,
+#	"record_length"	INTEGER,
+#	"start_time"	TIMESTAMP,
+#	"frequency"	DOUBLE,
+#	"sample_count"   BIGINT,
+#	"sample_type"   CHAR(1),
+#--	CONSTRAINT "catalog_file_id_seq_no_pkey" PRIMARY KEY (file_id, seq_no),
+#--	CONSTRAINT "cat_fkey_files_file_id" FOREIGN KEY (file_id) REFERENCES mseed.files(file_id)
+#	CONSTRAINT "catalog_file_loc_seq_no_pkey" PRIMARY KEY (file_location, seq_no),
+#	CONSTRAINT "cat_fkey_files_file_loc" FOREIGN KEY (file_location) REFERENCES mseed.files(file_location)
+#CREATE TABLE "mseed"."data" (
+#--	"file_id"      INTEGER,
+#	"file_location" STRING,
+#	"seq_no"       INTEGER,
+#	"sample_time"  TIMESTAMP,
+#	"sample_value" INTEGER,
+#--	CONSTRAINT "data_file_id_seq_no_sample_time_pkey" PRIMARY KEY (file_id, seq_no, sample_time),
+#--	CONSTRAINT "data_fkey_cat_file_id_seq_no" FOREIGN KEY (file_id, seq_no) REFERENCES mseed.catalog(file_id, seq_no)
+#	CONSTRAINT "data_file_loc_seq_no_sample_time_pkey" PRIMARY KEY (file_location, seq_no, sample_time),
+#	CONSTRAINT "data_fkey_cat_file_loc_seq_no" FOREIGN KEY (file_location, seq_no) REFERENCES mseed.catalog(file_location, seq_no)
+#CREATE VIEW mseed.dataview AS
+#SELECT f.file_location, dataquality, network, station, location, channel, encoding, byte_order, c.seq_no, record_length, start_time, frequency, sample_count, sample_type, sample_time, sample_value
+#FROM mseed.files AS f 
+#	JOIN mseed.catalog AS c
+#		ON f.file_location = c.file_location 
+#	JOIN mseed.data AS d 
+#		ON c.file_location = d.file_location AND c.seq_no = d.seq_no;
+#SELECT * FROM mseed.files;
+% mseed.files,	mseed.files,	mseed.files,	mseed.files,	mseed.files,	mseed.files,	mseed.files,	mseed.files # table_name
+% file_location,	dataquality,	network,	station,	location,	channel,	encoding,	byte_order # name
+% clob,	char,	varchar,	varchar,	varchar,	varchar,	tinyint,	boolean # type
+% 84,	1,	2,	4,	2,	3,	2,	5 # length
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed",	"D",	"FR",	"ARBF",	"00",	"BHN",	11,	true	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/RO_TESR__BHN.2010.005.12.15.30.mseed",	"D",	"RO",	"TESR",	"",	"BHN",	11,	true	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	"D",	"TU",	"KEMA",	"",	"BHN",	11,	true	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ANTF_00_BHN.2010.005.04.55.39.mseed",	"D",	"FR",	"ANTF",	"00",	"BHN",	11,	true	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/PL_OJC__BHZ.2010.005.13.11.43.mseed",	"D",	"PL",	"OJC",	"",	"BHZ",	11,	true	]
+#SELECT * FROM mseed.catalog;
+% mseed.catalog,	mseed.catalog,	mseed.catalog,	mseed.catalog,	mseed.catalog,	mseed.catalog,	mseed.catalog # table_name
+% file_location,	seq_no,	record_length,	start_time,	frequency,	sample_count,	sample_type # name
+% clob,	int,	int,	timestamp,	double,	bigint,	char # type
+% 84,	3,	4,	26,	24,	4,	1 # length
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed",	10,	4096,	2010-01-05 12:32:12.035000,	25,	75,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/RO_TESR__BHN.2010.005.12.15.30.mseed",	225,	4096,	2010-01-05 12:27:36.969000,	20,	3760,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	155,	4096,	2010-01-05 03:16:35.160000,	50,	3928,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	154,	4096,	2010-01-05 03:16:28.300000,	50,	343,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	153,	4096,	2010-01-05 03:15:09.840000,	50,	3923,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	152,	4096,	2010-01-05 03:13:51.220000,	50,	3931,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	151,	4096,	2010-01-05 03:12:33.520000,	50,	3885,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	150,	4096,	2010-01-05 03:11:15.400000,	50,	3906,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	149,	4096,	2010-01-05 03:09:57.680000,	50,	3886,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	148,	4096,	2010-01-05 03:08:39.140000,	50,	3927,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	147,	4096,	2010-01-05 03:07:20.540000,	50,	3930,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	146,	4096,	2010-01-05 03:06:02.140000,	50,	3920,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	145,	4096,	2010-01-05 03:04:43.380000,	50,	3938,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	144,	4096,	2010-01-05 03:03:24.560000,	50,	3941,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	143,	4096,	2010-01-05 03:02:05.800000,	50,	3938,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	142,	4096,	2010-01-05 03:00:47.960000,	50,	3892,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	141,	4096,	2010-01-05 02:59:29.560000,	50,	3920,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	140,	4096,	2010-01-05 02:58:11.020000,	50,	3927,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	139,	4096,	2010-01-05 02:56:52.660000,	50,	3918,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	138,	4096,	2010-01-05 02:55:34.880000,	50,	3889,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	137,	4096,	2010-01-05 02:54:16.180000,	50,	3935,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	136,	4096,	2010-01-05 02:52:57.980000,	50,	3910,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	135,	4096,	2010-01-05 02:51:39.780000,	50,	3910,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	134,	4096,	2010-01-05 02:50:22.080000,	50,	3885,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	133,	4096,	2010-01-05 02:49:03.660000,	50,	3921,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/TU_KEMA__BHN.2010.005.02.47.17.mseed",	132,	4096,	2010-01-05 02:47:45.600000,	50,	3903,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ANTF_00_BHN.2010.005.04.55.39.mseed",	1,	4096,	2010-01-05 05:32:08.591000,	25,	25,	""	]
+[ "/net/singha/export/data1/knmi/ORFEUS/2010/005/PL_OJC__BHZ.2010.005.13.11.43.mseed",	293,	4096,	2010-01-05 13:24:27.050000,	20.00098991,	1872,	""	]
+
+# 15:31:11 >  
+# 15:31:11 >  "Done."
+# 15:31:11 >  
+

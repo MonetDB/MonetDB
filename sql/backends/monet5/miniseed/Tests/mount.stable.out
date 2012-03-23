@@ -1,0 +1,106 @@
+stdout of test 'mount` in directory 'backends/monet5/miniseed` itself:
+
+
+# 15:05:52 >  
+# 15:05:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/kargin/_/Monet/dft_miniseed/PREFIX/DFT/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=34446" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_backends_monet5_miniseed" "mount.mal"
+# 15:05:52 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_backends_monet5_miniseed', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.630 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:34446/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    (file_loc:bat[:oid,:str] ,seq_no:bat[:oid,:int] ,stamp:bat[:oid,:timestamp] ,val:bat[:oid,:int] ) := miniseed.mount("/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed");
+    io.print(file_loc,seq_no,stamp,val);
+end main;
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+# h	t											t	t				t	  # name
+# void	str											int	timestamp			int	  # type
+#-------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 0@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.035,	  -49998  ]
+[ 1@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.075,	  -49874  ]
+[ 2@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.115,	  -50176  ]
+[ 3@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.155,	  -50486  ]
+[ 4@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.195,	  -50436  ]
+[ 5@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.235,	  -50654  ]
+[ 6@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.275,	  -50868  ]
+[ 7@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.315,	  -50966  ]
+[ 8@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.355,	  -51228  ]
+[ 9@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.395,	  -51272  ]
+[ 10@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.435,	  -51306  ]
+[ 11@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.475,	  -51670  ]
+[ 12@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.515,	  -51748  ]
+[ 13@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.555,	  -51688  ]
+[ 14@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.595,	  -52020  ]
+[ 15@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.635,	  -51936  ]
+[ 16@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.675,	  -51976  ]
+[ 17@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.715,	  -52312  ]
+[ 18@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.755,	  -52198  ]
+[ 19@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.795,	  -52316  ]
+[ 20@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.835,	  -52650  ]
+[ 21@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.875,	  -52540  ]
+[ 22@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.915,	  -52638  ]
+[ 23@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.955,	  -52776  ]
+[ 24@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:12.995,	  -52476  ]
+[ 25@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.035,	  -52934  ]
+[ 26@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.075,	  -52994  ]
+[ 27@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.115,	  -52710  ]
+[ 28@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.155,	  -53010  ]
+[ 29@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.195,	  -53006  ]
+[ 30@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.235,	  -52984  ]
+[ 31@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.275,	  -53284  ]
+[ 32@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.315,	  -53554  ]
+[ 33@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.355,	  -53486  ]
+[ 34@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.395,	  -53758  ]
+[ 35@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.435,	  -53698  ]
+[ 36@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.475,	  -53870  ]
+[ 37@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.515,	  -54162  ]
+[ 38@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.555,	  -53826  ]
+[ 39@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.595,	  -54132  ]
+[ 40@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.635,	  -54096  ]
+[ 41@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.675,	  -54038  ]
+[ 42@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.715,	  -54354  ]
+[ 43@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.755,	  -54056  ]
+[ 44@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.795,	  -54100  ]
+[ 45@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.835,	  -54124  ]
+[ 46@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.875,	  -53738  ]
+[ 47@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.915,	  -53852  ]
+[ 48@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.955,	  -53856  ]
+[ 49@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:13.995,	  -53466  ]
+[ 50@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.035,	  -53470  ]
+[ 51@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.075,	  -53132  ]
+[ 52@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.115,	  -52740  ]
+[ 53@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.155,	  -52628  ]
+[ 54@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.195,	  -52322  ]
+[ 55@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.235,	  -52100  ]
+[ 56@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.275,	  -51622  ]
+[ 57@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.315,	  -51282  ]
+[ 58@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.355,	  -51024  ]
+[ 59@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.395,	  -50812  ]
+[ 60@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.435,	  -50500  ]
+[ 61@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.475,	  -50194  ]
+[ 62@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.515,	  -49846  ]
+[ 63@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.555,	  -49628  ]
+[ 64@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.595,	  -49446  ]
+[ 65@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.635,	  -49210  ]
+[ 66@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.675,	  -49130  ]
+[ 67@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.715,	  -48956  ]
+[ 68@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.755,	  -48656  ]
+[ 69@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.795,	  -48376  ]
+[ 70@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.835,	  -48376  ]
+[ 71@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.875,	  -48196  ]
+[ 72@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.915,	  -48114  ]
+[ 73@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.955,	  -47826  ]
+[ 74@0,	  "/net/singha/export/data1/knmi/ORFEUS/2010/005/FR_ARBF_00_BHN.2010.005.12.15.36.mseed", 10,	  2010-01-05 12:32:14.995,	  -47936  ]
+
+# 15:05:52 >  
+# 15:05:52 >  "Done."
+# 15:05:52 >  
+
