@@ -212,6 +212,7 @@ JAQLparser(Client c)
 			freeVariables(c, prg->def, c->glb, oldvtop);
 			prg->def->errors = 0;
 			mnstr_printf(out, "!%s\n", j->err);
+			freetree(j->p);
 			throw(PARSE, "JAQLparse", "%s", j->err);
 		}
 
@@ -225,6 +226,7 @@ JAQLparser(Client c)
 			MSresetInstructions(prg->def, oldstop);
 			freeVariables(c, prg->def, c->glb, oldvtop);
 			prg->def->errors = 0;
+			freetree(j->p);
 			throw(SYNTAX, "JAQLparser", "typing errors");
 		}
 	}
@@ -253,6 +255,7 @@ JAQLengine(Client c)
 	} else if (j->explain == 2 || j->explain == 3) {
 		printtree(j->p, 0, j->explain == 3);
 		printf("\n");
+		freetree(j->p);
 		return MAL_SUCCEED;  /* don't have a plan generated */
 	} else if (j->explain == 4) {
 		msg = runMALDebugger(c, c->curprg);
@@ -279,6 +282,8 @@ JAQLengine(Client c)
 	MSresetInstructions(c->curprg->def, 1);
 	freeVariables(c, c->curprg->def, c->glb, j->vtop);
 	c->glb = oldglb;
+
+	freetree(j->p);
 
 	return msg;
 }
