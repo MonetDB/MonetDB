@@ -213,9 +213,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	getArg(q,0) = barrier;
 
 	/* PHASE 2 The second block runs the query in local mode */
-	q= newStmt(cmb,calcRef,notRef);
+	q= newStmt(cmb,calcRef,putName("==",2));
 	q->barrier= BARRIERsymbol;
 	q = pushArgument(cmb,q, barrier);
+	q = pushInt(cmb,q,-1);
 	barrier = getArg(q,0);
 	setVarType(cmb,x,TYPE_int);
 

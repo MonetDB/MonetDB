@@ -448,7 +448,7 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( getPC(mb, pci) > pci->jump)
 			throw(MAL,"scheduler.srvpool","Illegal statement range");
 		msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
-		*res = -1;  /* continue at end of block */
+		*res = -2;  /* continue at end of block */
 	}
 	return msg;
 }
