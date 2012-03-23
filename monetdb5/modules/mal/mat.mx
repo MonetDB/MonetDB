@@ -444,41 +444,53 @@ MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
  * the next one is specific to the centipede, where we carve out
  * a portion of table based on the value ids. They are simply glued
  * together in a void-headed bat.
+ * The special case that only one partition is filled is taken separately.
 */
 static str
 MATpack3Internal(MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret;
+	int i,*ret, nonempty=0, ref=0;
 	BAT *b, *bn;
 	BUN cap=0;
 
-	b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
-	if( b == NULL)
-		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-	bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
-	BATseqbase(bn,0);
-	BBPunfix(b->batCacheid);
-	if( bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-
-	for(i = 2; i < p->argc; i++){
+	for(i = 1; i < p->argc; i++){
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		}
 		cap += BATcount(b);
+		nonempty += (BATcount(b) != 0);
+		if ( nonempty == 1) 
+			ref = i;
 		BBPunfix(b->batCacheid);
 	}
-	bn = BATextend(bn, cap);
-	for( i = 2; i < p->argc; i++){
-		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
-		if( b == NULL){
-			BBPreleaseref(bn->batCacheid);
+	if ( nonempty == 1) {
+		b= BATdescriptor(stk->stk[getArg(p,ref)].val.ival);
+		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		}
-		BATappend(bn,b,FALSE);
+		bn = BATcopy(b,TYPE_void, b->ttype, FALSE);
+		BATseqbase(bn,0);
 		BBPunfix(b->batCacheid);
+		if( bn == NULL)
+			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	} else {
+		b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
+		if( b == NULL)
+			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+		BATseqbase(bn,0);
+		BBPunfix(b->batCacheid);
+		if( bn == NULL)
+			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		bn = BATextend(bn, cap);
+		for( i = 1; i < p->argc; i++){
+			b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+			if( b == NULL){
+				BBPreleaseref(bn->batCacheid);
+				throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+			}
+			BATappend(bn,b,FALSE);
+			BBPunfix(b->batCacheid);
+		}
 	}
 	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
