@@ -30,7 +30,6 @@
 int mx_out = 1;
 extern int somethingPrinted;	/* used for preventing to empty display lines */
 
-/* VARARGS */
 void
 ofile_printf(const char *format, ...)
 {
