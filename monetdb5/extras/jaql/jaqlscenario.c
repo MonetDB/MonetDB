@@ -101,6 +101,7 @@ JAQLexitClient(Client c)
 		jaqllex_destroy(j->scanner);
 		j->scanner = NULL;
 		freevars(j->vars);
+		GDKfree(j);
 
 		c->state[MAL_SCENARIO_READER] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
