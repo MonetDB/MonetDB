@@ -1902,6 +1902,7 @@ JAQLexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int
 	}
 	free(buf);
 	mnstr_close(f);
+	mnstr_destroy(f);
 	buffer_destroy(bufstr);
 
 	return MAL_SUCCEED;
