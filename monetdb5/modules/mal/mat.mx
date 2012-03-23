@@ -449,7 +449,7 @@ MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static str
 MATpack3Internal(MalStkPtr stk, InstrPtr p)
 {
-	int i,*ret, nonempty=0, ref=0;
+	int i,*ret, nonempty=0, ref=0, type =0;
 	BAT *b, *bn;
 	BUN cap=0;
 
@@ -457,9 +457,10 @@ MATpack3Internal(MalStkPtr stk, InstrPtr p)
 		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		type= b->ttype;	/* all tail types are the same */
 		cap += BATcount(b);
 		nonempty += (BATcount(b) != 0);
-		if ( nonempty == 1) 
+		if ( BATcount(b)) 
 			ref = i;
 		BBPunfix(b->batCacheid);
 	}
@@ -467,22 +468,11 @@ MATpack3Internal(MalStkPtr stk, InstrPtr p)
 		b= BATdescriptor(stk->stk[getArg(p,ref)].val.ival);
 		if( b == NULL)
 			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		bn = BATcopy(b,TYPE_void, b->ttype, FALSE);
-		BATseqbase(bn,0);
+		bn = BATcopy(b, TYPE_void, type, TRUE);
 		BBPunfix(b->batCacheid);
-		if( bn == NULL)
-			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 	} else {
-		b= BATdescriptor(stk->stk[getArg(p,1)].val.ival);
-		if( b == NULL)
-			throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
-		bn = BATnew(TYPE_void, b->ttype, BATcount(b));
-		BATseqbase(bn,0);
-		BBPunfix(b->batCacheid);
-		if( bn == NULL)
-			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-		bn = BATextend(bn, cap);
-		for( i = 1; i < p->argc; i++){
+		bn = BATnew( TYPE_void, type, cap);
+		for( i = 1; bn && i < p->argc; i++){
 			b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 			if( b == NULL){
 				BBPreleaseref(bn->batCacheid);
@@ -492,6 +482,9 @@ MATpack3Internal(MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
+	if( bn == NULL)
+		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	BATseqbase(bn,0);
 	ret= (int*) getArgReference(stk,p,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
