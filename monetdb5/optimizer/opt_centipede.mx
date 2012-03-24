@@ -54,6 +54,8 @@ opt_export str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 opt_export str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high);
 opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#define REMOTE_EXECUTION	/* or LOCAL_EXECUTION */
+
 /* #define DEBUG_DETAIL*/
 #define _DEBUG_OPT_CENTIPEDE_ 
 #define OPTDEBUGcentipede  if ( optDebug & ((lng)1 <<DEBUG_OPT_CENTIPEDE) )
@@ -162,7 +164,8 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	}
 	*/
 
-	/* PHASE 1: dont run in distributed  mode */
+#ifdef REMOTE_EXECUTION
+	/* PHASE 1: run in distributed  mode */
 	q= newFcnCall(cmb,schedulerRef,srvpoolRef);
 	q->barrier= BARRIERsymbol;
 	barrier = getArg(q,0);
@@ -197,6 +200,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 		q= setArgument(cmb,q,q->retc, getArg(p,i));
 		pushInstruction(cmb,q);
 	}
+
 	/* put all mat.pack instructions into the program
 	  make sure that they have contiguous void headed columns 
 	*/
@@ -211,15 +215,8 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	q= newAssignment(cmb);
 	q->barrier = EXITsymbol;
 	getArg(q,0) = barrier;
-
+#else
 	/* PHASE 2 The second block runs the query in local mode */
-	q= newStmt(cmb,calcRef,putName("==",2));
-	q->barrier= BARRIERsymbol;
-	q = pushArgument(cmb,q, barrier);
-	q = pushInt(cmb,q,-1);
-	barrier = getArg(q,0);
-	setVarType(cmb,x,TYPE_int);
-
 	/* re-use instructions, injecting missing server selections */
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(cmb,base + i));
@@ -236,10 +233,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 		pushInstruction(cmb, copyInstruction(pack[k]));
 		getArg(pack[k],0)= getArg(p,k);
 	}
-	/* finalize the second dataflow block */
-	q= newAssignment(cmb);
-	q->barrier = EXITsymbol;
-	getArg(q,0) = barrier;
+#endif
 
 	/* consolidate the result */
 	ret = copyInstruction(getInstrPtr(cmb,0));
