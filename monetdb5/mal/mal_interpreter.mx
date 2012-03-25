@@ -751,6 +751,8 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 		return 0;
 
 	mal_set_lock(mal_contextLock, "DFLOWdelay");
+	if (memoryclaims < 0)
+		memoryclaims = 0;
 	if (memorypool <= 0 && memoryclaims == 0)
 		memorypool = (lng)(MEMORY_THRESHOLD * monet_memory);
 
@@ -765,7 +767,7 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 			return 0;
 		}
 		PARDEBUG
-		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT "\n", memorypool, argclaim + hotclaim);
+		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
 		mal_unset_lock(mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
