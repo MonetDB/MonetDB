@@ -4565,6 +4565,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
+	int ro1 = 0, ro2 = 0, ro3 = 0, ro4 = 0, ro5 = 0, ro6 = 0, ro7 = 0;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
 
 	/* each iteration in this loop is a pipe (a JSON document)
@@ -4627,10 +4628,25 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 			case j_json:
 				dumpjsonshred(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
 				break;
-			case j_var:
+			case j_var: {
+				int *bats[8] = {&j1, &j2, &j3, &j4, &j5, &j6, &j7, NULL};
+				int **bat;
 				/* j_var at top level is always _IDENT */
 				dumpgetvar(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
-				break;
+				/* vars are the only read-only BATs we have */
+				ro1 = ro2 = ro3 = ro4 = ro5 = ro6 = ro7 = 1;
+				/* force this in the MAL environment as well as
+				 * assertion check */
+				for (bat = bats; *bat != NULL; bat++) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, batRef);
+					setFunctionId(q, putName("setAccess", 9));
+					q = pushReturn(mb, q, **bat);
+					q = pushArgument(mb, q, **bat);
+					q = pushStr(mb, q, "r");
+					pushInstruction(mb, q);
+				}
+			} break;
 			case j_filter:
 				a = dumpwalkvar(mb, j1, j5);
 				b = dumppred(j, cntxt, mb, t->tval2, a,
