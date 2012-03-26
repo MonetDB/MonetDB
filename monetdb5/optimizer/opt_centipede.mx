@@ -87,7 +87,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ], *plan, *stub;
-	int base, barrier, x, i, j, k, *alias, nrpack;
+#ifndef REMOTE_EXECUTION
+	int base;
+#endif
+	int barrier, x, i, j, k, *alias, nrpack;
 	InstrPtr ret, p, q, *pack;
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
@@ -179,7 +182,6 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	q= pushStr(cmb,q,plan);
 	p= q;
 
-	base = cmb->stop;
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(pmb,0));
 		q->token = ASSIGNsymbol;
@@ -218,6 +220,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 #else
 	/* PHASE 2 The second block runs the query in local mode */
 	/* re-use instructions, injecting missing server selections */
+	base = cmb->stop;
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(cmb,base + i));
 		getFunctionId(q) = plan;
