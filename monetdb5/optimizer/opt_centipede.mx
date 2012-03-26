@@ -378,8 +378,11 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 			  strcmp(slices->column, getVarConstant(nmb, getArg(p,2)).val.sval) == 0 &&
 			  strcmp(slices->column, getVarConstant(nmb, getArg(p,3)).val.sval) == 0;
 	}
-	if ( fnd == 0)
+	if ( fnd == 0) {
+		i = newTmpVariable(nmb, getVarType(nmb, getArg(slices->target,0)));
 		pushInstruction(nmb, p = copyInstruction(slices->target));
+		getArg(p,0) = i;
+	}
 	q= newInstruction(nmb,ASSIGNsymbol);
 	/* add the slices->to the call */
 	q= pushArgument(nmb,q, getArg(p,0));
@@ -763,9 +766,8 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	/* construct the control plan for local/remote execution */
 	cmb = OPTplanCntrl(cntxt,mb,nmb, slices, plantag);
-	msg= optimizeMALBlock(cntxt, cmb);
 	if ( cmb) 
-		chkProgram(cntxt->fdout, cntxt->nspace, cmb);
+		msg= optimizeMALBlock(cntxt, cmb);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
@@ -780,7 +782,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#non-optimized remote plan error %d %s\n", nmb->errors, msg?msg:"");
-	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_ALL);
+	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 	msg= optimizeMALBlock(cntxt, nmb);
 	chkProgram(cntxt->fdout, cntxt->nspace, nmb);
 	mnstr_printf(cntxt->fdout,"#optimized remote plan error %d %s\n", nmb->errors, msg?msg:"");
