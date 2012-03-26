@@ -335,6 +335,7 @@ struct PIPELINES {
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
 	 "optimizer.centipede();"
+	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
 	 "optimizer.deadcode();"
 	 "optimizer.commonTerms();"

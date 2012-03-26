@@ -244,8 +244,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	ret->barrier = RETURNsymbol;
 	ret->argc = ret->retc;
 	/* make it a correct assignment to ensure ref counts */
-	for( k= 0; k< ret->retc; k++)
+	for( k= 0; k< ret->retc; k++) {
+		setVarUsed(cmb,getArg(ret,k));
 		ret = pushArgument(cmb,ret,getArg(ret,k));
+	}
 	pushInstruction(cmb,ret);
 	getInstrPtr(cmb,0)->argc -= 2;
 
@@ -777,9 +779,11 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	insertInstruction(mb,call, 1);
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#non-optimized remote plan error %d %s\n", nmb->errors, msg?msg:"");
+	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_ALL);
 	msg= optimizeMALBlock(cntxt, nmb);
 	chkProgram(cntxt->fdout, cntxt->nspace, nmb);
-	mnstr_printf(cntxt->fdout,"#remote plan error %d %s\n", nmb->errors, msg?msg:"");
+	mnstr_printf(cntxt->fdout,"#optimized remote plan error %d %s\n", nmb->errors, msg?msg:"");
 	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
 	GDKfree(plan);
