@@ -710,8 +710,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6););
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef;);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, e);
 		q = pushArgument(mb, q, f);
@@ -735,8 +735,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6););
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, e);
 		q = pushArgument(mb, q, f);
@@ -1976,8 +1976,8 @@ dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		pushInstruction(mb, q);
 	} else { /* j_or */
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6));
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, l);
 		q = pushArgument(mb, q, r);
