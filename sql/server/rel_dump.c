@@ -635,7 +635,7 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		sql_schema *s = NULL;
 		prop *p;
 
-		(*pos)+= strlen("JOINIDX");
+		(*pos)+= (int) strlen("JOINIDX");
 		skipWS(r, pos);
 		/* schema.table.index */
 		sname = r+*pos;
@@ -793,12 +793,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 		skipWS(r, pos);
 		if (r[*pos] == 'u') {
 			unique = 1;
-			(*pos)+= strlen("unique");
+			(*pos)+= (int) strlen("unique");
 			skipWS(r, pos);
 		}
 		if (r[*pos] == 'n') {
 			no_nils = 1;
-			(*pos)+= strlen("no nil");
+			(*pos)+= (int) strlen("no nil");
 			skipWS(r, pos);
 		}
 	}
@@ -840,30 +840,30 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, char *r, int *pos, int grp)
 	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
-		(*pos)+= strlen("NOT");
+		(*pos)+= (int) strlen("NOT");
 		skipWS(r, pos);
 		set_direction(exp, ASCENDING);
 	}
 
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {
-		(*pos)+= strlen("NOT");
+		(*pos)+= (int) strlen("NOT");
 		skipWS(r, pos);
 		not = 1;
 	}
 	if (strncmp(r+*pos, "NULL",  strlen("NULL")) == 0) {
-		(*pos)+= strlen("NULL");
+		(*pos)+= (int) strlen("NULL");
 		skipWS(r, pos);
 		if (not)
 			set_has_no_nil(exp);
 	}
 	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
-		(*pos)+= strlen("HASHIDX");
+		(*pos)+= (int) strlen("HASHIDX");
 		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
-		(*pos)+= strlen("FETCH");
+		(*pos)+= (int) strlen("FETCH");
 		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
@@ -947,7 +947,7 @@ rel_read(mvc *sql, char *r, int *pos)
 
 	skipWS(r,pos);
 	if (r[*pos] == 'd') {
-		*pos += strlen("distinct");
+		*pos += (int) strlen("distinct");
 		skipWS(r, pos);
 		distinct = 1;
 	}
@@ -957,7 +957,7 @@ rel_read(mvc *sql, char *r, int *pos)
 			sql_schema *s = NULL;
 			sql_table *t = NULL;
 			char *sname, *tname, *e;
-			*pos += strlen("table");
+			*pos += (int) strlen("table");
 			skipWS(r, pos);
 			if (r[*pos] != '(') 
 				return sql_error(sql, -1, "table: missing '('\n");
@@ -995,7 +995,7 @@ rel_read(mvc *sql, char *r, int *pos)
 				rel->exps = exps;
 			return rel;
 		} else { /* top N */
-			*pos += strlen("top N");
+			*pos += (int) strlen("top N");
 			skipWS(r, pos);
 			if (r[*pos] != '(') 
 				return sql_error(sql, -1, "top N: missing '('\n");
@@ -1012,7 +1012,7 @@ rel_read(mvc *sql, char *r, int *pos)
 		}
 		break;
 	case 'p':
-		*pos += strlen("project");
+		*pos += (int) strlen("project");
 		skipWS(r, pos);
 
 		if (r[*pos] != '(') 
@@ -1036,7 +1036,7 @@ rel_read(mvc *sql, char *r, int *pos)
 		distinct = 0;
 		return rel;
 	case 'g':
-		*pos += strlen("group by");
+		*pos += (int) strlen("group by");
 		skipWS(r, pos);
 
 		if (r[*pos] != '(') 
@@ -1058,7 +1058,7 @@ rel_read(mvc *sql, char *r, int *pos)
 		rel->exps = exps;
 		return rel;
 	case 's':
-		*pos += strlen("sample");
+		*pos += (int) strlen("sample");
 		skipWS(r, pos);
 		if (r[*pos] != '(') 
 			return sql_error(sql, -1, "sample: missing '('\n");
@@ -1074,7 +1074,7 @@ rel_read(mvc *sql, char *r, int *pos)
 		return rel;
 	case 'a':
 		if (r[*pos+2] == 'l') {
-			*pos += strlen("select");
+			*pos += (int) strlen("select");
 			skipWS(r, pos);
 			if (r[*pos] != '(') 
 				return sql_error(sql, -1, "select: missing '('\n");
@@ -1097,7 +1097,7 @@ rel_read(mvc *sql, char *r, int *pos)
 			if (r[*pos+1] == 'n') 
 				j = op_anti;
 
-			*pos += strlen("semijoin");
+			*pos += (int) strlen("semijoin");
 			skipWS(r, pos);
 			if (r[*pos] != '(') 
 				return sql_error(sql, -1, "semijoin: missing '('\n");
@@ -1125,30 +1125,30 @@ rel_read(mvc *sql, char *r, int *pos)
 		}
 		break;
 	case 'l':
-		*pos += strlen("left outer join");
+		*pos += (int) strlen("left outer join");
 		j = op_left;
 		/* fall through */
 	case 'r': 
 		if (j == op_basetable) {
-			*pos += strlen("right outer join");
+			*pos += (int) strlen("right outer join");
 			j = op_right;
 		}
 		/* fall through */
 	case 'f':
 		if (j == op_basetable) {
-			*pos += strlen("full outer join");
+			*pos += (int) strlen("full outer join");
 			j = op_full;
 		}
 		/* fall through */
 	case 'c':
 		if (j == op_basetable) {
-			*pos += strlen("crossproduct");
+			*pos += (int) strlen("crossproduct");
 			j = op_join;
 		}
 		/* fall through */
 	case 'j':
 		if (j == op_basetable) {
-			*pos += strlen("join");
+			*pos += (int) strlen("join");
 			j = op_join;
 		}
 		skipWS(r, pos);
@@ -1178,17 +1178,17 @@ rel_read(mvc *sql, char *r, int *pos)
 		return rel;
 	case 'u':
 		if (j != op_basetable) {
-			*pos += strlen("union");
+			*pos += (int) strlen("union");
 			j = op_union;
 		}
 	case 'i':
 		if (j != op_basetable) {
-			*pos += strlen("intersect");
+			*pos += (int) strlen("intersect");
 			j = op_inter;
 		}
 	case 'e':
 		if (j != op_basetable) {
-			*pos += strlen("except");
+			*pos += (int) strlen("except");
 			j = op_except;
 		}
 		skipWS(r, pos);
