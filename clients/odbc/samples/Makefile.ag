@@ -22,6 +22,6 @@ INCLUDES = $(ODBC_INCS)
 BINS = {
 	CONDINST = HAVE_TESTING
 	DIR = libdir/monetdb/tests
-	SOURCES = odbcsample1.c testgetinfo.c
+	SOURCES = odbcsample1.c testgetinfo.c arraytest.c
 	LIBS = $(ODBC_LIBS)
 }

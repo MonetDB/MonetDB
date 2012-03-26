@@ -41,8 +41,8 @@ reorder01
 
 #mapreduce00   has no output, won't run this way
 
-#mat00
-#mat01
+mat00
+mat01
 #mat02
 #mat03
 #mat04

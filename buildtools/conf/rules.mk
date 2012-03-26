@@ -51,6 +51,14 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 	echo '#include <'"$(CONFIG_H)"'>' > $*.yy.c
 	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.c.tmp >> $*.yy.c
 	$(RM) $*.yy.c.tmp
+	[ -f $(LEX_OUTPUT_ROOT).h ] && $(RM) $(LEX_OUTPUT_ROOT).h
+	$(RM) waiting
+
+%.yy.h: %.l
+	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
+	if [ -f $(LEX_OUTPUT_ROOT).h ]; then $(MV) $(LEX_OUTPUT_ROOT).h $*.yy.h ; fi
+	[ -f $(LEX_OUTPUT_ROOT).c ] && $(RM) $(LEX_OUTPUT_ROOT).c
 	$(RM) waiting
 
 %.def: %.syms

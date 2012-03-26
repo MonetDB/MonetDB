@@ -25,6 +25,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
+#include <float.h>		/* for FLT_MAX */
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
@@ -520,7 +521,7 @@ parseoptionalbracketednumber(char **svalp,
 		sval = eptr;
 		*val2p = val;
 	}
-		
+
 	if (slen == 0 || *sval != ')')
 		return SQL_ERROR;
 	slen--;
@@ -529,7 +530,7 @@ parseoptionalbracketednumber(char **svalp,
 	*slenp = slen;
 	return SQL_SUCCESS;
 }
-	
+
 static SQLRETURN
 parsemonthintervalstring(char **svalp,
 			 SQLLEN *slenp,
@@ -2256,13 +2257,12 @@ ODBCFetch(ODBCStmt *stmt,
 		if (type == SQL_C_FLOAT) {
 			if (ardrec && row > 0)
 				ptr = (SQLPOINTER) ((char *) ptr + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(float) : bind_type));
-			*(float *) ptr = (float) fval;
-
-			if ((double) *(float *) ptr != fval) {
+			if (fval < -FLT_MAX || fval > FLT_MAX) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
 				return SQL_ERROR;
 			}
+			*(float *) ptr = (float) fval;
 			if (lenp)
 				*lenp = sizeof(float);
 		} else {
@@ -2715,7 +2715,7 @@ ODBCStore(ODBCStmt *stmt,
 {
 	ODBCDescRec *ipdrec, *apdrec;
 	SQLPOINTER ptr;
-	SQLLEN *indicator_ptr;
+	SQLLEN *strlen_or_ind_ptr;
 	SQLUINTEGER bind_type;
 	SQLSMALLINT ctype, sqltype;
 	char *sval = NULL;
@@ -2742,11 +2742,11 @@ ODBCStore(ODBCStmt *stmt,
 	ptr = apdrec->sql_desc_data_ptr;
 	if (ptr && offset)
 		ptr = (SQLPOINTER) ((char *) ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLPOINTER) : bind_type));
-	indicator_ptr = apdrec->sql_desc_indicator_ptr;
-	if (indicator_ptr && offset)
-		indicator_ptr = (SQLLEN *) ((char *) indicator_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+	strlen_or_ind_ptr = apdrec->sql_desc_indicator_ptr;
+	if (strlen_or_ind_ptr && offset)
+		strlen_or_ind_ptr = (SQLLEN *) ((char *) strlen_or_ind_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
 	if (ptr == NULL &&
-	    (indicator_ptr == NULL || *indicator_ptr != SQL_NULL_DATA)) {
+	    (strlen_or_ind_ptr == NULL || *strlen_or_ind_ptr != SQL_NULL_DATA)) {
 		/* COUNT field incorrect */
 		addStmtError(stmt, "07002", NULL, 0);
 		return SQL_ERROR;
@@ -2771,7 +2771,7 @@ ODBCStore(ODBCStmt *stmt,
 		break;
 	}
 
-	if (indicator_ptr != NULL && *indicator_ptr == SQL_NULL_DATA) {
+	if (strlen_or_ind_ptr != NULL && *strlen_or_ind_ptr == SQL_NULL_DATA) {
 		assigns(buf, bufpos, buflen, "NULL", stmt);
 		*bufp = buf;
 		*bufposp = bufpos;
@@ -2779,16 +2779,20 @@ ODBCStore(ODBCStmt *stmt,
 		return SQL_SUCCESS;
 	}
 
+	strlen_or_ind_ptr = apdrec->sql_desc_octet_length_ptr;
+	if (strlen_or_ind_ptr && offset)
+		strlen_or_ind_ptr = (SQLLEN *) ((char *) strlen_or_ind_ptr + offset + row * (bind_type == SQL_BIND_BY_COLUMN ? sizeof(SQLINTEGER) : bind_type));
+
 	switch (ctype) {
 	case SQL_C_CHAR:
 	case SQL_C_BINARY:
-		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
+		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		sval = (char *) ptr;
 		fixODBCstring(sval, slen, SQLLEN, addStmtError, stmt, return SQL_ERROR);
 		break;
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:
-		slen = apdrec->sql_desc_octet_length_ptr ? *apdrec->sql_desc_octet_length_ptr : SQL_NTS;
+		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
 		sval = (char *) ptr;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
@@ -3667,7 +3671,7 @@ ODBCStore(ODBCStmt *stmt,
 			fval = (double) (60 * (60 * (24 * ival.intval.day_second.day + ival.intval.day_second.hour) + ival.intval.day_second.minute) + ival.intval.day_second.second);
 			if (ival.intval.day_second.fraction && ivalprec > 0) {
 				int f = 1;
-				
+
 				for (i = 0; i < ivalprec; i++)
 					f *= 10;
 				fval += ival.intval.day_second.fraction / (double) f;

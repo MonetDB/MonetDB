@@ -78,6 +78,7 @@ typedef struct {
 	str conn;	/* remote handle */
 } Server;
 
+#define DEBUG_RUN_SRVPOOL
 #define MAXSITES 2048	/* should become dynamic at some point */
 static Server servers[MAXSITES];	/* registry of servers */
 static int srvtop = 0;
@@ -431,6 +432,7 @@ str
 SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *res = (int*) getArgReference(stk,pci,0);
+	str msg = MAL_SUCCEED;
 
 	(void) mb;
 	(void) stk;
@@ -442,9 +444,13 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* only discover workers once */
 		if ( srvtop == 0)
 			SRVPOOLdiscover(cntxt);
-		*res = localExecution;
+		/* execute block in parallel */
+		if ( getPC(mb, pci) > pci->jump)
+			throw(MAL,"scheduler.srvpool","Illegal statement range");
+		msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
+		*res = -2;  /* continue at end of block */
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
