@@ -2554,7 +2554,7 @@ mapi_start_talking(Mapi mid)
 				 * commas, and only allow full matches */
 				if (strstr(hashes, *algs) != NULL) {
 					char *pwh = mcrypt_hashPassword(*algs, p, chal);
-					int len;
+					size_t len;
 					if (pwh == NULL)
 						continue;
 					len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;

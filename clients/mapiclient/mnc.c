@@ -99,7 +99,7 @@ main(int argc, char **argv)
 	stream *in = NULL;
 	stream *out = NULL;
 	char buf[8096];
-	size_t len;
+	ssize_t len;
 	fd_set fds;
 	char seeneof = 0;
 	char seenflush = 0;
@@ -271,8 +271,11 @@ main(int argc, char **argv)
 
 		select((int)s + 1, &fds, NULL, NULL, NULL);
 		if (FD_ISSET(s, &fds)) {
-			if ((len = mnstr_read(in, buf, 1, sizeof(buf))) != 0) {
-				if (!write(1, buf, len))
+			if ((len = mnstr_read(in, buf, 1, sizeof(buf))) > 0) {
+				/* on Windows: unsigned int,
+				 * elsewhere: size_t, but then
+				 * unsigned int shouldn't harm */
+				if (!write(1, buf, (unsigned int) len))
 					exit(2);
 				seenflush = 0;
 			} else {
@@ -285,8 +288,8 @@ main(int argc, char **argv)
 			}
 		}
 		if (FD_ISSET(0, &fds)) {
-			if ((len = read(0, buf, sizeof(buf))) != 0) {
-				mnstr_write(out, buf, len, 1);
+			if ((len = read(0, buf, sizeof(buf))) > 0) {
+				mnstr_write(out, buf, (size_t) len, 1);
 				seeneof = 0;
 			} else if (len == 0) {
 				/* EOF */

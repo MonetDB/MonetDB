@@ -1460,8 +1460,9 @@ socket_update_timeout(stream *s)
 
 	tv.tv_sec = s->timeout;
 	tv.tv_usec = 0;
-	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, (socklen_t) sizeof(tv));
-	setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, (socklen_t) sizeof(tv));
+	/* cast to char * for Windows, no harm on "normal" systems */
+	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
+	setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, (char *) &tv, (socklen_t) sizeof(tv));
 }
 
 static stream *
