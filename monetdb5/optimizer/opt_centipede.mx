@@ -727,6 +727,11 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 		p = copyInstruction(getInstrPtr(mb, i));
 		if ( old[i]->token == ENDsymbol) {
 			getFunctionId(nmb->stmt[0]) = putName(nme,strlen(nme));
+			/* fix the return statement to become a complete assignment */
+			ret->retc= ret->argc;
+			ret->token= ASSIGNsymbol;
+			for( j= 0; j< ret->retc; j++)
+				ret= pushArgument(nmb,ret,getArg(ret,j));
 			pushInstruction(nmb,ret);
 			pushEndInstruction(nmb);
 		} else
