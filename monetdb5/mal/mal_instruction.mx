@@ -251,6 +251,7 @@ mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
 mal_export void renameVariable(MalBlkPtr mb, int i, str name);
 mal_export void resetVarName(MalBlkPtr mb, int i);
 mal_export void copyVariable(MalBlkPtr dst, VarPtr v);
+mal_export void copyProperties(MalBlkPtr mb, int src, int dst);
 mal_export void removeVariable(MalBlkPtr mb, int varid);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTmpSink(MalBlkPtr mb, malType type);
@@ -1262,6 +1263,26 @@ delVariable(MalBlkPtr mb, int varid)
 		getVar(mb, varid) = 0;
 		mb->vtop--;
 	}
+}
+
+void
+copyProperties(MalBlkPtr mb, int src, int dst)
+{
+    VarPtr w, v;
+    int i;
+
+    assert(src >=0 && src < mb->vtop);
+    assert(dst >=0 && dst < mb->vtop);
+    v = mb->var[src];
+    w = mb->var[dst];
+    if ( w->maxprop < v->maxprop){
+        w = (VarPtr) GDKrealloc(w, sizeof(VarRecord) + v->maxprop * sizeof(int));
+        mb->var[dst] = w;
+        w->maxprop = v->maxprop;
+    }
+    w->propc = v->propc;
+    for ( i= 0; i< v->propc; i++)
+        w->prps[i] = v->prps[i];
 }
 
 void
