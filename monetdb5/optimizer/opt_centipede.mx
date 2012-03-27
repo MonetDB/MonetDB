@@ -100,10 +100,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	/* define the query controller */
 	snprintf(nme, BUFSIZ, "%s_plan"OIDFMT, getFunctionId( getInstrPtr(mb,0)), plantag);
 	plan = putName(nme, strlen(nme));
-	snprintf(nme,BUFSIZ,"%s_stub",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme,BUFSIZ,"%s_stub"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	stub = putName(nme, strlen(nme));
 
-	snprintf(nme,BUFSIZ,"%s_cntrl",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme,BUFSIZ,"%s_cntrl"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -268,7 +268,7 @@ OPTplanStub(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, oid plantag)
 	char nme[BUFSIZ];
 
 	/* define the sub query stub for remote processing */
-	snprintf(nme,BUFSIZ,"%s_stub",getFunctionId( getInstrPtr(mb,0)));
+	snprintf(nme,BUFSIZ,"%s_stub"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
 	if ( s == NULL)
 		return 0;
@@ -381,6 +381,7 @@ OPTpreparePartition(MalBlkPtr nmb, InstrPtr p, Slices *slices, int pc)
 	if ( fnd == 0) {
 		i = newTmpVariable(nmb, getVarType(nmb, getArg(slices->target,0)));
 		pushInstruction(nmb, p = copyInstruction(slices->target));
+		copyProperties(nmb, getArg(p,0),i); /* retain the properties */
 		getArg(p,0) = i;
 	}
 	q= newInstruction(nmb,ASSIGNsymbol);
@@ -756,9 +757,10 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	/* construct the remote stub plan */
 	smb = OPTplanStub(cntxt, mb, nmb, plantag);
-	msg= optimizeMALBlock(cntxt, smb);
-	if ( smb) 
+	if ( smb)  {
+		msg= optimizeMALBlock(cntxt, smb);
 		chkProgram(cntxt->fdout, cntxt->nspace, smb);
+	}
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#stub plan errors %d %s \n",smb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, smb, 0, LIST_MAL_STMT);
@@ -766,8 +768,10 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 
 	/* construct the control plan for local/remote execution */
 	cmb = OPTplanCntrl(cntxt,mb,nmb, slices, plantag);
-	if ( cmb) 
+	if ( cmb)  {
 		msg= optimizeMALBlock(cntxt, cmb);
+		chkProgram(cntxt->fdout, cntxt->nspace, cmb);
+	}
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#control plan errors %d %s \n",cmb->errors,msg?msg:"");
 	printFunction(cntxt->fdout, cmb, 0, LIST_MAL_STMT);
