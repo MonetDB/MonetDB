@@ -50,10 +50,36 @@ typedef struct _jgvar {
 
 #define MAXJAQLARG 23
 
-static int dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7);
+static int dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems);
 static int dumpnextid(MalBlkPtr mb, int j1);
 static int matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltypes)[MAXJAQLARG], int (*dynaarg)[MAXJAQLARG][7]);
 static void conditionalcall(int *ret, MalBlkPtr mb, tree *t, enum treetype coltypes[MAXJAQLARG], int dynaarg[MAXJAQLARG][7], int coltpos, InstrPtr q);
+
+/* dumps a algebra.copy for the Xth JSON BAT, if necessary, and sets the
+ * ro bit appropriately afterwards */
+static inline void
+dumpbatwritable(jc *j, MalBlkPtr mb, char X)
+{
+	int *jX = NULL;
+	InstrPtr q;
+
+	switch (X) {
+		case 1:  if (!j->ro1) return; jX = &j->j1; j->ro1 = 0;  break;
+		case 2:  if (!j->ro2) return; jX = &j->j2; j->ro2 = 0;  break;
+		case 3:  if (!j->ro3) return; jX = &j->j3; j->ro3 = 0;  break;
+		case 4:  if (!j->ro4) return; jX = &j->j4; j->ro4 = 0;  break;
+		case 5:  if (!j->ro5) return; jX = &j->j5; j->ro5 = 0;  break;
+		case 6:  if (!j->ro6) return; jX = &j->j6; j->ro6 = 0;  break;
+		case 7:  if (!j->ro7) return; jX = &j->j7; j->ro7 = 0;  break;
+	}
+	q = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(q, algebraRef);
+	setFunctionId(q, copyRef);
+	/* put inplace, because we sometimes use this inside barriers */
+	q = pushReturn(mb, q, *jX);
+	q = pushArgument(mb, q, *jX);
+	pushInstruction(mb, q);
+}
 
 /* returns a bat with subset from kind bat (:oid,:bte) which are
  * referenced by the first array of the JSON structure (oid 0@0 of kind
@@ -244,7 +270,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
  * in the tail, the oid of the corresponding element from elems
  * (typically array bat, head oid 0@0) */
 static int
-dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
+dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0;
@@ -267,7 +293,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 	a = elems;
 	for (t = t->tval1; t != NULL; t = t->tval1) {
 		if (t->type == j_arr_idx) {
-			c = dumparrrefvar(mb, t, a, *j5);
+			c = dumparrrefvar(mb, t, a, j->j5);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, joinRef);
@@ -281,7 +307,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 			setModuleId(q, algebraRef);
 			setFunctionId(q, semijoinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, b);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
@@ -300,7 +326,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 			setModuleId(q, algebraRef);
 			setFunctionId(q, semijoinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j6);
+			q = pushArgument(mb, q, j->j6);
 			q = pushArgument(mb, q, a);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
@@ -323,7 +349,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 			setModuleId(q, algebraRef);
 			setFunctionId(q, semijoinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j7);
+			q = pushArgument(mb, q, j->j7);
 			q = pushArgument(mb, q, a);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
@@ -350,7 +376,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 			setModuleId(q, algebraRef);
 			setFunctionId(q, semijoinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, b);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
@@ -359,7 +385,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 	if (encapsulate) {
 		/* we have to return the results as arrays here, since they are
 		 * multi-value (x[*].y) */
-		a = dumpnextid(mb, *j1);
+		a = dumpnextid(mb, j->j1);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);
 		setFunctionId(q, markTRef);
@@ -385,13 +411,14 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
 		/* append to array bat */
+		dumpbatwritable(j, mb, 5);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("sunion", 6));
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j5);
+		q = pushArgument(mb, q, j->j5);
 		q = pushArgument(mb, q, b);
-		*j5 = getArg(q, 0);
+		j->j5 = getArg(q, 0);
 		pushInstruction(mb, q);
 
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -410,13 +437,14 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 		c = getArg(q, 0);
 		pushInstruction(mb, q);
 		/* append to kind bat */
+		dumpbatwritable(j, mb, 1);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6));
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j1);
+		q = pushArgument(mb, q, j->j1);
 		q = pushArgument(mb, q, c);
-		*j1 = getArg(q, 0);
+		j->j1 = getArg(q, 0);
 		pushInstruction(mb, q);
 	}
 	return b;
@@ -425,7 +453,7 @@ dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 /* returns bat with in the head the oids from elems that match the
  * comparison */
 static int
-dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
+dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
@@ -438,10 +466,9 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 			|| t->tval3->type == j_str || t->tval3->type == j_bool);
 
 	if (t->tval1->type == j_operation) {
-		a = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems,
-				j1, j2, j3, j4, j5, j6, j7);
+		a = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
 	} else {
-		a = dumprefvar(mb, t->tval1, elems, j1, j5, j6, j7);
+		a = dumprefvar(j, mb, t->tval1, elems);
 	}
 
 	if (t->tval3->type != j_var && t->tval3->type != j_operation) {
@@ -456,12 +483,11 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 
 	switch (t->tval3->type) {
 		case j_var:
-			b = dumprefvar(mb, t->tval3, elems, j1, j5, j6, j7);
+			b = dumprefvar(j, mb, t->tval3, elems);
 			c = -1;
 			break;
 		case j_operation:
-			b = dumpvariabletransformation(j, cntxt, mb, t->tval3, elems,
-					j1, j2, j3, j4, j5, j6, j7);
+			b = dumpvariabletransformation(j, cntxt, mb, t->tval3, elems);
 			c = -1;
 			break;
 		case j_num:
@@ -470,7 +496,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, *j3);
+			q = pushArgument(mb, q, j->j3);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -485,7 +511,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, *j4);
+			q = pushArgument(mb, q, j->j4);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -500,7 +526,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, *j2);
+			q = pushArgument(mb, q, j->j2);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -515,7 +541,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 			setFunctionId(q, joinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -613,7 +639,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 				assert(0);
 		}
 	} else {  /* var <cmp> var */
-		int lv[4] = {*j2, *j3, *j4, 0}, *lp = lv;
+		int lv[4] = {j->j2, j->j3, j->j4, 0}, *lp = lv;
 		/* FIXME: we need to check that a and b have at most one value
 		 * per elem here, further code assumes that, because its
 		 * semantically unclear what one should do with multiple values
@@ -647,7 +673,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		setModuleId(q, algebraRef);
 		setFunctionId(q, semijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j1);
+		q = pushArgument(mb, q, j->j1);
 		q = pushArgument(mb, q, c);
 		c = getArg(q, 0);
 		pushInstruction(mb, q);
@@ -671,7 +697,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		setModuleId(q, algebraRef);
 		setFunctionId(q, semijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, *j1);
+		q = pushArgument(mb, q, j->j1);
 		q = pushArgument(mb, q, d);
 		d = getArg(q, 0);
 		pushInstruction(mb, q);
@@ -1023,11 +1049,12 @@ calculatejoingraph(join_result *jrs)
 }
 
 static void
-dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
+dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, l = 0, r = 0;
 	tree *pred;
+	jc tj;
 	json_var *vars, *ljv, *rjv;
 	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
 
@@ -1050,7 +1077,11 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		}
 		locate_var(ljv, pred->tval1->sval);
 		a = dumpwalkvar(mb, ljv->j1, ljv->j5);
-		l = dumprefvar(mb, pred->tval1, a, &ljv->j1, &ljv->j5, &ljv->j6, &ljv->j7);
+		tj.j1 = ljv->j1;
+		tj.j5 = ljv->j5;
+		tj.j6 = ljv->j6;
+		tj.j7 = ljv->j7;
+		l = dumprefvar(&tj, mb, pred->tval1, a);
 
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1062,7 +1093,11 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 
 		locate_var(rjv, pred->tval3->sval);
 		a = dumpwalkvar(mb, rjv->j1, rjv->j5);
-		r = dumprefvar(mb, pred->tval3, a, &rjv->j1, &rjv->j5, &rjv->j6, &rjv->j7);
+		tj.j1 = rjv->j1;
+		tj.j5 = rjv->j5;
+		tj.j6 = rjv->j6;
+		tj.j7 = rjv->j7;
+		r = dumprefvar(&tj, mb, pred->tval3, a);
 
 		/* strings */
 		q = newInstruction(mb, ASSIGNsymbol);
@@ -1891,7 +1926,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j1);
 		q = pushArgument(mb, q, vars->j1);
-		*j1 = js->j1 = getArg(q, 0);
+		j->j1 = js->j1 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1899,7 +1934,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j2);
 		q = pushArgument(mb, q, vars->j2);
-		*j2 = js->j2 = getArg(q, 0);
+		j->j2 = js->j2 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1907,7 +1942,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j3);
 		q = pushArgument(mb, q, vars->j3);
-		*j3 = js->j3 = getArg(q, 0);
+		j->j3 = js->j3 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1915,7 +1950,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j4);
 		q = pushArgument(mb, q, vars->j4);
-		*j4 = js->j4 = getArg(q, 0);
+		j->j4 = js->j4 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1923,7 +1958,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j5);
 		q = pushArgument(mb, q, vars->j5);
-		*j5 = js->j5 = getArg(q, 0);
+		j->j5 = js->j5 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1931,7 +1966,7 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j6);
 		q = pushArgument(mb, q, vars->j6);
-		*j6 = js->j6 = getArg(q, 0);
+		j->j6 = js->j6 = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -1939,13 +1974,13 @@ dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, js->j7);
 		q = pushArgument(mb, q, vars->j7);
-		*j7 = js->j7 = getArg(q, 0);
+		j->j7 = js->j7 = getArg(q, 0);
 		pushInstruction(mb, q);
 	}
 }
 
 static int
-dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
+dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 {
 	int a, l, r;
 	InstrPtr q;
@@ -1955,14 +1990,14 @@ dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 	/* comparisons only take place between tval1 = var and tval3 = val/var
 	 * for the rest, only boolean logic is applied */
 	if (t->tval2->cval != j_and && t->tval2->cval != j_or)
-		return dumpcomp(j, cntxt, mb, t, elems, j1, j2, j3, j4, j5, j6, j7);
+		return dumpcomp(j, cntxt, mb, t, elems);
 
 	assert(t->tval1->type == j_pred);
 	assert(t->tval2->cval == j_and || t->tval2->cval == j_or);
 	assert(t->tval3->type == j_pred);
 
-	l = dumppred(j, cntxt, mb, t->tval1, elems, j1, j2, j3, j4, j5, j6, j7);
-	r = dumppred(j, cntxt, mb, t->tval3, elems, j1, j2, j3, j4, j5, j6, j7);
+	l = dumppred(j, cntxt, mb, t->tval1, elems);
+	r = dumppred(j, cntxt, mb, t->tval3, elems);
 	/* l,r = oid from elems that match in head */
 
 	if (t->tval2->cval == j_and) {
@@ -2011,7 +2046,7 @@ dumpnextid(MalBlkPtr mb, int j1)
  * the j{1..7} variables are updated to point to the updated BATs as
  * insertions of new values (the serialised versions of the variable) */
 static int
-dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
+dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0;
@@ -2023,7 +2058,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 		case j_num:
 		case j_dbl:
 			/* fill up elems size of this constant */
-			a = dumpnextid(mb, *j1);
+			a = dumpnextid(mb, j->j1);
 
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
@@ -2055,37 +2090,41 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			q = pushArgument(mb, q, c);
 			if (t->type == j_num) {
 				q = pushBte(mb, q, 'i');
-				d = *j3;
+				d = j->j3;
+				dumpbatwritable(j, mb, 3);
 			} else if (t->type == j_dbl) {
 				q = pushBte(mb, q, 'd');
-				d = *j4;
+				d = j->j4;
+				dumpbatwritable(j, mb, 4);
 			} else {
 				q = pushBte(mb, q, 's');
-				d = *j2;
+				d = j->j2;
+				dumpbatwritable(j, mb, 2);
 			}
 			e = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, d);
 			q = pushArgument(mb, q, b);
 			if (t->type == j_num) {
-				*j3 = getArg(q, 0);
+				j->j3 = getArg(q, 0);
 			} else if (t->type == j_dbl) {
-				*j4 = getArg(q, 0);
+				j->j4 = getArg(q, 0);
 			} else if (t->type == j_str) {
-				*j2 = getArg(q, 0);
+				j->j2 = getArg(q, 0);
 			}
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 1);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, e);
-			*j1 = getArg(q, 0);
+			j->j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -2106,10 +2145,10 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 			return b;
 		case j_var:
-			b = dumprefvar(mb, t, elems, j1, j5, j6, j7);
+			b = dumprefvar(j, mb, t, elems);
 
 			/* add back missing vars as null */
-			a = dumpnextid(mb, *j1);
+			a = dumpnextid(mb, j->j1);
 
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
@@ -2149,13 +2188,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			q = pushArgument(mb, q, a);
 			d = getArg(q, 0);
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 1);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, d);
-			*j1 = getArg(q, 0);
+			j->j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			/* create return mapping between original elem and newly
@@ -2176,8 +2216,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			d = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, b);
 			q = pushArgument(mb, q, d);
@@ -2218,14 +2258,13 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			switch (t->tval1->type) {
 				case j_var:
 				case j_operation:
-					b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems,
-							j1, j2, j3, j4, j5, j6, j7);
+					b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
 
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, *j3);
+					q = pushArgument(mb, q, j->j3);
 					q = pushArgument(mb, q, b);
 					d = getArg(q, 0);
 					pushInstruction(mb, q);
@@ -2233,7 +2272,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, *j4);
+					q = pushArgument(mb, q, j->j4);
 					q = pushArgument(mb, q, b);
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
@@ -2247,14 +2286,13 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			switch (t->tval3->type) {
 				case j_var:
 				case j_operation:
-					c = dumpvariabletransformation(j, cntxt, mb, t->tval3, elems,
-							j1, j2, j3, j4, j5, j6, j7);
+					c = dumpvariabletransformation(j, cntxt, mb, t->tval3, elems);
 
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, *j3);
+					q = pushArgument(mb, q, j->j3);
 					q = pushArgument(mb, q, c);
 					f = getArg(q, 0);
 					pushInstruction(mb, q);
@@ -2262,7 +2300,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, *j4);
+					q = pushArgument(mb, q, j->j4);
 					q = pushArgument(mb, q, c);
 					g = getArg(q, 0);
 					pushInstruction(mb, q);
@@ -2297,7 +2335,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			}
 			/* f:int and g:dbl are values from val3, bats if c != -1 */
 
-			a = dumpnextid(mb, *j1);
+			a = dumpnextid(mb, j->j1);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, markTRef);
@@ -2430,13 +2468,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, h);
 				h = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 3);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j3);
+				q = pushArgument(mb, q, j->j3);
 				q = pushArgument(mb, q, h);
-				*j3 = getArg(q, 0);
+				j->j3 = getArg(q, 0);
 				pushInstruction(mb, q);
 			}
 
@@ -2498,25 +2537,26 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				i = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, e);
 				q = pushArgument(mb, q, i);
 				e = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 4);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j4);
+				q = pushArgument(mb, q, j->j4);
 				q = pushArgument(mb, q, i);
-				*j4 = getArg(q, 0);
+				j->j4 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, s);
 				q = pushArgument(mb, q, k);
@@ -2562,25 +2602,25 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				i = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, i);
 				g = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j4);
+				q = pushArgument(mb, q, j->j4);
 				q = pushArgument(mb, q, i);
-				*j4 = getArg(q, 0);
+				j->j4 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, v);
 				q = pushArgument(mb, q, l);
@@ -2662,8 +2702,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					s = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, algebraRef);
-					setFunctionId(q, putName("kunion", 6));
+					setModuleId(q, batRef);
+					setFunctionId(q, insertRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, v);
 					q = pushArgument(mb, q, s);
@@ -2690,13 +2730,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			q = pushArgument(mb, q, s);
 			i = getArg(q, 0);
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 4);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j4);
+			q = pushArgument(mb, q, j->j4);
 			q = pushArgument(mb, q, i);
-			*j4 = getArg(q, 0);
+			j->j4 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -2728,8 +2769,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 			if (h != -1) {
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, h);
 				q = pushArgument(mb, q, i);
@@ -2747,20 +2788,21 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			r = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, h);
 			c = getArg(q, 0);
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 1);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, c);
-			*j1 = getArg(q, 0);
+			j->j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			/* prepare return, new ids (head) with elem ids (tail) in
@@ -2816,12 +2858,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				w->tval1 = NULL;
 
 				/* find all possible array member names */
-				a = dumprefvar(mb, t->tval1, elems, j1, j5, j6, j7);
+				a = dumprefvar(j, mb, t->tval1, elems);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, a);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -2837,7 +2879,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, c);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -2860,19 +2902,18 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				return a;
 			}
 
-			b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems,
-					j1, j2, j3, j4, j5, j6, j7);
+			b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
 			/* only need to copy if tval1 is a var, otherwise we have a
 			 * new copy already */
 			if (t->tval1->type == j_var) {
-				int *lv[] = {j2, j3, j4, j5, j6, NULL};
+				int *lv[] = {&j->j2, &j->j3, &j->j4, &j->j5, &j->j6, NULL};
 				int **lp = lv;
 
 				/* jaql tool seems not to be able to return null in pairs,
 				 * instead it shows empty pairs instead of null, but it
 				 * however does for arrays, so we filter them out here if
 				 * they weren't a real null (jaql tool crashes on that) */
-				a = dumprefvar(mb, t->tval1, elems, j1, j5, j6, j7);
+				a = dumprefvar(j, mb, t->tval1, elems);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
@@ -2903,13 +2944,13 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
 
-				a = dumpnextid(mb, *j1);
+				a = dumpnextid(mb, j->j1);
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, b);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -2921,13 +2962,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, a);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 1);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, c);
-				*j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -2946,6 +2988,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				d = getArg(q, 0);
 				pushInstruction(mb, q);
 
+				dumpbatwritable(j, mb, 2);
+				dumpbatwritable(j, mb, 3);
+				dumpbatwritable(j, mb, 4);
+				dumpbatwritable(j, mb, 5);
+				dumpbatwritable(j, mb, 6);
 				for (; *lp != NULL; lp++) {
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
@@ -2964,8 +3011,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, algebraRef);
-					setFunctionId(q, putName("kunion", 6));
+					setModuleId(q, batRef);
+					setFunctionId(q, insertRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, **lp);
 					q = pushArgument(mb, q, e);
@@ -2992,13 +3039,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			q = pushStr(mb, q, t->sval);
 			c = getArg(q, 0);
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 7);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j7);
+			q = pushArgument(mb, q, j->j7);
 			q = pushArgument(mb, q, c);
-			*j7 = getArg(q, 0);
+			j->j7 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			return b;
@@ -3007,7 +3055,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 		case j_json_arr:
 			g++;
 
-			f = dumpnextid(mb, *j1);
+			f = dumpnextid(mb, j->j1);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, markHRef);
@@ -3024,13 +3072,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			q = pushBte(mb, q, g == 2 ? 'o' : 'a');
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
+			dumpbatwritable(j, mb, 1);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("kunion", 6));
+			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, *j1);
+			q = pushArgument(mb, q, j->j1);
 			q = pushArgument(mb, q, a);
-			*j1 = getArg(q, 0);
+			j->j1 = getArg(q, 0);
 			pushInstruction(mb, q);
 
 			/* prepare return set with aligned elements */
@@ -3053,8 +3102,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			c = -1;
 			t = t->tval1;
 			while (t != NULL) {
-				b = dumpvariabletransformation(j, cntxt, mb, t, elems,
-						j1, j2, j3, j4, j5, j6, j7);
+				b = dumpvariabletransformation(j, cntxt, mb, t, elems);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
@@ -3076,7 +3124,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, batRef);
 					setFunctionId(q, insertRef);
-					/* can't use sunion, this may have duplicates [$,$] */
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, c);
 					q = pushArgument(mb, q, b);
@@ -3087,24 +3134,17 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			}
 
 			if (c != -1) {
-				/* can have duplicates, see above */
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, copyRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, g == 2 ? *j6 : *j5);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, g == 2 ? 6 : 5);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, g == 2 ? j->j6 : j->j5);
 				q = pushArgument(mb, q, c);
 				if (g == 2) {
-					*j6 = getArg(q, 0);
+					j->j6 = getArg(q, 0);
 				} else {
-					*j5 = getArg(q, 0);
+					j->j5 = getArg(q, 0);
 				}
 				pushInstruction(mb, q);
 			}
@@ -3147,8 +3187,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 				switch (w->tval1->type) {
 					case j_var:
-						b = dumpvariabletransformation(j, cntxt, mb, w->tval1, elems,
-								j1, j2, j3, j4, j5, j6, j7);
+						b = dumpvariabletransformation(j, cntxt, mb, w->tval1, elems);
 						switch (coltypes[i]) {
 							case j_json:
 								q = newInstruction(mb, ASSIGNsymbol);
@@ -3168,13 +3207,13 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
-								q = pushArgument(mb, q, *j2);
-								q = pushArgument(mb, q, *j3);
-								q = pushArgument(mb, q, *j4);
-								q = pushArgument(mb, q, *j5);
-								q = pushArgument(mb, q, *j6);
-								q = pushArgument(mb, q, *j7);
+								q = pushArgument(mb, q, j->j1);
+								q = pushArgument(mb, q, j->j2);
+								q = pushArgument(mb, q, j->j3);
+								q = pushArgument(mb, q, j->j4);
+								q = pushArgument(mb, q, j->j5);
+								q = pushArgument(mb, q, j->j6);
+								q = pushArgument(mb, q, j->j7);
 								q = pushArgument(mb, q, b);
 								q = pushOid(mb, q, (oid)0);
 								dynaarg[i][0] = getArg(q, 0);
@@ -3194,7 +3233,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								setFunctionId(q, semijoinRef);
 								q = pushReturn(mb, q,
 										newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, j->j1);
 								q = pushArgument(mb, q, b);
 								c = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -3259,7 +3298,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								setModuleId(q, algebraRef);
 								setFunctionId(q, putName("kdifference", 11));
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, j->j1);
 								q = pushArgument(mb, q, c);
 								a = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -3291,7 +3330,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								setModuleId(q, algebraRef);
 								setFunctionId(q, putName("kdifference", 11));
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j5);
+								q = pushArgument(mb, q, j->j5);
 								q = pushArgument(mb, q, h);
 								c = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -3311,12 +3350,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									setFunctionId(q, putName("unwraptype", 10));
 									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 									q = pushArgument(mb, q, a);
-									q = pushArgument(mb, q, *j2);
-									q = pushArgument(mb, q, *j3);
-									q = pushArgument(mb, q, *j4);
+									q = pushArgument(mb, q, j->j2);
+									q = pushArgument(mb, q, j->j3);
+									q = pushArgument(mb, q, j->j4);
 									q = pushArgument(mb, q, h);
-									q = pushArgument(mb, q, *j6);
-									q = pushArgument(mb, q, *j7);
+									q = pushArgument(mb, q, j->j6);
+									q = pushArgument(mb, q, j->j7);
 									q = pushOid(mb, q, (oid)0);
 									dynaarg[i][0] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -3355,12 +3394,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									setFunctionId(q, putName("unwrap", 6));
 									q = pushReturn(mb, q, c);
 									q = pushArgument(mb, q, a);
-									q = pushArgument(mb, q, *j2);
-									q = pushArgument(mb, q, *j3);
-									q = pushArgument(mb, q, *j4);
+									q = pushArgument(mb, q, j->j2);
+									q = pushArgument(mb, q, j->j3);
+									q = pushArgument(mb, q, j->j4);
 									q = pushArgument(mb, q, h);
-									q = pushArgument(mb, q, *j6);
-									q = pushArgument(mb, q, *j7);
+									q = pushArgument(mb, q, j->j6);
+									q = pushArgument(mb, q, j->j7);
 									q = pushOid(mb, q, (oid)0);
 									q = pushStr(mb, q, "");
 									dynaarg[i][1] = getArg(q, 0);
@@ -3396,12 +3435,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									setFunctionId(q, putName("unwrap", 6));
 									q = pushReturn(mb, q, d);
 									q = pushArgument(mb, q, a);
-									q = pushArgument(mb, q, *j2);
-									q = pushArgument(mb, q, *j3);
-									q = pushArgument(mb, q, *j4);
+									q = pushArgument(mb, q, j->j2);
+									q = pushArgument(mb, q, j->j3);
+									q = pushArgument(mb, q, j->j4);
 									q = pushArgument(mb, q, h);
-									q = pushArgument(mb, q, *j6);
-									q = pushArgument(mb, q, *j7);
+									q = pushArgument(mb, q, j->j6);
+									q = pushArgument(mb, q, j->j7);
 									q = pushOid(mb, q, (oid)0);
 									q = pushDbl(mb, q, 0.0);
 									dynaarg[i][2] = getArg(q, 0);
@@ -3437,12 +3476,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									setFunctionId(q, putName("unwrap", 6));
 									q = pushReturn(mb, q, d);
 									q = pushArgument(mb, q, a);
-									q = pushArgument(mb, q, *j2);
-									q = pushArgument(mb, q, *j3);
-									q = pushArgument(mb, q, *j4);
+									q = pushArgument(mb, q, j->j2);
+									q = pushArgument(mb, q, j->j3);
+									q = pushArgument(mb, q, j->j4);
 									q = pushArgument(mb, q, h);
-									q = pushArgument(mb, q, *j6);
-									q = pushArgument(mb, q, *j7);
+									q = pushArgument(mb, q, j->j6);
+									q = pushArgument(mb, q, j->j7);
 									q = pushOid(mb, q, (oid)0);
 									q = pushLng(mb, q, 0);
 									dynaarg[i][3] = getArg(q, 0);
@@ -3509,7 +3548,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								setModuleId(q, algebraRef);
 								setFunctionId(q, semijoinRef);
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-								q = pushArgument(mb, q, *j1);
+								q = pushArgument(mb, q, j->j1);
 								q = pushArgument(mb, q, b);
 								b = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -3656,7 +3695,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				pushInstruction(mb, q);
 
 				a = dumpwalkvar(mb, a1, a5);
-				b = dumpnextid(mb, *j1);
+				b = dumpnextid(mb, j->j1);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, reverseRef);
@@ -3692,75 +3731,68 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				a7 = getArg(q, 6);
 				pushInstruction(mb, q);
 
+				dumpbatwritable(j, mb, 1);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, a1);
-				*j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 2);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j2);
+				q = pushArgument(mb, q, j->j2);
 				q = pushArgument(mb, q, a2);
-				*j2 = getArg(q, 0);
+				j->j2 = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 3);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j3);
+				q = pushArgument(mb, q, j->j3);
 				q = pushArgument(mb, q, a3);
-				*j3 = getArg(q, 0);
+				j->j3 = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 4);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j4);
+				q = pushArgument(mb, q, j->j4);
 				q = pushArgument(mb, q, a4);
-				*j4 = getArg(q, 0);
+				j->j4 = getArg(q, 0);
 				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, copyRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j5);
-				*j5 = getArg(q, 0);
-				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 5);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, a5);
-				*j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, batRef);
-				setFunctionId(q, copyRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j6);
-				*j6 = getArg(q, 0);
-				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 6);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, a6);
-				*j6 = getArg(q, 0);
+				j->j6 = getArg(q, 0);
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 7);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j7);
+				q = pushArgument(mb, q, j->j7);
 				q = pushArgument(mb, q, a7);
-				*j7 = getArg(q, 0);
+				j->j7 = getArg(q, 0);
 
 				/* return bat has b in head, 0 in tail (this is an
 				 * aggregate (can it be anything else?) */
@@ -3793,7 +3825,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 				conditionalcall(&a, mb, t, coltypes, dynaarg, coltpos, q);
 
-				h = dumpnextid(mb, *j1);
+				h = dumpnextid(mb, j->j1);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, markHRef);
@@ -3847,11 +3879,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, f);
 				q = pushBte(mb, q, 'i');
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 3);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
-				q = pushReturn(mb, q, *j3);
-				q = pushArgument(mb, q, *j3);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, j->j3);
+				q = pushArgument(mb, q, j->j3);
 				q = pushArgument(mb, q, f);
 				pushInstruction(mb, q);
 				q = newAssignment(mb);
@@ -3888,11 +3921,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, f);
 				q = pushBte(mb, q, 'd');
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 4);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
-				q = pushReturn(mb, q, *j4);
-				q = pushArgument(mb, q, *j4);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, j->j4);
+				q = pushArgument(mb, q, j->j4);
 				q = pushArgument(mb, q, f);
 				pushInstruction(mb, q);
 				q = newAssignment(mb);
@@ -3929,11 +3963,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, f);
 				q = pushBte(mb, q, 's');
 				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 2);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
-				q = pushReturn(mb, q, *j2);
-				q = pushArgument(mb, q, *j2);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, j->j2);
+				q = pushArgument(mb, q, j->j2);
 				q = pushArgument(mb, q, f);
 				pushInstruction(mb, q);
 				q = newAssignment(mb);
@@ -3941,13 +3976,14 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q->argc = q->retc = 1;
 				q->barrier = EXITsymbol;
 
+				dumpbatwritable(j, mb, 1);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, kunionRef);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, *j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, e);
-				*j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -4564,9 +4600,11 @@ int
 dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
-	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
-	int ro1 = 0, ro2 = 0, ro3 = 0, ro4 = 0, ro5 = 0, ro6 = 0, ro7 = 0;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+
+	/* start with a clean sheet */
+	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = 0;
+	j->ro1 = j->ro2 = j->ro3 = j->ro4 = j->ro5 = j->ro6 = j->ro7 = 0;
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
@@ -4578,13 +4616,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setFunctionId(q, putName("setVar", 6));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushStr(mb, q, t->sval);
-				q = pushArgument(mb, q, j1);
-				q = pushArgument(mb, q, j2);
-				q = pushArgument(mb, q, j3);
-				q = pushArgument(mb, q, j4);
-				q = pushArgument(mb, q, j5);
-				q = pushArgument(mb, q, j6);
-				q = pushArgument(mb, q, j7);
+				q = pushArgument(mb, q, j->j1);
+				q = pushArgument(mb, q, j->j2);
+				q = pushArgument(mb, q, j->j3);
+				q = pushArgument(mb, q, j->j4);
+				q = pushArgument(mb, q, j->j5);
+				q = pushArgument(mb, q, j->j6);
+				q = pushArgument(mb, q, j->j7);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
@@ -4601,13 +4639,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					setFunctionId(q, putName("exportResult", 12));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 					q = pushArgument(mb, q, a);
-					q = pushArgument(mb, q, j1);
-					q = pushArgument(mb, q, j2);
-					q = pushArgument(mb, q, j3);
-					q = pushArgument(mb, q, j4);
-					q = pushArgument(mb, q, j5);
-					q = pushArgument(mb, q, j6);
-					q = pushArgument(mb, q, j7);
+					q = pushArgument(mb, q, j->j1);
+					q = pushArgument(mb, q, j->j2);
+					q = pushArgument(mb, q, j->j3);
+					q = pushArgument(mb, q, j->j4);
+					q = pushArgument(mb, q, j->j5);
+					q = pushArgument(mb, q, j->j6);
+					q = pushArgument(mb, q, j->j7);
 					pushInstruction(mb, q);
 				} else {
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -4615,26 +4653,26 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					setFunctionId(q, printRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 					q = pushArgument(mb, q, a);
-					q = pushArgument(mb, q, j1);
-					q = pushArgument(mb, q, j2);
-					q = pushArgument(mb, q, j3);
-					q = pushArgument(mb, q, j4);
-					q = pushArgument(mb, q, j5);
-					q = pushArgument(mb, q, j6);
-					q = pushArgument(mb, q, j7);
+					q = pushArgument(mb, q, j->j1);
+					q = pushArgument(mb, q, j->j2);
+					q = pushArgument(mb, q, j->j3);
+					q = pushArgument(mb, q, j->j4);
+					q = pushArgument(mb, q, j->j5);
+					q = pushArgument(mb, q, j->j6);
+					q = pushArgument(mb, q, j->j7);
 					pushInstruction(mb, q);
 				}
 				break;
 			case j_json:
-				dumpjsonshred(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
+				dumpjsonshred(mb, t->sval, &j->j1, &j->j2, &j->j3, &j->j4, &j->j5, &j->j6, &j->j7);
 				break;
 			case j_var: {
-				int *bats[8] = {&j1, &j2, &j3, &j4, &j5, &j6, &j7, NULL};
+				int *bats[8] = {&j->j1, &j->j2, &j->j3, &j->j4, &j->j5, &j->j6, &j->j7, NULL};
 				int **bat;
 				/* j_var at top level is always _IDENT */
-				dumpgetvar(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
+				dumpgetvar(mb, t->sval, &j->j1, &j->j2, &j->j3, &j->j4, &j->j5, &j->j6, &j->j7);
 				/* vars are the only read-only BATs we have */
-				ro1 = ro2 = ro3 = ro4 = ro5 = ro6 = ro7 = 1;
+				j->ro1 = j->ro2 = j->ro3 = j->ro4 = j->ro5 = j->ro6 = j->ro7 = 1;
 				/* force this in the MAL environment as well as
 				 * assertion check */
 				for (bat = bats; *bat != NULL; bat++) {
@@ -4648,9 +4686,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 			} break;
 			case j_filter:
-				a = dumpwalkvar(mb, j1, j5);
-				b = dumppred(j, cntxt, mb, t->tval2, a,
-						&j1, &j2, &j3, &j4, &j5, &j6, &j7);
+				a = dumpwalkvar(mb, j->j1, j->j5);
+				b = dumppred(j, cntxt, mb, t->tval2, a);
 				/* b = matching ids from dumpwalkvar (first array) */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
@@ -4679,15 +4716,14 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, a);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
 			case j_transform:
-				a = dumpwalkvar(mb, j1, j5);
-				b = dumpvariabletransformation(j, cntxt, mb, t->tval2, a,
-						&j1, &j2, &j3, &j4, &j5, &j6, &j7);
+				a = dumpwalkvar(mb, j->j1, j->j5);
+				b = dumpvariabletransformation(j, cntxt, mb, t->tval2, a);
 
 				/* remove old array entries */
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -4709,9 +4745,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, g);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				/* construct new array members, respecting the old
@@ -4738,19 +4774,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, e);
-				q = pushArgument(mb, q, j5);
-				j5 = getArg(q, 0);
+				q = pushArgument(mb, q, j->j5);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
 			case j_expand:
-				a = dumpwalkvar(mb, j1, j5);
-				c = dumprefvar(mb, t->tval2, a, &j1, &j5, &j6, &j7);
+				a = dumpwalkvar(mb, j->j1, j->j5);
+				c = dumprefvar(j, mb, t->tval2, a);
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, c);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4760,9 +4796,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, c);
-				j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
@@ -4775,9 +4811,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, b);
-				j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -4794,7 +4830,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, a);
 				d = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4812,17 +4848,17 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, d);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, b);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				/* append to top-level array */
@@ -4831,21 +4867,21 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
-				q = pushArgument(mb, q, j5);
-				j5 = getArg(q, 0);
+				q = pushArgument(mb, q, j->j5);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
 			case j_unroll:
-				a = dumpwalkvar(mb, j1, j5);
-				b = dumprefvar(mb, t->tval2, a, &j1, &j5, &j6, &j7);
-				e = dumpnextid(mb, j1);
+				a = dumpwalkvar(mb, j->j1, j->j5);
+				b = dumprefvar(j, mb, t->tval2, a);
+				e = dumpnextid(mb, j->j1);
 
 				/* we only want the arrays from here */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, b);
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4863,7 +4899,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, joinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, c);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4871,7 +4907,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, c);
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4881,7 +4917,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, b);
 				d = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -4908,17 +4944,18 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, c);
-				j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
+				j->ro1 = 0;
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, f);
-				j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				/* generate the outer array */
@@ -4942,17 +4979,18 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, f);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
+				j->ro5 = 0;
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, f);
-				q = pushArgument(mb, q, j5);
-				j5 = getArg(q, 0);
+				q = pushArgument(mb, q, j->j5);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				/* construct the objects themselves */
@@ -5028,8 +5066,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				f = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, f);
@@ -5055,7 +5093,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setFunctionId(q, joinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, f);
-				q = pushArgument(mb, q, j7);
+				q = pushArgument(mb, q, j->j7);
 				f = getArg(q, 0);
 				pushInstruction(mb, q);
 				
@@ -5064,42 +5102,45 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, c);
-				j6 = getArg(q, 0);
+				j->j6 = getArg(q, 0);
+				j->ro6 = 0;
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j6);
+				q = pushArgument(mb, q, j->j6);
 				q = pushArgument(mb, q, g);
-				j6 = getArg(q, 0);
+				j->j6 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j7);
+				q = pushArgument(mb, q, j->j7);
 				q = pushArgument(mb, q, d);
-				j7 = getArg(q, 0);
+				j->j7 = getArg(q, 0);
+				j->ro7 = 0;
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("kdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushArgument(mb, q, d);
-				j1 = getArg(q, 0);
+				j->j1 = getArg(q, 0);
+				j->ro1 = 0;
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("kunion", 6));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j7);
+				q = pushArgument(mb, q, j->j7);
 				q = pushArgument(mb, q, f);
-				j7 = getArg(q, 0);
+				j->j7 = getArg(q, 0);
 				pushInstruction(mb, q);
 
 				break;
@@ -5108,7 +5149,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 				/* first calculate the join output, based on the input
 				 * and predicates */
-				dumppredjoin(mb, js, t, &j1, &j2, &j3, &j4, &j5, &j6 ,&j7);
+				dumppredjoin(j, mb, js, t);
 
 				/* then transform the output with a modified into clause */
 				changetmplrefsjoin(t->tval3, NULL);
@@ -5127,10 +5168,10 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				continue;
 			}
 			case j_group: {
-				int lv[] = {j2, j3, j4, -1};
+				int lv[] = {j->j2, j->j3, j->j4, -1};
 				int *lp = lv;
 				tree *w;
-				if (j1 != 0) { /* group from single input, previous pipe component */
+				if (j->j1 != 0) { /* group from single input, previous pipe component */
 					assert(t->tval1 == NULL ||
 							(t->tval1->next == NULL && t->tval1->tval1 == NULL));
 					w = t->tval1;
@@ -5140,7 +5181,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setModuleId(q, algebraRef);
 						setFunctionId(q, putName("selectH", 7));
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, j->j5);
 						q = pushOid(mb, q, (oid)0);
 						a = getArg(q, 0);
 						pushInstruction(mb, q);
@@ -5148,11 +5189,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setModuleId(q, algebraRef);
 						setFunctionId(q, putName("kdifference", 11));
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, j->j5);
 						q = pushArgument(mb, q, a);
-						j5 = getArg(q, 0);
+						j->j5 = getArg(q, 0);
 						pushInstruction(mb, q);
-						b = dumpnextid(mb, j1);
+						b = dumpnextid(mb, j->j1);
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, algebraRef);
 						setFunctionId(q, projectRef);
@@ -5175,8 +5216,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 						q = pushArgument(mb, q, a);
-						q = pushArgument(mb, q, j5);
-						j5 = getArg(q, 0);
+						q = pushArgument(mb, q, j->j5);
+						j->j5 = getArg(q, 0);
 						pushInstruction(mb, q);
 
 						q = newInstruction(mb, ASSIGNsymbol);
@@ -5192,17 +5233,17 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 						q = pushArgument(mb, q, c);
-						q = pushArgument(mb, q, j1);
-						j1 = getArg(q, 0);
+						q = pushArgument(mb, q, j->j1);
+						j->j1 = getArg(q, 0);
 						pushInstruction(mb, q);
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j1);
+						q = pushArgument(mb, q, j->j1);
 						q = pushArgument(mb, q, b);
 						q = pushBte(mb, q, 'a');
-						j1 = getArg(q, 0);
+						j->j1 = getArg(q, 0);
 						pushInstruction(mb, q);
 
 						t->type = j_transform;
@@ -5217,8 +5258,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					 *   tval2 = var from source to group on
 					 *   tval3 = name of result (default $) (only into)
 					 */
-					a = dumpwalkvar(mb, j1, j5);
-					b = dumprefvar(mb, w->tval2, a, &j1, &j5, &j6, &j7);
+					a = dumpwalkvar(mb, j->j1, j->j5);
+					b = dumprefvar(j, mb, w->tval2, a);
 					/* b should point to all "groups" now */
 
 					for (; *lp != -1; lp++) {
@@ -5237,7 +5278,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						q = pushArgument(mb, q, d);
 						e = getArg(q, 0);
 						pushInstruction(mb, q);
-						f = dumpnextid(mb, j1);
+						f = dumpnextid(mb, j->j1);
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, algebraRef);
 						setFunctionId(q, markHRef);
@@ -5299,18 +5340,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setModuleId(q, algebraRef);
 						setFunctionId(q, putName("sdifference", 11));
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, j->j5);
 						q = pushArgument(mb, q, d);
-						j5 = getArg(q, 0);
+						j->j5 = getArg(q, 0);
+						j->ro5 = 0;
 						pushInstruction(mb, q);
 
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, j->j5);
 						q = pushArgument(mb, q, e);
-						j5 = getArg(q, 0);
+						j->j5 = getArg(q, 0);
 						pushInstruction(mb, q);
 
 						q = newInstruction(mb, ASSIGNsymbol);
@@ -5332,9 +5374,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j5);
+						q = pushArgument(mb, q, j->j5);
 						q = pushArgument(mb, q, e);
-						j5 = getArg(q, 0);
+						j->j5 = getArg(q, 0);
 						pushInstruction(mb, q);
 
 						q = newInstruction(mb, ASSIGNsymbol);
@@ -5345,13 +5387,14 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						q = pushBte(mb, q, 'a');
 						e = getArg(q, 0);
 						pushInstruction(mb, q);
+						dumpbatwritable(j, mb, 1);
 						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, kunionRef);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j1);
+						q = pushArgument(mb, q, j->j1);
 						q = pushArgument(mb, q, e);
-						j1 = getArg(q, 0);
+						j->j1 = getArg(q, 0);
 						pushInstruction(mb, q);
 					}
 
@@ -5406,8 +5449,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							pw = pw->next = GDKzalloc(sizeof(tree));
 					}
 
-					dumppredjoin(mb, js, preds,
-							&j1, &j2, &j3, &j4, &j5, &j6, &j7);
+					dumppredjoin(j, mb, js, preds);
 
 					for (pw = preds->tval2; pw != NULL; pw = pw->next)
 						pw->tval1 = pw->tval3 = NULL;
@@ -5429,7 +5471,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				assert(0);
 			} break;
 			case j_sort: {
-				int l[4][2] = {{j2, 's'}, {j3, 'i'}, {j4, 'd'}, {0, 0}};
+				int l[4][2] = {{j->j2, 's'}, {j->j3, 'i'}, {j->j4, 'd'}, {0, 0}};
 				int lw;
 				tree *rpreds = NULL, *w;
 
@@ -5443,13 +5485,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 				t->tval2 = rpreds;
 
-				a = dumpwalkvar(mb, j1, j5);
+				a = dumpwalkvar(mb, j->j1, j->j5);
 				
 				for (w = rpreds; w != NULL; w = w->tval3) {
 					/* avoid double free upon cleanup */
 					w->next = NULL;
 
-					b = dumprefvar(mb, w->tval1, a, &j1, &j5, &j6, &j7);
+					b = dumprefvar(j, mb, w->tval1, a);
 					/* can only sort on one type (str, lng, dbl), and can't
 					 * combine these, so pick first element's type and
 					 * sort all of those */
@@ -5492,7 +5534,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, j1);
+					q = pushArgument(mb, q, j->j1);
 					q = pushArgument(mb, q, b);
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
@@ -5611,7 +5653,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					setModuleId(q, batRef);
 					setFunctionId(q, reverseRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, j5);
+					q = pushArgument(mb, q, j->j5);
 					f = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -5633,17 +5675,18 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					setModuleId(q, algebraRef);
 					setFunctionId(q, putName("sdifference", 11));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, j5);
+					q = pushArgument(mb, q, j->j5);
 					q = pushArgument(mb, q, g);
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, algebraRef);
-					setFunctionId(q, sunionRef);
+					setModuleId(q, batRef);
+					setFunctionId(q, insertRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, g);
 					q = pushArgument(mb, q, e);
-					j5 = getArg(q, 0);
+					j->j5 = getArg(q, 0);
+					j->ro5 = 0;
 					pushInstruction(mb, q);
 				}
 			} break;
@@ -5652,7 +5695,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("selectH", 7));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j1);
+				q = pushArgument(mb, q, j->j1);
 				q = pushOid(mb, q, 0);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -5660,7 +5703,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, semijoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, a);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
@@ -5685,9 +5728,9 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("sdifference", 11));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, j5);
+				q = pushArgument(mb, q, j->j5);
 				q = pushArgument(mb, q, b);
-				j5 = getArg(q, 0);
+				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
 				break;
 			case j_func: {
@@ -5697,7 +5740,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				int i, funcretc = 0;
 				tree *w;
 
-				if (j1 != 0) {
+				if (j->j1 != 0) {
 					/* treat pipe as first input of type json array */
 					coltypes[coltpos++] = j_json_arr;
 				}
@@ -5707,21 +5750,21 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
  					break;
 
 				i = 0;
-				if (j1 != 0) {
+				if (j->j1 != 0) {
 					/* treat pipe as first input */
 					switch (coltypes[i]) {
 						case j_json_arr:
-							dynaarg[i][0] = j1;
-							dynaarg[i][1] = j2;
-							dynaarg[i][2] = j3;
-							dynaarg[i][3] = j4;
-							dynaarg[i][4] = j5;
-							dynaarg[i][5] = j6;
-							dynaarg[i][6] = j7;
+							dynaarg[i][0] = j->j1;
+							dynaarg[i][1] = j->j2;
+							dynaarg[i][2] = j->j3;
+							dynaarg[i][3] = j->j4;
+							dynaarg[i][4] = j->j5;
+							dynaarg[i][5] = j->j6;
+							dynaarg[i][6] = j->j7;
 							break;
 						case j_bool:
 							a = dumpvalsfromarr(mb, coltypes[i],
-									j1, j2, j3, j4, j5);
+									j->j1, j->j2, j->j3, j->j4, j->j5);
 							dynaarg[i][0] = a;
 							break;
 						case j_sort_arg:
@@ -5729,13 +5772,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							setModuleId(q, putName("json", 4));
 							setFunctionId(q, putName("unwraptype", 10));
 							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-							q = pushArgument(mb, q, j1);
-							q = pushArgument(mb, q, j2);
-							q = pushArgument(mb, q, j3);
-							q = pushArgument(mb, q, j4);
-							q = pushArgument(mb, q, j5);
-							q = pushArgument(mb, q, j6);
-							q = pushArgument(mb, q, j7);
+							q = pushArgument(mb, q, j->j1);
+							q = pushArgument(mb, q, j->j2);
+							q = pushArgument(mb, q, j->j3);
+							q = pushArgument(mb, q, j->j4);
+							q = pushArgument(mb, q, j->j5);
+							q = pushArgument(mb, q, j->j6);
+							q = pushArgument(mb, q, j->j7);
 							q = pushOid(mb, q, (oid)0);
 							a = getArg(q, 0);
 							dynaarg[i][0] = a;
@@ -5765,13 +5808,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								setModuleId(q, putName("json", 4));
 								setFunctionId(q, putName("unwrap", 6));
 								q = pushReturn(mb, q, c);
-								q = pushArgument(mb, q, j1);
-								q = pushArgument(mb, q, j2);
-								q = pushArgument(mb, q, j3);
-								q = pushArgument(mb, q, j4);
-								q = pushArgument(mb, q, j5);
-								q = pushArgument(mb, q, j6);
-								q = pushArgument(mb, q, j7);
+								q = pushArgument(mb, q, j->j1);
+								q = pushArgument(mb, q, j->j2);
+								q = pushArgument(mb, q, j->j3);
+								q = pushArgument(mb, q, j->j4);
+								q = pushArgument(mb, q, j->j5);
+								q = pushArgument(mb, q, j->j6);
+								q = pushArgument(mb, q, j->j7);
 								q = pushOid(mb, q, (oid)0);
 								q = pushStr(mb, q, "");
 								dynaarg[i][1] = getArg(q, 0);
@@ -5806,13 +5849,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								setModuleId(q, putName("json", 4));
 								setFunctionId(q, putName("unwrap", 6));
 								q = pushReturn(mb, q, d);
-								q = pushArgument(mb, q, j1);
-								q = pushArgument(mb, q, j2);
-								q = pushArgument(mb, q, j3);
-								q = pushArgument(mb, q, j4);
-								q = pushArgument(mb, q, j5);
-								q = pushArgument(mb, q, j6);
-								q = pushArgument(mb, q, j7);
+								q = pushArgument(mb, q, j->j1);
+								q = pushArgument(mb, q, j->j2);
+								q = pushArgument(mb, q, j->j3);
+								q = pushArgument(mb, q, j->j4);
+								q = pushArgument(mb, q, j->j5);
+								q = pushArgument(mb, q, j->j6);
+								q = pushArgument(mb, q, j->j7);
 								q = pushOid(mb, q, (oid)0);
 								q = pushDbl(mb, q, 0.0);
 								dynaarg[i][2] = getArg(q, 0);
@@ -5847,13 +5890,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								setModuleId(q, putName("json", 4));
 								setFunctionId(q, putName("unwrap", 6));
 								q = pushReturn(mb, q, d);
-								q = pushArgument(mb, q, j1);
-								q = pushArgument(mb, q, j2);
-								q = pushArgument(mb, q, j3);
-								q = pushArgument(mb, q, j4);
-								q = pushArgument(mb, q, j5);
-								q = pushArgument(mb, q, j6);
-								q = pushArgument(mb, q, j7);
+								q = pushArgument(mb, q, j->j1);
+								q = pushArgument(mb, q, j->j2);
+								q = pushArgument(mb, q, j->j3);
+								q = pushArgument(mb, q, j->j4);
+								q = pushArgument(mb, q, j->j5);
+								q = pushArgument(mb, q, j->j6);
+								q = pushArgument(mb, q, j->j7);
 								q = pushOid(mb, q, (oid)0);
 								q = pushLng(mb, q, 0);
 								dynaarg[i][3] = getArg(q, 0);
@@ -5913,7 +5956,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 							break;
 						case j_func_arg:
-							a = dumpwalkvar(mb, j1, j5);
+							a = dumpwalkvar(mb, j->j1, j->j5);
 							q = newInstruction(mb, ASSIGNsymbol);
 							setModuleId(q, algebraRef);
 							setFunctionId(q, projectRef);
@@ -6171,13 +6214,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					/* only single BAT returning functions can be dynatyped */
-					j1 = getArg(q, 0);
-					j2 = getArg(q, 1);
-					j3 = getArg(q, 2);
-					j4 = getArg(q, 3);
-					j5 = getArg(q, 4);
-					j6 = getArg(q, 5);
-					j7 = getArg(q, 6);
+					j->j1 = getArg(q, 0);
+					j->j2 = getArg(q, 1);
+					j->j3 = getArg(q, 2);
+					j->j4 = getArg(q, 3);
+					j->j5 = getArg(q, 4);
+					j->j6 = getArg(q, 5);
+					j->j7 = getArg(q, 6);
 					for (i = 0; i < coltpos; i++) {
 						switch (coltypes[i]) {
 							case j_json:
@@ -6224,13 +6267,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
 					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any));
 					r = pushArgument(mb, r, a);
-					j1 = getArg(r, 0);
-					j2 = getArg(r, 1);
-					j3 = getArg(r, 2);
-					j4 = getArg(r, 3);
-					j5 = getArg(r, 4);
-					j6 = getArg(r, 5);
-					j7 = getArg(r, 6);
+					j->j1 = getArg(r, 0);
+					j->j2 = getArg(r, 1);
+					j->j3 = getArg(r, 2);
+					j->j4 = getArg(r, 3);
+					j->j5 = getArg(r, 4);
+					j->j6 = getArg(r, 5);
+					j->j7 = getArg(r, 6);
 					pushInstruction(mb, r);
 				}
 			} break;
