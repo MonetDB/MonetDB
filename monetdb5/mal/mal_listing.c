@@ -407,9 +407,14 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 					advance(t,base,len);
 					if (cv)
 						GDKfree(cv);
-					d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
-					if( d){
-						snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
+					if ( ABS(stk->stk[getArg(p,i)].val.ival) ){
+						d= BBPquickdesc(ABS(stk->stk[getArg(p,i)].val.ival),TRUE);
+						if( d){
+							snprintf(t,(len-(t-base)),"[" BUNFMT "]", BATcount(d));
+							advance(t,base,len);
+						}
+					} else {
+						snprintf(t,(len-(t-base)),"[ nil ]");
 						advance(t,base,len);
 					}
 				} else strcat(t, "=nil");
