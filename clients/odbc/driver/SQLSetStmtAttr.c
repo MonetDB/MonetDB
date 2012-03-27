@@ -22,7 +22,7 @@
  * This code is LGPL. Please ensure that this message remains in future
  * distributions and uses of this code (thats about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
- * 
+ *
  * This file has been modified for the MonetDB project.  See the file
  * Copyright in this directory for more information.
  */
@@ -249,6 +249,12 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 		}
 		break;
 
+	case SQL_ATTR_ROW_NUMBER: /* read-only attribute */
+	default:
+		/* Invalid attribute/option identifier */
+		addStmtError(stmt, "HY092", NULL, 0);
+		return SQL_ERROR;
+
 		/* TODO: implement requested behavior */
 	case SQL_ATTR_ASYNC_ENABLE:
 	case SQL_ATTR_CURSOR_SENSITIVITY:
@@ -258,15 +264,10 @@ SQLSetStmtAttr_(ODBCStmt *stmt,
 	case SQL_ATTR_MAX_LENGTH:
 	case SQL_ATTR_MAX_ROWS:
 	case SQL_ATTR_QUERY_TIMEOUT:
-	case SQL_ATTR_ROW_NUMBER:
 	case SQL_ATTR_SIMULATE_CURSOR:
 	case SQL_ATTR_USE_BOOKMARKS:
 		/* Optional feature not implemented */
 		addStmtError(stmt, "HYC00", NULL, 0);
-		return SQL_ERROR;
-	default:
-		/* Invalid attribute/option identifier */
-		addStmtError(stmt, "HY092", NULL, 0);
 		return SQL_ERROR;
 	}
 
@@ -280,8 +281,9 @@ SQLSetStmtAttr(SQLHSTMT StatementHandle,
 	       SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtAttr " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLSetStmtAttr " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -303,8 +305,9 @@ SQLSetStmtAttrW(SQLHSTMT StatementHandle,
 		SQLINTEGER StringLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetStmtAttrW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute));
+	ODBCLOG("SQLSetStmtAttrW " PTRFMT " %s " PTRFMT "\n",
+		PTRFMTCAST StatementHandle, translateStmtAttribute(Attribute),
+		PTRFMTCAST ValuePtr);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

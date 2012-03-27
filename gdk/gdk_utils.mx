@@ -223,7 +223,6 @@ static FILE *GDKlockFile = 0;
  * Single-lined comments can now be logged safely, together with process, thread
  * and user ID, and the current time.
  */
-/* VARARGS */
 void
 GDKlog(const char *format, ...)
 {
@@ -2056,7 +2055,7 @@ GDKaddbuf(const char *message)
 
 #define GDKERRLEN	(1024+512)
 
- /*VARARGS*/ int
+int
 GDKerror(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -2077,7 +2076,7 @@ GDKerror(const char *format, ...)
 	return 0;
 }
 
- /*VARARGS*/ int
+int
 GDKsyserror(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -2145,7 +2144,7 @@ GDKclrerr(void)
 }
 
 /* coverity[+kill] */
- /*VARARGS*/ int
+int
 GDKfatal(const char *format, ...)
 {
 	char message[GDKERRLEN];
@@ -2369,7 +2368,7 @@ THRgettid(void)
 
 static char THRprintbuf[BUFSIZ];
 
- /*VARARGS*/ int
+int
 THRprintf(stream *s, const char *format, ...)
 {
 	str bf = THRprintbuf, p = 0;

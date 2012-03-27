@@ -54,6 +54,8 @@ opt_export str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 opt_export str OPTcentipedeMaterialize(int *result, int *bid, ptr low, ptr high);
 opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#define REMOTE_EXECUTION	/* or LOCAL_EXECUTION */
+
 /* #define DEBUG_DETAIL*/
 #define _DEBUG_OPT_CENTIPEDE_ 
 #define OPTDEBUGcentipede  if ( optDebug & ((lng)1 <<DEBUG_OPT_CENTIPEDE) )
@@ -85,7 +87,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	MalBlkPtr cmb;
 	Symbol s;
 	char nme[BUFSIZ], *plan, *stub;
-	int base, barrier, x, i, j, k, *alias, nrpack;
+#ifndef REMOTE_EXECUTION
+	int base;
+#endif
+	int barrier, x, i, j, k, *alias, nrpack;
 	InstrPtr ret, p, q, *pack;
 
 #ifdef _DEBUG_OPT_CENTIPEDE_
@@ -162,7 +167,8 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	}
 	*/
 
-	/* PHASE 1: dont run in distributed  mode */
+#ifdef REMOTE_EXECUTION
+	/* PHASE 1: run in distributed  mode */
 	q= newFcnCall(cmb,schedulerRef,srvpoolRef);
 	q->barrier= BARRIERsymbol;
 	barrier = getArg(q,0);
@@ -176,7 +182,6 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	q= pushStr(cmb,q,plan);
 	p= q;
 
-	base = cmb->stop;
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(pmb,0));
 		q->token = ASSIGNsymbol;
@@ -197,6 +202,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 		q= setArgument(cmb,q,q->retc, getArg(p,i));
 		pushInstruction(cmb,q);
 	}
+
 	/* put all mat.pack instructions into the program
 	  make sure that they have contiguous void headed columns 
 	*/
@@ -211,15 +217,10 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 	q= newAssignment(cmb);
 	q->barrier = EXITsymbol;
 	getArg(q,0) = barrier;
-
+#else
 	/* PHASE 2 The second block runs the query in local mode */
-	q= newStmt(cmb,calcRef,notRef);
-	q->barrier= BARRIERsymbol;
-	q = pushArgument(cmb,q, barrier);
-	barrier = getArg(q,0);
-	setVarType(cmb,x,TYPE_int);
-
 	/* re-use instructions, injecting missing server selections */
+	base = cmb->stop;
 	for ( i = 0; i < nrservers ; i++) {
 		q= copyInstruction(getInstrPtr(cmb,base + i));
 		getFunctionId(q) = plan;
@@ -235,10 +236,7 @@ OPTplanCntrl(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid plan
 		pushInstruction(cmb, copyInstruction(pack[k]));
 		getArg(pack[k],0)= getArg(p,k);
 	}
-	/* finalize the second dataflow block */
-	q= newAssignment(cmb);
-	q->barrier = EXITsymbol;
-	getArg(q,0) = barrier;
+#endif
 
 	/* consolidate the result */
 	ret = copyInstruction(getInstrPtr(cmb,0));
@@ -748,7 +746,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	insertSymbol(cntxt->nspace,s);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", nmb->errors);
-	printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
+	//printFunction(cntxt->fdout, nmb, 0, LIST_MAL_STMT);
 #endif
 
 	/* construct the remote stub plan */
@@ -896,26 +894,21 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
  * @-
  */
 @= histo
-	{ @1 *vv;
-		vv= (@1 *) getArgReference(stk, pci, 0 );
-		*vv = @1_nil;
-		vx = (ptr) &max.val.@2;
-		BATmax(b, vx);
-		vv= (ptr) getArgReference(stk, pci, pci->retc -1 );
-		*vv = @1_nil;
-		vm = (ptr) &min.val.@2;
-		BATmin(b, vm);
-		if ( pci->retc > 2)
-			step.val.@2 = (max.val.@2 - min.val.@2) / (pci->retc - 2);
-		else
-		if ( step.val.@2 == 0)
-				step.val.@2 = max.val.@2;
-		for ( i = 1; i < pci->retc-1; i++) {
-			vx= (ptr) getArgReference(stk, pci, i );
-			((ValPtr) vx ) ->val.@2 = min.val.@2 + i * step.val.@2;
+	{ 	@1 *vv;
+		@1 *p = (@1*)Hloc(uniq, BUNfirst(uniq));
+		int step = (int) (BATcount(uniq) / (pci->retc-1));
+
+		/* extract split points from the sample */
+		/* bounds are unspecified */
+		for ( j=step, i = 0; i < pci->retc; i++) {
+			vv= (@1 *) getArgReference(stk, pci, i );
+			if ( i > 0 && i< pci->retc-1){
+				*vv = p[j]; j+= step;
+			} else
+				*vv = @1_nil;
 		}
 	}
-@
+
 @c
 
 /* the min/max bounds are null values */
@@ -923,13 +916,11 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str
 OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	BAT *b;
+	BAT *b, *sample, *uniq;
 	int bid = *(int*) getArgReference(stk,pci, pci->argc-1);
-	ValRecord min,max, step;
 	int i, j;
-	ptr vx,vm;
+	ptr vx;
 
-	memset( (char*) &step, 0, sizeof(step));
 	(void) cntxt;
 	(void) mb;
 	if ( pci->retc < 2)
@@ -937,16 +928,18 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATdescriptor(bid);
 	if (b == NULL)
 		throw(SQL,"centipede.vector","Can not access BAT");
+	sample= BATsample(b,1000);
+	uniq = BATkunique(BATmirror(sample));
     switch ( ATOMtype(b->ttype)) {
-    case TYPE_bit: @:histo(bit,btval)@ break;
-    case TYPE_bte: @:histo(bte,btval)@ break;
-    case TYPE_sht: @:histo(sht,shval)@ break;
-    case TYPE_int: @:histo(int,ival)@ break;
+    case TYPE_bit: @:histo(bit,"%d")@ break;
+    case TYPE_bte: @:histo(bte,"%d")@ break;
+    case TYPE_sht: @:histo(sht,"%d")@ break;
+    case TYPE_int: @:histo(int,"%d")@ break;
     case TYPE_wrd: @:histo(wrd,wval)@ break;
-    case TYPE_lng: @:histo(lng,lval)@ break;
-    case TYPE_oid: @:histo(oid,oval)@ break;
-    case TYPE_flt: @:histo(flt,fval)@ break;
-    case TYPE_dbl: @:histo(dbl,dval)@ break;
+    case TYPE_lng: @:histo(lng,"%d")@ break;
+    case TYPE_oid: @:histo(oid,OIDFMT)@ break;
+    case TYPE_flt: @:histo(flt,"%f")@ break;
+    case TYPE_dbl: @:histo(dbl,"%f")@ break;
 	case TYPE_str:
 		/* fake split, ignore the data distribution */
 
@@ -963,6 +956,8 @@ OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 
 	BBPreleaseref(bid);
+	BBPreleaseref(sample->batCacheid);
+	BBPreleaseref(uniq->batCacheid);
 	return MAL_SUCCEED;
 }
 

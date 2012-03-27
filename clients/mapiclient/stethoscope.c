@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/**
- * stethoscope
- * author Martin Kersten
- */
-
 #include "monetdb_config.h"
 #include "monet_options.h"
 #include <mapi.h>
@@ -107,6 +102,7 @@ typedef struct _wthread {
 } wthread;
 
 static wthread *thds = NULL;
+static char hostname[128];
 
 static void
 usage(void)
@@ -243,10 +239,11 @@ doProfile(void *d)
 		goto stop_cleanup;
 	}
 
-	printf("-- %sopened UDP profile stream for %s:%d\n", id, host, portnr);
+	printf("-- %sopened UDP profile stream %s:%d for %s\n",
+			id, hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			host, portnr);
+			hostname, portnr);
 	doQ(buf);
 
 	/* Set Filters */
@@ -452,6 +449,9 @@ main(int argc, char **argv)
 
 	close(0); /* get rid of stdin */
 
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
+
 	/* try and find multiple options, we assume that we always need a
 	 * local merovingian for that, in the future we probably need to fix
 	 * this in a decent manner */
@@ -507,7 +507,6 @@ main(int argc, char **argv)
 			if (*alts == NULL)
 				break;
 			walk = walk->next = malloc(sizeof(wthread));
-			printf("Alternative route created '%s'\n",walk->uri);
 		}
 		walk->next = NULL;
 		free(oalts);

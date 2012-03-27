@@ -275,8 +275,8 @@ extern stmt *stmt_exception(sql_allocator *sa, stmt *cond, char *errstr, int err
 
 extern stmt *stmt_const(sql_allocator *sa, stmt *s, stmt *val);
 
-extern stmt *stmt_mark(sql_allocator *sa, stmt *s, int id);
-extern stmt *stmt_mark_tail(sql_allocator *sa, stmt *s, int id);
+extern stmt *stmt_mark(sql_allocator *sa, stmt *s, oid id);
+extern stmt *stmt_mark_tail(sql_allocator *sa, stmt *s, oid id);
 extern stmt *stmt_gen_group(sql_allocator *sa, stmt *s); /* given a gid,cnt blowup to full groups */
 extern stmt *stmt_reverse(sql_allocator *sa, stmt *s);
 extern stmt *stmt_mirror(sql_allocator *sa, stmt *s);

@@ -129,7 +129,7 @@ parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, l
 			char *nn;
 			msec = strtol(n+1, &nn, 10);
 			if (msec && nn) {
-				int d = nn-(n+1);
+				ptrdiff_t d = nn-(n+1);
 				for( ;d<3; d++) 
 					msec *= 10;
 				for( ;d>3; d--) 
@@ -226,7 +226,7 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, int sp, int ep, ln
 			char *nn;
 			msec = strtol(n+1, &nn, 10);
 			if (msec && nn) {
-				int d = nn-(n+1);
+				ptrdiff_t d = nn-(n+1);
 				for( ;d<3; d++) 
 					msec *= 10;
 				for( ;d>3; d--) 

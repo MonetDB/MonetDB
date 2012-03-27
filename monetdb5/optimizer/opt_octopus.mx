@@ -1318,7 +1318,7 @@ OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( msg == MAL_SUCCEED) {
 			b = BBPquickdesc(bid, FALSE);
 			if ( b != NULL && BATcount(b) > 0 )
-				return BATcount(b);
+				return (int) BATcount(b);
 		}
 		/*	return GDKnr_threads;*/
 	}

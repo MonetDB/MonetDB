@@ -105,7 +105,7 @@ static int
 dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 {
 	InstrPtr q;
-	int a, b, c, d;
+	int a = 0, b = 0, c = 0, d = 0;
 
 	/* array indirection, entries must be arrays */
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -247,7 +247,7 @@ static int
 dumprefvar(MalBlkPtr mb, tree *t, int elems, int *j1, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c;
+	int a = 0, b = 0, c = 0;
 	char encapsulate = 0;
 
 	assert(t && t->type == j_var);
@@ -428,7 +428,7 @@ static int
 dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, e, f, g;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
 
 	assert(t != NULL);
 	assert(t->tval1->type == j_var || t->tval1->type == j_operation);
@@ -710,8 +710,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6););
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef;);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, e);
 		q = pushArgument(mb, q, f);
@@ -735,8 +735,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		f = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6););
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, e);
 		q = pushArgument(mb, q, f);
@@ -1026,7 +1026,7 @@ static void
 dumppredjoin(MalBlkPtr mb, json_var *js, tree *t, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, l, r;
+	int a = 0, b = 0, c = 0, d = 0, l = 0, r = 0;
 	tree *pred;
 	json_var *vars, *ljv, *rjv;
 	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
@@ -1976,8 +1976,8 @@ dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2
 		pushInstruction(mb, q);
 	} else { /* j_or */
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, algebraRef);
-		setFunctionId(q, putName("kunion", 6));
+		setModuleId(q, batRef);
+		setFunctionId(q, insertRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, l);
 		q = pushArgument(mb, q, r);
@@ -2014,7 +2014,7 @@ static int
 dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems, int *j1, int *j2, int *j3, int *j4, int *j5, int *j6, int *j7)
 {
 	InstrPtr q;
-	int a, b, c, d, e, f, g = 0, h;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0;
 
 	assert (t != NULL);
 
@@ -4462,7 +4462,7 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 		int dynaarg[MAXJAQLARG][7], int coltpos, InstrPtr q)
 {
 	InstrPtr r;
-	int a, b, i;
+	int a = 0, b = 0, i = 0;
 	for (i = 0; i < coltpos; i++) {
 		switch (coltypes[i]) {
 			case j_json:
@@ -4565,7 +4565,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int j1 = 0, j2 = 0, j3 = 0, j4 = 0, j5 = 0, j6 = 0, j7 = 0;
-	int a, b, c, d, e, f, g;
+	int ro1 = 0, ro2 = 0, ro3 = 0, ro4 = 0, ro5 = 0, ro6 = 0, ro7 = 0;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
@@ -4627,10 +4628,25 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 			case j_json:
 				dumpjsonshred(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
 				break;
-			case j_var:
+			case j_var: {
+				int *bats[8] = {&j1, &j2, &j3, &j4, &j5, &j6, &j7, NULL};
+				int **bat;
 				/* j_var at top level is always _IDENT */
 				dumpgetvar(mb, t->sval, &j1, &j2, &j3, &j4, &j5, &j6, &j7);
-				break;
+				/* vars are the only read-only BATs we have */
+				ro1 = ro2 = ro3 = ro4 = ro5 = ro6 = ro7 = 1;
+				/* force this in the MAL environment as well as
+				 * assertion check */
+				for (bat = bats; *bat != NULL; bat++) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, batRef);
+					setFunctionId(q, putName("setAccess", 9));
+					q = pushReturn(mb, q, **bat);
+					q = pushArgument(mb, q, **bat);
+					q = pushStr(mb, q, "r");
+					pushInstruction(mb, q);
+				}
+			} break;
 			case j_filter:
 				a = dumpwalkvar(mb, j1, j5);
 				b = dumppred(j, cntxt, mb, t->tval2, a,

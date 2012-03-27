@@ -836,7 +836,7 @@ stmt_const(sql_allocator *sa, stmt *rows, stmt *val)
  * the generated code.
 */
 stmt *
-stmt_mark(sql_allocator *sa, stmt *s, int id)
+stmt_mark(sql_allocator *sa, stmt *s, oid id)
 {
 	stmt *ns = stmt_create(sa, st_mark);
 
@@ -851,7 +851,7 @@ stmt_mark(sql_allocator *sa, stmt *s, int id)
 }
 
 stmt *
-stmt_mark_tail(sql_allocator *sa, stmt *s, int id)
+stmt_mark_tail(sql_allocator *sa, stmt *s, oid id)
 {
 	stmt *ns = stmt_create(sa, st_mark);
 

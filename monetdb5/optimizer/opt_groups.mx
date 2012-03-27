@@ -169,7 +169,7 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *grp = (int*) getArgReference(stk,pci,0);
 	int *ext = (int*) getArgReference(stk,pci,1);
-	int i, j, newgrp, newext;
+	int i, j, oldgrp, oldext;
 	str msg = MAL_SUCCEED;
 	lng *sizes = (lng*) GDKzalloc(sizeof(lng) * pci->argc), l;
 	bat *bid = (bat*) GDKzalloc(sizeof(bat) * pci->argc), bi;
@@ -209,30 +209,37 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mnstr_printf(cntxt->fdout,"# after [%d] "LLFMT"\n",i, sizes[i]); */
 
 	/* (grp,ext) := group.new(..) */
+	*grp = 0;
+	*ext = 0;
 	msg = GRPgroup(grp, ext, &bid[2]);
+	if ( msg != MAL_SUCCEED){
+		GDKfree(sizes);
+		GDKfree(bid);
+		GDKfree(cnt);
+		return msg;
+	}
 	/* check group count */
-	b = ( msg == MAL_SUCCEED)?  BATdescriptor(*grp): 0;
+	b = BATdescriptor(*grp);
 	if (  b && BATcount(b) != cnt[2]) {
 		BBPreleaseref(*grp);
+		b = 0;
 		/* (grp,ext) := group.derive(grp,ext,arg) */
 		/* (grp,ext) := group.done(grp,ext,arg) */
-		for ( i=3; msg == MAL_SUCCEED && i < pci->argc; i++){
-			newgrp= *grp;
-			newext= *ext;
-			msg = GRPderive(grp, ext, &newgrp, &newext, &bid[i]);
+		for ( i=3; i < pci->argc; i++){
+			oldgrp= *grp;
+			oldext= *ext;
+			msg = GRPderive(grp, ext, &oldgrp, &oldext, &bid[i]);
 			if ( msg == MAL_SUCCEED){
-				BBPdecref(newgrp, TRUE);
-				BBPdecref(newext, TRUE);
-			}
+				BBPdecref(oldgrp, TRUE);
+				BBPdecref(oldext, TRUE);
+			} else break;
 			/* check group count */
 			b = BATdescriptor(*grp);
-			if ( b && BATcount(b) == cnt[i]){
-				BBPreleaseref(*grp);
+			if ( b && BATcount(b) == cnt[i])
 				break;
-			}
-			BBPreleaseref(*grp);
 		}
-	} else
+	} 
+	if (b) 
 		BBPreleaseref(*grp);
 	GDKfree(sizes);
 	GDKfree(bid);
