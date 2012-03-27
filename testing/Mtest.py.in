@@ -65,6 +65,10 @@ except AttributeError:
     else:
         os.devnull = '/dev/null'
 
+def ErrExit(msg):
+    print >> sys.stderr, msg
+    sys.exit(1)
+
 def _configure(str):
     # expand configure variables in str and return result
     config = [
