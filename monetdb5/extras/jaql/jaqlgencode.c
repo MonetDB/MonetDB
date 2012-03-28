@@ -5262,6 +5262,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				/* first calculate the join output, based on the input
 				 * and predicates */
 				dumppredjoin(j, mb, js, t);
+				GDKfree(js);
 
 				/* then transform the output with a modified into clause */
 				changetmplrefsjoin(t->tval3, NULL);
