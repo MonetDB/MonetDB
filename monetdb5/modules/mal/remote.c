@@ -1240,7 +1240,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */
 	if (bb.Ttype == TYPE_str && bb.size) {
-		b->T->width = bb.tailsize / bb.size;
+		b->T->width = (unsigned short) (bb.tailsize / bb.size);
 		b->T->shift = ATOMelmshift(Tsize(b));
 	}
 
