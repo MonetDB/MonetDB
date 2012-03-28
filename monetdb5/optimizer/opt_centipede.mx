@@ -478,7 +478,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	InstrPtr ret, call, p, *old;
 	Symbol s;
 	MalBlkPtr nmb, cmb, smb;
-	str msg;
+	str msg = MAL_SUCCEED;
 	char nme[BUFSIZ];
 	char *head, *tail; /* oid reference to target table*/
 	oid plantag= OIDnew(1);
