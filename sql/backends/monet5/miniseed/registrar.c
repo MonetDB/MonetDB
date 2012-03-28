@@ -356,7 +356,7 @@ str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc)
 
 	}
 	
-	if((msg = getContext(cntxt, mb, &m, NULL))!= MAL_SUCCEED)
+	if((msg = getSQLContext(cntxt, mb, &m, NULL))!= MAL_SUCCEED)
 	{//getting mvc failed, what to do
 		return msg;
 	}
