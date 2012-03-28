@@ -579,8 +579,11 @@ make_jaql_sort(tree *var, tree *expr)
 	assert(var != NULL && var->type == j_var);
 	assert(expr != NULL && expr->type == j_sort_arg);
 
-	if ((res = _check_exp_var1("sort", var->sval, expr)) != NULL)
+	if ((res = _check_exp_var1("sort", var->sval, expr)) != NULL) {
+		freetree(var);
+		freetree(expr);
 		return res;
+	}
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_sort;
