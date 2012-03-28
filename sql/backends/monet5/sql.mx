@@ -573,9 +573,9 @@ command calc.@1( v:str, digits:int, scale:int ) :@1
 address str_2dec_@1
 comment "cast to dec(@1) and check for overflow";
 
-command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
-address batstr_2_@1
-comment "Cast to @1";
+# command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+# address batstr_2_@1
+# comment "Cast to @1";
 command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
 address batstr_2num_@1
 comment "cast to @1 and check for overflow";
@@ -595,9 +595,9 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(lng)@
 
 @= mal_casttime
-command calc.@1( v:str ) :@1 
-address str_2_@1
-comment "Cast to @1";
+# command calc.@1( v:str ) :@1 
+# address str_2_@1
+# comment "Cast to @1";
 command calc.@1( v:str, digits:int ) :@1 
 address str_2time_@1
 comment "cast to @1 and check for overflow";
@@ -605,9 +605,9 @@ command calc.@1( v:@1, digits:int ) :@1
 address @1_2time_@1
 comment "cast @1 to @1 and check for overflow";
 
-command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
-address batstr_2_@1
-comment "Cast to @1";
+# command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+# address batstr_2_@1
+# comment "Cast to @1";
 command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
 address batstr_2time_@1
 comment "cast to @1 and check for overflow";
@@ -620,23 +620,23 @@ comment "cast @1 to @1 and check for overflow";
 @:mal_casttime(daytime)@
 
 @= mal_castfromstr1
-command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
-address batstr_2_@1
-comment "cast to @1";
-command calc.str( v:@1 ) :str 
-address SQL@1_2_str
-comment "cast @1 to str";
+# command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
+# address batstr_2_@1
+# comment "cast to @1";
+# command calc.str( v:@1 ) :str 
+# address SQL@1_2_str
+# comment "cast @1 to str";
 @
 @= mal_castfromstr2
-command calc.@1( v:str ) :@1 
-address str_2_@1
-comment "cast to @1";
+# command calc.@1( v:str ) :@1 
+# address str_2_@1
+# comment "cast to @1";
 command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
 address batstr_2_@1
 comment "cast to @1";
-command calc.str( v:@1 ) :str 
-address SQL@1_2_str
-comment "cast @1 to str";
+# command calc.str( v:@1 ) :str 
+# address SQL@1_2_str
+# comment "cast @1 to str";
 @
 @mal
 @:mal_castfromstr1(wrd)@
@@ -681,16 +681,16 @@ command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
 
 @= mal_cast_2dec
-command calc.@1( v:@2) :@1 
-address @2_2_@1
-comment "cast @2 to @1";
+# command calc.@1( v:@2) :@1 
+# address @2_2_@1
+# comment "cast @2 to @1";
 command calc.@1( v:@2, digits:int, scale:int ) :@1 
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 
-command batcalc.@1( v:bat[:oid,:@2]) :bat[:oid,:@1]
-address bat@2_2_@1
-comment "cast @2 to @1";
+# command batcalc.@1( v:bat[:oid,:@2]) :bat[:oid,:@1]
+# address bat@2_2_@1
+# comment "cast @2 to @1";
 command batcalc.@1( v:bat[:oid,:@2], digits:int, scale:int ) :bat[:oid,:@1] 
 address bat@2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
@@ -4038,7 +4038,7 @@ str not_unique(bit *ret, int* bid)
 	if (BATtkey(b) || BATtdense(b) || BATcount(b) <= 1) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
-	} else if (b->tsorted&1) {
+	} else if (b->tsorted) {
 		BUN p,q;
 		oid c = *(oid*)Tloc(b, BUNfirst(b)); 
 
@@ -4095,7 +4095,7 @@ not_unique_oids(bat *ret, bat* bid)
 			BBPreleaseref(b->batCacheid);
 			throw(SQL, "sql.not_uniques", MAL_MALLOC_FAIL);
 		}
-	} else if (b->tsorted&1) { /* ugh handle both wrd and oid types */
+	} else if (b->tsorted) { /* ugh handle both wrd and oid types */
 		oid c = *(oid*)Tloc(b, BUNfirst(b)), *rf, *rh, *rt;
 		oid *h = (oid*)Hloc(b,0), *vp, *ve;
 		int first = 1;
@@ -4872,6 +4872,7 @@ str bat@2_2_@1( int *res, int *bid )
 		throw(SQL, "sql.@2_2_@1", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -4892,6 +4893,7 @@ str bat@2_2_@1( int *res, int *bid )
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -4987,6 +4989,7 @@ str bat@2_2_@1( int *res, int *bid )
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -5090,6 +5093,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -5118,6 +5122,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -5382,6 +5387,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "sql.dec2_@1", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -5403,6 +5409,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -5588,6 +5595,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 		throw(SQL, "sql.dec@2_2_@1", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	BATseqbase(bn, b->hseqbase);
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
@@ -5635,6 +5643,7 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -6011,7 +6020,7 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	gc = BUNtail(gi, BUNfirst(g));
 	if (!ALIGNsynced(b, g))
 		throw(SQL, "sql.@1rank_grp", "bats not aligned");
-	if (BATtordered(b) != GDK_SORTED)
+	if (BATtordered(b))
 		throw(SQL, "sql.@1rank_grp", "bat not sorted");
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL){
@@ -6051,7 +6060,7 @@ sql_@1rank(bat *rid, bat *bid)
 
 	if( (b = BATdescriptor(*bid)) == NULL )
 		throw(SQL, "sql.@1rank", "Cannot access descriptor");
-	if (!(BATtordered(b) & GDK_SORTED) && !(BATtordered(b) & GDK_SORTED_REV))
+	if (!BATtordered(b) && !BATtrevordered(b))
 		throw(SQL, "sql.@1rank", "bat not sorted");
 
 	bi = bat_iterator(b);
@@ -6855,7 +6864,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 				/*printf("\n");*/
 
-				w =  BATtordered(bn) > 0;
+				w =  BATtordered(bn);
 				sort = BUNappend(sort, &w, FALSE);
 				BBPunfix(bn->batCacheid);
 			}
@@ -6896,7 +6905,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							aux = BUNappend(aux, &sz, FALSE);
 							/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 							/*printf("\n");*/
-							w =  BATtordered(bn) > 0;
+							w =  BATtordered(bn);
 							sort = BUNappend(sort, &w, FALSE);
 							BBPunfix(bn->batCacheid);
 						}

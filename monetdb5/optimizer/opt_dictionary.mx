@@ -855,7 +855,8 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	case TYPE_sht: @:mkindex(sht,bo,sht_nil+1)@
 	case TYPE_int: @:mkindex(int,bo,int_nil+1)@
 	}
-	bv->hsorted = GDK_SORTED;
+	bv->hsorted = 1;
+	bv->hrevsorted = 0;
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
 	BATpropcheck(bv, BATPROPS_QUICK);
 

@@ -179,7 +179,9 @@ BATcalcnot(BAT *b, int accum)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = nils == 0 ? REVERT_SORTED(BATtordered(b)) : 0;
+	/* NOT reverses the order, but NILs mess it up */
+	bn->T->sorted = nils == 0 ? b->T->revsorted : 0;
+	bn->T->revsorted = nils == 0 ? b->T->sorted : 0;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 	bn->T->key = b->T->key & 1;
@@ -306,7 +308,9 @@ BATcalcnegate(BAT *b, int accum)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = nils == 0 ? REVERT_SORTED(BATtordered(b)) : 0;
+	/* unary - reverses the order, but NILs mess it up */
+	bn->T->sorted = nils == 0 ? b->T->revsorted : 0;
+	bn->T->revsorted = nils == 0 ? b->T->sorted : 0;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 	bn->T->key = b->T->key & 1;
@@ -439,7 +443,11 @@ BATcalcabsolute(BAT *b, int accum)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
+	/* ABSOLUTE messes up order (unless all values were negative
+	 * or all values were positive, but we don't know anything
+	 * about that) */
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -562,6 +570,7 @@ BATcalciszero(BAT *b)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -683,7 +692,11 @@ BATcalcsign(BAT *b)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* SIGN is ordered if the input is ordered (negative comes
+	 * first, positive comes after) and NILs stay in the same
+	 * position */
+	bn->T->sorted = b->T->sorted || bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->T->revsorted || bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -834,7 +847,8 @@ BATcalcisnil(BAT *b)
 	/* If b sorted, all nils are at the start, i.e. bn starts with
 	 * 1's and ends with 0's, hence bn is revsorted.  Similarly
 	 * for revsorted. */
-	bn->T->sorted = REVERT_SORTED(BATtordered(b));
+	bn->T->sorted = b->T->revsorted;
+	bn->T->revsorted = b->T->sorted;
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
 	bn->T->key = bn->U->count <= 1;
@@ -1857,7 +1871,13 @@ BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b1->U->count);
 	bn = BATseqbase(bn, b1->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if both inputs are sorted the same way, and no overflow
+	 * occurred (we only know for sure if abort_on_error is set),
+	 * the result is also sorted */
+	bn->T->sorted = (abort_on_error && b1->T->sorted & b2->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b1->T->revsorted & b2->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -1915,7 +1935,13 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -1973,7 +1999,13 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -2041,7 +2073,13 @@ BATcalcincr(BAT *b, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -3019,6 +3057,7 @@ BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -3076,7 +3115,13 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -3095,6 +3140,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
+	int savesorted;
 
 	BATcheck(b, "BATcalccstsub");
 
@@ -3134,7 +3180,18 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is
+	 * sorted in the opposite direction (except that NILs mess
+	 * things up */
+	/* note that if b == bn (accum is set), the first assignment
+	 * changes a value that we need on the right-hand side of the
+	 * second assignment, so we need to save the value */
+	savesorted = b->T->sorted;
+	bn->T->sorted = (abort_on_error && nils == 0 && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && nils == 0 && savesorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -3202,7 +3259,13 @@ BATcalcdecr(BAT *b, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted */
+	bn->T->sorted = (abort_on_error && b->T->sorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = (abort_on_error && b->T->revsorted) ||
+		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -4261,6 +4324,7 @@ BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -4318,7 +4382,25 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted, or reverse sorted if the constant is negative */
+	if (abort_on_error) {
+		ValRecord sign;
+		int savesorted;
+
+		savesorted = b->T->sorted; /* in case b == bn (accum set) */
+		VARcalcsign(&sign, v);
+		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
+			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
+			(sign.val.btval <= 0 && savesorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+	} else {
+		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
+	}
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -4376,7 +4458,25 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
-	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	/* if the input is sorted, and no overflow occurred (we only
+	 * know for sure if abort_on_error is set), the result is also
+	 * sorted, or reverse sorted if the constant is negative */
+	if (abort_on_error) {
+		ValRecord sign;
+		int savesorted;
+
+		savesorted = b->T->sorted; /* in case b == bn (accum set) */
+		VARcalcsign(&sign, v);
+		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
+			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
+			(sign.val.btval <= 0 && savesorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+	} else {
+		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
+	}
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -5442,6 +5542,7 @@ BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -5499,7 +5600,28 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
+	/* if the input is sorted, and no zero division occurred (we
+	 * only know for sure if abort_on_error is set), the result is
+	 * also sorted, or reverse sorted if the constant is
+	 * negative */
+	if (abort_on_error) {
+		ValRecord sign;
+		int savesorted;
+
+		savesorted = b->T->sorted; /* in case b == bn (accum set) */
+		VARcalcsign(&sign, v);
+		bn->T->sorted = (sign.val.btval > 0 && b->T->sorted) ||
+			(sign.val.btval < 0 && b->T->revsorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = (sign.val.btval > 0 && b->T->revsorted) ||
+			(sign.val.btval < 0 && savesorted && nils == 0) ||
+			bn->U->count <= 1 || nils == bn->U->count;
+	} else {
+		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+		bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
+	}
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -5558,6 +5680,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6168,6 +6291,7 @@ BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6226,6 +6350,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6284,6 +6409,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6424,6 +6550,7 @@ BATcalcxor(BAT *b1, BAT *b2, int accum)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6489,6 +6616,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6554,6 +6682,7 @@ BATcalccstxor(const ValRecord *v, BAT *b, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6713,6 +6842,7 @@ BATcalcor(BAT *b1, BAT *b2, int accum)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6778,6 +6908,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6843,6 +6974,7 @@ BATcalccstor(const ValRecord *v, BAT *b, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -6998,6 +7130,7 @@ BATcalcand(BAT *b1, BAT *b2, int accum)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7063,6 +7196,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7128,6 +7262,7 @@ BATcalccstand(const ValRecord *v, BAT *b, int accum)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7307,6 +7442,7 @@ BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7365,6 +7501,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7412,6 +7549,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7585,6 +7723,7 @@ BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b1->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7643,6 +7782,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -7690,6 +7830,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn = BATseqbase(bn, b->H->seq);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -8159,6 +8300,7 @@ BATcalclt_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -8732,6 +8874,7 @@ BATcalcgt_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -9305,6 +9448,7 @@ BATcalcle_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -9878,6 +10022,7 @@ BATcalcge_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -10451,6 +10596,7 @@ BATcalceq_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -11022,6 +11168,7 @@ BATcalcne_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -11596,6 +11743,7 @@ BATcalccmp_intern(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -11788,6 +11936,7 @@ BATcalcbetween_intern(const void *src, int incr1,
 	bn = BATseqbase(bn, seqbase);
 
 	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
@@ -12386,7 +12535,8 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	bn->T->sorted = nils == 0 ? b->T->sorted : 0;
+	bn->T->sorted = nils == 0 && b->T->sorted;
+	bn->T->revsorted = nils == 0 && b->T->revsorted;
 	bn->T->key = (b->T->key & 1) && nils <= 1;
 
 	if (b->H->type != bn->H->type) {

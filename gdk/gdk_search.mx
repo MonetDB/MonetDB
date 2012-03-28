@@ -396,6 +396,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (b->htype == TYPE_void) {
 			if (b->hseqbase == oid_nil) {
+				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				ALGODEBUG THRprintf(GDKout, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				return NULL;
 			}
@@ -806,7 +807,7 @@ SORTfnd_@2(BAT *m, ptr v)
 BUN
 SORTfnd@2(BAT *b, ptr v)
 {
-	if (b && b->@1sorted & 1) {
+	if (b && b->@1sorted) {
 		switch(ATOMstorage(b->@1type)) {
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:

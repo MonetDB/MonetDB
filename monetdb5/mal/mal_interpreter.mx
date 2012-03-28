@@ -74,7 +74,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #include "mal_type.h"
 
 #define SLOW 1
-#define FAST 0
+#define FAST 1
 
 static str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 static void displayVolume(Client cntxt, lng vol);
@@ -939,6 +939,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 {
 	DataFlow flow = t->flow;
 	int stkpc = fs->pc;
+	int stamp = -1;
 
 	ValPtr lhs, rhs, v;
 	int i, k;

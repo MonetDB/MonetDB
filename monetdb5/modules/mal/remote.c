@@ -1092,7 +1092,9 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"\"hseqbase\":" OIDFMT ","
 			"\"tseqbase\":" OIDFMT ","
 			"\"hsorted\":%d,"
+			"\"hrevsorted\":%d,"
 			"\"tsorted\":%d,"
+			"\"trevsorted\":%d,"
 			"\"hkey\":%d,"
 			"\"tkey\":%d,"
 			"\"hnonil\":%d,"
@@ -1105,7 +1107,8 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			"}\n",
 			sendhead ? b->htype : TYPE_void, b->ttype,
 			b->hseqbase, b->tseqbase,
-			b->hsorted, b->tsorted,
+			b->hsorted, b->hrevsorted,
+			b->tsorted, b->trevsorted,
 			b->hkey, b->tkey,
 			b->H->nonil, b->T->nonil,
 			b->tdense,
@@ -1138,7 +1141,9 @@ typedef struct _binbat_v1 {
 	oid Hseqbase;
 	oid Tseqbase;
 	bit Hsorted;
+	bit Hrevsorted;
 	bit Tsorted;
+	bit Trevsorted;
 	unsigned int
 		Hkey:2,
 		Tkey:2,
@@ -1154,7 +1159,7 @@ typedef struct _binbat_v1 {
 static inline str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
-	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -1204,8 +1209,12 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 					bb.Tseqbase = (oid)atol(val);
 				} else if (strcmp(nme, "hsorted") == 0) {
 					bb.Hsorted = *val != '0';
+				} else if (strcmp(nme, "hrevsorted") == 0) {
+					bb.Hrevsorted = *val != '0';
 				} else if (strcmp(nme, "tsorted") == 0) {
 					bb.Tsorted = *val != '0';
+				} else if (strcmp(nme, "trevsorted") == 0) {
+					bb.Trevsorted = *val != '0';
 				} else if (strcmp(nme, "hkey") == 0) {
 					bb.Hkey = *val != '0';
 				} else if (strcmp(nme, "tkey") == 0) {
@@ -1265,7 +1274,9 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	b->hseqbase = bb.Hseqbase;
 	b->tseqbase = bb.Tseqbase;
 	b->hsorted = bb.Hsorted;
+	b->hrevsorted = bb.Hrevsorted;
 	b->tsorted = bb.Tsorted;
+	b->trevsorted = bb.Trevsorted;
 	b->hkey = bb.Hkey;
 	b->tkey = bb.Tkey;
 	b->H->nonil = bb.Hnonil;

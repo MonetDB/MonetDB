@@ -942,6 +942,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, nilptr, (void *)BUNtloc(bat_iterator(tmp), BUNfirst(tmp)), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = 0;
+			tmp->trevsorted = 0;
 		} else {
 /*			char *v = GDKzalloc(wid[j-1]);*/
 			int bsize = 50;

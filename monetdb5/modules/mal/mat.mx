@@ -732,6 +732,7 @@ MATproject_( BAT *map, BAT **bats, int len )
 		res = MATproject_any(map, bats, len);
 	}
 	res->tsorted = 0;
+	res->trevsorted = 0;
 	res->T->nonil = MATnonil(bats, len);
 	return res;
 }
@@ -757,7 +758,7 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!bats[i-2])
 			goto error;
 		bcnt += BATcount(bats[i-2]);
-		if (bats[i-2]->T->sorted != GDK_SORTED)
+		if (!bats[i-2]->T->sorted)
 			sorted = 0;
 	}
 	assert(bcnt == BATcount(map));
@@ -1022,7 +1023,7 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	if (res) 
 		res->T->nonil = MATnonil(bats, len);
 	if (res && rev)
-		res->T->sorted = GDK_SORTED_REV;
+		res->T->revsorted = 1;
 error:
 	if (bats) {
 		for (i=0; i<len && bats[i]; i++)
@@ -1031,6 +1032,7 @@ error:
 	GDKfree(bats);
 	if (map && res) {
 		map->tsorted = 0;
+		map->trevsorted = 0;
 		BBPkeepref( *map_id = map->batCacheid);
 		BBPkeepref( *res_id = res->batCacheid);
 		return MAL_SUCCEED;

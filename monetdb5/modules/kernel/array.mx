@@ -69,38 +69,11 @@ comment "Fill an array representation with constants ";
 
 # @- Implementation
 @include ../mal/prelude.mx
-@h
-
-/*============================================================================*/
-#ifndef __array_h__
-#define __array_h__
-
-#include <gdk.h>
-#include <algebra.h>		/* to include BATmin and BATmax */
-
-@= grid_hdefs
-#define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(BUN) (s)); \
-                         if (b) BATseqbase((b),0);                 }
-#define add_@1s(b,n)    {(b)->T->heap.free+=(size_t)(n)*sizeof(@1);\
-			                   (b)->batCount+=(BUN)n;\
-                         BATkey(BATmirror((b)),0);          \
-                         (b)->tsorted = 0;                  }
-#define get_@1_ptr(b)   ((@1*)(Tloc(b,BUNfirst((b)))))
-@
-@h
-@:grid_hdefs(int)@
-@:grid_hdefs(lng)@
-
-/* The maximum number of dimensions that the print-function can handle... */
-#define MAX_ARRAY_DIM 16
-
-#endif
-/*============================================================================*/
 @c
 /*============================================================================*/
 #include "monetdb_config.h"
-#include "array.h"
 #include "gdk.h"
+#include "algebra.h"
 #include <math.h>
 #include <time.h>
 
@@ -118,6 +91,22 @@ comment "Fill an array representation with constants ";
 
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYproject(int *ret, int *bid, int *cst);
+
+#define new_bat(b, s, TYPE)										\
+		do {													\
+			(b) = BATnew(TYPE_void, TYPE_##TYPE, (BUN) (s));	\
+			if (b)												\
+				BATseqbase((b), 0);								\
+		} while (0)
+#define add_vals(b, n, TYPE)									\
+		do {													\
+			(b)->T->heap.free += (size_t) (n) * sizeof(TYPE);	\
+			(b)->batCount += (BUN) (n);							\
+			BATkey(BATmirror(b), 0);							\
+			(b)->tsorted = (b)->trevsorted = 0;					\
+			(b)->hrevsorted = 0;								\
+		} while (0)
+#define get_ptr(b,TYPE)   ((TYPE*)(Tloc(b,BUNfirst((b)))))
 
 @= grid_impl
 array_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
@@ -139,7 +128,7 @@ fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	ptr = get_@1_ptr(*out);
+	ptr = get_ptr(*out, @1);
 
 	while (i--) {
 		register @1 ni = o;
@@ -173,12 +162,12 @@ grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_@1_bat(*out, (i * (n - o) * r));
+	new_bat(*out, (i * (n - o) * r), @1);
 	if (out == NULL) {
 		GDKerror("grid: cannot create the bat (" @2 " BUNs)\n", (i * (n - o) * r));
 		return GDK_FAIL;
 	}
-	add_@1s(*out, (i * (n - o) * r));
+	add_vals(*out, (i * (n - o) * r), @1);
 	return fillgrid_@1(out, groups, groupsize, clustersize, offset, &s);
 }
 
@@ -194,10 +183,10 @@ gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, 
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_@1_bat(*out, (i * (n - o) * r));
+	new_bat(*out, (i * (n - o) * r), @1);
 	if (*out == 0)
 		return GDK_FAIL;
-	add_@1s(*out, (i * (n - o) * r));
+	add_vals(*out, (i * (n - o) * r), @1);
 	return fillgrid_@1(out, groups, groupsize, clustersize, offset, shift);
 }
 
@@ -355,7 +344,9 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	}
 	/* not sorted at best we have some fixed offset partial sorting */
 	bn->hsorted = 0;
+	bn->hrevsorted = 0;
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
@@ -375,12 +366,12 @@ ARRAYproject(int *ret, int *bid, int *cst)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "array.project", RUNTIME_OBJECT_MISSING);
 	}
-	new_int_bat(bn, BATcount(b));
+	new_bat(bn, BATcount(b), int);
 	if (bn == 0)
 		throw(MAL, "array.project", MAL_MALLOC_FAIL);
 	i = BATcount(b);
-	add_ints(bn, i); 
-	ptr = get_int_ptr(bn);
+	add_vals(bn, i, int);
+	ptr = get_ptr(bn, int);
 
 	while (i-- > 0)
 		(*(ptr ++)) = *cst;

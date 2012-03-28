@@ -117,7 +117,7 @@ All Rights Reserved.
 #if @1
 	if (!sums)
 #endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	if (BATtdense(g)) {
@@ -132,7 +132,7 @@ All Rights Reserved.
 #if @1
 	if (!sums)
 #endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 #if @1
 	if (sums) {
 		/* copy sums array to final result */
@@ -272,7 +272,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");
 
-	if((g->hseqbase == oid_nil) || (!BAThdense(g)) || (!(BAThordered(b)&1)) || (!g->hkey)) {
+	if (g->hseqbase == oid_nil || !BAThdense(g) || !BAThordered(b) || !g->hkey) {
 		BAT *gb = BATjoin(BATmirror(g),b,BUN_NONE);
 		int rtrn = CMDaggrX3_sum_@1_@2(ret, gb, e);
 		BBPunfix(gb->batCacheid);
@@ -337,7 +337,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		} else {
 			@:aggrX3_sum3(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,BUNtloc(bni,r),if (w >= base && w < end),@2,r-off)@
 		}
-	} else if (BATtordered(g)&BAThordered(e)&1) {
+	} else if (BATtordered(g)&BAThordered(e)) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {

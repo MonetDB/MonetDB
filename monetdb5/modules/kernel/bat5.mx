@@ -851,7 +851,7 @@ CMDtail(str *res, int *bid)
 static int
 CMDordered(bit *result, BAT *input)
 {
-	*result = BATordered(input) ? 1 : 0;
+	*result = BATordered(input);
 	return GDK_SUCCEED;
 }
 
@@ -1049,7 +1049,8 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "batDirty", BATdirty(b) ? "dirty" : "clean",FALSE);
 	BUNins(bn, "batSet", local_itoa((ssize_t)(b->batSet)),FALSE);
 
-	BUNins(bn, "hsorted", local_itoa((ssize_t)(BAThordered(b))),FALSE);
+	BUNins(bn, "hsorted", local_itoa((ssize_t)BAThordered(b)),FALSE);
+	BUNins(bn, "hrevsorted", local_itoa((ssize_t)BAThrevordered(b)),FALSE);
 	BUNins(bn, "hident", b->hident,FALSE);
 	BUNins(bn, "hdense", local_itoa((ssize_t)(BAThdense(b))),FALSE);
 	BUNins(bn, "hseqbase", oidtostr(b->hseqbase),FALSE);
@@ -1057,7 +1058,7 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "hvarsized", local_itoa((ssize_t)(b->hvarsized)),FALSE);
 	BUNins(bn, "halign", local_utoa(b->halign),FALSE);
 	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted),FALSE);
-	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev),FALSE);
+	BUNins(bn, "hnorevsorted", local_utoa(b->H->norevsorted),FALSE);
 	BUNins(bn, "hnodense", local_utoa(b->H->nodense),FALSE);
 	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]),FALSE);
 	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]),FALSE);
@@ -1067,12 +1068,13 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "tident", b->tident,FALSE);
 	BUNins(bn, "tdense", local_itoa((ssize_t)(BATtdense(b))),FALSE);
 	BUNins(bn, "tseqbase", oidtostr(b->tseqbase),FALSE);
-	BUNins(bn, "tsorted", local_itoa((ssize_t)(BATtordered(b))),FALSE);
+	BUNins(bn, "tsorted", local_itoa((ssize_t)BATtordered(b)),FALSE);
+	BUNins(bn, "trevsorted", local_itoa((ssize_t)BATtrevordered(b)),FALSE);
 	BUNins(bn, "tkey", local_itoa((ssize_t)(b->tkey)),FALSE);
 	BUNins(bn, "tvarsized", local_itoa((ssize_t)(b->tvarsized)),FALSE);
 	BUNins(bn, "talign", local_utoa(b->talign),FALSE);
 	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted),FALSE);
-	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev),FALSE);
+	BUNins(bn, "tnorevsorted", local_utoa(b->T->norevsorted),FALSE);
 	BUNins(bn, "tnodense", local_utoa(b->T->nodense),FALSE);
 	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]),FALSE);
 	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]),FALSE);
@@ -2080,7 +2082,7 @@ BKCsetSorted(bit *res, int *bid)
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
 	CMDordered(res, b);
-	*res = BATordered(b) ? 1 : 0;
+	*res = BATordered(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2093,7 +2095,7 @@ BKCisSorted(bit *res, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered(b) ? 1 : 0;
+	*res = BATordered(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2106,7 +2108,7 @@ BKCisSortedReverse(bit *res, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
 	}
-	*res = BATordered_rev(b) ? 1 : 0;
+	*res = BATordered_rev(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2815,7 +2817,6 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrink", MAL_MALLOC_FAIL );
 	}
-	BATseqbase(bn, 0);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -2867,7 +2868,9 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, cnt);
+	BATseqbase(bn, 0);
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->tdense = 0;
 	bn->tkey = b->tkey;
 	bn->T->nonil = b->T->nonil;
@@ -2910,7 +2913,6 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
-	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -2936,7 +2938,9 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
     BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b)-BATcount(d));
+	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
+    bn->trevsorted = 0;
     bn->tdense = 0;
 
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2994,7 +2998,6 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.reuse", MAL_MALLOC_FAIL );
 	}
-	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -3051,7 +3054,9 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b) - BATcount(d));
+	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
+    bn->trevsorted = 0;
     bn->tdense = 0;
 	bn->tkey = b->tkey;
 
@@ -3086,7 +3091,6 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		BBPreleaseref(d->batCacheid);
 		throw(MAL, "bat.shrinkMap", MAL_MALLOC_FAIL );
 	}
-	BATseqbase(bn, b->hseqbase);
 	bs = BATmirror(BATsort(BATmirror(d)));
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -3115,7 +3119,9 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b)-BATcount(d));
+	BATseqbase(bn, b->hseqbase);
     bn->tsorted = 0;
+    bn->trevsorted = 0;
     bn->tdense = 0;
 
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);

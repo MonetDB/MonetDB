@@ -1054,7 +1054,9 @@ wkbcreatepoint_bat(int *out, int *ix, int *iy)
 	BATsetcount(bo, BATcount(bx));
 	bo->batDirty = TRUE;
 	bo->tdense = FALSE;
-	bo->tsorted = FALSE;
+	bo->tsorted = BATcount(bo) <= 1;
+	bo->trevsorted = BATcount(bo) <= 1;
+	bo->hrevsorted = BATcount(bo) <= 1;
 	bo->T->nonil = (bx->T->nonil && by->T->nonil);
 	BATkey(BATmirror(bo), (bx->tkey && by->tkey));
 
@@ -1317,25 +1319,6 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 }
 
 @(
-#define prepareOperand(X,Y,Z) \
-	if( (X= BATdescriptor(*Y)) == NULL ) \
-		throw(MAL, "geom." Z, "Cannot access descriptor");
-#define prepareResult(X,Y,T,Z) \
-	X= BATnew(Y->htype,T,BATcount(Y)); \
-	if( Y->htype== TYPE_void) \
-		BATseqbase(X, Y->hseqbase); \
-	if( X == NULL){ \
-		BBPreleaseref(Y->batCacheid); \
-		throw(MAL, "geom." Z, "no space available "); \
-	} \
-	X->hsorted=Y->hsorted; \
-	X->tsorted=0;
-#define finalizeResult(X,Y,Z) \
-	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
-	*X = (Y)->batCacheid; \
-	BBPkeepref(*(X));\
-	BBPreleaseref(Z->batCacheid);
-
 geom_export str bat_wkbMBR(int *ret, int *l);
 
 str
@@ -1347,20 +1330,35 @@ bat_wkbMBR(int *ret, int *l)
 	wkb *x;
 	mbr y;
 
-	prepareOperand(b,l,"mbr");
-	prepareResult(bn,b,TYPE_mbr,"mbr");
+	if ((b = BATdescriptor(*l)) == NULL)
+		throw(MAL, "geom.mbr", "Cannot access descriptor");
+	bn = BATnew(b->htype, TYPE_mbr, BATcount(b));
+	if (b->htype == TYPE_void)
+		BATseqbase(bn, b->hseqbase);
+	if (bn == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "geom.mbr", "no space available ");
+	}
 
 	BATloopFast(b, p, q, xx) {
 		mbr *yp = &y;
-		ptr h = BUNhead(b,p);
-		x = (wkb*)BUNtail(b,p);
+		ptr h = BUNhead(b, p);
+		x = (wkb *) BUNtail(b, p);
 		if (wkb_isnil(x))
 			yp = mbrNULL();
 		else
-			wkbMBR(yp,&x);
+			wkbMBR(yp, &x);
 		bunfastins(bn, h, yp);
 	}
-	finalizeResult(ret,bn,b);
+	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
+	bn->tsorted = 0;
+	bn->trevsorted = 0;
+	if (!(bn->batDirty & 2))
+		bn = BATsetaccess(bn, BAT_READ);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 bunins_failed:
 	BBPreleaseref(b->batCacheid);

@@ -521,7 +521,9 @@ CRKProjectCrack_@1_@2(int *res, int *bid, int *pbid, @1 *low, @1 *hgh, bit *incl
 	view = BATmirror(BATmark(BATmirror(vslice),cl1));
 
 	view->hsorted = TRUE;
+	view->hrevsorted = FALSE;
 	view->tsorted = FALSE;
+	view->trevsorted = FALSE;
 	view->hdense = TRUE;
 	view->tdense = FALSE;
         *res = view->batCacheid;
@@ -625,8 +627,10 @@ CRKPositionProject_@1_@2(int *res, int *bid, int *pbid,int *PositionPivot, @1 *l
 
         BATsetcount(r, size);
 
-	r->hsorted = FALSE;
+        r->hsorted = FALSE;
+        r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -723,7 +727,9 @@ CRKProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bit
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -821,7 +827,9 @@ CRKProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hgh, bi
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -951,7 +959,9 @@ CRKMarkedProject_@1_@2(int *res, int *bid, int *pbid,int *pivot, @1 *low, @1 *hg
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -1025,7 +1035,9 @@ CRKdProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -1089,7 +1101,9 @@ CRKdProjectH_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         BATsetcount(r, fsize);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -1147,7 +1161,9 @@ CRKdPositionProject_@1_@2(int *res, int *bid, int *pbid,int *pivot){
         BATsetcount(r, size);
 
 	r->hsorted = FALSE;
+	r->hrevsorted = FALSE;
         r->tsorted = FALSE;
+        r->trevsorted = FALSE;
         r->hdense = FALSE;
         r->tdense = FALSE;
 
@@ -1771,7 +1787,9 @@ createView:
 	}
 
 	view->hsorted = TRUE;
+	view->hrevsorted = TRUE;
 	view->tsorted = FALSE;
+	view->trevsorted = FALSE;
 	view->hdense = TRUE;
 	view->tdense = FALSE;
 	BBPunfix(viewHead->batCacheid);
@@ -1857,7 +1875,9 @@ createView:
 			}
 		}
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
 
@@ -2037,7 +2057,9 @@ createView:
         BATsetcount(p, size);
 
         p->hsorted = FALSE;
+        p->hrevsorted = FALSE;
         p->tsorted = FALSE;
+        p->trevsorted = FALSE;
         p->hdense = FALSE;
         p->tdense = FALSE;
 
@@ -2435,6 +2457,7 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
         BATsetcount(p, size);	
 	
 	p->hsorted = FALSE;
+	p->hrevsorted = FALSE;
         p->hdense = FALSE;
 
         if (dense){
@@ -2444,6 +2467,7 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
         	p->tdense =FALSE; 
         	p->tsorted = FALSE;
 	}
+	p->trevsorted = FALSE;
 
 	BBPkeepref(p->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -2515,6 +2539,7 @@ CRKdRangeSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh, bit *in
         	p->tdense =FALSE; 
         	p->tsorted = FALSE;
 	}
+	p->trevsorted = FALSE;
 
 	if (newMap){
 		BBPkeepref(b->batCacheid);

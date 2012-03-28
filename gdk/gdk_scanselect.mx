@@ -326,7 +326,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
 	@4: the predicate
-	@5: the tail to be store, being either the tail read ("v")
+	@5: the tail to be stored, being either the tail read ("v")
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
@@ -358,7 +358,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
 	@4: the predicate
-	@5: the tail to be store, being either the tail read ("v")
+	@5: the tail to be stored, being either the tail read ("v")
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
@@ -388,7 +388,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "var" specifying how to read the tail-input
 	@4: the predicate
-	@5: the tail to be store, being either the tail read ("v")
+	@5: the tail to be stored, being either the tail read ("v")
 	    or in case of equi-str-select the search string ("tl")
 	@6: input-head-type for working function name
 	@7: output-head-type for bunfastins macro name
@@ -442,7 +442,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 	@2: output-tail-type for bunfastins macro name
 	@3: "tloc" / "tvar" specifying how to read the tail-input
 	@4: the predicate
-	@5: the tail to be store, being either the tail read ("v")
+	@5: the tail to be stored, being either the tail read ("v")
 	    or in case of equi-str-select the search string ("tl")
 */
 @= seqscanHTget
@@ -530,13 +530,12 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
 		@:seqscanHTget(nn_@1,@2,@3,if (!@4_EQ(nil,v,@5)                      ),v)@
 	}
 @
- * @-
- *
- * Expanding on input-tail-type for data read and comparison.
+/* Expanding on input-tail-type for data read and comparison.
  * Most is straight forward.
  * Taking special care of equi selects on str when there are no doubles in the
  * heap.
  * Adding test for v != nil for types where nil != MIN.
+ */
 @= seqscanTTget
 #ifndef SKIP_TYPE_EXPANSIONS
 #ifndef NOEXPAND_BTE

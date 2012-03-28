@@ -786,9 +786,18 @@ void_bat_create(int adt, BUN nr)
 	if (b == NULL)
 		return b;
 
+	b->hsorted = TRUE;
+	b->hrevsorted = FALSE;
+	b->H->norevsorted = 1;
+	b->hkey = TRUE;
+	b->H->nil = FALSE;
+	b->H->nonil = TRUE;
+
 	/* disable all properties here */
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->T->nosorted = 0;
+	b->T->norevsorted = 0;
 	b->tdense = FALSE;
 	b->T->nodense = 0;
 	b->tkey = FALSE;
@@ -1203,8 +1212,12 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		b->tdense &= bv->tdense;
 		if (b->hsorted != bv->hsorted)
 			b->hsorted = 0;
+		if (b->hrevsorted != bv->hrevsorted)
+			b->hrevsorted = 0;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
+		if (b->trevsorted != bv->trevsorted)
+			b->trevsorted = 0;
 		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {
@@ -2072,8 +2085,7 @@ CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, in
 	if (bn == NULL)
 		throw(MAL, "tablet.load", MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
@@ -2151,8 +2163,7 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		throw(MAL, "tablet.load", OPERATION_FAILED);
 	}
 	*ret = bn->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
@@ -2385,7 +2396,13 @@ TABshowHeader(Tablet *t)
 					prop = buf;
 				}
 				if (strcmp(p, "sorted") == 0) {
-					if (BATtordered(c->c[0]) & 1)
+					if (BATtordered(c->c[0]))
+						prop = "true";
+					else
+						prop = "false";
+				}
+				if (strcmp(p, "revsorted") == 0) {
+					if (BATtrevordered(c->c[0]))
 						prop = "true";
 					else
 						prop = "false";

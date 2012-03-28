@@ -683,7 +683,6 @@ BATload_intern(bat i, int lock)
 
 	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
 		++b->batSharecnt;
-		BATpropcheck(b, BATPROPS_CHECK);
 		--b->batSharecnt;
 	}
 	return (i < 0) ? BATmirror(b) : b;
@@ -1264,7 +1263,7 @@ BATmultiprintf(stream *s,	/* output stream */
 				goto cleanup;
 		}
 		MULTIJOIN_LEAD(ret) = 1;
-		MULTIJOIN_SORTED(ret) = (BAThordered(b) & 1);
+		MULTIJOIN_SORTED(ret) = BAThordered(b);
 		MULTIJOIN_KEY(ret) = BAThkey(b);
 		MULTIJOIN_SYNCED(ret) = 1;
 	} else {

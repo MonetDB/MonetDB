@@ -156,7 +156,7 @@ All Rights Reserved.
 #if @1
 	if (!cnt)
 #endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
@@ -175,7 +175,7 @@ All Rights Reserved.
 #if @1
 	if (!cnt)
 #endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	break;
 @
 @h
@@ -248,7 +248,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 		} else {
 			@:aggrX3_count(0,0,SCANfndOID,loc,BUNhloc(bi,p),BUNtloc(bni,r))@
 		}
-	} else if (BATtordered(b)&BAThordered(e)&1) {
+	} else if (BATtordered(b)&BAThordered(e)) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {
@@ -289,7 +289,8 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	/* init: set all sums to zero */
-	bn->tsorted = bn->hsorted = 0;
+	bn->tsorted = bn->trevsorted = 0;
+	bn->hsorted = bn->hrevsorted = 0;
 	ALIGNsetH(bn, e);
 	BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 	BATloop(e, p, q) {

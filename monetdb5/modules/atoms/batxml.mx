@@ -195,7 +195,9 @@ batxml_export str BATXMLgroup(xml *ret, int *bid);
     if ((Y)->htype == TYPE_void)					\
         BATseqbase((X), (Y)->hseqbase);				\
     (X)->hsorted = (Y)->hsorted;					\
+    (X)->hrevsorted = (Y)->hrevsorted;				\
     (X)->tsorted =  0;								\
+    (X)->trevsorted =  0;							\
     (X)->H->nonil = (Y)->H->nonil;					\
 	(X)->T->nonil = 1;
 
@@ -1306,6 +1308,7 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	BBPunfix(r->batCacheid);
 	GDKfree(buf);
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = 0;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1336,7 +1339,7 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	@:getBATdescriptor(grp,g,"xml.agg")@
 	@:getBATdescriptor(bid,b,"xml.agg",BBPunfix(g->batCacheid))@
 
-	bn = BATnew(g->htype, b->ttype, BATcount(g));
+	bn = BATnew(TYPE_oid, b->ttype, BATcount(g));
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(g->batCacheid);
@@ -1371,9 +1374,12 @@ BATXMLagg(int *ret, int *bid, int *grp)
 				bn->T->nonil = 0;
 			strcpy(buf, str_nil);
 			offset = 0;
+		} else if (first) {
+			bn->H->nil = (gid == oid_nil);
+			bn->H->nonil = (gid != oid_nil);
+			first = 0;
 		}
 		gid = o;
-		first = 0;
 		if (strNil(t))
 			continue;
 		len = strlen(t) + 1;
@@ -1410,7 +1416,11 @@ BATXMLagg(int *ret, int *bid, int *grp)
 
 	BBPunfix(r->batCacheid);
 	GDKfree(buf);
+	bn->hsorted = 1;
+	bn->hrevsorted = bn->batCount <= 1;
+	bn->hkey = 1;
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = 0;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;

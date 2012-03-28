@@ -460,7 +460,7 @@ CRKdeleteFromAVL_@1(int *k, int *bid, int *uid){
         }
 
         /* if necessary, sort in place the insertions bat */
-        if (u->tsorted == FALSE){
+        if (!u->tsorted) {
                 u->batRestricted = BAT_WRITE;
                 BATmirror(BATorder(BATmirror(u)));
         }

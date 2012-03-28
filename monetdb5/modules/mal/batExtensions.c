@@ -197,7 +197,9 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	bn->hkey= b->hkey;
 	bn->tkey= b->tkey;
 	bn->hsorted= b->hsorted;
+	bn->hrevsorted= b->hrevsorted;
 	bn->tsorted= b->tsorted;
+	bn->trevsorted= b->trevsorted;
 	BBPkeepref(*res = bn->batCacheid);
 	return MAL_SUCCEED;
 }
