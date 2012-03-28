@@ -2314,7 +2314,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				default:
 					assert(0);
 			}
-			assert(b != -1);  /* to help the compiler */
 			/* d:int and e:dbl are values from val1 */
 
 			switch (t->tval3->type) {
