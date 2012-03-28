@@ -508,15 +508,21 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 		vars[i] = res->tval2->sval;
 	vars[i] = NULL;
 
-	if ((res = _check_exp_var("join", vars, pred)) != NULL)
+	if ((res = _check_exp_var("join", vars, pred)) != NULL) {
+		GDKfree(vars);
 		return res;
-	if ((res = _check_exp_var("join", vars, tmpl)) != NULL)
+	}
+	if ((res = _check_exp_var("join", vars, tmpl)) != NULL) {
+		GDKfree(vars);
 		return res;
+	}
 
 	/* JAQL defines that only conjunctions of equality expressions may
 	 * be used (and + ==), where self-joins are disallowed */
-	if ((res = _check_exp_equals_only(pred)) != NULL)
+	if ((res = _check_exp_equals_only(pred)) != NULL) {
+		GDKfree(vars);
 		return res;
+	}
 
 	/* JAQL defines that each of the inputs must be linked through a
 	 * join path, collect all equality tests and put them in a simple
@@ -538,6 +544,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 			snprintf(buf, sizeof(buf), "join: input not referenced "
 					"in where: %s", vars[i]);
 			res->sval = GDKstrdup(buf);
+			GDKfree(vars);
 			freetree(inputs);
 			freetree(pred);
 			freetree(tmpl);
@@ -546,6 +553,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 	}
 
 	/* we skip the graph/path check and do it during code generation */
+	GDKfree(vars);
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_join;
