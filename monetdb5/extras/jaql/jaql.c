@@ -274,7 +274,7 @@ make_jaql_expand(tree *var, tree *expr)
 
 	if (expr->type == j_var && expr->next != NULL) {
 		/* JAQL's confusing "inner pipes" feature -- most probably to
-		 * steer Hadoop's map-reduce job generationi -- is just useless
+		 * steer Hadoop's map-reduce job generation -- is just useless
 		 * for us and actually making our life harder, so just pull out
 		 * this inner pipe, and make it a proper top-level pipe instead */
 		res->next = expr->next;
@@ -316,6 +316,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 
 	if (tmpl->type == j_error) {
 		freetree(inputs);
+		freetree(var);
 		return tmpl;
 	}
 
@@ -335,6 +336,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 						"inputs must be equal");
 				freetree(inputs);
 				freetree(tmpl);
+				freetree(var);
 				return res;
 			}
 			if (strcmp(w->tval2->sval, var->sval) != 0) {
@@ -345,6 +347,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 				res->sval = GDKstrdup(buf);
 				freetree(inputs);
 				freetree(tmpl);
+				freetree(var);
 				return res;
 			}
 		}
@@ -359,6 +362,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 							"inputs must be unique (for use in 'into' expression)");
 					freetree(inputs);
 					freetree(tmpl);
+					freetree(var);
 					return res;
 				}
 			}
@@ -382,9 +386,11 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 		if ((w = _check_exp_var1("group", var->sval, tmpl)) != NULL) {
 			freetree(inputs);
 			freetree(tmpl);
+			freetree(var);
 			return w;
 		}
 	}
+	freetree(var);  /* no longer used after verification of input */
 
 	res->type = j_group;
 	res->tval1 = inputs;
