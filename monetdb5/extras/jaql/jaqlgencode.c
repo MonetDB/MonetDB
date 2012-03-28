@@ -1090,7 +1090,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 	tree *pred;
 	jc tj;
 	json_var *vars, *ljv, *rjv;
-	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
+	join_result *jro = NULL, *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
 
 	jgvar *jgraph = NULL;
 
@@ -1376,7 +1376,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		pushInstruction(mb, q);
 
 		if (jrs == NULL) {
-			jrw = jrs = GDKzalloc(sizeof(join_result));
+			jrw = jro = jrs = GDKzalloc(sizeof(join_result));
 		} else {
 			jrw = jrw->next = GDKzalloc(sizeof(join_result));
 		}
@@ -2010,6 +2010,11 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		q = pushArgument(mb, q, vars->j7);
 		j->j7 = js->j7 = getArg(q, 0);
 		pushInstruction(mb, q);
+	}
+
+	for (jrw = jro; jrw != NULL; jrw = jrs) {
+		jrs = jrw->next;
+		GDKfree(jrw);
 	}
 }
 
