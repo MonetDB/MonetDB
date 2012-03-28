@@ -2347,7 +2347,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					q = pushArgument(mb, q, c);
 					g = getArg(q, 0);
 					pushInstruction(mb, q);
-					q = newInstruction(mb, ASSIGNsymbol);
 					break;
 				case j_num:
 					c = -1;
