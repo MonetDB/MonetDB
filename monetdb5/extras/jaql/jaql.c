@@ -374,8 +374,10 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 		if ((w = _check_exp_var("group", vars, tmpl)) != NULL) {
 			freetree(inputs);
 			freetree(tmpl);
+			GDKfree(vars);
 			return w;
 		}
+		GDKfree(vars);
 	} else {
 		if ((w = _check_exp_var1("group", var->sval, tmpl)) != NULL) {
 			freetree(inputs);
