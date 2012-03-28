@@ -1092,7 +1092,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 	json_var *vars, *ljv, *rjv;
 	join_result *jro = NULL, *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
 
-	jgvar *jgraph = NULL;
+	jgvar *jgraph = NULL, *ograph = NULL;
 
 	/* iterate through all predicates and load the set from the correct
 	 * JSON variable */
@@ -1505,7 +1505,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		}
 	}
 
-	jgraph = calculatejoingraph(jrs);
+	ograph = jgraph = calculatejoingraph(jrs);
 	/* FIXME: at this point, there may be joins like a->c, while there
 	 * is a->b->c, in which case a->c is a reduction on a and c, having
 	 * effect on everything inbetween (only b in this case) */
@@ -2016,6 +2016,11 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		jrs = jrw->next;
 		GDKfree(jrw);
 	}
+	for (jgraph = ograph->next; jgraph != NULL; jgraph = jgraph->next) {
+		GDKfree(jgraph->prev);
+		ograph = jgraph;
+	}
+	GDKfree(ograph);
 }
 
 static int
