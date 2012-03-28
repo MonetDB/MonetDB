@@ -4633,6 +4633,8 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 					r->argc = r->retc = 1;
 					r->barrier = EXITsymbol;
 				}
+				/* we passed copies above, so need to free the original */
+				freeInstruction(q);
 				return;
 			default:
 				q = pushArgument(mb, q, dynaarg[i][0]);
