@@ -30,5 +30,5 @@ X_CFLAGS = #$(X_CFLAGS:-Werror=) <- recursive
 
 lib_jaqlp = {
 	NOINST
-	SOURCES = jaql.y jaql.l force-jaql-yy-h-gen.c
+	SOURCES = jaql.y jaql.l force_jaql_yy_h_gen.c
 }
