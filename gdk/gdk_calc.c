@@ -378,6 +378,10 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
+#ifdef ABSOLUTE
+/* Windows seems to define this somewhere */
+#undef ABSOLUTE
+#endif
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
 
 BAT *
