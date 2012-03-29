@@ -23,6 +23,16 @@ extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 #define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
 #define YY_NO_INPUT
 
+/* ugly as hell, but needed to prevent flex from assigning stdin to yyin */
+#ifdef stdin
+# undef stdin
+#endif
+#define stdin (FILE *)0
+#ifdef stdout
+# undef stdout
+#endif
+#define stdout (FILE *)0
+
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 	if (j->buf != NULL && *j->buf != '\0') {
 		*res = strlen(j->buf);
