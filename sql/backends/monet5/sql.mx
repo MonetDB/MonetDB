@@ -6817,7 +6817,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sql_base *bc = ncol->data;
 				sql_column *c= (sql_column *) ncol->data;
 				BAT *bn = store_funcs.bind_col(tr, c, 0);
-				BUN sz;
+				lng sz;
 
 				/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name);*/
 				sch = BUNappend(sch, b->name, FALSE);
@@ -6859,7 +6859,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						sql_idx *c= (sql_idx *) ncol->data;
 						if(c->type != no_idx){
 							BAT *bn = store_funcs.bind_idx(tr, c, 0);
-							BUN sz;
+							lng sz;
 			
 							/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name);*/
 							sch = BUNappend(sch, b->name, FALSE);
@@ -6994,7 +6994,8 @@ str
 SQLmiddle(bat *res,  bat *val, bat *hist)
 {
 	BAT *r,*v,*h;
-	wrd *sz, cnt, i;
+	wrd *sz;
+	BUN cnt, i;
 	oid *gid;
 
 	if( (h = BATdescriptor(*hist)) == NULL )
@@ -7017,7 +7018,7 @@ SQLmiddle(bat *res,  bat *val, bat *hist)
 
 		for(i=0;i<cnt;i++) {
 			BUN p = BUNfnd(h, gid);
-			wrd s = *(sz+p);
+			oid s = (oid) sz[p];
 			oid nid = id + (s-1)/2;
 	
 			BUNins(r, gid, &nid, FALSE);
@@ -7029,7 +7030,7 @@ SQLmiddle(bat *res,  bat *val, bat *hist)
 
 		for(i=0;i<cnt;i++) {
 			BUN p = BUNfnd(h, gid);
-			wrd s = *(sz+p);
+			wrd s = sz[p];
 	
 			BUNins(r, gid, id+((s-1)/2), FALSE);
 			gid += s;

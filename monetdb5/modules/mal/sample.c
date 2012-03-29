@@ -92,7 +92,7 @@
 sample_export str
 SAMPLEuniform(bat *r, bat *b, ptr s) {
 	BAT *br, *bb;
-	BUN p, sz = *(wrd *)s, top, N, n, jump;
+	BUN p, sz = (BUN) *(wrd *)s, top, N, n, jump;
 	BATiter iter;
 	double v, quot;
 
