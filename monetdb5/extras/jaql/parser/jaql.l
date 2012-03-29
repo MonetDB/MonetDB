@@ -4,6 +4,10 @@
 %option noyywrap
 %option yylineno
 %option case-insensitive
+%option batch
+%option nostdinit
+%option nodefault
+%option fast
 %option extra-type="struct _jc *"
 
 %{
@@ -17,6 +21,7 @@ extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 #define YY_USER_ACTION yylloc->first_line = yylineno;
 
 #define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
+#define YY_NO_INPUT
 
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 	if (j->buf != NULL && *j->buf != '\0') {
