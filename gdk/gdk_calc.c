@@ -12888,6 +12888,11 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 				ret->val.lval = lng_nil;
 			} else {
 				ret->val.lval = (lng) v->val.dval;
+				/* it can still go wrong...
+				 * select cast(power(2,63) as bigint)
+				 */
+				if (ret->val.lval == lng_nil && abort_on_error)
+					goto overflow;
 			}
 			break;
 		case TYPE_str:

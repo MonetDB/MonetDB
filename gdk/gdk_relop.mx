@@ -1528,9 +1528,7 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 	 */
 	JOINPROPCHK {
 		if (b) {
-			BATpropcheck(b, BATPROPS_QUICK);
-			if (b->H != b->T)
-				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+			BATderiveProps(b, 0);
 		}
 	}
 
@@ -1550,9 +1548,7 @@ BATleftjoin(BAT *l, BAT *r, BUN estimate)
 	 */
 	JOINPROPCHK {
 		if (b) {
-			BATpropcheck(b, BATPROPS_QUICK);
-			if (b->H != b->T)
-				BATpropcheck(BATmirror(b), BATPROPS_QUICK);
+			BATderiveProps(b, 0);
 		}
 	}
 	return b;
@@ -1632,7 +1628,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		 */
 		JOINPROPCHK {
 			if (bn)
-				BATpropcheck(bn, BATPROPS_QUICK);
+				BATderiveProps(bn, 0);
 		}
 
 		return bn;
@@ -1743,7 +1739,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	 */
 	JOINPROPCHK {
 		if (bn)
-			BATpropcheck(bn, BATPROPS_QUICK);
+			BATderiveHeadProps(bn, 0);
 	}
 
 	return bn;
@@ -2553,7 +2549,7 @@ BATsemijoin(BAT *l, BAT *r)
 	 */
 	JOINPROPCHK {
 		if (bn)
-			BATpropcheck(BATmirror(bn), BATPROPS_QUICK);
+			BATderiveHeadProps(BATmirror(bn), 0);
 	}
 	return bn;
 }

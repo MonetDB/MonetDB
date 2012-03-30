@@ -1047,7 +1047,7 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 		prv += *t;
 		/* propcheck slice */
 		if (!BATtordered(bx)) 
-			BATpropcheck(BATmirror(bx), BATPROPS_ALL);
+			BATderiveHeadProps(BATmirror(bx), 0);
 		if (!BATtordered(bx)) {
 
 			ordered = 0;

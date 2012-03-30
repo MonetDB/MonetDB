@@ -1799,21 +1799,26 @@ gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int
 					(col)->key = 1;			\
 					(b)->batDirtydesc = 1;		\
 				}					\
+				if ((col)->revsorted && (b)->batCount > 1) { \
+					(col)->revsorted = 0;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
 			}						\
 			if (!(col)->sorted) {				\
 				(col)->sorted = 1;			\
 				(b)->batDirtydesc = 1;			\
 			}						\
-		}							\
-		if ((b)->batCount <= 1) {				\
+		} else if ((b)->batCount <= 1) {			\
 			oid sqbs;					\
-			if (!(col)->sorted) {				\
-				(col)->sorted = 1;			\
-				(b)->batDirtydesc = 1;			\
-			}						\
-			if (!(col)->revsorted) {			\
-				(col)->revsorted = 1;			\
-				(b)->batDirtydesc = 1;			\
+			if (BATatoms[(col)->type].linear) {		\
+				if (!(col)->sorted) {			\
+					(col)->sorted = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if (!(col)->revsorted) {		\
+					(col)->revsorted = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
 			}						\
 			if (!(col)->key) {				\
 				(col)->key = 1;				\
@@ -1829,6 +1834,16 @@ gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int
 				(col)->seq = sqbs;			\
 				(col)->nonil = 1;			\
 				(col)->nil = 0;				\
+				(b)->batDirtydesc = 1;			\
+			}						\
+		}							\
+		if (!BATatoms[(col)->type].linear) {			\
+			if ((col)->sorted) {				\
+				(col)->sorted = 0;			\
+				(b)->batDirtydesc = 1;			\
+			}						\
+			if ((col)->revsorted) {				\
+				(col)->revsorted = 0;			\
 				(b)->batDirtydesc = 1;			\
 			}						\
 		}							\
@@ -2721,9 +2736,6 @@ gdk_export BAT *BATprev(BAT *b);
  * @item int
  * @tab ALIGNsetH    ((BAT *dst, BAT *src)
  *
- * @item BAT *
- * @tab BATpropcheck (BAT *b, int mode)
- *
  * @item BAT*
  * @tab VIEWcreate   (BAT *h, BAT *t)
  * @item int
@@ -2747,9 +2759,6 @@ gdk_export BAT *BATprev(BAT *b);
  * BATs means that one pair of columns (either head or tail) of
  * both BATs is aligned. The first property is checked by ALIGNsynced,
  * the latter by ALIGNrelated.
- *
- * The BATpropcheck examines a BAT and tries to set all applicable
- * properties (key,sorted,align,dense).
  *
  * All algebraic BAT commands propagate the properties - including
  * alignment properly on their results.
@@ -2775,8 +2784,9 @@ gdk_export BAT *BATprev(BAT *b);
  */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
-gdk_export BAT *BATpropcheck(BAT *b, int mode);
 gdk_export void BATassertProps(BAT *b);
+gdk_export void BATderiveProps(BAT *b, int expensive);
+gdk_export void BATderiveHeadProps(BAT *b, int expensive);
 
 #define BATPROPS_QUICK  0	/* only derive easy (non-resource consuming) properties */
 #define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */

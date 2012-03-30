@@ -213,9 +213,7 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	nb->tsorted= FALSE;
 	nb->trevsorted= FALSE;
 	nb->tdense= FALSE;
-    	if (nb->H != nb->T) 
-        	BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
-    	BATpropcheck(nb, BATPROPS_QUICK);
+	BATderiveProps(nb, 0);
 	return MAL_SUCCEED;
 }
 #endif
@@ -294,11 +292,9 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 		}
 	}
 	BATsetcount(nb, BATcount(b));
-    if (nb->H != nb->T)
-        BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
+	BATderiveProps(nb, 0);
 	if (!(nb->batDirty&2)) 
 		nb = BATsetaccess(nb, BAT_READ);
-    BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
 /*

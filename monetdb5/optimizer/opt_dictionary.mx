@@ -858,10 +858,10 @@ str DICTcompress(int *ret, str *nme, int *bid)
 	bv->hsorted = 1;
 	bv->hrevsorted = 0;
 	if (!(bv->batDirty&2)) bv = BATsetaccess(bv, BAT_READ);
-	BATpropcheck(bv, BATPROPS_QUICK);
+	BATderiveHeadProps(bv, 0);
 
 	bx = BATjoin(b,BATmirror(bv), BUN_NONE);
-	BATpropcheck(bx, BATPROPS_QUICK);
+	BATderiveHeadProps(bx, 0);
 #ifdef DEBUG_OPT_DICTIONARY 
 	mnstr_printf(GDKout,"#dictionary.new values table " BUNFMT " \n", BATcount(bv));
 #endif
@@ -946,7 +946,7 @@ DICTexpand(int *rval, int *val, int *bid)
 	case TYPE_sht: @:mkindex2(sht,b)@
 	case TYPE_int: @:mkindex2(int,b)@
 	}
-	BATpropcheck(bv, BATPROPS_QUICK);
+	BATderiveHeadProps(bv, 0);
 
 	BBPreleaseref(b->batCacheid);
 	BBPkeepref(*rval = bv->batCacheid);

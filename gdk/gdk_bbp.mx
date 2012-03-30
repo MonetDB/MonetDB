@@ -1187,13 +1187,16 @@ BBPimportEntry(char *nme)
 		return 0;
 	*s = 0;
 	nme = s + strlen(BATDIR) + 1;
-	snprintf(path, BUFSIZ, "%s%c%s/BBP.dir", bbpdir, DIR_SEP, BATDIR);
+	snprintf(path, BUFSIZ, "%s%c%s%cBBP.dir",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP);
 	fd = fopen(path,"r");
 	if (fd == 0) {
-		snprintf(path, BUFSIZ, "%s%c%s%c/BBP.bak", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+		snprintf(path, BUFSIZ, "%s%c%s%cBBP.bak",
+			 bbpdir, DIR_SEP, BATDIR, DIR_SEP);
 		fd = fopen(path,"r");
 		if (fd == 0) {
-			snprintf(path, BUFSIZ, "%s%c%s%cBACKUP/BBP.dir", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+			snprintf(path, BUFSIZ, "%s%c%s%cBACKUP%cBBP.dir",
+				 bbpdir, DIR_SEP, BATDIR, DIR_SEP, DIR_SEP);
 			fd = fopen(path,"r");
 			if (fd == 0)
 				return 0;
@@ -1215,10 +1218,14 @@ BBPimportEntry(char *nme)
 	BBP_lrefs(bn->batCacheid)++;
 
 	/* re-adjust the files to become symbolic links */
-	snprintf(bufhead, BUFSIZ, "%s%c%s%c%s.head", bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(buftail, BUFSIZ, "%s%c%s%c%s.tail",  bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(bufhheap, BUFSIZ, "%s%c%s%c%s.hheap",  bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(buftheap, BUFSIZ, "%s%c%s%c%s.theap",  bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(bufhead, BUFSIZ, "%s%c%s%c%s.head",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(buftail, BUFSIZ, "%s%c%s%c%s.tail",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(bufhheap, BUFSIZ, "%s%c%s%c%s.hheap",
+		 bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(buftheap, BUFSIZ, "%s%c%s%c%s.theap",
+		 bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
 
 	BATmode(bn, TRANSIENT);
 	bn->batCopiedtodisk = 1;
@@ -1236,10 +1243,7 @@ BBPimportEntry(char *nme)
 		}
 	}
 	BATsetaccess(bn, BAT_READ);
-	if (bn->batCapacity > 1) {
-		BATpropcheck(bn, BATPROPS_QUICK);
-		BATpropcheck(BATmirror(bn), BATPROPS_QUICK);
-	}
+	BATderiveProps(bn, 0);
 
 	return bn->batCacheid;
 #endif
@@ -2512,8 +2516,6 @@ BBPkeepref(bat i)
 		if ((b = BBPdescriptor(i)) != NULL) {
 			BATsettrivprop(b);
 			BATassertProps(b);
-			/* BATpropcheck(b, 0); */
-			/* BATpropcheck(BATmirror(b), 0); */
 		}
 
 		incref(i, TRUE, lock);

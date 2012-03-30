@@ -1119,15 +1119,7 @@ TABLETcollect_bats(Tablet *as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c[0]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
-		BATaccessBegin(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(fmt[i].c[0]);
-
-		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(fmt[i].c[0]));
-		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+		BATderiveProps(fmt[i].c[0], 1);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if (as->error == 0)	/* a new error */
@@ -1153,15 +1145,7 @@ TABLETcollect(Tablet *as)
 		bats[i] = fmt[i].c[0];
 		BBPincref(bats[i]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
-		BATaccessBegin(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(fmt[i].c[0]);
-
-		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(fmt[i].c[0]));
-		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+		BATderiveProps(fmt[i].c[0], 1);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if (as->error == 0)	/* a new error */
@@ -1183,26 +1167,13 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 	if (bats == NULL)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
-		int GDKdebug_bak = GDKdebug;
 		BAT *b = fmt[i].c[0];
 		BAT *bv = NULL;
 
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, offset, BATcount(b));
 		bats[i] = bv;
-		/* we "mis"use BATpropcheck to set rather than verify properties on 
-		 * the newly loaded slice; hence, we locally disable property errors */
-		GDKdebug &= ~PROPMASK;
-		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(bv, BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(b);
-
-		BATpropcheck(BATmirror(bv), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(b));
-		BATaccessEnd(bv, USE_ALL, MMAP_WILLNEED);
-		GDKdebug = GDKdebug_bak;
+		BATderiveProps(bv, 1);
 
 		b->hkey &= bv->hkey;
 		b->tkey &= bv->tkey;

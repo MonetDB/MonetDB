@@ -1294,7 +1294,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 		mnstr_printf(GDKout, "!MALexception:remote.bincopyfrom: expected flush, got: %c\n", tmp);
 	}
 
-	BATpropcheck(b, BATPROPS_ALL);
+	BATderiveHeadProps(b, 1);
 
 	*ret = b;
 	return(MAL_SUCCEED);

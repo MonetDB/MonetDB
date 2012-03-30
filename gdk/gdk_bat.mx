@@ -1019,27 +1019,27 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	if (ATOMtype(ht) == ATOMtype(b->htype)) {
 		ALIGNsetH(bn, b);
 	} else if (ATOMtype(ATOMstorage(ht)) == ATOMtype(ATOMstorage(b->htype))) {
-		bn->hsorted = b->hsorted || cnt <= 1;
-		bn->hrevsorted = b->hrevsorted || cnt <= 1;
+		bn->hsorted = b->hsorted || (cnt <= 1 && BATatoms[b->htype].linear);
+		bn->hrevsorted = b->hrevsorted || (cnt <= 1 && BATatoms[b->htype].linear);
 		bn->hdense = b->hdense;
 		if (b->hkey)
 			BATkey(bn, TRUE);
 		bn->H->nonil = b->H->nonil;
 	} else {
-		bn->hsorted = bn->hrevsorted = cnt <= 1;
+		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
 		bn->hdense = bn->T->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
 	} else if (ATOMtype(ATOMstorage(tt)) == ATOMtype(ATOMstorage(b->ttype))) {
-		bn->tsorted = b->tsorted || cnt <= 1;
-		bn->trevsorted = b->trevsorted || cnt <= 1;
+		bn->tsorted = b->tsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
+		bn->trevsorted = b->trevsorted || (cnt <= 1 && BATatoms[b->ttype].linear);
 		bn->tdense = b->tdense;
 		if (b->tkey)
 			BATkey(BATmirror(bn), TRUE);
 		bn->T->nonil = b->T->nonil;
 	} else {
-		bn->tsorted = bn->trevsorted = cnt <= 1;
+		bn->tsorted = bn->trevsorted = (cnt <= 1 && BATatoms[b->ttype].linear);
 		bn->tdense = bn->T->nonil = 0;
 	}
 	if (writable != TRUE)
@@ -1153,8 +1153,7 @@ setcolprops(BAT *b, COLrec *col, void *x)
 	assert(x != NULL || col->type == TYPE_void);
 	if (b->batCount == 0) {
 		/* first value */
-		col->sorted = 1;
-		col->revsorted = 1;
+		col->sorted = col->revsorted = BATatoms[col->type].linear != 0;
 		col->key |= 1;
 		if (col->type == TYPE_void) {
 			if (x) {
@@ -2945,539 +2944,11 @@ BATmode(BAT *b, int mode)
 	return b;
 }
 
-/*
- * @+ BATpropcheck
- *
- * This is a low-cost routine that smartly tries to deduce as many
- * properties as possible on the head column of its BAT parameter.
- *
- * with PROPDEBUG (-d8) enabled, it is also a powerful tool
- * to check whether all properties of a BAT are set correctly.
- *
- * It uses efficient algorithms to either prove or disprove
- * the validity of the hkey, hsorted and hdense properties.
- *
- * If each such property is already set, we know already for certain
- * and do not have to check. If in the course of this routine we find
- * proof that the property does not hold, we record this proof
- * using special fields in the BAT descriptor.
- * This means that a subsequent execution of this routine
- * does not have to check the property exhaustively anymore.
- *
- * This routine now guarantees that any property that could be set
- * on the BAT head column, is set after execution. Hence it can be
- * used for determining with certainty whether the head column of a
- * BAT is sorted, key or dense.
- */
-BAT *
-BATpropcheck(BAT *b, int mode)
-{
-	BATiter bvi, bi = bat_iterator(b), bi2 = bat_iterator(b);
-	int disprove_dense, disprove_sorted, disprove_revsorted, disprove_key = TRUE, disprove_nonil = b->H->nonil;
-	int dense_bak = 0, key_bak = 0, sorted_bak = 0, revsorted_bak = 0, nonil_bak = 0;
-	oid seq_bak = 0;
-	BUN xx, yy;
-	int zz, tpe;
-	BUN p, q, r;
-	ptr last;
-	bit isKey = FALSE;
-	BAT *parent;
-
-	BATcheck(b, "BATpropcheck");
-	if (b->halign == 0) {
-		b->batDirtydesc = 1;
-		b->halign = OIDnew(1);
-	}
-	tpe = b->htype;
-	yy = BUNfirst(b);
-	xx = BUNlast(b);
-	disprove_sorted = disprove_revsorted = ATOMlinear(tpe);
-	/*
-	 * @-
-	 * check if duplicated properties are equal
-	 */
-	PROPDEBUG mode |= BATPROPS_CHECK;
-
-	if (mode & BATPROPS_CHECK) {
-		BAT *bm = BATmirror(b);
-
-		if (BAThvoid(b) && b->hseqbase != bm->tseqbase) {
-			oid o = (b->htype && yy != xx) ? *(oid *) BUNhloc(bi, BUNfirst(b)) : oid_nil;
-			GDKerror("BATpropcheck: BAT %s(%d) set inconsistent hseqbase: " OIDFMT " != " OIDFMT " => " OIDFMT "\n", BATgetId(b), b->batCacheid, b->hseqbase, bm->tseqbase, o);
-			b->hseqbase = bm->tseqbase = o;
-
-			b->batDirty = TRUE;
-		}
-		zz = ((b->U != bm->U) << 1) |
-		     ((b->P != bm->P) << 2) |
-		     ((b->H != bm->T) << 3) |
-		     ((b->htype != bm->ttype) << 4) |
-		     ((b->H->varsized != bm->T->varsized) << 6) |
-		     ((b->T->varsized != bm->H->varsized) << 6) |
-		     ((b->H->shift != bm->T->shift) << 7) |
-		     ((b->T->shift != bm->H->shift) << 7) |
-		     ((b->H->width != bm->T->width) << 8) |
-		     ((b->T->width != bm->H->width) << 8) |
-		     (((b->H->width != 0 || b->H->shift != 0) && b->H->width != (1 << b->H->shift)) << 9) |
-		     (((b->T->width != 0 || b->T->shift != 0) && b->T->width != (1 << b->T->shift)) << 9) |
-		     ((b->batFirst < b->batDeleted) << 10) |
-		     ((b->batFirst > b->batInserted) << 11) |
-		     ((b->H->heap.size > b->H->heap.maxsize) << 13) |
-		     (((b->H->heap.free > b->H->heap.size) & (b->htype != TYPE_void)) |
-		      ((b->T->heap.free > b->T->heap.size) & (b->ttype != TYPE_void))) << 14 |
-		     (((xx - yy) != b->batCount) << 15) |
-		     ((b->H->type && (b->U->capacity > (b->H->heap.size >> b->H->shift))) |
-		      (b->T->type && (b->U->capacity > (b->T->heap.size >> b->T->shift)))) << 16;
-
-		if (zz) {
-			GDKfatal("BATpropcheck: BAT %s(%d) has inconsistent descriptor %d (%o)\n", BATgetId(b), b->batCacheid, zz, zz);
-
-		}
-		if (b->H->hash != bm->T->hash) {
-			GDKerror("BATpropcheck: BAT %s(%d) has inconsistent accrefs\n", BATgetId(b), b->batCacheid);
-			HASHdestroy(b);
-			b->batDirty = TRUE;
-		}
-		if (b->H->key != bm->T->key) {
-			GDKerror("BATpropcheck: BAT %s(%d) recovered hkey\n", BATgetId(b), b->batCacheid);
-			b->H->key = bm->T->key = b->batDirty = TRUE;
-		}
-		if (BAThdense(b) && !b->hkey) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples is dense but not key!?\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		}
-	}
-	if (BAThdense(b) && !b->hkey)
-		BATkey(b, TRUE);
-	/*
-	 * @-
-	 * quick check on trivial cases (void columns, 0 or 1 tuple bats).
-	 */
-	if (tpe == TYPE_void) {
-		return b;
-	}
-	if (xx > yy /* BATcount(b) > 0 */  &&
-	    BAThdense(b) &&
-	    b->htype == TYPE_oid &&
-	    *(oid *) BUNhloc(bi, BUNfirst(b)) != b->hseqbase) {
-		GDKerror("BATpropcheck: BAT %s(%d) with " BUNFMT " tuples seqbase of dense oid bat is wrong! " OIDFMT " != " OIDFMT "\n", BATgetId(b), b->batCacheid, b->batCount, b->hseqbase, *(oid *) BUNhloc(bi, BUNfirst(b)));
-	}
-	if (xx <= yy + 1) {	/* BATcount(b) <= 1 */
-		if (ATOMlinear(tpe) && !b->hsorted) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples is (h)sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-
-			b->batDirtydesc = TRUE;
-			b->hsorted = 1;
-		}
-		if (ATOMlinear(tpe) && !b->hrevsorted) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples is (h)revsorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-
-			b->batDirtydesc = TRUE;
-			b->hrevsorted = 1;
-		}
-		if (!b->hkey) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples is (h)key!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-
-			BATkey(b, TRUE);
-		}
-		if (tpe == TYPE_oid && !BAThdense(b)) {
-			oid hsb = oid_nil;
-
-			if (yy == xx) {	/* BATcount(b) == 0 */
-				hsb = 0;	/* does not really matter */
-			} else {
-				hsb = *(oid *) BUNhloc(bi, BUNfirst(b));
-			}
-			if (hsb != oid_nil) {
-				XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with " BUNFMT " tuples is (h)dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-
-				b->hdense = b->batDirtydesc = TRUE;
-				BATseqbase(b, hsb);
-			}
-		}
-		return b;
-	}
-	/*
-	 * @-
-	 * first propagate already known properties. that will save some effort.
-	 */
-	if (VIEWparentcol(b) && ALIGNsynced(parent = BBP_cache(VIEWhparent(b)), b)) {
-		/* quickly propagate properties from parent to child */
-		if (BAThordered(parent) && !BAThordered(b) && !b->H->heap.copied) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples inherits (h)sorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
-
-			b->batDirtydesc = TRUE;
-			b->hsorted = 1;
-		}
-		if (BAThrevordered(parent) && !BAThrevordered(b) && !b->H->heap.copied) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples inherits (h)revsorted from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
-
-			b->batDirtydesc = TRUE;
-			b->hrevsorted = 1;
-		}
-		if (parent->hkey && !b->hkey) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples inherits (h)key from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
-
-			BATkey(b, TRUE);
-		}
-		if (BAThdense(parent) && tpe == TYPE_oid && !BAThdense(b)) {
-			XPROPDEBUG THRprintf(GDKout, "#BATpropcheck: [oid,?]-BAT %s(%d)[%s,%s] with " BUNFMT " tuples inherits (h)dense from BAT %s(%d)!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount, BATgetId(parent), parent->batCacheid);
-
-			b->hdense = b->batDirtydesc = TRUE;
-			BATseqbase(b, *(oid *) BUNhloc(bi, BUNfirst(b)));
-		}
-	}
-	disprove_dense = (tpe == TYPE_oid);
-
-	if (mode & BATPROPS_CHECK) {
-		dense_bak = BAThdense(b);
-		seq_bak = b->hseqbase;
-		sorted_bak = BAThordered(b);
-		revsorted_bak = BAThrevordered(b);
-		key_bak = b->hkey;
-		nonil_bak = b->H->nonil;
-		BATkey(b, FALSE);
-		b->hsorted = FALSE;
-		b->hrevsorted = FALSE;
-		b->hdense = FALSE;
-		b->H->nonil = FALSE;
-	} else if (b->hdense) {
-		disprove_dense = FALSE;
-	}
-	/*
-	 * @-
-	 * check whether whatever we want need to prove was already disproven
-	 */
-	if (disprove_key) {
-		if (b->hkey ||
-		    ((b->H->nokey[0] != b->H->nokey[1]) &&
-		     (b->H->nokey[0] >= yy) &&
-		     (b->H->nokey[0] < xx) &&
-		     (b->H->nokey[1] >= yy) &&
-		     (b->H->nokey[1] < xx) &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nokey[0]), BUNhead(bi2, b->H->nokey[1])) == 0)) {
-			disprove_key = FALSE;
-		} else {
-			b->H->nokey[0] = b->H->nokey[1] = 0;
-		}
-	}
-	if (disprove_nonil) {
-		if (b->H->nonil || b->H->nil) {
-			disprove_nonil = FALSE;
-		} else {
-			b->H->nil = 0;
-		}
-	}
-	if (disprove_sorted) {
-		if (BAThordered(b) ||
-		    ATOMlinear(tpe) == 0 ||
-		    (b->H->nosorted > yy &&
-		     b->H->nosorted < xx &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->nosorted - 1), BUNhead(bi2, b->H->nosorted)) > 0)) {
-			disprove_sorted = FALSE;
-		} else {
-			b->H->nosorted = 0;
-		}
-	}
-	if (disprove_revsorted) {
-		if (BAThrevordered(b) ||
-		    ATOMlinear(tpe) == 0 ||
-		    (b->H->norevsorted > yy &&
-		     b->H->norevsorted < xx &&
-		     ATOMcmp(tpe, BUNhead(bi, b->H->norevsorted - 1), BUNhead(bi2, b->H->norevsorted)) < 0)) {
-			disprove_revsorted = FALSE;
-		} else {
-			b->H->norevsorted = 0;
-		}
-	}
-	if (disprove_dense) {	/* StM: GDK_SORTED_REV ? */
-		if ((!b->hsorted && !disprove_sorted) ||
-		    (b->H->nodense > yy &&
-		     b->H->nodense < xx &&
-		     *(oid *) BUNhloc(bi, b->H->nodense - 1) + 1 != *(oid *) BUNhloc(bi2, b->H->nodense))) {
-			disprove_dense = FALSE;
-		} else {
-			b->H->nodense = 0;
-		}
-	}
-	/*
-	 * @-
-	 * still got something to prove? If not, we're done.
-	 */
-	if (!(disprove_sorted || disprove_revsorted || disprove_key || disprove_dense || disprove_nonil)) {
-		goto exit;
-	}
-	/*
-	 * @-
-	 * Prepare to scan.
-	 */
-	p = BUNfirst(b);
-	q = BUNlast(b);
-	last = BUNhead(bi, p);
-	/*
-	 * @-
-	 * disprove_dense is only set for oid columns, as the 'dense' property
-	 * is only relevant for this type..
-	 */
-	if (disprove_dense) {
-		while ((++p) < q) {
-			ptr v = BUNhloc(bi, p);
-
-			if ((*(oid *) last + 1) != *(oid *) v) {
-				disprove_dense = FALSE;
-				b->hdense = FALSE;
-				b->H->nodense = p;
-				b->batDirtydesc = 1;
-				break;
-			}
-			last = v;
-		}
-		if (disprove_revsorted && p > BUNfirst(b) + 1) {
-			/* initial bit of b was dense, so not revsorted */
-			disprove_revsorted = FALSE;
-			b->hrevsorted = FALSE;
-			b->H->norevsorted = BUNfirst(b) + 1;
-			b->batDirtydesc = 1;
-		}
-	} else
-		p++;
-	if (disprove_dense)
-		isKey = TRUE;
-	/*
-	 * @-
-	 * Merge scan check to see if head values are sorted (&key)
-	 */
-	switch (ATOMstorage(tpe)) {
-#ifndef NOEXPAND_BTE
-	case TYPE_bte:
-		@:merge_disprove(simple,bte,loc)@
-#endif
-#ifndef NOEXPAND_SHT
-	case TYPE_sht:
-		@:merge_disprove(simple,sht,loc)@
-#endif
-#ifndef NOEXPAND_INT
-	case TYPE_int:
-		@:merge_disprove(simple,int,loc)@
-#endif
-#ifndef NOEXPAND_FLT
-	case TYPE_flt:
-		@:merge_disprove(simple,flt,loc)@
-#endif
-#ifndef NOEXPAND_LNG
-	case TYPE_lng:
-		@:merge_disprove(simple,lng,loc)@
-#endif
-#ifndef NOEXPAND_DBL
-	case TYPE_dbl:
-		@:merge_disprove(simple,dbl,loc)@
-#endif
-	default:
-		@:merge_disprove(atom,tpe,ead)@
-	}
-
-@= merge_disprove
-	if (disprove_sorted || disprove_revsorted) {
-		if (disprove_nonil && p < q) {
-			ptr v = BUNh@3(bi, p);
-			int ret = @1_CMP(v, ATOMnilptr(b->htype), @2);
-			if (ret == 0) {
-				b->H->nil = 1;
-				disprove_nonil = FALSE;
-				b->batDirtydesc = 1;
-			}
-		}
-		while (p < q) {
-			ptr v = BUNh@3(bi, p);
-			int ret = @1_CMP(v, last, @2);
-
-			if (ret < 0) {
-				disprove_sorted = FALSE;
-				b->H->nosorted = p;
-				b->batDirtydesc = 1;
-				if (!disprove_revsorted)
-					break;
-			} else if (ret > 0) {
-				disprove_revsorted = FALSE;
-				b->H->norevsorted = p;
-				b->batDirtydesc = 1;
-				if (!disprove_sorted)
-					break;
-			} else if (ret == 0 && disprove_key) {
-				b->H->nokey[0] = p - 1;
-				b->H->nokey[1] = p;
-				disprove_key = FALSE;
-				b->batDirtydesc = 1;
-			}
-			p++;
-			last = v;
-		}
-	}
-	break;
-@
-@c
-/*
- * @-
- * To see if head values are key
- * we create a view on the bat as the hash table created is
- * partial; hence inconsistent (it should also not molest
- * existing consistent hash tables). On this VIEW we can do a HASHfnd
- *
- * The code was modified to limit memory consumption in the hash-table.
- * Basically, unless we really need to determine that a bat is key,
- * we say that it is not if we cannot determine easily. Easily here means
- * 'with a small hash table'. In the case of a sanity check,
- * we also do full key derivation (with whatever it takes).
- *
- * We also insert a debug statement triggered with BATDEBUG (mask 32)
- * that displays the size of the hash table used.  We chose BATDEBUG because
- * that also gives the best overview of program execution - necessary
- * for determining which algebra commands set properties sub-optimally.
- */
-	if (disprove_key || disprove_nonil) {
-		if (p < q) {
-			BUN cnt = b->batCount;
-			BUN lim = (BUN) ((mode & BATPROPS_ALL) ? GDK_int_max : 16000);
-
-			lim = MIN(cnt, lim);
-			q = yy + lim;
-			if (p < q) {
-				BAT *bv = VIEWcreate(b, b);
-				Heap *hp = (Heap *) GDKzalloc(sizeof(Heap));
-				str nme = BBP_physical(bv->batCacheid);
-				size_t nmelen = strlen(nme);
-
-				hp->filename = GDKmalloc(nmelen + 12);
-				if (hp->filename != NULL)
-					snprintf(hp->filename, nmelen + 12, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
-				if (hp->filename == NULL ||
-				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
-					GDKfree(hp->filename);
-					GDKfree(hp);
-					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): could not allocate hash table for key test\n", BATgetId(b), b->batCacheid);
-				} else {
-					switch (ATOMstorage(tpe)) {
-#ifndef NOEXPAND_BTE
-					case TYPE_bte:
-						@:hash_disprove(_bte,loc)@
-#endif
-#ifndef NOEXPAND_SHT
-					case TYPE_sht:
-						@:hash_disprove(_sht,loc)@
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
-					case TYPE_int:
-					case TYPE_flt:
-						@:hash_disprove(_int,loc)@
-#endif
-#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
-					case TYPE_lng:
-					case TYPE_dbl:
-						@:hash_disprove(_lng,loc)@
-#endif
-					case TYPE_str:
-						if (b->H->vheap->hashash) {
-							@:hash_disprove(_str_hv,var)@
-						}
-						/* fall through */
-					default:
-						@:hash_disprove(_any,ead)@
-					}
-					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): used hashtable of size " BUNFMT "\n", BATgetId(b), b->batCacheid, lim);
-				}
-				BBPreclaim(bv);
-			}
-		} else {
-			isKey = TRUE;
-		}
-	}
-
-@= hash_disprove
-	bvi = bat_iterator(bv);
-	for (r = BUNfirst(b); r < p; r++, yy++) {
-		ptr v = BUNh@2(bvi, r);
-		HASHins@1(bv->H->hash, yy, v);
-		if (disprove_nonil && ATOMcmp(b->htype, v, ATOMnilptr(b->htype)) == 0) {
-			disprove_nonil = FALSE;
-			b->H->nil = 1;
-			b->batDirtydesc = 1;
-			if (!disprove_key)
-				break;
-		}
-	}
-	while (disprove_key && p < q) {
-		ptr v = BUNh@2(bvi, p);
-
-		HASHfnd@1(r,bvi,v); /* purify: UMR */
-		if (r != BUN_NONE) {
-			b->H->nokey[0] = r;
-			b->H->nokey[1] = yy;
-			disprove_key = FALSE;
-			b->batDirtydesc = 1;
-			break;
-		}
-		HASHins@1(bv->H->hash, yy, v);
-		yy++;
-		p++;
-	}
-	if (disprove_key && cnt == lim)
-		isKey = TRUE;
-	break;
-@
-@c
-/*
- * @-
- * failed to disprove on exhaustive check => succeeded to prove
- */
-	if (disprove_nonil)
-		b->H->nonil = nonil_bak;
-	if (disprove_key || disprove_dense) {
-		BATkey(b, key_bak | isKey);	/* respect BOUND2BTRUE */
-	}
-	if (disprove_sorted || disprove_dense) {
-		b->batDirtydesc = TRUE;
-		b->hsorted = 1;
-	}
-	if (disprove_revsorted) {
-		b->batDirtydesc = TRUE;
-		b->hrevsorted = 1;
-	}
-	if (disprove_dense) {
-		b->batDirtydesc = b->hdense = TRUE;
-		BATseqbase(b, *(oid *) BUNhloc(bi, BUNfirst(b)));
-	}
-      exit:
-	if ((mode & BATPROPS_CHECK) == BATPROPS_CHECK) {
-		if (sorted_bak && !BAThordered(b)) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		}
-		if (revsorted_bak && !BAThrevordered(b)) {
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked reverse sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		}
-		if (key_bak && !b->hkey)
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		if (nonil_bak && !b->H->nonil)
-			GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked nonil!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		if (dense_bak && disprove_dense) {
-			if (!BAThdense(b))
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was incorrectly marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-			if (seq_bak != b->hseqbase)
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples had incorrect seqbase!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-		}
-		XPROPDEBUG {
-			if (!sorted_bak && BAThordered(b))
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was not marked sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-			if (!revsorted_bak && BAThrevordered(b))
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was not marked reverse sorted!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-			if (!key_bak && b->hkey)
-				GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was not marked keyed!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-			if (!dense_bak && disprove_dense) {
-				if (BAThdense(b))
-					GDKerror("BATpropcheck: BAT %s(%d)[%s,%s] with " BUNFMT " tuples was not marked dense!\n", BATgetId(b), b->batCacheid, ATOMname(b->htype), ATOMname(b->ttype), b->batCount);
-			}
-		}
-	}
-	return b;
-}
+/* BATassertProps checks whether properties are set correctly.  Under
+ * no circumstances will it change any properties.
+ * Note that the "set" property is not checked.
+ * Also note that the "nil" property is not actually used anywhere,
+ * but it is checked. */
 
 #ifndef NDEBUG
 static void
@@ -3489,9 +2960,11 @@ BATassertHeadProps(BAT *b)
 	int cmp;
 	ptr prev = NULL, valp, nilp;
 	int seennil = 0;
-	int disprove_key, disprove_dense, disprove_sorted, disprove_revsorted;
 
 	assert(b != NULL);
+	assert(b->htype >= TYPE_void);
+	assert(b->htype < GDKatomcnt);
+
 	cmpf = BATatoms[b->htype].atomCmp;
 	nilp = ATOMnilptr(b->htype);
 	p = BUNfirst(b);
@@ -3504,13 +2977,13 @@ BATassertHeadProps(BAT *b)
 		assert(b->H->heap.size >> b->H->shift >= b->batCapacity);
 	}
 
-	assert(b->htype >= TYPE_void);
-	assert(b->htype < GDKatomcnt);
 	/* void and str imply varsized */
-	if (b->htype == TYPE_void || b->htype == TYPE_str)
+	if (b->htype == TYPE_void ||
+	    ATOMstorage(b->htype) == TYPE_str)
 		assert(b->hvarsized);
 	/* other "known" types are not varsized */
-	if (b->htype > TYPE_void && b->htype < TYPE_str)
+	if (ATOMstorage(b->htype) > TYPE_void &&
+	    ATOMstorage(b->htype) < TYPE_str)
 		assert(!b->hvarsized);
 	/* shift and width have a particular relationship */
 	assert(b->H->shift >= 0);
@@ -3536,7 +3009,7 @@ BATassertHeadProps(BAT *b)
 		}
 		return;
 	}
-	if (b->htype == TYPE_str)
+	if (ATOMstorage(b->htype) == TYPE_str)
 		assert(b->H->width >= 1 && b->H->width <= ATOMsize(b->htype));
 	else
 		assert(b->H->width == ATOMsize(b->htype));
@@ -3544,57 +3017,102 @@ BATassertHeadProps(BAT *b)
 	if (b->htype == TYPE_oid && b->hdense) {
 		assert(b->hsorted);
 		assert(b->hseqbase != oid_nil);
-		if (b->batCount > 0 && b->hdense) {
+		if (b->batCount > 0) {
 			assert(b->hseqbase != oid_nil);
 			assert(* (oid *) BUNhead(bi, p) == b->hseqbase);
 		}
 	}
-	if ((disprove_key = b->hkey) != 0 &&
-	    b->H->nokey[0] >= p && b->H->nokey[0] < q &&
-	    b->H->nokey[1] >= p && b->H->nokey[1] < q &&
-	    cmpf(BUNhead(bi, b->H->nokey[0]), BUNhead(bi, b->H->nokey[1])) == 0)
-		disprove_key = 0;
-	if ((disprove_dense = b->hdense) != 0 &&
-	    b->H->nodense > p && b->H->nodense < q &&
-	    * (oid *) Hloc(b, b->H->nodense - 1) + 1 != * (oid *) Hloc(b, b->H->nodense))
-		disprove_dense = 0;
-	if ((disprove_sorted = b->hsorted) != 0 &&
-	    b->H->nosorted > p && b->H->nosorted < q &&
-	    cmpf(BUNhead(bi, b->H->nosorted - 1),
-		 BUNhead(bi, b->H->nosorted)) > 0)
-		disprove_sorted = 0;
-	if ((disprove_revsorted = b->hrevsorted) != 0 &&
-	    b->H->norevsorted > p && b->H->norevsorted < q &&
-	    cmpf(BUNhead(bi, b->H->norevsorted - 1),
-		 BUNhead(bi, b->H->norevsorted)) < 0)
-		disprove_revsorted = 0;
+	/* only linear atoms can be sorted */
+	assert(!b->hsorted || BATatoms[b->htype].linear);
+	assert(!b->hrevsorted || BATatoms[b->htype].linear);
 
-	if (!disprove_key && !disprove_dense && !disprove_sorted &&
-	    !disprove_revsorted && !b->H->nonil && !b->H->nil) {
+	if (!b->hkey && !b->hsorted && !b->hrevsorted &&
+	    !b->H->nonil && !b->H->nil) {
 		/* nothing more to prove */
 		return;
 	}
 
-	PROPDEBUG {
-		BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
-		BATloop(b, p, q) {
-			valp = BUNhead(bi, p);
-			if (prev) {
-				cmp = cmpf(prev, valp);
-				assert(!b->hsorted || cmp <= 0);
-				assert(!b->hrevsorted || cmp >= 0);
-				assert(!b->hkey || cmp != 0); /* necessary, not sufficient */
-				if (b->hdense) {
-					assert(* (oid *) prev + 1 == * (oid *) valp);
+	PROPDEBUG { /* only do a scan if property checking is requested */
+		if (b->hsorted || b->hrevsorted || !b->hkey) {
+			/* if sorted (either way), or we don't have to
+			 * prove uniqueness, we can do a simple
+			 * scan */
+			BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
+			BATloop(b, p, q) {
+				valp = BUNhead(bi, p);
+				if (prev) {
+					cmp = cmpf(prev, valp);
+					assert(!b->hsorted || cmp <= 0);
+					assert(!b->hrevsorted || cmp >= 0);
+					assert(!b->hkey || cmp != 0); /* necessary, not sufficient */
+					if (b->hdense) {
+						assert(* (oid *) prev + 1 == * (oid *) valp);
+					}
 				}
+				prev = valp;
+				cmp = cmpf(valp, nilp);
+				assert(!b->H->nonil || cmp != 0);
+				if (cmp == 0)
+					seennil = 1;
 			}
-			prev = valp;
-			cmp = cmpf(valp, nilp);
-			assert(!b->H->nonil || cmp != 0);
-			if (cmp == 0)
-				seennil = 1;
+			BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
+		} else {	/* b->hkey && !b->hsorted && !b->hrevsorted */
+			/* we need to check for uniqueness the hard
+			 * way (i.e. using a hash table) */
+			const char *nme = BBP_physical(b->batCacheid);
+			char *ext;
+			size_t nmelen = strlen(nme);
+			Heap *hp;
+			Hash *hs;
+
+			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
+			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
+				if (hp)
+					GDKfree(hp);
+				THRprintf(GDKout,
+					  "#BATassertProps: cannot allocate "
+					  "hash table\n");
+				goto abort_check;
+			}
+			snprintf(hp->filename, nmelen + 30,
+				 "%s.hash" SZFMT, nme, MT_getpid());
+			ext = GDKstrdup(hp->filename + nmelen + 1);
+			if ((hs = HASHnew(hp, b->htype, BUNlast(b),
+					  HASHmask(b->batCount))) == NULL) {
+				GDKfree(ext);
+				GDKfree(hp->filename);
+				GDKfree(hp);
+				THRprintf(GDKout,
+					  "#BATassertProps: cannot allocate "
+					  "hash table\n");
+				goto abort_check;
+			}
+			BATloop(b, p, q) {
+				BUN hb;
+				BUN prb;
+				valp = BUNhead(bi, p);
+				prb = HASHprobe(hs, valp);
+				for (hb = hs->hash[prb];
+				     hb != BUN_NONE;
+				     hb = hs->link[hb])
+					if (cmpf(valp, BUNhead(bi, hb)) == 0)
+						assert(!b->hkey);
+				hs->link[p] = hs->hash[prb];
+				hs->hash[prb] = p;
+				cmp = cmpf(valp, nilp);
+				assert(!b->H->nonil || cmp != 0);
+				if (cmp == 0)
+					seennil = 1;
+			}
+			if (hp->storage == STORE_MEM)
+				HEAPfree(hp);
+			else
+				HEAPdelete(hp, nme, ext);
+			GDKfree(hp);
+			GDKfree(hs);
+			GDKfree(ext);
 		}
-		BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
+	  abort_check:
 		assert(!b->H->nil || seennil);
 	}
 }
@@ -3620,6 +3138,152 @@ BATassertProps(BAT *b)
 	assert(b->batFirst + b->batCount >= b->batInserted);
 
 	BATassertHeadProps(b);
-	BATassertHeadProps(bm);
+	if (b->H != bm->H)
+		BATassertHeadProps(bm);
+#else
+	(void) b;
 #endif
+}
+
+/* derive properties that can be derived with a simple scan: sorted,
+ * revsorted, nil, nonil, dense; if expensive is set, we also check
+ * the key property */
+void
+BATderiveHeadProps(BAT *b, int expensive)
+{
+	BATiter bi = bat_iterator(b);
+	BUN p, q;
+	int (*cmpf)(ptr, ptr);
+	int cmp;
+	ptr prev = NULL, valp, nilp;
+	int sorted, revsorted, key, dense, nonil;
+	const char *nme = NULL;
+	char *ext = NULL;
+	size_t nmelen;
+	Heap *hp = NULL;
+	Hash *hs = NULL;
+	BUN hb, prb;
+	oid sqbs = oid_nil;
+
+	assert(b != NULL);
+	if (b == NULL)
+		return;
+	assert((b->hkey & BOUND2BTRUE) == 0);
+	COLsettrivprop(b, b->H);
+	cmpf = BATatoms[b->htype].atomCmp;
+	nilp = ATOMnilptr(b->htype);
+	if (b->htype == TYPE_void || b->batCount <= 1) {
+		/* COLsettrivprop has already taken care of all
+		 * properties except for (no)nil if count == 1 */
+		if (b->batCount == 1) {
+			valp = BUNhead(bi, BUNfirst(b));
+			if (cmpf(valp, nilp) == 0) {
+				b->H->nil = 1;
+				b->H->nonil = 0;
+			} else {
+				b->H->nil = 0;
+				b->H->nonil = 1;
+			}
+		}
+		return;
+	}
+	/* tentatively set until proven otherwise */
+	key = nonil = 1;
+	sorted = revsorted = (BATatoms[b->htype].linear != 0);
+	dense = (b->htype == TYPE_oid);
+	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
+	if (expensive) {
+		nme = BBP_physical(b->batCacheid);
+		nmelen = strlen(nme);
+		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
+		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
+		    snprintf(hp->filename, nmelen + 30,
+			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
+		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
+		    (hs = HASHnew(hp, b->htype, BUNlast(b),
+				  HASHmask(b->batCount))) == NULL) {
+			if (hp) {
+				if (hp->filename)
+					GDKfree(hp->filename);
+				GDKfree(hp);
+			}
+			if (ext)
+				GDKfree(ext);
+			hp = NULL;
+			ext = NULL;
+			THRprintf(GDKout,
+				  "#BATderiveProps: cannot allocate "
+				  "hash table: not doing full check\n");
+		}
+	}
+	BATloop(b, p, q) {
+		valp = BUNhead(bi, p);
+		if (prev) {
+			cmp = cmpf(prev, valp);
+			if (cmp < 0)
+				revsorted = 0;
+			else if (cmp > 0)
+				sorted = 0;
+			else
+				key = 0;
+			if (dense && * (oid *) prev + 1 != * (oid *) valp)
+				dense = 0;
+		} else if (dense && (sqbs = * (oid *) valp) == oid_nil) {
+			dense = 0;
+		}
+		prev = valp;
+		if (nonil && cmpf(valp, nilp) == 0)
+			nonil = 0;
+		if (key && hs) {
+			prb = HASHprobe(hs, valp);
+			for (hb = hs->hash[prb];
+			     hb != BUN_NONE;
+			     hb = hs->link[hb])
+				if (cmpf(valp, BUNhead(bi, hb)) == 0)
+					key = 0;
+			hs->link[p] = hs->hash[prb];
+			hs->hash[prb] = p;
+		}
+		if (!sorted && !revsorted && !nonil && !(key && hs))
+			break;
+	}
+	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
+	if (hs) {
+		if (hp->storage == STORE_MEM)
+			HEAPfree(hp);
+		else
+			HEAPdelete(hp, nme, ext);
+		GDKfree(hp);
+		GDKfree(hs);
+		GDKfree(ext);
+	}
+	b->hsorted = sorted;
+	b->hrevsorted = revsorted;
+	b->hdense = dense;
+	if (dense)
+		b->hseqbase = sqbs;
+	if (hs) {
+		b->hkey = key;
+	} else {
+		/* we can only say something about keyness if the
+		 * column is sorted */
+		b->hkey = key & (sorted | revsorted);
+	}
+	b->H->nonil = nonil;
+	b->H->nil = !nonil;
+#ifndef NDEBUG
+	BATassertHeadProps(b);
+#endif
+}
+
+void
+BATderiveProps(BAT *b, int expensive)
+{
+	assert(b != NULL);
+
+	if (b == NULL)
+		return;
+	BATderiveHeadProps(b, expensive);
+	if (b->H != b->T)
+		BATderiveHeadProps(BATmirror(b), expensive);
 }

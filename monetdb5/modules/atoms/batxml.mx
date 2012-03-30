@@ -1307,6 +1307,8 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 
 	BBPunfix(r->batCacheid);
 	GDKfree(buf);
+	bn->hsorted = 1;
+	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	bn->T->nonil = 0;

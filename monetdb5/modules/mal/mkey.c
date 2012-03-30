@@ -205,6 +205,7 @@ voidbathash(BAT **res, BAT *b )
 	}
 	BATsetcount(dst, (BUN) (r-f));
 	BATkey(BATmirror(dst), 0);
+	dst->hrevsorted = dst->batCount <= 1;
 	dst->tsorted = !ATOMvarsized(b->ttype) && Tsize(b) <= sizeof(wrd) && b->tsorted;
 	dst->trevsorted = !ATOMvarsized(b->ttype) && Tsize(b) <= sizeof(wrd) && b->trevsorted;
 	dst->T->nonil = b->T->nonil;
@@ -392,6 +393,7 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(br, BATcount(b));
+	br->hrevsorted = br->batCount <= 1;
 	br->tsorted = 0;
 	br->trevsorted = 0;
 	if (br->tkey)
@@ -466,6 +468,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 	BATsetcount(br, BATcount(hn));
+	br->hrevsorted = br->batCount <= 1;
 	br->tsorted = 0;
 	br->trevsorted = 0;
 	if (br->tkey)
@@ -611,6 +614,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(br, BATcount(bn));
+	br->hrevsorted = br->batCount <= 1;
 	br->tsorted = 0;
 	br->trevsorted = 0;
 	if (br->tkey)

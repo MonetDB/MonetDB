@@ -866,7 +866,7 @@ CMDgetkey(bit *ret, BAT *b)
 		*ret = TRUE;
 	} else {
 		if (!b->hkey) {
-			BATpropcheck(b, BATPROPS_ALL);
+			BATderiveHeadProps(b, 1);
 		}
 		*ret = b->hkey ? TRUE : FALSE;
 	}

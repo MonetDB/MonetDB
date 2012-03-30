@@ -623,6 +623,7 @@ MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
 	for (j=0; j<cnt; j++)
 		resT[j] = *batsT[mapT[j]]++;
 	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
 	GDKfree(batsT);
 	return res;
 }
@@ -880,6 +881,7 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 		len1 += len2;
 	}
 	BATsetcount(*map, len1);
+	(*map)->hrevsorted = len1 <= 1;
 	return res;
 }
 
@@ -975,6 +977,8 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	}
 	BATsetcount(res, len1);
 	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
 	GDKfree(batsT);
 	return res;
 }
@@ -1020,10 +1024,16 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	} else {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
 	}
-	if (res) 
+	if (res) {
 		res->T->nonil = MATnonil(bats, len);
-	if (res && rev)
-		res->T->revsorted = 1;
+		if (rev) {
+			res->trevsorted = 1;
+			res->tsorted = res->batCount <= 1;
+		} else {
+			res->tsorted = 1;
+			res->trevsorted = res->batCount <= 1;
+		}
+	}
 error:
 	if (bats) {
 		for (i=0; i<len && bats[i]; i++)

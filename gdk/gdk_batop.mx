@@ -859,6 +859,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->H->nonil = b->H->nonil || bn->batCount == 0;
 	bn->T->nonil = b->T->nonil || bn->batCount == 0;
+	bn->H->nil = bn->T->nil = 0; /* we just don't know */
 	return bn;
       bunins_failed:
 	BBPreclaim(bn);
@@ -2873,7 +2874,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 				bn = bt;
 				BATseqbase(bn, b->hseqbase);
 				ALIGNsetH(bn, b);
-				assert(bn->hrevsorted == (bn->U->count <= 1 || b->hseqbase == oid_nil));
+				bn->hrevsorted = (bn->U->count <= 1 || b->hseqbase == oid_nil);
 			} else {
 				bn = VIEWcreate(b, bt);
 				BBPunfix(bt->batCacheid);
