@@ -23,20 +23,17 @@
 
 #include "monetdb_config.h"
 #include "jaql.h"
+#include "mal_client.h"
 #include "jaqlgencode.h"
 #include "json.h"
 #include "gdk.h"
 #include "mal.h"
-#include "mal_client.h"
 #include "mal_exception.h"
 #include "stream.h"
 
-#include "parser/jaql.tab.h"
-#include "parser/jaql.yy.h"
-
 extern int jaqlparse(jc *j);
-void freetree(tree *j);
-str getJAQLContext(Client c, jc **j);
+extern int jaqllex_init_extra(jc *user_defined, void **scanner);
+extern int jaqllex_destroy(void *yyscanner);
 
 /* assign the output of action (a 1 or more stage pipe) to ident, if
  * ident is NULL, the result should be outputted to the screen, if

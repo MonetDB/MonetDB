@@ -23,12 +23,12 @@ INCLUDES = ../ \
 		   ../../../../gdk
 
 AM_YFLAGS = -d -p jaql
-AM_LFLAGS = -o$(LEX_OUTPUT_ROOT).c --header-file=$(LEX_OUTPUT_ROOT).h -P jaql
+AM_LFLAGS = -ojaql.yy.c --header-file=jaql.yy.h -P jaql
 
 # flex' and bison's output aren't up to the strictness of our flags
 X_CFLAGS = #$(X_CFLAGS:-Werror=) <- recursive
 
 lib_jaqlp = {
 	NOINST
-	SOURCES = jaql.y jaql.l force_jaql_yy_h_gen.c
+	SOURCES = jaql.y jaql.l
 }

@@ -18,6 +18,7 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_client.h"
 #include "jaqlgencode.h"
 #include "opt_prelude.h"
 

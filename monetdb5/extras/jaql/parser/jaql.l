@@ -1,3 +1,18 @@
+%{
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+#include "jaql.tab.h"
+#include "jaqltree.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+__declspec(dllimport)
+#else
+extern
+#endif
+char *GDKstrdup(const char *);
+%}
+
 %option reentrant
 %option bison-bridge
 %option bison-locations
@@ -11,9 +26,6 @@
 %option extra-type="struct _jc *"
 
 %{
-#include "jaql.tab.h"
-#include "jaql.h"
-
 YYSTYPE yylval;
 extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 

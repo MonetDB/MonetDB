@@ -170,7 +170,7 @@ parse_json_number(jsonbat *jb, oid *v, char *p)
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->doble, v, &d, FALSE);
 	} else {
-		long long int i = atoll(n);
+		long long int i = strtoll(n, NULL, 10);
 		BUNappend(jb->kind, "i", FALSE);
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->integer, v, &i, FALSE);
