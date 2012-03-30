@@ -1,15 +1,31 @@
+%{
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <stdio.h>
+#include "jaql.tab.h"
+#include "jaqltree.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+__declspec(dllimport)
+#else
+extern
+#endif
+char *GDKstrdup(const char *);
+%}
+
 %option reentrant
 %option bison-bridge
 %option bison-locations
 %option noyywrap
 %option yylineno
 %option case-insensitive
+%option batch
+%option nostdinit
+%option nodefault
+%option fast
 %option extra-type="struct _jc *"
 
 %{
-#include "jaql.tab.h"
-#include "jaql.h"
-
 YYSTYPE yylval;
 extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 
@@ -17,10 +33,21 @@ extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 #define YY_USER_ACTION yylloc->first_line = yylineno;
 
 #define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
+#define YY_NO_INPUT
+
+/* ugly as hell, but needed to prevent flex from assigning stdin to yyin */
+#ifdef stdin
+# undef stdin
+#endif
+#define stdin (FILE *)0
+#ifdef stdout
+# undef stdout
+#endif
+#define stdout (FILE *)0
 
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 	if (j->buf != NULL && *j->buf != '\0') {
-		*res = strlen(j->buf);
+		*res = (int)strlen(j->buf);
 		if ((size_t)*res > max_size)
 			*res = (int)max_size;
 		memcpy(buf, j->buf, *res);

@@ -23,20 +23,17 @@
 
 #include "monetdb_config.h"
 #include "jaql.h"
+#include "mal_client.h"
 #include "jaqlgencode.h"
 #include "json.h"
 #include "gdk.h"
 #include "mal.h"
-#include "mal_client.h"
 #include "mal_exception.h"
 #include "stream.h"
 
-#include "parser/jaql.tab.h"
-#include "parser/jaql.yy.h"
-
 extern int jaqlparse(jc *j);
-void freetree(tree *j);
-str getJAQLContext(Client c, jc **j);
+extern int jaqllex_init_extra(jc *user_defined, void **scanner);
+extern int jaqllex_destroy(void *yyscanner);
 
 /* assign the output of action (a 1 or more stage pipe) to ident, if
  * ident is NULL, the result should be outputted to the screen, if
@@ -124,7 +121,7 @@ append_jaql_pipe(tree *oaction, tree *naction)
 
 /* recursive helper to check variable usages for validity */
 static tree *
-_check_exp_var(const char *func, const char **vars, tree *t)
+_check_exp_var(const char *func, char **vars, tree *t)
 {
 	tree *res = NULL;
 
@@ -132,7 +129,7 @@ _check_exp_var(const char *func, const char **vars, tree *t)
 		return res;
 
 	if (t->type == j_var) {
-		const char **var;
+		char **var;
 		for (var = vars; *var != NULL; var++) {
 			if (strcmp(*var, t->sval) == 0)
 				break;
@@ -158,9 +155,9 @@ _check_exp_var(const char *func, const char **vars, tree *t)
 	return res;
 }
 static tree *
-_check_exp_var1(const char *func, const char *var, tree *t)
+_check_exp_var1(const char *func, char *var, tree *t)
 {
-	const char *vars[] = {var, NULL};
+	char *vars[] = {var, NULL};
 	return _check_exp_var(func, vars, t);
 }
 
@@ -274,7 +271,7 @@ make_jaql_expand(tree *var, tree *expr)
 
 	if (expr->type == j_var && expr->next != NULL) {
 		/* JAQL's confusing "inner pipes" feature -- most probably to
-		 * steer Hadoop's map-reduce job generationi -- is just useless
+		 * steer Hadoop's map-reduce job generation -- is just useless
 		 * for us and actually making our life harder, so just pull out
 		 * this inner pipe, and make it a proper top-level pipe instead */
 		res->next = expr->next;
@@ -316,6 +313,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 
 	if (tmpl->type == j_error) {
 		freetree(inputs);
+		freetree(var);
 		return tmpl;
 	}
 
@@ -323,7 +321,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 
 	if (inputs != NULL) {
 		size_t i;
-		const char **vars;
+		char **vars;
 
 		/* when multiple inputs are given, the groupkeyvar must be for
 		 * each input the same, its expression may differ */
@@ -335,6 +333,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 						"inputs must be equal");
 				freetree(inputs);
 				freetree(tmpl);
+				freetree(var);
 				return res;
 			}
 			if (strcmp(w->tval2->sval, var->sval) != 0) {
@@ -345,6 +344,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 				res->sval = GDKstrdup(buf);
 				freetree(inputs);
 				freetree(tmpl);
+				freetree(var);
 				return res;
 			}
 		}
@@ -359,6 +359,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 							"inputs must be unique (for use in 'into' expression)");
 					freetree(inputs);
 					freetree(tmpl);
+					freetree(var);
 					return res;
 				}
 			}
@@ -374,15 +375,19 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 		if ((w = _check_exp_var("group", vars, tmpl)) != NULL) {
 			freetree(inputs);
 			freetree(tmpl);
+			GDKfree(vars);
 			return w;
 		}
+		GDKfree(vars);
 	} else {
 		if ((w = _check_exp_var1("group", var->sval, tmpl)) != NULL) {
 			freetree(inputs);
 			freetree(tmpl);
+			freetree(var);
 			return w;
 		}
 	}
+	freetree(var);  /* no longer used after verification of input */
 
 	res->type = j_group;
 	res->tval1 = inputs;
@@ -481,7 +486,7 @@ tree *
 make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 {
 	tree *res;
-	const char **vars;
+	char **vars;
 	int i;
 
 	/* docs seem to suggest a where clause (pred) is always present */
@@ -506,15 +511,21 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 		vars[i] = res->tval2->sval;
 	vars[i] = NULL;
 
-	if ((res = _check_exp_var("join", vars, pred)) != NULL)
+	if ((res = _check_exp_var("join", vars, pred)) != NULL) {
+		GDKfree(vars);
 		return res;
-	if ((res = _check_exp_var("join", vars, tmpl)) != NULL)
+	}
+	if ((res = _check_exp_var("join", vars, tmpl)) != NULL) {
+		GDKfree(vars);
 		return res;
+	}
 
 	/* JAQL defines that only conjunctions of equality expressions may
 	 * be used (and + ==), where self-joins are disallowed */
-	if ((res = _check_exp_equals_only(pred)) != NULL)
+	if ((res = _check_exp_equals_only(pred)) != NULL) {
+		GDKfree(vars);
 		return res;
+	}
 
 	/* JAQL defines that each of the inputs must be linked through a
 	 * join path, collect all equality tests and put them in a simple
@@ -536,6 +547,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 			snprintf(buf, sizeof(buf), "join: input not referenced "
 					"in where: %s", vars[i]);
 			res->sval = GDKstrdup(buf);
+			GDKfree(vars);
 			freetree(inputs);
 			freetree(pred);
 			freetree(tmpl);
@@ -544,6 +556,7 @@ make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 	}
 
 	/* we skip the graph/path check and do it during code generation */
+	GDKfree(vars);
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_join;
@@ -563,8 +576,11 @@ make_jaql_sort(tree *var, tree *expr)
 	assert(var != NULL && var->type == j_var);
 	assert(expr != NULL && expr->type == j_sort_arg);
 
-	if ((res = _check_exp_var1("sort", var->sval, expr)) != NULL)
+	if ((res = _check_exp_var1("sort", var->sval, expr)) != NULL) {
+		freetree(var);
+		freetree(expr);
 		return res;
+	}
 
 	res = GDKzalloc(sizeof(tree));
 	res->type = j_sort;
@@ -648,7 +664,7 @@ make_pred(tree *l, tree *comp, tree *r)
 }
 
 tree *
-make_sort_arg(tree *var, char asc)
+make_sort_arg(tree *var, long long int asc)
 {
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_sort_arg;

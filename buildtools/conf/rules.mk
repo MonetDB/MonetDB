@@ -22,17 +22,10 @@ MV=mv
 HIDE=1
 MX = $(top_builddir)/buildtools/Mx/Mx
 
-# in the next few rules, make sure that "$(CONFIG_H)" is included
-# first, also with bison-generated files.  This is crucial
-# to prevent inconsistent (re-)definitions of macros.
 %.tab.c: %.y
 	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(YACC) $(YFLAGS) $(AM_YFLAGS) $< || { $(RM) waiting ; exit 1 ; }
 	if [ -f y.tab.c ]; then $(MV) y.tab.c $*.tab.c ; fi
-	$(MV) $*.tab.c $*.tab.c.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $*.tab.c
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.tab.c.tmp >> $*.tab.c
-	$(RM) $*.tab.c.tmp
 	[ ! -f y.tab.h ] || $(RM) y.tab.h
 	$(RM) waiting
 
@@ -46,19 +39,13 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 %.yy.c: %.l
 	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
-	if [ -f $(LEX_OUTPUT_ROOT).c ]; then $(MV) $(LEX_OUTPUT_ROOT).c $*.yy.c ; fi
-	$(MV) $*.yy.c $*.yy.c.tmp
-	echo '#include <'"$(CONFIG_H)"'>' > $*.yy.c
-	grep -v '^#include.*[<"]'"$(CONFIG_H)"'[">]' $*.yy.c.tmp >> $*.yy.c
-	$(RM) $*.yy.c.tmp
-	[ -f $(LEX_OUTPUT_ROOT).h ] && $(RM) $(LEX_OUTPUT_ROOT).h
+	[ -f $*.yy.h ] && $(RM) $*.yy.h
 	$(RM) waiting
 
 %.yy.h: %.l
 	touch waiting.$$$$ && until ln waiting.$$$$ waiting 2>/dev/null; do sleep 1; done && rm waiting.$$$$
 	$(LEX) $(LFLAGS) $(AM_LFLAGS) $< || { $(RM) waiting ; exit 1 ; }
-	if [ -f $(LEX_OUTPUT_ROOT).h ]; then $(MV) $(LEX_OUTPUT_ROOT).h $*.yy.h ; fi
-	[ -f $(LEX_OUTPUT_ROOT).c ] && $(RM) $(LEX_OUTPUT_ROOT).c
+	[ -f $*.yy.c ] && $(RM) $*.yy.c
 	$(RM) waiting
 
 %.def: %.syms

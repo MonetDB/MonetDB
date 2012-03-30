@@ -170,7 +170,7 @@ parse_json_number(jsonbat *jb, oid *v, char *p)
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->doble, v, &d, FALSE);
 	} else {
-		long long int i = atoll(n);
+		long long int i = strtoll(n, NULL, 10);
 		BUNappend(jb->kind, "i", FALSE);
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->integer, v, &i, FALSE);
@@ -1321,7 +1321,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'd':
 								BUNfndOID(x, bid, BUNhead(bi, p));
-								l = (lng)*(dbl *)BUNtail(bis, x);
+								l = (lng)*(dbl *)BUNtail(bid, x);
 								BUNins(r, &v, &l, FALSE);
 								break;
 							case 'i':

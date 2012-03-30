@@ -18,6 +18,7 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_client.h"
 #include "jaqlgencode.h"
 #include "opt_prelude.h"
 
@@ -1090,9 +1091,9 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 	tree *pred;
 	jc tj;
 	json_var *vars, *ljv, *rjv;
-	join_result *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
+	join_result *jro = NULL, *jrs = NULL, *jrw = NULL, *jrl, *jrr = NULL, *jrn, *jrv, *jrp;
 
-	jgvar *jgraph = NULL;
+	jgvar *jgraph = NULL, *ograph = NULL;
 
 	/* iterate through all predicates and load the set from the correct
 	 * JSON variable */
@@ -1376,7 +1377,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		pushInstruction(mb, q);
 
 		if (jrs == NULL) {
-			jrw = jrs = GDKzalloc(sizeof(join_result));
+			jrw = jro = jrs = GDKzalloc(sizeof(join_result));
 		} else {
 			jrw = jrw->next = GDKzalloc(sizeof(join_result));
 		}
@@ -1505,7 +1506,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		}
 	}
 
-	jgraph = calculatejoingraph(jrs);
+	ograph = jgraph = calculatejoingraph(jrs);
 	/* FIXME: at this point, there may be joins like a->c, while there
 	 * is a->b->c, in which case a->c is a reduction on a and c, having
 	 * effect on everything inbetween (only b in this case) */
@@ -2011,6 +2012,16 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		j->j7 = js->j7 = getArg(q, 0);
 		pushInstruction(mb, q);
 	}
+
+	for (jrw = jro; jrw != NULL; jrw = jrs) {
+		jrs = jrw->next;
+		GDKfree(jrw);
+	}
+	for (jgraph = ograph->next; jgraph != NULL; jgraph = jgraph->next) {
+		GDKfree(jgraph->prev);
+		ograph = jgraph;
+	}
+	GDKfree(ograph);
 }
 
 static int
@@ -2314,7 +2325,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				default:
 					assert(0);
 			}
-			assert(b != -1);  /* to help the compiler */
 			/* d:int and e:dbl are values from val1 */
 
 			switch (t->tval3->type) {
@@ -2338,7 +2348,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					q = pushArgument(mb, q, c);
 					g = getArg(q, 0);
 					pushInstruction(mb, q);
-					q = newInstruction(mb, ASSIGNsymbol);
 					break;
 				case j_num:
 					c = -1;
@@ -2703,7 +2712,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, joinRef);
+				setFunctionId(q, leftjoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, s);
 				q = pushArgument(mb, q, e);
@@ -2711,7 +2720,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, joinRef);
+				setFunctionId(q, leftjoinRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, v);
 				q = pushArgument(mb, q, g);
@@ -4116,7 +4125,7 @@ bindjsonvars(MalBlkPtr mb, tree *t)
 	res = GDKmalloc(sizeof(json_var) * (i + 1));
 	for (w = t, i = 0; w != NULL; w = w->next, i++) {
 		res[i].name = w->tval2->sval; /* always _IDENT */
-		res[i].preserve = w->nval;
+		res[i].preserve = (char)w->nval;
 		dumpgetvar(mb, w->tval1->sval,
 				&res[i].j1, &res[i].j2, &res[i].j3, &res[i].j4,
 				&res[i].j5, &res[i].j6, &res[i].j7);
@@ -4625,6 +4634,8 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 					r->argc = r->retc = 1;
 					r->barrier = EXITsymbol;
 				}
+				/* we passed copies above, so need to free the original */
+				freeInstruction(q);
 				return;
 			default:
 				q = pushArgument(mb, q, dynaarg[i][0]);
@@ -5254,6 +5265,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				/* first calculate the join output, based on the input
 				 * and predicates */
 				dumppredjoin(j, mb, js, t);
+				GDKfree(js);
 
 				/* then transform the output with a modified into clause */
 				changetmplrefsjoin(t->tval3, NULL);

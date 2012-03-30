@@ -31,17 +31,23 @@ lib__json = {
 	DIR = libdir/monetdb5
 	SOURCES = json.c json.h
 
-	LIBS = ../../tools/libmonetdb5
+	LIBS = ../../tools/libmonetdb5 \
+		   ../../../gdk/libbat \
+		   ../../../common/stream/libstream \
+		   $(MALLOC_LIBS)
 }
 
 lib__jaql = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = jaql.c jaql.h jaqlgencode.c jaqlgencode.h \
-			  jaqlscenario.c jaqlscenario.h
+			  jaqlscenario.c jaqlscenario.h jaqltree.h
 
 	# the ./ is necessary for autogen not to generate garbage
-	LIBS = ./parser/libjaqlp ../../tools/libmonetdb5
+	LIBS = lib_json ./parser/libjaqlp ../../tools/libmonetdb5 \
+		   ../../../gdk/libbat \
+		   ../../../common/stream/libstream \
+		   $(MALLOC_LIBS)
 }
 
 headers_json_mal = {
