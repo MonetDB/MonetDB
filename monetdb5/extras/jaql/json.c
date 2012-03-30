@@ -1321,7 +1321,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'd':
 								BUNfndOID(x, bid, BUNhead(bi, p));
-								l = (lng)*(dbl *)BUNtail(bis, x);
+								l = (lng)*(dbl *)BUNtail(bid, x);
 								BUNins(r, &v, &l, FALSE);
 								break;
 							case 'i':
