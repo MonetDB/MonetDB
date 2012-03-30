@@ -4422,7 +4422,7 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				dst[k] = (TYPE3) lft[i] / rgt[j];	\
+				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
 			}						\
 		}							\
 		return nils;						\
@@ -12781,7 +12781,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			if (v->val.btval == bte_nil) {
 				ret->val.fval = flt_nil;
 			} else if (ret->vtype == TYPE_bit) {
-				ret->val.fval = (flt) v->val.btval != 0;
+				ret->val.fval = (flt) (v->val.btval != 0);
 			} else {
 				ret->val.fval = (flt) v->val.btval;
 			}
