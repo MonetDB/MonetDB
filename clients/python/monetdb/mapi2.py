@@ -41,6 +41,7 @@ logger = logging.getLogger("monetdb")
 MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
+MSG_MORE = "\1\2\n"
 MSG_INFO = "#"
 MSG_ERROR = "!"
 MSG_Q = "&"
@@ -159,6 +160,9 @@ class Server:
         response = self.__getblock()
         if not len(response):
             return
+        if response == MSG_MORE:
+            # tell server it isn't going to get more
+            return self.cmd("")
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:
