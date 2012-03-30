@@ -47,7 +47,7 @@ extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 	if (j->buf != NULL && *j->buf != '\0') {
-		*res = strlen(j->buf);
+		*res = (int)strlen(j->buf);
 		if ((size_t)*res > max_size)
 			*res = (int)max_size;
 		memcpy(buf, j->buf, *res);

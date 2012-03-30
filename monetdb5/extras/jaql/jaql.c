@@ -121,7 +121,7 @@ append_jaql_pipe(tree *oaction, tree *naction)
 
 /* recursive helper to check variable usages for validity */
 static tree *
-_check_exp_var(const char *func, const char **vars, tree *t)
+_check_exp_var(const char *func, char **vars, tree *t)
 {
 	tree *res = NULL;
 
@@ -129,7 +129,7 @@ _check_exp_var(const char *func, const char **vars, tree *t)
 		return res;
 
 	if (t->type == j_var) {
-		const char **var;
+		char **var;
 		for (var = vars; *var != NULL; var++) {
 			if (strcmp(*var, t->sval) == 0)
 				break;
@@ -155,9 +155,9 @@ _check_exp_var(const char *func, const char **vars, tree *t)
 	return res;
 }
 static tree *
-_check_exp_var1(const char *func, const char *var, tree *t)
+_check_exp_var1(const char *func, char *var, tree *t)
 {
-	const char *vars[] = {var, NULL};
+	char *vars[] = {var, NULL};
 	return _check_exp_var(func, vars, t);
 }
 
@@ -321,7 +321,7 @@ make_jaql_group(tree *inputs, tree *tmpl, tree *var)
 
 	if (inputs != NULL) {
 		size_t i;
-		const char **vars;
+		char **vars;
 
 		/* when multiple inputs are given, the groupkeyvar must be for
 		 * each input the same, its expression may differ */
@@ -486,7 +486,7 @@ tree *
 make_jaql_join(tree *inputs, tree *pred, tree *tmpl)
 {
 	tree *res;
-	const char **vars;
+	char **vars;
 	int i;
 
 	/* docs seem to suggest a where clause (pred) is always present */
@@ -664,7 +664,7 @@ make_pred(tree *l, tree *comp, tree *r)
 }
 
 tree *
-make_sort_arg(tree *var, char asc)
+make_sort_arg(tree *var, long long int asc)
 {
 	tree *res = GDKzalloc(sizeof(tree));
 	res->type = j_sort_arg;

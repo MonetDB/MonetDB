@@ -4125,7 +4125,7 @@ bindjsonvars(MalBlkPtr mb, tree *t)
 	res = GDKmalloc(sizeof(json_var) * (i + 1));
 	for (w = t, i = 0; w != NULL; w = w->next, i++) {
 		res[i].name = w->tval2->sval; /* always _IDENT */
-		res[i].preserve = w->nval;
+		res[i].preserve = (char)w->nval;
 		dumpgetvar(mb, w->tval1->sval,
 				&res[i].j1, &res[i].j2, &res[i].j3, &res[i].j4,
 				&res[i].j5, &res[i].j6, &res[i].j7);

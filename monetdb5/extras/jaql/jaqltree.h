@@ -125,7 +125,7 @@ tree *make_jaql_top(long long int num);
 tree *make_unroll(tree *var);
 tree *make_array_index(long long int idx, char isstar);
 tree *make_pred(tree *var, tree *comp, tree *value);
-tree *make_sort_arg(tree *var, char asc);
+tree *make_sort_arg(tree *var, long long int asc);
 tree *append_sort_arg(tree *osarg, tree *nsarg);
 tree *make_varname(char *ident);
 tree *append_varname(tree *var, char *ident);
