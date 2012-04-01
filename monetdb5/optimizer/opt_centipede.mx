@@ -56,8 +56,6 @@ opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define REMOTE_EXECUTION	/* or LOCAL_EXECUTION */
 
-/* #define DEBUG_DETAIL*/
-#define _DEBUG_OPT_CENTIPEDE_ 
 #define OPTDEBUGcentipede  if ( optDebug & ((lng)1 <<DEBUG_OPT_CENTIPEDE) )
 #endif
 @c
@@ -67,6 +65,9 @@ opt_export str OPTpeers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mal_builder.h"
 #include "mal_recycle.h"
 #include "mal_interpreter.h"
+
+/* #define DEBUG_DETAIL*/
+/*#define _DEBUG_OPT_CENTIPEDE_ */
 
 typedef	struct{
 	InstrPtr target;
@@ -426,6 +427,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 	if (strcmp(slices->column, getVarConstant(nmb, getArg(p,4)).val.sval) )   {
 		/* sideways projection the range selection */
 		pushInstruction(nmb,p);
+		/* not needed. single column partitioning is enough 
 		q= newInstruction(nmb,ASSIGNsymbol);
 		setModuleId(q,algebraRef);
 		setFunctionId(q,semijoinRef);
@@ -437,6 +439,7 @@ OPTsliceColumn(Client cntxt, MalBlkPtr nmb, MalBlkPtr mb, InstrPtr p, Slices *sl
 		q= pushArgument(nmb,q, k);
 		q= pushArgument(nmb,q, slices->slice);
 		pushInstruction(nmb,q);
+		*/
 	} else {
 		q= newInstruction(nmb,ASSIGNsymbol);
 		k = newTmpVariable(nmb, getVarType(mb, getArg(p,0)));
@@ -478,11 +481,12 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	InstrPtr ret, call, p, *old;
 	Symbol s;
 	MalBlkPtr nmb, cmb, smb;
-	str msg = MAL_SUCCEED;
+	str msg= MAL_SUCCEED;
 	char nme[BUFSIZ];
 	char *head, *tail; /* oid reference to target table*/
 	oid plantag= OIDnew(1);
 
+	(void) msg;	/* only used when _DEBUG_OPT_CENTIPEDE_ is defined */
 	plan = GDKzalloc(mb->ssize * sizeof(int));
 	if( plan == 0)
 		return 0;
@@ -877,9 +881,9 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	mnstr_printf(cntxt->fdout,"#orig BEFORE optimizer test\n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
-#ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, mb);
 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+#ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#partition %s.%s.%s type %d %s\n",
 		slices.schema,
 		slices.table,

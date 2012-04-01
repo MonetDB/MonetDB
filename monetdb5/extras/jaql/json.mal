@@ -29,6 +29,10 @@ function print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[
 	json.print(o, kind, string, integer, double, array, object, name, false:bit);
 end print;
 
+command exportResult(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
+address JSONexportResult
+comment "Serialise the given JSON pointer into JSON format, respecting the MAPI protocol";
+
 command store(nme:str, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
 address JSONstore
 comment "Store the JSON object in the database as name";
