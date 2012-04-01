@@ -486,6 +486,7 @@ OPTplanFragment(Client cntxt, MalBlkPtr mb, Slices *slices)
 	char *head, *tail; /* oid reference to target table*/
 	oid plantag= OIDnew(1);
 
+	(void) msg;	/* only used when _DEBUG_OPT_CENTIPEDE_ is defined */
 	plan = GDKzalloc(mb->ssize * sizeof(int));
 	if( plan == 0)
 		return 0;
@@ -825,7 +826,6 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void)cntxt;
 	(void) stk;
 	(void) pci;
-	(void) msg;	/* only used when _DEBUG_OPT_CENTIPEDE_ is defined */
 
 	msg = GDKgetenv("gdk_readonly");
 	if( msg == 0 || strcmp(msg,"yes"))
