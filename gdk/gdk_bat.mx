@@ -1860,18 +1860,18 @@ BUNfnd(BAT *b, ptr v)
 	return r;
 }
 
-#define usemirror()				\
-	do {					\
-		int (*_cmp) (ptr, ptr);		\
-		ptr _p;				\
-						\
-		_cmp = hcmp;			\
-		hcmp = tcmp;			\
-		tcmp = _cmp;			\
-		_p = x;				\
-		x = y;				\
-		y = _p;				\
-		bi.b = b = BATmirror(b);	\
+#define usemirror()						\
+	do {							\
+		int (*_cmp) (const void *, const void *);	\
+		ptr _p;						\
+								\
+		_cmp = hcmp;					\
+		hcmp = tcmp;					\
+		tcmp = _cmp;					\
+		_p = x;						\
+		x = y;						\
+		y = _p;						\
+		bi.b = b = BATmirror(b);			\
 	} while (0)
 
 #define dohash(hp)        (ATOMstorage(hp->type) != TYPE_bte &&		\
@@ -1882,7 +1882,8 @@ BUN
 BUNlocate(BAT *b, ptr x, ptr y)
 {
 	BATiter bi = bat_iterator(b);
-	int (*hcmp) (ptr, ptr), (*tcmp) (ptr, ptr);
+	int (*hcmp) (const void *, const void *);
+	int (*tcmp) (const void *, const void *);
 	int htpe, ttpe, hint = 0, tint = 0, hlng = 0, tlng = 0;
 	union {
 		var_t v;
@@ -2956,7 +2957,7 @@ BATassertHeadProps(BAT *b)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmpf)(ptr, ptr);
+	int (*cmpf)(const void *, const void *);
 	int cmp;
 	ptr prev = NULL, valp, nilp;
 	int seennil = 0;
@@ -3153,7 +3154,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 {
 	BATiter bi = bat_iterator(b);
 	BUN p, q;
-	int (*cmpf)(ptr, ptr);
+	int (*cmpf)(const void *, const void *);
 	int cmp;
 	ptr prev = NULL, valp, nilp;
 	int sorted, revsorted, key, dense, nonil;

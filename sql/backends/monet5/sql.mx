@@ -5967,7 +5967,8 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	BAT *r, *b, *g;
 	BUN p, q;
 	BATiter bi, gi;
-	int (*ocmp)(ptr, ptr), (*gcmp)(ptr, ptr);
+	int (*ocmp)(const void *, const void *);
+	int (*gcmp)(const void *, const void *);
 	ptr oc, gc;
 	int rank = 1, nrank = @3;
 
@@ -6025,7 +6026,7 @@ sql_@1rank(bat *rid, bat *bid)
 { 
 	BAT *r, *b;
 	BATiter bi;
-	int (*cmp)(ptr, ptr);
+	int (*cmp)(const void *, const void *);
 	ptr cur;
 	BUN p, q;
 	int rank = 1, nrank = @3;

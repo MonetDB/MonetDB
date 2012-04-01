@@ -619,7 +619,7 @@ HASHgonebad(BAT *b, ptr v)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
-		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[b->htype].atomCmp;
 		BUN cnt, hit, i = h->hash[HASHprobe(h, v)];
 
 		for (cnt = hit = 1; i != BUN_NONE; i = h->link[i], cnt++)

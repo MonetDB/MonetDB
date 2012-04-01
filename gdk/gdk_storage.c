@@ -1015,7 +1015,7 @@ BATdelete(BAT *b)
 						break;			\
 			} while (0)
 
-typedef int (*strFcn) (str *s, int *len, ptr val);
+typedef int (*strFcn) (str *s, int *len, const void *val);
 
 typedef struct {
 	int tabs;		/* tab width of output */
@@ -1028,7 +1028,7 @@ typedef struct {
 } col_format_t;
 
 static int
-print_nil(char **dst, int *len, ptr dummy)
+print_nil(char **dst, int *len, const void *dummy)
 {
 	(void) dummy;
 	if (*len < 3) {

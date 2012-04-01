@@ -833,7 +833,7 @@ BATcalcisnil(BAT *b)
 		BUN j;
 		ptr v;
 		ptr nil = ATOMnilptr(b->T->type);
-		int (*atomcmp)(ptr, ptr) = BATatoms[b->T->type].atomCmp;
+		int (*atomcmp)(const void *, const void *) = BATatoms[b->T->type].atomCmp;
 
 		BATloop(b, i, j) {
 			v = BUNtail(bi, i);
@@ -12149,81 +12149,180 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRec
 	return GDK_SUCCEED;
 }
 
-#define convertimpl_enlarge(TYPE1, TYPE2)			\
+#define convertimpl_copy(TYPE)					\
 static BUN							\
-convert_##TYPE1##_##TYPE2(TYPE1 *src, TYPE2 *dst, BUN cnt)	\
+convert_##TYPE##_##TYPE(const TYPE *src, TYPE *dst, BUN cnt)	\
 {								\
 	BUN nils = 0;						\
 								\
 	while (cnt-- > 0) {					\
-		if (*src == TYPE1##_nil) {			\
-			*dst = TYPE2##_nil;			\
-			nils++;					\
-		} else						\
-			*dst = (TYPE2) *src;			\
-		src++;						\
-		dst++;						\
+		nils += *src == TYPE##_nil;			\
+		*dst++ = *src++;				\
 	}							\
 	return nils;						\
 }
 
-#define convertimpl_reduce(TYPE1, TYPE2)			\
+#define convertimpl_enlarge(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt)	\
+{									\
+	BUN nils = 0;							\
+									\
+	while (cnt-- > 0) {						\
+		if (*src == TYPE1##_nil) {				\
+			*dst = TYPE2##_nil;				\
+			nils++;						\
+		} else							\
+			*dst = (TYPE2) *src;				\
+		src++;							\
+		dst++;							\
+	}								\
+	return nils;							\
+}
+
+#define convertimpl_oid_enlarge(TYPE1)				\
 static BUN							\
-convert_##TYPE1##_##TYPE2(TYPE1 *src, TYPE2 *dst, BUN cnt,	\
-			  int abort_on_error)		\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,	\
+			  int abort_on_error)			\
 {								\
 	BUN nils = 0;						\
 								\
 	while (cnt-- > 0) {					\
 		if (*src == TYPE1##_nil) {			\
-			*dst = TYPE2##_nil;			\
+			*dst = oid_nil;				\
 			nils++;					\
-		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||	\
-			   *src > (TYPE1) GDK_##TYPE2##_max) {	\
+		} else if (*src < 0) {				\
 			if (abort_on_error)			\
 				return BUN_NONE;		\
-			*dst = TYPE2##_nil;			\
+			*dst = oid_nil;				\
 			nils++;					\
-		} else						\
-			*dst = (TYPE2) *src;			\
+		} else if ((*dst = (oid) *src) == oid_nil &&	\
+			   abort_on_error)			\
+			return BUN_NONE;			\
 		src++;						\
 		dst++;						\
 	}							\
 	return nils;						\
 }
 
-#define convert2bit_impl(TYPE)				\
-static BUN						\
-convert_##TYPE##_bit(TYPE *src, bit *dst, BUN cnt)	\
-{							\
-	BUN nils = 0;					\
-							\
-	while (cnt-- > 0) {				\
-		if (*src == TYPE##_nil) {		\
-			*dst = bit_nil;			\
-			nils++;				\
-		} else					\
-			*dst = (bit) (*src != 0);	\
-		src++;					\
-		dst++;					\
-	}						\
-	return nils;					\
+#define convertimpl_oid_reduce(TYPE1)				\
+static BUN							\
+convert_##TYPE1##_oid(const TYPE1 *src, oid *dst, BUN cnt,	\
+			  int abort_on_error)			\
+{								\
+	BUN nils = 0;						\
+								\
+	while (cnt-- > 0) {					\
+		if (*src == TYPE1##_nil) {			\
+			*dst = oid_nil;				\
+			nils++;					\
+		} else if (*src < 0 ||				\
+			   *src > (TYPE1) GDK_oid_max) {	\
+			if (abort_on_error)			\
+				return BUN_NONE;		\
+			*dst = oid_nil;				\
+			nils++;					\
+		} else if ((*dst = (oid) *src) == oid_nil &&	\
+			   abort_on_error)			\
+			return BUN_NONE;			\
+		src++;						\
+		dst++;						\
+	}							\
+	return nils;						\
 }
 
+#define convertimpl_reduce(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
+			  int abort_on_error)				\
+{									\
+	BUN nils = 0;							\
+									\
+	while (cnt-- > 0) {						\
+		if (*src == TYPE1##_nil) {				\
+			*dst = TYPE2##_nil;				\
+			nils++;						\
+		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
+			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+			if (abort_on_error)				\
+				return BUN_NONE;			\
+			*dst = TYPE2##_nil;				\
+			nils++;						\
+		} else							\
+			*dst = (TYPE2) *src;				\
+		src++;							\
+		dst++;							\
+	}								\
+	return nils;							\
+}
+
+/* Special version of the above for converting from floating point.
+ * The final assignment rounds the value which can still come out to
+ * the NIL representation, so we need to check for that. */
+#define convertimpl_reduce_float(TYPE1, TYPE2)				\
+static BUN								\
+convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *dst, BUN cnt,	\
+			  int abort_on_error)				\
+{									\
+	BUN nils = 0;							\
+									\
+	while (cnt-- > 0) {						\
+		if (*src == TYPE1##_nil) {				\
+			*dst = TYPE2##_nil;				\
+			nils++;						\
+		} else if (*src <= (TYPE1) GDK_##TYPE2##_min ||		\
+			   *src > (TYPE1) GDK_##TYPE2##_max) {		\
+			if (abort_on_error)				\
+				return BUN_NONE;			\
+			*dst = TYPE2##_nil;				\
+			nils++;						\
+		} else if ((*dst = (TYPE2) *src) == TYPE2##_nil &&	\
+			   abort_on_error)				\
+			return BUN_NONE;				\
+		src++;							\
+		dst++;							\
+	}								\
+	return nils;							\
+}
+
+#define convert2bit_impl(TYPE)					\
+static BUN							\
+convert_##TYPE##_bit(const TYPE *src, bit *dst, BUN cnt)	\
+{								\
+	BUN nils = 0;						\
+								\
+	while (cnt-- > 0) {					\
+		if (*src == TYPE##_nil) {			\
+			*dst = bit_nil;				\
+			nils++;					\
+		} else						\
+			*dst = (bit) (*src != 0);		\
+		src++;						\
+		dst++;						\
+	}							\
+	return nils;						\
+}
+
+convertimpl_copy(bte)
 convertimpl_enlarge(bte, sht)
 convertimpl_enlarge(bte, int)
+convertimpl_oid_enlarge(bte)
 convertimpl_enlarge(bte, lng)
 convertimpl_enlarge(bte, flt)
 convertimpl_enlarge(bte, dbl)
 
 convertimpl_reduce(sht, bte)
+convertimpl_copy(sht)
 convertimpl_enlarge(sht, int)
+convertimpl_oid_enlarge(sht)
 convertimpl_enlarge(sht, lng)
 convertimpl_enlarge(sht, flt)
 convertimpl_enlarge(sht, dbl)
 
 convertimpl_reduce(int, bte)
 convertimpl_reduce(int, sht)
+convertimpl_copy(int)
+convertimpl_oid_enlarge(int)
 convertimpl_enlarge(int, lng)
 convertimpl_enlarge(int, flt)
 convertimpl_enlarge(int, dbl)
@@ -12231,20 +12330,30 @@ convertimpl_enlarge(int, dbl)
 convertimpl_reduce(lng, bte)
 convertimpl_reduce(lng, sht)
 convertimpl_reduce(lng, int)
+#if SIZEOF_OID == SIZEOF_LNG
+convertimpl_oid_enlarge(lng)
+#else
+convertimpl_oid_reduce(lng)
+#endif
+convertimpl_copy(lng)
 convertimpl_enlarge(lng, flt)
 convertimpl_enlarge(lng, dbl)
 
-convertimpl_reduce(flt, bte)
-convertimpl_reduce(flt, sht)
-convertimpl_reduce(flt, int)
-convertimpl_reduce(flt, lng)
+convertimpl_reduce_float(flt, bte)
+convertimpl_reduce_float(flt, sht)
+convertimpl_reduce_float(flt, int)
+convertimpl_oid_reduce(flt)
+convertimpl_reduce_float(flt, lng)
+convertimpl_copy(flt)
 convertimpl_enlarge(flt, dbl)
 
-convertimpl_reduce(dbl, bte)
-convertimpl_reduce(dbl, sht)
-convertimpl_reduce(dbl, int)
-convertimpl_reduce(dbl, lng)
-convertimpl_reduce(dbl, flt)
+convertimpl_reduce_float(dbl, bte)
+convertimpl_reduce_float(dbl, sht)
+convertimpl_reduce_float(dbl, int)
+convertimpl_oid_reduce(dbl)
+convertimpl_reduce_float(dbl, lng)
+convertimpl_reduce_float(dbl, flt)
+convertimpl_copy(dbl)
 
 convert2bit_impl(bte)
 convert2bit_impl(sht)
@@ -12254,14 +12363,14 @@ convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
 static BUN
-convert_any_str(int tp, void *src, BAT *bn, BUN cnt)
+convert_any_str(int tp, const void *src, BAT *bn, BUN cnt)
 {
 	str dst = 0;
 	int len = 0;
 	BUN nils = 0;
 	BUN i;
 	void *nil = ATOMnilptr(tp);
-	int (*atomtostr)(str *, int *, ptr) = BATatoms[tp].atomToStr;
+	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
 
 	for (i = 0; i < cnt; i++) {
 		(*atomtostr)(&dst, &len, src);
@@ -12288,7 +12397,7 @@ convert_str_any(BAT *b, int tp, void *dst, int abort_on_error)
 	char *s;
 	ptr d;
 	int len = ATOMsize(tp);
-	int (*atomfromstr)(str, int *, ptr *) = BATatoms[tp].atomFromStr;
+	int (*atomfromstr)(const char *, int *, ptr *) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
 	BATloop(b, i, j) {
@@ -12307,11 +12416,198 @@ convert_str_any(BAT *b, int tp, void *dst, int abort_on_error)
 	return nils;
 }
 
+static BUN
+convert_typeswitchloop(const void *src, int stp, void *dst, int dtp,
+		       BUN cnt, int abort_on_error)
+{
+	switch (ATOMstorage(stp)) {
+	case TYPE_bte:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit)
+				return convert_bte_bit(src, dst, cnt);
+			return convert_bte_bte(src, dst, cnt);
+		case TYPE_sht:
+			return convert_bte_sht(src, dst, cnt);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_bte_int(src, dst, cnt);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_bte_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_bte_lng(src, dst, cnt);
+		case TYPE_flt:
+			return convert_bte_flt(src, dst, cnt);
+		case TYPE_dbl:
+			return convert_bte_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_sht:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit)
+				return convert_sht_bit(src, dst, cnt);
+			return convert_sht_bte(src, dst, cnt, abort_on_error);
+		case TYPE_sht:
+			return convert_sht_sht(src, dst, cnt);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_sht_int(src, dst, cnt);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_sht_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_sht_lng(src, dst, cnt);
+		case TYPE_flt:
+			return convert_sht_flt(src, dst, cnt);
+		case TYPE_dbl:
+			return convert_sht_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_int:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_int_bit(src, dst, cnt);
+			}
+			return convert_int_bte(src, dst, cnt, abort_on_error);
+		case TYPE_sht:
+			return convert_int_sht(src, dst, cnt, abort_on_error);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_int_int(src, dst, cnt);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_int_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_int_lng(src, dst, cnt);
+		case TYPE_flt:
+			return convert_int_flt(src, dst, cnt);
+		case TYPE_dbl:
+			return convert_int_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_lng:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_lng_bit(src, dst, cnt);
+			}
+			return convert_lng_bte(src, dst, cnt, abort_on_error);
+		case TYPE_sht:
+			return convert_lng_sht(src, dst, cnt, abort_on_error);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_lng_int(src, dst, cnt, abort_on_error);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_lng_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_lng_lng(src, dst, cnt);
+		case TYPE_flt:
+			return convert_lng_flt(src, dst, cnt);
+		case TYPE_dbl:
+			return convert_lng_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_flt:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_flt_bit(src, dst, cnt);
+			}
+			return convert_flt_bte(src, dst, cnt, abort_on_error);
+		case TYPE_sht:
+			return convert_flt_sht(src, dst, cnt, abort_on_error);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_flt_int(src, dst, cnt, abort_on_error);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_flt_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_flt_lng(src, dst, cnt, abort_on_error);
+		case TYPE_flt:
+			return convert_flt_flt(src, dst, cnt);
+		case TYPE_dbl:
+			return convert_flt_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	case TYPE_dbl:
+		switch (ATOMstorage(dtp)) {
+		case TYPE_bte:
+			if (dtp == TYPE_bit) {
+				return convert_dbl_bit(src, dst, cnt);
+			}
+			return convert_dbl_bte(src, dst, cnt, abort_on_error);
+		case TYPE_sht:
+			return convert_dbl_sht(src, dst, cnt, abort_on_error);
+		case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_dbl_int(src, dst, cnt, abort_on_error);
+		case TYPE_lng:
+#if SIZEOF_OID == SIZEOF_LNG
+			if (dtp == TYPE_oid)
+				return convert_dbl_oid(src, dst, cnt,
+						      abort_on_error);
+#endif
+			return convert_dbl_lng(src, dst, cnt, abort_on_error);
+		case TYPE_flt:
+			return convert_dbl_flt(src, dst, cnt, abort_on_error);
+		case TYPE_dbl:
+			return convert_dbl_dbl(src, dst, cnt);
+		default:
+			return BUN_NONE + 1;
+		}
+	default:
+		return BUN_NONE + 1;
+	}
+}
+
 BAT *
 BATconvert(BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
-	void *src, *dst;
 	BUN nils = 0;	/* in case no conversion defined */
 
 	assert(ATOMstorage(TYPE_wrd) == ATOMstorage(TYPE_int) ||
@@ -12330,205 +12626,30 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	src = (void *) Tloc(b, b->U->first);
-	dst = (void *) Tloc(bn, bn->U->first);
+	if (tp == TYPE_str)
+		nils = convert_any_str(b->T->type, Tloc(b, b->U->first),
+				       bn, b->U->count);
+	else if (b->T->type == TYPE_str)
+		nils = convert_str_any(b, b->T->type, Tloc(bn, bn->U->first),
+				       abort_on_error);
+	else
+		nils = convert_typeswitchloop(Tloc(b, b->U->first), b->T->type,
+					      Tloc(bn, bn->U->first), tp,
+					      b->U->count, abort_on_error);
 
-	switch (ATOMstorage(b->T->type)) {
-	case TYPE_bte:
-		switch (ATOMstorage(tp)) {
-		case TYPE_sht:
-			nils = convert_bte_sht(src, dst, b->U->count);
-			break;
-		case TYPE_int:
-			nils = convert_bte_int(src, dst, b->U->count);
-			break;
-		case TYPE_lng:
-			nils = convert_bte_lng(src, dst, b->U->count);
-			break;
-		case TYPE_flt:
-			nils = convert_bte_flt(src, dst, b->U->count);
-			break;
-		case TYPE_dbl:
-			nils = convert_bte_dbl(src, dst, b->U->count);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		case TYPE_bte:
-			assert(tp == TYPE_bit);
-			nils = convert_bte_bit(src, dst, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_sht:
-		switch (ATOMstorage(tp)) {
-		case TYPE_bte:
-			if (tp == TYPE_bit) {
-				nils = convert_sht_bit(src, dst, b->U->count);
-				break;
-			}
-			nils = convert_sht_bte(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_int:
-			nils = convert_sht_int(src, dst, b->U->count);
-			break;
-		case TYPE_lng:
-			nils = convert_sht_lng(src, dst, b->U->count);
-			break;
-		case TYPE_flt:
-			nils = convert_sht_flt(src, dst, b->U->count);
-			break;
-		case TYPE_dbl:
-			nils = convert_sht_dbl(src, dst, b->U->count);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_int:
-		switch (ATOMstorage(tp)) {
-		case TYPE_bte:
-			if (tp == TYPE_bit) {
-				nils = convert_int_bit(src, dst, b->U->count);
-				break;
-			}
-			nils = convert_int_bte(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_sht:
-			nils = convert_int_sht(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_lng:
-			nils = convert_int_lng(src, dst, b->U->count);
-			break;
-		case TYPE_flt:
-			nils = convert_int_flt(src, dst, b->U->count);
-			break;
-		case TYPE_dbl:
-			nils = convert_int_dbl(src, dst, b->U->count);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_lng:
-		switch (ATOMstorage(tp)) {
-		case TYPE_bte:
-			if (tp == TYPE_bit) {
-				nils = convert_lng_bit(src, dst, b->U->count);
-				break;
-			}
-			nils = convert_lng_bte(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_sht:
-			nils = convert_lng_sht(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_int:
-			nils = convert_lng_int(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_flt:
-			nils = convert_lng_flt(src, dst, b->U->count);
-			break;
-		case TYPE_dbl:
-			nils = convert_lng_dbl(src, dst, b->U->count);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_flt:
-		switch (ATOMstorage(tp)) {
-		case TYPE_bte:
-			if (tp == TYPE_bit) {
-				nils = convert_flt_bit(src, dst, b->U->count);
-				break;
-			}
-			nils = convert_flt_bte(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_sht:
-			nils = convert_flt_sht(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_int:
-			nils = convert_flt_int(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_lng:
-			nils = convert_flt_lng(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_dbl:
-			nils = convert_flt_dbl(src, dst, b->U->count);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_dbl:
-		switch (ATOMstorage(tp)) {
-		case TYPE_bte:
-			if (tp == TYPE_bit) {
-				nils = convert_dbl_bit(src, dst, b->U->count);
-				break;
-			}
-			nils = convert_dbl_bte(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_sht:
-			nils = convert_dbl_sht(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_int:
-			nils = convert_dbl_int(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_lng:
-			nils = convert_dbl_lng(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_flt:
-			nils = convert_dbl_flt(src, dst, b->U->count,
-					       abort_on_error);
-			break;
-		case TYPE_str:
-			nils = convert_any_str(b->T->type, src, bn, b->U->count);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_str:
-		nils = convert_str_any(b, b->T->type, dst, abort_on_error);
-		break;
-	default:
-		goto unsupported;
+	if (nils == BUN_NONE + 1) {
+		BBPunfix(bn->batCacheid);
+		GDKerror("BATconvert: type combination (convert(%s)->%s) "
+			 "not supported.\n",
+			 ATOMname(b->T->type), ATOMname(tp));
+		return NULL;
 	}
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
-		if (b->T->type)
-			GDKerror("22018!conversion from string to type %s failed.\n",
-				 ATOMname(tp));
+		if (b->T->type == TYPE_str)
+			GDKerror("22018!conversion from string to type %s "
+				 "failed.\n", ATOMname(tp));
 		else
 			GDKerror("22003!overflow in conversion.\n");
 		return NULL;
@@ -12550,542 +12671,60 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 	}
 
 	return bn;
-
-  unsupported:
-	BBPunfix(bn->batCacheid);
-	GDKerror("BATconvert: type combination (convert(%s)->%s) not supported.\n", ATOMname(b->T->type), ATOMname(tp));
-	return NULL;
 }
 
 int
 VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	ptr p;
+	BUN nils = 0;
 
-	switch (ATOMstorage(ret->vtype)) {
-	case TYPE_bte:
-		ret->len = (int) sizeof(ret->val.btval);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.btval = bte_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.btval != 0);
-			} else {
-				ret->val.btval = (bte) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			if (v->val.shval == sht_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.shval != 0);
-			} else if (v->val.shval <= (sht) GDK_bte_min ||
-				   v->val.shval > (sht) GDK_bte_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.btval = bte_nil;
-			} else {
-				ret->val.btval = (bte) v->val.shval;
-			}
-			break;
-		case TYPE_int:
-			if (v->val.ival == int_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.ival != 0);
-			} else if (v->val.ival <= (int) GDK_bte_min ||
-				   v->val.ival > (int) GDK_bte_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.btval = bte_nil;
-			} else {
-				ret->val.btval = (bte) v->val.ival;
-			}
-			break;
-		case TYPE_lng:
-			if (v->val.lval == lng_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.lval != 0);
-			} else if (v->val.lval <= (lng) GDK_bte_min ||
-				   v->val.lval > (lng) GDK_bte_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.btval = bte_nil;
-			} else {
-				ret->val.btval = (bte) v->val.lval;
-			}
-			break;
-		case TYPE_flt:
-			if (v->val.fval == flt_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.fval != 0);
-			} else if (v->val.fval <= (flt) GDK_bte_min ||
-				   v->val.fval > (flt) GDK_bte_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.btval = bte_nil;
-			} else {
-				ret->val.btval = (bte) v->val.fval;
-			}
-			break;
-		case TYPE_dbl:
-			if (v->val.dval == dbl_nil) {
-				ret->val.btval = bte_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.btval = (bte) (v->val.dval != 0);
-			} else if (v->val.dval <= (dbl) GDK_bte_min ||
-				   v->val.dval > (dbl) GDK_bte_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.btval = bte_nil;
-			} else {
-				ret->val.btval = (bte) v->val.dval;
-			}
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.btval = bte_nil;
-			} else {
-				p = &ret->val.btval;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.btval = bte_nil;
-				}
-				assert(p == &ret->val.btval);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_sht:
-		ret->len = (int) sizeof(ret->val.shval);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.shval = sht_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.shval = sht_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.shval = (sht) v->val.btval != 0;
-			} else {
-				ret->val.shval = (sht) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			ret->val.shval = v->val.shval;
-			break;
-		case TYPE_int:
-			if (v->val.ival == int_nil) {
-				ret->val.shval = sht_nil;
-			} else if (v->val.ival <= (int) GDK_sht_min ||
-				   v->val.ival > (int) GDK_sht_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.shval = sht_nil;
-			} else {
-				ret->val.shval = (sht) v->val.ival;
-			}
-			break;
-		case TYPE_lng:
-			if (v->val.lval == lng_nil) {
-				ret->val.shval = sht_nil;
-			} else if (v->val.lval <= (lng) GDK_sht_min ||
-				   v->val.lval > (lng) GDK_sht_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.shval = sht_nil;
-			} else {
-				ret->val.shval = (sht) v->val.lval;
-			}
-			break;
-		case TYPE_flt:
-			if (v->val.fval == flt_nil) {
-				ret->val.shval = sht_nil;
-			} else if (v->val.fval <= (flt) GDK_sht_min ||
-				   v->val.fval > (flt) GDK_sht_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.shval = sht_nil;
-			} else {
-				ret->val.shval = (sht) v->val.fval;
-			}
-			break;
-		case TYPE_dbl:
-			if (v->val.dval == dbl_nil) {
-				ret->val.shval = sht_nil;
-			} else if (v->val.dval <= (dbl) GDK_sht_min ||
-				   v->val.dval > (dbl) GDK_sht_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.shval = sht_nil;
-			} else {
-				ret->val.shval = (sht) v->val.dval;
-			}
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.shval = sht_nil;
-			} else {
-				p = &ret->val.shval;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.shval = sht_nil;
-				}
-				assert(p == &ret->val.shval);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_int:
-		ret->len = (int) sizeof(ret->val.ival);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.ival = int_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.ival = int_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.ival = (int) v->val.btval != 0;
-			} else {
-				ret->val.ival = (int) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			if (v->val.shval == sht_nil) {
-				ret->val.ival = int_nil;
-			} else {
-				ret->val.ival = (int) v->val.shval;
-			}
-			break;
-		case TYPE_int:
-			ret->val.ival = v->val.ival;
-			break;
-		case TYPE_lng:
-			if (v->val.lval == lng_nil) {
-				ret->val.ival = int_nil;
-			} else if (v->val.lval <= (lng) GDK_int_min ||
-				   v->val.lval > (lng) GDK_int_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.ival = int_nil;
-			} else {
-				ret->val.ival = (int) v->val.lval;
-			}
-			break;
-		case TYPE_flt:
-			if (v->val.fval == flt_nil) {
-				ret->val.ival = int_nil;
-			} else if (v->val.fval <= (flt) GDK_int_min ||
-				   v->val.fval > (flt) GDK_int_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.ival = int_nil;
-			} else {
-				ret->val.ival = (int) v->val.fval;
-			}
-			break;
-		case TYPE_dbl:
-			if (v->val.dval == dbl_nil) {
-				ret->val.ival = int_nil;
-			} else if (v->val.dval <= (dbl) GDK_int_min ||
-				   v->val.dval > (dbl) GDK_int_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.ival = int_nil;
-			} else {
-				ret->val.ival = (int) v->val.dval;
-			}
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.ival = int_nil;
-			} else {
-				p = &ret->val.ival;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.ival = int_nil;
-				}
-				assert(p == &ret->val.ival);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-#if SIZEOF_OID == SIZEOF_INT
-		if (ret->vtype == TYPE_oid &&
-		    ret->val.ival != int_nil &&
-		    ret->val.ival < 0) {
-			if (abort_on_error)
-				goto overflow;
-			ret->val.oval = oid_nil;
-		}
-#endif
-		break;
-	case TYPE_lng:
-		ret->len = (int) sizeof(ret->val.lval);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.lval = lng_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.lval = lng_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.lval = (lng) v->val.btval != 0;
-			} else {
-				ret->val.lval = (lng) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			if (v->val.shval == sht_nil) {
-				ret->val.lval = lng_nil;
-			} else {
-				ret->val.lval = (lng) v->val.shval;
-			}
-			break;
-		case TYPE_int:
-			if (v->val.ival == int_nil) {
-				ret->val.lval = lng_nil;
-			} else {
-				ret->val.lval = (lng) v->val.ival;
-			}
-			break;
-		case TYPE_lng:
-			ret->val.lval = v->val.lval;
-			break;
-		case TYPE_flt:
-			if (v->val.fval == flt_nil) {
-				ret->val.lval = lng_nil;
-			} else if (v->val.fval <= (flt) GDK_lng_min ||
-				   v->val.fval > (flt) GDK_lng_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.lval = lng_nil;
-			} else {
-				ret->val.lval = (lng) v->val.fval;
-			}
-			break;
-		case TYPE_dbl:
-			if (v->val.dval == dbl_nil) {
-				ret->val.lval = lng_nil;
-			} else if (v->val.dval <= (dbl) GDK_lng_min ||
-				   v->val.dval > (dbl) GDK_lng_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.lval = lng_nil;
-			} else {
-				ret->val.lval = (lng) v->val.dval;
-				/* it can still go wrong...
-				 * select cast(power(2,63) as bigint)
-				 */
-				if (ret->val.lval == lng_nil && abort_on_error)
-					goto overflow;
-			}
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.lval = lng_nil;
-			} else {
-				p = &ret->val.lval;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.lval = lng_nil;
-				}
-				assert(p == &ret->val.lval);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-#if SIZEOF_OID == SIZEOF_LNG
-		if (ret->vtype == TYPE_oid &&
-		    ret->val.lval != lng_nil &&
-		    ret->val.lval < 0) {
-			if (abort_on_error)
-				goto overflow;
-			ret->val.oval = oid_nil;
-		}
-#endif
-		break;
-	case TYPE_flt:
-		ret->len = (int) sizeof(ret->val.fval);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.fval = flt_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.fval = flt_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.fval = (flt) (v->val.btval != 0);
-			} else {
-				ret->val.fval = (flt) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			if (v->val.shval == sht_nil) {
-				ret->val.fval = flt_nil;
-			} else {
-				ret->val.fval = (flt) v->val.shval;
-			}
-			break;
-		case TYPE_int:
-			if (v->val.ival == int_nil) {
-				ret->val.fval = flt_nil;
-			} else {
-				ret->val.fval = (flt) v->val.ival;
-			}
-			break;
-		case TYPE_lng:
-			if (v->val.lval == lng_nil) {
-				ret->val.fval = flt_nil;
-			} else {
-				ret->val.fval = (flt) v->val.lval;
-			}
-			break;
-		case TYPE_flt:
-			ret->val.fval = v->val.fval;
-			break;
-		case TYPE_dbl:
-			if (v->val.dval == dbl_nil) {
-				ret->val.fval = flt_nil;
-			} else if (v->val.dval <= (dbl) GDK_flt_min ||
-				   v->val.dval > (dbl) GDK_flt_max) {
-				if (abort_on_error)
-					goto overflow;
-				ret->val.fval = flt_nil;
-			} else {
-				ret->val.fval = (flt) v->val.dval;
-			}
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.fval = flt_nil;
-			} else {
-				p = &ret->val.fval;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.fval = flt_nil;
-				}
-				assert(p == &ret->val.fval);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_dbl:
-		ret->len = (int) sizeof(ret->val.dval);
-		switch (ATOMstorage(v->vtype)) {
-		case TYPE_void:
-			ret->val.dval = dbl_nil;
-			break;
-		case TYPE_bte:
-			if (v->val.btval == bte_nil) {
-				ret->val.dval = dbl_nil;
-			} else if (ret->vtype == TYPE_bit) {
-				ret->val.dval = (dbl) v->val.btval != 0;
-			} else {
-				ret->val.dval = (dbl) v->val.btval;
-			}
-			break;
-		case TYPE_sht:
-			if (v->val.shval == sht_nil) {
-				ret->val.dval = dbl_nil;
-			} else {
-				ret->val.dval = (dbl) v->val.shval;
-			}
-			break;
-		case TYPE_int:
-			if (v->val.ival == int_nil) {
-				ret->val.dval = dbl_nil;
-			} else {
-				ret->val.dval = (dbl) v->val.ival;
-			}
-			break;
-		case TYPE_lng:
-			if (v->val.lval == lng_nil) {
-				ret->val.dval = dbl_nil;
-			} else {
-				ret->val.dval = (dbl) v->val.lval;
-			}
-			break;
-		case TYPE_flt:
-			if (v->val.fval == flt_nil) {
-				ret->val.dval = dbl_nil;
-			} else {
-				ret->val.dval = (dbl) v->val.fval;
-			}
-			break;
-		case TYPE_dbl:
-			ret->val.dval = v->val.dval;
-			break;
-		case TYPE_str:
-			if (v->val.sval == NULL ||
-			    strcmp(v->val.sval, str_nil) == 0) {
-				ret->val.dval = dbl_nil;
-			} else {
-				p = &ret->val.dval;
-				if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval, &ret->len, &p) <= 0) {
-					if (abort_on_error)
-						goto strconvert;
-					ret->val.dval = dbl_nil;
-				}
-				assert(p == &ret->val.dval);
-			}
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	case TYPE_str:
-		if ((*BATatoms[v->vtype].atomCmp)(VALptr((ValPtr) v),
+	if (ret->vtype == TYPE_str) {
+		if (v->vtype == TYPE_void ||
+		    (*BATatoms[v->vtype].atomCmp)(VALptr((ValPtr) v),
 						  ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
 		} else if (v->vtype == TYPE_str) {
 			ret->val.sval = GDKstrdup(v->val.sval);
 		} else {
 			ret->val.sval = NULL;
-			(*BATatoms[v->vtype].atomToStr)(&ret->val.sval, &ret->len, VALptr((ValPtr) v));
+			(*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
+							&ret->len,
+							VALptr((ValPtr) v));
 		}
-		break;
-	default:
-		goto unsupported;
+	} else if (v->vtype == TYPE_void) {
+		nils = convert_typeswitchloop(&oid_nil, TYPE_oid,
+					      VALptr(ret), ret->vtype,
+					      1, abort_on_error);
+	} else if (v->vtype == TYPE_str) {
+		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
+			nils = convert_typeswitchloop(&bte_nil, TYPE_bte,
+						      VALptr(ret), ret->vtype,
+						      1, abort_on_error);
+		} else {
+			p = VALptr(ret);
+			ret->len = BATatoms[ret->vtype].size;
+			if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval,
+								&ret->len,
+								&p) <= 0) {
+				if (abort_on_error) {
+					nils = BUN_NONE;
+					GDKerror("22018!conversion from string"
+						 " to type %s failed.\n",
+						 ATOMname(ret->vtype));
+				} else {
+					nils = 1;
+					ret->val.dval = dbl_nil;
+				}
+			}
+			assert(p == VALptr(ret));
+		}
+	} else {
+		nils = convert_typeswitchloop(VALptr((ValPtr) v), v->vtype,
+					      VALptr(ret), ret->vtype,
+					      1, abort_on_error);
 	}
-	return GDK_SUCCEED;
-
-  overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
-  strconvert:
-	GDKerror("22018!conversion of string '%s' to type %s failed.\n",
-		 v->val.sval, ATOMname(ret->vtype));
-	return GDK_FAIL;
-  unsupported:
-	GDKerror("VARconvert: conversion from type %s to type %s unsupported.\n",
-		 ATOMname(v->vtype), ATOMname(ret->vtype));
-	return GDK_FAIL;
+	return nils >= BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
 }
 
 /* signed version of BUN */

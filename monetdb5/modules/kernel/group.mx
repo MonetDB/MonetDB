@@ -1494,7 +1494,7 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
-	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
+	int (*cmp) (const void *, const void *) = BATatoms[tpe].atomCmp;
 	int shift = 0;
 	oid id = *idp + 1;
 	ptr cur, val;
@@ -1557,7 +1557,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[b->ttype].atomCmp;
 		BUN cnt = 0;
 		BUN p, q, r, last = BUNfirst(b);
 		char *base = a->T->vheap ? NULL : a->T->heap.base, *this = NULL;
@@ -2769,7 +2769,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
-	int (*cmp)(ptr,ptr);
+	int (*cmp)(const void *, const void *);
 	ptr nil;
 	BUN yy = 0, off;
 	@3 *extremes;

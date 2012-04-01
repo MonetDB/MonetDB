@@ -2597,12 +2597,12 @@ TABshowPage(Tablet *t)
  * @+ V4 stuff
  * The remainder is a patched copy of material from gdk_storage.
  */
-typedef int (*strFcn) (str *s, int *len, ptr val);
+typedef int (*strFcn) (str *s, int *len, const void *val);
 
 #define printfcn(b)	((b->ttype==TYPE_void && b->tseqbase==oid_nil)?	\
 			          print_nil:BATatoms[b->ttype].atomToStr)
 static int
-print_nil(char **dst, int *len, ptr dummy)
+print_nil(char **dst, int *len, const void *dummy)
 {
 	(void) dummy;				/* fool compiler */
 	if (*len < 3) {

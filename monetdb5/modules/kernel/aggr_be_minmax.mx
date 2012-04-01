@@ -241,7 +241,7 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
 	BATiter bni, bi = bat_iterator(b);
-	int (*cmp)(ptr,ptr);
+	int (*cmp)(const void *, const void *);
 	ptr nil;
 	BUN off;
 	@5 *extremes = NULL;

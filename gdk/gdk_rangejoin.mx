@@ -162,7 +162,7 @@ break;
 	BUN p, q;
 	BUN v, w;
 	BUN cap = bn->batCapacity, cnt = 0;
-	int (*cmp)(void*,void*) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 
 	if (!ATOMlinear(l->ttype)) {
 		GDKerror("range join not possible on non-linear types\n");

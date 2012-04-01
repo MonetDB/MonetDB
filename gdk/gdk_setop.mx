@@ -157,7 +157,7 @@ All Rights Reserved.
 	BATaccessEnd(bn, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_SEQUENTIAL);
 @= elim
 	{
-		int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
 		BUN zz;
 		BUN p, q, r;
 
@@ -212,7 +212,7 @@ All Rights Reserved.
 		/* fall through */
 	default:
 		{
-			int (*merge)(ptr, ptr) = BATatoms[b->htype].atomCmp;
+			int (*merge)(const void *, const void *) = BATatoms[b->htype].atomCmp;
 
 			if (b->hvarsized) {
 				@:elim(@1,var,var,((*merge)(h,BUNhvar(bi,r))))@
@@ -726,7 +726,7 @@ BATsunique(BAT *b)
 static BAT*
 BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
-	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
+	int hash = TRUE, (*cmp)(const void *, const void *), (*merge)(const void *, const void *) = NULL;
 	ptr hnil, tnil;
 
 	/* determine how to do the intersect */

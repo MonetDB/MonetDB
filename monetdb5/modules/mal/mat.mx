@@ -793,7 +793,7 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 	BUN end_i2 = val_i2 + cnt_i2;
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
-	int (*cmp) (ptr, ptr) = BATatoms[i1->ttype].atomCmp;
+	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
 
 	BATseqbase(res, 0);

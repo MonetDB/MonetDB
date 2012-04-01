@@ -2131,11 +2131,11 @@ typedef struct {
 	ptr atomNull;		/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (str s, int *len, ptr *dst);
-	int (*atomToStr) (str *s, int *len, ptr src);
+	int (*atomFromStr) (const char *s, int *len, ptr *dst);
+	int (*atomToStr) (str *s, int *len, const void *src);
 	void *(*atomRead) (ptr a, stream *s, size_t cnt);
 	int (*atomWrite) (ptr a, stream *s, size_t cnt);
-	int (*atomCmp) (ptr v1, ptr v2);
+	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (ptr v);
 	/* optional functions */
 	void (*atomConvert) (ptr v, int direction);
@@ -2161,7 +2161,7 @@ gdk_export int ATOMindex(char *nme);
 gdk_export str ATOMname(int id);
 gdk_export int ATOMlen(int id, ptr v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, ptr v_1, ptr v_2);
+gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, ptr val, stream *fd);
 gdk_export int ATOMformat(int id, ptr val, char **buf);
 

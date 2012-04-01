@@ -1988,7 +1988,7 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	if (!optimize) {
 		BATiter li = bat_iterator(l);
 		BATiter ri = bat_iterator(r);
-		int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[l->ttype].atomCmp;
 		ptr nil = ATOMnilptr(l->ttype);
 		BUN rp, rq, lp, lq;
 
@@ -2568,7 +2568,7 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATiter ri = bat_iterator(r);
 	BATiter bni;
 	BUN l_cur, l_end, r_cur, r_end, dst;
-	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
+	int (*cmp) (const void *, const void *) = BATatoms[l->ttype].atomCmp;
 	ptr nil = ATOMnilptr(l->ttype);
 
 	/* Just to silence compilers (Intel's icc) that otherwise might
@@ -3208,7 +3208,7 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	if (ATOMstorage(lead_col->b->htype) == ATOMstorage(TYPE_oid)) {
 		@:multijoin(hloc,OID,_oid,_oid)@
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[lead_col->b->htype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[lead_col->b->htype].atomCmp;
 
 		@:multijoin(head,STD,_any)@
 	}
