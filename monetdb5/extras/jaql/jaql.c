@@ -29,7 +29,6 @@
 #include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "stream.h"
 
 extern int jaqlparse(jc *j);
 extern int jaqllex_init_extra(jc *user_defined, void **scanner);
@@ -1876,50 +1875,5 @@ JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "jaql.cast", "BAT tail is not of required type");
 
 	*ret = *b;
-	return MAL_SUCCEED;
-}
-
-str
-JAQLexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
-{
-	stream *f;
-	buffer *bufstr = NULL;
-	bit pretty = TRUE;
-	size_t maxlen = 0;
-	size_t rows = 0;
-	str buf;
-	str line, oline;
-
-	bufstr = buffer_create(8096);
-	f = buffer_wastream(bufstr, "bufstr_write");
-	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, &pretty);
-
-	/* calculate width of column, and the number of tuples */
-	buf = buffer_get_buf(bufstr);
-	oline = buf;
-	while ((line = strchr(oline, '\n')) != NULL) {
-		if ((size_t) (line - oline) > maxlen)
-			maxlen = line - oline;
-		rows++;
-		oline = line + 1;
-	} /* last line ends with \n */
-
-	mnstr_printf(*s, "&1 0 " SZFMT " 1 " SZFMT "\n",
-			/* type id rows columns tuples */ rows, rows);
-	mnstr_printf(*s, "%% .json # table_name\n");
-	mnstr_printf(*s, "%% json # name\n");
-	mnstr_printf(*s, "%% clob # type\n");
-	mnstr_printf(*s, "%% " SZFMT " # length\n", maxlen);
-	oline = buf;
-	while ((line = strchr(oline, '\n')) != NULL) {
-		*line++ = '\0';
-		mnstr_printf(*s, "=%s\n", oline);
-		oline = line;
-	}
-	free(buf);
-	mnstr_close(f);
-	mnstr_destroy(f);
-	buffer_destroy(bufstr);
-
 	return MAL_SUCCEED;
 }

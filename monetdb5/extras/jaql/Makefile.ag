@@ -44,7 +44,9 @@ lib__jaql = {
 			  jaqlscenario.c jaqlscenario.h jaqltree.h
 
 	# the ./ is necessary for autogen not to generate garbage
-	LIBS = lib_json ./parser/libjaqlp ../../tools/libmonetdb5 \
+	# Windows needs the libstream for indirect dep from libbat
+	LIBS = ./parser/libjaqlp \
+		   ../../tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
 		   $(MALLOC_LIBS)

@@ -4687,7 +4687,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				if (j->explain & 64) {
 					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, putName("jaql", 4));
+					setModuleId(q, putName("json", 4));
 					setFunctionId(q, putName("exportResult", 12));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 					q = pushArgument(mb, q, a);
