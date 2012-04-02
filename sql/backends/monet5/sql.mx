@@ -563,9 +563,6 @@ address SQLbat_alpha
 comment "BAT implementation of astronomy alpha function";
 
 @= mal_cast
-# command calc.@1( v:str ) :@1 
-# address str_2_@1
-# comment "Cast to @1";
 command calc.@1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
@@ -573,9 +570,6 @@ command calc.@1( v:str, digits:int, scale:int ) :@1
 address str_2dec_@1
 comment "cast to dec(@1) and check for overflow";
 
-# command batcalc.@1( v:bat[:oid,:str] ) :bat[:oid,:@1] 
-# address batstr_2_@1
-# comment "Cast to @1";
 command batcalc.@1( v:bat[:oid,:str], digits:int ) :bat[:oid,:@1] 
 address batstr_2num_@1
 comment "cast to @1 and check for overflow";
@@ -618,6 +612,16 @@ comment "cast @1 to @1 and check for overflow";
 @mal
 @:mal_casttime(timestamp)@
 @:mal_casttime(daytime)@
+
+command calc.date( v:str ) :date 
+address str_2_date
+comment "cast to date";
+command batcalc.date( v:bat[:oid,:str] ) :bat[:oid,:date] 
+address batstr_2_date
+comment "cast to date";
+command calc.str( v:date ) :str 
+address SQLdate_2_str
+comment "cast date to str";
 
 command calc.sqlblob( v:str ) :sqlblob 
 address str_2_sqlblob
@@ -1294,15 +1298,6 @@ sql5_export str batstr_2_@1( int *res, int *val );
 sql5_export str SQL@1_2_str( str *res, @1 *val );
 @
 @h
-@:cast_export(bit,bitToStr,bit)@
-@:cast_export(oid,OIDtoStr,oid)@
-@:cast_export(bte,bteToStr,bte)@
-@:cast_export(sht,shtToStr,sht)@
-@:cast_export(int,intToStr,int)@
-@:cast_export(lng,lngToStr,lng)@
-@:cast_export(wrd,wrdToStr,wrd)@
-@:cast_export(flt,fltToStr,flt)@
-@:cast_export(dbl,dblToStr,dbl)@
 @:cast_export(timestamp,timestamp_tostr,timestamp)@
 @:cast_export(daytime,daytime_tostr,daytime)@
 @:cast_export(date,date_tostr,date)@
@@ -4692,15 +4687,6 @@ batstr_2_@1( int *res, int *bid )
 }
 @
 @c
-@:cast(bit,bitToStr,bit, *res = *(bit*)p,&)@
-@:cast(oid,OIDtoStr,oid, *res = *(oid*)p,&)@
-@:cast(bte,bteToStr,bte, *res = *(bte*)p,&)@
-@:cast(sht,shtToStr,sht, *res = *(sht*)p,&)@
-@:cast(int,intToStr,int, *res = *(int*)p,&)@
-@:cast(lng,lngToStr,lng, *res = *(lng*)p,&)@
-@:cast(wrd,wrdToStr,wrd, *res = *(wrd*)p,&)@
-@:cast(flt,fltToStr,flt, *res = *(flt*)p,&)@
-@:cast(dbl,dblToStr,dbl, *res = *(dbl*)p,&)@
 @:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p,&)@
 @:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p,&)@
 @:cast(date,date_tostr,date, *res = *(date*)p,&)@
