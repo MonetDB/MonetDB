@@ -734,7 +734,7 @@ BATreplace(BAT *b, BAT *n, bit force)
  * Their efficient implementation is therefore mandatory.
  *
  * The interface supports seven operations: BATslice, BATselect,
- * BATfragment, BATsample, BATproject, BATrestrict.
+ * BATfragment, BATproject, BATrestrict.
  *
  * @- BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
@@ -1368,124 +1368,6 @@ BATtopN(BAT *b, BUN topN)
 		BATsetcount(b, topN);
 	}
 	return 0;
-}
-
-/*
- * @- Random Selections
- */
-BAT *
-BATsample_deprecated(BAT *b, BUN size)
-{
-	BUN cnt, i, r = 0, n, j;
-	BUN *choice = NULL, *dst;
-	BAT *bn;
-	BATiter bi = bat_iterator(b);
-	BUN bun;
-
-	BATcheck(b, "BATsample: source BAT required");
-
-	assert(BATcount(b) <= BUN_MAX);
-
-	if (size > BUN_MAX) {
-		GDKerror("BATsample: sample too large\n");
-		return NULL;
-	}
-
-	cnt = (BUN) BATcount(b);
-	n = (BUN) MIN(size, BATcount(b));
-
-	bn = BATnew(BAThtype(b), BATttype(b), n);
-	BATcheck(bn, "BATsample: dest BAT required");
-
-	if (n == 0)
-		return bn;
-	dst = choice = (BUN *) GDKmalloc(n * sizeof(BUN));
-	if (choice == NULL)
-		goto bunins_failed;
-
-	if (n * 2 < BATcount(b)) {	/* nondense sample */
-		char *vec = (char *) GDKzalloc(1 + (cnt / 8));
-
-		if (vec == NULL)
-			goto bunins_failed;
-		for (j = 0; j < n; j++) {
-			r += rand();
-			i = r % cnt;
-			for (;;) {
-				int mask = 1 << (i & 7);
-
-				if (vec[i >> 3] & mask) {
-					if (++i == cnt)
-						i = 0;
-				} else {
-					vec[i >> 3] |= mask;
-					break;
-				}
-			}
-			*dst++ = i;
-		}
-		GDKfree(vec);
-	} else if (cnt < 65536) {
-		unsigned short *vec = (unsigned short *) GDKmalloc(cnt * sizeof(unsigned short));
-
-		if (vec == NULL)
-			goto bunins_failed;
-		for (i = 0; i < cnt; i++)
-			vec[i] = (unsigned short) i;
-		for (j = 0; j < n; j++) {
-			r += rand();
-			i = r % cnt;
-			*dst++ = vec[i];
-			vec[i] = vec[--cnt];
-		}
-		GDKfree(vec);
-	} else {
-		BUN *vec = (BUN *) GDKmalloc(cnt * sizeof(BUN));
-
-		if (vec == NULL)
-			goto bunins_failed;
-		for (i = 0; i < cnt; i++)
-			vec[i] = i;
-		for (j = 0; j < n; j++) {
-			r += rand();
-			i = r % cnt;
-			*dst++ = vec[i];
-			vec[i] = vec[--cnt];
-		}
-		GDKfree(vec);
-	}
-
-	/* merge all positions into a sorted list */
-	qsort((void *) choice, n, sizeof(BUN),
-#if SIZEOF_BUN == SIZEOF_INT
-	      (int (*)(const void *, const void *)) intCmp
-#else
-	      (int (*)(const void *, const void *)) lngCmp
-#endif
-	    );
-
-	/* insert the sorted sample */
-	bun = BUNfirst(b);
-	for (j = 0; j < n; j++) {
-		BUN p = bun + choice[j];
-
-		bunfastins(bn, BUNhead(bi, p), BUNtail(bi, p));
-	}
-	GDKfree(choice);	/* clean up choice array of BUN positions */
-
-	/* set sorted flags by hand, because we used BUNfastins() */
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = BATtordered(b);
-	BATkey(bn, BAThkey(b));
-	BATkey(BATmirror(bn), BATtkey(b));
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = b->T->nonil;
-	return bn;
-      bunins_failed:
-	if (choice)
-		GDKfree(choice);
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /*

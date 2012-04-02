@@ -3108,14 +3108,10 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @tab
  *  BAThistogram(BAT *b)
  * @item BAT*
- * @tab
- *  BATsample(BAT* b,BUN n)
  * @end multitable
  *
  * The routine BAThistogram produces a new BAT with a frequency distribution
  * of the tail of its operand.
- *
- * The routine BATsample returns a random sample on n BUNs of a BAT.
  *
  * For each BAT we maintain its dimensions as separately accessible
  * properties. They can be used to improve query processing at higher levels.
@@ -3129,7 +3125,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec * BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export BAT *BATsample_deprecated(BAT *b, BUN n);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
 
@@ -3367,6 +3362,9 @@ gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
  * @item BAT *
  * @tab BATsample (BAT *b, n)
  * @end multitable
+ *
+ * The routine BATsample returns a random sample on n BUNs of a BAT.
+ *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
 
