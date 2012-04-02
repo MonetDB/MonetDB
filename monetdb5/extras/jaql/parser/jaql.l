@@ -1,11 +1,10 @@
 %{
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include <stdio.h>
 #include "jaql.tab.h"
 #include "jaqltree.h"
 #ifdef _MSC_VER
 #define snprintf _snprintf
+#define fileno _fileno
 __declspec(dllimport)
 #else
 extern

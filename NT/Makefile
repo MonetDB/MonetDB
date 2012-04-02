@@ -55,6 +55,7 @@ unistd.h:
 	$(ECHO) #define close _close >> unistd.h
 	$(ECHO) #define getpid _getpid >> unistd.h
 	$(ECHO) #define umask _umask >> unistd.h
+	$(ECHO) #define isatty _isatty >> unistd.h
 	$(ECHO) #endif >> unistd.h
 	$(ECHO) #endif >> unistd.h
 
