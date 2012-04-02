@@ -504,6 +504,22 @@ comment "return a table with storage information ";
 #
 # The routine below are added to the calc module to
 # ease code generation.
+pattern calc.hash( v:bte ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:bte] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:sht ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:sht] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:int ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:int] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:lng ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:lng] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:oid ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:oid] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:wrd ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:wrd] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:flt ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:flt] ) :bat[:oid,:wrd] address MKEYbathash;
+pattern calc.hash( v:dbl ) :wrd address MKEYhash; 
+command batcalc.hash( b:bat[:oid,:dbl] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.hash( v:any ) :wrd address MKEYhash; 
 command batcalc.hash( b:bat[:oid,:any_1] ) :bat[:oid,:wrd] address MKEYbathash;
 pattern calc.rotate_xor_hash(h:wrd, nbits:int, v:any_1) :wrd address MKEYrotate_xor_hash;
