@@ -12707,15 +12707,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval,
 								&ret->len,
 								&p) <= 0) {
-				if (abort_on_error) {
-					nils = BUN_NONE;
-					GDKerror("22018!conversion from string"
-						 " to type %s failed.\n",
-						 ATOMname(ret->vtype));
-				} else {
-					nils = 1;
-					ret->val.dval = dbl_nil;
-				}
+				nils = BUN_NONE;
 			}
 			assert(p == VALptr(ret));
 		}
@@ -12724,7 +12716,22 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 					      VALptr(ret), ret->vtype,
 					      1, abort_on_error);
 	}
-	return nils >= BUN_NONE ? GDK_FAIL : GDK_SUCCEED;
+	if (nils == BUN_NONE + 1) {
+		GDKerror("VARconvert: conversion from type %s to type %s "
+			 "unsupported.\n",
+			 ATOMname(v->vtype), ATOMname(ret->vtype));
+		return GDK_FAIL;
+	}
+	if (nils == BUN_NONE && abort_on_error) {
+		if (v->vtype == TYPE_str)
+			GDKerror("22018!conversion of string "
+				 "'%s' to type %s failed.\n",
+				 v->val.sval, ATOMname(ret->vtype));
+		else
+			GDKerror("22003!overflow in calculation.\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 /* signed version of BUN */
