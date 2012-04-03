@@ -253,10 +253,6 @@ command getSequenceBase( b:bat[:oid,:any_1]):oid
 address BKCgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
 
-command setSorted(b:bat[:any_1,:any_2]) :bit 
-address BKCsetSorted
-comment "Assure BAT is ordered on the head.";
-
 command isSorted(b:bat[:any_1,:any_2]) :bit 
 address BKCisSorted
 comment "Returns whether a BAT is ordered on head or not.";
@@ -654,7 +650,6 @@ bat5_export str BKCgetRole(str *res, int *bid);
 bat5_export str BKCsetkey(int *res, int *bid, bit *param);
 bat5_export str BKCsetSet(int *res, int *bid, bit *param);
 bat5_export str BKCisaSet(bit *res, int *bid);
-bat5_export str BKCsetSorted(bit *res, int *bid);
 bat5_export str BKCisSorted(bit *res, int *bid);
 bat5_export str BKCisSortedReverse(bit *res, int *bid);
 bat5_export str BKCgetKey(bit *ret, int *bid);
@@ -845,13 +840,6 @@ CMDtail(str *res, int *bid)
 	} else {
 		*res = GDKstrdup(str_nil);
 	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDordered(bit *result, BAT *input)
-{
-	*result = BATordered(input);
 	return GDK_SUCCEED;
 }
 
@@ -2069,20 +2057,6 @@ BKCisaSet(bit *res, int *bid)
 		throw(MAL, "bat.isaSet", RUNTIME_OBJECT_MISSING);
 	}
 	*res = b->batSet;
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-BKCsetSorted(bit *res, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.isSorted", RUNTIME_OBJECT_MISSING);
-	}
-	CMDordered(res, b);
-	*res = BATordered(b);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }

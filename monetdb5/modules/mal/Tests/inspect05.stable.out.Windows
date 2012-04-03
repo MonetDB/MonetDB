@@ -7663,7 +7663,6 @@ end main;
 [ "setColumn",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2],t:str):void ",							  "BKCsetColumn;"		  ]
 [ "setRole",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:str,t:str):void ",						  "BKCsetRole;"			  ]
 [ "setName",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2],s:str):void ",							  "BKCsetName;"			  ]
-[ "setSorted",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",							  "BKCsetSorted;"		  ]
 [ "setWriteMode",	  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",						  "BKCsetWriteMode;"		  ]
 [ "setReadMode",	  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",						  "BKCsetReadMode;"		  ]
 [ "setAppendMode",	  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",						  "BKCsetAppendMode;"		  ]
