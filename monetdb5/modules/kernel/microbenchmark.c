@@ -48,8 +48,10 @@ BATrandom(BAT **bn, oid *base, int *size, int *domain)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = GDK_SORTED;
-		b->hsorted = GDK_SORTED;
+		b->tsorted = 1;
+		b->trevsorted = 0;
+		b->hsorted = 1;
+		b->hrevsorted = 0;
 		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
@@ -71,11 +73,13 @@ BATrandom(BAT **bn, oid *base, int *size, int *domain)
 		}
 	}
 
-	b->hsorted = GDK_SORTED;
+	b->hsorted = 1;
+	b->hrevsorted = 0;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	BATkey(BATmirror(b), FALSE);
 	*bn = b;
@@ -99,8 +103,10 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = GDK_SORTED;
-		b->hsorted = GDK_SORTED;
+		b->tsorted = 1;
+		b->trevsorted = 0;
+		b->hsorted = 1;
+		b->hrevsorted = 0;
 		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
@@ -130,11 +136,13 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
 		*(int *) Tloc(b, q) = val;
 	}
-	b->hsorted = GDK_SORTED;
+	b->hsorted = 1;
+	b->hrevsorted = 0;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	BATkey(BATmirror(b), *size <= *domain);
 	*bn = b;
@@ -160,8 +168,10 @@ BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = GDK_SORTED;
-		b->hsorted = GDK_SORTED;
+		b->tsorted = 1;
+		b->trevsorted = 0;
+		b->hsorted = 1;
+		b->hrevsorted = 0;
 		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
@@ -197,11 +207,13 @@ BATskewed(BAT **bn, oid *base, int *size, int *domain, int *skew)
 		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
 		*(int *) Tloc(b, q) = val;
 	}
-	b->hsorted = GDK_SORTED;
+	b->hsorted = 1;
+	b->hrevsorted = 0;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	BATkey(BATmirror(b), *size <= *domain);
 	*bn = b;
@@ -238,8 +250,10 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = GDK_SORTED;
-		b->hsorted = GDK_SORTED;
+		b->tsorted = 1;
+		b->trevsorted = 0;
+		b->hsorted = 1;
+		b->hrevsorted = 0;
 		b->tdense = FALSE;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
@@ -290,11 +304,13 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 		*(int *) Tloc(b, p) = *(int *) Tloc(b, q);
 		*(int *) Tloc(b, q) = val;
 	}
-	b->hsorted = GDK_SORTED;
+	b->hsorted = 1;
+	b->hrevsorted = 0;
 	b->hdense = TRUE;
 	BATseqbase(b, *base);
 	BATkey(b, TRUE);
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	BATkey(BATmirror(b), n<2);
 	*bn = b;

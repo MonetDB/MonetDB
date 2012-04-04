@@ -92,7 +92,7 @@ All Rights Reserved.
 #define ENDintersect(h,t)
 #define ENDdiff(h,t)            for(;p1<q1;p1++) bunfastins(bn,h,t)
 #define RALIGNdiff(bn,l,r)      FALSE
-#define RALIGNintersect(bn,l,r) ((BAThordered(l)&BAThordered(r)&1) && l->hkey\
+#define RALIGNintersect(bn,l,r) (BAThordered(l) & BAThordered(r) && (l)->hkey \
 				 && BATcount(bn)==BATcount(r))
 #endif /* _GDK_SETOP_H */
 
@@ -157,11 +157,11 @@ All Rights Reserved.
 	BATaccessEnd(bn, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_SEQUENTIAL);
 @= elim
 	{
-		int (*cmp)(ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
 		BUN zz;
 		BUN p, q, r;
 
-		if (BAThordered(b) & 1) {
+		if (BAThordered(b)) {
 			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: BAThordered(b)\n");
 			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: mergeelim\n");
 			if (b->tvarsized) {
@@ -212,7 +212,7 @@ All Rights Reserved.
 		/* fall through */
 	default:
 		{
-			int (*merge)(ptr, ptr) = BATatoms[b->htype].atomCmp;
+			int (*merge)(const void *, const void *) = BATatoms[b->htype].atomCmp;
 
 			if (b->hvarsized) {
 				@:elim(@1,var,var,((*merge)(h,BUNhvar(bi,r))))@
@@ -267,26 +267,26 @@ BATins_sunique(BAT *bn, BAT *b)
 	last2 = (BUNlast(b) - 1);
 
 	if (BATcount(b) &&
-	    (BAThordered(b) & 1) &&
+	    BAThordered(b) &&
 	    ATOMcmp(b->htype, BUNhead(bi, fst2), BUNhead(bi, last2)) == 0 &&
 	    (BATcount(bn) == 0 ||
 	     (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
-	      (BAThordered(bn) & 1) &&
+	      BAThordered(bn) &&
 	      ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
 		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(BATmirror(bn), BATmirror(b))\n");
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
 	}
 	if (BATcount(b) &&
-	    (BATtordered(b) & 1) &&
+	    BATtordered(b) &&
 	    ATOMcmp(b->ttype, BUNtail(bi, fst2), BUNtail(bi, last2)) == 0 &&
 	    (BATcount(bn) == 0 ||
 	     (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
-	      (BATtordered(bn) & 1) &&
+	      BATtordered(bn) &&
 	      ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
 		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(bn, b)\n");
 		return BATins_kunique(bn, b);
 	}
-	if ((BATtordered(b) & 1) && ATOMstorage(b->ttype) < TYPE_str) {
+	if (BATtordered(b) && ATOMstorage(b->ttype) < TYPE_str) {
 		bni.b = bn = BATmirror(bn);
 		bi.b = b = BATmirror(b);
 	}
@@ -355,7 +355,9 @@ BATkunique(BAT *b)
 	BATkey(bn, TRUE);	/* this we accomplished */
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
+	bn->hrevsorted = BAThrevordered(b);
 	bn->tsorted = BATtordered(b);
+	bn->trevsorted = BATtrevordered(b);
 	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = b->T->nonil;
 	if (BATcount(bn) == BATcount(b)) {
@@ -400,7 +402,9 @@ BATsunique(BAT *b)
 	BATkey(bn, BAThkey(b));
 	BATkey(BATmirror(bn), BATtkey(b));
 	bn->hsorted = BAThordered(b);
+	bn->hrevsorted = BAThrevordered(b);
 	bn->tsorted = BATtordered(b);
+	bn->trevsorted = BATtrevordered(b);
 	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = b->T->nonil;
 	if (BATcount(bn) == BATcount(b)) {
@@ -722,14 +726,14 @@ BATsunique(BAT *b)
 static BAT*
 BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
-	int hash = TRUE, (*cmp)(ptr, ptr), (*merge)(ptr, ptr) = NULL;
+	int hash = TRUE, (*cmp)(const void *, const void *), (*merge)(const void *, const void *) = NULL;
 	ptr hnil, tnil;
 
 	/* determine how to do the intersect */
-	if (BAThordered(l) & BAThordered(r) & 1) {
+	if (BAThordered(l) & BAThordered(r)) {
 		hash = FALSE;
 	} else if (FLIP@1(l, r)) {
-		int flip = BATtordered(l) & BATtordered(r) & 1;
+		int flip = BATtordered(l) & BATtordered(r);
 
 		if (flip) {
 			hash = FALSE;
@@ -827,7 +831,9 @@ BAT@1@2(BAT *l, BAT *r)
 		ALIGNsetH(bn, r);
 	}
 	bn->hsorted = BAThordered(l);
+	bn->hrevsorted = BAThrevordered(l);
 	bn->tsorted = BATtordered(l);
+	bn->trevsorted = BATtrevordered(l);
 	if (BATcount(bn)) {
 		BATkey(bn, BAThkey(l));
 		BATkey(BATmirror(bn), BATtkey(l));
@@ -863,145 +869,105 @@ BAT@1@2(BAT *l, BAT *r)
  * implementation uses the s/kdiff() and s/kunique() code for efficient
  * double elimination.
  */
-#define KEYk	TRUE
-#define KEYs	FALSE
-
-static BAT *
-BATmaterialize_(BAT *b, BUN size)
-{
-	BAT *bn = BATnew(TYPE_oid, b->ttype, size);
-	BUN p, q;
-	oid base;
-	BATiter bi = bat_iterator(b);
-
-	if (bn == NULL)
-		return NULL;
-	base = b->hseqbase;
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(bn, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	if (base == oid_nil) {
-		BATloop(b, p, q) {
-			bunfastins(bn, &base, BUNtail(bi, p));
-		}
-	} else {
-		BATloop(b, p, q) {
-			bunfastins(bn, &base, BUNtail(bi, p));
-			base++;
-		}
-	}
-	BATaccessEnd(bn, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	ALIGNsetH(bn, b);
-	ALIGNsetT(bn, b);
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
 
 @:union(k)@
 @:union(s)@
 
-@= bndense
-	/* r and l may be void */
-	bn@1dense = (BAT@1dense(r) & BAT@1dense(l) & 1) && @1disjunct &&
-			((* (@3 *) BUN@2(ri, BUNfirst(r)) - * (@3 *) BUN@2(li, BUNlast(l) - 1)) == (@3) 1);
-	break;
 @= union
 BAT *
 BAT@1union(BAT *l, BAT *r)
 {
-	int hdisjunct, tdisjunct, bnhdense, bntdense;
-	BAT *bn, *b=0;
+	int hdisjunct, tdisjunct;
+	BAT *bn, *b;
 	BUN p,q;
 	BATiter li, ri;
+	int ht, tt;
 
 	BATcompatible(l, r);
 	if (BATcount(l) == 0) {
-		BAT* swap = l;
-
+		b = l;
 		l = r;
-		r = swap;
+		r = b;
 	}
-	li = bat_iterator(l);
- 	ri = bat_iterator(r);
 	if (BATcount(r) == 0) {
 		return BATcopy(l, l->htype, l->ttype, FALSE);
 	}
-	if (l->htype == TYPE_void && l->hseqbase != oid_nil) {
-		bn = BATmaterialize_(l, BATcount(l) + BATcount(r));
-	} else if (l->ttype == TYPE_void && l->tseqbase != oid_nil) {
-		bn = BATmirror(BATmaterialize_(BATmirror(l), BATcount(l) + BATcount(r)));
-	} else {
-		bn = BATcopy(l, l->htype, l->ttype, TRUE);
-	}
-	if (bn == NULL)
-		return NULL;
 
-	hdisjunct = (BAThordered(r) & BAThordered(l) & 1) &&
+	b = NULL;
+	li = bat_iterator(l);
+ 	ri = bat_iterator(r);
+	hdisjunct = BAThordered(r) & BAThordered(l) &&
 		    ATOMcmp(l->htype, BUNhead(li, BUNlast(l) - 1), BUNhead(ri, BUNfirst(r))) < 0;
-	tdisjunct = (BATtordered(r) & BATtordered(l) & 1) &&
+	tdisjunct = BATtordered(r) & BATtordered(l) &&
 		    ATOMcmp(l->ttype, BUNtail(li, BUNlast(l) - 1), BUNtail(ri, BUNfirst(r))) < 0;
-
-	/* for now, only oid can be dense;
-	   later, bte, sht, int, wrd, lng might become dense, too */
-	switch (bn->htype) {
-	case TYPE_oid:
-	case TYPE_void:
-		@:bndense(h,head,oid)@
-	default:
-	        bnhdense = 0;
-	}
-	switch (bn->ttype) {
-	case TYPE_oid:
-	case TYPE_void:
-		@:bndense(t,tail,oid)@
-	default:
-		bntdense = 0;
-	}
 
 	if (!hdisjunct) {
 		b = r;
-		ri.b = r = BAT@1diff(r, bn);
+		ri.b = r = BAT@1diff(r, l);
 		if (r == NULL) {
-			BBPreclaim(bn);
 			return NULL;
 		}
+	}
+
+	if (BATcount(r) == 0) {
+		if (b)
+			BBPreclaim(r);
+		return BATcopy(l, l->htype, l->ttype, FALSE);
+	}
+
+	ht = l->htype;
+	tt = l->ttype;
+	if (ht == TYPE_void && l->hseqbase != oid_nil)
+		ht = TYPE_oid;
+	if (tt == TYPE_void && l->tseqbase != oid_nil)
+		tt = TYPE_oid;
+	bn = BATcopy(l, ht, tt, TRUE);
+	if (bn == NULL) {
+		if (b)
+			BBPreclaim(r);
+		return NULL;
 	}
 	BATloop(r, p, q) {
 		bunfastins(bn, BUNhead(ri, p), BUNtail(ri, p));
 	}
+	if (!BAThdense(l) || !BAThdense(r) ||
+	    * (oid *) BUNhead(li, BUNlast(l) - 1) + 1 != * (oid *) BUNhead(ri, BUNfirst(r))) {
+		bn->hseqbase = oid_nil;
+		bn->hdense = 0;
+	}
+	if (!BATtdense(l) || !BATtdense(r) ||
+	    * (oid *) BUNtail(li, BUNlast(l) - 1) + 1 != * (oid *) BUNtail(ri, BUNfirst(r))) {
+		bn->tseqbase = oid_nil;
+		bn->tdense = 0;
+	}
+	bn->H->nonil = l->H->nonil & r->H->nonil;
+	bn->T->nonil = l->T->nonil & r->T->nonil;
+	bn->H->nil = l->H->nil | r->H->nil;
+	bn->T->nil = l->T->nil | r->T->nil;
 	if (b) {
 		BBPreclaim(r);
 		r = b;
 	}
 	HASHdestroy(bn);
 
-	/* set alignment info */
-	if (!bnhdense) {
-		bn->hseqbase = oid_nil;
-		bn->hdense = 0;
-	}
-	if (!bntdense) {
-		bn->tseqbase = oid_nil;
-		bn->tdense = 0;
-	}
-	bn->hsorted = hdisjunct ? GDK_SORTED : FALSE;
-	bn->tsorted = tdisjunct ? GDK_SORTED : FALSE;
+	bn->hsorted = hdisjunct;
+	bn->hrevsorted = 0;
+	bn->tsorted = tdisjunct;
+	bn->trevsorted = 0;
 	bn->talign = bn->halign = 0;
 	if (!r->hkey)
 		BATkey(bn, FALSE);
-#if KEY@1 == KEYs
+#if '@1' == 's'
 	if (bn->hkey && hdisjunct == FALSE)
 		BATkey(bn, FALSE);
 #endif
-	BATkey(BATmirror(bn), tdisjunct ? BATtkey(l) && BATtkey(r) : 0);
-	bn->H->nonil = l->H->nonil & r->H->nonil;
-	bn->T->nonil = l->T->nonil & r->T->nonil;
+	BATkey(BATmirror(bn), tdisjunct && BATtkey(l) && BATtkey(r));
 
 	return bn;
   bunins_failed:
 	BBPreclaim(bn);
+	if (b)
+		BBPreclaim(r);
 	return NULL;
 }
 @

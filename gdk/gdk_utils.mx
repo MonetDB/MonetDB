@@ -863,10 +863,12 @@ GDKmtrace(bit *enable)
 				return GDK_FAIL;
 			BBPrename(memBat->batCacheid, "mem_trace");
 			BBPrename(stackBat->batCacheid, "mem_stack");
-			memBat->hsorted = memBat->tsorted = 0;
+			memBat->hsorted = memBat->hrevsorted = 0;
+			memBat->tsorted = memBat->trevsorted = 0;
 			memBat->H->nonil = 0;
 			BATkey(memBat, TRUE);
-			stackBat->hsorted = stackBat->tsorted = 0;
+			stackBat->hsorted = stackBat->hrevsorted = 0;
+			stackBat->tsorted = stackBat->trevsorted = 0;
 			BATset(stackBat, TRUE);
 			memBat->T->nonil = 0;
 		}

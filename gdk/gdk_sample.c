@@ -91,8 +91,10 @@ BATsample(BAT *b, BUN n)
 		bunfastins(bn, BUNhead(iter, p+1), BUNtail(iter,p+1));
 
 		/* property management */
-		bn->tsorted = BATtordered(b);
 		bn->hsorted = BAThordered(b);
+		bn->tsorted = BATtordered(b);
+		bn->hrevsorted = BAThrevordered(b);
+		bn->trevsorted = BATtrevordered(b);
 		bn->hdense = FALSE;
 		bn->tdense = FALSE;
 		BATkey(bn, BAThkey(b));

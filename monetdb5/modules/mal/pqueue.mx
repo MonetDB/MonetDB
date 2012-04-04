@@ -229,6 +229,7 @@ static int pqueue_enqueue_@1@2(BAT *h,
 	else break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -545,6 +546,7 @@ static int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 	else break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -591,6 +593,7 @@ static int pqueue_movedowntop_any@1(BAT *h)
 		break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
 
   return GDK_SUCCEED;
 }
@@ -632,6 +635,7 @@ static int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 	* (oid *) BUNhloc(hi, hbase) = *idx;
 	pqueue_movedowntop_any@1(h);
     	h->hsorted = h->tsorted = FALSE;
+    	h->hrevsorted = h->trevsorted = FALSE;
   }
   
   return GDK_SUCCEED;

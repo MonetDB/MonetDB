@@ -472,6 +472,7 @@ LSSTxmatch(int *ret, int *lid, int *rid, int *delta)
 	if ( bn == NULL)
          throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
     bn->hsorted = bn->tsorted = 0;
+    bn->hrevsorted = bn->trevsorted = 0;
 	bn->T->nonil = 1;
 	bn->H->nonil = 1;
 

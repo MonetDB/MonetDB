@@ -168,6 +168,7 @@ PMAnew(bat *res, int *tpe, BUN *sz) {
 		}
 		BATsetcount(b, cnt);
 		b->tsorted = 0;
+		b->trevsorted = 0;
 		BATkey(BATmirror(b), FALSE);
 		BBPkeepref(*res = b->batCacheid);
 		return MAL_SUCCEED;
@@ -340,6 +341,7 @@ PMAins_@1(oid *pos_res, bat *bid, oid *pos, @1 *val) {
 		if ((b = BATextend(b, (BUN)psz)) == NULL) throw(MAL,"pma.ins","BATextend fails");
 		BATsetcount(b, psz);
 		b->tsorted = 0;
+		b->trevsorted = 0;
 		BATkey(BATmirror(b), FALSE);
 		BBPkeepref(*bid = b->batCacheid);
 		base = (@1*) Tloc(b, BUNfirst(b));

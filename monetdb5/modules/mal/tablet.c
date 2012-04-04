@@ -786,9 +786,18 @@ void_bat_create(int adt, BUN nr)
 	if (b == NULL)
 		return b;
 
+	b->hsorted = TRUE;
+	b->hrevsorted = FALSE;
+	b->H->norevsorted = 1;
+	b->hkey = TRUE;
+	b->H->nil = FALSE;
+	b->H->nonil = TRUE;
+
 	/* disable all properties here */
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->T->nosorted = 0;
+	b->T->norevsorted = 0;
 	b->tdense = FALSE;
 	b->T->nodense = 0;
 	b->tkey = FALSE;
@@ -1110,15 +1119,7 @@ TABLETcollect_bats(Tablet *as)
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].c[0]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
-		BATaccessBegin(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(fmt[i].c[0]);
-
-		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(fmt[i].c[0]));
-		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+		BATderiveProps(fmt[i].c[0], 1);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if (as->error == 0)	/* a new error */
@@ -1144,15 +1145,7 @@ TABLETcollect(Tablet *as)
 		bats[i] = fmt[i].c[0];
 		BBPincref(bats[i]->batCacheid, FALSE);
 		BATsetaccess(fmt[i].c[0], BAT_READ);
-		BATaccessBegin(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(fmt[i].c[0], BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(fmt[i].c[0]);
-
-		BATpropcheck(BATmirror(fmt[i].c[0]), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(fmt[i].c[0]));
-		BATaccessEnd(fmt[i].c[0], USE_ALL, MMAP_WILLNEED);
+		BATderiveProps(fmt[i].c[0], 1);
 
 		if (cnt != BATcount(fmt[i].c[0])) {
 			if (as->error == 0)	/* a new error */
@@ -1174,26 +1167,13 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 	if (bats == NULL)
 		return NULL;
 	for (i = 0; i < as->nr_attrs; i++) {
-		int GDKdebug_bak = GDKdebug;
 		BAT *b = fmt[i].c[0];
 		BAT *bv = NULL;
 
 		BATsetaccess(b, BAT_READ);
 		bv = BATslice(b, offset, BATcount(b));
 		bats[i] = bv;
-		/* we "mis"use BATpropcheck to set rather than verify properties on 
-		 * the newly loaded slice; hence, we locally disable property errors */
-		GDKdebug &= ~PROPMASK;
-		BATaccessBegin(bv, USE_ALL, MMAP_WILLNEED);
-		BATpropcheck(bv, BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(b);
-
-		BATpropcheck(BATmirror(bv), BATPROPS_ALL);
-		/* drop the hashes, we don't need them now  and they consume space */
-		HASHremove(BATmirror(b));
-		BATaccessEnd(bv, USE_ALL, MMAP_WILLNEED);
-		GDKdebug = GDKdebug_bak;
+		BATderiveProps(bv, 1);
 
 		b->hkey &= bv->hkey;
 		b->tkey &= bv->tkey;
@@ -1203,8 +1183,12 @@ TABLETcollect_parts(Tablet *as, BUN offset)
 		b->tdense &= bv->tdense;
 		if (b->hsorted != bv->hsorted)
 			b->hsorted = 0;
+		if (b->hrevsorted != bv->hrevsorted)
+			b->hrevsorted = 0;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
+		if (b->trevsorted != bv->trevsorted)
+			b->trevsorted = 0;
 		b->batDirty = TRUE;
 
 		if (cnt != BATcount(b)) {
@@ -2072,8 +2056,7 @@ CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, in
 	if (bn == NULL)
 		throw(MAL, "tablet.load", MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
@@ -2151,8 +2134,7 @@ CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *
 		throw(MAL, "tablet.load", OPERATION_FAILED);
 	}
 	*ret = bn->batCacheid;
-	BBPincref(*ret, TRUE);
-	BBPunfix(*ret);
+	BBPkeepref(*ret);
 	BBPunfix(names->batCacheid);
 	BBPunfix(seps->batCacheid);
 	BBPunfix(types->batCacheid);
@@ -2385,7 +2367,13 @@ TABshowHeader(Tablet *t)
 					prop = buf;
 				}
 				if (strcmp(p, "sorted") == 0) {
-					if (BATtordered(c->c[0]) & 1)
+					if (BATtordered(c->c[0]))
+						prop = "true";
+					else
+						prop = "false";
+				}
+				if (strcmp(p, "revsorted") == 0) {
+					if (BATtrevordered(c->c[0]))
 						prop = "true";
 					else
 						prop = "false";
@@ -2609,12 +2597,12 @@ TABshowPage(Tablet *t)
  * @+ V4 stuff
  * The remainder is a patched copy of material from gdk_storage.
  */
-typedef int (*strFcn) (str *s, int *len, ptr val);
+typedef int (*strFcn) (str *s, int *len, const void *val);
 
 #define printfcn(b)	((b->ttype==TYPE_void && b->tseqbase==oid_nil)?	\
 			          print_nil:BATatoms[b->ttype].atomToStr)
 static int
-print_nil(char **dst, int *len, ptr dummy)
+print_nil(char **dst, int *len, const void *dummy)
 {
 	(void) dummy;				/* fool compiler */
 	if (*len < 3) {

@@ -107,7 +107,7 @@ All Rights Reserved.
 #if @1
 	if (!sums)
 #endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	if (b_use)
 		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
@@ -146,7 +146,7 @@ All Rights Reserved.
 #if @1
 	if (!sums)
 #endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)&1?MMAP_SEQUENTIAL:MMAP_WILLNEED);
+		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	/* postprocess by dividing sums by counts */
 #if @1
 	if (sums) {
@@ -256,7 +256,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		} else {
 			@:aggrX3_avg(0,0,SCANfndOID,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
-	} else if (BATtordered(b)&BAThordered(e)&1) {
+	} else if (BATtordered(b)&BAThordered(e)) {
 		/* merge lookup */
 		MERGE_aggr_init;
 		if (BAThdense(b)) {

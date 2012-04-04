@@ -101,8 +101,8 @@ int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
 int HEAP_mmappable(Heap *heap);
 int HEAPsave(Heap *h, const char *nme, const char *ext);
 int HEAPwarm(Heap *h);
-int intCmp(int *r, int *l);
-int lngCmp(lng *r, lng *l);
+int intCmp(const int *r, const int *l);
+int lngCmp(const lng *r, const lng *l);
 void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);

@@ -755,7 +755,7 @@ fixoidheap(void)
  * BBPdir file.
  */
 static BATstore *
-BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
+BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
@@ -858,6 +858,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			lng nokey0;
 			lng nokey1;
 			lng nosorted;
+			lng norevsorted;
 			lng base;
 			lng align;
 			lng free;
@@ -865,13 +866,23 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			unsigned short storage;
 			int n;
 
-			if (sscanf(buf + nread,
+			norevsorted = 0; /* default for first case */
+			if (bbpversion <= GDKLIBRARY_SORTED_BYTE ?
+			    sscanf(buf + nread,
 				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
 				   "%n",
 				   type, &width, &var, &properties, &nokey0,
 				   &nokey1, &nosorted, &base, &align, &free,
 				   &size, &storage,
-				   &n) < 12)
+				   &n) < 12
+			    :
+			    sscanf(buf + nread,
+				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+				   "%n",
+				   type, &width, &var, &properties, &nokey0,
+				   &nokey1, &nosorted, &norevsorted, &base,
+				   &align, &free, &size, &storage,
+				   &n) < 13)
 				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
 			@1hashash = var & 2;
@@ -903,12 +914,14 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize)
 			assert_shift_width(bs->@1.shift,bs->@1.width);
 			bs->@1.nokey[0] = (BUN) nokey0;
 			bs->@1.nokey[1] = (BUN) nokey1;
-			bs->@1.sorted = (bit) (properties & 0x00FF);
+			bs->@1.sorted = (bit) ((properties & 0x0001) != 0);
+			bs->@1.revsorted = (bit) ((properties & 0x0080) != 0);
 			bs->@1.key = (properties & 0x0100) != 0;
 			bs->@1.dense = (properties & 0x0200) != 0;
 			bs->@1.nonil = (properties & 0x0400) != 0;
 			bs->@1.nil = (properties & 0x0800) != 0;
 			bs->@1.nosorted = (BUN) nosorted;
+			bs->@1.norevsorted = (BUN) norevsorted;
 			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
 			bs->@1.align = (oid) align;
 			bs->@1.heap.maxsize = (size_t) size;
@@ -1019,6 +1032,7 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_SORTED_BYTE &&
 	    bbpversion != GDKLIBRARY_CHR &&
 	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
 		if (silent) {
@@ -1073,6 +1087,7 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 	}
 	return bbpversion;
 }
+
 /*
  * In a distributed version of MonetDB, it would be nice to easily
  * share the BATs with other server instances. Although concurrency
@@ -1159,6 +1174,7 @@ BBPimportEntry(char *nme)
 	struct stat st;
 	oid BBPoid;
 	int BBPlimit;
+	int bbpversion;
 
 	IODEBUG mnstr_printf(GDKerr,"#importEntry %s\n",nme);
 	if (strlen(nme) >= sizeof(bbpdir)) {
@@ -1171,22 +1187,25 @@ BBPimportEntry(char *nme)
 		return 0;
 	*s = 0;
 	nme = s + strlen(BATDIR) + 1;
-	snprintf(path, BUFSIZ, "%s%c%s/BBP.dir", bbpdir, DIR_SEP, BATDIR);
+	snprintf(path, BUFSIZ, "%s%c%s%cBBP.dir",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP);
 	fd = fopen(path,"r");
 	if (fd == 0) {
-		snprintf(path, BUFSIZ, "%s%c%s%c/BBP.bak", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+		snprintf(path, BUFSIZ, "%s%c%s%cBBP.bak",
+			 bbpdir, DIR_SEP, BATDIR, DIR_SEP);
 		fd = fopen(path,"r");
 		if (fd == 0) {
-			snprintf(path, BUFSIZ, "%s%c%s%cBACKUP/BBP.dir", bbpdir, DIR_SEP, BATDIR, DIR_SEP);
+			snprintf(path, BUFSIZ, "%s%c%s%cBACKUP%cBBP.dir",
+				 bbpdir, DIR_SEP, BATDIR, DIR_SEP, DIR_SEP);
 			fd = fopen(path,"r");
 			if (fd == 0)
 				return 0;
 		}
 	}
 
-	if (BBPheader(fd, &BBPlimit, &BBPoid, NULL, TRUE) < 0)
+	if ((bbpversion = BBPheader(fd, &BBPlimit, &BBPoid, NULL, TRUE)) < 0)
 		return 0;
-	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp, 0);
+	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp, 0, bbpversion);
 	fclose(fd);
 	if (bs == 0)
 		return 0;
@@ -1199,10 +1218,14 @@ BBPimportEntry(char *nme)
 	BBP_lrefs(bn->batCacheid)++;
 
 	/* re-adjust the files to become symbolic links */
-	snprintf(bufhead, BUFSIZ, "%s%c%s%c%s.head", bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(buftail, BUFSIZ, "%s%c%s%c%s.tail",  bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(bufhheap, BUFSIZ, "%s%c%s%c%s.hheap",  bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
-	snprintf(buftheap, BUFSIZ, "%s%c%s%c%s.theap",  bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(bufhead, BUFSIZ, "%s%c%s%c%s.head",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(buftail, BUFSIZ, "%s%c%s%c%s.tail",
+		 bbpdir, DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(bufhheap, BUFSIZ, "%s%c%s%c%s.hheap",
+		 bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
+	snprintf(buftheap, BUFSIZ, "%s%c%s%c%s.theap",
+		 bbpdir,  DIR_SEP, BATDIR, DIR_SEP, nme);
 
 	BATmode(bn, TRANSIENT);
 	bn->batCopiedtodisk = 1;
@@ -1220,10 +1243,7 @@ BBPimportEntry(char *nme)
 		}
 	}
 	BATsetaccess(bn, BAT_READ);
-	if (bn->batCapacity > 1) {
-		BATpropcheck(bn, BATPROPS_QUICK);
-		BATpropcheck(BATmirror(bn), BATPROPS_QUICK);
-	}
+	BATderiveProps(bn, 0);
 
 	return bn->batCacheid;
 #endif
@@ -1295,7 +1315,7 @@ BBPinit(void)
 	}
 	memset(BBP, 0, BBPlimit * sizeof(BBPrec));
 
-	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize);
+	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
 
 	/* normalize saved LRU stamps */
@@ -1325,7 +1345,6 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
-	(void) bbpversion;
 
 	return;
 
@@ -1453,14 +1472,15 @@ new_bbpentry(stream *s, bat i)
 		return -1;
 @= columnprint
 	t = BBP[i].cache->@1.type;
-	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
 			  BBP[i].cache->@1.width,
 			  BBP[i].cache->@1.varsized | (BBP[i].cache->@1.vheap ? BBP[i].cache->@1.vheap->hashash << 1 : 0),
-			  ((unsigned short) BBP[i].cache->@1.sorted & 0xFF) | (((unsigned short) BBP[i].cache->@1.key & 0x01) << 8) | (((unsigned short) BBP[i].cache->@1.dense & 0x01) << 9) | (((unsigned short) BBP[i].cache->@1.nonil & 0x01) << 10) | (((unsigned short) BBP[i].cache->@1.nil & 0x01) << 11),
+			 ((unsigned short) BBP[i].cache->@1.sorted & 0x01) | (((unsigned short) BBP[i].cache->@1.revsorted & 0x01) << 7) | (((unsigned short) BBP[i].cache->@1.key & 0x01) << 8) | (((unsigned short) BBP[i].cache->@1.dense & 0x01) << 9) | (((unsigned short) BBP[i].cache->@1.nonil & 0x01) << 10) | (((unsigned short) BBP[i].cache->@1.nil & 0x01) << 11),
 			  BBP[i].cache->@1.nokey[0],
 			  BBP[i].cache->@1.nokey[1],
 			  BBP[i].cache->@1.nosorted,
+			  BBP[i].cache->@1.norevsorted,
 			  BBP[i].cache->@1.seq,
 			  BBP[i].cache->@1.align,
 			  BBP[i].cache->@1.heap.free,
@@ -2493,8 +2513,10 @@ BBPkeepref(bat i)
 		int lock = locked_by ? BBP_getpid() != locked_by : 1;
 		BAT *b;
 
-		if ((b = BBPdescriptor(i)) != NULL)
+		if ((b = BBPdescriptor(i)) != NULL) {
 			BATsettrivprop(b);
+			BATassertProps(b);
+		}
 
 		incref(i, TRUE, lock);
 		assert(BBP_refs(i));
@@ -3719,7 +3741,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 		 * bat is reused (not in BBPaddtobin) */
 		bs->H.type = ht;
 		bs->H.varsized = BATatoms[bs->H.type].varsized;
-		bs->H.sorted = ATOMlinear(ht) ? GDK_SORTED : 0;
+		bs->H.sorted = ATOMlinear(ht) != 0;
+		bs->H.revsorted = ATOMlinear(ht) != 0;
 		if (ht == TYPE_str)
 			bs->H.width = 1;
 		bs->H.align = 0;
@@ -3731,7 +3754,8 @@ BBPrecycle(int ht, int tt, size_t cap)
 
 		bs->T.type = tt;
 		bs->T.varsized = BATatoms[bs->T.type].varsized;
-		bs->T.sorted = ATOMlinear(tt) ? GDK_SORTED : 0;
+		bs->T.sorted = ATOMlinear(tt) != 0;
+		bs->T.revsorted = ATOMlinear(tt) != 0;
 		if (tt == TYPE_str)
 			bs->T.width = 1;
 		bs->T.align = 0;
@@ -3751,10 +3775,14 @@ BBPrecycle(int ht, int tt, size_t cap)
 
 		BATsetcount(&bs->B, 0);
 
-		if (bs->H.vheap)
-			memset(bs->H.vheap->base, 0, bs->H.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t));
-		if (bs->T.vheap)
-			memset(bs->T.vheap->base, 0, bs->T.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t));
+		if (bs->H.vheap) {
+			bs->H.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+			memset(bs->H.vheap->base, 0, bs->H.vheap->free);
+		}
+		if (bs->T.vheap) {
+			bs->T.vheap->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+			memset(bs->T.vheap->base, 0, bs->T.vheap->free);
+		}
 		return bs;
 	}
 	BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) N2\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);

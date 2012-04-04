@@ -211,10 +211,9 @@ CLUSTER_column_@1(BAT *nb, BAT *b, BAT *cmap)
 	}
 	BATsetcount(nb, BATcount(b));
 	nb->tsorted= FALSE;
+	nb->trevsorted= FALSE;
 	nb->tdense= FALSE;
-    	if (nb->H != nb->T) 
-        	BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
-    	BATpropcheck(nb, BATPROPS_QUICK);
+	BATderiveProps(nb, 0);
 	return MAL_SUCCEED;
 }
 #endif
@@ -293,11 +292,9 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 		}
 	}
 	BATsetcount(nb, BATcount(b));
-    if (nb->H != nb->T)
-        BATpropcheck(BATmirror(nb), BATPROPS_QUICK);
+	BATderiveProps(nb, 0);
 	if (!(nb->batDirty&2)) 
 		nb = BATsetaccess(nb, BAT_READ);
-    BATpropcheck(nb, BATPROPS_QUICK);
 	return MAL_SUCCEED;
 }
 /*
@@ -316,10 +313,11 @@ CLUSTER_key( bat *M, bat *B){
 		BBPunfix(*B);
 		throw(MAL, "cluster.key", MAL_MALLOC_FAIL);
 	}
-	map->tsorted= FALSE;
-	map->tdense= FALSE;
-	BATseqbase(map, 0);
 	BATsetcount(map, BATcount(b));
+	BATseqbase(map, 0);
+	map->tsorted= FALSE;
+	map->trevsorted= FALSE;
+	map->tdense= FALSE;
 	map->H->nonil = b->H->nonil;
 	map->T->nonil = b->T->nonil;
 
@@ -375,14 +373,16 @@ CLUSTER_map(bat *RB, bat *B)
 		BBPunfix(*B);
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
-	map->hsorted= TRUE;
-	map->hdense= TRUE;
-	BATkey(map, TRUE);
-	BATseqbase(map, 0);
-	BATkey(map,TRUE);
-	map->tsorted= FALSE;
-	map->tdense= FALSE;
 	BATsetcount(map, BATcount(b));
+	BATseqbase(map, 0);
+	BATkey(map, TRUE);
+	BATkey(map,TRUE);
+	map->hsorted= TRUE;
+	map->hrevsorted= FALSE;
+	map->hdense= TRUE;
+	map->tsorted= FALSE;
+	map->trevsorted= FALSE;
+	map->tdense= FALSE;
 	map->H->nonil = b->H->nonil;
 	map->T->nonil = TRUE;
 	BATmax(b, (ptr) &rng); /* get the maximum hash key , could use mask !*/
@@ -478,15 +478,16 @@ CLUSTER_apply(bat *bid, BAT *b, BAT *cmap)
 {
 	BAT *nb;
 	nb= BATnew(b->htype, b->ttype, BATcapacity(b));
+	BATseqbase(nb,0);
+	nb->hrevsorted = 0;
 	nb->tsorted= FALSE;
+	nb->trevsorted= FALSE;
 	nb->tdense= FALSE;
-	BATseqbase(nb,0); 
 
 	/* determine the work for all threads */
 	/* to be done, first assume that we can remap in one go */
 	assert(BATcount(b)==BATcount(cmap));
 
-	BATseqbase(nb,0);
 	switch(ATOMstorage(b->ttype)) {
 /*
 	case TYPE_bte: CLUSTER_column_bte(nb, b, cmap);break;
@@ -591,9 +592,10 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 		BBPunfix(*B);
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(psum,0);
 	BATsetcount(psum, mask+1);
+	BATseqbase(psum,0);
 	psum->tsorted= TRUE;
+	psum->trevsorted= FALSE;
 	psum->tdense= FALSE;
 	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
 	for (i=0 ; i <= mask; i++)
@@ -623,9 +625,10 @@ CLS_create_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int 
 		GDKfree(pos);
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(cmap, b->H->seq);
 	BATsetcount(cmap, BATcount(b));
+	BATseqbase(cmap, b->H->seq);
 	cmap->tsorted= FALSE;
+	cmap->trevsorted= FALSE;
 	cmap->tdense= FALSE;
 	m = (wrd*)Tloc(cmap, BUNfirst(cmap));
 
@@ -679,9 +682,10 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 		BBPunfix(*B);
 		throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 	}
-	BATseqbase(psum,0);
 	BATsetcount(psum, mask+1);
+	BATseqbase(psum,0);
 	psum->tsorted= TRUE;
+	psum->trevsorted= FALSE;
 	psum->tdense= FALSE;
 	cnt = (wrd*)Tloc(psum, BUNfirst(psum));
 	for (i=0 ; i <= mask; i++)
@@ -706,6 +710,7 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 
 		if (!*order) {
 			cmap->tsorted = FALSE;
+			cmap->trevsorted = FALSE;
 			for ( ; bt < be; bt++) {
 				int h = (((int)(*bt)) >> off) & mask;
 			   	*m++ = h;
@@ -744,9 +749,10 @@ CLS_create2_@1( bat *rpsum, bat *rcmap, bat *B, unsigned int *Bits, unsigned int
 			BBPunfix(psum->batCacheid);
 			throw(MAL, "cluster.new", MAL_MALLOC_FAIL);
 		}
-		BATseqbase(cmap, b->H->seq);
 		BATsetcount(cmap, BATcount(b));
+		BATseqbase(cmap, b->H->seq);
 		cmap->tsorted = FALSE;
+		cmap->trevsorted = FALSE;
 		cmap->tdense = FALSE;
 		m = (bte*)Tloc(cmap, BUNfirst(cmap));
 
@@ -863,9 +869,10 @@ CLS_map(bat *RB, bat *CMAP, bat *B)
 		BBPunfix(*B);
 		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
 	} 
-	BATseqbase(rb, b->H->seq);
 	BATsetcount(rb, BATcount(b));
+	BATseqbase(rb, b->H->seq);
 	rb->tsorted= FALSE;
+	rb->trevsorted= FALSE;
 	rb->tdense= FALSE;
 	rb->H->nonil = b->H->nonil;
 	rb->T->nonil = b->T->nonil;
@@ -970,9 +977,10 @@ CLS_map2(bat *RB, bat *PSUM, bat *CMAP, bat *B)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "cluster.map", MAL_MALLOC_FAIL);
 	} 
-	BATseqbase(rb, b->H->seq);
 	BATsetcount(rb, BATcount(b));
+	BATseqbase(rb, b->H->seq);
 	rb->tsorted= FALSE;
+	rb->trevsorted= FALSE;
 	rb->tdense= FALSE;
 	rb->H->nonil = b->H->nonil;
 	rb->T->nonil = b->T->nonil;

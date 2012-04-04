@@ -396,6 +396,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (b->htype == TYPE_void) {
 			if (b->hseqbase == oid_nil) {
+				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				ALGODEBUG THRprintf(GDKout, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				return NULL;
 			}
@@ -618,7 +619,7 @@ HASHgonebad(BAT *b, ptr v)
 		return 1;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
-		int (*cmp) (ptr, ptr) = BATatoms[b->htype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[b->htype].atomCmp;
 		BUN cnt, hit, i = h->hash[HASHprobe(h, v)];
 
 		for (cnt = hit = 1; i != BUN_NONE; i = h->link[i], cnt++)
@@ -806,7 +807,7 @@ SORTfnd_@2(BAT *m, ptr v)
 BUN
 SORTfnd@2(BAT *b, ptr v)
 {
-	if (b && b->@1sorted & 1) {
+	if (b && b->@1sorted) {
 		switch(ATOMstorage(b->@1type)) {
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:

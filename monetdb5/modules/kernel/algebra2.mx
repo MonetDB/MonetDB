@@ -198,7 +198,7 @@ BATmallefthashjoin(BAT *l, BAT *r)
 static BAT *
 BATmalmergejoin(BAT *l, BAT *r)
 {
-	if (!((BATtordered(l) & 1) || (BAThordered(r) & 1))) {
+	if (!BATtordered(l) && !BAThordered(r)) {
 		GDKerror("BATmalmergejoin: Cannot perform mergejoin: neither left tail nor right head is ordered.\n");
 		return NULL;
 	}
@@ -217,7 +217,7 @@ BATmalmergejoin(BAT *l, BAT *r)
 static BAT *
 BATmalleftmergejoin(BAT *l, BAT *r)
 {
-	if (!(BAThordered(r) & 1)) {
+	if (!BAThordered(r)) {
 		GDKerror("BATmalleftmergejoin: Cannot perform leftmergejoin: right head is ordered.\n");
 		return NULL;
 	}
@@ -309,7 +309,9 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 	@1 sum = 0;
 
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->H->nonil = b->H->nonil;
 	bn->T->nonil = 0;
 	if (BATcount(b))

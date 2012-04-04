@@ -855,7 +855,7 @@ static bit
 VALisNil(ValPtr p)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe = p ->vtype;
     ptr nilptr;
 
@@ -873,7 +873,7 @@ setSelectProp(InstrPtr q)
 	ValRecord lbval, ubval, nilval;
 	int bid, tpe = 0;
 	ptr nilptr = NULL;
-	int (*cmp) (ptr, ptr) = NULL;
+	int (*cmp) (const void *, const void *) = NULL;
 
     str selectRef = putName("select",6);
 	str thetaselectRef = putName("thetaselect",11);
@@ -1219,7 +1219,7 @@ likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static bit
 marginEq(ValPtr p, ValPtr q)
 {
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe;
     ptr nilptr, pp, pq;
 
@@ -1239,7 +1239,7 @@ static bit
 lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe, c;
     ptr nilptr, pp, pq;
 
@@ -1271,7 +1271,7 @@ static bit
 greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe, c;
     ptr nilptr, pp, pq;
 
