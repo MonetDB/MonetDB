@@ -1495,22 +1495,23 @@ convertConstant(int type, ValPtr vr)
 	if (vr->vtype == TYPE_str) {
 		int ll = 0;
 		ptr d = NULL;
+		char *s = vr->val.sval;
 
 		ATOMfromstr(type, &d, &ll, vr->val.sval);
 		if (d == NULL) {
 			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
 		}
-		if (strncmp(vr->val.sval, "nil", 3) != 0 && ATOMcmp(type, vr, ATOMnilptr(type)) == 0) {
+		if (strncmp(vr->val.sval, "nil", 3) != 0 && ATOMcmp(type, d, ATOMnilptr(type)) == 0) {
 			GDKfree(d);
 			VALinit(vr, type, ATOMnilptr(type));
-			throw(SYNTAX, "convertConstant", "parse error in '%s'", vr->val.sval);
+			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
 		}
 		VALset(vr, type, d);
 		if (ATOMextern(type) == 0)
 			GDKfree(d);
 		if (vr->vtype != type)
-			throw(SYNTAX, "convertConstant", "coercion failed in '%s'", vr->val.sval);
+			throw(SYNTAX, "convertConstant", "coercion failed in '%s'", s);
 	}
 
 	if (type == TYPE_bat || isaBatType(type)) {
@@ -1560,10 +1561,10 @@ convertConstant(int type, ValPtr vr)
 		vr->len = (int) strlen(w);
 		vr->val.sval = w;
 		/* VALset(vr, type, w); does not use TYPE-str */
-	}
 		if (vr->vtype != type)
 			throw(SYNTAX, "convertConstant", "coercion failed");
 		return MAL_SUCCEED;
+	}
 
 	case TYPE_bat:
 		/* BAT variables can only be set to nil */
