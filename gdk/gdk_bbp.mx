@@ -1345,6 +1345,8 @@ BBPinit(void)
 #else
 	(void) oidsize;
 #endif
+	if (bbpversion <= GDKLIBRARY_SORTED_BYTE)
+		TMcommit();
 
 	return;
 
