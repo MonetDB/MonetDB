@@ -260,8 +260,7 @@ newAVLIndex(int bid){
 
                 if (maxAVLIndices > 0)
                         units = (int) (1.2 * maxAVLIndices);
-                x = (AVLIndexNode *) GDKmalloc(sizeof(AVLIndexNode) * units);
-                memset(x, 0, sizeof(AVLIndexNode) * units);
+                x = (AVLIndexNode *) GDKzalloc(sizeof(AVLIndexNode) * units);
                 if (AVLIndex) {
                         fprintf(stderr, "reallocate index \n");
                         memcpy(x, AVLIndex, sizeof(AVLIndexNode) * i);

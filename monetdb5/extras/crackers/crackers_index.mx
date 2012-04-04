@@ -373,8 +373,7 @@ newCrackerIndex_@1(int bid, int cbid){
 
                         if (maxCrackMap > 0)
                                 units = (int) (1.2 * maxCrackMap);
-                        x = (CrackerIndexNode *) GDKmalloc(sizeof(CrackerIndexNode) * units);
-                        memset(x, 0, sizeof(CrackerIndexNode) * units);
+                        x = (CrackerIndexNode *) GDKzalloc(sizeof(CrackerIndexNode) * units);
                         if (CrackerIndex) {
                                 fprintf(stderr, "reallocate index \n");
                                 memcpy(x, CrackerIndex, sizeof(CrackerIndexNode) * i);

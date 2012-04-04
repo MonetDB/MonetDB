@@ -1082,15 +1082,10 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	fields = mapi_get_field_count(hdl);
 	rows = mapi_get_row_count(hdl);
 
-	len = (int *) malloc(sizeof(int) * fields);
-	hdr = (int *) malloc(sizeof(int) * fields);
-	rest = (char **) malloc(sizeof(char *) * fields);
-	numeric = (int *) malloc(sizeof(int) * fields);
-
-	memset(len, 0, sizeof(int) * fields);
-	memset(hdr, 0, sizeof(int) * fields);
-	memset(rest, 0, sizeof(char *) * fields);
-	memset(numeric, 0, sizeof(int) * fields);
+	len = calloc(fields, sizeof(*len));
+	hdr = calloc(fields, sizeof(*hdr));
+	rest = calloc(fields, sizeof(*rest));
+	numeric = calloc(fields, sizeof(*numeric));
 
 	total = 0;
 	lentotal = 0;

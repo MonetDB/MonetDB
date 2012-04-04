@@ -1195,7 +1195,7 @@ BATmultiprintf(stream *s,	/* output stream */
 	       int printorder	/* boolean: print the orderby column? */
     )
 {
-	col_format_t *c = (col_format_t *) GDKmalloc((unsigned) (argc * sizeof(col_format_t)));
+	col_format_t *c = (col_format_t *) GDKzalloc((unsigned) (argc * sizeof(col_format_t)));
 	col_format_t **cp = (col_format_t **) GDKmalloc((unsigned) ((argc + 1) * sizeof(void *)));
 	ColFcn *value_fcn = (ColFcn *) GDKmalloc((unsigned) (argc * sizeof(ColFcn)));
 	int ret = 0, j, total = 0;
@@ -1217,7 +1217,8 @@ BATmultiprintf(stream *s,	/* output stream */
 	 */
 	cp[argc] = NULL;	/* terminator */
 	cp[0] = c;
-	memset(c, 0, (argc--) * sizeof(col_format_t));
+	argc--;
+
 	/*
 	 * Init the column descriptors of the tail columns.
 	 */

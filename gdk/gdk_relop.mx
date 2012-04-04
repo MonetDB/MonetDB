@@ -3035,7 +3035,7 @@ column_result(table_t *t, int i)
 int
 BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn value_fcn[], ptr value_data[], int orderby)
 {
-	column_t *lead_col, *c = (column_t *) GDKmalloc(argc * (int) sizeof(column_t));
+	column_t *lead_col, *c = (column_t *) GDKzalloc(argc * (int) sizeof(column_t));
 	column_t **reorder = (column_t **) GDKmalloc(argc * (int) sizeof(column_t *));
 	int status = 0, algo = LEAD_TRAVERSE_SEQ;
 	int i, k;
@@ -3051,7 +3051,6 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 		GDKfree(reorder);
 		return 0;
 	}
-	memset(c, 0, argc * sizeof(column_t));
 	t.tuple_data = tuple_data;
 	t.value_data = value_data;
 	t.tuple_fcn = tuple_fcn;

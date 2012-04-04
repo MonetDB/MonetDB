@@ -720,8 +720,11 @@ IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, i
 	for (; i < pci->argc; i++) {
 		tpe = getArgType(mb, pci, i);
 		val = (ptr) getArgReference(stk, pci, i);
-		if (!isaBatType(tpe))
+		if (!isaBatType(tpe)) {
+			for (k = 0; k < nbats; k++)
+				BBPunfix(piv[k]->batCacheid);
 			throw(MAL, "io.table", ILLEGAL_ARGUMENT " BAT expected");
+		}
 		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
 			for (k = 0; k < nbats; k++)
@@ -783,7 +786,6 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int order;
 	order = *(int *) getArgReference(stk, pci, 1);
-	(void) order;		/* fool compiler */
 	return IOtableAll(cntxt->fdout, cntxt, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
