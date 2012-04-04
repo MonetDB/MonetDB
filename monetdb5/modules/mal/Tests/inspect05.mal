@@ -7,4 +7,4 @@ f2:= algebra.ssort(f1);
 fs:= bat.reverse(f2);
 s:= inspect.getSignatures();
 a:= inspect.getAddresses();
-io.table(fs,k,m,s,a);
+io.table(1,fs,k,m,s,a);
