@@ -1924,7 +1924,7 @@ BAT@6order@2(BAT *b)
 	BATcheck(b, "BATorder@2");
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return b as is */
-		return BATcopy(b, b->htype, b->ttype, FALSE);
+		return b;
 	}
 #if 0 @5 1
 	if (b->htype != TYPE_void && BATordered_rev(b))
