@@ -83,7 +83,6 @@ Ready.
 #0	3	1
 #
 [ 12	]
-#COMMIT;
 #SELECT u, v, r FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u, v, r;
 % sys.inter,	sys.inter,	sys.inter # table_name
 % u,	v,	r # name
@@ -153,6 +152,8 @@ Ready.
 [ 2	]
 [ 3	]
 [ 3	]
+
+#ROLLBACK;
 
 # 13:59:59 >  
 # 13:59:59 >  "Done."

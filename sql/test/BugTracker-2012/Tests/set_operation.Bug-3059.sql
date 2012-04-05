@@ -37,7 +37,6 @@ COPY 12 RECORDS INTO "sys"."s" FROM stdin USING DELIMITERS '\t','\n','"';
 3	0	1
 0	3	1
 
-COMMIT;
 SELECT u, v, r FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u, v, r;
 SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter;
 SELECT u, v, r  FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u, v, r;
@@ -45,3 +44,5 @@ SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff;
 SELECT inter.u FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u;
 SELECT diff.u FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u;
 SELECT inter.u FROM ((SELECT * FROM R) INTERSECT (SELECT * FROM S)) as inter ORDER BY u;
+
+ROLLBACK;
