@@ -22,5 +22,4 @@ hash_select.Bug-2947
 server-crash.Bug-3046
 bart-crash.Bug-3057
 set_operation.Bug-3059
-set_operation.Bug-3059
 delete-with-constant-where.Bug-3065
