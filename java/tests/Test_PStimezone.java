@@ -23,12 +23,6 @@ import java.text.*;
 
 public class Test_PStimezone {
 	public static void main(String[] args) throws Exception {
-		// make sure this test is reproducable regardless timezone
-		// setting, by overriding the VM's default
-		// we have to make sure that one doesn't have daylight
-		// savings corrections
-		TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-
 		Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		Connection con = DriverManager.getConnection(args[0]);
 		Statement stmt = con.createStatement();
@@ -63,6 +57,12 @@ public class Test_PStimezone {
 			}
 
 			System.out.println("2. inserting records...");
+
+			// make sure this test is reproducable regardless timezone
+			// setting, by overriding the VM's default
+			// we have to make sure that one doesn't have daylight
+			// savings corrections
+			TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
 			SimpleDateFormat tsz =
 				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");

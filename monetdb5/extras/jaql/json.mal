@@ -21,10 +21,6 @@ command shred(json:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:o
 address JSONshred
 comment "Parse the given JSON object into internal shredded representation";
 
-command shred(i:streams)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str])
-address JSONshredstream
-comment "Parse the given JSON stream into internal shredded representation";
-
 command print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str], pretty:bit):void
 address JSONprint
 comment "Serialise the given JSON pointer into JSON format";
