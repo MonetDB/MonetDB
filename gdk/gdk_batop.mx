@@ -1976,7 +1976,7 @@ BAT@6order@3(BAT *b)
 	BATcheck(b, "BATorder@3");
 	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
 		/* b's head is void-nil, hence we return b as is */
-		return BATcopy(b, b->htype, b->ttype, FALSE);
+		return b;
 	}
 	if ((GDK_SORTED@2 == GDK_SORTED && b->htype == TYPE_void) || (b->htype != TYPE_void && BATordered@3(b))) {
 		/* b is already ordered as desired, hence we return b as is */
