@@ -20,3 +20,4 @@ simple_select.Bug-2988
 interval_timestamp.Bug-3002
 hash_select.Bug-2947
 server-crash.Bug-3046
+delete-with-constant-where.Bug-3065
