@@ -48,14 +48,26 @@ function user.main():void;
     io.print(2147483647:int);
     io.print(-2147483647:int);
     i := calc.+(2147483647:int,1:int);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(i);
     z := calc.-(-2147483647:int,1:int);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(z);
     io.printf("# should this produce nil (overflow)?\n");
     z := calc.+(2147483647:int,2:int);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(z);
     io.printf("# should this produce nil (overflow)?\n");
     z := calc.-(-2147483647:int,2:int);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(z);
     io.printf("# int from lng\n");
     io.print(1:int);
@@ -344,10 +356,10 @@ exit SQLException:str ;
     io.print(-2147483649:lng);
     io.print(9223372036854775807:lng);
     io.print(nil:lng);
-    io.print(nil:lng);
+    io.print(-9223372036854775807:lng);
     io.print(-9223372036854775807:lng);
     io.print(nil:lng);
-    io.print(nil:lng);
+    io.print(9223372036854775807:lng);
     io.printf("# lng from bit\n");
     io.print(1:lng);
     io.print(0:lng);
@@ -365,16 +377,28 @@ exit SQLException:str ;
     io.print(2147483647:lng);
     io.print(-2147483647:lng);
     lz := calc.+(2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     l := calc.lng(lz);
     io.print(l);
     lu := calc.-(-2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     l := calc.lng(lu);
     io.print(l);
     io.printf("# should this produce nil (overflow)?\n");
     la := calc.+(2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(la);
     io.printf("# should this produce nil (overflow)?\n");
     lb := calc.-(-2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(lb);
     io.printf("# lng from lng\n");
     io.printf("# lng from flt\n");
@@ -515,17 +539,29 @@ exit SQLException:str ;
     io.print(2.14748365e+09:flt);
     io.print(-2.14748365e+09:flt);
     fl := calc.+(2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     f := calc.flt(fl);
     io.print(f);
     fi := calc.-(-2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     f := calc.flt(fi);
     io.print(f);
     io.printf("# should this produce nil (overflow)?\n");
-    ff := calc.+(2147483647,1);
+    ff := calc.+(2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     f := calc.flt(ff);
     io.print(f);
     io.printf("# should this produce nil (overflow)?\n");
     fg := calc.-(-2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     f := calc.flt(fg);
     io.print(f);
     io.printf("# flt from lng\n");
@@ -538,10 +574,10 @@ exit SQLException:str ;
     io.print(-2.14748365e+09:flt);
     io.print(9.22337204e+18:flt);
     io.print(nil:flt);
-    io.print(nil:flt);
+    io.print(-9.22337204e+18:flt);
     io.print(-9.22337204e+18:flt);
     io.print(nil:flt);
-    io.print(nil:flt);
+    io.print(9.22337204e+18:flt);
     io.printf("# flt from dbl\n");
     io.print(0:flt);
     io.print(0.100000001:flt);
@@ -877,17 +913,29 @@ exit SQLException:str ;
     io.print(2147483647:dbl);
     io.print(-2147483647:dbl);
     zd := calc.+(2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     ze := calc.dbl(zd);
     io.print(zd);
     zj := calc.-(-2147483647,1);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     d := calc.dbl(zj);
     io.print(d);
     io.printf("# should this produce nil (overflow)?\n");
     zn := calc.+(2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     d := calc.dbl(zn);
     io.print(d);
     io.printf("# should this produce nil (overflow)?\n");
     zk := calc.-(-2147483647,2);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     d := calc.dbl(zk);
     io.print(d);
     io.printf("# dbl from lng\n");
@@ -900,10 +948,10 @@ exit SQLException:str ;
     io.print(-2147483649:dbl);
     io.print(9.2233720368547758e+18:dbl);
     io.print(nil:dbl);
-    io.print(nil:dbl);
+    io.print(-9.2233720368547758e+18:dbl);
     io.print(-9.2233720368547758e+18:dbl);
     io.print(nil:dbl);
-    io.print(nil:dbl);
+    io.print(9.2233720368547758e+18:dbl);
     io.printf("# dbl from flt\n");
     io.print(0:dbl);
     io.print(0.10000000149011612:dbl);
@@ -1271,20 +1319,35 @@ exit SQLException:str ;
     o9 := -2147483647;
     o := calc.oid(o9);
     io.print(o);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     o3 := calc.+(2147483647,1);
     o := calc.oid(o3);
     io.print(o);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     o4 := calc.-(-2147483647,1);
     o := calc.oid(o4);
     io.print(o);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     o5 := calc.+(2147483647,2);
     o := calc.oid(o5);
     io.print(o);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     o6 := calc.-(-2147483647,2);
     o := calc.oid(o6);
     io.print(o);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# oid from lng\n");
     io.print(1@0:oid);
     io.print(2147483647@0:oid);
@@ -1300,8 +1363,17 @@ exit SQLException:str ;
     o := calc.oid(ol3);
     io.print(o);
     io.print(nil:oid);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(nil:oid);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.print(nil:oid);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# oid from flt\n");
     io.print(0@0:oid);
     io.print(0@0:oid);
@@ -1412,17 +1484,29 @@ exit SQLException:str ;
     wd := calc.+(2147483647:int,1);
     sv := calc.str(wd);
     io.print(sv);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     wc := calc.-(-2147483647,1);
     sv := calc.str(wc);
     io.print(sv);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     we := calc.+(2147483647:int,2);
     sv := calc.str(we);
     io.print(sv);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# should this produce nil (overflow)?\n");
     wb := calc.-(-2147483647,2);
     sv := calc.str(wb);
     io.print(sv);
+catch MALException:str ;
+    io.printf("Caught exception\n");
+exit MALException:str ;
     io.printf("# str from lng\n");
     io.print("1":str);
     io.print("2147483647":str);
@@ -1525,12 +1609,16 @@ end main;
 [ 32768 ]
 [ 2147483647 ]
 [ -2147483647 ]
-[ nil ]
-[ nil ]
+Caught exception
+[ 0 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ -2147483647 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ 2147483647 ]
+Caught exception
+[ 0 ]
 # int from lng
 [ 1 ]
 [ 2147483647 ]
@@ -1581,11 +1669,11 @@ end main;
 [ 0 ]
 [ 32767 ]
 [ 2147483647 ]
-Caught exception
-Caught exception
+[ nil ]
 [ -2147483647 ]
-Caught exception
-Caught exception
+[ -2147483647 ]
+[ nil ]
+[ 2147483647 ]
 Caught exception
 Caught exception
 # to bit
@@ -1632,8 +1720,8 @@ Caught exception
 [ false ]
 [ false ]
 [ true ]
-[ nil ]
-[ nil ]
+Caught exception
+Caught exception
 # to sht
 # sht from bit
 [ 1 ]
@@ -1697,11 +1785,11 @@ Caught exception
 # sht from str
 [ 0 ]
 [ 32767 ]
-Caught exception
-Caught exception
+[ nil ]
 [ -32767 ]
-Caught exception
-Caught exception
+[ -32767 ]
+[ nil ]
+[ 32767 ]
 Caught exception
 Caught exception
 # to long
@@ -1718,10 +1806,10 @@ Caught exception
 [ -2147483649 ]
 [ 9223372036854775807 ]
 [ nil ]
-[ nil ]
+[ -9223372036854775807 ]
 [ -9223372036854775807 ]
 [ nil ]
-[ nil ]
+[ 9223372036854775807 ]
 # lng from bit
 [ 1 ]
 [ 0 ]
@@ -1734,12 +1822,16 @@ Caught exception
 [ 32768 ]
 [ 2147483647 ]
 [ -2147483647 ]
-[ nil ]
-[ nil ]
+Caught exception
+[ 0 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ -2147483647 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ 2147483647 ]
+Caught exception
+[ 0 ]
 # lng from lng
 # lng from flt
 [ 0 ]
@@ -1806,11 +1898,11 @@ Caught exception
 Caught exception
 Caught exception
 [ 9223372036854775807 ]
-Caught exception
-Caught exception
+[ nil ]
 [ -9223372036854775807 ]
-Caught exception
-Caught exception
+[ -9223372036854775807 ]
+[ nil ]
+[ 9223372036854775807 ]
 # to flt
 # flt from bit
 [ 1 ]
@@ -1824,12 +1916,16 @@ Caught exception
 [ 32768 ]
 [ 2.14748365e+09 ]
 [ -2.14748365e+09 ]
-[ nil ]
-[ nil ]
+Caught exception
+[ 0 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ nil ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ 2.14748365e+09 ]
+Caught exception
+[ 0 ]
 # flt from lng
 [ 1 ]
 [ 2.14748365e+09 ]
@@ -1840,10 +1936,10 @@ Caught exception
 [ -2.14748365e+09 ]
 [ 9.22337204e+18 ]
 [ nil ]
-[ nil ]
+[ -9.22337204e+18 ]
 [ -9.22337204e+18 ]
 [ nil ]
-[ nil ]
+[ 9.22337204e+18 ]
 # flt from dbl
 [ 0 ]
 [ 0.100000001 ]
@@ -1947,16 +2043,16 @@ Caught exception
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
-Caught exception
-Caught exception
+[ nil ]
+[ nil ]
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
 [ 3.40282347e+38 ]
-Caught exception
-Caught exception
-Caught exception
-Caught exception
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
 Caught exception
 Caught exception
 # to dbl
@@ -1972,12 +2068,16 @@ Caught exception
 [ 32768 ]
 [ 2147483647 ]
 [ -2147483647 ]
-[ nil ]
-[ nil ]
+Caught exception
+[ 0 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ -2147483647 ]
+Caught exception
+[ 0 ]
 # should this produce nil (overflow)?
-[ 2147483647 ]
+Caught exception
+[ 0 ]
 # dbl from lng
 [ 1 ]
 [ 2147483647 ]
@@ -1988,10 +2088,10 @@ Caught exception
 [ -2147483649 ]
 [ 9.2233720368547758e+18 ]
 [ nil ]
-[ nil ]
+[ -9.2233720368547758e+18 ]
 [ -9.2233720368547758e+18 ]
 [ nil ]
-[ nil ]
+[ 9.2233720368547758e+18 ]
 # dbl from flt
 [ 0 ]
 [ 0.10000000149011612 ]
@@ -2104,16 +2204,16 @@ Caught exception
 # dbl range is -1.7976931348623157E+308 to 1.7976931348623157E+308.
 [ 1.7976931348623157e+308 ]
 [ 1.7976931348623157e+308 ]
-Caught exception
-Caught exception
+[ nil ]
+[ nil ]
 [ 1.7976931348623157e+308 ]
 [ 1.7976931348623157e+308 ]
 [ 1.7976931348623157e+308 ]
 [ 1.7976931348623157e+308 ]
-Caught exception
-Caught exception
-Caught exception
-Caught exception
+[ nil ]
+[ nil ]
+[ nil ]
+[ nil ]
 Caught exception
 Caught exception
 # to oid
@@ -2128,22 +2228,19 @@ Caught exception
 [ 32767@0 ]
 [ 32768@0 ]
 [ 2147483647@0 ]
-[ nil ]
-[ nil ]
-[ nil ]
+Caught exception
+Caught exception
+Caught exception
 # should this produce nil (overflow)?
-[ nil ]
+Caught exception
 # should this produce nil (overflow)?
-[ 2147483647@0 ]
+Caught exception
 # oid from lng
 [ 1@0 ]
 [ 2147483647@0 ]
 [ 2147483647@0 ]
 [ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
+Caught exception
 [ nil ]
 [ nil ]
 # oid from flt
@@ -2190,11 +2287,11 @@ Caught exception
 [ 2147483647@0 ]
 [ nil ]
 [ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
-[ nil ]
+Caught exception
+Caught exception
+Caught exception
+Caught exception
+Caught exception
 # to str
 # str from bit
 [ "true" ]
@@ -2208,12 +2305,12 @@ Caught exception
 [ "32768" ]
 [ "2147483647" ]
 [ "-2147483647" ]
-[ nil ]
-[ nil ]
+Caught exception
+Caught exception
 # should this produce nil (overflow)?
-[ "-2147483647" ]
+Caught exception
 # should this produce nil (overflow)?
-[ "2147483647" ]
+Caught exception
 # str from lng
 [ "1" ]
 [ "2147483647" ]
