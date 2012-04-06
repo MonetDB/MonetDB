@@ -1146,6 +1146,8 @@ struct curl_data {
 static struct curl_data *curl_handles;
 #endif
 
+#define BLOCK_CURL	8192
+
 /* this function is called by libcurl when there is data for us */
 static size_t
 write_callback(char *buffer, size_t size, size_t nitems, void *userp)
@@ -1156,8 +1158,8 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 	size *= nitems;
 	/* allocate a buffer if we don't have one yet */
 	if (c->buffer == NULL && size != 0) {
-		/* BLOCK had better be a power of 2! */
-		c->maxsize = (size + BLOCK - 1) & ~(BLOCK - 1);
+		/* BLOCK_CURL had better be a power of 2! */
+		c->maxsize = (size + BLOCK_CURL - 1) & ~(BLOCK_CURL - 1);
 		if ((c->buffer = malloc(c->maxsize)) == NULL)
 			return 0;
 		c->usesize = 0;
@@ -1173,7 +1175,7 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 #endif
 	/* allocate more buffer space if we still don't have enough space */
 	if (c->maxsize - c->usesize < size) {
-		c->maxsize = (c->usesize + size + BLOCK - 1) & ~(BLOCK - 1);
+		c->maxsize = (c->usesize + size + BLOCK_CURL - 1) & ~(BLOCK_CURL - 1);
 		c->buffer = realloc(c->buffer, c->usesize + size);
 	}
 	/* finally, store the data we received */
