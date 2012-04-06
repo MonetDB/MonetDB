@@ -3119,6 +3119,46 @@ BATassertHeadProps(BAT *b)
 }
 #endif
 
+/* Assert that properties are set correctly.
+ *
+ * A BAT can have a bunch of properties set.  Mostly, the property
+ * bits are set if we *know* the property holds, and not set if we
+ * don't know whether the property holds (or if we know it doesn't
+ * hold).  Most properties are per column, only the "set" property is
+ * over two columns.
+ *
+ * The properties currently maintained are:
+ *
+ * dense	Only valid for TYPE_oid columns: each value in the
+ * 		column is exactly one more than the previous value.
+ * 		This implies sorted, key, nonil.
+ * nil		There is at least one NIL value in the column.
+ * nonil	There are no NIL values in the column.
+ * key		All values in the column are distinct.
+ * sorted	The column is sorted (ascending).  If also revsorted,
+ * 		then all values are equal.
+ * revsorted	The column is reversely sorted (descending).  If
+ * 		also sorted, then all values are equal.
+ * set		The combinations of head and tail values are distinct.
+ *
+ * The "key" property consists of two bits.  The lower bit, when set,
+ * indicates that all values in the column are distinct.  The upper
+ * bit, when set, indicates that all values must be distinct
+ * (BOUND2BTRUE).
+ *
+ * Note also that the "set" property is somewhat confused.  On the one
+ * hand, some comments suggest it is merely an indication of the
+ * current state of affairs, i.e. all head/tail combinations are
+ * distinct.  The code in BUNins suggests that is means that the
+ * combinations must be distinct.
+ *
+ * Note that the functions BATseqbase and BATkey also set more
+ * properties than you might suspect.  When setting properties on a
+ * newly created and filled BAT, you may want to first make sure the
+ * batCount is set correctly (e.g. by calling BATsetcount), then use
+ * BATseqbase and BATkey, and finally set the other properties.
+ */
+
 void
 BATassertProps(BAT *b)
 {

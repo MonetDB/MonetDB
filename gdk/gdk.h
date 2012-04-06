@@ -818,6 +818,8 @@ typedef struct PROPrec {
 	struct PROPrec *next;	/* simple chain of properties */
 } PROPrec;
 
+/* see also comment near BATassertProps() for more information about
+ * the properties */
 typedef struct {
 	str id;			/* label for head/tail column */
 
@@ -825,13 +827,13 @@ typedef struct {
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bunwidth */
 	unsigned int
-	 varsized:1,		/* varsized(>0) or fixedsized(0). */
+	 varsized:1,		/* varsized (1) or fixedsized (0) */
 	 key:2,			/* duplicates allowed? */
-	 dense:1,
+	 dense:1, 		/* OID only: only consecutive values */
 	 nonil:1, 		/* nonil isn't propchecked yet */
-	 nil:1,			/* nil is set when we found one nil (propcheck) */
-	 sorted:1,		/* column is sorted */
-	 revsorted:1;		/* column is reverse sorted */
+	 nil:1,			/* there is a nil in the column */
+	 sorted:1,		/* column is sorted in ascending order */
+	 revsorted:1;		/* column is sorted in descending order */
 	oid align;		/* OID for sync alignment */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
