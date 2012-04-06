@@ -4,7 +4,19 @@ try:
 except ImportError:
     import process
 
-dbname = os.getenv('TSTDB') + '-bug2875'
+dbfarm = os.getenv('GDK_DBFARM')
+tstdb = os.getenv('TSTDB')
+
+if not tstdb or not dbfarm:
+    print 'No TSTDB or GDK_DBFARM in environment'
+    sys.exit(1)
+
+dbname = tstdb + '-bug2875'
+
+# clean up before we start
+if os.path.exists(os.path.join(dbfarm, dbname)):
+    import shutil
+    shutil.rmtree(os.path.join(dbfarm, dbname))
 
 s = process.server(stdin = process.PIPE,
                    stdout = process.PIPE,
