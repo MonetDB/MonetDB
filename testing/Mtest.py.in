@@ -1104,7 +1104,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     if TSTDIR == os.curdir:
         env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
     else:
-        env['RELSRCDIR'] = os.path.join(((os.pardir + os.sep) * (len(TSTDIR.split(os.sep)) + 1)), env['RELSRCBASE'], TSTDIR, TSTSUFF)
+        env['RELSRCDIR'] = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
