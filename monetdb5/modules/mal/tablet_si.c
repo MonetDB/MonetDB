@@ -230,6 +230,7 @@ Slice(READERtask *task, Column * fmt, ptr key, str *err, int col)
 		bunfastins(sample, key, adt);
 	}
 	sample->tsorted = FALSE;
+	sample->trevsorted = FALSE;
 	sortedSample = BATtsort(sample);
 	bsi = bat_iterator(sortedSample);
 	vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));
@@ -449,6 +450,7 @@ Slice2(READERtask *task, Column * fmt, ptr key, str *err, int col)
 			bunfastins(sample, key, adt);
 		}
 		sample->tsorted = FALSE;
+		sample->trevsorted = FALSE;
 		sortedSample = BATtsort(sample);
 		bsi = bat_iterator(sortedSample);
 		vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));
@@ -693,6 +695,7 @@ Slice3(READERtask *task)
 			}
 
 			sample->tsorted = FALSE;
+			sample->trevsorted = FALSE;
 			sortedSample = BATtsort(sample);
 			bsi = bat_iterator(sortedSample);
 			vmin= (ValPtr) GDKzalloc(sizeof(ValRecord));

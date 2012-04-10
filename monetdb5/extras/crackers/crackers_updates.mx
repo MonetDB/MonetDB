@@ -593,13 +593,17 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
 			}
 
 			ripple->hsorted = FALSE;
+			ripple->hrevsorted = FALSE;
 			ripple->tsorted = FALSE;
+			ripple->trevsorted = FALSE;
 			ripple->tdense = FALSE;
 			ripple->hdense = FALSE;
 
 			/* this is just to bypass a bug and shuold be removed from here */
 			deletes->hsorted = FALSE;
+			deletes->hrevsorted = FALSE;
 			deletes->tsorted = FALSE;
+			deletes->trevsorted = FALSE;
 			deletes->tdense = FALSE;
 			deletes->hdense = FALSE;
 
@@ -618,6 +622,7 @@ mergeInsertionsBRipple_@1_@4(BAT *b, BAT *u, oid startPosition, oid endPosition,
                         goto EmptyRipple;
 
 		ripple->tsorted = FALSE;		
+		ripple->trevsorted = FALSE;		
 		ripple->batRestricted = BAT_WRITE;
 		BATmirror(BATorder(BATmirror(ripple)));
 		

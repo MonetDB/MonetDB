@@ -273,7 +273,9 @@ grp_new(BAT *b, BAT *h)
 	if (h) {
 		BATkey(h, TRUE);
 		h->tsorted = 0;
-		if ((h->hsorted = BAThordered(b)) & 1) {
+		h->trevsorted = 0;
+		h->hrevsorted = BAThrevordered(b);
+		if ((h->hsorted = BAThordered(b))) {
 			if (BATcount(h) == BATcount(b)) {
 				ALIGNsetH(h, BATmirror(b));
 			}
@@ -422,6 +424,7 @@ map2histo(BAT *map)
 	}
 	BATkey(BATmirror(bn),FALSE);
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 bunins_failed:
 	BATaccessEnd(map, USE_HEAD, MMAP_SEQUENTIAL);
 	if (map)
@@ -517,6 +520,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into ct */
 	}
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn,b);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -646,7 +650,7 @@ bits(BUN i)
 		}
 
 		/* Poor man's clustered test: sorted & !keyed => clustered  */
-		if ( ((b->tsorted)&1) && !(b->tkey) ) {
+		if (b->tsorted && !b->tkey) {
 			@:choosegroup@1(tailtype(b,TRUE),bn,clustered,histo)@
 		} else {
 			@:choosegroup@1(tailtype(b,TRUE),bn,unclustered,histo)@
@@ -656,6 +660,7 @@ bits(BUN i)
 			return GDK_FAIL;
 		}
 		bn->tsorted = 0;
+		bn->trevsorted = 0;
 	}
 	if (BATcount(histo) == BATcount(bn)) {
 		BATkey(BATmirror(bn),TRUE);
@@ -861,6 +866,7 @@ found:		/* ultra-fast 'insert' of [oid,gid] into result ct */
 		*dst++ = e->use.gid;
 	}
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATsetcount(bn, (BUN) (dst - (oid *) bn->T->heap.base)); 
 	if (hash)
 		GDKfree(hash);
@@ -1041,7 +1047,7 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 		prv += *t;
 		/* propcheck slice */
 		if (!BATtordered(bx)) 
-			BATpropcheck(BATmirror(bx), BATPROPS_ALL);
+			BATderiveHeadProps(BATmirror(bx), 0);
 		if (!BATtordered(bx)) {
 
 			ordered = 0;
@@ -1094,8 +1100,11 @@ CTderive_ordered(BAT *ohisto, BAT *b, BAT **res, BAT **reshisto)
 	}
 	if (ordered) {
 		bn->tsorted = TRUE;
+		bn->trevsorted = 0;
 		histo->hsorted = b->hsorted;
+		histo->hrevsorted = b->hrevsorted;
 		histo->tsorted = 0;
+		histo->trevsorted = 0;
 		BATkey(histo, TRUE);
 	}
 	if (b->hkey)
@@ -1312,8 +1321,8 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 	} else {
 		if (synced &&
 		    !BATtkey(b) &&
-	    	    BAThdense(b) &&
-		    BATtordered(ct_map)&1 &&
+			BAThdense(b) &&
+		    BATtordered(ct_map) &&
 		    BAThordered(ct_histo) &&
 		    (wrd)BATcount(b) > 2 * limit) {
 			/* break large (out-of-memory) derive over ordered
@@ -1346,7 +1355,7 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 		}
 #if 0
 		/* see comment above */
-		if (!b->tkey && BATcount(b) > 1 && BATtordered(ct_map)&1 && 
+		if (!b->tkey && BATcount(b) > 1 && BATtordered(ct_map) && 
 			BAThordered(ct_histo) &&
 	    		ATOMtype(b->htype) == TYPE_oid && 
 	    		b->ttype < TYPE_str) {
@@ -1388,13 +1397,13 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 
 		/* CTderive with correct lookup method (hash,synced) and type */
 		if (synced) {
-			if (((ct_map->tsorted) & 1)) {
+			if (ct_map->tsorted) {
 				@:choosederive(sync,clustered)@
 			} else {
 				@:choosederive(sync,unclustered)@
 			}
 		} else {
-			if (((ct_map->tsorted) & 1)) {
+			if (ct_map->tsorted) {
 				@:choosederive(hash,clustered)@
 			} else {
 				@:choosederive(hash,unclustered)@
@@ -1410,6 +1419,7 @@ derive(BAT **H, BAT **M, BAT *ct_histo, BAT *ct_map, BAT *b, int tt)
 			ALIGNsetH(bn, b);
 		} else {
 			bn->hsorted = BAThordered(b);
+			bn->hrevsorted = BAThrevordered(b);
 			if (b->hkey)
 				BATkey(bn, TRUE);
 		}
@@ -1484,7 +1494,7 @@ CTderive(BAT **M, BAT **H, BAT *ct_histo, BAT *ct_map, BAT *b)
 static inline BUN
 sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *tdst, oid *idp, int reverse)
 {
-	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
+	int (*cmp) (const void *, const void *) = BATatoms[tpe].atomCmp;
 	int shift = 0;
 	oid id = *idp + 1;
 	ptr cur, val;
@@ -1547,7 +1557,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 	if (b->tkey) {		/* if key, no further refinements can take place */
 		bn = BATmark(b, 0);
 	} else {
-		int (*cmp) (ptr, ptr) = BATatoms[b->ttype].atomCmp;
+		int (*cmp) (const void *, const void *) = BATatoms[b->ttype].atomCmp;
 		BUN cnt = 0;
 		BUN p, q, r, last = BUNfirst(b);
 		char *base = a->T->vheap ? NULL : a->T->heap.base, *this = NULL;
@@ -1606,6 +1616,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			return GDK_FAIL;
 		}
 		bn->hsorted = bn->tsorted = FALSE;
+		bn->hrevsorted = bn->trevsorted = FALSE;
 		hdst = (oid *) Hloc(bn,BUNfirst(bn));
 		tdst = (oid *) Tloc(bn,BUNfirst(bn));
 
@@ -1677,7 +1688,8 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void)
 			GDKfree(base);
 		BATsetcount(bn, (BUN) (((char*) tdst - bn->T->heap.base) / Tsize(bn)));
-		bn->tsorted = GDK_SORTED;
+		bn->tsorted = 1;
+		bn->trevsorted = 0;
 	}
 	*res = bn;
 	return GDK_SUCCEED;
@@ -1781,6 +1793,18 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 	rt = (oid*)Tloc(bn, BUNfirst(bn));
 
 	bn->hseqbase = b->hseqbase;
+	bn->hsorted = 1;
+	if (bn->hseqbase == oid_nil) {
+		bn->hkey = 0;
+		bn->hrevsorted = 1;
+		bn->H->nonil = 0;
+		bn->H->nil = 1;
+	} else {
+		bn->hkey = 1;
+		bn->hrevsorted = 0;
+		bn->H->nonil = 1;
+		bn->H->nil = 0;
+	}
 	cur = *t;
 	if (b->htype == TYPE_void) {
 		oid h = b->hseqbase;
@@ -1822,8 +1846,11 @@ CTgroup_@1_ordered(BAT *b, BAT **res)
 	}
 	if (BAThordered(b)) {
 		bn->tsorted = b->tsorted;
+		bn->trevsorted = b->trevsorted;
 		histo->hsorted = b->hsorted;
+		histo->hrevsorted = b->hrevsorted;
 		histo->tsorted = 0;
+		histo->trevsorted = 0;
 		BATkey(histo, TRUE);
 	}
 	if (b->hkey)
@@ -1861,7 +1888,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
 	}
 	if (!b->tkey && BATcount(b) > 1 &&
-	    BATtordered(b)&1 && 
+	    BATtordered(b) && 
 	    ATOMtype(b->htype) == TYPE_oid && 
 	    b->ttype < TYPE_str) {
 		switch(tailtype(b,TRUE)) {
@@ -2114,7 +2141,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2134,7 +2161,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 			}
 		}
 	}
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2171,7 +2198,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2191,7 +2218,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 			}
 		}
 	}
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2232,7 +2259,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 		throw(MAL, "group.@1", MAL_MALLOC_FAIL);
 	}
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2253,7 +2280,7 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 			}
 		}
 	}
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2337,13 +2364,14 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPsum_@1_@3)@
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
 
-	if (BAThordered(e)&1) {
+	if (BAThordered(e)) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
 		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
@@ -2414,13 +2442,14 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	@:chkHeader(e,GRPprod_@1_@3)@
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
 
-	if (BAThordered(e)&1) {
+	if (BAThordered(e)) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
 		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
@@ -2515,6 +2544,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
@@ -2522,7 +2552,7 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	bni = bat_iterator(bn);
 	off = BUNfirst(bn);
 
-	if (BAThordered(e)&1) {
+	if (BAThordered(e)) {
 		min = *(oid*)BUNhead(ei, BUNfirst(e));
 		BATaccessBegin(e, USE_HEAD, MMAP_SEQUENTIAL);
 		BATloop(e, p, q) {
@@ -2612,6 +2642,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	off = BUNfirst(e);
 	/* init sums and counts to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
@@ -2650,7 +2681,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	memset(sumsquares, 0, nElements*sizeof(dbl));
 
 	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
-	if (!(BAThordered(b)&1 && BAThdense(e)))
+	if (!BAThordered(b) || !BAThdense(e))
 		BATaccessBegin(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	BATloop(b, p, q) {
 		oid *h = (oid*) BUNhead(bi,p);
@@ -2673,7 +2704,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 			}
 		}
 	}
-	if (!(BAThordered(b)&1 && BAThdense(e)))
+	if (!BAThordered(b) || !BAThdense(e))
 		BATaccessEnd(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 
@@ -2712,6 +2743,7 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 		throw(MAL, "group.@1", "failed");
 	}
 	bn->hsorted = bn->tsorted = 0;
+	bn->hrevsorted = bn->trevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	BBPkeepref(*ret= bn->batCacheid);
@@ -2737,7 +2769,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 {
 	BAT *bn = *ret = BATnew(e->htype, BATttype(b), BATcount(e));
 	BATiter ei = bat_iterator(e), bi = bat_iterator(b);
-	int (*cmp)(ptr,ptr);
+	int (*cmp)(const void *, const void *);
 	ptr nil;
 	BUN yy = 0, off;
 	@3 *extremes;
@@ -2763,7 +2795,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKfree(extremes);
 		return GDK_FAIL;
 	}
-	if (!(BAThordered(b)&1 && BAThdense(e)))
+	if (!BAThordered(b) || !BAThdense(e))
 		BATaccessBegin(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	BATloop(b, p, q) {
@@ -2776,7 +2808,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		}
 	}
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
-	if (!(BAThordered(b)&1 && BAThdense(e)))
+	if (!BAThordered(b) || !BAThdense(e))
 		BATaccessEnd(e, USE_HEAD|USE_HHASH, MMAP_WILLNEED);
 	/* insert the extreme values into the result */
 	yy = 0;
@@ -2795,6 +2827,7 @@ CMDaggr_@1_@3(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 0;
 	ALIGNsetH(bn, e);
 	return GDK_SUCCEED;
@@ -2871,7 +2904,7 @@ GRP@1(int *retval, int *bid, int *eid)
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2888,7 +2921,7 @@ GRP@1(int *retval, int *bid, int *eid)
 			}
 		}
 	}
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -2956,12 +2989,13 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
 	bi = bat_iterator(b);
 	bni = bat_iterator(bn);
-	if (BAThordered(e) & 1) {
+	if (BAThordered(e)) {
 		min = *(oid *) BUNhead(ei, BUNfirst(e));
 		BATloop(e, p, q) {
 			if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
@@ -3044,6 +3078,7 @@ GRPsize(int *retval, int *bid, int *eid)
 	}
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
 	bn->T->nonil = 1;
 	ALIGNsetH(bn, e);
 	ei = bat_iterator(e);
@@ -3063,7 +3098,7 @@ GRPsize(int *retval, int *bid, int *eid)
 		throw(MAL, "group.count", MAL_MALLOC_FAIL);
 	}
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessBegin(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessBegin(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -3079,7 +3114,7 @@ GRPsize(int *retval, int *bid, int *eid)
 			}
 		}
 	}
-	if (BAThordered(b)&1 && BAThdense(bn))
+	if (BAThordered(b) && BAThdense(bn))
 		BATaccessEnd(bn, USE_TAIL, MMAP_SEQUENTIAL);
 	else
 		BATaccessEnd(bn, USE_HEAD|USE_HHASH|USE_TAIL, MMAP_WILLNEED);
@@ -3120,8 +3155,6 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
-	bn->tsorted = bn->hsorted = 0;
-	BATseqbase(bn,0);
 
 	i = *size;
 	sum =0;
@@ -3142,6 +3175,10 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if(i != *size)
 		BUNfastins(bn, &o, &sum);
+
+	bn->tsorted = bn->hsorted = 0;
+	bn->trevsorted = bn->hrevsorted = 0;
+	BATseqbase(bn,0);
 
 	*retval= bn->batCacheid;
 	BBPkeepref(*retval);

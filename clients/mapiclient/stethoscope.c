@@ -42,6 +42,8 @@
 
 #define COUNTERSDEFAULT "ISTest"
 
+/* #define _DEBUG_STETHOSCOPE_*/
+
 static struct {
 	char tag;
 	char *ptag;     /* which profiler group counter is needed */
@@ -202,12 +204,14 @@ doProfile(void *d)
 	mapi_reconnect(dbh);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
+#ifdef _DEBUG_STETHOSCOPE_
 	if (wthr->tid > 0) {
 		snprintf(id, 10, "[%d] ", wthr->tid);
 		printf("-- connection with server %s is %s\n", wthr->uri, id);
 	} else {
 		printf("-- connection with server %s\n", wthr->uri);
 	}
+#endif
 
 	/* set counters */
 	x = NULL;
@@ -223,7 +227,9 @@ doProfile(void *d)
 			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
 					profileCounter[i].ptag);
 			doQ(buf);
+#ifdef _DEBUG_STETHOSCOPE_
 			printf("-- %s%s\n", id, buf);
+#endif
 		}
 		x = profileCounter[i].ptag;
 	}
@@ -250,7 +256,9 @@ doProfile(void *d)
 	doQ("profiler.setNone();");
 
 	if (wthr->argc == 0) {
+#ifdef _DEBUG_STETHOSCOPE_
 		printf("-- %sprofiler.setAll();\n", id);
+#endif
 		doQ("profiler.setAll();");
 	} else {
 		for (a = 0; a < wthr->argc; a++) {
@@ -270,12 +278,16 @@ doProfile(void *d)
 				mod = "*";
 			}
 			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
+#ifdef _DEBUG_STETHOSCOPE_
 			printf("-- %s%s\n", id, buf);
+#endif
 			doQ(buf);
 			free(arg);
 		}
 	}
+#ifdef _DEBUG_STETHOSCOPE_
 	printf("-- %sprofiler.start();\n", id);
+#endif
 	doQ("profiler.start();");
 	fflush(NULL);
 

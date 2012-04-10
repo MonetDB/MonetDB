@@ -43,11 +43,11 @@ int ndef = 0;
 
 #define topCond() (condStack[condSP-1].defined)
 #define topMacro() (condStack[condSP-1].macro)
-#define pushCond(X,N) { condStack[condSP].defined = (X);\
-			condStack[condSP++].macro = StrDup(N); }
-#define toggle() {if(topCond())condStack[condSP-1].defined=0;\
-                  else condStack[condSP-1].defined=1;}
-#define popCond() {if(condSP) condSP--;else Fatal("DefDir","IFDEF error");}
+#define pushCond(X,N) do { condStack[condSP].defined = (X);\
+		condStack[condSP++].macro = StrDup(N); } while (0)
+#define toggle() do {if(topCond())condStack[condSP-1].defined=0;\
+		else condStack[condSP-1].defined=1;} while (0)
+#define popCond() do {if(condSP) condSP--;else Fatal("DefDir","IFDEF error");} while (0)
 
 int
 allTrue(void)

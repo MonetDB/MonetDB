@@ -768,7 +768,7 @@ int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop){
 
 int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {   int k;
-	int (*cmp)(ptr,ptr);
+	int (*cmp)(const void *, const void *);
 	VarPtr w,u;
 
 	(void) mb;

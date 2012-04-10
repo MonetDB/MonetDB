@@ -627,7 +627,7 @@ int
 VALcmp(ValPtr p, ValPtr q)
 {
 
-	int (*cmp) (ptr, ptr);
+	int (*cmp) (const void *, const void *);
 	int tpe;
 	ptr nilptr, pp, pq;
 

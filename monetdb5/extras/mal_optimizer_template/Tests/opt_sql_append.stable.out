@@ -61,10 +61,10 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 175 # length
+% 178 # length
 function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/tmp/xyz":str,-1:lng,0:lng,0:int);
+    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
     X_9 := sql.append(X_2,"sys","ttt","a",X_6);
     X_11 := sql.append(X_9,"sys","ttt","b",X_7);
     X_14 := sql.append(X_11,"sys":str,"ttt":str,"c",X_8);
@@ -89,10 +89,10 @@ end s2_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 175 # length
+% 178 # length
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/tmp/xyz":str,-1:lng,0:lng,0:int);
+    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
     X_9 := sql.append(X_2,"sys","ttt","a",X_6);
     X_11 := sql.append(X_9,"sys","ttt","b",X_7);
     X_16 := aggr.count(X_8);

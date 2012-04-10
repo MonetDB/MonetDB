@@ -132,6 +132,7 @@ str CMDscience_bat_@2_@1(int *ret, int *bid)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),0);           
 	
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
@@ -172,6 +173,7 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
 
 	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),0);           
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 

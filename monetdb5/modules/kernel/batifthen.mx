@@ -198,6 +198,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
 	BATkey(BATmirror(bn), FALSE);
 
 	cnt = BATcount(b);
@@ -235,6 +236,7 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:chkSize(b,eb,ifThenElse)@
 	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	cnt = BATcount(b);
@@ -278,6 +280,7 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:chkSize(b,eb,ifThenElse)@
 	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	cnt = BATcount(b);
@@ -313,6 +316,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:chkSize(b,tb,ifThenElse)@
 	@:voidresultBAT(TYPE_@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	cnt = BATcount(b);
@@ -360,6 +364,7 @@ str CMDifThenElseCst_@1(int *ret, int *bid, @1 *tid, @1 *eid)
 	@:getBATdescriptor(bid,b,"batcalc.ifThenElse")@
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
@@ -406,6 +411,7 @@ CMDifThenElse_@1(int *ret, int *bid, int *tid, int *eid)
 	@:chkSize(b,eb,ifThenElse)@
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
@@ -453,6 +459,7 @@ CMDifThenElseCst1_@1(int *ret, int *bid, @1 *val, int *eid)
 	@:chkSize(b,eb,ifThenElse)@
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);
@@ -501,6 +508,7 @@ CMDifThenElseCst2_@1(int *ret, int *bid, int *tid, @1 *val)
 	@:chkSize(b,tb,ifThenElse)@
 	@:resultBAT(@1,"batcalc.ifThenElse")@
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
     	BATkey(BATmirror(bn), FALSE);
 
 	bi = bat_iterator(b);

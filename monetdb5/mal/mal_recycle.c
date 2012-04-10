@@ -193,19 +193,24 @@ double recycleAlpha = 0.5;
 
 
 #define recycleCrdCPU(X) (recycleBlk->profiler[X].ticks) * (recycleW(X))
-#define setIPtr(q,i,cst,c) {	VALset(&cst,TYPE_int,&i);\
-				c = defConstant(recycleBlk,TYPE_int, &cst); \
-				q = pushArgument(recycleBlk,q,c); \
-				setVarUsed(recycleBlk,c); }
-#define getIPtr(p,r,j,pc) {	MalBlkPtr smb; \
-				j = p->argv[p->argc-1];\
-				pc = *(int*)getVarValue(recycleBlk,j); \
-				r = NULL; \
-				if ((p)->recycle >= 0 ){ \
-					smb = recycleQPat->ptrn[(p)->recycle]->mb; \
-					if (smb) r = getInstrPtr(smb, pc);	\
-				}\
-			      }
+#define setIPtr(q,i,cst,c)								\
+	do {												\
+		VALset(&cst,TYPE_int,&i);						\
+		c = defConstant(recycleBlk,TYPE_int, &cst);		\
+		q = pushArgument(recycleBlk,q,c);				\
+		setVarUsed(recycleBlk,c);						\
+	} while (0)
+#define getIPtr(p,r,j,pc)								\
+	do {												\
+		MalBlkPtr smb;									\
+		j = p->argv[p->argc-1];							\
+		pc = *(int*)getVarValue(recycleBlk,j);			\
+		r = NULL;										\
+		if ((p)->recycle >= 0 ){						\
+			smb = recycleQPat->ptrn[(p)->recycle]->mb;	\
+			if (smb) r = getInstrPtr(smb, pc);			\
+		}												\
+	} while (0)
 
 #define InstrCrd(mb,p) (recycleQPat->ptrn[cntxt->rcc->curQ]->crd[getPC(mb,p)])
 				/* credits of executed instruction p in mal block mb */
@@ -855,7 +860,7 @@ static bit
 VALisNil(ValPtr p)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe = p ->vtype;
     ptr nilptr;
 
@@ -873,7 +878,7 @@ setSelectProp(InstrPtr q)
 	ValRecord lbval, ubval, nilval;
 	int bid, tpe = 0;
 	ptr nilptr = NULL;
-	int (*cmp) (ptr, ptr) = NULL;
+	int (*cmp) (const void *, const void *) = NULL;
 
     str selectRef = putName("select",6);
 	str thetaselectRef = putName("thetaselect",11);
@@ -1219,7 +1224,7 @@ likeSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 static bit
 marginEq(ValPtr p, ValPtr q)
 {
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe;
     ptr nilptr, pp, pq;
 
@@ -1239,7 +1244,7 @@ static bit
 lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe, c;
     ptr nilptr, pp, pq;
 
@@ -1271,7 +1276,7 @@ static bit
 greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 {
 
-    int (*cmp) (ptr, ptr);
+    int (*cmp) (const void *, const void *);
     int tpe, c;
     ptr nilptr, pp, pq;
 

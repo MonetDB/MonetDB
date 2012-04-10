@@ -46,7 +46,6 @@ cast_to_interval.SF-1019079
 error_in_sql_parser.SF-1019122
 cross_product.SF-1122802
 max_min_sum_null.SF-1123132
-HAVE_JDBCCLIENT_JAR?alter_table_describe.SF-1146092
 alter_table_describe-mclient.SF-1146092
 affected_rows_count.SF-1149757
 var_char_cast_truncate.SF-1150907

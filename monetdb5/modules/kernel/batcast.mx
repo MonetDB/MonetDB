@@ -176,6 +176,7 @@ str CMDconvert_@1(int *ret, int *bid)
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	BATkey(BATmirror(bn), FALSE);
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 
 	if (b->htype != bn->htype) {
 		BAT *r = VIEWcreate(b,bn);

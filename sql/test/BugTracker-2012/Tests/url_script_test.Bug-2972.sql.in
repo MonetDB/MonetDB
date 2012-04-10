@@ -8,8 +8,6 @@ select getAnchor(u) from t;
 
 select getBasename(u) from t;
 
-select getContent(u) from t;
-
 select getContext(u) from t;
 
 select getDomain(u) from t;
@@ -36,5 +34,14 @@ select isaURL('htp:///www.monetdb.org');
 
 select newurl('https','www.monetdb.org',8080,'blah');
 select newurl('https','localhost','boe');
+
+drop table t;
+
+create table t(u url);
+
+-- this works on UNIX, on Windows we likely need an extra / after file://
+insert into t values ('file://$TSTSRCDIR/url_script_test.Bug-2972.txt');
+
+select getContent(u) from t;
 
 drop table t;

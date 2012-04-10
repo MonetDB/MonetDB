@@ -86,11 +86,25 @@ gdk_export char *MT_locktrace_nme[65536];
 gdk_export unsigned long long MT_clock(void);
 
 #define MT_locktrace_hash(_id)  ((int) (((lng) ((size_t) _id))^(((lng) ((size_t) _id))>>16))&65535)
-#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) do { unsigned long long _c=0; if (MT_locktrace) _c=(MT_getpid() == MT_locktrace)?MT_clock():0; MT_log(_impl, _object, _action, _caller, _fp); if (_c) { MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; } } while(0)
-#define MT_locktrace_set(s,n) {int _i = MT_locktrace_hash(s); \
-                               if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
-                                  printf("MT_locktrace: name collision %s hides %s\n", MT_locktrace_nme[_i], (n)); \
-                               } else MT_locktrace_nme[_i] = (n); }
+#define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat)	\
+	do {								\
+		unsigned long long _c=0;				\
+		if (MT_locktrace)					\
+			_c=(MT_getpid() == MT_locktrace)?MT_clock():0;	\
+		MT_log(_impl, _object, _action, _caller, _fp);		\
+		if (_c) {						\
+			MT_locktrace_cnt[MT_locktrace_hash(_pat)] += MT_clock() - _c; \
+		}							\
+	} while(0)
+#define MT_locktrace_set(s,n)\
+	do {								\
+		int _i = MT_locktrace_hash(s);				\
+		if (MT_locktrace_nme[_i] && MT_locktrace_nme[_i] != (n)) { \
+			printf("MT_locktrace: name collision %s hides %s\n", \
+			       MT_locktrace_nme[_i], (n));		\
+		} else							\
+			MT_locktrace_nme[_i] = (n);			\
+	} while (0)
 #else
 #define MT_log_trace(_impl, _object, _action, _caller, _fp, _pat) MT_log(_impl, _object, _action, _caller, _fp)
 #define MT_locktrace_set(s,n)
@@ -144,7 +158,7 @@ gdk_export int pthread_mutex_unlock(pthread_mutex_t *);
 
 typedef pthread_mutex_t MT_Lock;
 
-#define MT_lock_init(l,n)    { pthread_mutex_init((pthread_mutex_t*) l, 0); MT_locktrace_set(l,n); }
+#define MT_lock_init(l,n)    do { pthread_mutex_init((pthread_mutex_t*) l, 0); MT_locktrace_set(l,n); } while (0)
 #define MT_lock_destroy(l)   pthread_mutex_destroy((pthread_mutex_t*) l)
 #define MT_lock_set(l,n)     MT_log_trace(pthread_mutex_lock((pthread_mutex_t *) l), l, "MT_set_lock", n, stderr, l)
 #define MT_lock_unset(l,n)   MT_log(pthread_mutex_unlock((pthread_mutex_t *) l), l, "MT_unset_lock", n, stderr)
@@ -181,7 +195,7 @@ gdk_export void pthread_sema_down(pthread_sema_t *s);
 
 typedef pthread_sema_t MT_Sema;
 
-#define MT_sema_init(s,nr,n) { pthread_sema_init(s,0,nr); MT_locktrace_set(s,n); }
+#define MT_sema_init(s,nr,n) do { pthread_sema_init(s,0,nr); MT_locktrace_set(s,n); } while (0)
 #define MT_sema_destroy(s)   pthread_sema_destroy(s)
 #define MT_sema_up(s,n)      MT_log(pthread_sema_up(s), s, "MT_up_sema", n, stderr)
 #define MT_sema_down(s,n)    MT_log_trace(pthread_sema_down(s), s, "MT_down_sema", n, stderr, s)
@@ -204,7 +218,7 @@ gdk_export int pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 #endif
 typedef pthread_cond_t MT_Cond;
 
-#define MT_cond_init(c,n)    { pthread_cond_init((pthread_cond_t*) c, NULL); MT_locktrace_set(c,n); }
+#define MT_cond_init(c,n)    do { pthread_cond_init((pthread_cond_t*) c, NULL); MT_locktrace_set(c,n); } while (0)
 #define MT_cond_destroy(c)   pthread_cond_destroy((pthread_cond_t*) c)
 #define MT_cond_signal(c,n)  MT_log(pthread_cond_signal((pthread_cond_t*) c), c, "MT_signal_cond", n, stderr)
 #define MT_cond_wait(c,l,n)  MT_log_trace(pthread_cond_wait((pthread_cond_t*) c, (pthread_mutex_t *) l), c, "MT_wait_cond", n, stderr, c)

@@ -150,7 +150,9 @@ comment	"Extracts Cb(blue color) component from a color atom";
 	if( Y->htype== TYPE_void) \
 		BATseqbase(X, Y->hseqbase); \
 	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
+	X->hrevsorted=Y->hrevsorted; \
+	X->tsorted=0; \
+	X->trevsorted=0; 
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \

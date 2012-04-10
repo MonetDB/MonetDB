@@ -87,8 +87,8 @@ end main;
 # h	t						  # name
 # void	xml						  # type
 #---------------------------------------------------------#
-[ nil,	  <title>spring</title><title>summer</title>	  ]
-[ nil,	  <title>autum</title>				  ]
+[ 0@0,	  <title>spring</title><title>summer</title>	  ]
+[ 1@0,	  <title>autum</title>				  ]
 #-----------------#
 # h	t	  # name
 # oid	xml	  # type

@@ -1105,7 +1105,7 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
     if TSTDIR == os.curdir:
         env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
     else:
-        env['RELSRCDIR'] = os.path.join(((os.pardir + os.sep) * (len(TSTDIR.split(os.sep)) + 1)), env['RELSRCBASE'], TSTDIR, TSTSUFF)
+        env['RELSRCDIR'] = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
     os.environ['TSTDB']     = TSTDB
     os.environ['TSTDIR']    = TSTDIR
     os.environ['TSTSRCDIR'] = TSTSRCDIR
@@ -1774,11 +1774,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         for f in os.listdir(RELSRCDIR):
             if test.match(f):
                 try:
-                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), os.path.join(TSTTRGDIR, f))
+                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
                     links.append(os.path.join(TSTTRGDIR, f))
                 except IOError, (IOerrNo, IOerrStr):
                     ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (os.path.join(RELSRCDIR, f), os.path.join(TSTTRGDIR, f), os.getcwd(), IOerrNo, IOerrStr))
+                           % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -3207,6 +3207,30 @@ def main(argv) :
         opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
     except monet_options.Error:
         sys.exit(1)
+
+    if len(args) == 1 and os.path.isfile(args[0]):
+        head, tail = os.path.split(args[0])
+        head, tst = os.path.split(head)
+        if tst != 'Tests':
+            ErrXit("%s: not a valid test name" % args[0])
+        if not opts.get('package'):
+            for d in ('common', 'clients', 'gdk', 'java', 'monetdb5', 'sql'):
+                if head.startswith(d + os.sep):
+                    setattr(opts, 'package', d)
+                    head = head[len(d + os.sep):]
+        args = [head]
+        if tail != 'All':
+            for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
+                        '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                        '.sql', '.py', ''):
+                if tail.endswith(ext + '.in'):
+                    args.append(tail[:-len(ext + '.in')])
+                    break
+                if tail.endswith(ext):
+                    args.append(tail[:-len(ext)])
+                    break
+            else:
+                ErrXit("%s: not a valid test name" % args[0])
 
     m5 = opts.get('monetdb5', False)
 

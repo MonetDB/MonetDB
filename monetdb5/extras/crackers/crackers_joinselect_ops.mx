@@ -106,11 +106,13 @@ CRKjoinSelectBounds_@1(int *res, int *right, @1 *low, @1 *hgh, bit *inclusiveLow
 	if (BATcount(l) == 0 || BATcount(r) == 0){
 		BAT *d = BATnew(TYPE_oid, TYPE_void, 0);
 		BATsetcount(d, 0);
-		d->hsorted = GDK_SORTED;
+		d->hsorted = 1;
+		d->hrevsorted = 1;
 		d->hdense = TRUE;
 		BATseqbase(d, (oid)0);
 		BATkey(d, TRUE);
-		d->tsorted = FALSE;
+		d->tsorted = 1;
+		d->trevsorted = 1;
 		d->tdense = FALSE;
 		BATseqbase(BATmirror(d), oid_nil);
 		BATkey(BATmirror(d), FALSE);
@@ -251,7 +253,7 @@ The result is a [oid,void] bat. */
 				}	
 				lt ++;
 			}
-		} else if (BAThordered(l)&1) {
+		} else if (BAThordered(l)) {
 			while(lt < llast && (lv = *lt) < rmin) {
 				lt ++;
 			}
@@ -279,7 +281,8 @@ The result is a [oid,void] bat. */
 	}
 
     	BATsetcount(d, (BUN) (dt - (oid*)Hloc(d,BUNfirst(d))));
-	d->hsorted = (BATcount(d)<2 || BAThordered(l)&1) ? GDK_SORTED : 0;
+	d->hsorted = BATcount(d)<2 || BAThordered(l);
+	d->hrevsorted = BATcount(d)<2 || BAThrevordered(l);
 	d->hdense = BATcount(d)<2 || d_hdense;
 	if (d->hdense) {
 		if (BATcount(d)==0) {
@@ -292,7 +295,8 @@ The result is a [oid,void] bat. */
 		BATseqbase(d, oid_nil);
 	}
 	BATkey(d, BATcount(d)<2 || l->hkey);
-	d->tsorted = FALSE;
+	d->tsorted = BATcount(d)<2;
+	d->trevsorted = BATcount(d)<2;
 	d->tdense = FALSE;
 	BATseqbase(BATmirror(d), oid_nil);
 	BATkey(BATmirror(d), FALSE);

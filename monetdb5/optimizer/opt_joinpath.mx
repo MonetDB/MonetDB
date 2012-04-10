@@ -477,11 +477,11 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* densefetchjoin -> sequential access */
 		cost /= 7;
 	else
-	if (BATtordered(l)&1 && BAThdense(r))
+	if (BATtordered(l) && BAThdense(r))
 		/* orderedfetchjoin > sequential access */
 		cost /= 6;
 	else
-	if (BATtdense(l) && BAThordered(r)&1 && flag != 0 /* no leftjoin */)
+	if (BATtdense(l) && BAThordered(r) && flag != 0 /* no leftjoin */)
 		/* (reversed-) orderedfetchjoin -> sequential access */
 		cost /= 6;
 	else
@@ -493,19 +493,19 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		/* (reversed-) fetchjoin with random access in L1 */
 		cost /= 5;
 	else
-	if (BATtordered(l)&1 && BAThordered(r)&1)
+	if (BATtordered(l) && BAThordered(r))
 		/* mergejoin > sequential access */
 		cost /= 4;
 	else
-	if (BAThordered(r)&1 && rc <= SMALL_OPERAND)
+	if (BAThordered(r) && rc <= SMALL_OPERAND)
 		/* binary-lookup-join with random access in L1 */
 		cost /= 3;
 	else
-	if (BATtordered(l)&1 && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
+	if (BATtordered(l) && lc <= SMALL_OPERAND && flag != 0 /* no leftjoin */)
 		/* (reversed-) binary-lookup-join with random access in L1 */
 		cost /= 3;
 	else
-	if ((BAThordered(r)&1 && lc <= SMALL_OPERAND) || (BATtordered(l)&1 && rc <= SMALL_OPERAND))
+	if ((BAThordered(r) && lc <= SMALL_OPERAND) || (BATtordered(l) && rc <= SMALL_OPERAND))
 		/* sortmergejoin with sorting in L1 */
 		cost /= 3;
 	else

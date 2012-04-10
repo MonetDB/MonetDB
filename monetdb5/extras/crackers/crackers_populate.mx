@@ -275,10 +275,11 @@ CrackPopulate_@1(
 
 	/* set properties */
 	BATsetcount(ccol, n);
-	if ((ccol->hdense = BATtordered(bcol)&1))
+	if ((ccol->hdense = BATtordered(bcol)))
 		BATseqbase(ccol, bcol->hseqbase);
 	ccol->tdense = FALSE;
-	ccol->hsorted = ccol->tsorted = BATtordered(bcol)&1 ? GDK_SORTED : 0;
+	ccol->hsorted = ccol->tsorted = BATtordered(bcol);
+	ccol->hrevsorted = ccol->trevsorted = BATtrevordered(bcol);
 	BATkey(ccol, TRUE);
 	BATkey(BATmirror(ccol), bcol->tkey);
 	ccol->H->nonil = TRUE;
@@ -434,8 +435,10 @@ CrackPopulateSideways_@1(
 	BATsetcount(ccol, n);
 	ccol->hdense = FALSE;
 	ccol->tdense = FALSE;
-	ccol->hsorted = BATtordered(bcol)&1 ? GDK_SORTED : 0;
-	ccol->tsorted = BATtordered(bcol)&BATtordered(bcol2)&1 ? GDK_SORTED : 0;
+	ccol->hsorted = BATtordered(bcol);
+	ccol->hrevsorted = BATtrevordered(bcol);
+	ccol->tsorted = BATtordered(bcol) & BATtordered(bcol2);
+	ccol->trevsorted = BATtrevordered(bcol) & BATtrevordered(bcol2);
 	BATkey(ccol, bcol->tkey);
 	BATkey(BATmirror(ccol), bcol2->tkey);
 	ccol->H->nonil = bcol->T->nonil;

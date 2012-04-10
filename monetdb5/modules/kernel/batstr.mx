@@ -48,20 +48,6 @@ command batstr.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
 address STRbatBytes
 comment "Return the string length in bytes.";
 
-command batcalc.==( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
-address STRbatEqual
-comment "Equate a bat of strings against each other";
-command batcalc.==( l:bat[:oid,:str], r:str) :bat[:oid,:bit]
-address STRbatEqualCst
-comment "Equate a bat of strings against a singleton";
-
-command batcalc.!=( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:bit]
-address STRbatNotEqual
-comment "Equate a bat of strings against each other";
-command batcalc.!=( l:bat[:oid,:str], r:str) :bat[:oid,:bit]
-address STRbatNotEqualCst
-comment "Equate a bat of strings against a singleton";
-
 command batstr.toLower( s:bat[:oid,:str] ) :bat[:oid,:str]
 address STRbatLower
 comment "Convert a string to lower case.";
@@ -210,7 +196,9 @@ comment "Insert a string into another";
 	if( Y->htype== TYPE_void) \
 		BATseqbase(X, Y->hseqbase); \
 	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
+	X->hrevsorted=Y->hrevsorted; \
+	X->tsorted=0; \
+	X->trevsorted=0; 
 #define prepareResult2(X,Y,A,T,Z) \
 	X= BATnew(Y->htype,T,BATcount(Y)); \
 	if( Y->htype== TYPE_void) \
@@ -221,7 +209,9 @@ comment "Insert a string into another";
 		throw(MAL, "batstr." Z, MAL_MALLOC_FAIL); \
 	} \
 	X->hsorted=Y->hsorted; \
-	X->tsorted=0; 
+	X->hrevsorted=Y->hrevsorted; \
+	X->tsorted=0; \
+	X->trevsorted=0; 
 #define finalizeResult(X,Y,Z) \
 	if (!((Y)->batDirty&2)) (Y) = BATsetaccess((Y), BAT_READ); \
 	*X = (Y)->batCacheid; \
@@ -314,55 +304,6 @@ bunins_failed:
 @:BATstr(Ltrim,strLtrim,str)@
 @:BATstr(Rtrim,strRtrim,str)@
 
-@= STRbatcstcmp
-batstr_export str STRbat@2Cst(int *ret, int *l, str *cst);
-str
-STRbat@2Cst(int *ret, int *l, str *cst)
-{
-	BATiter bi;
-	BAT *bn, *b;
-	BUN p, q;
-	str x;
-	bit y;
-	int isnil = 0;
-
-	prepareOperand(b, l, "@1");
-	prepareResult(bn, b, TYPE_bit, "@1");
-
-	bi = bat_iterator(b);
-	
-	if (strcmp(*cst, str_nil) == 0) 
-		isnil = 1;
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		ptr h = BUNhead(bi, p);
-
-		x = (str) BUNtail(bi, p);
-		if (isnil || x == 0 || strcmp(x, str_nil) == 0) {
-			y = bit_nil;
-			bn->T->nonil = 0;
-		} else
-			y = strcmp(x, *cst) @1 0;
-		bunfastins(bn, h, &y);
-	}
-	bn->tsorted = (BATtordered(b)&1)?@3:0;
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	finalizeResult(ret, bn, b);
-	return MAL_SUCCEED;
-bunins_failed:
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BBPreleaseref(b->batCacheid);
-	BBPunfix(bn->batCacheid);
-	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
-}
-@
-@c
-/*
- * @-
- */
-@:STRbatcstcmp(==,Equal,GDK_SORTED_REV)@
-@:STRbatcstcmp(!=,NotEqual,GDK_SORTED)@
-
 /*
  * @-
  * A general assumption in all cases is the bats are synchronized on their
@@ -373,56 +314,6 @@ bunins_failed:
 	if( BATcount(@1) != BATcount(@2) )
 	throw(MAL, "batstr.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
 @
-@c
-@= STRbatcmp
-batstr_export str STRbat@2(int *ret, int *l, int *r);
-str
-STRbat@2(int *ret, int *l, int *r)
-{
-	BATiter lefti, righti;
-	BAT *bn, *left, *right;
-	BUN p, q;
-
-	prepareOperand2(left, l, right, r, "@1");
-	@:chkSize(left,right,CMDcompare@1)@
-	prepareResult2(bn, left, right, TYPE_bit, "@1");
-
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-
-	BATaccessBegin(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(right, USE_TAIL, MMAP_SEQUENTIAL);
-	BATloop(left, p, q) {
-		bit y = TRUE;
-		ptr h = BUNhead(lefti, p);
-		ptr tl = BUNtail(lefti, p);
-		ptr tr = BUNtail(righti, p);
-
-		if (tl == 0 || tr == 0 || !(strcmp(tl, tr) @1 0))
-			y = FALSE;
-		bunfastins(bn, h, &y);
-	}
-	bn->T->nonil = 0;
-	bn->tsorted = (BATtordered(left)&BATtordered(right)&1)?@3:0;
-	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(right, USE_TAIL, MMAP_SEQUENTIAL);
-	BBPreleaseref(right->batCacheid);
-	finalizeResult(ret, bn, left);
-	return MAL_SUCCEED;
-
-bunins_failed:
-	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(right, USE_TAIL, MMAP_SEQUENTIAL);
-	BBPreleaseref(left->batCacheid);
-	BBPreleaseref(right->batCacheid);
-	BBPunfix(*ret);
-	throw(MAL, "batstr.@1", OPERATION_FAILED " During bulk operation");
-}
-@
-@c
-@:STRbatcmp(==,Equal,GDK_SORTED_REV)@
-@:STRbatcmp(!=,NotEqual,GDK_SORTED)@
-
 @= binarySTR
 batstr_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
@@ -671,7 +562,9 @@ STRbatlike_uselect(int *ret, int *bid, str *pat, str *esc)
 	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
 	BATseqbase(BATmirror(b),o);
 	bn->hsorted = b->hsorted;
-	bn->tsorted = b->tsorted;
+	bn->hrevsorted = b->hrevsorted;
+	bn->tsorted = 1;
+	bn->trevsorted = 1;
 
 	bi = bat_iterator(b);
 
@@ -719,7 +612,9 @@ STRbatsubstringcst(int *ret, int *bid, int *start, int *length)
 	bn= BATnew(BAThtype(b),TYPE_str, BATcount(b)/10+5);
 	BATseqbase(BATmirror(b),o);
 	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
 	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
 
 	bi = bat_iterator(b);
 	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -773,7 +668,9 @@ str STRbatsubstring(int *ret, int *l, int *r, int *t)
 		throw(MAL, "batstr.substring", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted= left->hsorted; 
+	bn->hrevsorted= left->hrevsorted; 
 	bn->tsorted=0; 
+	bn->trevsorted=0; 
 
 	lefti = bat_iterator(left);
 	starti = bat_iterator(start);
@@ -822,7 +719,9 @@ str STRbatreplace(int *ret, int *l, str *pat, str *s2)
 		throw(MAL, "batstr.replace", MAL_MALLOC_FAIL);
 	}
 	bn->hsorted= left->hsorted; 
+	bn->hrevsorted= left->hrevsorted; 
 	bn->tsorted=0; 
+	bn->trevsorted=0; 
 
 	li = bat_iterator(left);
 	BATaccessBegin(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);

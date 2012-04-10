@@ -206,7 +206,7 @@ mccArg(stream *f, MalBlkPtr mb, int i)
 static void
 mccValue(stream *f, MalBlkPtr mb, int i)
 {
-	int (*tostr) (str *, int *, ptr);
+	int (*tostr) (str *, int *, const void *);
 	str buf = 0, c;
 	int sz = 0;
 	ValPtr val;

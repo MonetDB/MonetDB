@@ -27,7 +27,7 @@
 #endif
 
 #ifdef DEBUG
-#define TRACE(x) {fflush(stdout); x; fflush(STDERR);}
+#define TRACE(x) do {fflush(stdout); x; fflush(STDERR);} while (0)
 #else
 #define TRACE(x)
 #endif

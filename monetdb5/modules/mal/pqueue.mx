@@ -180,27 +180,29 @@ pqueue_init(BAT **h, BAT *b, wrd *maxsize)
 	return do_pqueue_init(h, b, (BUN) *maxsize);
 }
 
-#define ht_swap(tpe,cur,ins) {					\
-	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
-	  tpe ttmp = *(tpe*)BUNtloc(hi,cur);			\
+#define ht_swap(tpe,cur,ins)							\
+	do {												\
+	  oid htmp = *(oid*)BUNhloc(hi,cur);				\
+	  tpe ttmp = *(tpe*)BUNtloc(hi,cur);				\
 	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
 	  *(tpe*)BUNtloc(hi,cur) = *(tpe*)BUNtloc(hi,ins);	\
-	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
-	  *(tpe*)BUNtloc(hi,ins) = ttmp;			\
-}
+	  *(oid*)BUNhloc(hi,ins) = htmp;					\
+	  *(tpe*)BUNtloc(hi,ins) = ttmp;					\
+	} while (0)
 
-#define any_swap(cur,ins,ts) {					\
-	  unsigned int i;					\
-	  char ch;						\
+#define any_swap(cur,ins,ts)								\
+	do {													\
+	  unsigned int i;										\
+	  char ch;												\
           /* only swap the locations (ie var_t's) */		\
 	  char *c1 = BUNtloc(hi,cur), *c2 = BUNtloc(hi,ins);	\
-	  oid htmp = *(oid*)BUNhloc(hi,cur); 			\
-	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);	\
-	  *(oid*)BUNhloc(hi,ins) = htmp; 			\
-	  for(i=0;i<ts;i++) {					\
-		ch= c1[i]; c1[i]=c2[i]; c2[i]=ch;		\
-	  }							\
-}
+	  oid htmp = *(oid*)BUNhloc(hi,cur);					\
+	  *(oid*)BUNhloc(hi,cur) = *(oid*)BUNhloc(hi,ins);		\
+	  *(oid*)BUNhloc(hi,ins) = htmp;						\
+	  for(i=0;i<ts;i++) {									\
+		ch= c1[i]; c1[i]=c2[i]; c2[i]=ch;					\
+	  }														\
+	} while (0)
 
 @= pqueueimpl_minmax
 /*enqueue an element*/
@@ -229,6 +231,7 @@ static int pqueue_enqueue_@1@2(BAT *h,
 	else break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -545,6 +548,7 @@ static int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 	else break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
   
   return GDK_SUCCEED;
 }
@@ -591,6 +595,7 @@ static int pqueue_movedowntop_any@1(BAT *h)
 		break;
   }
   h->hsorted = h->tsorted = FALSE;
+  h->hrevsorted = h->trevsorted = FALSE;
 
   return GDK_SUCCEED;
 }
@@ -632,6 +637,7 @@ static int pqueue_topreplace_any@1(BAT *h, oid *idx, ptr el, int tpe)
 	* (oid *) BUNhloc(hi, hbase) = *idx;
 	pqueue_movedowntop_any@1(h);
     	h->hsorted = h->tsorted = FALSE;
+    	h->hrevsorted = h->trevsorted = FALSE;
   }
   
   return GDK_SUCCEED;

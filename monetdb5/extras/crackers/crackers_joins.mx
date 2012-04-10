@@ -193,22 +193,23 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
-#define bunfastins_limit(b, h, t, limit, percdone) {			\
-                register BUN _p = BUNlast(b);				\
+#define bunfastins_limit(b, h, t, limit, percdone)\
+	do {														\
+		register BUN _p = BUNlast(b);							\
 		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
-			goto bunins_done;				\
-                if (_p + 1 > BATcapacity(b)) {				\
-                        if (limit) {					\
-				*limit = (BUN) (b->batCount * (percdone)); \
-                              goto bunins_done;				\
-			}						\
-                        if (BATextend(b, BATgrows(b)) == NULL)		\
-                                goto bunins_failed;			\
-                }							\
-                hfastins_nocheck(b, _p, h, Hsize(b));			\
-                tfastins_nocheck(b, _p, t, Tsize(b));			\
-                (b)->batCount++;					\
-        }
+			goto bunins_done;									\
+		if (_p + 1 > BATcapacity(b)) {							\
+			if (limit) {										\
+				*limit = (BUN) (b->batCount * (percdone));		\
+				goto bunins_done;								\
+			}													\
+			if (BATextend(b, BATgrows(b)) == NULL)				\
+				goto bunins_failed;								\
+		}														\
+		hfastins_nocheck(b, _p, h, Hsize(b));					\
+		tfastins_nocheck(b, _p, t, Tsize(b));					\
+		(b)->batCount++;										\
+	} while (0)													\
 @= mergejoin
 	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
 	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {
@@ -300,7 +301,7 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	if (BATtordered(l) & 1) {
+	if (BATtordered(l)) {
 		BUN i;
 		int logr = 4;
 
@@ -396,7 +397,9 @@ CRKmergejoin(BAT *bn,BAT *l, BAT *r){
                 }
                 /* set sorted flags by hand, because we used BUNfastins() */
                 bn->hsorted = BAThordered(l);
+                bn->hrevsorted = BAThrevordered(l);
                 bn->tsorted = FALSE;
+                bn->trevsorted = FALSE;
                 break;
 	}
 
@@ -560,9 +563,13 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 	markedViewRight = BATslice(mapRight, prevPosRight, curPosRight+1);
 
 	markedViewLeft->hsorted = TRUE;
+	markedViewLeft->hrevsorted = FALSE;
 	markedViewLeft->tsorted = FALSE;
+	markedViewLeft->trevsorted = FALSE;
 	markedViewRight->hsorted = TRUE;
+	markedViewRight->hrevsorted = FALSE;
 	markedViewRight->tsorted = FALSE;
+	markedViewRight->trevsorted = FALSE;
 	
 
 #ifdef DEBUG_CRACKERS_JOIN
@@ -1200,7 +1207,9 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
                 sizeM = BATcount(b);
 
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
 
@@ -1244,7 +1253,9 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
                 sizeM = BATcount(bo);
 
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
 
@@ -1285,7 +1296,9 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
                 sizeM = BATcount(bo);
 		b = BATnew(bo->ttype, bp->ttype, sizeM);
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
 
@@ -1351,7 +1364,9 @@ printf("Join " LLFMT ", Cost " LLFMT ", Left "OIDFMT" Right "OIDFMT"\n",joinsDon
 		}
 
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
 
@@ -4269,7 +4284,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 	currentTupleLeft   = BUNfirst(BATLeft);
 
 	/* sort in place the right bat */
-        if (BATRight->tsorted == FALSE){
+        if (!BATRight->tsorted){
                 BATRight->batRestricted = BAT_WRITE;
                 BATmirror(BATorder(BATmirror(BATRight)));
         }

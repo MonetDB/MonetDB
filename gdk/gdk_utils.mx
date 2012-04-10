@@ -863,10 +863,12 @@ GDKmtrace(bit *enable)
 				return GDK_FAIL;
 			BBPrename(memBat->batCacheid, "mem_trace");
 			BBPrename(stackBat->batCacheid, "mem_stack");
-			memBat->hsorted = memBat->tsorted = 0;
+			memBat->hsorted = memBat->hrevsorted = 0;
+			memBat->tsorted = memBat->trevsorted = 0;
 			memBat->H->nonil = 0;
 			BATkey(memBat, TRUE);
-			stackBat->hsorted = stackBat->tsorted = 0;
+			stackBat->hsorted = stackBat->hrevsorted = 0;
+			stackBat->tsorted = stackBat->trevsorted = 0;
 			BATset(stackBat, TRUE);
 			memBat->T->nonil = 0;
 		}
@@ -1126,14 +1128,15 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
  * realsize in front */
-#define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG);	\
-	if (s != NULL) {						\
-		assert((((size_t) s)&7) == 0); /* no MISALIGN */	\
-		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);	\
-		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
-	}								\
-}
+#define GDKmalloc_prefixsize(s,size)					\
+	do {								\
+		s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG); \
+		if (s != NULL) {					\
+			assert((((size_t) s)&7) == 0); /* no MISALIGN */ \
+			s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE); \
+			s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);	\
+		}							\
+	} while (0)
 
 /*
  * @-

@@ -801,7 +801,7 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "cacheinc"), rid);
 	seq->cacheinc = *(lng *)v;		_DELETE(v);
 	v = table_funcs.column_find_value(tr, find_sql_column(seqs, "cycle"), rid);
-	seq->cycle = *(bit *)v;			_DELETE(v)
+	seq->cycle = *(bit *)v;			_DELETE(v);
 	seq->s = s;
 	return seq;
 }

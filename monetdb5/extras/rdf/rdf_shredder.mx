@@ -255,6 +255,7 @@ create_BAT(int ht, int tt, int size)
 
 	/* disable all properties */
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	b->tkey = FALSE;
 	b->hdense = TRUE;

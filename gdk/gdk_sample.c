@@ -91,12 +91,16 @@ BATsample(BAT *b, BUN n)
 		bunfastins(bn, BUNhead(iter, p+1), BUNtail(iter,p+1));
 
 		/* property management */
-		bn->tsorted = BATtordered(b);
 		bn->hsorted = BAThordered(b);
+		bn->tsorted = BATtordered(b);
+		bn->hrevsorted = BAThrevordered(b);
+		bn->trevsorted = BATtrevordered(b);
 		bn->hdense = FALSE;
 		bn->tdense = FALSE;
 		BATkey(bn, BAThkey(b));
 		BATkey(BATmirror(bn), BATtkey(b));
+		bn->H->nil = bn->htype == TYPE_void; /* implies seq == nil */
+		bn->T->nil = bn->ttype == TYPE_void; /* implies seq == nil */
 		bn->H->nonil = b->H->nonil;
 		bn->T->nonil = b->T->nonil;
 		BATsetcount(bn, n);
