@@ -1766,11 +1766,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         for f in os.listdir(RELSRCDIR):
             if test.match(f):
                 try:
-                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), os.path.join(TSTTRGDIR, f))
+                    SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
                     links.append(os.path.join(TSTTRGDIR, f))
                 except IOError, (IOerrNo, IOerrStr):
                     ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (os.path.join(RELSRCDIR, f), os.path.join(TSTTRGDIR, f), os.getcwd(), IOerrNo, IOerrStr))
+                           % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
