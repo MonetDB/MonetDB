@@ -99,8 +99,8 @@ BATsample(BAT *b, BUN n)
 		bn->tdense = FALSE;
 		BATkey(bn, BAThkey(b));
 		BATkey(BATmirror(bn), BATtkey(b));
-		bn->H->nil = b->H->nil;
-		bn->T->nil = b->T->nil;
+		bn->H->nil = bn->htype == TYPE_void; /* implies seq == nil */
+		bn->T->nil = bn->ttype == TYPE_void; /* implies seq == nil */
 		bn->H->nonil = b->H->nonil;
 		bn->T->nonil = b->T->nonil;
 		BATsetcount(bn, n);
