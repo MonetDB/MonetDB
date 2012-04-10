@@ -1321,8 +1321,12 @@ BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit pres
 		bn->hsorted = bn->hrevsorted = FALSE;
 		bn->tsorted = bn->trevsorted = !tail;
 	} else {
-		if (BATcount(bn) == BATcount(b))
-			ALIGNset(bn, b);
+		if (BATcount(bn) == BATcount(b)) {
+			if (tail)
+				ALIGNset(bn, b);
+			else
+				ALIGNsetH(bn, b);
+		}
 		bn->hsorted = BAThordered(b);
 		bn->tsorted = !tail || BATtordered(b);
 		bn->hrevsorted = BAThrevordered(b);
