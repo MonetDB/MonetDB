@@ -193,19 +193,24 @@ double recycleAlpha = 0.5;
 
 
 #define recycleCrdCPU(X) (recycleBlk->profiler[X].ticks) * (recycleW(X))
-#define setIPtr(q,i,cst,c) {	VALset(&cst,TYPE_int,&i);\
-				c = defConstant(recycleBlk,TYPE_int, &cst); \
-				q = pushArgument(recycleBlk,q,c); \
-				setVarUsed(recycleBlk,c); }
-#define getIPtr(p,r,j,pc) {	MalBlkPtr smb; \
-				j = p->argv[p->argc-1];\
-				pc = *(int*)getVarValue(recycleBlk,j); \
-				r = NULL; \
-				if ((p)->recycle >= 0 ){ \
-					smb = recycleQPat->ptrn[(p)->recycle]->mb; \
-					if (smb) r = getInstrPtr(smb, pc);	\
-				}\
-			      }
+#define setIPtr(q,i,cst,c)								\
+	do {												\
+		VALset(&cst,TYPE_int,&i);						\
+		c = defConstant(recycleBlk,TYPE_int, &cst);		\
+		q = pushArgument(recycleBlk,q,c);				\
+		setVarUsed(recycleBlk,c);						\
+	} while (0)
+#define getIPtr(p,r,j,pc)								\
+	do {												\
+		MalBlkPtr smb;									\
+		j = p->argv[p->argc-1];							\
+		pc = *(int*)getVarValue(recycleBlk,j);			\
+		r = NULL;										\
+		if ((p)->recycle >= 0 ){						\
+			smb = recycleQPat->ptrn[(p)->recycle]->mb;	\
+			if (smb) r = getInstrPtr(smb, pc);			\
+		}												\
+	} while (0)
 
 #define InstrCrd(mb,p) (recycleQPat->ptrn[cntxt->rcc->curQ]->crd[getPC(mb,p)])
 				/* credits of executed instruction p in mal block mb */

@@ -3242,7 +3242,7 @@ like_exp:
 	  if (_strlen(s) != 1) {
 		char *msg = sql_message("\b22025!ESCAPE must be one character");
 		yyerror(msg);
-		_DELETE(msg)
+		_DELETE(msg);
 		$$ = NULL;
 		YYABORT;
 	  } else {

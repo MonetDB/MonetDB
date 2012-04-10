@@ -60,7 +60,12 @@ fromMallocToGDK(char *val)
 	return(ret);
 }
 
-#define excFromMem(TPE, WHRE, X)   { str _me = createException(TPE, WHRE, "%s", X); free(X); return(_me); }
+#define excFromMem(TPE, WHRE, X)						\
+	do {												\
+		str _me = createException(TPE, WHRE, "%s", X);	\
+		free(X);										\
+		return(_me);									\
+	} while (0)
 /**
  * Initialises this Sabaoth instance to use the given dbfarm and dbname.
  * dbname may be NULL to indicate that there is no active database.  The

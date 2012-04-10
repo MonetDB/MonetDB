@@ -2806,12 +2806,12 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 /* low level functions */
 gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
-#define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
+#define ALIGNset(x,y)	do {ALIGNsetH(x,y);ALIGNsetT(x,y);} while (0)
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
-#define ALIGNins(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
-#define ALIGNdel(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
-#define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
-#define ALIGNapp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; }
+#define ALIGNins(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNdel(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; } while (0)
+#define ALIGNapp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; } while (0)
 
 #define BAThrestricted(b) (VIEWhparent(b) ? BBP_cache(VIEWhparent(b))->batRestricted : (b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)

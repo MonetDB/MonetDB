@@ -156,7 +156,7 @@ typedef struct MALBLK {
  * prepare for separate name space management. */
 #define getModuleId(P)		(P)->modname
 #define setModuleId(P,S)	(P)->modname= S
-#define setModuleScope(P,S)	{(P)->modname= (S)==NULL?NULL: (S)->name;}
+#define setModuleScope(P,S)	do {(P)->modname= (S)==NULL?NULL: (S)->name;} while (0)
 
 #define getFunctionId(P)	(P)->fcnname
 #define setFunctionId(P,S)	(P)->fcnname= S

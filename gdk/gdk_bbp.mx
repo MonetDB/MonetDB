@@ -296,9 +296,10 @@ int BBPout = 0;			/* bats saved statistic */
  * may be modified).
  */
 @h
-#define BBP_status_set(bid, mode, nme) {	\
+#define BBP_status_set(bid, mode, nme)		\
+	do {					\
 		BBP_status(bid) = mode;		\
-}
+	} while (0)
 
 #define BBP_status_on(bid, flags, nme)					\
 		BBP_status_set(bid, BBP_status(bid) | flags, nme);
@@ -306,18 +307,20 @@ int BBPout = 0;			/* bats saved statistic */
 #define BBP_status_off(bid, flags, nme)					\
 		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
 
-#define BBP_unload_inc(bid, nme) {			\
+#define BBP_unload_inc(bid, nme)			\
+	do {						\
 		gdk_set_lock(GDKunloadLock, nme);	\
 		BBPunloadCnt++;				\
 		gdk_unset_lock(GDKunloadLock, nme);	\
- 	}
+ 	} while (0)
 
-#define BBP_unload_dec(bid, nme) {					\
+#define BBP_unload_dec(bid, nme)					\
+	do {								\
 		gdk_set_lock(GDKunloadLock, nme);			\
 		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme); \
 		assert(BBPunloadCnt >= 0);				\
 		gdk_unset_lock(GDKunloadLock, nme);			\
-	}
+	} while (0)
 @c
 static MT_Id locked_by = 0;
 

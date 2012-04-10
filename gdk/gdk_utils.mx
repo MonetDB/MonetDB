@@ -1128,14 +1128,15 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 /* allocate 8 bytes extra (so it stays 8-bytes aligned) and put
  * realsize in front */
-#define GDKmalloc_prefixsize(s,size) {					\
-	s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG);	\
-	if (s != NULL) {						\
-		assert((((size_t) s)&7) == 0); /* no MISALIGN */	\
-		s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE);	\
-		s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);		\
-	}								\
-}
+#define GDKmalloc_prefixsize(s,size)					\
+	do {								\
+		s = (ssize_t *) malloc(size + MALLOC_EXTRA_SPACE + GLIBC_BUG); \
+		if (s != NULL) {					\
+			assert((((size_t) s)&7) == 0); /* no MISALIGN */ \
+			s = (ssize_t*) ((char*) s + MALLOC_EXTRA_SPACE); \
+			s[-1] = (ssize_t) (size + MALLOC_EXTRA_SPACE);	\
+		}							\
+	} while (0)
 
 /*
  * @-

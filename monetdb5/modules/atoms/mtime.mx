@@ -940,11 +940,14 @@ typedef union {
 } rule;
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
-#define set_rule(r,i) { (r).asint = int_nil;			\
-			(r).s.weekday = (i)&15;			\
-			(r).s.day = ((i)&(63<<6))>>6;		\
-			(r).s.minutes = ((i)&(2047<<10))>>10;	\
-			(r).s.month = ((i)&(15<<21))>>21; }
+#define set_rule(r,i)							\
+	do {										\
+		(r).asint = int_nil;					\
+		(r).s.weekday = (i)&15;					\
+		(r).s.day = ((i)&(63<<6))>>6;			\
+		(r).s.minutes = ((i)&(2047<<10))>>10;	\
+		(r).s.month = ((i)&(15<<21))>>21;		\
+	} while (0)
 
 /* phony zero values, used to get negative numbers from unsigned
  * sub-integers in rule */
@@ -966,7 +969,7 @@ typedef struct {
 @c
 /* as the offset field got split in two, we need macros to get and set them */
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
-#define set_offset(z,i)	{ (z)->off1 = (((i)+OFFSET_ZERO)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
+#define set_offset(z,i)	do { (z)->off1 = (((i)+OFFSET_ZERO)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; } while (0)
 
 tzone tzone_local;
 @h

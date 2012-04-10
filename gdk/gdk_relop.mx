@@ -185,7 +185,8 @@ All Rights Reserved.
 		((((dbl) (lend-lfirst))*((dbl) (rend-rfirst))) / \
 		 MAX(1,((lcur-lfirst)*((dbl) (rend-rfirst))+(dbl) (rcur-rfirst))))
 
-#define bunfastins_limit(b, h, t, limit, percdone) {			\
+#define bunfastins_limit(b, h, t, limit, percdone)			\
+	do {								\
                 register BUN _p = BUNlast(b);				\
 		if (_p == BUN_MAX) /* reached maximum, can't do more */	\
 			goto bunins_done;				\
@@ -200,7 +201,7 @@ All Rights Reserved.
                 hfastins_nocheck(b, _p, h, Hsize(b));			\
                 tfastins_nocheck(b, _p, t, Tsize(b));			\
                 (b)->batCount++;					\
-        }
+        } while (0)
 @= mergejoin
 	if (((!BATtvoid(l)) || l->tseqbase != oid_nil) &&
 	    ((!BAThvoid(r)) || r->hseqbase != oid_nil || nil_on_miss)) {

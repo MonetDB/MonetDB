@@ -110,44 +110,56 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 
 
 @= hashfnd
-#define HASHfnd_@1(x,y,z)	{					\
-	BUN _i;								\
-	(x) = BUN_NONE;							\
-	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y).b))) \
-		HASHloop_@1((y), (y).b->H->hash, _i, (z)) {		\
-			(x) = _i;					\
-			break;						\
-		}							\
-}
+#define HASHfnd_@1(x,y,z)						\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
+		    GDKfatal("HASHfnd_@1: hash build failed on %s.\n",	\
+			     BATgetId((y).b)))				\
+			HASHloop_@1((y), (y).b->H->hash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+	} while (0)
 @
 @h
-#define HASHfnd_str(x,y,z)	{					\
-	BUN _i;								\
-	(x) = BUN_NONE;							\
-	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y).b))) \
-		HASHloop_str((y), (y).b->H->hash, _i, (z)) {		\
-			(x) = _i;					\
-			break;						\
-		}							\
-}
-#define HASHfnd_str_hv(x,y,z)	{					\
-	BUN _i;								\
-	(x) = BUN_NONE;							\
-	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd_str_hv: hash build failed on %s.\n", BATgetId((y).b))) \
-		HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {		\
-			(x) = _i;					\
-			break;						\
-		}							\
-}
-#define HASHfnd(x,y,z)	{						\
-	BUN _i;							\
-	(x) = BUN_NONE;							\
-	if ((y).b->H->hash || BAThash((y).b, 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId((y).b))) \
-		HASHloop((y), (y).b->H->hash, _i, (z)) {			\
-			(x) = _i;					\
-			break;						\
-		}							\
-}
+#define HASHfnd_str(x,y,z)						\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
+		    GDKfatal("HASHfnd_str: hash build failed on %s.\n",	\
+			     BATgetId((y).b)))				\
+			HASHloop_str((y), (y).b->H->hash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+	} while (0)
+#define HASHfnd_str_hv(x,y,z)						\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
+		    GDKfatal("HASHfnd_str_hv: hash build failed on %s.\n", \
+			     BATgetId((y).b)))				\
+			HASHloop_str_hv((y), (y).b->H->hash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+	} while (0)
+#define HASHfnd(x,y,z)							\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
+		    GDKfatal("HASHfnd: hash build failed on %s.\n",	\
+			     BATgetId((y).b)))				\
+			HASHloop((y), (y).b->H->hash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+	} while (0)
 @:hashfnd(bte)@
 @:hashfnd(sht)@
 @:hashfnd(int)@
@@ -226,43 +238,45 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 @:hashins(int)@
 @:hashins(lng)@
 
-#define HASHdel(h, i, v, next) {					\
-	if (next && h->link[i+1] == i) {				\
-		h->link[i+1] = h->link[i];				\
-	} else {							\
-		BUN _c = HASHprobe(h, v);				\
-		if (h->hash[_c] == i) {					\
-			h->hash[_c] = h->link[i];			\
+#define HASHdel(h, i, v, next)						\
+	do {								\
+		if (next && h->link[i+1] == i) {			\
+			h->link[i+1] = h->link[i];			\
 		} else {						\
-			for(_c = h->hash[_c]; _c != BUN_NONE; 		\
-					_c = h->link[_c]){ 		\
-				if (h->link[_c] == i) {			\
-					h->link[_c] = h->link[i];	\
-					break;				\
+			BUN _c = HASHprobe(h, v);			\
+			if (h->hash[_c] == i) {				\
+				h->hash[_c] = h->link[i];		\
+			} else {					\
+				for(_c = h->hash[_c]; _c != BUN_NONE;	\
+						_c = h->link[_c]){	\
+					if (h->link[_c] == i) {		\
+						h->link[_c] = h->link[i]; \
+						break;			\
+					}				\
 				}					\
 			}						\
-		}							\
-	} h->link[i] = BUN_NONE;					\
-}
+		} h->link[i] = BUN_NONE;				\
+	} while (0)
 
-#define HASHmove(h, i, j, v, next) {					\
-	if (next && h->link[i+1] == i) {				\
-		h->link[i+1] = j;					\
-	} else {							\
-		BUN _c = HASHprobe(h, v);				\
-		if (h->hash[_c] == i) {					\
-			h->hash[_c] = j;				\
+#define HASHmove(h, i, j, v, next)					\
+	do {								\
+		if (next && h->link[i+1] == i) {			\
+			h->link[i+1] = j;				\
 		} else {						\
-			for(_c = h->hash[_c]; _c != BUN_NONE; 		\
-					_c = h->link[_c]){ 		\
-				if (h->link[_c] == i) {			\
-					h->link[_c] = j;		\
-					break;				\
+			BUN _c = HASHprobe(h, v);			\
+			if (h->hash[_c] == i) {				\
+				h->hash[_c] = j;			\
+			} else {					\
+				for(_c = h->hash[_c]; _c != BUN_NONE;	\
+						_c = h->link[_c]){	\
+					if (h->link[_c] == i) {		\
+						h->link[_c] = j;	\
+						break;			\
+					}				\
 				}					\
 			}						\
-		}							\
-	} h->link[j] = h->link[i];					\
-}
+		} h->link[j] = h->link[i];				\
+	} while (0)
 @c
 /*
  * @- Hash Table Creation

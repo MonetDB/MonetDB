@@ -53,7 +53,7 @@
 #define RENEW_ARRAY( type,ptr,size) (type*)GDKrealloc((void*)ptr,(size)*sizeof(type))
 
 #define NEWADT( size ) (adt*)GDKmalloc(size)
-#define _DELETE( ptr )	{ GDKfree(ptr); ptr = NULL; }
+#define _DELETE( ptr )	do { GDKfree(ptr); ptr = NULL; } while (0)
 #define _STRDUP( ptr )	GDKstrdup((char*)ptr)
 
 typedef struct sql_ref {
