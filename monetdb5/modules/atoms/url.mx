@@ -996,9 +996,46 @@ URLgetBasename(str *retval, str *t)
 str
 URLgetContent(str *retval, str *Str1)
 {
-	(void) Str1;		/* fool compiler */
-	*retval = 0;
-	throw(MAL, "url.getContent", "not yet implemented");
+	stream *f;
+	str retbuf = NULL;
+	str oldbuf = NULL;
+	char *buf[8096];
+	size_t len;
+	size_t rlen;
+
+	if ((f = open_urlstream(*Str1)) == NULL)
+		throw(MAL, "url.getContent", "failed to open urlstream");
+
+	if (mnstr_errnr(f) != 0) {
+		str err = createException(MAL, "url.getContent",
+				"opening stream failed: %s", mnstr_error(f));
+		mnstr_destroy(f);
+		*retval = NULL;
+		return err;
+	}
+
+	rlen = 0;
+	while ((len = mnstr_read(f, buf, 1, sizeof(buf))) != 0) {
+		if (retbuf != NULL) {
+			oldbuf = retbuf;
+			retbuf = GDKrealloc(retbuf, rlen + len + 1);
+		} else {
+			retbuf = GDKmalloc(len + 1);
+		}
+		if (retbuf == NULL) {
+			if (oldbuf != NULL)
+				GDKfree(oldbuf);
+			mnstr_destroy(f);
+			throw(MAL, "url.getContent", "contents too large");
+		}
+		oldbuf = NULL;
+		(void)memcpy(retbuf + rlen, buf, len);
+		rlen += len;
+	}
+	retbuf[rlen] = '\0';
+
+	*retval = retbuf;
+	return MAL_SUCCEED;
 }
 
 str
