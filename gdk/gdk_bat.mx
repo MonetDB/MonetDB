@@ -1432,6 +1432,10 @@ BUNappend(BAT *b, ptr t, bit force)
 						b->tdense = FALSE;
 						b->T->nodense = i;
 					}
+					if (b->batCount == 1) {
+						b->tsorted = GDK_SORTED_REV;
+						goto revsorted;
+					}
 				} else if (cmp && b->tdense && *(oid *) t != 1 + *(oid *) prv) {
 					b->T->nodense = i;
 					b->tdense = FALSE;
@@ -1460,8 +1464,10 @@ BUNappend(BAT *b, ptr t, bit force)
 					b->tkey = bm->hkey = b->tdense = FALSE;
 				}
 			} else if (b->tsorted == (bit) GDK_SORTED_REV) {
-				ptr prv = BUNtail(bi, p - 1);
+				ptr prv;
 
+			  revsorted:
+				prv = BUNtail(bi, p - 1);
 				cmp = atom_CMP(t, prv, b->ttype);
 				if (cmp > 0) {
 					b->T->nosorted_rev = i;
