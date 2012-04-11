@@ -2991,23 +2991,42 @@ BATassertHeadProps(BAT *b)
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
 			 * scan */
+			/* only call compare function if we have to */
+			int cmpprv = b->hsorted | b->hrevsorted | b->hkey;
+			int cmpnil = b->H->nonil | b->H->nil;
+
 			BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 			BATloop(b, p, q) {
 				valp = BUNhead(bi, p);
-				if (prev) {
+				if (prev && cmpprv) {
 					cmp = cmpf(prev, valp);
 					assert(!b->hsorted || cmp <= 0);
 					assert(!b->hrevsorted || cmp >= 0);
-					assert(!b->hkey || cmp != 0); /* necessary, not sufficient */
-					if (b->hdense) {
-						assert(* (oid *) prev + 1 == * (oid *) valp);
+					assert(!b->hkey || cmp != 0);
+					assert(!b->hdense || * (oid *) prev + 1 == * (oid *) valp);
+				}
+				if (cmpnil) {
+					cmp = cmpf(valp, nilp);
+					assert(!b->H->nonil || cmp != 0);
+					if (cmp == 0) {
+						/* we found a nil:
+						 * we're done checking
+						 * for them */
+						seennil = 1;
+						cmpnil = 0;
+						if (!cmpprv) {
+							/* we were
+							 * only
+							 * checking
+							 * for nils,
+							 * so nothing
+							 * more to
+							 * do */
+							break;
+						}
 					}
 				}
 				prev = valp;
-				cmp = cmpf(valp, nilp);
-				assert(!b->H->nonil || cmp != 0);
-				if (cmp == 0)
-					seennil = 1;
 			}
 			BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 		} else {	/* b->hkey && !b->hsorted && !b->hrevsorted */
