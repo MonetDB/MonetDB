@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_bat
-
-@c
 /*
  * @a M. L. Kersten, P. Boncz, N. Nes
  * @* BAT Module
@@ -32,40 +29,27 @@ All Rights Reserved.
  * storage and easy shipment over a network.
  *
  * The BAT starts with a descriptor, which indicates the required BAT
- * library version and the BAT administration details.  In particular, it
- * describes the binary relationship maintained and the location of
+ * library version and the BAT administration details.  In particular,
+ * it describes the binary relationship maintained and the location of
  * fields required for storage.
  *
  * The general layout of the BAT in this implementation is as follows.
  * Each BAT comes with a heap for the loc-size buns and, optionally,
  * with heaps to manage the variable-sized data items of both
- * dimensions.  The buns are assumed to be stored as loc-size
- * objects.  This is essentially an array of structs to store the
- * associations.  The size is determined at BAT creation time using an
- * upper bound on the number of elements to be accommodated.  In case of
- * overflow, its storage space is extended automatically.
+ * dimensions.  The buns are assumed to be stored as loc-size objects.
+ * This is essentially an array of structs to store the associations.
+ * The size is determined at BAT creation time using an upper bound on
+ * the number of elements to be accommodated.  In case of overflow,
+ * its storage space is extended automatically.
  *
- * The capacity of a BAT places an upper limit on the number of BUNs to
- * be stored initially. The actual space set aside may be quite large.
- * Moreover, the size is aligned to int boundaries to speedup access and
- * avoid some machine limitations.
+ * The capacity of a BAT places an upper limit on the number of BUNs
+ * to be stored initially. The actual space set aside may be quite
+ * large.  Moreover, the size is aligned to int boundaries to speedup
+ * access and avoid some machine limitations.
  *
  * Initialization of the variable parts rely on type specific routines
  * called atomHeap.
  */
-@h
-#ifndef _GDK_BAT_H_
-#define _GDK_BAT_H_
-
-gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
-gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
-gdk_export BAT *BATattach(int tt, const char *heapfile);
-
-extern int default_ident(char *s);
-extern oid MAXoid(BAT *i);
-
-#endif /* _GDK_BAT_H_ */
-@c
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -99,7 +83,6 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	BAT *bn;
 
 	/*
-	 * @-
 	 * Alloc space for the BAT and its dependent records.
 	 */
 	BATstore *bs = (BATstore *) GDKzalloc(sizeof(BATstore));
@@ -107,7 +90,6 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	if (bs == NULL)
 		return NULL;
 	/*
-	 * @-
 	 * assert needed in the kernel to get symbol eprintf resolved.
 	 * Else modules using assert fail to load.
 	 */
@@ -124,7 +106,6 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn = &bs->B;
 
 	/*
-	 * @-
 	 * Fill in basic column info
 	 */
 	bn->htype = ht;
@@ -145,13 +126,12 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	bn->batPersistence = TRANSIENT;
 	bn->H->props = bn->T->props = NULL;
 	/*
-	 * @-
 	 * add to BBP
 	 */
 	BBPinsert(bs);
 	/*
-	 * @-
-	 * fill in heap names, so HEAPallocs can resort to disk for very large writes.
+	 * fill in heap names, so HEAPallocs can resort to disk for
+	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
 	bn->H->heap.filename = NULL;
@@ -245,12 +225,13 @@ BATsetdims(BAT *b)
 /*
  * @- BAT allocation
  * Allocate BUN heap and variable-size atomheaps (see e.g. strHeap).
- * We now initialize new BATs with their heapname such that the modified
- * HEAPalloc/HEAPextend primitives can possibly use memory mapped files
- * as temporary heap storage.
+ * We now initialize new BATs with their heapname such that the
+ * modified HEAPalloc/HEAPextend primitives can possibly use memory
+ * mapped files as temporary heap storage.
  *
- * In case of huge bats, we want HEAPalloc to write a file to disk, and memory map
- * it. To make this possible, we must provide it with filenames.
+ * In case of huge bats, we want HEAPalloc to write a file to disk,
+ * and memory map it. To make this possible, we must provide it with
+ * filenames.
  */
 static BATstore *
 BATnewstorage(int ht, int tt, BUN cap)
@@ -387,7 +368,6 @@ BATattach(int tt, const char *heapfile)
 }
 
 /*
- * @-
  * The routine BATclone creates a bat with the same types as b.
  */
 BAT *
@@ -403,19 +383,18 @@ BATclone(BAT *b, BUN cap)
 }
 
 /*
- * @-
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
  * having an assurance that the BAT still can be safely stored away.
  *
- * @-
- * Most BAT operations use a BAT to assemble the result. In several cases
- * it is rather difficult to give a precise estimate of the required space.
- * The routine BATguess is used internally for this purpose.
- * It balances the cost of small BATs with their probability of occurrence.
- * Small results BATs are more likely than 100M BATs.
+ * Most BAT operations use a BAT to assemble the result. In several
+ * cases it is rather difficult to give a precise estimate of the
+ * required space.  The routine BATguess is used internally for this
+ * purpose.  It balances the cost of small BATs with their probability
+ * of occurrence.  Small results BATs are more likely than 100M BATs.
  *
- * Likewise, the routines Hgrows and Tgrows  provides a heuristic to enlarge the space.
+ * Likewise, the routines Hgrows and Tgrows provides a heuristic to
+ * enlarge the space.
  */
 BUN
 BATguess(BAT *b)
@@ -461,12 +440,12 @@ BATgrows(BAT *b)
 }
 
 /*
- * @-
- * The routine should ensure that the BAT keeps its location
- * in the BAT buffer.
+ * The routine should ensure that the BAT keeps its location in the
+ * BAT buffer.
  *
- * Overflow in the other heaps are dealt with in the atom  routines.
- * Here we merely copy their references into the new administration space.
+ * Overflow in the other heaps are dealt with in the atom routines.
+ * Here we merely copy their references into the new administration
+ * space.
  */
 BAT *
 BATextend(BAT *b, BUN newcap)
@@ -476,13 +455,12 @@ BATextend(BAT *b, BUN newcap)
 	assert(newcap <= BUN_MAX);
 	BATcheck(b, "BATextend");
 	/*
-	 * @-
 	 * The main issue is to properly predict the new BAT size.
 	 * storage overflow. The assumption taken is that capacity
-	 * overflow is rare. It is changed only when the position
-	 * of the next available BUN surpasses the free area marker.
-	 * Be aware that the newcap should be greater than the old
-	 * value, otherwise you may easily corrupt the administration of
+	 * overflow is rare. It is changed only when the position of
+	 * the next available BUN surpasses the free area marker.  Be
+	 * aware that the newcap should be greater than the old value,
+	 * otherwise you may easily corrupt the administration of
 	 * malloc.
 	 */
 	if (newcap <= BATcapacity(b)) {
@@ -509,18 +487,17 @@ BATextend(BAT *b, BUN newcap)
 
 /*
  * @+ BAT destruction
- * @-
- * BATclear quickly removes all elements from a BAT. It must respect the
- * transaction rules; so stable elements must be moved to the "deleted"
- * section of the BAT (they cannot be fully deleted yet). For the elements
- * that really disappear, we must free heapspace and unfix the atoms if
- * they have fix/unfix handles. As an optimization, in the case of no stable
- * elements, we quickly empty the heaps by copying a standard small empty image
- * over them.
+ * BATclear quickly removes all elements from a BAT. It must respect
+ * the transaction rules; so stable elements must be moved to the
+ * "deleted" section of the BAT (they cannot be fully deleted
+ * yet). For the elements that really disappear, we must free
+ * heapspace and unfix the atoms if they have fix/unfix handles. As an
+ * optimization, in the case of no stable elements, we quickly empty
+ * the heaps by copying a standard small empty image over them.
  */
 BAT *
 BATclear(BAT *b)
-{	
+{
 	BUN p, q;
 	int voidbat;
 	BAT *bm;
@@ -554,8 +531,8 @@ BATclear(BAT *b)
 	}
 
 	/* we must dispose of all inserted atoms */
-	if (b->batDeleted == b->batInserted && 
-	    BATatoms[b->htype].atomDel == NULL && 
+	if (b->batDeleted == b->batInserted &&
+	    BATatoms[b->htype].atomDel == NULL &&
 	    BATatoms[b->ttype].atomDel == NULL) {
 		Heap hh, th;
 
@@ -616,7 +593,7 @@ BATclear(BAT *b)
 	BATsetcount(b,0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
-	return b; 
+	return b;
 }
 
 /* free a cached BAT; leave the bat descriptor cached */
@@ -628,10 +605,10 @@ BATfree(BAT *b)
 	/* deallocate all memory for a bat */
 	if (b->batCacheid < 0)
 		b = BBP_cache(-(b->batCacheid));
-	if (b->hident && !default_ident(b->hident)) 
+	if (b->hident && !default_ident(b->hident))
 		GDKfree(b->hident);
 	b->hident = BATstring_h;
-	if (b->tident && !default_ident(b->tident)) 
+	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	b->tident = BATstring_t;
 	if (b->H->props)
@@ -669,10 +646,10 @@ BATfree(BAT *b)
 void
 BATdestroy( BATstore *bs )
 {
-	if (bs->H.id && !default_ident(bs->H.id)) 
+	if (bs->H.id && !default_ident(bs->H.id))
 		GDKfree(bs->H.id);
 	bs->H.id = BATstring_h;
-	if (bs->T.id && !default_ident(bs->T.id)) 
+	if (bs->T.id && !default_ident(bs->T.id))
 		GDKfree(bs->T.id);
 	bs->T.id = BATstring_t;
 	if (bs->H.vheap)
@@ -690,35 +667,41 @@ BATdestroy( BATstore *bs )
  * @+ BAT copying
  *
  * BAT copying is an often used operation. So it deserves attention.
- * When making a copy of a BAT, the following aspects are of importance:
- * @itemize
- * @item the requested head and tail types. The purpose of the copy may be
- * to slightly change these types (e.g. void <-> oid). We may also remap between
- * types as long as they share the same ATOMstorage(type), i.e. the types
- * have the same physical implementation. We may even want to allow 'dirty'
- * trick such as viewing a flt-column suddenly as int.
+ * When making a copy of a BAT, the following aspects are of
+ * importance:
+
+ * - the requested head and tail types. The purpose of the copy may be
+ *   to slightly change these types (e.g. void <-> oid). We may also
+ *   remap between types as long as they share the same
+ *   ATOMstorage(type), i.e. the types have the same physical
+ *   implementation. We may even want to allow 'dirty' trick such as
+ *   viewing a flt-column suddenly as int.
  *
- * To allow such changes, the desired head- and tail-types are a parameter of BATcopy.
+ *   To allow such changes, the desired head- and tail-types are a
+ *   parameter of BATcopy.
  *
- * @item access mode. If we want a read-only copy of a read-only BAT, a
- * VIEW may do (in this case, the user may be after just an independent BAT
- * header and id). This is indicated by the parameter (writable = FALSE).
+ * - access mode. If we want a read-only copy of a read-only BAT, a
+ *   VIEW may do (in this case, the user may be after just an
+ *   independent BAT header and id). This is indicated by the
+ *   parameter (writable = FALSE).
  *
- * In other cases, we really want an independent physical copy (writable = TRUE).
- * Changing the mode to BAT_WRITE will be a zero-cost operation if the
- * BAT was copied with (writable = TRUE).
- * @end itemize
- * In GDK, the result is a BAT that is BAT_WRITE iff (writable == TRUE).
+ *   In other cases, we really want an independent physical copy
+ *   (writable = TRUE).  Changing the mode to BAT_WRITE will be a
+ *   zero-cost operation if the BAT was copied with (writable = TRUE).
  *
- * There is a special parameter setting (writable == 2), which does create
- * an independent BAT (not a view that shares the same heaps), however tries
- * to share VM heap resources using copy-on-write maps. Note that the result of
- * this is a read-only BAT (BAT_READ). The copy-on-write VM tricks can be used,
- *  to isolate these copies from changes in the parent.
+ * In GDK, the result is a BAT that is BAT_WRITE iff (writable ==
+ * TRUE).
  *
- * In these cases the copy becomes a logical view on the original, which ensures
- * that the original cannot be modified or destroyed (which could affect the shared
- * heaps).
+ * There is a special parameter setting (writable == 2), which does
+ * create an independent BAT (not a view that shares the same heaps),
+ * however tries to share VM heap resources using copy-on-write
+ * maps. Note that the result of this is a read-only BAT
+ * (BAT_READ). The copy-on-write VM tricks can be used to isolate
+ * these copies from changes in the parent.
+ *
+ * In these cases the copy becomes a logical view on the original,
+ * which ensures that the original cannot be modified or destroyed
+ * (which could affect the shared heaps).
  */
 static int
 HEAPshare(Heap *dst, Heap *src, int copy_on_write)
@@ -794,7 +777,6 @@ wrongtype(int t1, int t2)
 }
 
 /*
- * @-
  * There are four main implementation cases:
  * (1) we are allowed to return a view (zero effort),
  * (2) the result is void,void (zero effort),
@@ -889,7 +871,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			bn->H->heap.free = 0;
 			bn->T->heap.free = 0;
 		} else if (bunstocopy == BUN_NONE) {
-			/* case (3): just copy the heaps; if possible with copy-on-write VM support */
+			/* case (3): just copy the heaps; if possible
+			 * with copy-on-write VM support */
 			int remap = writable == 2;
 			int hremap = remap && BAThrestricted(b) != BAT_WRITE && ht != TYPE_void;
 			int tremap = remap && BATtrestricted(b) != BAT_WRITE && tt != TYPE_void;
@@ -913,7 +896,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				BBPreclaim(bn);
 				return NULL;
 			}
-			/* succeeded; replace dummy small heaps by the real ones */
+			/* succeeded; replace dummy small heaps by the
+			 * real ones */
 			heapfree(&bn->H->heap, &bhhp);
 			heapfree(&bn->T->heap, &bthp);
 			hhp.parentid = bn->batCacheid;
@@ -934,11 +918,14 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				bn->U->capacity = tcap;
 
 
-			/* first/inserted must point equally far into the heap as in the source */
+			/* first/inserted must point equally far into
+			 * the heap as in the source */
 			bn->batFirst = b->batFirst;
 			bn->batInserted = b->batInserted;
 
-			/* if we have copy-on-write heaps, bn is a logical view on b to ensure the heaps stay stable */
+			/* if we have copy-on-write heaps, bn is a
+			 * logical view on b to ensure the heaps stay
+			 * stable */
 			if (hremap || hvremap) {
 				bn->P->lview = TRUE;
 				BBPshare(bn->H->heap.parentid = b->batCacheid);
@@ -960,7 +947,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				r++;
 			}
 		} else if ((ht && b->htype == TYPE_void) || (tt && b->ttype == TYPE_void)) {
-			/* case (4): optimized for unary void materialization */
+			/* case (4): optimized for unary void
+			 * materialization */
 			oid cur = ht ? b->hseqbase : b->tseqbase, *dst = (oid *) (ht ? bn->H->heap.base : bn->T->heap.base);
 			oid inc = (cur != oid_nil);
 
@@ -1050,82 +1038,71 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	return NULL;
 }
 
-@h
-/*
- * @+ BAT Unit Manipulation
- * Binary units (tuples) are the elements stored in BATs. We
- * discuss here BUN insert, replace and delete.
- * Below are help macros that actually move the BUNs
- * around and adapt search accelerator structures.
- */
-#define hashins(h,i,v,n) HASHins_any(h,i,v)
-#define hashdel(h,i,v,n) HASHdel(h,i,v,n)
+#define un_move(src, dst, sz)						\
+	do {								\
+		if (sz == 8) {						\
+			* (lng *) dst = * (lng *) src;			\
+		} else if (sz == 4) {					\
+			* (int *) dst = * (int *) src;			\
+		} else {						\
+			str _dst = (str) dst, _src = (str) src, _end = _src + sz; \
+									\
+			while (_src < _end)				\
+				*_dst++ = *_src++;			\
+		}							\
+	} while (0)
+#define hacc_update(del, get, p, idx)					\
+	do {								\
+		if (b->H->hash) {					\
+			hash##del(b->H->hash, idx, BUN##get(bi, p), p < last); \
+		}							\
+	} while (0)
+#define tacc_update(del, get, p, idx)					\
+	do {								\
+		if (b->T->hash) {					\
+			hash##del(b->T->hash, idx, BUN##get(bi, p), p < last); \
+		}							\
+	} while (0)
+#define acc_move(l, p, idx2, idx1)					\
+	do {								\
+		char tmp[16];						\
+		/* avoid compiler warning: dereferencing type-punned pointer \
+		 * will break strict-aliasing rules */			\
+		char *tmpp = tmp;					\
+									\
+		assert(hs <= 16);					\
+		assert(ts <= 16);					\
+		if (b->H->hash) {					\
+			HASHmove(b->H->hash, idx2, idx1, BUNhead(bi, l), l < last); \
+		}							\
+		if (b->T->hash) {					\
+			HASHmove(b->T->hash, idx2, idx1, BUNtail(bi, l), l < last); \
+		}							\
+									\
+		/* move first to tmp */					\
+		un_move(Hloc(b, l), tmpp, hs);				\
+		/* move delete to first */				\
+		un_move(Hloc(b, p), Hloc(b, l), hs);			\
+		/* move first to deleted */				\
+		un_move(tmpp, Hloc(b, p), hs);				\
+									\
+		/* move first to tmp */					\
+		un_move(Tloc(b, l), tmpp, ts);				\
+		/* move delete to first */				\
+		un_move(Tloc(b, p), Tloc(b, l), ts);			\
+		/* move first to deleted */				\
+		un_move(tmpp, Tloc(b, p), ts);				\
+	} while (0)
 
-@= un_move
-	if (@3 == 8) {
-		* (lng *) @2 = * (lng *) @1;
-	} else if (@3 == 4) {
-		* (int *) @2 = * (int *) @1;
-	} else {
-		str _dst = (str) @2, _src = (str) @1, _end = _src + @3;
-
-		while (_src < _end)
-			*_dst++ = *_src++;
-	}
-@= hacc_update
-{
-	if (b->H->hash) {
-		hash@1(b->H->hash, @4, BUN@2(bi, @3), @3 < last); 
-	}
-} 
-@= tacc_update
-{
-	if (b->T->hash) {
-		hash@1(b->T->hash, (BUN)@4, BUN@2(bi, @3), @3 < last); 
-	}
-}
-@= acc_move
-{
-	char tmp[16];
-	/* avoid compiler warning: dereferencing type-punned pointer
-	 * will break strict-aliasing rules */
-	char *tmpp = tmp;
-
-	assert(hs <= 16);
-	assert(ts <= 16);
-	if (b->H->hash) {
-		HASHmove(b->H->hash, @3, @4, BUNhead(bi, @1), @1 < last); 
-	}
-	if (b->T->hash) {
-		HASHmove(b->T->hash, @3, @4, BUNtail(bi, @1), @1 < last); 
-	}
-
-	/* move first to tmp */
-	@:un_move(Hloc(b,@1),tmpp,hs)@
-	/* move delete to first */
-	@:un_move(Hloc(b,@2),Hloc(b,@1),hs)@
-	/* move first to deleted */
-	@:un_move(tmpp,Hloc(b,@2),hs)@
-
-	/* move first to tmp */
-	@:un_move(Tloc(b,@1),tmpp,ts)@
-	/* move delete to first */
-	@:un_move(Tloc(b,@2),Tloc(b,@1),ts)@
-	/* move first to deleted */
-	@:un_move(tmpp,Tloc(b,@2),ts)@
-}
-
-@
-@c
 /*
  * @- BUN Insertion
  * Insertion into a BAT is split into two operations BUNins and
  * BUNfastins.  The former should be used when integrity enforcement
  * and index maintenance is required.  The latter is used to quickly
- * insert the BUN into the result without any additional check.
- * For those cases where speed is required, the type decoding can
- * be circumvented by asking for a BUN using BATbunalloc and fill
- * it directly. See gdk.mx for the bunfastins(b,h,t) macros.
+ * insert the BUN into the result without any additional check.  For
+ * those cases where speed is required, the type decoding can be
+ * circumvented by asking for a BUN using BATbunalloc and fill it
+ * directly. See gdk.mx for the bunfastins(b,h,t) macros.
  */
 BAT *
 BUNfastins(BAT *b, ptr h, ptr t)
@@ -1237,10 +1214,9 @@ setcolprops(BAT *b, COLrec *col, void *x)
 	} while (0)
 
 /*
- * @-
- * The interface routine should also perform integrity checks.
- * Null values should have been obtained at a higher level.
- * This code assumes that new elements are appended to the BUN list.
+ * The interface routine should also perform integrity checks.  Null
+ * values should have been obtained at a higher level.  This code
+ * assumes that new elements are appended to the BUN list.
  */
 BAT *
 BUNins(BAT *b, ptr h, ptr t, bit force)
@@ -1332,8 +1308,9 @@ MAXoid(BAT *i)
 
 /*
  * @+ BUNappend
- * The BUNappend function can be used to add a single value to void and oid
- * headed bats. The new head value will be a unique number, (max(bat)+1).
+ * The BUNappend function can be used to add a single value to void
+ * and oid headed bats. The new head value will be a unique number,
+ * (max(bat)+1).
  */
 BAT *
 BUNappend(BAT *b, ptr t, bit force)
@@ -1411,21 +1388,19 @@ BUNappend(BAT *b, ptr t, bit force)
 /*
  * @- BUN Delete
  * Deletes should maintain the BAT as a contiguous array. This
- * implementation permits using a BATloop for(;;) construction
- * to use the BUNdelete routines, by not modifying what is in
- * front of the deleted bun.
+ * implementation permits using a BATloop for(;;) construction to use
+ * the BUNdelete routines, by not modifying what is in front of the
+ * deleted bun.
  *
- * This routine returns the next BUN in b after deletion of p.
- * Note: to cause less trouble when updating BATs with void columns
- * the delete policy has been changed. Deleted volatile elements
- * are now being overwritten by the last element; instead of causing
- * a cascade of moves. The sequential deletability property
- * is changed somewhat: instead of doing
- * @verbatim
+ * This routine returns the next BUN in b after deletion of p.  Note:
+ * to cause less trouble when updating BATs with void columns the
+ * delete policy has been changed. Deleted volatile elements are now
+ * being overwritten by the last element; instead of causing a cascade
+ * of moves. The sequential deletability property is changed somewhat:
+ * instead of doing
  * 	BATloop(b,p,q) BUNdelete(b,p,FALSE)
  * one now must do:
  * 	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
- * @end verbatim
  */
 static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
@@ -1444,8 +1419,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	if (p < b->batInserted && !force) {
 		idx1 = p;
 		if (p == b->batFirst) {	/* first can simply be discarded */
-			@:hacc_update(del,head,p,idx1)@
-			@:tacc_update(del,tail,p,idx1)@
+			hacc_update(del,head,p,idx1);
+			tacc_update(del,tail,p,idx1);
 
 			if (BAThdense(b)) {
 				bm->tseqbase = ++b->hseqbase;
@@ -1456,12 +1431,12 @@ BUNdelete_(BAT *b, BUN p, bit force)
 		} else {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 
-			@:hacc_update(del,head,p,idx1)@
-			@:tacc_update(del,tail,p,idx1)@
+			hacc_update(del,head,p,idx1);
+			tacc_update(del,tail,p,idx1);
 
 			l = BUNfirst(b);
 			idx2 = l;
-			@:acc_move(l,p,idx2,idx1)@
+			acc_move(l,p,idx2,idx1);
 			if (b->hsorted) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
@@ -1491,8 +1466,9 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	} else {
 		/*
 		 * @- Uncommitted Delete.
-		 * This bun was not committed, and should therefore disappear. The
-		 * last inserted bun (if present) is copied over it.
+		 * This bun was not committed, and should therefore
+		 * disappear. The last inserted bun (if present) is
+		 * copied over it.
 		 */
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
 		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
@@ -1514,14 +1490,14 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
 		idx1 = p;
-		@:hacc_update(del,head,p,idx1)@
-		@:tacc_update(del,tail,p,idx1)@
+		hacc_update(del,head,p,idx1);
+		tacc_update(del,tail,p,idx1);
 		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 			BATiter bi2 = bat_iterator(b);
 
-			@:acc_move(last,p,idx2,idx1)@
+			acc_move(last,p,idx2,idx1);
 			/* If a column was sorted before the BUN was
 			   deleted, check whether it is still sorted
 			   afterward.  This is done by comparing the
@@ -1611,9 +1587,8 @@ BUNdel(BAT *b, ptr x, ptr y, bit force)
 }
 
 /*
- * @-
- * The routine BUNdelHead is similar, but removes all BUNs whose head matches
- * the argument passed.
+ * The routine BUNdelHead is similar, but removes all BUNs whose head
+ * matches the argument passed.
  */
 BAT *
 BUNdelHead(BAT *b, ptr x, bit force)
@@ -1635,28 +1610,38 @@ BUNdelHead(BAT *b, ptr x, bit force)
 }
 
 /*
- * Deletion of strings leads to garbage on the variable stack.
- * This can be removed by compaction of the BAT through copying it.
+ * Deletion of strings leads to garbage on the variable stack.  This
+ * can be removed by compaction of the BAT through copying it.
  *
  * @-  BUN replace
  * The last operation in this context is BUN replace. It assumes that
- * the header denotes a key. The old value association is destroyed (if it
- * exists in the first place) and the new value takes its place.
+ * the header denotes a key. The old value association is destroyed
+ * (if it exists in the first place) and the new value takes its
+ * place.
  *
  * In order to make updates on void columns workable; replaces on them
  * are always done in-place. Performing them without bun-movements
- * greatly simplifies the problem. The 'downside' is that when transaction
- * management has to be performed, replaced values should be saved
- * explicitly.
+ * greatly simplifies the problem. The 'downside' is that when
+ * transaction management has to be performed, replaced values should
+ * be saved explicitly.
  */
-@= uncommit_replace
-	do {
+BAT *
+BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
+{
+	if (p >= b->batInserted || force) {
+		/* uncommitted BUN elements */
+		BUN last = BUNlast(b) - 1;
+		BAT *bm = BBP_cache(-b->batCacheid);
+		BUN pit = p;
+		BATiter bi = bat_iterator(b);
+		size_t tsize = b->tvarsized ? b->T->vheap->size : 0;
 		int tt;
 		BUN prv, nxt;
 
-		@:tacc_update(del,t@1,p,pit)@
+		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
+		tacc_update(del,tail,p,pit);
 		Treplacevalue(b, BUNtloc(bi, p), t);
-		@:tacc_update(ins,t@1,p,pit)@
+		tacc_update(ins,tail,p,pit);
 
 		tt = b->ttype;
 		prv = p > b->batFirst ? p - 1 : BUN_NONE;
@@ -1664,9 +1649,9 @@ BUNdelHead(BAT *b, ptr x, bit force)
 
 		if (BATtordered(b)) {
 			if ((prv != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNt@1(bi, prv)) < 0) ||
+			     ATOMcmp(tt, t, BUNtail(bi, prv)) < 0) ||
 			    (nxt != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNt@1(bi, nxt)) > 0)) {
+			     ATOMcmp(tt, t, BUNtail(bi, nxt)) > 0)) {
 				b->tsorted = FALSE;
 				b->T->nosorted = pit;
 			} else if (b->ttype != TYPE_void && b->tdense) {
@@ -1684,36 +1669,15 @@ BUNdelHead(BAT *b, ptr x, bit force)
 		}
 		if (BATtrevordered(b)) {
 			if ((prv != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNt@1(bi, prv)) > 0) ||
+			     ATOMcmp(tt, t, BUNtail(bi, prv)) > 0) ||
 			    (nxt != BUN_NONE &&
-			     ATOMcmp(tt, t, BUNt@1(bi, nxt)) < 0)) {
+			     ATOMcmp(tt, t, BUNtail(bi, nxt)) < 0)) {
 				b->trevsorted = FALSE;
 				b->T->norevsorted = pit;
 			}
 		}
-	} while (0)
-@
-@c
-BAT *
-BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
-{
-	if (p >= b->batInserted || force) {
-		/* uncommitted BUN elements */
-		BUN last = BUNlast(b) - 1;
-		BAT *bm = BBP_cache(-b->batCacheid);
-		BUN pit = p;
-		BATiter bi = bat_iterator(b);
-
-		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
-		if (b->tvarsized) {
-			size_t tsize = b->T->vheap->size;
-
-			@:uncommit_replace(var)@;
-			if (b->T->hash && tsize != b->T->vheap->size)
-				HEAPwarm(b->T->vheap);
-		} else {
-			@:uncommit_replace(loc)@;
-		}
+		if (b->tvarsized && b->T->hash && tsize != b->T->vheap->size)
+			HEAPwarm(b->T->vheap);
 		if (((b->ttype != TYPE_void) & b->tkey & !(b->tkey & BOUND2BTRUE)) && b->batCount > 1) {
 			BATkey(bm, FALSE);
 		}
@@ -1810,14 +1774,14 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 
 /*
  * @- BUN Lookup
- * Location of a BUN using a value should use the available indexes
- * to speed up access. If indexes are lacking then a hash index
- * is constructed under the assumption that 1) multiple access to the BAT
- * can be expected and 2) building the hash is only slightly more expensive
- * than the full linear scan.
- * BUN_NONE is returned if no such element could be found.
- * In those cases where the type is known and a hash index is available,
- * one should use the inline functions to speed-up processing.
+ * Location of a BUN using a value should use the available indexes to
+ * speed up access. If indexes are lacking then a hash index is
+ * constructed under the assumption that 1) multiple access to the BAT
+ * can be expected and 2) building the hash is only slightly more
+ * expensive than the full linear scan.  BUN_NONE is returned if no
+ * such element could be found.  In those cases where the type is
+ * known and a hash index is available, one should use the inline
+ * functions to speed-up processing.
  */
 BUN
 BUNfnd(BAT *b, ptr v)
@@ -1947,7 +1911,8 @@ BUNlocate(BAT *b, ptr x, ptr y)
 	if (p >= q)
 		return BUN_NONE;	/* value combination cannot occur */
 
-	/* if the range is still larger than 32 BUNs, consider investing in a hash table */
+	/* if the range is still larger than 32 BUNs, consider
+	 * investing in a hash table */
 	if ((q - p) > (1 << 5)) {
 		/* regrettably MonetDB support only single-column hashes
 		 * strategy: create a hash on both columns, and select
@@ -2039,7 +2004,8 @@ BUNlocate(BAT *b, ptr x, ptr y)
 		}
 	}
 
-	/* type analysis. For equi-lookup {flt,dbl,wrd,oid} can all be treated as either int or lng */
+	/* type analysis. For equi-lookup {flt,dbl,wrd,oid} can all be
+	 * treated as either int or lng */
 	if (!ATOMvarsized(htpe)) {
 		hint = (ATOMsize(htpe) == sizeof(int));
 		hlng = (ATOMsize(htpe) == sizeof(lng));
@@ -2118,10 +2084,9 @@ BUNlocate(BAT *b, ptr x, ptr y)
 /*
  * @+ BAT Property Management
  *
- * The function BATcount returns the number of active elements in a BAT.
- * Counting is type independent.
- * It can be implemented quickly, because the system ensures a dense
- * BUN list.
+ * The function BATcount returns the number of active elements in a
+ * BAT.  Counting is type independent.  It can be implemented quickly,
+ * because the system ensures a dense BUN list.
  */
 void
 BATsetcapacity(BAT *b, BUN cnt)
@@ -2143,9 +2108,8 @@ BATsetcount(BAT *b, BUN cnt)
 }
 
 /*
- * @-
- * The alternative routine is BATbuncount, which calculates the
- * total buns in use.
+ * The alternative routine is BATbuncount, which calculates the total
+ * buns in use.
  */
 BUN
 BATbuncount(BAT *b)
@@ -2184,13 +2148,12 @@ BATmemsize(BAT *b, int dirty)
 }
 
 /*
- * @-
- * The key and name properties can be changed at any time.
- * Keyed dimensions are automatically supported by an auxiliary hash-based
- * access structure to speed up searching. Turning off the key integrity
- * property does not cause the index to disappear. It can still be used to
- * speed-up retrieval. The routine BATkey sets the key property of the
- * association head.
+ * The key and name properties can be changed at any time.  Keyed
+ * dimensions are automatically supported by an auxiliary hash-based
+ * access structure to speed up searching. Turning off the key
+ * integrity property does not cause the index to disappear. It can
+ * still be used to speed-up retrieval. The routine BATkey sets the
+ * key property of the association head.
  */
 BAT *
 BATkey(BAT *b, int flag)
@@ -2250,7 +2213,8 @@ BATseqbase(BAT *b, oid o)
 	if (ATOMtype(b->htype) == TYPE_oid) {
 		if (b->hseqbase != o) {
 			b->batDirtydesc = TRUE;
-			/* zap alignment if column is changed by new seqbase */
+			/* zap alignment if column is changed by new
+			 * seqbase */
 			if (b->htype == TYPE_void)
 				b->halign = 0;
 		}
@@ -2280,14 +2244,12 @@ BATseqbase(BAT *b, oid o)
 }
 
 /*
- * @-
- * BATs have a logical name that is independent of their
- * location in the file system (this depends on batCacheid).
- * The dimensions of the BAT can be given a separate name.
- * It helps front-ends in identifying the column of interest.
- * The new name should be recognizable as an identifier.
- * Otherwise interaction through the front-ends becomes
- * complicated.
+ * BATs have a logical name that is independent of their location in
+ * the file system (this depends on batCacheid).  The dimensions of
+ * the BAT can be given a separate name.  It helps front-ends in
+ * identifying the column of interest.  The new name should be
+ * recognizable as an identifier.  Otherwise interaction through the
+ * front-ends becomes complicated.
  */
 int
 BATname(BAT *b, const char *nme)
@@ -2349,46 +2311,17 @@ BATcol_name(BAT *b, const char *tnme)
 }
 
 
-@h
-/*
- * @+ BAT permissions, persistency and memory mapped heaps
- * The way large heaps are memory mapped is dependent both on the BAT persistency status (persistent or not)
- * as well as their update permissions (readonly,append-only,writable).
- *
- * Let us recall the two main memory mapped file modes used to store heaps:
- * @multitable @columnfractions .12 .8
- * @item STORE_MMAP
- * @tab files must be readonly, because you never know the exact saved status.
- *       HEAPsave consists of the rather efficient msync(X).
- * @item STORE_PRIV
- * @tab files modify pages in swap area, and can be writable.
- *       HEAPsave actually does a full write(X.new), while the mapped file stays in X
- * @end multitable
- * Notice that PRIV storage is only required for persistent BATs that are already committed
- * on disk. The crash-consistent state of transient BATs is irrelevant as they disappear
- * after a crash. Even the crash-consistency of persistent BATs that did not make their first
- * commit is not relevant as they also will disappear.
- *
- * Also, some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
- * code is bug-free and we know we won't modify the already committed parts of the mapped
- * file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
- * anymore (i.e. when the contents of the builtin hash table at the start of the string heap
- * are not crucial anymore).
- */
-#define ATOMappendpriv(t,h) ((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
-			     (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
-
-@c
 /*
  * @- BATmmap
  * Changing the storage status of heaps in a BAT is done in BATmmap.
- * The new semantics is to do nothing: the new mapping only takes effect the next time the bat is loaded or extended. The latter is needed for loading large data
- * sets. These transient bats should switch cheaply between malloced and memory
- * mapped modes.
+ * The new semantics is to do nothing: the new mapping only takes
+ * effect the next time the bat is loaded or extended. The latter is
+ * needed for loading large data sets. These transient bats should
+ * switch cheaply between malloced and memory mapped modes.
  *
- * We modify the hp->storage fields using HEAPnewstorage and store that
- * we want malloced or memory mapped heaps in special binary batMap fields
- * that are used when the BAT descriptor is saved.
+ * We modify the hp->storage fields using HEAPnewstorage and store
+ * that we want malloced or memory mapped heaps in special binary
+ * batMap fields that are used when the BAT descriptor is saved.
  */
 /* TODO niels: merge with BATsetmodes in gdk_storage */
 #define STORE_MODE(m,r,e,s,f) (((m) == STORE_MEM)?STORE_MEM:((r)&&(e)&&!(f))||(s)==STORE_PRIV?STORE_PRIV:STORE_MMAP)
@@ -2428,8 +2361,8 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 	BATcheck(b, "BATmmap");
 	IODEBUG THRprintf(GDKout, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
 
-	/* Reverse back if required, as this determines which heap is saved in the 
-	 * "hheap" file and which in the "theap" file.
+	/* Reverse back if required, as this determines which heap is
+	 * saved in the "hheap" file and which in the "theap" file.
 	 */
 	if (b->batCacheid < 0) {
 		int swap = hb;
@@ -2452,16 +2385,17 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 /*
  * @- BATmadvise
  */
-@= madvise
-	if (@1 >= 0 && (@2) && @3 > 0 && (@2)->base &&
-			((@2)->storage != STORE_MEM) && MT_madvise((@2)->base, @3, BUF_TO_MMAP[@1]))
-	{
-		GDKsyserror("madvise(" PTRFMT ", " SZFMT ", %d) on @2 @1 failed\n",
-				PTRFMTCAST (@2)->base, @3, @1);
-		return -1;
-	}
-@
-@c
+#define madvise(adv, hp, len)						\
+	do {								\
+		if (adv >= 0 && (hp) && len > 0 && (hp)->base &&	\
+		    ((hp)->storage != STORE_MEM) &&			\
+		    MT_madvise((hp)->base, len, BUF_TO_MMAP[adv])) {	\
+			GDKsyserror("madvise(" PTRFMT ", " SZFMT ", %d) on " \
+				    #hp " " #adv " failed\n",		\
+				    PTRFMTCAST (hp)->base, len, adv);	\
+			return -1;					\
+		}							\
+	} while (0)
 
 static int BUF_TO_MMAP[] = {
 	/* BUF_NORMAL     */ MMAP_NORMAL,
@@ -2476,48 +2410,48 @@ BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 {
 	BATcheck(b, "BATmadvise");
 
-	/* A varsized string heap never has sequential access, setting it is
-	 * no good. */
+	/* A varsized string heap never has sequential access, setting
+	 * it is no good. */
 	assert(!(ATOMstorage(b->htype) == TYPE_str && b->H->vheap && hhp == BUF_SEQUENTIAL));
 	assert(!(ATOMstorage(b->ttype) == TYPE_str && b->T->vheap && thp == BUF_SEQUENTIAL));
 
-	/* If the BAT is read-only, set the madvice for the actually used
-	 * part of the BAT (e.g. till the free offset), else, apply the
-	 * advice to the entire BAT (the size), since writing may extend to
-	 * there */
+	/* If the BAT is read-only, set the madvice for the actually
+	 * used part of the BAT (e.g. till the free offset), else,
+	 * apply the advice to the entire BAT (the size), since
+	 * writing may extend to there */
 	if (BAThrestricted(b) == BAT_READ) {
-		@:madvise(hb,(&b->H->heap),(&b->H->heap)->free)@
-		@:madvise(hhp,b->H->vheap,b->H->vheap->free)@
+		madvise(hb, &b->H->heap, b->H->heap.free);
+		madvise(hhp, b->H->vheap, b->H->vheap->free);
 	} else {
-		@:madvise(hb,(&b->H->heap),(&b->H->heap)->size)@
-		@:madvise(hhp,b->H->vheap,b->H->vheap->size)@
+		madvise(hb, &b->H->heap, b->H->heap.size);
+		madvise(hhp, b->H->vheap, b->H->vheap->size);
 	}
 	if (BATtrestricted(b) == BAT_READ) {
-		@:madvise(tb,(&b->T->heap),(&b->T->heap)->free)@
-		@:madvise(thp,b->T->vheap,b->T->vheap->free)@
+		madvise(tb, &b->T->heap, b->T->heap.free);
+		madvise(thp, b->T->vheap, b->T->vheap->free);
 	} else {
-		@:madvise(tb,(&b->T->heap),(&b->T->heap)->size)@
-		@:madvise(thp,b->T->vheap,b->T->vheap->size)@
+		madvise(tb, &b->T->heap, b->T->heap.size);
+		madvise(thp, b->T->vheap, b->T->vheap->size);
 	}
 	return 0;
 }
 
 /*
  * @- Change the BAT access permissions (read, append, write)
- * @verbatim
- * Regrettably, BAT access-permissions, persistent status and memory map
- * modes, interact in ways that makes one's brain sizzle. This makes
- * BATsetaccess and TMcommit (where a change in BAT persistence mode is
- * made permanent) points in which the memory map status of bats needs
- * to be carefully re-assessed and ensured.
+ * Regrettably, BAT access-permissions, persistent status and memory
+ * map modes, interact in ways that makes one's brain sizzle. This
+ * makes BATsetaccess and TMcommit (where a change in BAT persistence
+ * mode is made permanent) points in which the memory map status of
+ * bats needs to be carefully re-assessed and ensured.
  *
- * Another complication is the fact that during commit, concurrent users
- * may access the heaps, such that the simple solution unmap;re-map is out
- * of the question.
+ * Another complication is the fact that during commit, concurrent
+ * users may access the heaps, such that the simple solution
+ * unmap;re-map is out of the question.
  * Even worse, it is not possible to even rename an open mmap file in
- * Windows. For this purpose, we dropped the old .priv scheme, which relied
- * on file moves. Now, the file that is opened with mmap is always the
- * X file, in case of newstorage=STORE_PRIV, we save in a new file X.new
+ * Windows. For this purpose, we dropped the old .priv scheme, which
+ * relied on file moves. Now, the file that is opened with mmap is
+ * always the X file, in case of newstorage=STORE_PRIV, we save in a
+ * new file X.new
  *
  * we must consider the following dimensions:
  *
@@ -2572,54 +2506,58 @@ BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
  *
  * (+) indicates that we must ensure that the heap gets saved in its new mode
  *
- * Note that we now allow a heap with save-regime STORE_PRIV that was actually
- * mapped STORE_MMAP. In effect, the potential corruption of the X file
- * is compensated by writing out full X.new files that take precedence.
- * When transitioning out of this state towards one with both storage
- * regime and OS as STORE_MMAP we need to move the X.new files into the
- * backup directory. Then msync the X file and (on success) remove the X.new;
- * see backup_new().
+ * Note that we now allow a heap with save-regime STORE_PRIV that was
+ * actually mapped STORE_MMAP. In effect, the potential corruption of
+ * the X file is compensated by writing out full X.new files that take
+ * precedence.  When transitioning out of this state towards one with
+ * both storage regime and OS as STORE_MMAP we need to move the X.new
+ * files into the backup directory. Then msync the X file and (on
+ * success) remove the X.new; see backup_new().
  *
- * Exception states are only reachable if the commit fails and those new
- * persistent bats have already been processed (but never become part
- * of a committed state). In that case a transition 2=>6 may end up 2=>b.
- * Exception states a and c are reachable from b.
+ * Exception states are only reachable if the commit fails and those
+ * new persistent bats have already been processed (but never become
+ * part of a committed state). In that case a transition 2=>6 may end
+ * up 2=>b.  Exception states a and c are reachable from b.
  *
- * Errors in HEAPchangeaccess() can be handled atomically inside the routine.
- * The work on changing mmap modes HEAPcommitpersistence() is done during
- * the BBPsync() for all bats that are newly persistent (BBPNEW). After the
- * TMcommit(), it is done for those bats that are no longer persistent after
- * the commit (BBPDELETED), only if it succeeds.
- * Such transient bats cannot be processed before the commit, because the
- * commit may fail and then the more unsafe transient mmap modes would be
- * present on a persistent bat.
+ * Errors in HEAPchangeaccess() can be handled atomically inside the
+ * routine.  The work on changing mmap modes HEAPcommitpersistence()
+ * is done during the BBPsync() for all bats that are newly persistent
+ * (BBPNEW). After the TMcommit(), it is done for those bats that are
+ * no longer persistent after the commit (BBPDELETED), only if it
+ * succeeds.  Such transient bats cannot be processed before the
+ * commit, because the commit may fail and then the more unsafe
+ * transient mmap modes would be present on a persistent bat.
  *
- * See dirty_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in gdk_tm.mx
+ * See dirty_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in
+ * gdk_tm.mx
  *
- * Including the exception states, we have 11 of the 16 combinations. As for the
- * 5 avoided states, all four (persistence,access) states with (STORE_MMAP,STORE_PRIV)
- * are omitted (this would amount to an msync() save regime on a copy-on-write
- * heap -- which does not work). The remaining avoided state is the patently unsafe
+ * Including the exception states, we have 11 of the 16
+ * combinations. As for the 5 avoided states, all four
+ * (persistence,access) states with (STORE_MMAP,STORE_PRIV) are
+ * omitted (this would amount to an msync() save regime on a
+ * copy-on-write heap -- which does not work). The remaining avoided
+ * state is the patently unsafe
  * (persistent,BAT_WRITE,STORE_MMAP,STORE_MMAP).
  *
- * Note that after a server restart exception states are gone, as on BAT loads
- * the saved descriptor is inspected again (which will reproduce the state
- * at the last succeeded commit).
+ * Note that after a server restart exception states are gone, as on
+ * BAT loads the saved descriptor is inspected again (which will
+ * reproduce the state at the last succeeded commit).
  *
- * To avoid exception states, a TMsubcommit protocol would need to be used which
- * is too heavy for BATsetaccess().
+ * To avoid exception states, a TMsubcommit protocol would need to be
+ * used which is too heavy for BATsetaccess().
  *
- * Note that this code is not about making heaps mmap-ed in the first place.
- * It is just about determining which flavor of mmap should be used. The
- * MAL user is oblivious of such details.
+ * Note that this code is not about making heaps mmap-ed in the first
+ * place.  It is just about determining which flavor of mmap should be
+ * used. The MAL user is oblivious of such details.
  *
- * The route for making heaps mmapped in the first place (or make them no
- * longer so) is to request a mode change with BATmmap. The requested modes
- * are remembered in b->batMap*. At the next re-load of the BAT, they are applied
- * after a sanity check (DESCsetmodes() in gdk_storage.mx).
- * @end verbatim
+ * The route for making heaps mmapped in the first place (or make them
+ * no longer so) is to request a mode change with BATmmap. The
+ * requested modes are remembered in b->batMap*. At the next re-load
+ * of the BAT, they are applied after a sanity check (DESCsetmodes()
+ * in gdk_storage.mx).  @end verbatim
  */
-/* rather than deleting X.new, we comply with the commit protocol and move it to backup storage */
+/* rather than deleting X.new, we comply with the commit protocol and
+ * move it to backup storage */
 static int
 backup_new(Heap *hp, int lockbat)
 {
@@ -2638,7 +2576,8 @@ backup_new(Heap *hp, int lockbat)
 	bakret = stat(bakpath, &st);
 
 	if (batret == 0 && bakret) {
-		/* no backup yet, so move the existing X.new there out of the way */
+		/* no backup yet, so move the existing X.new there out
+		 * of the way */
 		ret = rename(batpath, bakpath);
 		IODEBUG THRprintf(GDKout, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
@@ -2743,37 +2682,40 @@ BATcheckmodes(BAT *b, int existing)
 	return 0;
 }
 
-@= heap_unshare
-	if (@1->copied) {
-		Heap hp;
+#define heap_unshare(heap, heapname, id)				\
+	do {								\
+		if ((heap)->copied) {					\
+			Heap hp;					\
+									\
+			memset(&hp, 0, sizeof(Heap));			\
+			if (HEAPcopy(&hp, (heap)) < 0) {		\
+				GDKerror("%s: remapped " #heapname	\
+					 " of %s could not be copied.\n", \
+					 fcn, BATgetId(b));		\
+				return -1;				\
+									\
+			}						\
+			hp.parentid = (id);				\
+			if ((heap)->parentid == (id))			\
+				HEAPfree(heap);				\
+			else						\
+				BBPunshare((heap)->parentid);		\
+			* (heap) = hp;					\
+			(heap)->copied = 0;				\
+		}							\
+	} while (0)
 
-		memset(&hp, 0, sizeof(Heap));
-		if (HEAPcopy(&hp, @1) < 0) {
-			GDKerror("%s: remapped @2 of %s could not be copied.\n", fcn, BATgetId(b));
-			return -1;
-
-		}
-		hp.parentid = @3;
-		if (@1->parentid == @3)
-			HEAPfree(@1);
-		else
-			BBPunshare(@1->parentid);
-		* (@1) = hp;
-		@1->copied = 0;
-	}
-@
-@c
 static int
 batunshare(BAT *b, str fcn)
 {
 	if (b->H->heap.base)
-		@:heap_unshare((&b->H->heap),head,0)@
+		heap_unshare(&b->H->heap, head, 0);
 	if (b->T->heap.base)
-		@:heap_unshare((&b->T->heap),tail,0)@
+		heap_unshare(&b->T->heap, tail, 0);
 	if (b->H->vheap)
-		@:heap_unshare(b->H->vheap,H->vheap,ABS(b->batCacheid))@
+		heap_unshare(b->H->vheap, H->vheap, ABS(b->batCacheid));
 	if (b->T->vheap)
-		@:heap_unshare(b->T->vheap,T->vheap,ABS(b->batCacheid))@
+		heap_unshare(b->T->vheap, T->vheap, ABS(b->batCacheid));
 	b->P->lview = 0;
 	return 0;
 }
@@ -2796,7 +2738,8 @@ BATsetaccess(BAT *b, int newmode)
 		int m0, m1, m2 = 0, m3 = 0;
 		int b0, b1, b2 = 0, b3 = 0;
 
-		/* copy-on-write isolated bats that change mode should be made independent */
+		/* copy-on-write isolated bats that change mode should
+		 * be made independent */
 		if (b->P->lview && newmode != BAT_READ && batunshare(b, "BATsetaccess") < 0)
 			return NULL;
 
@@ -2862,31 +2805,39 @@ BATgetaccess(BAT *b)
 /*
  * @- change BAT persistency (persistent,session,transient)
  * In the past, we prevented BATS with certain types from being saved at all:
- * - BATs of BATs, as having recursive bats creates cascading complexities in commits/aborts.
- * - any atom with refcounts, as the BBP has no overview of such user-defined refcounts.
+ * - BATs of BATs, as having recursive bats creates cascading
+ *   complexities in commits/aborts.
+ * - any atom with refcounts, as the BBP has no overview of such
+ *   user-defined refcounts.
  * - pointer types, as the values they point to are bound to be transient.
  *
- * However, nowadays we do allow such saves, as the BBP swapping mechanism was altered
- * to be able to save transient bats temporarily to disk in order to make room.
- * Thus, we must be able to save any transient BAT to disk.
+ * However, nowadays we do allow such saves, as the BBP swapping
+ * mechanism was altered to be able to save transient bats temporarily
+ * to disk in order to make room.  Thus, we must be able to save any
+ * transient BAT to disk.
  *
  * What we don't allow is to make such bats persistent.
  *
- * Although the persistent state does influence the allowed mmap modes, this only
- * goes for the *real* committed persistent state. Making the bat persistent with BATmode
- * does not matter for the heap modes until the commit point is reached. So we do not
- * need to do anything with heap modes yet at this point.
+ * Although the persistent state does influence the allowed mmap
+ * modes, this only goes for the *real* committed persistent
+ * state. Making the bat persistent with BATmode does not matter for
+ * the heap modes until the commit point is reached. So we do not need
+ * to do anything with heap modes yet at this point.
  */
-@= check_type
-	if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
-	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) {
-		GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
-			 ATOMname(@1), BATgetId(b),
-			 ATOMname(b->htype), ATOMname(b->ttype));
-		return NULL;
-	}
-@
-@c
+#define check_type(tp)							\
+	do {								\
+		if (ATOMisdescendant((tp), TYPE_ptr) ||			\
+		    ATOMisdescendant((tp), TYPE_bat) ||			\
+		    BATatoms[tp].atomUnfix ||				\
+		    BATatoms[tp].atomFix) {				\
+			GDKerror("BATmode: %s type implies that %s[%s,%s] " \
+				 "cannot be made persistent.\n",	\
+				 ATOMname(tp), BATgetId(b),		\
+				 ATOMname(b->htype), ATOMname(b->ttype)); \
+			return NULL;					\
+		}							\
+	} while (0)
+
 BAT *
 BATmode(BAT *b, int mode)
 {
@@ -2900,12 +2851,13 @@ BATmode(BAT *b, int mode)
 				return NULL;
 		}
 		if (mode == PERSISTENT) {
-			@:check_type(b->htype)@
-			@:check_type(b->ttype)@
+			check_type(b->htype);
+			check_type(b->ttype);
 		}
 		BBPdirty(1);
 
-		/* a SESSION bat is a TRANSIENT with one logical reference added */
+		/* a SESSION bat is a TRANSIENT with one logical
+		 * reference added */
 		if (mode == SESSION) {
 			BBPincref(bid, TRUE);
 		} else if (b->batPersistence == SESSION) {
@@ -2930,12 +2882,14 @@ BATmode(BAT *b, int mode)
 				BBP_status_on(bid, BBPDELETED, "BATmode");
 			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
 		}
-		/* session bats or persistent bats that did not witness a commit yet may have been saved */
+		/* session bats or persistent bats that did not
+		 * witness a commit yet may have been saved */
 		if (b->batCopiedtodisk) {
 			if (mode == PERSISTENT) {
 				BBP_status_off(bid, BBPTMP, "BATmode");
 			} else {
-				/* TMcommit must remove it to guarantee free space */
+				/* TMcommit must remove it to
+				 * guarantee free space */
 				BBP_status_on(bid, BBPTMP, "BATmode");
 			}
 		}
@@ -2946,10 +2900,9 @@ BATmode(BAT *b, int mode)
 }
 
 /* BATassertProps checks whether properties are set correctly.  Under
- * no circumstances will it change any properties.
- * Note that the "set" property is not checked.
- * Also note that the "nil" property is not actually used anywhere,
- * but it is checked. */
+ * no circumstances will it change any properties.  Note that the
+ * "set" property is not checked.  Also note that the "nil" property
+ * is not actually used anywhere, but it is checked. */
 
 #ifndef NDEBUG
 static void
