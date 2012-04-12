@@ -3438,7 +3438,7 @@ def main(argv) :
         RELSRCBASE = os.curdir
     else:
         TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(TSTSRCBASE), os.path.normcase(TSTTRGBASE)]))
-        RELBASE = (os.pardir+os.sep)*len(TSTTRGBASE[len(TSTBASE+os.sep):].split(os.sep))
+        RELBASE = os.path.join(* [os.pardir] * len(TSTTRGBASE[len(TSTBASE+os.sep):].split(os.sep)))
         RELSRCBASE = RELBASE + TSTSRCBASE[len(TSTBASE):]
     env['RELSRCBASE'] = RELSRCBASE
 
