@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_value
-
-@c
 /*
  * @a Martin L. Kersten & Peter Boncz
  * @v 2.0
@@ -246,7 +243,7 @@ int
 VALcmp(ValPtr p, ValPtr q)
 {
 
-	int (*cmp) (const void *, const void *);
+	int (*cmp)(const void *, const void *);
 	int tpe;
 	ptr nilptr, pp, pq;
 
@@ -261,11 +258,10 @@ VALcmp(ValPtr p, ValPtr q)
 	nilptr = ATOMnilptr(tpe);
 	pp = VALget(p);
 	pq = VALget(q);
-	if (((*cmp) (pp, nilptr) == 0) && ((*cmp) (pq, nilptr) == 0))
+	if ((*cmp)(pp, nilptr) == 0 && (*cmp)(pq, nilptr) == 0)
 		return 0;	/* eq nil val */
-	if (((*cmp) (pp, nilptr) == 0) || ((*cmp) (pq, nilptr) == 0))
+	if ((*cmp)(pp, nilptr) == 0 || (*cmp)(pq, nilptr) == 0)
 		return -1;
-	return ((*cmp) (pp, pq));
+	return (*cmp)(pp, pq);
 
 }
-
