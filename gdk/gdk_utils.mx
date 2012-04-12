@@ -369,22 +369,26 @@ int GDK_mem_allocs = 0;
 int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
-#define CHKMEM(meminc, vminc) do {					\
-	int memchk, vmchk; \
-	malloc_lock(); \
-	memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
-	vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
-	malloc_unlock(); \
-	if (memchk || vmchk) GDKmemchk(memchk, vmchk);			\
-} while (0)
+#define CHKMEM(meminc, vminc)						\
+	do {								\
+		int memchk, vmchk;					\
+									\
+		malloc_lock();						\
+		memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
+		vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+		malloc_unlock();					\
+		if (memchk || vmchk)					\
+			GDKmemchk(memchk, vmchk);			\
+	} while (0)
 
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
 
 /* histogram update macro */
-#define GDKmallidx(idx,size)				\
-	{						\
+#define GDKmallidx(idx, size)				\
+	do {						\
 		int _mask;				\
+							\
 		if (size < 128) {			\
 			_mask = (1<<6);			\
 			idx = 7;			\
@@ -396,15 +400,11 @@ int GDK_vm_trim = 1;
 			if (_mask&size) break;		\
 			_mask >>=1;			\
 		}					\
-	}
+	} while (0)
 
 volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
-
-#ifdef GDK_MEM_TRACE
-static int mtrace = 0;
-#endif
 
 #ifndef NDEBUG
 static MT_Lock mbyteslock;
@@ -624,108 +624,106 @@ GDKmem_heapcheck(int t)
 	GDK_heapcheck_last = t;
 }
 
-/*
- * @- heapinc(size_t _memdelta, void* _blk)
- */
-@= heapinc
-	{
-		size_t _memdelta = (size_t) @1;
-#ifdef GDK_MEM_TRACE
-		void*  _blk = (void*) @2;
-
-		if (mtrace) {
-			int _idx = add_stack(stackBat);
-
-			add_mem(memBat, _blk, _idx);
-		}
-#endif
-		malloc_lock();
-		GDK_mallocedbytes_estimate += _memdelta;
-		malloc_unlock();
 #ifdef GDK_MEM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _memdelta);
-			GDK_nmallocs[_idx]++;
-		}
+#define heapinc(_memdelta)					\
+	do {							\
+		int _idx;					\
+								\
+		malloc_lock();					\
+		GDK_mallocedbytes_estimate += (_memdelta);	\
+		malloc_unlock();				\
+		GDKmallidx(_idx, _memdelta);			\
+		GDK_nmallocs[_idx]++;				\
+	} while (0)
+#define heapdec(memdelta)						\
+	do {								\
+		size_t _memdelta = (size_t) (memdelta);			\
+		int _idx;						\
+									\
+		malloc_lock();						\
+		if (_memdelta > GDK_mallocedbytes_estimate) {		\
+			/* clearly, the stats are off: it should never	\
+			 * become less-than-zero */			\
+			GDKmem_heapcheck(GDKms());			\
+		} else {						\
+			GDK_mallocedbytes_estimate -= _memdelta;	\
+		}							\
+		malloc_unlock();					\
+		GDKmallidx(_idx, _memdelta);				\
+		GDK_nmallocs[_idx]--;					\
+	} while (0)
+#else
+#define heapinc(_memdelta)					\
+	do {							\
+		malloc_lock();					\
+		GDK_mallocedbytes_estimate += (_memdelta);	\
+		malloc_unlock();				\
+	} while (0)
+#define heapdec(memdelta)						\
+	do {								\
+		size_t _memdelta = (size_t) (memdelta);			\
+		malloc_lock();						\
+		if (_memdelta > GDK_mallocedbytes_estimate) {		\
+			/* clearly, the stats are off: it should never	\
+			 * become less-than-zero */			\
+			GDKmem_heapcheck(GDKms());			\
+		} else {						\
+			GDK_mallocedbytes_estimate -= _memdelta;	\
+		}							\
+		malloc_unlock();					\
+	} while (0)
 #endif
-	}
 
-@
- * @- heapdec(size_t memdelta, void* _blk)
-@= heapdec
-	{
-		size_t _memdelta = (size_t) @1;
-#ifdef GDK_MEM_TRACE
-		void*  _blk = (void*) @2;
-
-		if (mtrace) {
-			del_mem(memBat,_blk);
-		}
-#endif
-
-		malloc_lock();
-		if (_memdelta > GDK_mallocedbytes_estimate) {
-			/* clearly, the stats are off: it should never become less-than-zero */
-			GDKmem_heapcheck(GDKms());
-		} else {
-			GDK_mallocedbytes_estimate -= _memdelta;
-		}
-		malloc_unlock();
-#ifdef GDK_MEM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _memdelta);
-			GDK_nmallocs[_idx]--;
-		}
-#endif
-	}
-
-@
- * @- meminc(size_t memdelta, size_t vmdelta, str fcn)
-@= meminc
-	{
-		ssize_t _memdelta = (ssize_t) @1;
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE(@2,MT_VMUNITLOG);
-
-		gdk_set_lock(GDKthreadLock, @3);
-		GDK_mem_cursize += _memdelta;
 #ifdef GDK_VM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _vmdelta);
-			GDK_vm_nallocs[_idx]++;
-		}
+#define meminc(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+		int _idx;						\
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize += _memdelta;				\
+		GDKmallidx(_idx, _vmdelta);				\
+		GDK_vm_nallocs[_idx]++;					\
+		GDK_vm_cursize += _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#define memdec(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+		int _idx;						\
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize -= _memdelta;				\
+		GDKmallidx(_idx, _vmdelta);				\
+		GDK_vm_nallocs[_idx]--;					\
+		GDK_vm_cursize -= _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#else
+#define meminc(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize += _memdelta;				\
+		GDK_vm_cursize += _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#define memdec(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize -= _memdelta;				\
+		GDK_vm_cursize -= _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
 #endif
-		GDK_vm_cursize += _vmdelta;
-		gdk_unset_lock(GDKthreadLock, @3);
-	}
 
-@
- * @- memdec(size_t memdelta, size_t vmdelta, str nme)
-@= memdec
-	{
-		ssize_t _memdelta = (ssize_t) @1;
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE(@2,MT_VMUNITLOG);
-
-		gdk_set_lock(GDKthreadLock, @3);
-		GDK_mem_cursize -= _memdelta;
-#ifdef GDK_VM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _vmdelta);
-			GDK_vm_nallocs[_idx]--;
-		}
-#endif
-		GDK_vm_cursize -= _vmdelta;
-		gdk_unset_lock(GDKthreadLock, @3);
-	}
-@
-@c
 static void
 GDKmemdump(void)
 {
@@ -809,232 +807,6 @@ GDKmemchk(int memchk, int vmchk)
 			GDK_vm_allocs = 0;
 	}
 }
-
-
-/*
- * @+ Stack tracing
- *
- * Very simple malloc tracing implementation that allows to retain on which stack frame
- * a malloc was done. This is code originally developed by DD, and
- * is used only  by them.
- * Two bats are used: stackBat and memBat.
- * StackBat contains a DAG of all methods used for memory allocation.
- * MemBat contains a mapping from allocated memory addresses to an index
- * in the stackBat which indicates the place the memory is allocated.
- */
-#ifdef GDK_MEM_TRACE
-
-static BAT *stackBat = NULL;
-static BAT *memBat = NULL;
-typedef ptr mem_t;
-
-char *
-stack_test(int i, int j)
-{
-	if (--i == 0)
-		return (char *) GDKmalloc(j);
-
-	return stack_test(i, j);
-}
-
-
-void
-mtrace_test()
-{
-	char *t = stack_test(1, 1);
-
-	GDKfree(t);
-	GDKfree(t);		/* double delete */
-	t = stack_test(2, 2);
-	t = GDKrealloc(t, 20);	/* leaked */
-}
-
-
-static int
-GDKmtrace(bit *enable)
-{
-	if (*enable) {
-		if (memBat == NULL) {
-			memBat = BATnew(TYPE_ptr, TYPE_int, 16384);
-			if (memBat == NULL)
-				return GDK_FAIL;
-			stackBat = BATnew(TYPE_ptr, TYPE_ptr, 16384);
-			if (stackBat == NULL)
-				return GDK_FAIL;
-			BBPrename(memBat->batCacheid, "mem_trace");
-			BBPrename(stackBat->batCacheid, "mem_stack");
-			memBat->hsorted = memBat->hrevsorted = 0;
-			memBat->tsorted = memBat->trevsorted = 0;
-			memBat->H->nonil = 0;
-			BATkey(memBat, TRUE);
-			stackBat->hsorted = stackBat->hrevsorted = 0;
-			stackBat->tsorted = stackBat->trevsorted = 0;
-			BATset(stackBat, TRUE);
-			memBat->T->nonil = 0;
-		}
-		mtrace++;
-	} else if (mtrace > 0)
-		mtrace--;
-
-	memBat->batDirty = TRUE;
-	stackBat->batDirty = TRUE;
-
-	if (*enable == bit_nil) {
-		printf("testing mtrace:\n");
-		mtrace_test();
-		--mtrace;
-	}
-
-	return GDK_SUCCEED;
-}
-
-
-BUN
-add_dag(BAT *b, BUN p, mem_t current, mem_t parent)
-{
-	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
-	BUN last = BUNlast(b);
-
-	while (p != last) {
-		if ((*(mem_t *) BUNhloc(b, p)) == current && (*(mem_t *) BUNtloc(b, p)) == parent)
-			return p;
-		p += bunsize;
-	}
-
-	if (b->batBuns->free + bunsize > b->batBuns->size) {
-		int tmp = mtrace;
-
-		mtrace = 0;
-		if (BATextend(b, BATgrows(b)) == NULL)
-			return BUNlast(b);
-		mtrace = tmp;
-		last = BUNlast(b);
-	}
-	bunfastins_nocheck(b, last, &current, &parent, bunsize);
-	return last;
-}
-
-
-#define MAX_STACK_ADDR 16
-#define STACK_LIST(STACK_ENTRY)						\
-	STACK_ENTRY(1) STACK_ENTRY(2) STACK_ENTRY(3)			\
-	STACK_ENTRY(4) STACK_ENTRY(5) STACK_ENTRY(6) STACK_ENTRY(7)	\
-	STACK_ENTRY(8) STACK_ENTRY(9) STACK_ENTRY(10) STACK_ENTRY(11)	\
-	STACK_ENTRY(12) STACK_ENTRY(13) STACK_ENTRY(14) STACK_ENTRY(15)
-
-#define STACK_READ(X)						\
-	if (continue_stack_trace &&				\
-	    ((mem_t)__builtin_frame_address((X)) != 0L) &&	\
-	    ((X) < MAX_STACK_ADDR)) {				\
-		parent = current;				\
-		current = (mem_t)__builtin_return_address((X)); \
-		if(parent)					\
-			p = add_dag(b, p, current, parent);	\
-	} else if (continue_stack_trace) {			\
-		continue_stack_trace = FALSE;			\
-	}
-
-int
-add_stack(BAT *b)
-{
-	mem_t current = 0, parent = 0;
-	bit continue_stack_trace = TRUE;
-	BUN p = BUNfirst(b);
-
-	STACK_LIST(STACK_READ);
-	return BUNindex(b, p);
-}
-
-#define __USE_GNU 1
-#include <dlfcn.h>
-void
-print_address(ptr address)
-{
-	Dl_info dlip;
-	char *filename;
-
-	dladdr(address, &dlip);
-
-	filename = 0;		/* strrchr(dlip.dli_fname,'/'); */
-	printf(PTRFMT "\t%s\t%s\n", PTRFMTCAST address, dlip.dli_sname, filename ? filename + 1 : dlip.dli_fname);
-}
-
-static int
-GDKmprint(int *pidx)
-{
-	int idx = *pidx;
-	BUN p = BUNptr(stackBat, idx), first = BUNfirst(stackBat);
-	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
-	mem_t *a;
-
-	if (p == NULL)
-		printf("No stack for index %d\n", idx);
-
-	a = (mem_t *) BUNhloc(stackBat, p);
-	print_address(*a);
-	a = (mem_t *) BUNtloc(stackBat, p);
-	print_address(*a);
-
-	while (p > first) {
-		p -= bunsize;
-		if (*(mem_t *) BUNhloc(stackBat, p) == *a) {
-			a = (mem_t *) BUNtloc(stackBat, p);
-			print_address(*a);
-		}
-	}
-
-	return GDK_SUCCEED;
-}
-
-
-void
-add_mem(BAT *b, mem_t mem, int idx)
-{
-	register BUN last;
-	const static int bunsize = sizeof(mem_t) + sizeof(int);
-
-	if (b->batBuns->free + bunsize > b->batBuns->size) {
-		int tmp = mtrace;
-
-		mtrace = 0;
-		if (BATextend(b, BATgrows(b)))
-			return;
-		mtrace = tmp;
-	}
-	last = BUNlast(b);
-	bunfastins_nocheck(b, last, &mem, &idx, bunsize);
-}
-
-
-void
-del_mem(BAT *b, mem_t mem)
-{
-	register BUN first = BUNfirst(b), p = BUNlast(b);
-	const static int bunsize = sizeof(mem_t) + sizeof(int);
-
-	for (p -= bunsize; p >= first; p -= bunsize) {
-		if (*(mem_t *) BUNhloc(b, p) == mem) {
-			int idx = -*(int *) BUNtloc(b, p);
-
-			if (idx > 0) {
-				printf("Double deletion of memory " PTRFMT ", "
-				       "size: " SSZFMT ", stack:%d\n",
-				       PTRFMTCAST(void *)mem,
-				       ((ssize_t *) mem)[-1],
-				       idx);
-
-				if (mtrace > 1)
-					GDKmprint(&idx);
-			} else {
-				BUNdelete(b, p);
-				/* BUNinplace(b,p,&mem,&idx,0); */
-			}
-			return;
-		}
-	}
-	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n", PTRFMTCAST(void *) mem, ((ssize_t *) mem)[-1]);
-}
-#endif
 
 /*
  * @+ Malloc
@@ -1187,7 +959,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 		}
 	}
 	*maxsize = size;
-	@:heapinc(size+MALLOC_EXTRA_SPACE,s)@
+	heapinc(size + MALLOC_EXTRA_SPACE);
 	return (void *) s;
 }
 
@@ -1254,7 +1026,7 @@ GDKfree_(void *blk)
 		DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
 		free(((char *) s) - MALLOC_EXTRA_SPACE);
-		@:heapdec(size,s)@
+		heapdec(size);
 	}
 }
 
@@ -1329,8 +1101,8 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			((ssize_t *) blk)[-1] = (ssize_t) newsize;
 
 			/* adapt statistics */
-			@:heapinc(newsize,blk)@
-			@:heapdec(oldsize,oldblk)@
+			heapinc(newsize);
+			heapdec(oldsize);
 			*maxsize = size;
 			return blk;
 		}
@@ -1375,7 +1147,7 @@ GDKstrdup(const char *s)
 void
 GDKvminc(size_t len)
 {
-	@:meminc(0,len,"GDKvminc")@
+	meminc(0, len, "GDKvminc");
 	CHKMEM(0, len);
 }
 
@@ -1408,9 +1180,8 @@ GDKmunmap(void *addr, size_t size)
 	ALLOCDEBUG fprintf(stderr, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
-	if (ret == 0) {
-		@:memdec(0,size,"GDKunmap")@
-	}
+	if (ret == 0)
+		memdec(0, size, "GDKunmap");
 	return ret;
 }
 
@@ -1441,7 +1212,7 @@ GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
 	if (ret != NULL) {
-		@:meminc(size,*maxsize,"GDKvmalloc")@
+		meminc(size, *maxsize, "GDKvmalloc");
 		CHKMEM(size, *maxsize);
 	}
 	return ret;
@@ -1467,8 +1238,8 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
 	if (ret != NULL) {
-		@:memdec(oldsize,oldmax,"GDKvmrealloc")@
-		@:meminc(newsize,*newmax,"GDKvmrealloc")@
+		memdec(oldsize, oldmax, "GDKvmrealloc");
+		meminc(newsize, *newmax, "GDKvmrealloc");
 		CHKMEM(newsize, *newmax);
 	}
 	return ret;
@@ -1479,7 +1250,7 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
 {
 	ALLOCDEBUG fprintf(stderr, "#GDKvmfree " SZFMT " " PTRFMT "\n", maxsize, PTRFMTCAST blk);
 	MT_vmfree(blk, maxsize);
-	@:memdec(size,maxsize,"GDKvmfree")@
+	memdec(size, maxsize, "GDKvmfree");
 }
 
 
@@ -2394,31 +2165,29 @@ THRprintf(stream *s, const char *format, ...)
 		format++;
 	}
 
-@= THRprintf_va_vsnprintf
-	p = bf;
-	*p++ = c;
-	if (GDKdebug&1) {
-		sprintf(p, "%02d ", THRgettid());
-		while (*p)
-			p++;
-	}
-	m = p - bf;
-	va_start(ap, format);
-	n = vsnprintf(p, bfsz-m, format, ap);
-	va_end(ap);
-@
-@c
-	@:THRprintf_va_vsnprintf@
-	if (n < 0)
-		goto cleanup;
-	if ((size_t) n >= bfsz - m) {
+	do {
+		p = bf;
+		*p++ = c;
+		if (GDKdebug&1) {
+			sprintf(p, "%02d ", THRgettid());
+			while (*p)
+				p++;
+		}
+		m = p - bf;
+		va_start(ap, format);
+		n = vsnprintf(p, bfsz-m, format, ap);
+		va_end(ap);
+		if (n < 0)
+			goto cleanup;
+		if ((size_t) n < bfsz - m)
+			break;	  /* normal loop exit, usually 1st iteration */
 		bfsz = m + n + 1;	/* precisely what is needed */
 		if (bf != THRprintbuf)
 			free(bf);
 		bf = (str) malloc(bfsz);
 		assert(bf != NULL);
-		@:THRprintf_va_vsnprintf@
-	}
+	} while (1);
+
 	p += n;
 
 	n = 0;
