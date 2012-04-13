@@ -2725,8 +2725,8 @@ BBPdestroy(BAT *b)
 		VIEWdestroy(b);
 	} else {
 		/* bats that get destroyed must unfix their atoms */
-		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		BUN p, q;
 		BATiter bi = bat_iterator(b);
 

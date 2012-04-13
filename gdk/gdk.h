@@ -708,7 +708,7 @@ typedef struct {
 gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, ValPtr res);
 gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
-gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
+gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
@@ -1142,21 +1142,21 @@ gdk_export bte 	ATOMelmshift(int sz);
  * @end itemize
  */
 /* NOTE: `p' is evaluated after a possible upgrade of the heap */
-#define Hputvalue(b, p, v, copyall)					\
+#define HTputvalue(b, p, v, copyall, HT)				\
 	do {								\
-		if ((b)->hvarsized && (b)->htype) {			\
+		if ((b)->HT->varsized && (b)->HT->type) {		\
 			var_t _d;					\
 			ptr _ptr;					\
-			ATOMput((b)->htype, (b)->H->vheap, &_d, v);	\
-			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
+			ATOMput((b)->HT->type, (b)->HT->vheap, &_d, v);	\
+			if ((b)->HT->width < SIZEOF_VAR_T &&		\
+			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
 				BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL); \
-				GDKupgradevarheap((b)->H, _d, (copyall)); \
+				GDKupgradevarheap((b)->HT, _d, (copyall)); \
 				BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL); \
 			}						\
 			_ptr = (p);					\
-			switch ((b)->H->width) {			\
+			switch ((b)->HT->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1171,46 +1171,17 @@ gdk_export bte 	ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else							\
-			ATOMput((b)->htype, (b)->H->vheap, (p), v);	\
+			ATOMput((b)->HT->type, (b)->HT->vheap, (p), v);	\
 	} while (0)
-#define Tputvalue(b, p, v, copyall)					\
+#define Hputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, H)
+#define Tputvalue(b, p, v, copyall)	HTputvalue(b, p, v, copyall, T)
+#define HTreplacevalue(b, p, v, HT)					\
 	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			ptr _ptr;					\
-			ATOMput((b)->ttype, (b)->T->vheap, &_d, v);	\
-			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL); \
-				GDKupgradevarheap((b)->T, _d, (copyall)); \
-				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL); \
-			}						\
-			_ptr = (p);					\
-			switch ((b)->T->width) {			\
-			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (unsigned int *) _ptr = (unsigned int) _d; \
-				break;					\
-			case 8:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else							\
-			ATOMput((b)->ttype, (b)->T->vheap, (p), v);	\
-	} while (0)
-#define Hreplacevalue(b, p, v)						\
-	do {								\
-		if ((b)->hvarsized && (b)->htype) {			\
+		if ((b)->HT->varsized && (b)->HT->type) {		\
 			var_t _d;					\
 			ptr _ptr;					\
 			_ptr = (p);					\
-			switch ((b)->H->width) {			\
+			switch ((b)->HT->width) {			\
 			case 1:						\
 				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
 				break;					\
@@ -1224,14 +1195,14 @@ gdk_export bte 	ATOMelmshift(int sz);
 				_d = * (var_t *) _ptr;			\
 				break;					\
 			}						\
-			ATOMreplace((b)->htype, (b)->H->vheap, &_d, v);	\
-			if ((b)->H->width < SIZEOF_VAR_T &&		\
-			    ((b)->H->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->H->width))) { \
+			ATOMreplace((b)->HT->type, (b)->HT->vheap, &_d, v); \
+			if ((b)->HT->width < SIZEOF_VAR_T &&		\
+			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->H, _d, 0);	\
+				GDKupgradevarheap((b)->HT, _d, 0);	\
 			}						\
 			_ptr = (p);					\
-			switch ((b)->H->width) {			\
+			switch ((b)->HT->width) {			\
 			case 1:						\
 				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
 				break;					\
@@ -1246,74 +1217,30 @@ gdk_export bte 	ATOMelmshift(int sz);
 				break;					\
 			}						\
 		} else							\
-			ATOMreplace((b)->htype, (b)->H->vheap, (p), v); \
+			ATOMreplace((b)->HT->type, (b)->HT->vheap, (p), v); \
 	} while (0)
-#define Treplacevalue(b, p, v)						\
-	do {								\
-		if ((b)->tvarsized && (b)->ttype) {			\
-			var_t _d;					\
-			ptr _ptr;					\
-			_ptr = (p);					\
-			switch ((b)->T->width) {			\
-			case 1:						\
-				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 2:						\
-				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
-				break;					\
-			case 4:						\
-				_d = (var_t) * (unsigned int *) _ptr;	\
-				break;					\
-			case 8:						\
-				_d = * (var_t *) _ptr;			\
-				break;					\
-			}						\
-			ATOMreplace((b)->ttype, (b)->T->vheap, &_d, v);	\
-			if ((b)->T->width < SIZEOF_VAR_T &&		\
-			    ((b)->T->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->T->width))) { \
-				/* doesn't fit in current heap, upgrade it */ \
-				GDKupgradevarheap((b)->T, _d, 0);	\
-			}						\
-			_ptr = (p);					\
-			switch ((b)->T->width) {			\
-			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
-				break;					\
-			case 4:						\
-				* (unsigned int *) _ptr = (unsigned int) _d; \
-				break;					\
-			case 8:						\
-				* (var_t *) _ptr = _d;			\
-				break;					\
-			}						\
-		} else							\
-			ATOMreplace((b)->ttype, (b)->T->vheap, (p), v); \
+#define Hreplacevalue(b, p, v)		HTreplacevalue(b, p, v, H)
+#define Treplacevalue(b, p, v)		HTreplacevalue(b, p, v, T)
+#define HTfastins_nocheck(b, p, v, s, HT)			\
+	do {							\
+		assert((b)->HT->width == (s));			\
+		(b)->HT->heap.free += (s);			\
+		HTputvalue((b), HT##loc((b), (p)), (v), 0, HT);	\
 	} while (0)
-#define hfastins_nocheck(b, p, v, s)			\
-	do {						\
-		assert((b)->H->width == (s));		\
-		(b)->H->heap.free += (s);		\
-		Hputvalue((b), Hloc((b), (p)), (v), 0);	\
-	} while (0)
-#define tfastins_nocheck(b, p, v, s)			\
-	do {						\
-		assert((b)->T->width == (s));		\
-		(b)->T->heap.free += (s);		\
-		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
-	} while (0)
+#define hfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, H)
+#define tfastins_nocheck(b, p, v, s)	HTfastins_nocheck(b, p, v, s, T)
 
 #define bunfastins_nocheck(b, p, h, t, hs, ts)		\
 	do {						\
-		assert((b)->H->width == (hs));		\
-		(b)->H->heap.free += (hs);		\
-		Hputvalue((b), Hloc((b), (p)), (h), 0);	\
-		assert((b)->T->width == (ts));		\
-		(b)->T->heap.free += (ts);		\
-		Tputvalue((b), Tloc((b), (p)), (t), 0);	\
+		hfastins_nocheck(b, p, h, hs);		\
+		tfastins_nocheck(b, p, t, ts);		\
 		(b)->batCount++;			\
+	} while (0)
+
+#define bunfastins_nocheck_inc(b, p, h, t)				\
+	do {								\
+		bunfastins_nocheck(b, p, h, t, Hsize(b), Tsize(b));	\
+		p++;							\
 	} while (0)
 
 #define bunfastins(b, h, t)						\
@@ -1327,47 +1254,37 @@ gdk_export bte 	ATOMelmshift(int sz);
 			if (BATextend((b), BATgrows(b)) == NULL)	\
 				goto bunins_failed;			\
 		}							\
-		hfastins_nocheck((b), _p, (h), Hsize(b));		\
-		tfastins_nocheck((b), _p, (t), Tsize(b));		\
-		(b)->batCount++;					\
+		bunfastins_nocheck(b, _p, h, t, Hsize(b), Tsize(b));	\
 	} while (0)
 
 #define bunfastins_check(b, p, h, t) bunfastins(b, h, t)
 
-#define bunfastins_nocheck_inc(b, p, h, t)		\
-	do {						\
-		hfastins_nocheck(b, p, h, Hsize(b));	\
-		tfastins_nocheck(b, p, t, Tsize(b));	\
-		p++;					\
-		(b)->batCount++;			\
-	} while (0)
-
 gdk_export int GDKupgradevarheap(COLrec *c, var_t v, int copyall);
-gdk_export BAT *BUNfastins(BAT *b, ptr left, ptr right);
-gdk_export BAT *BUNins(BAT *b, ptr left, ptr right, bit force);
-gdk_export BAT *BUNappend(BAT *b, ptr right, bit force);
+gdk_export BAT *BUNfastins(BAT *b, const void *left, const void *right);
+gdk_export BAT *BUNins(BAT *b, const void *left, const void *right, bit force);
+gdk_export BAT *BUNappend(BAT *b, const void *right, bit force);
 gdk_export BAT *BATins(BAT *b, BAT *c, bit force);
 gdk_export BAT *BATappend(BAT *b, BAT *c, bit force);
-gdk_export BAT *BUNdel(BAT *b, ptr left, ptr right, bit force);
-gdk_export BAT *BUNdelHead(BAT *b, ptr left, bit force);
+gdk_export BAT *BUNdel(BAT *b, const void *left, const void *right, bit force);
+gdk_export BAT *BUNdelHead(BAT *b, const void *left, bit force);
 gdk_export BUN BUNdelete(BAT *b, BUN p, bit force);
 gdk_export BAT *BATdel(BAT *b, BAT *c, bit force);
 gdk_export BAT *BATdelHead(BAT *b, BAT *c, bit force);
 
-gdk_export BAT *BUNreplace(BAT *b, ptr left, ptr right, bit force);
-gdk_export BAT *BUNinplace(BAT *b, BUN p, ptr left, ptr right, bit force);
+gdk_export BAT *BUNreplace(BAT *b, const void *left, const void *right, bit force);
+gdk_export BAT *BUNinplace(BAT *b, BUN p, const void *left, const void *right, bit force);
 gdk_export BAT *BATreplace(BAT *b, BAT *n, bit force);
 
-gdk_export BUN BUNlocate(BAT *b, ptr left, ptr right);
-gdk_export BUN BUNfnd(BAT *b, ptr left);
+gdk_export BUN BUNlocate(BAT *b, const void *left, const void *right);
+gdk_export BUN BUNfnd(BAT *b, const void *left);
 
 #define BUNfndVOID(p,bi,v)						\
 	do {								\
-		BUN result = BUNfirst((bi).b) + (BUN) (*(oid*)(v) - (bi).b->hseqbase); \
+		BUN result = BUNfirst((bi).b) + (BUN) (*(const oid*)(v) - (bi).b->hseqbase); \
 		int check =						\
-			(((*(oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
-			 (*(oid*) (v) < (bi).b->hseqbase) |		\
-			 (*(oid*) (v) >= (bi).b->hseqbase + (bi).b->batCount));	\
+			(((*(const oid*)(v) == oid_nil) ^ ((bi).b->hseqbase == oid_nil)) | \
+			 (*(const oid*) (v) < (bi).b->hseqbase) |		\
+			 (*(const oid*) (v) >= (bi).b->hseqbase + (bi).b->batCount));	\
 		(p) = check?BUN_NONE:result; /* and with 0xFF...FF or 0x00..00 */ \
 	} while (0)
 
@@ -2136,18 +2053,18 @@ typedef struct {
 	int (*atomFromStr) (const char *s, int *len, ptr *dst);
 	int (*atomToStr) (str *s, int *len, const void *src);
 	void *(*atomRead) (ptr a, stream *s, size_t cnt);
-	int (*atomWrite) (ptr a, stream *s, size_t cnt);
+	int (*atomWrite) (const void *a, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);
 	/* optional functions */
 	void (*atomConvert) (ptr v, int direction);
-	int (*atomFix) (ptr atom);
-	int (*atomUnfix) (ptr atom);
+	int (*atomFix) (const void *atom);
+	int (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (Heap *, var_t *off, ptr src);
+	var_t (*atomPut) (Heap *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
-	int (*atomLen) (ptr atom);
+	int (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
 	/* optional functions */
 	void (*atomHeapConvert) (Heap *, int direction);
@@ -2161,13 +2078,13 @@ gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
 gdk_export int ATOMindex(char *nme);
 
 gdk_export str ATOMname(int id);
-gdk_export int ATOMlen(int id, ptr v);
+gdk_export int ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
 gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
-gdk_export int ATOMprint(int id, ptr val, stream *fd);
-gdk_export int ATOMformat(int id, ptr val, char **buf);
+gdk_export int ATOMprint(int id, const void *val, stream *fd);
+gdk_export int ATOMformat(int id, const void *val, char **buf);
 
-gdk_export ptr ATOMdup(int id, ptr val);
+gdk_export ptr ATOMdup(int id, const void *val);
 
 /*
  * @- Unique OIDs
@@ -2509,7 +2426,6 @@ typedef struct threadStruct {
 	str name;
 	ptr data[THREADDATA];
 	size_t sp;
-	void (*cleanup) (ptr thr);
 } ThreadRec, *Thread;
 
 
@@ -3208,14 +3124,14 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
 #define JOIN_GE		2
 #define JOIN_BAND	3
 
-gdk_export BAT *BATselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
-gdk_export BAT *BATuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
-gdk_export BAT *BATantiuselect_(BAT *b, ptr tl, ptr th, bit li, bit hi);
-gdk_export BAT *BATselect(BAT *b, ptr tl, ptr th);
-gdk_export BAT *BATuselect(BAT *b, ptr tl, ptr th);
-gdk_export BAT *BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th);
+gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
+gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
+gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
+gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
+gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
+gdk_export BAT *BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th);
 
-gdk_export BAT *BATconst(BAT *l, int tt, ptr val);
+gdk_export BAT *BATconst(BAT *l, int tt, const void *val);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, BUN estimate);
@@ -3354,7 +3270,7 @@ gdk_export BAT *BATsample(BAT *b, BUN n);
 #define MULTIJOIN_SYNCED(r)	((char*) &r)[2]
 #define MULTIJOIN_LEAD(r)	((char*) &r)[3]
 
-typedef void (*ColFcn) (ptr, ptr);
+typedef void (*ColFcn) (ptr, const void *);
 typedef void (*RowFcn) (ptr, ptr *);
 /*
  *

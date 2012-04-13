@@ -805,7 +805,7 @@ typedef struct heapheader {
 	int alignment;		/* alignment of objects on heap         */
 	size_t firstblock;	/* first block in heap                  */
 	int version;
-	int (*sizefcn) (ptr);	/* ADT function to ask length           */
+	int (*sizefcn)(const void *);	/* ADT function to ask length           */
 } HEADER32;
 
 typedef struct {
@@ -813,7 +813,7 @@ typedef struct {
 	int alignment;
 	size_t head;
 	size_t firstblock;
-	int (*sizefcn) (ptr);
+	int (*sizefcn)(const void *);
 } HEADER64;
 
 #if SIZEOF_SIZE_T==8

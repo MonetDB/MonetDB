@@ -1952,7 +1952,6 @@ THRnew(MT_Id pid, str name)
 		s->tid = tid;
 		s->data[1] = THRdata[1];
 		s->data[0] = THRdata[0];
-		s->cleanup = NULL;
 		s->sp = THRsp();
 
 		PARDEBUG THRprintf(GDKout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
@@ -1973,9 +1972,6 @@ THRdel(Thread t)
 		GDKfatal("THRdel: illegal call\n");
 	}
 	gdk_set_lock(GDKthreadLock, "THRdel");
-	if (t->cleanup) {
-		(*t->cleanup) (t);
-	}
 /*	The stream may haven been closed (e.g. in freeClient)  causing an abort
 	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 */

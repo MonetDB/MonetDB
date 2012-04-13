@@ -940,8 +940,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			BATiter bi = bat_iterator(b);
 
 			BATloop(b, p, q) {
-				ptr h = BUNhead(bi, p);
-				ptr t = BUNtail(bi, p);
+				const void *h = BUNhead(bi, p);
+				const void *t = BUNtail(bi, p);
 
 				bunfastins_nocheck(bn, r, h, t, Hsize(bn), Tsize(bn));
 				r++;
@@ -1105,7 +1105,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
  * directly. See gdk.mx for the bunfastins(b,h,t) macros.
  */
 BAT *
-BUNfastins(BAT *b, ptr h, ptr t)
+BUNfastins(BAT *b, const void *h, const void *t)
 {
 	bunfastins(b, h, t);
 	if (!b->batDirty)
@@ -1117,13 +1117,13 @@ BUNfastins(BAT *b, ptr h, ptr t)
 
 
 static void
-setcolprops(BAT *b, COLrec *col, void *x)
+setcolprops(BAT *b, COLrec *col, const void *x)
 {
 	int isnil = col->type != TYPE_void &&
 		atom_CMP(x, ATOMnilptr(col->type), col->type) == 0;
 	BATiter bi;
 	BUN pos;
-	void *prv;
+	const void *prv;
 	int cmp;
 
 	/* x may only be NULL if the column type is VOID */
@@ -1134,7 +1134,7 @@ setcolprops(BAT *b, COLrec *col, void *x)
 		col->key |= 1;
 		if (col->type == TYPE_void) {
 			if (x) {
-				col->seq = * (oid *) x;
+				col->seq = * (const oid *) x;
 			}
 			col->nil = col->seq == oid_nil;
 			col->nonil = !col->nil;
@@ -1143,7 +1143,7 @@ setcolprops(BAT *b, COLrec *col, void *x)
 			col->nonil = !isnil;
 			if (col->type == TYPE_oid) {
 				col->dense = !isnil;
-				col->seq = * (oid *) x;
+				col->seq = * (const oid *) x;
 			}
 		}
 	} else if (col->type == TYPE_void) {
@@ -1185,7 +1185,7 @@ setcolprops(BAT *b, COLrec *col, void *x)
 			col->revsorted = 0;
 			col->norevsorted = pos;
 		}
-		if (col->dense && (cmp >= 0 || * (oid *) prv + 1 != * (oid *) x)) {
+		if (col->dense && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
 			col->dense = 0;
 			col->nodense = pos;
 		}
@@ -1219,7 +1219,7 @@ setcolprops(BAT *b, COLrec *col, void *x)
  * assumes that new elements are appended to the BUN list.
  */
 BAT *
-BUNins(BAT *b, ptr h, ptr t, bit force)
+BUNins(BAT *b, const void *h, const void *t, bit force)
 {
 	int countonly;
 	BUN p;
@@ -1313,12 +1313,12 @@ MAXoid(BAT *i)
  * (max(bat)+1).
  */
 BAT *
-BUNappend(BAT *b, ptr t, bit force)
+BUNappend(BAT *b, const void *t, bit force)
 {
 	BUN i;
 	BUN p;
 	BAT *bm;
-	ptr h = NULL;
+	const void *h = NULL;
 	oid id = 0;
 	int countonly;
 	size_t hsize = 0, tsize = 0;
@@ -1470,8 +1470,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 		 * disappear. The last inserted bun (if present) is
 		 * copied over it.
 		 */
-		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 
@@ -1571,7 +1571,7 @@ BUNdelete(BAT *b, BUN p, bit force)
 }
 
 BAT *
-BUNdel(BAT *b, ptr x, ptr y, bit force)
+BUNdel(BAT *b, const void *x, const void *y, bit force)
 {
 	BUN p;
 
@@ -1591,7 +1591,7 @@ BUNdel(BAT *b, ptr x, ptr y, bit force)
  * matches the argument passed.
  */
 BAT *
-BUNdelHead(BAT *b, ptr x, bit force)
+BUNdelHead(BAT *b, const void *x, bit force)
 {
 	BUN p;
 
@@ -1626,7 +1626,7 @@ BUNdelHead(BAT *b, ptr x, bit force)
  * be saved explicitly.
  */
 BAT *
-BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
+BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 {
 	if (p >= b->batInserted || force) {
 		/* uncommitted BUN elements */
@@ -1698,7 +1698,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t, bit force)
 }
 
 BAT *
-BUNreplace(BAT *b, ptr h, ptr t, bit force)
+BUNreplace(BAT *b, const void *h, const void *t, bit force)
 {
 	BUN p;
 
@@ -1729,7 +1729,7 @@ BUNreplace(BAT *b, ptr h, ptr t, bit force)
 }
 
 int
-void_inplace(BAT *b, oid id, ptr val, bit force)
+void_inplace(BAT *b, oid id, const void *val, bit force)
 {
 	int res = GDK_SUCCEED;
 	BUN p = BUN_NONE;
@@ -1762,7 +1762,7 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 	BATaccessBegin(u, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
-		ptr val = BUNtail(ui, r);
+		const void *val = BUNtail(ui, r);
 
 		if (void_inplace(b, updid, val, force) == GDK_FAIL)
 			return BUN_NONE;
@@ -1784,7 +1784,7 @@ void_replace_bat(BAT *b, BAT *u, bit force)
  * functions to speed-up processing.
  */
 BUN
-BUNfnd(BAT *b, ptr v)
+BUNfnd(BAT *b, const void *v)
 {
 	BUN r = BUN_NONE;
 	BATiter bi = bat_iterator(b);
@@ -1827,7 +1827,7 @@ BUNfnd(BAT *b, ptr v)
 #define usemirror()						\
 	do {							\
 		int (*_cmp) (const void *, const void *);	\
-		ptr _p;						\
+		const void *_p;					\
 								\
 		_cmp = hcmp;					\
 		hcmp = tcmp;					\
@@ -1843,7 +1843,7 @@ BUNfnd(BAT *b, ptr v)
 			    !GDK_ELIMDOUBLES(hp->vheap)))
 
 BUN
-BUNlocate(BAT *b, ptr x, ptr y)
+BUNlocate(BAT *b, const void *x, const void *y)
 {
 	BATiter bi = bat_iterator(b);
 	int (*hcmp) (const void *, const void *);
@@ -2912,7 +2912,7 @@ BATassertHeadProps(BAT *b)
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
-	ptr prev = NULL, valp, nilp;
+	const void *prev = NULL, *valp, *nilp;
 	int seennil = 0;
 
 	assert(b != NULL);
@@ -3168,7 +3168,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	BUN p, q;
 	int (*cmpf)(const void *, const void *);
 	int cmp;
-	ptr prev = NULL, valp, nilp;
+	const void *prev = NULL, *valp, *nilp;
 	int sorted, revsorted, key, dense, nonil;
 	const char *nme = NULL;
 	char *ext = NULL;
