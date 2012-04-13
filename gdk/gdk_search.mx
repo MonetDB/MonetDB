@@ -90,7 +90,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_sht(H,V)         ((BUN) mix_sht(*((const unsigned short*) (V))) & (H)->mask)
 #define hash_int(H,V)         ((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)         ((BUN) mix_int((const unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#define hash_lng(H,V)         ((BUN) mix_int((unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
 #if SIZEOF_OID == SIZEOF_INT
 #define hash_oid(H,V)         ((BUN) mix_int((unsigned int) *((const oid*) (V))) & (H)->mask)
 #else
