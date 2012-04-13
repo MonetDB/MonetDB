@@ -258,7 +258,6 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 	if ( bn == NULL)
 		throw(MAL, "array.series", MAL_MALLOC_FAIL);
 
-	BATseqbase(bn,0);
 	o = (@1*)Tloc(bn, BUNfirst(bn));
 
 	if ( *start < *stop && *step > 0) {
@@ -277,7 +276,13 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 				}
 	}
 	BATsetcount(bn, cnt);
-	bn->tsorted = *series == 1;
+	BATseqbase(bn,0);
+	bn->hdense = TRUE;
+	BATkey(bn, TRUE);
+	bn->hsorted = 1;
+	bn->hrevsorted = (cnt <= 1);
+	bn->tsorted = (cnt <= 1 || (*series == 1 && *step > 0));
+	bn->trevsorted = (cnt <= 1 || (*series == 1 && *step < 0));
 	bn->T->nonil = TRUE;
 
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
@@ -319,7 +324,6 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);
 	}
 	bn= BATnew(TYPE_void, TYPE_@2, BATcount(b)*BATcount(r));
-	BATseqbase(bn,0);
 
 	bi = bat_iterator(b);
 	ri = bat_iterator(r);
@@ -329,6 +333,11 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 			BUNfastins(bn,&o,&val);
 		}
 	}
+	BATseqbase(bn,0);
+	bn->hdense = TRUE;
+	BATkey(bn, TRUE);
+	bn->hsorted = 1;
+	bn->hrevsorted = (BATcount(bn) <= 1);
 	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;
@@ -378,7 +387,9 @@ ARRAYproduct(int *ret, int *bid, int *rid)
 	}
 	/* not sorted at best we have some fixed offset partial sorting */
 	bn->hsorted = 0;
+	bn->hrevsorted = 0;
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = b->T->nonil & r->T->nonil;
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret = bn->batCacheid;
@@ -403,12 +414,17 @@ ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "array.filler", RUNTIME_OBJECT_MISSING);
 	
 	bn = BATnew(b->htype, type, BATcount(b));
-	BATseqbase(bn,0);
 
 	bi = bat_iterator(b);
 	BATloop(b,p,q){
 		BUNfastins(bn, BUNhead(bi, p), ATOMvarsized(type)?*(str *)val:val);
 	}
+	BATseqbase(bn,b->hseqbase);
+	bn->hdense = BAThdense(b);
+	BATkey(bn, BAThkey(b));
+	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
+	bn->tsorted = b->trevsorted = 1;
 	(void) cntxt;
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -439,8 +455,9 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(bn, 0);
 	bn->hdense = TRUE;
 	BATkey(bn, TRUE);
-	bn->hsorted = GDK_SORTED;
-	bn->tsorted = GDK_SORTED;
+	bn->hsorted = 1;
+	bn->hrevsorted = (cnt <= 1);
+	bn->tsorted = bn->trevsorted = 1;
 	switch(type){
 		case TYPE_bit:
 			bn->T->nonil = *(bit*)val==bit_nil?FALSE:TRUE;
@@ -811,7 +828,6 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* For each anchor piont, compute all cells belong to this tile (bVal.head
 	 * is the group nr.) and compute the SUM */
 	bRes = 	BATnew(TYPE_void, TYPE_@3, BATcount(bVal));
-	BATseqbase(bRes, arrbase);
 	bResT = (@3*) Tloc(bRes, BUNfirst(bRes));
 	for (p = 0 ; p < arrcnt ; p++) {
 		sum = 0; cnt = 0;
@@ -851,7 +867,13 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	AGGR_CLEANUP();
 	BATsetcount(bRes, arrcnt);
-	bRes->tsorted = FALSE;
+	BATseqbase(bRes, arrbase);
+	bRes->hdense = TRUE;
+	BATkey(bRes, TRUE);
+	bRes->hsorted = 1;
+	bRes->hrevsorted = (arrcnt <= 1);
+	bRes->tsorted = (arrcnt <= 1);
+	bRes->trevsorted = (arrcnt <= 1);
 	BATkey(BATmirror(bRes), FALSE);
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
