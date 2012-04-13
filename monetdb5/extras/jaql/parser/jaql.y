@@ -1,3 +1,18 @@
+%{
+#define _CRT_SECURE_NO_WARNINGS 1
+
+#include <string.h>
+#include <stdio.h>
+#include "jaqltree.h"
+#ifdef _MSC_VER
+#define snprintf _snprintf
+__declspec(dllimport)
+#else
+extern
+#endif
+char *GDKstrdup(const char *);
+%}
+
 %define api.pure
 %locations
 %defines
@@ -47,10 +62,6 @@ http://www.usualcoding.eu/post/2007/09/03/Building-a-reentrant-parser-in-C-with-
 */
 
 %{
-#include <string.h>
-
-#include "jaql.h"
-
 #define YYLEX_PARAM j->scanner
 
 int jaqllex(YYSTYPE* lvalp, YYLTYPE* llocp, void *scanner);

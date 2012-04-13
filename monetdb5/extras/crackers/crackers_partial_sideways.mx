@@ -1011,7 +1011,9 @@ AddToTapeIncrementalSideways_@1(struct Node *node, @1 value, bit inclusive){
                 }
 
                 b->hsorted = FALSE;
+                b->hrevsorted = FALSE;
                 b->tsorted = FALSE;
+                b->trevsorted = FALSE;
                 b->hdense = FALSE;
                 b->tdense = FALSE;
                 /*BATkey(b,TRUE);*/
@@ -1813,7 +1815,9 @@ CRKRangeIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hg
         BATsetcount(p, size);
 	
         p->hsorted = FALSE;
+        p->hrevsorted = FALSE;
         p->tsorted = FALSE;
+        p->trevsorted = FALSE;
         p->hdense = FALSE;
         p->tdense = FALSE;
 
@@ -1834,7 +1838,9 @@ CRKRangeTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1
         BATsetcount(p, size);
 	
         p->hsorted = FALSE;
+        p->hrevsorted = FALSE;
         p->tsorted = FALSE;
+        p->trevsorted = FALSE;
         p->hdense = FALSE;
         p->tdense = FALSE;
 
@@ -1876,7 +1882,9 @@ ProjectIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, int *pivotid, @1
 
         BATsetcount(res, size);
         res->hsorted = FALSE;
+        res->hrevsorted = FALSE;
         res->tsorted = FALSE;
+        res->trevsorted = FALSE;
         res->hdense = FALSE;
         res->tdense = FALSE;
         BBPkeepref(res->batCacheid);
@@ -1901,7 +1909,9 @@ MaxTailIncrementalSideways_@1_@2(int *vid, int *bid, int *pbid, @1 *low, @1 *hgh
 	(void)pivott;
 
         p->hsorted = FALSE;
+        p->hrevsorted = FALSE;
         p->tsorted = FALSE;
+        p->trevsorted = FALSE;
         p->hdense = FALSE;
         p->tdense = FALSE;
 

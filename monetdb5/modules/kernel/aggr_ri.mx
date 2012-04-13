@@ -31,6 +31,7 @@ All Rights Reserved.
 	BAT *bm = 0;
 
 	bn->tsorted = 0;
+	bn->trevsorted = 0;
 	bn->T->nonil = 0;
 	min = max = (oid) 0;
 	if (_cnt) {

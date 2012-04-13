@@ -891,7 +891,7 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	ERRORcheck((pos->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT pos must be int.\n");
 	ERRORcheck((len->ttype != TYPE_int), "CMDqgramselfjoin: tail of BAT len must be int.\n");
 
-	/* ERRORcheck( (BATcount(qgram)>1 && !(BATtordered(qgram)&1)), "CMDqgramselfjoin: tail of qgram must be sorted.\n"); */
+	/* ERRORcheck( (BATcount(qgram)>1 && !BATtordered(qgram)), "CMDqgramselfjoin: tail of qgram must be sorted.\n"); */
 
 	ERRORcheck((ALIGNsynced(qgram, id) == 0), "CMDqgramselfjoin: qgram and id are not synced");
 
@@ -915,6 +915,7 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	}
 
 	bn->hsorted = bn->tsorted = 0;
+	bn->hrevsorted = bn->trevsorted = 0;
 	bn->H->nonil = bn->T->nonil = 0;
 
 	return MAL_SUCCEED;

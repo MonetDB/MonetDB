@@ -138,6 +138,8 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi = bat_iterator(qotStat[QOTcalls]);
 	ip = (int*) BUNtail(bi,p);
 	*ip = *ip+1;
+	bi.b->tsorted = bi.b->trevsorted = 0;
+	bi.b->tkey = 0;
 
 	p = BUNfnd(qotStat[QOTactions],&idx);
 	if (p == BUN_NONE){
@@ -150,6 +152,8 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi = bat_iterator(qotStat[QOTactions]);
 	ip = (int*) BUNtail(bi,p);
 	*ip = *ip+ actions;
+	bi.b->tsorted = bi.b->trevsorted = 0;
+	bi.b->tkey = 0;
 
 	p = BUNfnd(qotStat[QOTtimings],&idx);
 	if (p == BUN_NONE){
@@ -162,6 +166,8 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	bi = bat_iterator(qotStat[QOTtimings]);
 	lp = (lng*) BUNtail(bi,p);
 	*lp = *lp+ val;
+	bi.b->tsorted = bi.b->trevsorted = 0;
+	bi.b->tkey = 0;
 	mal_unset_lock(qotlock,"QOT statistics");
 }
 

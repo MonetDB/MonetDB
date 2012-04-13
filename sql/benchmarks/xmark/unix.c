@@ -713,8 +713,7 @@ void AlignObjs(void)
     int i=0,j;
     ObjDesc * newobjs;
     int nobj=NumberOfObjs();
-    newobjs=(ObjDesc*)malloc(sizeof(ObjDesc)*nobj);
-    memset(newobjs,0,sizeof(ObjDesc)*nobj);
+    newobjs=(ObjDesc*)calloc(nobj, sizeof(ObjDesc));
     for (i=0;i<nobj;i++)
         memcpy(&newobjs[objs[i].id], &objs[i],sizeof(ObjDesc));
     memcpy(objs,newobjs,sizeof(ObjDesc)*nobj);

@@ -88,7 +88,7 @@ All Rights Reserved.
  * Introduced to reduce number of qsort parameters
  */
 typedef struct {
-	int (*cmp) (ptr, ptr);	/* routine that compares two atoms */
+	int (*cmp)(const void *, const void *);	/* routine that compares two atoms */
 	char *offst;		/* NULL or start of varsized heap */
 	int hshift;		/* log2 of hs */
 	int tshift;		/* log2 of hs */

@@ -623,6 +623,7 @@ MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
 	for (j=0; j<cnt; j++)
 		resT[j] = *batsT[mapT[j]]++;
 	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
 	GDKfree(batsT);
 	return res;
 }
@@ -732,6 +733,7 @@ MATproject_( BAT *map, BAT **bats, int len )
 		res = MATproject_any(map, bats, len);
 	}
 	res->tsorted = 0;
+	res->trevsorted = 0;
 	res->T->nonil = MATnonil(bats, len);
 	return res;
 }
@@ -757,7 +759,7 @@ MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!bats[i-2])
 			goto error;
 		bcnt += BATcount(bats[i-2]);
-		if (bats[i-2]->T->sorted != GDK_SORTED)
+		if (!bats[i-2]->T->sorted)
 			sorted = 0;
 	}
 	assert(bcnt == BATcount(map));
@@ -791,7 +793,7 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 	BUN end_i2 = val_i2 + cnt_i2;
 	BATiter bi_i1 = bat_iterator(i1); 
 	BATiter bi_i2 = bat_iterator(i2);
-	int (*cmp) (ptr, ptr) = BATatoms[i1->ttype].atomCmp;
+	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
 	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
 
 	BATseqbase(res, 0);
@@ -879,6 +881,7 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 		len1 += len2;
 	}
 	BATsetcount(*map, len1);
+	(*map)->hrevsorted = len1 <= 1;
 	return res;
 }
 
@@ -974,6 +977,8 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	}
 	BATsetcount(res, len1);
 	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
 	GDKfree(batsT);
 	return res;
 }
@@ -1019,10 +1024,16 @@ MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)
 	} else {
 		res = MATsort_any(&map, bats, len, pcnt, rev);
 	}
-	if (res) 
+	if (res) {
 		res->T->nonil = MATnonil(bats, len);
-	if (res && rev)
-		res->T->sorted = GDK_SORTED_REV;
+		if (rev) {
+			res->trevsorted = 1;
+			res->tsorted = res->batCount <= 1;
+		} else {
+			res->tsorted = 1;
+			res->trevsorted = res->batCount <= 1;
+		}
+	}
 error:
 	if (bats) {
 		for (i=0; i<len && bats[i]; i++)
@@ -1031,6 +1042,7 @@ error:
 	GDKfree(bats);
 	if (map && res) {
 		map->tsorted = 0;
+		map->trevsorted = 0;
 		BBPkeepref( *map_id = map->batCacheid);
 		BBPkeepref( *res_id = res->batCacheid);
 		return MAL_SUCCEED;

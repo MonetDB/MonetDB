@@ -29,10 +29,9 @@
 #include "mal_instruction.h"
 #include "optimizer.h"
 
-#include "parser/jaql.tab.h"
-#include "parser/jaql.yy.h"
-
 extern int jaqlparse(jc *j);
+extern int jaqllex_init_extra(jc *user_defined, void **scanner);
+extern int jaqllex_destroy(void *yyscanner);
 
 str
 JAQLprelude(void)

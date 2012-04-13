@@ -818,24 +818,26 @@ typedef struct PROPrec {
 	struct PROPrec *next;	/* simple chain of properties */
 } PROPrec;
 
+/* see also comment near BATassertProps() for more information about
+ * the properties */
 typedef struct {
 	str id;			/* label for head/tail column */
 
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bunwidth */
-	bit sorted;		/* 0=false, 1=true; */
 	unsigned int
-	 varsized:1,		/* varsized(>0) or fixedsized(0). */
+	 varsized:1,		/* varsized (1) or fixedsized (0) */
 	 key:2,			/* duplicates allowed? */
-	 dense:1,
+	 dense:1, 		/* OID only: only consecutive values */
 	 nonil:1, 		/* nonil isn't propchecked yet */
-	 nil:1,			/* nil is set when we found one nil (propcheck) */
-	 unused:2;
+	 nil:1,			/* there is a nil in the column */
+	 sorted:1,		/* column is sorted in ascending order */
+	 revsorted:1;		/* column is sorted in descending order */
 	oid align;		/* OID for sync alignment */
-	BUN nosorted_rev;	/* position that proves sorted_rev==FALSE */
 	BUN nokey[2];		/* positions that prove key ==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
+	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	BUN nodense;		/* position that proves dense==FALSE */
 	oid seq;		/* start of dense head sequence */
 
@@ -851,7 +853,8 @@ typedef struct {
 
 #define GDKLIBRARY_PRE_VARWIDTH 061023  /* backward compatible version */
 #define GDKLIBRARY_CHR		061024	/* version that still had chr type */
-#define GDKLIBRARY		061025
+#define GDKLIBRARY_SORTED_BYTE	061025	/* version that still had byte-sized sorted flag */
+#define GDKLIBRARY		061026
 
 typedef struct BAT {
 	/* static bat properties */
@@ -913,7 +916,9 @@ typedef int (*GDKfcn) ();
 #define hseqbase	H->seq
 #define tseqbase	T->seq
 #define hsorted		H->sorted
+#define hrevsorted	H->revsorted
 #define tsorted		T->sorted
+#define trevsorted	T->revsorted
 #define hdense		H->dense
 #define tdense		T->dense
 #define hident		H->id
@@ -1746,11 +1751,6 @@ gdk_export int BATmultiprintf(stream *f, int argc, BAT *argv[], int printoid, in
  * BUNs of a BAT in reverse order. It just reverses the sequence, so
  * this does not necessarily mean that they are sorted in reverse order!
  */
-#define GDK_SORTED_REV	128	/* reversely sorted */
-#define GDK_SORTED	65	/* 65 = (32 bits radix_clustered)<<1 + 1 */
-#define REVERT_SORTED(o)						\
-	((o)==GDK_SORTED?GDK_SORTED_REV:((o)==GDK_SORTED_REV?GDK_SORTED:0))
-
 gdk_export BAT *BATsort(BAT *b);
 gdk_export BAT *BATsort_rev(BAT *b);
 gdk_export BAT *BATorder(BAT *b);
@@ -1764,60 +1764,98 @@ gdk_export BAT *BATssort_rev(BAT *b);
 gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 
-#define BAThordered(b)	(((b)->htype == TYPE_void)?GDK_SORTED:(b)->hsorted)
-#define BATtordered(b)	(((b)->ttype == TYPE_void)?GDK_SORTED:(b)->tsorted)
+#define BAThordered(b)	((b)->htype == TYPE_void || (b)->hsorted)
+#define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
+#define BAThrevordered(b) (((b)->htype == TYPE_void && (b)->hseqbase == oid_nil) || (b)->hrevsorted)
+#define BATtrevordered(b) (((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil) || (b)->trevsorted)
 #define BAThdense(b)	(BAThvoid(b) && (b)->hseqbase != oid_nil)
 #define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
-#define BAThvoid(b)	(((b)->hdense&(b)->hsorted&1) || (b)->htype==TYPE_void)
-#define BATtvoid(b)	(((b)->tdense&(b)->tsorted&1) || (b)->ttype==TYPE_void)
+#define BAThvoid(b)	(((b)->hdense && (b)->hsorted) || (b)->htype==TYPE_void)
+#define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
 #define BAThkey(b)	(b->hkey != FALSE || BAThdense(b))
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
-#define BATsettrivprop(b)						\
+#define COLsettrivprop(b, col)						\
 	do {								\
-		int trivial = (b)->batCount <= 1;			\
-		if (!(b)->hdense && (b)->htype == TYPE_void && (b)->hseqbase != oid_nil) { \
-			(b)->hdense = 1;				\
-			(b)->batDirtydesc = TRUE;			\
-		}							\
-		if (!(b)->tdense && (b)->ttype == TYPE_void && (b)->tseqbase != oid_nil) { \
-			(b)->tdense = 1;				\
-			(b)->batDirtydesc = TRUE;			\
-		}							\
-		if (trivial) {						\
+		if ((col)->type == TYPE_void) {				\
+			if ((col)->seq == oid_nil) {			\
+				if (!(col)->nil && (b)->batCount >= 1) { \
+					(col)->nil = 1;			\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if (!(col)->revsorted) {		\
+					(col)->revsorted = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+			} else {					\
+				if (!(col)->dense) {			\
+					(col)->dense = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if (!(col)->nonil) {			\
+					(col)->nonil = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if (!(col)->key) {			\
+					(col)->key = 1;			\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if ((col)->revsorted && (b)->batCount > 1) { \
+					(col)->revsorted = 0;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+			}						\
+			if (!(col)->sorted) {				\
+				(col)->sorted = 1;			\
+				(b)->batDirtydesc = 1;			\
+			}						\
+		} else if ((b)->batCount <= 1) {			\
 			oid sqbs;					\
-			BATiter bi = bat_iterator(b);			\
-			if (!(b)->hdense &&				\
-			    (b)->htype == TYPE_oid &&			\
-			    (sqbs = (b)->batCount == 0 ? 0 : * (oid *) BUNhead(bi, BUNfirst(b))) != oid_nil) { \
-				(b)->batDirtydesc = TRUE;		\
-				(b)->hdense = 1;			\
-				BATseqbase((b), sqbs);			\
+			if (BATatoms[(col)->type].linear) {		\
+				if (!(col)->sorted) {			\
+					(col)->sorted = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
+				if (!(col)->revsorted) {		\
+					(col)->revsorted = 1;		\
+					(b)->batDirtydesc = 1;		\
+				}					\
 			}						\
-			if (!(b)->tdense &&				\
-			    (b)->ttype == TYPE_oid &&			\
-			    (sqbs = (b)->batCount == 0 ? 0 : * (oid *) BUNtail(bi, BUNfirst(b))) != oid_nil) { \
-				(b)->batDirtydesc = TRUE;		\
-				(b)->tdense = 1;			\
-				BATseqbase(BATmirror(b), sqbs);		\
+			if (!(col)->key) {				\
+				(col)->key = 1;				\
+				(b)->batDirtydesc = 1;			\
+			}						\
+			if ((b)->batCount == 0) {			\
+				(col)->nonil = 1;			\
+				(col)->nil = 0;				\
+			} else if (!(col)->dense &&			\
+				   (col)->type == TYPE_oid &&		\
+				   (sqbs = ((oid *) (col)->heap.base)[(b)->batFirst]) != oid_nil) { \
+				(col)->dense = 1;			\
+				(col)->seq = sqbs;			\
+				(col)->nonil = 1;			\
+				(col)->nil = 0;				\
+				(b)->batDirtydesc = 1;			\
 			}						\
 		}							\
-		if ((trivial && (b)->htype != TYPE_void) || (b)->hdense) { \
-			if ((b)->hsorted != GDK_SORTED)			\
-				(b)->batDirtydesc = TRUE;		\
-			(b)->hsorted = GDK_SORTED;			\
-			if (!(b)->hkey)					\
-				BATkey((b), TRUE);			\
-		}							\
-		if ((trivial && (b)->ttype != TYPE_void) || (b)->tdense) { \
-			if ((b)->tsorted != GDK_SORTED)			\
-				(b)->batDirtydesc = TRUE;		\
-			(b)->tsorted = GDK_SORTED;			\
-			if (!(b)->tkey)					\
-				BATkey(BATmirror(b), TRUE);		\
+		if (!BATatoms[(col)->type].linear) {			\
+			if ((col)->sorted) {				\
+				(col)->sorted = 0;			\
+				(b)->batDirtydesc = 1;			\
+			}						\
+			if ((col)->revsorted) {				\
+				(col)->revsorted = 0;			\
+				(b)->batDirtydesc = 1;			\
+			}						\
 		}							\
 	} while (0)
+#define BATsettrivprop(b)			\
+	do {					\
+		COLsettrivprop((b), (b)->H);	\
+		COLsettrivprop((b), (b)->T);	\
+	} while (0)
+
 /*
  * @+ BAT Buffer Pool
  * @multitable @columnfractions 0.08 0.7
@@ -2095,11 +2133,11 @@ typedef struct {
 	ptr atomNull;		/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (str s, int *len, ptr *dst);
-	int (*atomToStr) (str *s, int *len, ptr src);
+	int (*atomFromStr) (const char *s, int *len, ptr *dst);
+	int (*atomToStr) (str *s, int *len, const void *src);
 	void *(*atomRead) (ptr a, stream *s, size_t cnt);
 	int (*atomWrite) (ptr a, stream *s, size_t cnt);
-	int (*atomCmp) (ptr v1, ptr v2);
+	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (ptr v);
 	/* optional functions */
 	void (*atomConvert) (ptr v, int direction);
@@ -2125,7 +2163,7 @@ gdk_export int ATOMindex(char *nme);
 gdk_export str ATOMname(int id);
 gdk_export int ATOMlen(int id, ptr v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, ptr v_1, ptr v_2);
+gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, ptr val, stream *fd);
 gdk_export int ATOMformat(int id, ptr val, char **buf);
 
@@ -2700,9 +2738,6 @@ gdk_export BAT *BATprev(BAT *b);
  * @item int
  * @tab ALIGNsetH    ((BAT *dst, BAT *src)
  *
- * @item BAT *
- * @tab BATpropcheck (BAT *b, int mode)
- *
  * @item BAT*
  * @tab VIEWcreate   (BAT *h, BAT *t)
  * @item int
@@ -2726,9 +2761,6 @@ gdk_export BAT *BATprev(BAT *b);
  * BATs means that one pair of columns (either head or tail) of
  * both BATs is aligned. The first property is checked by ALIGNsynced,
  * the latter by ALIGNrelated.
- *
- * The BATpropcheck examines a BAT and tries to set all applicable
- * properties (key,sorted,align,dense).
  *
  * All algebraic BAT commands propagate the properties - including
  * alignment properly on their results.
@@ -2754,7 +2786,9 @@ gdk_export BAT *BATprev(BAT *b);
  */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
-gdk_export BAT *BATpropcheck(BAT *b, int mode);
+gdk_export void BATassertProps(BAT *b);
+gdk_export void BATderiveProps(BAT *b, int expensive);
+gdk_export void BATderiveHeadProps(BAT *b, int expensive);
 
 #define BATPROPS_QUICK  0	/* only derive easy (non-resource consuming) properties */
 #define BATPROPS_ALL	1	/* derive all possible properties; no matter what cost (key=hash) */
@@ -2772,12 +2806,12 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 /* low level functions */
 gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 
-#define ALIGNset(x,y)	{ALIGNsetH(x,y);ALIGNsetT(x,y);}
+#define ALIGNset(x,y)	do {ALIGNsetH(x,y);ALIGNsetT(x,y);} while (0)
 #define ALIGNsetT(x,y)	ALIGNsetH(BATmirror(x),BATmirror(y))
-#define ALIGNins(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; }
-#define ALIGNdel(x,y,f)	{if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; }
-#define ALIGNinp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; }
-#define ALIGNapp(x,y,f) {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; }
+#define ALIGNins(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNdel(x,y,f)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->halign=(x)->talign=0; } while (0)
+#define ALIGNinp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND);(x)->talign=0; } while (0)
+#define ALIGNapp(x,y,f) do {if (!(f)) VIEWchk(x,y,BAT_READ);(x)->talign=0; } while (0)
 
 #define BAThrestricted(b) (VIEWhparent(b) ? BBP_cache(VIEWhparent(b))->batRestricted : (b)->batRestricted)
 #define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
@@ -3034,8 +3068,8 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * in the selected range of BUNs. A nil-value means that there is no bound.
  * The 's' finally is an integer denoting the bunsize, used for speed.
  */
-#define SORTloop(b,p,q,tl,th)						\
-	if (!(BATtordered(b) & 1))					\
+#define SORTloop(b, p, q, tl, th)					\
+	if (!BATtordered(b))						\
 		GDKerror("SORTloop: BAT not sorted.\n");		\
 	else for (p = (ATOMcmp((b)->ttype, tl, ATOMnilptr((b)->ttype)) ? \
 		       SORTfndfirst((b), tl) : BUNfirst(b)),		\
@@ -3045,7 +3079,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 		  p++)
 
 #define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
-	if (!(BATtordered(b) & 1))					\
+	if (!BATtordered(b))						\
 		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
 	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst_##TYPE(b, tl), \
 		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast_##TYPE(b, th); \
@@ -3062,7 +3096,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 #define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
 
 #define SORTloop_loc(b,p,q,tl,th)					\
-	if (!(BATtordered(b) & 1))					\
+	if (!BATtordered(b))						\
 		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
 	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_loc(b, tl), \
 			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_loc(b, th); \
@@ -3070,7 +3104,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 		  p++)
 
 #define SORTloop_var(b,p,q,tl,th)					\
-	if (!(BATtordered(b) & 1))					\
+	if (!BATtordered(b))						\
 		GDKerror("SORTloop_var: BAT not sorted.\n");		\
 	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_var(b, tl), \
 			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_var(b, th); \
@@ -3108,14 +3142,10 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * @tab
  *  BAThistogram(BAT *b)
  * @item BAT*
- * @tab
- *  BATsample(BAT* b,BUN n)
  * @end multitable
  *
  * The routine BAThistogram produces a new BAT with a frequency distribution
  * of the tail of its operand.
- *
- * The routine BATsample returns a random sample on n BUNs of a BAT.
  *
  * For each BAT we maintain its dimensions as separately accessible
  * properties. They can be used to improve query processing at higher levels.
@@ -3129,7 +3159,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 gdk_export void PROPdestroy(PROPrec *p);
 gdk_export PROPrec * BATgetprop(BAT *b, int idx);
 gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
-gdk_export BAT *BATsample_deprecated(BAT *b, BUN n);
 gdk_export BAT *BAThistogram(BAT *b);
 gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/algebra.mx */
 
@@ -3367,6 +3396,9 @@ gdk_export int BATcalcavg(BAT *b, dbl *avg, BUN *vals);
  * @item BAT *
  * @tab BATsample (BAT *b, n)
  * @end multitable
+ *
+ * The routine BATsample returns a random sample on n BUNs of a BAT.
+ *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
 

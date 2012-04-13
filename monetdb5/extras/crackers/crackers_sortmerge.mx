@@ -870,7 +870,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 
 		br=BATnew(TYPE_oid, bo->ttype,BATcount(bo));
 		br->hsorted = FALSE;
+		br->hrevsorted = FALSE;
 		br->tsorted = FALSE;
+		br->trevsorted = FALSE;
 		br->hdense = FALSE;
 		br->tdense = FALSE;
 		BATkey(BATmirror(br),FALSE);
@@ -904,7 +906,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 				b = BATmaterializeh(b);
 			timeHead+=GDKusec()-t1;
 			b->hsorted = FALSE;
+			b->hrevsorted = FALSE;
 			b->tsorted = FALSE;
+			b->trevsorted = FALSE;
 			b->hdense = FALSE;
 			b->tdense = FALSE;
 			BATkey(BATmirror(b),FALSE);
@@ -1091,7 +1095,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	if (*rounding){
 		BAT *temp=BATslice(br,resStart, resEnd);
 		temp->hsorted = FALSE;
+		temp->hrevsorted = FALSE;
 		temp->tsorted = TRUE;
+		temp->trevsorted = FALSE;
 		BATkey(BATmirror(temp),FALSE);
 		temp->batRestricted= BAT_READ;
 		
@@ -1253,7 +1259,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			endSlice=endSlice+sliceSize>BATcount(bo)?BATcount(bo):endSlice+sliceSize;
 		}	
 		br->hsorted = FALSE;
+		br->hrevsorted = FALSE;
 		br->tsorted = FALSE;
+		br->trevsorted = FALSE;
 		br->hdense =  FALSE;
 		br->tdense =  FALSE;
 		BATmirror(BATorder(BATmirror(br)));
@@ -1271,7 +1279,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b);
 		b->hsorted = FALSE;
+		b->hrevsorted = FALSE;
 		b->tsorted = FALSE;
+		b->trevsorted = FALSE;
 		b->hdense = FALSE;
 		b->tdense = FALSE;
 		BATkey(BATmirror(b),FALSE);
@@ -1305,7 +1315,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	@:NwayMergeSort(@1,@2,@3,@4)@
 
 	br->hsorted = FALSE;
+	br->hrevsorted = FALSE;
 	br->tsorted = TRUE;
+	br->trevsorted = FALSE;
 	br->hdense =  TRUE;
 	br->tdense =  TRUE;
 	BATkey(BATmirror(br),FALSE);
@@ -1362,7 +1374,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		if ( bo->htype == TYPE_void)
 			b = BATmaterializeh(b);
 		b->hsorted = FALSE;
+		b->hrevsorted = FALSE;
 		b->tsorted = FALSE;
+		b->trevsorted = FALSE;
 		b->hdense = FALSE;
 		b->tdense = FALSE;
 		BATkey(BATmirror(b),FALSE);
@@ -1411,7 +1425,9 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	@:MergeExtSort(@1,@2,@3,@4)@
 
 	br->hsorted = FALSE;
+	br->hrevsorted = FALSE;
 	br->tsorted = TRUE;
+	br->trevsorted = FALSE;
 	br->hdense =  TRUE;
 	br->tdense =  TRUE;
 	BATkey(BATmirror(br),FALSE);

@@ -113,12 +113,24 @@ comment "Symbolic evaluation of empty BAT expressions";
 #include "opt_deadcode.h"
 #include "mal_builder.h"
 
-#define propagate(X) {p->token= ASSIGNsymbol; \
-	getArg(p,1)= getArg(p,X); p->argc = 2; p->fcn = 0; actions++;\
-	clrFunction(p); \
-	if(getArgType(mb,p,0)== getArgType(mb,p,X)){\
-	setModuleId(p,NULL); setFunctionId(p,NULL); } \
-	else {actions++;setModuleId(p,NULL); setFunctionId(p,NULL); alias[getArg(p,0)]= getArg(p,1); } }
+#define propagate(X)									\
+	do {												\
+		p->token= ASSIGNsymbol;							\
+		getArg(p,1)= getArg(p,X);						\
+		p->argc = 2;									\
+		p->fcn = 0;										\
+		actions++;										\
+		clrFunction(p);									\
+		if(getArgType(mb,p,0)== getArgType(mb,p,X)){	\
+			setModuleId(p,NULL);						\
+			setFunctionId(p,NULL);						\
+		} else {										\
+			actions++;									\
+			setModuleId(p,NULL);						\
+			setFunctionId(p,NULL);						\
+			alias[getArg(p,0)]= getArg(p,1);			\
+		}												\
+	} while (0)
 	/*
 	 * @-
 	 * Be aware to handle alias mapping.

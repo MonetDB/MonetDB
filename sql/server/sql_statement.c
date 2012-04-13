@@ -1981,6 +1981,8 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str && st->op4.aval->data.val.sval && _strlen(st->op4.aval->data.val.sval))
 			return st->op4.aval->data.val.sval;
+		return NULL;
+
 	case st_list:
 		if (list_length(st->op4.lval) && st->op4.lval->h)
 			return table_name(sa, st->op4.lval->h->data);

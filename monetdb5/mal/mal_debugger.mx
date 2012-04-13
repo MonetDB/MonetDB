@@ -1841,9 +1841,7 @@ printBATelm(stream *f, int i, BUN cnt, BUN first)
 		mnstr_printf(f, ":%s ",tpe);
 		printBATproperties(f,b);
 		/* perform property checking */
-		if( b->H != b->T)
-			BATpropcheck(BATmirror(b),BATPROPS_QUICK);
-		BATpropcheck(b,BATPROPS_QUICK);
+		BATassertProps(b);
 		mnstr_printf(f,"\n");
 		if( cnt && BATcount(b)>0){
 			if (cnt < BATcount(b)) {

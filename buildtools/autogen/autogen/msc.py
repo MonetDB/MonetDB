@@ -349,25 +349,15 @@ def msc_dep(fd, tar, deplist, msc):
         of = b + '.' + de
         of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-        fd.write("\t$(DEL) y.tab.c\n")
-        fd.write('\t$(MV) y.tab.h "%s.tab.h"\n' % b)
     if ext == "tab.c":
         fd.write(getsrc)
         x, de = split_filename(deplist[0])
         of = b + '.' + de
         of = msc_translate_file(of, msc)
         fd.write('\t$(YACC) $(YFLAGS) $(AM_YFLAGS) "%s"\n' % of)
-        fd.write('\t$(FILTER) $(FILTERPREF)"    ;" y.tab.c > "%s.tab.c"\n' % b)
-        fd.write("\t$(DEL) y.tab.h\n")
     if ext == "yy.c":
         fd.write(getsrc)
         fd.write('\t$(LEX) $(LFLAGS) $(AM_LFLAGS) "%s.l"\n' % b)
-        # either lex.<name>.c or lex.yy.c or lex.$(PARSERNAME).c gets generated
-        fd.write('\tif exist lex.%s.c $(MV) lex.%s.c "%s.yy.c.tmp"\n' % (b,b,b))
-        fd.write('\tif exist lex.yy.c $(MV) lex.yy.c "%s.yy.c.tmp"\n' % b)
-        fd.write('\tif exist lex.$(PARSERNAME).c $(MV) lex.$(PARSERNAME).c "%s.yy.c.tmp"\n' % b)
-        fd.write('\techo #include "$(CONFIG_H)" > "%s.yy.c"\n' % b)
-        fd.write('\ttype "%s.yy.c.tmp" >> "%s.yy.c"\n' % (b, b))
     if ext in ("obj", "tab.obj", "yy.obj"):
         target, name = msc_find_target(tar, msc)
         if name[0] == '_':
@@ -375,7 +365,7 @@ def msc_dep(fd, tar, deplist, msc):
         if target == "LIB":
             d, dext = split_filename(deplist[0])
             if dext in ("c", "yy.c", "tab.c"):
-                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
+                fd.write('\t$(CC) $(CFLAGS) $(%s_CFLAGS) $(GENDLL) -D_CRT_SECURE_NO_WARNINGS -DLIB%s -Fo"%s" -c "%s"\n' %
                          (split_filename(msc_basename(src))[0], name, t, src))
     if ext == 'res':
         fd.write("\t$(RC) -fo%s %s\n" % (t, src))

@@ -1773,13 +1773,9 @@ mapi_new(void)
 	Mapi mid;
 	static int index = 0;
 
-	mid = malloc(sizeof(*mid));
+	mid = calloc(1, sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
-	assert(mid);
-
-	/* initialize everything to 0 */
-	memset(mid, 0, sizeof(*mid));
 
 	/* then fill in some details */
 	mid->index = index++;	/* for distinctions in log records */

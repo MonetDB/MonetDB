@@ -44,12 +44,12 @@ All Rights Reserved.
  * we use the following #defines for comparing atoms:
  */
 #define simple_CMP(x,y,tpe)     (simple_LT(x,y,tpe)?-1:simple_GT(x,y,tpe))
-#define simple_EQ(x,y,tpe)      ((*(tpe*) (x)) == (*(tpe*) (y)))
-#define simple_NE(x,y,tpe,nl)   ((*(tpe*)(y)) != nl && (*(tpe*) (x)) != (*(tpe*) (y)))
-#define simple_LT(x,y,tpe)      ((*(tpe*) (x))  < (*(tpe*) (y)))
-#define simple_GT(x,y,tpe)      ((*(tpe*) (x))  > (*(tpe*) (y)))
-#define simple_LE(x,y,tpe)      ((*(tpe*) (x)) <= (*(tpe*) (y)))
-#define simple_GE(x,y,tpe)      ((*(tpe*) (x)) >= (*(tpe*) (y)))
+#define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
+#define simple_NE(x,y,tpe,nl)   ((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
+#define simple_LT(x,y,tpe)      ((*(const tpe*) (x))  < (*(const tpe*) (y)))
+#define simple_GT(x,y,tpe)      ((*(const tpe*) (x))  > (*(const tpe*) (y)))
+#define simple_LE(x,y,tpe)      ((*(const tpe*) (x)) <= (*(const tpe*) (y)))
+#define simple_GE(x,y,tpe)      ((*(const tpe*) (x)) >= (*(const tpe*) (y)))
 #define atom_CMP(x,y,id)        (*BATatoms[id].atomCmp)(x,y)
 #define atom_EQ(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) == 0)
 #define atom_NE(x,y,id,nl)      ((*BATatoms[id].atomCmp)(y,BATatoms[id].atomNull) != 0 && (*BATatoms[id].atomCmp)(x,y) != 0)
@@ -57,7 +57,7 @@ All Rights Reserved.
 #define atom_GT(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) > 0)
 #define atom_LE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) <= 0)
 #define atom_GE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) >= 0)
-#define simple_HASH(v,tpe,dst)  ((dst) *(tpe *) (v))
+#define simple_HASH(v,tpe,dst)  ((dst) *(const tpe *) (v))
 #define atom_HASH(v,id,dst)     ((dst) (*BATatoms[id].atomHash)(v))
 
 /*
@@ -94,29 +94,29 @@ All Rights Reserved.
  * This leads to the following type descriptor table.
  */
 
-gdk_export int lngFromStr(str src, int *len, lng **dst);
-gdk_export int lngToStr(str *dst, int *len, lng *src);
-gdk_export int intFromStr(str src, int *len, int **dst);
-gdk_export int intToStr(str *dst, int *len, int *src);
-gdk_export int batFromStr(str src, int *len, bat **dst);
-gdk_export int batToStr(str *dst, int *len, bat *src);
-gdk_export int ptrFromStr(str src, int *len, ptr **dst);
-gdk_export int ptrToStr(str *dst, int *len, ptr *src);
-gdk_export int bitFromStr(str src, int *len, bit **dst);
-gdk_export int bitToStr(str *dst, int *len, bit *src);
-gdk_export int OIDfromStr(str src, int *len, oid **dst);
-gdk_export int OIDtoStr(str *dst, int *len, oid *src);
-gdk_export int shtFromStr(str src, int *len, sht **dst);
-gdk_export int shtToStr(str *dst, int *len, sht *src);
-gdk_export int bteFromStr(str src, int *len, bte **dst);
-gdk_export int bteToStr(str *dst, int *len, bte *src);
-gdk_export int fltFromStr(str src, int *len, flt **dst);
-gdk_export int fltToStr(str *dst, int *len, flt *src);
-gdk_export int dblFromStr(str src, int *len, dbl **dst);
-gdk_export int dblToStr(str *dst, int *len, dbl *src);
-gdk_export ssize_t GDKstrFromStr(unsigned char *src, unsigned char *dst, ssize_t len);
-gdk_export int strFromStr(str src, int *len, str *dst);
-gdk_export int strToStr(str *dst, int *len, str src);
+gdk_export int lngFromStr(const char *src, int *len, lng **dst);
+gdk_export int lngToStr(str *dst, int *len, const lng *src);
+gdk_export int intFromStr(const char *src, int *len, int **dst);
+gdk_export int intToStr(str *dst, int *len, const int *src);
+gdk_export int batFromStr(const char *src, int *len, bat **dst);
+gdk_export int batToStr(str *dst, int *len, const bat *src);
+gdk_export int ptrFromStr(const char *src, int *len, ptr **dst);
+gdk_export int ptrToStr(str *dst, int *len, const ptr *src);
+gdk_export int bitFromStr(const char *src, int *len, bit **dst);
+gdk_export int bitToStr(str *dst, int *len, const bit *src);
+gdk_export int OIDfromStr(const char *src, int *len, oid **dst);
+gdk_export int OIDtoStr(str *dst, int *len, const oid *src);
+gdk_export int shtFromStr(const char *src, int *len, sht **dst);
+gdk_export int shtToStr(str *dst, int *len, const sht *src);
+gdk_export int bteFromStr(const char *src, int *len, bte **dst);
+gdk_export int bteToStr(str *dst, int *len, const bte *src);
+gdk_export int fltFromStr(const char *src, int *len, flt **dst);
+gdk_export int fltToStr(str *dst, int *len, const flt *src);
+gdk_export int dblFromStr(const char *src, int *len, dbl **dst);
+gdk_export int dblToStr(str *dst, int *len, const dbl *src);
+gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
+gdk_export int strFromStr(const char *src, int *len, str *dst);
+gdk_export int strToStr(str *dst, int *len, const char *src);
 gdk_export BUN strHash(const char *s);
 gdk_export int strLen(const char *s);
 gdk_export int strNil(const char *s);
@@ -133,37 +133,37 @@ gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 #include <math.h>		/* for INFINITY and NAN */
 
 static int
-bteCmp(bte *l, bte *r)
+bteCmp(const bte *l, const bte *r)
 {
 	return simple_CMP(l, r, bte);
 }
 
 static int
-shtCmp(sht *l, sht *r)
+shtCmp(const sht *l, const sht *r)
 {
 	return simple_CMP(l, r, sht);
 }
 
 int
-intCmp(int *l, int *r)
+intCmp(const int *l, const int *r)
 {
 	return simple_CMP(l, r, int);
 }
 
 static int
-fltCmp(flt *l, flt *r)
+fltCmp(const flt *l, const flt *r)
 {
 	return simple_CMP(l, r, flt);
 }
 
 int
-lngCmp(lng *l, lng *r)
+lngCmp(const lng *l, const lng *r)
 {
 	return simple_CMP(l, r, lng);
 }
 
 static int
-dblCmp(dbl *l, dbl *r)
+dblCmp(const dbl *l, const dbl *r)
 {
 	return simple_CMP(l, r, dbl);
 }
@@ -173,27 +173,27 @@ dblCmp(dbl *l, dbl *r)
  * Return some positive integer derived from one atom value.
  */
 static BUN
-bteHash(bte *v)
+bteHash(const bte *v)
 {
-	return (BUN) *(unsigned char *) v;
+	return (BUN) *(const unsigned char *) v;
 }
 
 static BUN
-shtHash(sht *v)
+shtHash(const sht *v)
 {
-	return (BUN) mix_sht(*(unsigned short *) v);
+	return (BUN) mix_sht(*(const unsigned short *) v);
 }
 
 static BUN
-intHash(int *v)
+intHash(const int *v)
 {
-	return (BUN) mix_int(*(unsigned int *) v);
+	return (BUN) mix_int(*(const unsigned int *) v);
 }
 
 static BUN
-lngHash(lng *v)
+lngHash(const lng *v)
 {
-	return (BUN) mix_int(((unsigned int *) v)[0] ^ ((unsigned int *) v)[1]);
+	return (BUN) mix_int(((const unsigned int *) v)[0] ^ ((const unsigned int *) v)[1]);
 }
 
 /*
@@ -218,13 +218,13 @@ lngConvert(lng *s)
 }
 
 static inline int
-batFix(bat *b)
+batFix(const bat *b)
 {
 	return BBPincref(*b, TRUE);
 }
 
 static inline int
-batUnfix(bat *b)
+batUnfix(const bat *b)
 {
 	return BBPdecref(*b, TRUE);
 }
@@ -329,9 +329,9 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		BATatoms[t] = BATatoms[val];	/* copy from example */
 		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
-		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;
+		BATatoms[t].atomFromStr = (int (*)(const char *, int *, void **)) arg;
 	} else if (strcmp("tostr", property) == 0) {
-		BATatoms[t].atomToStr = (int (*)(char **, int *, void *)) arg;
+		BATatoms[t].atomToStr = (int (*)(char **, int *, const void *)) arg;
 	} else if (strcmp("read", property) == 0) {
 		BATatoms[t].atomRead = (void *(*)(void *, stream *, size_t)) arg;
 	} else if (strcmp("write", property) == 0) {
@@ -370,7 +370,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 
 		/* these ADT functions *must* be equal for overloaded types */
 		if (strcmp("cmp", property) == 0) {
-			atomset(BATatoms[t].atomCmp, (int (*)(void *, void *)) arg);
+			atomset(BATatoms[t].atomCmp, (int (*)(const void *, const void *)) arg);
 		} else if (strcmp("hash", property) == 0) {
 			atomset(BATatoms[t].atomHash, (BUN (*)(void *)) arg);
 		} else if (strcmp("length", property) == 0) {
@@ -685,7 +685,7 @@ ATOMheap(int t, Heap *hp, size_t cap)
 }
 
 int
-ATOMcmp(int t, ptr l, ptr r)
+ATOMcmp(int t, const void *l, const void *r)
 {
 	switch (ATOMstorage(t)) {
 #ifndef NOEXPAND_BTE
@@ -726,7 +726,7 @@ ATOMcmp(int t, ptr l, ptr r)
 int
 ATOMprint(int t, ptr p, stream *s)
 {
-	int (*tostr) (str *, int *, ptr);
+	int (*tostr) (str *, int *, const void *);
 
 	if (p && (t >= 0) && (t < GDKatomcnt) && (tostr = BATatoms[t].atomToStr)) {
 		if (t != TYPE_bat && t < TYPE_str) {
@@ -751,7 +751,7 @@ ATOMprint(int t, ptr p, stream *s)
 int
 ATOMformat(int t, ptr p, char **buf)
 {
-	int (*tostr) (str *, int *, ptr);
+	int (*tostr) (str *, int *, const void *);
 
 	if (p && (t >= 0) && (t < GDKatomcnt) && (tostr = BATatoms[t].atomToStr)) {
 		int sz = 0, l = (*tostr) (buf, &sz, p);
@@ -801,7 +801,7 @@ ATOMdup(int t, ptr p)
 		return -1;
 @= atomtostr
 int
-@1ToStr(char ** dst, int *len, @1 *src)
+@1ToStr(char ** dst, int *len, const @1 *src)
 {
 	@:atommem(char,@1Strlen)@
 	if (*src == @1_nil) {
@@ -826,7 +826,7 @@ int
 
 #if 0
 int
-voidFromStr(str src, int *len, void **dst)
+voidFromStr(const char *src, int *len, void **dst)
 {
 	(void) src;
 	(void) len;
@@ -863,9 +863,9 @@ voidWrite(void *a, stream *s, size_t cnt)
 }
 
 int
-bitFromStr(str src, int *len, bit **dst)
+bitFromStr(const char *src, int *len, bit **dst)
 {
-	char *p = src;
+	const char *p = src;
 
 	@:atommem(bit,sizeof(bit))@
 
@@ -893,7 +893,7 @@ bitFromStr(str src, int *len, bit **dst)
 }
 
 int
-bitToStr(char **dst, int *len, bit *src)
+bitToStr(char **dst, int *len, const bit *src)
 {
 	@:atommem(char,6)@
 
@@ -925,9 +925,10 @@ bitWrite(bit *a, stream *s, size_t cnt)
 }
 
 int
-batFromStr(char *src, int *len, bat **dst)
+batFromStr(const char *src, int *len, bat **dst)
 {
-	char *s, *t, *r = src;
+	char *s;
+	const char *t, *r = src;
 	int c;
 	bat bid = 0;
 
@@ -958,7 +959,7 @@ batFromStr(char *src, int *len, bat **dst)
 }
 
 int
-batToStr(char **dst, int *len, bat *src)
+batToStr(char **dst, int *len, const bat *src)
 {
 	bat b = *src;
 	int i;
@@ -1001,11 +1002,11 @@ batWrite(bat *a, stream *s, size_t cnt)
  */
 @= numfromstr
 int
-@1FromStr(char *src, int *len, @1 **dst)
+@1FromStr(const char *src, int *len, @1 **dst)
 {
 	int sign = 1;
 	@1 base = 0;
-	str p = src;
+	const char *p = src;
 
 	@:atommem(@1,sizeof(@1))@
 	while (GDKisspace(*p))
@@ -1097,10 +1098,10 @@ static int @1Write(@1 *a, stream *s, size_t cnt)
  * }
  */
 int
-ptrFromStr(char *src, int *len, ptr **dst)
+ptrFromStr(const char *src, int *len, ptr **dst)
 {
 	size_t base = 0;
-	str p = src;
+	const char *p = src;
 
 	@:atommem(ptr,sizeof(ptr))@
 
@@ -1139,9 +1140,9 @@ ptrFromStr(char *src, int *len, ptr **dst)
 #endif
 
 int
-dblFromStr(char *src, int *len, dbl **dst)
+dblFromStr(const char *src, int *len, dbl **dst)
 {
-	char *p = src;
+	const char *p = src;
 	double d;
 
 	/* alloc memory */
@@ -1158,8 +1159,10 @@ dblFromStr(char *src, int *len, dbl **dst)
 		 * whose magnitude is no greater than the smallest
 		 * normalized double, and may or may not set errno to
 		 * ERANGE.  We accept underflow, but not overflow. */
+		char *pe;
 		errno = 0;
-		d = strtod(src, &p);
+		d = strtod(src, &pe);
+		p = pe;
 		if (p == src || (errno == ERANGE && (d < -1 || d > 1))) {
 			**dst = dbl_nil; /* default return value is nil */
 			p = src;
@@ -1174,9 +1177,9 @@ dblFromStr(char *src, int *len, dbl **dst)
 @:atom_io(dbl,Lng,lng)@
 
 int
-fltFromStr(char *src, int *len, flt **dst)
+fltFromStr(const char *src, int *len, flt **dst)
 {
-	char *p = src;
+	const char *p = src;
 	int n = 0;
 	float f;
 
@@ -1196,8 +1199,10 @@ fltFromStr(char *src, int *len, flt **dst)
 		 * whose magnitude is no greater than the smallest
 		 * normalized float, and may or may not set errno to
 		 * ERANGE.  We accept underflow, but not overflow. */
+		char *pe;
 		errno = 0;
-		f = strtof(src, &p);
+		f = strtof(src, &pe);
+		p = pe;
 		n = (int) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #ifdef INFINITY
@@ -1574,9 +1579,10 @@ static int utf8chkmsk[] = {
 };
 
 ssize_t
-GDKstrFromStr(unsigned char *dst, unsigned char *src, ssize_t len)
+GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 {
-	unsigned char *p = dst, *cur = src, *end = src + len;
+	unsigned char *p = dst;
+	const unsigned char *cur = src, *end = src + len;
 	int escaped = FALSE, mask = 0, n, c, utf8char = 0;
 
 	/* copy it in, while performing the correct escapes */
@@ -1700,9 +1706,10 @@ GDKstrFromStr(unsigned char *dst, unsigned char *src, ssize_t len)
 }
 
 int
-strFromStr(char *src, int *len, char **dst)
+strFromStr(const char *src, int *len, char **dst)
 {
-	unsigned char *p, *start = NULL, *cur = (unsigned char *) src;
+	unsigned char *p;
+	const unsigned char *cur = (const unsigned char *) src, *start = NULL;
 	ssize_t res;
 	int l = 1, escaped = FALSE;
 
@@ -1843,7 +1850,7 @@ escapedStr(char *dst, const char *src, int dstlen)
 }
 
 int
-strToStr(char **dst, int *len, char *src)
+strToStr(char **dst, int *len, const char *src)
 {
 	int l = 0;
 
@@ -2029,7 +2036,7 @@ OIDnew(oid inc)
  * String conversion routines.
  */
 int
-OIDfromStr(char *src, int *len, oid **dst)
+OIDfromStr(const char *src, int *len, oid **dst)
 {
 #if SIZEOF_OID == SIZEOF_INT
 	int ui = 0, *uip = &ui;
@@ -2038,7 +2045,7 @@ OIDfromStr(char *src, int *len, oid **dst)
 #endif
 	int l = (int) sizeof(ui);
 	int pos = 0;
-	str p = src;
+	const char *p = src;
 
 	@:atommem(oid,sizeof(oid))@
 
@@ -2065,7 +2072,7 @@ OIDfromStr(char *src, int *len, oid **dst)
 }
 
 int
-OIDtoStr(char **dst, int *len, oid *src)
+OIDtoStr(char **dst, int *len, const oid *src)
 {
 	@:atommem(char,oidStrlen)@
 
@@ -2081,15 +2088,15 @@ atomDesc BATatoms[MAXATOMS] = {
 	{"void",
 #if SIZEOF_OID == SIZEOF_INT
 	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, 0,
 #else
 	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(void *, stream *, size_t)) voidWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
+	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(ptr)) lngHash, 0,
 #endif
 	 0, 0,
@@ -2097,45 +2104,45 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0,
 	 0, 0},
 	{"bit", TYPE_bte, 1, sizeof(bit), sizeof(bit), 0, 0, (ptr) &bte_nil,
-	 (int (*)(str, int *, ptr *)) bitFromStr, (int (*)(str *, int *, ptr)) bitToStr,
+	 (int (*)(const char *, int *, ptr *)) bitFromStr, (int (*)(str *, int *, const void *)) bitToStr,
 	 (void *(*)(void *, stream *, size_t)) bitRead, (int (*)(void *, stream *, size_t)) bitWrite,
-	 (int (*)(ptr, ptr)) bteCmp,
+	 (int (*)(const void *, const void *)) bteCmp,
 	 (BUN (*)(ptr)) bteHash, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"bte", TYPE_bte, 1, sizeof(bte), sizeof(bte), 0, 0, (ptr) &bte_nil,
-	 (int (*)(str, int *, ptr *)) bteFromStr, (int (*)(str *, int *, ptr)) bteToStr,
+	 (int (*)(const char *, int *, ptr *)) bteFromStr, (int (*)(str *, int *, const void *)) bteToStr,
 	 (void *(*)(void *, stream *, size_t)) bteRead, (int (*)(void *, stream *, size_t)) bteWrite,
-	 (int (*)(ptr, ptr)) bteCmp,
+	 (int (*)(const void *, const void *)) bteCmp,
 	 (BUN (*)(ptr)) bteHash, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"sht", TYPE_sht, 1, sizeof(sht), sizeof(sht), 0, 0, (ptr) &sht_nil,
-	 (int (*)(str, int *, ptr *)) shtFromStr, (int (*)(str *, int *, ptr)) shtToStr,
+	 (int (*)(const char *, int *, ptr *)) shtFromStr, (int (*)(str *, int *, const void *)) shtToStr,
 	 (void *(*)(void *, stream *, size_t)) shtRead, (int (*)(void *, stream *, size_t)) shtWrite,
-	 (int (*)(ptr, ptr)) shtCmp,
+	 (int (*)(const void *, const void *)) shtCmp,
 	 (BUN (*)(ptr)) shtHash, (void (*)(ptr, int)) shtConvert,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"BAT", TYPE_int, 1, sizeof(bat), sizeof(bat), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) batFromStr, (int (*)(str *, int *, ptr)) batToStr,
+	 (int (*)(const char *, int *, ptr *)) batFromStr, (int (*)(str *, int *, const void *)) batToStr,
 	 (void *(*)(void *, stream *, size_t)) batRead, (int (*)(void *, stream *, size_t)) batWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 	 (int (*)(ptr)) batFix, (int (*)(ptr)) batUnfix,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"int", TYPE_int, 1, sizeof(int), sizeof(int), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
+	 (int (*)(const char *, int *, ptr *)) intFromStr, (int (*)(str *, int *, const void *)) intToStr,
 	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 	 0, 0,
 	 0, 0,
@@ -2144,15 +2151,15 @@ atomDesc BATatoms[MAXATOMS] = {
 	{"oid",
 #if SIZEOF_OID == SIZEOF_INT
 	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 #else
 	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, ptr)) OIDtoStr,
+	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
+	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
 #endif
 	 0, 0,
@@ -2162,15 +2169,15 @@ atomDesc BATatoms[MAXATOMS] = {
 	{"wrd",
 #if SIZEOF_WRD == SIZEOF_INT
 	 TYPE_int, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &int_nil,
-	 (int (*)(str, int *, ptr *)) intFromStr, (int (*)(str *, int *, ptr)) intToStr,
+	 (int (*)(const char *, int *, ptr *)) intFromStr, (int (*)(str *, int *, const void *)) intToStr,
 	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(void *, stream *, size_t)) intWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 #else
 	 TYPE_lng, 1, sizeof(wrd), sizeof(wrd), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
+	 (int (*)(const char *, int *, ptr *)) lngFromStr, (int (*)(str *, int *, const void *)) lngToStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
+	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
 #endif
 	 0, 0,
@@ -2180,15 +2187,15 @@ atomDesc BATatoms[MAXATOMS] = {
 	{"ptr",
 #if SIZEOF_VOID_P == SIZEOF_INT
 	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
+	 (int (*)(const char *, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, const void *)) ptrToStr,
 	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
-	 (int (*)(ptr, ptr)) intCmp,
+	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 	 TYPE_ptr, 1, sizeof(ptr), sizeof(ptr), 0, 0, (ptr) &ptr_nil,
-	 (int (*)(str, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, ptr)) ptrToStr,
+	 (int (*)(const char *, int *, ptr *)) ptrFromStr, (int (*)(str *, int *, const void *)) ptrToStr,
 	 (void *(*)(void *, stream *, size_t)) ptrRead, (int (*)(void *, stream *, size_t)) ptrWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
+	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
 #endif
 	 0, 0,
@@ -2196,36 +2203,36 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0,
 	 0, 0},
 	{"flt", TYPE_flt, 1, sizeof(flt), sizeof(flt), 0, 0, (ptr) &flt_nil,
-	 (int (*)(str, int *, ptr *)) fltFromStr, (int (*)(str *, int *, ptr)) fltToStr,
+	 (int (*)(const char *, int *, ptr *)) fltFromStr, (int (*)(str *, int *, const void *)) fltToStr,
 	 (void *(*)(void *, stream *, size_t)) fltRead, (int (*)(void *, stream *, size_t)) fltWrite,
-	 (int (*)(ptr, ptr)) fltCmp,
+	 (int (*)(const void *, const void *)) fltCmp,
 	 (BUN (*)(ptr)) intHash, (void (*)(ptr, int)) intConvert,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"dbl", TYPE_dbl, 1, sizeof(dbl), sizeof(dbl), 0, 0, (ptr) &dbl_nil,
-	 (int (*)(str, int *, ptr *)) dblFromStr, (int (*)(str *, int *, ptr)) dblToStr,
+	 (int (*)(const char *, int *, ptr *)) dblFromStr, (int (*)(str *, int *, const void *)) dblToStr,
 	 (void *(*)(void *, stream *, size_t)) dblRead, (int (*)(void *, stream *, size_t)) dblWrite,
-	 (int (*)(ptr, ptr)) dblCmp,
+	 (int (*)(const void *, const void *)) dblCmp,
 	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"lng", TYPE_lng, 1, sizeof(lng), sizeof(lng), 0, 0, (ptr) &lng_nil,
-	 (int (*)(str, int *, ptr *)) lngFromStr, (int (*)(str *, int *, ptr)) lngToStr,
+	 (int (*)(const char *, int *, ptr *)) lngFromStr, (int (*)(str *, int *, const void *)) lngToStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(void *, stream *, size_t)) lngWrite,
-	 (int (*)(ptr, ptr)) lngCmp,
+	 (int (*)(const void *, const void *)) lngCmp,
 	 (BUN (*)(ptr)) lngHash, (void (*)(ptr, int)) lngConvert,
 	 0, 0,
 	 0, 0,
 	 0, 0,
 	 0, 0},
 	{"str", TYPE_str, 1, sizeof(var_t), sizeof(var_t), 0, 1, (ptr) str_nil,
-	 (int (*)(str, int *, ptr *)) strFromStr, (int (*)(str *, int *, ptr)) strToStr,
+	 (int (*)(const char *, int *, ptr *)) strFromStr, (int (*)(str *, int *, const void *)) strToStr,
 	 (void *(*)(void *, stream *, size_t)) strRead, (int (*)(void *, stream *, size_t)) strWrite,
-	 (int (*)(ptr, ptr)) strCmp,
+	 (int (*)(const void *, const void *)) strCmp,
 	 (BUN (*)(ptr)) strHash, 0,
 	 0, 0,
 	 (var_t (*)(Heap *, var_t *, ptr)) strPut, 0,

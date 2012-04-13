@@ -102,7 +102,9 @@ BAT *BATrangejoin(BAT *l, BAT *rl, BAT *rh, bit li, bit hi)
 	}
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->hsorted = BAThordered(l);
+	bn->hrevsorted = BAThrevordered(l);
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
 
 	ESTIDEBUG THRprintf(GDKout, "#BATrangejoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
@@ -160,7 +162,7 @@ break;
 	BUN p, q;
 	BUN v, w;
 	BUN cap = bn->batCapacity, cnt = 0;
-	int (*cmp)(void*,void*) = BATatoms[l->ttype].atomCmp;
+	int (*cmp)(const void *, const void *) = BATatoms[l->ttype].atomCmp;
 
 	if (!ATOMlinear(l->ttype)) {
 		GDKerror("range join not possible on non-linear types\n");
@@ -261,7 +263,9 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	}
 	/* set sorted flags by hand, because we used BUNfastins() */
 	bn->hsorted = BAThordered(l);
+	bn->hrevsorted = BAThrevordered(l);
 	bn->tsorted = FALSE;
+	bn->trevsorted = FALSE;
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = r->T->nonil;
 
@@ -430,7 +434,9 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 	BATkey(bn, FALSE);
 	BATkey(BATmirror(bn), FALSE);
 	bn->hsorted = FALSE;
+	bn->hrevsorted = FALSE;
 	bn->tsorted = BATtordered(r);
+	bn->trevsorted = BATtrevordered(r);
 	bn->H->nonil = l->H->nonil;
 	bn->T->nonil = r->T->nonil;
 	return bn;

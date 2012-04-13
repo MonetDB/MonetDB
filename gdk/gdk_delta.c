@@ -201,10 +201,10 @@ BATundo(BAT *b)
 		BAT *bm = BBP_cache(-b->batCacheid);
 
 		/* elements are 'inserted' => zap properties */
-		if (b->hsorted & 1 || b->hsorted == (bit) GDK_SORTED_REV)
-			b->hsorted = FALSE;
-		if (b->tsorted & 1 || b->tsorted == (bit) GDK_SORTED_REV)
-			b->tsorted = FALSE;
+		b->hsorted = 0;
+		b->hrevsorted = 0;
+		b->tsorted = 0;
+		b->trevsorted = 0;
 		if (b->hkey)
 			BATkey(b, FALSE);
 		if (b->tkey)

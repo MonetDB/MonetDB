@@ -235,7 +235,7 @@ do {	/* type-specific core algorithm */				\
 	/* is tail of right/second BAT sorted, also when cast to	\
 	 * unsigned type, */						\
 	/* i.e., are the values either all >= 0 or all < 0? */		\
-	two_tail_sorted_unsigned = BATtordered(btwo) & 1 &&		\
+	two_tail_sorted_unsigned = BATtordered(btwo) &&			\
 		(two[0] >= 0 || two[n - 1] < 0);			\
 									\
 	/* iterate over all values/tuples and do the work */		\
@@ -276,7 +276,8 @@ do {	/* type-specific core algorithm */				\
 	/* set result properties */
 	bres->hdense = TRUE;		/* result head is dense */
 	BATseqbase(bres, bone->hseqbase); /* result head has same seqbase as input */
-	bres->hsorted = GDK_SORTED;	/* result head is sorted */
+	bres->hsorted = 1;		/* result head is sorted */
+	bres->hrevsorted = 0;
 	BATkey(bres, TRUE);		/* result head is key (unique) */
 
 	/* Result tail is sorted, if the left/first input tail is
@@ -285,11 +286,12 @@ do {	/* type-specific core algorithm */				\
 	 * second/right tail values are either all >= 0 or all < 0;
 	 * otherwise, we cannot tell.
 	 */
-	if (BATtordered(bone) & 1
+	if (BATtordered(bone)
 	    && (BATtkey(bone) || two_tail_sorted_unsigned))
-		bres->tsorted = GDK_SORTED;
+		bres->tsorted = 1;
 	else
 		bres->tsorted = 0;
+	bres->trevsorted = 0;
 	/* result tail is key (unique), iff both input tails are */
 	BATkey(BATmirror(bres), BATtkey(bone) || BATtkey(btwo));
 
