@@ -73,7 +73,7 @@ end main;
 [ 9@0,	  4,	  1,	  333	  ]
 [ 10@0,	  4,	  2,	  333	  ]
 [ 11@0,	  4,	  3,	  333	  ]
-!MALException:array.series:illegal range
+!MALException:array.series:#groups must be > 0,  got (0)
 
 
 
