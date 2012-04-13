@@ -245,7 +245,7 @@ crackers_export str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1,
 					/* use binary search after failed scan or if scanning is impossible (l not sorted) */
 					if (r_scan < 0 || r_start < r_last) {
 						/* if merge not ended (or if no merge at all) */
-						r_start = (BUN) SORTfndfirst_@4(rr, v1);
+						r_start = (BUN) SORTfndfirst(rr, v1);
 					}
 					if (r_start < r_last) {
 						v2 = BUNh@3(ri, r_start);
@@ -4295,7 +4295,7 @@ str CRKsortBandJoin_@1(int *resid, int *bidL, int *bidR, @1 *c1, @1 *c2, bit *in
 		low  = currentValue - *c1;			
 		hgh  = currentValue + *c2;			
 		
-		currentTupleRight = SORTfndfirst_@1(BATRight,&low);
+		currentTupleRight = SORTfndfirst(BATRight,&low);
 		if (currentTupleRight == BUNlast(BATRight))
 			goto next;
 	

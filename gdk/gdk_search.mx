@@ -25,46 +25,41 @@ All Rights Reserved.
  *
  * @* Search Accelerators
  *
- * What sets BATs apart from normal arrays is their built-in ability to
- * search on both dimensions of the binary association.  The easiest way to
- * implement this is simply walk to the whole table and compare against each
- * element.  This method is of course highly inefficient, much better performance
- * can be obtained if the BATs use some kind of index method to speed up
- * searching.
+ * What sets BATs apart from normal arrays is their built-in ability
+ * to search on both dimensions of the binary association.  The
+ * easiest way to implement this is simply walk to the whole table and
+ * compare against each element.  This method is of course highly
+ * inefficient, much better performance can be obtained if the BATs
+ * use some kind of index method to speed up searching.
  *
- * While index methods speed up searching they also have disadvantages.
- * In the first place extra storage is needed for the index. Second,
- * insertion of data or removing old data requires updating of the index
- * structure, which takes extra time.
+ * While index methods speed up searching they also have
+ * disadvantages.  In the first place extra storage is needed for the
+ * index. Second, insertion of data or removing old data requires
+ * updating of the index structure, which takes extra time.
  *
- * This means there is a need for both indexed and non-indexed BAT, the
- * first to be used when  little or no searching is needed, the
+ * This means there is a need for both indexed and non-indexed BAT,
+ * the first to be used when little or no searching is needed, the
  * second to be used when searching is predominant. Also, there is no
- * best index method for all cases, different methods have different storage
- * needs and different performance. Thus, multiple index methods are provided,
- * each suited to particular types of usage.
+ * best index method for all cases, different methods have different
+ * storage needs and different performance. Thus, multiple index
+ * methods are provided, each suited to particular types of usage.
  *
- * For query-dominant environments it pays to build a search accelerator.
- * The main problems to be solved are:
- * @itemize
- * @item
- * avoidance of excessive storage requirements, and
- * @item
- * limited maintenance overhead.
- * @end itemize
+ * For query-dominant environments it pays to build a search
+ * accelerator.  The main problems to be solved are:
  *
- * @-
- * The idea that query intensive tasks need many different index methods has
- * been proven invalid. The current direction is multiple copies of data, which
- * can than be sorted or clustered.
+ * - avoidance of excessive storage requirements, and
+ * - limited maintenance overhead.
  *
- * @-
+ * The idea that query intensive tasks need many different index
+ * methods has been proven invalid. The current direction is multiple
+ * copies of data, which can than be sorted or clustered.
+ *
  * The BAT library automatically decides when an index becomes cost
  * effective.
  *
- * In situations where an index is expected, a call is
- * made to @emph{BAThash}.
- * This operation check for indexing on the header.
+ * In situations where an index is expected, a call is made to
+ * BAThash.  This operation check for indexing on the header.
+ *
  * @+ Interface Declarations
  */
 @h
@@ -72,15 +67,17 @@ All Rights Reserved.
 #define _GDK_SEARCH_H_
 /*
  * @+ Hash indexing
- * This is a highly efficient implementation of simple bucket-chained hashing.
  *
- * In the past, we used integer modulo for hashing, with bucket chains of mean size 4.
- * This was shown to be inferior to direct hashing with integer anding. The new implementation
- * reflects this.
+ * This is a highly efficient implementation of simple bucket-chained
+ * hashing.
+ *
+ * In the past, we used integer modulo for hashing, with bucket chains
+ * of mean size 4.  This was shown to be inferior to direct hashing
+ * with integer anding. The new implementation reflects this.
  */
 gdk_export void HASHremove(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
-gdk_export BUN HASHprobe(Hash *h, ptr v);
+gdk_export BUN HASHprobe(Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
 
 #define mix_sht(X)            (((X)>>7)^(X))
@@ -89,41 +86,25 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define hash_var(H,V)         hash_any(H,V)
 #define hash_any(H,V)         (ATOMhash((H)->type, (V)) & (H)->mask)
 #define heap_hash_any(hp,H,V) ((hp) && (hp)->hashash ? ((BUN *) (V))[-1] & (H)->mask : hash_any(H,V))
-#define hash_bte(H,V)         ((BUN) (*(unsigned char*) (V)) & (H)->mask)
-#define hash_sht(H,V)         ((BUN) mix_sht(*((unsigned short*) (V))) & (H)->mask)
-#define hash_int(H,V)         ((BUN) mix_int(*((unsigned int*) (V))) & (H)->mask)
+#define hash_bte(H,V)         ((BUN) (*(const unsigned char*) (V)) & (H)->mask)
+#define hash_sht(H,V)         ((BUN) mix_sht(*((const unsigned short*) (V))) & (H)->mask)
+#define hash_int(H,V)         ((BUN) mix_int(*((const unsigned int*) (V))) & (H)->mask)
 /* XXX return size_t-sized value for 8-byte oid? */
-#define hash_lng(H,V)         ((BUN) mix_int((unsigned int) (*(lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
+#define hash_lng(H,V)         ((BUN) mix_int((const unsigned int) (*(const lng *)(V) ^ (*(lng *)(V) >> 32))) & (H)->mask)
 #if SIZEOF_OID == SIZEOF_INT
-#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) *((oid*) (V))) & (H)->mask)
+#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) *((const oid*) (V))) & (H)->mask)
 #else
-#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) (*(oid *)(V) ^ (*(oid *)(V) >> 32))) & (H)->mask)
+#define hash_oid(H,V)         ((BUN) mix_int((unsigned int) (*(const oid *)(V) ^ (*(const oid *)(V) >> 32))) & (H)->mask)
 #endif
 #if SIZEOF_WRD == SIZEOF_INT
-#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) *((wrd*) (V))) & (H)->mask)
+#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) *((const wrd*) (V))) & (H)->mask)
 #else
-#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) (*(wrd *)(V) ^ (*(wrd *)(V) >> 32))) & (H)->mask)
+#define hash_wrd(H,V)         ((BUN) mix_int((unsigned int) (*(const wrd *)(V) ^ (*(const wrd *)(V) >> 32))) & (H)->mask)
 #endif
 
 #define hash_flt(H,V)         hash_int(H,V)
 #define hash_dbl(H,V)         hash_lng(H,V)
 
-
-@= hashfnd
-#define HASHfnd_@1(x,y,z)						\
-	do {								\
-		BUN _i;							\
-		(x) = BUN_NONE;						\
-		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
-		    GDKfatal("HASHfnd_@1: hash build failed on %s.\n",	\
-			     BATgetId((y).b)))				\
-			HASHloop_@1((y), (y).b->H->hash, _i, (z)) {	\
-				(x) = _i;				\
-				break;					\
-			}						\
-	} while (0)
-@
-@h
 #define HASHfnd_str(x,y,z)						\
 	do {								\
 		BUN _i;							\
@@ -160,12 +141,24 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 				break;					\
 			}						\
 	} while (0)
-@:hashfnd(bte)@
-@:hashfnd(sht)@
-@:hashfnd(int)@
-@:hashfnd(lng)@
-@:hashfnd(oid)@
-@:hashfnd(wrd)@
+#define HASHfnd_TYPE(x,y,z,TYPE)					\
+	do {								\
+		BUN _i;							\
+		(x) = BUN_NONE;						\
+		if ((y).b->H->hash || BAThash((y).b, 0) ||		\
+		    GDKfatal("HASHfnd_" #TYPE ": hash build failed on %s.\n", \
+			     BATgetId((y).b)))				\
+			HASHloop_##TYPE((y), (y).b->H->hash, _i, (z)) {	\
+				(x) = _i;				\
+				break;					\
+			}						\
+	} while (0)
+#define HASHfnd_bte(x,y,z)	HASHfnd_TYPE(x,y,z,bte)
+#define HASHfnd_sht(x,y,z)	HASHfnd_TYPE(x,y,z,sht)
+#define HASHfnd_int(x,y,z)	HASHfnd_TYPE(x,y,z,int)
+#define HASHfnd_lng(x,y,z)	HASHfnd_TYPE(x,y,z,lng)
+#define HASHfnd_oid(x,y,z)	HASHfnd_TYPE(x,y,z,oid)
+#define HASHfnd_wrd(x,y,z)	HASHfnd_TYPE(x,y,z,wrd)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHfnd_ptr(x,y,z)	HASHfnd_int(x,y,z)
@@ -177,45 +170,49 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHfnd_dbl(x,y,z)	HASHfnd_lng(x,y,z)
 #define HASHfnd_any(x,y,z)	HASHfnd(x,y,z)
 /*
- * @-
- * A new entry is added with HASHins using the BAT, the BUN index,
- * and a pointer to the value to be stored. An entry is removed by HASdel.
+ * A new entry is added with HASHins using the BAT, the BUN index, and
+ * a pointer to the value to be stored. An entry is removed by HASdel.
  */
-@= hashins
-#define HASHins_@1(h, i, v) do {		\
-	BUN _c = hash_@1(h,v);			\
-	h->link[i] = h->hash[_c];		\
-	h->hash[_c] = i;			\
-} while (0)
-@
-@h
-#define HASHins_str(h,i,v) do {			\
-	BUN _c;					\
-	GDK_STRHASH(v,_c);			\
-	_c &= (h)->mask;			\
-	h->link[i] = h->hash[_c];		\
-	h->hash[_c] = i;			\
-} while (0)
-#define HASHins_str_hv(h,i,v) do {		\
-	BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
-	h->link[i] = h->hash[_c];		\
-	h->hash[_c] = i;			\
-} while (0)
+#define HASHins_TYPE(h, i, v, TYPE)		\
+	do {					\
+		BUN _c = hash_##TYPE(h,v);	\
+		h->link[i] = h->hash[_c];	\
+		h->hash[_c] = i;		\
+	} while (0)
 
-#define HASHins_any(h,i,v) do {			\
-	BUN _c = HASHprobe(h, v);		\
-	h->link[i] = h->hash[_c];		\
-	h->hash[_c] = i;			\
-} while (0)
+#define HASHins_str(h,i,v)			\
+	do {					\
+		BUN _c;				\
+		GDK_STRHASH(v,_c);		\
+		_c &= (h)->mask;		\
+		h->link[i] = h->hash[_c];	\
+		h->hash[_c] = i;		\
+	} while (0)
+#define HASHins_str_hv(h,i,v)				\
+	do {						\
+		BUN _c = ((BUN *) v)[-1] & (h)->mask;	\
+		h->link[i] = h->hash[_c];		\
+		h->hash[_c] = i;			\
+	} while (0)
 
-/* HASHins now receives a BAT* param and has become adaptive; killing wrongly configured hash tables */
-/* use HASHins_any or HASHins_<tpe> instead if you know what you're doing or want to keep the hash whatever */
-#define HASHins(b,i,v) do {						\
-	if (((i) & 1023) == 1023 && HASHgonebad((b),(v)))		\
-		HASHremove(b);						\
-	else								\
-		HASHins_any((b)->H->hash,(i),(v));			\
-} while (0)
+#define HASHins_any(h,i,v)			\
+	do {					\
+		BUN _c = HASHprobe(h, v);	\
+		h->link[i] = h->hash[_c];	\
+		h->hash[_c] = i;		\
+	} while (0)
+
+/* HASHins now receives a BAT* param and has become adaptive; killing
+ * wrongly configured hash tables */
+/* use HASHins_any or HASHins_<tpe> instead if you know what you're
+ * doing or want to keep the hash whatever */
+#define HASHins(b,i,v)							\
+	do {								\
+		if (((i) & 1023) == 1023 && HASHgonebad((b),(v)))	\
+			HASHremove(b);					\
+		else							\
+			HASHins_any((b)->H->hash,(i),(v));		\
+	} while (0)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 #define HASHins_ptr(h,i,v)	HASHins_int(h,i,v)
@@ -233,10 +230,10 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 #define HASHinsvar(h,i,v)	HASHins_any(h,i,v)
 #define HASHinsloc(h,i,v)	HASHins_any(h,i,v)
 
-@:hashins(bte)@
-@:hashins(sht)@
-@:hashins(int)@
-@:hashins(lng)@
+#define HASHins_bte(h,i,v)	HASHins_TYPE(h,i,v,bte)
+#define HASHins_sht(h,i,v)	HASHins_TYPE(h,i,v,sht)
+#define HASHins_int(h,i,v)	HASHins_TYPE(h,i,v,int)
+#define HASHins_lng(h,i,v)	HASHins_TYPE(h,i,v,lng)
 
 #define HASHdel(h, i, v, next)						\
 	do {								\
@@ -280,24 +277,28 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 @c
 /*
  * @- Hash Table Creation
- * The @emph{hash} indexing scheme for BATs reserves a block of memory to maintain
- * the hash table and a collision list. A one-to-one mapping exists between
- * the BAT and the collision list using the BUN index. NOTE: we alloc the
- * link list as a parallel array to the BUN array; hence the hash link array has
- * the same size as BATcapacity(b) (not BATcount(b)). This allows us in the
- * BUN insert and delete to assume that there is hash space iff there is BUN
- * space. If there is no BUN space, the BATextend now destroys the hash table.
+ * The hash indexing scheme for BATs reserves a block of memory to
+ * maintain the hash table and a collision list. A one-to-one mapping
+ * exists between the BAT and the collision list using the BUN
+ * index. NOTE: we alloc the link list as a parallel array to the BUN
+ * array; hence the hash link array has the same size as
+ * BATcapacity(b) (not BATcount(b)). This allows us in the BUN insert
+ * and delete to assume that there is hash space iff there is BUN
+ * space. If there is no BUN space, the BATextend now destroys the
+ * hash table.
  *
- * The hash mask size is a power of two, so we can do bitwise AND on the
- * hash (integer) number to quickly find the head of the bucket chain.
- * Clearly, the hash mask size is a crucial parameter. If we know that the column
- * is unique (hkey), we use direct hashing (mask size ~= BATcount). Otherwise
- * we dynamically determine the mask size by starting out with mask size = BATcount/64
- * (just 1.5% of memory storage overhead). Then we start building the hash table
- * on the first 25% of the BAT. As we aim for max-collisions list length of 4,
- * the list on 25% should not exceed length 1. So, if a small number of collisssions
- * occurs (mask/2) then we abandon the attempt and restart with a mask that is 4 times
- * larger. This converges after three cycles to direct hashing.
+ * The hash mask size is a power of two, so we can do bitwise AND on
+ * the hash (integer) number to quickly find the head of the bucket
+ * chain.  Clearly, the hash mask size is a crucial parameter. If we
+ * know that the column is unique (hkey), we use direct hashing (mask
+ * size ~= BATcount). Otherwise we dynamically determine the mask size
+ * by starting out with mask size = BATcount/64 (just 1.5% of memory
+ * storage overhead). Then we start building the hash table on the
+ * first 25% of the BAT. As we aim for max-collisions list length of
+ * 4, the list on 25% should not exceed length 1. So, if a small
+ * number of collisssions occurs (mask/2) then we abandon the attempt
+ * and restart with a mask that is 4 times larger. This converges
+ * after three cycles to direct hashing.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -344,37 +345,33 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	return h;
 }
 
-@= starthash
-	{
-		@1 *v = (@1*)BUNhloc(bi, 0);
-		for (; r < p; r++) {
-			BUN c = hash_@1(h, v+r);
+#define starthash(TYPE)							\
+	do {								\
+		TYPE *v = (TYPE*)BUNhloc(bi, 0);			\
+		for (; r < p; r++) {					\
+			BUN c = hash_##TYPE(h, v+r);			\
+									\
+			if (h->hash[c] == BUN_NONE && nslots-- == 0)	\
+				break; /* mask too full */		\
+			h->link[r] = h->hash[c];			\
+			h->hash[c] = r;					\
+		}							\
+	} while (0)
+#define finishhash(TYPE)				\
+	do {						\
+		TYPE *v = (TYPE*)BUNhloc(bi, 0);	\
+		for (; p < q; p++) {			\
+			BUN c = hash_##TYPE(h, v+p);	\
+							\
+			h->link[p] = h->hash[c];	\
+			h->hash[c] = p;			\
+		}					\
+	} while (0)
 
-			if (h->hash[c] == BUN_NONE && nslots-- == 0) 
-				break; /* mask too full */
-			h->link[r] = h->hash[c];
-			h->hash[c] = r;
-		}
-	}
-	break;
-@= finishhash
-	{
-		@1 *v = (@1*)BUNhloc(bi, 0);
-		for (; p < q; p++) {
-			BUN c = hash_@1(h, v+p);
-	
-			h->link[p] = h->hash[c];
-			h->hash[c] = p;
-		}
-	}
-	break;
-@
-@c
 /*
- * @-
  * The prime routine for the BAT layer is to create a new hash index.
- * Its argument is the element type and the maximum number of BUNs
- * be stored under the hash function.
+ * Its argument is the element type and the maximum number of BUNs be
+ * stored under the hash function.
  */
 BAT *
 BAThash(BAT *b, BUN masksize)
@@ -403,8 +400,8 @@ BAThash(BAT *b, BUN masksize)
 		BATiter bi = bat_iterator(b);
 
 		ALGODEBUG THRprintf(GDKout, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
-		/* cnt = 0, hopefully there is a proper capacity from which
-		 * we can derive enough information */
+		/* cnt = 0, hopefully there is a proper capacity from
+		 * which we can derive enough information */
 		if (!cnt)
 			cnt = BATcapacity(b);
 
@@ -418,8 +415,8 @@ BAThash(BAT *b, BUN masksize)
 
 			tpe = TYPE_void;
 		}
-		/* determine hash mask size 
-		   p = first; then no dynamic scheme */
+		/* determine hash mask size p = first; then no dynamic
+		 * scheme */
 		if (masksize > 0) {
 			mask = HASHmask(masksize);
 		} else if (ATOMsize(ATOMstorage(tpe)) == 1) {
@@ -429,8 +426,11 @@ BAThash(BAT *b, BUN masksize)
 		} else if (b->hkey) {
 			mask = HASHmask(cnt);
 		} else {
-			/* dynamic hash: we start with HASHmask(cnt/64); if there are too many collisions
-			 * we try HASHmask(cnt/16), then HASHmask(cnt/4), and finally HASHmask(cnt).  */
+			/* dynamic hash: we start with
+			 * HASHmask(cnt/64); if there are too many
+			 * collisions we try HASHmask(cnt/16), then
+			 * HASHmask(cnt/4), and finally
+			 * HASHmask(cnt).  */
 			mask = HASHmask(cnt >> 6);
 			p += (cnt >> 2);	/* try out on first 25% of b */
 			if (p > q)
@@ -468,21 +468,25 @@ BAThash(BAT *b, BUN masksize)
 			switch (tpe) {
 #ifndef NOEXPAND_BTE
 			case TYPE_bte:
-				@:starthash(bte)@
+				starthash(bte);
+				break;
 #endif
 #ifndef NOEXPAND_SHT
 			case TYPE_sht:
-				@:starthash(sht)@
+				starthash(sht);
+				break;
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 			case TYPE_int:
 			case TYPE_flt:
-				@:starthash(int)@
+				starthash(int);
+				break;
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 			case TYPE_dbl:
 			case TYPE_lng:
-				@:starthash(lng)@
+				starthash(lng);
+				break;
 #endif
 			default:
 				for (; r < p; r++) {
@@ -504,21 +508,25 @@ BAThash(BAT *b, BUN masksize)
 		switch (tpe) {
 #ifndef NOEXPAND_BTE
 		case TYPE_bte:
-			@:finishhash(bte)@
+			finishhash(bte);
+			break;
 #endif
 #ifndef NOEXPAND_SHT
 		case TYPE_sht:
-			@:finishhash(sht)@
+			finishhash(sht);
+			break;
 #endif
 #if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
-			@:finishhash(int)@
+			finishhash(int);
+			break;
 #endif
 #if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
-			@:finishhash(lng)@
+			finishhash(lng);
+			break;
 #endif
 		default:
 			for (; p < q; p++) {
@@ -542,12 +550,11 @@ BAThash(BAT *b, BUN masksize)
 }
 
 /*
- * @-
  * The entry on which a value hashes can be calculated with the
  * routine HASHprobe.
  */
 BUN
-HASHprobe(Hash *h, ptr v)
+HASHprobe(Hash *h, const void *v)
 {
 	switch (ATOMstorage(h->type)) {
 #ifndef NOEXPAND_BTE
@@ -624,7 +631,7 @@ HASHdestroy(BAT *b)
 }
 
 int
-HASHgonebad(BAT *b, ptr v)
+HASHgonebad(BAT *b, const void *v)
 {
 	Hash *h = b->H->hash;
 	BATiter bi = bat_iterator(b);
@@ -642,8 +649,9 @@ HASHgonebad(BAT *b, ptr v)
 		if (cnt / hit > 4)
 			return 1;	/* linked list too long */
 
-		/* in this case, linked lists are long but contain the desired values 
-		 * such hash tables may be useful for locating all duplicates */
+		/* in this case, linked lists are long but contain the
+		 * desired values such hash tables may be useful for
+		 * locating all duplicates */
 	}
 	return 0;		/* a-ok */
 }
@@ -652,31 +660,31 @@ HASHgonebad(BAT *b, ptr v)
 @h
 /*
  * @+ Binary Search on a Sorted BAT
- * We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that
- * search for a TAIL value 'v' in a sorted BAT. If the value is present,
- * the first routine returns a pointer to its first occurrence, while the second
- * routine returns a pointer to the BUN just after the last occurrence of 'v'.
- * In case value 'v' does not occur in the tail of BAT b, both routines return
- * a pointer to the first BUN with a tail value larger than 'v'
- * (i.e., BUNfirst(b), in case all tail values are larger than 'v');
- * or BUNlast(b), in case all tail values are smaller than 'v'.
+ * We have two main routines, @`SORTfndfirst@5(b,v) and
+ * @`SORTfndlast@5(b,v), that search for a TAIL value 'v' in a sorted
+ * BAT. If the value is present, the first routine returns a pointer
+ * to its first occurrence, while the second routine returns a pointer
+ * to the BUN just after the last occurrence of 'v'.  In case value
+ * 'v' does not occur in the tail of BAT b, both routines return a
+ * pointer to the first BUN with a tail value larger than 'v' (i.e.,
+ * BUNfirst(b), in case all tail values are larger than 'v'); or
+ * BUNlast(b), in case all tail values are smaller than 'v'.
  *
- * @
- * From the above routines we now also defined the @`SORTfnd@5 and SORTfnd_tpe
- * routines that look for a certain value and return a (not necessarily the first
- * or last) reference to it, or NULL (if the value does not exist).
+ * From the above routines we now also defined the @`SORTfnd@5 and
+ * SORTfnd_tpe routines that look for a certain value and return a
+ * (not necessarily the first or last) reference to it, or NULL (if
+ * the value does not exist).
  *
  * Note: of the SORTfnd, only @`SORTfndfirst@5(b,v) and
  * @`SORTfndlast@5(b,v) work on the tail of a bat!
- *
- * @
  *
  * @- Range Binary Search
  * Type-specific versions of SORTfndfirst are available using macro
  * expansions. It finds the first BUN larger or equal than a certain
  * value and expands to @`SORTfndfirst_bte@5, @`SORTfndfirst_sht@5,
  * @`SORTfndfirst_int@5, @`SORTfndfirst_flt@5, @`SORTfndfirst_lng@5,
- * @`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and @`SORTfndfirst_var@5.
+ * @`SORTfndfirst_dbl@5, @`SORTfndfirst_loc@5 and
+ * @`SORTfndfirst_var@5.
  *
  * Type-specific versions of SORTfndlast are available using macro
  * expansions. It finds the first BUN smaller or equal than a certain
@@ -684,46 +692,25 @@ HASHgonebad(BAT *b, ptr v)
  * @`SORTfndlast_int@5, @`SORTfndlast_flt@5, @`SORTfndlast_lng@5,
  * @`SORTfndlast_dbl@5, @`SORTfndlast_loc@5 and @`SORTfndlast_var@5.
  */
-/* type specific binary search implementations */
-gdk_export BUN SORTfnd_bte(BAT *b, ptr v);
-gdk_export BUN SORTfnd_dbl(BAT *b, ptr v);
-gdk_export BUN SORTfnd_flt(BAT *b, ptr v);
-gdk_export BUN SORTfnd_int(BAT *b, ptr v);
-gdk_export BUN SORTfnd_lng(BAT *b, ptr v);
-gdk_export BUN SORTfnd_loc(BAT *b, ptr v);
-gdk_export BUN SORTfnd_sht(BAT *b, ptr v);
-gdk_export BUN SORTfnd_var(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_bte(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_dbl(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_flt(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_int(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_lng(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_loc(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_sht(BAT *b, ptr v);
-gdk_export BUN SORTfndfirst_var(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_bte(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_dbl(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_flt(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_int(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_lng(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_loc(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_sht(BAT *b, ptr v);
-gdk_export BUN SORTfndlast_var(BAT *b, ptr v);
+
+gdk_export BUN SORTfnd(BAT *b, const void *v);
+gdk_export BUN SORTfndfirst(BAT *b, const void *v);
+gdk_export BUN SORTfndlast(BAT *b, const void *v);
 
 #endif /* _GDK_SEARCH_H_ */
 
 /*
- * @-
- * By Peter sept-99. This is a simple implementation that avoids all multiply
- * and divs on most bats by using integer BUNindex numbers rather than absolute
- * pointers (the BUNptr employed to obtain a pointer uses shift where possible).
- * Also, the gradient-based approach has been dropped again, which allows all
- * atoms to be treated in one macro. Main motivation: distrust of gradient
+ * By Peter sept-99. This is a simple implementation that avoids all
+ * multiply and divs on most bats by using integer BUNindex numbers
+ * rather than absolute pointers (the BUNptr employed to obtain a
+ * pointer uses shift where possible).  Also, the gradient-based
+ * approach has been dropped again, which allows all atoms to be
+ * treated in one macro. Main motivation: distrust of gradient
  * performance on odmg data and its high mult/div overhead.
  */
 @= SORTfnd
 BUN
-SORTfndfirst_@2(BAT *b, ptr v)
+SORTfndfirst_@2(BAT *b, const void *v)
 {
 	BUN diff, end = BUNfirst(b), cur = end;
 	BUN lo = end, hi = BUNlast(b);
@@ -731,8 +718,8 @@ SORTfndfirst_@2(BAT *b, ptr v)
 	BATiter bi = bat_iterator(b);
 
         if (lo >= hi || @3_CMP(BUNt@1(bi, cur), v, @4)>=0) {
-		/* shortcut: if BAT is empty or first (and hence all) tail
-		 * value is >= v, we're done. */
+		/* shortcut: if BAT is empty or first (and hence all)
+		 * tail value is >= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
@@ -758,7 +745,7 @@ SORTfndfirst_@2(BAT *b, ptr v)
 }
 
 BUN
-SORTfndlast_@2(BAT *b, ptr v)
+SORTfndlast_@2(BAT *b, const void *v)
 {
 	BUN diff, end = BUNlast(b), cur = end;
 	BUN lo = BUNfirst(b), hi = end;
@@ -766,8 +753,8 @@ SORTfndlast_@2(BAT *b, ptr v)
 	BATiter bi = bat_iterator(b);
 
         if (lo >= hi || @3_CMP(BUNt@1(bi, cur - 1), v, @4)<=0) {
-		/* shortcut: if BAT is empty or last (and hence all) tail
-		 * value is <= v, we're done. */
+		/* shortcut: if BAT is empty or last (and hence all)
+		 * tail value is <= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
@@ -793,7 +780,7 @@ SORTfndlast_@2(BAT *b, ptr v)
 }
 
 BUN
-SORTfnd_@2(BAT *m, ptr v)
+SORTfnd_@2(BAT *m, const void *v)
 {
 	BAT *b = BATmirror(m);
 	BUN lo = BUNfirst(b), hi = BUNlast(b);
@@ -819,7 +806,7 @@ SORTfnd_@2(BAT *m, ptr v)
 
 @= SORTfnd_switch
 BUN
-SORTfnd@2(BAT *b, ptr v)
+SORTfnd@2(BAT *b, const void *v)
 {
 	if (b && b->@1sorted) {
 		switch(ATOMstorage(b->@1type)) {

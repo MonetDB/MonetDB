@@ -161,7 +161,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			return 1;
 		}
 		if (idcmp("hash", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomHash = (BUN (*)(ptr))pci->fcn;
+			BATatoms[tpe].atomHash = (BUN (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}

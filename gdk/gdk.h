@@ -2138,7 +2138,7 @@ typedef struct {
 	void *(*atomRead) (ptr a, stream *s, size_t cnt);
 	int (*atomWrite) (ptr a, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
-	BUN (*atomHash) (ptr v);
+	BUN (*atomHash) (const void *v);
 	/* optional functions */
 	void (*atomConvert) (ptr v, int direction);
 	int (*atomFix) (ptr atom);
@@ -3077,60 +3077,6 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
 		       SORTfndlast((b), th) : BUNlast(b));		\
 		  p < q;						\
 		  p++)
-
-#define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
-	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst_##TYPE(b, tl), \
-		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast_##TYPE(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_bte(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, bte)
-#define SORTloop_sht(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, sht)
-#define SORTloop_int(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, int)
-#define SORTloop_lng(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, lng)
-#define SORTloop_flt(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, flt)
-#define SORTloop_dbl(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, dbl)
-#define SORTloop_oid(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, oid)
-#define SORTloop_wrd(b, p, q, tl, th)	SORTloop_TYPE(b, p, q, tl, th, wrd)
-
-#define SORTloop_loc(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_loc(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_loc(b, th); \
-		  p < q;						\
-		  p++)
-
-#define SORTloop_var(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_var: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_var(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_var(b, th); \
-		  p < q;						\
-		  p++)
-
-/* OIDDEPEND */
-#if SIZEOF_OID == SIZEOF_INT
-#define SORTfnd_oid(b,v)	SORTfnd_int(b,v)
-#define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v)
-#define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v)
-#else
-#define SORTfnd_oid(b,v)	SORTfnd_lng(b,v)
-#define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
-#define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-#define SORTfnd_wrd(b,v)	SORTfnd_int(b,v)
-#define SORTfndfirst_wrd(b,v)	SORTfndfirst_int(b,v)
-#define SORTfndlast_wrd(b,v)	SORTfndlast_int(b,v)
-#else
-#define SORTfnd_wrd(b,v)	SORTfnd_lng(b,v)
-#define SORTfndfirst_wrd(b,v)	SORTfndfirst_lng(b,v)
-#define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
-#endif
-#define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)
 
 /*
  * @+ Common BAT Operations

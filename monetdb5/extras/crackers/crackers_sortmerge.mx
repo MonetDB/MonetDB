@@ -246,7 +246,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	QNodesSize=0;
 	while(current!=NULL){
 		/* binary search to find the position of the lowest requested value in the current slice */
-		l  = SORTfndfirst_@4(current->slice,@5);
+		l  = SORTfndfirst(current->slice,@5);
 		lt = (@1*)Tloc(current->slice,l);
 		t0 = (@1*)Tloc(current->slice,BUNfirst(current->slice));
 		lastValue = (@1*)Tloc(current->slice, BUNlast(current->slice));
@@ -514,7 +514,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 @= BinarySearchBounds
 	/* binary search to find the position of the lowest requested value in the current slice */
-	l  = SORTfndfirst_@4(slice,@5);
+	l  = SORTfndfirst(slice,@5);
 	lt = (@1*)Tloc(slice,l);
 	t0 = (@1*)Tloc(slice,BUNfirst(slice));
 	lastValue = (@1*)Tloc(slice, BUNlast(slice));
@@ -543,7 +543,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		start= (oid) (lt-t0);	
 		
 		/* binary search to find the position of the highest requested value */
-		l = SORTfndfirst_@4(slice, @6);
+		l = SORTfndfirst(slice, @6);
 		lt = (@1*)Tloc(slice,l);
 		if (lt < lastValue){
 			if (@2_EQ(lt,@6,@3@1) && *@8 == TRUE){	
@@ -589,7 +589,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 	notFound=FALSE;
 
 	/* binary search to find the position of the highest requested value */
-	l = SORTfndfirst_@4(slice, @5);
+	l = SORTfndfirst(slice, @5);
 	lt = (@1*)Tloc(slice,l);
 	if (lt < lastValue) {
 		lt = (@1*)Tloc(slice,l);
@@ -621,7 +621,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 @
 @= BinarySearchLow
 	/* binary search to find the position of the lowest requested value in the current slice */
-	l  = SORTfndfirst_@4(slice,@5);
+	l  = SORTfndfirst(slice,@5);
 	lt = (@1*)Tloc(slice,l);
 	t0 = (@1*)Tloc(slice,BUNfirst(slice));
 	lastValue = (@1*)Tloc(slice, BUNlast(slice));
