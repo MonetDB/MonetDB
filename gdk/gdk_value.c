@@ -157,7 +157,7 @@ VALcopy(ValPtr d, ValPtr s)
 }
 
 ValPtr
-VALinit(ValPtr d, int tpe, ptr s)
+VALinit(ValPtr d, int tpe, const void *s)
 {
 	if (ATOMextern(tpe) == 0) {
 		d->vtype = tpe;

@@ -276,7 +276,7 @@ All Rights Reserved.
  * (also to be moved to gdk.mx and gdk_bat.mx, respectively)
  */
 
-BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck);
+BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck);
 
 #endif /* _GDK_SCANSELECT_H */
 
@@ -595,7 +595,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, i
  * The dispatcher, called from BAT_select (gdk_batop.mx).
  */
 BAT *
-BAT_scanselect(BAT *b, BAT *bn, ptr tl, ptr th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck)
+BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck)
 {
 	int t = b->ttype;
 

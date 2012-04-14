@@ -431,19 +431,19 @@ la_bat_updates(logger *lg, logaction *la)
 				BUN p, q;
 
 				BATloop(la->b, p, q) {
-					ptr h = BUNhead(bi, p);
-					ptr t = BUNtail(bi, p);
+					const void *h = BUNhead(bi, p);
+					const void *t = BUNtail(bi, p);
 
 					if (BUNfnd(b, h) == BUN_NONE) {
 						/* if value doesn't exist, insert it
 						   if b void headed, maintain that by inserting nils */
 						if (b->htype == TYPE_void) {
-							if (b->batCount == 0 && *(oid *) h != oid_nil)
-								b->hseqbase = *(oid *) h;
-							if (b->hseqbase != oid_nil && *(oid *) h != oid_nil) {
-								void *tv = ATOMnilptr(b->ttype);
+							if (b->batCount == 0 && *(const oid *) h != oid_nil)
+								b->hseqbase = *(const oid *) h;
+							if (b->hseqbase != oid_nil && *(const oid *) h != oid_nil) {
+								const void *tv = ATOMnilptr(b->ttype);
 
-								while (b->hseqbase + b->batCount < *(oid *) h)
+								while (b->hseqbase + b->batCount < *(const oid *) h)
 									BUNappend(b, tv, TRUE);
 							}
 							BUNappend(b, t, TRUE);
@@ -1530,8 +1530,8 @@ log_delta(logger *lg, BAT *b, char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		int (*wh) (ptr, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
-		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		int (*wh) (const void *, stream *, size_t) = b->htype == TYPE_void ? BATatoms[TYPE_oid].atomWrite : BATatoms[b->htype].atomWrite;
+		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_UPDATE;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1539,8 +1539,8 @@ log_delta(logger *lg, BAT *b, char *name)
 			return LOG_ERR;
 
 		for (p = BUNfirst(b); p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-			ptr h = BUNhead(bi, p);
-			ptr t = BUNtail(bi, p);
+			const void *h = BUNhead(bi, p);
+			const void *t = BUNtail(bi, p);
 
 			ok = wh(h, lg->log, 1);
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
@@ -1570,8 +1570,8 @@ log_bat(logger *lg, BAT *b, char *name)
 
 	if (l.nr) {
 		BATiter bi = bat_iterator(b);
-		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
-		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		int (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_INSERT;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1581,13 +1581,13 @@ log_bat(logger *lg, BAT *b, char *name)
 		if (b->htype == TYPE_void &&
 		    b->ttype < TYPE_str &&
 		    !isVIEW(b)) {
-			ptr t = BUNtail(bi, b->batInserted);
+			const void *t = BUNtail(bi, b->batInserted);
 
 			ok = wt(t, lg->log, l.nr);
 		} else {
 			for (p = b->batInserted; p < BUNlast(b) && ok == GDK_SUCCEED; p++) {
-				ptr h = BUNhead(bi, p);
-				ptr t = BUNtail(bi, p);
+				const void *h = BUNhead(bi, p);
+				const void *t = BUNtail(bi, p);
 
 				ok = wh(h, lg->log, 1);
 				ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);
@@ -1602,8 +1602,8 @@ log_bat(logger *lg, BAT *b, char *name)
 
 	if (l.nr && ok == GDK_SUCCEED) {
 		BATiter bi = bat_iterator(b);
-		int (*wh) (ptr, stream *, size_t) = BATatoms[b->htype].atomWrite;
-		int (*wt) (ptr, stream *, size_t) = BATatoms[b->ttype].atomWrite;
+		int (*wh) (const void *, stream *, size_t) = BATatoms[b->htype].atomWrite;
+		int (*wt) (const void *, stream *, size_t) = BATatoms[b->ttype].atomWrite;
 
 		l.flag = LOG_DELETE;
 		if (log_write_format(lg, &l) == LOG_ERR ||
@@ -1611,8 +1611,8 @@ log_bat(logger *lg, BAT *b, char *name)
 			return LOG_ERR;
 
 		for (p = b->batDeleted; p < b->batFirst && ok == GDK_SUCCEED; p++) {
-			ptr h = BUNhead(bi, p);
-			ptr t = BUNtail(bi, p);
+			const void *h = BUNhead(bi, p);
+			const void *t = BUNtail(bi, p);
 
 			ok = wh(h, lg->log, 1);
 			ok = (ok == GDK_FAIL) ? ok : wt(t, lg->log, 1);

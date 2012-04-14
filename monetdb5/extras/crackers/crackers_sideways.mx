@@ -1944,7 +1944,7 @@ selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, b
 	}
 
 	/* binary search to find the position of the lowest requested value in the insertions */
-	l = SORTfndfirst_@5(u,low);
+	l = SORTfndfirst(u,low);
 	lt = (@1*)Tloc(u,l);
 	t0 = (@1*)Tloc(u,BUNfirst(u));
 	updLast = (@1*)Tloc(u, BUNlast(u));
@@ -1967,7 +1967,7 @@ selectMergeInsertionsPart_@1_@2_Sideways( @1 *low, bit *inclusiveLow, @1 *hgh, b
 	updatesStart = (oid) (lt - t0);	
 	
 	/* binary search to find the position of the highest requested value in the insertions */
-        l = SORTfndfirst_@5(u, hgh);
+        l = SORTfndfirst(u, hgh);
 	lt = (@1*)Tloc(u,l);
 	if (lt < updLast){
 		if (@3_EQ(lt,hgh,@4@1) && *inclusiveHgh == TRUE){	

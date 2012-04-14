@@ -1117,7 +1117,7 @@ print_line(stream *s, col_format_t **l)
 }
 
 static void
-print_format(col_format_t *c, ptr v)
+print_format(col_format_t *c, const void *v)
 {
 	if (c->format)
 		c->len = (*c->format) (&c->buf, &c->size, v);
