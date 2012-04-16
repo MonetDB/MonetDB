@@ -233,9 +233,9 @@ do {	/* type-specific core algorithm */				\
 	two = (in *) Tloc(btwo, BUNfirst(btwo));			\
 	res = (out*) Tloc(bres, BUNfirst(bres));			\
 									\
-	/* is tail of right/second BAT sorted, also when cast to	\
-	 * unsigned type, */						\
-	/* i.e., are the values either all >= 0 or all < 0? */		\
+	/* is tail of right/second BAT sorted,				\
+	 * also when cast to unsigned type,				\
+	 * i.e., are the values either all >= 0 or all < 0? */		\
 	two_tail_sorted_unsigned = BATtordered(btwo) &&			\
 		(two[0] >= 0 || two[n - 1] < 0);			\
 	two_tail_revsorted_unsigned = BATtrevordered(btwo) &&		\
@@ -277,11 +277,11 @@ do {	/* type-specific core algorithm */				\
 	BATaccessEnd(btwo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	/* set result properties */
-	bres->hdense = TRUE;		/* result head is dense */
+	bres->hdense = TRUE;              /* result head is dense */
 	BATseqbase(bres, bone->hseqbase); /* result head has same seqbase as input */
-	bres->hsorted = 1;		/* result head is sorted */
+	bres->hsorted = 1;                /* result head is sorted */
 	bres->hrevsorted = (BATcount(bres) <= 1);
-	BATkey(bres, TRUE);		/* result head is key (unique) */
+	BATkey(bres, TRUE);               /* result head is key (unique) */
 
 	/* Result tail is sorted, if the left/first input tail is
 	 * sorted and key (unique), or if the left/first input tail is
