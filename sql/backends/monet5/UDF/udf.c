@@ -176,6 +176,7 @@ UDFBATfuse(bat *ires, bat *ione, bat *itwo)
 {
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
+	bit two_tail_revsorted_unsigned = FALSE;
 
 	/* assert calling sanity */
 	assert(ires != NULL && ione != NULL && itwo != NULL);
@@ -237,6 +238,8 @@ do {	/* type-specific core algorithm */				\
 	/* i.e., are the values either all >= 0 or all < 0? */		\
 	two_tail_sorted_unsigned = BATtordered(btwo) &&			\
 		(two[0] >= 0 || two[n - 1] < 0);			\
+	two_tail_revsorted_unsigned = BATtrevordered(btwo) &&		\
+		(two[0] < 0 || two[n - 1] >= 0);			\
 									\
 	/* iterate over all values/tuples and do the work */		\
 	for (i = 0; i < n; i++)						\
@@ -277,7 +280,7 @@ do {	/* type-specific core algorithm */				\
 	bres->hdense = TRUE;		/* result head is dense */
 	BATseqbase(bres, bone->hseqbase); /* result head has same seqbase as input */
 	bres->hsorted = 1;		/* result head is sorted */
-	bres->hrevsorted = 0;
+	bres->hrevsorted = (BATcount(bres) <= 1);
 	BATkey(bres, TRUE);		/* result head is key (unique) */
 
 	/* Result tail is sorted, if the left/first input tail is
@@ -290,8 +293,12 @@ do {	/* type-specific core algorithm */				\
 	    && (BATtkey(bone) || two_tail_sorted_unsigned))
 		bres->tsorted = 1;
 	else
-		bres->tsorted = 0;
-	bres->trevsorted = 0;
+		bres->tsorted = (BATcount(bres) <= 1);
+	if (BATtrevordered(bone)
+	    && (BATtkey(bone) || two_tail_revsorted_unsigned))
+		bres->trevsorted = 1;
+	else
+		bres->trevsorted = (BATcount(bres) <= 1);
 	/* result tail is key (unique), iff both input tails are */
 	BATkey(BATmirror(bres), BATtkey(bone) || BATtkey(btwo));
 
