@@ -114,7 +114,7 @@ UDFBATreverse(bat *ret, bat *bid)
 			BATaccessEnd(left, USE_HEAD | USE_TAIL,
 				     MMAP_SEQUENTIAL);
 			BBPreleaseref(left->batCacheid);
-			BBPreleaseref(*ret);
+			BBPreleaseref(bn->batCacheid);
 			return err;
 		}
 
