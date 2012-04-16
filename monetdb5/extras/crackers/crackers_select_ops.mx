@@ -718,7 +718,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 	}
 
 	/* binary search to find the position of the lowest requested value in the deletions*/
-	l  = SORTfndfirst_@4(u,low);
+	l  = SORTfndfirst(u,low);
 	lt = (@1*)Tloc(u,l);
 	t0 = (@1*)Tloc(u,BUNfirst(u));
 	updLast = (@1*)Tloc(u, BUNlast(u));
@@ -747,7 +747,7 @@ selectMergeDeletionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit *
 	updatesStart = (oid) (lt-t0);	
 	
 	/* binary search to find the position of the highest requested value in the deletions */
-        l = SORTfndfirst_@4(u, hgh);
+        l = SORTfndfirst(u, hgh);
 	lt = (@1*)Tloc(u,l);
 	if (lt < updLast){
 		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == TRUE){	
@@ -811,7 +811,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 	}
 
 	/* binary search to find the position of the lowest requested value in the insertions */
-	l = SORTfndfirst_@4(u,low);
+	l = SORTfndfirst(u,low);
 	lt = (@1*)Tloc(u,l);
 	t0 = (@1*)Tloc(u, BUNfirst(u));
 	updLast = (@1*)Tloc(u, BUNlast(u));
@@ -834,7 +834,7 @@ selectMergeInsertionsPart_@1(int *bid, @1 *low, bit *inclusiveLow, @1 *hgh, bit 
 	updatesStart = (oid) (lt-t0);	
 	
 	/* binary search to find the position of the highest requested value in the insertions */
-        l  = SORTfndfirst_@4(u, hgh);
+        l  = SORTfndfirst(u, hgh);
 	lt = (@1*)Tloc(u,l);
 	if (lt < updLast){
 		if (@2_EQ(lt,hgh,@3@1) && *inclusiveHgh == TRUE){	

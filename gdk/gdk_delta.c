@@ -63,8 +63,8 @@ BATcommit(BAT *b)
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
-		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 		BUN p, q;
@@ -160,8 +160,8 @@ BATundo(BAT *b)
 	bunlast = BUNlast(b) - 1;
 	if (bunlast >= b->batInserted) {
 		BUN i = bunfirst;
-		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
-		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		int (*hunfix) (const void *) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (const void *) = BATatoms[b->ttype].atomUnfix;
 		void (*hatmdel) (Heap *, var_t *) = BATatoms[b->htype].atomDel;
 		void (*tatmdel) (Heap *, var_t *) = BATatoms[b->ttype].atomDel;
 

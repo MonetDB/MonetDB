@@ -139,7 +139,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			return 1;
 		}
 		if (idcmp("fix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomFix = (int (*)(ptr))pci->fcn;
+			BATatoms[tpe].atomFix = (int (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
@@ -161,7 +161,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			return 1;
 		}
 		if (idcmp("hash", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomHash = (BUN (*)(ptr))pci->fcn;
+			BATatoms[tpe].atomHash = (BUN (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
@@ -173,7 +173,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'l':
 		if (idcmp("length", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomLen = (int (*)(ptr))pci->fcn;
+			BATatoms[tpe].atomLen = (int (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
@@ -194,7 +194,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'p':
 		if (idcmp("put", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomPut = (var_t (*)(Heap *, var_t *, ptr))pci->fcn;
+			BATatoms[tpe].atomPut = (var_t (*)(Heap *, var_t *, const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
@@ -215,7 +215,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'u':
 		if (idcmp("unfix", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomUnfix = (int (*)(ptr))pci->fcn;
+			BATatoms[tpe].atomUnfix = (int (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}
@@ -236,7 +236,7 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'w':
 		if (idcmp("write", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomWrite = (int (*)(void *, stream *, size_t))pci->fcn;
+			BATatoms[tpe].atomWrite = (int (*)(const void *, stream *, size_t))pci->fcn;
 			setAtomName(pci);
 			return 1;
 		}

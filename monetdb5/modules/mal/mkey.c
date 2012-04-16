@@ -150,7 +150,7 @@ static str
 voidbathash(BAT **res, BAT *b )
 {
 	BAT *dst;
-	BUN (*hash)(ptr v);
+	BUN (*hash)(const void *v);
 	wrd *r, *f;
 	BATiter bi, dsti;
 
@@ -381,7 +381,7 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 			dst++;
 		}
 	} else {
-		BUN (*hash)(ptr) = BATatoms[b->ttype].atomHash;
+		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 		BUN p, q;
 
 		BATloop(b, p, q) {
@@ -601,7 +601,7 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			src++;
 		}
 	} else {
-		BUN (*hash)(ptr) = BATatoms[b->ttype].atomHash;
+		BUN (*hash)(const void *) = BATatoms[b->ttype].atomHash;
 		BUN p, q;
 
 		BATloop(b, p, q) {

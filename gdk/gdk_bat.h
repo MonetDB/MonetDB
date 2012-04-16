@@ -21,7 +21,7 @@
 #define _GDK_BAT_H_
 
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
-gdk_export int void_inplace(BAT *b, oid id, ptr val, bit force);
+gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
 gdk_export BAT *BATattach(int tt, const char *heapfile);
 
 extern int default_ident(char *s);

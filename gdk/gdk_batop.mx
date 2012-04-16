@@ -418,7 +418,7 @@ BATins(BAT *b, BAT *n, bit force)
 			BATiter ni = bat_iterator(n);
 
 			BATloop(n, p, q) {
-				ptr v = BUNhead(ni, p);
+				const void *v = BUNhead(ni, p);
 
 				bunfastins_nocheck(b, r, v, BUNtail(ni, p), Hsize(b), Tsize(b));
 				HASHins_oid(b->H->hash, i, v);
@@ -618,7 +618,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				oid h = b->hseqbase + i;
 
 				BATloop(n, p, q) {
-					ptr t = BUNtail(ni, p);
+					const void *t = BUNtail(ni, p);
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &h, t);
 						if (b->T->hash) {
@@ -633,7 +633,7 @@ BATappend(BAT *b, BAT *n, bit force)
 				oid on = oid_nil;
 
 				BATloop(n, p, q) {
-					ptr t = BUNtail(ni, p);
+					const void *t = BUNtail(ni, p);
 					if (BUNfnd(bm, t) == BUN_NONE) {
 						bunfastins(b, &on, t);
 						if (b->T->hash) {
@@ -655,7 +655,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			h = (oid) (b->hseqbase + BATcount(b));
 
 			BATloop(n, p, q) {
-				ptr t = BUNtail(ni, p);
+				const void *t = BUNtail(ni, p);
 
 				bunfastins(b, &h, t);
 				if (b->T->hash) {
@@ -671,7 +671,7 @@ BATappend(BAT *b, BAT *n, bit force)
 			oid on = oid_nil;
 
 			BATloop(n, p, q) {
-				ptr t = BUNtail(ni, p);
+				const void *t = BUNtail(ni, p);
 
 				bunfastins(b, &on, t);
 				if (b->T->hash) {
@@ -1012,7 +1012,7 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 @
 @c
 static BAT *
-BAT_hashselect(BAT *b, BAT *bn, ptr tl)
+BAT_hashselect(BAT *b, BAT *bn, const void *tl)
 {
 	int ht = bn->htype, tt = bn->ttype;
 	BUN size = BATcount(bn);
@@ -1068,11 +1068,11 @@ BATsetprop_wrd(BAT *b, int idx, wrd val)
 }
 
 BAT *
-BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
+BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
 {
 	int hval, lval, equi, nequi = anti, t, ht, tt, lnil = 0;
 	BUN offset, batcnt, estimate = 0;
-	ptr nil;
+	const void *nil;
 	BAT *bn;
 	BUN p, q;
 
@@ -1104,7 +1104,7 @@ BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit pres
 		if (!lval != !hval) {
 			/* one of the end points is nil and the other
 			 * isn't: swap sub-ranges */
-			ptr tv;
+			const void *tv;
 			bit ti;
 			ti = li;
 			li = hi;
@@ -1354,31 +1354,31 @@ BAT_select_(BAT *b, ptr tl, ptr th, bit li, bit hi, bit tail, bit anti, bit pres
 }
 
 BAT *
-BATselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+BATselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
 	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, FALSE);
 }
 
 BAT *
-BATuselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
 	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, FALSE);
 }
 
 BAT *
-BATantiuselect_(BAT *b, ptr h, ptr t, bit li, bit hi)
+BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
 	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, FALSE);
 }
 
 BAT *
-BATselect(BAT *b, ptr h, ptr t)
+BATselect(BAT *b, const void *h, const void *t)
 {
 	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE, FALSE);
 }
 
 BAT *
-BATuselect(BAT *b, ptr h, ptr t)
+BATuselect(BAT *b, const void *h, const void *t)
 {
 	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE, FALSE);
 }
@@ -1458,7 +1458,7 @@ BATtopN(BAT *b, BUN topN)
 			BATiter bi = bat_iterator(b);
 
 			for (; i < m; i++) {
-				ptr v = BUNt@4(bi, *i);
+				const void *v = BUNt@4(bi, *i);
 
 				if ((!tl || @1_LE(tl, v, @2)) &&
 				    (!th || @1_LE(v, th, @2))) {
@@ -1470,7 +1470,7 @@ BATtopN(BAT *b, BUN topN)
 @
 @c
 BAT *
-BATrestrict(BAT *b, ptr hl, ptr hh, ptr tl, ptr th)
+BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th)
 {
 	BAT *bn;
 	BUN p = 0, l;
@@ -2293,7 +2293,7 @@ BATrangesplit(BAT *b, BUN n, int unary)
 		 */
 @= rangesplit
 	BATloop(b, r, s) {
-		ptr val = BUNt@2(bi, r);
+		const void *val = BUNt@2(bi, r);
 		BUN lo = 0;
 		BUN hi = n - 1;
 		for (;;) {
@@ -2524,7 +2524,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 	BATloop(b, p, q) {
 		oid n = oid_nil;
 		BUN w;
-		ptr v = BUNt@3(bi, p);
+		const void *v = BUNt@3(bi, p);
 		oid *m;
 
 		BUNfnd@4(w, gci, v);
@@ -2691,7 +2691,7 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 
 
 BAT *
-BATconst(BAT *b, int tailtype, ptr v)
+BATconst(BAT *b, int tailtype, const void *v)
 {
 	BAT *bn = NULL;
 	BUN p, q, r;
@@ -2723,28 +2723,28 @@ BATconst(BAT *b, int tailtype, ptr v)
 			bt->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
 			switch (ATOMsize(ATOMstorage(tailtype))) {
 			case 1:{
-				bte *d = (bte *) Tloc(bt, BUNfirst(bt)), V = *(bte *) v;
+				bte *d = (bte *) Tloc(bt, BUNfirst(bt)), V = *(const bte *) v;
 				for (r = 0; r < cnt; r++)
 					d[r] = V;
 				BATsetcount(bt, cnt);
 				break;
 			}
 			case 2:{
-				sht *d = (sht *) Tloc(bt, BUNfirst(bt)), V = *(sht *) v;
+				sht *d = (sht *) Tloc(bt, BUNfirst(bt)), V = *(const sht *) v;
 				for (r = 0; r < cnt; r++)
 					d[r] = V;
 				BATsetcount(bt, cnt);
 				break;
 			}
 			case 4:{
-				int *d = (int *) Tloc(bt, BUNfirst(bt)), V = *(int *) v;
+				int *d = (int *) Tloc(bt, BUNfirst(bt)), V = *(const int *) v;
 				for (r = 0; r < cnt; r++)
 					d[r] = V;
 				BATsetcount(bt, cnt);
 				break;
 			}
 			case 8:{
-				lng *d = (lng *) Tloc(bt, BUNfirst(bt)), V = *(lng *) v;
+				lng *d = (lng *) Tloc(bt, BUNfirst(bt)), V = *(const lng *) v;
 				for (r = 0; r < cnt; r++)
 					d[r] = V;
 				BATsetcount(bt, cnt);
@@ -2790,7 +2790,7 @@ BATconst(BAT *b, int tailtype, ptr v)
 	bn->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
 	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
 	if (tailtype == TYPE_bit) {
-		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(bit *) v == TRUE) ? (wrd) BATcount(b) : 0);
+		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(const bit *) v == TRUE) ? (wrd) BATcount(b) : 0);
 	}
 	return bn;
       bunins_failed:
@@ -2899,7 +2899,7 @@ BATpropagate(BAT *dst, BAT *src, int idx)
 		BATiter bni = bat_iterator(bn);
 
 		BATloop(b, p, q) {
-			ptr v =  (ptr) BUNt@1(bi, p);
+			const void *v = BUNt@1(bi, p);
 
 			if (BATprepareHash(bn))
 				goto bunins_failed;
@@ -2912,10 +2912,10 @@ found@3@2:		(* (int *) BUNtloc(bni, r))++;
 		}
 		HASHdestroy(bn);
 	} else if (BATcount(b)) {
-		ptr prev = (ptr) BUNt@1(bi, BUNfirst(b));
+		const void *prev = BUNt@1(bi, BUNfirst(b));
 
 		BATloop(b, p, q) {
-			ptr v = (ptr) BUNt@1(bi, p);
+			const void *v = BUNt@1(bi, p);
 
 			if (@3_CMP(v, prev, @4) == 0) {
 				yy++;
@@ -3059,7 +3059,7 @@ BATcount_no_nil(BAT *b)
 	BUN cnt = 0;
 	BUN p, q;
 	BUN tt;
-	ptr nil;
+	const void *nil;
 	BATiter bi = bat_iterator(b);
 
 	BATcheck(b, "BATcnt");

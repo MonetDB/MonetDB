@@ -1,42 +1,30 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_utils
-
-@c
 /*
  * @a M. L. Kersten, P. Boncz, N. Nes
  *
  * @* Utilities
- * The utility section contains functions to initialize the Monet database
- * system, memory allocation details, and a basic system logging scheme.
- * @-
+ * The utility section contains functions to initialize the Monet
+ * database system, memory allocation details, and a basic system
+ * logging scheme.
  */
-@h
-#ifndef _GDK_UTILS_H_
-#define _GDK_UTILS_H_
-
-#include <monet_options.h>
-
-gdk_export BAT *GDKenv;
-
-@c
 #include "monetdb_config.h"
 
 #include "gdk.h"
@@ -88,18 +76,17 @@ static int GDKgetHome(void);
 
 /*
  * @+ Monet configuration file
- * Parse a possible MonetDB config file
- * (if specified by command line option -c/--config)
- * to extract pre-settings of system variables.
- * Un-recognized parameters are simply skipped, because they  may be
- * picked up by other components of the system.
- * The consequence is that making a typing error in the configuration file
- * may be unnoticed for a long time.
- * Syntax errors are immediately flagged, though.
+ * Parse a possible MonetDB config file (if specified by command line
+ * option -c/--config) to extract pre-settings of system variables.
+ * Un-recognized parameters are simply skipped, because they may be
+ * picked up by other components of the system.  The consequence is
+ * that making a typing error in the configuration file may be
+ * unnoticed for a long time.  Syntax errors are immediately flagged,
+ * though.
  *
- * Since the GDK kernel moves into the database directory, we need
- * to keep the absolute path to the MonetDB config file for top-levels
- * to access its information.
+ * Since the GDK kernel moves into the database directory, we need to
+ * keep the absolute path to the MonetDB config file for top-levels to
+ * access its information.
  */
 
 static int
@@ -126,10 +113,6 @@ GDKenvironment(str dbname, str dbfarm)
 	return 1;
 }
 
-@h
-gdk_export char *GDKgetenv(const char *name);
-
-@c
 char *
 GDKgetenv(const char *name)
 {
@@ -142,10 +125,6 @@ GDKgetenv(const char *name)
 	return NULL;
 }
 
-@h
-gdk_export int GDKgetenv_isyes(const char *name);
-
-@c
 int
 GDKgetenv_isyes(const char *name)
 {
@@ -157,10 +136,6 @@ GDKgetenv_isyes(const char *name)
 	return 0;
 }
 
-@h
-gdk_export int GDKgetenv_istrue(const char *name);
-
-@c
 int
 GDKgetenv_istrue(const char *name)
 {
@@ -182,10 +157,6 @@ GDKgetenv_int(const char *name, int def)
 	return def;
 }
 
-@h
-gdk_export void GDKsetenv(str name, str value);
-
-@c
 void
 GDKsetenv(str name, str value)
 {
@@ -196,18 +167,16 @@ GDKsetenv(str name, str value)
 
 /*
  * @+ System logging
- * Per database a log file can be maintained for collection
- * of system management information. Its contents is driven
- * by the upper layers, which encode information such as
- * who logged on and how long the session went on.
- * The lower layers merely store error information on the file.
- * It should not be used for crash recovery, because this should be
- * dealt with on a per client basis.
+ * Per database a log file can be maintained for collection of system
+ * management information. Its contents is driven by the upper layers,
+ * which encode information such as who logged on and how long the
+ * session went on.  The lower layers merely store error information
+ * on the file.  It should not be used for crash recovery, because
+ * this should be dealt with on a per client basis.
  *
- * @-
- * A system log can be maintained in the database to keep track
- * of session and crash information. It should regularly be
- * refreshed to avoid disk overflow.
+ * A system log can be maintained in the database to keep track of
+ * session and crash information. It should regularly be refreshed to
+ * avoid disk overflow.
  */
 #define GDKLOCK	".gdk_lock"
 
@@ -219,9 +188,8 @@ static FILE *GDKlockFile = 0;
 #define GDKCRASH	"CRASH"
 
 /*
- * @-
- * Single-lined comments can now be logged safely, together with process, thread
- * and user ID, and the current time.
+ * Single-lined comments can now be logged safely, together with
+ * process, thread and user ID, and the current time.
  */
 void
 GDKlog(const char *format, ...)
@@ -241,14 +209,14 @@ GDKlog(const char *format, ...)
 	/* remove forbidden characters from message */
 	for (p = buf; (p = strchr(p, '\n')) != NULL; *p = ' ')
 		;
-	for (p = buf; (p = strchr(p, '\@')) != NULL; *p = ' ')
+	for (p = buf; (p = strchr(p, '@')) != NULL; *p = ' ')
 		;
 
 	fseek(GDKlockFile, 0, SEEK_END);
 #ifndef HAVE_GETUID
 #define getuid() 0
 #endif
-	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s \@ %s", (int) getuid(), (int) getpid(), ctime(&tm), buf);
+	fprintf(GDKlockFile, "USR=%d PID=%d TIME=%s @ %s", (int) getuid(), (int) getpid(), ctime(&tm), buf);
 	fflush(GDKlockFile);
 
 	if (mustopen)
@@ -312,52 +280,8 @@ BATSIGinit(void)
 }
 #endif /* NATIVE_WIN32 */
 
-@h
-/*
- * @+ Memory management
- * Memory management in GDK mostly relies on the facilities offered by the
- * underlying OS.  The below routines monitor the available memory resources
- * which consist of physical swap space and logical vm space.
- * There are three kinds of memory, that affect these two resources in different ways:
- * @table @samp
- *
- * @item memory mapping
- *  which ask for a logical region of virtual memory space.
- * In principal, no physical memory is needed to keep the system afloat here,
- * as the memory mapped file is swapped onto a disk object that already exists.
- *
- * Actually, there are two kings of memory mapping used in GDK, namely
- * read-only direct mapped and writable copy-on write. For the dirty
- * pages, the latter actually also consumes physical memory resources,
- * but that is ignored here for simplicity.
- *
- * @item anonymous virtual memory
- * This is virtual memory that is mapped on the swap file. Hence, this consumes
- * both logical VM space resources and physical memory space.
- *
- * @item malloced memory
- * comes from the heap and directly consumes physical memory resources.
- * @end table
- *
- * We check the resource consumption with preset target values, and if these
- * are exceeded, the routine BBPtrim is called that will unload the
- * least recently used BATs in order to decrease memory usage.
- *
- * The malloc routine checks the memory consumption every 1000 calls,
- * or for calls larger that 50000 bytes. Consequently, at least every
- * 50MB increase, alloc memory is checked. The VM calls always check
- * the memory consumption.
- */
-/* default setting to administer everything */
-#define GDK_MEM_NULLALLOWED
-
-#if SIZEOF_VOID_P==8
-#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104)	/* :-) a 64-bit OS: 4TB */
-#else
-#define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
-#endif
-@c
-/* memory thresholds; these values some "sane" constants only, really set in GDKinit() */
+/* memory thresholds; these values some "sane" constants only, really
+ * set in GDKinit() */
 size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
@@ -369,22 +293,26 @@ int GDK_mem_allocs = 0;
 int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
-#define CHKMEM(meminc, vminc) do {					\
-	int memchk, vmchk; \
-	malloc_lock(); \
-	memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
-	vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
-	malloc_unlock(); \
-	if (memchk || vmchk) GDKmemchk(memchk, vmchk);			\
-} while (0)
+#define CHKMEM(meminc, vminc)						\
+	do {								\
+		int memchk, vmchk;					\
+									\
+		malloc_lock();						\
+		memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
+		vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+		malloc_unlock();					\
+		if (memchk || vmchk)					\
+			GDKmemchk(memchk, vmchk);			\
+	} while (0)
 
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
 
 /* histogram update macro */
-#define GDKmallidx(idx,size)				\
-	{						\
+#define GDKmallidx(idx, size)				\
+	do {						\
 		int _mask;				\
+							\
 		if (size < 128) {			\
 			_mask = (1<<6);			\
 			idx = 7;			\
@@ -396,15 +324,11 @@ int GDK_vm_trim = 1;
 			if (_mask&size) break;		\
 			_mask >>=1;			\
 		}					\
-	}
+	} while (0)
 
 volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
-
-#ifdef GDK_MEM_TRACE
-static int mtrace = 0;
-#endif
 
 #ifndef NDEBUG
 static MT_Lock mbyteslock;
@@ -417,16 +341,6 @@ static MT_Lock mbyteslock;
 #define malloc_lock_init()
 #endif
 
-@h
-/* virtual memory defines */
-gdk_export size_t _MT_npages;
-gdk_export size_t _MT_pagesize;
-
-#define MT_pagesize()	_MT_pagesize
-#define MT_npages()	_MT_npages
-
-gdk_export void MT_init(void);	/*  init the package. */
-@c
 size_t _MT_pagesize = 0;	/* variable holding memory size */
 size_t _MT_npages = 0;		/* variable holding page size */
 
@@ -446,7 +360,7 @@ MT_init(void)
 		size_t len = sizeof(int);
 		int mib[2];
 
-		/* Everyone should have permission to make this call, 
+		/* Everyone should have permission to make this call,
 		 * if we get a failure something is really wrong. */
 		mib[0] = CTL_HW;
 		mib[1] = HW_PAGESIZE;
@@ -481,7 +395,7 @@ MT_init(void)
 		size_t len = sizeof(size);
 		int mib[2];
 
-		/* Everyone should have permission to make this call, 
+		/* Everyone should have permission to make this call,
 		 * if we get a failure something is really wrong. */
 		mib[0] = CTL_HW;
 		mib[1] = HW_MEMSIZE;
@@ -495,7 +409,7 @@ MT_init(void)
 		size_t len = sizeof(size);
 		int mib[2];
 
-		/* Everyone should have permission to make this call, 
+		/* Everyone should have permission to make this call,
 		 * if we get a failure something is really wrong. */
 		mib[0] = CTL_HW;
 		mib[1] = HW_PHYSMEM64;
@@ -513,7 +427,7 @@ MT_init(void)
 		size_t len = sizeof(size);
 		int mib[2];
 
-		/* Everyone should have permission to make this call, 
+		/* Everyone should have permission to make this call,
 		 * if we get a failure something is really wrong. */
 		mib[0] = CTL_HW;
 		mib[1] = HW_PHYSMEM;
@@ -542,7 +456,9 @@ GDKvm_heapsize(void)
 	size_t ret = GDKmem_heapsize();
 
 #ifdef __linux__
-	/* on linux, malloc may also use mmapped space, so the bytes-in-malloc may be much bigger than the sbrk() region */
+	/* on linux, malloc may also use mmapped space, so the
+	 * bytes-in-malloc may be much bigger than the sbrk()
+	 * region */
 	malloc_lock();
 	ret = MAX(GDK_mallocedbytes_estimate, ret);
 	malloc_unlock();
@@ -624,108 +540,106 @@ GDKmem_heapcheck(int t)
 	GDK_heapcheck_last = t;
 }
 
-/*
- * @- heapinc(size_t _memdelta, void* _blk)
- */
-@= heapinc
-	{
-		size_t _memdelta = (size_t) @1;
-#ifdef GDK_MEM_TRACE
-		void*  _blk = (void*) @2;
-
-		if (mtrace) {
-			int _idx = add_stack(stackBat);
-
-			add_mem(memBat, _blk, _idx);
-		}
-#endif
-		malloc_lock();
-		GDK_mallocedbytes_estimate += _memdelta;
-		malloc_unlock();
 #ifdef GDK_MEM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _memdelta);
-			GDK_nmallocs[_idx]++;
-		}
+#define heapinc(_memdelta)					\
+	do {							\
+		int _idx;					\
+								\
+		malloc_lock();					\
+		GDK_mallocedbytes_estimate += (_memdelta);	\
+		malloc_unlock();				\
+		GDKmallidx(_idx, _memdelta);			\
+		GDK_nmallocs[_idx]++;				\
+	} while (0)
+#define heapdec(memdelta)						\
+	do {								\
+		size_t _memdelta = (size_t) (memdelta);			\
+		int _idx;						\
+									\
+		malloc_lock();						\
+		if (_memdelta > GDK_mallocedbytes_estimate) {		\
+			/* clearly, the stats are off: it should never	\
+			 * become less-than-zero */			\
+			GDKmem_heapcheck(GDKms());			\
+		} else {						\
+			GDK_mallocedbytes_estimate -= _memdelta;	\
+		}							\
+		malloc_unlock();					\
+		GDKmallidx(_idx, _memdelta);				\
+		GDK_nmallocs[_idx]--;					\
+	} while (0)
+#else
+#define heapinc(_memdelta)					\
+	do {							\
+		malloc_lock();					\
+		GDK_mallocedbytes_estimate += (_memdelta);	\
+		malloc_unlock();				\
+	} while (0)
+#define heapdec(memdelta)						\
+	do {								\
+		size_t _memdelta = (size_t) (memdelta);			\
+		malloc_lock();						\
+		if (_memdelta > GDK_mallocedbytes_estimate) {		\
+			/* clearly, the stats are off: it should never	\
+			 * become less-than-zero */			\
+			GDKmem_heapcheck(GDKms());			\
+		} else {						\
+			GDK_mallocedbytes_estimate -= _memdelta;	\
+		}							\
+		malloc_unlock();					\
+	} while (0)
 #endif
-	}
 
-@
- * @- heapdec(size_t memdelta, void* _blk)
-@= heapdec
-	{
-		size_t _memdelta = (size_t) @1;
-#ifdef GDK_MEM_TRACE
-		void*  _blk = (void*) @2;
-
-		if (mtrace) {
-			del_mem(memBat,_blk);
-		}
-#endif
-
-		malloc_lock();
-		if (_memdelta > GDK_mallocedbytes_estimate) {
-			/* clearly, the stats are off: it should never become less-than-zero */
-			GDKmem_heapcheck(GDKms());
-		} else {
-			GDK_mallocedbytes_estimate -= _memdelta;
-		}
-		malloc_unlock();
-#ifdef GDK_MEM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _memdelta);
-			GDK_nmallocs[_idx]--;
-		}
-#endif
-	}
-
-@
- * @- meminc(size_t memdelta, size_t vmdelta, str fcn)
-@= meminc
-	{
-		ssize_t _memdelta = (ssize_t) @1;
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE(@2,MT_VMUNITLOG);
-
-		gdk_set_lock(GDKthreadLock, @3);
-		GDK_mem_cursize += _memdelta;
 #ifdef GDK_VM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _vmdelta);
-			GDK_vm_nallocs[_idx]++;
-		}
+#define meminc(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+		int _idx;						\
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize += _memdelta;				\
+		GDKmallidx(_idx, _vmdelta);				\
+		GDK_vm_nallocs[_idx]++;					\
+		GDK_vm_cursize += _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#define memdec(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+		int _idx;						\
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize -= _memdelta;				\
+		GDKmallidx(_idx, _vmdelta);				\
+		GDK_vm_nallocs[_idx]--;					\
+		GDK_vm_cursize -= _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#else
+#define meminc(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize += _memdelta;				\
+		GDK_vm_cursize += _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
+#define memdec(memdelta, vmdelta, fcn)					\
+	do {								\
+		ssize_t _memdelta = (ssize_t) (memdelta);		\
+		ssize_t _vmdelta = (ssize_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
+									\
+		gdk_set_lock(GDKthreadLock, fcn);			\
+		GDK_mem_cursize -= _memdelta;				\
+		GDK_vm_cursize -= _vmdelta;				\
+		gdk_unset_lock(GDKthreadLock, fcn);			\
+	} while (0)
 #endif
-		GDK_vm_cursize += _vmdelta;
-		gdk_unset_lock(GDKthreadLock, @3);
-	}
 
-@
- * @- memdec(size_t memdelta, size_t vmdelta, str nme)
-@= memdec
-	{
-		ssize_t _memdelta = (ssize_t) @1;
-		ssize_t _vmdelta = (ssize_t) SEG_SIZE(@2,MT_VMUNITLOG);
-
-		gdk_set_lock(GDKthreadLock, @3);
-		GDK_mem_cursize -= _memdelta;
-#ifdef GDK_VM_KEEPHISTO
-		{
-			int _idx;
-
-			GDKmallidx(_idx, _vmdelta);
-			GDK_vm_nallocs[_idx]--;
-		}
-#endif
-		GDK_vm_cursize -= _vmdelta;
-		gdk_unset_lock(GDKthreadLock, @3);
-	}
-@
-@c
 static void
 GDKmemdump(void)
 {
@@ -776,8 +690,8 @@ GDKmemchk(int memchk, int vmchk)
 	size_t vmtarget = GDKvm_cursize();
 
 	MEMDEBUG {
-		/* Protect from being called recursively because THRprintf
-		   allocates memory */
+		/* Protect from being called recursively because
+		 * THRprintf allocates memory */
 		static int printing[THREADS];
 		int tid = THRgettid();
 
@@ -793,7 +707,9 @@ GDKmemchk(int memchk, int vmchk)
 		if (memtarget > 0) {
 			int t = GDKms();
 
-			/* check max every 10 secs, and only if its incorrectness bothers us (i.e. causes BBPtrim) */
+			/* check max every 10 secs, and only if its
+			 * incorrectness bothers us (i.e. causes
+			 * BBPtrim) */
 			if ((t - GDK_heapcheck_last) > 10000) {
 				malloc_lock();
 				GDKmem_heapcheck(t);	/* correct thread-unsafe estimate */
@@ -810,282 +726,64 @@ GDKmemchk(int memchk, int vmchk)
 	}
 }
 
-
-/*
- * @+ Stack tracing
- *
- * Very simple malloc tracing implementation that allows to retain on which stack frame
- * a malloc was done. This is code originally developed by DD, and
- * is used only  by them.
- * Two bats are used: stackBat and memBat.
- * StackBat contains a DAG of all methods used for memory allocation.
- * MemBat contains a mapping from allocated memory addresses to an index
- * in the stackBat which indicates the place the memory is allocated.
- */
-#ifdef GDK_MEM_TRACE
-
-static BAT *stackBat = NULL;
-static BAT *memBat = NULL;
-typedef ptr mem_t;
-
-char *
-stack_test(int i, int j)
-{
-	if (--i == 0)
-		return (char *) GDKmalloc(j);
-
-	return stack_test(i, j);
-}
-
-
-void
-mtrace_test()
-{
-	char *t = stack_test(1, 1);
-
-	GDKfree(t);
-	GDKfree(t);		/* double delete */
-	t = stack_test(2, 2);
-	t = GDKrealloc(t, 20);	/* leaked */
-}
-
-
-static int
-GDKmtrace(bit *enable)
-{
-	if (*enable) {
-		if (memBat == NULL) {
-			memBat = BATnew(TYPE_ptr, TYPE_int, 16384);
-			if (memBat == NULL)
-				return GDK_FAIL;
-			stackBat = BATnew(TYPE_ptr, TYPE_ptr, 16384);
-			if (stackBat == NULL)
-				return GDK_FAIL;
-			BBPrename(memBat->batCacheid, "mem_trace");
-			BBPrename(stackBat->batCacheid, "mem_stack");
-			memBat->hsorted = memBat->hrevsorted = 0;
-			memBat->tsorted = memBat->trevsorted = 0;
-			memBat->H->nonil = 0;
-			BATkey(memBat, TRUE);
-			stackBat->hsorted = stackBat->hrevsorted = 0;
-			stackBat->tsorted = stackBat->trevsorted = 0;
-			BATset(stackBat, TRUE);
-			memBat->T->nonil = 0;
-		}
-		mtrace++;
-	} else if (mtrace > 0)
-		mtrace--;
-
-	memBat->batDirty = TRUE;
-	stackBat->batDirty = TRUE;
-
-	if (*enable == bit_nil) {
-		printf("testing mtrace:\n");
-		mtrace_test();
-		--mtrace;
-	}
-
-	return GDK_SUCCEED;
-}
-
-
-BUN
-add_dag(BAT *b, BUN p, mem_t current, mem_t parent)
-{
-	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
-	BUN last = BUNlast(b);
-
-	while (p != last) {
-		if ((*(mem_t *) BUNhloc(b, p)) == current && (*(mem_t *) BUNtloc(b, p)) == parent)
-			return p;
-		p += bunsize;
-	}
-
-	if (b->batBuns->free + bunsize > b->batBuns->size) {
-		int tmp = mtrace;
-
-		mtrace = 0;
-		if (BATextend(b, BATgrows(b)) == NULL)
-			return BUNlast(b);
-		mtrace = tmp;
-		last = BUNlast(b);
-	}
-	bunfastins_nocheck(b, last, &current, &parent, bunsize);
-	return last;
-}
-
-
-#define MAX_STACK_ADDR 16
-#define STACK_LIST(STACK_ENTRY)						\
-	STACK_ENTRY(1) STACK_ENTRY(2) STACK_ENTRY(3)			\
-	STACK_ENTRY(4) STACK_ENTRY(5) STACK_ENTRY(6) STACK_ENTRY(7)	\
-	STACK_ENTRY(8) STACK_ENTRY(9) STACK_ENTRY(10) STACK_ENTRY(11)	\
-	STACK_ENTRY(12) STACK_ENTRY(13) STACK_ENTRY(14) STACK_ENTRY(15)
-
-#define STACK_READ(X)						\
-	if (continue_stack_trace &&				\
-	    ((mem_t)__builtin_frame_address((X)) != 0L) &&	\
-	    ((X) < MAX_STACK_ADDR)) {				\
-		parent = current;				\
-		current = (mem_t)__builtin_return_address((X)); \
-		if(parent)					\
-			p = add_dag(b, p, current, parent);	\
-	} else if (continue_stack_trace) {			\
-		continue_stack_trace = FALSE;			\
-	}
-
-int
-add_stack(BAT *b)
-{
-	mem_t current = 0, parent = 0;
-	bit continue_stack_trace = TRUE;
-	BUN p = BUNfirst(b);
-
-	STACK_LIST(STACK_READ);
-	return BUNindex(b, p);
-}
-
-#define __USE_GNU 1
-#include <dlfcn.h>
-void
-print_address(ptr address)
-{
-	Dl_info dlip;
-	char *filename;
-
-	dladdr(address, &dlip);
-
-	filename = 0;		/* strrchr(dlip.dli_fname,'/'); */
-	printf(PTRFMT "\t%s\t%s\n", PTRFMTCAST address, dlip.dli_sname, filename ? filename + 1 : dlip.dli_fname);
-}
-
-static int
-GDKmprint(int *pidx)
-{
-	int idx = *pidx;
-	BUN p = BUNptr(stackBat, idx), first = BUNfirst(stackBat);
-	const static int bunsize = sizeof(mem_t) + sizeof(mem_t);
-	mem_t *a;
-
-	if (p == NULL)
-		printf("No stack for index %d\n", idx);
-
-	a = (mem_t *) BUNhloc(stackBat, p);
-	print_address(*a);
-	a = (mem_t *) BUNtloc(stackBat, p);
-	print_address(*a);
-
-	while (p > first) {
-		p -= bunsize;
-		if (*(mem_t *) BUNhloc(stackBat, p) == *a) {
-			a = (mem_t *) BUNtloc(stackBat, p);
-			print_address(*a);
-		}
-	}
-
-	return GDK_SUCCEED;
-}
-
-
-void
-add_mem(BAT *b, mem_t mem, int idx)
-{
-	register BUN last;
-	const static int bunsize = sizeof(mem_t) + sizeof(int);
-
-	if (b->batBuns->free + bunsize > b->batBuns->size) {
-		int tmp = mtrace;
-
-		mtrace = 0;
-		if (BATextend(b, BATgrows(b)))
-			return;
-		mtrace = tmp;
-	}
-	last = BUNlast(b);
-	bunfastins_nocheck(b, last, &mem, &idx, bunsize);
-}
-
-
-void
-del_mem(BAT *b, mem_t mem)
-{
-	register BUN first = BUNfirst(b), p = BUNlast(b);
-	const static int bunsize = sizeof(mem_t) + sizeof(int);
-
-	for (p -= bunsize; p >= first; p -= bunsize) {
-		if (*(mem_t *) BUNhloc(b, p) == mem) {
-			int idx = -*(int *) BUNtloc(b, p);
-
-			if (idx > 0) {
-				printf("Double deletion of memory " PTRFMT ", "
-				       "size: " SSZFMT ", stack:%d\n",
-				       PTRFMTCAST(void *)mem,
-				       ((ssize_t *) mem)[-1],
-				       idx);
-
-				if (mtrace > 1)
-					GDKmprint(&idx);
-			} else {
-				BUNdelete(b, p);
-				/* BUNinplace(b,p,&mem,&idx,0); */
-			}
-			return;
-		}
-	}
-	printf("Free of unknown memory " PTRFMT ", size: " SSZFMT "\n", PTRFMTCAST(void *) mem, ((ssize_t *) mem)[-1]);
-}
-#endif
-
 /*
  * @+ Malloc
- * Malloc normally maps through directly to the OS provided malloc/free/realloc
- * calls. Where possible, we want to use the -lmalloc library on Unix systems,
- * because it allows to influence the memory allocation strategy. This can prevent
- * fragmentation and greatly help enhance performance.
+ * Malloc normally maps through directly to the OS provided
+ * malloc/free/realloc calls. Where possible, we want to use the
+ * -lmalloc library on Unix systems, because it allows to influence
+ * the memory allocation strategy. This can prevent fragmentation and
+ * greatly help enhance performance.
  *
- * The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the standard OS
- * primitives is that the GDK versions try to do recovery from failure to malloc by
- * initiating a BBPtrim. Also, big requests are redirected to anonymous virtual
- * memory. Finally, additional information on block sizes is kept (helping efficient
- * reallocations) as well as some debugging that guards against duplicate frees.
+ * The "added-value" of the GDKmalloc/GDKfree/GDKrealloc over the
+ * standard OS primitives is that the GDK versions try to do recovery
+ * from failure to malloc by initiating a BBPtrim. Also, big requests
+ * are redirected to anonymous virtual memory. Finally, additional
+ * information on block sizes is kept (helping efficient
+ * reallocations) as well as some debugging that guards against
+ * duplicate frees.
  *
- * A number of different strategies are available using different switches, however:
- * @table @samp
+ * A number of different strategies are available using different
+ * switches, however:
  *
- * @item zero sized blocks
- * Normally, GDK gives fatal errors on illegal block sizes.
- * This can be overridden with  GDK_MEM_NULLALLOWED.
+ * - zero sized blocks
+ *   Normally, GDK gives fatal errors on illegal block sizes.
+ *   This can be overridden with  GDK_MEM_NULLALLOWED.
  *
- * @item resource tracking
- * Many malloc interfaces lack a routine that tells the size of a block
- * by the pointer. We need this information for correct malloc statistics.
+ * - resource tracking
+ *   Many malloc interfaces lack a routine that tells the size of a
+ *   block by the pointer. We need this information for correct malloc
+ *   statistics.
  *
- * @item outstanding block histograms
- * In order to solve the problem, we allocate extra memory in front of the
- * returned block. With the resource tracking in place, we keep a total of
- * allocated bytes.  Also, if GDK_MEM_KEEPHISTO is defined, we keep a histogram
- * of the outstanding blocks on the log2 of the block size (similarly for virtual.
- * memory blocks; define GDK_VM_KEEPHISTO).
+ * - outstanding block histograms
+ *   In order to solve the problem, we allocate extra memory in front
+ *   of the returned block. With the resource tracking in place, we
+ *   keep a total of allocated bytes.  Also, if GDK_MEM_KEEPHISTO is
+ *   defined, we keep a histogram of the outstanding blocks on the
+ *   log2 of the block size (similarly for virtual.  memory blocks;
+ *   define GDK_VM_KEEPHISTO).
  *
- * @item redirection to anonymous VM
- * Sometimes, fragmentation problems arise on mallocs that are not tunable.
- * In that case, it makes sense to redirect large block requests (taken to be
- * larger than GDK_mem_bigsize) to anonymous virtual memory. The seamless
- * implementation of this stores the @strong{negative} block size in front of the
- * pointer (as well as the VM maxsize), so the malloc primitives can recognize
- * these redirected blocks.
- * @end table
+ * - redirection to anonymous VM
+ *   Sometimes, fragmentation problems arise on mallocs that are not
+ *   tunable.  In that case, it makes sense to redirect large block
+ *   requests (taken to be larger than GDK_mem_bigsize) to anonymous
+ *   virtual memory. The seamless implementation of this stores the
+ *   @strong{negative} block size in front of the pointer (as well as
+ *   the VM maxsize), so the malloc primitives can recognize these
+ *   redirected blocks.
  *
- * 64-bits update: Some 64-bit implementations (Linux) of mallinfo is severely broken, as they use int-s for memory sizes!!
- * This causes corruption of mallinfo stats. As we depend on those, we should keep the
- * malloc arena small. Thus, VM redirection is now quickly applied: for all mallocs > 1MB.
+ * 64-bits update: Some 64-bit implementations (Linux) of mallinfo is
+ * severely broken, as they use int-s for memory sizes!!  This causes
+ * corruption of mallinfo stats. As we depend on those, we should keep
+ * the malloc arena small. Thus, VM redirection is now quickly
+ * applied: for all mallocs > 1MB.
  */
 static void
 GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 {
 	int bak = GDKdebug;
 
-	/* bumped your nose against the wall; try to prevent repetition by adjusting maxsizes 
+	/* bumped your nose against the wall; try to prevent
+	 * repetition by adjusting maxsizes
 	   if (memtarget < 0.3 * GDKmem_inuse()) {
 		   size_t newmax = (size_t) (0.7 * (double) GDKmem_inuse());
 
@@ -1115,7 +813,8 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }
 
-/* the blocksize is stored in the ssize_t before it. Negative size <=> VM memory */
+/* the blocksize is stored in the ssize_t before it. Negative size <=>
+ * VM memory */
 #define GDK_MEM_BLKSIZE(p) ((ssize_t*) (p))[-1]
 #ifdef __GLIBC__
 #define GLIBC_BUG 8
@@ -1139,7 +838,6 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	} while (0)
 
 /*
- * @-
  * The emergency flag can be set to force a fatal error if needed.
  * Otherwise, the caller is able to deal with the lack of memory.
  */
@@ -1187,7 +885,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 		}
 	}
 	*maxsize = size;
-	@:heapinc(size+MALLOC_EXTRA_SPACE,s)@
+	heapinc(size + MALLOC_EXTRA_SPACE);
 	return (void *) s;
 }
 
@@ -1239,7 +937,7 @@ GDKfree_(void *blk)
 #ifndef NDEBUG
 		/* The check above detects obvious duplicate free's,
 		 * but fails in case the "check-bit" is cleared between
-		 * two free's (e.g., as the respective memory has been 
+		 * two free's (e.g., as the respective memory has been
 		 * re-allocated and initialized.
 		 * To simplify detection & debugging of duplicate free's,
 		 * we now overwrite the to be freed memory, which will
@@ -1254,7 +952,7 @@ GDKfree_(void *blk)
 		DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
 		free(((char *) s) - MALLOC_EXTRA_SPACE);
-		@:heapdec(size,s)@
+		heapdec(size);
 	}
 }
 
@@ -1329,13 +1027,14 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 			((ssize_t *) blk)[-1] = (ssize_t) newsize;
 
 			/* adapt statistics */
-			@:heapinc(newsize,blk)@
-			@:heapdec(oldsize,oldblk)@
+			heapinc(newsize);
+			heapdec(oldsize);
 			*maxsize = size;
 			return blk;
 		}
 	}
-	/* alloc&copy due to failed realloc (may be very big heap that needs vm) */
+	/* alloc&copy due to failed realloc (may be very big heap that
+	 * needs vm) */
 	oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
 	blk = GDKmallocmax(size, maxsize, emergency);
 	if (blk) {
@@ -1375,7 +1074,7 @@ GDKstrdup(const char *s)
 void
 GDKvminc(size_t len)
 {
-	@:meminc(0,len,"GDKvminc")@
+	meminc(0, len, "GDKvminc");
 	CHKMEM(0, len);
 }
 
@@ -1393,7 +1092,8 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKmmap " LLFMT " " SZFMT " " PTRFMT "\n", (lng) off, len, PTRFMTCAST ret);
 	if (ret != (void *) -1L) {
-		/* since mmap directly have content we say its zero-ed memory */
+		/* since mmap directly have content we say its zero-ed
+		 * memory */
 		VALGRIND_MALLOCLIKE_BLOCK(ret, len, 0, 1);
 		GDKvminc(len);
 	}
@@ -1408,9 +1108,8 @@ GDKmunmap(void *addr, size_t size)
 	ALLOCDEBUG fprintf(stderr, "#GDKmunmap " SZFMT " " PTRFMT "\n", size, PTRFMTCAST addr);
 	ret = MT_munmap(addr, size);
 	VALGRIND_FREELIKE_BLOCK(addr, 0);
-	if (ret == 0) {
-		@:memdec(0,size,"GDKunmap")@
-	}
+	if (ret == 0)
+		memdec(0, size, "GDKunmap");
 	return ret;
 }
 
@@ -1441,7 +1140,7 @@ GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, *maxsize, PTRFMTCAST ret);
 	if (ret != NULL) {
-		@:meminc(size,*maxsize,"GDKvmalloc")@
+		meminc(size, *maxsize, "GDKvmalloc");
 		CHKMEM(size, *maxsize);
 	}
 	return ret;
@@ -1467,8 +1166,8 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 	}
 	ALLOCDEBUG fprintf(stderr, "#GDKvmrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", newsize, *newmax, PTRFMTCAST pold, PTRFMTCAST ret);
 	if (ret != NULL) {
-		@:memdec(oldsize,oldmax,"GDKvmrealloc")@
-		@:meminc(newsize,*newmax,"GDKvmrealloc")@
+		memdec(oldsize, oldmax, "GDKvmrealloc");
+		meminc(newsize, *newmax, "GDKvmrealloc");
 		CHKMEM(newsize, *newmax);
 	}
 	return ret;
@@ -1479,25 +1178,26 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
 {
 	ALLOCDEBUG fprintf(stderr, "#GDKvmfree " SZFMT " " PTRFMT "\n", maxsize, PTRFMTCAST blk);
 	MT_vmfree(blk, maxsize);
-	@:memdec(size,maxsize,"GDKvmfree")@
+	memdec(size, maxsize, "GDKvmfree");
 }
 
 
 /*
  * @+ Session Initialization
- * The parameter @emph{db} is followed by the database name relative to
- * the environment variable dbfarm.
- * The parameter @emph{monetrc} tells that the system variables setting
- * should be overruled by the specification given in the file argument.
- * This format is only necessary to temporarily experiment with variable settings,
- * without disturbing a system/site default setting.
+ * The parameter @emph{db} is followed by the database name relative
+ * to the environment variable dbfarm.  The parameter monetrc tells
+ * that the system variables setting should be overruled by the
+ * specification given in the file argument.  This format is only
+ * necessary to temporarily experiment with variable settings, without
+ * disturbing a system/site default setting.
  *
  * The interface code to the operating system is highly dependent on
- * the processing environment. It can be filtered away with compile-time flags.
- * Suicide is necessary due to some system implementation errors.
+ * the processing environment. It can be filtered away with
+ * compile-time flags.  Suicide is necessary due to some system
+ * implementation errors.
  *
- * The kernel requires file descriptors for I/O with the user.
- * They are thread specific and should be obtained by a function.
+ * The kernel requires file descriptors for I/O with the user.  They
+ * are thread specific and should be obtained by a function.
  *
  * The arguments relevant for the kernel are extracted from the list.
  * Their value is turned into a blanc space.
@@ -1505,10 +1205,6 @@ GDKvmfree(void *blk, size_t size, size_t maxsize)
 
 int GDKrecovery = 0;
 
-@h
-gdk_export int GDKinit(opt *set, int setlen);
-
-@c
 void
 GDKprotect(void)
 {
@@ -1578,7 +1274,8 @@ GDKvmtrim(void *limit)
 			BBPtrim(*(size_t *) limit, *(size_t *) limit);
 		}
 		if (highload) {	/* memcrunch distress varies from 1 to 4 */
-			/* rss is above 0.75mem_maxsize!! start using mmap-on-tempfile */
+			/* rss is above 0.75mem_maxsize!! start using
+			 * mmap-on-tempfile */
 			/* minsize = memsize/threads iff highload = 0
 			 *         =  ..in between.. iff highload = 1-3
 			 *         =           128MB iff highload = 4
@@ -1701,7 +1398,8 @@ GDKinit(opt *set, int setlen)
 		GDK_vm_maxsize = MAX(1 << 30, (size_t) strtoll(p, NULL, 10));
 	}
 	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
-		/* when allocating >6% of all RAM; do so using vmalloc() iso malloc() */
+		/* when allocating >6% of all RAM; do so using
+		 * vmalloc() iso malloc() */
 		lng max_mem_bigsize = GDK_mem_maxsize_max / 16;
 
 		/* sanity check to avoid memory fragmentation */
@@ -1745,23 +1443,9 @@ GDKinit(opt *set, int setlen)
 	return 1;
 }
 
-@h
-/*
- * @-
- * Upon closing the session, all persistent BATs should be saved and
- * the transient BATs should be removed.
- * The buffer pool manager takes care of this.
- */
-gdk_export int GDKnr_threads;
-
-@c
 int GDKnr_threads = 0;
 static int GDKnrofthreads;
 
-@h
-gdk_export void GDKexit(int status);
-
-@c
 /* coverity[+kill] */
 void
 GDKexit(int status)
@@ -1821,15 +1505,16 @@ MT_Cond GDKunloadCond;
 
 /*
  * @+ Concurrency control
- * Concurrency control requires actions at several levels of the system.
- * First, it should be ensured that each database  is controlled by a single
- * server process (group). Subsequent attempts should be stopped.
- * This is regulated through file locking against ".gdk_lock".
- * Furthermore, the server process is moved to the database directory
- * for improved speed.
- * @-
+ * Concurrency control requires actions at several levels of the
+ * system.  First, it should be ensured that each database is
+ * controlled by a single server process (group). Subsequent attempts
+ * should be stopped.  This is regulated through file locking against
+ * ".gdk_lock".  Furthermore, the server process is moved to the
+ * database directory for improved speed.
+ *
  * Before the locks and threads are initiated, we cannot use the
- * normal routines yet. So we have a local fatal here instead of GDKfatal.
+ * normal routines yet. So we have a local fatal here instead of
+ * GDKfatal.
  */
 void
 GDKlockHome(void)
@@ -1838,11 +1523,10 @@ GDKlockHome(void)
 	char GDKdirStr[PATHLENGTH];
 
 	/*
-	 * @-
 	 * Go there and obtain the global database lock.
 	 */
-	/* The DIR_SEP at the end of the path is needed for a succesfull
-	   call to GDKcreatedir */
+	/* The DIR_SEP at the end of the path is needed for a
+	 * successful call to GDKcreatedir */
 
 	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s%c", GDKdbfarmStr, DIR_SEP, GDKdbnameStr, DIR_SEP);
 
@@ -1872,13 +1556,12 @@ GDKlockHome(void)
 		host[0] = 0;
 	}
 	/*
-	 * @-
-	 * We have the lock, are the only process currently allowed in this section.
+	 * We have the lock, are the only process currently allowed in
+	 * this section.
 	 */
 	MT_init();
 	OIDinit();
 	/*
-	 * @-
 	 * Print the new process list in the global lock file.
 	 */
 	fseek(GDKlockFile, 0, SEEK_SET);
@@ -1887,7 +1570,6 @@ GDKlockHome(void)
 	fflush(GDKlockFile);
 	GDKlog(GDKLOGON);
 	/*
-	 * @-
 	 * In shared mode, we allow more parties to join. Release the lock.
 	 */
 	GDKstopped = 0;
@@ -1904,7 +1586,6 @@ GDKunlockHome(void)
 }
 
 /*
- * @-
  * Really really get the lock. Now!!
  */
 static int
@@ -1926,19 +1607,17 @@ GDKgetHome(void)
 
 /*
  * @+ Error handling
- * Errors come in three flavors: warnings, non-fatal and fatal errors.
- * A fatal error leaves a core dump behind after trying to
- * safe the content of the relation.
- * A non-fatal error returns a message to the user
- * and aborts the current transaction.
- * Fatal errors are also recorded on the system log for post-mortem
- * analysis.
- * In non-silent mode the errors are immediately sent to output,
- * which makes it hard for upper layers to detect if an error
- * was produced in the process. To facilitate such testing,
- * a global error count is maintained on a thread basis,
- * which can be read out by the function GDKerrorCount();
- * Furthermore, threads may have set their private error buffer.
+  * Errors come in three flavors: warnings, non-fatal and fatal errors.
+ * A fatal error leaves a core dump behind after trying to safe the
+ * content of the relation.  A non-fatal error returns a message to
+ * the user and aborts the current transaction.  Fatal errors are also
+ * recorded on the system log for post-mortem analysis.
+ * In non-silent mode the errors are immediately sent to output, which
+ * makes it hard for upper layers to detect if an error was produced
+ * in the process. To facilitate such testing, a global error count is
+ * maintained on a thread basis, which can be read out by the function
+ * GDKerrorCount(); Furthermore, threads may have set their private
+ * error buffer.
  */
 int GDKsilent = 0;
 static int THRerrorcount[THREADDATA];
@@ -1981,7 +1660,7 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		*dst = '\0';
 	} else if (!GDKsilent) {
 		/* construct format string because the format string
-		   must start with ! */
+		 * must start with ! */
 		char format[32];
 
 		snprintf(format, sizeof(format), "%s%%.*s%s", prefix ? prefix : "", suffix ? suffix : "");
@@ -1990,16 +1669,16 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 }
 
 /* print an error or warning message, making sure the message ends in
-   a newline, and also that every line in the message (if there are
-   multiple), starts with an exclamation point.
-   One of the problems complicating this whole issue is that each line
-   should be printed using a single call to THRprintf, and moreover,
-   the format string should start with a "!".  This is because
-   THRprintf adds a "#" to the start of the printed text if the format
-   string doesn't start with "!".
-   Another problem is that we're religious about bounds checking.
-   It would probably also not be quite as bad if we could write in the
-   message buffer.
+ * a newline, and also that every line in the message (if there are
+ * multiple), starts with an exclamation point.
+ * One of the problems complicating this whole issue is that each line
+ * should be printed using a single call to THRprintf, and moreover,
+ * the format string should start with a "!".  This is because
+ * THRprintf adds a "#" to the start of the printed text if the format
+ * string doesn't start with "!".
+ * Another problem is that we're religious about bounds checking. It
+ * would probably also not be quite as bad if we could write in the
+ * message buffer.
  */
 static void
 GDKaddbuf(const char *message)
@@ -2016,12 +1695,13 @@ GDKaddbuf(const char *message)
 			size_t preflen;
 
 			/* remember last ! prefix (e.g. "!ERROR: ")
-			   for any subsequent lines that start without ! */
+			 * for any subsequent lines that start without
+			 * ! */
 			message = p;
 			/* A prefix consists of a ! immediately
-			   followed by some text, followed by a : and
-			   a space.  Anything else results in no
-			   prefix being remembered */
+			 * followed by some text, followed by a : and
+			 * a space.  Anything else results in no
+			 * prefix being remembered */
 			while (*++p && *p != ':' && *p != '\n' && *p != ' ')
 				;
 			if (*p == ':' && *++p == ' ') {
@@ -2047,7 +1727,7 @@ GDKaddbuf(const char *message)
 			doGDKaddbuf(prefix, p, (size_t) (q - p), "");
 		} else {
 			/* no newline at end of buffer: print all the
-			   rest and add a newline */
+			 * rest and add a newline */
 			doGDKaddbuf(prefix, p, strlen(p), "\n");
 			/* we're done since there were no more newlines */
 			break;
@@ -2174,8 +1854,8 @@ GDKfatal(const char *format, ...)
 		fflush(fd);
 	}
 	/*
-	 * @-
-	 * Real errors should be saved in the lock file for post-crash inspection.
+	 * Real errors should be saved in the lock file for post-crash
+	 * inspection.
 	 */
 	if (GDKstopped) {
 		fflush(stdout);
@@ -2199,13 +1879,12 @@ GDKfatal(const char *format, ...)
  * All semaphores used by the application should be mentioned here.
  * They are initialized during system initialization.
  *
- * @-
- * The first action upon thread creation is to add it to the pool
- * of known threads. This should be done by the thread itself.
+ * The first action upon thread creation is to add it to the pool of
+ * known threads. This should be done by the thread itself.
  * Subsequently, the thread descriptor can be obtained using THRget.
- * Note that the users should have gained exclusive access already.
- * A new entry is initialized automatically when not found.
- * Its file descriptors are the same as for the server and should be
+ * Note that the users should have gained exclusive access already.  A
+ * new entry is initialized automatically when not found.  Its file
+ * descriptors are the same as for the server and should be
  * subsequently reset.
  */
 ThreadRec GDKthreads[THREADS];
@@ -2273,7 +1952,6 @@ THRnew(MT_Id pid, str name)
 		s->tid = tid;
 		s->data[1] = THRdata[1];
 		s->data[0] = THRdata[0];
-		s->cleanup = NULL;
 		s->sp = THRsp();
 
 		PARDEBUG THRprintf(GDKout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
@@ -2294,9 +1972,6 @@ THRdel(Thread t)
 		GDKfatal("THRdel: illegal call\n");
 	}
 	gdk_set_lock(GDKthreadLock, "THRdel");
-	if (t->cleanup) {
-		(*t->cleanup) (t);
-	}
 /*	The stream may haven been closed (e.g. in freeClient)  causing an abort
 	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 */
@@ -2325,10 +2000,8 @@ THRhighwater(void)
 }
 
 /*
- * @-
  * I/O is organized per thread, because users may gain access through
- * the network.
- * The code below should be improved to gain speed.
+ * the network.  The code below should be improved to gain speed.
  */
 
 static int
@@ -2394,31 +2067,29 @@ THRprintf(stream *s, const char *format, ...)
 		format++;
 	}
 
-@= THRprintf_va_vsnprintf
-	p = bf;
-	*p++ = c;
-	if (GDKdebug&1) {
-		sprintf(p, "%02d ", THRgettid());
-		while (*p)
-			p++;
-	}
-	m = p - bf;
-	va_start(ap, format);
-	n = vsnprintf(p, bfsz-m, format, ap);
-	va_end(ap);
-@
-@c
-	@:THRprintf_va_vsnprintf@
-	if (n < 0)
-		goto cleanup;
-	if ((size_t) n >= bfsz - m) {
+	do {
+		p = bf;
+		*p++ = c;
+		if (GDKdebug&1) {
+			sprintf(p, "%02d ", THRgettid());
+			while (*p)
+				p++;
+		}
+		m = p - bf;
+		va_start(ap, format);
+		n = vsnprintf(p, bfsz-m, format, ap);
+		va_end(ap);
+		if (n < 0)
+			goto cleanup;
+		if ((size_t) n < bfsz - m)
+			break;	  /* normal loop exit, usually 1st iteration */
 		bfsz = m + n + 1;	/* precisely what is needed */
 		if (bf != THRprintbuf)
 			free(bf);
 		bf = (str) malloc(bfsz);
 		assert(bf != NULL);
-		@:THRprintf_va_vsnprintf@
-	}
+	} while (1);
+
 	p += n;
 
 	n = 0;
@@ -2431,10 +2102,6 @@ THRprintf(stream *s, const char *format, ...)
 	return n;
 }
 
-@h
-gdk_export const char *GDKversion(void);
-
-@c
 static char *_gdk_version_string = VERSION;
 /**
  * Returns the GDK version as internally allocated string.  Hence the
@@ -2447,5 +2114,3 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
-@h
-#endif /* _GDK_UTILS_H_ */
