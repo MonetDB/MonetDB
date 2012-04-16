@@ -21,17 +21,16 @@
 #include "udf.h"
 
 /* Reverse a string */
-str
-UDFreverse(str *ret, str *arg)
+
+/* actual implementation */
+static str
+UDFreverse_(str *ret, str src)
 {
 	size_t len = 0;
-	str src = NULL, dst = NULL;
+	str dst = NULL;
 
 	/* assert calling sanity */
-	assert(ret != NULL && arg != NULL);
-
-	/* mainly for convenience */
-	src = *arg;
+	assert(ret != NULL);
 
 	/* handle NULL pointer and NULL value */
 	if (src == NULL || strcmp(src, str_nil) == 0) {
@@ -58,29 +57,40 @@ UDFreverse(str *ret, str *arg)
 	return MAL_SUCCEED;
 }
 
+/* MAL wrapper */
+str
+UDFreverse(str *ret, str *arg)
+{
+	/* assert calling sanity */
+	assert(ret != NULL && arg != NULL);
+
+	return UDFreverse_ ( ret, *arg );
+}
+
 
 /* Reverse a BAT of strings */
 /*
  * Generic "type-oblivious" version,
  * using generic "type-oblivious" BAT access interface.
  */
-str
-UDFBATreverse(bat *ret, bat *bid)
+
+/* actual implementation */
+static str
+UDFBATreverse_(BAT **ret, BAT *left)
 {
 	BATiter li;
-	BAT *bn = NULL, *left = NULL;
+	BAT *bn = NULL;
 	BUN p = 0, q = 0;
 
 	/* assert calling sanity */
-	assert(ret != NULL && bid != NULL);
+	assert(ret != NULL);
 
-	/* bat-id -> BAT-descriptor */
-	if ((left = BATdescriptor(*bid)) == NULL)
+	/* handle NULL pointer */
+	if (left == NULL)
 		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
 
 	/* check tail type */
 	if (left->ttype != TYPE_str) {
-		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batudf.reverse",
 		      "tail-type of input BAT must be TYPE_str");
 	}
@@ -88,7 +98,6 @@ UDFBATreverse(bat *ret, bat *bid)
 	/* allocate result BAT */
 	bn = BATnew(left->htype, TYPE_str, BATcount(left));
 	if (bn == NULL) {
-		BBPreleaseref(left->batCacheid);
 		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(bn, left->hseqbase);
@@ -108,13 +117,12 @@ UDFBATreverse(bat *ret, bat *bid)
 		str t = (str) BUNtail(li, p);
 
 		/* revert tail value */
-		err = UDFreverse(&tr, &t);
+		err = UDFreverse_(&tr, t);
 		if (err != MAL_SUCCEED) {
 			/* error -> bail out */
 			BATaccessEnd(left, USE_HEAD | USE_TAIL,
 				     MMAP_SEQUENTIAL);
-			BBPreleaseref(left->batCacheid);
-			BBPreleaseref(*ret);
+			BBPreleaseref(bn->batCacheid);
 			return err;
 		}
 
@@ -125,19 +133,43 @@ UDFBATreverse(bat *ret, bat *bid)
 		/* BUNins() takes care of all necessary administration */
 		BUNins(bn, h, tr, FALSE);
 
-		/* free memory allocated in UDFreverse() */
+		/* free memory allocated in UDFreverse_() */
 		GDKfree(tr);
 	}
 
 	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
+	*ret = bn;
+
+	return MAL_SUCCEED;
+}
+
+/* MAL wrapper */           
+str
+UDFBATreverse(bat *ret, bat *bid)
+{
+	BAT *res = NULL, *left = NULL;
+	str msg = NULL;
+
+	/* assert calling sanity */
+	assert(ret != NULL && bid != NULL);
+
+	/* bat-id -> BAT-descriptor */
+	if ((left = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batudf.reverse", RUNTIME_OBJECT_MISSING);
+
+	/* do the work */
+	msg = UDFBATreverse_ ( &res, left );
+
 	/* release input BAT-descriptor */
 	BBPreleaseref(left->batCacheid);
 
-	/* register result BAT in buffer pool */
-	BBPkeepref((*ret = bn->batCacheid));
+	if (msg == MAL_SUCCEED) {
+		/* register result BAT in buffer pool */
+		BBPkeepref((*ret = res->batCacheid));
+	}
 
-	return MAL_SUCCEED;
+	return msg;
 }
 
 
@@ -146,19 +178,28 @@ UDFBATreverse(bat *ret, bat *bid)
 
 #define UDFfuse_scalar_impl(in,uin,out,shift)				\
 /* fuse two (shift-byte) in values into one (2*shift-byte) out value */	\
+/* actual implementation */						\
+static str UDFfuse_##in##_##out##_ ( out *ret , in one , in two )	\
+{									\
+	/* assert calling sanity */					\
+	assert(ret != NULL);						\
+									\
+	if (one == in##_nil || two == in##_nil)				\
+		/* NULL/nil in => NULL/nil out */			\
+		*ret = out##_nil;					\
+	else								\
+		/* do the work; watch out for sign bits */		\
+		*ret = ( ((out)((uin)one)) << shift ) | ((uin)two);	\
+									\
+	return MAL_SUCCEED;						\
+}									\
+/* MAL wrapper */							\
 str UDFfuse_##in##_##out ( out *ret , in *one , in *two )		\
 {									\
 	/* assert calling sanity */					\
 	assert(ret != NULL && one != NULL && two != NULL);		\
 									\
-	if (*one == in##_nil || *two == in##_nil)			\
-		/* NULL/nil in => NULL/nil out */			\
-		*ret = out##_nil;					\
-	else								\
-		/* do the work; watch out for sign bits */		\
-		*ret = ( ((out)((uin)*one)) << shift ) | ((uin)*two);	\
-									\
-	return MAL_SUCCEED;						\
+	return UDFfuse_##in##_##out##_ ( ret, *one, *two );		\
 }
 
 UDFfuse_scalar_impl(bte, unsigned char,  sht,  8)
@@ -171,41 +212,33 @@ UDFfuse_scalar_impl(int, unsigned int,   lng, 32)
  * Type-expanded optimized version,
  * accessing value arrays directly.
  */
- str
-UDFBATfuse(bat *ires, bat *ione, bat *itwo)
+
+/* actual implementation */
+static str
+UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 {
-	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
+	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
 	bit two_tail_revsorted_unsigned = FALSE;
 
 	/* assert calling sanity */
-	assert(ires != NULL && ione != NULL && itwo != NULL);
+	assert(ret != NULL);
 
-	/* bat-id -> BAT-descriptor */
-	if ((bone = BATdescriptor(*ione)) == NULL)
+	/* handle NULL pointer */
+	if (bone == NULL || btwo == NULL)
 		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
-
-	/* bat-id -> BAT-descriptor */
-	if ((btwo = BATdescriptor(*itwo)) == NULL) {
-		BBPreleaseref(bone->batCacheid);
-		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
-	}
 
 	/* check for dense & aligned heads */
 	if (!BAThdense(bone) ||
 	    !BAThdense(btwo) ||
 	    BATcount(bone) != BATcount(btwo) ||
 	    bone->hseqbase != btwo->hseqbase) {
-		BBPreleaseref(bone->batCacheid);
-		BBPreleaseref(btwo->batCacheid);
 		throw(MAL, "batudf.fuse",
 		      "heads of input BATs must be aligned");
 	}
 
 	/* check tail types */
 	if (bone->ttype != btwo->ttype) {
-		BBPreleaseref(bone->batCacheid);
-		BBPreleaseref(btwo->batCacheid);
 		throw(MAL, "batudf.fuse",
 		      "tails of input BATs must be identical");
 	}
@@ -302,12 +335,42 @@ do {	/* type-specific core algorithm */				\
 	/* result tail is key (unique), iff both input tails are */
 	BATkey(BATmirror(bres), BATtkey(bone) || BATtkey(btwo));
 
+	*ret = bres;
+
+	return MAL_SUCCEED;
+}
+
+/* MAL wrapper */
+str
+UDFBATfuse(bat *ires, bat *ione, bat *itwo)
+{
+	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
+	str msg = NULL;
+
+	/* assert calling sanity */
+	assert(ires != NULL && ione != NULL && itwo != NULL);
+
+	/* bat-id -> BAT-descriptor */
+	if ((bone = BATdescriptor(*ione)) == NULL)
+		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
+
+	/* bat-id -> BAT-descriptor */
+	if ((btwo = BATdescriptor(*itwo)) == NULL) {
+		BBPreleaseref(bone->batCacheid);
+		throw(MAL, "batudf.fuse", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* do the work */
+	msg = UDFBATfuse_ ( &bres, bone, btwo );
+
 	/* release input BAT-descriptors */
 	BBPreleaseref(bone->batCacheid);
 	BBPreleaseref(btwo->batCacheid);
 
-	/* register result BAT in buffer pool */
-	BBPkeepref((*ires = bres->batCacheid));
+	if (msg == MAL_SUCCEED) {
+		/* register result BAT in buffer pool */
+		BBPkeepref((*ires = bres->batCacheid));
+	}
 
-	return MAL_SUCCEED;
+	return msg;
 }
