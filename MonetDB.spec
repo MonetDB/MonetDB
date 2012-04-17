@@ -295,6 +295,7 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
+%{_bindir}/arraytest
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -391,6 +392,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
+%{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif

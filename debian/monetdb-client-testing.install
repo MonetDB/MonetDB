@@ -1,3 +1,4 @@
+debian/tmp/usr/bin/arraytest usr/bin
 debian/tmp/usr/bin/odbcsample1 usr/bin
 debian/tmp/usr/bin/sample0 usr/bin
 debian/tmp/usr/bin/sample1 usr/bin
