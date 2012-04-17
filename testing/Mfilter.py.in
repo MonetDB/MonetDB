@@ -93,6 +93,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
     r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 8: 3
 # filter for AVG_of_SQRT.SF-2757642: result not always exactly 1.1
+    r'^(\[ "avg\(sqrt\(n8\)\) == 1\.1",\s+)(1\.09999\d*)(\s+\])\n',                                                                             # 9: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
@@ -104,6 +105,7 @@ norm_out = (
     None, '...', None,                                                                                  # 6: 3
     None, None, '...', None,                                                                            # 7: 4
     None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 8: 3
+    None, '1.1', None,                                                                                  # 9: 3
 )
 
 
