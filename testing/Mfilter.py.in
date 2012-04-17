@@ -48,15 +48,15 @@ test = (
         # potential differences, which we want to ignore
         re.compile('(?:'+')|(?:'.join([
                 # MAPI port numbers
-                    r"^MAPI  = .*@.*:[0-9]*$",
+                    r"^MAPI  = .*@.*:\d*$",
                 # SPHINX is optional in monetdb5/modules/mal/inspec05
                     r'\[\s+"[^"]*",\s+"(?:command|function|pattern)",\s+"sphinx",\s+"[^"]*",\s+"[^"]*"\s+\]',
                  ])+')',  re.MULTILINE),
         # differences (e.g., due to property-checking), which we want to treat as "minor differences"
         re.compile('(?:'+')|(?:'.join([
                 # varying variable names in dataflow barriers
-                    r'^barrier X_[0-9]+ := language.dataflow\(\);$',
-                    r'^exit X_[0-9]+;$',
+                    r'^barrier X_\d+ := language.dataflow\(\);$',
+                    r'^exit X_\d+;$',
                  ])+')',  re.MULTILINE),
         # warnings and messages that should be treated as errors:
         re.compile('(?:'+')|(?:'.join([
@@ -69,40 +69,41 @@ test = (
 # heap fields (head and tail)
 # we want to ignore differences in groups 5, 16+8, 16+12+8 (lastused,
 # halign, talign)
-# the regular expression (-?[0-9]+) is for numeric fields, the regular
+# the regular expression (-?\d+) is for numeric fields, the regular
 # expression ([^ ]+) is for string fields
 
-bbp_dir = re.compile('^(-?[0-9]+) (-?[0-9]+) ([^ ]+) ([^ ]+) ([^ ]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+)'
-                     ' ([^ ]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+)'
-                     ' ([^ ]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+) (-?[0-9]+)'
-                     '( (-?[0-9]+) (-?[0-9]+) (-?[0-9]+))?'
-                     '( (-?[0-9]+) (-?[0-9]+) (-?[0-9]+))?$')
+bbp_dir = re.compile(r'^(-?\d+) (-?\d+) ([^ ]+) ([^ ]+) ([^ ]+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)'
+                     r' ([^ ]+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)'
+                     r' ([^ ]+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)'
+                     r'( (-?\d+) (-?\d+) (-?\d+))?'
+                     r'( (-?\d+) (-?\d+) (-?\d+))?$')
 
         # "normalize" differences in error messages caused by flex/bison:
         # matched groups from "norm_in" are replaced by the respective
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 01: 5
-    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 01: 3
-    r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )([0-9]+)( .*)\n",                                                               # 21: 8
-    r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 22: 3
-    r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 25: 3
-    r"^(DBD::monetdb::db table_info warning: Catalog parameter '' ignored at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line [0-9]+\.)\n",         # 27: 3
-    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line [0-9]+\.)\n',                      # 28: 3
+### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 1: 5
+    r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
+    r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )(\d+)( .*)\n",                                                                  # 3: 8
+    r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
+    r'^(!.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                        # 5: 4
+    r"^(DBD::monetdb::db table_info warning: Catalog parameter '' ignored at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line \d+\.)\n",            # 6: 3
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
-    r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 29: 3
+    r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 8: 3
+# filter for AVG_of_SQRT.SF-2757642: result not always exactly 1.1
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (
-### None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,                                    # 01: 5
-    None, 'syntax/parse', None,                                                                         # 01: 3
-    None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 21: 8
-    None, '', None,                                                                                     # 22: 3
-    None, 'localhost', None,                                                                            # 25: 3
-    None, '...', None,                                                                                  # 27: 3
-    None, None, '...', None,                                                                            # 28: 3
-    None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 29: 3
+### None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,                                    # 1: 5
+    None, 'syntax/parse', None,                                                                         # 2: 5
+    None, None, None, None, '<HOST>', None, '<MAPIPORT>', None,                                         # 3: 8
+    None, '', None,                                                                                     # 4: 3
+    None, 'localhost', None,                                                                            # 5: 4
+    None, '...', None,                                                                                  # 6: 3
+    None, None, '...', None,                                                                            # 7: 4
+    None, "'Z', 'M', 'ZM', 'EMPTY' or '('", None,                                                       # 8: 3
 )
 
 
