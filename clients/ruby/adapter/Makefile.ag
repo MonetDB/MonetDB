@@ -17,7 +17,7 @@
 
 gem_adapter = {
 	FILES = activerecord-monetdb-adapter-0.1.gemspec
-	DIR = $(prefix)/$(RUBY_DIR)
+	DIR = $(RUBY_DIR)
 }
 
 EXTRA_DIST = activerecord-monetdb-adapter-0.1.gemspec

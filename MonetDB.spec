@@ -48,6 +48,7 @@ BuildRequires: python
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
+BuildRequires: rubygems-devel
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
@@ -57,8 +58,7 @@ Obsoletes: %{name}-devel
 %if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
-%{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig -e 'puts Config::CONFIG["sitelibdir"] ')}
-%define gemdir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)
+%{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -261,16 +261,16 @@ program.
 
 %files client-ruby
 %defattr(-,root,root)
-%docdir %{gemdir}/doc/activerecord-monetdb-adapter-0.1
-%docdir %{gemdir}/doc/ruby-monetdb-sql-0.1
-%{gemdir}/doc/activerecord-monetdb-adapter-0.1/*
-%{gemdir}/doc/ruby-monetdb-sql-0.1/*
-%{gemdir}/cache/*.gem
-# %dir %{gemdir}/gems/activerecord-monetdb-adapter-0.1
-# %dir %{gemdir}/gems/ruby-monetdb-sql-0.1
-%{gemdir}/gems/activerecord-monetdb-adapter-0.1
-%{gemdir}/gems/ruby-monetdb-sql-0.1
-%{gemdir}/specifications/*.gemspec
+%docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
+%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
+%{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
+%{gem_dir}/doc/ruby-monetdb-sql-0.1/*
+%{gem_dir}/cache/*.gem
+# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
+# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
+%{gem_dir}/gems/activerecord-monetdb-adapter-0.1
+%{gem_dir}/gems/ruby-monetdb-sql-0.1
+%{gem_dir}/specifications/*.gemspec
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -589,6 +589,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-python=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
+	--with-rubygem-dir="%{gem_dir}" \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
