@@ -1675,6 +1675,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	j->buf = jaql;
 	j->err[0] = '\0';
+	j->pos = 0;
 	jaqllex_init_extra(j, &j->scanner);
 
 	do {
@@ -1683,7 +1684,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (j->err[0] != '\0')
 			break;
 		if (j->p == NULL)
-			continue;
+			j->explain = 99; /* jump over switch below */
 
 		switch (j->explain) {
 			case 0: /* normal (execution) mode */
@@ -1721,11 +1722,11 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 		}
 		freetree(j->p);
-		/* reset, j->buf has been reset by the lexer if EOF was found */
+		/* reset */
 		j->p = NULL;
 		j->esc_depth = 0;
 		j->explain = 0;
-	} while (j->buf != NULL && j->err[0] == '\0');
+	} while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0' && j->err[0] == '\0');
 
 	jaqllex_destroy(j->scanner);
 	j->scanner = NULL;

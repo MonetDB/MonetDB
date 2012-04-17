@@ -182,6 +182,7 @@ JAQLparser(Client c)
 	j->vtop = oldvtop;
 	j->explain = 0;
 	j->buf = in->buf + in->pos;
+	j->pos = 0;
 
 	jaqlparse(j);
 	

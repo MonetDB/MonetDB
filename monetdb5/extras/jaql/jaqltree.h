@@ -37,6 +37,10 @@ typedef struct _jc {
 	int esc_depth;
 	char expect_json;
 	char *buf;
+	size_t start;
+	size_t pos;
+	char *scanbuf;
+	char *tokstart;
 	char err[1024];
 	void *scanner;
 	char explain;
