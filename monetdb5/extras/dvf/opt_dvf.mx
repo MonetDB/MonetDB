@@ -87,12 +87,6 @@ pattern optimizer.DVframework(mod:str, fcn:str):str
 address OPTdvf
 comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
 
-module dvf;
-
-pattern plan_modifier(schema_name:str, file_locations:bat[:oid,:any]):void
-address plan_modifier
-comment "Modify the rest of the plan in the execution time according to the files to be mounted.";
-
 @h
 #ifndef _OPT_DVF_
 #define _OPT_DVF_
@@ -111,7 +105,6 @@ comment "Modify the rest of the plan in the execution time according to the file
 
 /*@:exportOptimizer(dvf)@*/
 opt_dvf_export str OPTdvf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_dvf_export str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 //TODO: What are the following two lines?
 #define DEBUG_OPT_DVF 61
@@ -208,14 +201,14 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					// pattern found! What to do
 					// create dvf.plan_modifier instruction
 					q = newInstruction(mb, ASSIGNsymbol);
-					q->argc = 2;
-					q->retc = 0;
+					q->argc = 3;
+					q->retc = 1;
 					setModuleId(q, dvfRef);
 					setFunctionId(q, planmodifierRef);
-					//q = pushArgument(mb, q, getArg(p, 2));
-					getArg(q, 0) = getArg(p, 2);
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
+					getArg(q, 1) = getArg(p, 2);
 					//q = pushArgument(mb, q, getArg(old[i2], 0));
-					getArg(q, 1) = getArg(old[i2], 0);
+					getArg(q, 2) = getArg(old[i2], 0);
 					
 					// insert the new instruction in pc i2+1
 					insertInstruction(mb, q, i2+1);

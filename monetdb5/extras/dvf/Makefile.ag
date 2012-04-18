@@ -35,10 +35,20 @@ lib_opt_dvf = {
 		$(MALLOC_LIBS)
 }
 
+lib__dvf = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = dvf.c dvf.h
+	LIBS = ../../tools/libmonetdb5 \
+		../../../gdk/libbat \
+		../../../common/stream/libstream \
+		$(MALLOC_LIBS)
+}
+
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = opt_dvf.mx
+	SOURCES = dvf.mal opt_dvf.mx
 }
 
 headers_opt_dvf_autoload = {
@@ -47,6 +57,12 @@ headers_opt_dvf_autoload = {
 	SOURCES = 91_opt_dvf.mal
 }
 
-EXTRA_DIST = 91_opt_dvf.mal
+headers_dvf_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 90_dvf.mal
+}
+
+EXTRA_DIST = 91_opt_dvf.mal dvf.mal 90_dvf.mal dvf.h
 
 EXTRA_DIST_DIR = Tests
