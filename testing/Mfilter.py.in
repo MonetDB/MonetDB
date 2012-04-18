@@ -83,6 +83,7 @@ bbp_dir = re.compile(r'^(-?\d+) (-?\d+) ([^ ]+) ([^ ]+) ([^ ]+) (-?\d+) (-?\d+) 
         # element of "norm_out", unless the latter is "None" (then, the
         # respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
+                                                                                                                                                # id: #groups
 ### r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(unexpected .* on line |unexpected .* in: )?(.*)\n',                         # 1: 5
     r'^(ERROR = !| *!|)(syntax|parse|parse error: syntax)( error, )(?:unexpected .* on line |unexpected .* in: )?(?:.*)\n',                     # 2: 5
     r"^(QUERY|ERROR)( =.* connect)( to|)( ')(localhost)(' port )(\d+)( .*)\n",                                                                  # 3: 8
@@ -93,7 +94,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
     r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 8: 3
 # filter for AVG_of_SQRT.SF-2757642: result not always exactly 1.1
-    r'^(\[ "avg\(sqrt\(n8\)\) == 1\.1",\s+)(1\.09999\d*)(\s+\])\n',                                                                             # 9: 3
+    r'^(\[ "avg\(sqrt\(n8\)\) == 1\.1",\s+)(1\.09999\d*|1\.10000\d*)(\s+\])\n',                                                                 # 9: 3
 ])+')',  re.MULTILINE)
 norm_hint = '# the original non-normalized output was: '
 norm_out = (

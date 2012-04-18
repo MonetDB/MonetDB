@@ -6793,7 +6793,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( atom ) BBPreleaseref(atom->batCacheid);
 		if ( size ) BBPreleaseref(size->batCacheid);
 		if ( aux ) BBPreleaseref(aux->batCacheid);
-		if ( sort ) BBPreleaseref(aux->batCacheid);
+		if ( sort ) BBPreleaseref(sort->batCacheid);
 		throw(SQL,"sql.storage", MAL_MALLOC_FAIL);
 	}
 	for( nsch= tr->schemas.set->h; nsch; nsch= nsch->next){
