@@ -1370,6 +1370,13 @@ case "$have_rubygem_dir" in
 		RUBY_DIR="$have_rubygem_dir"
 		;;
 esac
+case "$RUBY_DIR" in
+${prefix}/*)
+	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
+/*)	;;
+*)
+	RUBY_DIR="\${prefix}/$RUBY_DIR";;
+esac
 AC_SUBST(RUBY_DIR)
 
 RUBYGEM=gem
