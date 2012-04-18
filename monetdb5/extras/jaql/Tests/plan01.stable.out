@@ -33,9 +33,10 @@ end main;
 a as $ -> transform: { "a": $.j } 
 a as $ -> transform: { "a": $.j[1] } 
 a as $ -> transform: { "a": $.j[*].k } 
-!MALException:jaql.execute:syntax error, unexpected '*', expecting _IDENT at or around 1
+!MALException:jaql.execute:syntax error, unexpected '*', expecting IDENT at or around '...form { "a":$.* };'
 a as $ -> transform: { <to be deduced from expansion> $.* } 
-!MALException:jaql.execute:syntax error, unexpected _DOT, expecting ',' or '}' at or around 1
+!MALException:jaql.execute:syntax error, unexpected '.', expecting ',' or '}' at or around '...ansform { $.*.foo };'
+
 
 # 15:26:53 >  
 # 15:26:53 >  "Done."

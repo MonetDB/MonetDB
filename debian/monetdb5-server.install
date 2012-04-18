@@ -74,3 +74,4 @@ debian/tmp/usr/lib/monetdb5/zorder.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/autoload/*_lsst.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/autoload/*_udf.mal usr/lib/monetdb5/autoload
 debian/tmp/usr/lib/monetdb5/autoload/*_vault.mal usr/lib/monetdb5/autoload
+debian/tmp/usr/lib/monetdb5/autoload/*_opt_sql_append.mal usr/lib/monetdb5/autoload

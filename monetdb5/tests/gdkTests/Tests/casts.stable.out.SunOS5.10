@@ -552,13 +552,13 @@ exit SQLException:str ;
     io.printf("# io.print(9223372036854775808LL);\n");
     io.print(nil:lng);
     io.printf("# io.print(9223372036854775809LL);\n");
-    io.print(-9223372036854775807:lng);
+    io.print(nil:lng);
     io.printf("# io.print(-9223372036854775807LL);\n");
     io.print(-9223372036854775807:lng);
     io.printf("# io.print(-9223372036854775808LL);\n");
     io.print(nil:lng);
     io.printf("# io.print(-9223372036854775809LL);\n");
-    io.print(9223372036854775807:lng);
+    io.print(nil:lng);
     io.printf("# lng from bit\n");
     io.printf("# io.print(true:lng);\n");
     io.print(1:lng);
@@ -889,13 +889,13 @@ exit MALException:str ;
     io.printf("# io.print(9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(9223372036854775809LL:flt);\n");
-    io.print(-9.22337204e+18:flt);
+    io.print(nil:flt);
     io.printf("# io.print(-9223372036854775807LL:flt);\n");
     io.print(-9.22337204e+18:flt);
     io.printf("# io.print(-9223372036854775808LL:flt);\n");
     io.print(nil:flt);
     io.printf("# io.print(-9223372036854775809LL:flt);\n");
-    io.print(9.22337204e+18:flt);
+    io.print(nil:flt);
     io.printf("# flt from dbl\n");
     io.printf("# io.print(0.0LL:flt);\n");
     io.print(0:flt);
@@ -1410,13 +1410,13 @@ exit MALException:str ;
     io.printf("# io.print(9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(9223372036854775809LL:dbl);\n");
-    io.print(-9.2233720368547758e+18:dbl);
+    io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775807LL:dbl);\n");
     io.print(-9.2233720368547758e+18:dbl);
     io.printf("# io.print(-9223372036854775808LL:dbl);\n");
     io.print(nil:dbl);
     io.printf("# io.print(-9223372036854775809LL:dbl);\n");
-    io.print(9.2233720368547758e+18:dbl);
+    io.print(nil:dbl);
     io.printf("# dbl from flt\n");
     io.printf("# io.print(0.0:dbl);\n");
     io.print(0:dbl);
@@ -2461,15 +2461,15 @@ Caught exception
 # s := "2147483647"; s_int := calc.int(s); io.print(s_int);
 [ 2147483647 ]
 # s := "2147483648"; s_int := calc.int(s); io.print(s_int);
-[ nil ]
+Caught exception
 # s := "2147483649"; s_int := calc.int(s); io.print(s_int);
-[ -2147483647 ]
+Caught exception
 # s := "-2147483647"; s_int := calc.int(s); io.print(s_int);
 [ -2147483647 ]
 # s := "-2147483648"; s_int := calc.int(s); io.print(s_int);
-[ nil ]
+Caught exception
 # s := "-2147483649"; s_int := calc.int(s); io.print(s_int);
-[ 2147483647 ]
+Caught exception
 # s := ""; s_int := calc.int(s); io.print(s_int);
 Caught exception
 # s := "random string"; s_int := calc.int(s); io.print(s_int);
@@ -2676,15 +2676,15 @@ Caught exception
 # s := "32767"; s_sht := calc.sht(s); io.print(s_sht);
 [ 32767 ]
 # s := "32768"; s_sht := calc.sht(s); io.print(s_sht);
-[ nil ]
+Caught exception
 # s := "32769"; s_sht := calc.sht(s); io.print(s_sht);
-[ -32767 ]
+Caught exception
 # s := "-32767"; s_sht := calc.sht(s); io.print(s_sht);
 [ -32767 ]
 # s := "-32768"; s_sht := calc.sht(s); io.print(s_sht);
-[ nil ]
+Caught exception
 # s := "-32769"; s_sht := calc.sht(s); io.print(s_sht);
-[ 32767 ]
+Caught exception
 # s := ""; s_sht := calc.sht(s); io.print(s_sht);
 Caught exception
 # s := "random string"; s_sht := calc.sht(s); io.print(s_sht);
@@ -2717,13 +2717,13 @@ Caught exception
 # io.print(9223372036854775808LL);
 [ nil ]
 # io.print(9223372036854775809LL);
-[ -9223372036854775807 ]
+[ nil ]
 # io.print(-9223372036854775807LL);
 [ -9223372036854775807 ]
 # io.print(-9223372036854775808LL);
 [ nil ]
 # io.print(-9223372036854775809LL);
-[ 9223372036854775807 ]
+[ nil ]
 # lng from bit
 # io.print(true:lng);
 [ 1 ]
@@ -2893,15 +2893,15 @@ Caught exception
 # s := "9223372036854775807"; s_lng := calc.lng(s); io.print(s_lng);
 [ 9223372036854775807 ]
 # s := "9223372036854775808"; s_lng := calc.lng(s); io.print(s_lng);
-[ nil ]
+Caught exception
 # s := "9223372036854775809"; s_lng := calc.lng(s); io.print(s_lng);
-[ -9223372036854775807 ]
+Caught exception
 # s := "-9223372036854775807"; s_lng := calc.lng(s); io.print(s_lng);
 [ -9223372036854775807 ]
 # s := "-9223372036854775808"; s_lng := calc.lng(s); io.print(s_lng);
-[ nil ]
+Caught exception
 # s := "-9223372036854775809"; s_lng := calc.lng(s); io.print(s_lng);
-[ 9223372036854775807 ]
+Caught exception
 # to flt
 # flt from bit
 # io.print(true:flt);
@@ -2966,13 +2966,13 @@ Caught exception
 # io.print(9223372036854775808LL:flt);
 [ nil ]
 # io.print(9223372036854775809LL:flt);
-[ -9.22337204e+18 ]
+[ nil ]
 # io.print(-9223372036854775807LL:flt);
 [ -9.22337204e+18 ]
 # io.print(-9223372036854775808LL:flt);
 [ nil ]
 # io.print(-9223372036854775809LL:flt);
-[ 9.22337204e+18 ]
+[ nil ]
 # flt from dbl
 # io.print(0.0LL:flt);
 [ 0 ]
@@ -3265,13 +3265,13 @@ Caught exception
 # io.print(9223372036854775808LL:dbl);
 [ nil ]
 # io.print(9223372036854775809LL:dbl);
-[ -9.2233720368547758e+18 ]
+[ nil ]
 # io.print(-9223372036854775807LL:dbl);
 [ -9.2233720368547758e+18 ]
 # io.print(-9223372036854775808LL:dbl);
 [ nil ]
 # io.print(-9223372036854775809LL:dbl);
-[ 9.2233720368547758e+18 ]
+[ nil ]
 # dbl from flt
 # io.print(0.0:dbl);
 [ 0 ]

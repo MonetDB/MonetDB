@@ -13,10 +13,8 @@ char *GDKstrdup(const char *);
 %}
 
 %option reentrant
-%option bison-bridge
-%option bison-locations
 %option noyywrap
-%option yylineno
+%option bison-bridge
 %option case-insensitive
 %option batch
 %option nostdinit
@@ -26,10 +24,10 @@ char *GDKstrdup(const char *);
 
 %{
 YYSTYPE yylval;
-extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
+extern void jaqlerror(jc* j, char const *msg);
 
 /* set line numbers each time a token is recognised */
-#define YY_USER_ACTION yylloc->first_line = yylineno;
+#define YY_USER_ACTION yyextra->tokstart = yytext;
 
 #define YY_INPUT(buf, res, max_size) readinput(yyextra, buf, &res, max_size)
 #define YY_NO_INPUT
@@ -45,20 +43,22 @@ extern void jaqlerror(YYLTYPE* locp, jc* j, char const *msg);
 #define stdout (FILE *)0
 
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
-	if (j->buf != NULL && *j->buf != '\0') {
-		*res = (int)strlen(j->buf);
+	if (j->buf[j->pos] != '\0') {
+		*res = (int)strlen(j->buf + j->pos);
 		if ((size_t)*res > max_size)
 			*res = (int)max_size;
-		memcpy(buf, j->buf, *res);
-		j->buf += *res;
+		memcpy(buf, j->buf + j->pos, *res);
+		j->start = j->pos;
+		j->pos += *res;
+		j->scanbuf = buf;
 	} else {
 		*res = YY_NULL;
 	}
 }
 %}
 
- /* allow to disregard JSON bits */
-%x ARR OBJ
+ /* allow to disregard JSON bits and deal with trailing garbage after ; */
+%x ARR OBJ SCOLON
 
 %%
 	/* if the parser expects a JSON bit, give it */
@@ -98,27 +98,26 @@ planf      return PLANF;
 debug      return DEBUG;
 
  /* language constructs */
-"->"       return _ARROW;
--?[0-9]+               {yylval->j_number = atol(yytext); return _NUMBER;}
--?[0-9]+\.[0-9e+-]+    {yylval->j_double = atof(yytext); return _DOUBLE;}
+"->"       return ARROW;
+-?[0-9]+               {yylval->j_number = atol(yytext); return NUMBER;}
+-?[0-9]+\.[0-9e+-]+    {yylval->j_double = atof(yytext); return DOUBLE;}
 \"[^\"]*\"             {yytext[yyleng - 1] = '\0';
                         yylval->j_string = GDKstrdup(yytext + 1);
-                        return _STRING;}
-\$         return _DOLLAR;
-=          return _ASSIGN;
-==         return _EQUALS;
-!=         return _NEQUAL;
-">"        return _GREATER;
-">="       return _GEQUAL;
-"<"        return _LESS;
-"<="       return _LEQUAL;
-not        return _NOT;
-and        return _AND;
-or         return _OR;
-true       return _TRUE;
-false      return _FALSE;
-;          return _SCOLON;
-\.         return _DOT;
+                        return STRING;}
+"$"        return '$';
+"="        return ASSIGN;
+"=="       return EQUALS;
+"!="       return NEQUAL;
+">"        return GREATER;
+">="       return GEQUAL;
+"<"        return LESS;
+"<="       return LEQUAL;
+not        return NOT;
+and        return AND;
+or         return OR;
+true       return TRUE;
+false      return FALSE;
+"."        return '.';
 ":"        return ':';
 ","        return ',';
 "("        return '(';
@@ -132,7 +131,7 @@ false      return _FALSE;
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
-			return _ARRAY;
+			return ARRAY;
 		} else {
 			yymore();
 		}
@@ -147,7 +146,7 @@ false      return _FALSE;
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
-			return _OBJECT;
+			return OBJECT;
 		} else {
 			yymore();
 		}
@@ -157,17 +156,26 @@ false      return _FALSE;
 }
 "}"        return '}';
 "{"        return '{';
+";"        BEGIN(SCOLON);
+<SCOLON>{
+	";" /* ignore superfluous semi-colons */;
+	[ \t\r\n]+ /* ignore whitespace */;
+	("#"|"//").*\n /* ignore comments */;
+	<<EOF>> { BEGIN(INITIAL); return ';'; }
+	.  { unput(yytext[0]); BEGIN(INITIAL); return ';'; }
+}
 [ \t\r\n]+ /* ignore whitespace */;
 ("#"|"//").*\n /* ignore comments */;
-[a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return _IDENT;}
-<<EOF>>    {yyextra->buf = NULL; return EOF;}
-.                      {
+[a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return IDENT;}
+<<EOF>>    return EOF;
+.          {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);
-	jaqlerror(yylloc_param, yyextra, buf);
-	yyextra->buf = NULL;
+	jaqlerror(yyextra, buf);
+	yyextra->pos = yyextra->start = strlen(yyextra->buf);
+	yyextra->scanbuf = yyextra->tokstart = NULL;
 	YY_FLUSH_BUFFER;
 	BEGIN(0);
 	return EOF;
-	}
+}
 %%

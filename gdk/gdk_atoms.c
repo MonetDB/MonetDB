@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_atoms
-
-@c
 /*
  * @a M. L. Kersten, P. Boncz
  * @* Atomic types
@@ -29,100 +26,7 @@ All Rights Reserved.
  * both built-in and user-defined atomic types.
  * New types, such as point and polygons, can be readily added to this
  * collection.
- * @-
  */
-@h
-#ifndef _GDK_ATOMS_H_
-#define _GDK_ATOMS_H_
-
-#define MAXATOMS	128
-
-/*
- * @- comparison macro's
- * In order to get maximum performance, we extensively use out-factoring
- * of typechecks using Mx macros. To catch diverging code in one Mx macro
- * we use the following #defines for comparing atoms:
- */
-#define simple_CMP(x,y,tpe)     (simple_LT(x,y,tpe)?-1:simple_GT(x,y,tpe))
-#define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
-#define simple_NE(x,y,tpe,nl)   ((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
-#define simple_LT(x,y,tpe)      ((*(const tpe*) (x))  < (*(const tpe*) (y)))
-#define simple_GT(x,y,tpe)      ((*(const tpe*) (x))  > (*(const tpe*) (y)))
-#define simple_LE(x,y,tpe)      ((*(const tpe*) (x)) <= (*(const tpe*) (y)))
-#define simple_GE(x,y,tpe)      ((*(const tpe*) (x)) >= (*(const tpe*) (y)))
-#define atom_CMP(x,y,id)        (*BATatoms[id].atomCmp)(x,y)
-#define atom_EQ(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) == 0)
-#define atom_NE(x,y,id,nl)      ((*BATatoms[id].atomCmp)(y,BATatoms[id].atomNull) != 0 && (*BATatoms[id].atomCmp)(x,y) != 0)
-#define atom_LT(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) < 0)
-#define atom_GT(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) > 0)
-#define atom_LE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) <= 0)
-#define atom_GE(x,y,id)         ((*BATatoms[id].atomCmp)(x,y) >= 0)
-#define simple_HASH(v,tpe,dst)  ((dst) *(const tpe *) (v))
-#define atom_HASH(v,id,dst)     ((dst) (*BATatoms[id].atomHash)(v))
-
-/*
- * @- maximum atomic string lengths
- */
-#define bitStrlen	8
-#define bteStrlen	8
-#define shtStrlen	12
-#define intStrlen	24
-#if SIZEOF_OID == SIZEOF_INT
-#define oidStrlen	24
-#else
-#define oidStrlen	48
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-#define wrdStrlen	24
-#else
-#define wrdStrlen	48
-#endif
-#if SIZEOF_PTR == SIZEOF_INT
-#define ptrStrlen	24
-#else
-#define ptrStrlen	48
-#endif
-#define lngStrlen	48
-#define fltStrlen	48
-#define dblStrlen	96
-
-/*
- * @-
- * The system comes with the traditional atomic types: int (4 bytes), bool(1
- * byte) and str (variable). In addition, we support the notion of an OID
- * type, which ensures uniqueness of its members.
- * This leads to the following type descriptor table.
- */
-
-gdk_export int lngFromStr(const char *src, int *len, lng **dst);
-gdk_export int lngToStr(str *dst, int *len, const lng *src);
-gdk_export int intFromStr(const char *src, int *len, int **dst);
-gdk_export int intToStr(str *dst, int *len, const int *src);
-gdk_export int batFromStr(const char *src, int *len, bat **dst);
-gdk_export int batToStr(str *dst, int *len, const bat *src);
-gdk_export int ptrFromStr(const char *src, int *len, ptr **dst);
-gdk_export int ptrToStr(str *dst, int *len, const ptr *src);
-gdk_export int bitFromStr(const char *src, int *len, bit **dst);
-gdk_export int bitToStr(str *dst, int *len, const bit *src);
-gdk_export int OIDfromStr(const char *src, int *len, oid **dst);
-gdk_export int OIDtoStr(str *dst, int *len, const oid *src);
-gdk_export int shtFromStr(const char *src, int *len, sht **dst);
-gdk_export int shtToStr(str *dst, int *len, const sht *src);
-gdk_export int bteFromStr(const char *src, int *len, bte **dst);
-gdk_export int bteToStr(str *dst, int *len, const bte *src);
-gdk_export int fltFromStr(const char *src, int *len, flt **dst);
-gdk_export int fltToStr(str *dst, int *len, const flt *src);
-gdk_export int dblFromStr(const char *src, int *len, dbl **dst);
-gdk_export int dblToStr(str *dst, int *len, const dbl *src);
-gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
-gdk_export int strFromStr(const char *src, int *len, str *dst);
-gdk_export int strToStr(str *dst, int *len, const char *src);
-gdk_export BUN strHash(const char *s);
-gdk_export int strLen(const char *s);
-gdk_export int strNil(const char *s);
-gdk_export int escapedStrlen(const char *src);
-gdk_export int escapedStr(char *dst, const char *src, int dstlen);
-@c
 /*
  * @- inline comparison routines
  * Return 0 on l==r, < 0 iff l < r, >0 iff l > r
@@ -263,7 +167,7 @@ batUnfix(const bat *b)
  *
  * The routines cmp and eq are comparison routines used to build access
  * structures. The null returns a reference to a null value representation.
- * @-
+ *
  * The incremental atom construction uses hardwired properties.
  * This should be improved later on.
  */
@@ -427,60 +331,6 @@ ATOMisdescendant(int tpe, int parent)
 }
 
 
-@h
-/*
- * @- nil values
- * All types have a single value designated as a NIL value. It designates
- * a missing value and it is ignored (forbidden) in several primitives.
- * The current policy is to use the smallest value in any ordered domain.
- * The routine atomnil returns a pointer to the nil value representation.
- */
-#define GDK_bit_max ((bit) 1)
-#define GDK_bit_min ((bit) 0)
-#define GDK_bte_max ((bte) SCHAR_MAX)
-#define GDK_bte_min ((bte) SCHAR_MIN)
-#define GDK_sht_max ((sht) SHRT_MAX)
-#define GDK_sht_min ((sht) SHRT_MIN)
-#define GDK_int_max INT_MAX
-#define GDK_int_min INT_MIN
-#define GDK_flt_max ((flt) FLT_MAX)
-#define GDK_flt_min (-GDK_flt_max)
-#define GDK_lng_max ((lng) LLONG_MAX)
-#define GDK_lng_min ((lng) LLONG_MIN)
-#define GDK_dbl_max ((dbl) DBL_MAX)
-#define GDK_dbl_min (-GDK_dbl_max)
-/* GDK_oid_max see below */
-#define GDK_oid_min ((oid) 0)
-/* representation of the nil */
-gdk_export const bte bte_nil;
-gdk_export const sht sht_nil;
-gdk_export const int int_nil;
-gdk_export const flt flt_nil;
-gdk_export const dbl dbl_nil;
-gdk_export const lng lng_nil;
-gdk_export const oid oid_nil;
-gdk_export const wrd wrd_nil;
-gdk_export const char str_nil[2];
-gdk_export const ptr ptr_nil;
-
-/* derived NIL values - OIDDEPEND */
-#define bit_nil	((bit) bte_nil)
-#define bat_nil	((bat) int_nil)
-#if SIZEOF_WRD == SIZEOF_INT
-#define GDK_wrd_max ((wrd) GDK_int_max)
-#define GDK_wrd_min ((wrd) GDK_int_min)
-#else
-#define GDK_wrd_max ((wrd) GDK_lng_max)
-#define GDK_wrd_min ((wrd) GDK_lng_min)
-#endif
-#if SIZEOF_OID == SIZEOF_INT
-#define GDK_oid_max ((oid) GDK_int_max)
-#else
-#define GDK_oid_max ((oid) GDK_lng_max)
-#endif
-
-#define void_nil	oid_nil
-@c
 const bte bte_nil = GDK_bte_min;
 const sht sht_nil = GDK_sht_min;
 const int int_nil = GDK_int_min;
@@ -504,162 +354,6 @@ ATOMnil(int t)
 	return dst;
 }
 
-@h
-/*
- * @- Derived types
- * In all algorithms across GDK, you will find switches on the types
- * ( bte, sht, int, wrd, flt, dbl, lng, str). They respectively represent
- * an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
- * a 64-bit int, and a pointer-sized location of a char-buffer (ended by
- * a zero char).
- *
- * In contrast, the types (bit, ptr, bat, oid) are derived types. They
- * do not occur in the switches. The ATOMstorage macro maps them respectively
- * onto a @code{ bte}, @code{ int} (pointers are 32-bit), @code{ int}, and
- * @code{ int}. OIDs are 32-bit.
- *
- * This approach makes it tractable to switch to 64-bits OIDs,
- * or to a fully 64-bits OS easily. One only has to map the @code{ oid}
- * and @code{ ptr} types to @code{ lng} instead of @code{ int}.
- *
- * Derived types mimic their fathers in many ways. They inherit the @code{ size},
- * @code{ varsized}, @code{ linear}, @code{ null} and @code{ align} properties of their
- * father.  The same goes for the ADT functions HASH, CMP, PUT, NULL,
- * DEL, LEN, and HEAP. So, a derived type differs in only two ways
- * from its father:
- * @table @code
- * @item [string representation]
- * the only two ADT operations specific for a derived type are FROMSTR
- * and TOSTR.
- * @item [identity]
- * (a @code{ bit} is really of a different type than @code{ bte}). The set of
- * operations on derived type values or BATs of such types may differ
- * from the sets of operations on the father type.
- * @end table
- */
-/* use "do ... while(0)" so that lhs can safely be used in if statements */
-#define ATOMstorage(t)		BATatoms[t].storage
-#define ATOMsize(t)		BATatoms[t].size
-#define ATOMalign(t)		BATatoms[t].align
-#define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
-#define ATOMnilptr(t)		BATatoms[t].atomNull
-#define ATOMhash(t,src)		BATatoms[t].atomHash(src)
-#define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
-#define ATOMvarsized(t)		((t != TYPE_void) && BATatoms[t].varsized)
-#define ATOMlinear(t)		BATatoms[t].linear
-#define ATOMtype(t)		((t == TYPE_void)?TYPE_oid:t)
-#define ATOMfix(t,v)		do if (BATatoms[t].atomFix) BATatoms[t].atomFix(v); while (0)
-#define ATOMunfix(t,v)		do if (BATatoms[t].atomUnfix) BATatoms[t].atomUnfix(v); while (0)
-#define ATOMconvert(t,v,d)	do if (BATatoms[t].atomConvert) BATatoms[t].atomConvert(v,d); while (0)
-#define ATOMheapConvert(t,hp,d)	do if (BATatoms[t].atomHeapConvert) BATatoms[t].atomHeapConvert(hp,d); while (0)
-
-#define CONV_HTON               1
-#define CONV_NTOH               0
-
-/*
- * @-
- * In case that atoms are added to a bat, their logical reference count
- * should be incremented (and decremented if deleted). Notice that BATs
- * with atomic types that have logical references (e.g. BATs of BATs but
- * also BATs of ODMG odSet) can never be persistent, as this would make
- * the commit tremendously complicated.
- */
-#define ATOMput(type, heap, dst, src)					\
-	do {								\
-		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
-									\
-		if (BATatoms[t_].atomPut) {				\
-			if ((*BATatoms[t_].atomPut)((heap), (var_t *) d_, s_) == 0) \
-				goto bunins_failed;			\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
-		}							\
-	} while (0)
-
-#define ATOMreplace(type, heap, dst, src)				\
-	do {								\
-		int t_ = (type);					\
-		ptr d_ = (ptr) (dst);					\
-		ptr s_ = (ptr) (src);					\
-									\
-		if (BATatoms[t_].atomPut) {				\
-			var_t loc_ = * (var_t *) d_;			\
-			Heap *h_ = (heap);				\
-									\
-			if ((*BATatoms[t_].atomPut)(h_, &loc_, s_) == 0) \
-				goto bunins_failed;			\
-			ATOMunfix(t_, d_);				\
-			ATOMdel(t_, h_, d_);				\
-			* (var_t *) d_ = loc_;				\
-			ATOMfix(t_, s_);				\
-		} else {						\
-			ATOMfix(t_, s_);				\
-			ATOMunfix(t_, d_);				\
-			switch (BATatoms[t_].size) {			\
-			case 0:		/* void */			\
-				break;					\
-			case 1:						\
-				* (bte *) d_ = * (bte *) s_;		\
-				break;					\
-			case 2:						\
-				* (sht *) d_ = * (sht *) s_;		\
-				break;					\
-			case 4:						\
-				* (int *) d_ = * (int *) s_;		\
-				break;					\
-			case 8:						\
-				* (lng *) d_ = * (lng *) s_;		\
-				break;					\
-			default:					\
-				memcpy(d_, s_, (size_t) BATatoms[t_].size); \
-				break;					\
-			}						\
-		}							\
-	} while (0)
-
-/* string heaps:
- * - strings are 8 byte aligned
- * - start with a 1024 bucket hash table
- * - heaps < 64KB are fully duplicate eliminated with this hash tables
- * - heaps >= 64KB are opportunistically (imperfect) duplicate eliminated 
- *   as only the last 128KB chunk is considered and there is no linked list
- * - buckets and next pointers are unsigned short "indices"
- * - indices should be multiplied by 8 and takes from ELIMBASE to get an offset
- *
- * Note that a 64KB chunk of the heap contains at most 8K 8-byte aligned
- * strings. The 1K bucket list means that in worst load, the list length is 8 (OK).
- */
-#define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
-#define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
-#define GDK_ELIMPOWER		16	/* 64KB is the threshold */
-#define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
-#define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
-#define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
-#define GDK_VAROFFSET		((var_t) (GDK_STRHASHSIZE >> GDK_VARSHIFT))
-
-@c
 /*
  * @- Atomic ADT functions
  */
@@ -790,29 +484,31 @@ ATOMdup(int t, const void *p)
  * Passing a pointer to a nil-ptr as 'dst' and/or a *len==0 is valid; the
  * conversion function will then alloc some region for you.
  */
-@= atommem
-	if (!*dst) {
-		*dst = (@1 *) GDKmalloc(*len = @2);
-	} else if (*len < (int) @2) {
-		GDKfree(*dst);
-		*dst = (@1 *) GDKmalloc(*len = @2);
-	}
-	if (!*dst)
-		return -1;
-@= atomtostr
-int
-@1ToStr(char ** dst, int *len, const @1 *src)
-{
-	@:atommem(char,@1Strlen)@
-	if (*src == @1_nil) {
-		strncpy(*dst, "nil", *len);
-		return 3;
-	}
-	snprintf(*dst, *len, @2, (@3) *src);
-	return (int) strlen(*dst);
+#define atommem(TYPE, size)						\
+	do {								\
+		if (!*dst) {						\
+			*dst = (TYPE *) GDKmalloc(*len = (size));	\
+		} else if (*len < (int) (size)) {			\
+			GDKfree(*dst);					\
+			*dst = (TYPE *) GDKmalloc(*len = (size));	\
+		}							\
+		if (!*dst)						\
+			return -1;					\
+	} while (0)
+
+#define atomtostr(TYPE, FMT, FMTCAST)			\
+int							\
+TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
+{							\
+	atommem(char, TYPE##Strlen);			\
+	if (*src == TYPE##_nil) {			\
+		strncpy(*dst, "nil", *len);		\
+		return 3;				\
+	}						\
+	snprintf(*dst, *len, FMT, FMTCAST *src);	\
+	return (int) strlen(*dst);			\
 }
-@
-@c
+
 #define num08(x)	((x) >= '0' && (x) <= '7')
 #define num10(x)	GDKisdigit(x)
 #define num16(x)	(GDKisdigit(x) || ((x)  >= 'a' && (x)  <= 'f') || ((x)  >= 'A' && (x)  <= 'F'))
@@ -838,8 +534,8 @@ int
 voidToStr(str *dst, int *len, void *src)
 {
 	(void) src;
-	@:atommem(char,4)@
 
+	atommem(char, 4);
 	strncpy(*dst, "nil", *len);
 	return 3;
 }
@@ -867,7 +563,7 @@ bitFromStr(const char *src, int *len, bit **dst)
 {
 	const char *p = src;
 
-	@:atommem(bit,sizeof(bit))@
+	atommem(bit, sizeof(bit));
 
 	while (GDKisspace(*p))
 		p++;
@@ -895,7 +591,7 @@ bitFromStr(const char *src, int *len, bit **dst)
 int
 bitToStr(char **dst, int *len, const bit *src)
 {
-	@:atommem(char,6)@
+	atommem(char, 6);
 
 	if (*src == bit_nil) {
 		strncpy(*dst, "nil", *len);
@@ -932,7 +628,7 @@ batFromStr(const char *src, int *len, bat **dst)
 	int c;
 	bat bid = 0;
 
-	@:atommem(bat,sizeof(bat))@
+	atommem(bat, sizeof(bat));
 
 	while (GDKisspace(*r))
 		r++;
@@ -966,14 +662,12 @@ batToStr(char **dst, int *len, const bat *src)
 	str s;
 
 	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
-		@:atommem(char,4)@
-
+		atommem(char, 4);
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
 	i = (int) (strlen(s) + 4);
-	@:atommem(char,i)@
-
+	atommem(char, i);
 	snprintf(*dst, *len, "<%s>", s);
 	return (int) strlen(*dst);
 }
@@ -993,93 +687,141 @@ batWrite(const bat *a, stream *s, size_t cnt)
 }
 
 /*
- * @-
- * The numfromstr parses the head of the string for a number,
- * accepting optional signs. The code has been prepared to
- * continue parsing by returning the number of characters read.
- * Two errors are possible. It does not represent a number (return 0)
- * or there is an overflow (silently ignored using <1 character count).
+ * numFromStr parses the head of the string for a number, accepting an
+ * optional sign. The code has been prepared to continue parsing by
+ * returning the number of characters read.  Both overflow and
+ * incorrect syntax (not a number) result in the function returning 0
+ * and setting the destination to nil.
  */
-@= numfromstr
-int
-@1FromStr(const char *src, int *len, @1 **dst)
+static int
+numFromStr(const char *src, int *len, void **dst, int tp)
 {
-	int sign = 1;
-	@1 base = 0;
 	const char *p = src;
+	int sz = ATOMsize(tp);
+	lng base = 0;
+	lng maxdiv10 = 0;	/* max value / 10 */
+	int maxmod10 = 7;	/* max value % 10 */
+	int sign = 1;
 
-	@:atommem(@1,sizeof(@1))@
+	atommem(void, sz);
 	while (GDKisspace(*p))
 		p++;
-	**dst = @1_nil;
+	memcpy(*dst, ATOMnilptr(tp), sz);
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		p += 3;
-	} else {
-		if (!num10(*p) ) {
-			if (*p == '-') {
-				sign = -1;
-				p++;
-			} else if (*p == '+') {
-				p++;
-			} else {
-				/* all else is an error */
-				return 0;
-			}
-		}
-		if (!num10(*p)) {
-			/* no number */
+		return (int) (p - src);
+	}
+	if (*p == '-') {
+		sign = -1;
+		p++;
+	} else if (*p == '+') {
+		p++;
+	}
+	if (!num10(*p)) {
+		/* not a number */
+		return 0;
+	}
+	switch (sz) {
+	case 1:
+		maxdiv10 = 12/*7*/;
+		break;
+	case 2:
+		maxdiv10 = 3276/*7*/;
+		break;
+	case 4:
+		maxdiv10 = 214748364/*7*/;
+		break;
+	case 8:
+		maxdiv10 = 922337203685477580/*7*/;
+		break;
+	}
+	do {
+		if (base > maxdiv10 ||
+		    (base == maxdiv10 && base10(*p) > maxmod10)) {
+			/* overflow */
 			return 0;
 		}
-		while (num10(*p)) {
-			if (base > @2 / 10 ||
-			    (base == @2 / 10 && num10(*p) > @2 % 10)) {
-				/* overflow */
-				return 0;
-			}
-			base = mult10(base) + base10(*p);
-			p++;
-		}
-		**dst = sign * base;
-#if @3 == 8
-		if (p[0] == 'L' && p[1] == 'L') {
+		base = 10 * base + base10(*p);
+		p++;
+	} while (num10(*p));
+	base *= sign;
+	switch (sz) {
+	case 1: {
+		bte **dstbte = (bte **) dst;
+		**dstbte = (bte) base;
+		break;
+	}
+	case 2: {
+		sht **dstsht = (sht **) dst;
+		**dstsht = (sht) base;
+		break;
+	}
+	case 4: {
+		int **dstint = (int **) dst;
+		**dstint = (int) base;
+		break;
+	}
+	case 8: {
+		lng **dstlng = (lng **) dst;
+		**dstlng = (lng) base;
+		if (p[0] == 'L' && p[1] == 'L')
 			p += 2;
-		}
-#endif
+		break;
+	}
 	}
 	return (int) (p - src);
 }
-@
-@c
 
-@= atom_io
-static @1 *@1Read(@1 *a, stream *s, size_t cnt)
+int
+bteFromStr(const char *src, int *len, bte **dst)
 {
-	mnstr_read@2Array(s, (@3 *) a, cnt);
-	return mnstr_errnr(s) ? NULL : a;
+	return numFromStr(src, len, (void **) dst, TYPE_bte);
 }
-static int @1Write(const @1 *a, stream *s, size_t cnt)
+
+int
+shtFromStr(const char *src, int *len, sht **dst)
 {
-	return mnstr_write@2Array(s, (const @3 *) a, cnt) ? GDK_SUCCEED : GDK_FAIL;
+	return numFromStr(src, len, (void **) dst, TYPE_sht);
 }
-@
-@c
 
-@:numfromstr(bte,127,1)@
-@:atomtostr(bte,"%hhd",bte)@
-@:atom_io(bte,Bte,bte)@
+int
+intFromStr(const char *src, int *len, int **dst)
+{
+	return numFromStr(src, len, (void **) dst, TYPE_int);
+}
 
-@:numfromstr(sht,32767,2)@
-@:atomtostr(sht,"%hd",sht)@
-@:atom_io(sht,Sht,sht)@
+int
+lngFromStr(const char *src, int *len, lng **dst)
+{
+	return numFromStr(src, len, (void **) dst, TYPE_lng);
+}
 
-@:numfromstr(int,2147483647,SIZEOF_INT)@
-@:atomtostr(int,"%d",int)@
-@:atom_io(int,Int,int)@
+#define atom_io(TYPE, NAME, CAST)					\
+static TYPE *								\
+TYPE##Read(TYPE *a, stream *s, size_t cnt)				\
+{									\
+	mnstr_read##NAME##Array(s, (CAST *) a, cnt);			\
+	return mnstr_errnr(s) ? NULL : a;				\
+}									\
+static int								\
+TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
+{									\
+	return mnstr_write##NAME##Array(s, (const CAST *) a, cnt) ?	\
+		GDK_SUCCEED : GDK_FAIL;					\
+}
 
-@:numfromstr(lng,LL_CONSTANT(9223372036854775807),SIZEOF_LNG)@
-@:atomtostr(lng,LLFMT,lng)@
+atomtostr(bte, "%hhd", )
+atom_io(bte, Bte, bte)
 
-@:atom_io(lng,Lng,lng)@
+atomtostr(sht, "%hd", )
+atom_io(sht, Sht, sht)
+
+atomtostr(int, "%d", )
+atom_io(int, Int, int)
+
+atomtostr(lng, LLFMT, )
+
+atom_io(lng, Lng, lng)
 
 /*
  * int
@@ -1088,7 +830,7 @@ static int @1Write(const @1 *a, stream *s, size_t cnt)
  * 	char *p;
  * 	int l=0;
  *
- * 	atommem(char,lngStrlen)
+ * 	atommem(char, lngStrlen);
  * 	if (*src == lng_nil) {
  * 		strncpy(*dst, "nil", *len);
  * 		return 3;
@@ -1103,7 +845,7 @@ ptrFromStr(const char *src, int *len, ptr **dst)
 	size_t base = 0;
 	const char *p = src;
 
-	@:atommem(ptr,sizeof(ptr))@
+	atommem(ptr, sizeof(ptr));
 
 	while (GDKisspace(*p))
 		p++;
@@ -1131,12 +873,12 @@ ptrFromStr(const char *src, int *len, ptr **dst)
 	return (int) (p - src);
 }
 
-@:atomtostr(ptr,SZFMT,size_t)@
+atomtostr(ptr, PTRFMT, PTRFMTCAST)
 
 #if SIZEOF_VOID_P == SIZEOF_INT
-@:atom_io(ptr,Int,int)@
+atom_io(ptr, Int, int)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
-@:atom_io(ptr,Lng,lng)@
+atom_io(ptr, Lng, lng)
 #endif
 
 int
@@ -1146,7 +888,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	double d;
 
 	/* alloc memory */
-	@:atommem(dbl,sizeof(dbl))@
+	atommem(dbl, sizeof(dbl));
 
 	while (GDKisspace(*p))
 		p++;
@@ -1173,8 +915,8 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	return (int) (p - src);
 }
 
-@:atomtostr(dbl,"%.17g",double)@
-@:atom_io(dbl,Lng,lng)@
+atomtostr(dbl, "%.17g", (double))
+atom_io(dbl, Lng, lng)
 
 int
 fltFromStr(const char *src, int *len, flt **dst)
@@ -1184,7 +926,7 @@ fltFromStr(const char *src, int *len, flt **dst)
 	float f;
 
 	/* alloc memory */
-	@:atommem(flt,sizeof(flt))@
+	atommem(flt, sizeof(flt));
 
 	while (GDKisspace(*p))
 		p++;
@@ -1235,8 +977,8 @@ fltFromStr(const char *src, int *len, flt **dst)
 	return n;
 }
 
-@:atomtostr(flt,"%.9g",float)@
-@:atom_io(flt,Int,int)@
+atomtostr(flt, "%.9g", (float))
+atom_io(flt, Int, int)
 
 
 /*
@@ -1285,7 +1027,7 @@ fltFromStr(const char *src, int *len, flt **dst)
  * used in the hash table have now allowed more buckets (2K instead of 1K)
  * and average 2 bytes overhead for the next pointers instead of 6-12. Therefore
  * small heaps are now more compact than before.
- * @-
+ *
  * The routine strElimDoubles() can be used to check whether all
  * strings are still being double-eliminated in the original hash-table.
  * Only then we know that unequal offset-integers in the BUN array means
@@ -1298,29 +1040,6 @@ strElimDoubles(Heap *h)
 	return GDK_ELIMDOUBLES(h);
 }
 
-@h
-/*
- * @- String Comparison, NILs and UTF-8
- *
- * Using the char* type for strings is handy as this is the type of any
- * constant strings
- * in a C/C++ program. Therefore, MonetDB uses this definition for str.
- * However, different compilers and platforms use either signed or unsigned
- * characters for the char type.
- * It is required that string ordering in MonetDB is consistent over
- * platforms though.
- *
- * As for the choice how strings should be ordered, our support for UTF-8 actually imposes that it
- * should follow 'unsigned char' doctrine (like in the AIX native compiler). In this semantics, though
- * we have to take corrective action to ensure that str(nil) is the smallest value of the domain.
- */
-#define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
-#define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
-#define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
-                          (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \
-                          (*(const unsigned char*)(l) > *(const unsigned char*)(r))?1: \
-                          strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
-@c
 int
 strNil(const char *s)
 {
@@ -1370,28 +1089,6 @@ strHeap(Heap *d, size_t cap)
 }
 
 
-@h
-/*
- * @- Hash Function
- * The string hash function is a very simple hash function that xors and
- * rotates all characters together. It is optimized to process 2 characters
- * at a time (adding 16-bits to the hash value each iteration).
- */
-#define GDK_STRHASH(x,y)				\
-	do {						\
-		const char *_key = (const char *) (x);	\
-		BUN _i;					\
-		for (_i = y = 0; _key[_i]; _i++) {	\
-		    y += _key[_i];			\
-		    y += (y << 10);			\
-		    y ^= (y >> 6);			\
-		}					\
-		y += (y << 3);				\
-		y ^= (y >> 11);				\
-		y += (y << 15);				\
-	} while (0)
-
-@c
 BUN
 strHash(const char *s)
 {
@@ -1413,7 +1110,6 @@ strCleanHash(Heap *h, int rebuild)
 }
 
 /*
- * @-
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it returns
  * zero.
@@ -1550,7 +1246,6 @@ strPut(Heap *h, var_t *dst, const char *v)
 }
 
 /*
- * @-
  * Convert an "" separated string to a GDK string value, checking that the input is correct UTF-8.
  */
 
@@ -1760,7 +1455,6 @@ strFromStr(const char *src, int *len, char **dst)
 }
 
 /*
- * @-
  * Convert a GDK string value to something printable.
  */
 /*
@@ -1855,13 +1549,13 @@ strToStr(char **dst, int *len, const char *src)
 	int l = 0;
 
 	if (GDK_STRNIL((str) src)) {
-		@:atommem(char,4)@
+		atommem(char, 4);
 
 		strncpy(*dst, "nil", *len);
 		return 3;
 	} else {
 		int sz = escapedStrlen(src);
-		@:atommem(char,sz+3)@
+		atommem(char, sz + 3);
 		l = escapedStr((*dst) + 1, src, *len - 1);
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
@@ -1913,7 +1607,6 @@ strWrite(const char *a, stream *s, size_t cnt)
  */
 oid	GDKoid, GDKflushed;
 /*
- * @-
  * Init the shared array of oid bases.
  */
 int
@@ -1924,7 +1617,6 @@ OIDinit(void)
 }
 
 /*
- * @-
  * Make up some new OID for a specified database, based on the current time.
  */
 static oid
@@ -1934,7 +1626,6 @@ OIDrand(void)
 }
 
 /*
- * @-
  * Initialize the current OID number to be starting at 'o'.
  */
 oid
@@ -1962,7 +1653,6 @@ OIDseed(oid o)
 }
 
 /*
- * @-
  * Initialize a sequence of OID seeds (for a sequence of database)
  * as stored in a string.
  */
@@ -1984,7 +1674,6 @@ OIDread(str s)
 }
 
 /*
- * @-
  * Write the current sequence of OID seeds to a file in string format.
  */
 int
@@ -2014,7 +1703,6 @@ OIDdirty(void)
 }
 
 /*
- * @-
  * Reserve a range of unique OIDs
  */
 oid
@@ -2032,7 +1720,6 @@ OIDnew(oid inc)
 }
 
 /*
- * @-
  * String conversion routines.
  */
 int
@@ -2047,7 +1734,7 @@ OIDfromStr(const char *src, int *len, oid **dst)
 	int pos = 0;
 	const char *p = src;
 
-	@:atommem(oid,sizeof(oid))@
+	atommem(oid, sizeof(oid));
 
 	**dst = oid_nil;
 	while (GDKisspace(*p))
@@ -2074,7 +1761,7 @@ OIDfromStr(const char *src, int *len, oid **dst)
 int
 OIDtoStr(char **dst, int *len, const oid *src)
 {
-	@:atommem(char,oidStrlen)@
+	atommem(char, oidStrlen);
 
 	if (*src == oid_nil) {
 		strncpy(*dst, "nil", *len);
@@ -2243,7 +1930,6 @@ atomDesc BATatoms[MAXATOMS] = {
 int GDKatomcnt = TYPE_str + 1;
 
 /*
- * @-
  * Sometimes a bat descriptor is loaded before the dynamic module defining
  * the atom is loaded. To support this an extra set of unknown atoms is kept.
  * These can be accessed via the ATOMunknown interface. Adding atoms to this
@@ -2300,8 +1986,3 @@ ATOMunknown_name(int i)
 	return unknown[-i];
 }
 
-@h
-/*
- *
- */
-#endif /* _GDK_ATOMS_H_ */

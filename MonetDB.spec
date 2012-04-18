@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Dec2011-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2012/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -48,6 +48,7 @@ BuildRequires: python
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
+BuildRequires: rubygems-devel
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
@@ -57,8 +58,7 @@ Obsoletes: %{name}-devel
 %if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
-%{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig -e 'puts Config::CONFIG["sitelibdir"] ')}
-%define gemdir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)
+%{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
 
 %description
 MonetDB is a database management system that is developed from a
@@ -261,16 +261,16 @@ program.
 
 %files client-ruby
 %defattr(-,root,root)
-%docdir %{gemdir}/doc/activerecord-monetdb-adapter-0.1
-%docdir %{gemdir}/doc/ruby-monetdb-sql-0.1
-%{gemdir}/doc/activerecord-monetdb-adapter-0.1/*
-%{gemdir}/doc/ruby-monetdb-sql-0.1/*
-%{gemdir}/cache/*.gem
-# %dir %{gemdir}/gems/activerecord-monetdb-adapter-0.1
-# %dir %{gemdir}/gems/ruby-monetdb-sql-0.1
-%{gemdir}/gems/activerecord-monetdb-adapter-0.1
-%{gemdir}/gems/ruby-monetdb-sql-0.1
-%{gemdir}/specifications/*.gemspec
+%docdir %{gem_dir}/doc/activerecord-monetdb-adapter-0.1
+%docdir %{gem_dir}/doc/ruby-monetdb-sql-0.1
+%{gem_dir}/doc/activerecord-monetdb-adapter-0.1/*
+%{gem_dir}/doc/ruby-monetdb-sql-0.1/*
+%{gem_dir}/cache/*.gem
+# %dir %{gem_dir}/gems/activerecord-monetdb-adapter-0.1
+# %dir %{gem_dir}/gems/ruby-monetdb-sql-0.1
+%{gem_dir}/gems/activerecord-monetdb-adapter-0.1
+%{gem_dir}/gems/ruby-monetdb-sql-0.1
+%{gem_dir}/specifications/*.gemspec
 
 %package client-tests
 Summary: MonetDB Client tests package
@@ -295,6 +295,7 @@ developer.
 
 %files client-tests
 %defattr(-,root,root)
+%{_bindir}/arraytest
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -391,6 +392,7 @@ fi
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
+%{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
@@ -587,6 +589,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-python=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
+	--with-rubygem-dir="%{gem_dir}" \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no \
@@ -626,6 +629,35 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Apr 18 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
+- Rebuilt.
+
+* Mon Mar 12 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.1-20120418
+- merovingian: The logfile and pidfile monetdbd properties are now displayed with
+  dbfarm path when relative
+
+* Mon Mar 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
+- clients: ODBC: Implemented the SQL_ATTR_CONNECTION_TIMEOUT attribute.
+
+* Mon Mar 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
+- clients: mclient now has a -a (--autocommit) option to turn off autocommit mode.
+
+* Mon Mar 12 2012 Wouter Alink <wouter@spinque.com> - 11.9.1-20120418
+- java: Password reading by JdbcClient no longer results in strange artifacts
+- java: JdbcClient now returns exit code 1 in case of failures
+
+* Mon Mar 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
+- gdk: The type "chr" has been removed.
+  chr has long been superseded by bte for 1 byte arithmetic plus it is
+  pretty useless to hold single characters since we use Unicode and
+  thus only a tiny subset of the supported character set would fit.
+
+* Mon Mar 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
+- monetdb5: The type "chr" has been removed.
+  chr has long been superseded by bte for 1 byte arithmetic plus it is
+  pretty useless to hold single characters since we use Unicode and
+  thus only a tiny subset of the supported character set would fit.
+
 * Mon Mar 12 2012 Fabian Groffen <fabian@monetdb.org> - 11.7.9-20120312
 - Rebuilt.
 
