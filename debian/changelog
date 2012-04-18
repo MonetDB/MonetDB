@@ -1,3 +1,53 @@
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 18 Apr 2012 09:48:42 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * merovingian: The logfile and pidfile monetdbd properties are now displayed with
+    dbfarm path when relative
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 12 Mar 2012 09:48:40 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * clients: ODBC: Implemented the SQL_ATTR_CONNECTION_TIMEOUT attribute.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * clients: mclient now has a -a (--autocommit) option to turn off autocommit mode.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * java: Password reading by JdbcClient no longer results in strange artifacts
+  * java: JdbcClient now returns exit code 1 in case of failures
+
+ -- Wouter Alink <wouter@spinque.com>  Mon, 12 Mar 2012 09:48:40 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * gdk: The type "chr" has been removed.
+    chr has long been superseded by bte for 1 byte arithmetic plus it is
+    pretty useless to hold single characters since we use Unicode and
+    thus only a tiny subset of the supported character set would fit.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
+
+monetdb (11.9.1-20120418) unstable; urgency=low
+
+  * monetdb5: The type "chr" has been removed.
+    chr has long been superseded by bte for 1 byte arithmetic plus it is
+    pretty useless to hold single characters since we use Unicode and
+    thus only a tiny subset of the supported character set would fit.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Mar 2012 09:48:40 +0200
+
 monetdb (11.7.9-20120312) unstable; urgency=low
 
   * Rebuilt.
