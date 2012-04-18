@@ -1334,7 +1334,8 @@ open_urlstream(const char *url)
 
 #else
 stream *open_urlstream(const char *url) {
-	(void) url;
+	if (url != NULL && strncmp(url, "file://", sizeof("file://") - 1) == 0)
+		return open_rastream(url + sizeof("file://") - 1);
 	return NULL;
 }
 #endif /* HAVE_CURL */
