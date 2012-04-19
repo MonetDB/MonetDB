@@ -411,10 +411,11 @@ fi
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_vault.mal
+%{_libdir}/monetdb5/autoload/*_jaql.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
-%{_libdir}/monetdb5/autoload/*_udf.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
+%{_libdir}/monetdb5/autoload/*_udf.mal
+%{_libdir}/monetdb5/autoload/*_vault.mal
 %if %{?centos:0}%{!?centos:1}
 %exclude %{_libdir}/monetdb5/lib_geom.so
 %endif
@@ -588,6 +589,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-gdk=yes \
 	--enable-geom=%{?centos:no}%{!?centos:yes} \
 	--enable-instrument=no \
+	--enable-jaql=yes \
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
