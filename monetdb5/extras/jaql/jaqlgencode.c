@@ -4402,9 +4402,13 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 				if (f->argc - f->retc - argoff < 1)
 					break;
 				itype = getArgType(s->def, f, f->retc + argoff);
-				if (!isaBatType(itype) ||
-						getHeadType(itype) != TYPE_oid)
+				if (isaBatType(itype)) {
+					if (getHeadType(itype) != TYPE_oid)
+						break;
+					itype = getTailType(itype);
+				} else if (f->retc != 7) {
 					break;
+				}
 
 				switch ((*coltypes)[i]) {
 					case j_var:
@@ -4416,14 +4420,14 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 						 * the first argument to be a BAT,
 						 * and of the right type */
 						if (f->argc - f->retc - argoff >= 7 &&
-								getTailType(itype) == TYPE_bte)
+								itype == TYPE_bte)
 						{
 							match = 1;
 							argoff += 7;
 							break;
 						}
 
-						switch (getTailType(itype)) {
+						switch (itype) {
 							case TYPE_str:
 								(*dynaarg)[i][1] = 0;
 								(*coltypes)[i] = j_sort_arg;
@@ -4456,22 +4460,22 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 						}
 						break;
 					case j_str:
-						if (getTailType(itype) == TYPE_str)
+						if (itype == TYPE_str)
 							match = 1;
 						argoff += 1;
 						break;
 					case j_num:
-						if (getTailType(itype) == TYPE_lng)
+						if (itype == TYPE_lng)
 							match = 1;
 						argoff += 1;
 						break;
 					case j_dbl:
-						if (getTailType(itype) == TYPE_dbl)
+						if (itype == TYPE_dbl)
 							match = 1;
 						argoff += 1;
 						break;
 					case j_bool:
-						if (getTailType(itype) == TYPE_bit)
+						if (itype == TYPE_bit)
 							match = 1;
 						argoff += 1;
 						break;
@@ -6295,6 +6299,24 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						case j_num:
 						case j_dbl:
 						case j_bool:
+							if (funcretc == 7) {
+								q = newInstruction(mb, ASSIGNsymbol);
+								q = pushReturn(mb, q,
+										newTmpVariable(mb, TYPE_any));
+								if (coltypes[i] == j_str) {
+									q = pushStr(mb, q, w->tval1->sval);
+								} else if (coltypes[i] == j_num) {
+									q = pushLng(mb, q, w->tval1->nval);
+								} else if (coltypes[i] == j_dbl) {
+									q = pushDbl(mb, q, w->tval1->dval);
+								} else /* j_bool */ {
+									q = pushBit(mb, q, w->tval1->nval == 1);
+								}
+								a = getArg(q, 0);
+								pushInstruction(mb, q);
+								dynaarg[i][0] = a;
+								break;
+							}
 							q = newInstruction(mb, ASSIGNsymbol);
 							setModuleId(q, batRef);
 							setFunctionId(q, newRef);
