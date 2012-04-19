@@ -438,7 +438,7 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 	unloadbat(object); \
 	unloadbat(name);
 
-str
+static str
 shred_json(jsonbat *jb, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *json)
 {
 	char *p = NULL;
