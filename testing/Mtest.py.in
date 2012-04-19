@@ -1688,7 +1688,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = ".sql"
         CALL = "sqlXp"
         SERVER = "SQL"
-    elif os.path.isfile(TST+".jaql"):  # deliberately kept simple for now
+    elif os.path.isfile(TST+".jaql") or os.path.isfile(TST+".jaql.in"):  # deliberately kept simple for now
         EXT = ".jaql"
         CALL = "jaql"
         SERVER = "JAQL"
@@ -1709,11 +1709,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
             reason = "as conditional '%s' does not hold." % COND
             elem = SkipTest(env, TST, EXT, reason, length)
         elif os.name == "nt":
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql)`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql|jaql)`")
             #TODO:
             #elif os.name == "posix":
         else:
-            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql]`")
+            ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.mal|.malC|.sql|.jaql]`")
         return TX,Failed,Failed,elem,reason,links
 
     if par['PACKAGE'] not in ('common', 'clients', 'gdk', 'java'):
