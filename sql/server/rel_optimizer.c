@@ -793,7 +793,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 	while(list_length(exps) && fnd) {
 		fnd = 0;
 		/* find the first expression which could be added */
-		for(djn = sdje->h; djn && !fnd; djn = (!fnd)?djn->next:NULL) {
+		for(djn = sdje->h; djn && !fnd && rels->h; djn = (!fnd)?djn->next:NULL) {
 			node *ln, *rn, *en;
 			
 			cje = djn->data;

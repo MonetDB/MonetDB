@@ -133,8 +133,7 @@ Ready.
 #   AND x.ra BETWEEN r.wm_ra - alpha(im0.bmaj, r.wm_decl)
 #                AND r.wm_ra + alpha(im0.bmaj, r.wm_decl)
 #   AND r.x * x.x + r.y * x.y + r.z * x.z > COS(RADIANS(im0.bmaj))
-#;
-% sys.t # table_name
+% sys.r # table_name
 % xtrsrc_id # name
 % int # type
 % 1 # length
