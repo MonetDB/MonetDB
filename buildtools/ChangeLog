@@ -1,3 +1,7 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Thu Apr 19 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Split the MonetDB-client-ruby RPM package into two and named them in
+  accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
+
