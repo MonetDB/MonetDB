@@ -48,7 +48,9 @@ BuildRequires: python
 BuildRequires: readline-devel
 BuildRequires: ruby
 BuildRequires: rubygems
+%if %{?centos:0}%{!?centos:1}
 BuildRequires: rubygems-devel
+%endif
 BuildRequires: unixODBC-devel
 BuildRequires: zlib-devel
 
