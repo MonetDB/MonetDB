@@ -732,7 +732,7 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 		maxdiv10 = 214748364/*7*/;
 		break;
 	case 8:
-		maxdiv10 = 922337203685477580/*7*/;
+		maxdiv10 = LL_CONSTANT(922337203685477580)/*7*/;
 		break;
 	}
 	do {
