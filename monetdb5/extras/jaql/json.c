@@ -41,11 +41,49 @@ typedef struct _json_bats {
 	BAT *object;  /* object members */
 	BAT *name;    /* pair names */
 	char *error;  /* set to non-NULL (an explanatory string) on failure */
+	stream *is;   /* set to non-NULL when reading directly from stream */
+	char *streambuf; /* buffer used for reading from the stream */
+	size_t streambuflen;
 } jsonbat;
 
 static char *parse_json_value(jsonbat *jb, oid *v, char *p);
 static char *parse_json_object(jsonbat *jb, oid *id, char *p);
 static char *parse_json_array(jsonbat *jb, oid *id, char *p);
+
+static size_t
+read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
+{
+	size_t shift = 0;
+	int sret = 0;
+	
+	assert(*start - jb->streambuf >= 0);
+	shift = *start - jb->streambuf;
+
+	if (shift > 0) {
+		memmove(jb->streambuf, *start, jb->streambuflen - shift);
+		if (pos != start)
+			*pos -= shift;
+		*start -= shift;
+		if (recall != NULL)
+			*recall -= shift;
+	}
+
+	shift = *pos - jb->streambuf;
+	if (*pos == jb->streambuf + jb->streambuflen) {
+		char *newbuf = realloc(jb->streambuf, jb->streambuflen += 8096);
+		if (newbuf == NULL)
+			return 0;
+		jb->streambuf = newbuf;
+		*pos = jb->streambuf + shift;
+	}
+
+	sret = mnstr_read(jb->is, *pos, 1, jb->streambuflen - shift - 1);
+	if (sret <= 0)
+		return 0;
+	jb->streambuf[sret] = '\0';
+
+	return sret;
+}
 
 static char *
 parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
@@ -54,7 +92,10 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 	char *n = p;
 	char *w = p;
 
-	for (; *p != '\0'; p++) {
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &n, &w) == 0))
+			break;
 		switch (*p) {
 			case '\\':
 				if (escape) {
@@ -152,7 +193,10 @@ parse_json_number(jsonbat *jb, oid *v, char *p)
 	if (*p == '-')
 		p++;
 
-	for (; *p != '\0'; p++) {
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &n, NULL) == 0))
+			break;
 		if (strchr("0123456789", *p) != NULL) {
 			/* valid for ints */
 		} else  if (strchr("eE.-+", *p) != NULL) {
@@ -272,15 +316,25 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	x = p + 1;
 	if ((p = parse_json_string(jb, &n, 1, x)) == NULL)
 		return NULL;
-	for (; *p != '\0' && isspace(*p); p++)
-		;
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+			break;
+		if (!isspace(*p))
+			break;
+	}
 	if (*p != ':') {
 		jb->error = GDKstrdup("exected ':' for pair");
 		return NULL;
 	}
 	p++;
-	for (; *p != '\0' && isspace(*p); p++)
-		;
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+			break;
+		if (!isspace(*p))
+			break;
+	}
 	if ((p = parse_json_value(jb, v, p)) == NULL)
 		return NULL;
 
@@ -297,7 +351,10 @@ parse_json_object(jsonbat *jb, oid *id, char *p)
 	BUNappend(jb->kind, "o", FALSE);
 	*id = BUNlast(jb->kind) - 1;
 
-	for (; *p != '\0'; p++) {
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
+			break;
 		if (isspace(*p))
 			continue;
 		switch (*p) {
@@ -329,7 +386,10 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 	BUNappend(jb->kind, "a", FALSE);
 	*id = BUNlast(jb->kind) - 1;
 
-	for (; *p != '\0'; p++) {
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
+			break;
 		if (isspace(*p))
 			continue;
 		switch (*p) {
@@ -379,69 +439,121 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 	unloadbat(name);
 
 str
-JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *json)
+shred_json(jsonbat *jb, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *json)
 {
-	char *p = *json;
-	jsonbat jb;
+	char *p = NULL;
 	oid v = (oid)0; 
 
-	memset(&jb, 0, sizeof(jsonbat));
-
 	/* initialise all bats */
-	jb.kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
-	jb.kind = BATseqbase(jb.kind, (oid)0);
-	jb.string = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jb.doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
-	jb.integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
-	jb.name = BATnew(TYPE_oid, TYPE_str, BATTINY);
-	jb.object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
-	jb.array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jb->kind = BATnew(TYPE_void, TYPE_bte, BATTINY);
+	jb->kind = BATseqbase(jb->kind, (oid)0);
+	jb->string = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jb->doble = BATnew(TYPE_oid, TYPE_dbl, BATTINY);
+	jb->integer = BATnew(TYPE_oid, TYPE_lng, BATTINY);
+	jb->name = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	jb->object = BATnew(TYPE_oid, TYPE_oid, BATTINY);
+	jb->array = BATnew(TYPE_oid, TYPE_oid, BATTINY);
 
-	for (; *p != '\0' && isspace(*p); p++)
-		;
-	if (*p == '\0') {
-		jb.error = GDKstrdup("expected data");
-		p = NULL;
+	if (json == NULL) {
+		p = jb->streambuf;
 	} else {
-		p = parse_json_value(&jb, &v, p);
+		p = *json;
 	}
 
-	for (; p != NULL && *p != '\0' && isspace(*p); p++)
-		;
+	for (; ; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
+			break;
+		if (!isspace(*p))
+			break;
+	}
+	if (*p == '\0') {
+		jb->error = GDKstrdup("expected data");
+		p = NULL;
+	} else {
+		p = parse_json_value(jb, &v, p);
+	}
+
+	for (; p != NULL; p++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
+			break;
+		if (!isspace(*p))
+			break;
+	}
 	if (p == NULL || *p != '\0') {
 		str e;
 		if (p == NULL) {
 			/* parsing failed */
-			e = createException(MAL, "json.shred", "%s", jb.error);
+			e = createException(MAL, "json.shred", "%s", jb->error);
 		} else {
 			e = createException(MAL, "json.shred", "invalid JSON data, "
 					"trailing characters: %s", p);
 		}
-		BBPunfix(jb.kind->batCacheid);
-		BBPunfix(jb.string->batCacheid);
-		BBPunfix(jb.integer->batCacheid);
-		BBPunfix(jb.doble->batCacheid);
-		BBPunfix(jb.array->batCacheid);
-		BBPunfix(jb.object->batCacheid);
-		BBPunfix(jb.name->batCacheid);
-		GDKfree(jb.error);
+		BBPunfix(jb->kind->batCacheid);
+		BBPunfix(jb->string->batCacheid);
+		BBPunfix(jb->integer->batCacheid);
+		BBPunfix(jb->doble->batCacheid);
+		BBPunfix(jb->array->batCacheid);
+		BBPunfix(jb->object->batCacheid);
+		BBPunfix(jb->name->batCacheid);
+		GDKfree(jb->error);
 		return e;
 	}
-	BBPkeepref(jb.kind->batCacheid);
-	*kind = jb.kind->batCacheid;
-	BBPkeepref(jb.string->batCacheid);
-	*string = jb.string->batCacheid;
-	BBPkeepref(jb.integer->batCacheid);
-	*integer = jb.integer->batCacheid;
-	BBPkeepref(jb.doble->batCacheid);
-	*doble = jb.doble->batCacheid;
-	BBPkeepref(jb.array->batCacheid);
-	*array = jb.array->batCacheid;
-	BBPkeepref(jb.object->batCacheid);
-	*object = jb.object->batCacheid;
-	BBPkeepref(jb.name->batCacheid);
-	*name = jb.name->batCacheid;
+	BBPkeepref(jb->kind->batCacheid);
+	*kind = jb->kind->batCacheid;
+	BBPkeepref(jb->string->batCacheid);
+	*string = jb->string->batCacheid;
+	BBPkeepref(jb->integer->batCacheid);
+	*integer = jb->integer->batCacheid;
+	BBPkeepref(jb->doble->batCacheid);
+	*doble = jb->doble->batCacheid;
+	BBPkeepref(jb->array->batCacheid);
+	*array = jb->array->batCacheid;
+	BBPkeepref(jb->object->batCacheid);
+	*object = jb->object->batCacheid;
+	BBPkeepref(jb->name->batCacheid);
+	*name = jb->name->batCacheid;
 	return MAL_SUCCEED;
+}
+
+str
+JSONshred(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *json)
+{
+	jsonbat jb;
+
+	memset(&jb, 0, sizeof(jsonbat));
+
+	return shred_json(&jb, kind, string, integer, doble, array, object, name, json);
+}
+
+str
+JSONshredstream(int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, str *uri)
+{
+	jsonbat jb;
+	str ret;
+
+	memset(&jb, 0, sizeof(jsonbat));
+	
+	if ((jb.is = open_urlstream(*uri)) == NULL)
+		throw(MAL, "json.shreduri", "failed to open urlstream");
+
+	if (mnstr_errnr(jb.is) != 0) {
+		str err = createException(MAL, "json.shreduri",
+				"opening stream failed: %s", mnstr_error(jb.is));
+		mnstr_destroy(jb.is);
+		return err;
+	}
+
+	jb.streambuflen = 8096;
+	jb.streambuf = malloc(8096);
+	jb.streambuf[0] = '\0';
+
+	ret = shred_json(&jb, kind, string, integer, doble, array, object, name, NULL);
+
+	free(jb.streambuf);
+
+	return ret;
 }
 
 static size_t
