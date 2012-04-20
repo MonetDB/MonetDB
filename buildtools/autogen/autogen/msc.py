@@ -995,6 +995,7 @@ def msc_gem(fd, var, gem, msc):
     if gem.has_key('DIR'):
         rd = gem['DIR'][0]
     rd = msc_translate_dir(rd, msc)
+    rd = '$(prefix)\\' + rd
     fd.write('!IF defined(HAVE_RUBYGEM)\n')
     for f in gem['FILES']:
         msc['SCRIPTS'].append(f[:-4])
