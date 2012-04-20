@@ -3404,12 +3404,13 @@ ALGslice_oid(int *ret, bat *bid, oid *start, oid *end)
 	bv  = BATmirror( b);
 	if ( bv == NULL)
 		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
-	bv  = BATselect( bv, (void*) start, (void*) end);
+	bv  = BATselect_( bv, (ptr) start, (ptr) end, TRUE, FALSE);
 	if ( bv == NULL)
 		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
 	bv  = BATmirror( bv);
 	if ( bv == NULL)
 		throw(MAL, "algebra.slice", MAL_MALLOC_FAIL);
+		
 	*ret = bv->batCacheid;
 	BBPkeepref(*ret);
 	BBPreleaseref(b->batCacheid);
