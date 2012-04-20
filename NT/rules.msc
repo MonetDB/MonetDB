@@ -289,9 +289,9 @@ create_winconfig_conds_new_py:
 	$(ECHO) ENABLE_DATACELL_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_CFITSIO
-	$(ECHO) "HAVE_CFITSIO_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_CFITSIO_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_CFITSIO_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_CFITSIO_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_DEVELOPER
 	$(ECHO) HAVE_DEVELOPER_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
@@ -341,9 +341,9 @@ create_winconfig_conds_new_py:
 	$(ECHO) HAVE_MONETDB5_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_MSEED
-	$(ECHO) "HAVE_MSEED_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MSEED_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
-	$(ECHO) "HAVE_MSEED_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+	$(ECHO) HAVE_MSEED_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
 !IFDEF HAVE_ODBC
 	$(ECHO) HAVE_ODBC_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
