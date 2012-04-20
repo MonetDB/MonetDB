@@ -424,7 +424,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	int *status,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, call, p, *old;
+	InstrPtr ret, call, p = NULL, *old;
 	Symbol s;
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
