@@ -1350,7 +1350,8 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	case op_topn:
 	case op_sample:
 		*p = rel;
-		return rel_bind_column_(sql, p, rel->l, cname);
+		if (rel->l)
+			return rel_bind_column_(sql, p, rel->l, cname);
 	default:
 		return NULL;
 	}

@@ -630,7 +630,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 		if (e->flag == cmp_or && right)  /* join */
 			assert(0);
 		/* here we handle join indices */
-		if ((p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
+		if (right && (p=find_prop(e->p, PROP_JOINIDX)) != NULL) {
 			sql_idx *i = p->value;
 			sql_exp *el = e->l;
 			sql_exp *er = e->r;
