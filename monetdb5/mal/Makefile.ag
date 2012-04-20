@@ -45,7 +45,7 @@ lib_mal = {
 		mal_module.c mal_module.h \
 		mal_namespace.c mal_namespace.h \
 		mal_parser.mx \
-		mal_profiler.mx \
+		mal_profiler.c mal_profiler.h \
 		mal_properties.c mal_properties.h \
 		mal_readline.c mal_readline.h \
 		mal_recycle.c mal_recycle.h \
