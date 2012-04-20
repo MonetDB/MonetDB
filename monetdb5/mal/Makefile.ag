@@ -32,7 +32,7 @@ lib_mal = {
 		mal_box.c mal_box.h \
 		mal_builder.c mal_builder.h \
 		mal_client.c mal_client.h \
-		mal_debugger.mx \
+		mal_debugger.c mal_debugger.h \
 		mal_errors.h \
 		mal_exception.c mal_exception.h \
 		mal_factory.c mal_factory.h \
