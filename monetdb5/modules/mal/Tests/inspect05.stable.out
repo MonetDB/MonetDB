@@ -141,7 +141,6 @@ end main;
 [ "setReadMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",					  "BKCsetReadMode;"			  ]
 [ "setRole",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],h:str,t:str):void ",												  "BKCsetRole;"						  ]
 [ "setSet",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],mode:bit):bat[:any_1,:any_2] ",			  "BKCsetSet;"				  ]
-[ "setSorted",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCsetSorted;"					  ]
 [ "setTransient",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):void ",						  "BKCsetTransient;"			  ]
 [ "setWriteMode",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",												  "BKCsetWriteMode;"					  ]
 [ "shrink",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] ",			  "BKCshrinkBAT;"			  ]
