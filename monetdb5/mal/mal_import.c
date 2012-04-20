@@ -1,46 +1,29 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
- * @a M. Kersten
- * @v 0.0
- * @+ Module import
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2011 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
+/* Author(s) M.L. Kersten
+ * Module import
  * The import statement simple switches the parser to a new input file, which
  * takes precedence. The context for which the file should be interpreted
  * is determined by the module name supplied.
  * Typically this involves a module, whose definitions are stored at
  * a known location.
- */
-@h
-#ifndef _MAL_IMPORT_H
-#define _MAL_IMPORT_H
-
-#include "mal_exception.h"
-#include "mal_client.h"
-#include "mal_session.h"
-#include "mal_utils.h"
-
-mal_export void slash_2_dir_sep(str fname);
-@c
-/*
- * @-
  * The import context is located. If the module already exists,
  * we should silently skip parsing the file. This is handled at the parser level.
  * The files are extracted from a default location,
@@ -50,7 +33,8 @@ mal_export void slash_2_dir_sep(str fname);
  *
  * Every IMPORT statement denotes a possible dynamic load library.
  * Make sure it is loaded as well.
- */
+*/
+
 #include "monetdb_config.h"
 #include "mal_import.h"
 #include "mal_interpreter.h"	/* for showErrors() */
@@ -95,18 +79,14 @@ malOpenSource(str file)
 	return fd;
 }
 
-@h
 /*
- * @-
  * The malLoadScript routine merely reads the contents of a file into
  * the input buffer of the client. It is typically used in situations
  * where an intermediate file is used to pass commands around.
  * Since the parser needs access to the complete block, we first have
  * to find out how long the input is.
  * For the time being, we assume at most 1Mb.
- */
-mal_export str malLoadScript(Client c, str name, bstream **fdin);
-@c
+*/
 str
 malLoadScript(Client c, str name, bstream **fdin)
 {
@@ -124,70 +104,63 @@ malLoadScript(Client c, str name, bstream **fdin)
 }
 
 /*
- * @-
  * Beware that we have to isolate the execution of the source file
  * in its own environment. E.g. we have to removed the execution
  * state until we are finished.
  * The script being read my contain errors, such as non-balanced
  * brackets as indicated by blkmode.
  * It should be reset before continuing.
- * @-
- */
-@= restoreState
-	bstream *oldfdin = c->fdin;
-	int oldyycur = c->yycur;
-	int oldlisting = c->listing;
-	int oldmode = c->mode;
-	int oldblkmode = c->blkmode;
-	str oldsrcFile = c->srcFile;
-	ClientInput *oldbak = c->bak;
-	str oldprompt = c->prompt;
-	Module oldnspace = c->nspace;
-	Symbol oldprg = c->curprg;
-	MalStkPtr oldglb = c->glb;
-@= restoreState3
-	int oldmode = c->mode;
-	int oldblkmode = c->blkmode;
-	str oldsrcFile = c->srcFile;
-	Module oldnspace = c->nspace;
-	Symbol oldprg = c->curprg;
-	MalStkPtr oldglb = c->glb;
+*/
+#define restoreState \
+	bstream *oldfdin = c->fdin; \
+	int oldyycur = c->yycur; \
+	int oldlisting = c->listing; \
+	int oldmode = c->mode; \
+	int oldblkmode = c->blkmode; \
+	str oldsrcFile = c->srcFile; \
+	ClientInput *oldbak = c->bak; \
+	str oldprompt = c->prompt; \
+	Module oldnspace = c->nspace; \
+	Symbol oldprg = c->curprg; \
+	MalStkPtr oldglb = c->glb	/* ; added by caller */
+#define restoreState3 \
+	int oldmode = c->mode; \
+	int oldblkmode = c->blkmode; \
+	str oldsrcFile = c->srcFile; \
+	Module oldnspace = c->nspace; \
+	Symbol oldprg = c->curprg; \
+	MalStkPtr oldglb = c->glb	/* ; added by caller */
 
-@= restoreClient1
-	if (c->fdin) 
-		(void) bstream_destroy(c->fdin);
-	c->fdin = oldfdin; 
-	c->yycur = oldyycur; 
-	c->listing = oldlisting;
-	c->mode = oldmode;
-	c->blkmode = oldblkmode;
-	c->bak = oldbak;
-	c->srcFile = oldsrcFile;
-	if(c->prompt) GDKfree(c->prompt);
-	c->prompt = oldprompt;
+#define restoreClient1 \
+	if (c->fdin)  \
+		(void) bstream_destroy(c->fdin); \
+	c->fdin = oldfdin;  \
+	c->yycur = oldyycur;  \
+	c->listing = oldlisting; \
+	c->mode = oldmode; \
+	c->blkmode = oldblkmode; \
+	c->bak = oldbak; \
+	c->srcFile = oldsrcFile; \
+	if(c->prompt) GDKfree(c->prompt); \
+	c->prompt = oldprompt; \
 	c->promptlength= (int)strlen(c->prompt);
-@= restoreClient2
-	c->glb = oldglb;
-	c->nspace = oldnspace;
+#define restoreClient2 \
+	c->glb = oldglb; \
+	c->nspace = oldnspace; \
 	c->curprg = oldprg;
-@= restoreClient
-	@:restoreClient1()@
-	@:restoreClient2()@
-@= restoreClient3
-	if (c->fdin) 
-		MCpopClientInput(c);
-	c->mode = oldmode;
-	c->blkmode = oldblkmode;
+#define restoreClient \
+	restoreClient1 \
+	restoreClient2
+#define restoreClient3 \
+	if (c->fdin)  \
+		MCpopClientInput(c); \
+	c->mode = oldmode; \
+	c->blkmode = oldblkmode; \
 	c->srcFile = oldsrcFile;
-@
-@h
 /*
- * @-
  * The include operation parses the file indentified and
  * leaves the MAL code behind in the 'main' function.
- */
-mal_export str malInclude(Client c, str name, int listing);
-@c
+*/
 str
 malInclude(Client c, str name, int listing)
 {
@@ -234,13 +207,11 @@ malInclude(Client c, str name, int listing)
 		c->fdin = NULL;
 	}
 
-	@:restoreClient()@
+	restoreClient;
 	return s;
 }
 
-@h
-/*
- * @+ File and input processing
+/*File and input processing
  * A recurring situation is to execute a stream of simple MAL instructions
  * stored on a file or comes from standard input. We parse one MAL
  * instruction line at a time and attempt to execute it immediately.
@@ -257,12 +228,10 @@ malInclude(Client c, str name, int listing)
  * phase. This is performed in the context of an a priori defined
  * stack frame. Life becomes a little complicated when the script contains
  * a definition.
- */
-mal_export str evalFile(Client c, str fname, int listing);
-@c
+*/
 str
 evalFile(Client c, str fname, int listing){
-	@:restoreState@
+	restoreState;
 	stream *fd;
 	str p;
 	str filename;
@@ -277,8 +246,8 @@ evalFile(Client c, str fname, int listing){
 	filename = malResolveFile(fname);
 	if (filename == NULL) {
 		mnstr_printf(c->fdout, "#WARNING: could not open file: %s\n", fname);
-		@:restoreClient3()@
-		@:restoreClient()@
+		restoreClient3;
+		restoreClient;
 		return msg;
 	}
 
@@ -315,8 +284,8 @@ evalFile(Client c, str fname, int listing){
 	}
 	GDKfree(fname);
 
-	@:restoreClient3()@
-	@:restoreClient()@
+	restoreClient3;
+	restoreClient;
 	return msg;
 }
 
@@ -336,13 +305,10 @@ static str mal_cmdline( char *s, int *len)
 	return s;
 }
 
-@h
-mal_export str compileString(Symbol *fcn, Client c, str s);
-@c
 str
 compileString(Symbol *fcn, Client c, str s)
 {
-	@:restoreState3@
+	restoreState3;
 	int len = (int)strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
@@ -351,16 +317,16 @@ compileString(Symbol *fcn, Client c, str s)
 
 	c->srcFile= NULL;
 
-	s = mal_cmdline(s, &len); 
+	s = mal_cmdline(s, &len);
 	mal_unquote(qry = GDKstrdup(s));
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if ( b == NULL) {
 		GDKfree(qry);
-		return MAL_MALLOC_FAIL; 
+		return MAL_MALLOC_FAIL;
 	}
-	
+
 	buffer_init(b, qry, len);
 	if ( MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "") < 0){
 		GDKfree(qry);
@@ -369,50 +335,43 @@ compileString(Symbol *fcn, Client c, str s)
 	}
 	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] && 
+	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] &&
 		(msg= (str) (*c->phase[MAL_SCENARIO_READER])(c)) ){
 		GDKfree(qry);
 		GDKfree(b);
-		@:restoreClient3()@
+		restoreClient3;
 		return msg;
 	}
-	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] && 
+	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] &&
 		(msg= (str) (*c->phase[MAL_SCENARIO_PARSER])(c)) ){
 		GDKfree(qry);
 		GDKfree(b);
 		/* error occurred  and ignored */
-		@:restoreClient3()@
+		restoreClient3;
 		return msg;
 	}
 	*fcn= c->curprg;
 	/* restore IO channel */
-	@:restoreClient3()@
-	@:restoreClient2()@
+	restoreClient3;
+	restoreClient2;
 	GDKfree(qry);
 	GDKfree(b);
 	return MAL_SUCCEED;
 }
-/*
- * @-
- * Selectively run the phases
- */
-@= runPhase
-	if(msg== MAL_SUCCEED && c->phase[@1] && (msg= (str) (*c->phase[@1])(c)) ){
-		/* error occurred  and ignored */
-		GDKfree(msg); msg=MAL_SUCCEED;
-		@:@2()@
-		if (b ) GDKfree(b);
-		if (qry) GDKfree(qry);
-		return 0;
+#define runPhase(X,Y) \
+	if(msg== MAL_SUCCEED && c->phase[X] && (msg= (str) (*c->phase[X])(c)) ){ \
+		/* error occurred  and ignored */ \
+		GDKfree(msg); msg=MAL_SUCCEED; \
+		Y; \
+		if (b ) GDKfree(b); \
+		if (qry) GDKfree(qry); \
+		return 0; \
 	}
-@
-@h
-mal_export int callString(Client c, str s, int listing);
-@c
+
 int
 callString(Client c, str s, int listing)
 {
-	@:restoreState3@
+	restoreState3;
 	int len = (int)strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED,qry;
@@ -435,18 +394,15 @@ callString(Client c, str s, int listing)
 	}
 	c->curprg= 0;
 	MSinitClientPrg(c,"user", "main");	/* create new context */
-	@:runPhase(MAL_SCENARIO_READER,restoreClient3)@
-	@:runPhase(MAL_SCENARIO_PARSER,restoreClient3)@
+	runPhase(MAL_SCENARIO_READER,restoreClient3);
+	runPhase(MAL_SCENARIO_PARSER,restoreClient3);
 	/* restore IO channel */
-	@:restoreClient3()@
-	@:runPhase(MAL_SCENARIO_OPTIMIZE,restoreClient2)@
-	@:runPhase(MAL_SCENARIO_SCHEDULER,restoreClient2)@
-	@:runPhase(MAL_SCENARIO_ENGINE,restoreClient2)@
-	@:restoreClient2()@
+	restoreClient3;
+	runPhase(MAL_SCENARIO_OPTIMIZE,restoreClient2);
+	runPhase(MAL_SCENARIO_SCHEDULER,restoreClient2);
+	runPhase(MAL_SCENARIO_ENGINE,restoreClient2);
+	restoreClient2;
 	GDKfree(qry);
 	GDKfree(b);
 	return 0;
 }
-
-@h
-#endif /*  _MAL_IMPORT_H */
