@@ -34,6 +34,7 @@ mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
 mal_export InstrPtr newCatchStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, str nme);
 mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
+mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
 mal_export InstrPtr pushWrd(MalBlkPtr mb, InstrPtr q, wrd val);

@@ -466,13 +466,12 @@ OCTnewTentacle(Client cntxt, MalBlkPtr mb, bte tidx, int v2, int *cl)
 	}
 
 	/* return stmt */
-	tp = newAssignment(tmb);
+	tp = newReturnStmt(tmb);
 	getArg(tp,0) = getArg(tsig,0);
 	for ( i = 1; i < tsig->retc; i++)
 		tp = pushReturn(tmb, tp, getArg(tsig,i));
 	for ( i = 0; i < ocl->retcnt; i++)
 		tp = pushArgument(tmb, tp, alias[ocl->ret[i]]);
-	tp->barrier = RETURNsymbol;
 
 	pushEndInstruction(tmb);
 	tp = newStmt(tmb, optimizerRef, putName("deadcode", 8));
@@ -815,8 +814,7 @@ OCTnewBidding(Client cntxt, int tcnt)
 	getArg(q,0) = bexit;
 
 	/* return (res0, ...) := (lres0, ...); */
-	q = newAssignment(sm);
-	q->barrier= RETURNsymbol;
+	q = newReturnStmt(sm);
 	getArg(q,0)= getArg(sig,0);
 	for (i = 1; i < sig->retc; i++ )
 		q = pushReturn(sm,q,getArg(sig,i));
@@ -944,8 +942,7 @@ OCTnewExec(Client cntxt, MalBlkPtr mb, MalBlkPtr t, int tno)
 	newExitStmt(sm, "ANYexception");
 
 	/* return exec_qry; */
-	q= newAssignment(sm);
-	q->barrier= RETURNsymbol;
+	q= newReturnStmt(sm);
 	getArg(q,0)= res[0];
 	for (i = 1; i < sig->retc; i++ )
 		q = pushReturn(sm,q,res[i]);
