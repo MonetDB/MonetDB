@@ -102,6 +102,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	plan = putName(nme, strlen(nme));
 	snprintf(nme,BUFSIZ,"%s_stub"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	stub = putName(nme, strlen(nme));
+	(void) stub;				/* only used if REMOTE_EXECUTION defined */
 
 	snprintf(nme,BUFSIZ,"%s_cntrl"OIDFMT,getFunctionId( getInstrPtr(mb,0)), plantag);
 	s = newFunction(userRef, putName(nme, strlen(nme)),FUNCTIONsymbol);
