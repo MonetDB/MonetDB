@@ -17,7 +17,6 @@
  * All Rights Reserved.
 */
 
-@h
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
 
