@@ -559,7 +559,7 @@ handleInts:
 				cst->vtype = TYPE_lng;
 				cst->val.lval = l;
 				if (l == lng_nil)
-					showException(SYNTAX, "convertConstant", "integer parse error");
+					showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
 			}
 		}
 		return i;
