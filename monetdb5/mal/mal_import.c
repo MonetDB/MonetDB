@@ -228,16 +228,17 @@ malInclude(Client c, str name, int listing)
  * phase. This is performed in the context of an a priori defined
  * stack frame. Life becomes a little complicated when the script contains
  * a definition.
-*/
+ */
 str
-evalFile(Client c, str fname, int listing){
+evalFile(Client c, str fname, int listing)
+{
 	restoreState;
 	stream *fd;
 	str p;
 	str filename;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 
-	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->prompt = GDKstrdup("");  /* do not produce visible prompts */
 	c->promptlength = 0;
 	c->listing = listing;
 
@@ -290,7 +291,7 @@ evalFile(Client c, str fname, int listing){
 }
 
 /* patch a newline character if needed */
-static str mal_cmdline( char *s, int *len)
+static str mal_cmdline(char *s, int *len)
 {
 	if (s[*len - 1] != '\n') {
 		char *n = GDKmalloc(*len + 1 + 1);
@@ -309,48 +310,48 @@ str
 compileString(Symbol *fcn, Client c, str s)
 {
 	restoreState3;
-	int len = (int)strlen(s);
+	int len = (int) strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
 	str old = s;
 
-	c->srcFile= NULL;
+	c->srcFile = NULL;
 
 	s = mal_cmdline(s, &len);
 	mal_unquote(qry = GDKstrdup(s));
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if ( b == NULL) {
+	if (b == NULL) {
 		GDKfree(qry);
 		return MAL_MALLOC_FAIL;
 	}
 
 	buffer_init(b, qry, len);
-	if ( MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "") < 0){
+	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "") < 0) {
 		GDKfree(qry);
 		GDKfree(b);
 		return MAL_MALLOC_FAIL;
 	}
-	c->curprg= 0;
-	MSinitClientPrg(c,"user", "main");	/* create new context */
-	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] &&
-		(msg= (str) (*c->phase[MAL_SCENARIO_READER])(c)) ){
+	c->curprg = 0;
+	MSinitClientPrg(c, "user", "main");  /* create new context */
+	if (msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_READER] &&
+		(msg = (str) (*c->phase[MAL_SCENARIO_READER])(c))) {
 		GDKfree(qry);
 		GDKfree(b);
 		restoreClient3;
 		return msg;
 	}
-	if(msg== MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] &&
-		(msg= (str) (*c->phase[MAL_SCENARIO_PARSER])(c)) ){
+	if (msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER] &&
+		(msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c))) {
 		GDKfree(qry);
 		GDKfree(b);
 		/* error occurred  and ignored */
 		restoreClient3;
 		return msg;
 	}
-	*fcn= c->curprg;
+	*fcn = c->curprg;
 	/* restore IO channel */
 	restoreClient3;
 	restoreClient2;
@@ -358,13 +359,15 @@ compileString(Symbol *fcn, Client c, str s)
 	GDKfree(b);
 	return MAL_SUCCEED;
 }
-#define runPhase(X,Y) \
-	if(msg== MAL_SUCCEED && c->phase[X] && (msg= (str) (*c->phase[X])(c)) ){ \
+#define runPhase(X, Y) \
+	if (msg == MAL_SUCCEED && c->phase[X] && (msg = (str) (*c->phase[X])(c))) {	\
 		/* error occurred  and ignored */ \
-		GDKfree(msg); msg=MAL_SUCCEED; \
+		GDKfree(msg); msg = MAL_SUCCEED; \
 		Y; \
-		if (b ) GDKfree(b); \
-		if (qry) GDKfree(qry); \
+		if (b) \
+			GDKfree(b);	\
+		if (qry) \
+			GDKfree(qry); \
 		return 0; \
 	}
 
@@ -372,35 +375,35 @@ int
 callString(Client c, str s, int listing)
 {
 	restoreState3;
-	int len = (int)strlen(s);
+	int len = (int) strlen(s);
 	buffer *b;
-	str msg = MAL_SUCCEED,qry;
+	str msg = MAL_SUCCEED, qry;
 	str old = s;
 
-	c->srcFile= NULL;
+	c->srcFile = NULL;
 
 	s = mal_cmdline(s, &len);
 	mal_unquote(qry = GDKstrdup(s));
 	if (old != s)
 		GDKfree(s);
 	b = (buffer *) GDKmalloc(sizeof(buffer));
-	if ( b == NULL)
+	if (b == NULL)
 		return -1;
 	buffer_init(b, qry, len);
-	if( MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0){
+	if (MCpushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "") < 0) {
 		GDKfree(b);
 		GDKfree(qry);
 		return -1;
 	}
-	c->curprg= 0;
-	MSinitClientPrg(c,"user", "main");	/* create new context */
-	runPhase(MAL_SCENARIO_READER,restoreClient3);
-	runPhase(MAL_SCENARIO_PARSER,restoreClient3);
+	c->curprg = 0;
+	MSinitClientPrg(c, "user", "main");  /* create new context */
+	runPhase(MAL_SCENARIO_READER, restoreClient3);
+	runPhase(MAL_SCENARIO_PARSER, restoreClient3);
 	/* restore IO channel */
 	restoreClient3;
-	runPhase(MAL_SCENARIO_OPTIMIZE,restoreClient2);
-	runPhase(MAL_SCENARIO_SCHEDULER,restoreClient2);
-	runPhase(MAL_SCENARIO_ENGINE,restoreClient2);
+	runPhase(MAL_SCENARIO_OPTIMIZE, restoreClient2);
+	runPhase(MAL_SCENARIO_SCHEDULER, restoreClient2);
+	runPhase(MAL_SCENARIO_ENGINE, restoreClient2);
 	restoreClient2;
 	GDKfree(qry);
 	GDKfree(b);

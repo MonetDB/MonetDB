@@ -31,7 +31,7 @@ newSymbol(str nme, int kind)
 	Symbol cur;
 
 	if (nme == NULL) {
-		GDKerror("@1:unexpected name (=null)\n");
+		GDKerror("newSymbol:unexpected name (=null)\n");
 		return NULL;
 	}
 	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
@@ -855,7 +855,7 @@ newVariable(MalBlkPtr mb, str name, malType type)
 
 	if (name == NULL)
 		return -1;
-	if ( makeVarSpace(mb))
+	if (makeVarSpace(mb))
 		return -1;
 	if (isTmpName(name)) {
 		int i = atol(name + (*name == TMPMARKER ? 1 : 2));
