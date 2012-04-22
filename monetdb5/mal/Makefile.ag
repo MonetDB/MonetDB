@@ -38,6 +38,7 @@ lib_mal = {
 		mal_factory.c mal_factory.h \
 		mal_function.c mal_function.h \
 		mal_import.c mal_import.h \
+		mal_runtime.c mal_runtime.h \
 		mal_instruction.c mal_instruction.h \
 		mal_interpreter.mx \
 		mal_linker.c mal_linker.h \

@@ -17,20 +17,6 @@ Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 @
 
-@c
-/*
- * @a M. Kersten
- * @v 0.0
- * @* The MAL Interpreter
- * The MAL interpreter always works in the context of a single user session,
- * which provides for storage access to global variables and modules.
- * @menu
- * * MAL API::
- * * Exception Handling::
- * * Garbage Collection::
- * * Stack Management::
- * @end menu
- */
 @h
 #ifndef _MAL_INTERPRET_H
 #define _MAL_INTERPRET_H
@@ -66,7 +52,14 @@ mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
 @c
+/*
+ * Author M. Kersten
+ * The MAL Interpreter
+ * The MAL interpreter always works in the context of a single user session,
+ * which provides for storage access to global variables and modules.
+ */
 #include "monetdb_config.h"
+#include "mal_runtime.h"
 #include "mal_interpreter.h"
 #include "mal_listing.h"
 #include "mal_debugger.h"   /* for mdbStep() */
@@ -77,7 +70,6 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define FAST 1
 
 static str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-static void displayVolume(Client cntxt, lng vol);
 
 #define USE_DFLOW_ADMISSION
 /* does not seem to have a major impact */
@@ -191,22 +183,21 @@ updateBigFoot(Client cntxt, int bid, int add)
  * Also we cannot overwrite values on the stack as this maybe part of a
  * sequence of factory calls.
  */
-@= initStack
-	for (i = @1; i < mb->vtop; i++) {
-		lhs = &stk->stk[i];
-		if (isVarConstant(mb, i) > 0) {
-			if (!isVarDisabled(mb, i)) {
-				rhs = &getVarConstant(mb, i);
-				VALcopy(lhs, rhs);
-			}
-		} else {
-			lhs->vtype = getVarGDKType(mb, i);
-			lhs->val.pval = 0;
-			lhs->len = 0;
-		}
-	}
-@
-@c
+#define initStack(S)\
+	for (i = S; i < mb->vtop; i++) {\
+		lhs = &stk->stk[i];\
+		if (isVarConstant(mb, i) > 0) {\
+			if (!isVarDisabled(mb, i)) {\
+				rhs = &getVarConstant(mb, i);\
+				VALcopy(lhs, rhs);\
+			}\
+		} else {\
+			lhs->vtype = getVarGDKType(mb, i);\
+			lhs->val.pval = 0;\
+			lhs->len = 0;\
+		}\
+	}\
+
 static int
 isNotUsedIn(InstrPtr p, int start, int a)
 {
@@ -231,7 +222,7 @@ prepareMALstack(MalBlkPtr mb, int size)
 	stk->stksize = size;
 	stk->blk = mb;
 
-	@:initStack(0)@
+	initStack(0);
 	return stk;
 }
 
@@ -243,8 +234,9 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	ValPtr lhs, rhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
 	str ret;
-	@:performanceVariables@
+	RuntimeProfileRecord runtimeProfile;
 
+	runtimeProfileInit(mb, &runtimeProfile);
 	if (mb->errors) {
 		showErrors(cntxt);
 		if (cntxt->itrace == 0) /* permit debugger analysis */
@@ -271,7 +263,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		if (mb->vtop > stk->stksize)
 			showScriptException(cntxt->fdout, mb, 0, MAL, "stack too small\n");
 		pci = pcicaller;
-		@:initStack(env->stkbot)@
+		initStack(env->stkbot);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
@@ -339,7 +331,8 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		env->cmd = stk->cmd;
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
-	@:endProfile(stk) @
+	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (stk && stk != env)
 		GDKfree(stk);
 	return ret;
@@ -392,8 +385,9 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	int i;
 	ValPtr lhs;
 	InstrPtr pci = getInstrPtr(mb, 0);
-	@:performanceVariables@
+	RuntimeProfileRecord runtimeProfile;
 
+	runtimeProfileInit(mb, &runtimeProfile);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -431,7 +425,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	default:
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	@:endProfile(stk)@
+	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
 /*
@@ -452,28 +447,21 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	ValPtr backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
 	int *garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 	lng oldtimer = 0;
-	struct Mallinfo oldMemory;
 	int stkpc = 0;
 	MT_Lock *lock = NULL;
 	int tid = 0;
+	RuntimeProfileRecord runtimeProfile;
 
-#ifdef HAVE_SYS_RESOURCE_H
-	int oldinblock = 0;
-	int oldoublock = 0;
-	struct rusage oldResource;
-#endif
-	@:performanceVariables@
-
+	runtimeProfileInit(mb, &runtimeProfile);
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if (cntxt->flags & timerFlag)
 		oldtimer = cntxt->timer = GDKusec();
-	oldMemory.arena = 0;
 
 	/* also produce event record for start of function */
 	if ( startpc == 1 ) {
 		stkpc = 0;
-		@:beginProfile(stk,1)@
+		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 	}
 	stkpc = startpc;
 	exceptionVar = -1;
@@ -494,7 +482,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (malProfileMode + cntxt->itrace)
 				goto workslow;
 
-				@:MALrecycleStart(stk)@ {
+			if (pci->recycle > 0)
+				stk->clk = GDKusec();
+			if (!RECYCLEentry(cntxt, mb, stk, pci)){
 				@:MALinterpret(FAST)@
 			}
 			@:MALflowofcontrol(FAST,continue)@
@@ -532,20 +522,19 @@ workslow:
 					/* ignore debugger waiting time*/
 					t = GDKusec() - t;
 					oldtimer += t;
-#ifdef HAVE_SYS_RESOURCE_H
-					getrusage(RUSAGE_SELF, &oldResource);
-#endif
-					if (cntxt->flags & memoryFlag)
-						oldMemory = MT_mallinfo();
 				}
 			}
 
-			@:beginProfile(stk,1)@
-			@:MALrecycleStart(stk)@ {
+			runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
+			if (pci->recycle > 0)
+				stk->clk = GDKusec();
+			if (!RECYCLEentry(cntxt, mb, stk, pci)){
 				@:MALinterpret(SLOW)@
 			}
 			@:MALflowofcontrol(SLOW,continue)@
-			@:endProfile(stk)@
+			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		}
 	}
 	if (exceptionVar >= 0) {
@@ -953,21 +942,11 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	int startpc = fs->pc;
 	InstrPtr pci;
 	lng oldtimer = 0;
-	struct Mallinfo oldMemory;
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id, prevpc = 0;
+	RuntimeProfileRecord runtimeProfile;
 
-#ifdef HAVE_SYS_RESOURCE_H
-	int oldinblock = 0;
-	int oldoublock = 0;
-	struct rusage oldResource;
-#endif
-	@:performanceVariables@
-
-	if (cntxt->flags & memoryFlag)
-		oldMemory = MT_mallinfo();
-	else
-		oldMemory.arena = 0;
+	runtimeProfileInit(mb, &runtimeProfile);
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
@@ -996,39 +975,36 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			/* ignore debugger waiting time*/
 			tm = GDKusec() - tm;
 			oldtimer += tm;
-#ifdef HAVE_SYS_RESOURCE_H
-			getrusage(RUSAGE_SELF, &oldResource);
-#endif
-			if (cntxt->flags & memoryFlag)
-				oldMemory = MT_mallinfo();
 		}
 	}
 
-	@:beginProfile(t,0)@
+	runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 0);
 	FREE_EXCEPTION(ret);
 	ret = MAL_SUCCEED;
-	@:MALrecycleStart(t)@ {
-		@:beginProfile(t,1)@
+	if (pci->recycle > 0)
+		t->clk = GDKusec();
+	if (!RECYCLEentry(cntxt, mb, stk, pci)){
+		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		/*
 		 * @-
 		 * The number of instructions allowed is severely limited.
 		 * We don't allow sequential flow control here, which is enforced by the dataflow optimizer;
 		 */
 		switch (pci->token) {
-		case ASSIGNsymbol: 
-			@:assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
+		case ASSIGNsymbol:
+			@:assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@
 			break;
-		case PATcall: 
-			@:patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
+		case PATcall:
+			@:patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@
 			break;
-		case CMDcall: 
-			@:commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
+		case CMDcall:
+			@:commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@
 			break;
-		case FACcall: 
-			@:factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
+		case FACcall:
+			@:factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@
 			break;
-		case FCNcall: 
-			@:functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@ 
+		case FCNcall:
+			@:functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)@
 			break;
 		case NOOPsymbol:
 		case REMsymbol:
@@ -1042,7 +1018,9 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				NULL, "unkown operation");
 		}
 	}
-	@:endProfile(t)@
+	runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (ret)
 		fs->pc = -fs->pc;
 	GDKfree(backup);
@@ -1088,7 +1066,7 @@ runDFLOWworker(void *t)
 		local = nxtfs != 0;
 		if (nxtfs == 0)
 			fs = (FlowStatus)q_dequeue(task->todo);
-		else 
+		else
 			fs = nxtfs;
 #ifdef USE_DFLOW_ADMISSION
 		if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
@@ -1233,7 +1211,7 @@ DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 			assign[getArg(p, j)] = pc;  /* ensure recognition of dependency on first instruction and constant */
 	}
 	GDKfree(assign);
-	PARDEBUG 
+	PARDEBUG
 	 for (n = 0; n < flow->stop - flow->start; n++) {
 		mnstr_printf(GDKstdout, "#[%d] %d: ", flow->start + n, n);
 		printInstruction(GDKstdout, mb, 0, getInstrPtr(mb, n + flow->start), LIST_MAL_STMT | LIST_MAPI);
@@ -1580,20 +1558,20 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	FREE_EXCEPTION(ret);
 	ret = 0;
 	switch (pci->token) {
-	case ASSIGNsymbol: 
-		@:assignStmt(@1,continue,stk)@ 
+	case ASSIGNsymbol:
+		@:assignStmt(@1,continue,stk)@
 		break;
-	case PATcall: 
-		@:patterncall(@1,continue,stk)@ 
+	case PATcall:
+		@:patterncall(@1,continue,stk)@
 		break;
-	case CMDcall: 
-		@:commandcall(@1,continue,stk)@ 
+	case CMDcall:
+		@:commandcall(@1,continue,stk)@
 		break;
-	case FACcall: 
-		@:factorycall(@1,continue,stk)@ 
+	case FACcall:
+		@:factorycall(@1,continue,stk)@
 		break;
-	case FCNcall: 
-		@:functioncall(@1,continue,stk)@ 
+	case FCNcall:
+		@:functioncall(@1,continue,stk)@
 		break;
 	case NOOPsymbol:
 	case REMsymbol:
@@ -1608,9 +1586,11 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
-		@:endProfile(stk)@
-		ppc = 0; /* also finalize function call event */
-		@:endProfile(stk)@
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfile.ppc = 0; /* also finalize function call event */
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 #endif
 		stkpc = mb->stop;
 		continue;
@@ -1622,7 +1602,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret = createScriptException(mb, stkpc, MAL,
 			NULL, "unkown operation");
 #if @1
-		@:endProfile(stk)@
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 #endif
 		stkpc= mb->stop;
 		continue;
@@ -1635,7 +1617,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @= MALflowofcontrol
 	switch (pci->barrier) {
 	case BARRIERsymbol:
-		@:barrierControl@ 
+		@:barrierControl@
 		stkpc++;
 		break;
 	case LEAVEsymbol:
@@ -1646,43 +1628,43 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		case TYPE_bit:
 			if (v->val.btval == TRUE && v->val.btval != bit_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_str:
 			if (v->len > 0 && v->val.sval != str_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_sht:
 			if (v->val.shval >= 0 && v->val.shval != sht_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_bat:
 			if (v->val.bval > 0)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_int:
 			if (v->val.ival >= 0 && v->val.ival != int_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_wrd:
 			if (v->val.wval >= 0 && v->val.wval != wrd_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_bte:
 			if (v->val.btval >= 0 && v->val.btval != bte_nil)
 				stkpc = pci->jump;
-			else 
+			else
 				stkpc++;
 			break;
 		case TYPE_lng:
@@ -1739,7 +1721,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* a fake multi-assignment */
 		if (env != NULL && pcicaller != NULL) {
 			InstrPtr pp = pci;
-			@:endProfile(stk)@
+			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			pci = pcicaller;
 			for (i = 0; i < pci->retc; i++) {
 				rhs = &stk->stk[pp->argv[i]];
@@ -1754,7 +1738,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (oldtimer)
 				cntxt->timer = oldtimer;
 		} else {
-			@:endProfile(stk)@
+			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		}
 		stkpc = mb->stop;
 		continue;
@@ -1790,8 +1776,8 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:restoreTarget(@1, @3)@
 	FREE_EXCEPTION(ret);
 	ret = 0;
-	@:exceptionHndlr(@1, @2, @3)@
-	@:timingHndlr(@1)@
+	@:exceptionHndlr(@1, @2, stk)@
+	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 }
 @c
 /*
@@ -1893,7 +1879,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 #endif
-	@:MALrecycleExit(@2)@
+	if (pci->recycle > 0) {
+		RECYCLEexit(cntxt, mb, stk, pci, @2->clk);
+	}
 	if (ret == MAL_SUCCEED && garbageControl(pci)) {
 		for (i = 0; i < pci->argc; i++) {
 			int a = getArg(pci, i);
@@ -1943,10 +1931,10 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* improve performance with 20 ms/1M calls*/
 	assert(pci->fcn != NULL);
 	switch (pci->argc) {
-	case 0: ret = (str)(*pci->fcn)(); 
+	case 0: ret = (str)(*pci->fcn)();
 		break;
 	case 1: ret = (str)(*pci->fcn)(
-			(ptr)getArgReference(stk, pci, 0)); 
+			(ptr)getArgReference(stk, pci, 0));
 		break;
 	case 2: ret = (str)(*pci->fcn)(
 			(ptr)getArgReference(stk, pci, 0),
@@ -2119,7 +2107,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
-	@:timingHndlr(@1,@2)@
+	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 }
 @= patterncall
 	if (pci->fcn == NULL) {
@@ -2131,7 +2119,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		@:restoreTarget(@1,@3)@
 	}
 	@:exceptionHndlr(@1,@2,@3)@
-	@:timingHndlr(@1,@2)@
+	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 @c
 /*
  * MAL function calls are relatively expensive, because they have to assemble
@@ -2173,7 +2161,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
-	@:timingHndlr(@1)@
+	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 }
 @c
 /*
@@ -2203,17 +2191,12 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* ignore debugger waiting time*/
 				t = GDKusec() - t;
 				oldtimer += t;
-	#ifdef HAVE_SYS_RESOURCE_H
-				getrusage(RUSAGE_SELF, &oldResource);
-	#endif
-				if (cntxt->flags & memoryFlag)
-					oldMemory = MT_mallinfo();
 			}
 		}
 		ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 	}
 	@:exceptionHndlr(@1,@2,@3)@
-	@:timingHndlr(SLOW)@
+	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 @c
 /*
  * The type dispatching table in getArgReference can be removed if we
@@ -2297,19 +2280,21 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (l->barrier == CATCHsymbol) {
 			int j;
 			for (j = 0; j < l->retc; j++)
-				if (getArg(l, j) == @1) 
+				if (getArg(l, j) == @1)
 					break;
 				else if (getArgName(mb, l, j) ||
 						 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 					break;
-			if (j < l->retc) 
+			if (j < l->retc)
 				break;
 		}
 	}
 	if (stkpc == mb->stop) {
-		@:endProfile(@3)@
-		ppc = 0; /* also finalize function call event */
-		@:endProfile(@3)@
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfile.ppc = 0; /* also finalize function call event */
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		@2;
 	}
 @
@@ -2441,7 +2426,9 @@ if (ret != MAL_SUCCEED) {
 
 	/* unknown exceptions lead to propagation */
 	if (exceptionVar == -1) {
-		@:endProfile(@3)@
+		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		stkpc = mb->stop;
 		@2;
 	}
@@ -2465,22 +2452,6 @@ if (ret != MAL_SUCCEED) {
 	@:skipToCatch(exceptionVar,@2,@3)@
 	pci = getInstrPtr(mb, stkpc);
 }
-@
- * @-
- * @+ Result Recycler
- * An optimization scheme for query sequences is to re-use variables
- * as much as possible.
- * The recycler works for any variable and relies on policy functions
- * registered.
-@= MALrecycleStart
-	if (pci->recycle > 0)
-		@1->clk = GDKusec();
-	if (!RECYCLEentry(cntxt, mb, stk, pci))
-@= MALrecycleExit
-	if (pci->recycle > 0) {
-		RECYCLEexit(cntxt, mb, stk, pci, @1->clk);
-	}
-@
 @c
 /*
  * @-
@@ -2604,179 +2575,6 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 		} else
 			break;
 	} while (stk);
-}
-
-/*
- * @-
- * @+ Performance section
- * Running the program under dataflow control will screw up the
- * order in which performance trace data is displayed. Moreover,
- * we do not clearly see the start and end of the dataflow execution,
- * because the performance data is the result of the 'failed' runMALdataflow().
- * It simply skips the barrier block upon return.
- */
-@= performanceVariables
-	lng newclk = 0;
-	int ppc = -2;
-	lng tcs = 0;
-	(void)tcs;
-	if (malProfileMode) {
-		setFilterOnBlock(mb, 0, 0);
-		ppc = -1;
-	}
-@= beginProfile
-	if (stk) {
-		gettimeofday(&stk->clock, NULL);
-		if (mb->profiler != NULL) {
-			@1->clk = GDKusec();
-			mal_set_lock(mal_contextLock, "DFLOWdelay");
-			if (mb->profiler[stkpc].trace) {
-				ppc = stkpc;
-				mb->profiler[ppc].clk = 0;
-				mb->profiler[ppc].ticks = 0;
-				mb->profiler[ppc].clock = stk->clock;
-				/* emit the instruction upon start as well */
-#if @2
-				if (malProfileMode)
-					profilerEvent(cntxt->idx, mb, stk, stkpc,1);
-#endif
-#ifdef HAVE_TIMES
-				times(&stk->timer);
-				mb->profiler[ppc].timer = stk->timer;
-#endif
-				mb->profiler[ppc].clk = @1->clk;
-			}
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
-		}
-	}
-@= endProfile
-	if (stk != NULL) {
-		if (malProfileMode == 0)
-			/* mostly true */;
-		else if (@1 != NULL && ppc >= 0 && mb->profiler != NULL && mb->profiler[ppc].trace && mb->profiler[ppc].clk) {
-			newclk = GDKusec();
-			mb->profiler[ppc].counter++;
-			mb->profiler[ppc].ticks = newclk - @1->clk;
-			mb->profiler[ppc].totalticks += mb->profiler[ppc].ticks;
-			mb->profiler[ppc].clk += mb->profiler[ppc].clk;
-			mb->profiler[ppc].rbytes = getVolume(stk, pci, 0);
-			mb->profiler[ppc].wbytes = getVolume(stk, pci, 1);
-			profilerEvent(cntxt->idx, mb, stk, ppc,0);
-			ppc = -1;
-		}
-		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-	}
-
-@= timingHndlr
-if (cntxt->flags && stk->cmd && stk->cmd != 't' && stk->cmd != 'C') {
-	if (lock)
-		MT_lock_set(&*lock, "timing");
-	mnstr_printf(cntxt->fdout, "= ");    /* single column rendering */
-	if (cntxt->flags & timerFlag) {
-		char buf[32];
-		snprintf(buf, sizeof(buf), LLFMT, GDKusec() - cntxt->timer);
-		mnstr_printf(cntxt->fdout, "%8s usec ", buf);
-	}
-	if (cntxt->flags & threadFlag)
-		mnstr_printf(cntxt->fdout, "\@%d ", tid);
-#ifdef HAVE_SYS_RESOURCE_H
-	if (cntxt->flags & ioFlag) {
-		struct  rusage resource;
-		getrusage(RUSAGE_SELF, &resource);
-		mnstr_printf(cntxt->fdout, " %3ld R",
-			resource.ru_inblock - oldinblock);
-		mnstr_printf(cntxt->fdout, " %3ld W ",
-			resource.ru_oublock - oldoublock);
-	}
-#endif
-	if (cntxt->flags & memoryFlag) {
-		struct Mallinfo memory;
-		memory = MT_mallinfo();
-		if (memory.arena - oldMemory.arena > 0)
-			mnstr_printf(cntxt->fdout, " " SZFMT " bytes ",
-				(size_t)(memory.arena - oldMemory.arena));
-	}
-	if (cntxt->flags & flowFlag) {
-		/* calculate the read/write byte flow */
-		displayVolume(cntxt, getVolume(stk, pci, 0));
-		mnstr_printf(cntxt->fdout, "/");
-		displayVolume(cntxt, getVolume(stk, pci, 1));
-		mnstr_printf(cntxt->fdout, " ");
-	}
-	if (cntxt->flags & bigfootFlag) {
-		displayVolume(cntxt, cntxt->vmfoot);
-		mnstr_printf(cntxt->fdout, ":");
-		displayVolume(cntxt, cntxt->bigfoot);
-		mnstr_printf(cntxt->fdout, " ");
-	}
-	if (cntxt->flags & cntFlag) {
-		char buf[32];
-		snprintf(buf, sizeof(buf), BUNFMT, cntxt->cnt);
-		mnstr_printf(cntxt->fdout, ":%6s ", buf);
-	}
-	{
-		str line;
-		line = instruction2str(mb, stk, pci, LIST_MAL_DEBUG);
-		if (line) {
-			mnstr_printf(cntxt->fdout, " %s\n", line);
-			GDKfree(line);
-		}
-	}
-	if (cntxt->flags & timerFlag)
-		cntxt->timer = GDKusec();
-	if (lock)
-		MT_lock_unset(&*lock, "timing");
-}
-@
-@c
-/*
- * @-
- * #endif
- * @-
- * For performance evaluation it is handy to know the
- * maximal amount of bytes read/written. The actual
- * amount is harder to guess, because it too much
- * depends on the operation.
- */
-lng getVolume(MalStkPtr stk, InstrPtr pci, int rd)
-{
-	int i, limit;
-	lng vol = 0;
-	BAT *b;
-	int isview = 0;
-
-	if ( pci == 0) return 0;
-	limit = rd == 0 ? pci->retc : pci->argc;
-	i = rd ? pci->retc : 0;
-
-	if (stk->stk[getArg(pci, 0)].vtype == TYPE_bat) {
-		b = BBPquickdesc(ABS(stk->stk[getArg(pci, 0)].val.bval), TRUE);
-		if (b)
-			isview = isVIEW(b);
-	}
-	for (; i < limit; i++) {
-		if (stk->stk[getArg(pci, i)].vtype == TYPE_bat) {
-			BUN cnt = 0;
-
-			b = BBPquickdesc(ABS(stk->stk[getArg(pci, i)].val.bval), TRUE);
-			if (b == NULL)
-				continue;
-			cnt = BATcount(b);
-			/* Usually reading views cost as much as full bats.
-			   But when we output a slice that is not the case. */
-			vol += ((rd && !isview) || !VIEWhparent(b)) ? headsize(b, cnt) : 0;
-			vol += ((rd && !isview) || !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
-		}
-	}
-	return vol;
-}
-
-void displayVolume(Client cntxt, lng vol)
-{
-	char buf[32];
-	formatVolume(buf, (int)sizeof(buf), vol);
-	mnstr_printf(cntxt->fdout, "%s", buf);
 }
 @h
 #endif /*  _MAL_INTERPRET_H*/
