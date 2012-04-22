@@ -51,6 +51,7 @@
 #include "mal_namespace.h"
 #include "mal_utils.h"
 #include "mal_builder.h"
+#include "mal_type.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
@@ -79,7 +80,7 @@ void echoInput(Client cntxt)
 static inline void
 skipSpace(Client cntxt)
 {
-	char *s = &currChar(cntxt);
+	char *s= &currChar(cntxt);
 	for (;;) {
 		switch (*s++) {
 		case ' ':
@@ -548,10 +549,9 @@ handleInts:
 		if (cst->vtype == TYPE_int || cst->vtype == TYPE_lng) {
 			int len = (int) sizeof(lng);
 			lng *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil) {
-				showException(cntxt->fdout, SYNTAX, "convertConstant", "integer parse error");
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil) 
 				l = lng_nil;
-			}
+			
 			if (INT_MIN < l && l <= INT_MAX) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
@@ -743,7 +743,8 @@ typeElm(Client cntxt, int def)
 	return parseTypeId(cntxt, def);
 }
 
-/* The Parser
+ /*
+ * The Parser
  * The client is responsible to collect the
  * input for parsing in a single string before calling the parser.
  * Once the input is available parsing runs in a critial section for
@@ -802,7 +803,7 @@ propList(Client cntxt, int arg)
 {
 	MalBlkPtr curBlk = cntxt->curprg->def;
 	int l;
-	MALtype tpe;
+	malType tpe;
 
 	if (keyphrase1(cntxt, "{")) {
 		do {
@@ -824,7 +825,7 @@ propList(Client cntxt, int arg)
 				advance(cntxt, i);
 				if (currChar(cntxt) == ':') {
 					tpe = simpleTypeId(cntxt);
-					if (tpe.type != TYPE_any)
+					if (tpe != TYPE_any)
 						convertConstant(tpe, &cst);
 					else
 						parseError(cntxt, "simple type expected\n");
@@ -846,16 +847,17 @@ static InstrPtr
 binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 {
 	int l, varid;
-	MALtype tpe;
+	malType type;
+
 	l = idLength(cntxt);
 	if (l > 0) {
 		varid = findVariableLength(curBlk, CURRENT(cntxt), l);
 		if (varid < 0) {
-			varid = newVariable(curBlk, idCopy(cntxt, l), newMALtype(TYPE_any));
-			tpe = typeElm(cntxt, newMALtype(TYPE_any));
-			if (tpe.type == TYPE_any)
-				setPolymorphic(curInstr, tpe, TRUE);
-			setVarType(curBlk, varid, tpe);
+			varid = newVariable(curBlk, idCopy(cntxt, l), TYPE_any);
+			type = typeElm(cntxt, TYPE_any);
+			if (isPolymorphic(type))
+				setPolymorphic(curInstr, type, TRUE);
+			setVarType(curBlk, varid, type);
 			propList(cntxt, varid);
 		} else if (flag) {
 			parseError(cntxt, "Argument defined twice\n");
@@ -863,20 +865,20 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 			propList(cntxt, varid);
 		} else {
 			advance(cntxt, l);
-			tpe = typeElm(cntxt, getVarType(curBlk, varid));
-			if (tpe.type != getVarType(curBlk, varid).type || tpe.col != getVarType(curBlk, varid).col)
+			type = typeElm(cntxt, getVarType(curBlk, varid));
+			if( type != getVarType(curBlk,varid))
 				parseError(cntxt, "Incompatible argument type\n");
-			if (tpe.type == TYPE_any)
-				setPolymorphic(curInstr, tpe, TRUE);
-			setVarType(curBlk, varid, tpe);
+			if (isPolymorphic(type))
+				setPolymorphic(curInstr, type, TRUE);
+			setVarType(curBlk, varid, type);
 			propList(cntxt, varid);
 		}
 	} else if (currChar(cntxt) == ':') {
-		tpe = typeElm(cntxt, newMALtype(TYPE_any));
-		varid = newTmpVariable(curBlk, tpe);
-		if (tpe.type == TYPE_any)
-			setPolymorphic(curInstr, tpe, TRUE);
-		setVarType(curBlk, varid, tpe);
+		type = typeElm(cntxt, TYPE_any);
+		varid = newTmpVariable(curBlk, type);
+		if ( isPolymorphic(type))
+			setPolymorphic(curInstr, type, TRUE);
+		setVarType(curBlk, varid, type);
 		propList(cntxt, varid);
 	} else {
 		varid = -1;
@@ -899,27 +901,27 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 	ValRecord cst;
 	str v = NULL;
 	int cstidx = -1;
-	MALtype tpe = newMALtype(TYPE_any);
+	malType tpe = TYPE_any;
 
 	if ((i = cstToken(cntxt, &cst))) {
-		cstidx = fndConstant(curBlk, &cst);
+		cstidx = fndConstant(curBlk, &cst, MAL_VAR_WINDOW);
 		if (cstidx >= 0) {
 			advance(cntxt, i);
 			if (currChar(cntxt) == ':') {
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
-				if (i != 3 && tpe.type == TYPE_any)
+				if (tpe < 0)
 					return 3;
-				if (tpe.type == getVarType(curBlk, cstidx).type && tpe.col == getVarType(curBlk, cstidx).col) {
-					setVarFixed(curBlk, cstidx);
+				if(tpe == getVarType(curBlk,cstidx) ){
+					setVarUDFtype(curBlk, cstidx);
 				} else {
 					cstidx = defConstant(curBlk, tpe, &cst);
 					setPolymorphic(*curInstr, tpe, FALSE);
-					setVarFixed(curBlk, cstidx);
+					setVarUDFtype(curBlk, cstidx);
 					free = 0;
 				}
-			} else if (cst.vtype != getVarType(curBlk, cstidx).type) {
-				cstidx = defConstant(curBlk, newMALtype(cst.vtype), &cst);
-				setPolymorphic(*curInstr, newMALtype(cst.vtype), FALSE);
+			} else if (cst.vtype != getVarType(curBlk, cstidx)) {
+				cstidx = defConstant(curBlk, cst.vtype, &cst);
+				setPolymorphic(*curInstr, cst.vtype, FALSE);
 				free = 0;
 			}
 			/* protect against leaks coming from constant reuse */
@@ -931,20 +933,20 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			/* add a new constant */
 			advance(cntxt, i);
 			flag = currChar(cntxt) == ':';
-			tpe = typeElm(cntxt, newMALtype(cst.vtype));
-			if (i != 3 && tpe.type == TYPE_any)
+			tpe = typeElm(cntxt, cst.vtype);
+			if (tpe < 0)
 				return 3;
 			cstidx = defConstant(curBlk, tpe, &cst);
 			setPolymorphic(*curInstr, tpe, FALSE);
 			if (flag)
-				setVarFixed(curBlk, cstidx);
+				setVarUDFtype(curBlk, cstidx);
 			*curInstr = pushArgument(curBlk, *curInstr, cstidx);
 			return ret;
 		}
 	} else if ((i = idLength(cntxt))) {
 		if ((idx = findVariableLength(curBlk, CURRENT(cntxt), i)) == -1) {
 			v = idCopy(cntxt, i);
-			idx = newVariable(curBlk, v, newMALtype(TYPE_any));
+			idx = newVariable(curBlk, v, TYPE_any);
 			propList(cntxt, idx);
 		} else {
 			advance(cntxt, i);
@@ -952,8 +954,8 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 		}
 		*curInstr = pushArgument(curBlk, *curInstr, idx);
 	} else if (currChar(cntxt) == ':') {
-		tpe = typeElm(cntxt, newMALtype(TYPE_any));
-		if (i != 3 && tpe.type == TYPE_any)
+		tpe = typeElm(cntxt, TYPE_any);
+		if (tpe < 0)
 			return 3;
 		setPolymorphic(*curInstr, tpe, FALSE);
 		idx = newTypeVariable(curBlk, tpe);
@@ -1126,19 +1128,21 @@ static MalBlkPtr
 fcnHeader(Client cntxt, int kind)
 {
 	int l;
-	MALtype tpe;
+	malType tpe;
 	str fnme, modnme = NULL;
 	char ch;
 	Symbol curPrg;
-	MalBlkPtr curBlk;
+	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr;
 
 	l = operatorLength(cntxt);
 	if (l == 0)
 		l = idLength(cntxt);
-	if (l == 0)
-		return (MalBlkPtr) parseError(cntxt,
-				"<identifier> | <operator> expected\n");
+	if (l == 0) {
+		parseError(cntxt, "<identifier> | <operator> expected\n");
+		skipToEnd(cntxt);
+		return 0;
+	}
 
 	fnme = putName(((char *) CURRENT(cntxt)), l);
 	advance(cntxt, l);
@@ -1149,16 +1153,21 @@ fcnHeader(Client cntxt, int kind)
 		l = operatorLength(cntxt);
 		if (l == 0)
 			l = idLength(cntxt);
-		if (l == 0)
-			return (MalBlkPtr) parseError(cntxt,
-					"<identifier> | <operator> expected\n");
+		if (l == 0){
+			parseError(cntxt, "<identifier> | <operator> expected\n");
+			skipToEnd(cntxt);
+			return 0;
+		}
 		fnme = putName(((char *) CURRENT(cntxt)), l);
 		advance(cntxt, l);
 	}
 
 	/* temporary suspend capturing statements in main block */
-	if (cntxt->backup)
-		return (MalBlkPtr) parseError(cntxt, "mal_parser: unexpected recursion\n");
+	if (cntxt->backup){
+		parseError(cntxt, "mal_parser: unexpected recursion\n");
+		skipToEnd(cntxt);
+		return 0;
+	}
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction(putName("user", 4), fnme, kind);
 	curPrg = cntxt->curprg;
@@ -1168,8 +1177,11 @@ fcnHeader(Client cntxt, int kind)
 	curInstr = getInstrPtr(curBlk, 0);
 	propList(cntxt, curInstr->argv[0]);
 
-	if (currChar(cntxt) != '(')
-		return (MalBlkPtr) parseError(cntxt, "function header '(' expected\n");
+	if (currChar(cntxt) != '('){
+		parseError(cntxt, "function header '(' expected\n");
+		skipToEnd(cntxt);
+		return curBlk;
+	}
 	advance(cntxt, 1);
 
 	setModuleId(curInstr, modnme ? putName(modnme, strlen(modnme)) :
@@ -1180,9 +1192,9 @@ fcnHeader(Client cntxt, int kind)
 			cntxt->curprg = cntxt->backup;
 			cntxt->backup = 0;
 		}
-		return (MalBlkPtr) parseError(cntxt, "<module> not defined\n");
+		parseError(cntxt, "<module> not defined\n");
+		return curBlk;
 	}
-
 
 	/* get calling parameters */
 	ch = currChar(cntxt);
@@ -1201,7 +1213,9 @@ fcnHeader(Client cntxt, int kind)
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}
-			return (MalBlkPtr) parseError(cntxt, "',' expected\n");
+			parseError(cntxt, "',' expected\n");
+			skipToEnd(cntxt);
+			return curBlk;
 		} else
 			nextChar(cntxt);  /* skip ',' */
 		skipSpace(cntxt);
@@ -1209,7 +1223,9 @@ fcnHeader(Client cntxt, int kind)
 	}
 	if (currChar(cntxt) != ')') {
 		freeInstruction(curInstr);
-		return (MalBlkPtr) parseError(cntxt, "')' expected\n");
+		parseError(cntxt, "')' expected\n");
+		skipToEnd(cntxt);
+		return curBlk;
 	}
 	advance(cntxt, 1); /* skip ')' */
 /*
@@ -1218,9 +1234,9 @@ fcnHeader(Client cntxt, int kind)
    during the final phase reshuffle the return values to the beginning (?)
  */
 	if (currChar(cntxt) == ':') {
-		type = typeElm(cntxt, TYPE_void);
-		setPolymorphic(curInstr, type, TRUE);
-		setVarType(curBlk, curInstr->argv[0], type);
+		tpe = typeElm(cntxt, TYPE_void);
+		setPolymorphic(curInstr, tpe, TRUE);
+		setVarType(curBlk, curInstr->argv[0], tpe);
 		/* we may be confronted by a variable target type list */
 		if (MALkeyword(cntxt, "...", 3)) {
 			curInstr->varargs |= VARRETS;
@@ -1245,7 +1261,9 @@ fcnHeader(Client cntxt, int kind)
 			if ((ch = currChar(cntxt)) != ',') {
 				if (ch == ')')
 					break;
-				return (MalBlkPtr) parseError(cntxt, "',' expected\n");
+				parseError(cntxt, "',' expected\n");
+				skipToEnd(cntxt);
+				return curBlk;
 			} else {
 				nextChar(cntxt); /* skip ',' */
 			}
@@ -1255,8 +1273,11 @@ fcnHeader(Client cntxt, int kind)
 		/* re-arrange the parameters, results first*/
 		max = curInstr->maxarg;
 		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
-		if (newarg == NULL)
-			return (MalBlkPtr) parseError(cntxt, MAL_MALLOC_FAIL);
+		if (newarg == NULL){
+			parseError(cntxt, MAL_MALLOC_FAIL);
+			skipToEnd(cntxt);
+			return curBlk;
+		}
 		for (i1 = retc; i1 < curInstr->argc; i1++)
 			newarg[i2++] = curInstr->argv[i1];
 		curInstr->retc = curInstr->argc - retc;
@@ -1274,7 +1295,9 @@ fcnHeader(Client cntxt, int kind)
 				cntxt->curprg = cntxt->backup;
 				cntxt->backup = 0;
 			}
-			return (MalBlkPtr) parseError(cntxt, "')' expected\n");
+			parseError(cntxt, "')' expected\n");
+			skipToEnd(cntxt);
+			return curBlk;
 		}
 		nextChar(cntxt); /* skip ')' */
 	} else { /* default */
@@ -1339,10 +1362,8 @@ parseCommandPattern(Client cntxt, int kind)
 	str modnme = NULL;
 
 	curBlk = fcnHeader(cntxt, kind);
-	if (curBlk == NULL) {
-		skipToEnd(cntxt);
+	if (curBlk == NULL) 
 		return curBlk;
-	}
 	getInstrPtr(curBlk, 0)->token = kind;
 	curPrg = cntxt->curprg;
 	curPrg->kind = kind;
@@ -1417,10 +1438,8 @@ parseFunction(Client cntxt, int kind)
 	MalBlkPtr curBlk = 0;
 
 	curBlk = fcnHeader(cntxt, kind);
-	if (curBlk == NULL) {
-		skipToEnd(cntxt);
+	if (curBlk == NULL) 
 		return curBlk;
-	}
 	if (MALkeyword(cntxt, "address", 7)) {
 		str nme;
 		int i;
@@ -1476,7 +1495,7 @@ parseEnd(Client cntxt)
 		/* parse fcn */
 		if ((l == (int) strlen(curPrg->name) &&
 			 strncmp(CURRENT(cntxt), curPrg->name, l) == 0) || l == 0) {} else {
-			parseError(cntxt, "non matching end label, overruled\n");
+			parseError(cntxt, "non matching end label\n");
 		}
 		pushEndInstruction(curBlk);
 		insertSymbol(cntxt->nspace, cntxt->curprg);
@@ -1528,7 +1547,7 @@ parseEnd(Client cntxt)
 #define GETvariable	\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
 		arg = idCopy(cntxt, l);	 \
-		varid = newVariable(curBlk, arg, newMALtype(TYPE_any));	\
+		varid = newVariable(curBlk, arg, TYPE_any);	\
 	} \
 	else \
 		advance(cntxt, l);
@@ -1569,7 +1588,6 @@ parseAssign(Client cntxt, int cntrl)
 	MalBlkPtr curBlk;
 	Symbol curPrg;
 	int i = 0, l, type = TYPE_any, varid = -1;
-	int idx;
 	str arg = 0;
 	ValRecord cst;
 

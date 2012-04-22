@@ -14,16 +14,16 @@ stdout of test 'tst804` in directory 'mal` itself:
 #function wrong.message():void;
 !SyntaxException:parseError:function wrong.message():void;
 !SyntaxException:parseError:                      ^<module> not defined
-function wrong.message():any;
-    io.print("shouldn't come here");
-end message;
-#wrong.message();
-#wrongTo.message();
-#
-!TypeException:user.main[2]:'wrong.message' undefined in: _2:any := wrong.message()
-!TypeException:user.main[3]:'wrongTo.message' undefined in: _3:any := wrongTo.message()
+!SyntaxException:parseError:	io.print("shouldn't come here");
+!SyntaxException:parseError:^';' expected
+!SyntaxException:parseError:end message;
+!SyntaxException:parseError:   ^non matching end label
 function user.main():void;
 # test definiton of a function in a unknown module 
+end main;
+function user.main():void;
+# test definiton of a function in a unknown module 
+end main;
     wrong.message();
     wrongTo.message();
 end main;
