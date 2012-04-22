@@ -38,6 +38,9 @@ runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof)
 	prof->newclk=0;
 	prof->ppc= -2;
 	prof->tcs = 0;
+	prof->inblock = 0;
+	prof->oublock = 0;
+	prof->memory = MT_mallinfo();
 	if (malProfileMode ) {
 		setFilterOnBlock(mb, 0, 0);
 		prof->ppc = -1;
@@ -57,8 +60,8 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 			mb->profiler[stkpc].ticks= 0;
 			mb->profiler[stkpc].clock= stk->clock;
 			/* emit the instruction upon start as well */
-			if ( start )
-				profilerEvent(cntxt->idx,mb,stk,stkpc,1);
+			if ( malProfileMode )
+				profilerEvent(cntxt->idx,mb,stk,stkpc,start);
 #ifdef HAVE_TIMES
 			times(&stk->timer);
 			mb->profiler[stkpc].timer= stk->timer;
@@ -71,8 +74,9 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 
 
 inline void 
-runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof)
+runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof)
 {
+	int stkpc = prof->ppc;
 	if( malProfileMode == 0)
 		/* mostly true */;
 	else
@@ -95,9 +99,9 @@ void
 runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid , MT_Lock *lock, RuntimeProfile prof)
 {
 	str line;
-	if (lock)
-		MT_lock_set(&*lock, "timing");
 	if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+		if (lock)
+			MT_lock_set(&*lock, "timing");
 		mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
 		if( cntxt->flags & timerFlag){
 			char buf[32];
@@ -149,9 +153,9 @@ runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid ,
 		}
 		if( cntxt->flags & timerFlag)
 			cntxt->timer = GDKusec();
+		if (lock)
+				MT_lock_unset(&*lock, "timing");
 	}
-	if (lock)
-			MT_lock_unset(&*lock, "timing");
 }
 /*
  * For performance evaluation it is handy to know the

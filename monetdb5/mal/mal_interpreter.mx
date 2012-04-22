@@ -459,10 +459,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		oldtimer = cntxt->timer = GDKusec();
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ) {
-		stkpc = 0;
-		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
-	}
+	if ( startpc == 1 ) 
+		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 	stkpc = startpc;
 	exceptionVar = -1;
 	/*
@@ -532,7 +530,7 @@ workslow:
 				@:MALinterpret(SLOW)@
 			}
 			@:MALflowofcontrol(SLOW,continue)@
-			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		}
@@ -1018,7 +1016,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				NULL, "unkown operation");
 		}
 	}
-	runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+	runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (ret)
@@ -1586,9 +1584,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 			garbageCollector(cntxt, mb, stk, TRUE);
 #if @1
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		runtimeProfile.ppc = 0; /* also finalize function call event */
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 #endif
@@ -1602,7 +1600,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret = createScriptException(mb, stkpc, MAL,
 			NULL, "unkown operation");
 #if @1
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 #endif
@@ -1721,7 +1719,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* a fake multi-assignment */
 		if (env != NULL && pcicaller != NULL) {
 			InstrPtr pp = pci;
-			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 			pci = pcicaller;
@@ -1738,7 +1736,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (oldtimer)
 				cntxt->timer = oldtimer;
 		} else {
-			runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+			runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 			if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 				throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		}
@@ -2290,9 +2288,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (stkpc == mb->stop) {
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		runtimeProfile.ppc = 0; /* also finalize function call event */
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		@2;
@@ -2426,7 +2424,7 @@ if (ret != MAL_SUCCEED) {
 
 	/* unknown exceptions lead to propagation */
 	if (exceptionVar == -1) {
-		runtimeProfileExit(cntxt, mb, stk, stkpc, &runtimeProfile);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 		stkpc = mb->stop;

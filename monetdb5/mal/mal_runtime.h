@@ -37,7 +37,7 @@ typedef struct{
 
 mal_export void runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof);
 mal_export void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start);
-mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof);
+mal_export void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof);
 mal_export void runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, MT_Lock *lock, RuntimeProfile prof);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 mal_export void displayVolume(Client cntxt, lng vol);
