@@ -159,7 +159,13 @@ updateBigFoot(Client cntxt, int bid, int add)
 			return;
 		/* count it once ! */
 		cntxt->cnt = cnt = BATcount(b);
-		@:calcFootprint@
+		heapinfo(&b->H->heap); total += vol;
+		heapinfo(b->H->vheap); total += vol;
+		hashinfo(b->H->hash); total += vol;
+
+		heapinfo(&b->T->heap); total += vol;
+		heapinfo(b->T->vheap); total += vol;
+		hashinfo(b->T->hash); total += vol;
 		if (b->H->hash)
 			total += cnt * sizeof(int);
 		if (b->T->hash)
@@ -682,16 +688,7 @@ DFLOWgraphSize(MalBlkPtr mb, int start, int stop)
  * Another option would be to maintain a priority queue of
  * suspended instructions.
  */
-@= calcFootprint
-	heapinfo(&b->H->heap); total += vol;
-	heapinfo(b->H->vheap); total += vol;
-	hashinfo(b->H->hash); total += vol;
 
-	heapinfo(&b->T->heap); total += vol;
-	heapinfo(b->T->vheap); total += vol;
-	hashinfo(b->T->hash); total += vol;
-@
-@c
 /*
  * The memory claim is the estimate for the amount of memory hold.
  * Views are consider cheap and ignored
@@ -711,7 +708,13 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 			BBPunfix(b->batCacheid);
 			return 0;
 		}
-		@:calcFootprint@
+		heapinfo(&b->H->heap); total += vol;
+		heapinfo(b->H->vheap); total += vol;
+		hashinfo(b->H->hash); total += vol;
+
+		heapinfo(&b->T->heap); total += vol;
+		heapinfo(b->T->vheap); total += vol;
+		hashinfo(b->T->hash); total += vol;
 		if ( b->T->hash == 0  || b->H->hash ==0)	/* assume one hash claim */
 			total+= BATcount(b) * sizeof(lng);
 		total = total > (lng)(MEMORY_THRESHOLD * monet_memory) ? (lng)(MEMORY_THRESHOLD * monet_memory) : total;
@@ -1615,7 +1618,47 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @= MALflowofcontrol
 	switch (pci->barrier) {
 	case BARRIERsymbol:
-		@:barrierControl@
+		v = &stk->stk[getDestVar(pci)];
+		/* skip to end of barrier, depends on the type */
+		switch (v->vtype) {
+		case TYPE_bit:
+			if (v->val.btval == FALSE || v->val.btval == bit_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_bte:
+			if (v->val.btval < 0 || v->val.btval == bte_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_oid:
+			if (v->val.oval == oid_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_sht:
+			if (v->val.shval < 0 || v->val.shval == sht_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_int:
+			if (v->val.ival < 0 || v->val.ival == int_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_lng:
+			if (v->val.lval < 0 || v->val.lval == lng_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_flt:
+		case TYPE_dbl:
+			if (v->val.dval < 0 || v->val.dval == dbl_nil)
+				stkpc = pci->jump;
+			break;
+		case TYPE_str:
+			if (v->len == 0 || v->val.sval == str_nil)
+				stkpc = pci->jump;
+			break;
+		default:
+			ret = createScriptException(mb, stkpc, MAL, NULL,
+				"%s: Unknown barrier type",
+				getVarName(mb, getDestVar(pci)));
+		}
 		stkpc++;
 		break;
 	case LEAVEsymbol:
@@ -2208,54 +2251,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * outcome of the operation and possibly skip the block altogether.
  * The latter is implemented as a linear scan for the corresponding
  * labeled statemtent. This might be optimized later.
- */
-@= barrierControl
-{
-	v = &stk->stk[getDestVar(pci)];
-	/* skip to end of barrier, depends on the type */
-	switch (v->vtype) {
-	case TYPE_bit:
-		if (v->val.btval == FALSE || v->val.btval == bit_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_bte:
-		if (v->val.btval < 0 || v->val.btval == bte_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_oid:
-		if (v->val.oval == oid_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_sht:
-		if (v->val.shval < 0 || v->val.shval == sht_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_int:
-		if (v->val.ival < 0 || v->val.ival == int_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_lng:
-		if (v->val.lval < 0 || v->val.lval == lng_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_flt:
-	case TYPE_dbl:
-		if (v->val.dval < 0 || v->val.dval == dbl_nil)
-			stkpc = pci->jump;
-		break;
-	case TYPE_str:
-		if (v->len == 0 || v->val.sval == str_nil)
-			stkpc = pci->jump;
-		break;
-	default:
-		ret = createScriptException(mb, stkpc, MAL, NULL,
-			"%s: Unknown barrier type",
-			getVarName(mb, getDestVar(pci)));
-	}
-}
-
-@c
-/*
+ *
  * You can skip to a catch block by searching for the corresponding 'lab'
  * The return value should be set to pass the error automatically upon
  * reaching end of function block.
