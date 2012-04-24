@@ -584,6 +584,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-hwcounters=no \
 	--with-java=no \
 	--with-mseed=no \
+	--with-geotiff=no \
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python=yes \

@@ -37,3 +37,10 @@ headers_rdf = {
 	DIR = libdir/monetdb5/createdb
 	SOURCES = 30_rdf.sql
 }
+
+headers_geotiff = {
+	COND = HAVE_GEOTIFF
+	HEADERS = sql
+	DIR = libdir/monetdb5/createdb
+	SOURCES = 31_geotiff_schema.sql
+}

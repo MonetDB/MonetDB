@@ -2267,6 +2267,50 @@ AC_SUBST(MSEED_CFLAGS, $MSEED_CFLAGS)
 AC_SUBST(MSEED_LIBS, $MSEED_LIBS)
 AM_CONDITIONAL(HAVE_MSEED, test x"$have_mseed" != xno)
 
+
+# geotiff
+have_geotiff="auto"
+AC_ARG_WITH(geotiff,
+    AS_HELP_STRING([--with-geotiff=DIR],[geotiff library is installed in DIR]),
+    [have_geotiff="$withval"], [have_geotiff="auto"])
+if test "x$have_geotiff" != xno; then
+
+	case "$have_geotiff" in
+	auto|yes)
+	    ;;
+	*)
+	    GEOTIFF_CFLAGS="-I$have_geotiff/include"
+	    GEOTIFF_LDFLAGS="-L$have_geotiff/lib"
+	    ;;
+	esac
+
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+    save_LIBS="$LIBS"
+	CPPFLAGS="$CPPFLAGS $GEOTIFF_CFLAGS"
+	LDFLAGS="$LDFLAGS $GEOTIFF_LDFLAGS"
+    LIBS=""
+    AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
+	AC_CHECK_HEADER(xtiffio.h,
+		AC_CHECK_LIB(geotiff, XTIFFOpen,
+			[AC_DEFINE(HAVE_GEOTIFF, 1, [Define if you have the geotiff library])
+            have_geotiff=yes
+            LIBS="$LIBS -lgeotiff"],
+			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ], [$MATH_LIBS]),
+		[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no ])
+    GEOTIFF_LDFLAGS="$GEOTIFF_LDFLAGS $LIBS"
+	LDFLAGS="$save_LDFLAGS"
+	CPPFLAGS="$save_CPPFLAGS"
+    LIBS="$save_LIBS"
+  if test "x$have_geotiff" != "xyes"; then
+	    GEOTIFF_CFLAGS=
+	    GEOTIFF_LIBS=""
+  fi
+fi
+AC_SUBST(GEOTIFF_CFLAGS, $GEOTIFF_CFLAGS)
+AC_SUBST(GEOTIFF_LIBS, $GEOTIFF_LDFLAGS)
+AM_CONDITIONAL(HAVE_GEOTIFF, test x"$have_geotiff" != xno)
+
 # geos, only used in geom module
 have_geos=auto
 GEOS_INCS=''

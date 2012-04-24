@@ -1,0 +1,55 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2012 MonetDB B.V.
+# All Rights Reserved.
+
+INCLUDES =	../.. \
+			../../../../server \
+			../../../../include \
+			../../../../common \
+			../../../../storage \
+			../../../../../monetdb5/mal \
+			../../../../../monetdb5/modules/atoms \
+			../../../../../monetdb5/modules/kernel \
+			../../../../../monetdb5/modules/mal \
+			../../../../../monetdb5/optimizer \
+			../../../../../clients/mapilib \
+			../../../../../gdk \
+			../../../../../ \
+			../../../../../common/stream \
+			../../../../../common/options \
+			$(GEOTIFF_CFLAGS)
+
+lib__geotiff = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = geotiff.c geotiff.h
+
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 $(GEOTIFF_LIBS)
+}
+
+headers_geotiff_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = geotiff.mal
+}
+
+headers_autoload = {
+        HEADERS = mal
+        DIR = libdir/monetdb5/autoload
+        SOURCES = 73_geotiff.mal
+}
+
+EXTRA_DIST = geotiff.h geotiff.mal 73_geotiff.mal
