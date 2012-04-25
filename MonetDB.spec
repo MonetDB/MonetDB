@@ -31,7 +31,7 @@ Source: http://dev.monetdb.org/downloads/sources/Apr2012/%{name}-%{version}.tar.
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
-# BuildRequires: cfitsio-devel
+# BuildRequires: cfitsio-devel libgeotiff-devel
 BuildRequires: flex
 %if %{?centos:0}%{!?centos:1}
 # no geos library on CentOS
@@ -389,6 +389,7 @@ fi
 %exclude %{_libdir}/monetdb5/sql.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
+# %{_libdir}/monetdb5/autoload/*_geotiff.mal
 %{_libdir}/monetdb5/autoload/*_vault.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
@@ -563,6 +564,7 @@ developer, but if you do want to test, this is the package you need.
 	--enable-debug=no \
 	--enable-developer=no \
 	--enable-fits=no \
+	--enable-geotiff=no \
 	--enable-gdk=yes \
 	--enable-geom=%{?centos:no}%{!?centos:yes} \
 	--enable-instrument=no \

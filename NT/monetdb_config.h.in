@@ -153,6 +153,9 @@
 /* Define to 1 if you have the <geos_c.h> header file. */
 /* #undef HAVE_GEOS_C_H */
 
+/* Define if you have the geotiff library */
+/* #undef HAVE_GEOTIFF */
+
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 

@@ -309,6 +309,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_GEOM_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_GEOTIFF
+	$(ECHO) "HAVE_GEOTIFF_FALSE='#'" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) "HAVE_GEOTIFF_FALSE=''" >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_JAVA
 	$(ECHO) HAVE_JAVA_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !IFDEF HAVE_JAVAJDBC
