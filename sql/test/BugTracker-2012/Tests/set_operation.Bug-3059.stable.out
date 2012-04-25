@@ -1,4 +1,4 @@
-stdout of test 'set_operation-bug-sf-3059` in directory 'test/bugs` itself:
+stdout of test 'set_operation.Bug-3059` in directory 'test/BugTracker-2012` itself:
 
 
 # 13:59:58 >  
@@ -100,7 +100,7 @@ Ready.
 % sys.inter # table_name
 % c # name
 % wrd # type
-% 2 # length
+% 1 # length
 [ 8	]
 #SELECT u, v, r  FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u, v, r;
 % sys.diff,	sys.diff,	sys.diff # table_name

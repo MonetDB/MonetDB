@@ -2986,7 +2986,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					sql->errstr[0] = 0;
 
 					/* TODO remove null checking (not needed in correlated case because of the semi/anti join) ! */
-					rel = left = rel_dup(left);
+					if (l_is_value) 
+						rel = rel_dup(outer);
+					else
+						rel = left = rel_dup(left);
 					r = rel_value_exp(sql, &rel, sval, f, ek);
 					if (r && !is_project(rel->op)) {
 						rel = rel_project(sql->sa, rel, NULL);

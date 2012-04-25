@@ -1752,7 +1752,8 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 /* push an expression through a projection. 
  * The result should again used in a projection.
  */
-static sql_exp * exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
+static sql_exp *
+exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 
 static list *
 exps_push_down_prj(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
@@ -4290,12 +4291,15 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			rel_mark_used(sql, rel->l, 0);
 			rel_mark_used(sql, rel->r, 0);
 		} else if (proj && !need_distinct(rel)) {
-			positional_exps_mark_used(rel, rel->l);
-			positional_exps_mark_used(rel, rel->r);
+			sql_rel *l = rel->l;
+
+			positional_exps_mark_used(rel, l);
 			rel_mark_used(sql, rel->l, 1);
+			/* based on child check set expression list */
+			if (is_project(l->op) && need_distinct(l))
+				positional_exps_mark_used(l, rel);
+			positional_exps_mark_used(rel, rel->r);
 			rel_mark_used(sql, rel->r, 1);
-			/* based on child check union expression list */
-			positional_exps_mark_used(rel->l, rel);
 		}
 		break;
 
