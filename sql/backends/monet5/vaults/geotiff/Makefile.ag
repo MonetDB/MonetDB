@@ -30,14 +30,14 @@ INCLUDES =	../.. \
 			../../../../../ \
 			../../../../../common/stream \
 			../../../../../common/options \
-			$(GEOTIFF_CFLAGS)
+			$(geotiff_CFLAGS)
 
 lib__geotiff = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = geotiff.c geotiff.h
 
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 $(GEOTIFF_LIBS)
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 $(geotiff_LIBS)
 }
 
 headers_geotiff_mal = {
