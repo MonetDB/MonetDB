@@ -502,6 +502,9 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 	int t, ret;
 	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - tile);
 
+	if (len == 0)
+		return 0;	/* nothing to do */
+
 	/* save to disk an 128MB tile, and observe how long this takes */
 	if (err) {
 		mnstr_printf(err,
@@ -631,9 +634,14 @@ done:
 					/* first run, walk backwards
 					   until we hit an unsaved
 					   tile */
-					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
+					off = MT_mmap_tab[i].len & ~(MT_MMAP_TILE - 1);
+					for (;;) {
 						if (MT_mmap_save_tile(i, off, err))
 							goto bailout;
+						if (off < MT_MMAP_TILE)
+							break;
+						off -= MT_MMAP_TILE;
+					}
 				} else {
 					/* save the next tile */
 					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
