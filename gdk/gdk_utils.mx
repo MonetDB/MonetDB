@@ -1567,7 +1567,10 @@ GDKvmtrim(void *limit)
 		}
 		MEMDEBUG {
 			fp = GDKout;
-			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT ", GDK_mmap_minsize=" SZFMT ")\n", highload_name[highload], *(size_t *) limit, GDK_mmap_minsize);
+			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT
+				  ", GDK_mmap_minsize=" SZFMT ")\n",
+				  highload_name[highload], *(size_t *) limit,
+				  GDK_mmap_minsize);
 		}
 		highload = MT_mmap_trim(*(size_t *) limit, fp);
 		if (highload >= 4) {
