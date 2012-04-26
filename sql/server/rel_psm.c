@@ -158,7 +158,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	sql_subtype ctype = *sql_bind_localtype("bat");
 
 	if (sname)  /* not allowed here */
-		return sql_error(sql, 02, "DECLARE TABLE: qualified name allowed");
+		return sql_error(sql, 02, "DECLARE TABLE: qualified name not allowed");
 	if (frame_find_var(sql, name)) 
 		return sql_error(sql, 01, "Variable '%s' allready declared", name);
 	
