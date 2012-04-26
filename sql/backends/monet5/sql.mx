@@ -1687,21 +1687,23 @@ sqlcleanup(mvc *c, int err)
  * Failure to find the state descriptor aborts the session.
  */
 str 
-getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b )
+getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b)
 {
-	(void)mb;
-	if (cntxt == NULL ) 
-		throw(SQL, "mvc","No client record");
-	if (cntxt->state[MAL_SCENARIO_PARSER] == NULL || cntxt->state[MAL_SCENARIO_OPTIMIZE] == NULL)
-		throw(SQL, "mvc","SQL module not initialized");
-	if (c)
-		*c = ((mvc *) cntxt ->state[MAL_SCENARIO_OPTIMIZE]); 
-	if (c && *c == 0)
-		throw(SQL, "mvc","SQL module not initialized, mvc struct missing");
+	backend *be;
+	(void) mb;
+
+	if (cntxt == NULL)
+		throw(SQL, "mvc", "No client record");
+	if (cntxt->sqlcontext == NULL)
+		throw(SQL, "mvc", "SQL module not initialized");
+	be = (backend *) cntxt->sqlcontext;
+	if (c) {
+		*c = be->mvc;
+		if (*c == NULL)
+			throw(SQL, "mvc", "SQL module not initialized, mvc struct missing");
+	}
 	if (b)
-		*b = ((backend*) cntxt->state[MAL_SCENARIO_PARSER]);
-	if (b && *b == 0)
-		throw(SQL, "mvc","SQL module not initialized, backend struct missing");
+		*b = be;
 	return MAL_SUCCEED;
 }
 

@@ -446,7 +446,7 @@ addOptimizers(Client c, MalBlkPtr mb)
 	ValRecord *val;
 	backend *be;
 
-	be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	be = (backend *) c->sqlcontext;
 	assert( be && be->mvc ); 	/* SQL clients should always have their state set */
 
 	val = stack_get_var(be->mvc,"optimizer");
@@ -473,7 +473,7 @@ addQueryToCache(Client c)
 	c->blkmode = 0;
 	mb = c->curprg->def;
 	chkProgram(c->fdout, c->nspace, mb);
-	m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
+	m = ((backend *)c->sqlcontext)->mvc;
 #ifdef _SQL_OPTIMIZER_DEBUG
 	mnstr_printf(GDKout, "ADD QUERY TO CACHE\n");
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
@@ -485,8 +485,6 @@ addQueryToCache(Client c)
 	 * to allow inspection.
 	 */
 	if (mb->errors) {
-		mvc *m;
-		m = ((mvc *) c->state[MAL_SCENARIO_OPTIMIZE]);
 		showErrors(c);
 
 		if (c->listing)
@@ -496,7 +494,7 @@ addQueryToCache(Client c)
 		return;
 	}
 	addOptimizers(c, mb);
-	SQLgetStatistics(c,(mvc *) c->state[MAL_SCENARIO_OPTIMIZE],mb);
+	SQLgetStatistics(c,m,mb);
 	if ( m->emod & mod_debug )
 		addtoMalBlkHistory(mb,"getStatistics");
 	optimizeMALBlock(c,mb);
