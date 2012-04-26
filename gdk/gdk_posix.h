@@ -126,6 +126,7 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 #ifndef HAVE_POSIX_MADVISE
 # ifdef HAVE_MADVISE
 #  define posix_madvise madvise
+#  define HAVE_POSIX_MADVISE 1
 #  ifndef MADV_RANDOM
 #   define MADV_RANDOM	0
 #  endif
