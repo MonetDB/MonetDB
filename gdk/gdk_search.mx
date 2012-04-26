@@ -312,10 +312,10 @@ HASHclear(Hash *h)
 }
 
 Hash *
-HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
+HASHnew(Heap *hp, int tpe, BUN size, BUN mask, int persistent)
 {
 	Hash *h = NULL;
-	if (HEAPalloc(hp, mask + size, sizeof(BUN)) < 0)
+	if (HEAPalloc(hp, mask + size, sizeof(BUN), persistent) < 0)
 		return NULL;
 	h = (Hash *) GDKmalloc(sizeof(Hash));
 	if (!h)
@@ -441,7 +441,7 @@ BAThash(BAT *b, BUN masksize)
 				sprintf(hp->filename, "%s.%chash", nme, b->batCacheid > 0 ? 'h' : 't');
 			if (hp == NULL ||
 			    hp->filename == NULL ||
-			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
+			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask, b->batPersistence == PERSISTENT)) == NULL) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
 				if (hp != NULL) {
 					GDKfree(hp->filename);

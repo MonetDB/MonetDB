@@ -274,10 +274,10 @@ BATnewstorage(int ht, int tt, BUN cap)
 		bn->U->capacity = cap;
 
 		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
+		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width, 0) < 0) {
 			return NULL;
 		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
+		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width, 0) < 0) {
 			if (ht)
 				HEAPfree(&bn->H->heap);
 			return NULL;
@@ -3453,7 +3453,7 @@ BATpropcheck(BAT *b, int mode)
 				if (hp->filename != NULL)
 					snprintf(hp->filename, nmelen + 12, "%s.%chash", nme, bv->batCacheid > 0 ? 'h' : 't');
 				if (hp->filename == NULL ||
-				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim))) == NULL) {
+				    (bv->H->hash = HASHnew(hp, tpe, yy + lim, HASHmask(lim), 0)) == NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
 					BATDEBUG THRprintf(GDKout, "#BATpropcheck: BAT %s(%d): could not allocate hash table for key test\n", BATgetId(b), b->batCacheid);
