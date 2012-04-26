@@ -735,12 +735,17 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
+#ifdef HAVE_GETPROCESSMEMORYINFO
+	PROCESS_MEMORY_COUNTERS ctr;
+
+	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
+		return ctr.WorkingSetSize;
+#elif defined(HAVE_PROCFS_H) && defined(__sun__)
+	/* retrieve RSS the Solaris way (2.6+) */
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
-
-#if defined(HAVE_PROCFS_H) && defined(__sun__)
-	/* retrieve RSS the Solaris way (2.6+) */
 	psinfo_t psbuff;
+
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
 		sprintf(MT_mmap_procfile, "/proc/%ld/psinfo", (long) getpid());
@@ -755,6 +760,8 @@ MT_getrss(void)
 	}
 #else
 	/* get RSS  -- linux only for the moment */
+	static char MT_mmap_procfile[128] = { 0 };
+	int fd;
 
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
