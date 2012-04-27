@@ -2323,6 +2323,8 @@ AC_CHECK_HEADERS([crypt.h \
 	limits.h \
 	locale.h \
 	mach-o/dyld.h \
+	mach/mach_init.h \
+	mach/task.h \
 	malloc.h \
 	netdb.h \
 	netinet/in.h \
@@ -2605,6 +2607,8 @@ AC_CHECK_FUNCS([\
 				strtoll \
 				strtoull \
 				sysconf \
+				task_for_pid \
+				task_info \
 				times \
 				trunc \
 				uname \
