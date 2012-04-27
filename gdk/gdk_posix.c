@@ -47,6 +47,12 @@ extern char *sbrk(int);
 #ifdef HAVE_PROCFS_H
 # include <procfs.h>
 #endif
+#ifdef HAVE_MACH_TASK_H
+# include <mach/task.h>
+#endif
+#ifdef HAVE_MACH_MACH_INIT_H
+# include <mach/mach_init.h>
+#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -502,6 +508,9 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 	int t, ret;
 	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - tile);
 
+	if (len == 0)
+		return 0;	/* nothing to do */
+
 	/* save to disk an 128MB tile, and observe how long this takes */
 	if (err) {
 		mnstr_printf(err,
@@ -631,9 +640,14 @@ done:
 					/* first run, walk backwards
 					   until we hit an unsaved
 					   tile */
-					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
+					off = MT_mmap_tab[i].len & ~(MT_MMAP_TILE - 1);
+					for (;;) {
 						if (MT_mmap_save_tile(i, off, err))
 							goto bailout;
+						if (off < MT_MMAP_TILE)
+							break;
+						off -= MT_MMAP_TILE;
+					}
 				} else {
 					/* save the next tile */
 					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
@@ -724,15 +738,21 @@ MT_init_posix(void)
 	MT_mmap_init();
 }
 
+/* return RSS in bytes */
 size_t
 MT_getrss(void)
 {
+#ifdef HAVE_GETPROCESSMEMORYINFO
+	PROCESS_MEMORY_COUNTERS ctr;
+
+	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
+		return ctr.WorkingSetSize;
+#elif defined(HAVE_PROCFS_H) && defined(__sun__)
+	/* retrieve RSS the Solaris way (2.6+) */
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
-
-#if defined(HAVE_PROCFS_H) && defined(__sun__)
-	/* retrieve RSS the Solaris way (2.6+) */
 	psinfo_t psbuff;
+
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */
 		sprintf(MT_mmap_procfile, "/proc/%ld/psinfo", (long) getpid());
@@ -745,8 +765,19 @@ MT_getrss(void)
 		}
 		close(fd);
 	}
+#elif defined(HAVE_TASK_INFO) && defined(HAVE_TASK_FOR_PID)
+	/* Darwin/MACH call for process' RSS */
+	task_t task = MACH_PORT_NULL;
+	struct task_basic_info t_info;
+	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+
+	if (task_for_pid(current_task(), getpid(), &task) == KERN_SUCCESS &&
+			task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
+		return t_info.resident_size * 1024;
 #else
-	/* get RSS  -- linux only for the moment */
+	/* get RSS on Linux */
+	static char MT_mmap_procfile[128] = { 0 };
+	int fd;
 
 	if (MT_mmap_procfile[0] == 0) {
 		/* getpid returns pid_t, cast to long to be sure */

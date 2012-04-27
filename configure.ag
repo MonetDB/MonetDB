@@ -365,7 +365,7 @@ dnl we try where UNIX domain sockets also exist.  So we go by the
 dnl following simple implementation for now.
 case $host in
 	*-solaris*)
-        dnl Solaris needs this to get msg_control and msg_controllen
+		dnl Solaris needs this to get msg_control and msg_controllen
 		dnl it disables, however, the availability of madvise, which is
 		dnl in use use by GDK, so we cannot just AC_DEFINE this, but
 		dnl rather have to enable it where it is necessary
@@ -2359,6 +2359,8 @@ AC_CHECK_HEADERS([crypt.h \
 	limits.h \
 	locale.h \
 	mach-o/dyld.h \
+	mach/mach_init.h \
+	mach/task.h \
 	malloc.h \
 	netdb.h \
 	netinet/in.h \
@@ -2641,6 +2643,8 @@ AC_CHECK_FUNCS([\
 				strtoll \
 				strtoull \
 				sysconf \
+				task_for_pid \
+				task_info \
 				times \
 				trunc \
 				uname \

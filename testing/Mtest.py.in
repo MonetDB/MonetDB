@@ -1128,11 +1128,11 @@ def PerformDir(env, testdir, testlist, BusyPorts) :
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr)
-            if os.path.isabs(LogDBdir):
+            if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
                 except:
-                    Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCD))
+                    Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
                     # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr)
@@ -1538,6 +1538,9 @@ def CheckTests(env, TST, oktests):
     if not os.path.isfile(TST + '.reqtests'):
         # no required tests, so none missing
         return missing
+    if env.get('NOCLEAN'):
+        # we didn't clean up from a previous run, assume tests were done
+        return missing
 
     for test in open(TST + '.reqtests'):
         test = test.strip()
@@ -1777,8 +1780,12 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     SymlinkOrCopy(os.path.join(RELSRCDIR, f), f)
                     links.append(os.path.join(TSTTRGDIR, f))
                 except IOError, (IOerrNo, IOerrStr):
-                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
+                    if not env.get('NOCLEAN'):
+                        ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                               % (os.path.join(RELSRCDIR, f), f, os.getcwd(), IOerrNo, IOerrStr))
+                except OSError:
+                    if not env.get('NOCLEAN'):
+                        raise
 
         # Check for available sockets and block them until we're ready to run the actual test
         MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)

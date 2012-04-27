@@ -255,10 +255,10 @@ BATnewstorage(int ht, int tt, BUN cap)
 		bn->U->capacity = cap;
 
 		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
+		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width, 0) < 0) {
 			return NULL;
 		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
+		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width, 0) < 0) {
 			if (ht)
 				HEAPfree(&bn->H->heap);
 			return NULL;
@@ -3051,7 +3051,7 @@ BATassertHeadProps(BAT *b)
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
 			if ((hs = HASHnew(hp, b->htype, BUNlast(b),
-					  HASHmask(b->batCount))) == NULL) {
+					  HASHmask(b->batCount), 0)) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3214,7 +3214,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->htype, BUNlast(b),
-				  HASHmask(b->batCount))) == NULL) {
+				  HASHmask(b->batCount), 0)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

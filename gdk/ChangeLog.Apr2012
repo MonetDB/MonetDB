@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Apr 27 2012 Fabian Groffen <fabian@cwi.nl>
+- Implemented MT_getrss for Mac OS X systems, this allows the server to
+  know about how much memory is currently in use.
+

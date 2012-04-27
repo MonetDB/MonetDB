@@ -249,9 +249,10 @@ HEAPmargin(size_t maxsize)
 
 /* in 64-bits space, use very large margins to accommodate reallocations */
 int
-HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+HEAPalloc(Heap *h, size_t nitems, size_t itemsize, int persistent)
 {
 	char nme[PATHLENGTH], *ext = NULL;
+	size_t minsize = persistent ? REMAP_PAGE_SIZE : GDK_mmap_minsize;
 
 	if (h->filename) {
 		strcpy(nme, h->filename);
@@ -268,7 +269,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
+	if (h->filename == NULL || (h->size < minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
 		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
@@ -531,7 +532,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 int
 HEAPcopy(Heap *dst, Heap *src)
 {
-	if (HEAPalloc(dst, src->size, 1) == 0) {
+	if (HEAPalloc(dst, src->size, 1, 0) == 0) {
 		dst->free = src->free;
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
@@ -938,7 +939,7 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 		size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
 
 		total = roundup_8(total);
-		if (HEAPalloc(heap, total, 1) < 0)
+		if (HEAPalloc(heap, total, 1, 0) < 0)
 			return;
 		heap->free = heap->size;
 	}
