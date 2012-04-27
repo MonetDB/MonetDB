@@ -746,8 +746,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 
 		 	if (body) {		/* sql func */
 				list *b = NULL;
+				sql_schema *old_schema = cur_schema(sql);
 	
+				if (s)
+					sql->session->schema = s;
 				b = sequential_block(sql, restype, body, NULL, is_func);
+				sql->session->schema = old_schema;
 				sql->params = NULL;
 				if (!b) 
 					return NULL;
