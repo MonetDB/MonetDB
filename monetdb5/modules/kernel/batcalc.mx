@@ -258,6 +258,10 @@ module batcalc;
 	command isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit] 
 	address CMDunaryISNIL
 	comment "Unary check for nil over the tail of the bat";
+
+	command isnil(b:bat[:void,:@1]):bat[:oid,:bit] 
+	address CMDunaryISNIL
+	comment "Unary check for nil over the tail of the bat";
 @
 @mal
 # @-

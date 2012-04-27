@@ -69,6 +69,10 @@ comment "Compare a bat of @1 against a singleton";
     address MTIMEunaryISNIL
     comment "Unary check for nil over the tail of the bat";
 
+    command batcalc.isnil(b:bat[:void,:@1]):bat[:oid,:bit]
+    address MTIMEunaryISNIL
+    comment "Unary check for nil over the tail of the bat";
+
 @
 @mal
 @:compareGrp(date)@
