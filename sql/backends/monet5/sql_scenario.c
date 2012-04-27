@@ -461,6 +461,25 @@ sql_update_apr2012_sp1(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_jul2012(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+	/* new function sys.alpha */
+	pos += snprintf(buf+pos, bufsize-pos, "create function alpha(pdec double, pradius double) returns double external name sql.alpha;\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'alpha' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
+
+	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -597,6 +616,13 @@ SQLinitClient(Client c)
 		 * need to update */
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "optimizers", NULL, NULL, F_FUNC )) {
 			if ((err = sql_update_apr2012_sp1(c)) != NULL)
+				fprintf(stderr, "!%s\n", err);
+		}
+		/* if aggregate function sys.median(int) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "double", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
+			if ((err = sql_update_jul2012(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
 	}
