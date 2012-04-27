@@ -47,6 +47,12 @@ extern char *sbrk(int);
 #ifdef HAVE_PROCFS_H
 # include <procfs.h>
 #endif
+#ifdef HAVE_MACH_TASK_H
+# include <mach/task.h>
+#endif
+#ifdef HAVE_MACH_MACH_INIT_H
+# include <mach/mach_init.h>
+#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -732,6 +738,7 @@ MT_init_posix(void)
 	MT_mmap_init();
 }
 
+/* return RSS in bytes */
 size_t
 MT_getrss(void)
 {
@@ -758,8 +765,17 @@ MT_getrss(void)
 		}
 		close(fd);
 	}
+#elif defined(HAVE_TASK_INFO) && defined(HAVE_TASK_FOR_PID)
+	/* Darwin/MACH call for process' RSS */
+	task_t task = MACH_PORT_NULL;
+	struct task_basic_info t_info;
+	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+
+	if (task_for_pid(current_task(), getpid(), &task) == KERN_SUCCESS &&
+			task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
+		return t_info.resident_size * 1024;
 #else
-	/* get RSS  -- linux only for the moment */
+	/* get RSS on Linux */
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 
