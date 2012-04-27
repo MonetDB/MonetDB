@@ -738,6 +738,7 @@ MT_init_posix(void)
 	MT_mmap_init();
 }
 
+/* return RSS in bytes */
 size_t
 MT_getrss(void)
 {
@@ -772,7 +773,7 @@ MT_getrss(void)
 
 	if (task_for_pid(current_task(), getpid(), &task) == KERN_SUCCESS &&
 			task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
-		return t_info.resident_size;
+		return t_info.resident_size * 1024;
 #else
 	/* get RSS on Linux */
 	static char MT_mmap_procfile[128] = { 0 };
