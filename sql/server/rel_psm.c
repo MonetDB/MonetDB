@@ -367,6 +367,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 	if (restype->comp_type)
 		ek.card = card_relation;
 	res = rel_value_exp2(sql, &rel, return_sym, sql_sel, ek, &is_last);
+	if (!res)
+		return NULL;
 	if (ek.card != card_relation && (!res || 
            	(res = rel_check_type(sql, restype, res, type_equal)) == NULL))
 		return NULL;
