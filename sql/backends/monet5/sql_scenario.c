@@ -413,6 +413,7 @@ sql_update_apr2012(Client c)
 	char *buf = GDKmalloc(2048), *err = NULL;
 	size_t bufsize = 2048, pos = 0;
 
+	/* sys.median and sys.corr functions */
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val TINYINT) returns TINYINT external name \"aggr\".\"median\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val SMALLINT) returns SMALLINT external name \"aggr\".\"median\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate median(val INTEGER) returns INTEGER external name \"aggr\".\"median\";\n");
@@ -426,7 +427,18 @@ sql_update_apr2012(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 REAL, e2 REAL) returns REAL external name \"aggr\".\"corr\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE external name \"aggr\".\"corr\";\n");
 
+	/* changes in createdb/25_debug.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "drop function storage;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create function storage() returns table (\"schema\" string, \"table\" string, \"column\" string, location string, \"count\" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted boolean) external name sql.storage;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create function optimizers() returns table (name string, def string, status string) external name sql.optimizers;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop procedure ra;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create procedure evalAlgebra( ra_stmt string, opt bool) external name sql.\"evalAlgebra\";\n");
+
 	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('median', 'corr') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('storage', 'optimizers') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('evalalgebra') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_PROC);
+
+	assert(pos < 2048);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0);
