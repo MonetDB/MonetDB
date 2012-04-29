@@ -26,3 +26,4 @@ bart-crash.Bug-3057
 set_operation.Bug-3059
 delete-with-constant-where.Bug-3065
 name_resolution_in_proc.Bug-3074
+segfault_incorrect_head.Bug-3028
