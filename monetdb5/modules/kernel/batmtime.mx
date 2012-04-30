@@ -161,14 +161,14 @@ str MTIMEbat_@1_@2_@3(int *ret, int *l)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
-    if (b->htype != bn->htype) {
-        BAT *r = VIEWcreate(b,bn);
-
-        BBPreleaseref(bn->batCacheid);
-        bn = r;
-    }
-
 	BATsetcount(bn, BATcount(b));
+    	if (b->htype != bn->htype) {
+        	BAT *r = VIEWcreate(b,bn);
+
+        	BBPreleaseref(bn->batCacheid);
+        	bn = r;
+    	}
+
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -221,15 +221,15 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
 
-
-    if (b->htype != bn->htype) {
-        BAT *r = VIEWcreate(b,bn);
-
-        BBPreleaseref(bn->batCacheid);
-        bn = r;
-    }
-
 	BATsetcount(bn, BATcount(b));
+
+    	if (b->htype != bn->htype) {
+        	BAT *r = VIEWcreate(b,bn);
+	
+        	BBPreleaseref(bn->batCacheid);
+        	bn = r;
+    	}
+
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	BATkey(BATmirror(bn),FALSE);
@@ -322,6 +322,15 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 			else @1@2(o,p,cst);
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
+
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+
+	if (b->htype != bn->htype) {
+		BAT *r = VIEWcreate(b,bn);
+
+		BBPreleaseref(bn->batCacheid);
+		bn = r;
+	}
 
 	bn->tsorted = 0;
 	bn->trevsorted = 0;

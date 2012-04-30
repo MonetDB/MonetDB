@@ -3441,12 +3441,7 @@ def main(argv) :
             ErrXit("System (-S) must match '"+sv+"' !")
 
     # some relative path's for relocatable HTML output
-    if os.path.normcase(TSTSRCBASE) == os.path.normcase(TSTTRGBASE):
-        RELSRCBASE = os.curdir
-    else:
-        TSTBASE = os.path.dirname(os.path.commonprefix([os.path.normcase(TSTSRCBASE), os.path.normcase(TSTTRGBASE)]))
-        RELBASE = os.path.join(* [os.pardir] * len(TSTTRGBASE[len(TSTBASE+os.sep):].split(os.sep)))
-        RELSRCBASE = RELBASE + TSTSRCBASE[len(TSTBASE):]
+    RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
     env['RELSRCBASE'] = RELSRCBASE
 
     #STDERR.flush()
