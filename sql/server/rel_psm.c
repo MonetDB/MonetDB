@@ -156,6 +156,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
 	sql_subtype ctype = *sql_bind_localtype("bat");
+	int tempt = (n->next->next->data.sym->token == SQL_CREATE_ARRAY) ? SQL_DECLARED_ARRAY : SQL_DECLARED_TABLE;
 
 	if (sname)  /* not allowed here */
 		return sql_error(sql, 02, "DECLARE TABLE: qualified name not allowed");
@@ -164,14 +165,28 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	
 	assert(n->next->next->next->type == type_int);
 	
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
-
-	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
+	rel = rel_create_table(sql, cur_schema(sql), tempt, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL);
+	if (!rel)
 		return NULL;
 
-	ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-	stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
-	return exp_var(sql->sa, sa_strdup(sql->sa, name), &ctype, sql->frame);
+	if (rel->op == op_ddl) {
+		if (rel->flag != DDL_CREATE_TABLE)
+			return NULL;
+
+		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
+		stack_push_rel_var(sql, name, rel_dup(rel), &ctype);
+		return exp_var(sql->sa, sa_strdup(sql->sa, name), &ctype, sql->frame);
+	} else if (rel->op == op_insert) {
+		/* in care of a DECLARE ARRAY, the declared array is hidden in an INSERT relation */
+		sql_rel *l = rel->l;
+		if (l->op != op_ddl || l->flag != DDL_CREATE_ARRAY)
+			return NULL;
+		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)l->exps->t->data)->l)->data.val.pval;
+		stack_push_rel_var(sql, name, rel_dup(l), &ctype);
+		return exp_rel(sql->sa, rel);
+	}
+
+	return NULL;
 }
 
 /* [ label: ]
@@ -539,6 +554,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
 		case SQL_CREATE_TABLE: 
+		case SQL_CREATE_ARRAY:
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
 		case SQL_WHILE:
@@ -633,9 +649,29 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 			dnode *n = res->data.lval->h;
 
 			tbl = mvc_create_generated(sql, sys, tnme, NULL, 1 /* system ?*/);
-			for(;n; n = n->next->next) {
+			for(;n; ) {
 				sql_subtype *ct = &n->next->data.typeval;
-		    		mvc_create_column(sql, tbl, n->data.sval, ct);
+				sql_column* cs = mvc_create_column(sql, tbl, n->data.sval, ct);
+				/* skip the type_string and type_type dnode-s */
+				n = n->next->next;
+				if (n && n->type == type_symbol) { /* possibly an additional SQL_DIMENSION dnode */
+					if(n->data.sym->token != SQL_DIMENSION) {
+						return sql_error(sql, 01, "DIMENSION declaration expected, got %s", token2string(n->data.sym->token));
+					}
+					if (res->token != SQL_ARRAY) {
+						return sql_error(sql, 01, "DIMENSION declaration not allowed in a TABLE data type");
+					}
+					if (n->data.sym->data.lval) {
+						return sql_error(sql, 01, "Dimension range specification not allowed function return declaration");
+					}
+					cs->dim = ZNEW(sql_dimspec);
+					tbl->ndims++;
+					/* skip the additional SQL_DIMENSION dnode */
+					n = n->next;
+				}
+			}
+			if (res->token == SQL_ARRAY && tbl->ndims == 0) {
+				return sql_error(sql, 01, "An array must have at least one column declared as a DIMENSION");
 			}
 		}
 		_DELETE(tnme);

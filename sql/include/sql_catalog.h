@@ -114,7 +114,8 @@ typedef enum temp_t {
 	SQL_PERSIST,
 	SQL_LOCAL_TEMP,
 	SQL_GLOBAL_TEMP,
-	SQL_DECLARED_TABLE,	/* variable inside a stored procedure */
+	SQL_DECLARED_TABLE,	/* table variable inside a stored procedure */
+	SQL_DECLARED_ARRAY,	/* array variable inside a stored procedure */
 	SQL_MERGE_TABLE,
 	SQL_STREAM,
 	SQL_REMOTE,
@@ -423,7 +424,8 @@ typedef enum table_types {
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isArray(x)  	(x->type==tt_array)
 #define isTableOrArray(x)(x->type==tt_array || x->type==tt_table)
-#define isFixedDim(x)   (x->start && x->step && x->stop && x->start[0] != '\0' && x->step[0] != '\0' && x->stop[0] != '\0')
+#define isFixedArray(a) (a->type == tt_array && a->fixed)
+#define isFixedDim(d)   (d->start && d->step && d->stop && d->start[0] != '\0' && d->step[0] != '\0' && d->stop[0] != '\0')
 
 typedef struct sql_table {
 	sql_base base;
@@ -513,6 +515,7 @@ extern sql_column *find_sql_column(sql_table *t, char *cname);
 
 extern sql_table *find_sql_table(sql_schema *s, char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
+extern char *tt2string(int tt);
 
 extern sql_sequence *find_sql_sequence(sql_schema *s, char *sname);
 

@@ -76,7 +76,7 @@ insert_exp_array(mvc *sql, sql_table *t, int *Len)
 sql_table *
 rel_ddl_table_get(sql_rel *r)
 {
-	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_VIEW) {
+	if (r->flag == DDL_ALTER_TABLE || r->flag == DDL_CREATE_TABLE || r->flag == DDL_CREATE_ARRAY || r->flag == DDL_CREATE_VIEW) {
 		sql_exp *e = r->exps->t->data;
 		atom *a = e->l;
 
@@ -96,6 +96,7 @@ get_table( sql_rel *t)
 	} else if (t->op == op_ddl && (
 			t->flag == DDL_ALTER_TABLE ||
 			t->flag == DDL_CREATE_TABLE ||
+			t->flag == DDL_CREATE_ARRAY ||
 			t->flag == DDL_CREATE_VIEW)) {
 		return rel_ddl_table_get(t);
 	}

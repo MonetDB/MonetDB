@@ -89,18 +89,20 @@ typedef struct expression {
 #define DDL_DROP_SCHEMA   22
 
 #define DDL_CREATE_TABLE 24
-#define DDL_DROP_TABLE 	 25
-#define DDL_CREATE_VIEW  26
-#define DDL_DROP_VIEW    27
-#define DDL_DROP_CONSTRAINT    28
-#define DDL_DROP_ARRAY 29
-#define DDL_ALTER_TABLE  30
+#define DDL_CREATE_ARRAY 25
+#define DDL_DROP_TABLE 	 26
+#define DDL_DROP_ARRAY 27
+#define DDL_CREATE_VIEW  28
+#define DDL_CREATE_VIEW_ARRAY 29
+#define DDL_DROP_VIEW    30
+#define DDL_DROP_CONSTRAINT    31
+#define DDL_ALTER_TABLE  32
 
-#define DDL_CREATE_TYPE 31 
-#define DDL_DROP_TYPE   32 
+#define DDL_CREATE_TYPE 33
+#define DDL_DROP_TYPE   34
 
-#define DDL_CREATE_INDEX  33
-#define DDL_DROP_INDEX    34
+#define DDL_CREATE_INDEX  35
+#define DDL_DROP_INDEX    36
 
 #define DDL_CREATE_FUNCTION 41 
 #define DDL_DROP_FUNCTION   42 
@@ -118,9 +120,6 @@ typedef struct expression {
 #define DDL_CREATE_ROLE 59
 #define DDL_DROP_ROLE 	60
 
-
-#define DDL_CREATE_ARRAY 63
-#define DDL_CREATE_VIEW_ARRAY 65
 #define MAXOPS 20
 
 typedef enum operator_type {

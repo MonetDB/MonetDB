@@ -390,3 +390,20 @@ sql_trans_bind_func(sql_trans *tr, char *name)
 
 	return t;
 }
+
+/* returns the name of a temp_t as a string */
+char *tt2string(int tt)
+{
+	switch(tt) {
+	case tt_table:         return "TABLE";
+	case tt_view:          return "VIEW";
+	case tt_generated:     return "GENERATED";
+	case tt_merge_table:   return "MERGE_TABLE";
+	case tt_stream:        return "STREAM";
+	case tt_remote:        return "REMOTE";
+	case tt_replica_table: return "REPLICA_TABLE";
+	case tt_array:         return "ARRAY";
+	}
+	return "UNKNOWN_TT";
+}
+

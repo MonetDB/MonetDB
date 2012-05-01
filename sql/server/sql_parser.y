@@ -391,7 +391,6 @@ int yydebug=1;
 	index_exp /* position indices of array cells */
 	index_exp_list
 	array_element_def_list
-	array_function_column_list
 	tiling_commalist
 
 %type <i_val>
@@ -1340,26 +1339,25 @@ opt_encrypted:
  ;
 
 table_def:
-    TABLE qname table_content_source 
+    table_or_array qname table_content_source 
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
+
+	  /* since there is no way in table_content_source to tell a TABLE from an
+	   *  ARRAY, we have to do it here.
+	   * This is quite dirty, but is a neater way of distinguish arrays from 
+	   *  tables than checking the token of an outer symbol, since that
+	   *  information is not always passed through.
+	   */
+	  if ($1 == SQL_ARRAY)
+	  	$3->token = SQL_CREATE_ARRAY;
 
 	  append_int(l, SQL_PERSIST);
 	  append_list(l, $2);
 	  append_symbol(l, $3);
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
-	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
- |  ARRAY qname table_content_source 
-	{ int commit_action = CA_COMMIT, tpe = SQL_ARRAY;
-	  dlist *l = L();
-
-	  append_int(l, tpe);
-	  append_list(l, $2);
-	  append_symbol(l, $3);
-	  append_int(l, commit_action);
-	  append_string(l, NULL);
-	  $$ = _symbol_create_list( SQL_CREATE_ARRAY, l ); }
+	  $$ = _symbol_create_list( $1 == SQL_TABLE ? SQL_CREATE_TABLE : SQL_CREATE_ARRAY, l ); }
  |  STREAM TABLE qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
@@ -2223,42 +2221,37 @@ opt_end_label:
 	/* empty */ 	{ $$ = NULL; }
  |	ident 
  ;
-	
-	
+
 table_function_column_list:
 	column data_type	{ $$ = L();
 				  append_string($$, $1);
 			  	  append_type($$, &$2);
 				}
-  |     table_function_column_list ',' column data_type
-				{ 
-				  append_string($$, $3);
-			  	  append_type($$, &$4);
+  | column data_type dimension	{ $$ = L();
+				  append_string($$, $1);
+			  	  append_type($$, &$2);
+			  	  append_symbol($$, $3);
 				}
+  | table_function_column_list ',' column data_type
+  	{ append_string($$, $3);
+	  append_type($$, &$4);
+	}
+  | table_function_column_list ',' column data_type dimension
+  	{ append_string($$, $3);
+	  append_type($$, &$4);
+	  append_symbol($$, $5);
+	}
   ;
 
-array_function_column_list:
-column data_type dimension	{ $$ = L();
-	append_string($$, $1);
-	append_type($$, &$2);
-	/* append_symbol($$, $3); Since the compiler can't deal with the dimensionality we ommit it'*/
-} | array_function_column_list ',' column data_type dimension {
-	append_string($$, $3);
-	append_type($$, &$4);
-	/* append_symbol($$, $5); Since the compiler can't deal with the dimensionality we ommit it*/
-} | column data_type{ $$ = L();
-	append_string($$, $1);
-	append_type($$, &$2);
-} | array_function_column_list ',' column data_type{
-	append_string($$, $3);
-	append_type($$, &$4);
-};
-
 func_data_type:
-    TABLE '(' table_function_column_list ')'	
-		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
-  | ARRAY '(' array_function_column_list ')'
-	{	$$ = _symbol_create_list(SQL_ARRAY, $3); }
+    table_or_array '(' table_function_column_list ')'
+	{
+		if ($1 == SQL_TABLE) {
+			$$ = _symbol_create_list(SQL_TABLE, $3);
+		  } else {
+			$$ = _symbol_create_list(SQL_ARRAY, $3);
+		  }
+	}
  |  data_type
 		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
  ;

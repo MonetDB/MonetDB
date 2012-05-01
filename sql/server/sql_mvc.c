@@ -1026,7 +1026,7 @@ mvc_create_table(mvc *m, sql_schema *s, char *name, int tt, bit system, int pers
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %s %d %d %d %d\n",
-				tt == tt_table? "TABLE":(tt == tt_array? "ARRAY":"OTHER_TT"),
+				tt2string(tt),
 				s->base.name, name, tt, system, persistence, commit_action);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {

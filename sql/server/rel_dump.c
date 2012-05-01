@@ -96,7 +96,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 				mnstr_printf(fout, "%s(%s)", 
 					isStream(t)?"stream":
 					isMergeTable(t)?"merge table":
-					isReplicaTable(t)?"replica table":"table",
+					isReplicaTable(t)?"replica table":
+					isArray(t)?"array":"table",
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));

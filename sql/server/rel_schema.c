@@ -636,7 +636,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		if (l->h->next->next->next) {
 			/* this is a dimension, see its structure in parser.y/column_def */
 			assert(l->h->next->next->next->type == type_symbol && l->h->next->next->next->data.sym->token == SQL_DIMENSION);
-			if (t->type != tt_array){
+			if (!isArray(t)){
 				sql_error(sql, 02, "%s %s: dimension column '%s' used in non-ARRAY\n", (alter)?"ALTER":"CREATE", (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
 				return SQL_ERR;
 			}
@@ -948,38 +948,66 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 	int instantiate = (sql->emode == m_instantiate);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
-	int tt = (temp == SQL_REMOTE)?tt_remote:
-		 (temp == SQL_STREAM)?tt_stream:
-	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
-	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:
-			  (temp == SQL_ARRAY)? tt_array:tt_table;
-	char *t_a = (tt == tt_array)?"ARRAY":"TABLE";
+	int tt = 0;
 
 	(void)create;
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE %s: no such schema '%s'", t_a, sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
+	switch (temp) {
+	case SQL_PERSIST:
+		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
+		break;
+	case SQL_LOCAL_TEMP:
+		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
+		break;
+	case SQL_GLOBAL_TEMP:
+		tt = (table_elements_or_subquery->token == SQL_CREATE_ARRAY) ? tt_array : tt_table;
+		break;
+	case SQL_DECLARED_TABLE:
+		tt = tt_table;
+		break;
+	case SQL_DECLARED_ARRAY:
+		tt = tt_array;
+		break;
+	case SQL_MERGE_TABLE:
+		tt = tt_merge_table;
+		break;
+	case SQL_STREAM:
+		tt = tt_stream;
+		break;
+	case SQL_REMOTE:
+		tt = tt_remote;
+		break;
+	case SQL_REPLICA_TABLE:
+		tt = tt_replica_table;
+		break;
+	default:
+		return sql_error(sql, 02, "Invalid table type %d", temp);
+	}
+
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, "3F000!CREATE %s: no such schema '%s'", tt2string(tt), sname);
+
+	if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array) &&
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
-	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table ) {
+	if (temp != SQL_DECLARED_TABLE && temp != SQL_DECLARED_ARRAY) {
+		if (temp != SQL_PERSIST && (tt == tt_table || tt == tt_array)) {
 			s = mvc_bind_schema(sql, "tmp");
 		} else if (s == NULL) {
 			s = ss;
 		}
 	}
 
-	if (temp != SQL_DECLARED_TABLE && s)
+	if (temp != SQL_DECLARED_TABLE  && temp != SQL_DECLARED_ARRAY && s)
 		sname = s->base.name;
 
 	if (mvc_bind_table(sql, s, name)) {
-		char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-		return sql_error(sql, 02, "42S01!%s %s: name '%s' already in use", cd, t_a, name);
-	} else if (temp != SQL_DECLARED_TABLE && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, "42000!CREATE %s: insufficient privileges for user '%s' in schema '%s'", t_a, stack_get_string(sql, "current_user"), s->base.name);
-	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
+		char *cd = (temp == SQL_DECLARED_TABLE || temp == SQL_DECLARED_ARRAY)?"DECLARE":"CREATE";
+		return sql_error(sql, 02, "42S01!%s %s: name '%s' already in use", cd, tt2string(tt), name);
+	} else if (temp != SQL_DECLARED_TABLE && temp != SQL_DECLARED_ARRAY && (!schema_privs(sql->role_id, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
+		return sql_error(sql, 02, "42000!CREATE %s: insufficient privileges for user '%s' in schema '%s'", tt2string(tt), stack_get_string(sql, "current_user"), s->base.name);
+	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE || table_elements_or_subquery->token == SQL_CREATE_ARRAY) {
 		/* table or array element list, value of 'tt' separates ARRAY from TABLE */
 		/* reuse SQL_DECLARED_TABLE for temp arrays as well. actual type is in 'tt' */
 		sql_table *t = (tt == tt_remote)?
@@ -1003,18 +1031,15 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 				return NULL;
 		}
 
-		if (tt == tt_array && t->ndims == 0) 
+		if (isArray(t) && t->ndims == 0)
 			return sql_error(sql, 02, "CREATE ARRAY: an array must have at least one dimension");
 
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		/* For tables and unbounded arrays we are done */
-		if ((tt == tt_table) || (tt == tt_array && !t->fixed)) {
-			/* TODO: DDL_CREATE_TABLE looks sufficient for arrays for now */
-			return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		/* For tables and unbounded arrays we are done. */
+		if (!isFixedArray(t)) {
+			return isArray(t)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		}
-		
 		/* For fixed arrays, we immediately create and fill in BATs for dimensions with dimension values, and for non-dim. attributes with default values */
-		assert(tt == tt_array && t->fixed);
 
 		/* To compute N (the #times each value is repeated), multiply the size of dimensions defined after the current dimension.  For the last dimension, its N is 1.  To compute M (the #times each value group is repeated), multiply the size of dimensions defined before the current dimension.  For the first dimension, its M is 1. */
 		N = SA_NEW_ARRAY(sql->sa, int, t->ndims);
@@ -1135,7 +1160,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		if (i != t->ndims) {
 			return sql_error(sql, 02, "CREATE ARRAY: expected number of dimension columns (%d) does not match actual numbre of dimension columns (%d)", t->ndims, i);
 		}
-		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		res = rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp);
 		return rel_insert(sql, res, rel_project(sql->sa, joinl, rp));
 	} else { /* [col name list] as subquery with or without data */
 		/* TODO: handle create_array_as_subquery??? */
@@ -1158,8 +1183,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, char *sname, char *name, sy
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
+		temp = (tt == tt_table || tt == tt_array)?temp:SQL_PERSIST;
+		res = (tt == tt_array)? rel_table(sql, DDL_CREATE_ARRAY, sname, t, temp) : rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
 		} else {
@@ -1858,7 +1883,7 @@ rel_schemas(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type)) 
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_ARRAY && s->token != SQL_CREATE_VIEW && STORE_READONLY(active_store_type))
 		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {

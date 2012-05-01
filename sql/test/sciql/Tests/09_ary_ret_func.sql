@@ -1,0 +1,18 @@
+CREATE FUNCTION test_fixed ()
+RETURNS ARRAY (x INT DIMENSION, y INT DIMENSION, val FLOAT)
+BEGIN
+	DECLARE ARRAY a (x INT DIMENSION[5], y INT DIMENSION[3], val FLOAT DEFAULT 42.0);
+	RETURN a;
+END;
+SELECT * FROM test_fixed();
+DROP FUNCTION test_fixed;
+
+-- CREATE FUNCTION test_param (sizex INT, sizey INT, dfl_val FLOAT)
+-- RETURNS ARRAY (x INT DIMENSION, y INT DIMENSION, val FLOAT)
+-- BEGIN
+-- 	DECLARE ARRAY a (x INT DIMENSION[sizex], y INT DIMENSION[sizey], val FLOAT DEFAULT dfl_val);
+-- 	RETURN a;
+-- END;
+-- SELECT * FROM test_param (5, 3, 22.4);
+-- DROP FUNCTION test_param;
+
