@@ -61,6 +61,8 @@ Ready.
 [ "queryhistory",	"str",	1	]
 [ "callhistory",	"str",	1	]
 [ "querylog",	"str",	1	]
+[ "files",	"str",	1	]
+[ "catalog",	"str",	1	]
 [ "systemfunctions",	"str",	1	]
 [ "test_update",	"str",	1	]
 [ " ",	"str",	1	]

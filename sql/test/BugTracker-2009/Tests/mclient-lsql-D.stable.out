@@ -30,6 +30,21 @@ Ready.
 # 21:51:00 >  
 
 START TRANSACTION;
+CREATE SCHEMA "rs" AUTHORIZATION "monetdb";
+SET SCHEMA "rs";
+CREATE TABLE "rs"."files" (
+	"fileid"       INTEGER,
+	"location"     CHAR(256),
+	"status"       TINYINT,
+	"lastmodified" TIMESTAMP
+);
+CREATE TABLE "rs"."catalog" (
+	"imageid" INTEGER,
+	"fileid"  INTEGER,
+	"width"   INTEGER,
+	"length"  INTEGER,
+	"bps"     SMALLINT
+);
 SET SCHEMA "sys";
 CREATE TABLE "sys"."table_a" (
 	"table_a_id" INTEGER       NOT NULL,

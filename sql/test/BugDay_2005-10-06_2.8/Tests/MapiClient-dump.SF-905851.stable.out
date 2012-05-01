@@ -113,6 +113,21 @@ Ready.
 # 14:58:14 >  
 
 START TRANSACTION;
+CREATE SCHEMA "rs" AUTHORIZATION "monetdb";
+SET SCHEMA "rs";
+CREATE TABLE "rs"."files" (
+	"fileid"       INTEGER,
+	"location"     CHAR(256),
+	"status"       TINYINT,
+	"lastmodified" TIMESTAMP
+);
+CREATE TABLE "rs"."catalog" (
+	"imageid" INTEGER,
+	"fileid"  INTEGER,
+	"width"   INTEGER,
+	"length"  INTEGER,
+	"bps"     SMALLINT
+);
 SET SCHEMA "sys";
 CREATE TABLE "sys"."allnewtriples" (
 	"id" INTEGER NOT NULL,
