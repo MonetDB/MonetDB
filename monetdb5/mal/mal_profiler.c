@@ -1,290 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@c
 /*
- * @a M. Kersten
- * @v 0.0
- * @* The MAL Profiler
- * A key issue in the road towards a high performance implementation
- * is to understand where resources are being spent. This information
- * can be obtained using different tools and at different levels of
- * abstraction.
- * A coarse grain insight for a particular application can be obtained
- * using injection of the necessary performance
- * capturing statements in the instruction sequence.
- * Fine-grain, platform specific information can be obtained using
- * existing profilers, like valgrind (http://www.valgrind.org),
- * or hardware performance counters.
- *
- * The MAL profiler collects detailed performance information, such
- * as cpu, memory and statement information. It is optionally extended
- * with IO activity, which is needed for coarse grain profiling only,
- * and estimated bytes read/written by an instruction.
- *
- * The execution profiler is supported by hooks in the MAL interpreter.
- * The default strategy is to ship an event record immediately over a stream
- * to a separate performance monitor, formatted as a tuple.
- * An alternative strategy is preparation for off-line performance analysis.
- *
- * Reflective performance analysis is supported by an event cache,
- * the event log becomes available as a series of BATs.
- * @menu
- * * Event Filtering ::
- * * Event Caching::
- * @end menu
- *
- * @node Event Filtering, Event Caching, The MAL Profiler, The MAL Profiler
- * @+ Event Filtering
- * The profiler supports selective retrieval of performance information by
- * tagging the instructions of interest. This means that a profiler
- * call has a global effect,
- * all concurrent users are affected by the performance overhead.
- * Therefore, it is of primary interest to single user sessions.
- *
- * The example below illustrates how the different performance
- * counter groups are activated, instructions are filtered for
- * tracking, and where the profile information is retained for
- * a posteriori analysis.
- * @example
- * #profiler.activate("event");
- * #profiler.activate("pc");
- * profiler.activate("time,ticks");
- * profiler.activate("stmt");
- * #profiler.activate("type");
- * #profiler.activate("cpu");
- * #profiler.activate("memory");
- * #profiler.activate("reads");
- * #profiler.activate("writes");
- * #profiler.activate("obytes");
- * #profiler.activate("wbytes");
- * #profiler.activate("user");
- * profiler.setFilter("*","insert");
- * profiler.setFilter("*","print");
- *
- * profiler.openStream("/tmp/MonetDBevents");
- * profiler.start();
- * b:= bbp.new(:int,:int);
- * bat.insert(b,1,15);
- * bat.insert(b,2,4);
- * bat.insert(b,3,9);
- * io.print(b);
- * profiler.stop();
- * profiler.closeStream();
- * @end example
- *
- * In this example, we are interested in all functions name @sc{insert} and @sc{print}.
- * A wildcard can be used to signify any name, e.g.
- * no constraints are put on the module in which the operations
- * are defined.
- * Several profiler components are ignored, shown by commenting
- * out the code line.
- *
- * Execution of the sample leads to the creation of a file with
- * the following content. The ticks are measured in micro-seconds.
- *
- * @verbatim
- * # time, ticks,  stmt  # name
- * [ "15:17:56",   12,   "_27 := bat.insert(<tmp_15>{3},1,15);" ]
- * [ "15:17:56",   2,    "_30 := bat.insert(<tmp_15>{3},2,4);"  ]
- * [ "15:17:56",   2,    "_33 := bat.insert(<tmp_15>{3},3,9);"  ]
- * [ "15:17:56",   245,  "_36 := io.print(<tmp_15>{3});",   ]
- * @end verbatim
- *
- * @node Event Caching, The MAL Modules, Event Filtering, The MAL Profiler
- * @+ Event Caching
- * Aside from shipping events to a separate process, the profiler
- * can keep the events in a local @sc{bat} group.
- * It is the default when no target file has been opened
- * to collect the information.
- *
- * Ofcourse, every measurement scheme does not come for free and may
- * even obscure performance measurements obtained through e.g. valgrind.
- * The separate event caches can be accessed using the
- * operator @sc{profiler.getTrace}(@emph{name}).
- * The current implementation only supports
- * access to @sc{time},@sc{ticks},@sc{pc},@sc{stmt}.
- * The event cache can be cleared with @sc{profiler.clearTrace()}.
- *
- * Consider the following MAL program snippet:
- * @example
- * profiler.setAll();
- * profiler.start();
- * b:= bbp.new(:int,:int);
- * bat.insert(b,1,15);
- * io.print(b);
- * profiler.stop();
- * s:= profiler.getTrace("stmt");
- * t:= profiler.getTrace("ticks");
- * io.print(s,t);
- * @end example
- * The performance result of the program execution becomes:
- * @verbatim
- * #---------------------------------------------------------#
- * # h     t                                       t         # name
- * # int   str                                     int       # type
- * #---------------------------------------------------------#
- * [ 1,      "b := bbp.new(0,0);",                   51      ]
- * [ 2,      "$6 := bat.insert(<tmp_22>,1,15);",     16      ]
- * [ 3,      "$9 := io.print(<tmp_22>);",            189     ]
- * @end verbatim
- *
- * @+ Monitoring Variables
- * The easiest scheme to obtain performance data is to
- * retrieve the performance properties of an instruction
- * directly after it has been executed using getEvent().
- * It reads the profiling stack maintained, provided you
- * have started monitoring.
- * @example
- * profiler setFilter(b);
- * profiler.start();
- * ....
- * b:= algebra.select(a,0 1000); # some expensive operation
- * (clk, memread, memwrite):= profiler.getEvent();
- * ...
- * profiler.stop();
- * @end example
- * @+ SQL table wrapper
- * The SQL frontend can access the profiler.
- * @verbatim
- * create function tracelog()
- * 	returns table (
- * 		event integer,      -- event counter
- * 		clk varchar(20),    -- wallclock, no mtime in kernel
- * 		pc varchar(50),     -- module.function[nr]
- * 		thread int,         -- thread identifier
- * 		"user" int,         -- client identifier
- * 		ticks integer,      -- time in microseconds
- * 		reads integer,      -- number of blocks read
- * 		writes integer,     -- number of blocks written
- * 		rbytes integer,     -- amount of bytes touched
- * 		wbytes integer,     -- amount of bytes written
- * 		type string,        -- return types
- * 		stmt string         -- actual statement executed
- * 	)
- * 	external name sql.dump_trace;
- * @end verbatim
- * @-
- *
- * @+ Security
- * Profiling the system is a security leak. Cached plans
- * are currently marked for profiling and not yet made private
- * for the user session. Furthermore, all events are assembled
- * in a global performance trace table. This means that concurrent
- * users can tap what is going on in the system.
- *
- * Dealing with it is major effort affecting both the kernel
- * and the upper layers. For the time being, access to the
- * data is considered priority over the leak.
- */
-@h
-#ifndef _MAL_PROFILER_H
-#define _MAL_PROFILER_H
-
-#include "mal_client.h"
-
-#ifdef HAVE_SYS_TIMES_H
-# include <sys/times.h>
-#endif
-
-#if defined(SOLARIS) && defined(OSVER) && OSVER < 560
-# include "/usr/ucbinclude/sys/rusage.h"
-# include "/usr/ucbinclude/sys/resource.h"
-#endif
-
-#ifdef HAVE_SYS_RESOURCE_H
-# include <sys/resource.h>
-typedef struct rusage Rusage;
-#endif
-
-typedef struct tms Tms;
-typedef struct Mallinfo Mallinfo;
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
 
 /*
- * @- Recycler statistics per client
- */
-typedef struct RECSTAT {
-	int statements;   /* total number of statements executed */
-	int recycled;     /* total number of statements recycled */
-	int recycled0;    /* recycled statements per query */
-	lng time0;        /* time per query */
-	int curQ;         /* index of current query in Qry Patterns array*/
-	int recent;       /* the most recent entry in RP touched by current query */
-	int recycleMiss;  /* DBG:count of misses due to cache eviction */
-	int recycleRem;   /* DBG:count of removed entries */
-	lng ccCalls;      /* Number of calls to cleanCache */
-	lng ccInstr;      /* Number of instructions evicted by eviction policy*/
-	lng crdInstr;     /* Number of instructions not admited in RP by CRD */
-	int trans;        /* Number of data transfer instructions */
-	lng transKB;      /* Size in KB of transferred data */
-	int recTrans;     /* Number of recycled data transfer instructions */
-	lng recTransKB;   /* Size in KB of recycled transferred data */
-	int RPadded0;     /* Number of instructions added to RP per query */
-	int RPreset0;     /* Number of instructions evicted from RP by reset() due to updates*/
-} *RecPtr, RecStat;
-
-mal_export str activateCounter(str name);
-mal_export str deactivateCounter(str name);
-mal_export str openProfilerStream(stream *fd);
-mal_export str closeProfilerStream(void);
-
-mal_export void initProfiler(MalBlkPtr mb);
-mal_export void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
-mal_export str setLogFile(stream *fd, Module cntxt, str fname);
-mal_export str setLogStream(Module cntxt, str host, int port);
-mal_export str setLogStreamStream(Module cntxt, stream *s);
-mal_export str setStartPoint(Module cntxt, str mod, str fcn);
-mal_export str setEndPoint(Module cntxt, str mod, str fcn);
-
-mal_export int profilerAvailable(void);
-mal_export str startProfiling(void);
-mal_export str stopProfiling(void);
-mal_export str cleanupProfiler(void);
-
-mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
-mal_export void setFilter(Module cntxt, str mod, str fcn);
-mal_export void setFilterOnBlock(MalBlkPtr mb, str mod, str fcn);
-mal_export void clrFilter(Module cntxt, str mod, str fcn);
-mal_export void setFilterVariable(MalBlkPtr mb, int i);
-mal_export void clrFilterVariable(MalBlkPtr mb, int i);
-mal_export stream *getProfilerStream(void);
-
-mal_export void MPresetProfiler(stream *fdout);
-
-mal_export int malProfileMode;
-
-mal_export void clearTrace(void);
-mal_export BAT *getTrace(str ev);
-mal_export int getTraceType(str nme);
-mal_export void TRACEtable(BAT **r);
-
-mal_export lng getDiskSpace(void);
-mal_export lng getDiskReads(void);
-mal_export lng getDiskWrites(void);
-mal_export lng getUserTime(void);
-mal_export lng getSystemTime(void);
-mal_export void _initTrace(void);
-
-#endif
-@c
-/*
- * @+ Performance tracing
+ * Performance tracing
  * The interpreter comes with several variables to hold performance
  * related data.
  * Every MAL instruction record is extended with two fields: counter and timer.
@@ -377,48 +111,34 @@ static struct {
 };
 
 /*
- * @-
  * The counters can be set individually.
  */
-@= setCounter
-	int i;
-	for (i = 0; profileCounter[i].name; i++)
-		if (strcmp(profileCounter[i].name, name) == 0) {
-			profileCounter[i].status = @1;
-			return 0;
-		}
-	throw(MAL, "@2", RUNTIME_OBJECT_UNDEFINED ":%s", name);
-@
-@c
 str
 activateCounter(str name)
 {
-	@:setCounter(1, activateCounter)@
+	int i;
+	for (i = 0; profileCounter[i].name; i++)
+		if (strcmp(profileCounter[i].name, name) == 0) {
+			profileCounter[i].status = 1;
+			return 0;
+		}
+	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
 
 str
 deactivateCounter(str name)
 {
-	@:setCounter(0, deactivateCounter)@
+	int i;
+	for (i = 0; profileCounter[i].name; i++)
+		if (strcmp(profileCounter[i].name, name) == 0) {
+			profileCounter[i].status = 0;
+			return 0;
+		}
+	throw(MAL, "deactivateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
 
 /*
- * @-
- * The parameter of getEventStream is the return value of the enclosing function:
- * 	profilerEvent:  none/void
- * 	setStartPoint:  a str
- * 	setEndPoint:    a str
- */
-@= getEventStream
-	mal_set_lock(mal_profileLock, "profileLock");
-	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
-		return @1;
-	}
-@
-@c
-/*
- * @+ Offline processing
+ * Offline processing
  * The offline processing structure is the easiest. We merely have to
  * produce a correct tuple format for the front-end.
  */
@@ -431,7 +151,7 @@ deactivateCounter(str name)
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
 
 /*
- * @- Event dispatching
+ * Event dispatching
  * The profiler strategy is encapsulated here
  * Note that the profiler itself should lead to event generations.
  */
@@ -456,7 +176,11 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 static void
 offlineProfilerHeader(void)
 {
-	@:getEventStream()@   /* profilerEvent -> void */
+	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return ;
+	}
 	log0("# ");
 	if (profileCounter[PROFevent].status) {
 		log0("event,\tstatus,\t");
@@ -545,7 +269,11 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		offlineProfilerHeader();
 		delayswitch--;
 	}
-	@:getEventStream()@   /* profilerEvent -> void */
+	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return ;
+	}
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
@@ -695,7 +423,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
 /*
- * @+ Postprocessing events
+ * Postprocessing events
  * The events may be sent for offline processing through a
  * stream, including "stdout".
  */
@@ -770,7 +498,11 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
+	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return MAL_SUCCEED ;
+	}
 	mnstr_printf(GDKout, "# start point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -783,7 +515,11 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	@:getEventStream(MAL_SUCCEED /*? or MAL_? ? */)@
+	mal_set_lock(mal_profileLock, "profileLock");
+	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
+		return MAL_SUCCEED ;
+	}
 	mnstr_printf(GDKout, "# end point not set\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -791,7 +527,6 @@ setEndPoint(Module cntxt, str mod, str fcn)
 }
 
 /*
- * @-
  * When you receive the message to start profiling, we
  * should wait for the next instruction the stream
  * is initiated. This is controlled by a delay-switch
@@ -824,7 +559,6 @@ stopProfiling(void)
 }
 
 /*
- * @-
  * The resetProfiler is called when the owner of the event stream
  * leaves the scene. (Unclear if parallelism may cause errors)
  */
@@ -848,7 +582,6 @@ getProfilerStream(void)
 }
 
 /*
- * @-
  * Performance tracing is triggered on an instruction basis
  * or a the global flag 'profileAll' being set.
  * Calling setFilter(M,F) switches the performance tracing
@@ -870,7 +603,6 @@ instrFilter(InstrPtr pci, str mod, str fcn)
 }
 
 /*
- * @-
  * The last filter values are saved as replacement for missing
  * arguments. It can be used to set the profile bits for modules
  * that has not been checked yet, e.g created on the fly.
@@ -930,7 +662,6 @@ setFilter(Module cntxt, str mod, str fcn)
 }
 
 /*
- * @-
  * Watch out. The profiling bits are only set for the shared modules and
  * the private main(). The profiler setFilter should explicitly be called in
  * each separate top level routine.
@@ -970,7 +701,6 @@ clrFilter(Module cntxt, str mod, str fcn)
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
 /*
- * @-
  * The instructions to be monitored can also be identified
  * using a variable. Any instruction that references it
  * is traced. Beware, this operation should be executed
@@ -1009,7 +739,7 @@ clrFilterVariable(MalBlkPtr mb, int arg)
 }
 
 /*
- * @+ Offline tracing
+ * Offline tracing
  * The events being captured are stored in separate BATs.
  * They are made persistent to accumate information over
  * multiple sessions. This means it has to be explicitly reset
@@ -1383,7 +1113,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
 /*
- * @-
  * The profile vector is added to the MAL block the first time we
  * have to safe monitor information.
  */

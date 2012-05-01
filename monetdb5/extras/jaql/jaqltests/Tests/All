@@ -5,3 +5,4 @@ HAVE_JAQL?filter
 HAVE_JAQL?join
 HAVE_JAQL?sort
 HAVE_JAQL?transform
+HAVE_JAQL?shred

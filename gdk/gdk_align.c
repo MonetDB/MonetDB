@@ -471,7 +471,7 @@ BATmaterializeh(BAT *b)
 	HASHdestroy(b);
 
 	b->H->heap.filename = NULL;
-	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
+	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid), b->batPersistence == PERSISTENT) < 0) {
 		b->H->heap = head;
 		return NULL;
 	}
@@ -619,7 +619,7 @@ VIEWreset(BAT *b)
 			if (head.filename == NULL)
 				goto bailout;
 			snprintf(head.filename, nmelen + 12, "%s.head", nme);
-			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0)
+			if (n->htype && HEAPalloc(&head, cnt, Hsize(n), b->batPersistence == PERSISTENT) < 0)
 				goto bailout;
 		}
 		if (n->ttype) {
@@ -627,7 +627,7 @@ VIEWreset(BAT *b)
 			if (tail.filename == NULL)
 				goto bailout;
 			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
-			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0)
+			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n), b->batPersistence == PERSISTENT) < 0)
 				goto bailout;
 		}
 		if (n->H->vheap) {

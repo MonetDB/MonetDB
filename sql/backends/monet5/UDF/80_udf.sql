@@ -17,6 +17,10 @@ Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 */
 
+
+-- add function signatures to SQL catalog
+
+
 -- Reverse a string
 create function reverse(src string)
 returns string external name udf.reverse;

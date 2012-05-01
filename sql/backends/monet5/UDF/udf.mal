@@ -15,6 +15,7 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+# scalar MAL signatures
 module udf;
 
 command reverse(ra1:str):str
@@ -22,6 +23,7 @@ address UDFreverse
 comment "Reverse a string";
 
 
+# BAT MAL signatures
 module batudf;
 
 command reverse(b:bat[:oid,:str]):bat[:oid,:str]
@@ -30,6 +32,7 @@ comment "Reverse a BAT of strings";
 
 
 
+# scalar MAL signatures
 module udf;
 
 command fuse(one:bte,two:bte):sht
@@ -45,6 +48,7 @@ address UDFfuse_int_lng
 comment "fuse two (4-byte) int values into one (8-byte) lng value";
 
 
+# BAT MAL signatures
 module batudf;
 
 command fuse(one:bat[:oid,:bte],two:bat[:oid,:bte]):bat[:oid,:sht]

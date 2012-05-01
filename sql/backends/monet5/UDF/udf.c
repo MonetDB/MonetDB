@@ -17,12 +17,14 @@
  * All Rights Reserved.
  */
 
+/* monetdb_config.h must be the first include in each .c file */
 #include "monetdb_config.h"
 #include "udf.h"
 
 /* Reverse a string */
 
 /* actual implementation */
+/* all non-exported functions must be declared static */
 static str
 UDFreverse_(str *ret, str src)
 {
@@ -176,6 +178,7 @@ UDFBATreverse(bat *ret, bat *bid)
 
 /* scalar fuse */
 
+/* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_impl(in,uin,out,shift)				\
 /* fuse two (shift-byte) in values into one (2*shift-byte) out value */	\
 /* actual implementation */						\
@@ -247,6 +250,7 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 	BATaccessBegin(bone, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(btwo, USE_TAIL, MMAP_SEQUENTIAL);
 
+/* using C macro for convenient type-expansion */
 #define UDFBATfuse_TYPE(in,uin,out,shift)				\
 do {	/* type-specific core algorithm */				\
 	in *one = NULL, *two = NULL;					\

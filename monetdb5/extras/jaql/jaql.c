@@ -1670,7 +1670,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (j == NULL) {
 		j = GDKzalloc(sizeof(jc));
-		cntxt->state[MAL_SCENARIO_OPTIMIZE] = j;
+		cntxt->jaqlcontext = j;
 	}
 
 	j->buf = jaql;
@@ -1742,7 +1742,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 getJAQLContext(Client cntxt, jc **c)
 {
-	*c = ((jc *) cntxt->state[MAL_SCENARIO_OPTIMIZE]); 
+	*c = (jc *) cntxt->jaqlcontext; 
 	if (*c == NULL)
 		throw(MAL, "jaql.context", "JAQL environment not found");
 	return MAL_SUCCEED;

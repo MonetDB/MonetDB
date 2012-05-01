@@ -86,7 +86,8 @@ JAQLinitClient(Client c)
 	/* Set state, this indicates an initialized client scenario */
 	c->state[MAL_SCENARIO_READER] = c;
 	c->state[MAL_SCENARIO_PARSER] = c;
-	c->state[MAL_SCENARIO_OPTIMIZE] = j;
+	c->state[MAL_SCENARIO_OPTIMIZE] = c;
+	c->jaqlcontext = j;
 
 	return msg;
 }
@@ -94,8 +95,8 @@ JAQLinitClient(Client c)
 str
 JAQLexitClient(Client c)
 {
-	if (c->state[MAL_SCENARIO_OPTIMIZE] != NULL) {
-		jc *j = (jc *) c->state[MAL_SCENARIO_OPTIMIZE];
+	if (c->jaqlcontext != NULL) {
+		jc *j = (jc *) c->jaqlcontext;
 
 		jaqllex_destroy(j->scanner);
 		j->scanner = NULL;
@@ -105,6 +106,7 @@ JAQLexitClient(Client c)
 		c->state[MAL_SCENARIO_READER] = NULL;
 		c->state[MAL_SCENARIO_PARSER] = NULL;
 		c->state[MAL_SCENARIO_OPTIMIZE] = NULL;
+		c->jaqlcontext = NULL;
 	}
 
 	return MAL_SUCCEED;

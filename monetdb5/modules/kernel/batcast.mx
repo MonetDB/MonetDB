@@ -126,7 +126,12 @@ All Rights Reserved.
 	@:coercion(lng,bit)@
 	@:coercion(str,bit)@
 
+	@:coercion(str,bte)@
+	@:coercion(str,sht)@
 	@:coercion(str,int)@
+	@:coercion(str,lng)@
+	@:coercion(str,flt)@
+	@:coercion(str,dbl)@
 
 	@:coercion(int,str)@
 	@:coercion(lng,str)@

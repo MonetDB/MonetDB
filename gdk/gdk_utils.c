@@ -1232,7 +1232,7 @@ GDKprotect(void)
 	}
 }
 
-#ifdef HAVE_POSIX_FADVISE
+#ifdef HAVE_POSIX_MADVISE
 static str highload_name[] = { "idle", "low", "medium", "high", "extreme" };
 
 static MT_Id GDKvmtrim_id;
@@ -1266,7 +1266,10 @@ GDKvmtrim(void *limit)
 		}
 		MEMDEBUG {
 			fp = GDKout;
-			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT ", GDK_mmap_minsize=" SZFMT ")\n", highload_name[highload], *(size_t *) limit, GDK_mmap_minsize);
+			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT
+				  ", GDK_mmap_minsize=" SZFMT ")\n",
+				  highload_name[highload], *(size_t *) limit,
+				  GDK_mmap_minsize);
 		}
 		highload = MT_mmap_trim(*(size_t *) limit, fp);
 		if (highload >= 4) {
@@ -1435,7 +1438,7 @@ GDKinit(opt *set, int setlen)
 	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
 
-#ifdef HAVE_POSIX_FADVISE
+#ifdef HAVE_POSIX_MADVISE
 	if (!GDKembedded && GDK_vm_trim)
 		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize, MT_THR_JOINABLE);
 #endif
@@ -1453,7 +1456,7 @@ GDKexit(int status)
 	gdk_set_lock(GDKthreadLock, "GDKexit");
 	if (GDKstopped == 0) {
 		GDKstopped = 1;	/* shouldn't there be a lock here? */
-#ifdef HAVE_POSIX_FADVISE
+#ifdef HAVE_POSIX_MADVISE
 		if (!GDKembedded && GDK_vm_trim && GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
 #endif
