@@ -28,6 +28,22 @@ Ready.
 #msqldump tables Wed Sep  8 10:50:27 2010
 
 START TRANSACTION;
+CREATE SCHEMA "rs" AUTHORIZATION "monetdb";
+SET SCHEMA "rs";
+CREATE TABLE "rs"."files" (
+	"fileid"       INTEGER,
+	"location"     CHAR(256),
+	"status"       TINYINT,
+	"lastmodified" TIMESTAMP
+);
+CREATE TABLE "rs"."catalog" (
+	"imageid" INTEGER,
+	"fileid"  INTEGER,
+	"width"   INTEGER,
+	"length"  INTEGER,
+	"bps"     SMALLINT
+);
+SET SCHEMA "sys";
 COMMIT;
 
 # 10:50:28 >  

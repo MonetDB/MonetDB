@@ -207,7 +207,7 @@ gettime(void)
 {
 	/* Return the time in milliseconds since an epoch.  The epoch
 	   is roughly the time this program started. */
-#ifdef HAVE_QUERYPERFORMANCECOUNTER
+#ifdef _MSC_VER
 	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
 	LARGE_INTEGER ctr;
 

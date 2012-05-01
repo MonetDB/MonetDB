@@ -17,6 +17,22 @@ stdout of test 'interrupted-initialization.Bug-2875` in directory 'test/BugTrack
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 START TRANSACTION;
+CREATE SCHEMA "rs" AUTHORIZATION "monetdb";
+SET SCHEMA "rs";
+CREATE TABLE "rs"."files" (
+	"fileid"       INTEGER,
+	"location"     CHAR(256),
+	"status"       TINYINT,
+	"lastmodified" TIMESTAMP
+);
+CREATE TABLE "rs"."catalog" (
+	"imageid" INTEGER,
+	"fileid"  INTEGER,
+	"width"   INTEGER,
+	"length"  INTEGER,
+	"bps"     SMALLINT
+);
+SET SCHEMA "sys";
 COMMIT;
 # MonetDB 5 server v11.5.8
 # This is an unreleased version
