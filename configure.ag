@@ -1464,7 +1464,6 @@ mac*)
 	QDIRSEP='\\'
 	PATHSEP=';'
 	SOEXT='-0.dll'
-	AC_DEFINE([HAVE_GLOBALMEMORYSTATUS], 1, [Define to 1 if you have the `GlobalMemoryStatus' function.])
 	;;
 *cygwin*)
 	DIRSEP='/'
@@ -2575,8 +2574,6 @@ AC_CHECK_FUNCS([\
 				GetSystemInfo \
 				gettimeofday \
 				getuid \
-				GlobalMemoryStatus \
-				GlobalMemoryStatusEx \
 				isinf \
 				kill \
 				localtime_r \
@@ -2589,7 +2586,6 @@ AC_CHECK_FUNCS([\
 				posix_fadvise \
 				posix_madvise \
 				putenv \
-				QueryPerformanceCounter \
 				round \
 				sbrk \
 				setenv \

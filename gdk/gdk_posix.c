@@ -742,12 +742,7 @@ MT_init_posix(void)
 size_t
 MT_getrss(void)
 {
-#ifdef HAVE_GETPROCESSMEMORYINFO
-	PROCESS_MEMORY_COUNTERS ctr;
-
-	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
-		return ctr.WorkingSetSize;
-#elif defined(HAVE_PROCFS_H) && defined(__sun__)
+#if defined(HAVE_PROCFS_H) && defined(__sun__)
 	/* retrieve RSS the Solaris way (2.6+) */
 	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
@@ -966,6 +961,7 @@ mdlopen(const char *library, int mode)
 #ifdef _MSC_VER
 #include <io.h>
 #endif /* _MSC_VER */
+#include <Psapi.h>
 
 #define MT_SMALLBLOCK 256
 
@@ -987,18 +983,11 @@ MT_init_posix(void)
 size_t
 MT_getrss()
 {
-#if (_WIN32_WINNT >= 0x0500)
-	MEMORYSTATUSEX state;
+	PROCESS_MEMORY_COUNTERS ctr;
 
-	state.dwLength = sizeof(state);
-	GlobalMemoryStatusEx(&state);
-	return (size_t) (state.ullTotalPhys - state.ullAvailPhys);
-#else
-	MEMORYSTATUS state;
-
-	GlobalMemoryStatus(&state);
-	return state.dwTotalPhys - state.dwAvailPhys;
-#endif
+	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
+		return ctr.WorkingSetSize;
+	return 0;
 }
 
 char *

@@ -168,26 +168,14 @@
 /* Define to 1 if you have the `getopt_long' function. */
 /* #undef HAVE_GETOPT_LONG */
 
-/* Define to 1 if you have the `GetProcessMemoryInfo' function. */
-#define HAVE_GETPROCESSMEMORYINFO 1
-
 /* Define to 1 if you have the `getrlimit' function. */
 /* #undef HAVE_GETRLIMIT */
-
-/* Define to 1 if you have the `GetSystemInfo' function. */
-#define HAVE_GETSYSTEMINFO 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
 /* #undef HAVE_GETTIMEOFDAY */
 
 /* Define to 1 if you have the `getuid' function. */
 /* #undef HAVE_GETUID */
-
-/* Define to 1 if you have the `GlobalMemoryStatus' function. */
-#define HAVE_GLOBALMEMORYSTATUS 1
-
-/* Define to 1 if you have the `GlobalMemoryStatusEx' function. */
-#define HAVE_GLOBALMEMORYSTATUSEX 1 /* only on >= NT 5 */
 
 /* Define if you have the iconv() function and it works. */
 /* #undef HAVE_ICONV */		/* optionally defined in rules.msc */
@@ -379,9 +367,6 @@
 
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
-
-/* Define to 1 if you have the `QueryPerformanceCounter' function. */
-#define HAVE_QUERYPERFORMANCECOUNTER 1
 
 /* Define if you have the raptor library */
 /* #undef HAVE_RAPTOR */

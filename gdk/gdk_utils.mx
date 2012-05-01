@@ -433,7 +433,7 @@ size_t _MT_npages = 0;		/* variable holding page size */
 void
 MT_init(void)
 {
-#ifdef HAVE_GETSYSTEMINFO
+#ifdef _MSC_VER
 	{
 		SYSTEM_INFO sysInfo;
 
@@ -459,20 +459,13 @@ MT_init(void)
 	if (_MT_pagesize <= 0)
 		_MT_pagesize = 4096;	/* default */
 
-#ifdef HAVE_GLOBALMEMORYSTATUSEX
+#ifdef _MSC_VER
 	{
 		MEMORYSTATUSEX memStatEx;
 
 		memStatEx.dwLength = sizeof(memStatEx);
 		if (GlobalMemoryStatusEx(&memStatEx))
 			_MT_npages = (size_t) (memStatEx.ullTotalPhys / _MT_pagesize);
-	}
-#elif defined(HAVE_GLOBALMEMORYSTATUS)
-	if (_MT_npages <= 0) {
-		MEMORYSTATUS memStat;
-
-		GlobalMemoryStatus(&memStat);
-		_MT_npages = memStat.dwTotalPhys / _MT_pagesize;
 	}
 #elif defined(HAVE_SYS_SYSCTL_H) && defined(HW_MEMSIZE) && SIZEOF_SIZE_T == SIZEOF_LNG
 	/* Darwin, 64-bits */
