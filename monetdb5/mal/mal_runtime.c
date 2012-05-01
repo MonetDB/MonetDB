@@ -3,19 +3,19 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- * Copyright August 2008-2011 MonetDB B.V.
+ * Copyright August 2008-2012 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
 
 /* Author(s) M.L. Kersten
  * The MAL Runtime Profiler
@@ -33,21 +33,24 @@
  * Manage the runtime profiling information
 */
 void
-runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof)
+runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory)
 {
 	prof->newclk=0;
 	prof->ppc= -2;
 	prof->tcs = 0;
 	prof->inblock = 0;
 	prof->oublock = 0;
-	prof->memory = MT_mallinfo();
+	if (initmemory)
+		prof->memory = MT_mallinfo();
+	else
+		memset(&prof->memory, 0, sizeof(prof->memory));
 	if (malProfileMode ) {
 		setFilterOnBlock(mb, 0, 0);
 		prof->ppc = -1;
 	}
 }
 
-inline void 
+void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
 	if( stk && mb->profiler != NULL ){
@@ -73,7 +76,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 }
 
 
-inline void 
+void
 runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile prof)
 {
 	int stkpc = prof->ppc;

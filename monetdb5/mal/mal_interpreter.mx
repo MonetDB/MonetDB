@@ -47,7 +47,6 @@ mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[]
 mal_export void garbageElement(Client cntxt, ValPtr v);
 mal_export void garbageCollector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int flag);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
-mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 
@@ -242,7 +241,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 	str ret;
 	RuntimeProfileRecord runtimeProfile;
 
-	runtimeProfileInit(mb, &runtimeProfile);
+	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (mb->errors) {
 		showErrors(cntxt);
 		if (cntxt->itrace == 0) /* permit debugger analysis */
@@ -393,7 +392,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	InstrPtr pci = getInstrPtr(mb, 0);
 	RuntimeProfileRecord runtimeProfile;
 
-	runtimeProfileInit(mb, &runtimeProfile);
+	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 #ifdef DEBUG_CALLMAL
 	mnstr_printf(cntxt->fdout, "callMAL\n");
 	printInstruction(cntxt->fdout, mb, 0, pci, LIST_MAL_ALL);
@@ -458,7 +457,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int tid = 0;
 	RuntimeProfileRecord runtimeProfile;
 
-	runtimeProfileInit(mb, &runtimeProfile);
+	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if (cntxt->flags & timerFlag)
@@ -947,7 +946,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	int tid = t->id, prevpc = 0;
 	RuntimeProfileRecord runtimeProfile;
 
-	runtimeProfileInit(mb, &runtimeProfile);
+	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 
