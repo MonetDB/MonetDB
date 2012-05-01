@@ -106,6 +106,7 @@
  */
 #include "monetdb_config.h"
 #include "run_memo.h"
+#include "mal_runtime.h"
 
 static void
 propagateNonTarget(MalBlkPtr mb, int pc){
