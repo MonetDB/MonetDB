@@ -28,3 +28,5 @@ delete-with-constant-where.Bug-3065
 name_resolution_in_proc.Bug-3074
 segfault_incorrect_head.Bug-3028
 table_returning_func_returns_too_many_columns.Bug-3077
+table_functions_fail_after_restart-0.Bug-3063
+table_functions_fail_after_restart-1.Bug-3063
