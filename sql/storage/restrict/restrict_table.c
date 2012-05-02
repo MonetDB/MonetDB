@@ -63,7 +63,7 @@ column_find_row(sql_trans *tr, sql_column *c, void *value, ...)
 	sql_bat *bat = c->t->data;
 
 	if (bat->bid) 
-		d = store_funcs.bind_del(tr, c->t, RDONLY);
+		d = store_funcs.bind_del(tr, c->t, RD_INS);
 	va_start(va, value);
 	while ((nc = va_arg(va, sql_column *)) != NULL) {
 		nv = va_arg(va, void *);
@@ -102,7 +102,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	sql_bat *bat = c->t->data;
 
 	if (bat->bid) 
-		d = store_funcs.bind_del(tr, c->t, RDONLY);
+		d = store_funcs.bind_del(tr, c->t, RD_INS);
 	b = full_column(c, d, NULL);
 	if (d)
 		bat_destroy(d);
@@ -178,7 +178,7 @@ rids_select( sql_trans *tr, sql_column *key, void *key_value_low, void *key_valu
 
 	/* special case, key_value_low and high NULL, ie return all */
 	if (bat->bid) 
-		d = store_funcs.bind_del(tr, key->t, RDONLY);
+		d = store_funcs.bind_del(tr, key->t, RD_INS);
 	if (key_value_low || key_value_high) {
 		va_start(va, key_value_high);
 		while ((nc = va_arg(va, sql_column *)) != NULL) {
@@ -227,7 +227,7 @@ rids_orderby(sql_trans *tr, rids *r, sql_column *orderby_col)
 	sql_bat *bat = orderby_col->t->data;
 
 	if (bat->bid) 
-		d = store_funcs.bind_del(tr, orderby_col->t, RDONLY);
+		d = store_funcs.bind_del(tr, orderby_col->t, RD_INS);
 	b = full_column(orderby_col, d, r->data);
 	if (d)
 		bat_destroy(d);
@@ -258,13 +258,13 @@ rids_join(sql_trans *tr, rids *l, sql_column *lc, rids *r, sql_column *rc)
 	
 	lbat = lc->t->data;
 	if (lbat->bid) 
-		d = store_funcs.bind_del(tr, lc->t, RDONLY);
+		d = store_funcs.bind_del(tr, lc->t, RD_INS);
 	lcb = full_column(lc, d, r->data);
 	if (d)
 		bat_destroy(d);
 	rbat = rc->t->data;
 	if (rbat->bid) 
-		d = store_funcs.bind_del(tr, rc->t, RDONLY);
+		d = store_funcs.bind_del(tr, rc->t, RD_INS);
 	rcb = full_column(rc, d, r->data);
 	if (d)
 		bat_destroy(d);

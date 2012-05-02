@@ -607,14 +607,11 @@ stmt_tbat(sql_allocator *sa, sql_table *t, int access)
 }
 
 stmt *
-stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access )
+stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access, int readonly )
 {
 	stmt *s = stmt_bat(sa, c, basetable, access );
 
-	if (c->t->readonly)
-		return s;
-
-	if (isTable(c->t) &&
+	if (isTable(c->t) && !readonly &&
 	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
 	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
 		stmt *i = stmt_bat(sa, c, basetable, RD_INS );
@@ -624,7 +621,7 @@ stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int acce
 		s = stmt_union(sa, s, u);
 		s = stmt_union(sa, s, i);
 	} 
-	/* even temp tables have deletes because we like to keep void heads */
+	/* even temp and readonly tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(c->t)) {
 		stmt *d = stmt_tbat(sa, c->t, RD_INS);
 		s = stmt_diff(sa, s, stmt_reverse(sa, d));
@@ -645,14 +642,11 @@ stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access)
 }
 
 stmt *
-stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, stmt *basetable, int access)
+stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, stmt *basetable, int access, int readonly)
 {
 	stmt *s = stmt_idxbat(sa, idx, basetable, access);
 
-	if (idx->t->readonly)
-		return s;
-
-	if (isTable(idx->t) &&
+	if (isTable(idx->t) && !readonly &&
 	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
 	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
 		stmt *i = stmt_idxbat(sa, idx, basetable, RD_INS);
@@ -662,7 +656,7 @@ stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, stmt *basetable, int a
 		s = stmt_union(sa, s, u);
 		s = stmt_union(sa, s, i);
 	} 
-	/* even temp tables have deletes because we like to keep void heads */
+	/* even temp and readonly tables have deletes because we like to keep void heads */
 	if (access == RDONLY && isTable(idx->t)) {
 		stmt *d = stmt_tbat(sa, idx->t, RD_INS);
 		s = stmt_diff(sa, s, stmt_reverse(sa, d));
