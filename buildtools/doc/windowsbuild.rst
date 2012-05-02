@@ -285,17 +285,17 @@ required for the MonetDB5 component, and hence implicitly required for
 the clients component when it needs to talk to a MonetDB5 server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.0d).  Follow the instructions in the file
+stable version (1.0.1b).  Follow the instructions in the file
 ``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
 ``enable-static-engine`` as described in the instructions.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.0d.win32
+   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.1b.win32
    ms\do_ms.bat
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
    and::
-   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.0d.win64
+   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.1b.win64
    ms\do_win64a
    nmake /f ms\ntdll.mak
    nmake /f ms\ntdll.mak install
