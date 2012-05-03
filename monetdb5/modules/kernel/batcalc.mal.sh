@@ -476,3 +476,23 @@ comment "average and number of non-nil values of B";
 
 EOF
 done
+
+for tp1 in $alltypes; do
+    for tp2 in $alltypes; do
+	cat <<EOF
+command $tp1(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from $tp2 to $tp1, signal error on overflow";
+pattern $tp1(v:$tp2) :$tp1
+address CMDconvertsignal
+comment "cast from $tp2 to $tp1, signal error on overflow";
+command ${tp1}_noerror(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+address CMDconvert_$tp1
+comment "cast from $tp2 to $tp1";
+pattern ${tp1}_noerror(v:$tp2) :$tp1
+address CMDconvert
+comment "cast from $tp2 to $tp1";
+
+EOF
+    done
+done

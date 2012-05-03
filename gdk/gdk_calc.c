@@ -12371,12 +12371,14 @@ convert_any_str(int tp, const void *src, BAT *bn, BUN cnt)
 	BUN i;
 	void *nil = ATOMnilptr(tp);
 	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
+	int size = ATOMsize(tp);
 
 	for (i = 0; i < cnt; i++) {
 		(*atomtostr)(&dst, &len, src);
 		if (ATOMcmp(tp, src, nil) == 0)
 			nils++;
 		tfastins_nocheck(bn, i, dst, bn->T->width);
+		src = (const void *) ((const char *) src + size);
 	}
 	BATsetcount(bn, cnt);
 	if (dst)
@@ -12414,6 +12416,120 @@ convert_str_any(BAT *b, int tp, void *dst, int abort_on_error)
 		dst = (void *) ((char *) dst + len);
 	}
 	return nils;
+}
+
+static BUN
+convert_void_any(oid seq, BUN cnt, BAT *bn, int abort_on_error)
+{
+	BUN cnt1 = 0;
+	BUN i = 0;
+	int tp = bn->T->type;
+	void *dst = Tloc(bn, bn->U->first);
+	int (*atomtostr)(str *, int *, const void *) = BATatoms[TYPE_oid].atomToStr;
+	str s = 0;
+	int len = 0;
+
+	if (seq != oid_nil) {
+		if (ATOMsize(tp) < ATOMsize(TYPE_oid) &&
+		    seq + cnt >= (oid) 1 << (8 * ATOMsize(tp) - 1)) {
+			/* overflow */
+			if (abort_on_error)
+				return BUN_NONE;
+			cnt1 = ((oid) 1 << (8 * ATOMsize(tp) - 1)) - seq;
+		} else {
+			cnt1 = cnt;
+		}
+		switch (ATOMstorage(tp)) {
+		case TYPE_bte:
+			if (tp == TYPE_bit) {
+				for (i = 0; i < cnt1; i++)
+					((bte *) dst)[i] = 1;
+				/* only the first one could be 0 */
+				if (cnt1 > 0 && seq == 0)
+					((bte *) dst)[0] = 0;
+			} else {
+				for (i = 0; i < cnt1; i++)
+					((bte *) dst)[i] = (bte) seq++;
+				for (; i < cnt; i++)
+					((bte *) dst)[i] = bte_nil;
+			}
+			break;
+		case TYPE_sht:
+			for (i = 0; i < cnt1; i++)
+				((sht *) dst)[i] = (sht) seq++;
+			break;
+		case TYPE_int:
+			for (i = 0; i < cnt1; i++)
+				((int *) dst)[i] = (int) seq++;
+			break;
+		case TYPE_lng:
+			for (i = 0; i < cnt1; i++)
+				((lng *) dst)[i] = (lng) seq++;
+			break;
+		case TYPE_flt:
+			for (i = 0; i < cnt1; i++)
+				((flt *) dst)[i] = (flt) seq++;
+			break;
+		case TYPE_dbl:
+			for (i = 0; i < cnt1; i++)
+				((dbl *) dst)[i] = (dbl) seq++;
+			break;
+		case TYPE_str:
+			for (i = 0; i < cnt1; i++) {
+				(*atomtostr)(&s, &len, &seq);
+				tfastins_nocheck(bn, i, dst, bn->T->width);
+				seq++;
+			}
+			break;
+		default:
+			/* dealt with below */
+			break;
+		}
+	}
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte:
+		for (; i < cnt; i++)
+			((bte *) dst)[i] = bte_nil;
+		break;
+	case TYPE_sht:
+		for (; i < cnt; i++)
+			((sht *) dst)[i] = sht_nil;
+		break;
+	case TYPE_int:
+		for (; i < cnt; i++)
+			((int *) dst)[i] = int_nil;
+		break;
+	case TYPE_lng:
+		for (; i < cnt; i++)
+			((lng *) dst)[i] = lng_nil;
+		break;
+	case TYPE_flt:
+		for (; i < cnt; i++)
+			((flt *) dst)[i] = flt_nil;
+		break;
+	case TYPE_dbl:
+		for (; i < cnt; i++)
+			((dbl *) dst)[i] = dbl_nil;
+		break;
+	case TYPE_str:
+		seq = oid_nil;
+		for (; i < cnt; i++) {
+			(*atomtostr)(&s, &len, &seq);
+			tfastins_nocheck(bn, i, dst, bn->T->width);
+			seq++;
+		}
+		if (s)
+			GDKfree(s);
+		break;
+	default:
+		return BUN_NONE + 1;
+	}
+	return cnt - cnt1;
+
+  bunins_failed:
+	if (s)
+		GDKfree(s);
+	return BUN_NONE;
 }
 
 static BUN
@@ -12626,11 +12742,14 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	if (tp == TYPE_str)
+	if (b->T->type == TYPE_void)
+		nils = convert_void_any(b->T->seq, b->U->count, bn,
+					abort_on_error);
+	else if (tp == TYPE_str)
 		nils = convert_any_str(b->T->type, Tloc(b, b->U->first),
 				       bn, b->U->count);
 	else if (b->T->type == TYPE_str)
-		nils = convert_str_any(b, b->T->type, Tloc(bn, bn->U->first),
+		nils = convert_str_any(b, tp, Tloc(bn, bn->U->first),
 				       abort_on_error);
 	else
 		nils = convert_typeswitchloop(Tloc(b, b->U->first), b->T->type,

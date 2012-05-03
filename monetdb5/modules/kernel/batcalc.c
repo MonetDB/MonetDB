@@ -1326,3 +1326,72 @@ CMDcalcavg(dbl *avg, bat *bid)
 {
 	return CMDcalcavg2(avg, NULL, bid);
 }
+
+batcalc_export str CMDconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0) == GDK_FAIL)
+		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+batcalc_export str CMDconvertsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDconvertsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) == GDK_FAIL)
+		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDconvertbat(bat *ret, bat *bid, int tp, int abort_on_error)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+	bn = BATconvert(b, tp, abort_on_error);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+#define CONVERT_TYPE(TYPE)										\
+batcalc_export str CMDconvert_##TYPE(bat *ret, bat *bid);		\
+																\
+str																\
+CMDconvert_##TYPE(bat *ret, bat *bid)							\
+{																\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 0);				\
+}																\
+																\
+batcalc_export str CMDconvertsignal_##TYPE(bat *ret, bat *bid);	\
+																\
+str																\
+CMDconvertsignal_##TYPE(bat *ret, bat *bid)						\
+{																\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 1);				\
+}
+
+CONVERT_TYPE(bit)
+CONVERT_TYPE(bte)
+CONVERT_TYPE(sht)
+CONVERT_TYPE(int)
+CONVERT_TYPE(wrd)
+CONVERT_TYPE(lng)
+CONVERT_TYPE(flt)
+CONVERT_TYPE(dbl)
+CONVERT_TYPE(oid)
+CONVERT_TYPE(str)
