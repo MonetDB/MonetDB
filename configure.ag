@@ -2603,7 +2603,6 @@ AC_CHECK_FUNCS([\
 				strtoll \
 				strtoull \
 				sysconf \
-				task_for_pid \
 				task_info \
 				times \
 				trunc \

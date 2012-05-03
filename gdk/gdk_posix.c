@@ -760,15 +760,14 @@ MT_getrss(void)
 		}
 		close(fd);
 	}
-#elif defined(HAVE_TASK_INFO) && defined(HAVE_TASK_FOR_PID)
+#elif defined(HAVE_TASK_INFO)
 	/* Darwin/MACH call for process' RSS */
-	task_t task = MACH_PORT_NULL;
+	task_t task = mach_task_self();
 	struct task_basic_info t_info;
-	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_64_COUNT;
 
-	if (task_for_pid(current_task(), getpid(), &task) == KERN_SUCCESS &&
-			task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
-		return t_info.resident_size * 1024;
+	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
+		return t_info.resident_size;  /* bytes */
 #else
 	/* get RSS on Linux */
 	static char MT_mmap_procfile[128] = { 0 };
