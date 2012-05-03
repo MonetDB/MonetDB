@@ -981,7 +981,7 @@ MT_init_posix(void)
 }
 
 size_t
-MT_getrss()
+MT_getrss(void)
 {
 	PROCESS_MEMORY_COUNTERS ctr;
 

@@ -352,7 +352,7 @@ BATSIGinit(void)
 #define GDK_MEM_NULLALLOWED
 
 #if SIZEOF_VOID_P==8
-#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104)	/* :-) a 64-bit OS: 4TB */
+#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104) /* :-) a 64-bit OS: 4TB */
 #else
 #define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
 #endif
@@ -369,21 +369,27 @@ int GDK_mem_allocs = 0;
 int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
-#define CHKMEM(meminc, vminc) do {					\
-	int memchk, vmchk; \
-	malloc_lock(); \
-	memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
-	vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
-	malloc_unlock(); \
-	if (memchk || vmchk) GDKmemchk(memchk, vmchk);			\
-} while (0)
+#define CHKMEM(meminc, vminc)						\
+	do {								\
+		int memchk, vmchk;					\
+		malloc_lock();						\
+		memchk = meminc > 0 &&					\
+			(++GDK_mem_allocs >= 1000 ||			\
+			 meminc > LL_CONSTANT(50000));			\
+		vmchk = vminc > 0 &&					\
+			(++GDK_vm_allocs >= 10 ||			\
+			 vminc > LL_CONSTANT(5000000));			\
+		malloc_unlock();					\
+		if (memchk || vmchk)					\
+			GDKmemchk(memchk, vmchk);			\
+	} while (0)
 
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
 
 /* histogram update macro */
-#define GDKmallidx(idx,size)				\
-	{						\
+#define GDKmallidx(idx, size)				\
+	do {						\
 		int _mask;				\
 		if (size < 128) {			\
 			_mask = (1<<6);			\
@@ -396,7 +402,7 @@ int GDK_vm_trim = 1;
 			if (_mask&size) break;		\
 			_mask >>=1;			\
 		}					\
-	}
+	} while (0)
 
 volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
