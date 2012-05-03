@@ -763,7 +763,7 @@ MT_getrss(void)
 #elif defined(HAVE_TASK_INFO)
 	/* Darwin/MACH call for process' RSS */
 	task_t task = mach_task_self();
-	struct task_basic_info t_info;
+	struct task_basic_info_64 t_info;
 	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_64_COUNT;
 
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
