@@ -588,7 +588,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		w = b->H->width; /* remember old width */
 		b->H->width = 1;
 		b->H->shift = 0;
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID, 1) < 0)
+		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -651,7 +651,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->H->width = SIZEOF_OID;
 		b->H->shift = 3;
 		assert(b->H->width == (1 << b->H->shift));
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID, 1) < 0)
+		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
