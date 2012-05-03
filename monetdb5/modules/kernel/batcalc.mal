@@ -11781,117 +11781,117 @@ pattern between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bat[:oid,:bit]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bit],lo:bat[:oid,:bit],hi:bit) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bit],lo:bit,hi:bat[:oid,:bit]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bit],lo:bit,hi:bit) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bat[:oid,:bte]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bte],lo:bat[:oid,:bte],hi:bte) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bte],lo:bte,hi:bat[:oid,:bte]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:bte],lo:bte,hi:bte) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:bat[:oid,:sht]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:sht],lo:bat[:oid,:sht],hi:sht) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:sht],lo:sht,hi:bat[:oid,:sht]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:sht],lo:sht,hi:sht) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:bat[:oid,:int]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:int],lo:bat[:oid,:int],hi:int) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:int],lo:int,hi:bat[:oid,:int]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:int],lo:int,hi:int) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:bat[:oid,:wrd]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:wrd],lo:bat[:oid,:wrd],hi:wrd) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:wrd],lo:wrd,hi:bat[:oid,:wrd]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:wrd],lo:wrd,hi:wrd) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:bat[:oid,:lng]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:lng],lo:bat[:oid,:lng],hi:lng) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:lng],lo:lng,hi:bat[:oid,:lng]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:lng],lo:lng,hi:lng) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:bat[:oid,:flt]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:flt],lo:bat[:oid,:flt],hi:flt) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:flt],lo:flt,hi:bat[:oid,:flt]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:flt],lo:flt,hi:flt) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:bat[:oid,:dbl]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:dbl],lo:bat[:oid,:dbl],hi:dbl) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:dbl],lo:dbl,hi:bat[:oid,:dbl]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:dbl],lo:dbl,hi:dbl) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 pattern between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:bat[:oid,:oid]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:oid],lo:bat[:oid,:oid],hi:oid) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:oid],lo:oid,hi:bat[:oid,:oid]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:oid],lo:oid,hi:oid) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 

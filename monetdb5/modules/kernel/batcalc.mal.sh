@@ -452,13 +452,13 @@ pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:bat[:oid,:$tp]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:$tp) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:$tp,hi:bat[:oid,:$tp]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:$tp,hi:$tp) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 EOF
