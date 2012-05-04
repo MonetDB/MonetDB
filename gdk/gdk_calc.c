@@ -12874,8 +12874,8 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 				continue;				\
 			n++;						\
 			/* calculate z1 = (x - a) / n, rounded down	\
-			 * (towards \ negative infinity), and		\
-			 * calculate z2 = remainder of \ the division	\
+			 * (towards negative infinity), and		\
+			 * calculate z2 = remainder of the division	\
 			 * (i.e. 0 <= z2 < n); do this without		\
 			 * causing overflow */				\
 			an = (TYPE) (a / (SBUN) n);			\
@@ -12887,18 +12887,21 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			/* z2 will be remainder of above division */	\
 			if (xn >= an) {					\
 				z2 = (BUN) (xn - an);			\
-				/* loop invariant: (x - a) - z1 * n == z2 */ \
+				/* loop invariant:			\
+				 * (x - a) - z1 * n == z2 */		\
 				while (z2 >= n) {			\
 					z2 -= n;			\
 					z1++;				\
 				}					\
 			} else {					\
 				z2 = (BUN) (an - xn);			\
-				/* loop invariant (until we break): (x - a) - z1 * n == -z2 */ \
+				/* loop invariant (until we break):	\
+				 * (x - a) - z1 * n == -z2 */		\
 				for (;;) {				\
 					z1--;				\
 					if (z2 < n) {			\
-						z2 = n - z2; /* proper remainder */ \
+						/* proper remainder */	\
+						z2 = n - z2;		\
 						break;			\
 					}				\
 					z2 -= n;			\
