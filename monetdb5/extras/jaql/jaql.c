@@ -1139,6 +1139,7 @@ set_func_input_from_pipe(tree *func)
 void
 printtree(stream *out, tree *t, int level, char op)
 {
+	tree *i;
 	(void) level;  /* indenting not used (yet) */
 #define step 4
 	while (t != NULL) {
@@ -1165,26 +1166,31 @@ printtree(stream *out, tree *t, int level, char op)
 				}
 				break;
 			case j_json_obj:
-				if (op) {
-					mnstr_printf(out, "j_json_obj( ");
-					printtree(out, t->tval1, level + step, op);
-					mnstr_printf(out, ") ");
-				} else {
-					mnstr_printf(out, "{ ");
-					printtree(out, t->tval1, level + step, op);
-					mnstr_printf(out, "} ");
-				}
-				break;
 			case j_json_arr:
-				if (op) {
-					mnstr_printf(out, "j_json_arr( ");
-					printtree(out, t->tval1, level + step, op);
-					mnstr_printf(out, ") ");
+				if (t->type == j_json_obj) {
+					mnstr_printf(out, op ? "j_json_obj( " : "{ ");
 				} else {
-					mnstr_printf(out, "[ ");
-					printtree(out, t->tval1, level + step, op);
-					mnstr_printf(out, "] ");
+					mnstr_printf(out, op ? "j_json_arr( " : "[ ");
 				}
+				if (t->tval1 != NULL) {
+					tree *n = t->tval1->next;
+					t->tval1->next = NULL;
+					printtree(out, t->tval1, level + step, op);
+					t->tval1->next = n;
+					for (i = t->tval1->next; i != NULL; i = i->next) {
+						mnstr_printf(out, ", ");
+						n = i->next;
+						i->next = NULL;
+						printtree(out, i, level + step, op);
+						i->next = n;
+					}
+				}
+				if (t->type == j_json_obj) {
+					mnstr_printf(out, op ? ") " : "} ");
+				} else {
+					mnstr_printf(out, op ? ") " : "] ");
+				}
+				t = NULL; /* we already iterated over all children */
 				break;
 			case j_pair:
 				if (op) {
@@ -1272,7 +1278,6 @@ printtree(stream *out, tree *t, int level, char op)
 				break;
 			case j_group:
 				if (op) {
-					tree *i;
 					mnstr_printf(out, "j_group( ");
 					if (t->tval1 != NULL) {
 						printtree(out, t->tval1, level + step, op);
@@ -1284,7 +1289,6 @@ printtree(stream *out, tree *t, int level, char op)
 					mnstr_printf(out, "), ");
 					printtree(out, t->tval2, level + step, op);
 				} else {
-					tree *i;
 					if (t->tval1 == NULL || t->tval1->next == NULL)
 						mnstr_printf(out, "-> ");
 					mnstr_printf(out, "group by: ( ");
@@ -1309,7 +1313,6 @@ printtree(stream *out, tree *t, int level, char op)
 				break;
 			case j_join:
 				if (op) {
-					tree *i;
 					mnstr_printf(out, "j_join( ");
 					printtree(out, t->tval1, level + step, op);
 					for (i = t->tval1->next; i != NULL; i = i->next) {
@@ -1321,7 +1324,6 @@ printtree(stream *out, tree *t, int level, char op)
 					mnstr_printf(out, "), ");
 					printtree(out, t->tval3, level + step, op);
 				} else {
-					tree *i;
 					mnstr_printf(out, "as ");
 					printtree(out, t->tval1, level + step, op);
 					for (i = t->tval1->next; i != NULL; i = i->next) {
@@ -1573,8 +1575,7 @@ printtree(stream *out, tree *t, int level, char op)
 			case j_bool:
 				mnstr_printf(out, "%s ", t->nval == 0 ? "false" : "true");
 				break;
-			case j_func: {
-				tree *i;
+			case j_func:
 				if (op) {
 					mnstr_printf(out, "j_func( %s, ", t->sval);
 				} else {
@@ -1590,7 +1591,7 @@ printtree(stream *out, tree *t, int level, char op)
 					}
 				}
 				mnstr_printf(out, ") ");
-			}	break;
+				break;
 			case j_func_arg:
 				if (op) {
 					mnstr_printf(out, "j_func_arg( ");
