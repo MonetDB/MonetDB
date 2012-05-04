@@ -101,54 +101,65 @@ char *MT_heapbase = NULL;
  *
  * a.k.a. "helping stupid VM implementations that ignore VM advice"
  *
- * The main goal is to be able to tell the OS to please stop buffering all memory
- * mapped pages when under pressure. A major problem is materialization of large
- * results in newly created memory mapped files. Operating systems tend to cache
- * all dirty pages, such that when memory is out, all pages are dirty and cannot
- * be unloaded quickly. The VM panic occurs and comatose OS states may be observed.
- * This is in spite of our use of madvise(MADV_SEQUENTIAL). That is; we would want
- * that the OS drops pages after we've passed them. That does not happen; pages are
+ * The main goal is to be able to tell the OS to please stop buffering
+ * all memory mapped pages when under pressure. A major problem is
+ * materialization of large results in newly created memory mapped
+ * files. Operating systems tend to cache all dirty pages, such that
+ * when memory is out, all pages are dirty and cannot be unloaded
+ * quickly. The VM panic occurs and comatose OS states may be
+ * observed.  This is in spite of our use of
+ * madvise(MADV_SEQUENTIAL). That is; we would want that the OS drops
+ * pages after we've passed them. That does not happen; pages are
  * retained and pollute the buffer cache.
  *
- * Regrettably, at this level, we don't know anything about how Monet is using the
- * mmapped regions. Monet code is totally oblivious of any I/O; that's why it is
- * so easy to create CPU efficient code in Monet.
+ * Regrettably, at this level, we don't know anything about how Monet
+ * is using the mmapped regions. Monet code is totally oblivious of
+ * any I/O; that's why it is so easy to create CPU efficient code in
+ * Monet.
  *
- * The current solution focuses on large writable maps. These often represent
- * newly created BATs, that are the result of some (running) operator. We
- * assume two things here:
+ * The current solution focuses on large writable maps. These often
+ * represent newly created BATs, that are the result of some (running)
+ * operator. We assume two things here:
  * - the BAT is created in sequential fashion (always almost true)
  * - afterwards, this BAT is used in sequential fashion (often true)
  *
- * A VMtrim thread keeps an eye on the RSS (memory pressure) and large writable
- * memory maps. If RSS approaches mem_maxsize(), it starts to *worry*, and starts
- * to write dirty data from these writable maps to disk in 128MB tiles. So, if
- * memory pressure rises further in the near future, the OS has some option to release
- * memory pages cheaply (i.e. without needing I/O). This is also done explicitly by the
- * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS to release pages.
- * The reason is that Linux is not smart enough to do even this. Anyway..
+ * A VMtrim thread keeps an eye on the RSS (memory pressure) and large
+ * writable memory maps. If RSS approaches mem_maxsize(), it starts to
+ * *worry*, and starts to write dirty data from these writable maps to
+ * disk in 128MB tiles. So, if memory pressure rises further in the
+ * near future, the OS has some option to release memory pages cheaply
+ * (i.e. without needing I/O). This is also done explicitly by the
+ * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS
+ * to release pages.  The reason is that Linux is not smart enough to
+ * do even this. Anyway..
  *
- * The way to free pages explicitly in Linux is to call posix_fadvise(..,MADV_DONTNEED).
- * Particularly, posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and documented
- * doesn't work on Linux. But we do both posix_madvise and posix_fadvise, so on other unix
- * systems that don't support posix_fadvise, posix_madvise still might work.
- * On Windows, to our knowledge, there is no way to tell it stop buffering
- * a memory mapped region. msync (FlushViewOfFile) does work, though. So let's
- * hope the VM paging algorithm behaves better than Linux which just runs off
- * the cliff and if MonetDB does not prevent RSS from being too high, enters coma.
+ * The way to free pages explicitly in Linux is to call
+ * posix_fadvise(..,MADV_DONTNEED).  Particularly,
+ * posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and
+ * documented doesn't work on Linux. But we do both posix_madvise and
+ * posix_fadvise, so on other unix systems that don't support
+ * posix_fadvise, posix_madvise still might work.  On Windows, to our
+ * knowledge, there is no way to tell it stop buffering a memory
+ * mapped region. msync (FlushViewOfFile) does work, though. So let's
+ * hope the VM paging algorithm behaves better than Linux which just
+ * runs off the cliff and if MonetDB does not prevent RSS from being
+ * too high, enters coma.
  *
- * We will only be able to sensibly test this on Windows64. On Windows32, mmap sizes
- * do not significantly exceed RAM sizes so MonetDB swapping actually will not happen
- * (of course, you've got this nasty problem of VM fragemntation and failing mmaps instead).
+ * We will only be able to sensibly test this on Windows64. On
+ * Windows32, mmap sizes do not significantly exceed RAM sizes so
+ * MonetDB swapping actually will not happen (of course, you've got
+ * this nasty problem of VM fragemntation and failing mmaps instead).
  *
- * In principle, page tiles are saved sequentially, and behind it, but never overtaking
- * it, is an "unload-cursor" that frees the pages if that is needed to keep RSS down.
- * There is a tweak in the algorithm, that re-sets the unload-cursor if it seems
- * that all tiles to the end have been saved (whether a tile is actually saved is
- * determined by timing the sync action). This means that the producing operator
- * is ready creating the BAT, and we assume it is going to be used sequentially afterwards.
- * In that case, we should start unloading right after the 'read-cursor', that is,
- * from the start.
+ * In principle, page tiles are saved sequentially, and behind it, but
+ * never overtaking it, is an "unload-cursor" that frees the pages if
+ * that is needed to keep RSS down.  There is a tweak in the
+ * algorithm, that re-sets the unload-cursor if it seems that all
+ * tiles to the end have been saved (whether a tile is actually saved
+ * is determined by timing the sync action). This means that the
+ * producing operator is ready creating the BAT, and we assume it is
+ * going to be used sequentially afterwards.  In that case, we should
+ * start unloading right after the 'read-cursor', that is, from the
+ * start.
  *
  * EXAMPLE
  * D = dirty tile
