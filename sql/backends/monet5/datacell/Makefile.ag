@@ -32,7 +32,7 @@ INCLUDES = .. \
 	../../../../gdk
 
 lib__datacell = {
-	MODULE
+	NOINST
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = basket.c \
@@ -43,9 +43,6 @@ lib__datacell = {
 		  opt_datacell.c \
 		  datacell.c \
 		  emitter.c 
-
-	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
-		../../../../gdk/libbat 
 }
 
 bin_actuator = {

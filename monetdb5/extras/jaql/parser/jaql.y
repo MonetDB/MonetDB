@@ -256,10 +256,10 @@ predicates: opt_not predicate  {$$ = make_pred(NULL, $1, $2);}
 
 predicate: opt_not variable
 		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
-		 | opt_not variable comparison value
-		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 | opt_not val_var_arith comparison value
 		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
+		 | opt_not json_value IN json_value
+		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_in), $4));}
 		 ;
 
 variable: ident                     {$$ = make_varname($1);}

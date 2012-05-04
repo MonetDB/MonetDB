@@ -1394,6 +1394,9 @@ printtree(tree *t, int level, char op)
 					case j_lequal:
 						printf("<= ");
 						break;
+					case j_in:
+						printf("IN ");
+						break;
 					case j_plus:
 						printf("+ ");
 						break;

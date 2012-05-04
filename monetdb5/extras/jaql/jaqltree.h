@@ -92,6 +92,7 @@ enum comptype {
 	j_gequal,
 	j_less,
 	j_lequal,
+	j_in,
 	j_not,
 	j_or,
 	j_and,
