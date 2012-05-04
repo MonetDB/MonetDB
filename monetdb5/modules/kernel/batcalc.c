@@ -1327,32 +1327,6 @@ CMDcalcavg(dbl *avg, bat *bid)
 	return CMDcalcavg2(avg, NULL, bid);
 }
 
-batcalc_export str CMDconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDconvert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0) == GDK_FAIL)
-		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
-batcalc_export str CMDconvertsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-str
-CMDconvertsignal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-
-	if (VARconvert(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 1) == GDK_FAIL)
-		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
 static str
 CMDconvertbat(bat *ret, bat *bid, int tp, int abort_on_error)
 {
@@ -1362,36 +1336,55 @@ CMDconvertbat(bat *ret, bat *bid, int tp, int abort_on_error)
 		throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
 	bn = BATconvert(b, tp, abort_on_error);
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
-		return mythrow(MAL, "batcalc.convert", OPERATION_FAILED);
+	if (bn == NULL) {
+		char buf[20];
+		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
+		return mythrow(MAL, buf, OPERATION_FAILED);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
-#define CONVERT_TYPE(TYPE)										\
-batcalc_export str CMDconvert_##TYPE(bat *ret, bat *bid);		\
-																\
-str																\
-CMDconvert_##TYPE(bat *ret, bat *bid)							\
-{																\
-	return CMDconvertbat(ret, bid, TYPE_##TYPE, 0);				\
-}																\
-																\
-batcalc_export str CMDconvertsignal_##TYPE(bat *ret, bat *bid);	\
-																\
-str																\
-CMDconvertsignal_##TYPE(bat *ret, bat *bid)						\
-{																\
-	return CMDconvertbat(ret, bid, TYPE_##TYPE, 1);				\
+#define BATCONVERT_TYPE(TYPE)						\
+str													\
+CMDconvert_##TYPE(bat *ret, bat *bid)				\
+{													\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 0);	\
+}													\
+str													\
+CMDconvertsignal_##TYPE(bat *ret, bat *bid)			\
+{													\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 1);	\
 }
 
-CONVERT_TYPE(bit)
-CONVERT_TYPE(bte)
-CONVERT_TYPE(sht)
-CONVERT_TYPE(int)
-CONVERT_TYPE(wrd)
-CONVERT_TYPE(lng)
-CONVERT_TYPE(flt)
-CONVERT_TYPE(dbl)
-CONVERT_TYPE(oid)
-CONVERT_TYPE(str)
+/* exports outside of define for clients exports test */
+batcalc_export str CMDconvert_bit(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_bit(bat *ret, bat *bid);
+BATCONVERT_TYPE(bit)
+batcalc_export str CMDconvert_bte(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_bte(bat *ret, bat *bid);
+BATCONVERT_TYPE(bte)
+batcalc_export str CMDconvert_sht(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_sht(bat *ret, bat *bid);
+BATCONVERT_TYPE(sht)
+batcalc_export str CMDconvert_int(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_int(bat *ret, bat *bid);
+BATCONVERT_TYPE(int)
+batcalc_export str CMDconvert_wrd(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_wrd(bat *ret, bat *bid);
+BATCONVERT_TYPE(wrd)
+batcalc_export str CMDconvert_lng(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_lng(bat *ret, bat *bid);
+BATCONVERT_TYPE(lng)
+batcalc_export str CMDconvert_flt(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_flt(bat *ret, bat *bid);
+BATCONVERT_TYPE(flt)
+batcalc_export str CMDconvert_dbl(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_dbl(bat *ret, bat *bid);
+BATCONVERT_TYPE(dbl)
+batcalc_export str CMDconvert_oid(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_oid(bat *ret, bat *bid);
+BATCONVERT_TYPE(oid)
+batcalc_export str CMDconvert_str(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_str(bat *ret, bat *bid);
+BATCONVERT_TYPE(str)
