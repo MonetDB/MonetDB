@@ -274,8 +274,9 @@ JAQLengine(Client c)
 	if (j->explain == 1) {
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
 	} else if (j->explain == 2 || j->explain == 3) {
-		printtree(j->p, 0, j->explain == 3);
-		printf("\n");
+		mnstr_printf(c->fdout, "=");
+		printtree(c->fdout, j->p, 0, j->explain == 3);
+		mnstr_printf(c->fdout, "\n");
 		freetree(j->p);
 		return MAL_SUCCEED;  /* don't have a plan generated */
 	} else if (j->explain == 4) {
