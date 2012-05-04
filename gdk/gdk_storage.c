@@ -78,7 +78,7 @@ GDKcreatedir(const char *dir)
 
 	strcpy(path, dir);
 	r = strrchr(path, DIR_SEP);
-	IODEBUG THRprintf(GDKout, "#GDKcreatedir(%s)\n", path);
+	IODEBUG THRprintf(GDKstdout, "#GDKcreatedir(%s)\n", path);
 
 	if (r) {
 		DIR *dirp;
@@ -90,7 +90,7 @@ GDKcreatedir(const char *dir)
 		} else {
 			GDKcreatedir(path);
 			ret = mkdir(path, 0755);
-			IODEBUG THRprintf(GDKout, "#mkdir %s = %d\n", path, ret);
+			IODEBUG THRprintf(GDKstdout, "#mkdir %s = %d\n", path, ret);
 			if (ret < 0 && (dirp = opendir(path)) != NULL) {
 				/* resolve race */
 				ret = 0;
@@ -110,7 +110,7 @@ GDKremovedir(const char *dirname)
 	struct dirent *dent;
 	int ret;
 
-	IODEBUG THRprintf(GDKout, "#GDKremovedir(%s)\n", dirname);
+	IODEBUG THRprintf(GDKstdout, "#GDKremovedir(%s)\n", dirname);
 
 	if (dirp == NULL)
 		return 0;
@@ -120,14 +120,14 @@ GDKremovedir(const char *dirname)
 		}
 		GDKfilepath(path, dirname, dent->d_name, NULL);
 		ret = unlink(path);
-		IODEBUG THRprintf(GDKout, "#unlink %s = %d\n", path, ret);
+		IODEBUG THRprintf(GDKstdout, "#unlink %s = %d\n", path, ret);
 	}
 	closedir(dirp);
 	ret = rmdir(dirname);
 	if (ret < 0) {
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirname);
 	}
-	IODEBUG THRprintf(GDKout, "#rmdir %s = %d\n", dirname, ret);
+	IODEBUG THRprintf(GDKstdout, "#rmdir %s = %d\n", dirname, ret);
 
 	return ret;
 }
@@ -202,7 +202,7 @@ GDKunlink(const char *dir, const char *nme, const char *ext)
 		/* if file already doesn't exist, we don't care */
 		if (unlink(path) == -1 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			IODEBUG THRprintf(GDKout, "#unlink %s = -1\n", path);
+			IODEBUG THRprintf(GDKstdout, "#unlink %s = -1\n", path);
 			return -1;
 		}
 		return 0;
@@ -229,7 +229,7 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 	GDKfilepath(path2, dir2, nme2, ext2);
 	ret = rename(path1, path2);
 
-	IODEBUG THRprintf(GDKout, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
+	IODEBUG THRprintf(GDKstdout, "#move %s %s = %d (%dms)\n", path1, path2, ret, GDKms() - t0);
 
 	return ret;
 }
@@ -249,7 +249,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 {
 	int fd = -1, err = 0;
 
-	IODEBUG THRprintf(GDKout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 
 	if (mode == STORE_MMAP) {
 		/*
@@ -269,7 +269,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 			err = MT_msync(buf, 0, size, MMAP_SYNC);
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
-		IODEBUG THRprintf(GDKout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
+		IODEBUG THRprintf(GDKstdout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
 			/* write() on 64-bits Redhat for IA64 returns
@@ -286,7 +286,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				IODEBUG THRprintf(GDKout, "#write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
+				IODEBUG THRprintf(GDKstdout, "#write(fd %d, buf " PTRFMT ", size %u) = " SSZFMT "\n", fd, PTRFMTCAST buf, (unsigned) MIN(1 << 30, size), ret);
 			}
 		} else {
 			err = -1;
@@ -316,7 +316,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 	char *ret = NULL;
 
 	IODEBUG {
-		THRprintf(GDKout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(nme, "rb", ext);
@@ -331,7 +331,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 				 * only accepts int */
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
-					IODEBUG THRprintf(GDKout, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+					IODEBUG THRprintf(GDKstdout, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
 
 					if (n <= 0)
 						break;
@@ -383,7 +383,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 			if (ret == (char *) -1L) {
 				ret = NULL;
 			}
-			IODEBUG THRprintf(GDKout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
 		}
 	}
 	return ret;
@@ -415,7 +415,7 @@ DESCload(int i)
 	int ht, tt;
 
 	IODEBUG {
-		THRprintf(GDKout, "#DESCload %s\n", nme);
+		THRprintf(GDKstdout, "#DESCload %s\n", nme);
 	}
 	bs = BBP_desc(i);
 
@@ -731,7 +731,7 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 	assert(advice);
 	/* ignore claims of pages beyond 1/4 the physical memory */
 	if ( sz > page * MT_npages() / 4 ) {
-		 IODEBUG THRprintf(GDKerr,"#Ignore access_heap " SZFMT ">" SZFMT"\n",h->size,page * MT_npages() / 4 );
+		 IODEBUG THRprintf(GDKstdout,"#Ignore access_heap " SZFMT ">" SZFMT"\n",h->size,page * MT_npages() / 4 );
 		return 0;
 	}
 	if (h->storage != STORE_MEM) {
@@ -743,7 +743,7 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 			
 			if (alignedsz > 0) {
 				if ((ret = posix_madvise(base + alignskip, alignedsz, adv)) != 0)
-					THRprintf(GDKerr,
+					THRprintf(GDKstdout,
 						  "#MT_mmap_inform: posix_madvise(file=%s, base=" PTRFMT ", len=" SZFMT "MB, advice=%s) = %d, errno = %d (%s)\n",
 						  h->filename,
 						  PTRFMTCAST(base + alignskip),
@@ -783,7 +783,7 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 			for (; lo <= hi1; lo += page)
 				v0 += *lo;
 	}
-	IODEBUG THRprintf(GDKout,
+	IODEBUG THRprintf(GDKstdout,
 			  "#BATpreload(%s->%s,preload=%d,sz=%dMB,touch=%dMB,%s) = %dms \n",
 			  id, hp, preload, (int) (sz >> 20),
 			  (int) (touch >> 20), advice, GDKms() - t);
@@ -911,7 +911,7 @@ BATdelete(BAT *b)
 		if (b->htype != TYPE_void &&
 		    HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
-			IODEBUG THRprintf(GDKout, "#BATdelete(%s): bun heap\n", BATgetId(b));
+			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
 		HEAPfree(&b->H->heap);
 	}
@@ -919,7 +919,7 @@ BATdelete(BAT *b)
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->T->heap, o, "tail") &&
 		    b->batCopiedtodisk)
-			IODEBUG THRprintf(GDKout, "#BATdelete(%s): bun heap\n", BATgetId(b));
+			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
 		HEAPfree(&b->T->heap);
 	}
@@ -927,7 +927,7 @@ BATdelete(BAT *b)
 		assert(b->H->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->H->vheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
-				IODEBUG THRprintf(GDKout, "#BATdelete(%s): head heap\n", BATgetId(b));
+				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->H->vheap);
 		}
@@ -936,7 +936,7 @@ BATdelete(BAT *b)
 		assert(b->T->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->T->vheap->storage != STORE_MEM)) {
 			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
-				IODEBUG THRprintf(GDKout, "#BATdelete(%s): tail heap\n", BATgetId(b));
+				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->T->vheap);
 		}

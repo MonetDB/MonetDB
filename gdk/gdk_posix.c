@@ -760,15 +760,14 @@ MT_getrss(void)
 		}
 		close(fd);
 	}
-#elif defined(HAVE_TASK_INFO) && defined(HAVE_TASK_FOR_PID)
+#elif defined(HAVE_TASK_INFO)
 	/* Darwin/MACH call for process' RSS */
-	task_t task = MACH_PORT_NULL;
-	struct task_basic_info t_info;
-	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+	task_t task = mach_task_self();
+	struct task_basic_info_64 t_info;
+	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_64_COUNT;
 
-	if (task_for_pid(current_task(), getpid(), &task) == KERN_SUCCESS &&
-			task_info(task, TASK_BASIC_INFO, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
-		return t_info.resident_size * 1024;
+	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
+		return t_info.resident_size;  /* bytes */
 #else
 	/* get RSS on Linux */
 	static char MT_mmap_procfile[128] = { 0 };
@@ -904,7 +903,7 @@ MT_mallinfo(void)
 {
 	struct Mallinfo _ret;
 
-#if defined(HAVE_USEFUL_MALLINFO) && 0
+#ifdef HAVE_USEFUL_MALLINFO
 	struct mallinfo m;
 
 	m = mallinfo();
@@ -981,7 +980,7 @@ MT_init_posix(void)
 }
 
 size_t
-MT_getrss()
+MT_getrss(void)
 {
 	PROCESS_MEMORY_COUNTERS ctr;
 
@@ -1408,7 +1407,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKout, "retry rmdir %s\n", pathname);
+		IODEBUG THRprintf(GDKstdout, "retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1432,7 +1431,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKout, "retry unlink %s\n", pathname);
+		IODEBUG THRprintf(GDKstdout, "retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}

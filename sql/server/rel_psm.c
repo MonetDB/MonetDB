@@ -413,6 +413,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		node *n, *m;
 		char *tname = t->base.name;
 
+		if (cs_size(&t->columns) != cs_size(&restype->comp_type->columns))
+			return sql_error(sql, 02, "RETURN: number of columns do not match");
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;

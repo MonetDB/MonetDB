@@ -1,18 +1,18 @@
 start transaction;
 
-create schema datacell;
+create schema dc;
 create table runningcatalog(
     tag timestamp
 );
 
-create table datacell.lta(
+create table dc.lta(
     tag timestamp
 );
 
-create procedure datacell.archive()
+create procedure dc.archive()
 begin
-    insert into runningcatalog select  * from datacell.lta;
+    insert into runningcatalog select  * from dc.lta;
 end;
-call datacell.archive();
+call dc.archive();
 
 rollback;

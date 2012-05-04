@@ -1881,6 +1881,9 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	rs = stmt_aggr(sql->sa, rgrp->grp, rgrp, a, 1); 
 
 	/* now find the matching groups */
+	/* There is a bug (#3040) in the scheme, ie the join removes the nil's
+         * as during joining nil != nil. But for except's nil aren't distinct.
+         */
 	s = stmt_releqjoin_init(sql->sa);
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m; n = n->next, m = m->next) {
 		stmt *l = column(sql->sa, n->data);

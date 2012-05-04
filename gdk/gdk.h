@@ -2194,7 +2194,7 @@ gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
-gdk_export int	GDK_vm_trim;		/* run vmtrim thread */
+gdk_export int	GDK_vm_trim;		/* allow trimming */
 
 gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */

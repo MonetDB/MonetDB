@@ -255,10 +255,10 @@ BATnewstorage(int ht, int tt, BUN cap)
 		bn->U->capacity = cap;
 
 		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width, 0) < 0) {
+		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
 			return NULL;
 		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width, 0) < 0) {
+		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
 			if (ht)
 				HEAPfree(&bn->H->heap);
 			return NULL;
@@ -2359,7 +2359,7 @@ int
 BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 {
 	BATcheck(b, "BATmmap");
-	IODEBUG THRprintf(GDKout, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
+	IODEBUG THRprintf(GDKstdout, "#BATmmap(%s,%d,%d,%d,%d%s)\n", BATgetId(b), hb, tb, hhp, thp, force ? ",force" : "");
 
 	/* Reverse back if required, as this determines which heap is
 	 * saved in the "hheap" file and which in the "theap" file.
@@ -2579,11 +2579,11 @@ backup_new(Heap *hp, int lockbat)
 		/* no backup yet, so move the existing X.new there out
 		 * of the way */
 		ret = rename(batpath, bakpath);
-		IODEBUG THRprintf(GDKout, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
+		IODEBUG THRprintf(GDKstdout, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
 		ret = unlink(batpath);
-		IODEBUG THRprintf(GDKout, "#unlink(%s) = %d\n", batpath, ret);
+		IODEBUG THRprintf(GDKstdout, "#unlink(%s) = %d\n", batpath, ret);
 	}
 	for (xx = lockbat; xx >= 0; xx--)
 		gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
@@ -3051,7 +3051,7 @@ BATassertHeadProps(BAT *b)
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
 			if ((hs = HASHnew(hp, b->htype, BUNlast(b),
-					  HASHmask(b->batCount), 0)) == NULL) {
+					  HASHmask(b->batCount))) == NULL) {
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
@@ -3214,7 +3214,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->htype, BUNlast(b),
-				  HASHmask(b->batCount), 0)) == NULL) {
+				  HASHmask(b->batCount))) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);
