@@ -87,10 +87,14 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_func *f;
 	sql_trans *tr;
 
-	if (msg)
-		return msg;
-
+	if (msg) {
+		GDKfree(msg);
+		return MAL_SUCCEED;
+	}
 	assert(m != NULL);
+
+	fprintf(stdout, "# MonetDB/DataCell module loaded\n");
+	fflush(stdout); /* make merovingian see this *now* */
 
 	s = mvc_bind_schema(m, schema_default);
 	if (s == NULL)
