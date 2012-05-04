@@ -12404,15 +12404,20 @@ convert_str_any(BAT *b, int tp, void *dst, int abort_on_error)
 
 	BATloop(b, i, j) {
 		s = BUNtail(bi, i);
-		d = dst;
-		if ((*atomfromstr)(s, &len, &d) <= 0) {
-			if (abort_on_error)
-				return BUN_NONE;
+		if (s[0] == str_nil[0] && s[1] == str_nil[1]) {
 			memcpy(dst, nil, len);
-		}
-		assert(len == ATOMsize(tp));
-		if (ATOMcmp(tp, dst, nil) == 0)
 			nils++;
+		} else {
+			d = dst;
+			if ((*atomfromstr)(s, &len, &d) <= 0) {
+				if (abort_on_error)
+					return BUN_NONE;
+				memcpy(dst, nil, len);
+			}
+			assert(len == ATOMsize(tp));
+			if (ATOMcmp(tp, dst, nil) == 0)
+				nils++;
+		}
 		dst = (void *) ((char *) dst + len);
 	}
 	return nils;
