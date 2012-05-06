@@ -468,7 +468,7 @@ sql_update_jul2012(Client c)
 	size_t bufsize = 2048, pos = 0;
 
 	/* new function sys.alpha */
-	pos += snprintf(buf+pos, bufsize-pos, "create function alpha(pdec double, pradius double) returns double external name sql.alpha;\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create function sys.alpha(pdec double, pradius double) returns double external name sql.alpha;\n");
 
 	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'alpha' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_FUNC);
 
