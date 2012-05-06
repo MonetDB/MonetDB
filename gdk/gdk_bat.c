@@ -2597,7 +2597,7 @@ static int
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
 	if (hp->storage == STORE_MMAP && hp->size >= MT_MMAP_TILE) {
-		MT_mmap_inform(hp->base, hp->size, 0, 0, (dstmode == BAT_READ) ? -1 : 1);	/* inform vmtrim of the new mode */
+		MT_mmap_inform(hp->base, hp->size, 0, MMAP_NORMAL, (dstmode == BAT_READ) ? -1 : 1);	/* inform vmtrim of the new mode */
 	}
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
 		return hp->newstorage;	/* 0<=>2,1<=>3,a<=>b */
