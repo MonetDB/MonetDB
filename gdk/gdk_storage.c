@@ -688,6 +688,7 @@ BATload_intern(bat i, int lock)
 	return (i < 0) ? BATmirror(b) : b;
 }
 
+#if 0
 /*
  * @- BAT preload
  * To avoid random disk access to large (memory-mapped) BATs it may
@@ -789,10 +790,18 @@ access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int pr
 			  (int) (touch >> 20), advice, GDKms() - t);
 	return v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
 }
+#endif
 
 size_t
 BATaccess(BAT *b, int what, int advice, int preload)
 {
+#if 1
+	(void) b;
+	(void) what;
+	(void) advice;
+	(void) preload;
+	return 0;
+#else
 	size_t v = 0, sz, budget = (size_t) (0.8 * MT_npages()), seqbudget = budget / 8;
 	str id = BATgetId(b);
 	BATiter bi = bat_iterator(b);
@@ -877,6 +886,7 @@ BATaccess(BAT *b, int what, int advice, int preload)
 		}
 	}
 	return v;
+#endif
 }
 
 

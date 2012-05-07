@@ -443,6 +443,7 @@ MT_mmap_del(void *base, size_t len)
 	}
 }
 
+#if 0
 static int
 MT_fadvise(void *base, size_t len, int advice)
 {
@@ -476,6 +477,7 @@ MT_fadvise(void *base, size_t len, int advice)
 #endif
 	return ret;
 }
+#endif
 
 #endif /* NATIVE_WIN32 */
 
@@ -697,11 +699,11 @@ MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 		MT_mmap_tab[i].random += preload * (advice == MMAP_WILLNEED);	/* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload;	/* active thread count */
 		if ( advice == MMAP_DONTNEED){
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_DONTNEED);
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_DONTNEED);
 			MT_mmap_tab[i].usecnt = 0;
 		} else
 		if (MT_mmap_tab[i].usecnt == 0)
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_SEQUENTIAL);
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_NORMAL);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
@@ -898,6 +900,12 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 int
 MT_madvise(void *p, size_t len, int advice)
 {
+#if 1
+	(void) p;
+	(void) len;
+	(void) advice;
+	return 0;
+#else
 	int ret = posix_madvise(p, len & ~(MT_pagesize() - 1), advice);
 
 #ifdef MMAP_DEBUG
@@ -907,6 +915,7 @@ MT_madvise(void *p, size_t len, int advice)
 	if (MT_fadvise(p, len, advice))
 		ret = -1;
 	return ret;
+#endif
 }
 
 struct Mallinfo
