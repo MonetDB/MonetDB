@@ -700,6 +700,7 @@ GDKmemchk(int memchk, int vmchk)
 	memtarget = (memchk && memtarget > GDK_mem_maxsize) ? memtarget - GDK_mem_maxsize : 0;
 	vmtarget = (vmchk && vmtarget > GDK_vm_maxsize) ? vmtarget - GDK_vm_maxsize : 0;
 	if (memtarget > 0 || vmtarget > 0) {
+#ifdef NDEBUG
 		if (memtarget > 0) {
 			int t = GDKms();
 
@@ -712,7 +713,8 @@ GDKmemchk(int memchk, int vmchk)
 				malloc_unlock();
 			}
 		}
-		BBPtrim(memtarget, vmtarget);
+#endif
+		BBPtrim(memtarget + vmtarget);
 		GDK_mem_allocs = GDK_vm_allocs = 0;
 	} else {
 		if (memchk)
@@ -774,7 +776,7 @@ GDKmemchk(int memchk, int vmchk)
  * applied: for all mallocs > 1MB.
  */
 static void
-GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
+GDKmemfail(str s, size_t len)
 {
 	int bak = GDKdebug;
 
@@ -800,7 +802,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 /*	GDKdebug |= 4;  avoid debugging output */
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 
-	BBPtrim(memtarget, vmtarget);
+	BBPtrim(BBPTRIM_ALL);
 
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
@@ -850,25 +852,10 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	if (size > GDK_mem_bigsize) {
-		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
-		size_t newmax = MAX(*maxsize, newsize);
-
-		/* round up to multiple of 64k */
-		newmax = ((newmax + 0xffff) >> 16) << 16;
-		s = (ssize_t *) GDKvmalloc(newsize, &newmax, emergency);
-		if (s == 0)
-			return s;
-		s += 2;
-		s[-2] = (ssize_t) newmax;
-		s[-1] = -((ssize_t) newsize);
-		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-		return (void *) s;
-	}
 	CHKMEM(size, 0);
 	GDKmalloc_prefixsize(s, size);
 	if (s == NULL) {
-		GDKmemfail("GDKmalloc", size, BBPTRIM_ALL, 0);
+		GDKmemfail("GDKmalloc", size);
 		GDKmalloc_prefixsize(s, size);
 		if (s == NULL) {
 			if (emergency == 0) {
@@ -964,6 +951,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 {
 	void *oldblk = blk;
 	ssize_t oldsize = 0;
+	size_t newsize;
 
 	if (blk == NULL) {
 		return GDKmallocmax(size, maxsize, emergency);
@@ -984,58 +972,33 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	/* check against duplicate free */
 	assert((oldsize & 2) == 0);
 
-	if (oldsize < 0) {
-		ssize_t *s = (ssize_t *) blk;
-		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
-		size_t oldmax = (size_t) s[-2];
-		size_t newmax = MAX(*maxsize, newsize);
+	newsize = size + MALLOC_EXTRA_SPACE;
 
-		s = (ssize_t *) GDKvmrealloc((ptr) (s - 2), (size_t) - oldsize, newsize, oldmax, &newmax, emergency);
-		if (s) {
-			s[0] = (ssize_t) newmax;
-			s[1] = -((ssize_t) newsize);
-			*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-			return (ptr) (s + 2);
-		}
-	}
-	else if (size <= GDK_mem_bigsize) {
-		size_t newsize = size + MALLOC_EXTRA_SPACE;
-
-		CHKMEM(newsize, 0);
-		blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE, newsize + GLIBC_BUG);
+	CHKMEM(newsize, 0);
+	blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE, newsize + GLIBC_BUG);
+	if (blk == NULL) {
+		GDKmemfail("GDKrealloc", newsize);
+		blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE, newsize);
 		if (blk == NULL) {
-			GDKmemfail("GDKrealloc", newsize, BBPTRIM_ALL, 0);
-			blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE, newsize);
-			if (blk == NULL) {
-				if (emergency == 0) {
-					GDKerror("GDKreallocmax: failed for " SZFMT " bytes", newsize);
-					return NULL;
-				}
-				GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
-			} else {
-				THRprintf(GDKstdout, "#GDKremallocmax: recovery ok. Continuing..\n");
+			if (emergency == 0) {
+				GDKerror("GDKreallocmax: failed for " SZFMT " bytes", newsize);
+				return NULL;
 			}
-		}
-		if (blk != NULL) {
-			/* place MALLOC_EXTRA_SPACE bytes before it */
-			assert((((size_t) blk) & 4) == 0);
-			blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
-			((ssize_t *) blk)[-1] = (ssize_t) newsize;
-
-			/* adapt statistics */
-			heapinc(newsize);
-			heapdec(oldsize);
-			*maxsize = size;
-			return blk;
+			GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
+		} else {
+			THRprintf(GDKstdout, "#GDKremallocmax: recovery ok. Continuing..\n");
 		}
 	}
-	/* alloc&copy due to failed realloc (may be very big heap that
-	 * needs vm) */
-	oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
-	blk = GDKmallocmax(size, maxsize, emergency);
-	if (blk) {
-		memcpy(blk, oldblk, oldsize);
-		GDKfree_(oldblk);
+	if (blk != NULL) {
+		/* place MALLOC_EXTRA_SPACE bytes before it */
+		assert((((size_t) blk) & 4) == 0);
+		blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
+		((ssize_t *) blk)[-1] = (ssize_t) newsize;
+
+		/* adapt statistics */
+		heapinc(newsize);
+		heapdec(oldsize);
+		*maxsize = size;
 	}
 	return blk;
 }
@@ -1080,7 +1043,7 @@ GDKmmap(char *path, int mode, off_t off, size_t len)
 	void *ret = MT_mmap(path, mode, off, len);
 
 	if (ret == (void *) -1L) {
-		GDKmemfail("GDKmmap", len, 0, BBPTRIM_ALL);
+		GDKmemfail("GDKmmap", len);
 		ret = MT_mmap(path, mode, off, len);
 		if (ret != (void *) -1L) {
 			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
@@ -1122,7 +1085,7 @@ GDKvmalloc(size_t size, size_t *maxsize, int emergency)
 	void *ret = MT_vmalloc(size, maxsize);
 
 	if (ret == NULL) {
-		GDKmemfail("GDKvmalloc", size, BBPTRIM_ALL, BBPTRIM_ALL);
+		GDKmemfail("GDKvmalloc", size);
 		ret = MT_vmalloc(size, maxsize);
 		if (ret == NULL) {
 			if (emergency == 0) {
@@ -1148,7 +1111,7 @@ GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *
 	void *ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
 
 	if (ret == NULL) {
-		GDKmemfail("GDKvmrealloc", newsize, BBPTRIM_ALL, BBPTRIM_ALL);
+		GDKmemfail("GDKvmrealloc", newsize);
 		ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
 		if (ret == NULL) {
 			if (emergency == 0) {
@@ -1228,70 +1191,43 @@ GDKprotect(void)
 	}
 }
 
-#ifdef HAVE_POSIX_MADVISE
-static str highload_name[] = { "idle", "low", "medium", "high", "extreme" };
-
 static MT_Id GDKvmtrim_id;
-static int membits = 0;
+
 static void
 GDKvmtrim(void *limit)
 {
-	size_t bak_mmap_minsize = 0;
 	int highload = 0;
+	ssize_t prevmem = 0, prevrss = 0;
 
-	if (membits == 0) {
-		/* compute rounded down log2 of memsize / nr_threads */
-		size_t s = GDK_mem_maxsize_max / (GDKnr_threads? GDKnr_threads:1);
-		while ((s >>= 1) > 0)
-			membits++;
-		membits = (MAX(0, membits - MT_MMAP_LOG)) / 4;
-	}
+	(void) limit;
+
 	do {
-		stream *fp = NULL;
 		int t;
+		size_t rss;
+		ssize_t rssdiff, memdiff;
+
 		/* sleep using catnaps so we can exit in a timely fashion */
 		for (t = highload ? 500 : 5000; t > 0; t -= 50) {
 			MT_sleep_ms(50);
 			if (GDKstopped)
 				return;
 		}
-		/* check for runtime overruling */
-		if (GDK_vm_trim == 0) {
+		malloc_lock();
+		rss = MT_getrss();
+		rssdiff = (ssize_t) rss - (ssize_t) prevrss;
+		memdiff = (ssize_t) (GDK_mallocedbytes_estimate + GDK_vm_cursize) - (ssize_t) prevmem;
+		fprintf(stderr, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", GDK_mallocedbytes_estimate + GDK_vm_cursize, memdiff, rss, rssdiff);
+		prevmem = GDK_mallocedbytes_estimate + GDK_vm_cursize;
+		prevrss = rss;
+		malloc_unlock();
+		if (memdiff >= 0 && rssdiff < - (ssize_t) (rss / 1024)) {
+			BBPtrim(rss);
+			highload = 1;
+		} else {
 			highload = 0;
-			continue;
-		}
-		MEMDEBUG {
-			fp = GDKstdout;
-			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT
-				  ", GDK_mmap_minsize=" SZFMT ")\n",
-				  highload_name[highload], *(size_t *) limit,
-				  GDK_mmap_minsize);
-		}
-		highload = MT_mmap_trim(*(size_t *) limit, fp);
-		if (highload >= 4) {
-			/* in extreme load, push out VM until the rss limit */
-			BBPtrim(*(size_t *) limit, *(size_t *) limit);
-		}
-		if (highload) {	/* memcrunch distress varies from 1 to 4 */
-			/* rss is above 0.75mem_maxsize!! start using
-			 * mmap-on-tempfile */
-			/* minsize = memsize/threads iff highload = 0
-			 *         =  ..in between.. iff highload = 1-3
-			 *         =           128MB iff highload = 4
-			 */
-			size_t new_mmap_minsize = ((size_t) 1) << (MT_MMAP_LOG + membits * (4 - highload));
-			if (!bak_mmap_minsize)
-				bak_mmap_minsize = GDK_mmap_minsize;
-			if (new_mmap_minsize < bak_mmap_minsize) {
-				GDK_mmap_minsize = new_mmap_minsize;
-			}
-		} else if (bak_mmap_minsize) {
-			GDK_mmap_minsize = bak_mmap_minsize;	/* revert to default setting */
-			bak_mmap_minsize = 0;
 		}
 	} while (!GDKstopped);
 }
-#endif
 
 static int THRinit(void);
 
@@ -1431,13 +1367,11 @@ GDKinit(opt *set, int setlen)
 	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
 
-#ifdef HAVE_POSIX_MADVISE
 	if (!GDKembedded &&
 	    ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
 	     strcasecmp(p, "yes") == 0))
 		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize,
 				 MT_THR_JOINABLE);
-#endif
 
 	return 1;
 }
@@ -1452,10 +1386,8 @@ GDKexit(int status)
 	gdk_set_lock(GDKthreadLock, "GDKexit");
 	if (GDKstopped == 0) {
 		GDKstopped = 1;	/* shouldn't there be a lock here? */
-#ifdef HAVE_POSIX_MADVISE
 		if (!GDKembedded && GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
-#endif
 		GDKnrofthreads = 0;
 		gdk_unset_lock(GDKthreadLock, "GDKexit");
 

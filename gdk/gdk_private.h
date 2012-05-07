@@ -67,7 +67,7 @@ void BBPinit(void);
 int BBPrecover(void);
 BATstore *BBPrecycle(int ht, int tt, size_t cap);
 void BBPreleaselref(bat i);
-void BBPtrim(size_t memdelta, size_t vmdelta);
+void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);

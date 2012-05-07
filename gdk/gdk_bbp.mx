@@ -89,7 +89,6 @@ All Rights Reserved.
 #define _GDK_BBP_H_
 
 #define BBPINIT		2048
-#define BBPMAXSIZE	(1024*1024)
 
 #define BBPLOADED	1	/* set if bat in memory */
 #define BBPSWAPPED	2	/* set if dirty bat is not in memory */
@@ -159,7 +158,7 @@ gdk_export void BBPshare(bat b);
  * in the BBPrec records.
  */
 BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
-bat BBPmaxsize = BBPMAXSIZE;	/* size of non-committed VM BBP array */
+bat BBPmaxsize;			/* size of non-committed VM BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
@@ -412,22 +411,20 @@ static void
 BBPextend(dbl factor, int buildhash)
 {
 	int newsize;
-	size_t maxsize;
 
 	/* make sure the new size is at least BBPsize large */
 	newsize = (int) (BBPlimit * factor);
 	while (newsize < BBPsize)
 		newsize = (int) (newsize * factor);
-	maxsize = MAX(newsize * 2, BBPmaxsize) * sizeof(BBPrec);
 
 	BBP_notrim = BBP_getpid();
-	BBP = (BBPrec *) GDKvmrealloc(BBP, BBPlimit * sizeof(BBPrec), newsize * sizeof(BBPrec), BBPmaxsize * sizeof(BBPrec), &maxsize, 1);
+	BBP = (BBPrec *) GDKrealloc(BBP, newsize * sizeof(BBPrec));
 	if (BBP == NULL)
 		GDKfatal("BBPextend: failed to extend BAT pool\n");
 
 	memset(BBP + BBPlimit, 0, (newsize - BBPlimit) * sizeof(BBPrec));
 	BBPlimit = newsize;
-	BBPmaxsize = (int) (maxsize / sizeof(BBPrec));
+	BBPmaxsize = BBPlimit;
 
 	if (buildhash) {
 		int i;
@@ -1302,21 +1299,11 @@ BBPinit(void)
 
 	/* allocate structures: try to reserve as much space as
 	   possible */
-	for (;;) {
-		size_t size = BBPlimit * sizeof(BBPrec);
-		size_t maxsize = BBPmaxsize * sizeof(BBPrec);
-
-		BBP = GDKvmalloc(size, &maxsize, 1);
-		assert(BBP != NULL);	/* GDKvmalloc panics if it can't allocate */
-		if (maxsize >= BBPmaxsize * sizeof(BBPrec)) {
-			BBPmaxsize = (bat) (maxsize / sizeof(BBPrec));
-			break;
-		}
-		GDKvmfree(BBP, size, maxsize);
-		if ((BBPmaxsize /= 2) < BBPlimit)
-			GDKfatal("BBPinit: could not alloc arena");
-	}
-	memset(BBP, 0, BBPlimit * sizeof(BBPrec));
+	BBP = GDKzalloc(BBPlimit * sizeof(BBPrec));
+	if (BBP == NULL)
+		GDKfatal("BBPinit: failed to allocate BBP");
+	assert(BBP != NULL);
+	BBPmaxsize = BBPlimit;
 
 	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
@@ -2886,11 +2873,11 @@ bbptrim_t bbptrim[BBPMAXTRIM];
 int bbptrimfirst = BBPMAXTRIM, bbptrimlast = 0, bbpunloadtail, bbpunload, bbptrimmax = BBPMAXTRIM, bbpscanstart = 1;
 
 static bat
-BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
+BBPtrim_scan(bat bbppos, bat bbplim)
 {
 	bbptrimlast = 0;
 	bbptrimmax = BBPMAXTRIM;
-	MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: mem=%d vm=%d, start=%d, limit=%d\n", mem, vm, (int) bbppos, (int) bbplim);
+	MEMDEBUG THRprintf(GDKstdout, "#TRIMSCAN: start=%d, limit=%d\n", (int) bbppos, (int) bbplim);
 
 	if (bbppos < BBPsize)
 		do {
@@ -2955,8 +2942,8 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 
 /* insert BATs to unload from bbptrim list into bbpunload list;
  * rebuild bbptrimlist only with the useful leftovers */
-static void
-BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
+static size_t
+BBPtrim_select(size_t target, int dirty)
 {
 	int bbptrimtail = BBPMAXTRIM, next = bbptrimfirst;
 
@@ -2994,30 +2981,25 @@ BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
 		/* recheck if conditions encountered by trimscan in
 		 * the past still hold */
 		if (BBPtrimmable(b) && untouched) {
-			size_t memdelta = BATmemsize(b, FALSE);
-			size_t vmdelta = BATvmsize(b, FALSE);
-			size_t memdirty = BATmemsize(b, TRUE);
-			size_t vmdirty = BATvmsize(b, TRUE);
+			size_t memdelta = BATmemsize(b, FALSE) + BATvmsize(b, FALSE);
+			size_t memdirty = BATmemsize(b, TRUE) + BATvmsize(b, TRUE);
 
 			if (((b->batPersistence == TRANSIENT &&
 			      BBP_lrefs(bbptrim[cur].bid) == 0) || /* needs not be saved when unloaded, OR.. */
-			     (vmdirty == 0 && memdirty <= sizeof(BATstore)) || /* the BAT is actually clean, OR.. */
+			     memdirty <= sizeof(BATstore) || /* the BAT is actually clean, OR.. */
 			     dirty) /* we are allowed to cause I/O (second run).. */
 			    &&	/* AND ... */
-			    ((*memtarget > 0 && (memdelta > 0)) ||
-			     (*vmtarget > 0 && (vmdelta > 0))))
+			    target > 0 && memdelta > 0)
 				/* there is some reward in terms of
 				 * memory requirements */
 			{
 				/* only then we unload! */
 				MEMDEBUG {
 					THRprintf(GDKstdout,
-						  "#TRIMSELECT: unload %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty\n",
+						  "#TRIMSELECT: unload %s [" SZFMT "] bytes [" SZFMT "] dirty\n",
 						  BBPname(b->batCacheid),
 						  memdelta,
-						  vmdelta,
-						  memdirty,
-						  vmdirty);
+						  memdirty);
 				}
 				BATDEBUG {
 					mnstr_printf(GDKout,
@@ -3026,8 +3008,7 @@ BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
 				}
 				BBP_status_on(bbptrim[cur].bid, BBPUNLOADING, "BBPtrim_select");
 				BBP_unload_inc(bbptrim[cur].bid, "BBPtrim_select");
-				*memtarget = *memtarget > memdelta ? *memtarget - memdelta : 0;
-				*vmtarget = *vmtarget > vmdelta ? *vmtarget - vmdelta : 0;
+				target = target > memdelta ? target - memdelta : 0;
 
 				/* add to bbpunload list */
 				if (bbpunload == BBPMAXTRIM) {
@@ -3043,14 +3024,11 @@ BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
 				 * bbptrim list */
 				MEMDEBUG {
 					THRprintf(GDKstdout,
-						  "#TRIMSELECT: keep %s [" SZFMT "," SZFMT "] bytes [" SZFMT "," SZFMT "] dirty target(mem=" SZFMT " vm=" SZFMT ")\n",
+						  "#TRIMSELECT: keep %s [" SZFMT "] bytes [" SZFMT "] dirty target(" SZFMT ")\n",
 						  BBPname(b->batCacheid),
 						  memdelta,
-						  vmdelta,
 						  memdirty,
-						  vmdirty,
-						  MAX(0, *memtarget),
-						  MAX(0, *vmtarget));
+						  MAX(0, target));
 				}
 				if (bbptrimtail == BBPMAXTRIM) {
 					bbptrimfirst = cur;
@@ -3081,7 +3059,7 @@ BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
 					   b ? "touched since last scan" : "unloaded already");
 		}
 
-		if (*memtarget == 0 && *vmtarget == 0) {
+		if (target == 0) {
 			/* we're done; glue the rest of the old
 			 * bbptrim list to the new bbptrim list */
 			if (bbptrimtail == BBPMAXTRIM) {
@@ -3093,12 +3071,13 @@ BBPtrim_select(size_t *memtarget, size_t *vmtarget, int dirty)
 		}
 	}
 	MEMDEBUG THRprintf(GDKstdout, "#TRIMSELECT: end\n");
+	return target;
 }
 
 extern int monet_exec(str);
 
 void
-BBPtrim(size_t memtarget, size_t vmtarget)
+BBPtrim(size_t target)
 {
 	int i, limit, scan, did_scan = FALSE, done = BBP_THREADMASK;
 	int msec = 0, bats_written = 0, bats_unloaded = 0;	/* performance info */
@@ -3115,36 +3094,26 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 	/* recheck targets to see whether the work was already done by
 	 * another thread */
-	if (memtarget && memtarget != BBPTRIM_ALL) {
-		memtarget = GDKmem_inuse();
-		if (memtarget > GDK_mem_maxsize)
-			memtarget -= GDK_mem_maxsize;
+	if (target && target != BBPTRIM_ALL) {
+		target = GDKmem_inuse() + GDKvm_cursize();
+		if (target > GDK_mem_maxsize)
+			target -= GDK_mem_maxsize;
 		else
-			memtarget = 0;
-	}
-	if (vmtarget && vmtarget != BBPTRIM_ALL) {
-		vmtarget = GDKvm_cursize();
-		if (vmtarget > GDK_vm_maxsize)
-			vmtarget -= GDK_vm_maxsize;
-		else
-			vmtarget = 0;
+			target = 0;
 	}
 	MEMDEBUG THRprintf(GDKstdout,
 			   "#BBPTRIM_ENTER: memsize=" SZFMT ",vmsize=" SZFMT "\n",
 			   GDKmem_inuse(), GDKvm_cursize());
 
-	MEMDEBUG THRprintf(GDKstdout,
-			   "#BBPTRIM: memtarget=" SZFMT " vmtarget=" SZFMT "\n",
-			   memtarget, vmtarget);
-	PERFDEBUG THRprintf(GDKout, "#BBPtrim(mem=%d,vm=%d)\n",
-			    memtarget > 0, vmtarget > 0);
+	MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: target=" SZFMT "\n", target);
+	PERFDEBUG THRprintf(GDKout, "#BBPtrim(mem=%d)\n", target > 0);
 
 	scan = (bbptrimfirst == BBPMAXTRIM);
 	if (bbpscanstart >= BBPsize)
 		bbpscanstart = 1;	/* sometimes, the BBP shrinks! */
 	limit = bbpscanstart;
 
-	while (memtarget > 0 || vmtarget > 0) {
+	while (target > 0) {
 		/* check for runtime overruling */
 		if (GDK_vm_trim == 0)
 			break;
@@ -3161,7 +3130,7 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 		 * first */
 		if (scan) {
 			did_scan = TRUE;
-			bbpscanstart = BBPtrim_scan((memtarget > 0), (vmtarget > 0), bbpscanstart, limit);
+			bbpscanstart = BBPtrim_scan(bbpscanstart, limit);
 			scan = (bbpscanstart != limit);
 		} else {
 			scan = TRUE;
@@ -3169,9 +3138,9 @@ BBPtrim(size_t memtarget, size_t vmtarget)
 
 		/* decide which of the candidates to unload using LRU */
 		bbpunload = BBPMAXTRIM;
-		BBPtrim_select(&memtarget, &vmtarget, FALSE);	/* first try to select only clean BATs */
-		if (did_scan && (memtarget > 0 || vmtarget > 0)) {
-			BBPtrim_select(&memtarget, &vmtarget, TRUE);	/* if that is not enough, also unload dirty BATs */
+		target = BBPtrim_select(target, FALSE);	/* first try to select only clean BATs */
+		if (did_scan && target > 0) {
+			target = BBPtrim_select(target, TRUE);	/* if that is not enough, also unload dirty BATs */
 		}
 
 		/* release the BBP locks */
