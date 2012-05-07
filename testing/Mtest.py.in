@@ -3685,13 +3685,6 @@ def main(argv) :
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
         else:
-            MAPIsockets, reason = CheckSocket2(env, "MAPI")
-            if MAPIsockets is None:
-                print "!!! could not find a free port"
-                sys.exit(1)
-            # Release reserved sockets and run the actual test
-            MAPIsockets[0].close()
-            MAPIsockets[1].close()
             if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], 'clients.quit();\n'):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
