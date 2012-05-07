@@ -745,8 +745,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			if (!l)
 				l = sa_list(sql->sa);
-			if (res)
+			if (res) {
 				restype = result_type(sql, sf, fname, res);
+				if (!restype)
+					return sql_error(sql, 01,
+							"CREATE %s%s: failed to get restype", KF, F);
+			}
 
 		 	if (body) {		/* sql func */
 				list *b = NULL;
