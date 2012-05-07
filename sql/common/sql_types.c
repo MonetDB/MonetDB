@@ -757,7 +757,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 				if (IS_FUNC(f)) { /* not needed for PROC/FILT */
 					/* fix the scale */
 					digits = f->res.digits;
-					if (f->fix_scale > SCALE_NONE) {
+					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ) {
 						for (n = ops->h; n; n = n->next) {
 							sql_subtype *a = n->data;
 
@@ -804,7 +804,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
 
 					fres->func = f;
-					if (f->fix_scale > SCALE_NONE) {
+					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ) {
 						for (n = ops->h; n; n = n->next) {
 							sql_subtype *a = n->data;
 

@@ -85,6 +85,7 @@
 #define SCALE_DIV	4	/* div on the other hand reduces the scales */ 
 #define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
+#define SCALE_EQ	7	/* user defined functions need equal scales */
 
 #define TR_OLD 0
 #define TR_NEW 1
