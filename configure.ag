@@ -2608,6 +2608,12 @@ AC_CHECK_FUNCS([\
 				trunc \
 				uname \
 				])
+AC_RUN_IFELSE([AC_LANG_PROGRAM(
+[[#include <sys/time.h>
+#include <sys/resource.h>]],
+[[struct rusage u; exit(getrusage(RUSAGE_SELF, &u) != 0 || u.ru_maxrss <= 0);]])],
+AC_DEFINE(HAVE_GETRUSAGE, 1, [Define if you have the getrusage function with working ru_maxrss.]))
+
 LIBS="$save_LIBS"
 save_LIBS="$LIBS"
 LIBS=
