@@ -1216,7 +1216,7 @@ GDKvmtrim(void *limit)
 		rss = MT_getrss();
 		rssdiff = (ssize_t) rss - (ssize_t) prevrss;
 		memdiff = (ssize_t) (GDK_mallocedbytes_estimate + GDK_vm_cursize) - (ssize_t) prevmem;
-		fprintf(stderr, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", GDK_mallocedbytes_estimate + GDK_vm_cursize, memdiff, rss, rssdiff);
+		MEMDEBUG THRprintf(GDKstdout, "alloc = " SZFMT " %+zd rss = " SZFMT " %+zd\n", GDK_mallocedbytes_estimate + GDK_vm_cursize, memdiff, rss, rssdiff);
 		prevmem = GDK_mallocedbytes_estimate + GDK_vm_cursize;
 		prevrss = rss;
 		malloc_unlock();
