@@ -4673,7 +4673,7 @@ ident:
  |  non_reserved_word
  ;
 
-non_reserved_word:  /* (lexicographically sorted for convenience) */
+non_reserved_word: 
   LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
 | OBJECT	{ $$ = sa_strdup(SA, "object"); }	/* sloppy: officially reserved */
@@ -4711,6 +4711,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+|  NO		{ $$ = sa_strdup(SA, "no"); }
 /* SQL/XML non reserved words */
 |  STRIP	{ $$ = sa_strdup(SA, "strip"); }
 |  WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
