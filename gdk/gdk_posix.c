@@ -53,9 +53,6 @@ extern char *sbrk(int);
 #ifdef HAVE_MACH_MACH_INIT_H
 # include <mach/mach_init.h>
 #endif
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -777,11 +774,6 @@ MT_getrss(void)
 
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
-#elif defined(HAVE_GETRUSAGE)
-	struct rusage usage;
-
-	if (getrusage(RUSAGE_SELF, &usage) == 0)
-		return (size_t) usage.ru_maxrss * 1024;
 #else
 	/* get RSS on Linux */
 	int fd;
