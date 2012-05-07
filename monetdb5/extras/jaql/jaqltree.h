@@ -20,7 +20,7 @@
 #ifndef JAQLTREE_H
 #define JAQLTREE_H 1
 
-#include "stream.h"
+typedef struct stream stream;
 
 typedef struct _jvar {
 	char *vname;
