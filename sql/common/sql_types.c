@@ -702,6 +702,28 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 			}
 		}
 	}
+	if (tp->type->eclass == EC_NUM) {
+	 	/* add second round but now look for Decimals only */
+		for (n = funcs->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (!f->res.type)
+				continue;
+			if (strcmp(f->base.name, sqlfname) == 0 && list_length(f->ops) == nrargs) {
+				if (((sql_arg *) f->ops->h->data)->type.type->eclass == EC_DEC && 
+				    ((sql_arg *) f->ops->h->data)->type.type->localtype == tp->type->localtype) {
+
+					unsigned int scale = 0, digits;
+					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
+
+					fres->func = f;
+					digits = f->res.digits;
+					sql_init_subtype(&fres->res, f->res.type, digits, scale);
+					return fres;
+				}
+			}
+		}
+	}
 	return NULL;
 }
 

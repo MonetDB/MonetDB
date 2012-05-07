@@ -1947,8 +1947,7 @@ static sql_exp *
 exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	if (strcmp(f->func->imp, "*") == 0 &&
-			f->func->res.type->scale == SCALE_FIX)
-	{
+			f->func->res.type->scale == SCALE_FIX) {
 		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
