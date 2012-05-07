@@ -33,3 +33,4 @@ table_functions_fail_after_restart-1.Bug-3063
 user_defined_decimal_function.Bug-2992
 non_keyword_no.Bug-3079
 round-type-inference.Bug-2987
+mal_syntax_error.Bug-2949
