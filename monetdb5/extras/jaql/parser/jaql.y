@@ -3,6 +3,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>  /* isspace */
 #include "jaqltree.h"
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -70,6 +71,7 @@ jaqlerror(struct _jc* j, char const *msg)
 {
 	if (j->err[0] == '\0') {
 		char around[32];
+		char *p;
 		size_t off = j->start + (j->tokstart - j->scanbuf);
 		char hadend = 0;
 		if (off < 13)
@@ -78,8 +80,16 @@ jaqlerror(struct _jc* j, char const *msg)
 		if (snprintf(around, sizeof(around), "%s", j->buf + off)
 				<= (int)(sizeof(around)))
 			hadend = 1;
+		/* wrap at newline */
+		for (p = around; *p != '\0'; p++)
+			if (*p == '\n' || *p == '\r')
+				*p = ' ';
+		/* trim */
+		for (--p; p > around && isspace(*p); p--)
+			*p = '\0';
+		for (p = around; *p != '\0' && isspace(*p); p++);
 		snprintf(j->err, sizeof(j->err), "%s at or around '%s%s%s'",
-				msg, off == 0 ? "" : "...", around, hadend == 0 ? "..." : "");
+				msg, off == 0 ? "" : "...", p, hadend == 0 ? "..." : "");
 	}
 }
 
@@ -246,10 +256,10 @@ predicates: opt_not predicate  {$$ = make_pred(NULL, $1, $2);}
 
 predicate: opt_not variable
 		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_equals), make_bool(1)));}
-		 | opt_not variable comparison value
-		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
 		 | opt_not val_var_arith comparison value
 		       {$$ = make_pred(NULL, $1, make_pred($2, $3, $4));}
+		 | opt_not json_value IN json_value
+		       {$$ = make_pred(NULL, $1, make_pred($2, make_comp(j_in), $4));}
 		 ;
 
 variable: ident                     {$$ = make_varname($1);}

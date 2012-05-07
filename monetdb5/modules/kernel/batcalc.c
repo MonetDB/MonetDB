@@ -1326,3 +1326,65 @@ CMDcalcavg(dbl *avg, bat *bid)
 {
 	return CMDcalcavg2(avg, NULL, bid);
 }
+
+static str
+CMDconvertbat(bat *ret, bat *bid, int tp, int abort_on_error)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+	bn = BATconvert(b, tp, abort_on_error);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL) {
+		char buf[20];
+		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
+		return mythrow(MAL, buf, OPERATION_FAILED);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+#define BATCONVERT_TYPE(TYPE)						\
+str													\
+CMDconvert_##TYPE(bat *ret, bat *bid)				\
+{													\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 0);	\
+}													\
+str													\
+CMDconvertsignal_##TYPE(bat *ret, bat *bid)			\
+{													\
+	return CMDconvertbat(ret, bid, TYPE_##TYPE, 1);	\
+}
+
+/* exports outside of define for clients exports test */
+batcalc_export str CMDconvert_bit(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_bit(bat *ret, bat *bid);
+BATCONVERT_TYPE(bit)
+batcalc_export str CMDconvert_bte(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_bte(bat *ret, bat *bid);
+BATCONVERT_TYPE(bte)
+batcalc_export str CMDconvert_sht(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_sht(bat *ret, bat *bid);
+BATCONVERT_TYPE(sht)
+batcalc_export str CMDconvert_int(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_int(bat *ret, bat *bid);
+BATCONVERT_TYPE(int)
+batcalc_export str CMDconvert_wrd(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_wrd(bat *ret, bat *bid);
+BATCONVERT_TYPE(wrd)
+batcalc_export str CMDconvert_lng(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_lng(bat *ret, bat *bid);
+BATCONVERT_TYPE(lng)
+batcalc_export str CMDconvert_flt(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_flt(bat *ret, bat *bid);
+BATCONVERT_TYPE(flt)
+batcalc_export str CMDconvert_dbl(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_dbl(bat *ret, bat *bid);
+BATCONVERT_TYPE(dbl)
+batcalc_export str CMDconvert_oid(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_oid(bat *ret, bat *bid);
+BATCONVERT_TYPE(oid)
+batcalc_export str CMDconvert_str(bat *ret, bat *bid);
+batcalc_export str CMDconvertsignal_str(bat *ret, bat *bid);
+BATCONVERT_TYPE(str)

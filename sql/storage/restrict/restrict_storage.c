@@ -67,7 +67,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 #ifdef NDEBUG
 	(void) access; /* satisfy compiler */
 #endif
-	assert(access == RDONLY);
+	assert(access == RD_INS);
 	b = temp_descriptor(bat->bid);
 	assert(b);
 	t->s->base.rtime = t->base.rtime = tr->stime;
@@ -425,19 +425,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 
 	if (ni->type == join_idx)
 		type = TYPE_oid;
-
-	/* no index bats for single column hash indices */
-/* TODO single column indices ! 
-		if (ni->key) {
-			sql_kc *c = ni->columns->h->data;
-			BAT *b = bind_col(tr->parent, c->c, RDONLY);
-
-			BATkey(BATmirror(b), BOUND2BTRUE);
-			bat_destroy(b);
-		}
-		return LOG_OK;
-	}
-*/
 
 	if (!bat)
 		ni->data = bat = ZNEW(sql_bat);

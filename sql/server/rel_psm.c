@@ -429,6 +429,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		node *n, *m;
 		char *tname = t->base.name;
 
+		if (cs_size(&t->columns) != cs_size(&restype->comp_type->columns))
+			return sql_error(sql, 02, "RETURN: number of columns do not match");
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;
@@ -795,8 +797,12 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			if (!l)
 				l = sa_list(sql->sa);
-			if (res)
+			if (res) {
 				restype = result_type(sql, sf, fname, res);
+				if (!restype)
+					return sql_error(sql, 01,
+							"CREATE %s%s: failed to get restype", KF, F);
+			}
 
 		 	if (body) {		/* sql func */
 				list *b = NULL;

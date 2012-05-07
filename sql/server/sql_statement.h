@@ -204,8 +204,8 @@ extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, int i, sql_subt
 
 extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
 extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access);
-extern stmt *stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
-extern stmt *stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access);
+extern stmt *stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access, int readonly );
+extern stmt *stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access, int readonly);
 
 extern stmt *stmt_append_col(sql_allocator *sa, sql_column *c, stmt *b);
 extern stmt *stmt_append_idx(sql_allocator *sa, sql_idx *i, stmt *b);

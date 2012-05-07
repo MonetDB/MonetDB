@@ -10,5 +10,5 @@ bat.insert(b,5,"");
 bat.insert(b,6,nil:str);
 io.print(b);
 
-bc:= batcalc.bit(b);
+bc:= batcalc.bit_noerror(b);
 io.print(bc);

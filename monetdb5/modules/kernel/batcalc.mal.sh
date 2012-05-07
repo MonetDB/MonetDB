@@ -452,13 +452,13 @@ pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:bat[:oid,:$tp]) :bit
 address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:bat[:oid,:$tp],hi:$tp) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:$tp,hi:bat[:oid,:$tp]) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 pattern between(b:bat[:oid,:$tp],lo:$tp,hi:$tp) :bit
-address CMDbatBETWEENcst
+address CMDbatBETWEEN
 comment "B between LO and HI inclusive, nil border is (minus) infinity";
 
 EOF
@@ -475,4 +475,18 @@ address CMDcalcavg2
 comment "average and number of non-nil values of B";
 
 EOF
+done
+
+for tp1 in $alltypes; do
+    for tp2 in $alltypes; do
+	cat <<EOF
+command $tp1(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+address CMDconvertsignal_$tp1
+comment "cast from $tp2 to $tp1, signal error on overflow";
+command ${tp1}_noerror(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+address CMDconvert_$tp1
+comment "cast from $tp2 to $tp1";
+
+EOF
+    done
 done

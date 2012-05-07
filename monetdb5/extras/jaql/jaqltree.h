@@ -20,6 +20,8 @@
 #ifndef JAQLTREE_H
 #define JAQLTREE_H 1
 
+#include "stream.h"
+
 typedef struct _jvar {
 	char *vname;
 	int kind;
@@ -92,6 +94,7 @@ enum comptype {
 	j_gequal,
 	j_less,
 	j_lequal,
+	j_in,
 	j_not,
 	j_or,
 	j_and,
@@ -153,7 +156,7 @@ tree *make_func_call(char *name, tree *args);
 tree *make_func_arg(tree *arg);
 tree *append_func_arg(tree *oarg, tree *narg);
 tree *set_func_input_from_pipe(tree *func);
-void printtree (tree *t, int level, char op);
+void printtree(stream *out, tree *t, int level, char op);
 void freetree(tree *t);
 void freevars(jvar *v);
 

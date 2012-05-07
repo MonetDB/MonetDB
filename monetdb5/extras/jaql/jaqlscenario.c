@@ -185,6 +185,7 @@ JAQLparser(Client c)
 	j->explain = 0;
 	j->buf = in->buf + in->pos;
 	j->pos = 0;
+	j->p = NULL;
 
 	jaqlparse(j);
 	
@@ -195,12 +196,24 @@ JAQLparser(Client c)
 	if (j->err[0] != '\0') {
 		/* tell the client */
 		mnstr_printf(out, "!%s\n", j->err);
+		/* read away anything left */
+		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
+			freetree(j->p);
+			jaqlparse(j);
+		}
 		j->err[0] = '\0';
 		return MAL_SUCCEED;
 	}
 
-	if (j->p == NULL) /* there was nothing to parse, EOF */
+	if (j->p == NULL) { /* there was nothing to parse, EOF */
+		/* read away anything left */
+		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
+			freetree(j->p);
+			jaqlparse(j);
+		}
+		j->err[0] = '\0';
 		return MAL_SUCCEED;
+	}
 
 	if (j->explain < 2 || j->explain == 4) {
 		Symbol prg = c->curprg;
@@ -233,6 +246,12 @@ JAQLparser(Client c)
 		}
 	}
 
+	/* read away anything left */
+	while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
+		freetree(j->p);
+		jaqlparse(j);
+	}
+	j->err[0] = '\0';
 	return MAL_SUCCEED;
 }
 
@@ -255,8 +274,9 @@ JAQLengine(Client c)
 	if (j->explain == 1) {
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
 	} else if (j->explain == 2 || j->explain == 3) {
-		printtree(j->p, 0, j->explain == 3);
-		printf("\n");
+		mnstr_printf(c->fdout, "=");
+		printtree(c->fdout, j->p, 0, j->explain == 3);
+		mnstr_printf(c->fdout, "\n");
 		freetree(j->p);
 		return MAL_SUCCEED;  /* don't have a plan generated */
 	} else if (j->explain == 4) {

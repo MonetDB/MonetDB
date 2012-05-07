@@ -296,10 +296,13 @@ int GDK_vm_trim = 1;
 #define CHKMEM(meminc, vminc)						\
 	do {								\
 		int memchk, vmchk;					\
-									\
 		malloc_lock();						\
-		memchk = (meminc>0 && (++GDK_mem_allocs>=1000 || meminc>LL_CONSTANT(50000))); \
-		vmchk = (vminc>0 && (++GDK_vm_allocs>=10 || vminc>LL_CONSTANT(5000000))); \
+		memchk = meminc > 0 &&					\
+			(++GDK_mem_allocs >= 1000 ||			\
+			 meminc > LL_CONSTANT(50000));			\
+		vmchk = vminc > 0 &&					\
+			(++GDK_vm_allocs >= 10 ||			\
+			 vminc > LL_CONSTANT(5000000));			\
 		malloc_unlock();					\
 		if (memchk || vmchk)					\
 			GDKmemchk(memchk, vmchk);			\
@@ -639,25 +642,25 @@ GDKmemdump(void)
 	struct Mallinfo m = MT_mallinfo();
 
 	MEMDEBUG {
-		THRprintf(GDKout, "\n#mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
-		THRprintf(GDKout, "#mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
-		THRprintf(GDKout, "#mallinfo.smblks = " SSZFMT "\n", (ssize_t) m.smblks);
-		THRprintf(GDKout, "#mallinfo.hblkhd = " SSZFMT "\n", (ssize_t) m.hblkhd);
-		THRprintf(GDKout, "#mallinfo.hblks = " SSZFMT "\n", (ssize_t) m.hblks);
-		THRprintf(GDKout, "#mallinfo.usmblks = " SSZFMT "\n", (ssize_t) m.usmblks);
-		THRprintf(GDKout, "#mallinfo.fsmblks = " SSZFMT "\n", (ssize_t) m.fsmblks);
-		THRprintf(GDKout, "#mallinfo.uordblks = " SSZFMT "\n", (ssize_t) m.uordblks);
-		THRprintf(GDKout, "#mallinfo.fordblks = " SSZFMT "\n", (ssize_t) m.fordblks);
+		THRprintf(GDKstdout, "\n#mallinfo.arena = " SSZFMT "\n", (ssize_t) m.arena);
+		THRprintf(GDKstdout, "#mallinfo.ordblks = " SSZFMT "\n", (ssize_t) m.ordblks);
+		THRprintf(GDKstdout, "#mallinfo.smblks = " SSZFMT "\n", (ssize_t) m.smblks);
+		THRprintf(GDKstdout, "#mallinfo.hblkhd = " SSZFMT "\n", (ssize_t) m.hblkhd);
+		THRprintf(GDKstdout, "#mallinfo.hblks = " SSZFMT "\n", (ssize_t) m.hblks);
+		THRprintf(GDKstdout, "#mallinfo.usmblks = " SSZFMT "\n", (ssize_t) m.usmblks);
+		THRprintf(GDKstdout, "#mallinfo.fsmblks = " SSZFMT "\n", (ssize_t) m.fsmblks);
+		THRprintf(GDKstdout, "#mallinfo.uordblks = " SSZFMT "\n", (ssize_t) m.uordblks);
+		THRprintf(GDKstdout, "#mallinfo.fordblks = " SSZFMT "\n", (ssize_t) m.fordblks);
 	}
 #ifdef GDK_MEM_KEEPHISTO
 	{
 		int i;
 
-		THRprintf(GDKout, "#memory histogram\n");
+		THRprintf(GDKstdout, "#memory histogram\n");
 		for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
 			size_t j = 1 << i;
 
-			THRprintf(GDKout, "# " SZFMT " " SZFMT "\n", j, GDK_nmallocs[i]);
+			THRprintf(GDKstdout, "# " SZFMT " " SZFMT "\n", j, GDK_nmallocs[i]);
 		}
 	}
 #endif
@@ -665,11 +668,11 @@ GDKmemdump(void)
 	{
 		int i;
 
-		THRprintf(GDKout, "\n#virtual memory histogram\n");
+		THRprintf(GDKstdout, "\n#virtual memory histogram\n");
 		for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
 			size_t j = 1 << i;
 
-			THRprintf(GDKout, "# " SZFMT " " SZFMT "\n", j, GDK_vm_nallocs[i]);
+			THRprintf(GDKstdout, "# " SZFMT " " SZFMT "\n", j, GDK_vm_nallocs[i]);
 		}
 	}
 #endif
@@ -690,7 +693,7 @@ GDKmemchk(int memchk, int vmchk)
 
 		if (!printing[tid - 1]) {
 			printing[tid - 1] = TRUE;
-			THRprintf(GDKout, "#GDKmemchk (memcur=" SZFMT ",memmax=" SZFMT ") (vmcur=" SZFMT ",vmmax=" SZFMT ")\n", memtarget, GDK_mem_maxsize, GDKvm_cursize(), GDK_vm_maxsize);
+			THRprintf(GDKstdout, "#GDKmemchk (memcur=" SZFMT ",memmax=" SZFMT ") (vmcur=" SZFMT ",vmmax=" SZFMT ")\n", memtarget, GDK_mem_maxsize, GDKvm_cursize(), GDK_vm_maxsize);
 			printing[tid - 1] = FALSE;
 		}
 	}
@@ -792,7 +795,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 	 */
 
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
-	THRprintf(GDKout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 /*	GDKdebug |= 4;  avoid debugging output */
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
@@ -801,7 +804,7 @@ GDKmemfail(str s, size_t len, size_t memtarget, size_t vmtarget)
 
 	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
-	THRprintf(GDKout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
+	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }
@@ -874,7 +877,7 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 			}
 			GDKfatal("GDKmallocmax: failed for " SZFMT " bytes", size);
 		} else {
-			THRprintf(GDKout, "#GDKmallocmax: recovery ok. Continuing..\n");
+			THRprintf(GDKstdout, "#GDKmallocmax: recovery ok. Continuing..\n");
 		}
 	}
 	*maxsize = size;
@@ -1010,7 +1013,7 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 				}
 				GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
 			} else {
-				THRprintf(GDKout, "#GDKremallocmax: recovery ok. Continuing..\n");
+				THRprintf(GDKstdout, "#GDKremallocmax: recovery ok. Continuing..\n");
 			}
 		}
 		if (blk != NULL) {
@@ -1258,7 +1261,7 @@ GDKvmtrim(void *limit)
 			continue;
 		}
 		MEMDEBUG {
-			fp = GDKout;
+			fp = GDKstdout;
 			THRprintf(fp, "#GDKvmtrim(load=%s, rsstarget=" SZFMT
 				  ", GDK_mmap_minsize=" SZFMT ")\n",
 				  highload_name[highload], *(size_t *) limit,
@@ -1327,9 +1330,6 @@ GDKinit(opt *set, int setlen)
 
 	if ((p = mo_find_option(set, setlen, "gdk_mem_pagebits")))
 		GDK_mem_pagebits = (int) strtol(p, NULL, 10);
-
-	if ((p = mo_find_option(set, setlen, "gdk_vmtrim")))
-		GDK_vm_trim = strcasecmp(p, "yes") == 0;
 
 	mnstr_init();
 	MT_init_posix();
@@ -1432,8 +1432,11 @@ GDKinit(opt *set, int setlen)
 #endif
 
 #ifdef HAVE_POSIX_MADVISE
-	if (!GDKembedded && GDK_vm_trim)
-		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize, MT_THR_JOINABLE);
+	if (!GDKembedded &&
+	    ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
+	     strcasecmp(p, "yes") == 0))
+		MT_create_thread(&GDKvmtrim_id, GDKvmtrim, &GDK_mem_maxsize,
+				 MT_THR_JOINABLE);
 #endif
 
 	return 1;
@@ -1450,7 +1453,7 @@ GDKexit(int status)
 	if (GDKstopped == 0) {
 		GDKstopped = 1;	/* shouldn't there be a lock here? */
 #ifdef HAVE_POSIX_MADVISE
-		if (!GDKembedded && GDK_vm_trim && GDKvmtrim_id)
+		if (!GDKembedded && GDKvmtrim_id)
 			MT_join_thread(GDKvmtrim_id);
 #endif
 		GDKnrofthreads = 0;
@@ -1531,7 +1534,7 @@ GDKlockHome(void)
 			GDKfatal("GDKlockHome: could not create %s\n", GDKdirStr);
 		if (chdir(GDKdirStr) < 0)
 			GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
-		IODEBUG THRprintf(GDKout, "#GDKlockHome: created directory %s\n", GDKdirStr);
+		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: created directory %s\n", GDKdirStr);
 	}
 	if (GDKrecovery && unlink(GDKLOCK) < 0) {
 		GDKfatal("GDKlockHome: unlock DB failed\n");
@@ -1548,7 +1551,7 @@ GDKlockHome(void)
 	if (p) {
 		sprintf(host, " from '%s'", buf);
 	} else {
-		IODEBUG THRprintf(GDKout, "#GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
+		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: ignoring empty or invalid %s.\n", GDKLOCK);
 		host[0] = 0;
 	}
 	/*
@@ -1594,7 +1597,7 @@ GDKgetHome(void)
 		MT_sleep_ms(1000);
 	}
 	if (MT_lockf(GDKLOCK, F_TLOCK, 4, 1) < 0) {
-		IODEBUG THRprintf(GDKout, "#GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);
+		IODEBUG THRprintf(GDKstdout, "#GDKgetHome: blocking on lock '%s'.\n", GDKLOCK);
 		MT_lockf(GDKLOCK, F_LOCK, 4, 1);
 	}
 	return 1;
@@ -1928,7 +1931,7 @@ THRnew(MT_Id pid, str name)
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == pid) {
 				gdk_unset_lock(GDKthreadLock, "THRnew");
-				IODEBUG THRprintf(GDKout, "#THRnew:duplicate " SZFMT "\n", (size_t) pid);
+				IODEBUG THRprintf(GDKstdout, "#THRnew:duplicate " SZFMT "\n", (size_t) pid);
 				return s;
 			}
 		}
@@ -1939,7 +1942,7 @@ THRnew(MT_Id pid, str name)
 		}
 		if (s == t) {
 			gdk_unset_lock(GDKthreadLock, "THRnew");
-			IODEBUG THRprintf(GDKout, "#THRnew: too many threads\n");
+			IODEBUG THRprintf(GDKstdout, "#THRnew: too many threads\n");
 			return NULL;
 		}
 		tid = s->tid;

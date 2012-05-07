@@ -17,10 +17,6 @@
 
 module datacell;
 
-pattern prelude()
-address DCprelude
-comment "Convert the datacell schema to a stream processing infrastructure";
-
 pattern basket(tab:str):void
 address DCregister
 comment "Initialize a new basket based on a specific table definition in the datacell schema");
@@ -60,6 +56,10 @@ comment "Add a new continuous query.";
 pattern query(name:str):void
 address DCquery
 comment "Add a new continuous query procedure.";
+
+pattern prelude()
+address DCprelude
+comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
 address DCpauseScheduler
@@ -106,4 +106,4 @@ command errors()(nme:bat[:oid,:str],error:bat[:oid,:str])
 address BSKTtableerrors
 comment "Return a table the erroneous events";
 
-datacell.prelude();
+io.printf("# MonetDB/DataCell loaded\n");
