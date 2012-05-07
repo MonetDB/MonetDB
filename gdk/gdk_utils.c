@@ -1220,7 +1220,7 @@ GDKvmtrim(void *limit)
 		prevmem = GDK_mallocedbytes_estimate + GDK_vm_cursize;
 		prevrss = rss;
 		malloc_unlock();
-		if (memdiff >= 0 && rssdiff < - (ssize_t) (rss / 1024)) {
+		if (memdiff >= 0 && rssdiff < -32 * (ssize_t) MT_pagesize()) {
 			BBPtrim(rss);
 			highload = 1;
 		} else {
