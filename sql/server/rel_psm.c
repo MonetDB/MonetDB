@@ -664,7 +664,7 @@ result_type(mvc *sql, sql_subfunc *f, char *fname, symbol *res)
 						return sql_error(sql, 01, "DIMENSION declaration not allowed in a TABLE data type");
 					}
 					if (n->data.sym->data.lval) {
-						return sql_error(sql, 01, "Dimension range specification not allowed function return declaration");
+						return sql_error(sql, 01, "Dimension range specification not allowed in function return declaration");
 					}
 					cs->dim = ZNEW(sql_dimspec);
 					tbl->ndims++;
