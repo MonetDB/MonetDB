@@ -2352,6 +2352,7 @@ AC_CHECK_HEADERS([crypt.h \
 	iconv.h \
 	ieeefp.h \
 	io.h \
+	kvm.h \
 	langinfo.h \
 	libgen.h \
 	libintl.h \
@@ -2475,6 +2476,10 @@ case $host_os in
 esac
 
 AC_SUBST(SOCKET_LIBS)
+
+KVM_LIBS=""
+AC_CHECK_LIB(kvm, kvm_open, [ KVM_LIBS="-lkvm" ] )
+AC_SUBST(KVM_LIBS)
 
 dnl     checks for types
 AC_TYPE_SIZE_T

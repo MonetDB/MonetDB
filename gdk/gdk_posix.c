@@ -53,6 +53,12 @@ extern char *sbrk(int);
 #ifdef HAVE_MACH_MACH_INIT_H
 # include <mach/mach_init.h>
 #endif
+#ifdef HAVE_KVM_H
+# include <kvm.h>
+# include <sys/param.h>
+# include <sys/sysctl.h>
+# include <sys/user.h>
+#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -781,6 +787,28 @@ MT_getrss(void)
 
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
+#elif defined(HAVE_KVM_H)
+	/* get RSS on FreeBSD */
+	struct kinfo_proc *ki;
+	int ski = 1;
+	kvm_t *kd;
+	size_t rss = 0;
+
+	kd = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
+	if (kd == NULL)
+		return 0;
+
+	ki = kvm_getprocs(kd, KERN_PROC_PID, getpid(), &ski);
+	if (ki == NULL) {
+		kvm_close(kd);
+		return 0;
+	}
+
+	rss = ki->ki_rssize;
+
+	kvm_close(kd);
+
+	return rss * MT_pagesize();
 #else
 	/* get RSS on Linux */
 	static char MT_mmap_procfile[128] = { 0 };
