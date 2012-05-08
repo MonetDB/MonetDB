@@ -20,6 +20,7 @@
 #ifndef JAQL_H
 #define JAQL_H 1
 
+#include "stream.h"
 #include "mal_client.h"
 #include "jaqltree.h"
 
@@ -34,6 +35,7 @@
 #endif
 
 str getJAQLContext(Client cntxt, jc **c);
+void printtree(stream *out, tree *t, int level, char op);
 
 
 jaql_export str JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

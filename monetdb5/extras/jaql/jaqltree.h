@@ -20,8 +20,6 @@
 #ifndef JAQLTREE_H
 #define JAQLTREE_H 1
 
-typedef struct stream stream;
-
 typedef struct _jvar {
 	char *vname;
 	int kind;
@@ -156,7 +154,6 @@ tree *make_func_call(char *name, tree *args);
 tree *make_func_arg(tree *arg);
 tree *append_func_arg(tree *oarg, tree *narg);
 tree *set_func_input_from_pipe(tree *func);
-void printtree(stream *out, tree *t, int level, char op);
 void freetree(tree *t);
 void freevars(jvar *v);
 
