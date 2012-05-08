@@ -283,13 +283,13 @@ BATSIGinit(void)
 /* memory thresholds; these values some "sane" constants only, really
  * set in GDKinit() */
 size_t GDK_mmap_minsize = GDK_VM_MAXSIZE;
-size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
+static size_t GDK_mem_maxsize_max = GDK_VM_MAXSIZE;
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_mem_bigsize = 1 << 30;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
 
-int GDK_vm_allocs = 0;
-int GDK_mem_allocs = 0;
+static int GDK_vm_allocs = 0;
+static int GDK_mem_allocs = 0;
 int GDK_vm_trim = 1;
 
 /* at least each 50M of memory increase, BBPtrim is run */
@@ -329,7 +329,7 @@ int GDK_vm_trim = 1;
 		}					\
 	} while (0)
 
-volatile size_t GDK_mallocedbytes_estimate = 0;
+static volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
 static ssize_t GDK_vm_cursize = 0;
 
@@ -524,7 +524,7 @@ GDKmem_heapinuse(void)
 	return GDK_mallocedbytes_estimate;
 }
 
-volatile int GDK_heapcheck_last = 0;
+static volatile int GDK_heapcheck_last = 0;
 
 static inline void
 GDKmem_heapcheck(int t)
