@@ -1762,6 +1762,10 @@ MALLOC_LIBS=""
 AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
 AC_SUBST(MALLOC_LIBS)
 
+KVM_LIBS=""
+AC_CHECK_LIB(kvm, kvm_open, [ KVM_LIBS="-lkvm" ] )
+AC_SUBST(KVM_LIBS)
+
 save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
 AC_CHECK_FUNCS(mallopt)
@@ -2476,10 +2480,6 @@ case $host_os in
 esac
 
 AC_SUBST(SOCKET_LIBS)
-
-KVM_LIBS=""
-AC_CHECK_LIB(kvm, kvm_open, [ KVM_LIBS="-lkvm" ] )
-AC_SUBST(KVM_LIBS)
 
 dnl     checks for types
 AC_TYPE_SIZE_T
