@@ -763,15 +763,10 @@ MT_getrss(void)
 {
 #if defined(HAVE_PROCFS_H) && defined(__sun__)
 	/* retrieve RSS the Solaris way (2.6+) */
-	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 	psinfo_t psbuff;
 
-	if (MT_mmap_procfile[0] == 0) {
-		/* getpid returns pid_t, cast to long to be sure */
-		sprintf(MT_mmap_procfile, "/proc/%ld/psinfo", (long) getpid());
-	}
-	fd = open(MT_mmap_procfile, O_RDONLY);
+	fd = open("/proc/self/psinfo", O_RDONLY);
 	if (fd >= 0) {
 		if (read(fd, &psbuff, sizeof(psbuff)) == sizeof(psbuff)) {
 			close(fd);
@@ -811,14 +806,9 @@ MT_getrss(void)
 	return rss * MT_pagesize();
 #else
 	/* get RSS on Linux */
-	static char MT_mmap_procfile[128] = { 0 };
 	int fd;
 
-	if (MT_mmap_procfile[0] == 0) {
-		/* getpid returns pid_t, cast to long to be sure */
-		sprintf(MT_mmap_procfile, "/proc/%ld/stat", (long) getpid());
-	}
-	fd = open(MT_mmap_procfile, O_RDONLY);
+	fd = open("/proc/self/stat", O_RDONLY);
 	if (fd >= 0) {
 		char buf[1024], *r = buf;
 		size_t i, sz = read(fd, buf, 1024);

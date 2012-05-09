@@ -2650,6 +2650,7 @@ AC_CHECK_FUNCS([\
 				trunc \
 				uname \
 				])
+
 LIBS="$save_LIBS"
 save_LIBS="$LIBS"
 LIBS=

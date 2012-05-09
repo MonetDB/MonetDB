@@ -1158,11 +1158,11 @@ URLnew4(str *url, str *protocol, str *server, int *port, str *file)
 	str File = *file;
 	int l, i;
 
-	if (GDK_STRNIL(file))
+	if (GDK_STRNIL(File))
 		File = "";
-	if (GDK_STRNIL(server))
+	if (GDK_STRNIL(Server))
 		Server = "";
-	if (GDK_STRNIL(protocol))
+	if (GDK_STRNIL(Protocol))
 		Protocol = "";
 	l = (int) (strlen(File) + strlen(Server) + strlen(Protocol) + 20);
 	*url = (str) GDKmalloc(l);

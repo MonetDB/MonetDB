@@ -56,7 +56,7 @@ Ready.
 [ 10000000	]
 #select bug2969(12.1111,12.1111);
 % . # table_name
-% bug2969_single_value # name
+% scale_up_single_value # name
 % decimal # type
 % 16 # length
 [ 10000000	]
