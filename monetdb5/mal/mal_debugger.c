@@ -1516,7 +1516,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 
 /*
  * The memory positions for the BATs is useful information to
- * asses for memory fragmentation.
+ * assess for memory fragmentation.
  */
 static str
 memProfileVector(stream *out, int cells)
