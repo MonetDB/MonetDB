@@ -53,7 +53,7 @@ extern char *sbrk(int);
 #ifdef HAVE_MACH_MACH_INIT_H
 # include <mach/mach_init.h>
 #endif
-#ifdef HAVE_KVM_H
+#if defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
 # include <kvm.h>
 # include <sys/param.h>
 # include <sys/sysctl.h>
@@ -787,7 +787,7 @@ MT_getrss(void)
 
 	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
 		return t_info.resident_size;  /* bytes */
-#elif defined(HAVE_KVM_H)
+#elif defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
 	/* get RSS on FreeBSD */
 	struct kinfo_proc *ki;
 	int ski = 1;
