@@ -21,14 +21,28 @@
  * to be defined by the including file, and we expect that the
  * combination (T,O) is unique to each inclusion. */
 
-#define binarysort(a,b)		binarysort_##a##b
-#define COPY(a)			COPY_##a
-#define ISLT(a,b)		ISLT_##a##b
-#define gallop_left(a,b)	gallop_left_##a##b
-#define gallop_right(a,b)	gallop_right_##a##b
-#define merge_at(a,b)		merge_at_##a##b
-#define do_ssort(a,b)		do_ssort_##a##b
-#define GDKssortimpl(b)		GDKssort##b
+/* concatenate two or three tokens */
+#define CONCAT2(a,b)    a##b
+#define CONCAT3(a,b,c)  a##b##c
+
+/* these tokens get redefined in each inclusion */
+#undef binarysort
+#undef ISLT
+#undef COPY
+#undef gallop_left
+#undef gallop_right
+#undef merge_at
+#undef do_ssort
+#undef GDKssortimpl
+
+#define binarysort(a,b)         CONCAT3(binarysort_,a,b)
+#define COPY(a)                 CONCAT2(COPY_,a)
+#define ISLT(a,b)               CONCAT3(ISLT_,a,b)
+#define gallop_left(a,b)        CONCAT3(gallop_left_,a,b)
+#define gallop_right(a,b)       CONCAT3(gallop_right_,a,b)
+#define merge_at(a,b)           CONCAT3(merge_at_,a,b)
+#define do_ssort(a,b)           CONCAT3(do_ssort_,a,b)
+#define GDKssortimpl(b)         CONCAT2(GDKssort,b)
 
 /* binarysort is the best method for sorting small arrays: it does few
  * compares, but can do data movement quadratic in the number of
@@ -709,19 +723,20 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 				n = 1;
 			} else {
 				n = 2;
-				if (ISLT(T,O)(PTRADD(ms.bh, nlo, ms.hs),
-					      PTRADD(ms.bh, olo, ms.hs), &ms)) {
+				if (ISLT(T,O)(PTRADD(ms->bh, nlo, ms->hs),
+					      PTRADD(ms->bh, olo, ms->hs),
+					      ms)) {
 					descending = 1;
 					for (olo = nlo++;
 					     nlo < hi;
 					     olo = nlo++, ++n) {
-						if (!ISLT(T,O)(PTRADD(ms.bh,
+						if (!ISLT(T,O)(PTRADD(ms->bh,
 								      nlo,
-								      ms.hs),
-							       PTRADD(ms.bh,
+								      ms->hs),
+							       PTRADD(ms->bh,
 								      olo,
-								      ms.hs),
-							       &ms))
+								      ms->hs),
+							       ms))
 							break;
 					}
 				}
@@ -729,32 +744,32 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 					for (olo = nlo++;
 					     nlo < hi;
 					     olo = nlo++, ++n) {
-						if (ISLT(T,O)(PTRADD(ms.bh,
+						if (ISLT(T,O)(PTRADD(ms->bh,
 								     nlo,
-								     ms.hs),
-							      PTRADD(ms.bh,
+								     ms->hs),
+							      PTRADD(ms->bh,
 								     olo,
-								     ms.hs),
-							      &ms))
+								     ms->hs),
+							      ms))
 							break;
 					}
 				}
 			}
 		}
 		if (descending)
-			reverse_slice(lo, lo + n, &ms);
+			reverse_slice(lo, lo + n, ms);
 		/* If short, extend to min(minrun, nremaining). */
 		if (n < minrun) {
 			ssize_t force = nremaining <= minrun ? nremaining : minrun;
 
-			binarysort(T,O)(lo, lo + force, lo + n, &ms);
+			binarysort(T,O)(lo, lo + force, lo + n, ms);
 			n = force;
 		}
 		/* Push run onto pending-runs stack, and maybe merge. */
-		assert(ms.n < MAX_MERGE_PENDING);
-		ms.pending[ms.n].base = lo;
-		ms.pending[ms.n].len = n;
-		ms.n++;
+		assert(ms->n < MAX_MERGE_PENDING);
+		ms->pending[ms->n].base = lo;
+		ms->pending[ms->n].len = n;
+		ms->n++;
 		{
 /* Examine the stack of runs waiting to be merged, merging adjacent
  * runs until the stack invariants are re-established:
@@ -765,19 +780,19 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
  * See listsort.txt for more info.
  *
  * Returns 0 on success, -1 on error. */
-			struct slice *p = ms.pending;
+			struct slice *p = ms->pending;
 
-			while (ms.n > 1) {
-				ssize_t i = ms.n - 2;
+			while (ms->n > 1) {
+				ssize_t i = ms->n - 2;
 
 				if (i > 0 &&
 				    p[i - 1].len <= p[i].len + p[i + 1].len) {
 					if (p[i - 1].len < p[i + 1].len)
 						--i;
-					if (merge_at(T,O)(&ms, i) < 0)
+					if (merge_at(T,O)(ms, i) < 0)
 						return -1;
 				} else if (p[i].len <= p[i + 1].len) {
-					if (merge_at(T,O)(&ms, i) < 0)
+					if (merge_at(T,O)(ms, i) < 0)
 						return -1;
 				} else
 					break;
@@ -794,14 +809,14 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
  * one remains.  This is used at the end of the mergesort.
  *
  * Returns 0 on success, -1 on error. */
-		struct slice *p = ms.pending;
+		struct slice *p = ms->pending;
 
-		while (ms.n > 1) {
-			ssize_t n = ms.n - 2;
+		while (ms->n > 1) {
+			ssize_t n = ms->n - 2;
 
 			if (n > 0 && p[n - 1].len < p[n + 1].len)
 				--n;
-			if (merge_at(T,O)(&ms, n) < 0)
+			if (merge_at(T,O)(ms, n) < 0)
 				return -1;
 		}
 	}
@@ -916,3 +931,4 @@ GDKssortimpl(O)(void *h, void *t, void *heap, size_t nitems,
 	merge_freemem(&ms);
 	return result;
 }
+#endif	/* DEFINE_MAIN_FUNC */
