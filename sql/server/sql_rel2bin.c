@@ -20,6 +20,7 @@
 
 #include "monetdb_config.h"
 #include "sql_rel2bin.h"
+#include "sql_stack.h"
 #include "sql_env.h"
 #include <stdio.h>
 #include "rel_semantic.h"
@@ -1020,7 +1021,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_ordered:
 
 	case st_alias:
-	case st_append:
 	case st_exception:
 	case st_trans:
 	case st_catalog:
@@ -1046,7 +1046,26 @@ rel2bin(mvc *c, stmt *s)
 	case st_append_idx:
 	case st_update_idx:
 	case st_delete:
+	case st_append:
 
+		/* work around some bad recursion */
+		if (s->type == st_append && s->op1->type == st_append) {
+			stmt *p = s->op1, *n = NULL;
+			sql_stack *stk = sql_stack_new(c->sa, 1024);
+
+			sql_stack_push(stk, p);
+			while(p->type == st_append && p->op1->optimized != 2) {
+				p = p->op1;
+				sql_stack_push(stk, p);
+			}
+			while( (p = sql_stack_pop(stk)) != NULL) {
+				if (n)
+					p->op1 = n;
+				n = rel2bin(c, p);
+			}
+			if (n)
+				s -> op1 = n;
+		}
 		if (s->op1) {
 			stmt *os = s->op1;
 			stmt *ns = rel2bin(c, os);

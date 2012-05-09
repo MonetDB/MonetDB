@@ -3770,7 +3770,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (m->emode == m_normal && m->caching) { 
+	  if (m->emode == m_normal && m->caching && m->argc < 100) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	

@@ -1888,7 +1888,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	atom *a;
 
 	/* exclude named variables */
-	if (exp->type != e_atom || exp->l /* atoms */ || exp->r /* named */ ||
+	if (exp->type != e_atom || exp->l /* atoms */ || exp->r /* named */ || exp->f /* list */ ||
 		(t->scale && t->type->eclass != EC_FLT))
 		return NULL;
 
