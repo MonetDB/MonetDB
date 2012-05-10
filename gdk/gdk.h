@@ -905,7 +905,6 @@ typedef int (*GDKfcn) ();
 #define batStamp	P->stamp
 #define batSharecnt	P->sharecnt
 #define batRestricted	P->restricted
-#define batLastused	P->lastused
 #define creator_tid	P->tid
 #define htype		H->type
 #define ttype		T->type

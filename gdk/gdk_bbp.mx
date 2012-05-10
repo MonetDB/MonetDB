@@ -112,7 +112,7 @@ All Rights Reserved.
 
 gdk_export int BBPin;		/* BATs swapped into BBP  */
 gdk_export int BBPout;		/* BATs swapped out of BBP */
-gdk_export int BBPsize;		/* current occupied size of BBP array */
+gdk_export bat BBPsize;		/* current occupied size of BBP array */
 
 /* global calls */
 gdk_export bat BBPimportEntry(char *nme);
@@ -2892,13 +2892,8 @@ BBPtrim_scan(bat bbppos, bat bbplim)
 					 * cache miss is relatively
 					 * higher for small bats
 					 */
-					int swap_first = 0;
-					BUN cnt = BUN_NONE;
-
-					if (b) {
-						cnt = BATcount(b);
-						swap_first = (cnt >= BBPSMALLBAT);
-					}
+					BUN cnt = BATcount(b);
+					int swap_first = (cnt >= BBPSMALLBAT);
 
 					/* however, when we are
 					 * looking to decrease the
@@ -2968,7 +2963,9 @@ BBPtrim_select(size_t target, int dirty)
 				  PTRFMTCAST(void *)b);
 
 			THRprintf(GDKstdout,
-				  "#            (cnt=" BUNFMT ", mode=%d, refs=%d, wait=%d, parent=%d,%d, lastused=%d,%d,%d)\n",
+				  "#            (cnt=" BUNFMT ", mode=%d, "
+				  "refs=%d, wait=%d, parent=%d,%d, "
+				  "lastused=%d,%d,%d)\n",
 				  bbptrim[cur].cnt,
 				  b->batPersistence,
 				  BBP_refs(b->batCacheid),
@@ -3163,8 +3160,9 @@ BBPtrim(size_t target)
 						  bbptrim[i].bid);
 				continue;
 			}
-			MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: %9d %7d %s\n",
-					   lastused[i],
+			MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: %8d%c %7d %s\n",
+					   BBPLASTUSED(lastused[i]),
+					   lastused[i] & 0x80000000 ? '*' : ' ',
 					   (int) bbptrim[i].bid,
 					   BBPname(bbptrim[i].bid));
 

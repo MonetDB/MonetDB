@@ -311,6 +311,7 @@ int GDK_vm_trim = 1;
 #define SEG_SIZE(x,y)   ((x)+(((x)&((1<<(y))-1))?(1<<(y))-((x)&((1<<(y))-1)):0))
 #define MAX_BIT         ((int) (sizeof(ssize_t)<<3))
 
+#if defined(GDK_MEM_KEEPHISTO) || defined(GDK_VM_KEEPHISTO)
 /* histogram update macro */
 #define GDKmallidx(idx, size)				\
 	do {						\
@@ -328,6 +329,7 @@ int GDK_vm_trim = 1;
 			_mask >>=1;			\
 		}					\
 	} while (0)
+#endif
 
 static volatile size_t GDK_mallocedbytes_estimate = 0;
 static ssize_t GDK_mem_cursize = 0;
@@ -526,7 +528,7 @@ GDKmem_heapinuse(void)
 
 static volatile int GDK_heapcheck_last = 0;
 
-static inline void
+static void
 GDKmem_heapcheck(int t)
 {
 	/* correct heap estimate with the real thing */

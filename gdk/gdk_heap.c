@@ -238,7 +238,8 @@ HEAPmargin(size_t maxsize)
 {
 	size_t ret;
 #if SIZEOF_VOID_P == 8
-	/* in 64-bits systems, try to enforce in-place realloc, but provoke the memcpy on 256MB, then 4GB */
+	/* in 64-bits systems, try to enforce in-place realloc, but
+	 * provoke the memcpy on 256MB, then 4GB */
 	size_t use = GDKvm_cursize();
 	ret = MIN(GDK_mem_maxsize, MAX(((size_t) 1) << 26, 16 * maxsize));
 	if ((ret + ret) > (GDK_vm_maxsize - MIN(GDK_vm_maxsize, use)))	/* only if room */

@@ -2124,27 +2124,28 @@ BATvmsize(BAT *b, int dirty)
 	BATcheck(b, "BATvmsize");
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->H->heap.dirty) ? HEAPvmsize(&b->H->heap) : 0) +
-		((dirty == 0 || b->T->heap.dirty) ? HEAPvmsize(&b->T->heap) : 0) +
-		(((dirty == 0 || b->H->heap.dirty) && b->H->hash) ? HEAPvmsize(b->H->hash->heap) : 0) +
-		(((dirty == 0 || b->T->heap.dirty) && b->T->hash) ? HEAPvmsize(b->T->hash->heap) : 0) +
-		((b->H->vheap && (dirty == 0 || b->H->vheap->dirty)) ? HEAPvmsize(b->H->vheap) : 0) +
-		((b->T->vheap && (dirty == 0 || b->T->vheap->dirty)) ? HEAPvmsize(b->T->vheap) : 0);
+	return (!dirty || b->H->heap.dirty ? HEAPvmsize(&b->H->heap) : 0) +
+		(!dirty || b->T->heap.dirty ? HEAPvmsize(&b->T->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPvmsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0) +
+		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPvmsize(b->H->vheap) : 0) +
+		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPvmsize(b->T->vheap) : 0);
 }
 
 size_t
 BATmemsize(BAT *b, int dirty)
 {
 	BATcheck(b, "BATmemsize");
-	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
+	if (b->batDirty ||
+	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->batDirtydesc) ? sizeof(BATstore) : 0) +
-		((dirty == 0 || b->H->heap.dirty) ? HEAPmemsize(&b->H->heap) : 0) +
-		((dirty == 0 || b->T->heap.dirty) ? HEAPmemsize(&b->T->heap) : 0) +
-		(((dirty == 0 || b->H->heap.dirty) && b->H->hash) ? HEAPmemsize(b->H->hash->heap) : 0) +
-		(((dirty == 0 || b->T->heap.dirty) && b->T->hash) ? HEAPmemsize(b->T->hash->heap) : 0) +
-		((b->H->vheap && (dirty == 0 || b->H->vheap->dirty)) ? HEAPmemsize(b->H->vheap) : 0) +
-		((b->T->vheap && (dirty == 0 || b->T->vheap->dirty)) ? HEAPmemsize(b->T->vheap) : 0);
+	return (!dirty || b->batDirtydesc ? sizeof(BATstore) : 0) +
+		(!dirty || b->H->heap.dirty ? HEAPmemsize(&b->H->heap) : 0) +
+		(!dirty || b->T->heap.dirty ? HEAPmemsize(&b->T->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0) +
+		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPmemsize(b->H->vheap) : 0) +
+		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPmemsize(b->T->vheap) : 0);
 }
 
 /*
