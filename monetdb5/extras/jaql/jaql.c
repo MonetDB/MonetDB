@@ -709,14 +709,16 @@ make_pred(tree *l, tree *comp, tree *r)
 	/* precompute static statements */
 	switch (l->type) {
 		char eval;
-		case j_bool: {
+		case j_bool:
 			/* comparators have been checked above */
 			if (r->type == j_bool) {
 				eval = l->nval == r->nval;
 			} else if (r->type == j_num || r->type == j_dbl) {
 				eval = (l->nval && r->nval)
 					|| (!l->nval && !r->nval);
-			} else {
+			} else if (r->type == j_str
+					|| r->type == j_json_obj || r->type == j_json_arr)
+			{
 				freetree(l);
 				freetree(comp);
 				freetree(r);
@@ -726,6 +728,8 @@ make_pred(tree *l, tree *comp, tree *r)
 				res->sval = GDKstrdup("filter: boolean comparison "
 						"with non-boolean not supported");
 				return res;
+			} else {
+				break;
 			}
 
 			freetree(l);
@@ -736,8 +740,7 @@ make_pred(tree *l, tree *comp, tree *r)
 			res->type = j_bool;
 			res->nval = comp->cval == j_nequal ? !eval : eval;
 			return res;
-		}
-		case j_num: {
+		case j_num:
 		case j_dbl:
 			if (r->type == j_num || r->type == j_dbl) {
 				double a, b;
@@ -790,7 +793,9 @@ make_pred(tree *l, tree *comp, tree *r)
 				res->type = j_bool;
 				res->nval = eval;
 				return res;
-			} else {
+			} else if (r->type == j_str
+					|| r->type == j_json_obj || r->type == j_json_arr)
+			{
 				freetree(l);
 				freetree(comp);
 				freetree(r);
@@ -801,7 +806,7 @@ make_pred(tree *l, tree *comp, tree *r)
 						"with non-number not supported");
 				return res;
 			}
-		}
+			break;
 		case j_str:
 			if (r->type == j_str) {
 				switch (comp->cval) {
@@ -843,7 +848,7 @@ make_pred(tree *l, tree *comp, tree *r)
 				res->type = j_bool;
 				res->nval = eval;
 				return res;
-			} else {
+			} else if (r->type == j_json_obj || r->type == j_json_arr) {
 				freetree(l);
 				freetree(comp);
 				freetree(r);
@@ -854,6 +859,7 @@ make_pred(tree *l, tree *comp, tree *r)
 						"with non-string not supported");
 				return res;
 			}
+			break;
 		default:
 			break;
 	}
