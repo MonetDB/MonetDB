@@ -52,11 +52,15 @@ typedef struct _jc {
 
 enum treetype {
 	j_invalid,
-	j_output_var,
-	j_output,
+	j_bool,
+	j_num,
+	j_dbl,
+	j_str,
 	j_json,
 	j_json_obj,
 	j_json_arr,
+	j_output_var,
+	j_output,
 	j_filter,
 	j_transform,
 	j_expand,
@@ -75,10 +79,6 @@ enum treetype {
 	j_arr_idx,
 	j_pair,
 	j_var,
-	j_num,
-	j_dbl,
-	j_str,
-	j_bool,
 	j_func,
 	j_func_arg,
 	j_error

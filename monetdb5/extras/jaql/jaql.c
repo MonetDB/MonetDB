@@ -175,6 +175,23 @@ make_jaql_filter(tree *var, tree *pred)
 		return pred;
 	}
 
+	if (pred->type == j_bool) {
+		if (pred->nval) {
+			freetree(var);
+			freetree(pred);
+			return NULL;
+		} else {
+			/* false, must somehow inject null-pipe, return error for
+			 * now */
+			freetree(var);
+			freetree(pred);
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_error;
+			res->sval = GDKstrdup("filter: condition always yields to false");
+			return res;
+		}
+	}
+
 	assert(pred->type == j_pred);
 	
 	if ((res = _check_exp_var1("filter", var->sval, pred)) != NULL) {
@@ -615,6 +632,8 @@ make_pred(tree *l, tree *comp, tree *r)
 {
 	tree *res;
 
+	assert(r != NULL);
+
 	if (l != NULL && l->type == j_error) {
 		freetree(comp);
 		freetree(r);
@@ -641,7 +660,9 @@ make_pred(tree *l, tree *comp, tree *r)
 		return r;
 	}
 
-	if (r->type == j_bool && comp->cval != j_nequal && comp->cval != j_equals)
+	if ((r->type == j_bool || l->type == j_bool)
+			&& comp->cval != j_nequal && comp->cval != j_equals
+			&& comp->cval != j_and && comp->cval != j_or)
 	{
 		freetree(l);
 		freetree(comp);
@@ -649,8 +670,192 @@ make_pred(tree *l, tree *comp, tree *r)
 
 		res = GDKzalloc(sizeof(tree));
 		res->type = j_error;
-		res->sval = GDKstrdup("filter: can only apply equality tests on booleans");
+		res->sval = GDKstrdup("filter: can only apply equality tests "
+				"on booleans");
 		return res;
+	}
+
+	assert(l != NULL && comp != NULL);
+
+	/* switch arguments such that left is always <= in type compared to
+	 * right */
+	if (comp->cval == j_equals || comp->cval == j_nequal
+			|| comp->cval == j_greater || comp->cval == j_gequal
+			|| comp->cval == j_less || comp->cval == j_lequal)
+	{
+		if (l->type > r->type) {
+			tree *t = r;
+			r = l;
+			l = t;
+			switch (comp->cval) {
+				case j_greater:
+					comp->cval = j_less;
+					break;
+				case j_gequal:
+					comp->cval = j_lequal;
+					break;
+				case j_less:
+					comp->cval = j_greater;
+					break;
+				case j_lequal:
+					comp->cval = j_gequal;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	/* precompute static statements */
+	switch (l->type) {
+		char eval;
+		case j_bool: {
+			/* comparators have been checked above */
+			if (r->type == j_bool) {
+				eval = l->nval == r->nval;
+			} else if (r->type == j_num || r->type == j_dbl) {
+				eval = (l->nval && r->nval)
+					|| (!l->nval && !r->nval);
+			} else {
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: boolean comparison "
+						"with non-boolean not supported");
+				return res;
+			}
+
+			freetree(l);
+			freetree(comp);
+			freetree(r);
+
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_bool;
+			res->nval = comp->cval == j_nequal ? !eval : eval;
+			return res;
+		}
+		case j_num: {
+		case j_dbl:
+			if (r->type == j_num || r->type == j_dbl) {
+				double a, b;
+				if (l->type == j_num && r->type == j_dbl) {
+					a = (double)l->nval;
+					b = r->dval;
+				} else if (l->type == j_num) {
+					a = (double)l->nval;
+					b = (double)r->nval;
+				} else {
+					a = l->dval;
+					b = r->dval;
+				}
+				switch (comp->cval) {
+					case j_equals:
+						eval = a == b;
+						break;
+					case j_nequal:
+						eval = a != b;
+						break;
+					case j_greater:
+						eval = a > b;
+						break;
+					case j_gequal:
+						eval = a >= b;
+						break;
+					case j_less:
+						eval = a < b;
+						break;
+					case j_lequal:
+						eval = a <= b;
+						break;
+					default:
+						freetree(l);
+						freetree(comp);
+						freetree(r);
+
+						res = GDKzalloc(sizeof(tree));
+						res->type = j_error;
+						res->sval = GDKstrdup("filter: operations IN, NOT, "
+								"OR, AND on numbers not supported");
+						return res;
+				}
+
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_bool;
+				res->nval = eval;
+				return res;
+			} else {
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: number comparison "
+						"with non-number not supported");
+				return res;
+			}
+		}
+		case j_str:
+			if (r->type == j_str) {
+				switch (comp->cval) {
+					case j_equals:
+						eval = strcmp(l->sval, r->sval) == 0;
+						break;
+					case j_nequal:
+						eval = strcmp(l->sval, r->sval) != 0;
+						break;
+					case j_greater:
+						eval = strcmp(l->sval, r->sval) > 0;
+						break;
+					case j_gequal:
+						eval = strcmp(l->sval, r->sval) >= 0;
+						break;
+					case j_less:
+						eval = strcmp(l->sval, r->sval) < 0;
+						break;
+					case j_lequal:
+						eval = strcmp(l->sval, r->sval) <= 0;
+						break;
+					default:
+						freetree(l);
+						freetree(comp);
+						freetree(r);
+
+						res = GDKzalloc(sizeof(tree));
+						res->type = j_error;
+						res->sval = GDKstrdup("filter: operations IN, NOT, "
+								"OR, AND on strings not supported");
+						return res;
+				}
+
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_bool;
+				res->nval = eval;
+				return res;
+			} else {
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: string comparison "
+						"with non-string not supported");
+				return res;
+			}
+		default:
+			break;
 	}
 
 	res = GDKzalloc(sizeof(tree));
