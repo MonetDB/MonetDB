@@ -50,8 +50,13 @@ typedef struct _jc {
 	int vtop;
 } jc;
 
+/* the order here does matter for filter */
 enum treetype {
 	j_invalid,
+	j_var,
+	j_func,
+	j_pred,
+	j_operation,
 	j_bool,
 	j_num,
 	j_dbl,
@@ -69,17 +74,13 @@ enum treetype {
 	j_join,
 	j_sort,
 	j_top,
-	j_comp,
 	j_op,
+	j_comp,
 	j_group_input,
 	j_join_input,
-	j_operation,
-	j_pred,
 	j_sort_arg,
 	j_arr_idx,
 	j_pair,
-	j_var,
-	j_func,
 	j_func_arg,
 	j_error
 };
