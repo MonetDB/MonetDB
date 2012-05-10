@@ -332,6 +332,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 	Hash *h = NULL;
 	if (HEAPalloc(hp, mask + size, sizeof(BUN)) < 0)
 		return NULL;
+	hp->free = (mask + size) * sizeof(BUN);
 	h = (Hash *) GDKmalloc(sizeof(Hash));
 	if (!h)
 		return h;
