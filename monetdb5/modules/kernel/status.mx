@@ -450,7 +450,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/malloc", &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
-	sz = GDKvm_heapsize();
+	sz = GDKmem_inuse();
 	BUNins(bn, "_tot/heap", &sz, FALSE);
 
 	tot = GDKmem_cursize();

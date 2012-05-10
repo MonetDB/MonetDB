@@ -2170,12 +2170,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
  * @tab GDKfree (void* blk)
  * @item str
  * @tab GDKstrdup (str s)
- * @item void*
- * @tab GDKvmalloc (size_t size, size_t *maxsize, int emergency)
- * @item void* @tab
- *  GDKvmrealloc (void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency)
- * @item void @tab
- *  GDKvmfree (void* blk, size_t size, size_t maxsize)
  * @end multitable
  *
  * These utilities are primarily used to maintain control over critical interfaces
@@ -2198,8 +2192,6 @@ gdk_export int	GDK_vm_trim;		/* allow trimming */
 gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
-gdk_export size_t GDKvm_heapsize(void);
-gdk_export size_t GDKmem_heapsize(void);
 
 gdk_export void *GDKmalloc(size_t size);
 gdk_export void *GDKzalloc(size_t size);

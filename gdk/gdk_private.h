@@ -76,7 +76,6 @@ void GDKlockHome(void);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
-size_t GDKmem_heapinuse(void);
 int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 int GDKmunmap(void *addr, size_t len);
 void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency);
@@ -85,10 +84,6 @@ int GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode);
 int GDKssort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 int GDKssort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 int GDKunlink(const char *dir, const char *nme, const char *extension);
-void *GDKvmalloc(size_t size, size_t * maxsize, int emergency);
-void GDKvmfree(void *blk, size_t size, size_t maxsize);
-void GDKvminc(size_t len);
-void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);

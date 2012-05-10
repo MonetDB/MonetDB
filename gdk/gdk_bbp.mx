@@ -3093,9 +3093,10 @@ BBPtrim(size_t target)
 	/* recheck targets to see whether the work was already done by
 	 * another thread */
 	if (target && target != BBPTRIM_ALL) {
-		target = GDKmem_inuse() + GDKvm_cursize();
-		if (target > GDK_mem_maxsize)
-			target -= GDK_mem_maxsize;
+		size_t rss2 = MT_getrss() / 2;
+		target = GDKvm_cursize();
+		if (target > rss2)
+			target -= rss2;
 		else
 			target = 0;
 	}
