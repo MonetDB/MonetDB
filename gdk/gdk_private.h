@@ -108,9 +108,6 @@ void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len
 void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
 int MT_mmap_trim(size_t lim, void *err);
 int MT_msync(void *p, size_t off, size_t len, int mode);
-void *MT_vmalloc(size_t size, size_t *maxsize);
-void MT_vmfree(void *p, size_t size);
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 int OIDdirty(void);
 int OIDinit(void);
 oid *oidRead(oid *a, stream *s, size_t cnt);
