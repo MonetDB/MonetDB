@@ -88,8 +88,6 @@ All Rights Reserved.
 #ifndef _GDK_BBP_H_
 #define _GDK_BBP_H_
 
-#define BBPINIT		2048
-
 #define BBPLOADED	1	/* set if bat in memory */
 #define BBPSWAPPED	2	/* set if dirty bat is not in memory */
 #define BBPTMP          4	/* set if non-persistent bat has image on disk */
@@ -157,8 +155,7 @@ gdk_export void BBPshare(bat b);
  * are found in O(1) by keeping a freelist that uses the 'next' field
  * in the BBPrec records.
  */
-BBPrec *BBP = NULL;		/* fixed base VM address of BBP array */
-bat BBPmaxsize;			/* size of non-committed VM BBP array */
+BBPrec *BBP[N_BBPINIT];		/* fixed base VM address of BBP array */
 bat BBPlimit = 0;		/* current committed VM BBP array */
 bat BBPsize = 0;		/* current used size of BBP array */
 
@@ -408,23 +405,22 @@ BBPinithash(void)
  * BBPtrim, causing deadlock.
  */
 static void
-BBPextend(dbl factor, int buildhash)
+BBPextend(int buildhash)
 {
-	int newsize;
+	BBP_notrim = BBP_getpid();
+
+	if (BBPsize >= N_BBPINIT * BBPINIT)
+		GDKfatal("BBPextend: trying to extend BAT pool beyond the "
+			 "limit (%d)\n", N_BBPINIT * BBPINIT);
 
 	/* make sure the new size is at least BBPsize large */
-	newsize = (int) (BBPlimit * factor);
-	while (newsize < BBPsize)
-		newsize = (int) (newsize * factor);
-
-	BBP_notrim = BBP_getpid();
-	BBP = (BBPrec *) GDKrealloc(BBP, newsize * sizeof(BBPrec));
-	if (BBP == NULL)
-		GDKfatal("BBPextend: failed to extend BAT pool\n");
-
-	memset(BBP + BBPlimit, 0, (newsize - BBPlimit) * sizeof(BBPrec));
-	BBPlimit = newsize;
-	BBPmaxsize = BBPlimit;
+	while (BBPlimit < BBPsize) {
+		assert(BBP[BBPlimit >> BBPINITLOG] == NULL);
+		BBP[BBPlimit >> BBPINITLOG] = GDKzalloc(BBPINIT * sizeof(BBPrec));
+		if (BBP[BBPlimit >> BBPINITLOG] == NULL)
+			GDKfatal("BBPextend: failed to extend BAT pool\n");
+		BBPlimit += BBPINIT;
+	}
 
 	if (buildhash) {
 		int i;
@@ -816,7 +812,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 		if ((bat) batid >= BBPsize) {
 			BBPsize = (bat) batid + 1;
 			if (BBPsize >= BBPlimit)
-				BBPextend(BATMARGIN, FALSE);
+				BBPextend(FALSE);
 		}
 		if (src == 0 && BBP_desc(bid) != NULL)
 			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
@@ -1299,11 +1295,11 @@ BBPinit(void)
 
 	/* allocate structures: try to reserve as much space as
 	   possible */
-	BBP = GDKzalloc(BBPlimit * sizeof(BBPrec));
-	if (BBP == NULL)
+	memset(BBP, 0, sizeof(BBP));
+	BBP[0] = GDKzalloc(BBPlimit * sizeof(BBPrec));
+	if (BBP[0] == NULL)
 		GDKfatal("BBPinit: failed to allocate BBP");
-	assert(BBP != NULL);
-	BBPmaxsize = BBPlimit;
+	assert(BBP[0] != NULL);
 
 	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
@@ -1360,9 +1356,6 @@ BBPexit(void)
 {
 	bat i;
 	int skipped;
-
-	if (!BBP)
-		return;		/* AARGH */
 
 	BBPrecycle_minsize(0);	/* clear the bat cache */
 	BBPlock("BBPexit");	/* stop all threads ever touching more descriptors */
@@ -1917,7 +1910,7 @@ BBPinsert(BATstore *bs)
 		 * while we were waiting */
 		if (BBP_free(idx) <= 0) {
 			if (BBPsize++ >= BBPlimit) {
-				BBPextend(BATMARGIN, TRUE);
+				BBPextend(TRUE);
 				/* it seems BBPextend could return and
 				 * still leaving BBP_free(idx) == 0 */
 				if (BBP_free(idx) == 0)

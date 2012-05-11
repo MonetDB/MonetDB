@@ -513,7 +513,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/tind", &tind, FALSE);
 
 	/* special area 1: BBP rec */
-	sz = BBPmaxsize * sizeof(BBPrec);
+	sz = BBPlimit * sizeof(BBPrec);
 	BUNins(bn, "_tot/bbp", &sz, FALSE);
 	tot += sz;
 

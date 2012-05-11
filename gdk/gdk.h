@@ -1840,23 +1840,30 @@ typedef struct {
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
 
-gdk_export bat BBPmaxsize;
 gdk_export bat BBPlimit;
-gdk_export BBPrec *BBP;
+#define N_BBPINIT	100
+#if SIZEOF_VOID_P == 4
+#define BBPINITLOG	11
+#else
+#define BBPINITLOG	13
+#endif
+#define BBPINIT		(1 << BBPINITLOG)
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
+gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
-#define BBP_cache(i)	BBP[ABS(i)].cache[(i)<0]
-#define BBP_logical(i)	BBP[ABS(i)].logical[(i)<0]
-#define BBP_bak(i)	BBP[ABS(i)].bak[(i)<0]
-#define BBP_next(i)	BBP[ABS(i)].next[(i)<0]
-#define BBP_physical(i)	BBP[ABS(i)].physical
-#define BBP_options(i)	BBP[ABS(i)].options
-#define BBP_desc(i)	BBP[ABS(i)].desc
-#define BBP_refs(i)	BBP[ABS(i)].refs
-#define BBP_lrefs(i)	BBP[ABS(i)].lrefs
-#define BBP_lastused(i)	BBP[ABS(i)].lastused
-#define BBP_status(i)	BBP[ABS(i)].status
-#define BBP_pid(i)	BBP[ABS(i)].pid
+#define BBP_cache(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].cache[(i)<0]
+#define BBP_logical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].logical[(i)<0]
+#define BBP_bak(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].bak[(i)<0]
+#define BBP_next(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].next[(i)<0]
+#define BBP_physical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].physical
+#define BBP_options(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].options
+#define BBP_desc(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].desc
+#define BBP_refs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].refs
+#define BBP_lrefs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lrefs
+#define BBP_lastused(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lastused
+#define BBP_status(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].status
+#define BBP_pid(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
