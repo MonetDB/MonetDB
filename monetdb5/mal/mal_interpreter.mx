@@ -64,6 +64,7 @@ mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
 
 mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
+mal_export str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 
 @c
 #include "monetdb_config.h"
@@ -76,7 +77,7 @@ mal_export ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k);
 #define SLOW 1
 #define FAST 1
 
-static str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+
 static void displayVolume(Client cntxt, lng vol);
 
 #define USE_DFLOW_ADMISSION

@@ -1987,8 +1987,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		
 		   	om = m = isMATalias(getArg(p,1), mat, mtop);
 			if (om < 0) { /* range join with parts on the right */
-				error++;
-				goto fail;
+				//error++;
+				//goto fail;
 			}
 
 		   	n = isMATalias(getArg(p,2), mat, mtop);

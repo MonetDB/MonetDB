@@ -36,7 +36,7 @@ All Rights Reserved.
  * 
  * The right place for injection is right after we get to know about the files
  * which have to be mounted (or possibly brought). It should also be before any
- * 'data' table is binded.
+ * 'data' table is bound.
  * 
  * For that purpose, the optimizer's task is to recognize MAL code
  * patterns like
@@ -57,7 +57,7 @@ All Rights Reserved.
  *  v3 := sql.bind(..., schema_name, meta_table_name, "file_location", 0);
  *  ...
  *  v5 := algebra.leftjoin(v2, v3);
- *  dvf.plan_modifier(v5);
+ *  dvf.plan_modifier(schema_name, v5);
  *  ...
  *  v6 := sql.bind(..., schema_name, data_table_name, ..., ...);
  *  ...

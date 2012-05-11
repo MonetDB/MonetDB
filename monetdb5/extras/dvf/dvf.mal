@@ -4,6 +4,6 @@ module dvf;
 #address plan_modifier
 #comment "Modify the rest of the plan in the execution time according to the files to be mounted.";
 
-pattern plan_modifier(schema_name:str, file_locations:bat[:oid,:str]):void
+pattern plan_modifier{unsafe}(schema_name:str, file_locations:bat[:oid,:str]):void
 address plan_modifier
 comment "Modify the rest of the plan in the execution time according to the files to be mounted.";
