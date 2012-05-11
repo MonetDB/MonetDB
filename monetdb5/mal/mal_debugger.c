@@ -723,10 +723,10 @@ retryRead:
 				/* watchout, you don't want to wait for locks by others */
 				mnstr_printf(out, "BBP contains %d entries\n", limit);
 				for (; i < limit; i++)
-					if ((BBP[i].lrefs || BBP[i].refs) && BBP[i].b[0]) {
-						mnstr_printf(out, "#[%d] %-15s", i, BBP[i].nme[0]);
-						if (BBP[i].b[0])
-							printBATproperties(out, BBP[i].b[0]);
+					if ((BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
+						mnstr_printf(out, "#[%d] %-15s", i, BBP_logical(i));
+						if (BBP_cache(i))
+							printBATproperties(out, BBP_cache(i));
 						if ((*b == 'd' && BBP_refs(i) == 0) || BBP_cache(i) == 0) {
 							mnstr_printf(out, "\n");
 							continue;

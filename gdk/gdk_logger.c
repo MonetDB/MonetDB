@@ -1792,7 +1792,7 @@ bm_commit(logger *lg)
 
 		if (lg->debug & 1)
 			fprintf(stderr, "bm_commit: delete %d (%d)\n",
-				bid, BBP[bid].lrefs);
+				bid, BBP_lrefs(bid));
 	}
 
 	/* subcommit the freed snapshots */
@@ -1824,7 +1824,7 @@ assert(lb->P->restricted > BAT_WRITE);
 
 		if (lg->debug & 1)
 			fprintf(stderr, "bm_commit: create %d (%d)\n",
-				bid, BBP[bid].lrefs);
+				bid, BBP_lrefs(bid));
 	}
 	res = bm_subcommit(lg->catalog, lg->catalog, n, lg->debug);
 	BBPreclaim(n);
@@ -1872,7 +1872,7 @@ logger_del_bat(logger *lg, log_bid bid)
 		if (lg->debug & 1)
 			fprintf(stderr,
 				"logger_del_bat release snapshot %d (%d)\n",
-				bid, BBP[bid].lrefs);
+				bid, BBP_lrefs(bid));
 		BUNins(lg->freed, &bid, NULL, FALSE);
 	} else if (p >= lg->catalog->batInserted)
 		BBPdecref(bid, TRUE);
@@ -1883,7 +1883,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	}
 	BUNdelHead(lg->catalog, &bid, FALSE);
 
-/*assert( BBP[bid].lrefs == 0 );*/
+/*assert( BBP_lrefs(bid) == 0 );*/
 }
 
 log_bid

@@ -695,11 +695,11 @@ fixoidheap(void)
 	fflush(stderr);
 
 	for (bid = 1; bid < BBPsize; bid++) {
-		if ((bs = BBP[bid].cache) == NULL)
+		if ((bs = BBP_desc(bid)) == NULL)
 			continue;	/* not a valid BAT */
-		if (BBP[bid].nme[0] &&
-		    (len = strlen(BBP[bid].nme[0])) > 8 &&
-		    strcmp(BBP[bid].nme[0] + len - 8, "_catalog") == 0) {
+		if (BBP_logical(bid) &&
+		    (len = strlen(BBP_logical(bid))) > 8 &&
+		    strcmp(BBP_logical(bid) + len - 8, "_catalog") == 0) {
 			/* this is one of the files used by the
 			 * logger.  We need to communicate to the
 			 * logger that it also needs to do a
@@ -707,7 +707,7 @@ fixoidheap(void)
 			 * file here based on the name of this BAT. */
 			snprintf(filename, sizeof(filename),
 				 "%.*s_32-64-convert",
-				 (int) (len - 8), BBP[bid].nme[0]);
+				 (int) (len - 8), BBP_logical(bid));
 			fp = fopen(filename, "w");
 			if (fp == NULL)
 				GDKfatal("fixoidheap: cannot create file %s\n",
@@ -818,7 +818,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 			if (BBPsize >= BBPlimit)
 				BBPextend(BATMARGIN, FALSE);
 		}
-		if (src == 0 && BBP[bid].cache != NULL)
+		if (src == 0 && BBP_desc(bid) != NULL)
 			GDKfatal("BBPinit: duplicate entry in BBP.dir.");
 		bs = GDKzalloc(sizeof(BATstore));
 		if (bs == NULL)
@@ -979,8 +979,8 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 
 		if (src)
 			return bs;
-		BBP[bid].cache = bs;
-		BBP[bid].status = BBPEXISTING;	/* do we need other status bits? */
+		BBP_desc(bid) = bs;
+		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
 			s = BBPtmpname(logical, sizeof(logical), bid);
 		} else {
@@ -989,22 +989,22 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 			strncpy(logical, headname, sizeof(logical));
 			s = logical;
 		}
-		BBP[bid].nme[0] = GDKstrdup(s);
+		BBP_logical(bid) = GDKstrdup(s);
 		if (strcmp(tailname, BBPNONAME) != 0)
-			BBP[bid].nme[1] = GDKstrdup(tailname);
+			BBP_logical(-bid) = GDKstrdup(tailname);
 		else
-			BBP[bid].nme[1] = GDKstrdup(BBPtmpname(tailname, sizeof(tailname), -bid));
-		BBP[bid].path = GDKstrdup(filename);
-		BBP[bid].options = NULL;
+			BBP_logical(-bid) = GDKstrdup(BBPtmpname(tailname, sizeof(tailname), -bid));
+		BBP_physical(bid) = GDKstrdup(filename);
+		BBP_options(bid) = NULL;
 		if (options)
-			BBP[bid].options = GDKstrdup(options);
-		BBP[bid].lastused = lastused;
+			BBP_options(bid) = GDKstrdup(options);
+		BBP_lastused(bid) = lastused;
 		if (lastused > *max_stamp)
 			*max_stamp = lastused;
 		if (lastused < *min_stamp)
 			*min_stamp = lastused;
-		BBP[bid].refs = 0;
-		BBP[bid].lrefs = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
+		BBP_refs(bid) = 0;
+		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
 	return NULL;
 }
@@ -1312,7 +1312,7 @@ BBPinit(void)
 	if (min_stamp <= max_stamp) {
 		for (bid = 1; bid < BBPsize; bid++)
 			if (BBPvalid(bid))
-				BBP[bid].lastused -= min_stamp;
+				BBP_lastused(bid) -= min_stamp;
 		BBPsetstamp(max_stamp - min_stamp);
 	}
 
@@ -1406,21 +1406,21 @@ BBPexit(void)
 						BATfree(b);
 				}
 				BBPuncacheit(i, TRUE);
-				if (BBP[i].nme[0] != BBP[i].bak[0])
-					GDKfree(BBP[i].bak[0]);
-				BBP[i].bak[0] = NULL;
-				GDKfree(BBP[i].nme[0]);
-				BBP[i].nme[0] = NULL;
-				GDKfree(BBP[i].nme[1]);
-				BBP[i].nme[1] = NULL;
+				if (BBP_logical(i) != BBP_bak(i))
+					GDKfree(BBP_bak(i));
+				BBP_bak(i) = NULL;
+				GDKfree(BBP_logical(i));
+				BBP_logical(i) = NULL;
+				GDKfree(BBP_logical(-i));
+				BBP_logical(-i) = NULL;
 			}
 			if (BBP_physical(i)) {
 				GDKfree(BBP_physical(i));
 				BBP_physical(i) = NULL;
 			}
-			if (BBP[i].bak[0])
-				GDKfree(BBP[i].bak[0]);
-			BBP[i].bak[0] = NULL;
+			if (BBP_bak(i))
+				GDKfree(BBP_bak(i));
+			BBP_bak(i) = NULL;
 		}
 	} while (skipped);
 	GDKfree(BBP_hash);
@@ -1442,42 +1442,42 @@ new_bbpentry(stream *s, bat i)
 
 	assert(i > 0);
 	assert(i < BBPsize);
-	assert(BBP[i].cache);
-	assert(BBP[i].cache->B.batCacheid == i);
+	assert(BBP_desc(i));
+	assert(BBP_desc(i)->B.batCacheid == i);
 
 	if (mnstr_printf(s, SSZFMT " %d %s %s %s %d %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " %u %u %u %u",	/* BAT info */
-			  (ssize_t) i, BBP[i].status & BBPPERSISTENT,
-			  BBP[i].nme[0],
-			  BBP[i].nme[1] ? BBP[i].nme[1] : BBPNONAME,
-			  BBP[i].path,
-			  BBP[i].lastused,
-			  (BBP[i].cache->P.restricted << 1) | BBP[i].cache->P.set,
-			  BBP[i].cache->U.inserted,
-			  BBP[i].cache->U.deleted,
-			  BBP[i].cache->U.first,
-			  BBP[i].cache->U.count,
-			  BBP[i].cache->U.capacity,
-			  (unsigned char) BBP[i].cache->P.map_head,
-			  (unsigned char) BBP[i].cache->P.map_tail,
-			  (unsigned char) BBP[i].cache->P.map_hheap,
-			  (unsigned char) BBP[i].cache->P.map_theap) < 0)
+			  (ssize_t) i, BBP_status(i) & BBPPERSISTENT,
+			  BBP_logical(i),
+			  BBP_logical(-i) ? BBP_logical(-i) : BBPNONAME,
+			  BBP_physical(i),
+			  BBP_lastused(i),
+			  (BBP_desc(i)->P.restricted << 1) | BBP_desc(i)->P.set,
+			  BBP_desc(i)->U.inserted,
+			  BBP_desc(i)->U.deleted,
+			  BBP_desc(i)->U.first,
+			  BBP_desc(i)->U.count,
+			  BBP_desc(i)->U.capacity,
+			  (unsigned char) BBP_desc(i)->P.map_head,
+			  (unsigned char) BBP_desc(i)->P.map_tail,
+			  (unsigned char) BBP_desc(i)->P.map_hheap,
+			  (unsigned char) BBP_desc(i)->P.map_theap) < 0)
 		return -1;
 @= columnprint
-	t = BBP[i].cache->@1.type;
+	t = BBP_desc(i)->@1.type;
 	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
-			  BBP[i].cache->@1.width,
-			  BBP[i].cache->@1.varsized | (BBP[i].cache->@1.vheap ? BBP[i].cache->@1.vheap->hashash << 1 : 0),
-			 ((unsigned short) BBP[i].cache->@1.sorted & 0x01) | (((unsigned short) BBP[i].cache->@1.revsorted & 0x01) << 7) | (((unsigned short) BBP[i].cache->@1.key & 0x01) << 8) | (((unsigned short) BBP[i].cache->@1.dense & 0x01) << 9) | (((unsigned short) BBP[i].cache->@1.nonil & 0x01) << 10) | (((unsigned short) BBP[i].cache->@1.nil & 0x01) << 11),
-			  BBP[i].cache->@1.nokey[0],
-			  BBP[i].cache->@1.nokey[1],
-			  BBP[i].cache->@1.nosorted,
-			  BBP[i].cache->@1.norevsorted,
-			  BBP[i].cache->@1.seq,
-			  BBP[i].cache->@1.align,
-			  BBP[i].cache->@1.heap.free,
-			  BBP[i].cache->@1.heap.size,
-			  BBP[i].cache->@1.heap.newstorage) < 0)
+			  BBP_desc(i)->@1.width,
+			  BBP_desc(i)->@1.varsized | (BBP_desc(i)->@1.vheap ? BBP_desc(i)->@1.vheap->hashash << 1 : 0),
+			 ((unsigned short) BBP_desc(i)->@1.sorted & 0x01) | (((unsigned short) BBP_desc(i)->@1.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->@1.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->@1.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->@1.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->@1.nil & 0x01) << 11),
+			  BBP_desc(i)->@1.nokey[0],
+			  BBP_desc(i)->@1.nokey[1],
+			  BBP_desc(i)->@1.nosorted,
+			  BBP_desc(i)->@1.norevsorted,
+			  BBP_desc(i)->@1.seq,
+			  BBP_desc(i)->@1.align,
+			  BBP_desc(i)->@1.heap.free,
+			  BBP_desc(i)->@1.heap.size,
+			  BBP_desc(i)->@1.heap.newstorage) < 0)
 		return -1;
 @
 @c
@@ -1485,19 +1485,19 @@ new_bbpentry(stream *s, bat i)
 	@:columnprint(T)@
 
 @= vheapprint
-	if (BBP[i].cache->@1.vheap &&
+	if (BBP_desc(i)->@1.vheap &&
 	    mnstr_printf(s, " " SZFMT " " SZFMT " %d",
-			  BBP[i].cache->@1.vheap->free,
-			  BBP[i].cache->@1.vheap->size,
-			  BBP[i].cache->@1.vheap->newstorage) < 0)
+			  BBP_desc(i)->@1.vheap->free,
+			  BBP_desc(i)->@1.vheap->size,
+			  BBP_desc(i)->@1.vheap->newstorage) < 0)
 		return -1;
 @
 @c
 	@:vheapprint(H)@
 	@:vheapprint(T)@
 
-	if (BBP[i].options)
-		mnstr_printf(s, " %s", BBP[i].options);
+	if (BBP_options(i))
+		mnstr_printf(s, " %s", BBP_options(i));
 
 	return mnstr_printf(s, "\n");
 }
@@ -1680,7 +1680,7 @@ BBPdump(void)
 	int n = 0, nc = 0;
 
 	for (i = 0; i < BBPsize; i++) {
-		BAT *b = BBP[i].b[0];
+		BAT *b = BBP_cache(i);
 		if (b == NULL)
 			continue;
 		THRprintf(GDKstdout,
@@ -1690,12 +1690,12 @@ BBPdump(void)
 			  i,
 			  ATOMname(b->H->type),
 			  ATOMname(b->T->type),
-			  BBP[i].nme[0] ? BBP[i].nme[0] : "<NULL>",
-			  BBP[i].nme[1] ? BBP[i].nme[1] : "<NULL>",
-			  BBP[i].refs,
-			  BBP[i].lrefs,
-			  BBP[i].status,
-			  BBP[i].b[0]->U->count,
+			  BBP_logical(i) ? BBP_logical(i) : "<NULL>",
+			  BBP_logical(-i) ? BBP_logical(-i) : "<NULL>",
+			  BBP_refs(i),
+			  BBP_lrefs(i),
+			  BBP_status(i),
+			  b->U->count,
 			  HEAPmemsize(&b->H->heap),
 			  HEAPvmsize(&b->H->heap),
 			  HEAPmemsize(b->H->vheap),
@@ -1708,7 +1708,7 @@ BBPdump(void)
 			  HEAPvmsize(b->T->vheap),
 			  b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0,
 			  b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0);
-		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->H->heap);
 			cvm += HEAPvmsize(&b->H->heap);
 			nc++;
@@ -1718,7 +1718,7 @@ BBPdump(void)
 			n++;
 		}
 		if (b->H->vheap) {
-			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->H->vheap);
 				cvm += HEAPvmsize(b->H->vheap);
 			} else {
@@ -1727,7 +1727,7 @@ BBPdump(void)
 			}
 		}
 		if (b->H->hash) {
-			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->H->hash->heap);
 				cvm += HEAPvmsize(b->H->hash->heap);
 			} else {
@@ -1735,7 +1735,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->H->hash->heap);
 			}
 		}
-		if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 			cmem += HEAPmemsize(&b->T->heap);
 			cvm += HEAPvmsize(&b->T->heap);
 		} else {
@@ -1743,7 +1743,7 @@ BBPdump(void)
 			vm += HEAPvmsize(&b->T->heap);
 		}
 		if (b->T->vheap) {
-			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->T->vheap);
 				cvm += HEAPvmsize(b->T->vheap);
 			} else {
@@ -1752,7 +1752,7 @@ BBPdump(void)
 			}
 		}
 		if (b->T->hash) {
-			if (BBP[i].nme[0] && BBP[i].nme[0][0] == '.') {
+			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->T->hash->heap);
 				cvm += HEAPvmsize(b->T->hash->heap);
 			} else {
@@ -1958,12 +1958,12 @@ BBPinsert(BATstore *bs)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	if (BBP[i].bak[0] == NULL) {
+	if (BBP_bak(i) == NULL) {
 		s = BBPtmpname(dirname, 64, i);
 		BBP_logical(i) = GDKstrdup(s);
-		BBP[i].bak[0] = BBP_logical(i);
+		BBP_bak(i) = BBP_logical(i);
 	} else
-		BBP_logical(i) = BBP[i].bak[0];
+		BBP_logical(i) = BBP_bak(i);
 	s = BBPtmpname(dirname, 64, -i);
 	BBP_logical(-i) = GDKstrdup(s);
 
@@ -2081,9 +2081,9 @@ bbpclear(bat i, int idx, str lock)
 		BBP_delete(-i);
 		gdk_unset_lock(GDKnameLock, "bbpclear");
 	}
-	if (BBP_logical(i) != BBP[ABS(i)].bak[(i) < 0])
+	if (BBP_logical(i) != BBP_bak(i))
 		GDKfree(BBP_logical(i));
-	if (BBP_logical(-i) != BBP[ABS(i)].bak[(-i) < 0])
+	if (BBP_logical(-i) != BBP_bak(-i))
 		GDKfree(BBP_logical(-i));
 	BBP_status_set(i, 0, "BBPclear");
 	BBP_logical(i) = NULL;
@@ -2165,7 +2165,7 @@ BBPrename(bat bid, const char *nme)
 	if (BBP_logical(bid) && BBPtmpcheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
-	if (BBP_logical(bid) != BBP[ABS(bid)].bak[(bid) < 0])
+	if (BBP_logical(bid) != BBP_bak(bid))
 		GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
 	if (tmpid == 0) {

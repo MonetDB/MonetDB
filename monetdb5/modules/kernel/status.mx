@@ -396,14 +396,14 @@ SYSmem_usage(int *ret, lng *minsize)
 
 		s = BBPname(i);
 		sz = 0;
-		if (BBP[i].cache)
+		if (BBP_desc(i))
 			sz += sizeof(BATstore);
-		if (BBP[i].nme[0])
-			n += strLen(BBP[i].nme[0]);
-		if (BBP[i].nme[1])
-			n += strLen(BBP[i].nme[1]);
-		if (BBP[i].path)
-			n += strLen(BBP[i].path);
+		if (BBP_logical(i))
+			n += strLen(BBP_logical(i));
+		if (BBP_logical(-i))
+			n += strLen(BBP_logical(-i));
+		if (BBP_physical(i))
+			n += strLen(BBP_physical(i));
 		if (b)
 			sz += sizeof(BAT);	/* mirror */
 

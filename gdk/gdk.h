@@ -1826,12 +1826,12 @@ gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int
  * The status and BAT persistency information is encoded in the status field.
  */
 typedef struct {
-	BAT *b[2];		/* if loaded: BAT* handle + reverse */
-	str nme[2];		/* logical name + reverse */
+	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
+	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
 	bat next[2];		/* next BBP slot in link list */
-	BATstore *cache;	/* cached header info */
-	str path;		/* dir + basename for storage */
+	BATstore *desc;		/* the BAT descriptor */
+	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
@@ -1845,15 +1845,16 @@ gdk_export bat BBPlimit;
 gdk_export BBPrec *BBP;
 
 /* fast defines without checks; internal use only  */
-#define BBP_cache(i)	BBP[ABS(i)].b[(i)<0]
-#define BBP_logical(i)  BBP[ABS(i)].nme[(i)<0]
+#define BBP_cache(i)	BBP[ABS(i)].cache[(i)<0]
+#define BBP_logical(i)	BBP[ABS(i)].logical[(i)<0]
+#define BBP_bak(i)	BBP[ABS(i)].bak[(i)<0]
 #define BBP_next(i)	BBP[ABS(i)].next[(i)<0]
-#define BBP_physical(i) BBP[ABS(i)].path
-#define BBP_options(i)  BBP[ABS(i)].options
-#define BBP_desc(i)	BBP[ABS(i)].cache
+#define BBP_physical(i)	BBP[ABS(i)].physical
+#define BBP_options(i)	BBP[ABS(i)].options
+#define BBP_desc(i)	BBP[ABS(i)].desc
 #define BBP_refs(i)	BBP[ABS(i)].refs
 #define BBP_lrefs(i)	BBP[ABS(i)].lrefs
-#define BBP_lastused(i) BBP[ABS(i)].lastused
+#define BBP_lastused(i)	BBP[ABS(i)].lastused
 #define BBP_status(i)	BBP[ABS(i)].status
 #define BBP_pid(i)	BBP[ABS(i)].pid
 
@@ -2454,7 +2455,7 @@ BBPcheck(register bat x, register const char *y)
 	if (x && x != bat_nil) {
 		register bat z = ABS(x);
 
-		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
+		if (z >= BBPsize || BBP_logical(z) == NULL) {
 			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
