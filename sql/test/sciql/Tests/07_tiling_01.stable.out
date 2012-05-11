@@ -88,7 +88,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
-
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	tinyint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	tinyint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 #create array a (x int dimension[4], y int dimension[4], v smallint default 37);
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
@@ -132,7 +174,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
-
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	smallint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	smallint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 #create array a (x int dimension[4], y int dimension[4], v integer default 37);
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
@@ -176,7 +260,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
-
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	int # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	int # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 #create array a (x int dimension[4], y int dimension[4], v bigint default 37);
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
@@ -220,7 +346,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
-
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	bigint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	bigint # type
+% 1,	1,	2 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 #create array a (x int dimension[4], y int dimension[4], v real default 37);
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
@@ -264,7 +432,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
-
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	real # type
+% 1,	1,	15 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	real # type
+% 1,	1,	15 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 #create array a (x int dimension[4], y int dimension[4], v double default 37);
 #select x, y,  avg(v) from a group by a[x-1:x+2][y-2:y+1];
 % sys.a,	sys.a,	sys. # table_name
@@ -308,6 +518,49 @@ Ready.
 [ 3,	1,	148	]
 [ 3,	2,	222	]
 [ 3,	3,	222	]
+#select x, y,  min(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	double # type
+% 1,	1,	24 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#select x, y,  max(v) from a group by a[x-1:x+2][y-2:y+1];
+% sys.a,	sys.a,	sys. # table_name
+% x,	y,	L1 # name
+% int,	int,	double # type
+% 1,	1,	24 # length
+[ 0,	0,	37	]
+[ 0,	1,	37	]
+[ 0,	2,	37	]
+[ 0,	3,	37	]
+[ 1,	0,	37	]
+[ 1,	1,	37	]
+[ 1,	2,	37	]
+[ 1,	3,	37	]
+[ 2,	0,	37	]
+[ 2,	1,	37	]
+[ 2,	2,	37	]
+[ 2,	3,	37	]
+[ 3,	0,	37	]
+[ 3,	1,	37	]
+[ 3,	2,	37	]
+[ 3,	3,	37	]
+#drop array a;
 
 # 14:43:18 >  
 # 14:43:18 >  "Done."

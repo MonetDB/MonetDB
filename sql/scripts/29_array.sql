@@ -72,6 +72,20 @@ create function array_sum(val bigint,   dim1 int, offsets1 int, size1 int) retur
 create function array_sum(val real,     dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
 create function array_sum(val double,   dim1 int, offsets1 int, size1 int) returns double external name "array".sum;
 
+create function array_min(val tinyint,  dim1 int, offsets1 int, size1 int) returns tinyint   external name "array".min;
+create function array_min(val smallint, dim1 int, offsets1 int, size1 int) returns smallint  external name "array".min;
+create function array_min(val int,      dim1 int, offsets1 int, size1 int) returns int       external name "array".min;
+create function array_min(val bigint,   dim1 int, offsets1 int, size1 int) returns bigint    external name "array".min;
+create function array_min(val real,     dim1 int, offsets1 int, size1 int) returns real      external name "array".min;
+create function array_min(val double,   dim1 int, offsets1 int, size1 int) returns double    external name "array".min;
+
+create function array_max(val tinyint,  dim1 int, offsets1 int, size1 int) returns tinyint   external name "array".max;
+create function array_max(val smallint, dim1 int, offsets1 int, size1 int) returns smallint  external name "array".max;
+create function array_max(val int,      dim1 int, offsets1 int, size1 int) returns int       external name "array".max;
+create function array_max(val bigint,   dim1 int, offsets1 int, size1 int) returns bigint    external name "array".max;
+create function array_max(val real,     dim1 int, offsets1 int, size1 int) returns real      external name "array".max;
+create function array_max(val double,   dim1 int, offsets1 int, size1 int) returns double    external name "array".max;
+
 create function array_avg(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
 create function array_avg(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
 create function array_avg(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
@@ -86,6 +100,20 @@ create function array_sum(val bigint,   dim1 int, offsets1 int, size1 int, dim2 
 create function array_sum(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
 create function array_sum(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".sum;
 
+create function array_min(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns tinyint   external name "array".min;
+create function array_min(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns smallint  external name "array".min;
+create function array_min(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns int       external name "array".min;
+create function array_min(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint    external name "array".min;
+create function array_min(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns real      external name "array".min;
+create function array_min(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double    external name "array".min;
+
+create function array_max(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns tinyint   external name "array".max;
+create function array_max(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns smallint  external name "array".max;
+create function array_max(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns int       external name "array".max;
+create function array_max(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint    external name "array".max;
+create function array_max(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns real      external name "array".max;
+create function array_max(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double    external name "array".max;
+
 create function array_avg(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
 create function array_avg(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
 create function array_avg(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
@@ -99,4 +127,18 @@ create function array_sum(val int,      dim1 int, offsets1 int, size1 int, dim2 
 create function array_sum(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".sum;
 create function array_sum(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".sum;
 create function array_sum(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".sum;
+
+create function array_min(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns tinyint   external name "array".min;
+create function array_min(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns smallint  external name "array".min;
+create function array_min(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns int       external name "array".min;
+create function array_min(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint    external name "array".min;
+create function array_min(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns real      external name "array".min;
+create function array_min(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double    external name "array".min;
+
+create function array_max(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns tinyint   external name "array".max;
+create function array_max(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns smallint  external name "array".max;
+create function array_max(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns int       external name "array".max;
+create function array_max(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint    external name "array".max;
+create function array_max(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns real      external name "array".max;
+create function array_max(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double    external name "array".max;
 

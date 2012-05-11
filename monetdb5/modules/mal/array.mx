@@ -100,6 +100,14 @@ pattern avg(val:any, any...):dbl
 address ARRAYtilesAvg
 comment "Construct the average over all tiles";
 
+pattern min(val:any_1, any...):any_1
+address ARRAYtilesMin
+comment "Construct the minimum over all tiles";
+
+pattern max(val:any_1, any...):any_1
+address ARRAYtilesMax
+comment "Construct the maximum over all tiles";
+
 module batarray;
 
 # The BAT version of the AGGR functions over array tiles
@@ -114,6 +122,14 @@ comment "Construct the sum over all tiles";
 pattern avg(val:bat[:oid,:any], any...):bat[:oid,:dbl]
 address ARRAYtilesAvg
 comment "Construct the average over all tiles";
+
+pattern min(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+address ARRAYtilesMin
+comment "Construct the minimum over all tiles";
+
+pattern max(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
+address ARRAYtilesMax
+comment "Construct the maximum over all tiles";
 
 module array;
 
@@ -199,12 +215,16 @@ array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
 array_export str ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *grp, int *series);
 array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMin_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesMax_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(bte)@
 @:array_defs(sht)@
@@ -936,6 +956,234 @@ ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return ARRAYtilesAvg_dbl(cntxt,mb,stk,pci);
 	default:
 		throw(MAL, "array.sum", "illegal/unsupported type");
+	}
+	return MAL_SUCCEED;
+}
+
+@= tilesMinMax
+# define MINMAX_CLEANUP() \
+{ \
+	if (bVal) BBPreleaseref(bVal->batCacheid); \
+	for (i = 0; i < ndims; i++) { \
+		if(bDims[i]) BBPreleaseref(bDims[i]->batCacheid); \
+		if(bOffsets[i]) BBPreleaseref(bOffsets[i]->batCacheid); \
+	} \
+	if(bDims) GDKfree(bDims); \
+	if(bDimsT) GDKfree(bDimsT); \
+	if(bOffsets) GDKfree(bOffsets); \
+	if(bOffsetsT) GDKfree(bOffsetsT); \
+	if(dMin) GDKfree(dMin); \
+	if(dMax) GDKfree(dMax); \
+	if(dSize) GDKfree(dSize); \
+}
+/* 
+ * array.[min|max] inputs:
+ *  (cell_val:BAT,
+ *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
+ *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
+ */
+str
+ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
+	@1 *bValT = NULL, elm = 0;
+	@1 *bResT = NULL;
+	int **bDimsT = NULL, **bOffsetsT = NULL;
+	BUN p, r, arrcnt = 0, offcnt = 0;
+	@1 minmax = @1_nil;
+	bit first = TRUE;
+	/* FIXME: this code only deal with INT dimensions */
+	int cidx = 0, *dMin = NULL, *dMax = NULL, *dSize = NULL;
+	oid arrbase = 0, offbase = 0, vid = 0, mul = 0;
+
+	(void) cntxt;
+	(void) mb;
+
+	if ( (pci->argc - pci->retc - 1) % 3 != 0)
+		throw(MAL, "array.@3", "Unbalanced argument sets");
+
+	ndims = (pci->argc - pci->retc - 1) / 3;
+	bDims = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bDimsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	bOffsets = (BAT**) GDKzalloc(sizeof(BAT*) * ndims);
+	bOffsetsT = (int**) GDKzalloc(sizeof(int*) * ndims);
+	dMin = (int*) GDKzalloc(sizeof(int) * ndims);
+	dMax = (int*) GDKzalloc(sizeof(int) * ndims);
+	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
+	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
+	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize || !bVal) {
+		MINMAX_CLEANUP();
+		throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
+	}
+	for (i = 0; i < ndims; i++) {
+		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
+		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
+		if (!bDims[i] || !bOffsets[i]) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
+		}
+		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
+	}
+	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
+	if (!BAThdense(bVal)) {
+		MINMAX_CLEANUP();
+		throw(MAL, "array.@3", "head of value BAT must be dense");
+	}
+	if (bVal->ttype != TYPE_@1) {
+		MINMAX_CLEANUP();
+		throw(MAL, "array.@3", "tail of value BAT must be of type @1");
+	}
+	arrcnt = BATcount(bVal);
+	arrbase = bVal->hseqbase;
+	offbase = bOffsets[0]->hseqbase;
+	offcnt = BATcount(bOffsets[0]);
+	for (i = 0; i < ndims; i++) {
+		if (!BAThdense(bDims[i])) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", "head of all dimension BATs must be dense");
+		}
+		if (!BAThdense(bOffsets[i])) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", "head of all offset BATs must be dense");
+		}
+		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", "head of all dimension BATs must be aligned with head of value BAT");
+		}
+		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", "heads of all offset BATs must be aligned");
+		}
+		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
+			MINMAX_CLEANUP();
+			throw(MAL, "array.@3", SEMANTIC_TYPE_MISMATCH);
+		}
+		BATmin(bDims[i], &(dMin[i]));
+		BATmax(bDims[i], &(dMax[i]));
+	}
+
+	/* access tails as arrays */
+	bValT = (@1*) Tloc(bVal, BUNfirst(bVal));
+	for (i = 0; i < ndims; i++) {
+		bDimsT[i] = (int*) Tloc(bDims[i], BUNfirst(bDims[i]));
+		bOffsetsT[i] = (int*) Tloc(bOffsets[i], BUNfirst(bOffsets[i]));
+	}
+
+	/* For each anchor piont, compute all cells belong to this tile (bVal.head
+	 * is the group nr.) and compute the SUM */
+	bRes = 	BATnew(TYPE_void, TYPE_@1, BATcount(bVal));
+	bResT = (@1*) Tloc(bRes, BUNfirst(bRes));
+	for (p = 0 ; p < arrcnt ; p++) {
+		/* loop over all sets of offsets */
+		for (r = 0; r < offcnt ; r++) {
+			vid = 0; /* index into bVal for the value of a qualified tile member */
+			mul = 1;
+			err = 0;
+			/* for the index of the anchor point on dimension d_i, check if the
+			 * resulting index is within the dimension range after having
+			 * shifted according this set of offset on dimension d_i.
+			 * If yes, update 'vid' so that we know the OID of the qualified
+			 * cell at the end; otherwise, skip.
+			 */
+			/* TODO: we can skip more.  If the j-th value bOffsets[i]
+			 * disqualifies the index on dimension d_i, we can jump to the next
+			 * of bOffsets[i] which value follows the j-th value */
+			for (i = ndims - 1; i >= 0; i--) {
+				cidx = bDimsT[i][p] + bOffsetsT[i][r];
+				if (dMin[i] <= cidx && cidx <= dMax[i]) {
+					vid += mul * (cidx - dMin[i]);
+				} else {
+					err = 1;
+					break; /* skip remaining dimensions */
+				}
+				mul *= dSize[i];
+			}
+			if (!err) {
+				elm = bValT[vid];
+				if (elm != @1_nil) {
+					if (first) {
+						minmax = elm;
+						first = FALSE;
+					}
+					else
+						minmax = @4(minmax,elm);
+				}
+			}
+		}
+		bResT[p] = minmax;
+	}
+	MINMAX_CLEANUP();
+	BATsetcount(bRes, arrcnt);
+	BATseqbase(bRes, arrbase);
+	bRes->hdense = TRUE;
+	BATkey(bRes, TRUE);
+	bRes->hsorted = 1;
+	bRes->hrevsorted = (arrcnt <= 1);
+	bRes->tsorted = (arrcnt <= 1);
+	bRes->trevsorted = (arrcnt <= 1);
+	BATkey(BATmirror(bRes), FALSE);
+	BBPkeepref(*ret = bRes->batCacheid);
+	return MAL_SUCCEED;
+}
+@-
+The compilating factor is that in general the tile enumeration is dense, while
+the tile structure can go over its boundaries. For this to control, we first
+embed the array into a slightly larger array, filled with nulls.
+
+@c
+@:tilesMinMax(bte,Min,min,MIN)@
+@:tilesMinMax(sht,Min,min,MIN)@
+@:tilesMinMax(int,Min,min,MIN)@
+@:tilesMinMax(lng,Min,min,MIN)@
+@:tilesMinMax(flt,Min,min,MIN)@
+@:tilesMinMax(dbl,Min,min,MIN)@
+@:tilesMinMax(bte,Max,max,MAX)@
+@:tilesMinMax(sht,Max,max,MAX)@
+@:tilesMinMax(int,Max,max,MAX)@
+@:tilesMinMax(lng,Max,max,MAX)@
+@:tilesMinMax(flt,Max,max,MAX)@
+@:tilesMinMax(dbl,Max,max,MAX)@
+str
+ARRAYtilesMin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int type = getTailType(getArgType(mb,pci,1));
+	switch(type){
+	case TYPE_bte:
+		return ARRAYtilesMin_bte(cntxt,mb,stk,pci);
+	case TYPE_sht:
+		return ARRAYtilesMin_sht(cntxt,mb,stk,pci);
+	case TYPE_int:
+		return ARRAYtilesMin_int(cntxt,mb,stk,pci);
+	case TYPE_lng:
+		return ARRAYtilesMin_lng(cntxt,mb,stk,pci);
+	case TYPE_flt:
+		return ARRAYtilesMin_flt(cntxt,mb,stk,pci);
+	case TYPE_dbl:
+		return ARRAYtilesMin_dbl(cntxt,mb,stk,pci);
+	default:
+		throw(MAL, "array.min", "illegal/unsupported type");
+	}
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYtilesMax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	int type = getTailType(getArgType(mb,pci,1));
+	switch(type){
+	case TYPE_bte:
+		return ARRAYtilesMax_bte(cntxt,mb,stk,pci);
+	case TYPE_sht:
+		return ARRAYtilesMax_sht(cntxt,mb,stk,pci);
+	case TYPE_int:
+		return ARRAYtilesMax_int(cntxt,mb,stk,pci);
+	case TYPE_lng:
+		return ARRAYtilesMax_lng(cntxt,mb,stk,pci);
+	case TYPE_flt:
+		return ARRAYtilesMax_flt(cntxt,mb,stk,pci);
+	case TYPE_dbl:
+		return ARRAYtilesMax_dbl(cntxt,mb,stk,pci);
+	default:
+		throw(MAL, "array.max", "illegal/unsupported type");
 	}
 	return MAL_SUCCEED;
 }
