@@ -89,7 +89,7 @@ input BAT, or not (see BAT_select in gdk_batop.mx). In the first case
  * equi-str-selects.
  */
 BAT *
-seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
+seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, const void *tl, const void *th, var_t str_idx)
 {
 	BATiter bi = bat_iterator(b);
 	register BUN _p;
@@ -98,7 +98,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_
 				    BATgetId(b), BATgetId(bn), oid_ctr, str_idx);
 	_p = BUNlast(bn);
 	BATloop(b, p, q) {
-		ptr v = BUN@3(bi, p);
+		const void *v = BUN@3(bi, p);
 
 		@4 {
 			@7@2_bunfastins_nocheck_noinc(bn, _p, @8, @5);
@@ -111,14 +111,14 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_
 }
 
 BAT *
-seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
+seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, const void *tl, const void *th, var_t str_idx)
 {
 	BATiter bi = bat_iterator(b);
 	@:seqscanPrologue@
 	ALGODEBUG THRprintf(GDKout, "#seqscan_@1_@2_@3_@6_@7[@4,@5,@8,@9](b=%s, bn=%s, tl, th, oid_ctr=" OIDFMT ", str_idx=" OIDFMT ");\n",
 			    BATgetId(b), BATgetId(bn), oid_ctr, str_idx);
 	BATloop(b, p, q) {
-		ptr v = BUN@3(bi, p);
+		const void *v = BUN@3(bi, p);
 
 		@4 {
 			@7@2_bunfastins(bn, @8, @5);
@@ -128,8 +128,8 @@ seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx)
 	@:seqscanEpilogue@
 }
 @= DEFseqscan_h
-BAT *seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx);
-BAT *seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, var_t str_idx);
+BAT *seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, const void *tl, const void *th, var_t str_idx);
+BAT *seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, const void *tl, const void *th, var_t str_idx);
 @= DEFseqscan
 @:DEFseqscan_@[10](@1,@2,@3,@4,@5,@6,@7,@8,@9)@
 @-

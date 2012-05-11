@@ -47,6 +47,18 @@ extern char *sbrk(int);
 #ifdef HAVE_PROCFS_H
 # include <procfs.h>
 #endif
+#ifdef HAVE_MACH_TASK_H
+# include <mach/task.h>
+#endif
+#ifdef HAVE_MACH_MACH_INIT_H
+# include <mach/mach_init.h>
+#endif
+#if defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
+# include <kvm.h>
+# include <sys/param.h>
+# include <sys/sysctl.h>
+# include <sys/user.h>
+#endif
 
 #if defined(DEBUG_ALLOC) && SIZEOF_VOID_P > 4
 #undef DEBUG_ALLOC
@@ -95,54 +107,65 @@ char *MT_heapbase = NULL;
  *
  * a.k.a. "helping stupid VM implementations that ignore VM advice"
  *
- * The main goal is to be able to tell the OS to please stop buffering all memory
- * mapped pages when under pressure. A major problem is materialization of large
- * results in newly created memory mapped files. Operating systems tend to cache
- * all dirty pages, such that when memory is out, all pages are dirty and cannot
- * be unloaded quickly. The VM panic occurs and comatose OS states may be observed.
- * This is in spite of our use of madvise(MADV_SEQUENTIAL). That is; we would want
- * that the OS drops pages after we've passed them. That does not happen; pages are
+ * The main goal is to be able to tell the OS to please stop buffering
+ * all memory mapped pages when under pressure. A major problem is
+ * materialization of large results in newly created memory mapped
+ * files. Operating systems tend to cache all dirty pages, such that
+ * when memory is out, all pages are dirty and cannot be unloaded
+ * quickly. The VM panic occurs and comatose OS states may be
+ * observed.  This is in spite of our use of
+ * madvise(MADV_SEQUENTIAL). That is; we would want that the OS drops
+ * pages after we've passed them. That does not happen; pages are
  * retained and pollute the buffer cache.
  *
- * Regrettably, at this level, we don't know anything about how Monet is using the
- * mmapped regions. Monet code is totally oblivious of any I/O; that's why it is
- * so easy to create CPU efficient code in Monet.
+ * Regrettably, at this level, we don't know anything about how Monet
+ * is using the mmapped regions. Monet code is totally oblivious of
+ * any I/O; that's why it is so easy to create CPU efficient code in
+ * Monet.
  *
- * The current solution focuses on large writable maps. These often represent
- * newly created BATs, that are the result of some (running) operator. We
- * assume two things here:
+ * The current solution focuses on large writable maps. These often
+ * represent newly created BATs, that are the result of some (running)
+ * operator. We assume two things here:
  * - the BAT is created in sequential fashion (always almost true)
  * - afterwards, this BAT is used in sequential fashion (often true)
  *
- * A VMtrim thread keeps an eye on the RSS (memory pressure) and large writable
- * memory maps. If RSS approaches mem_maxsize(), it starts to *worry*, and starts
- * to write dirty data from these writable maps to disk in 128MB tiles. So, if
- * memory pressure rises further in the near future, the OS has some option to release
- * memory pages cheaply (i.e. without needing I/O). This is also done explicitly by the
- * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS to release pages.
- * The reason is that Linux is not smart enough to do even this. Anyway..
+ * A VMtrim thread keeps an eye on the RSS (memory pressure) and large
+ * writable memory maps. If RSS approaches mem_maxsize(), it starts to
+ * *worry*, and starts to write dirty data from these writable maps to
+ * disk in 128MB tiles. So, if memory pressure rises further in the
+ * near future, the OS has some option to release memory pages cheaply
+ * (i.e. without needing I/O). This is also done explicitly by the
+ * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS
+ * to release pages.  The reason is that Linux is not smart enough to
+ * do even this. Anyway..
  *
- * The way to free pages explicitly in Linux is to call posix_fadvise(..,MADV_DONTNEED).
- * Particularly, posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and documented
- * doesn't work on Linux. But we do both posix_madvise and posix_fadvise, so on other unix
- * systems that don't support posix_fadvise, posix_madvise still might work.
- * On Windows, to our knowledge, there is no way to tell it stop buffering
- * a memory mapped region. msync (FlushViewOfFile) does work, though. So let's
- * hope the VM paging algorithm behaves better than Linux which just runs off
- * the cliff and if MonetDB does not prevent RSS from being too high, enters coma.
+ * The way to free pages explicitly in Linux is to call
+ * posix_fadvise(..,MADV_DONTNEED).  Particularly,
+ * posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and
+ * documented doesn't work on Linux. But we do both posix_madvise and
+ * posix_fadvise, so on other unix systems that don't support
+ * posix_fadvise, posix_madvise still might work.  On Windows, to our
+ * knowledge, there is no way to tell it stop buffering a memory
+ * mapped region. msync (FlushViewOfFile) does work, though. So let's
+ * hope the VM paging algorithm behaves better than Linux which just
+ * runs off the cliff and if MonetDB does not prevent RSS from being
+ * too high, enters coma.
  *
- * We will only be able to sensibly test this on Windows64. On Windows32, mmap sizes
- * do not significantly exceed RAM sizes so MonetDB swapping actually will not happen
- * (of course, you've got this nasty problem of VM fragemntation and failing mmaps instead).
+ * We will only be able to sensibly test this on Windows64. On
+ * Windows32, mmap sizes do not significantly exceed RAM sizes so
+ * MonetDB swapping actually will not happen (of course, you've got
+ * this nasty problem of VM fragemntation and failing mmaps instead).
  *
- * In principle, page tiles are saved sequentially, and behind it, but never overtaking
- * it, is an "unload-cursor" that frees the pages if that is needed to keep RSS down.
- * There is a tweak in the algorithm, that re-sets the unload-cursor if it seems
- * that all tiles to the end have been saved (whether a tile is actually saved is
- * determined by timing the sync action). This means that the producing operator
- * is ready creating the BAT, and we assume it is going to be used sequentially afterwards.
- * In that case, we should start unloading right after the 'read-cursor', that is,
- * from the start.
+ * In principle, page tiles are saved sequentially, and behind it, but
+ * never overtaking it, is an "unload-cursor" that frees the pages if
+ * that is needed to keep RSS down.  There is a tweak in the
+ * algorithm, that re-sets the unload-cursor if it seems that all
+ * tiles to the end have been saved (whether a tile is actually saved
+ * is determined by timing the sync action). This means that the
+ * producing operator is ready creating the BAT, and we assume it is
+ * going to be used sequentially afterwards.  In that case, we should
+ * start unloading right after the 'read-cursor', that is, from the
+ * start.
  *
  * EXAMPLE
  * D = dirty tile
@@ -426,6 +449,7 @@ MT_mmap_del(void *base, size_t len)
 	}
 }
 
+#if 0
 static int
 MT_fadvise(void *base, size_t len, int advice)
 {
@@ -459,6 +483,7 @@ MT_fadvise(void *base, size_t len, int advice)
 #endif
 	return ret;
 }
+#endif
 
 #endif /* NATIVE_WIN32 */
 
@@ -501,6 +526,9 @@ MT_mmap_save_tile(int i, size_t tile, stream *err)
 {
 	int t, ret;
 	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - tile);
+
+	if (len == 0)
+		return 0;	/* nothing to do */
 
 	/* save to disk an 128MB tile, and observe how long this takes */
 	if (err) {
@@ -631,9 +659,14 @@ done:
 					/* first run, walk backwards
 					   until we hit an unsaved
 					   tile */
-					for (off = MT_mmap_tab[i].len; off >= MT_MMAP_TILE; off -= MT_MMAP_TILE)
+					off = MT_mmap_tab[i].len & ~(MT_MMAP_TILE - 1);
+					for (;;) {
 						if (MT_mmap_save_tile(i, off, err))
 							goto bailout;
+						if (off < MT_MMAP_TILE)
+							break;
+						off -= MT_MMAP_TILE;
+					}
 				} else {
 					/* save the next tile */
 					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
@@ -672,11 +705,11 @@ MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
 		MT_mmap_tab[i].random += preload * (advice == MMAP_WILLNEED);	/* done as a counter to keep track of multiple threads */
 		MT_mmap_tab[i].usecnt += preload;	/* active thread count */
 		if ( advice == MMAP_DONTNEED){
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_DONTNEED);
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_DONTNEED);
 			MT_mmap_tab[i].usecnt = 0;
 		} else
 		if (MT_mmap_tab[i].usecnt == 0)
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), MMAP_SEQUENTIAL);
+			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_NORMAL);
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 	if (ret) {
@@ -724,20 +757,16 @@ MT_init_posix(void)
 	MT_mmap_init();
 }
 
+/* return RSS in bytes */
 size_t
 MT_getrss(void)
 {
-	static char MT_mmap_procfile[128] = { 0 };
-	int fd;
-
 #if defined(HAVE_PROCFS_H) && defined(__sun__)
 	/* retrieve RSS the Solaris way (2.6+) */
+	int fd;
 	psinfo_t psbuff;
-	if (MT_mmap_procfile[0] == 0) {
-		/* getpid returns pid_t, cast to long to be sure */
-		sprintf(MT_mmap_procfile, "/proc/%ld/psinfo", (long) getpid());
-	}
-	fd = open(MT_mmap_procfile, O_RDONLY);
+
+	fd = open("/proc/self/psinfo", O_RDONLY);
 	if (fd >= 0) {
 		if (read(fd, &psbuff, sizeof(psbuff)) == sizeof(psbuff)) {
 			close(fd);
@@ -745,14 +774,41 @@ MT_getrss(void)
 		}
 		close(fd);
 	}
-#else
-	/* get RSS  -- linux only for the moment */
+#elif defined(HAVE_TASK_INFO)
+	/* Darwin/MACH call for process' RSS */
+	task_t task = mach_task_self();
+	struct task_basic_info_64 t_info;
+	mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_64_COUNT;
 
-	if (MT_mmap_procfile[0] == 0) {
-		/* getpid returns pid_t, cast to long to be sure */
-		sprintf(MT_mmap_procfile, "/proc/%ld/stat", (long) getpid());
+	if (task_info(task, TASK_BASIC_INFO_64, (task_info_t)&t_info, &t_info_count) != KERN_INVALID_POLICY)
+		return t_info.resident_size;  /* bytes */
+#elif defined(HAVE_KVM_H) && defined(HAVE_SYS_SYSCTL_H)
+	/* get RSS on FreeBSD */
+	struct kinfo_proc *ki;
+	int ski = 1;
+	kvm_t *kd;
+	size_t rss = 0;
+
+	kd = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
+	if (kd == NULL)
+		return 0;
+
+	ki = kvm_getprocs(kd, KERN_PROC_PID, getpid(), &ski);
+	if (ki == NULL) {
+		kvm_close(kd);
+		return 0;
 	}
-	fd = open(MT_mmap_procfile, O_RDONLY);
+
+	rss = ki->ki_rssize;
+
+	kvm_close(kd);
+
+	return rss * MT_pagesize();
+#else
+	/* get RSS on Linux */
+	int fd;
+
+	fd = open("/proc/self/stat", O_RDONLY);
 	if (fd >= 0) {
 		char buf[1024], *r = buf;
 		size_t i, sz = read(fd, buf, 1024);
@@ -862,6 +918,12 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 int
 MT_madvise(void *p, size_t len, int advice)
 {
+#if 1
+	(void) p;
+	(void) len;
+	(void) advice;
+	return 0;
+#else
 	int ret = posix_madvise(p, len & ~(MT_pagesize() - 1), advice);
 
 #ifdef MMAP_DEBUG
@@ -871,6 +933,7 @@ MT_madvise(void *p, size_t len, int advice)
 	if (MT_fadvise(p, len, advice))
 		ret = -1;
 	return ret;
+#endif
 }
 
 struct Mallinfo
@@ -878,7 +941,7 @@ MT_mallinfo(void)
 {
 	struct Mallinfo _ret;
 
-#if defined(HAVE_USEFUL_MALLINFO) && 0
+#ifdef HAVE_USEFUL_MALLINFO
 	struct mallinfo m;
 
 	m = mallinfo();
@@ -935,6 +998,7 @@ mdlopen(const char *library, int mode)
 #ifdef _MSC_VER
 #include <io.h>
 #endif /* _MSC_VER */
+#include <Psapi.h>
 
 #define MT_SMALLBLOCK 256
 
@@ -954,20 +1018,13 @@ MT_init_posix(void)
 }
 
 size_t
-MT_getrss()
+MT_getrss(void)
 {
-#if (_WIN32_WINNT >= 0x0500)
-	MEMORYSTATUSEX state;
+	PROCESS_MEMORY_COUNTERS ctr;
 
-	state.dwLength = sizeof(state);
-	GlobalMemoryStatusEx(&state);
-	return (size_t) (state.ullTotalPhys - state.ullAvailPhys);
-#else
-	MEMORYSTATUS state;
-
-	GlobalMemoryStatus(&state);
-	return state.dwTotalPhys - state.dwAvailPhys;
-#endif
+	if (GetProcessMemoryInfo(GetCurrentProcess(), &ctr, sizeof(ctr)))
+		return ctr.WorkingSetSize;
+	return 0;
 }
 
 char *
@@ -1388,7 +1445,7 @@ win_rmdir(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKout, "retry rmdir %s\n", pathname);
+		IODEBUG THRprintf(GDKstdout, "retry rmdir %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _rmdir(p);
 	}
@@ -1412,7 +1469,7 @@ win_unlink(const char *pathname)
 		/* it could be the <expletive deleted> indexing
 		 * service which prevents us from doing what we have a
 		 * right to do, so try again (once) */
-		IODEBUG THRprintf(GDKout, "retry unlink %s\n", pathname);
+		IODEBUG THRprintf(GDKstdout, "retry unlink %s\n", pathname);
 		MT_sleep_ms(100);	/* wait a little */
 		ret = _unlink(pathname);
 	}
@@ -1576,92 +1633,6 @@ win_errno(void)
 
 #ifndef WIN32
 
-#define MT_PAGESIZE(s)		((((s)-1)/MT_pagesize()+1)*MT_pagesize())
-
-#if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
-#define MAP_ANONYMOUS MAP_ANON
-#endif
-#if defined(MAP_ANONYMOUS)
-#define MMAP_FLAGS(f)		f|MAP_ANONYMOUS
-#define MMAP_FD			-1
-#define MMAP_OPEN_DEV_ZERO	int fd = 1
-#define MMAP_CLOSE_DEV_ZERO	(void)fd
-#else
-#define MMAP_FLAGS(f)		f
-#define MMAP_FD			fd
-#define MMAP_OPEN_DEV_ZERO	int fd = open("/dev/zero", O_RDWR, MONETDB_MODE)
-#define MMAP_CLOSE_DEV_ZERO	close(fd)
-#endif
-
-void *
-MT_vmalloc(size_t size, size_t *maxsize)
-{
-	MMAP_OPEN_DEV_ZERO;
-	char *q, *r = (char *) -1L;
-
-	if (fd < 0) {
-		return NULL;
-	}
-	size = MT_PAGESIZE(size);
-	*maxsize = MT_PAGESIZE(*maxsize);
-	if (*maxsize > size) {
-		r = (char *) mmap(NULL, *maxsize, PROT_NONE, MMAP_FLAGS(MAP_PRIVATE | MAP_NORESERVE), MMAP_FD, 0);
-	}
-	if (r == (char *) -1L) {
-		*maxsize = size;
-		q = (char *) mmap(NULL, size, PROT_READ | PROT_WRITE, MMAP_FLAGS(MAP_PRIVATE), MMAP_FD, 0);
-	} else {
-		q = (char *) mmap(r, size, PROT_READ | PROT_WRITE, MMAP_FLAGS(MAP_PRIVATE | MAP_FIXED), MMAP_FD, 0);
-	}
-	MMAP_CLOSE_DEV_ZERO;
-	return (void *) ((q == (char *) -1L) ? NULL : q);
-}
-
-void
-MT_vmfree(void *p, size_t size)
-{
-	size = MT_PAGESIZE(size);
-	munmap(p, size);
-}
-
-void *
-MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize)
-{
-	char *p = (char *) voidptr;
-	char *q = (char *) -1L;
-
-	/* sanitize sizes */
-	oldsize = MT_PAGESIZE(oldsize);
-	newsize = MT_PAGESIZE(newsize);
-	oldmaxsize = MT_PAGESIZE(oldmaxsize);
-	*newmaxsize = MT_PAGESIZE(*newmaxsize);
-	if (*newmaxsize < newsize) {
-		*newmaxsize = newsize;
-	}
-
-	if (oldsize > newsize) {
-		munmap(p + oldsize, oldsize - newsize);
-	} else if (oldsize < newsize) {
-		if (newsize < oldmaxsize) {
-			MMAP_OPEN_DEV_ZERO;
-			if (fd >= 0) {
-				q = (char *) mmap(p + oldsize, newsize - oldsize, PROT_READ | PROT_WRITE, MMAP_FLAGS(MAP_PRIVATE | MAP_FIXED), MMAP_FD, (off_t) oldsize);
-				MMAP_CLOSE_DEV_ZERO;
-			}
-		}
-		if (q == (char *) -1L) {
-			q = (char *) MT_vmalloc(newsize, newmaxsize);
-			if (q != NULL) {
-				memcpy(q, p, oldsize);
-				MT_vmfree(p, oldmaxsize);
-				return q;
-			}
-		}
-	}
-	*newmaxsize = MAX(oldmaxsize, newsize);
-	return p;
-}
-
 void
 MT_sleep_ms(unsigned int ms)
 {
@@ -1682,93 +1653,6 @@ MT_sleep_ms(unsigned int ms)
 }
 
 #else /* WIN32 */
-
-#define MT_PAGESIZE(s)		(((((s)-1) >> 12) + 1) << 12)
-#define MT_SEGSIZE(s)		((((((s)-1) >> 16) & 65535) + 1) << 16)
-
-#ifndef MEM_TOP_DOWN
-#define MEM_TOP_DOWN 0
-#endif
-
-void *
-MT_vmalloc(size_t size, size_t *maxsize)
-{
-	void *p, *a = NULL;
-	int mode = 0;
-
-	size = MT_PAGESIZE(size);
-	if (*maxsize < size) {
-		*maxsize = size;
-	}
-	*maxsize = MT_SEGSIZE(*maxsize);
-	if (*maxsize < 1000000) {
-		mode = MEM_TOP_DOWN;	/* help NT in keeping memory defragmented */
-	}
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	if (*maxsize > size) {
-		a = (void *) VirtualAlloc(NULL, *maxsize, MEM_RESERVE | mode, PAGE_NOACCESS);
-		if (a == NULL) {
-			*maxsize = size;
-		}
-	}
-	p = (void *) VirtualAlloc(a, size, MEM_COMMIT | mode, PAGE_READWRITE);
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	if (p == NULL) {
-		mnstr_printf(GDKstdout, "#VirtualAlloc(" PTRFMT "," SZFMT ",MEM_COMMIT,PAGE_READWRITE): failed\n", PTRFMTCAST a, size);
-	}
-	return p;
-}
-
-
-void
-MT_vmfree(void *p, size_t size)
-{
-	if (VirtualFree(p, size, MEM_DECOMMIT) == 0)
-		mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT "," SZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST p, size);
-	if (VirtualFree(p, 0, MEM_RELEASE) == 0)
-		mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT ",0,MEM_RELEASE): failed\n", PTRFMTCAST p);
-}
-
-void *
-MT_vmrealloc(void *v, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize)
-{
-	char *p = (char *) v, *a = p;
-
-	/* sanitize sizes */
-	oldsize = MT_PAGESIZE(oldsize);
-	newsize = MT_PAGESIZE(newsize);
-	oldmaxsize = MT_PAGESIZE(oldmaxsize);
-	*newmaxsize = MT_PAGESIZE(*newmaxsize);
-	if (*newmaxsize < newsize) {
-		*newmaxsize = newsize;
-	}
-
-	if (oldsize > newsize) {
-		size_t ret = VirtualFree(p + newsize, oldsize - newsize, MEM_DECOMMIT);
-
-		if (ret == 0)
-			mnstr_printf(GDKstdout, "#VirtualFree(" PTRFMT "," SSZFMT ",MEM_DECOMMIT): failed\n", PTRFMTCAST(p + newsize), (ssize_t) (oldsize - newsize));
-	} else if (oldsize < newsize) {
-		(void) pthread_mutex_lock(&MT_mmap_lock);
-		a = (char *) VirtualAlloc(p, newsize, MEM_COMMIT, PAGE_READWRITE);
-		(void) pthread_mutex_unlock(&MT_mmap_lock);
-		if (a != p) {
-			char *q = a;
-
-			if (a == NULL) {
-				q = MT_vmalloc(newsize, newmaxsize);
-			}
-			if (q != NULL) {
-				memcpy(q, p, oldsize);
-				MT_vmfree(p, oldmaxsize);
-			}
-			if (a == NULL)
-				return q;
-		}
-	}
-	*newmaxsize = MAX(oldmaxsize, newsize);
-	return a;
-}
 
 void
 MT_sleep_ms(unsigned int ms)

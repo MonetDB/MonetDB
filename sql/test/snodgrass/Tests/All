@@ -1,1 +1,11 @@
 cast_select
+cast_table
+date_parsing
+date_select
+date_table
+extract_select
+extract_table
+interval_parsing
+interval_select
+# this one needs proper OVERLAPS
+#interval_table

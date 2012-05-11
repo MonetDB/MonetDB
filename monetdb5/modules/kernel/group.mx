@@ -313,13 +313,13 @@ grp_new(BAT *b, BAT *h)
 #else
 #define mix_BUN(v) mix_int((v)^((v)>>31))
 #endif
-#define HASH_bte(p) ((BUN) (*(unsigned char*) (p)))
-#define HASH_sht(p) ((BUN) (*(unsigned short*) (p)))
-#define HASH_int(p) ((BUN) (*(unsigned int*) (p)))
+#define HASH_bte(p) ((BUN) (*(const unsigned char*) (p)))
+#define HASH_sht(p) ((BUN) (*(const unsigned short*) (p)))
+#define HASH_int(p) ((BUN) (*(const unsigned int*) (p)))
 #if SIZEOF_BUN == SIZEOF_LNG
 #define HASH_lng(p) ((BUN) (*(BUN *) (p)))
 #else
-#define HASH_lng(p) ((BUN) (((unsigned int*)(p))[0]^((unsigned int*)(p))[1]))
+#define HASH_lng(p) ((BUN) (((const unsigned int*)(p))[0]^((const unsigned int*)(p))[1]))
 #endif
 #define HASH_str_hv(p) (((BUN *) (p))[-1])
 #define HASH_any(p) ((*hashfcn)(p))
@@ -327,7 +327,7 @@ grp_new(BAT *b, BAT *h)
 #define match_sync(bi,p,r) r++
 #define match_hash(bi,p,r) BUNfndOID(r,bi,p); if (r == BUN_NONE) continue;
 
-#define declare_atom int any = b->ttype; BUN (*hashfcn)(ptr) = BATatoms[any].atomHash;
+#define declare_atom int any = b->ttype; BUN (*hashfcn)(const void *) = BATatoms[any].atomHash;
 #define declare_simple	/* any and hash would otherwise give unused variable warning */
 #define declare_str_hv
 

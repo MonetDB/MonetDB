@@ -396,14 +396,14 @@ SYSmem_usage(int *ret, lng *minsize)
 
 		s = BBPname(i);
 		sz = 0;
-		if (BBP[i].cache)
+		if (BBP_desc(i))
 			sz += sizeof(BATstore);
-		if (BBP[i].nme[0])
-			n += strLen(BBP[i].nme[0]);
-		if (BBP[i].nme[1])
-			n += strLen(BBP[i].nme[1]);
-		if (BBP[i].path)
-			n += strLen(BBP[i].path);
+		if (BBP_logical(i))
+			n += strLen(BBP_logical(i));
+		if (BBP_logical(-i))
+			n += strLen(BBP_logical(-i));
+		if (BBP_physical(i))
+			n += strLen(BBP_physical(i));
 		if (b)
 			sz += sizeof(BAT);	/* mirror */
 
@@ -450,7 +450,7 @@ SYSmem_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/malloc", &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
-	sz = GDKvm_heapsize();
+	sz = GDKmem_inuse();
 	BUNins(bn, "_tot/heap", &sz, FALSE);
 
 	tot = GDKmem_cursize();
@@ -513,7 +513,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	BUNins(bn, "_tot/tind", &tind, FALSE);
 
 	/* special area 1: BBP rec */
-	sz = BBPmaxsize * sizeof(BBPrec);
+	sz = BBPlimit * sizeof(BBPrec);
 	BUNins(bn, "_tot/bbp", &sz, FALSE);
 	tot += sz;
 

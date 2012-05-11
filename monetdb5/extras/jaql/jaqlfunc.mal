@@ -78,6 +78,14 @@ function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[
 	return (r1,r2,r3,r4,r5,r6,r7);
 end arrayToRecord;
 
+# read JSON data from URI
+function shred(uri:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(r1,r2,r3,r4,r5,r6,r7) := json.shreduri(uri);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end shred
+
+
 # these are groupable functions, they receive their input as :oid,:any_1
 # and return the per :oid group result as :oid,:any_2
 

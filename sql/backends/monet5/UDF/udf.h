@@ -17,10 +17,16 @@
  * All Rights Reserved.
 */
 
+/* In your own module, replace "UDF" & "udf" by your module's name */
+
 #ifndef _SQL_UDF_H_
 #define _SQL_UDF_H_
 #include "sql.h"
 #include <string.h>
+
+/* This is required as-is (except from renaming "UDF" & "udf" as suggested
+ * above) for all modules for correctly exporting function on Unix-like and
+ * Windows systems. */
 
 #ifdef WIN32
 #ifndef LIBUDF
@@ -32,9 +38,12 @@
 #define udf_export extern
 #endif
 
+/* export MAL wrapper functions */
+
 udf_export str UDFreverse(str *ret, str *src);
 udf_export str UDFBATreverse(int *ret, int *bid);
 
+/* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \
         udf_export str UDFfuse_##in##_##out(out *ret, in *one, in *two)
 UDFfuse_scalar_decl(bte, sht);

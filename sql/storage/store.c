@@ -697,7 +697,7 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 
 	/* complex (table) types */
 	if (a->type.type->localtype == TYPE_bat) 
-		a->type.comp_type = schema_get_table(f->s, digits);
+		a->type.comp_type = schema_get_table(syss, digits);
 	return a;
 }
 
@@ -729,6 +729,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->s = s;
+	t->fix_scale = SCALE_EQ;
 	if (t->sql) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -2041,15 +2042,19 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	f->sql = of->sql;
 	f->side_effect = of->side_effect;
 	f->ops = list_new(sa, of->ops->destroy);
+	f->fix_scale = of->fix_scale;
 	for(n=of->ops->h; n; n = n->next) 
 		list_append(f->ops, arg_dup(sa, n->data));
 	f->res.type = NULL;
 	if (of->res.type) {
+		sql_schema *syss = find_sql_schema(tr, "sys");
 		f->res = of->res;
 
+		if (!syss)
+			syss = s;
 		/* complex (table) types */
 		if (f->res.type->localtype == TYPE_bat) 
-			f->res.comp_type = schema_get_table(s, f->res.digits);
+			f->res.comp_type = schema_get_table(syss, f->res.digits);
 	}
 
 	f->s = s;
@@ -3595,6 +3600,7 @@ create_sql_func(sql_allocator *sa, char *func, list *args, sql_subtype *res, int
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->query = (query)?sa_strdup(sa, query):NULL;
+	t->fix_scale = SCALE_EQ;
 	if (res)
 		t->res = *res;
 	t->s = NULL;
@@ -3619,6 +3625,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	sql = t->sql = (query)?1:0;
 	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = sa_list(tr->sa);
+	t->fix_scale = SCALE_EQ;
 	for(n=args->h; n; n = n->next) 
 		list_append(t->ops, arg_dup(tr->sa, n->data));
 	t->res.scale = t->res.digits = 0;

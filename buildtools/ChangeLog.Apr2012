@@ -1,3 +1,6 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Wed May  2 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Windows: we now use OpenSSL 1.0.1b.
+

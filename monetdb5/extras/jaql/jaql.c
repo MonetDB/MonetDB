@@ -175,6 +175,23 @@ make_jaql_filter(tree *var, tree *pred)
 		return pred;
 	}
 
+	if (pred->type == j_bool) {
+		if (pred->nval) {
+			freetree(var);
+			freetree(pred);
+			return NULL;
+		} else {
+			/* false, must somehow inject null-pipe, return error for
+			 * now */
+			freetree(var);
+			freetree(pred);
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_error;
+			res->sval = GDKstrdup("filter: condition always yields to false");
+			return res;
+		}
+	}
+
 	assert(pred->type == j_pred);
 	
 	if ((res = _check_exp_var1("filter", var->sval, pred)) != NULL) {
@@ -615,6 +632,8 @@ make_pred(tree *l, tree *comp, tree *r)
 {
 	tree *res;
 
+	assert(r != NULL);
+
 	if (l != NULL && l->type == j_error) {
 		freetree(comp);
 		freetree(r);
@@ -641,7 +660,9 @@ make_pred(tree *l, tree *comp, tree *r)
 		return r;
 	}
 
-	if (r->type == j_bool && comp->cval != j_nequal && comp->cval != j_equals)
+	if ((r->type == j_bool || l->type == j_bool)
+			&& comp->cval != j_nequal && comp->cval != j_equals
+			&& comp->cval != j_and && comp->cval != j_or)
 	{
 		freetree(l);
 		freetree(comp);
@@ -649,8 +670,198 @@ make_pred(tree *l, tree *comp, tree *r)
 
 		res = GDKzalloc(sizeof(tree));
 		res->type = j_error;
-		res->sval = GDKstrdup("filter: can only apply equality tests on booleans");
+		res->sval = GDKstrdup("filter: can only apply equality tests "
+				"on booleans");
 		return res;
+	}
+
+	assert(l != NULL && comp != NULL);
+
+	/* switch arguments such that left is always <= in type compared to
+	 * right */
+	if (comp->cval == j_equals || comp->cval == j_nequal
+			|| comp->cval == j_greater || comp->cval == j_gequal
+			|| comp->cval == j_less || comp->cval == j_lequal)
+	{
+		if (l->type > r->type) {
+			tree *t = r;
+			r = l;
+			l = t;
+			switch (comp->cval) {
+				case j_greater:
+					comp->cval = j_less;
+					break;
+				case j_gequal:
+					comp->cval = j_lequal;
+					break;
+				case j_less:
+					comp->cval = j_greater;
+					break;
+				case j_lequal:
+					comp->cval = j_gequal;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	/* precompute static statements */
+	switch (l->type) {
+		char eval;
+		case j_bool:
+			/* comparators have been checked above */
+			if (r->type == j_bool) {
+				eval = l->nval == r->nval;
+			} else if (r->type == j_num || r->type == j_dbl) {
+				eval = (l->nval && r->nval)
+					|| (!l->nval && !r->nval);
+			} else if (r->type == j_str
+					|| r->type == j_json_obj || r->type == j_json_arr)
+			{
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: boolean comparison "
+						"with non-boolean not supported");
+				return res;
+			} else {
+				break;
+			}
+
+			freetree(l);
+			freetree(comp);
+			freetree(r);
+
+			res = GDKzalloc(sizeof(tree));
+			res->type = j_bool;
+			res->nval = comp->cval == j_nequal ? !eval : eval;
+			return res;
+		case j_num:
+		case j_dbl:
+			if (r->type == j_num || r->type == j_dbl) {
+				double a, b;
+				if (l->type == j_num && r->type == j_dbl) {
+					a = (double)l->nval;
+					b = r->dval;
+				} else if (l->type == j_num) {
+					a = (double)l->nval;
+					b = (double)r->nval;
+				} else {
+					a = l->dval;
+					b = r->dval;
+				}
+				switch (comp->cval) {
+					case j_equals:
+						eval = a == b;
+						break;
+					case j_nequal:
+						eval = a != b;
+						break;
+					case j_greater:
+						eval = a > b;
+						break;
+					case j_gequal:
+						eval = a >= b;
+						break;
+					case j_less:
+						eval = a < b;
+						break;
+					case j_lequal:
+						eval = a <= b;
+						break;
+					default:
+						freetree(l);
+						freetree(comp);
+						freetree(r);
+
+						res = GDKzalloc(sizeof(tree));
+						res->type = j_error;
+						res->sval = GDKstrdup("filter: operations IN, NOT, "
+								"OR, AND on numbers not supported");
+						return res;
+				}
+
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_bool;
+				res->nval = eval;
+				return res;
+			} else if (r->type == j_str
+					|| r->type == j_json_obj || r->type == j_json_arr)
+			{
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: number comparison "
+						"with non-number not supported");
+				return res;
+			}
+			break;
+		case j_str:
+			if (r->type == j_str) {
+				switch (comp->cval) {
+					case j_equals:
+						eval = strcmp(l->sval, r->sval) == 0;
+						break;
+					case j_nequal:
+						eval = strcmp(l->sval, r->sval) != 0;
+						break;
+					case j_greater:
+						eval = strcmp(l->sval, r->sval) > 0;
+						break;
+					case j_gequal:
+						eval = strcmp(l->sval, r->sval) >= 0;
+						break;
+					case j_less:
+						eval = strcmp(l->sval, r->sval) < 0;
+						break;
+					case j_lequal:
+						eval = strcmp(l->sval, r->sval) <= 0;
+						break;
+					default:
+						freetree(l);
+						freetree(comp);
+						freetree(r);
+
+						res = GDKzalloc(sizeof(tree));
+						res->type = j_error;
+						res->sval = GDKstrdup("filter: operations IN, NOT, "
+								"OR, AND on strings not supported");
+						return res;
+				}
+
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_bool;
+				res->nval = eval;
+				return res;
+			} else if (r->type == j_json_obj || r->type == j_json_arr) {
+				freetree(l);
+				freetree(comp);
+				freetree(r);
+
+				res = GDKzalloc(sizeof(tree));
+				res->type = j_error;
+				res->sval = GDKstrdup("filter: string comparison "
+						"with non-string not supported");
+				return res;
+			}
+			break;
+		default:
+			break;
 	}
 
 	res = GDKzalloc(sizeof(tree));
@@ -1137,299 +1348,304 @@ set_func_input_from_pipe(tree *func)
 
 
 void
-printtree(tree *t, int level, char op)
+printtree(stream *out, tree *t, int level, char op)
 {
+	tree *i;
 	(void) level;  /* indenting not used (yet) */
 #define step 4
 	while (t != NULL) {
 		switch (t->type) {
 			case j_output_var:
 				if (op) {
-					printf("j_output_var( %s ) ", t->sval);
+					mnstr_printf(out, "j_output_var( %s ) ", t->sval);
 				} else {
-					printf("=> %s ", t->sval);
+					mnstr_printf(out, "=> %s ", t->sval);
 				}
 				break;
 			case j_output:
 				if (op) {
-					printf("j_output() ");
+					mnstr_printf(out, "j_output() ");
 				} else {
-					printf("=> <result> ");
+					mnstr_printf(out, "=> <result> ");
 				}
 				break;
 			case j_json:
 				if (op) {
-					printf("j_json( %s ) ", t->sval);
+					mnstr_printf(out, "j_json( %s ) ", t->sval);
 				} else {
-					printf("%s ", t->sval);
+					mnstr_printf(out, "%s ", t->sval);
 				}
 				break;
 			case j_json_obj:
-				if (op) {
-					printf("j_json_obj( ");
-					printtree(t->tval1, level + step, op);
-					printf(") ");
-				} else {
-					printf("{ ");
-					printtree(t->tval1, level + step, op);
-					printf("} ");
-				}
-				break;
 			case j_json_arr:
-				if (op) {
-					printf("j_json_arr( ");
-					printtree(t->tval1, level + step, op);
-					printf(") ");
+				if (t->type == j_json_obj) {
+					mnstr_printf(out, op ? "j_json_obj( " : "{ ");
 				} else {
-					printf("[ ");
-					printtree(t->tval1, level + step, op);
-					printf("] ");
+					mnstr_printf(out, op ? "j_json_arr( " : "[ ");
 				}
+				if (t->tval1 != NULL) {
+					tree *n = t->tval1->next;
+					t->tval1->next = NULL;
+					printtree(out, t->tval1, level + step, op);
+					t->tval1->next = n;
+					for (i = t->tval1->next; i != NULL; i = i->next) {
+						mnstr_printf(out, ", ");
+						n = i->next;
+						i->next = NULL;
+						printtree(out, i, level + step, op);
+						i->next = n;
+					}
+				}
+				if (t->type == j_json_obj) {
+					mnstr_printf(out, op ? ") " : "} ");
+				} else {
+					mnstr_printf(out, op ? ") " : "] ");
+				}
+				t = NULL; /* we already iterated over all children */
 				break;
 			case j_pair:
 				if (op) {
-					printf("j_pair( ");
+					mnstr_printf(out, "j_pair( ");
 					if (t->sval != NULL) {
-						printf("\"%s\", ", t->sval);
+						mnstr_printf(out, "\"%s\", ", t->sval);
 					} else {
-						printf("<deduced_name>, ");
+						mnstr_printf(out, "<deduced_name>, ");
 					}
-					printtree(t->tval1, level + step, op);
-					printf(") ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
 					if (t->sval == NULL) {
-						printf("<to be deduced from expansion> ");
+						mnstr_printf(out, "<to be deduced from expansion> ");
 					} else {
-						printf("\"%s\": ", t->sval);
+						mnstr_printf(out, "\"%s\": ", t->sval);
 					}
-					printtree(t->tval1, level + step, op);
+					printtree(out, t->tval1, level + step, op);
 					if (t->next != NULL)
-						printf(", ");
+						mnstr_printf(out, ", ");
 				}
 				break;
 			case j_filter:
 				if (op) {
-					printf("j_filter( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_filter( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
-					printf("as ");
-					printtree(t->tval1, level + step, op);
-					printf("-> filter: ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "-> filter: ");
+					printtree(out, t->tval2, level + step, op);
 				}
 				break;
 			case j_transform:
 				if (op) {
-					printf("j_transform( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "j_transform( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
 				} else {
-					printf("as ");
-					printtree(t->tval1, level + step, op);
-					printf("-> transform: ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "-> transform: ");
+					printtree(out, t->tval2, level + step, op);
 				}
 				t = t->tval3;
 				while (t != NULL) {
-					printf(", ");
-					printtree(t, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t, level + step, op);
 					t = t->next;
 				}
 				if (op)
-					printf(") ");
+					mnstr_printf(out, ") ");
 				break;
 			case j_expand:
 				if (op) {
-					printf("j_expand( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_expand( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
-					printf("as ");
-					printtree(t->tval1, level + step, op);
-					printf("-> expand: ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "-> expand: ");
+					printtree(out, t->tval2, level + step, op);
 				}
 				break;
 			case j_unroll:
 				if (op) {
-					printf("j_unroll( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_unroll( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
-					printf("as ");
-					printtree(t->tval1, level + step, op);
-					printf("-> expand unroll: ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "-> expand unroll: ");
+					printtree(out, t->tval2, level + step, op);
 				}
 				break;
 			case j_group:
 				if (op) {
-					tree *i;
-					printf("j_group( ");
+					mnstr_printf(out, "j_group( ");
 					if (t->tval1 != NULL) {
-						printtree(t->tval1, level + step, op);
+						printtree(out, t->tval1, level + step, op);
 						for (i = t->tval1->next; i != NULL; i = i->next) {
-							printf(", ");
-							printtree(i, level + step, op);
+							mnstr_printf(out, ", ");
+							printtree(out, i, level + step, op);
 						}
 					}
-					printf("), ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, "), ");
+					printtree(out, t->tval2, level + step, op);
 				} else {
-					tree *i;
 					if (t->tval1 == NULL || t->tval1->next == NULL)
-						printf("-> ");
-					printf("group by: ( ");
+						mnstr_printf(out, "-> ");
+					mnstr_printf(out, "group by: ( ");
 					if (t->tval1 != NULL) {
-						printtree(t->tval1, level + step, op);
+						printtree(out, t->tval1, level + step, op);
 						for (i = t->tval1->next; i != NULL; i = i->next) {
-							printf(", ");
-							printtree(i, level + step, op);
+							mnstr_printf(out, ", ");
+							printtree(out, i, level + step, op);
 						}
 					}
-					printf(") into ");
-					printtree(t->tval2, level + step, op);
+					mnstr_printf(out, ") into ");
+					printtree(out, t->tval2, level + step, op);
 				}
 				t = t->tval2->next;
 				while (t != NULL) {
-					printf(", ");
-					printtree(t, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t, level + step, op);
 					t = t->next;
 				}
 				if (op)
-					printf(") ");
+					mnstr_printf(out, ") ");
 				break;
 			case j_join:
 				if (op) {
-					tree *i;
-					printf("j_join( ");
-					printtree(t->tval1, level + step, op);
+					mnstr_printf(out, "j_join( ");
+					printtree(out, t->tval1, level + step, op);
 					for (i = t->tval1->next; i != NULL; i = i->next) {
-						printf(", ");
-						printtree(i, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, i, level + step, op);
 					}
-					printf(", ( ");
-					printtree(t->tval2, level + step, op);
-					printf("), ");
-					printtree(t->tval3, level + step, op);
+					mnstr_printf(out, ", ( ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, "), ");
+					printtree(out, t->tval3, level + step, op);
 				} else {
-					tree *i;
-					printf("as ");
-					printtree(t->tval1, level + step, op);
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
 					for (i = t->tval1->next; i != NULL; i = i->next) {
-						printf(", ");
-						printtree(i, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, i, level + step, op);
 					}
-					printf("-> join: where ( ");
-					printtree(t->tval2, level + step, op);
-					printf(") into ");
-					printtree(t->tval3, level + step, op);
+					mnstr_printf(out, "-> join: where ( ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") into ");
+					printtree(out, t->tval3, level + step, op);
 				}
 				t = t->tval3->next;
 				while (t != NULL) {
-					printf(", ");
-					printtree(t, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t, level + step, op);
 					t = t->next;
 				}
 				if (op)
-					printf(") ");
+					mnstr_printf(out, ") ");
 				break;
 			case j_sort:
 				if (op) {
-					printf("j_sort( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ( ");
-					printtree(t->tval2, level + step, op);
-					printf(") ) ");
+					mnstr_printf(out, "j_sort( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ( ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") ) ");
 				} else {
-					printf("as ");
-					printtree(t->tval1, level + step, op);
-					printf("-> sort: [ ");
-					printtree(t->tval2, level + step, op);
-					printf("] ");
+					mnstr_printf(out, "as ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "-> sort: [ ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, "] ");
 				}
 				break;
 			case j_top:
 				if (op) {
-					printf("j_top( %lld ) ", t->nval);
+					mnstr_printf(out, "j_top( %lld ) ", t->nval);
 				} else {
-					printf("-> top: %lld ", t->nval);
+					mnstr_printf(out, "-> top: %lld ", t->nval);
 				}
 				break;
 			case j_comp:
 			case j_op:
 				switch (t->cval) {
 					case j_and:
-						printf("&& ");
+						mnstr_printf(out, "&& ");
 						break;
 					case j_or:
-						printf("|| ");
+						mnstr_printf(out, "|| ");
 						break;
 					case j_not:
-						printf("! ");
+						mnstr_printf(out, "! ");
 						break;
 					case j_equals:
-						printf("== ");
+						mnstr_printf(out, "== ");
 						break;
 					case j_nequal:
-						printf("!= ");
+						mnstr_printf(out, "!= ");
 						break;
 					case j_greater:
-						printf("> ");
+						mnstr_printf(out, "> ");
 						break;
 					case j_gequal:
-						printf(">= ");
+						mnstr_printf(out, ">= ");
 						break;
 					case j_less:
-						printf("< ");
+						mnstr_printf(out, "< ");
 						break;
 					case j_lequal:
-						printf("<= ");
+						mnstr_printf(out, "<= ");
+						break;
+					case j_in:
+						mnstr_printf(out, "in ");
 						break;
 					case j_plus:
-						printf("+ ");
+						mnstr_printf(out, "+ ");
 						break;
 					case j_min:
-						printf("- ");
+						mnstr_printf(out, "- ");
 						break;
 					case j_multiply:
-						printf("* ");
+						mnstr_printf(out, "* ");
 						break;
 					case j_divide:
-						printf("/ ");
+						mnstr_printf(out, "/ ");
 						break;
 					case j_cinvalid:
-						printf("<<invalid compare node>>");
+						mnstr_printf(out, "<<invalid compare node>>");
 						break;
 				}
 				break;
 			case j_group_input:
 				if (op) {
-					printf("j_group_input( ");
-					printtree(t->tval1, level + step, op);
+					mnstr_printf(out, "j_group_input( ");
+					printtree(out, t->tval1, level + step, op);
 					if (t->sval != NULL) {
-						printf(", %s , ", t->sval);
-						printtree(t->tval2, level + step, op);
-						printf(", ");
-						printtree(t->tval3, level + step, op);
+						mnstr_printf(out, ", %s , ", t->sval);
+						printtree(out, t->tval2, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, t->tval3, level + step, op);
 					}
-					printf(") ");
+					mnstr_printf(out, ") ");
 				} else {
-					printtree(t->tval1, level + step, op);
-					printf("each %s ", t->tval2->sval);
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, "each %s ", t->tval2->sval);
 					if (t->sval != NULL) {
-						printf("by %s = ", t->sval);
-						printtree(t->tval2, level + step, op);
-						printf("as ");
-						printtree(t->tval3, level + step, op);
+						mnstr_printf(out, "by %s = ", t->sval);
+						printtree(out, t->tval2, level + step, op);
+						mnstr_printf(out, "as ");
+						printtree(out, t->tval3, level + step, op);
 					}
 				}
 				/* avoid re-recursion after j_group */
@@ -1437,177 +1653,176 @@ printtree(tree *t, int level, char op)
 				break;
 			case j_join_input:
 				if (op) {
-					printf("j_join_input( ");
-					printf("%lld , ", t->nval);
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_join_input( ");
+					mnstr_printf(out, "%lld , ", t->nval);
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
 					if (t->nval == 1)
-						printf("preserve ");
-					printtree(t->tval2, level + step, op);
-					printf("in ");
-					printtree(t->tval1, level + step, op);
+						mnstr_printf(out, "preserve ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, "in ");
+					printtree(out, t->tval1, level + step, op);
 				}
 				/* avoid re-recursion after j_join */
 				t = NULL;
 				break;
 			case j_pred:
 				if (op) {
-					printf("j_pred( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(", ");
-					printtree(t->tval3, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_pred( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval3, level + step, op);
+					mnstr_printf(out, ") ");
 					if (t->next != NULL)
-						printf("&& ");
+						mnstr_printf(out, "&& ");
 				} else {
-					printf("( ");
-					printtree(t->tval1, level + step, op);
-					printtree(t->tval2, level + step, op);
-					printtree(t->tval3, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "( ");
+					printtree(out, t->tval1, level + step, op);
+					printtree(out, t->tval2, level + step, op);
+					printtree(out, t->tval3, level + step, op);
+					mnstr_printf(out, ") ");
 					if (t->next != NULL)
-						printf("and ");
+						mnstr_printf(out, "and ");
 				}
 				break;
 			case j_operation:
 				if (op) {
-					printf("j_operation( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
-					printtree(t->tval2, level + step, op);
-					printf(", ");
-					printtree(t->tval3, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_operation( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval2, level + step, op);
+					mnstr_printf(out, ", ");
+					printtree(out, t->tval3, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
-					printf("( ");
-					printtree(t->tval1, level + step, op);
-					printtree(t->tval2, level + step, op);
-					printtree(t->tval3, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "( ");
+					printtree(out, t->tval1, level + step, op);
+					printtree(out, t->tval2, level + step, op);
+					printtree(out, t->tval3, level + step, op);
+					mnstr_printf(out, ") ");
 				}
 				break;
 			case j_sort_arg:
 				if (op) {
-					printf("j_sort_arg( ");
-					printtree(t->tval1, level + step, op);
-					printf(", ");
+					mnstr_printf(out, "j_sort_arg( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ", ");
 					if (t->nval == 1) {
-						printf("asc ");
+						mnstr_printf(out, "asc ");
 					} else {
-						printf("desc ");
+						mnstr_printf(out, "desc ");
 					}
-					printf(") ");
+					mnstr_printf(out, ") ");
 				} else {
-					printtree(t->tval1, level + step, op);
+					printtree(out, t->tval1, level + step, op);
 					if (t->nval == 1) {
-						printf("asc ");
+						mnstr_printf(out, "asc ");
 					} else {
-						printf("desc ");
+						mnstr_printf(out, "desc ");
 					}
 				}
 				break;
 			case j_var:
 				if (op) {
-					printf("j_var( %s ", t->sval == NULL ? "*" : t->sval);
+					mnstr_printf(out, "j_var( %s ", t->sval == NULL ? "*" : t->sval);
 					if (t->tval1 != NULL) {
-						printf(", ");
-						printtree(t->tval1, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, t->tval1, level + step, op);
 					}
-					printf(") ");
+					mnstr_printf(out, ") ");
 				} else {
-					printf("%s", t->sval == NULL ? "*" : t->sval);
+					mnstr_printf(out, "%s", t->sval == NULL ? "*" : t->sval);
 					if (t->tval1 != NULL) {
 						if (t->tval1->type == j_var)
-							printf(".");
-						printtree(t->tval1, level + step, op);
+							mnstr_printf(out, ".");
+						printtree(out, t->tval1, level + step, op);
 					} else {
-						printf(" ");
+						mnstr_printf(out, " ");
 					}
 				}
 				break;
 			case j_arr_idx:
 				if (op) {
-					printf("j_arr_idx( ");
+					mnstr_printf(out, "j_arr_idx( ");
 					if (t->nval == -1) {
-						printf("* ");
+						mnstr_printf(out, "* ");
 					} else {
-						printf("%lld ", t->nval);
+						mnstr_printf(out, "%lld ", t->nval);
 					}
 					if (t->tval1 != NULL) {
-						printf(", ");
-						printtree(t->tval1, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, t->tval1, level + step, op);
 					}
-					printf(") ");
+					mnstr_printf(out, ") ");
 				} else {
 					if (t->nval == -1) {
-						printf("[*]");
+						mnstr_printf(out, "[*]");
 					} else {
-						printf("[%lld]", t->nval);
+						mnstr_printf(out, "[%lld]", t->nval);
 					}
 					if (t->tval1 != NULL) {
 						if (t->tval1->type == j_var)
-							printf(".");
-						printtree(t->tval1, level + step, op);
+							mnstr_printf(out, ".");
+						printtree(out, t->tval1, level + step, op);
 					} else {
-						printf(" ");
+						mnstr_printf(out, " ");
 					}
 				}
 				break;
 			case j_num:
-				printf("%lld ", t->nval);
+				mnstr_printf(out, "%lld ", t->nval);
 				break;
 			case j_dbl:
-				printf("%f ", t->dval);
+				mnstr_printf(out, "%f ", t->dval);
 				break;
 			case j_str:
-				printf("'%s' ", t->sval);
+				mnstr_printf(out, "'%s' ", t->sval);
 				break;
 			case j_bool:
-				printf("%s ", t->nval == 0 ? "false" : "true");
+				mnstr_printf(out, "%s ", t->nval == 0 ? "false" : "true");
 				break;
-			case j_func: {
-				tree *i;
+			case j_func:
 				if (op) {
-					printf("j_func( %s, ", t->sval);
+					mnstr_printf(out, "j_func( %s, ", t->sval);
 				} else {
 					if (t->nval == 1)
-						printf("-> ");
-					printf("%s( ", t->sval);
+						mnstr_printf(out, "-> ");
+					mnstr_printf(out, "%s( ", t->sval);
 				}
 				if (t->tval1 != NULL) {
-					printtree(t->tval1, level + step, op);
+					printtree(out, t->tval1, level + step, op);
 					for (i = t->tval1->next; i != NULL; i = i->next) {
-						printf(", ");
-						printtree(i, level + step, op);
+						mnstr_printf(out, ", ");
+						printtree(out, i, level + step, op);
 					}
 				}
-				printf(") ");
-			}	break;
+				mnstr_printf(out, ") ");
+				break;
 			case j_func_arg:
 				if (op) {
-					printf("j_func_arg( ");
-					printtree(t->tval1, level + step, op);
-					printf(") ");
+					mnstr_printf(out, "j_func_arg( ");
+					printtree(out, t->tval1, level + step, op);
+					mnstr_printf(out, ") ");
 				} else {
-					printtree(t->tval1, level + step, op);
+					printtree(out, t->tval1, level + step, op);
 				}
 				/* avoid re-recursion after j_func */
 				t = NULL;
 				break;
 			case j_error:
 				if (op) {
-					printf("j_error( %s )", t->sval);
+					mnstr_printf(out, "j_error( %s )", t->sval);
 				} else {
-					printf("!%s\n", t->sval);
+					mnstr_printf(out, "!%s\n", t->sval);
 				}
 				break;
 			case j_invalid:
-				printf("<<invalid tree node>>");
+				mnstr_printf(out, "<<invalid tree node>>");
 				break;
 		}
 		if (t != NULL)
@@ -1670,11 +1885,12 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (j == NULL) {
 		j = GDKzalloc(sizeof(jc));
-		cntxt->state[MAL_SCENARIO_OPTIMIZE] = j;
+		cntxt->jaqlcontext = j;
 	}
 
 	j->buf = jaql;
 	j->err[0] = '\0';
+	j->pos = 0;
 	jaqllex_init_extra(j, &j->scanner);
 
 	do {
@@ -1683,7 +1899,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (j->err[0] != '\0')
 			break;
 		if (j->p == NULL)
-			continue;
+			j->explain = 99; /* jump over switch below */
 
 		switch (j->explain) {
 			case 0: /* normal (execution) mode */
@@ -1716,16 +1932,16 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}	break;
 			case 2: /* plan */
 			case 3: /* planf */
-				printtree(j->p, 0, j->explain == 3);
-				printf("\n");
+				printtree(cntxt->fdout, j->p, 0, j->explain == 3);
+				mnstr_printf(cntxt->fdout, "\n");
 				break;
 		}
 		freetree(j->p);
-		/* reset, j->buf has been reset by the lexer if EOF was found */
+		/* reset */
 		j->p = NULL;
 		j->esc_depth = 0;
 		j->explain = 0;
-	} while (j->buf != NULL && j->err[0] == '\0');
+	} while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0' && j->err[0] == '\0');
 
 	jaqllex_destroy(j->scanner);
 	j->scanner = NULL;
@@ -1741,7 +1957,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 getJAQLContext(Client cntxt, jc **c)
 {
-	*c = ((jc *) cntxt->state[MAL_SCENARIO_OPTIMIZE]); 
+	*c = (jc *) cntxt->jaqlcontext; 
 	if (*c == NULL)
 		throw(MAL, "jaql.context", "JAQL environment not found");
 	return MAL_SUCCEED;

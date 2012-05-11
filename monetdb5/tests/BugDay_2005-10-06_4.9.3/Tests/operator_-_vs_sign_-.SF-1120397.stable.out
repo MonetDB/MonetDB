@@ -9,41 +9,42 @@ stdout of test 'operator_-_vs_sign_-.SF-1120397` in directory 'tests/BugDay_2005
 # Serving database 'mTests_tests_BugDay_2005-10-06_4.9.3', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:34219/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+!SyntaxException:parseError:z:=(1)+(1); io.print(z);
+!SyntaxException:parseError:     ^';' expected
+!SyntaxException:parseError:z:=(1)-(1); io.print(z);
+!SyntaxException:parseError:     ^';' expected
+!SyntaxException:parseError:z:=(1)+ 1; io.print(z);
+!SyntaxException:parseError:     ^';' expected
+!SyntaxException:parseError:z:=(1)- 1; io.print(z);
+!SyntaxException:parseError:     ^';' expected
+!SyntaxException:parseError:z:=(1) +1; io.print(z);
+!SyntaxException:parseError:      ^';' expected
+!SyntaxException:parseError:z:=(1) -1; io.print(z);
+!SyntaxException:parseError:      ^';' expected
+!SyntaxException:parseError:z:=(1)+1; io.print(z);
+!SyntaxException:parseError:     ^';' expected
+!SyntaxException:parseError:z:=(1)-1; io.print(z);
+!SyntaxException:parseError:     ^';' expected
 function user.main():void;
     z := calc.+(1,1);
     io.print(z);
     z := calc.-(1,1);
     io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
     z := 1;
-    io.print(z);
 end main;
-[ 2 ]
-[ 0 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
-[ 1 ]
 
 # 11:42:10 >  
 # 11:42:10 >  Done.

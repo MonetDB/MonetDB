@@ -133,7 +133,6 @@ static char *mccPrelude[] = {
 	"#include \"kernel/array.h\"\n",
 	"#include \"kernel/bat5.h\"\n",
 	"#include \"kernel/batcalc.h\"\n",
-	"#include \"kernel/batcast.h\"\n",
 	"#include \"kernel/batifthen.h\"\n",
 	"#include \"kernel/batmmath.h\"\n",
 	"#include \"kernel/batmtime.h\"\n",

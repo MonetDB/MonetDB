@@ -1350,7 +1350,8 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, char *cname )
 	case op_topn:
 	case op_sample:
 		*p = rel;
-		return rel_bind_column_(sql, p, rel->l, cname);
+		if (rel->l)
+			return rel_bind_column_(sql, p, rel->l, cname);
 	default:
 		return NULL;
 	}
@@ -1948,8 +1949,7 @@ static sql_exp *
 exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	if (strcmp(f->func->imp, "*") == 0 &&
-			f->func->res.type->scale == SCALE_FIX)
-	{
+			f->func->res.type->scale == SCALE_FIX) {
 		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
@@ -2987,7 +2987,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					sql->errstr[0] = 0;
 
 					/* TODO remove null checking (not needed in correlated case because of the semi/anti join) ! */
-					rel = left = rel_dup(left);
+					if (l_is_value) 
+						rel = rel_dup(outer);
+					else
+						rel = left = rel_dup(left);
 					r = rel_value_exp(sql, &rel, sval, f, ek);
 					if (r && !is_project(rel->op)) {
 						rel = rel_project(sql->sa, rel, NULL);
@@ -3430,6 +3433,13 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		if (f->func->fix_scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
 			r = exp_fix_scale(sql, t1, r, 0, 0);
+		} else if (f->func->fix_scale == SCALE_EQ) {
+			sql_arg *a1 = f->func->ops->h->data;
+			sql_arg *a2 = f->func->ops->h->next->data;
+			t1 = &a1->type;
+			t2 = &a2->type;
+			l = exp_fix_scale(sql, t1, l, 0, 0);
+			r = exp_fix_scale(sql, t2, r, 0, 0);
 		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, l, r);
 		} else if (f->func->fix_scale == SCALE_MUL) {
@@ -3476,6 +3486,13 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				if (f->func->fix_scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
 					r = exp_fix_scale(sql, t1, r, 0, 0);
+				} else if (f->func->fix_scale == SCALE_EQ) {
+					sql_arg *a1 = f->func->ops->h->data;
+					sql_arg *a2 = f->func->ops->h->next->data;
+					t1 = &a1->type;
+					t2 = &a2->type;
+					l = exp_fix_scale(sql, t1, l, 0, 0);
+					r = exp_fix_scale(sql, t2, r, 0, 0);
 				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, l, r);
 				} else if (f->func->fix_scale == SCALE_MUL) {
@@ -3537,8 +3554,6 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				exp_subtype(r)->type->sqlname);
 	return res;
 }
-
-#define SQLMAXDEPTH ((THREAD_STACK_SIZE/4096))
 
 static sql_exp *
 rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)

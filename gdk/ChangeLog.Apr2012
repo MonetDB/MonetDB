@@ -1,9 +1,7 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Tue Feb  7 2012 Sjoerd Mullender <sjoerd@acm.org>
-- The type "chr" has been removed.
-  chr has long been superseded by bte for 1 byte arithmetic plus it is
-  pretty useless to hold single characters since we use Unicode and
-  thus only a tiny subset of the supported character set would fit.
+* Fri Apr 27 2012 Fabian Groffen <fabian@cwi.nl>
+- Implemented MT_getrss for Mac OS X systems, this allows the server to
+  know about how much memory is currently in use.
 

@@ -267,7 +267,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 {
 	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
-	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;
@@ -2397,7 +2397,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	sql_rel *r;
 	mvc *m = (mvc*)M;
 	Client c = MCgetClient(m->clientid);
-	backend *be = ((backend *) c->state[MAL_SCENARIO_PARSER]);
+	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;

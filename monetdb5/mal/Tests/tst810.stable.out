@@ -1,0 +1,71 @@
+stdout of test 'tst810` in directory 'mal` itself:
+
+
+# 16:18:09 >  
+# 16:18:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/scratch/mk/current//Linux/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=32494" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_mal" "tst810.mal"
+# 16:18:09 >  
+
+# MonetDB 5 server v11.10.0
+# This is an unreleased version
+# Serving database 'mTests_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.620 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks019.scilens:32494/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
+    bat.append(b,4);
+    bat.append(b,5);
+    bat.append(b,6);
+    bat.append(b,7);
+    bat.append(b,8);
+    bat.append(b,9);
+    io.print(b);
+    slice1 := algebra.slice(b,nil:oid,4@0);
+    io.print(slice1);
+    slice2 := algebra.slice(b,4@0,nil:oid);
+    io.print(slice2);
+end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 7@0,	  8	  ]
+[ 8@0,	  9	  ]
+#-----------------#
+# t	h	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+#-----------------#
+# t	h	  # name
+# void	int	  # type
+#-----------------#
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 7@0,	  8	  ]
+[ 8@0,	  9	  ]
+
+# 16:18:09 >  
+# 16:18:09 >  "Done."
+# 16:18:09 >  
+

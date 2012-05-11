@@ -1096,11 +1096,9 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_bat:
 
-		if (s->flag == RDONLY && 
-			!mvc_debug_on(c, 32) &&
-			!mvc_debug_on(c, 64) &&
-			!mvc_debug_on(c, 8192)) {
-			stmt *res = stmt_delta_table_bat(c->sa,  s->op4.cval, s->h, s->flag);
+		if (s->flag == RDONLY) { 
+			stmt *res = stmt_delta_table_bat(c->sa,  s->op4.cval, s->h, s->flag,
+				(mvc_debug_on(c, 32) || mvc_debug_on(c, 64) || mvc_debug_on(c, 8192))); 
 			assert(s->rewritten==NULL);
 			s->rewritten = res;
 			s->optimized = res->optimized = 2;
@@ -1112,11 +1110,9 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_idxbat:
 
-		if (s->flag == RDONLY && 
-			!mvc_debug_on(c, 32) &&
-			!mvc_debug_on(c, 64) &&
-			!mvc_debug_on(c, 8192)) {
-			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op4.idxval, s->h, s->flag);
+		if (s->flag == RDONLY) { 
+			stmt *res = stmt_delta_table_idxbat(c->sa,  s->op4.idxval, s->h, s->flag,
+				(mvc_debug_on(c, 32) || mvc_debug_on(c, 64) || mvc_debug_on(c, 8192))); 
 			assert(s->rewritten==NULL);
 			s->rewritten = res;
 			s->optimized = res->optimized = 2;

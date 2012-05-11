@@ -365,7 +365,7 @@ dnl we try where UNIX domain sockets also exist.  So we go by the
 dnl following simple implementation for now.
 case $host in
 	*-solaris*)
-        dnl Solaris needs this to get msg_control and msg_controllen
+		dnl Solaris needs this to get msg_control and msg_controllen
 		dnl it disables, however, the availability of madvise, which is
 		dnl in use use by GDK, so we cannot just AC_DEFINE this, but
 		dnl rather have to enable it where it is necessary
@@ -1370,6 +1370,13 @@ case "$have_rubygem_dir" in
 		RUBY_DIR="$have_rubygem_dir"
 		;;
 esac
+case "$RUBY_DIR" in
+${prefix}/*)
+	RUBY_DIR="\${prefix}`echo "$RUBY_DIR" | sed "s|^$prefix||"`";;
+/*)	;;
+*)
+	RUBY_DIR="\${prefix}/$RUBY_DIR";;
+esac
 AC_SUBST(RUBY_DIR)
 
 RUBYGEM=gem
@@ -1493,7 +1500,6 @@ mac*)
 	QDIRSEP='\\'
 	PATHSEP=';'
 	SOEXT='-0.dll'
-	AC_DEFINE([HAVE_GLOBALMEMORYSTATUS], 1, [Define to 1 if you have the `GlobalMemoryStatus' function.])
 	;;
 *cygwin*)
 	DIRSEP='/'
@@ -1755,6 +1761,10 @@ AC_SUBST(MATH_LIBS)
 MALLOC_LIBS=""
 AC_CHECK_LIB(malloc, malloc, [ MALLOC_LIBS="-lmalloc" ] )
 AC_SUBST(MALLOC_LIBS)
+
+KVM_LIBS=""
+AC_CHECK_LIB(kvm, kvm_open, [ KVM_LIBS="-lkvm" ] )
+AC_SUBST(KVM_LIBS)
 
 save_LIBS="$LIBS"
 LIBS="$LIBS $MALLOC_LIBS"
@@ -2346,12 +2356,15 @@ AC_CHECK_HEADERS([crypt.h \
 	iconv.h \
 	ieeefp.h \
 	io.h \
+	kvm.h \
 	langinfo.h \
 	libgen.h \
 	libintl.h \
 	limits.h \
 	locale.h \
 	mach-o/dyld.h \
+	mach/mach_init.h \
+	mach/task.h \
 	malloc.h \
 	netdb.h \
 	netinet/in.h \
@@ -2371,6 +2384,7 @@ AC_CHECK_HEADERS([crypt.h \
 	sys/param.h \
 	sys/resource.h \
 	sys/socket.h \
+	sys/sysctl.h \
 	sys/time.h \
 	sys/times.h \
 	sys/types.h \
@@ -2602,8 +2616,6 @@ AC_CHECK_FUNCS([\
 				GetSystemInfo \
 				gettimeofday \
 				getuid \
-				GlobalMemoryStatus \
-				GlobalMemoryStatusEx \
 				isinf \
 				kill \
 				localtime_r \
@@ -2616,7 +2628,6 @@ AC_CHECK_FUNCS([\
 				posix_fadvise \
 				posix_madvise \
 				putenv \
-				QueryPerformanceCounter \
 				round \
 				sbrk \
 				setenv \
@@ -2634,10 +2645,12 @@ AC_CHECK_FUNCS([\
 				strtoll \
 				strtoull \
 				sysconf \
+				task_info \
 				times \
 				trunc \
 				uname \
 				])
+
 LIBS="$save_LIBS"
 save_LIBS="$LIBS"
 LIBS=

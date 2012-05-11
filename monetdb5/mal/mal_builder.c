@@ -99,6 +99,17 @@ newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
 }
 
 InstrPtr
+newReturnStmt(MalBlkPtr mb)
+{
+	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
+
+	getArg(q,0)= newTmpVariable(mb,TYPE_any);
+	pushInstruction(mb, q);
+	q->barrier= RETURNsymbol;
+	return q;
+}
+
+InstrPtr
 newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 {
 	InstrPtr q = newAssignment(mb);

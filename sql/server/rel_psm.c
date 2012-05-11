@@ -158,7 +158,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	sql_subtype ctype = *sql_bind_localtype("bat");
 
 	if (sname)  /* not allowed here */
-		return sql_error(sql, 02, "DECLARE TABLE: qualified name allowed");
+		return sql_error(sql, 02, "DECLARE TABLE: qualified name not allowed");
 	if (frame_find_var(sql, name)) 
 		return sql_error(sql, 01, "Variable '%s' allready declared", name);
 	
@@ -367,6 +367,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 	if (restype->comp_type)
 		ek.card = card_relation;
 	res = rel_value_exp2(sql, &rel, return_sym, sql_sel, ek, &is_last);
+	if (!res)
+		return NULL;
 	if (ek.card != card_relation && (!res || 
            	(res = rel_check_type(sql, restype, res, type_equal)) == NULL))
 		return NULL;
@@ -411,6 +413,8 @@ rel_psm_return( mvc *sql, sql_subtype *restype, symbol *return_sym )
 		node *n, *m;
 		char *tname = t->base.name;
 
+		if (cs_size(&t->columns) != cs_size(&restype->comp_type->columns))
+			return sql_error(sql, 02, "RETURN: number of columns do not match");
 		for (n = t->columns.set->h, m = restype->comp_type->columns.set->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_column *ce = m->data;
@@ -741,13 +745,21 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 			if (!l)
 				l = sa_list(sql->sa);
-			if (res)
+			if (res) {
 				restype = result_type(sql, sf, fname, res);
+				if (!restype)
+					return sql_error(sql, 01,
+							"CREATE %s%s: failed to get restype", KF, F);
+			}
 
 		 	if (body) {		/* sql func */
 				list *b = NULL;
+				sql_schema *old_schema = cur_schema(sql);
 	
+				if (s)
+					sql->session->schema = s;
 				b = sequential_block(sql, restype, body, NULL, is_func);
+				sql->session->schema = old_schema;
 				sql->params = NULL;
 				if (!b) 
 					return NULL;
