@@ -66,9 +66,9 @@ Ready.
 % id,	name,	schema_id,	query,	type,	system,	commit_action,	readonly,	fixed_array,	nr_dimensions # name
 % int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	boolean,	boolean,	int # type
 % 4,	4,	4,	0,	1,	5,	1,	5,	5,	1 # length
-[ 6486,	"ary",	2000,	NULL,	7,	false,	0,	false,	true,	2	]
-[ 6491,	"ary1",	2000,	NULL,	7,	false,	0,	false,	false,	2	]
-[ 6497,	"ary2",	2000,	NULL,	7,	false,	0,	false,	false,	3	]
+[ 6846,	"ary",	2000,	NULL,	7,	false,	0,	false,	true,	2	]
+[ 6851,	"ary1",	2000,	NULL,	7,	false,	0,	false,	false,	2	]
+[ 6857,	"ary2",	2000,	NULL,	7,	false,	0,	false,	false,	3	]
 #DROP ARRAY ary;
 
 # 13:50:46 >  
