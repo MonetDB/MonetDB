@@ -495,25 +495,25 @@ pthread_sema_destroy(pthread_sema_t *s)
 void
 pthread_sema_up(pthread_sema_t *s)
 {
-	int status = pthread_mutex_lock(&(s->mutex));
+	(void)pthread_mutex_lock(&(s->mutex));
 
 	if (s->cnt++ < 0) {
 		/* wake up sleeping thread */
-		status = pthread_cond_signal(&(s->cond));
+		(void)pthread_cond_signal(&(s->cond));
 	}
-	status = pthread_mutex_unlock(&(s->mutex));
+	(void)pthread_mutex_unlock(&(s->mutex));
 }
 
 void
 pthread_sema_down(pthread_sema_t *s)
 {
-	int status = pthread_mutex_lock(&(s->mutex));
+	(void)pthread_mutex_lock(&(s->mutex));
 
 	if (--s->cnt < 0) {
 		/* thread goes to sleep */
-		status = pthread_cond_wait(&(s->cond), &(s->mutex));
+		(void)pthread_cond_wait(&(s->cond), &(s->mutex));
 	}
-	status = pthread_mutex_unlock(&(s->mutex));
+	(void)pthread_mutex_unlock(&(s->mutex));
 }
 #endif
 #endif

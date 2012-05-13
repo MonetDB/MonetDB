@@ -29,8 +29,8 @@ Ready.
 % clob # type
 % 76 # length
 function user.s0_1{autoCommit=true}(A0:bte,A1:bte):void;
-    X_5 := udf.fuse(A0,A1);
-    sql.exportValue(1,".","fuse_single_value":str,"smallint",16,0,6,X_5,"");
+    X_4 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"smallint",16,0,6,X_4,"");
 end s0_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -46,8 +46,8 @@ end s0_1;
 % clob # type
 % 71 # length
 function user.s2_1{autoCommit=true}(A0:sht,A1:sht):void;
-    X_5 := udf.fuse(A0,A1);
-    sql.exportValue(1,".","fuse_single_value":str,"int",32,0,6,X_5,"");
+    X_4 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"int",32,0,6,X_4,"");
 end s2_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -63,8 +63,8 @@ end s2_1;
 % clob # type
 % 74 # length
 function user.s4_1{autoCommit=true}(A0:int,A1:int):void;
-    X_5 := udf.fuse(A0,A1);
-    sql.exportValue(1,".","fuse_single_value":str,"bigint",64,0,6,X_5,"");
+    X_4 := udf.fuse(A0,A1);
+    sql.exportValue(1,".","fuse_single_value":str,"bigint",64,0,6,X_4,"");
 end s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -96,30 +96,30 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 66 # length
 function user.s11_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_12:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",0);
-    X_10:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",2);
-    X_14 := algebra.kdifference(X_12,X_10);
-    X_15 := algebra.kunion(X_14,X_10);
-    X_9:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",1);
-    X_16 := algebra.kunion(X_15,X_9);
-    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
-    X_8 := bat.reverse(X_5);
-    X_17 := algebra.kdifference(X_16,X_8);
-    X_21:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",0);
+    X_3:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",0);
+    X_8:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",2);
+    X_10 := algebra.kdifference(X_3,X_8);
+    X_11 := algebra.kunion(X_10,X_8);
+    X_12:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",1);
+    X_14 := algebra.kunion(X_11,X_12);
+    X_15:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_16 := bat.reverse(X_15);
+    X_17 := algebra.kdifference(X_14,X_16);
+    X_18:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",0);
     X_20:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",2);
-    X_22 := algebra.kdifference(X_21,X_20);
-    X_23 := algebra.kunion(X_22,X_20);
-    X_19:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",1);
-    X_24 := algebra.kunion(X_23,X_19);
-    X_25 := algebra.kdifference(X_24,X_8);
+    X_21 := algebra.kdifference(X_18,X_20);
+    X_22 := algebra.kunion(X_21,X_20);
+    X_23:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",1);
+    X_24 := algebra.kunion(X_22,X_23);
+    X_25 := algebra.kdifference(X_24,X_16);
     X_26:bat[:oid,:sht]  := batudf.fuse(X_17,X_25);
-    X_27 := sql.resultSet(1,1,X_26);
-    sql.rsColumn(X_27,"sys.","fuse_a":str,"smallint",16,0,X_26);
-    X_33 := io.stdout();
-    sql.exportResult(X_33,X_27);
+    X_28 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_28,"sys.","fuse_a","smallint",16,0,X_26);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_28);
 end s11_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -127,30 +127,30 @@ end s11_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 66 # length
 function user.s12_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_12:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",0);
-    X_10:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",2);
-    X_14 := algebra.kdifference(X_12,X_10);
-    X_15 := algebra.kunion(X_14,X_10);
-    X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",1);
-    X_16 := algebra.kunion(X_15,X_9);
-    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
-    X_8 := bat.reverse(X_5);
-    X_17 := algebra.kdifference(X_16,X_8);
-    X_21:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",0);
+    X_3:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",0);
+    X_8:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",2);
+    X_10 := algebra.kdifference(X_3,X_8);
+    X_11 := algebra.kunion(X_10,X_8);
+    X_12:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",1);
+    X_14 := algebra.kunion(X_11,X_12);
+    X_15:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_16 := bat.reverse(X_15);
+    X_17 := algebra.kdifference(X_14,X_16);
+    X_18:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",0);
     X_20:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",2);
-    X_22 := algebra.kdifference(X_21,X_20);
-    X_23 := algebra.kunion(X_22,X_20);
-    X_19:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",1);
-    X_24 := algebra.kunion(X_23,X_19);
-    X_25 := algebra.kdifference(X_24,X_8);
+    X_21 := algebra.kdifference(X_18,X_20);
+    X_22 := algebra.kunion(X_21,X_20);
+    X_23:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",1);
+    X_24 := algebra.kunion(X_22,X_23);
+    X_25 := algebra.kdifference(X_24,X_16);
     X_26:bat[:oid,:int]  := batudf.fuse(X_17,X_25);
-    X_27 := sql.resultSet(1,1,X_26);
-    sql.rsColumn(X_27,"sys.","fuse_c":str,"int",32,0,X_26);
-    X_33 := io.stdout();
-    sql.exportResult(X_33,X_27);
+    X_28 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_28,"sys.","fuse_c","int",32,0,X_26);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_28);
 end s12_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -158,30 +158,30 @@ end s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 66 # length
 function user.s13_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_12:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",0);
-    X_10:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",2);
-    X_14 := algebra.kdifference(X_12,X_10);
-    X_15 := algebra.kunion(X_14,X_10);
-    X_9:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",1);
-    X_16 := algebra.kunion(X_15,X_9);
-    X_5:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
-    X_8 := bat.reverse(X_5);
-    X_17 := algebra.kdifference(X_16,X_8);
-    X_21:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",0);
+    X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",0);
+    X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",2);
+    X_10 := algebra.kdifference(X_3,X_8);
+    X_11 := algebra.kunion(X_10,X_8);
+    X_12:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",1);
+    X_14 := algebra.kunion(X_11,X_12);
+    X_15:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","udf_fuse",1);
+    X_16 := bat.reverse(X_15);
+    X_17 := algebra.kdifference(X_14,X_16);
+    X_18:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",0);
     X_20:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",2);
-    X_22 := algebra.kdifference(X_21,X_20);
-    X_23 := algebra.kunion(X_22,X_20);
-    X_19:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",1);
-    X_24 := algebra.kunion(X_23,X_19);
-    X_25 := algebra.kdifference(X_24,X_8);
+    X_21 := algebra.kdifference(X_18,X_20);
+    X_22 := algebra.kunion(X_21,X_20);
+    X_23:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",1);
+    X_24 := algebra.kunion(X_22,X_23);
+    X_25 := algebra.kdifference(X_24,X_16);
     X_26:bat[:oid,:lng]  := batudf.fuse(X_17,X_25);
-    X_27 := sql.resultSet(1,1,X_26);
-    sql.rsColumn(X_27,"sys.","fuse_e":str,"bigint",64,0,X_26);
-    X_33 := io.stdout();
-    sql.exportResult(X_33,X_27);
+    X_28 := sql.resultSet(1,1,X_26);
+    sql.rsColumn(X_28,"sys.","fuse_e","bigint",64,0,X_26);
+    X_34 := io.stdout();
+    sql.exportResult(X_34,X_28);
 end s13_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

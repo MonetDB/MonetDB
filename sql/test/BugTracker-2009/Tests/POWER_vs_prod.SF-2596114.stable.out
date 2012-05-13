@@ -27,21 +27,21 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 67 # length
+% 68 # length
 function user.s0_1{autoCommit=true}(A0:dbl):void;
     X_3 := sql.mvc();
-    X_14:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
-    X_12:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",2);
-    X_16 := algebra.kdifference(X_14,X_12);
-    X_17 := algebra.kunion(X_16,X_12);
-    X_11:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",1);
-    X_18 := algebra.kunion(X_17,X_11);
-    X_7:bat[:oid,:oid]  := sql.bind_dbat(X_3,"sys","sf_2596114",1);
-    X_10 := bat.reverse(X_7);
-    X_19 := algebra.kdifference(X_18,X_10);
-    X_20:bat[:oid,:dbl]  := batmmath.pow(X_19,A0);
-    X_21 := sql.resultSet(1,1,X_20);
-    sql.rsColumn(X_21,"sys.","power_x","double",53,0,X_20);
+    X_4:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",0);
+    X_9:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",2);
+    X_11 := algebra.kdifference(X_4,X_9);
+    X_12 := algebra.kunion(X_11,X_9);
+    X_13:bat[:oid,:dbl]  := sql.bind(X_3,"sys","sf_2596114","x",1);
+    X_15 := algebra.kunion(X_12,X_13);
+    X_16:bat[:oid,:oid]  := sql.bind_dbat(X_3,"sys","sf_2596114",1);
+    X_17 := bat.reverse(X_16);
+    X_18 := algebra.kdifference(X_15,X_17);
+    X_19:bat[:oid,:dbl]  := batmmath.pow(X_18,A0);
+    X_21 := sql.resultSet(1,1,X_19);
+    sql.rsColumn(X_21,"sys.","power_x":str,"double",53,0,X_19);
     X_26 := io.stdout();
     sql.exportResult(X_26,X_21);
 end s0_1;
@@ -49,21 +49,21 @@ end s0_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 67 # length
+% 68 # length
 function user.s1_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    X_13:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
-    X_11:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
-    X_15 := algebra.kdifference(X_13,X_11);
-    X_16 := algebra.kunion(X_15,X_11);
-    X_10:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",1);
-    X_17 := algebra.kunion(X_16,X_10);
-    X_6:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","sf_2596114",1);
-    X_9 := bat.reverse(X_6);
-    X_18 := algebra.kdifference(X_17,X_9);
-    X_19:bat[:oid,:dbl]  := batcalc.*(X_18,X_18);
-    X_20 := sql.resultSet(1,1,X_19);
-    sql.rsColumn(X_20,"sys.","sql_mul_x","double",53,0,X_19);
+    X_3:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",0);
+    X_8:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",2);
+    X_10 := algebra.kdifference(X_3,X_8);
+    X_11 := algebra.kunion(X_10,X_8);
+    X_12:bat[:oid,:dbl]  := sql.bind(X_2,"sys","sf_2596114","x",1);
+    X_14 := algebra.kunion(X_11,X_12);
+    X_15:bat[:oid,:oid]  := sql.bind_dbat(X_2,"sys","sf_2596114",1);
+    X_16 := bat.reverse(X_15);
+    X_17 := algebra.kdifference(X_14,X_16);
+    X_18:bat[:oid,:dbl]  := batcalc.*(X_17,X_17);
+    X_20 := sql.resultSet(1,1,X_18);
+    sql.rsColumn(X_20,"sys.","sql_mul_x":str,"double",53,0,X_18);
     X_25 := io.stdout();
     sql.exportResult(X_25,X_20);
 end s1_1;

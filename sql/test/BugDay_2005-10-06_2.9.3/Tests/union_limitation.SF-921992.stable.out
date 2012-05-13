@@ -19,7 +19,10 @@ Ready.
 # 12:37:48 >  
 
 [ 1	]
-% .,	. # table_name
+#SELECT 'abc' AS c1, '123' AS c2
+#UNION ALL
+#SELECT val1 AS c1, val2 AS c2 FROM union_test;
+% .union_test,	.union_test # table_name
 % c1,	c2 # name
 % varchar,	varchar # type
 % 6,	6 # length

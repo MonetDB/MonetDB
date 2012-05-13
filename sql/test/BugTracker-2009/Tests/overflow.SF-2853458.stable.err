@@ -67,10 +67,10 @@ stderr of test 'overflow.SF-2853458` in directory 'test/BugTracker-2009` itself:
 # 22:26:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35561 
 # 22:26:13 >  
 
-MAPI  = monetdb@madrid:31905
+MAPI  = monetdb@sofia:38256
 QUERY = select cast(power(2,63) as bigint);
 ERROR = !overflow in calculation.
-MAPI  = monetdb@madrid:31905
+MAPI  = monetdb@sofia:38256
 QUERY = select cast(power(2,64) as bigint);
 ERROR = !overflow in calculation.
 
