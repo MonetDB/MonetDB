@@ -64,12 +64,12 @@ Ready.
 % 178 # length
 function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
-    X_9 := sql.append(X_2,"sys","ttt","a",X_6);
-    X_11 := sql.append(X_9,"sys","ttt","b",X_7);
-    X_14 := sql.append(X_11,"sys":str,"ttt":str,"c",X_8);
-    X_16 := aggr.count(X_8);
-    sql.affectedRows(X_14,X_16,"");
+    (X_5:bat[:oid,:int] ,X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
+    X_9 := sql.append(X_2,"sys","ttt","a",X_5);
+    X_11 := sql.append(X_9,"sys":str,"ttt":str,"b",X_6);
+    X_15 := sql.append(X_11,"sys":str,"ttt":str,"c",X_7);
+    X_16 := aggr.count(X_7);
+    sql.affectedRows(X_15,X_16,"");
 end s2_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -92,12 +92,12 @@ end s2_1;
 % 178 # length
 function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
-    (X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ,X_8:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
-    X_9 := sql.append(X_2,"sys","ttt","a",X_6);
-    X_11 := sql.append(X_9,"sys","ttt","b",X_7);
-    X_16 := aggr.count(X_8);
-    X_14 := sql.append(X_11,"sys":str,"ttt":str,"c",X_8);
-    sql.affectedRows(X_14,X_16,"");
+    (X_5:bat[:oid,:int] ,X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
+    X_9 := sql.append(X_2,"sys","ttt","a",X_5);
+    X_11 := sql.append(X_9,"sys","ttt","b",X_6);
+    X_16 := aggr.count(X_7);
+    X_15 := sql.append(X_11,"sys","ttt","c",X_7);
+    sql.affectedRows(X_15,X_16,"");
 end s5_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
