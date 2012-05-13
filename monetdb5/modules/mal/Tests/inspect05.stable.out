@@ -82,13 +82,11 @@ end main;
 [ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2],force:bit):bat[:any_1,:any_2] ",							  "BKCinsert_bat_force;"				  ]
 [ "insert",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):bat[:any_1,:any_2] ",									  "BKCinsert_bat;"					  ]
 [ "isCached",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisCached;"			  ]
-[ "isFixed",		  "pattern",	  "array",	  "(dims:bat[:oid,:any]...):bit ",								  "ARRAYisFixed;"			  ]
 [ "isPersistent",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisPersistent;"			  ]
 [ "isSorted",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCisSorted;"					  ]
 [ "isSortedReverse",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisSortedReverse;"			  ]
 [ "isSynced",			  "command",	  "bat",	  "(b1:bat[:any_1,:any_2],b2:bat[:any_3,:any_4]):bit ",				  "BKCisSynced;"			  ]
 [ "isTransient",		  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",						  "BKCisTransient;"			  ]
-[ "isUnbounded",	  "pattern",	  "array",	  "(dims:bat[:oid,:any]...):bit ",								  "ARRAYisUnbounded;"			  ]
 [ "isaKey",			  "command",	  "bat",	  "(b:bat[:any_1,:any_2]):bit ",													  "BKCgetKey;"						  ]
 [ "isaSet",			  "command",	  "bat",	  "(b:bat[:any_1,:any_1]):bit ",						  "BKCisaSet;"				  ]
 [ "load",			  "command",	  "bat",	  "(name:str):bat[:any_1,:any_2] ",													  "BKCload;"						  ]
@@ -148,7 +146,6 @@ end main;
 [ "shrink",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1] ",			  "BKCshrinkBAT;"			  ]
 [ "shrinkMap",			  "command",	  "bat",	  "(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid] ",			  "BKCshrinkBATmap;"			  ]
 [ "unload",			  "command",	  "bat",	  "(name:str):bit ",								  "BKCunload;"				  ]
-[ "unmap",		  "pattern",	  "array",	  "(cells:bat[:oid,:oid],dims:bat[:oid,:any]...):bat[:oid,:any]... ",				  "ARRAYumap;"				  ]
 [ "unpack",			  "pattern",	  "bat",	  "(b:bat[:any_1,:any_2]) (h:any_1,t:any_2) ",					  "CMDbatunpack;"			  ]
 
 # 08:55:30 >  
