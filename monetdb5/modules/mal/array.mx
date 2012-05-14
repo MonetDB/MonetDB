@@ -176,7 +176,6 @@ address ARRAYembed
 comment "Take two shapes N and M and derive a mapping between the elements based on the index values.
 It can be used to create an embedding of values from one array into another.";
 @- Implementation
-@include ../mal/prelude.mx
 @h
 
 /*============================================================================*/
@@ -306,7 +305,6 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 @:dim_wrapper_impl(flt,%f)@
 @:dim_wrapper_impl(dbl,%f)@
 
-@-
 @= arraymultiply
 array_export str ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid);
 str
