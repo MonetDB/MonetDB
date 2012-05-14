@@ -41,3 +41,5 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-sphinxclient=no \
 	--with-unixodbc=yes \
 	--with-valgrind=no
+
+DEB_BUILD_PARALLEL=1
