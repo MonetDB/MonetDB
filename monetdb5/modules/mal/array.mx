@@ -147,18 +147,6 @@ pattern unmap(cells:bat[:oid,:oid], dims:bat[:oid,:any]...):bat[:oid,:any]...
 address ARRAYumap
 comment "Extract the index columns from a shape based on the cell identifier list";
 
-pattern isFixed(dims:bat[:oid,:any]...):bit
-address ARRAYisFixed
-comment "Determine fixed size property of an array";
-
-pattern isUnbounded(dims:bat[:oid,:any]...):bit
-address ARRAYisUnbounded
-comment "Determine unboundedness property of an array";
-
-pattern getDimensions(dims:bat[:oid,:any]...):int...
-address ARRAYgetDimensions
-comment "Extract the series sizes";
-
 pattern replace(v1:bat[:oid, :any_1], idx:bat[:oid, :oid], v2:any_1):bat[:oid,:any_1]
 address ARRAYreplaceScalar
 comment "Replace values in v1 at the positions determined by idx with v2, return the modified v1.";
@@ -194,9 +182,6 @@ comment "Produce an array product";
 #define array_export extern
 #endif
 
-array_export str ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYisUnbounded(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-array_export str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYproduct(int *ret, int *bid, int *rid);
 array_export str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -563,36 +548,6 @@ ARRAYumap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
-}
-
-str
-ARRAYisFixed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.isFixed", PROGRAM_NYI);
-}
-
-str
-ARRAYisUnbounded(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.isUnbounded", PROGRAM_NYI);
-}
-
-str
-ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) p;
-	throw(MAL,"array.getDimensions", PROGRAM_NYI);
 }
 
 str
