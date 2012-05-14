@@ -786,13 +786,6 @@ str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit 
 str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str ARRAYmap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str ARRAYmultiply_dbl_dbl(int *ret, int *bid, int *rid);
-str ARRAYmultiply_flt_flt(int *ret, int *bid, int *rid);
-str ARRAYmultiply_int_int(int *ret, int *bid, int *rid);
-str ARRAYmultiply_int_lng(int *ret, int *bid, int *rid);
-str ARRAYmultiply_lng_lng(int *ret, int *bid, int *rid);
-str ARRAYmultiply_sht_int(int *ret, int *bid, int *rid);
-str ARRAYmultiply_sht_lng(int *ret, int *bid, int *rid);
 str ARRAYproduct(int *ret, int *bid, int *rid);
 str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
