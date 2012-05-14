@@ -783,7 +783,6 @@ str ALGurangesplit(int *result, int *bid, int *nfrag);
 str ALGuselect(int *result, int *bid, ptr low, ptr high);
 str ALGuselect1(int *result, int *bid, ptr value);
 str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
-str ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str ARRAYfiller_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str ARRAYgetDimensions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

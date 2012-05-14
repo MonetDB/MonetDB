@@ -70,12 +70,6 @@ io.print(mx, my, mv, gs, ga);
 #nv:= array.filler(nx,nil:int);
 #io.print(nx,ny,nv);
 #
-##derive the mapping from cell id in N into M
-#map:= array.embed(nx,ny,mx,my);
-#io.print(map);
-#rv:= array.replace(nv,map,mv);
-#io.print(rv);
-#
 ##now produce the tiled sum over the enlarged one
 #template:= array.map(nx,ny,t0,t1);
 #io.print(template);
