@@ -1,3 +1,22 @@
+monetdb (11.9.3-20120514) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Mon, 14 May 2012 12:36:35 +0200
+
+monetdb (11.9.3-20120514) unstable; urgency=low
+
+  * buildtools: Windows: we now use OpenSSL 1.0.1b.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 2 May 2012 12:36:35 +0200
+
+monetdb (11.9.3-20120514) unstable; urgency=low
+
+  * gdk: Implemented MT_getrss for Mac OS X systems, this allows the server to
+    know about how much memory is currently in use.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 27 Apr 2012 12:36:35 +0200
+
 monetdb (11.9.1-20120418) unstable; urgency=low
 
   * Rebuilt.
