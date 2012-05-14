@@ -277,97 +277,299 @@ merge_compute_minrun(ssize_t n)
 
 
 #ifndef NOEXPAND_BTE
-#define T bte
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_bte
 
-#define O _rev
+#define binarysort	binarysort_bte
+#define do_ssort	do_ssort_bte
+#define gallop_left	gallop_left_bte
+#define gallop_right	gallop_right_bte
+#define ISLT		ISLT_bte
+#define merge_at	merge_at_bte
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_bte_rev
+#define do_ssort	do_ssort_bte_rev
+#define gallop_left	gallop_left_bte_rev
+#define gallop_right	gallop_right_bte_rev
+#define ISLT		ISLT_bte_rev
+#define merge_at	merge_at_bte_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_SHT
-#define T sht
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_sht
 
-#define O _rev
+#define binarysort	binarysort_sht
+#define do_ssort	do_ssort_sht
+#define gallop_left	gallop_left_sht
+#define gallop_right	gallop_right_sht
+#define ISLT		ISLT_sht
+#define merge_at	merge_at_sht
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_sht_rev
+#define do_ssort	do_ssort_sht_rev
+#define gallop_left	gallop_left_sht_rev
+#define gallop_right	gallop_right_sht_rev
+#define ISLT		ISLT_sht_rev
+#define merge_at	merge_at_sht_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_INT
-#define T int
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_int
 
-#define O _rev
+#define binarysort	binarysort_int
+#define do_ssort	do_ssort_int
+#define gallop_left	gallop_left_int
+#define gallop_right	gallop_right_int
+#define ISLT		ISLT_int
+#define merge_at	merge_at_int
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_int_rev
+#define do_ssort	do_ssort_int_rev
+#define gallop_left	gallop_left_int_rev
+#define gallop_right	gallop_right_int_rev
+#define ISLT		ISLT_int_rev
+#define merge_at	merge_at_int_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_LNG
-#define T lng
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_lng
 
-#define O _rev
+#define binarysort	binarysort_lng
+#define do_ssort	do_ssort_lng
+#define gallop_left	gallop_left_lng
+#define gallop_right	gallop_right_lng
+#define ISLT		ISLT_lng
+#define merge_at	merge_at_lng
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_lng_rev
+#define do_ssort	do_ssort_lng_rev
+#define gallop_left	gallop_left_lng_rev
+#define gallop_right	gallop_right_lng_rev
+#define ISLT		ISLT_lng_rev
+#define merge_at	merge_at_lng_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_FLT
-#define T flt
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_flt
 
-#define O _rev
+#define binarysort	binarysort_flt
+#define do_ssort	do_ssort_flt
+#define gallop_left	gallop_left_flt
+#define gallop_right	gallop_right_flt
+#define ISLT		ISLT_flt
+#define merge_at	merge_at_flt
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_flt_rev
+#define do_ssort	do_ssort_flt_rev
+#define gallop_left	gallop_left_flt_rev
+#define gallop_right	gallop_right_flt_rev
+#define ISLT		ISLT_flt_rev
+#define merge_at	merge_at_flt_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_DBL
-#define T dbl
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_dbl
 
-#define O _rev
+#define binarysort	binarysort_dbl
+#define do_ssort	do_ssort_dbl
+#define gallop_left	gallop_left_dbl
+#define gallop_right	gallop_right_dbl
+#define ISLT		ISLT_dbl
+#define merge_at	merge_at_dbl
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_dbl_rev
+#define do_ssort	do_ssort_dbl_rev
+#define gallop_left	gallop_left_dbl_rev
+#define gallop_right	gallop_right_dbl_rev
+#define ISLT		ISLT_dbl_rev
+#define merge_at	merge_at_dbl_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
 #ifndef NOEXPAND_OID
-#define T oid
-#define O
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_oid
 
-#define O _rev
+#define binarysort	binarysort_oid
+#define do_ssort	do_ssort_oid
+#define gallop_left	gallop_left_oid
+#define gallop_right	gallop_right_oid
+#define ISLT		ISLT_oid
+#define merge_at	merge_at_oid
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_oid_rev
+#define do_ssort	do_ssort_oid_rev
+#define gallop_left	gallop_left_oid_rev
+#define gallop_right	gallop_right_oid_rev
+#define ISLT		ISLT_oid_rev
+#define merge_at	merge_at_oid_rev
+#include "gdk_ssort_impl.h"
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY
 #endif
 
-#define T any
-#define O
-#define DEFINE_MAIN_FUNC	/* define GDKssort and GDKssort_rev */
-#include "gdk_ssort_impl.h"
-#undef O
+#define COPY		COPY_any
 
-#define O _rev
+#define binarysort	binarysort_any
+#define do_ssort	do_ssort_any
+#define gallop_left	gallop_left_any
+#define gallop_right	gallop_right_any
+#define ISLT		ISLT_any
+#define merge_at	merge_at_any
+
+#define GDKssortimpl	GDKssort
+
 #include "gdk_ssort_impl.h"
-#undef T
-#undef O
-#undef DEFINE_MAIN_FUNC
+
+#undef GDKssortimpl
+
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#define binarysort	binarysort_any_rev
+#define do_ssort	do_ssort_any_rev
+#define gallop_left	gallop_left_any_rev
+#define gallop_right	gallop_right_any_rev
+#define ISLT		ISLT_any_rev
+#define merge_at	merge_at_any_rev
+
+#define GDKssortimpl	GDKssort_rev
+#define do_ssort_bte	do_ssort_bte_rev
+#define do_ssort_sht	do_ssort_sht_rev
+#define do_ssort_int	do_ssort_int_rev
+#define do_ssort_lng	do_ssort_lng_rev
+#define do_ssort_flt	do_ssort_flt_rev
+#define do_ssort_dbl	do_ssort_dbl_rev
+#define do_ssort_oid	do_ssort_oid_rev
+#define do_ssort_any	do_ssort_any_rev
+
+#include "gdk_ssort_impl.h"
+
+#undef GDKssortimpl
+#undef do_ssort_bte
+#undef do_ssort_sht
+#undef do_ssort_int
+#undef do_ssort_lng
+#undef do_ssort_flt
+#undef do_ssort_dbl
+#undef do_ssort_oid
+#undef do_ssort_any
+
+#undef binarysort
+#undef do_ssort
+#undef gallop_left
+#undef gallop_right
+#undef ISLT
+#undef merge_at
+
+#undef COPY

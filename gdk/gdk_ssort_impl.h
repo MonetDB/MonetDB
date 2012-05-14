@@ -17,32 +17,9 @@
  * All Rights Reserved.
  */
 
-/* This file is included multiple times.  We expect the tokens T and O
- * to be defined by the including file, and we expect that the
- * combination (T,O) is unique to each inclusion. */
-
-/* concatenate two or three tokens */
-#define CONCAT2(a,b)    a##b
-#define CONCAT3(a,b,c)  a##b##c
-
-/* these tokens get redefined in each inclusion */
-#undef binarysort
-#undef ISLT
-#undef COPY
-#undef gallop_left
-#undef gallop_right
-#undef merge_at
-#undef do_ssort
-#undef GDKssortimpl
-
-#define binarysort(a,b)         CONCAT3(binarysort_,a,b)
-#define COPY(a)                 CONCAT2(COPY_,a)
-#define ISLT(a,b)               CONCAT3(ISLT_,a,b)
-#define gallop_left(a,b)        CONCAT3(gallop_left_,a,b)
-#define gallop_right(a,b)       CONCAT3(gallop_right_,a,b)
-#define merge_at(a,b)           CONCAT3(merge_at_,a,b)
-#define do_ssort(a,b)           CONCAT3(do_ssort_,a,b)
-#define GDKssortimpl(b)         CONCAT2(GDKssort,b)
+/* This file is included multiple times.  We expect a bunch of tokens
+ * to be redefined differently each time (see gdk_ssort.c).  If the
+ * token GDKssortimpl is defined, the main interface is defined.  */
 
 /* binarysort is the best method for sorting small arrays: it does few
  * compares, but can do data movement quadratic in the number of
@@ -52,7 +29,7 @@
  * hi, and that [lo, start) is already sorted (pass start == lo if you
  * don't know!). */
 static void
-binarysort(T,O)(size_t lo, size_t hi, size_t start, MergeState *ms)
+binarysort(size_t lo, size_t hi, size_t start, MergeState *ms)
 {
 	register size_t l, p, r;
 
@@ -67,7 +44,7 @@ binarysort(T,O)(size_t lo, size_t hi, size_t start, MergeState *ms)
 		l = lo;
 		r = start;
 		/* ms->t[ht] is the pivot */
-		COPY(T)(ms->th, PTRADD(ms->bh, r, ms->hs), ms->hs);
+		COPY(ms->th, PTRADD(ms->bh, r, ms->hs), ms->hs);
 		COPY_any(ms->tt, PTRADD(ms->bt, r, ms->ts), ms->ts);
 		/* Invariants:
 		 * pivot >= all in [lo, l).
@@ -76,7 +53,7 @@ binarysort(T,O)(size_t lo, size_t hi, size_t start, MergeState *ms)
 		assert(l < r);
 		do {
 			p = l + ((r - l) >> 1);
-			if (ISLT(T,O)(ms->th, PTRADD(ms->bh, p, ms->hs), ms))
+			if (ISLT(ms->th, PTRADD(ms->bh, p, ms->hs), ms))
 				r = p;
 			else
 				l = p + 1;
@@ -91,12 +68,12 @@ binarysort(T,O)(size_t lo, size_t hi, size_t start, MergeState *ms)
 		 * Caution: using memmove is much slower under MSVC 5;
 		 * we're not usually moving many slots. */
 		for (p = start, r = p - 1; p > l; p = r, r = p - 1) {
-			COPY(T)(PTRADD(ms->bh, p, ms->hs),
-				PTRADD(ms->bh, r, ms->hs), ms->hs);
+			COPY(PTRADD(ms->bh, p, ms->hs),
+			     PTRADD(ms->bh, r, ms->hs), ms->hs);
 			COPY_any(PTRADD(ms->bt, p, ms->ts),
 				 PTRADD(ms->bt, r, ms->ts), ms->ts);
 		}
-		COPY(T)(PTRADD(ms->bh, l, ms->hs), ms->th, ms->hs);
+		COPY(PTRADD(ms->bh, l, ms->hs), ms->th, ms->hs);
 		COPY_any(PTRADD(ms->bt, l, ms->ts), ms->tt, ms->ts);
 	}
 }
@@ -123,7 +100,7 @@ binarysort(T,O)(size_t lo, size_t hi, size_t start, MergeState *ms)
  *
  * Returns -1 on error.  See listsort.txt for info on the method. */
 static ssize_t
-gallop_left(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
+gallop_left(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 {
 	ssize_t ofs;
 	ssize_t lastofs;
@@ -134,12 +111,12 @@ gallop_left(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 	a = PTRADD(a, hint, ms->hs);
 	lastofs = 0;
 	ofs = 1;
-	if (ISLT(T,O)(a, key, ms)) {
+	if (ISLT(a, key, ms)) {
 		/* a[hint] < key -- gallop right, until
 		 * a[hint + lastofs] < key <= a[hint + ofs] */
 		const ssize_t maxofs = n - hint;	/* &a[n-1] is highest */
 		while (ofs < maxofs) {
-			if (ISLT(T,O)(PTRADD(a, ofs, ms->hs), key, ms)) {
+			if (ISLT(PTRADD(a, ofs, ms->hs), key, ms)) {
 				lastofs = ofs;
 				ofs = (ofs << 1) + 1;
 				if (ofs <= 0)	/* int overflow */
@@ -157,7 +134,7 @@ gallop_left(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 		 * a[hint - ofs] < key <= a[hint - lastofs] */
 		const ssize_t maxofs = hint + 1;	/* &a[0] is lowest */
 		while (ofs < maxofs) {
-			if (ISLT(T,O)(PTRADD(a, -ofs, ms->hs), key, ms))
+			if (ISLT(PTRADD(a, -ofs, ms->hs), key, ms))
 				break;
 			/* key <= a[hint - ofs] */
 			lastofs = ofs;
@@ -183,7 +160,7 @@ gallop_left(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 	while (lastofs < ofs) {
 		ssize_t m = lastofs + ((ofs - lastofs) >> 1);
 
-		if (ISLT(T,O)(PTRADD(a, m, ms->hs), key, ms))
+		if (ISLT(PTRADD(a, m, ms->hs), key, ms))
 			lastofs = m + 1; /* a[m] < key */
 		else
 			ofs = m;	/* key <= a[m] */
@@ -207,7 +184,7 @@ gallop_left(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
  * follow if written as one routine with yet another "left or right?"
  * flag. */
 static ssize_t
-gallop_right(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
+gallop_right(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 {
 	ssize_t ofs;
 	ssize_t lastofs;
@@ -218,12 +195,12 @@ gallop_right(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 	a = PTRADD(a, hint, ms->hs);
 	lastofs = 0;
 	ofs = 1;
-	if (ISLT(T,O)(key, a, ms)) {
+	if (ISLT(key, a, ms)) {
 		/* key < a[hint] -- gallop left, until
 		 * a[hint - ofs] <= key < a[hint - lastofs] */
 		const ssize_t maxofs = hint + 1;	/* &a[0] is lowest */
 		while (ofs < maxofs) {
-			if (ISLT(T,O)(key, PTRADD(a, -ofs, ms->hs), ms)) {
+			if (ISLT(key, PTRADD(a, -ofs, ms->hs), ms)) {
 				lastofs = ofs;
 				ofs = (ofs << 1) + 1;
 				if (ofs <= 0)	/* int overflow */
@@ -242,7 +219,7 @@ gallop_right(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 		 * a[hint + lastofs] <= key < a[hint + ofs] */
 		const ssize_t maxofs = n - hint;	/* &a[n-1] is highest */
 		while (ofs < maxofs) {
-			if (ISLT(T,O)(key, PTRADD(a, ofs, ms->hs), ms))
+			if (ISLT(key, PTRADD(a, ofs, ms->hs), ms))
 				break;
 			/* a[hint + ofs] <= key */
 			lastofs = ofs;
@@ -267,7 +244,7 @@ gallop_right(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 	while (lastofs < ofs) {
 		ssize_t m = lastofs + ((ofs - lastofs) >> 1);
 
-		if (ISLT(T,O)(key, PTRADD(a, m, ms->hs), ms))
+		if (ISLT(key, PTRADD(a, m, ms->hs), ms))
 			ofs = m;	/* key < a[m] */
 		else
 			lastofs = m+1;	/* a[m] <= key */
@@ -279,7 +256,7 @@ gallop_right(T,O)(void *key, void *a, ssize_t n, ssize_t hint, MergeState *ms)
 /* Merge the two runs at stack indices i and i+1.
  * Returns 0 on success, -1 on error. */
 static ssize_t
-merge_at(T,O)(MergeState *ms, ssize_t i)
+merge_at(MergeState *ms, ssize_t i)
 {
 	size_t pa, pb;
 	ssize_t na, nb;
@@ -308,8 +285,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 
 	/* Where does b start in a?  Elements in a before that can be
 	 * ignored (already in place). */
-	k = gallop_right(T,O)(PTRADD(ms->bh, pb, ms->hs),
-			      PTRADD(ms->bh, pa, ms->hs), na, 0, ms);
+	k = gallop_right(PTRADD(ms->bh, pb, ms->hs),
+			 PTRADD(ms->bh, pa, ms->hs), na, 0, ms);
 	pa += k;
 	na -= k;
 	if (na == 0)
@@ -317,8 +294,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 
 	/* Where does a end in b?  Elements in b after that can be
 	 * ignored (already in place). */
-	nb = gallop_left(T,O)(PTRADD(ms->bh, pa + na - 1, ms->hs),
-			      PTRADD(ms->bh, pb, ms->hs), nb, nb-1, ms);
+	nb = gallop_left(PTRADD(ms->bh, pa + na - 1, ms->hs),
+			 PTRADD(ms->bh, pb, ms->hs), nb, nb-1, ms);
 	if (nb <= 0)
 		return nb;
 
@@ -343,8 +320,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 		dest = pa;
 		pa = 0;
 
-		COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-			PTRADD(ms->bh, pb, ms->hs), ms->hs);
+		COPY(PTRADD(ms->bh, dest, ms->hs),
+		     PTRADD(ms->bh, pb, ms->hs), ms->hs);
 		COPY_any(PTRADD(ms->bt, dest, ms->ts),
 			 PTRADD(ms->bt, pb, ms->ts), ms->ts);
 		dest++;
@@ -364,12 +341,12 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 			 * consistently. */
 			for (;;) {
 				assert(na > 1 && nb > 0);
-				k = ISLT(T,O)(PTRADD(ms->bh, pb, ms->hs),
-					      PTRADD(ms->ah, pa, ms->hs), ms);
+				k = ISLT(PTRADD(ms->bh, pb, ms->hs),
+					 PTRADD(ms->ah, pa, ms->hs), ms);
 				if (k) {
-					COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-						PTRADD(ms->bh, pb, ms->hs),
-						ms->hs);
+					COPY(PTRADD(ms->bh, dest, ms->hs),
+					     PTRADD(ms->bh, pb, ms->hs),
+					     ms->hs);
 					COPY_any(PTRADD(ms->bt, dest, ms->ts),
 						 PTRADD(ms->bt, pb, ms->ts),
 						 ms->ts);
@@ -383,9 +360,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (bcount >= min_gallop)
 						break;
 				} else {
-					COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-						PTRADD(ms->ah, pa, ms->hs),
-						ms->hs);
+					COPY(PTRADD(ms->bh, dest, ms->hs),
+					     PTRADD(ms->ah, pa, ms->hs),
+					     ms->hs);
 					COPY_any(PTRADD(ms->bt, dest, ms->ts),
 						 PTRADD(ms->at, pa, ms->ts),
 						 ms->ts);
@@ -411,11 +388,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 				assert(na > 1 && nb > 0);
 				min_gallop -= min_gallop > 1;
 				ms->min_gallop = min_gallop;
-				k = gallop_right(T,O)(PTRADD(ms->bh, pb,
-							     ms->hs),
-						      PTRADD(ms->ah, pa,
-							     ms->hs),
-						      na, 0, ms);
+				k = gallop_right(PTRADD(ms->bh, pb, ms->hs),
+						 PTRADD(ms->ah, pa, ms->hs),
+						 na, 0, ms);
 				acount = k;
 				if (k) {
 					COPY_anyN(PTRADD(ms->bh, dest, ms->hs),
@@ -436,8 +411,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (na == 0)
 						goto SucceedA;
 				}
-				COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-					PTRADD(ms->bh, pb, ms->hs), ms->hs);
+				COPY(PTRADD(ms->bh, dest, ms->hs),
+				     PTRADD(ms->bh, pb, ms->hs), ms->hs);
 				COPY_any(PTRADD(ms->bt, dest, ms->ts),
 					 PTRADD(ms->bt, pb, ms->ts), ms->ts);
 				dest++;
@@ -446,9 +421,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 				if (nb == 0)
 					goto SucceedA;
 
-				k = gallop_left(T,O)(PTRADD(ms->ah, pa, ms->hs),
-						     PTRADD(ms->bh, pb, ms->hs),
-						     nb, 0, ms);
+				k = gallop_left(PTRADD(ms->ah, pa, ms->hs),
+						PTRADD(ms->bh, pb, ms->hs),
+						nb, 0, ms);
 				bcount = k;
 				if (k) {
 					memmove(PTRADD(ms->bh, dest, ms->hs),
@@ -463,8 +438,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (nb == 0)
 						goto SucceedA;
 				}
-				COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-					PTRADD(ms->ah, pa, ms->hs), ms->hs);
+				COPY(PTRADD(ms->bh, dest, ms->hs),
+				     PTRADD(ms->ah, pa, ms->hs), ms->hs);
 				COPY_any(PTRADD(ms->bt, dest, ms->ts),
 					 PTRADD(ms->at, pa, ms->ts), ms->ts);
 				dest++;
@@ -491,8 +466,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 			PTRADD(ms->bh, pb, ms->hs), nb * ms->hs);
 		memmove(PTRADD(ms->bt, dest, ms->ts),
 			PTRADD(ms->bt, pb, ms->ts), nb * ms->ts);
-		COPY(T)(PTRADD(ms->bh, dest + nb, ms->hs),
-			PTRADD(ms->ah, pa, ms->hs), ms->hs);
+		COPY(PTRADD(ms->bh, dest + nb, ms->hs),
+		     PTRADD(ms->ah, pa, ms->hs), ms->hs);
 		COPY_any(PTRADD(ms->bt, dest + nb, ms->ts),
 			 PTRADD(ms->at, pa, ms->ts), ms->ts);
 		return 0;
@@ -520,8 +495,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 		pb = nb - 1;
 		pa += na - 1;
 
-		COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-			PTRADD(ms->bh, pa, ms->hs), ms->hs);
+		COPY(PTRADD(ms->bh, dest, ms->hs),
+		     PTRADD(ms->bh, pa, ms->hs), ms->hs);
 		COPY_any(PTRADD(ms->bt, dest, ms->ts),
 			 PTRADD(ms->bt, pa, ms->ts), ms->ts);
 		dest--;
@@ -541,12 +516,12 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 			 * consistently. */
 			for (;;) {
 				assert(na > 0 && nb > 1);
-				k = ISLT(T,O)(PTRADD(ms->ah, pb, ms->hs),
-					      PTRADD(ms->bh, pa, ms->hs), ms);
+				k = ISLT(PTRADD(ms->ah, pb, ms->hs),
+					 PTRADD(ms->bh, pa, ms->hs), ms);
 				if (k) {
-					COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-						PTRADD(ms->bh, pa, ms->hs),
-						ms->hs);
+					COPY(PTRADD(ms->bh, dest, ms->hs),
+					     PTRADD(ms->bh, pa, ms->hs),
+					     ms->hs);
 					COPY_any(PTRADD(ms->bt, dest, ms->ts),
 						 PTRADD(ms->bt, pa, ms->ts),
 						 ms->ts);
@@ -560,9 +535,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (acount >= min_gallop)
 						break;
 				} else {
-					COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-						PTRADD(ms->ah, pb, ms->hs),
-						ms->hs);
+					COPY(PTRADD(ms->bh, dest, ms->hs),
+					     PTRADD(ms->ah, pb, ms->hs),
+					     ms->hs);
 					COPY_any(PTRADD(ms->bt, dest, ms->ts),
 						 PTRADD(ms->at, pb, ms->ts),
 						 ms->ts);
@@ -588,11 +563,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 				assert(na > 0 && nb > 1);
 				min_gallop -= min_gallop > 1;
 				ms->min_gallop = min_gallop;
-				k = gallop_right(T,O)(PTRADD(ms->ah, pb,
-							     ms->hs),
-						      PTRADD(ms->bh, basea,
-							     ms->hs),
-						      na, na - 1, ms);
+				k = gallop_right(PTRADD(ms->ah, pb, ms->hs),
+						 PTRADD(ms->bh, basea, ms->hs),
+						 na, na - 1, ms);
 				k = na - k;
 				acount = k;
 				if (k) {
@@ -610,8 +583,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (na == 0)
 						goto SucceedB;
 				}
-				COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-					PTRADD(ms->ah, pb, ms->hs), ms->hs);
+				COPY(PTRADD(ms->bh, dest, ms->hs),
+				     PTRADD(ms->ah, pb, ms->hs), ms->hs);
 				COPY_any(PTRADD(ms->bt, dest, ms->ts),
 					 PTRADD(ms->at, pb, ms->ts), ms->ts);
 				dest--;
@@ -620,10 +593,9 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 				if (nb == 1)
 					goto CopyA;
 
-				k = gallop_left(T,O)(PTRADD(ms->bh, pa, ms->hs),
-						     PTRADD(ms->ah, baseb,
-							    ms->hs),
-						     nb, nb - 1, ms);
+				k = gallop_left(PTRADD(ms->bh, pa, ms->hs),
+						PTRADD(ms->ah, baseb, ms->hs),
+						nb, nb - 1, ms);
 				k = nb - k;
 				bcount = k;
 				if (k) {
@@ -647,8 +619,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 					if (nb == 0)
 						goto SucceedB;
 				}
-				COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-					PTRADD(ms->bh, pa, ms->hs), ms->hs);
+				COPY(PTRADD(ms->bh, dest, ms->hs),
+				     PTRADD(ms->bh, pa, ms->hs), ms->hs);
 				COPY_any(PTRADD(ms->bt, dest, ms->ts),
 					 PTRADD(ms->bt, pa, ms->ts), ms->ts);
 				dest--;
@@ -680,8 +652,8 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 		memmove(PTRADD(ms->bt, dest + 1, ms->ts),
 			PTRADD(ms->bt, pa + 1, ms->ts),
 			na * ms->ts);
-		COPY(T)(PTRADD(ms->bh, dest, ms->hs),
-			PTRADD(ms->ah, pb, ms->hs), ms->hs);
+		COPY(PTRADD(ms->bh, dest, ms->hs),
+		     PTRADD(ms->ah, pb, ms->hs), ms->hs);
 		COPY_any(PTRADD(ms->bt, dest, ms->ts),
 			 PTRADD(ms->at, pb, ms->ts), ms->ts);
 		return 0;
@@ -689,7 +661,7 @@ merge_at(T,O)(MergeState *ms, ssize_t i)
 }
 
 static int
-do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minrun)
+do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minrun)
 {
 	do {
 		int descending;
@@ -723,20 +695,16 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 				n = 1;
 			} else {
 				n = 2;
-				if (ISLT(T,O)(PTRADD(ms->bh, nlo, ms->hs),
-					      PTRADD(ms->bh, olo, ms->hs),
-					      ms)) {
+				if (ISLT(PTRADD(ms->bh, nlo, ms->hs),
+					 PTRADD(ms->bh, olo, ms->hs), ms)) {
 					descending = 1;
 					for (olo = nlo++;
 					     nlo < hi;
 					     olo = nlo++, ++n) {
-						if (!ISLT(T,O)(PTRADD(ms->bh,
-								      nlo,
-								      ms->hs),
-							       PTRADD(ms->bh,
-								      olo,
-								      ms->hs),
-							       ms))
+						if (!ISLT(PTRADD(ms->bh, nlo,
+								 ms->hs),
+							  PTRADD(ms->bh, olo,
+								 ms->hs), ms))
 							break;
 					}
 				}
@@ -744,13 +712,10 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 					for (olo = nlo++;
 					     nlo < hi;
 					     olo = nlo++, ++n) {
-						if (ISLT(T,O)(PTRADD(ms->bh,
-								     nlo,
-								     ms->hs),
-							      PTRADD(ms->bh,
-								     olo,
-								     ms->hs),
-							      ms))
+						if (ISLT(PTRADD(ms->bh, nlo,
+								ms->hs),
+							 PTRADD(ms->bh, olo,
+								ms->hs), ms))
 							break;
 					}
 				}
@@ -762,7 +727,7 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 		if (n < minrun) {
 			ssize_t force = nremaining <= minrun ? nremaining : minrun;
 
-			binarysort(T,O)(lo, lo + force, lo + n, ms);
+			binarysort(lo, lo + force, lo + n, ms);
 			n = force;
 		}
 		/* Push run onto pending-runs stack, and maybe merge. */
@@ -789,10 +754,10 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 				    p[i - 1].len <= p[i].len + p[i + 1].len) {
 					if (p[i - 1].len < p[i + 1].len)
 						--i;
-					if (merge_at(T,O)(ms, i) < 0)
+					if (merge_at(ms, i) < 0)
 						return -1;
 				} else if (p[i].len <= p[i + 1].len) {
-					if (merge_at(T,O)(ms, i) < 0)
+					if (merge_at(ms, i) < 0)
 						return -1;
 				} else
 					break;
@@ -816,14 +781,14 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
 
 			if (n > 0 && p[n - 1].len < p[n + 1].len)
 				--n;
-			if (merge_at(T,O)(ms, n) < 0)
+			if (merge_at(ms, n) < 0)
 				return -1;
 		}
 	}
 	return 0;
 }
 
-#ifdef DEFINE_MAIN_FUNC
+#ifdef GDKssortimpl
 /* Stable sort an array "h" (and move t accordingly).
  * "nitems" is the number of items to sort; "hs"+"ts" is the size of
  * the items, "tpe" is the type of the key within the items. If "heap"
@@ -831,8 +796,8 @@ do_ssort(T,O)(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t 
  * the actual key is found at that offset (MonetDB var-sized
  * atoms). */
 int
-GDKssortimpl(O)(void *h, void *t, void *heap, size_t nitems,
-		int hs, int ts, int tpe)
+GDKssortimpl(void *h, void *t, void *heap, size_t nitems,
+	     int hs, int ts, int tpe)
 {
 	char temp;
 	MergeState ms;
@@ -876,48 +841,48 @@ GDKssortimpl(O)(void *h, void *t, void *heap, size_t nitems,
 	switch (tpe) {
 #ifndef NOEXPAND_BTE
 	case TYPE_bte:
-		if (do_ssort(bte,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_bte(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_SHT
 	case TYPE_sht:
-		if (do_ssort(sht,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_sht(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_INT
 	case TYPE_int:
-		if (do_ssort(int,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_int(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_LNG
 	case TYPE_lng:
-		if (do_ssort(lng,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_lng(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_FLT
 	case TYPE_flt:
-		if (do_ssort(flt,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_flt(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_DBL
 	case TYPE_dbl:
-		if (do_ssort(dbl,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_dbl(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 #ifndef NOEXPAND_OID
 	case TYPE_oid:
-		if (do_ssort(oid,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_oid(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 #endif
 	default:
-		if (do_ssort(any,O)(&ms, nremaining, lo, hi, minrun) < 0)
+		if (do_ssort_any(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
 	}
@@ -931,4 +896,4 @@ GDKssortimpl(O)(void *h, void *t, void *heap, size_t nitems,
 	merge_freemem(&ms);
 	return result;
 }
-#endif	/* DEFINE_MAIN_FUNC */
+#endif	/* GDKssortimpl */
