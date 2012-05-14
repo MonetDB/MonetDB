@@ -80,56 +80,59 @@ function filler_(cnt:lng, v:any_1)(id:bat[:oid,:lng], cellval:bat[:oid,:any_1]);
 	return (b4,b2);
 end filler_;
 
-#pattern sum(values:bat[:oid,:any_1], any...):bat[:oid,:any_1]
-#address ARRAYtilesSum
-#comment "Construct the sum over all tiles";
+@= tilesAggrDecl
+module array;
 
-#pattern avg(values:bat[:oid,:any], any...):bat[:oid,:dbl]
-#address ARRAYtilesAvg
-#comment "Construct the average over all tiles";
-
-pattern sum(val:any, any...):lng
-address ARRAYtilesSum
+pattern sum(val:@1, any...):lng
+address ARRAYtilesSum_@1
 comment "Construct the sum over all tiles";
 
-pattern sum(val:any, any...):dbl
-address ARRAYtilesSum
+pattern sum(val:@1, any...):dbl
+address ARRAYtilesSum_@1
 comment "Construct the sum over all tiles";
 
-pattern avg(val:any, any...):dbl
-address ARRAYtilesAvg
+pattern avg(val:@1, any...):dbl
+address ARRAYtilesAvg_@1
 comment "Construct the average over all tiles";
 
-pattern min(val:any_1, any...):any_1
-address ARRAYtilesMin
+pattern min(val:@1, any...):@1
+address ARRAYtilesMin_@1
 comment "Construct the minimum over all tiles";
 
-pattern max(val:any_1, any...):any_1
-address ARRAYtilesMax
+pattern max(val:@1, any...):@1
+address ARRAYtilesMax_@1
 comment "Construct the maximum over all tiles";
 
 module batarray;
 
 # The BAT version of the AGGR functions over array tiles
-pattern sum(val:bat[:oid,:any], any...):bat[:oid,:lng]
-address ARRAYtilesSum
+pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:lng]
+address ARRAYtilesSum_@1
 comment "Construct the sum over all tiles";
 
-pattern sum(val:bat[:oid,:any], any...):bat[:oid,:dbl]
-address ARRAYtilesSum
+pattern sum(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
+address ARRAYtilesSum_@1
 comment "Construct the sum over all tiles";
 
-pattern avg(val:bat[:oid,:any], any...):bat[:oid,:dbl]
-address ARRAYtilesAvg
+pattern avg(val:bat[:oid,:@1], any...):bat[:oid,:dbl]
+address ARRAYtilesAvg_@1
 comment "Construct the average over all tiles";
 
-pattern min(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
-address ARRAYtilesMin
+pattern min(val:bat[:oid,:@1], any...):bat[:oid,:@1]
+address ARRAYtilesMin_@1
 comment "Construct the minimum over all tiles";
 
-pattern max(val:bat[:oid,:any_1], any...):bat[:oid,:any_1]
-address ARRAYtilesMax
+pattern max(val:bat[:oid,:@1], any...):bat[:oid,:@1]
+address ARRAYtilesMax_@1
 comment "Construct the maximum over all tiles";
+@
+@mal
+@:tilesAggrDecl(bte)@
+@:tilesAggrDecl(sht)@
+@:tilesAggrDecl(int)@
+@:tilesAggrDecl(lng)@
+@:tilesAggrDecl(flt)@
+@:tilesAggrDecl(dbl)@
 
 module array;
 
@@ -213,10 +216,6 @@ array_export str ARRAYumap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 array_export str ARRAYreplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYreplaceScalar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 array_export str ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesMin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-array_export str ARRAYtilesMax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= array_defs
@@ -736,7 +735,6 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@= tilesAggr
 # define AGGR_CLEANUP() \
 { \
 	if (bVal) BBPreleaseref(bVal->batCacheid); \
@@ -752,6 +750,8 @@ ARRAYtiles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if(dMax) GDKfree(dMax); \
 	if(dSize) GDKfree(dSize); \
 }
+
+@= tilesAggr
 /* 
  * array.[sum|avg] inputs:
  *  (cell_val:BAT,
@@ -898,11 +898,6 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-The compilating factor is that in general the tile enumeration is dense, while
-the tile structure can go over its boundaries. For this to control, we first
-embed the array into a slightly larger array, filled with nulls.
-
 @c
 @:tilesAggr(bte,lng,lng,Sum,sum, sum )@
 @:tilesAggr(sht,lng,lng,Sum,sum, sum )@
@@ -916,66 +911,8 @@ embed the array into a slightly larger array, filled with nulls.
 @:tilesAggr(lng,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
 @:tilesAggr(flt,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
 @:tilesAggr(dbl,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
-str
-ARRAYtilesSum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int type = getTailType(getArgType(mb,pci,1));
-	switch(type){
-	case TYPE_bte:
-		return ARRAYtilesSum_bte(cntxt,mb,stk,pci);
-	case TYPE_sht:
-		return ARRAYtilesSum_sht(cntxt,mb,stk,pci);
-	case TYPE_int:
-		return ARRAYtilesSum_int(cntxt,mb,stk,pci);
-	case TYPE_lng:
-		return ARRAYtilesSum_lng(cntxt,mb,stk,pci);
-	case TYPE_flt:
-		return ARRAYtilesSum_flt(cntxt,mb,stk,pci);
-	case TYPE_dbl:
-		return ARRAYtilesSum_dbl(cntxt,mb,stk,pci);
-	default:
-		throw(MAL, "array.sum", "illegal/unsupported type");
-	}
-	return MAL_SUCCEED;
-}
-
-str
-ARRAYtilesAvg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int type = getTailType(getArgType(mb,pci,1));
-	switch(type){
-	case TYPE_bte:
-		return ARRAYtilesAvg_bte(cntxt,mb,stk,pci);
-	case TYPE_sht:
-		return ARRAYtilesAvg_sht(cntxt,mb,stk,pci);
-	case TYPE_int:
-		return ARRAYtilesAvg_int(cntxt,mb,stk,pci);
-	case TYPE_lng:
-		return ARRAYtilesAvg_lng(cntxt,mb,stk,pci);
-	case TYPE_flt:
-		return ARRAYtilesAvg_flt(cntxt,mb,stk,pci);
-	case TYPE_dbl:
-		return ARRAYtilesAvg_dbl(cntxt,mb,stk,pci);
-	default:
-		throw(MAL, "array.sum", "illegal/unsupported type");
-	}
-	return MAL_SUCCEED;
-}
 
 @= tilesMinMax
-# define MINMAX_CLEANUP() \
-{ \
-	if (bVal) BBPreleaseref(bVal->batCacheid); \
-	for (i = 0; i < ndims; i++) { \
-		if(bDims[i]) BBPreleaseref(bDims[i]->batCacheid); \
-		if(bOffsets[i]) BBPreleaseref(bOffsets[i]->batCacheid); \
-	} \
-	if(bDims) GDKfree(bDims); \
-	if(bDimsT) GDKfree(bDimsT); \
-	if(bOffsets) GDKfree(bOffsets); \
-	if(bOffsetsT) GDKfree(bOffsetsT); \
-	if(dMin) GDKfree(dMin); \
-	if(dMax) GDKfree(dMax); \
-	if(dSize) GDKfree(dSize); \
-}
 /* 
  * array.[min|max] inputs:
  *  (cell_val:BAT,
@@ -1013,25 +950,25 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dSize = (int*) GDKzalloc(sizeof(int) * ndims);
 	bVal = BATdescriptor(*(int*)getArgReference(stk,pci,1));
 	if(!bDims || !bDimsT || !bOffsets || !bOffsetsT || !dMin || !dMax || !dSize || !bVal) {
-		MINMAX_CLEANUP();
+		AGGR_CLEANUP();
 		throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
 	}
 	for (i = 0; i < ndims; i++) {
 		bDims[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3));
 		bOffsets[i] = BATdescriptor(*(int*)getArgReference(stk,pci,2+i*3+1));
 		if (!bDims[i] || !bOffsets[i]) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", RUNTIME_OBJECT_MISSING);
 		}
 		dSize[i] = *(int*)getArgReference(stk,pci,2+i*3+2);
 	}
 	/* type check the shapes, prepare iterators, and compute the min/max of the dimensions */
 	if (!BAThdense(bVal)) {
-		MINMAX_CLEANUP();
+		AGGR_CLEANUP();
 		throw(MAL, "array.@3", "head of value BAT must be dense");
 	}
 	if (bVal->ttype != TYPE_@1) {
-		MINMAX_CLEANUP();
+		AGGR_CLEANUP();
 		throw(MAL, "array.@3", "tail of value BAT must be of type @1");
 	}
 	arrcnt = BATcount(bVal);
@@ -1040,23 +977,23 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	offcnt = BATcount(bOffsets[0]);
 	for (i = 0; i < ndims; i++) {
 		if (!BAThdense(bDims[i])) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", "head of all dimension BATs must be dense");
 		}
 		if (!BAThdense(bOffsets[i])) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", "head of all offset BATs must be dense");
 		}
 		if (bDims[i]->hseqbase != arrbase || BATcount(bDims[i]) != arrcnt) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", "head of all dimension BATs must be aligned with head of value BAT");
 		}
 		if (bOffsets[i]->hseqbase != offbase || BATcount(bOffsets[i]) != offcnt) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", "heads of all offset BATs must be aligned");
 		}
 		if (bDims[i]->ttype != TYPE_int || bDims[i]->ttype != bOffsets[i]->ttype) {
-			MINMAX_CLEANUP();
+			AGGR_CLEANUP();
 			throw(MAL, "array.@3", SEMANTIC_TYPE_MISMATCH);
 		}
 		BATmin(bDims[i], &(dMin[i]));
@@ -1113,7 +1050,7 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		bResT[p] = minmax;
 	}
-	MINMAX_CLEANUP();
+	AGGR_CLEANUP();
 	BATsetcount(bRes, arrcnt);
 	BATseqbase(bRes, arrbase);
 	bRes->hdense = TRUE;
@@ -1126,11 +1063,6 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*ret = bRes->batCacheid);
 	return MAL_SUCCEED;
 }
-@-
-The compilating factor is that in general the tile enumeration is dense, while
-the tile structure can go over its boundaries. For this to control, we first
-embed the array into a slightly larger array, filled with nulls.
-
 @c
 @:tilesMinMax(bte,Min,min,MIN)@
 @:tilesMinMax(sht,Min,min,MIN)@
@@ -1144,50 +1076,12 @@ embed the array into a slightly larger array, filled with nulls.
 @:tilesMinMax(lng,Max,max,MAX)@
 @:tilesMinMax(flt,Max,max,MAX)@
 @:tilesMinMax(dbl,Max,max,MAX)@
-str
-ARRAYtilesMin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int type = getTailType(getArgType(mb,pci,1));
-	switch(type){
-	case TYPE_bte:
-		return ARRAYtilesMin_bte(cntxt,mb,stk,pci);
-	case TYPE_sht:
-		return ARRAYtilesMin_sht(cntxt,mb,stk,pci);
-	case TYPE_int:
-		return ARRAYtilesMin_int(cntxt,mb,stk,pci);
-	case TYPE_lng:
-		return ARRAYtilesMin_lng(cntxt,mb,stk,pci);
-	case TYPE_flt:
-		return ARRAYtilesMin_flt(cntxt,mb,stk,pci);
-	case TYPE_dbl:
-		return ARRAYtilesMin_dbl(cntxt,mb,stk,pci);
-	default:
-		throw(MAL, "array.min", "illegal/unsupported type");
-	}
-	return MAL_SUCCEED;
-}
 
-str
-ARRAYtilesMax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	int type = getTailType(getArgType(mb,pci,1));
-	switch(type){
-	case TYPE_bte:
-		return ARRAYtilesMax_bte(cntxt,mb,stk,pci);
-	case TYPE_sht:
-		return ARRAYtilesMax_sht(cntxt,mb,stk,pci);
-	case TYPE_int:
-		return ARRAYtilesMax_int(cntxt,mb,stk,pci);
-	case TYPE_lng:
-		return ARRAYtilesMax_lng(cntxt,mb,stk,pci);
-	case TYPE_flt:
-		return ARRAYtilesMax_flt(cntxt,mb,stk,pci);
-	case TYPE_dbl:
-		return ARRAYtilesMax_dbl(cntxt,mb,stk,pci);
-	default:
-		throw(MAL, "array.max", "illegal/unsupported type");
-	}
-	return MAL_SUCCEED;
-}
-
+@-
+The compilating factor is that in general the tile enumeration is dense, while
+the tile structure can go over its boundaries. For this to control, we first
+embed the array into a slightly larger array, filled with nulls.
+@c
 str
 ARRAYembed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
