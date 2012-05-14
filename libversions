@@ -34,7 +34,7 @@
 # the numbers are: <CURRENT>:<REVISION>:<AGE>
 
 # version of the GDK library (subdirectory gdk; also includes
-# common/options and common/mutils)
+# common/options and common/utils)
 GDK_VERSION=5:1:0
 
 # version of the MAPI library (subdirectory clients/mapilib)
