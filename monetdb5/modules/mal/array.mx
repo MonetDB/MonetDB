@@ -55,12 +55,6 @@ module array;
 @:array_mdefs(lng)@
 @:array_mdefs(flt)@
 @:array_mdefs(dbl)@
-@-
-to be dealt with differently
-@:array_mdefs(oid)@
-@:array_mdefs(date)@
-@:array_mdefs(daytime)@
-@:array_mdefs(timestamp)@
 
 @mal
 pattern filler(idx:bat[:oid,:any_1], v:any_2):bat[:oid,:any_2]
@@ -231,12 +225,6 @@ array_export str ARRAYtilesMax_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 @:array_defs(lng)@
 @:array_defs(flt)@
 @:array_defs(dbl)@
-@-
-to be dealt with differently
-@:array_defs(oid)@
-@:array_defs(date)@
-@:array_defs(daytime)@
-@:array_defs(timestamp)@
 
 @h
 /* The maximum number of series_ that the print-function can handle... */
@@ -317,12 +305,6 @@ ARRAYseries_@1(int *ret, @1 *start, @1 *step, @1 *stop, int *group, int *series)
 @:dim_wrapper_impl(lng,%lld)@
 @:dim_wrapper_impl(flt,%f)@
 @:dim_wrapper_impl(dbl,%f)@
-@-
-to be dealt with differently
-@:dim_wrapper_impl(oid," OIDFMT ")@
-@:dim_wrapper_impl(date)@
-@:dim_wrapper_impl(daytime)@
-@:dim_wrapper_impl(timestamp)@
 
 @-
 @= arraymultiply
