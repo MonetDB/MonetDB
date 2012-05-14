@@ -366,7 +366,8 @@ str
 ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
-	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
+	bit skip = FALSE;
 	@1 *bValT = NULL, elm = 0;
 	@3 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
@@ -459,7 +460,7 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
 			mul = 1;
-			err = 0;
+			skip = FALSE;
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
 			 * shifted according this set of offset on dimension d_i.
@@ -474,12 +475,12 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dMin[i] <= cidx && cidx <= dMax[i]) {
 					vid += mul * (cidx - dMin[i]);
 				} else {
-					err = 1;
+					skip = TRUE;
 					break; /* skip remaining dimensions */
 				}
 				mul *= dSize[i];
 			}
-			if (!err) {
+			if (!skip) {
 				elm = bValT[vid];
 				if (elm != @1_nil) {
 					cnt++;
@@ -527,7 +528,8 @@ str
 ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bVal = NULL, *bRes = NULL, **bDims = NULL, **bOffsets = NULL;
-	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0, err = 0;
+	int *ret = (int*) getArgReference(stk,pci,0), i = 0, ndims = 0;
+	bit skip = FALSE;
 	@1 *bValT = NULL, elm = 0;
 	@1 *bResT = NULL;
 	int **bDimsT = NULL, **bOffsetsT = NULL;
@@ -620,7 +622,7 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
 			mul = 1;
-			err = 0;
+			skip = FALSE;
 			/* for the index of the anchor point on dimension d_i, check if the
 			 * resulting index is within the dimension range after having
 			 * shifted according this set of offset on dimension d_i.
@@ -635,12 +637,12 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (dMin[i] <= cidx && cidx <= dMax[i]) {
 					vid += mul * (cidx - dMin[i]);
 				} else {
-					err = 1;
+					skip = TRUE;
 					break; /* skip remaining dimensions */
 				}
 				mul *= dSize[i];
 			}
-			if (!err) {
+			if (!skip) {
 				elm = bValT[vid];
 				if (elm != @1_nil) {
 					if (first) {
