@@ -1871,7 +1871,14 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPcurstamp()	BBP_curstamp
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)	(BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
+#define BBPname(i)							\
+	(BBPcheck((i), "BBPname") ?					\
+	 ((i) > 0 ?							\
+	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
+	  (BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] ?	\
+	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] :	\
+	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[0])) : \
+	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
 #define BBPfix(i)	BBPincref((i), FALSE)
