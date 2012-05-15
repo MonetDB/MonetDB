@@ -1288,12 +1288,12 @@ BBPinit(void)
 	assert(fp != NULL);
 
 	/* scan the BBP.dir to obtain current size */
-	BBPlimit = BBPINIT;
+	BBPlimit = 0;
+	memset(BBP, 0, sizeof(BBP));
 	BBPsize = 1;
 
 	bbpversion = BBPheader(fp, &BBPsize, &BBPoid, &oidsize, FALSE);
 
-	memset(BBP, 0, sizeof(BBP));
 	BBPextend(0);		/* allocate BBP records */
 	BBPsize = 1;
 
