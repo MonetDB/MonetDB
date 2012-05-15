@@ -1006,7 +1006,7 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 }
 
 static int
-BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
+BBPheader(FILE *fp, bat *limit, oid *BBPoid, int *OIDsize, int silent)
 {
 	char buf[BUFSIZ];
 	int sz, bbpversion, ptrsize, oidsize;
@@ -1078,8 +1078,8 @@ BBPheader(FILE *fp, int *BBPlimit, oid *BBPoid, int *OIDsize, int silent)
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
 		sscanf(s, "BBPsize=%d", &sz);
 		sz = (int) (sz * BATMARGIN);
-		if (sz > *BBPlimit)
-			*BBPlimit = sz;
+		if (sz > *limit)
+			*limit = sz;
 	}
 	return bbpversion;
 }
@@ -1169,7 +1169,7 @@ BBPimportEntry(char *nme)
 	char path[BUFSIZ];
 	struct stat st;
 	oid BBPoid;
-	int BBPlimit;
+	bat limit;
 	int bbpversion;
 
 	IODEBUG mnstr_printf(GDKstdout,"#importEntry %s\n",nme);
@@ -1199,7 +1199,7 @@ BBPimportEntry(char *nme)
 		}
 	}
 
-	if ((bbpversion = BBPheader(fd, &BBPlimit, &BBPoid, NULL, TRUE)) < 0)
+	if ((bbpversion = BBPheader(fd, &limit, &BBPoid, NULL, TRUE)) < 0)
 		return 0;
 	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp, 0, bbpversion);
 	fclose(fd);
@@ -1291,15 +1291,11 @@ BBPinit(void)
 	BBPlimit = BBPINIT;
 	BBPsize = 1;
 
-	bbpversion = BBPheader(fp, &BBPlimit, &BBPoid, &oidsize, FALSE);
+	bbpversion = BBPheader(fp, &BBPsize, &BBPoid, &oidsize, FALSE);
 
-	/* allocate structures: try to reserve as much space as
-	   possible */
 	memset(BBP, 0, sizeof(BBP));
-	BBP[0] = GDKzalloc(BBPlimit * sizeof(BBPrec));
-	if (BBP[0] == NULL)
-		GDKfatal("BBPinit: failed to allocate BBP");
-	assert(BBP[0] != NULL);
+	BBPextend(0);		/* allocate BBP records */
+	BBPsize = 1;
 
 	(void) BBPreadEntries(fp, 0, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
