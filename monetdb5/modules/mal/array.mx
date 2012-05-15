@@ -618,6 +618,8 @@ ARRAYtiles@2_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bRes = 	BATnew(TYPE_void, TYPE_@1, BATcount(bVal));
 	bResT = (@1*) Tloc(bRes, BUNfirst(bRes));
 	for (p = 0 ; p < arrcnt ; p++) {
+		minmax = @1_nil;
+		first = TRUE;
 		/* loop over all sets of offsets */
 		for (r = 0; r < offcnt ; r++) {
 			vid = 0; /* index into bVal for the value of a qualified tile member */
