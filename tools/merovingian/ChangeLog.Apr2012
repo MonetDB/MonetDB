@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue May 15 2012 Fabian Groffen <fabian@cwi.nl>
+- Fixed a bug where connecting to a stopped multiplex-funnel would result
+  in a 'there are no available connections' error.
+
