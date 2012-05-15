@@ -176,93 +176,35 @@ UDFBATreverse(bat *ret, bat *bid)
 
 
 
-/* scalar fuse */
+/* fuse */
 
-/* use C macro to conveniently define type-specific functions */
-#define UDFfuse_scalar_impl(in,uin,out,shift)				\
-/* fuse two (shift-byte) in values into one (2*shift-byte) out value */	\
-/* actual implementation */						\
-static str								\
-UDFfuse_##in##_##out##_ ( out *ret , in one , in two )			\
-{									\
-	/* assert calling sanity */					\
-	assert(ret != NULL);						\
-									\
-	if (one == in##_nil || two == in##_nil)				\
-		/* NULL/nil in => NULL/nil out */			\
-		*ret = out##_nil;					\
-	else								\
-		/* do the work; watch out for sign bits */		\
-		*ret = ( ((out)((uin)one)) << shift ) | ((uin)two);	\
-									\
-	return MAL_SUCCEED;						\
-}									\
-/* MAL wrapper */							\
-str									\
-UDFfuse_##in##_##out ( out *ret , in *one , in *two )			\
-{									\
-	/* assert calling sanity */					\
-	assert(ret != NULL && one != NULL && two != NULL);		\
-									\
-	return UDFfuse_##in##_##out##_ ( ret, *one, *two );		\
-}
+/* instantiate type-specific functions */
 
-/* call C macro to define type-specific functions */
-UDFfuse_scalar_impl(bte, unsigned char,  sht,  8)
-UDFfuse_scalar_impl(sht, unsigned short, int, 16)
-UDFfuse_scalar_impl(int, unsigned int,   lng, 32)
+#define UI bte
+#define UU unsigned char
+#define UO sht
+#include "udf_impl.h"
+#undef UI
+#undef UU
+#undef UO
 
+#define UI sht
+#define UU unsigned short
+#define UO int
+#include "udf_impl.h"
+#undef UI
+#undef UU
+#undef UO
+
+#define UI int
+#define UU unsigned int
+#define UO lng
+#include "udf_impl.h"
+#undef UI
+#undef UU
+#undef UO
 
 /* BAT fuse */
-/*
- * Type-expanded optimized version,
- * accessing value arrays directly.
- */
-
-/* type-specific core algorithm */
-/* use C macro to conveniently define type-specific functions */
-#define UDFBATfuse_impl(in,uin,out,shift)				\
-static str								\
-UDFBATfuse_##in##_##out ( BAT *bres, BAT *bone, BAT *btwo, BUN n,	\
-                            bit *two_tail_sorted_unsigned,		\
-                            bit *two_tail_revsorted_unsigned )		\
-{									\
-	in *one = NULL, *two = NULL;					\
-	out *res = NULL;						\
-	BUN i;								\
-									\
-	/* assert calling sanity */					\
-	assert(bres != NULL && bone != NULL && btwo != NULL);		\
-	assert(BATcapacity(bres) >= n);					\
-	assert(BATcount(bone) >= n && BATcount(btwo) >= n);		\
-	assert(bone->ttype == TYPE_##in && btwo->ttype == TYPE_##in);	\
-	assert(bres->ttype == TYPE_##out);				\
-									\
-	/* get direct access to the tail arrays	*/			\
-	one = (in *) Tloc(bone, BUNfirst(bone));			\
-	two = (in *) Tloc(btwo, BUNfirst(btwo));			\
-	res = (out*) Tloc(bres, BUNfirst(bres));			\
-	/* iterate over all values/tuples and do the work */		\
-	for (i = 0; i < n; i++)						\
-		if (one[i] == in##_nil || two[i] == in##_nil)		\
-			/* NULL/nil in => NULL/nil out */		\
-			res[i] = out##_nil;				\
-		else							\
-			/* do the work; watch out for sign bits */	\
-			res[i] = ((out) (uin) one[i] << shift) | (uin) two[i]; \
-									\
-	*two_tail_sorted_unsigned =					\
-		BATtordered(btwo) && (two[0] >= 0 || two[n-1] < 0);	\
-	*two_tail_revsorted_unsigned =					\
-		BATtrevordered(btwo) &&	(two[0] < 0 || two[n-1] >= 0);	\
-									\
-	return MAL_SUCCEED;						\
-}
-
-/* call C macro to define type-specific functions */
-UDFBATfuse_impl(bte, unsigned char,  sht,  8)
-UDFBATfuse_impl(sht, unsigned short, int, 16)
-UDFBATfuse_impl(int, unsigned int,   lng, 32)
 
 /* actual implementation */
 static str
@@ -322,13 +264,16 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 	/* call type-specific core algorithm */
 	switch (bone->ttype) {
 	case TYPE_bte:
-		msg = UDFBATfuse_bte_sht ( bres, bone, btwo, n, &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
+		msg = UDFBATfuse_bte_sht ( bres, bone, btwo, n,
+		        &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_sht:
-		msg = UDFBATfuse_sht_int ( bres, bone, btwo, n, &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
+		msg = UDFBATfuse_sht_int ( bres, bone, btwo, n,
+		        &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_int:
-		msg = UDFBATfuse_int_lng ( bres, bone, btwo, n, &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
+		msg = UDFBATfuse_int_lng ( bres, bone, btwo, n,
+		        &two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	default:
 		BBPreleaseref(bres->batCacheid);

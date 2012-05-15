@@ -33,7 +33,7 @@ INCLUDES = .. \
 lib__udf = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = udf.c udf.h
+	SOURCES = udf.c udf.h udf_impl.h
 	LIBS = ../../../../monetdb5/tools/libmonetdb5 \
 		   ../../../../gdk/libbat
 }
