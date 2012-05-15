@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue May 15 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Databases that were upgraded from the Aug2011 release have an error
+  in the catalog for SQL procedures.  This is now fixed.
+

@@ -444,6 +444,7 @@ sql_update_apr2012_sp1(Client c)
 	size_t bufsize = 2048, pos = 0;
 
 	/* changes in createdb/25_debug.sql */
+	pos += snprintf(buf+pos, bufsize-pos, "update sys.functions set type = %d, side_effect = false where type = %d and id not in (select func_id from sys.args where number = 0 and name = 'result');\n", F_PROC, F_FUNC);
 	pos += snprintf(buf+pos, bufsize-pos, "drop function sys.storage;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create function sys.storage() returns table (\"schema\" string, \"table\" string, \"column\" string, location string, \"count\" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted boolean) external name sql.storage;\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create function sys.optimizers() returns table (name string, def string, status string) external name sql.optimizers;\n");

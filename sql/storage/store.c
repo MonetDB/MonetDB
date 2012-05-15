@@ -752,6 +752,8 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 				t -> res = a->type;
 			} else {
 				list_append(t->ops, a);
+				if (t->type == F_FUNC)
+					t->type = F_PROC;
 			}
 		} else {
 			list_append(t->ops, a);
