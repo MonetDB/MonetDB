@@ -6,10 +6,12 @@
 
 str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret0 = (int*) getArgReference(stk,pci,0);	//return value 1: BAT containing file_locations.
-	int *ret1 = (int*) getArgReference(stk,pci,1);	//return value 2: BAT containing seq_nos.
-	int *ret2 = (int*) getArgReference(stk,pci,2);	//return value 3: BAT containing timestamps.
-	int *ret3 = (int*) getArgReference(stk,pci,3);	//return value 4: BAT containing integer data.
+	bat** ret;
+	
+// 	int *ret0 = (int*) getArgReference(stk,pci,0);	//return value 1: BAT containing file_locations.
+// 	int *ret1 = (int*) getArgReference(stk,pci,1);	//return value 2: BAT containing seq_nos.
+// 	int *ret2 = (int*) getArgReference(stk,pci,2);	//return value 3: BAT containing timestamps.
+// 	int *ret3 = (int*) getArgReference(stk,pci,3);	//return value 4: BAT containing integer data.
 	str *targetfile = (str*) getArgReference(stk,pci,4); //arg 1: string containing the input file path.
 	BAT *btime, *bdata, *bfile, *bseqno; // BATs to return, representing columns of a table.
 	
@@ -19,6 +21,19 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MSRecord *msr = NULL;
 	int retcode;
 	int verbose = 1;
+	int r;
+	
+// 	printf("num_rets: %d\n", pci->retc);
+	ret = (bat**) GDKmalloc(pci->retc*sizeof(bat*));
+	if(ret == NULL)
+	{
+		throw(MAL,"miniseed.mount",MAL_MALLOC_FAIL);
+	}
+	
+	for(r = 0; r < pci->retc; r++)
+	{
+		ret[r] = (int*) getArgReference(stk,pci,r);
+	}
 	
 	cntxt = cntxt; //to escape 'unused' parameter error.
 	mb = mb; //to escape 'unused' parameter error.
@@ -116,10 +131,15 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hub"), op_lt, (ptr) &high.value);
 	
-	BBPkeepref(*ret0 = bfile->batCacheid); //return BAT.
-	BBPkeepref(*ret1 = bseqno->batCacheid); //return BAT.
-	BBPkeepref(*ret2 = btime->batCacheid); //return BAT.
-	BBPkeepref(*ret3 = bdata->batCacheid); //return BAT.
+// 	BBPkeepref(*ret0 = bfile->batCacheid); //return BAT.
+// 	BBPkeepref(*ret1 = bseqno->batCacheid); //return BAT.
+// 	BBPkeepref(*ret2 = btime->batCacheid); //return BAT.
+// 	BBPkeepref(*ret3 = bdata->batCacheid); //return BAT.
+	
+	BBPkeepref(*ret[0] = bfile->batCacheid); //return BAT.
+	BBPkeepref(*ret[1] = bseqno->batCacheid); //return BAT.
+	BBPkeepref(*ret[2] = btime->batCacheid); //return BAT.
+	BBPkeepref(*ret[3] = bdata->batCacheid); //return BAT.
 	
 	return MAL_SUCCEED;
 }
