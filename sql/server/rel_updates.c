@@ -304,6 +304,7 @@ rel_insert_table(mvc *sql, sql_table *t, char *name, sql_rel *inserts)
 static sql_rel *
 insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 {
+	size_t rowcount = 1;
 	int i, len = 0;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -361,6 +362,8 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		dlist *rowlist = val_or_q->data.lval;
 		dlist *values;
 		dnode *o;
+		list *exps = new_exp_list(sql->sa);
+		sql_rel *inner = NULL;
 
 		if (!rowlist->h) {
 			r = rel_project(sql->sa, NULL, NULL);
@@ -368,40 +371,57 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				collist = NULL;
 		}
 
-		for (o = rowlist->h; o; o = o->next) {
+		for (o = rowlist->h; o; o = o->next, rowcount++) {
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
 				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
-				sql_rel *inner = NULL;
-				sql_rel *i = NULL;
-				list *exps = new_exp_list(sql->sa);
 				dnode *n;
+				node *v;
 
-				for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
-					sql_column *c = m->data;
-					sql_rel *r = NULL;
-					sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
-					if (!ins)
-						return NULL;
-					if (r && inner)
-						inner = rel_crossproduct(sql->sa, inner,r, op_join);
-					else if (r) 
-						inner = r;
-					if (!ins->name)
-						exp_label(sql->sa, ins, ++sql->label);
-					list_append(exps, ins);
+				if (o->next && list_empty(exps)) {
+					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
+						sql_exp *vals = exp_values(sql->sa, sa_list(sql->sa));
+						sql_column *c = m->data;
+	
+					        vals->tpe = c->type;
+						exp_label(sql->sa, vals, ++sql->label);
+						list_append(exps, vals);
+					}
 				}
-				i = rel_project(sql->sa, inner, exps);
-				if (r) {
-					r = rel_setop(sql->sa, r, i, op_union);
-					r->exps = rel_projections(sql, i, NULL, 1, 1);
+				if (!list_empty(exps)) {
+					for (n = values->h, m = collist->h, v = exps->h; n && m && v; n = n->next, m = m->next, v = v->next) {
+						sql_exp *vals = v->data;
+						list *vals_list = vals->f;
+						sql_column *c = m->data;
+						sql_rel *r = NULL;
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
+						if (!ins || r)
+							return NULL;
+						list_append(vals_list, ins);
+					}
 				} else {
-					r = i;
+					/* only allow correlation in a single row of values */
+					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
+						sql_column *c = m->data;
+						sql_rel *r = NULL;
+						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
+						if (!ins)
+							return NULL;
+						if (r && inner)
+							inner = rel_crossproduct(sql->sa, inner,r, op_join);
+						else if (r) 
+							inner = r;
+						if (!ins->name)
+							exp_label(sql->sa, ins, ++sql->label);
+						list_append(exps, ins);
+					}
 				}
 			}
 		}
+		if (collist)
+			r = rel_project(sql->sa, inner, exps);
 	} else {
 		exp_kind ek = {type_value, card_relation, TRUE};
 
@@ -435,20 +455,37 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 				sql_column *c = m->data;
 
 				if (c->colnr == i) {
-					sql_exp *e = NULL;
+					size_t j = 0;
+					sql_exp *exps = NULL;
 
-					if (c->def) {
-						char *q = sa_message(sql->sa, "select %s;", c->def);
-						e = rel_parse_val(sql, q, sql->emode);
-						if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-							return NULL;
-					} else {
-						atom *a = atom_general(sql->sa, &c->type, NULL);
-						e = exp_atom(sql->sa, a);
+					for(j = 0; j < rowcount; j++) {
+						sql_exp *e = NULL;
+
+						if (c->def) {
+							char *q = sa_message(sql->sa, "select %s;", c->def);
+							e = rel_parse_val(sql, q, sql->emode);
+							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+								return NULL;
+						} else {
+							atom *a = atom_general(sql->sa, &c->type, NULL);
+							e = exp_atom(sql->sa, a);
+						}
+						if (!e) 
+							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+						if (exps) {
+							list *vals_list = exps->f;
+			
+							list_append(vals_list, e);
+						}
+						if (!exps && j+1 < rowcount) {
+							exps = exp_values(sql->sa, sa_list(sql->sa));
+							exps->tpe = c->type;
+							exp_label(sql->sa, exps, ++sql->label);
+						}
+						if (!exps)
+							exps = e;
 					}
-					if (!e) 
-						return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
-					inserts[i] = e;
+					inserts[i] = exps;
 				}
 			}
 			assert(inserts[i]);

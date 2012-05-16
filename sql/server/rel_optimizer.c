@@ -198,30 +198,6 @@ list_find_exp( list *exps, sql_exp *e)
 	return NULL;
 }
 
-/* find in the list of expression an expression which uses e */ 
-static sql_exp *
-exp_uses_exp( list *exps, sql_exp *e)
-{
-	node *n;
-	char *rname = exp_find_rel_name(e);
-	char *name = exp_name(e);
-
-	if (!exps)
-		return NULL;
-
-	for ( n = exps->h; n; n = n->next) {
-		sql_exp *u = n->data;
-
-		if (u->l && rname && strcmp(u->l, rname) == 0 &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
-		if (!u->l && !rname &&
-		    u->r && name && strcmp(u->r, name) == 0) 
-			return u;
-	}
-	return NULL;
-}
-
 static int
 kc_column_cmp(sql_kc *kc, sql_column *c)
 {
@@ -2892,19 +2868,44 @@ rel_remove_empty_select(int *changes, mvc *sql, sql_rel *rel)
  * ->
  * {semi}join( A, groupby( semijoin(B,A) [gbe == A.x] ) [gbe][aggrs] ) [ gbe == A.x ]
  */
+
+/* find in the list of expression an expression which uses e */ 
+static sql_exp *
+exp_uses_exp( list *exps, sql_exp *e)
+{
+	node *n;
+	char *rname = exp_find_rel_name(e);
+	char *name = exp_name(e);
+
+	if (!exps)
+		return NULL;
+
+	for ( n = exps->h; n; n = n->next) {
+		sql_exp *u = n->data;
+
+		if (u->l && rname && strcmp(u->l, rname) == 0 &&
+		    u->r && name && strcmp(u->r, name) == 0) 
+			return u;
+		if (!u->l && !rname &&
+		    u->r && name && strcmp(u->r, name) == 0) 
+			return u;
+	}
+	return NULL;
+}
+
 static sql_rel *
 rel_push_join_down(int *changes, mvc *sql, sql_rel *rel) 
 {
 	list *exps = NULL;
 
 	(void)*changes;
-	if (((is_join(rel->op) && rel->exps) || is_semi(rel->op)) && rel->l) {
+	if (!rel_is_ref(rel) && (((is_join(rel->op) && rel->exps) || is_semi(rel->op)) && rel->l)) {
 		sql_rel *gb = rel->r, *ogb = gb, *l = NULL, *rell = rel->l;
 
 		if (gb->op == op_project)
 			gb = gb->l;
 
-		if (is_basetable(rell->op))
+		if (is_basetable(rell->op) || rel_is_ref(rell))
 			return rel;
 
 		exps = rel->exps;

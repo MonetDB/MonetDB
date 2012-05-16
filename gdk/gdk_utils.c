@@ -697,19 +697,15 @@ GDKmemfail(str s, size_t len)
 	   }
 	 */
 
-	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
 /*	GDKdebug |= 4;  avoid debugging output */
-	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 
 	BBPtrim(BBPTRIM_ALL);
 
-	gdk_set_lock(GDKthreadLock, "GDKmemfail");
 	GDKdebug = MIN(GDKdebug, bak);
 	THRprintf(GDKstdout, "#%s(" SZFMT ") result [mem=" SZFMT ",vm=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-	gdk_unset_lock(GDKthreadLock, "GDKmemfail");
 }
 
 /* the blocksize is stored in the ssize_t before it. Negative size <=>

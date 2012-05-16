@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2012/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -655,6 +655,27 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed May 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.5-20120516
+- Rebuilt.
+
+* Tue May 15 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.5-20120516
+- merovingian: Fixed a bug where connecting to a stopped multiplex-funnel would result
+  in a 'there are no available connections' error.
+
+* Tue May 15 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.5-20120516
+- sql: Databases that were upgraded from the Aug2011 release have an error
+  in the catalog for SQL procedures.  This is now fixed.
+
+* Mon May 14 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.3-20120514
+- Rebuilt.
+
+* Wed May  2 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.3-20120514
+- buildtools: Windows: we now use OpenSSL 1.0.1b.
+
+* Fri Apr 27 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.3-20120514
+- gdk: Implemented MT_getrss for Mac OS X systems, this allows the server to
+  know about how much memory is currently in use.
+
 * Wed Apr 18 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
 - Rebuilt.
 

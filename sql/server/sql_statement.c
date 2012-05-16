@@ -728,6 +728,10 @@ stmt_const_(sql_allocator *sa, stmt *s, stmt *val)
 	return ns;
 }
 
+/* some functions have side_effects, for example next_value_for. When these are
+ * used in update statements we need to make sure we call these functions once
+ * for every to be inserted value. 
+ */
 static stmt *
 push_project(sql_allocator *sa, stmt *rows, stmt *val) 
 {
@@ -1936,12 +1940,12 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_joinN:
 	case st_outerjoin:
 	case st_derive:
+	case st_append:
 		return table_name(sa, st->op2);
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
 	case st_union:
-	case st_append:
 	case st_mark:
 	case st_gen_group:
 	case st_select:
@@ -2172,12 +2176,12 @@ stack_push_children( sql_stack *stk, stmt *s)
 		stack_push_list( stk, s->op4.lval);
 		break;
 	default:
-		if (s->op1)
-			stack_push_stmt(stk, s->op1, 1);
-		if (s->op2)
-			stack_push_stmt(stk, s->op2, 1);
 		if (s->op3)
 			stack_push_stmt(stk, s->op3, 1);
+		if (s->op2)
+			stack_push_stmt(stk, s->op2, 1);
+		if (s->op1)
+			stack_push_stmt(stk, s->op1, 1);
 	}
 }
 
