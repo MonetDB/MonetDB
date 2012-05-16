@@ -1673,9 +1673,14 @@ BBPdump(void)
 		if (b == NULL)
 			continue;
 		THRprintf(GDKstdout,
-			  "# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d status=%d count=" BUNFMT " "
-			  "Hheap=[" SZFMT "," SZFMT "] Hvheap=[" SZFMT "," SZFMT "] Hhash=[" SZFMT "," SZFMT "] "
-			  "Theap=[" SZFMT "," SZFMT "] Tvheap=[" SZFMT "," SZFMT "] Thash=[" SZFMT "," SZFMT "]\n",
+			  "# %d[%s,%s]: nme=['%s','%s'] refs=%d lrefs=%d "
+			  "status=%d count=" BUNFMT " "
+			  "Hheap=[" SZFMT "," SZFMT "] "
+			  "Hvheap=[" SZFMT "," SZFMT "] "
+			  "Hhash=[" SZFMT "," SZFMT "] "
+			  "Theap=[" SZFMT "," SZFMT "] "
+			  "Tvheap=[" SZFMT "," SZFMT "] "
+			  "Thash=[" SZFMT "," SZFMT "]\n",
 			  i,
 			  ATOMname(b->H->type),
 			  ATOMname(b->T->type),

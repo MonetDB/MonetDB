@@ -40,7 +40,6 @@ struct qsort_t {
 	 (buf->hs == 2 ? ((unsigned short *) b)[i] + GDK_VAROFFSET :	\
 	  ((var_t *) b)[i])))
 #endif
-#define VAL(i)		(buf->base ? OFF(b, (i)) : b + (i) * buf->hs)
 
 /* return index of middle value at indexes a, b, and c */
 #define MED3(a, b, c) (LT(a, b) ?					\
@@ -243,13 +242,15 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_any
+#define INITIALIZER	int z
 #define CMP(i, j)	(buf->base ?					\
 			 (*buf->cmp)(OFF(h, i),				\
 				     OFF(h, j)) :			\
 			 (*buf->cmp)(h + (i) * buf->hs,			\
 				     h + (j) * buf->hs))
-#define EQ(i, j)	(CMP(i, j) == 0)
-#define LE(i, j)	(CMP(i, j) <= 0)
+/* EQ is only ever called directly after LE with the same arguments */
+#define EQ(i, j)	(z == 0)
+#define LE(i, j)	((z = CMP(i, j)) <= 0)
 #define LT(i, j)	(CMP(i, j) < 0)
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
@@ -257,7 +258,7 @@ struct qsort_t {
 #undef LT
 
 #define GDKqsort_impl GDKqsort_impl_any_rev
-#define LE(i, j)	(CMP(i, j) >= 0)
+#define LE(i, j)	((z = CMP(i, j)) >= 0)
 #define LT(i, j)	(CMP(i, j) > 0)
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl

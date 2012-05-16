@@ -66,6 +66,9 @@ GDKqsort_impl(struct qsort_t *buf, char *h, char *t, size_t n)
 	size_t a, b, c, d;
 	size_t r;
 	int swap_cnt;
+#ifdef INITIALIZER
+	INITIALIZER;
+#endif
 
   loop:
 	if (n < 7) {
@@ -84,21 +87,22 @@ GDKqsort_impl(struct qsort_t *buf, char *h, char *t, size_t n)
 		/* for larger arrays, take the middle value from the
 		 * first, middle, and last */
 		a = 0;
-		r = n - 1;
+		c = n - 1;
 		if (n > 40) {
 			/* for even larger arrays, take the middle
 			 * value of three middle values */
 			d = n >> 3;
 			a = MED3(a, a + d, a + 2 * d);
 			b = MED3(b - d, b, b + d);
-			r = MED3(r - 2 * d, r - d, r);
+			c = MED3(c - 2 * d, c - d, c);
 		}
-		b = MED3(a, b, r);
+		b = MED3(a, b, c);
 	}
 	/* move pivot to start */
-	SWAP(0, b);
+	if (b != 0)
+		SWAP(0, b);
 
-	/* Bentley's and McIlroy's implementation of Dijkstra's Dutch
+	/* Bentley and McIlroy's implementation of Dijkstra's Dutch
 	 * National Flag Problem */
 	a = b = 1;
 	c = d = n - 1;
@@ -155,25 +159,39 @@ GDKqsort_impl(struct qsort_t *buf, char *h, char *t, size_t n)
 	multi_SWAP(b, n - r, r);
 	/* at this point we have:
 	 * b == c + 1
-	 * [0..b-a): values less than pivot
-	 * [b-a..n-(d-c)): values equal to pivot ((b-a)+(d-c) in total)
-	 * [n-(d-c)..n): values larger than pivot
+	 * [0..b-a): values less than pivot (to be sorted)
+	 * [b-a..n-(d-c)): values equal to pivot (in place)
+	 * [n-(d-c)..n): values larger than pivot (to be sorted)
 	 */
-	if ((r = b - a) > 1) {
-		/* sort values less than pivot */
-		GDKqsort_impl(buf, h, t, r);
-	}
-	if ((r = d - c) > 1) {
-		/* sort values greater than pivot */
-#if 0
-		GDKqsort_impl(buf, h + (n - r) * buf->hs, t && buf->ts ? t + (n - r) * buf->ts : NULL, r);
-#else
-		/* iterate rather than recurse */
-		h += (n - r) * buf->hs;
-		if (t && buf->ts)
-			t += (n - r) * buf->ts;
-		n = r;
-		goto loop;
-#endif
+
+	/* use recursion for smaller of the two subarrays, loop back
+	 * to start for larger of the two */
+	if (b - a < d - c) {
+		if ((r = b - a) > 1) {
+			/* sort values less than pivot */
+			GDKqsort_impl(buf, h, t, r);
+		}
+		if ((r = d - c) > 1) {
+			/* sort values greater than pivot
+			 * iterate rather than recurse */
+			h += (n - r) * buf->hs;
+			if (t && buf->ts)
+				t += (n - r) * buf->ts;
+			n = r;
+			goto loop;
+		}
+	} else {
+		if ((r = d - c) > 1) {
+			/* sort values greater than pivot */
+			GDKqsort_impl(buf, h + (n - r) * buf->hs,
+				      t ? t + (n - r) * buf->ts : NULL,
+				      r);
+		}
+		if ((r = b - a) > 1) {
+			/* sort values less than pivot
+			 * iterate rather than recurse */
+			n = r;
+			goto loop;
+		}
 	}
 }

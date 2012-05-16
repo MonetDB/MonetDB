@@ -26,11 +26,6 @@
 # include <sys/times.h>
 #endif
 
-#if defined(SOLARIS) && defined(OSVER) && OSVER < 560
-# include "/usr/ucbinclude/sys/rusage.h"
-# include "/usr/ucbinclude/sys/resource.h"
-#endif
-
 #ifdef HAVE_SYS_RESOURCE_H
 # include <sys/resource.h>
 typedef struct rusage Rusage;
