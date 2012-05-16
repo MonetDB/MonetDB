@@ -44,30 +44,41 @@ All Rights Reserved.
  *  ...
  *  v3 := sql.bind(..., schema_name, meta_table_name, "file_location", 0);
  *  ...
- *  v5 := algebra.leftjoin(v2, v3);
+ *  v4 := algebra.leftjoin(v2, v3);
+ *  .
+ *  .
+ *  .
+ *  v6 := algebra.leftjoin(v5, v4);
  *  ...
- *  v6 := sql.bind(..., schema_name, data_table_name, ..., ...);
+ *  v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
  *  ...
- * WHERE the same pattern does not occur between assignments of v5 and v6. 
- * Namely, the subpattern of v3 and v5 should not occur in '...' before v6.
+ * 
+ * WHERE the same pattern does not occur between assignments of v6 and v7. 
+ * Namely, the subpattern of v3, v4, ..., v6 should not occur in '...' before v7.
+ * (Note that from v4 to v6 always the similar leftjoin pattern occurs.)
  * 
  * And transforms them into
  * 
  *  ...
  *  v3 := sql.bind(..., schema_name, meta_table_name, "file_location", 0);
  *  ...
- *  v5 := algebra.leftjoin(v2, v3);
- *  dvf.plan_modifier(schema_name, v5);
+ *  v4 := algebra.leftjoin(v2, v3);
+ *  .
+ *  .
+ *  .
+ *  v6 := algebra.leftjoin(v5, v4);
+ *  dvf.plan_modifier(schema_name, v6);
  *  ...
- *  v6 := sql.bind(..., schema_name, data_table_name, ..., ...);
+ *  v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
  *  ...
- * 
+ *  
  * The optimizer looks for this pattern because v2 is supposed to have the oids
- * of meta_table_name with all the selections on all meta_tables are applied 
- * (it is all selections because of the WHERE clause). Then v5 is supposed to 
- * provide the required file_locations. Line with v6 is there, because the 
- * required file_locations should be collected before the first bind to a 
- * data_table happens.
+ * of meta_table_name with all the selections on that meta_table_name are applied 
+ * (it is all selections because of the WHERE clause) and v5 is supposed to have
+ * the oids of (an)other meta_table_name with all the selections on that 
+ * meta_table_name are applied. Then v6 is supposed to provide the required
+ * file_locations. Line with v7 is there, because the required file_locations
+ * should be collected before the first bind to a data_table happens.
  * 
  * 
  * WARNING: This optimizer should run without the dataflow optimizations!
@@ -166,7 +177,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			state = 1;
 		}
 		/* check for
-		 * v5 := algebra.leftjoin(v2, v3);
+		 * v4 := algebra.leftjoin(v2, v3);
 		 */
 		else if((state == 1 || state == 2) &&
 			getModuleId(p) == algebraRef &&
@@ -177,9 +188,32 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		{
 			i2 = i;
 			state = 2;
+			
+			/* check for
+			 * v6 := algebra.leftjoin(v5, v4); 
+			 * or series thereof.
+			 */
+			for(i = i+1; i < limit; i++)
+			{
+				p = old[i];
+				
+				if(getModuleId(p) == algebraRef &&
+					getFunctionId(p) == leftjoinRef &&
+					p->argc == 3 &&
+					p->retc == 1 &&
+					getArg(p, 2) == getArg(old[i2], 0))
+				{
+					i2 = i;
+				}
+				else
+				{
+					i = i-1;
+					break;
+				}
+			}
 		}
 		/* check for
-		 * v6 := sql.bind(..., schema_name, data_table_name, ..., ...);
+		 * v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
 		 */
 		else if((state == 1 || state == 2) &&
 			getModuleId(p) == sqlRef && 
