@@ -108,7 +108,9 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	num_fl = BAT_fl->U->count;
 	
-	// TODO when num_fl is 0.
+	// when number of files to be mounted is 0.
+	if(num_fl == 0)
+		goto finish;
 	
 	/* prepare to keep the potential mount instructions */
 	mounts = (InstrPtr*)GDKmalloc(num_fl*sizeof(InstrPtr));
@@ -409,7 +411,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	freeMalBlk(mb);
 	if(is_stack_new)
 		freeStack(stk_new);
-		
+
+finish:
 	/* for statistics we print if/how many patches have been made */
 	DEBUGoptimizers
 	printf("#dvf.plan_modifier: %d actions\n", actions);
