@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.9.4
+%define version 11.9.6
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -631,6 +631,17 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed May 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.5-20120516
+- Rebuilt.
+
+* Tue May 15 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.5-20120516
+- merovingian: Fixed a bug where connecting to a stopped multiplex-funnel would result
+  in a 'there are no available connections' error.
+
+* Tue May 15 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.5-20120516
+- sql: Databases that were upgraded from the Aug2011 release have an error
+  in the catalog for SQL procedures.  This is now fixed.
+
 * Mon May 14 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.3-20120514
 - Rebuilt.
 

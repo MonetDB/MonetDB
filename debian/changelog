@@ -1,3 +1,23 @@
+monetdb (11.9.5-20120516) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Wed, 16 May 2012 10:07:19 +0200
+
+monetdb (11.9.5-20120516) unstable; urgency=low
+
+  * merovingian: Fixed a bug where connecting to a stopped multiplex-funnel would result
+    in a 'there are no available connections' error.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 15 May 2012 10:07:19 +0200
+
+monetdb (11.9.5-20120516) unstable; urgency=low
+
+  * sql: Databases that were upgraded from the Aug2011 release have an error
+    in the catalog for SQL procedures.  This is now fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 15 May 2012 10:07:19 +0200
+
 monetdb (11.9.3-20120514) unstable; urgency=low
 
   * Rebuilt.
