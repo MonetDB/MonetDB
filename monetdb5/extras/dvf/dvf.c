@@ -195,7 +195,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					high.value.val.oval += 1;
 					
 					// copy the value of constant string from stack. Otherwise cannot reach the actual value
-					VALcopy(&stk->stk[q->argv[NUM_RET_MOUNT]], &getVarConstant(mb, getArg(q, NUM_RET_MOUNT)));
+// 					VALcopy(&stk->stk[q->argv[NUM_RET_MOUNT]], &getVarConstant(mb, getArg(q, NUM_RET_MOUNT)));
 					
 					mounts[which_fl] = q;
 					which_fl++;
@@ -349,12 +349,28 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rhs = &getVarConstant(mb, j);
 				VALcopy(lhs, rhs);
 			}
-		} else if (j > old_vtop) {
-			lhs->vtype = getVarGDKType(mb, j);
-			lhs->val.pval = 0;
-			lhs->len = 0;
+		} 
+		else 
+		{ 
+			if (j > old_vtop) 
+			{
+				lhs->vtype = getVarGDKType(mb, j);
+				lhs->val.pval = 0;
+				lhs->len = 0;
+			}	
+			else if(j > stk->stksize)
+			{
+				rhs = getVarValue(mb, j);
+				VALcopy(lhs, rhs);
+			}
+			else
+			{
+				rhs = &stk->stk[j];
+				VALcopy(lhs, rhs);
+			}
 		}
 	}
+	stk_new->blk = mb;
 	
 	// adjust variable lifetimes
 	malGarbageCollector(mb);
@@ -367,6 +383,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 // 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN);
 	
+	msg = msg;
 	// run rest of the plan
 	msg = runMALsequence(cntxt, mb, startpc+1, mb->stop, stk_new, stk_new, mb->stmt[startpc]);
 	
