@@ -43,7 +43,7 @@ Ready.
 #ORDER BY "TABLE_TYPE",
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-% char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+% any,	varchar,	varchar,	char,	char,	any,	any,	any,	char,	char # type
 % 0,	0,	0,	12,	0,	0,	0,	0,	2,	6 # length
 
 # 11:50:19 >  

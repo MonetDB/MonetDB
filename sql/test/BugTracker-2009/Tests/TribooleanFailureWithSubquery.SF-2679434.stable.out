@@ -48,22 +48,22 @@ Ready.
 
 % .sub3,	.sub3 # table_name
 % suma,	mynull # name
-% bigint,	char # type
+% bigint,	any # type
 % 1,	0 # length
 
 % .sub3,	.sub3 # table_name
 % suma,	mynull # name
-% bigint,	char # type
+% bigint,	any # type
 % 1,	0 # length
 
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	any # type
 % 1,	0 # length
 
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	any # type
 % 1,	0 # length
 [ 1	]
 

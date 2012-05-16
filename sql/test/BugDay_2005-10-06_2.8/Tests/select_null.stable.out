@@ -20,12 +20,12 @@ Ready.
 
 % . # table_name
 % single_value # name
-% char # type
+% any # type
 % 0 # length
 [ NULL	]
 % . # table_name
 % v # name
-% char # type
+% any # type
 % 0 # length
 [ NULL	]
 [ 1	]
