@@ -1863,6 +1863,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if (!b->tkey && BATcount(b) > 1 &&
 	    BATtordered(b)&1 && 
 	    ATOMtype(b->htype) == TYPE_oid && 
+	    b->htype > TYPE_void &&
 	    b->ttype < TYPE_str) {
 		switch(tailtype(b,TRUE)) {
 		case TYPE_bte:

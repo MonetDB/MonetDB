@@ -2647,7 +2647,7 @@ null:
 
 	  if (m->emode == m_normal && m->caching) {
 		/* replace by argument */
-		atom *a = atom_general(SA, sql_bind_localtype("str"), NULL);
+		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
 		sql_add_arg( m, a);
 		$$ = _symbol_create_list( SQL_COLUMN,

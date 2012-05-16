@@ -89,7 +89,7 @@ int bits2digits(int bits)
 /* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
 /* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
 /* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
@@ -287,25 +287,6 @@ sql_bind_localtype(char *name)
 	assert(0);
 	return NULL;
 }
-
-#if 0
-sql_type *
-sql_bind_type(char *name)
-{
-	node *n = types->h;
-
-	while (n) {
-		sql_type *t = n->data;
-
-		if (strcmp(t->base.name, name) == 0) {
-			return t;
-		}
-		n = n->next;
-	}
-	assert(0);
-	return NULL;
-}
-#endif
 
 int
 type_cmp(sql_type *t1, sql_type *t2)
@@ -1165,7 +1146,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *ANY, *TABLE;
 	sql_func *f;
 
-	ANY = sql_create_type(sa, "ANY", 0, 0, 0, EC_ANY, "any");
+	ANY = sql_create_type(sa, "ANY", 0, 0, 0, EC_ANY, "void");
 
 	t = ts;
 	TABLE = *t++ = sql_create_type(sa, "TABLE", 0, 0, 0, EC_TABLE, "bat");
