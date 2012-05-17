@@ -47,7 +47,7 @@ Ready.
 #ORDER BY "COLUMN_N
 % .,	.schemas,	.tables,	.objects,	.keys,	.keys # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	COLUMN_NAME,	KEY_SEQ,	PK_NAME # name
-% any,	varchar,	varchar,	varchar,	int,	varchar # type
+% char,	varchar,	varchar,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0 # length
 
 # 11:50:39 >  

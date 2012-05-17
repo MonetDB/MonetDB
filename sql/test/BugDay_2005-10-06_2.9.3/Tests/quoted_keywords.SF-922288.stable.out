@@ -28,7 +28,7 @@ Ready.
 [ 3,	4	]
 % .,	sys.tab # table_name
 % test,	nullable # name
-% any,	int # type
+% char,	int # type
 % 0,	1 # length
 [ NULL,	2	]
 [ NULL,	4	]

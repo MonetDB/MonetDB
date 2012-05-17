@@ -27,7 +27,7 @@ Ready.
 
 % . # table_name
 % isnull_=_single_value # name
-% any # type
+% char # type
 % 0 # length
 [ NULL	]
 
