@@ -79,25 +79,6 @@ typedef	struct{
 	ValRecord bounds[MAXSITES];
 } Slices;
 
-/* Glue the groups together, propagating the extension oids */
-/* assume you trigger on the 'grp' */
-static void
-OPTglueGroup(MalBlkPtr mb, InstrPtr pci)
-{
-	int ext, grp, i,j;
-	InstrPtr p;
-
-	for (i = 0; i < mb->stop; i++) {
-		p= getInstrPtr(mb,i);
-		if ( 	sscanf(getVarName(mb, getArg(p,i)),"ext%d", &ext) == 1 &&
-			sscanf(getVarName(mb, getArg(pci,i)),"grp%d",&grp) == 1 &&
-			ext == grp){
-			/* correct the components */
-			for ( j = pci->retc; j < pci->argc; j++){
-			}
-		}
-	}
-}
 /*
  * The query will be controlled from the coordinator with a plan
  * geared at parallel execution 
@@ -130,6 +111,7 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 		return 0;
 	nrpack= getInstrPtr(pmb,0)->retc;
 	pack = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * nrpack);
+
 	pushInstruction(cmb, copyInstruction(pmb->stmt[0]));
 	getFunctionId( getInstrPtr(cmb,0)) = putName(nme,strlen(nme));
 	insertSymbol(cntxt->nspace,s);
@@ -208,9 +190,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 		q->token = ASSIGNsymbol;
 		q->barrier = 0;
 		q->argc -= 2; /* remove the bounds */
-		for ( k=0 ; k < q->retc; k++) {
-			getArg(q,k) = newTmpVariable(cmb, getArgType(pmb,q,k));
-			pack[k] = pushArgument(cmb,pack[k], getArg(q,k));
+		for ( j=0 ; j < q->retc; j++) {
+			getArg(q,j) = newTmpVariable(cmb, getVarType(pmb,getArg(q,j)));
+			pack[j] = pushArgument(cmb, pack[j], getArg(q,j));
 		}
 
 		if ( slices->column){
@@ -234,11 +216,41 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	p = getInstrPtr(pmb,0);
 	if ( slices->column) 
 	for ( k=0 ; k < nrpack; k++) 
-	if ( strncmp(getVarName(cmb, getArg(pack[k],0)),"grp",3) == 0){
-		OPTglueGroup(cmb, pack[k]);
-		/* take care of grp targets */
+	/* after packing we may have to re-do groupings*/
+	if (sscanf(getVarName(pmb, getArg(p,k)),"ext%d",&j) == 1){
+		/* x:= mat.pack(...);  */
+		getArg(pack[k],0) = newTmpVariable(cmb,TYPE_any);
 		pushInstruction(cmb, pack[k]);
-		getArg(pack[k],0)= getArg(p,k);
+
+		/* (ext,grp) := group.new(pack[k]) */
+		q= newStmt(cmb, groupRef, newRef);
+		q->retc = q->argc = 0;
+		q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
+		q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_oid)));
+		q= pushArgument(pmb,q, getArg(pack[k],0));
+		j = getArg(q,0);
+
+		/* sum the group counts */
+
+		/* j := newresult */
+		q= newAssignment(cmb);
+		getArg(q,0) = getArg(p,k);
+		q= pushArgument(cmb,q, j);
+	} else
+	if (sscanf(getVarName(pmb, getArg(p,k)),"grp%dvalues",&j) == 1){
+		char buf[BUFSIZ];
+		/* x:= mat.pack(...);  */
+		pushInstruction(cmb, pack[k]);
+
+		/* (ext,grp) := group.new(pack[k]) */
+		q= newStmt(cmb, groupRef, newRef);
+		q->retc = q->argc = 0;
+		q= pushReturn(cmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
+		q= pushReturn(cmb,q, getArg(p,k));
+		q= pushArgument(cmb,q, getArg(pack[k],0));
+		snprintf(buf,BUFSIZ,"grp%d",k);
+		setVarName(cmb, getArg(p,k), GDKstrdup(buf));
+		setVarType(cmb, getArg(p,k), newBatType(TYPE_oid, TYPE_oid));
 	} else
 	{
 		pushInstruction(cmb, pack[k]);
@@ -264,6 +276,9 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	getInstrPtr(cmb,0)->argc -= 2;
 
 	pushEndInstruction(cmb);
+
+	optimizeMALBlock(cntxt, cmb);
+	chkProgram(cntxt->fdout, cntxt->nspace, cmb);
 	GDKfree(alias);
 	GDKfree(pack);
 
@@ -447,7 +462,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 {
 	int *status,*vars;
 	int i, j, k, limit, last;
-	InstrPtr ret, call, p = NULL, *old;
+	InstrPtr ret, orig, call, p = NULL, *old;
 	Symbol s;
 	MalBlkPtr plan, cntrl, stub;
 	str msg= MAL_SUCCEED;
@@ -490,6 +505,8 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 #else
 	(void) slices;
 #endif
+#define OIDS 1
+#define VALS 2
 
 	/* Phase 1: determine all variables/instructions indirectly dependent on a fragmented column */
 	last = limit;
@@ -506,90 +523,64 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			strcmp(slices->schema, getVarConstant(mb, getArg(p,2)).val.sval) == 0 &&
 			strcmp(slices->table, getVarConstant(mb, getArg(p,3)).val.sval) == 0 ) {
 			status[i] = PARTITION;
-			head[getArg(p,0)] = 1;
-			tail[getArg(p,0)] = 0;
+			head[getArg(p,0)] = OIDS;
+			tail[getArg(p,0)] = VALS;
 		} 
 
 		/* blocking instructions are those that require data exchange, aggregation or total view */
-		if (    getModuleId(p) == algebraRef && getFunctionId(p) == joinRef ) {
-			/* be aware that supportive subqueries may produce pivot sets */
-			/* this means we have to enforce the following */
-			if ( vars[getArg(p,1)] == PARTITION && vars[getArg(p,2)] != PARTITION  ) {
+		if (    getModuleId(p) == algebraRef && (getFunctionId(p) == joinRef || getFunctionId(p) == leftjoinRef) ) {
+			if ( head[getArg(p,1)] ){
 				status[i] = PARTITION;
 				head[getArg(p,0)] = 1;
-			} else
-			if ( vars[getArg(p,1)] == PARTITION && vars[getArg(p,2)] == PARTITION  ) {
-				if (tail[getArg(p,1)] == 1 ) {
-					status[i] = PARTITION;
-					tail[getArg(p,0)] = tail[getArg(p,2)];
-				} else 	status[i] = BLOCKED;
+			} 
+			if ( tail[getArg(p,2)] ){
+				status[i] = PARTITION;
+				tail[getArg(p,0)] = tail[getArg(p,2)];
 			}
 		} else
-		if (    getModuleId(p) == algebraRef && getFunctionId(p) == leftjoinRef ) {
-			head[getArg(p,0)] = head[getArg(p,1)];
-			tail[getArg(p,0)] = tail[getArg(p,1)];
-			if ( head[getArg(p,0)] + tail[getArg(p,0)])
-				status[i] = PARTITION;
-		} else
 		if (    getModuleId(p) == algebraRef && (getFunctionId(p)== thetauselectRef  || getFunctionId(p) == uselectRef || getFunctionId(p) == selectRef ) )  {
-			if (vars[getArg(p,p->retc)] == PARTITION ) {
+			if (head[getArg(p,p->retc)] ) {
 				head[getArg(p,0)] = 1;
+				tail[getArg(p,0)] = 2;
 				status[i] = PARTITION;
 			} 
 		} else
-		if (    getModuleId(p) == algebraRef && getFunctionId(p) == kdifferenceRef )  {
+		if (    getModuleId(p) == algebraRef && (getFunctionId(p) == kdifferenceRef || getFunctionId(p) == kunionRef) )  {
 			/* kdifference can be pushed if the second argument is a partition variable */
-			if (vars[getArg(p,2)] == PARTITION ){
+			if (head[getArg(p,1)] + tail[getArg(p,1)] ){
 				head[getArg(p,0)] = head[getArg(p,1)];
 				tail[getArg(p,0)] = tail[getArg(p,1)];
 				status[i] = PARTITION;
 			}
 		} else
-		if (    getModuleId(p) == algebraRef && getFunctionId(p) == kunionRef )  {
-			/* kunion can always be pushed when either argument is partition */
-			head[getArg(p,0)] = head[getArg(p,1)];
-			tail[getArg(p,0)] = tail[getArg(p,1)];
-			if ( head[getArg(p,0)] + tail[getArg(p,0)])
-				status[i] = PARTITION;
-		} else
 		if (    getModuleId(p) == algebraRef && getFunctionId(p)==markTRef )  {
-			if (vars[getArg(p,p->retc)] == PARTITION ){
+			if (head[getArg(p,1)] ){
+				head[getArg(p,0)] = head[getArg(p,1)];
+				status[i] = PARTITION;
+			}
+		} else
+		if (    getModuleId(p) == algebraRef && (getFunctionId(p)==markHRef || getFunctionId(p) == sortTailRef) )  {
+			if (tail[getArg(p,1)] ){
+				tail[getArg(p,0)] = tail[getArg(p,1)];
+				status[i] = PARTITION;
+			}
+		} else
+		if (    getModuleId(p) == batRef && getFunctionId(p) == mirrorRef )  {
+			if (head[getArg(p,1)]){
 				head[getArg(p,0)] = 1;
-				status[i] = PARTITION;
-			}
-		} else
-		if (    getModuleId(p) == algebraRef && getFunctionId(p)==markHRef )  {
-			if (vars[getArg(p,p->retc)] == PARTITION ){
-				tail[getArg(p,0)] = 1;
-				status[i] = PARTITION;
-			}
-		} else
-		if (    getModuleId(p) == algebraRef && getFunctionId(p) == sortTailRef )  {
-			if (tail[getArg(p,1)]){
-				tail[getArg(p,0)] = 1;
-				status[i] = PARTITION;
-			}
-		} else
-		if (    getModuleId(p) == batRef && (getFunctionId(p) == mirrorRef || getFunctionId(p) == reverseRef) )  {
-			if (vars[getArg(p,p->retc)] == PARTITION ){
 				tail[getArg(p,0)] = 1;
 				status[i] = PARTITION;
 			}
 		} else
 		if (    getModuleId(p) == batRef && getFunctionId(p)==reverseRef )  {
-			if (vars[getArg(p,p->retc)] == PARTITION ){
+			if (head[getArg(p,1)]  || tail[getArg(p,1)] ){
 				head[getArg(p,0)] = tail[getArg(p,p->retc)];
 				tail[getArg(p,0)] = head[getArg(p,p->retc)];
 				status[i] = PARTITION;
 			}
 		} else
-		if ( getModuleId(p) == algebraRef && (getFunctionId(p)==sortRef || getFunctionId(p)==sortTailRef))  {
-			/* this is always blocking */
-			if (vars[getArg(p,p->retc)] == PARTITION )
-				status[i]= BLOCKED;
-		} else
 		if ( getModuleId(p) == groupRef && ( getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef) ){
-			if ( vars[getArg(p, p->retc)] == PARTITION )
+			if ( head[getArg(p, p->retc)] ){
 				/* groups against the partition column is allowed.
 				   It calls for a proper group reconstruction at the receiver 
 				*/
@@ -598,12 +589,16 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				head[getArg(p,1)] = 1;
 				tail[getArg(p,1)] = 1;
 				status[i] = PARTITION;
+			}
 		}else 
-		if ( getModuleId(p) == groupRef && (getFunctionId(p) == pqueueRef || getFunctionId(p) == aggrRef )) 
-			status[i] = BLOCKED;
-		else 
-		if (    (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) ) )  ||
-				getModuleId(p) == ioRef )
+		if ( getModuleId(p) == groupRef && getFunctionId(p) == refineRef ) {
+			if ( head[getArg(p, p->retc)] ){
+				head[getArg(p,0)] = head[getArg(p,1)];
+				tail[getArg(p,0)] = 1;
+				status[i] = PARTITION;
+			}
+		}else 
+		if (    (getModuleId(p) == sqlRef && (getFunctionId(p) == resultSetRef || getFunctionId(p) == putName("exportValue",11) ) )  || getModuleId(p) == ioRef )
 			status[i] = BLOCKED;
 		else 
 		if ( getModuleId(p) == batcalcRef ){
@@ -611,18 +606,28 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				status[i]= PARTITION;
 				head[getArg(p,0)] = head[getArg(p,1)];
 				tail[getArg(p,0)] = tail[getArg(p,1)];
+				status[i] = PARTITION;
 			}
 			if ( p->argc == 3 /* binaries */ && (vars[getArg(p,1)] == PARTITION || vars[getArg(p,2)] == PARTITION)) {
 				status[i]= PARTITION;
 				head[getArg(p,0)] = head[getArg(p,1)];
 				tail[getArg(p,0)] = tail[getArg(p,1)];
+				status[i] = PARTITION;
 			}
-		} 
+		} else 
+		if ( getModuleId(p) == aggrRef ) 
+			status[i] = BLOCKED;
+
 		for( j = p->retc; j < p->argc; j++)
 		if (vars[getArg(p,j)] == BLOCKED ) 
 			break;
 		if ( j != p->argc && p->argc - p->retc > 0 )
 			status[i]= BLOCKED;
+
+		if ( status[i] != BLOCKED)
+		for( j = p->retc; j < p->argc; j++)
+		if (vars[getArg(p,j)] == PARTITION ) 
+			status[i]= PARTITION;
 
 		for ( j= 0; j< p->retc; j++)
 		if (vars[getArg(p,j)] == 0)
@@ -634,11 +639,14 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 			vars[getArg(p,j)] = SUPPORTIVE;
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
-	mnstr_printf(cntxt->fdout,"\n#phase 1\n");
+	mnstr_printf(cntxt->fdout,"\n#phase 1 show partition keys\n");
 	for( i= 0; i< limit; i++)
 	if (status[i] ) {
-		int x = old[i]->argv[0];
-		mnstr_printf(cntxt->fdout,"%s %d %s %c%c ",statusname[status[i]], x, statusname[vars[x]], head[x]+'0', tail[x]+'0');
+		mnstr_printf(cntxt->fdout,"%s ",statusname[status[i]]);
+		for (j=0; j< old[i]->retc; j++){
+			int x = old[i]->argv[j];
+			mnstr_printf(cntxt->fdout,"[%d]%d %c%c ",x,vars[x], head[x]+'0', tail[x]+'0');
+		}
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -680,11 +688,14 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		}
 	}
 #ifdef _DEBUG_OPT_CENTIPEDE_ 
-	mnstr_printf(cntxt->fdout,"\n#phase 2\n");
+	mnstr_printf(cntxt->fdout,"\n#phase 2 show partition keys\n");
 	for( i= 0; i< limit; i++)
 	if (status[i] ) {
-		int x = old[i]->argv[0];
-		mnstr_printf(cntxt->fdout,"%s %s %c%c ",statusname[status[i]], statusname[vars[x]], head[x]+'0', tail[x]+'0');
+		mnstr_printf(cntxt->fdout,"%s ",statusname[status[i]]);
+		for (j=0; j< old[i]->retc; j++){
+			int x = old[i]->argv[j];
+			mnstr_printf(cntxt->fdout,"[%d]%d %c%c ",x,vars[x], head[x]+'0', tail[x]+'0');
+		}
 		if( old[i])
 			printInstruction(cntxt->fdout, mb,0,old[i],LIST_MAL_STMT);
 	}
@@ -707,6 +718,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				 (getModuleId(p) == batRef && (getFunctionId(p) == reverseRef || getFunctionId(p) == mirrorRef )) )
 				continue;
 			*/
+			/* don't return the same variable twice */
 			for ( k = 0; k < ret->retc; k++)
 			if (getArg(ret,k) == getArg(p,j))
 				break;
@@ -722,29 +734,37 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	/* Phase 4: Bake a new function that produces them */
 
 	p = copyInstruction(getInstrPtr(mb, 0));
-	getModuleId(p) = userRef;
 	pushInstruction(plan,p);
 
+
+	/* keep the original variable list for the caller */
+	orig = copyInstruction(ret);
 	for ( i = 1; i < limit ; i++) 
 	if( status[i] == PARTITION || status[i] == SUPPORTIVE ) {
 		p = copyInstruction(getInstrPtr(mb, i));
-		if ( old[i]->barrier == RETURNsymbol) {
-			/* convert back the grouped variables */
-			int ext,grp;
-			for ( k = 0; k < p->retc ; k++)
-			if (sscanf(getVarName(plan, getArg(p,k)),"ext%d",&ext) == 1){
-			} else
-			if (sscanf(getVarName(plan, getArg(p,k)),"grp%d",&grp) == 1){
-			} 
-				pushInstruction(plan,p);
-		} else
 		if ( old[i]->token == ENDsymbol) {
 			getFunctionId(plan->stmt[0]) = putName(nme,strlen(nme));
 			/* fix the return statement to become a complete assignment */
 			ret->retc= ret->argc;
 			ret->token= ASSIGNsymbol;
-			for( j= 0; j< ret->retc; j++)
+			for( j= 0; j< ret->retc; j++) {
+				if (sscanf(getVarName(plan, getArg(ret,j)),"grp%d",&k) == 1){
+					char buf[BUFSIZ];
+					InstrPtr q;
+					/* grp := algebra.join(ret,src) */
+					q = newStmt(plan, algebraRef, joinRef);
+					snprintf(buf,BUFSIZ,"grp%dvalues",k);
+					setVarName(plan, getArg(q,0), GDKstrdup(buf));
+					setVarUDFtype(plan,getArg(q,0));
+					q = pushArgument(plan, q, getArg(ret,j));
+					snprintf(buf,BUFSIZ,"src%d",k);
+					k = findVariable(plan, buf);
+					q = pushArgument(plan,q,k);
+					setVarType(plan, getArg(q,0), newBatType(TYPE_oid, getTailType(getVarType(plan,k))));
+					getArg(ret,j) = getArg(q,0);
+				} 
 				ret= pushArgument(plan,ret,getArg(ret,j));
+			}
 			pushInstruction(plan,ret);
 			pushEndInstruction(plan);
 		} else
@@ -759,19 +779,21 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 		delArgument(plan->stmt[0],0);
 	for( i =0; i< ret->retc; i++) {
 		plan->stmt[0]= pushReturn(plan, plan->stmt[0], getArg(ret,i));
+/*
 		for( j = 0; j< mb->stop; j++) {
 			p = getInstrPtr(mb,j);
 			for ( k = 0; k< p->retc; k++)
 			if( getArg(p,k) == getArg(ret,i))
 				getArg(p,k) = newTmpVariable(mb, getArgType(mb,p,k));
 		}
+*/
 	}
 
 	insertSymbol(cntxt->nspace,s);
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	mnstr_printf(cntxt->fdout,"#original plan \n");
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
-	mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", plan->errors);
+	//mnstr_printf(cntxt->fdout,"#rough plan errors %d \n", plan->errors);
 	//printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
 #endif
 
@@ -792,10 +814,24 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 	call->argc -= 2; /* bounds are removed */
 	getFunctionId(call) = getFunctionId(getInstrPtr(cntrl,0));
 	insertInstruction(mb,call, 1);
+	/* fix the signature and modify the underlying plan */
+	while ( call->retc )
+		delArgument(call,0);
+	for( i =0; i< orig->retc; i++) {
+		call= pushReturn(mb, call, getArg(orig,i));
+		/* in the underlying plan we can remove all assignments handled by the cntrl() */
+		for( j = 2; j < mb->stop; j++){
+			InstrPtr q= getInstrPtr(mb,j);
+			for( k=0; k< q->retc; k++)
+			if ( getArg(q,k) == getArg(orig,i))
+				getArg(q,k) = newTmpVariable(mb,TYPE_any);
+		}
+	}
 
-#ifdef _DEBUG_OPT_DEBUG
-	mnstr_printf(cntxt->fdout,"#non-optimized remote plan error %d %s\n", plan->errors, msg?msg:"");
-	printFunction(cntxt->fdout, plan, 0, LIST_MAL_STMT);
+#ifdef _DEBUG_OPT_DETAIL
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	mnstr_printf(cntxt->fdout,"#non-optimized main error %d %s\n", mb->errors, msg?msg:"");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 #ifdef _DEBUG_OPT_CENTIPEDE_
 	msg= optimizeMALBlock(cntxt, plan);
@@ -833,7 +869,6 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr q, target= 0;
 	Slices slices;
 	str msg = NULL;
-	MalBlkPtr  oldmb;
 
 	(void)cntxt;
 	(void) stk;
@@ -845,8 +880,11 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if ( nrservers == 0)
 		nrservers = 2; /* to ease debugging now */
 
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"#original plan \n");
+	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 	/* modify the block as we go */
-	oldmb= copyMalBlk(mb);
 	memset( (char*) &slices, 0, sizeof(slices));
 	/* locate the largest non-partitioned table */
 	/* Much more intelligence can be injected here */
@@ -888,8 +926,9 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	/* derive a local plan based on forward flow reasoning */
 	OPTbakePlans(cntxt, mb, &slices);
-#ifdef DEBUG_OPT_DETAIL
-	mnstr_printf(cntxt->fdout,"#orig BEFORE optimizer test\n");
+#ifdef _DEBUG_OPT_CENTIPEDE_
+	mnstr_printf(cntxt->fdout,"non-optimized final main plan: %d errors\n",mb->errors);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
 #endif
 	msg= optimizeMALBlock(cntxt, mb);
@@ -908,8 +947,9 @@ OPTcentipedeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (msg || mb->errors ) {
 		/* restore MAL block */
 		mnstr_printf(cntxt->fdout,"#partition %s\n", msg?msg:"generic error");
-		/* freeMalBlk(mb);*/
-		*mb = *oldmb;
+#ifdef _DEBUG_OPT_CENTIPEDE_
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT);
+#endif
 		return 0;
 	}
 	return 1;
