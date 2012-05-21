@@ -327,7 +327,7 @@ EOF
 done
 
 for func in min min_no_nil max max_no_nil; do
-    if [[ $func = *_no_nil ]]; then
+    if [[ $func == *_no_nil ]]; then
 	com=", ignoring nil values"
     else
 	com=
