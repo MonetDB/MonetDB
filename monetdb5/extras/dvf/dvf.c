@@ -106,6 +106,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		      "tail-type of input BAT must be TYPE_str");
 	}
 	
+	BBPincref(bat_fl, TRUE);
+	
 	num_fl = BAT_fl->U->count;
 	
 	// when number of files to be mounted is 0.
@@ -147,7 +149,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // 			save_pci = copyInstruction(old[i]);
 		}
 		/* check for
-		 * v6 := sql.bind(..., schema_name, data_table_name, ..., ...);
+		 * v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
 		 */
 		else if(getModuleId(p) == sqlRef && 
 			getFunctionId(p) == bindRef &&

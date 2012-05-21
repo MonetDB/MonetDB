@@ -67,7 +67,10 @@ All Rights Reserved.
  *  .
  *  .
  *  v6 := algebra.leftjoin(v5, v4);
- *  dvf.plan_modifier(schema_name, v6);
+ *  (t1, t2) := group.done(v6); 
+ *  t3 := bat.mirror(t1);
+ *  t4 := algebra.leftjoin(t3, v6);
+ *  dvf.plan_modifier(schema_name, t4);
  *  ...
  *  v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
  *  ...
@@ -79,6 +82,9 @@ All Rights Reserved.
  * meta_table_name are applied. Then v6 is supposed to provide the required
  * file_locations. Line with v7 is there, because the required file_locations
  * should be collected before the first bind to a data_table happens.
+ * 
+ * The first 3 lines directly after assignment to v6 are to get the distinct
+ * file_locations. 
  * 
  * 
  * WARNING: This optimizer should run without the dataflow optimizations!
@@ -144,7 +150,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//state variables (instruction index) numbered with state
 	int i1, i2;
 	
-	InstrPtr *old = NULL, q = NULL;
+	InstrPtr *old = NULL, q = NULL, r = NULL, s = NULL, t = NULL;
 	int i, limit, actions = 0;
 	
 	stk = stk; //to escape 'unused' parameter error.
@@ -233,6 +239,36 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					//throw(MAL,"optimizer.DVframework", "Schema of %s vault is not well-organized.\n", getVarConstant(mb, getArg(p, 2)).val.sval);
 				case 2:
 					// pattern found! What to do
+					/* (t1, t2) := group.done(v6); 
+					 *  t3 := bat.mirror(t1);
+					 *  t4 := algebra.leftjoin(t3, v6);
+					 *  dvf.plan_modifier(schema_name, t4);
+					 */
+					
+					// create group.done instruction
+					r = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(r, groupRef);
+					setFunctionId(r, doneRef);
+					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
+					r = pushReturn(mb, r, newTmpVariable(mb, TYPE_bat));
+					r = pushArgument(mb, r, getArg(old[i2], 0));
+					
+					
+					// create bat.mirror instruction
+					s = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(s, batRef);
+					setFunctionId(s, mirrorRef);
+					s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
+					s = pushArgument(mb, s, getArg(r, 0));
+					
+					// create algebra.leftjoin instruction
+					t = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(t, algebraRef);
+					setFunctionId(t, leftjoinRef);
+					t = pushReturn(mb, t, newTmpVariable(mb, TYPE_bat));
+					t = pushArgument(mb, t, getArg(s, 0));
+					t = pushArgument(mb, t, getArg(old[i2], 0));
+					
 					// create dvf.plan_modifier instruction
 					q = newInstruction(mb, ASSIGNsymbol);
 					q->argc = 3;
@@ -242,10 +278,13 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 					getArg(q, 1) = getArg(p, 2);
 					//q = pushArgument(mb, q, getArg(old[i2], 0));
-					getArg(q, 2) = getArg(old[i2], 0);
+					getArg(q, 2) = getArg(t, 0);
 					
 					// insert the new instruction in pc i2+1
 					insertInstruction(mb, q, i2+1);
+					insertInstruction(mb, t, i2+1);
+					insertInstruction(mb, s, i2+1);
+					insertInstruction(mb, r, i2+1);
 					
 					actions++;
 					goto finish;
