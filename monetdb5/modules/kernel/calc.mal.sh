@@ -314,7 +314,7 @@ echo
 # EOF
 # done
 
-for tp1 in $alltypes; do
+for tp1 in void $alltypes; do
     for tp2 in void $alltypes; do
 	cat <<EOF
 pattern $tp1(v:$tp2) :$tp1
