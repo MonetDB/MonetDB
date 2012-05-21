@@ -150,7 +150,7 @@ dump_header(mvc *sql, MalBlkPtr mb, stmt *s, list *l)
 		q = pushArgument(mb, q, s->nr);
 		q = pushStr(mb, q, fqtn);
 		q = pushStr(mb, q, cn);
-		q = pushStr(mb, q, t->type->sqlname);
+		q = pushStr(mb, q, t->type->localtype == TYPE_void?"char":t->type->sqlname);
 		q = pushInt(mb, q, t->digits);
 		q = pushInt(mb, q, t->scale);
 		(void) pushArgument(mb, q, c->nr);
@@ -179,7 +179,7 @@ dump_table(MalBlkPtr mb, sql_table *t)
 		q = pushArgument(mb, q, nr);
 		q = pushStr(mb, q, tn);
 		q = pushStr(mb, q, cn);
-		q = pushStr(mb, q, c->type.type->sqlname);
+		q = pushStr(mb, q, c->type.type->localtype == TYPE_void?"char":c->type.type->sqlname);
 		q = pushInt(mb, q, c->type.digits);
 		(void) pushInt(mb, q, c->type.scale);
 		_DELETE(tn);
@@ -1947,7 +1947,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushInt(mb, q, sql->mvc->type);
 					q = pushStr(mb, q, fqtn);
 					q = pushStr(mb, q, cn);
-					q = pushStr(mb, q, t->type->sqlname);
+					q = pushStr(mb, q, t->type->localtype == TYPE_void?"char":t->type->sqlname);
 					q = pushInt(mb, q, t->digits);
 					q = pushInt(mb, q, t->scale);
 					q = pushInt(mb, q, t->type->eclass);

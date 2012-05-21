@@ -1868,10 +1868,8 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
  */
 
 static void
-convert_arg(mvc *sql, int nr, sql_subtype *rt)
+convert_atom(atom *a, sql_subtype *rt)
 {
-	atom *a = sql_bind_arg(sql, nr);
-
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
 			ptr p;
@@ -1890,13 +1888,19 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	atom *a;
 
 	/* exclude named variables */
-	if (exp->type != e_atom || exp->l /* atoms */ || exp->r /* named */ || exp->f /* list */ ||
-		(t->scale && t->type->eclass != EC_FLT))
+	if (exp->type != e_atom || (exp->l && !atom_null(exp->l)) /* atoms */ || exp->r /* named */ || exp->f /* list */) 
 		return NULL;
 
-	a = sql_bind_arg(sql, exp->flag);
+	if (exp->l)
+		a = exp->l;
+	else
+		a = sql_bind_arg(sql, exp->flag);
+
+	if ((!exp->l || !atom_null(a)) && (t->scale && t->type->eclass != EC_FLT))
+		return NULL;
+
 	if (a && atom_cast(a, t)) {
-		convert_arg(sql, exp->flag, t);
+		convert_atom(a, t);
 		exp->tpe = *t;
 		return exp;
 	}
@@ -2728,7 +2732,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		if (!an || !an->a) {
 			assert(0);
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 		} else {
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
@@ -4476,12 +4480,12 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		return exp_atom_ref(sql->sa, se->data.i_val, NULL);
 	}
 	case SQL_NULL:
-		return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 		} else {
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}

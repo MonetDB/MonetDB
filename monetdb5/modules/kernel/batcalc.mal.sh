@@ -478,7 +478,7 @@ EOF
 done
 
 for tp1 in $alltypes; do
-    for tp2 in $alltypes; do
+    for tp2 in void $alltypes; do
 	cat <<EOF
 command $tp1(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
 address CMDconvertsignal_$tp1

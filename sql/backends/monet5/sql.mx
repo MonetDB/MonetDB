@@ -579,6 +579,21 @@ address SQLbat_alpha
 comment "BAT implementation of astronomy alpha function";
 
 @= mal_cast
+command calc.@1( v:void, digits:int ) :@1 
+address nil_2num_@1
+comment "cast to @1 and check for overflow";
+
+command calc.@1( v:void, digits:int, scale:int ) :@1 
+address nil_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:void], digits:int ) :bat[:oid,:@1] 
+address batnil_2num_@1
+comment "cast to @1 and check for overflow";
+command batcalc.@1( v:bat[:oid,:void], digits:int, scale:int ) :bat[:oid,:@1] 
+address batnil_2dec_@1
+comment "cast to dec(@1) and check for overflow";
+
 command calc.@1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
@@ -605,6 +620,20 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(lng)@
 
 @= mal_casttime
+command calc.@1( v:void ) :@1 
+address nil_2_@1
+comment "Cast to @1";
+command calc.@1( v:void, digits:int ) :@1 
+address nil_2time_@1
+comment "cast to @1 and check for overflow";
+
+command batcalc.@1( v:bat[:oid,:void] ) :bat[:oid,:@1] 
+address batnil_2_@1
+comment "Cast to @1";
+command batcalc.@1( v:bat[:oid,:void], digits:int ) :bat[:oid,:@1] 
+address batnil_2time_@1
+comment "cast to @1 and check for overflow";
+
 command calc.@1( v:str ) :@1 
 address str_2_@1
 comment "Cast to @1";
@@ -628,6 +657,13 @@ comment "cast @1 to @1 and check for overflow";
 @mal
 @:mal_casttime(timestamp)@
 @:mal_casttime(daytime)@
+
+command calc.date( v:void ) :date 
+address nil_2_date
+comment "cast to date";
+command batcalc.date( v:bat[:oid,:void] ) :bat[:oid,:date] 
+address batnil_2_date
+comment "cast to date";
 
 command calc.date( v:str ) :date 
 address str_2_date
@@ -1291,6 +1327,11 @@ sql5_export str str_2num_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2dec_@1( int *res, int *val, int *d, int *sc );
 sql5_export str batstr_2num_@1( int *res, int *v, int *len );
 sql5_export str @1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int *sk );
+
+sql5_export str nil_2dec_@1( @1 *res, void *val, int *d, int *sc );
+sql5_export str nil_2num_@1( @1 *res, void *v, int *len );
+sql5_export str batnil_2dec_@1( int *res, int *val, int *d, int *sc );
+sql5_export str batnil_2num_@1( int *res, int *v, int *len );
 @
 @h
 @:round_export(bte)@
@@ -1300,6 +1341,8 @@ sql5_export str @1_dec2second_interval( lng *res, int *sc, @1 *dec, int *ek, int
 @:round_export(lng)@
 
 @= cast_time
+sql5_export str nil_2time_@1( @1 *res, void *v, int *len );
+sql5_export str batnil_2time_@1( int *res, int *v, int *len );
 sql5_export str str_2time_@1( @1 *res, str *v, int *len );
 sql5_export str batstr_2time_@1( int *res, int *v, int *len );
 sql5_export str @1_2time_@1( @1 *res, @1 *v, int *len );
@@ -1309,6 +1352,8 @@ sql5_export str bat@1_2time_@1( int *res, int *v, int *len );
 @:cast_time(timestamp)@
 @:cast_time(daytime)@
 @= cast_export
+sql5_export str nil_2_@1( @3 *res, void *val );
+sql5_export str batnil_2_@1( int *res, int *val );
 sql5_export str str_2_@1( @3 *res, str *val );
 sql5_export str batstr_2_@1( int *res, int *val );
 sql5_export str SQL@1_2_str( str *res, @1 *val );
@@ -4220,6 +4265,17 @@ str
 }
 
 str
+nil_2dec_@1( @1 *res, void *val, int *d, int *sc )
+{
+	(void)val;
+	(void)d;
+	(void)sc;
+
+	*res = @1_nil;
+	return MAL_SUCCEED;
+}
+
+str
 str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(*val);
@@ -4267,10 +4323,47 @@ str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 }
 
 str
+nil_2num_@1( @1 *res, void *v, int *len )
+{
+	int zero = 0;
+	return nil_2dec_@1( res, v, len, &zero );
+}
+
+str
 str_2num_@1( @1 *res, str *v, int *len )
 {
 	int zero = 0;
 	return str_2dec_@1( res, v, len, &zero );
+}
+
+str
+batnil_2dec_@1( int *res, int *bid, int *d, int *sc )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+
+	(void)d;
+	(void)sc;
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.nil_2dec_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(SQL, "sql.dec_@1", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BATloop(b,p,q) {
+		@1 r = @1_nil;
+		BUNins(dst, BUNhead(bi,p), &r, FALSE);
+	}
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -4304,6 +4397,13 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
+}
+
+str
+batnil_2num_@1( int *res, int *bid, int *len )
+{
+	int zero = 0;
+	return batnil_2dec_@1( res, bid, len, &zero );
 }
 
 str
@@ -4391,6 +4491,15 @@ second_interval_2_daytime( daytime *res, lng *s, int *digits )
 }
 
 str
+nil_2time_daytime( daytime *res, void *v, int *digits )
+{
+	(void)digits;
+	(void)v;
+	*res = daytime_nil;
+	return MAL_SUCCEED;
+}
+
+str
 str_2time_daytime( daytime *res, str *v, int *digits )
 {
 	int len = sizeof(daytime), pos;
@@ -4444,6 +4553,15 @@ timestamp_2time_timestamp( timestamp *res, timestamp *v, int *digits )
 		}
 		res->msecs = msec;
 	}
+	return MAL_SUCCEED;
+}
+
+str
+nil_2time_timestamp( timestamp *res, void *v, int *digits )
+{
+	(void)digits;
+	(void)v;
+	*res = *timestamp_nil;
 	return MAL_SUCCEED;
 }
 
@@ -4636,6 +4754,14 @@ SQLbat_alpha(bat *res, bat *decl, dbl *theta)
 
 @= cast
 str
+nil_2_@1( @3 *res, void *val )
+{
+	(void)val;
+	*res = @6;
+	return MAL_SUCCEED;
+}
+
+str
 str_2_@1( @3 *res, str *val )
 {
 	ptr p = NULL;
@@ -4668,6 +4794,34 @@ SQL@1_2_str( str *res, @1 *val )
 	int len = 0;
 	@2( &p, &len, val);
 	*res = p;
+	return MAL_SUCCEED;
+}
+
+str
+batnil_2_@1( int *res, int *bid )
+{
+	BAT *b, *dst;
+	BATiter bi;
+	BUN p,q;
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		throw(SQL, "batcalc.nil_2_@1", "Cannot access descriptor");
+	}
+	bi = bat_iterator(b);
+	dst = BATnew(b->htype, TYPE_@1, BATcount(b));
+	if( dst == NULL){
+		BBPreleaseref(b->batCacheid);
+		throw(SQL, "sql.2_@1", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(dst, b->hseqbase);
+	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BATloop(b,p,q) {
+		@3 r = @6;
+		BUNins(dst, BUNhead(bi,p), @5 r, FALSE);
+	}
+	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+	BBPkeepref( *res = dst->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -4705,10 +4859,10 @@ batstr_2_@1( int *res, int *bid )
 }
 @
 @c
-@:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p,&)@
-@:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p,&)@
-@:cast(date,date_tostr,date, *res = *(date*)p,&)@
-@:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p,)@
+@:cast(timestamp,timestamp_tostr,timestamp, *res = *(timestamp*)p,&,*timestamp_nil)@
+@:cast(daytime,daytime_tostr,daytime, *res = *(daytime*)p,&,daytime_nil)@
+@:cast(date,date_tostr,date, *res = *(date*)p,&,date_nil)@
+@:cast(sqlblob,sqlblob_tostr,sqlblob*, *res = (sqlblob*)p,,ATOMnilptr(TYPE_blob))@
 
 static str
 SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int tpe, int len)
