@@ -978,7 +978,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 		}
 	}
 
-	runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 0);
+	//runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 0);
 	FREE_EXCEPTION(ret);
 	ret = MAL_SUCCEED;
 	if (pci->recycle > 0)
@@ -1017,8 +1017,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			ret = createScriptException(mb, stkpc, MAL,
 				NULL, "unkown operation");
 		}
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 	}
-	runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (ret)
