@@ -1693,8 +1693,6 @@ parseAssign(Client cntxt, int cntrl)
 			}
 		}
 
-		if (currChar(cntxt) != ';')
-			parseError(cntxt, "';' expected\n");
 		goto part3;
 	}
 	if (currChar(cntxt) == '(') {
