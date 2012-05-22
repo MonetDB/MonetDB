@@ -28,19 +28,6 @@ struct qsort_t {
 	char *base;
 };
 
-#if SIZEOF_VAR_T == 8
-#define OFF(b, i)	(buf->base +					\
-	(buf->hs == 1 ? ((unsigned char *) b)[i] + GDK_VAROFFSET :	\
-	 (buf->hs == 2 ? ((unsigned short *) b)[i] + GDK_VAROFFSET :	\
-	  (buf->hs == 4 ? ((unsigned int *) b)[i] :			\
-	   ((var_t *) b)[i]))))
-#else
-#define OFF(b, i)	(buf->base +					\
-	(buf->hs == 1 ? ((unsigned char *) b)[i] + GDK_VAROFFSET :	\
-	 (buf->hs == 2 ? ((unsigned short *) b)[i] + GDK_VAROFFSET :	\
-	  ((var_t *) b)[i])))
-#endif
-
 /* return index of middle value at indexes a, b, and c */
 #define MED3(a, b, c) (LT(a, b) ?					\
 		       (LT(b, c) ? (b) : (LT(a, c) ? (c) : (a))) :	\
@@ -241,13 +228,48 @@ struct qsort_t {
 		if (t && buf->ts)					\
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
+
+#define GDKqsort_impl GDKqsort_impl_var
+#define INITIALIZER	int z
+#define OFF(i)		(buf->base + VarHeapVal(h, i, buf->hs))
+#define CMP(i, j)	(*buf->cmp)(OFF(i), OFF(j))
+/* EQ is only ever called directly after LE with the same arguments */
+#define EQ(i, j)	(z == 0)
+#define LE(i, j)	((z = CMP(i, j)) <= 0)
+#define LT(i, j)	(CMP(i, j) < 0)
+#include "gdk_qsort_impl.h"
+#undef GDKqsort_impl
+#undef LE
+#undef LT
+
+#define GDKqsort_impl GDKqsort_impl_var_rev
+#define LE(i, j)	((z = CMP(i, j)) >= 0)
+#define LT(i, j)	(CMP(i, j) > 0)
+#include "gdk_qsort_impl.h"
+#undef GDKqsort_impl
+#undef OFF
+#undef CMP
+#undef EQ
+#undef LE
+#undef LT
+
 #define GDKqsort_impl GDKqsort_impl_any
 #define INITIALIZER	int z
+#if SIZEOF_VAR_T == 8
+#define OFF(i)		(buf->base +					\
+			 (buf->hs == 1 ? ((unsigned char *) h)[i] :	\
+			  buf->hs == 2 ? ((unsigned short *) h)[i] :	\
+			  buf->hs == 4 ? ((unsigned int *) h)[i] :	\
+			  ((var_t *) h)[i]))
+#else
+#define OFF(i)		(buf->base +					\
+			 (buf->hs == 1 ? ((unsigned char *) h)[i] :	\
+			  buf->hs == 2 ? ((unsigned short *) h)[i] :	\
+			  ((var_t *) h)[i]))
+#endif
 #define CMP(i, j)	(buf->base ?					\
-			 (*buf->cmp)(OFF(h, i),				\
-				     OFF(h, j)) :			\
-			 (*buf->cmp)(h + (i) * buf->hs,			\
-				     h + (j) * buf->hs))
+			 (*buf->cmp)(OFF(i), OFF(j)) :			\
+			 (*buf->cmp)(h + (i) * buf->hs, h + (j) * buf->hs))
 /* EQ is only ever called directly after LE with the same arguments */
 #define EQ(i, j)	(z == 0)
 #define LE(i, j)	((z = CMP(i, j)) <= 0)
@@ -266,6 +288,7 @@ struct qsort_t {
 #undef EQ
 #undef LE
 #undef LT
+
 #undef SWAP
 
 /* the interface functions */
@@ -276,11 +299,18 @@ GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe)
 
 	assert(hs > 0);
 	assert(ts >= 0);
+	assert(tpe != TYPE_void);
+
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
 	buf.cmp = BATatoms[tpe].atomCmp;
 	buf.base = base;
 
+	if (ATOMvarsized(tpe)) {
+		assert(base != NULL);
+		GDKqsort_impl_var(&buf, h, t, n);
+		return;
+	}
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
@@ -316,11 +346,18 @@ GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe)
 
 	assert(hs > 0);
 	assert(ts >= 0);
+	assert(tpe != TYPE_void);
+
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
 	buf.cmp = BATatoms[tpe].atomCmp;
 	buf.base = base;
 
+	if (ATOMvarsized(tpe)) {
+		assert(base != NULL);
+		GDKqsort_impl_var_rev(&buf, h, t, n);
+		return;
+	}
 	if (base)
 		tpe = TYPE_str;	/* we need the default case */
 
