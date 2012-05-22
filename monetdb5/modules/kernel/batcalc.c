@@ -209,13 +209,18 @@ CMDbatSIGN(bat *ret, bat *bid)
 static int
 calctype(int tp1, int tp2)
 {
-	tp1 = ATOMstorage(tp1);
-	tp2 = ATOMstorage(tp2);
-	if (tp1 < TYPE_flt && tp2 < TYPE_flt)
+	int tp1s = ATOMstorage(tp1);
+	int tp2s = ATOMstorage(tp2);
+	if (tp1s < TYPE_flt && tp2s < TYPE_flt) {
+		if (tp1s > tp2s)
+			return tp1;
+		if (tp1s < tp2s)
+			return tp2;
 		return MAX(tp1, tp2);
-	if (tp1 == TYPE_dbl || tp2 == TYPE_dbl)
+	}
+	if (tp1s == TYPE_dbl || tp2s == TYPE_dbl)
 		return TYPE_dbl;
-	if (tp1 == TYPE_flt || tp2 == TYPE_flt)
+	if (tp1s == TYPE_flt || tp2s == TYPE_flt)
 		return TYPE_flt;
 	return TYPE_lng;
 }
@@ -230,6 +235,9 @@ calctypeenlarge(int tp1, int tp2)
 	case TYPE_sht:
 		return TYPE_int;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		return TYPE_lng;
 	case TYPE_flt:
 		return TYPE_dbl;
