@@ -1774,13 +1774,13 @@ OIDtoStr(char **dst, int *len, const oid *src)
 atomDesc BATatoms[MAXATOMS] = {
 	{"void",
 #if SIZEOF_OID == SIZEOF_INT
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &int_nil,
+	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &oid_nil,
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(const void *, stream *, size_t)) voidWrite,
 	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(const void *)) intHash, 0,
 #else
-	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &lng_nil,
+	 TYPE_void, 1, 0, /* sizeof(void) */ 0, 0, 1, (ptr) &oid_nil,
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) voidRead, (int (*)(const void *, stream *, size_t)) voidWrite,
 	 (int (*)(const void *, const void *)) lngCmp,
@@ -1837,13 +1837,13 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0, 0},
 	{"oid",
 #if SIZEOF_OID == SIZEOF_INT
-	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &int_nil,
+	 TYPE_int, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &oid_nil,
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) intRead, (int (*)(const void *, stream *, size_t)) intWrite,
 	 (int (*)(const void *, const void *)) intCmp,
 	 (BUN (*)(const void *)) intHash, (void (*)(ptr, int)) intConvert,
 #else
-	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &lng_nil,
+	 TYPE_lng, 1, sizeof(oid), sizeof(oid), 0, 0, (ptr) &oid_nil,
 	 (int (*)(const char *, int *, ptr *)) OIDfromStr, (int (*)(str *, int *, const void *)) OIDtoStr,
 	 (void *(*)(void *, stream *, size_t)) lngRead, (int (*)(const void *, stream *, size_t)) lngWrite,
 	 (int (*)(const void *, const void *)) lngCmp,
