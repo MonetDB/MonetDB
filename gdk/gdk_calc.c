@@ -12816,6 +12816,11 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 							&ret->len,
 							VALptr((ValPtr) v));
 		}
+	} else if (ret->vtype == TYPE_void) {
+		if (abort_on_error &&
+		    ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0)
+			nils = BUN_NONE;
+		ret->val.oval = oid_nil;
 	} else if (v->vtype == TYPE_void) {
 		nils = convert_typeswitchloop(&oid_nil, TYPE_oid,
 					      VALptr(ret), ret->vtype,

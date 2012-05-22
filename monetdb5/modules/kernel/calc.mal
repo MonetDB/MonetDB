@@ -4183,6 +4183,51 @@ address CMDvarCMP
 comment "Return -1/0/1 if V1 </==/> V2";
 
 
+pattern void(v:void) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:bit) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:bte) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:sht) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:int) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:wrd) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:lng) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:flt) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:dbl) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:oid) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+pattern void(v:str) :void
+address CMDvarCONVERT
+comment "Cast VALUE to void";
+
+
 pattern bit(v:void) :bit
 address CMDvarCONVERT
 comment "Cast VALUE to bit";
