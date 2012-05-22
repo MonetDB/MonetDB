@@ -1511,7 +1511,7 @@ sort_flush(var_t *off, oid *o, BUN size, int tpe, char *base, oid *hdst, oid *td
 		if (ATOMvarsized(tpe)) shift = GDK_VARSHIFT;
 	}
 
-	cur = base + off[0];
+	cur = base + (off[0] << shift);
 	for (i=0; i < size; i++) {
 		val = base + (off[i] << shift);
 		if ((*cmp) (cur, val)) {
