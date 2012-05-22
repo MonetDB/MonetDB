@@ -24,17 +24,6 @@ create table xtr
   )
 ;
 
-CREATE FUNCTION alpha(theta DOUBLE, decl DOUBLE) RETURNS DOUBLE
-BEGIN
-  IF ABS(decl) + theta > 89.9 THEN
-    RETURN 180;
-  ELSE
-    RETURN DEGREES(ABS(ATAN(SIN(RADIANS(theta)) / SQRT(ABS(COS(RADIANS(decl -
-theta)) * COS(RADIANS(decl + theta))))))) ;
-  END IF ;
-END
-;
-
 create table rc
   (xtrsrc_id int
   ,ds_id int
@@ -71,8 +60,8 @@ select t.xtrsrc_id
                           AND CAST(FLOOR(r.wm_decl - im0.bmaj) as integer)
            AND x.decl BETWEEN r.wm_decl - im0.bmaj
                           AND r.wm_decl + im0.bmaj
-           AND x.ra BETWEEN r.wm_ra - alpha(im0.bmaj, r.wm_decl)
-                        AND r.wm_ra + alpha(im0.bmaj, r.wm_decl)
+           AND x.ra BETWEEN r.wm_ra - alpha(r.wm_decl, im0.bmaj)
+                        AND r.wm_ra + alpha(r.wm_decl, im0.bmaj)
        ) t
  where t.dist > t.dist_lim
 ;
@@ -88,8 +77,8 @@ SELECT r.xtrsrc_id
                   AND CAST(FLOOR(r.wm_decl - im0.bmaj) as integer)
    AND x.decl BETWEEN r.wm_decl - im0.bmaj
                   AND r.wm_decl + im0.bmaj
-   AND x.ra BETWEEN r.wm_ra - alpha(im0.bmaj, r.wm_decl)
-                AND r.wm_ra + alpha(im0.bmaj, r.wm_decl)
+   AND x.ra BETWEEN r.wm_ra - alpha(r.wm_decl, im0.bmaj)
+                AND r.wm_ra + alpha(r.wm_decl, im0.bmaj)
    AND r.x * x.x + r.y * x.y + r.z * x.z > COS(RADIANS(im0.bmaj))
 ;
 
