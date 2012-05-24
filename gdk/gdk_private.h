@@ -108,6 +108,9 @@ void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len
 void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
 int MT_mmap_trim(size_t lim, void *err);
 int MT_msync(void *p, size_t off, size_t len, int mode);
+void *MT_vmalloc(size_t size, size_t *maxsize);
+void MT_vmfree(void *p, size_t size);
+void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 int OIDdirty(void);
 int OIDinit(void);
 oid *oidRead(oid *a, stream *s, size_t cnt);
@@ -168,8 +171,7 @@ typedef struct {
 extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-extern ptr GDK_mem_start;		/* sbrk(0) at start of the program */
-extern size_t GDK_mmap_minsize;	/* size after which we use tempfile VM rather than malloc/anonymous VM */
+extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
 extern MT_Lock GDKnameLock;
 extern int GDKrecovery;
 extern int GDKsilent;	/* should GDK shut up? */

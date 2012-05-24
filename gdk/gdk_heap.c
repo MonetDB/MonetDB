@@ -252,12 +252,10 @@ HEAPmargin(size_t maxsize)
 int
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
-	char nme[PATHLENGTH], *ext = NULL;
+	char nme[PATHLENGTH];
+	size_t minsize = GDK_mmap_minsize;
+	struct stat st;
 
-	if (h->filename) {
-		strcpy(nme, h->filename);
-		ext = decompose_filename(nme);
-	}
 	h->base = NULL;
 	h->maxsize = h->size = 1;
 	h->copied = 0;
@@ -269,32 +267,43 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize && nitems > (h->size / itemsize))
 		return -1;
 
-	if (h->filename == NULL || (h->size < GDK_mmap_minsize)) {
+	if (h->filename) {
+		GDKfilepath(nme, BATDIR, h->filename, NULL);
+		/* if we're going to use mmap anyway (size >=
+		 * GDK_mem_bigsize -- see GDKmallocmax), and the file
+		 * we want to use already exists and is large enough
+		 * for the size we want, force non-anonymous mmap */
+		if (h->size >= GDK_mem_bigsize &&
+		    stat(nme, &st) == 0 && st.st_size >= (off_t) h->size) {
+			minsize = GDK_mem_bigsize; /* force mmap */
+		}
+	}
+
+	if (h->filename == NULL || (h->size < minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
-		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
+		ALLOCDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
 	}
 	if (h->filename && h->base == NULL) {
-		long_str ofn;
 		char *of = h->filename;
 		FILE *fp;
-		struct stat st;
 
 		h->filename = NULL;
 
-		GDKfilepath(ofn, BATDIR, of, NULL);
-		if (stat(ofn, &st) != 0) {
+		if (stat(nme, &st) != 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcacheFind(&h->maxsize, of, h->storage );
 			h->filename = of;
 		} else {
+			char *ext;
+
+			strcpy(nme, h->filename);
+			ext = decompose_filename(nme);
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
 				fclose(fp);
 				h->newstorage = STORE_MMAP;
 				HEAPload(h, nme, ext, FALSE);
-				if (h->base != NULL)
-					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 			}
 			GDKfree(of);
 		}
