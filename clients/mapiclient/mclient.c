@@ -471,6 +471,15 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						mnstr_printf(toConsole, "%*s",
 							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
 							     "");
+
+					if (!numeric[i]) {
+						/* replace tabs with a single space to avoid
+						 * screwup the width calculations */
+						for (s = rest[i]; *s != *t; s++)
+							if (*s == '\t')
+								*s = ' ';
+					}
+
 					s = t;
 					if (trim == 1)
 						while (isascii((int) *s) &&
@@ -515,16 +524,26 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 				} else {
 					mnstr_printf(toConsole, "%c",
 							first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
-					if (numeric[i])
+					if (numeric[i]) {
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
-					mnstr_printf(toConsole, " %s ",
-						      rest[i]);
-					if (!numeric[i])
+						mnstr_printf(toConsole, " %s ",
+								  rest[i]);
+					}
+					if (!numeric[i]) {
+						char *p;
+						/* replace tabs with a single space to avoid
+						 * screwup the width calculations */
+						for (p = rest[i]; *p != '\0'; p++)
+							if (*p == '\t')
+								*p = ' ';
+						mnstr_printf(toConsole, " %s ",
+								  rest[i]);
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
+					}
 					rest[i] = 0;
 					/* avoid > as border marker if everything
 					 * actually just fits */
