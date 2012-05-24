@@ -1272,7 +1272,7 @@ sqltypeinit( sql_allocator *sa)
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
 		sql_create_aggr(sa, "prod", "aggr", "product", *t, *t);
-		sql_create_func(sa, "mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
+		sql_create_func(sa, "mod", "mmath", "fmod", *t, *t, *t, SCALE_FIX);
 	}
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);

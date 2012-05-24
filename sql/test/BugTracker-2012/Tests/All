@@ -38,3 +38,4 @@ mal_syntax_error.Bug-2949
 grant_on_qname.Bug-2958
 bug_large-insert-Bug.2960
 any_null.Bug-2594
+float-mod.Bug-3086
