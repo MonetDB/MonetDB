@@ -268,7 +268,10 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		BATappend(b, i, TRUE);
 	} else {
 		temp_destroy(bat->ibid);
-		bat->ibid = ebat2real(i->batCacheid, bat->ibase);
+		bat->ibid = ebat2real(b->batCacheid, bat->ibase);
+		bat_destroy(b);
+		b = temp_descriptor(bat->ibid);
+		BATappend(b, i, TRUE);
 	}
 	bat_destroy(b);
 }
