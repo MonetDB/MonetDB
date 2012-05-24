@@ -910,7 +910,7 @@ main(int argc, char *argv[])
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
 	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT,
-			S_IRUSR | S_IWUSR, 0666);
+			S_IRUSR | S_IWUSR);
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
