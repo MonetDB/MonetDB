@@ -297,7 +297,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		} else {
 			char *ext;
 
-			strcpy(nme, h->filename);
+			strcpy(nme, of);
 			ext = decompose_filename(nme);
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
