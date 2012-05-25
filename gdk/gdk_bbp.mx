@@ -2277,8 +2277,8 @@ incref(bat i, int logical, int lock)
 		assert(!logical);
 		if (hp) {
 			incref(hp, 0, lock);
+			b = getBBPdescriptor(hp, lock);
 			if (!bs->P.lview) {
-				b = getBBPdescriptor(hp, lock);
 				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
 				/* if we shared the hash before, share
 				 * it again note that if the parent's
@@ -2290,9 +2290,9 @@ incref(bat i, int logical, int lock)
 		}
 		if (tp) {
 			incref(tp, 0, lock);
+			b = getBBPdescriptor(tp, lock);
 			if (!bs->P.lview &&
 			    bs->B.H != bs->B.T) {  /* mirror? */
-				b = getBBPdescriptor(tp, lock);
 				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
 				/* if we shared the hash before, share
 				 * it again note that if the parent's
@@ -2302,10 +2302,14 @@ incref(bat i, int logical, int lock)
 					bs->B.T->hash = b->H->hash;
 			}
 		}
-		if (hvp)
+		if (hvp) {
 			incref(hvp, 0, lock);
-		if (tvp)
+			(void) getBBPdescriptor(hvp, lock);
+		}
+		if (tvp) {
 			incref(tvp, 0, lock);
+			(void) getBBPdescriptor(tvp, lock);
+		}
 		/* done loading, release descriptor */
 		BBP_status_off(i, BBPLOADING, "BBPincref");
 	}
