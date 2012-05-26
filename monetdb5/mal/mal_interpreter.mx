@@ -1064,19 +1064,21 @@ runDFLOWworker(void *t)
 	GDKerrbuf[0] = 0;
 	while (task) {
 		local = nxtfs != 0;
-		if (nxtfs == 0)
+		if (nxtfs == 0) {
 			fs = (FlowStatus)q_dequeue(task->todo);
-		else
-			fs = nxtfs;
 #ifdef USE_DFLOW_ADMISSION
-		if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
-			fs->hotclaim = 0;   /* don't assume priority anymore */
-			MT_sleep_ms(1);
-			q_requeue(task->todo, fs);
-			nxtfs = 0;
-			continue;
-		}
+			if (DFLOWadmission(fs->argclaim, fs->hotclaim)) {
+				fs->hotclaim = 0;   /* don't assume priority anymore */
+				if ( task->todo->last == 0)
+					MT_sleep_ms(1);
+				q_requeue(task->todo, fs);
+				nxtfs = 0;
+				continue;
+			}
 #endif
+		} else
+			/* always execute, it does not affect memory claims */
+			fs = nxtfs;
 		assert(fs->pc > 0);
 		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= " LLFMT "," LLFMT " %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
 		fs->error = DFLOWstep(task, fs);
@@ -1085,7 +1087,8 @@ runDFLOWworker(void *t)
 
 #ifdef USE_DFLOW_ADMISSION
 		/* release the memory claim */
-		DFLOWadmission(-fs->argclaim, -fs->hotclaim);
+		if ( nxtfs)
+			DFLOWadmission(-fs->argclaim, -fs->hotclaim);
 #endif
 
 		p = getInstrPtr(fs->mb, ABS(fs->pc));
@@ -1096,6 +1099,7 @@ runDFLOWworker(void *t)
 		/* see if you can find an eligible instruction that uses the
 		 * result just produced. Then we can continue with it right away.
 		 * We are just looking for the last block, which means we are safe from concurrent actions
+		 * All eligable instructions are queued 
 		 */
 		nxtfs = 0;
 		if (fs->pc >= 0)
@@ -1107,10 +1111,11 @@ runDFLOWworker(void *t)
 					task->flow->status[i].hotclaim = fs->hotclaim;
 					task->flow->status[i].argclaim += fs->hotclaim;
 					task->flow->status[i].error = NULL;
+					if ( nxtfs )
+						q_enqueue(task->todo, nxtfs);
 					nxtfs = task->flow->status + i;
-					PARDEBUG mnstr_printf(GDKstdout, "#continue pc= %d thr= %d claim= " LLFMT "\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
-					break;
 				}
+			PARDEBUG if (nxtfs) mnstr_printf(GDKstdout, "#continue pc= %d thr= %d claim= " LLFMT "\n", nxtfs->pc, task->id, task->flow->status[i].argclaim);
 
 		/* all non-local choices are handled by the main scheduler */
 		/* we always return the instruction handled */
