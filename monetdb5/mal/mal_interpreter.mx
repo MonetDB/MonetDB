@@ -1087,7 +1087,7 @@ runDFLOWworker(void *t)
 
 #ifdef USE_DFLOW_ADMISSION
 		/* release the memory claim */
-		if ( nxtfs)
+		if ( nxtfs ==0 )
 			DFLOWadmission(-fs->argclaim, -fs->hotclaim);
 #endif
 
