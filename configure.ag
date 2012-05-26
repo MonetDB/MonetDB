@@ -605,9 +605,6 @@ yes-*-*)
 		;;
 	esac
 
-	# The default configure invocation when doing an rpmbuild also uses this
-	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
-
 	dnl  Our code is not (yet?) up to these:
 	dnl MCHECK_ADD_FLAG([-pedantic-errors])
 	dnl MCHECK_ADD_FLAG([-Wno-long-long])
@@ -1070,6 +1067,9 @@ if test "x$enable_optim" = xyes; then
 		  # - speeds up and fixes some outputs on sparcv9-solaris
 		;;
       esac
+
+      # The default configure invocation when doing an rpmbuild also uses this
+      MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
       ;;
     *)
       case "$host-$icc_ver" in
