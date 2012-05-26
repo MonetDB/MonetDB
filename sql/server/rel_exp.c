@@ -1144,7 +1144,7 @@ int
 exps_card( list *l ) 
 {
 	node *n;
-	int card = 0;
+	int card = CARD_ATOM;
 
 	if (l) for(n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;

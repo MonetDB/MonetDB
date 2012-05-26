@@ -609,7 +609,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = CARD_MULTI;
+	rel->card = exps_card(e);
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -760,6 +760,8 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
 		append(rel->exps, e);
+		if (e->card > rel->card)
+			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
 		(void) rel_groupby_add_aggr(sql, rel, e);
 	}
@@ -4235,7 +4237,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						if (!e)
 							return NULL;
 						e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e));
-					} else {
+					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 					}
 				}
