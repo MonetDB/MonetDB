@@ -219,25 +219,28 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 	/* check group count */
-	b = BBPquickdesc(*grp, FALSE);
+	b = BATdescriptor(*grp);
 	if (  b && BATcount(b) != cnt[2]) {
+		BBPreleaseref(*grp);
+		b = 0;
 		/* (grp,ext) := group.derive(grp,ext,arg) */
 		/* (grp,ext) := group.done(grp,ext,arg) */
 		for ( i=3; i < pci->argc; i++){
 			oldgrp= *grp;
 			oldext= *ext;
 			msg = GRPderive(grp, ext, &oldgrp, &oldext, &bid[i]);
-			if ( msg != MAL_SUCCEED){
+			if ( msg == MAL_SUCCEED){
 				BBPdecref(oldgrp, TRUE);
 				BBPdecref(oldext, TRUE);
-				*grp = *ext = 0;
 			} else break;
 			/* check group count */
-			b = BBPquickdesc(*grp, FALSE);
+			b = BATdescriptor(*grp);
 			if ( b && BATcount(b) == cnt[i])
 				break;
 		}
 	} 
+	if (b) 
+		BBPreleaseref(*grp);
 	GDKfree(sizes);
 	GDKfree(bid);
 	GDKfree(cnt);
