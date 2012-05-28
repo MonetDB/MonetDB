@@ -553,7 +553,7 @@ BAT *
 ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 {
 	BAT *b = NULL;
-	BUN estimate, e;
+	BUN estimate, e = 0;
 	int i, j, k;
 	int *postpone= (int*) GDKzalloc(sizeof(int) *top);
 	int postponed=0;
