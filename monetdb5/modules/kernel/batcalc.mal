@@ -6020,6 +6020,56 @@ pattern mod_noerror(v:bte,b:bat[:oid,:lng]) :bat[:oid,:bte]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
 
+command %(b1:bat[:oid,:bte],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:bte],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:bte],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:bte],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:bte,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:bte,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:bte,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:bte],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:bte],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:bte],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:bte],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:bte],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:bte,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:bte,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:bte,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
 command %(b1:bat[:oid,:sht],b2:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -6145,6 +6195,56 @@ pattern %(v:sht,b:bat[:oid,:lng]) :bat[:oid,:sht]
 address CMDbatMODcstsignal
 comment "Return V % B, signal error on divide by zero";
 pattern mod_noerror(v:sht,b:bat[:oid,:lng]) :bat[:oid,:sht]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:sht],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:sht],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:sht],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:sht],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:sht],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:sht,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:sht,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:sht,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:sht],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:sht],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:sht],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:sht],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:sht],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:sht,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:sht,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:sht,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
 
@@ -6276,6 +6376,56 @@ pattern mod_noerror(v:int,b:bat[:oid,:lng]) :bat[:oid,:int]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
 
+command %(b1:bat[:oid,:int],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:int],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:int],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:int],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:int],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:int,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:int,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:int,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:int],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:int],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:int],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:int],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:int],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:int,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:int,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:int,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
 command %(b1:bat[:oid,:wrd],b2:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -6404,6 +6554,56 @@ pattern mod_noerror(v:wrd,b:bat[:oid,:lng]) :bat[:oid,:wrd]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
 
+command %(b1:bat[:oid,:wrd],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:wrd],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:wrd],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:wrd],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:wrd],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:wrd,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:wrd,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:wrd,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:wrd],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:wrd],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:wrd],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:wrd],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:wrd],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:wrd,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:wrd,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:wrd,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
 command %(b1:bat[:oid,:lng],b2:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -6529,6 +6729,412 @@ pattern %(v:lng,b:bat[:oid,:lng],accum:int) :bat[:oid,:lng]
 address CMDbatMODcstsignal
 comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
 pattern mod_noerror(v:lng,b:bat[:oid,:lng]) :bat[:oid,:lng]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:lng],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:lng],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:lng],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:lng],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:lng],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:lng,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:lng,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:lng,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:lng],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:lng],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:lng],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:lng],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:lng],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:lng,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:lng,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:lng,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:bte]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:bte],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:bte]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:bte) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:bte,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:bte) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:bte]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:flt,b:bat[:oid,:bte]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:sht]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:sht],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:sht]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:sht) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:sht,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:sht) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:sht]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:flt,b:bat[:oid,:sht]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:int]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:int],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:int]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:int,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:int) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:int]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:flt,b:bat[:oid,:int]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:wrd]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:wrd],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:wrd]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:wrd) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:wrd,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:wrd) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:wrd]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:flt,b:bat[:oid,:wrd]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:lng]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:lng],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:lng]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:lng) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:lng,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:lng) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:lng]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:flt,b:bat[:oid,:lng]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:flt) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:flt],v:flt,accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:flt],v:flt) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:flt,b:bat[:oid,:flt],accum:int) :bat[:oid,:flt]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:flt,b:bat[:oid,:flt]) :bat[:oid,:flt]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:flt],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:flt],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:flt],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern mod_noerror(b:bat[:oid,:flt],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:flt,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:flt,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:flt,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:bte]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:bte],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:bte]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:bte) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:bte,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:bte) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:bte]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:bte]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:sht]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:sht],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:sht]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:sht) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:sht,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:sht) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:sht]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:sht]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:int]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:int],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:int]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:int,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:int) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:int]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:int]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:wrd]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:wrd],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:wrd]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:wrd) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:wrd,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:wrd) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:wrd]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:wrd]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:lng]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:lng],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:lng]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:lng) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:lng,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:lng) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:lng]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:lng]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:flt],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:flt) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:flt,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:flt) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:flt]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern mod_noerror(v:dbl,b:bat[:oid,:flt]) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return V % B, divide by zero causes NIL value";
+
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODsignal
+comment "Return B1 % B2, signal error on divide by zero";
+command %(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODsignalaccum
+comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
+command mod_noerror(b1:bat[:oid,:dbl],b2:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMOD
+comment "Return B1 % B2, divide by zero causes NIL value";
+pattern %(b:bat[:oid,:dbl],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero";
+pattern %(b:bat[:oid,:dbl],v:dbl,accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(b:bat[:oid,:dbl],v:dbl) :bat[:oid,:dbl]
+address CMDbatMODcst
+comment "Return B % V, divide by zero causes NIL value";
+pattern %(v:dbl,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero";
+pattern %(v:dbl,b:bat[:oid,:dbl],accum:int) :bat[:oid,:dbl]
+address CMDbatMODcstsignal
+comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
+pattern mod_noerror(v:dbl,b:bat[:oid,:dbl]) :bat[:oid,:dbl]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
 

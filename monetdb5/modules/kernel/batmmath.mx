@@ -70,7 +70,10 @@ module batmmath;
 	# @-
 	# 	round is not binary...
 	# 	scienceFcnBinary(round,int)
-	@:scienceFcnBinary(fmod)@
+	command fmod(x:bat[:oid,:dbl],y:dbl):bat[:oid,:dbl] 
+	address CMDbatMODsignal;
+	command fmod(x:bat[:oid,:flt],y:flt):bat[:oid,:flt] 
+	address CMDbatMODsignal;
 	@:scienceFcnBinary(atan2)@
 	@:scienceFcnBinary(pow)@
 	# @- Implementation
@@ -216,8 +219,6 @@ str CMDscience_bat_cst_@1_@2(int *ret, int *bid, @2 *d)
  * 	round is not binary...
  * 	scienceBinaryImpl(round,int)
  */
-@:scienceBinaryImpl(fmod,dbl,)@
-@:scienceBinaryImpl(fmod,flt,f)@
 @:scienceBinaryImpl(atan2,dbl,)@
 @:scienceBinaryImpl(atan2,flt,f)@
 @:scienceBinaryImpl(pow,dbl,)@

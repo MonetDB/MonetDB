@@ -285,8 +285,12 @@ calcmodtype(int tp1, int tp2)
 {
 	tp1 = ATOMstorage(tp1);
 	tp2 = ATOMstorage(tp2);
-	assert(tp1 > 0 && tp1 < TYPE_str && tp1 != TYPE_flt && tp1 != TYPE_dbl && tp1 != TYPE_bat && tp1 != TYPE_ptr);
-	assert(tp2 > 0 && tp2 < TYPE_str && tp2 != TYPE_flt && tp2 != TYPE_dbl && tp2 != TYPE_bat && tp2 != TYPE_ptr);
+	assert(tp1 > 0 && tp1 < TYPE_str && tp1 != TYPE_bat && tp1 != TYPE_ptr);
+	assert(tp2 > 0 && tp2 < TYPE_str && tp2 != TYPE_bat && tp2 != TYPE_ptr);
+	if (tp1 == TYPE_dbl || tp2 == TYPE_dbl)
+		return TYPE_dbl;
+	if (tp1 == TYPE_flt || tp2 == TYPE_flt)
+		return TYPE_flt;
 	return MIN(tp1, tp2);
 }
 
