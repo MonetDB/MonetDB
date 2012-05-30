@@ -60,7 +60,7 @@ jaql_import void GDKfree(const char *);
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
 %token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG UNROLL PRESERVE
 
-%token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE
+%token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE NIL
 %token GREATER GEQUAL LESS LEQUAL NOT AND OR
 
 %token <j_ident>  IDENT
@@ -312,6 +312,7 @@ literal: NUMBER      {$$ = make_number($1);}
 	   | STRING      {$$ = make_string($1);}
 	   | TRUE        {$$ = make_bool(1);}
 	   | FALSE       {$$ = make_bool(0);}
+	   | NIL         {$$ = make_null();}
 	   ;
 
 arith_op: '+'        {$$ = make_op(j_plus);}

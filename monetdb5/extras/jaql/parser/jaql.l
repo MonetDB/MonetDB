@@ -136,6 +136,7 @@ and        return AND;
 or         return OR;
 true       return TRUE;
 false      return FALSE;
+null       return NIL;
 "."        return '.';
 ":"        return ':';
 ","        return ',';
