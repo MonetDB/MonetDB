@@ -2152,6 +2152,20 @@ pattern mod_noerror(v1:bte,v2:lng) :bte
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
+pattern %(v1:bte,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:bte,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:dbl) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
 pattern %(v1:sht,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
@@ -2184,6 +2198,20 @@ pattern %(v1:sht,v2:lng) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:lng) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:sht,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:sht,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:dbl) :dbl
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
@@ -2222,6 +2250,20 @@ pattern mod_noerror(v1:int,v2:lng) :int
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
+pattern %(v1:int,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:int,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:dbl) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
 pattern %(v1:wrd,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
@@ -2257,6 +2299,20 @@ pattern mod_noerror(v1:wrd,v2:lng) :wrd
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
+pattern %(v1:wrd,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:wrd,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:wrd,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:wrd,v2:dbl) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
 pattern %(v1:lng,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
@@ -2289,6 +2345,118 @@ pattern %(v1:lng,v2:lng) :lng
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:lng) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:lng,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:lng,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:dbl) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:bte) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:bte) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:sht) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:sht) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:int) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:int) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:wrd) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:wrd) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:lng) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:lng) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:flt) :flt
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:flt) :flt
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:flt,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:flt,v2:dbl) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:bte) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:bte) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:sht) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:sht) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:int) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:int) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:wrd) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:wrd) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:lng) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:lng) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:flt) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:flt) :dbl
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero causes NIL value";
+
+pattern %(v1:dbl,v2:dbl) :dbl
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:dbl,v2:dbl) :dbl
 address CMDvarMOD
 comment "Return V1 % V2, divide by zero causes NIL value";
 
