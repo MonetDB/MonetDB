@@ -1,0 +1,6 @@
+# some tests on the IN construct
+
+[1,2] -> filter $ in [2,3];
+["fabian","niels"] -> filter $ in ["niels","martin"];
+[3,"bla",4.3] -> filter $ in [4.3,"bla"];
+[true, true, false, null, true] -> filter $ in [true, null];
