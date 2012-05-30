@@ -1296,6 +1296,15 @@ make_bool(char b)
 	return res;
 }
 
+tree *
+make_null(void)
+{
+	tree *res = GDKzalloc(sizeof(tree));
+	res->type = j_null;
+	
+	return res;
+}
+
 /* creates a function call, with the optional arguments given */
 tree *
 make_func_call(char *name, tree *args)
@@ -1785,6 +1794,9 @@ printtree(stream *out, tree *t, int level, char op)
 				break;
 			case j_bool:
 				mnstr_printf(out, "%s ", t->nval == 0 ? "false" : "true");
+				break;
+			case j_null:
+				mnstr_printf(out, "null ");
 				break;
 			case j_func:
 				if (op) {
