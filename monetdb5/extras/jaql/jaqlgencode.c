@@ -491,7 +491,7 @@ static int
 dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 {
 	int ink = 0, inn = 0, ind = 0, ins = 0;
-	int a, b, c, g;
+	int a, b, c, g = 0;
 	InstrPtr q;
 
 	assert(
@@ -772,10 +772,12 @@ dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 			g = getArg(q, 0);
 			pushInstruction(mb, q);
 
-			return g;
+			break;
 		default:
 			assert(0);
 	}
+
+	return g;
 }
 
 /* returns bat with in the head the oids from elems that match the
