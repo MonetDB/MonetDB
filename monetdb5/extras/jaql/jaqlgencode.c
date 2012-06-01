@@ -896,6 +896,7 @@ dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 					pushInstruction(mb, q);
 					break;
 				default:
+					c = -1;
 					assert(0);
 			}
 
