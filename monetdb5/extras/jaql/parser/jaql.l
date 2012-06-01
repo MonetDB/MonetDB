@@ -156,8 +156,17 @@ null       return NIL;
 			yymore();
 		}
 	%}
-	"["   yymore(); yyextra->esc_depth++;
+	"["   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
+	\n    yymore();
+	<<EOF>> %{
+		jaqlerror(yyextra, "unexpected end of input");
+		yyextra->pos = yyextra->start = strlen(yyextra->buf);
+		yyextra->scanbuf = yyextra->tokstart = NULL;
+		YY_FLUSH_BUFFER;
+		BEGIN(INITIAL);
+		return EOF;
+	%}
 }
 "]"        return ']';
 "["        return '[';
@@ -171,8 +180,17 @@ null       return NIL;
 			yymore();
 		}
 	%}
-	"{"   yymore(); yyextra->esc_depth++;
+	"{"   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
+	\n    yymore();
+	<<EOF>> %{
+		jaqlerror(yyextra, "unexpected end of input");
+		yyextra->pos = yyextra->start = strlen(yyextra->buf);
+		yyextra->scanbuf = yyextra->tokstart = NULL;
+		YY_FLUSH_BUFFER;
+		BEGIN(INITIAL);
+		return EOF;
+	%}
 }
 "}"        return '}';
 "{"        return '{';
@@ -188,14 +206,14 @@ null       return NIL;
 ("#"|"//").*\n /* ignore comments */;
 [a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return IDENT;}
 <<EOF>>    return EOF;
-.          {
+.          %{
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);
 	jaqlerror(yyextra, buf);
 	yyextra->pos = yyextra->start = strlen(yyextra->buf);
 	yyextra->scanbuf = yyextra->tokstart = NULL;
 	YY_FLUSH_BUFFER;
-	BEGIN(0);
+	BEGIN(INITIAL);
 	return EOF;
-}
+%}
 %%
