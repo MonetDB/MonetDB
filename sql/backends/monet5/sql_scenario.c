@@ -1001,23 +1001,23 @@ SQLreader(Client c)
 	mvc *m = NULL;
 	int blocked = isa_block_stream(in->s);
 
-	if( SQLinitialized == FALSE){
+	if (SQLinitialized == FALSE) {
 		c->mode = FINISHING;
 		return NULL;
 	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "#SQL client finished\n");
+		mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
 		c->mode = FINISHING;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
 	mnstr_printf(GDKout, "#SQLparser: start reading SQL %s %s\n",
-		(be->console?" from console":""),
-		(blocked? "Blocked read":""));
+			(be->console ? " from console" : ""),
+			(blocked ? "Blocked read" : ""));
 #endif
-	language = be->language;	/* 'S' for SQL, 'D' from debugger */
+	language = be->language;    /* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
 	m->errstr[0] = 0;
 	/*
@@ -1027,88 +1027,88 @@ SQLreader(Client c)
 
 #ifdef _SQL_READER_DEBUG
 	mnstr_printf(GDKout, "#pos %d len %d eof %d \n",
-		in->pos, in->len, in->eof);
+			in->pos, in->len, in->eof);
 #endif
 	/*
 	 * @-
 	 * Distinguish between console reading and mclient connections.
 	 * The former comes with readline functionality.
 	 */
-	while(more) {
+	while (more) {
 		more = FALSE;
 
 		/* Different kinds of supported statements sequences
-			A;	-- single line			s
-			A \n B;	-- multi line			S
-			A; B;   -- compound single block	s
-			A;	-- many multi line
-			B \n C; -- statements in one block	S
-		*/
+		    A;	-- single line			s
+		    A \n B;	-- multi line			S
+		    A; B;   -- compound single block	s
+		    A;	-- many multi line
+		    B \n C; -- statements in one block	S
+		 */
 		/* auto_commit on end of statement */
 		if (m->scanner.mode == LINE_N)
-			go = SQLautocommit(c,m);
+			go = SQLautocommit(c, m);
 
 		if (go && in->pos >= in->len) {
-		ssize_t rd;
+			ssize_t rd;
 
-		if (c->bak) {
+			if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "#Switch to backup stream\n");
+				mnstr_printf(GDKout, "#Switch to backup stream\n");
 #endif
-			in = c->fdin;
-			blocked = isa_block_stream(in->s);
-			m->scanner.rs = c->fdin;
-			c->fdin->pos += c->yycur;
-			c->yycur = 0;
-		}
-		if (in->eof || !blocked) {
-			language = (be->console) ? 'S' : 0;
+				in = c->fdin;
+				blocked = isa_block_stream(in->s);
+				m->scanner.rs = c->fdin;
+				c->fdin->pos += c->yycur;
+				c->yycur = 0;
+			}
+			if (in->eof || !blocked) {
+				language = (be->console) ? 'S' : 0;
 
-			/* The rules of auto_commit require us to finish
-			   and start a transaction on the start of a new statement (s A;B; case) */
-			if (!(m->emod & mod_debug))
-				go = SQLautocommit(c,m);
+				/* The rules of auto_commit require us to finish
+				   and start a transaction on the start of a new statement (s A;B; case) */
+				if (!(m->emod & mod_debug))
+					go = SQLautocommit(c, m);
 
-			if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+					go = FALSE;
+					break;
+				}
+				in->eof = 0;
+			}
+			if (in->buf == NULL) {
+				more = FALSE;
+				go = FALSE;
+			} else if (go && (rd = bstream_next(in)) <= 0) {
+#ifdef _SQL_READER_DEBUG
+				mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+#endif
+				if (be->language == 'D' && in->eof == 0)
+					return 0;
+
+				if (rd == 0 && language != 0 && in->eof && !be->console) {
+					/* we hadn't seen the EOF before, so just try again
+					   (this time with prompt) */
+					more = TRUE;
+					continue;
+				}
 				go = FALSE;
 				break;
+			} else if (go && !be->console && language == 0) {
+				be->language = in->buf[in->pos++];
+				if (be->language == 's') {
+					be->language = 'S';
+					m->scanner.mode = LINE_1;
+				} else if (be->language == 'S') {
+					m->scanner.mode = LINE_N;
+				}
 			}
-			in->eof = 0;
-		}
-		if (in->buf == NULL) {
-			more = FALSE;
-			go = FALSE;
-		} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
-#endif
-			if (be->language == 'D' && in->eof == 0)
-				return 0;
-
-			if (rd == 0 && language != 0 && in->eof && !be->console) {
-				/* we hadn't seen the EOF before, so just try again
-				   (this time with prompt) */
-				more = TRUE;
-				continue;
-			}
-			go = FALSE;
-			break;
-		} else if (go && !be->console && language == 0) {
-			be->language = in->buf[in->pos++];
-			if (be->language == 's') {
-				be->language = 'S';
-				m->scanner.mode = LINE_1;
-			} else if (be->language == 'S') {
-				m->scanner.mode = LINE_N;
-			}
-		}
-#ifdef _SQL_READER_DEBUG
-		mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
+			mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
 		}
 	}
 	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
-		in->pos = in->len;	/* skip rest of the input */
+		in->pos = in->len;  /* skip rest of the input */
 		c->mode = FINISHING;
 		return NULL;
 	}
