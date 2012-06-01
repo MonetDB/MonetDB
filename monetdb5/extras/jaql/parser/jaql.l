@@ -147,7 +147,7 @@ null       return NIL;
 "*"        return '*';
 "/"        return '/';
 <ARR>{
-	"]"   %{
+	"]"   {
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
@@ -155,23 +155,23 @@ null       return NIL;
 		} else {
 			yymore();
 		}
-	%}
+	}
 	"["   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
 	\n    yymore();
-	<<EOF>> %{
+	<<EOF>> {
 		jaqlerror(yyextra, "unexpected end of input");
 		yyextra->pos = yyextra->start = strlen(yyextra->buf);
 		yyextra->scanbuf = yyextra->tokstart = NULL;
 		YY_FLUSH_BUFFER;
 		BEGIN(INITIAL);
 		return EOF;
-	%}
+	}
 }
 "]"        return ']';
 "["        return '[';
 <OBJ>{
-	"}"   %{
+	"}"   {
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
@@ -179,18 +179,18 @@ null       return NIL;
 		} else {
 			yymore();
 		}
-	%}
+	}
 	"{"   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
 	\n    yymore();
-	<<EOF>> %{
+	<<EOF>> {
 		jaqlerror(yyextra, "unexpected end of input");
 		yyextra->pos = yyextra->start = strlen(yyextra->buf);
 		yyextra->scanbuf = yyextra->tokstart = NULL;
 		YY_FLUSH_BUFFER;
 		BEGIN(INITIAL);
 		return EOF;
-	%}
+	}
 }
 "}"        return '}';
 "{"        return '{';
@@ -206,7 +206,7 @@ null       return NIL;
 ("#"|"//").*\n /* ignore comments */;
 [a-zA-Z_][a-zA-Z0-9_]* {yylval->j_ident = GDKstrdup(yytext); return IDENT;}
 <<EOF>>    return EOF;
-.          %{
+.          {
 	char buf[32];
 	snprintf(buf, sizeof(buf), "unexpected character: %c", yytext[0]);
 	jaqlerror(yyextra, buf);
@@ -215,5 +215,5 @@ null       return NIL;
 	YY_FLUSH_BUFFER;
 	BEGIN(INITIAL);
 	return EOF;
-%}
+}
 %%
