@@ -1541,7 +1541,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if (n < BBPsize)
 		n = BBPsize;
 
-	if (GDKdebug & (IOMASK | 1))
+	if (GDKdebug & (IOMASK | THRDMASK))
 		THRprintf(GDKstdout, "#BBPdir: writing BBP.dir (%d bats).\n", n);
 	IODEBUG {
 		THRprintf(GDKstdout, "#BBPdir start oid=");
@@ -1616,7 +1616,7 @@ BBPdir(int cnt, bat *subcommit)
 	if (subcommit)
 		return BBPdir_subcommit(cnt, subcommit);
 
-	if (GDKdebug & (IOMASK | 1))
+	if (GDKdebug & (IOMASK | THRDMASK))
 		THRprintf(GDKstdout, "#BBPdir: writing BBP.dir (%d bats).\n", (int) BBPsize);
 	IODEBUG {
 		THRprintf(GDKstdout, "#BBPdir start oid=");

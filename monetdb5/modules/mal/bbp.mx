@@ -1171,7 +1171,7 @@ CMDbbpLocation(int *ret)
 }
 
 
-#define monet_modulesilent (GDKdebug&4096)
+#define monet_modulesilent (GDKdebug&PERFMASK)
 
 
 str

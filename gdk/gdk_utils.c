@@ -699,7 +699,7 @@ GDKmemfail(str s, size_t len)
 
 	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-/*	GDKdebug |= 4;  avoid debugging output */
+/*	GDKdebug |= MEMMASK;  avoid debugging output */
 
 	BBPtrim(BBPTRIM_ALL);
 
@@ -1692,7 +1692,7 @@ GDKfatal(const char *format, ...)
 	va_list ap;
 	FILE *fd = stderr;
 
-	GDKdebug |= 16;
+	GDKdebug |= IOMASK;
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif
@@ -1927,7 +1927,7 @@ THRprintf(stream *s, const char *format, ...)
 	do {
 		p = bf;
 		*p++ = c;
-		if (GDKdebug&1) {
+		if (GDKdebug & THRDMASK) {
 			sprintf(p, "%02d ", THRgettid());
 			while (*p)
 				p++;

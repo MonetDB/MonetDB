@@ -1901,7 +1901,7 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	/* Provide debugging support */
 #if @1
-	if (GDKdebug & 10 && exceptionVar < 0) {
+	if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
 		BAT *b;
 
 		for (i = 0; i < pci->retc; i++) {
@@ -1913,10 +1913,10 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					continue;
 				}
 				if (b->batStamp <= stamp) {
-					if (GDKdebug & 8) {
+					if (GDKdebug & PROPMASK) {
 						BATassertProps(b);
 					}
-				} else if (GDKdebug & 2) {
+				} else if (GDKdebug & CHECKMASK) {
 					BATassertProps(b);
 				}
 				BBPunfix(b->batCacheid);
