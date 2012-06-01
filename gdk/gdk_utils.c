@@ -1811,8 +1811,8 @@ THRnew(MT_Id pid, str name)
 		s->data[0] = THRdata[0];
 		s->sp = THRsp();
 
-		PARDEBUG THRprintf(GDKout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
-		PARDEBUG THRprintf(GDKout, "#nrofthreads %d\n", GDKnrofthreads);
+		PARDEBUG THRprintf(GDKstdout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG THRprintf(GDKstdout, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
 	}
@@ -1830,7 +1830,7 @@ THRdel(Thread t)
 	}
 	gdk_set_lock(GDKthreadLock, "THRdel");
 /*	The stream may haven been closed (e.g. in freeClient)  causing an abort
-	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
+	PARDEBUG THRprintf(GDKstdout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 */
 
 	t->pid = 0;

@@ -3043,7 +3043,7 @@ BATassertHeadProps(BAT *b)
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
 				if (hp)
 					GDKfree(hp);
-				THRprintf(GDKout,
+				THRprintf(GDKstdout,
 					  "#BATassertProps: cannot allocate "
 					  "hash table\n");
 				goto abort_check;
@@ -3056,7 +3056,7 @@ BATassertHeadProps(BAT *b)
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
-				THRprintf(GDKout,
+				THRprintf(GDKstdout,
 					  "#BATassertProps: cannot allocate "
 					  "hash table\n");
 				goto abort_check;
@@ -3225,7 +3225,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 				GDKfree(ext);
 			hp = NULL;
 			ext = NULL;
-			THRprintf(GDKout,
+			THRprintf(GDKstdout,
 				  "#BATderiveProps: cannot allocate "
 				  "hash table: not doing full check\n");
 		}
