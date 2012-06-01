@@ -48,6 +48,12 @@ Ready.
 % clob # type
 % 26 # length
 [ true, true, null, true ]
+#[{"a":[1,2], "b":"bla,bla"}, {"a":[2,3], "b":"no,no"}, {"a":[4]}] -> filter 2 in $.a;
+% .json # table_name
+% json # name
+% clob # type
+% 70 # length
+[ { "a": [ 1, 2 ], "b": "bla,bla" }, { "a": [ 2, 3 ], "b": "no,no" } ]
 
 # 20:32:01 >  
 # 20:32:01 >  "Done."

@@ -4,3 +4,5 @@
 ["fabian","niels"] -> filter $ in ["niels","martin"];
 [3,"bla",4.3] -> filter $ in [4.3,"bla"];
 [true, true, false, null, true] -> filter $ in [true, null];
+
+[{"a":[1,2], "b":"bla,bla"}, {"a":[2,3], "b":"no,no"}, {"a":[4]}] -> filter 2 in $.a;
