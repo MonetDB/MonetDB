@@ -1541,7 +1541,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	if (n < BBPsize)
 		n = BBPsize;
 
-	if (GDKdebug & (IOMASK | 1))
+	if (GDKdebug & (IOMASK | THRDMASK))
 		THRprintf(GDKstdout, "#BBPdir: writing BBP.dir (%d bats).\n", n);
 	IODEBUG {
 		THRprintf(GDKstdout, "#BBPdir start oid=");
@@ -1616,7 +1616,7 @@ BBPdir(int cnt, bat *subcommit)
 	if (subcommit)
 		return BBPdir_subcommit(cnt, subcommit);
 
-	if (GDKdebug & (IOMASK | 1))
+	if (GDKdebug & (IOMASK | THRDMASK))
 		THRprintf(GDKstdout, "#BBPdir: writing BBP.dir (%d bats).\n", (int) BBPsize);
 	IODEBUG {
 		THRprintf(GDKstdout, "#BBPdir start oid=");
@@ -1971,7 +1971,7 @@ BBPinsert(BATstore *bs)
 		BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strlen(nme) + 1 + 1 /* EOS + DIR_SEP */ );
 		GDKfilepath(BBP_physical(i), dirname, nme, NULL);
 
-		BATDEBUG THRprintf(GDKout, "#%d = new %s(%s,%s)\n", (int) i, BBPname(i), ATOMname(bs->H.type), ATOMname(bs->T.type));
+		BATDEBUG THRprintf(GDKstdout, "#%d = new %s(%s,%s)\n", (int) i, BBPname(i), ATOMname(bs->H.type), ATOMname(bs->T.type));
 	}
 
 	return i;
@@ -2030,7 +2030,7 @@ BBPuncacheit(bat i, int unloaddesc)
 
 		if (bs) {
 			if (BBP_cache(i)) {
-				BATDEBUG THRprintf(GDKout, "#uncache %d (%s)\n", (int) i, BBPname(i));
+				BATDEBUG THRprintf(GDKstdout, "#uncache %d (%s)\n", (int) i, BBPname(i));
 
 				BBP_cache(i) = BBP_cache(-i) = NULL;
 
@@ -2053,11 +2053,11 @@ static inline void
 bbpclear(bat i, int idx, str lock)
 {
 	BATDEBUG {
-		THRprintf(GDKout, "#clear %d (%s)\n", (int) i, BBPname(i));
+		THRprintf(GDKstdout, "#clear %d (%s)\n", (int) i, BBPname(i));
 	}
 	BBPuncacheit(i, TRUE);
 	BATDEBUG {
-		mnstr_printf(GDKout, "#BBPclear set to unloading %d\n", i);
+		mnstr_printf(GDKstdout, "#BBPclear set to unloading %d\n", i);
 	}
 	BBP_status_set(i, BBPUNLOADING, "BBPclear");
 	BBP_refs(i) = 0;
@@ -2213,7 +2213,7 @@ BBPspin(bat i, str s, int event)
 			MT_sleep_ms(1);
 			spin++;
 		}
-		BATDEBUG THRprintf(GDKout, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
+		BATDEBUG THRprintf(GDKstdout, "#BBPspin(%d,%s,%d): " LLFMT " loops\n", (int) i, s, event, spin);
 	}
 }
 
@@ -2431,7 +2431,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 		 * available anymore */
 		assert((BBP_status(i) & BBPUNLOADING) == 0);
 		BATDEBUG {
-			mnstr_printf(GDKout, "#BBPdecref set to unloading BAT %d\n", i);
+			mnstr_printf(GDKstdout, "#BBPdecref set to unloading BAT %d\n", i);
 		}
 		BBP_status_on(i, BBPUNLOADING, "BBPdecref");
 		swap = TRUE;
@@ -2456,7 +2456,7 @@ decref(bat i, int logical, int releaseShare, int lock)
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BATDEBUG {
-				mnstr_printf(GDKout, "#BBPdecref unload and free bat %d\n", i);
+				mnstr_printf(GDKstdout, "#BBPdecref unload and free bat %d\n", i);
 			}
 			BBP_unload_inc(i, "BBPdecref");
 			if (BBPfree(b, "BBPdecref"))	/* free memory of transient */
@@ -2611,7 +2611,7 @@ getBBPdescriptor(bat i, int lock)
 			if (b == NULL) {
 				load = TRUE;
 				BATDEBUG {
-					mnstr_printf(GDKout, "#BBPdescriptor set to unloading BAT %d\n", j);
+					mnstr_printf(GDKstdout, "#BBPdescriptor set to unloading BAT %d\n", j);
 				}
 				BBP_status_on(j, BBPLOADING, "BBPdescriptor");
 			}
@@ -2770,7 +2770,7 @@ BBPfree(BAT *b, str calledFrom)
 	}
 	/* clearing bits can be done without the lock */
 	BATDEBUG {
-		mnstr_printf(GDKout, "#BBPfree turn off unloading %d\n", bid);
+		mnstr_printf(GDKstdout, "#BBPfree turn off unloading %d\n", bid);
 	}
 	BBP_status_off(bid, BBPUNLOADING, calledFrom);
 	BBP_unload_dec(bid, calledFrom);
@@ -2998,7 +2998,7 @@ BBPtrim_select(size_t target, int dirty)
 						  memdirty);
 				}
 				BATDEBUG {
-					mnstr_printf(GDKout,
+					mnstr_printf(GDKstdout,
 						      "#BBPtrim_select set to unloading BAT %d\n",
 						      bbptrim[cur].bid);
 				}
@@ -3103,7 +3103,7 @@ BBPtrim(size_t target)
 			   GDKmem_inuse(), GDKvm_cursize());
 
 	MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM: target=" SZFMT "\n", target);
-	PERFDEBUG THRprintf(GDKout, "#BBPtrim(mem=%d)\n", target > 0);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPtrim(mem=%d)\n", target > 0);
 
 	scan = (bbptrimfirst == BBPMAXTRIM);
 	if (bbpscanstart >= BBPsize)
@@ -3168,7 +3168,7 @@ BBPtrim(size_t target)
 			bats_written += (b->batPersistence != TRANSIENT && BATdirty(b));
 			bats_unloaded++;
 			BATDEBUG {
-				mnstr_printf(GDKout,
+				mnstr_printf(GDKstdout,
 					      "#BBPtrim unloaded and free bat %d\n",
 					      b->batCacheid);
 			}
@@ -3180,7 +3180,7 @@ BBPtrim(size_t target)
 	}
 	/* done trimming */
 	MEMDEBUG THRprintf(GDKstdout, "#BBPTRIM_EXIT: memsize=" SZFMT ",vmsize=" SZFMT "\n", GDKmem_cursize(), GDKvm_cursize());
-	PERFDEBUG THRprintf(GDKout, "#BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", did_scan, bats_unloaded, bats_written, GDKms() - msec);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPtrim(did_scan=%d, bats_unloaded=%d, bats_written=%d) %d ms\n", did_scan, bats_unloaded, bats_written, GDKms() - msec);
 
 	BBP_notrim = 0;
 	for (i = BBP_THREADMASK; i >= 0; i--)
@@ -3555,7 +3555,7 @@ batcache_get(batcache_t * bc, int bin)
 		BBP_refs(bid)++;
 
 		BATDEBUG {
-			mnstr_printf(GDKout, "#BBPrecycle turn off unloading %d\n", bid);
+			mnstr_printf(GDKstdout, "#BBPrecycle turn off unloading %d\n", bid);
 		}
 		/* clearing bits can be done without the lock */
 		BBP_status_off(bid, BBPUNLOADING, "BBPrecycle");
@@ -3592,7 +3592,7 @@ BBPaddtobin(BAT *b)
 	    b->ttype > TYPE_str ||
 	    VIEWvhparent(b) ||
 	    VIEWvtparent(b)) {
-		BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d " BUNFMT " %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
+		BATDEBUG THRprintf(GDKstdout, "#BBPaddtobin %d %d " BUNFMT " %d N1\n", b->htype, b->ttype, b->U->capacity, bin);
 		BATdelete(b);	/* handles persistent case also (file deletes) */
 		return 1;
 	}
@@ -3604,7 +3604,7 @@ BBPaddtobin(BAT *b)
 		    (b->U->capacity & ((BUN) BATTINY - 1)) != 0 ||
 		    BATCACHE_NOTYPE(b->htype) ||
 		    BATCACHE_NOTYPE(b->ttype)) {
-			BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d " BUNFMT " %d N2\n", b->htype, b->ttype, b->U->capacity, bin);
+			BATDEBUG THRprintf(GDKstdout, "#BBPaddtobin %d %d " BUNFMT " %d N2\n", b->htype, b->ttype, b->U->capacity, bin);
 			BATdelete(b);	/* handles persistent case also (file deletes) */
 			return 1;
 		}
@@ -3613,7 +3613,7 @@ BBPaddtobin(BAT *b)
 	assert(BBP_lrefs(bid) == 0);
 	assert(b->batCacheid > 0);
 
-	BATDEBUG THRprintf(GDKout, "#BBPaddtobin %d %d " BUNFMT " %d Y\n", b->htype, b->ttype, b->U->capacity, bin);
+	BATDEBUG THRprintf(GDKstdout, "#BBPaddtobin %d %d " BUNFMT " %d Y\n", b->htype, b->ttype, b->U->capacity, bin);
 	/* change views into void,void bats */
 	if (hp || tp) {
 		BATstore *bs = BBP_desc(b->batCacheid);
@@ -3699,7 +3699,7 @@ BBPrecycle(int ht, int tt, size_t cap)
 	    cap > batcache_maxbuckets * (BUN) BATTINY ||
 	    BATCACHE_NOTYPE(ht) ||
 	    BATCACHE_NOTYPE(tt)) {
-		BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) N1\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
+		BATDEBUG THRprintf(GDKstdout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) N1\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 		return NULL;
 	}
 
@@ -3708,7 +3708,7 @@ BBPrecycle(int ht, int tt, size_t cap)
 	bid = batcache_get(batcache + (bin == 0 ? 0 : (cap >> BATTINY_BITS) - 1), bin);
 	bs = BBP_desc(bid);
 	if (bs) {
-		BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) Y\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
+		BATDEBUG THRprintf(GDKstdout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) Y\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 		/* make the bat empty; do this extra work only if the
 		 * bat is reused (not in BBPaddtobin) */
 		bs->H.type = ht;
@@ -3757,7 +3757,7 @@ BBPrecycle(int ht, int tt, size_t cap)
 		}
 		return bs;
 	}
-	BATDEBUG THRprintf(GDKout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) N2\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
+	BATDEBUG THRprintf(GDKstdout, "#BBPrecycle %d %d " SZFMT " (%d, %d %d %d) N2\n", ht, tt, cap, BATCACHE_NOTYPE(ht), BATCACHE_NOTYPE(tt), batcache_maxbuckets, bin);
 	return NULL;
 }
 
@@ -4107,7 +4107,7 @@ BBPsync(int cnt, bat *subcommit)
 		}
 		ret = (idx < cnt);
 	}
-	PERFDEBUG THRprintf(GDKout, "#BBPsync (move time %d) %d files\n", (t1 = GDKms()) - t0, backup_files);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPsync (move time %d) %d files\n", (t1 = GDKms()) - t0, backup_files);
 
 	/* PHASE 2: save the repository */
 	if (ret == 0) {
@@ -4127,7 +4127,7 @@ BBPsync(int cnt, bat *subcommit)
 		ret = (idx < cnt);
 	}
 
-	PERFDEBUG THRprintf(GDKout, "#BBPsync (write time %d)\n", (t0 = GDKms()) - t1);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPsync (write time %d)\n", (t0 = GDKms()) - t1);
 
 	if (ret == 0) {
 		if (bbpdirty) {
@@ -4141,7 +4141,7 @@ BBPsync(int cnt, bat *subcommit)
 		}
 	}
 
-	PERFDEBUG THRprintf(GDKout, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, BBPsize);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPsync (dir time %d) %d bats\n", (t1 = GDKms()) - t0, BBPsize);
 
 	if (bbpdirty || backup_files > 0) {
 		if (ret == 0) {
@@ -4169,7 +4169,7 @@ BBPsync(int cnt, bat *subcommit)
 			(void) BBPprepare(0);	/* (try to) remove DELDIR and set up new BAKDIR */
 		}
 	}
-	PERFDEBUG THRprintf(GDKout, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
+	PERFDEBUG THRprintf(GDKstdout, "#BBPsync (ready time %d)\n", (t0 = GDKms()) - t1);
 
 	return ret;
 }

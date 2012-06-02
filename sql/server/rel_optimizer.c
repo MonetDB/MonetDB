@@ -1357,40 +1357,26 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data, *ne = NULL;
 				int must = 0, mustl = 0, mustr = 0;
 
-				assert(e->type == e_cmp);
+				if (e->type == e_column)
+					continue;
 				if ((is_join(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
 				    (is_select(rel->op) && can_push_func(e, NULL, &must) && must)) {
 					must = 0; mustl = 0; mustr = 0;
-					ne = e->l;
-					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
-					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
-						exp_label(sql->sa, ne, ++sql->label);
-						if (mustr)
-							append(r->exps, ne);
-						else
-							append(l->exps, ne);
-						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
-					}
-					e->l = ne;
-
-					must = 0; mustl = 0; mustr = 0;
-					ne = e->r;
-					if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
-					    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
-						exp_label(sql->sa, ne, ++sql->label);
-						if (mustr)
-							append(r->exps, ne);
-						else
-							append(l->exps, ne);
-						ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
-					}
-					e->r = ne;
-
-					if (e->f) {
-						must = 0; mustl = 0; mustr = 0;
-						ne = e->f;
+					if (e->type != e_cmp) { /* predicate */
+						if ((is_join(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
+					    	    (is_select(rel->op) && can_push_func(e, NULL, &must) && must)) {
+							exp_label(sql->sa, e, ++sql->label);
+							if (mustr)
+								append(r->exps, e);
+							else
+								append(l->exps, e);
+							e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+							n->data = e;
+						}
+					} else {
+						ne = e->l;
 						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
-					            (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+					    	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
 							exp_label(sql->sa, ne, ++sql->label);
 							if (mustr)
 								append(r->exps, ne);
@@ -1398,11 +1384,39 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(l->exps, ne);
 							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
 						}
-						e->f = ne;
+						e->l = ne;
+
+						must = 0; mustl = 0; mustr = 0;
+						ne = e->r;
+						if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+					    	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+							exp_label(sql->sa, ne, ++sql->label);
+							if (mustr)
+								append(r->exps, ne);
+							else
+								append(l->exps, ne);
+							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+						}
+						e->r = ne;
+
+						if (e->f) {
+							must = 0; mustl = 0; mustr = 0;
+							ne = e->f;
+							if ((is_join(rel->op) && ((can_push_func(ne, l, &mustl) && mustl) || (can_push_func(ne, r, &mustr) && mustr))) ||
+					            	    (is_select(rel->op) && can_push_func(ne, NULL, &must) && must)) {
+								exp_label(sql->sa, ne, ++sql->label);
+								if (mustr)
+									append(r->exps, ne);
+								else
+									append(l->exps, ne);
+								ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							}
+							e->f = ne;
+						}
 					}
+					(*changes)++;
 				}
 			}
-			(*changes)++;
 		}
 	}
 	if (rel->op == op_project && rel->l && rel->exps) {
@@ -4672,11 +4686,14 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 	if (is_select(rel->op) || is_join(rel->op)) {
 		list *exps = NULL;
 		sql_idx *i = find_index(sql->sa, rel, rel, &exps);
+		int left = 1;
 
 		if (!i && is_join(rel->op))
 			i = find_index(sql->sa, rel, rel->l, &exps);
-		if (!i && is_join(rel->op))
+		if (!i && is_join(rel->op)) {
+			left = 0;
 			i = find_index(sql->sa, rel, rel->r, &exps);
+		}
 			
 		if (i) {
 			prop *p;
@@ -4686,6 +4703,11 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 			for( n = exps->h; n; n = n->next) { 
 				sql_exp *e = n->data;
 
+				/* swapped ? */
+				if (is_join(rel->op) && 
+					 ((left && !rel_find_exp(rel->l, e->l)) ||
+					 (!left && !rel_find_exp(rel->r, e->l)))) 
+					n->data = e = exp_compare(sql->sa, e->r, e->l, cmp_equal);
 				p = find_prop(e->p, PROP_HASHCOL);
 				if (!p)
 					e->p = p = prop_create(sql->sa, PROP_HASHCOL, e->p);

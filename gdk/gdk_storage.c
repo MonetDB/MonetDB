@@ -681,7 +681,8 @@ BATload_intern(bat i, int lock)
 	}
 	b->batDirtydesc |= batmapdirty;	/* if some heap mode changed, make desc dirty */
 
-	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
+	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
+	    (GDKdebug & PROPMASK)) {
 		++b->batSharecnt;
 		--b->batSharecnt;
 	}

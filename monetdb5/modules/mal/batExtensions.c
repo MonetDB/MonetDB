@@ -151,7 +151,7 @@ CMDBATreduce(int *ret, int *bid)
 			printf("found thash %s " SZFMT "\n",BBP_logical(b->batCacheid), (size_t) BATcount(b) * sizeof(BUN));
 #endif
 		/* disable DeadBeef production */
-		GDKdebug &= ~33554432;
+		GDKdebug &= ~DEADBEEFMASK;
 		HASHdestroy(b);
 	}
 	BBPkeepref(*ret=b->batCacheid);

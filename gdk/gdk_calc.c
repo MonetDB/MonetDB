@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include <math.h>
 
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
@@ -5711,7 +5712,10 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 
 #define MOD_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
-	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1, const TYPE2 *rgt, int incr2, TYPE3 *dst, BUN cnt, int abort_on_error) \
+	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
+					const TYPE2 *rgt, int incr2,	\
+					TYPE3 *dst, BUN cnt,		\
+					int abort_on_error)		\
 	{								\
 		BUN i, j, k;						\
 		BUN nils = 0;						\
@@ -5727,6 +5731,33 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 				nils++;					\
 			} else {					\
 				dst[k] = (TYPE3) lft[i] % rgt[j];	\
+			}						\
+		}							\
+		return nils;						\
+	}
+
+#define FMOD_3TYPE(TYPE1, TYPE2, TYPE3, FUNC)				\
+	static BUN							\
+	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
+					const TYPE2 *rgt, int incr2,	\
+					TYPE3 *dst, BUN cnt,		\
+					int abort_on_error)		\
+	{								\
+		BUN i, j, k;						\
+		BUN nils = 0;						\
+									\
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) { \
+			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else if (rgt[j] == 0) {			\
+				if (abort_on_error)			\
+					return BUN_NONE;		\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
+						      (TYPE3) rgt[j]);	\
 			}						\
 		}							\
 		return nils;						\
@@ -5812,6 +5843,27 @@ MOD_3TYPE(lng, int, int)
 MOD_3TYPE(lng, int, lng)
 #endif
 MOD_3TYPE(lng, lng, lng)
+
+FMOD_3TYPE(bte, flt, flt, fmodf)
+FMOD_3TYPE(sht, flt, flt, fmodf)
+FMOD_3TYPE(int, flt, flt, fmodf)
+FMOD_3TYPE(lng, flt, flt, fmodf)
+FMOD_3TYPE(flt, bte, flt, fmodf)
+FMOD_3TYPE(flt, sht, flt, fmodf)
+FMOD_3TYPE(flt, int, flt, fmodf)
+FMOD_3TYPE(flt, lng, flt, fmodf)
+FMOD_3TYPE(flt, flt, flt, fmodf)
+FMOD_3TYPE(bte, dbl, dbl, fmod)
+FMOD_3TYPE(sht, dbl, dbl, fmod)
+FMOD_3TYPE(int, dbl, dbl, fmod)
+FMOD_3TYPE(lng, dbl, dbl, fmod)
+FMOD_3TYPE(flt, dbl, dbl, fmod)
+FMOD_3TYPE(dbl, bte, dbl, fmod)
+FMOD_3TYPE(dbl, sht, dbl, fmod)
+FMOD_3TYPE(dbl, int, dbl, fmod)
+FMOD_3TYPE(dbl, lng, dbl, fmod)
+FMOD_3TYPE(dbl, flt, dbl, fmod)
+FMOD_3TYPE(dbl, dbl, dbl, fmod)
 
 static BUN
 mod_typeswitchloop(const void *lft, int tp1, int incr1,
@@ -5936,6 +5988,28 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_bte_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_bte_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
 		default:
 			goto unsupported;
 		}
@@ -6039,6 +6113,28 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_sht_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_sht_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
 		default:
 			goto unsupported;
 		}
@@ -6132,6 +6228,28 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 				goto unsupported;
 			}
 			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_int_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_int_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
 		default:
 			goto unsupported;
 		}
@@ -6211,6 +6329,172 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 			switch (ATOMstorage(tp)) {
 			case TYPE_lng:
 				nils = mod_lng_lng_lng(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_lng_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_lng_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_flt:
+		switch (ATOMstorage(tp2)) {
+		case TYPE_bte:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_flt_bte_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_flt_sht_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_flt_int_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_flt_lng_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_flt:
+				nils = mod_flt_flt_flt(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_flt_dbl_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_dbl:
+		switch (ATOMstorage(tp2)) {
+		case TYPE_bte:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_bte_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_sht:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_sht_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_int:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_int_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_lng:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_lng_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_flt:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_flt_dbl(lft, incr1, rgt, incr2,
+						       dst, cnt,
+						       abort_on_error);
+				break;
+			default:
+				goto unsupported;
+			}
+			break;
+		case TYPE_dbl:
+			switch (ATOMstorage(tp)) {
+			case TYPE_dbl:
+				nils = mod_dbl_dbl_dbl(lft, incr1, rgt, incr2,
 						       dst, cnt,
 						       abort_on_error);
 				break;

@@ -699,7 +699,7 @@ GDKmemfail(str s, size_t len)
 
 	THRprintf(GDKstdout, "#%s(" SZFMT ") fails, try to free up space [memory in use=" SZFMT ",virtual memory in use=" SZFMT "]\n", s, len, GDKmem_inuse(), GDKvm_cursize());
 	GDKmemdump();
-/*	GDKdebug |= 4;  avoid debugging output */
+/*	GDKdebug |= MEMMASK;  avoid debugging output */
 
 	BBPtrim(BBPTRIM_ALL);
 
@@ -1692,7 +1692,7 @@ GDKfatal(const char *format, ...)
 	va_list ap;
 	FILE *fd = stderr;
 
-	GDKdebug |= 16;
+	GDKdebug |= IOMASK;
 #ifndef NATIVE_WIN32
 	BATSIGinit();
 #endif
@@ -1811,8 +1811,8 @@ THRnew(MT_Id pid, str name)
 		s->data[0] = THRdata[0];
 		s->sp = THRsp();
 
-		PARDEBUG THRprintf(GDKout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
-		PARDEBUG THRprintf(GDKout, "#nrofthreads %d\n", GDKnrofthreads);
+		PARDEBUG THRprintf(GDKstdout, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG THRprintf(GDKstdout, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
 	}
@@ -1830,7 +1830,7 @@ THRdel(Thread t)
 	}
 	gdk_set_lock(GDKthreadLock, "THRdel");
 /*	The stream may haven been closed (e.g. in freeClient)  causing an abort
-	PARDEBUG THRprintf(GDKout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
+	PARDEBUG THRprintf(GDKstdout, "#pid = " SZFMT ", disconnected, %d left\n", (size_t) t->pid, GDKnrofthreads);
 */
 
 	t->pid = 0;
@@ -1927,7 +1927,7 @@ THRprintf(stream *s, const char *format, ...)
 	do {
 		p = bf;
 		*p++ = c;
-		if (GDKdebug&1) {
+		if (GDKdebug & THRDMASK) {
 			sprintf(p, "%02d ", THRgettid());
 			while (*p)
 				p++;

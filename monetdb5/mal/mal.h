@@ -66,16 +66,16 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of all debug options.
 */
-#define GRPthreads ( 1 | PARMASK)
+#define GRPthreads (THRDMASK | PARMASK)
 #define GRPmemory (MEMMASK | ALLOCMASK )
 #define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
 #define GRPio (IOMASK | PERFMASK )
-#define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
-#define GRPmodules (DLMASK | LOADMASK)
+#define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
+#define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
-#define GRPxproperties (XPROPMASK )
+#define GRPxproperties 0 /* (XPROPMASK) */
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
-#define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., gdk/gdk.mx */
+#define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
 /*
  * @-

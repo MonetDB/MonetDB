@@ -181,10 +181,10 @@ command floor(y:dbl)    :dbl
 address MATHunary_FLOORdbl
 comment "The floor(x) function rounds x downwards to the nearest integer.";
 
-command fmod(y:flt,x:flt) :flt 
-address MATHbinary_FMODflt;
-command fmod(y:dbl,x:dbl) :dbl 
-address MATHbinary_FMODdbl
+pattern fmod(y:flt,x:flt) :flt 
+address CMDvarMODsignal;
+pattern fmod(y:dbl,x:dbl) :dbl 
+address CMDvarMODsignal
 comment "The fmod(x,y) function computes the remainder of dividing x by y.
 	The return value is x - n * y, where n is the quotient of x / y,
 	rounded towards zero to an integer.";
@@ -293,7 +293,6 @@ mmath_export str MATHbinary@1@2(@2 *res, @2 *a, @3 *b );
 @:unopM5_export(_CEIL)@
 @:unopbaseM5_export(_FABS,dbl,dbl)@
 @:unopM5_export(_FLOOR)@
-@:binopM5_export(_FMOD)@
 @:binopbaseM5_export(_ROUND,dbl,int)@
 @:binopbaseM5_export(_ROUND,flt,int)@
 
@@ -380,7 +379,6 @@ MNisinf(double x)
 #define ceil_unary(x, z)      *z = ((-1.0<*x)&&(*x<0.0))?0.0:ceil(*x)
 #define fabs_unary(x, z)      *z = fabs(*x)
 #define floor_unary(x, z)     *z = floor(*x)
-#define fmod_binary(x, y, z)  *z = fmod(*x,*y)
 
 static str
 math_unary_ISNAN(bit *res, dbl *a)
@@ -523,7 +521,6 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
 @:unopM5(_CEIL,ceil)@
 @:unopbaseM5(_FABS,fabs,dbl)@
 @:unopM5(_FLOOR,floor)@
-@:binopM5(_FMOD,fmod)@
 
 @:roundM5(dbl)@
 @:roundM5(flt)@

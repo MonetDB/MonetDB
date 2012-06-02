@@ -2237,9 +2237,6 @@ event_t *X_event = NO_event;
 #endif
 
 
-#define monet_modulesilent (!(GDKdebug&16384))
-
-
 static int
 init_counters(void)
 {
@@ -2264,7 +2261,7 @@ init_counters(void)
 		event = P5_event;
 	} else if (!strcmp(uts.machine, "i686")) {
 		if ((fp = fopen("/proc/cpuinfo", "r")) == NULL) {
-			if (!monet_modulesilent)
+			LOADDEBUG
 				mnstr_printf(GDKout,"init_counters: Cannot open /proc/cpuinfo to determine CPU: %s.\n", strerror(errno));
 		} else {
 			char buf[256];
@@ -2288,15 +2285,15 @@ init_counters(void)
 						NumEvents = NoEvent = K7_NUMEVENTS;
 						event = K7_event;
 					} else {
-						if (!monet_modulesilent)
+						LOADDEBUG
 							mnstr_printf(GDKout,"init_counters: Unknown vendor_id '%s` in /proc/cpuinfo.\n", p2);
 					}
 				}
 			}
-			if ((!found) && (!monet_modulesilent))
+			if ((!found) && (GDKdebug&LOADMASK))
 				mnstr_printf(GDKout,"init_counters: No 'vendor_id` found in /proc/cpuinfo.\n");
 			if (found > 1) {
-				if (!monet_modulesilent)
+				LOADDEBUG
 					mnstr_printf(GDKout,"init_counters: Currently, there's no hardware counter support for Linux SMP machines.\n");
 				NumEvents = NoEvent = 0;
 				event = NO_event;
@@ -2304,16 +2301,16 @@ init_counters(void)
 			fclose(fp);
 		}
 	} else {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: Architecture '%s' is not supported.\n", uts.machine);
 	}
 #elif ( defined(HW_Linux) && defined(HAVE_LIBPERFCTR) )
 	if (!(Self = vperfctr_open())) {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: vperfctr_open failed: %s.\n", strerror(errno));
 	} else {
 		if (vperfctr_info(Self, &Info) != 0) {
-			if (!monet_modulesilent)
+			LOADDEBUG
 				mnstr_printf(GDKout,"init_counters: vperfctr_info failed: %s.\n", strerror(errno));
 		} else {
 			switch (Info.cpu_type) {
@@ -2348,11 +2345,11 @@ init_counters(void)
 			}
 		}
 		if (vperfctr_stop(Self) != 0) {
-			if (!monet_modulesilent)
+			LOADDEBUG
 				fprintf(stderr, "init_counters: vperfctr_stop failed: %s.\n", strerror(errno));
 		}
 		if (vperfctr_unlink(Self) != 0) {
-			if (!monet_modulesilent)
+			LOADDEBUG
 				fprintf(stderr, "init_counters: vperfctr_unlink failed: %s.\n", strerror(errno));
 		}
 		vperfctr_close(Self);
@@ -2363,13 +2360,13 @@ init_counters(void)
 	 * Initialize pfm library (required before we can use it)
 	 */
 	if ((rtrn = pfm_initialize()) != PFMLIB_SUCCESS) {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: pfm_initialize failed: %s.\n", pfm_strerror(rtrn));
 	} else {
 		int pmu_type = 0;
 
 		if ((rtrn = pfm_get_pmu_type(&pmu_type)) != PFMLIB_SUCCESS) {
-			if (!monet_modulesilent)
+			LOADDEBUG
 				mnstr_printf(GDKout,"init_counters: pfm_get_pmu_type failed: %s.\n", pfm_strerror(rtrn));
 		} else {
 			pfmlib_options_t pfmlib_options;
@@ -2395,13 +2392,13 @@ init_counters(void)
 
 #elif ( defined(HW_SunOS) && defined(HAVE_LIBCPC) )
 	if ((cpc_version(CPC_VER_CURRENT) != CPC_VER_CURRENT) || (cpc_version(CPC_VER_CURRENT) == CPC_VER_NONE)) {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: library cpc version mismatch!\n");
 	} else if ((CPUver = cpc_getcpuver()) == -1) {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: no performance counter hardware!");
 	} else if (cpc_access() == -1) {
-		if (!monet_modulesilent)
+		LOADDEBUG
 			mnstr_printf(GDKout,"init_counters: can't access perf counters: %s.", strerror(errno));
 	} else {
 		NumEvents = NoEvent = X_NUMEVENTS;
@@ -2412,7 +2409,7 @@ init_counters(void)
 	event = X_event;
 #endif
 #endif
-	if ((!NumEvents) && (!monet_modulesilent))
+	if ((!NumEvents) && (GDKdebug&LOADMASK))
 		mnstr_printf(GDKout,"init_counters: Hardware counters will not be available.\n");
 	return GDK_SUCCEED;
 }

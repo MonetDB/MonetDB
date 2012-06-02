@@ -579,7 +579,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 				ATOMname(t2), ATOMname(t1));		\
 			return 0;					\
 		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(t2), ATOMname(t1));		\
 		}							\
 	} while (0)
@@ -595,12 +595,12 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 		if (BAThtype(P1) != BAThtype(P2) &&			\
 		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
 		}							\
 	} while (0)
@@ -2319,6 +2319,7 @@ VALptr(ValPtr v)
    for a documentation of the following debug options.
 */
 
+#define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
@@ -2329,26 +2330,34 @@ VALptr(ValPtr v)
 #define IODEBUG		if (GDKdebug & IOMASK)
 #define BATMASK		(1<<5)
 #define BATDEBUG	if (GDKdebug & BATMASK)
+/* PARSEMASK not used anymore
 #define PARSEMASK	(1<<6)
 #define PARSEDEBUG	if (GDKdebug & PARSEMASK)
+*/
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
+/* TRGMASK not used anymore
 #define TRGMASK		(1<<8)
 #define TRGDEBUG	if (GDKdebug & TRGMASK)
+*/
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
 #define TEMDEBUG	if (GDKdebug & TEMMASK)
+/* DLMASK not used anymore
 #define DLMASK		(1<<11)
 #define DLDEBUG		if (GDKdebug & DLMASK)
+*/
 #define PERFMASK	(1<<12)
 #define PERFDEBUG	if (GDKdebug & PERFMASK)
 #define DELTAMASK	(1<<13)
 #define DELTADEBUG	if (GDKdebug & DELTAMASK)
 #define LOADMASK	(1<<14)
 #define LOADDEBUG	if (GDKdebug & LOADMASK)
+/* YACCMASK not used anymore
 #define YACCMASK	(1<<15)
 #define YACCDEBUG	if (GDKdebug & YACCMASK)
+*/
 /*
 #define ?tcpip?		if (GDKdebug&(1<<16))
 #define ?monet_multiplex?	if (GDKdebug&(1<<17))
@@ -2360,8 +2369,10 @@ VALptr(ValPtr v)
 #define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)
 #define ESTIDEBUG	if (GDKdebug & ESTIMASK)
+/* XPROPMASK not used anymore
 #define XPROPMASK	(1<<23)
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
+*/
 
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
@@ -2372,12 +2383,10 @@ VALptr(ValPtr v)
 #define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
 
 /* M5, only; cf.,
- * MonetDB5/src/optimizer/opt_prelude.mx
- * MonetDB5/src/mal/mal.mx
-
+ * monetdb5/mal/mal.h
+ */
 #define OPTMASK		(1<<27)
 #define OPTDEBUG	if (GDKdebug & OPTMASK)
-*/
 
 #define EXTENDMASK	(1<<28)
 #define EXTENDDEBUG	if (GDKdebug & EXTENDMASK)
@@ -2470,7 +2479,7 @@ BBPcheck(register bat x, register const char *y)
 		register bat z = ABS(x);
 
 		if (z >= BBPsize || BBP_logical(z) == NULL) {
-			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
+			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

@@ -1436,9 +1436,10 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				sql_idx *i = p->value;
 			
 				join = s = rel2bin_hash_lookup(sql, rel, left, right, i, en);
-				assert(s);
-				list_append(jns, s);
-				use_hash = 1;
+				if (s) {
+					list_append(jns, s);
+					use_hash = 1;
+				}
 			}
 
 			s = exp_bin(sql, e, left, right, NULL, NULL);
