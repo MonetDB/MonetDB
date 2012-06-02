@@ -109,7 +109,6 @@ HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
 	int added = 0;
 
 
-	ALLOCDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, storage, free_file, hc->used);
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
 		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
 		if (hc->used < hc->sz) {
@@ -127,6 +126,7 @@ HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
 	}
 	if (!added)
 		return GDKmunmap(base, maxsz);
+	ALLOCDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, storage, free_file, hc->used);
 	return 0;
 }
 
@@ -206,7 +206,8 @@ HEAPcacheFind( size_t *maxsz, char *fn, int mode )
 			fclose(fp);
 			return GDKload(fn, NULL, *maxsz, *maxsz, mode);
 		}
-	}
+	} else
+		ALLOCDEBUG fprintf(stderr, "#HEAPcacheFind (%s) re-used\n", fn);
 	return base;
 }
 
@@ -560,6 +561,7 @@ HEAPfree_(Heap *h, int free_file)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
+			ALLOCDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
 			int ret = HEAPcacheAdd(h->base, h->maxsize, h->filename, h->storage, free_file);
