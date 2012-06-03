@@ -1261,6 +1261,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			if ( !*isens)
 				options |= PCRE_CASELESS;
 			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL) {
+				BBPreleaseref(strs->batCacheid);
+				BBPreleaseref(r->batCacheid);
 				throw(MAL, "pcre.match", OPERATION_FAILED
 						": compilation of regular expression (%s) failed "
 						"at %d with '%s'", ppat, errpos, err_p);
@@ -1276,6 +1278,8 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				else if (pos == -1)
 					br[i] = *not? TRUE: FALSE;
 				else {
+					BBPreleaseref(strs->batCacheid);
+					BBPreleaseref(r->batCacheid);
 					throw(MAL, "pcre.match", OPERATION_FAILED
 							": matching of regular expression (%s) failed with %d", ppat, pos);
 				}
