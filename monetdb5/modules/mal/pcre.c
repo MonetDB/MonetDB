@@ -1252,28 +1252,36 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 				i++;
 			}
 		} else {
-			if (*isens) {
-				BATloop(strs, p, q) {
-					str s = (str)BUNtail(strsi, p);
+			const char err[BUFSIZ], *err_p = err;
+			int errpos = 0;
+			int options = PCRE_UTF8;
+			int pos;
+			pcre *re;
 
-					res = PCREimatch(br + i, &s, &ppat);
-					i++;
-				}
-			} else {
-				BATloop(strs, p, q) {
-					str s = (str)BUNtail(strsi, p);
+			if ( !*isens)
+				options |= PCRE_CASELESS;
+			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL) {
+				throw(MAL, "pcre.match", OPERATION_FAILED
+						": compilation of regular expression (%s) failed "
+						"at %d with '%s'", ppat, errpos, err_p);
+			}
 
-					res = PCREmatch(br + i, &s, &ppat);
-					i++;
+			BATloop(strs, p, q) {
+				str s = (str)BUNtail(strsi, p);
+
+				pos = pcre_exec(re, NULL, s, (int) strlen(s), 0, 0, NULL, 0);
+
+				if (pos >= 0)
+					br[i] = *not? FALSE:TRUE;
+				else if (pos == -1)
+					br[i] = *not? TRUE: FALSE;
+				else {
+					throw(MAL, "pcre.match", OPERATION_FAILED
+							": matching of regular expression (%s) failed with %d", ppat, pos);
 				}
+				i++;
 			}
-			if (*not) {
-				i = 0;
-				BATloop(strs, p, q) {
-					br[i] = !br[i];
-					i++;
-				}
-			}
+			my_pcre_free(re);
 		}
 		BATaccessEnd(strs,USE_TAIL,MMAP_SEQUENTIAL);
 		BATsetcount(r, i);
