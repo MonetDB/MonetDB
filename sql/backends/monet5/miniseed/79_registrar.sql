@@ -32,7 +32,7 @@ All Rights Reserved.
 -- END;
 
 
-CREATE PROCEDURE register_repo(repo string)
+CREATE PROCEDURE register_repo(repo string, mode int)
 external name registrar.register_repo;
 
 -- CREATE FUNCTION register_read(repo string)

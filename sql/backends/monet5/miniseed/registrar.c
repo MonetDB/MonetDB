@@ -33,7 +33,9 @@ typedef struct {
 lng get_line_num(str filename);
 lng get_file_paths(str repo_path, str** ret_file_paths);
 str mseed_create_temp_container(temp_container* ret_tc);
+str mseed_create_temp_container_with_data_tables(temp_container* ret_tc);
 str mseed_register(str file_path, temp_container* ret_tc);
+str mseed_register_and_mount(str file_path, temp_container* ret_tc);
 int concatenate_strs(str* words_to_concat, int num_words_to_concat, str* ret_concatenated);
 str prepare_insertion(Client cntxt, temp_container* tc);
 str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc);
@@ -63,8 +65,8 @@ lng get_line_num(str filename)
 		
 	fclose(f);
 	
-	if(c != '\n')
-		lines++;
+// 	if(c != '\n')
+// 		lines++;
 	
 	return lines;
 }
@@ -259,7 +261,7 @@ str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 	int num_c_fil = 8;
 	int num_c_cat = 7;
 	int num_c_dat = 4;
-	int c, t, d;
+	int c, t;
 	
 	str sch_name = "mseed";
 	
@@ -739,6 +741,13 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		
 		// mount
 		{
+			int32_t seq_no = msr->sequence_number;
+			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
+			long sampling_time = msr->starttime;
+			
+			long num_samples = msr->samplecnt;
+			int *data_samples = msr->datasamples;
+			
 			if ((bfile = BATdescriptor(ret_tc->tables_columns[2].column_bats[0])) == NULL)
 				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 			if ((bseqno = BATdescriptor(ret_tc->tables_columns[2].column_bats[1])) == NULL)
@@ -748,15 +757,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 			if ((bdata = BATdescriptor(ret_tc->tables_columns[2].column_bats[3])) == NULL)
 				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 			
-			int32_t seq_no = msr->sequence_number;
-			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
-			long sampling_time = msr->starttime;
-			
-			long num_samples = msr->samplecnt;
-			int *data_samples = msr->datasamples;
-			
-			int i = 0;
-			for(;i<num_samples;i++)
+			for(i = 0; i<num_samples; i++)
 			{
 				
 				timestamp sampling_timestamp;
@@ -764,7 +765,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 				MTIMEtimestamp_lng(&sampling_timestamp, &st);
 				
 				// For each sample add one row to the table
-				BUNappend(bfile, (ptr) *targetfile, FALSE);
+				BUNappend(bfile, (ptr) file_path, FALSE);
 				BUNappend(bseqno, (ptr) &seq_no, FALSE);
 				BUNappend(btime, (ptr) &sampling_timestamp, FALSE);
 				BUNappend(bdata, (ptr) (data_samples+i), FALSE);
