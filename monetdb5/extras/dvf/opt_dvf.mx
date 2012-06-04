@@ -148,7 +148,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int state = 0; //0: start, 1:found v3, 2:found v5, 3:found v6;
 	
 	//state variables (instruction index) numbered with state
-	int i1, i2;
+	int i1 = 0, i2 = 0;
 	
 	InstrPtr *old = NULL, q = NULL, r = NULL, s = NULL, t = NULL;
 	int i, limit, actions = 0;
