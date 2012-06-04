@@ -245,6 +245,133 @@ str mseed_create_temp_container(temp_container* ret_tc)
 }
 
 /*
+ * fills the temp_container structure with the "mseed" meta-data and data tables' info.
+ * 
+ * returns error or MAL_SUCCEED
+ * 
+ * TODO: This function is now hardcoding every info. It can be made generic, 
+ * because required info is in sql_catalog.
+ */
+str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
+{
+	// cat: (metadata) catalog, fil: (metadata) files.
+	int num_tables = 3;
+	int num_c_fil = 8;
+	int num_c_cat = 7;
+	int num_c_dat = 4;
+	int c, t, d;
+	
+	str sch_name = "mseed";
+	
+	str cn_fil[] = {"file_location", "dataquality", "network", "station", "location", "channel", "encoding", "byte_order"};
+	str cn_cat[] = {"file_location", "seq_no", "record_length", "start_time", "frequency", "sample_count", "sample_type"};
+	str cn_dat[] = {"file_location", "seq_no", "sample_time", "sample_value"};
+	
+	str cts_fil[] = {"string", "char", "string", "string", "string", "string", "tinyint", "boolean"};
+	str cts_cat[] = {"string", "int", "int", "timestamp", "double", "bigint", "char"};
+	str cts_dat[] = {"string", "int", "timestamp", "int"};
+	
+	sht ct_fil[] = {TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_str, TYPE_bte, TYPE_bit};
+	sht ct_cat[] = {TYPE_str, TYPE_int, TYPE_int, TYPE_timestamp, TYPE_dbl, TYPE_lng, TYPE_str};
+	sht ct_dat[] = {TYPE_str, TYPE_int, TYPE_timestamp, TYPE_int};
+	
+	str tn[] = {"files", "catalog", "data"};
+	int num_c[] = {8, 7, 4};
+	
+	bat *cb_fil = (bat*)GDKmalloc(num_c_fil*sizeof(bat));
+	bat *cb_cat = (bat*)GDKmalloc(num_c_cat*sizeof(bat));
+	bat *cb_dat = (bat*)GDKmalloc(num_c_dat*sizeof(bat));
+	
+	temp_subcontainer *tscs = (temp_subcontainer*)GDKmalloc(num_tables*sizeof(temp_subcontainer));
+	
+	BAT *aBAT;
+	
+	assert(cb_fil!=NULL);
+	assert(cb_cat!=NULL);
+	assert(cb_dat!=NULL);
+	assert(tscs!=NULL);
+	
+	//cb_fil
+	for(c = 0; c < num_c_fil; c++)
+	{
+		aBAT = BATnew(TYPE_void, ct_fil[c], 0); //create empty BAT for each column.
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BATseqbase(aBAT, 0);
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BBPkeepref(cb_fil[c] = aBAT->batCacheid);
+	}
+	
+	//cb_cat
+	for(c = 0; c < num_c_cat; c++)
+	{
+		aBAT = BATnew(TYPE_void, ct_cat[c], 0); //create empty BAT for each column.
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BATseqbase(aBAT, 0);
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BBPkeepref(cb_cat[c] = aBAT->batCacheid);
+	}
+	
+	//cb_dat
+	for(c = 0; c < num_c_dat; c++)
+	{
+		aBAT = BATnew(TYPE_void, ct_dat[c], 0); //create empty BAT for each column.
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BATseqbase(aBAT, 0);
+		if ( aBAT == NULL)
+			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
+		BBPkeepref(cb_dat[c] = aBAT->batCacheid);
+	}
+	
+	(tscs+0)->column_bats = cb_fil;
+	(tscs+1)->column_bats = cb_cat;
+	(tscs+2)->column_bats = cb_dat;
+	
+	(tscs+0)->column_names = (str*) GDKmalloc(num_c[0]*sizeof(str));
+	(tscs+0)->column_types_strs = (str*) GDKmalloc(num_c[0]*sizeof(str));
+	for(c = 0; c < num_c[0]; c++)
+	{
+		(tscs+0)->column_names[c] = GDKstrdup(cn_fil[c]);
+		(tscs+0)->column_types_strs[c] = GDKstrdup(cts_fil[c]);
+	}	
+	
+	(tscs+1)->column_names = (str*) GDKmalloc(num_c[1]*sizeof(str));
+	(tscs+1)->column_types_strs = (str*) GDKmalloc(num_c[1]*sizeof(str));
+	for(c = 0; c < num_c[1]; c++)
+	{
+		(tscs+1)->column_names[c] = GDKstrdup(cn_cat[c]);
+		(tscs+1)->column_types_strs[c] = GDKstrdup(cts_cat[c]);
+	}
+	
+	(tscs+2)->column_names = (str*) GDKmalloc(num_c[2]*sizeof(str));
+	(tscs+2)->column_types_strs = (str*) GDKmalloc(num_c[2]*sizeof(str));
+	for(c = 0; c < num_c[2]; c++)
+	{
+		(tscs+2)->column_names[c] = GDKstrdup(cn_dat[c]);
+		(tscs+2)->column_types_strs[c] = GDKstrdup(cts_dat[c]);
+	}
+	
+	ret_tc->schema_name = sch_name;
+	ret_tc->tables_columns = tscs;
+	
+	ret_tc->table_names = (str*) GDKmalloc(num_tables*sizeof(str));
+	ret_tc->num_columns = (int*) GDKmalloc(num_tables*sizeof(int));
+	for(t = 0; t < num_tables; t++)
+	{
+		ret_tc->table_names[t] = GDKstrdup(tn[t]);
+		ret_tc->num_columns[t] = num_c[t];
+	}
+	
+	ret_tc->num_tables = num_tables;
+	
+	return MAL_SUCCEED;
+}
+
+/*
  * concatenates num_words_to_concat strings that are in words_to_concat into 
  * one string and stores it in ret_concatenated.
  * 
@@ -512,6 +639,151 @@ str mseed_register(str file_path, temp_container* ret_tc)
 }
 
 /*
+ * appends the meta-data and actual data of the input "mseed" file provided in the file_path,
+ * to the end of BATs of temp_container ret_tc.
+ * 
+ * returns error or MAL_SUCCEED.
+ * 
+ * WARNING: this may be an optional DEVELOPER-PROVIDED function. 
+ * 
+ * TODO: A better interface can be provided to submit values for the attributes
+ * of tables_to_be_filled.
+ */
+str mseed_register_and_mount(str file_path, temp_container* ret_tc)
+{
+	
+	MSRecord *msr = NULL;
+	int retcode;
+	short int verbose = 1;
+	short int data_flag = 1;
+	BAT *aBAT = NULL;
+	BAT *btime = NULL, *bdata = NULL, *bfile = NULL, *bseqno = NULL;
+	int files_done = FALSE;
+	timestamp start_timestamp;
+	lng st;
+	long i;
+	str ch = (str) GDKmalloc(2*sizeof(char));
+	ch[1] = '\0';
+	
+	while ((retcode = ms_readmsr (&msr, file_path, 0, NULL, NULL, 1, data_flag, verbose)) == MS_NOERROR)
+	{
+		if(!files_done)
+		{
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[0])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) file_path, FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[1])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			ch[0] = msr->dataquality;
+			// 			BUNappend(aBAT, (ptr) &(msr->dataquality), FALSE);
+			BUNappend(aBAT, (ptr) ch, FALSE);
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[2])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) msr->network, FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[3])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) msr->station, FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[4])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) msr->location, FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[5])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) msr->channel, FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[6])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) &(msr->encoding), FALSE);
+			
+			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[7])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			BUNappend(aBAT, (ptr) &(msr->byteorder), FALSE);
+			
+			files_done = TRUE;
+		}
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[0])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		BUNappend(aBAT, (ptr) file_path, FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[1])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[2])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		BUNappend(aBAT, (ptr) &(msr->reclen), FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[3])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		st = (lng) msr->starttime / 1000;
+		MTIMEtimestamp_lng(&start_timestamp, &st);
+		BUNappend(aBAT, (ptr) &start_timestamp, FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[4])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		BUNappend(aBAT, (ptr) &(msr->samprate), FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[5])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		BUNappend(aBAT, (ptr) &(msr->samplecnt), FALSE);
+		
+		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[6])) == NULL)
+			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+		ch[0] = msr->sampletype;
+		// 		BUNappend(aBAT, (ptr) &(msr->sampletype), FALSE);
+		BUNappend(aBAT, (ptr) ch, FALSE);
+		
+		// mount
+		{
+			if ((bfile = BATdescriptor(ret_tc->tables_columns[2].column_bats[0])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			if ((bseqno = BATdescriptor(ret_tc->tables_columns[2].column_bats[1])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			if ((btime = BATdescriptor(ret_tc->tables_columns[2].column_bats[2])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			if ((bdata = BATdescriptor(ret_tc->tables_columns[2].column_bats[3])) == NULL)
+				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
+			
+			int32_t seq_no = msr->sequence_number;
+			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
+			long sampling_time = msr->starttime;
+			
+			long num_samples = msr->samplecnt;
+			int *data_samples = msr->datasamples;
+			
+			int i = 0;
+			for(;i<num_samples;i++)
+			{
+				
+				timestamp sampling_timestamp;
+				lng st = (lng) sampling_time / 1000;
+				MTIMEtimestamp_lng(&sampling_timestamp, &st);
+				
+				// For each sample add one row to the table
+				BUNappend(bfile, (ptr) *targetfile, FALSE);
+				BUNappend(bseqno, (ptr) &seq_no, FALSE);
+				BUNappend(btime, (ptr) &sampling_timestamp, FALSE);
+				BUNappend(bdata, (ptr) (data_samples+i), FALSE);
+				sampling_time += sample_interval;
+			}
+		}
+		
+	}
+	
+	/* Cleanup memory and close file */
+	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
+	
+	if ( retcode != MS_ENDOFFILE )
+		throw(MAL, "mseed_register", "Cannot read %s: %s\n", file_path, ms_errorstr(retcode));
+	
+	return MAL_SUCCEED;
+}
+
+/*
  * takes a repository path repo_path, finds out the files in it, creates a 
  * temp_container of the metadata to be inserted, for each file calls the 
  * developer-provided register function which fills in the temp_container, 
@@ -525,11 +797,13 @@ str mseed_register(str file_path, temp_container* ret_tc)
 str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *repo_path = (str*) getArgReference(stk,pci,pci->retc); //arg 1: repo_path
+	int mode = *(int*) getArgReference(stk,pci,pci->retc+1); //arg 2: mode 0:register only, mode 1: register+mount
 	str *file_paths = NULL;
 	long num_file_paths;
 	temp_container *tc;
 	long i;
 	str err = NULL;
+	long start, finish;
 	
 	//fetch file_paths from repo_path
 	num_file_paths = get_file_paths(*repo_path, &file_paths);
@@ -541,22 +815,45 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	//create temp_container
 	tc = (temp_container*)GDKmalloc(sizeof(temp_container));
 	assert(tc != NULL);
-	err = mseed_create_temp_container(tc); // depending on design can get different argument(s)
+	if(mode == 0)
+		err = mseed_create_temp_container(tc); // depending on design can get different argument(s)
+	else
+		err = mseed_create_temp_container_with_data_tables(tc); // depending on design can get different argument(s)	
 	if(err != MAL_SUCCEED)
 	{//temp_container creation failed, what to do
 		throw(MAL,"registrar.register_repo", "temp_container creation failed: %s\n", err);
 	}
 	
+	start = GDKms();
 	//loop through the file_paths in repo
-	for(i = 0; i < num_file_paths; i++)
+	if(mode == 0)
 	{
-		err = mseed_register(file_paths[i], tc);
-		if(err != MAL_SUCCEED)
-		{//current file cannot be registered, what to do
-			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err);
+		for(i = 0; i < num_file_paths; i++)
+		{
+			err = mseed_register(file_paths[i], tc);
+			if(err != MAL_SUCCEED)
+			{//current file cannot be registered, what to do
+	// 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err);
+				printf("registrar.register_repo: current file cannot be registered: %s\n", err);
+			}
 		}
 	}
+	else
+	{
+		for(i = 0; i < num_file_paths; i++)
+		{
+			err = mseed_register_and_mount(file_paths[i], tc);
+			if(err != MAL_SUCCEED)
+			{//current file cannot be registered, what to do
+			// 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err);
+			printf("registrar.register_repo: current file cannot be registered and/or mounted: %s\n", err);
+			}
+		}
+	}
+	finish = GDKms();
+	printf("Time for extraction and transformation of (meta-)data: %ld milliseconds\n", finish - start);
 	
+	start = GDKms();
 	//prepare sql functions for inserting temp_container into tables_to_be_filled
 	err = prepare_insertion(cntxt, tc);
 	if(err != MAL_SUCCEED)
@@ -570,6 +867,8 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	{//inserting the temp_container into one of the tables failed, what to do
 		throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed: %s\n", err);
 	}
+	finish = GDKms();
+	printf("Time for loading of (meta-)data: %ld milliseconds\n", finish - start);
 	
 	err = register_clean_up(tc);
 	if(err != MAL_SUCCEED)
