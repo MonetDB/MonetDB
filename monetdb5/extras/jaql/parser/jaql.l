@@ -147,7 +147,7 @@ null       return NIL;
 "*"        return '*';
 "/"        return '/';
 <ARR>{
-	"]"   %{
+	"]"   {
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
@@ -155,14 +155,23 @@ null       return NIL;
 		} else {
 			yymore();
 		}
-	%}
-	"["   yymore(); yyextra->esc_depth++;
+	}
+	"["   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
+	\n    yymore();
+	<<EOF>> {
+		jaqlerror(yyextra, "unexpected end of input");
+		yyextra->pos = yyextra->start = strlen(yyextra->buf);
+		yyextra->scanbuf = yyextra->tokstart = NULL;
+		YY_FLUSH_BUFFER;
+		BEGIN(INITIAL);
+		return EOF;
+	}
 }
 "]"        return ']';
 "["        return '[';
 <OBJ>{
-	"}"   %{
+	"}"   {
 		if (--yyextra->esc_depth == 0) {
 			yylval->j_json = GDKstrdup(yytext - 1);
 			BEGIN(INITIAL);
@@ -170,9 +179,18 @@ null       return NIL;
 		} else {
 			yymore();
 		}
-	%}
-	"{"   yymore(); yyextra->esc_depth++;
+	}
+	"{"   {yymore(); yyextra->esc_depth++;}
 	.     yymore();
+	\n    yymore();
+	<<EOF>> {
+		jaqlerror(yyextra, "unexpected end of input");
+		yyextra->pos = yyextra->start = strlen(yyextra->buf);
+		yyextra->scanbuf = yyextra->tokstart = NULL;
+		YY_FLUSH_BUFFER;
+		BEGIN(INITIAL);
+		return EOF;
+	}
 }
 "}"        return '}';
 "{"        return '{';
@@ -195,7 +213,7 @@ null       return NIL;
 	yyextra->pos = yyextra->start = strlen(yyextra->buf);
 	yyextra->scanbuf = yyextra->tokstart = NULL;
 	YY_FLUSH_BUFFER;
-	BEGIN(0);
+	BEGIN(INITIAL);
 	return EOF;
 }
 %%
