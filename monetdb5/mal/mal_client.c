@@ -193,7 +193,6 @@ MCnewClient(void)
 	return c;
 }
 /*
- * @-
  * You can always retrieve a client record using the thread identifier,
  * because we maintain a 1-1 mapping between client and thread of control.
  * Therefore, we don't need locks either.
@@ -305,15 +304,13 @@ int MCinitClientThread(Client c)
 
 	snprintf(cname, 11, OIDFMT, c->user);
 	cname[11] = '\0';
-	c->mypid = MT_getpid();
-	t = THRnew(c->mypid,cname);
+	t = THRnew(MT_getpid(),cname);
 	if ( t==0) {
 		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
 	/*
-	 * @-
 	 * The GDK thread administration should be set to reflect use of
 	 * the proper IO descriptors.
 	 */
@@ -423,7 +420,6 @@ void freeClient(Client c)
 	 */
 	c->user = oid_nil;
 	c->mythread = 0;
-	c->mypid = 0;
 	c->mode = FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;

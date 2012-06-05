@@ -412,7 +412,6 @@ MSserveClient(void *dummy)
 		return;
 	}
 	/*
-	 * @-
 	 * A stack frame is initialized to keep track of global variables.
 	 * The scenarios are run until we finally close the last one.
 	 */
