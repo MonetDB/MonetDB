@@ -1137,7 +1137,6 @@ runDFLOWworker(void *t)
 			long delay, clk =  (long)(GDKusec()-usec)/1000;
 			double factor = 1.0;
 			if ( clk > DELAYUNIT ) {
-				long clkstart = clk;
 				mal_set_lock(mal_contextLock, "runMALdataflow");
 				asleep++;
 				/* speedup as we see more threads asleep */
@@ -1159,13 +1158,11 @@ runDFLOWworker(void *t)
 					MT_sleep_ms( delay );
 					clk -= DELAYUNIT;
 				}
-				if ( clkstart > DELAYUNIT || clkstart < - DELAYUNIT ) {
-					mal_set_lock(mal_contextLock, "runMALdataflow");
-					asleep--;
-					mal_unset_lock(mal_contextLock, "runMALdataflow");
-					PARDEBUG if ( clk > -2 * DELAYUNIT )
-						mnstr_printf(GDKstdout,"#delayed finished thread %d asleep %d\n", task->id, asleep);
-				}
+				mal_set_lock(mal_contextLock, "runMALdataflow");
+				asleep--;
+				mal_unset_lock(mal_contextLock, "runMALdataflow");
+				PARDEBUG if ( clk > -2 * DELAYUNIT )
+					mnstr_printf(GDKstdout,"#delayed finished thread %d asleep %d\n", task->id, asleep);
 			}
 		}
 	}
