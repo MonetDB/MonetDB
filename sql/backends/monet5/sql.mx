@@ -7165,6 +7165,45 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
  * Assume val is id,oid sorted. 
  */
 @h
+sql5_export str SQLmiddle_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+@c
+str
+SQLmiddle_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *v;
+	BUN cnt = 0, pos;
+	ValPtr res = getArgReference(stk, pci, 0);
+	int *type = (int*) getArgReference(stk, pci, 0);
+	bat valid = *(bat*) getArgReference(stk, pci, 1);
+	BATiter vi;
+
+	(void)cntxt;
+	(void)mb;
+	if( (v = BATdescriptor(valid)) == NULL ) 
+		throw(SQL, "sql.middle", "Cannot access descriptor");
+
+	*type = v->ttype;
+	cnt = BATcount(v);
+	if (cnt == 0) {
+		VALset(res, v->ttype, ATOMnilptr(v->ttype));
+		BBPunfix(v->batCacheid);
+		return MAL_SUCCEED;
+	}
+	pos = cnt/2;
+	vi = bat_iterator(v);
+	VALset(res, v->ttype, BUNtail(vi, pos));
+	BBPunfix(v->batCacheid);
+	return MAL_SUCCEED;
+}
+@mal
+pattern sql.middle_val( val:bat[:any_1,:any_2]):any_2
+address SQLmiddle_val;
+
+@h
+/*
+ * Compute the median.
+ * Assume val is id,oid sorted. 
+ */
 sql5_export str SQLmiddle(bat *res,  bat *val, bat *hist);
 @c
 str
@@ -7228,10 +7267,7 @@ address SQLmiddle;
 
 function aggr.median(a:bat[:oid,:any_1]):any_1;
 	v := algebra.sortTail(a);
-	c := aggr.count(v);
-	c := calc./(c,2);
-	p := calc.lng(c);
-	return algebra.fetch(v, p);
+	return sql.middle_val(a);
 end aggr.median;
 
 function aggr.median(a:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1];
