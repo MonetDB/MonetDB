@@ -1134,7 +1134,7 @@ runDFLOWworker(void *t)
 		/* If in the mean time memory becomes free, or too many sleep, re-enable worker */
 		/* It may happen that all threads enter the wait state. So, keep one running at all time */
 		if ( nxtfs == 0){
-			long delay, clk =  (long)(GDKusec()-usec)/1000;
+			long delay, clk = (GDKusec()- usec)/1000;
 			double factor = 1.0;
 			if ( clk > DELAYUNIT ) {
 				mal_set_lock(mal_contextLock, "runMALdataflow");
@@ -1149,20 +1149,19 @@ runDFLOWworker(void *t)
 				if ( task->todo->last ==  0) 
 					clk = -3 * DELAYUNIT;
 	
-				PARDEBUG if ( clk > 0) 
-					mnstr_printf(GDKstdout,"#delay %d initial %ld\n", task->id, clk);
+				PARDEBUG mnstr_printf(GDKstdout,"#delay %d initial %ld\n", task->id, clk);
 				while (clk > 0 ){
 					/* speed up wake up when we have memory or too many sleepers */
-					factor = memorypool/(MEMORY_THRESHOLD * monet_memory);
-					delay = (long)( DELAYUNIT * (factor > 1.0 ? 1.0:factor)) + 1;
-					MT_sleep_ms( delay );
+					factor = MT_getrss()/(MEMORY_THRESHOLD * monet_memory);
+					delay = (long)( DELAYUNIT * (factor > 1.0 ? 1.0:factor));
+					if ( delay)
+						MT_sleep_ms( delay );
 					clk -= DELAYUNIT;
 				}
 				mal_set_lock(mal_contextLock, "runMALdataflow");
 				asleep--;
 				mal_unset_lock(mal_contextLock, "runMALdataflow");
-				PARDEBUG if ( clk > -2 * DELAYUNIT )
-					mnstr_printf(GDKstdout,"#delayed finished thread %d asleep %d\n", task->id, asleep);
+				PARDEBUG mnstr_printf(GDKstdout,"#delayed finished thread %d asleep %d\n", task->id, asleep);
 			}
 		}
 	}
