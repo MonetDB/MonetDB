@@ -1154,6 +1154,7 @@ runDFLOWworker(void *t)
 					/* speed up wake up when we have memory or too many sleepers */
 					factor = MT_getrss()/(MEMORY_THRESHOLD * monet_memory);
 					delay = (long)( DELAYUNIT * (factor > 1.0 ? 1.0:factor));
+					delay = (long) (delay * (1.0 - asleep/GDKnr_threads));
 					if ( delay)
 						MT_sleep_ms( delay );
 					clk -= DELAYUNIT;
