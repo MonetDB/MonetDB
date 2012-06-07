@@ -3648,6 +3648,7 @@ void setPolymorphic(InstrPtr p, int tpe, int force);
 void setReturnArgument(InstrPtr p, int varid);
 str setScenario(Client c, str nme);
 str setStartPoint(Module cntxt, str mod, str fcn);
+void setVarName(MalBlkPtr mb, int i, str nme);
 void setVarType(MalBlkPtr mb, int i, int tpe);
 str setWriteModeRef;
 void showAllScenarios(stream *f);
