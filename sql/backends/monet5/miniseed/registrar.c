@@ -554,6 +554,7 @@ str mseed_register(str file_path, temp_container* ret_tc)
 	BAT *aBAT = NULL;
 	int files_done = FALSE;
 	timestamp start_timestamp;
+	int32_t seq_no_fake = 1;
 	lng st;
 	str ch = (str) GDKmalloc(2*sizeof(char));
 	ch[1] = '\0';
@@ -614,7 +615,8 @@ str mseed_register(str file_path, temp_container* ret_tc)
 		
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[1])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
-		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+// 		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+		BUNappend(aBAT, (ptr) &(seq_no_fake), FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[1]);
 		
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[2])) == NULL)
@@ -646,6 +648,7 @@ str mseed_register(str file_path, temp_container* ret_tc)
 		BUNappend(aBAT, (ptr) ch, FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[6]);
 		
+		seq_no_fake++;
 	}
 		
 	/* Cleanup memory and close file */
@@ -679,6 +682,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 	BAT *btime = NULL, *bdata = NULL, *bfile = NULL, *bseqno = NULL;
 	int files_done = FALSE;
 	timestamp start_timestamp;
+	int32_t seq_no_fake = 1;
 	lng st;
 	long i;
 	str ch = (str) GDKmalloc(2*sizeof(char));
@@ -740,7 +744,8 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[1])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
-		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+//		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+		BUNappend(aBAT, (ptr) &(seq_no_fake), FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[1]);
 		
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[2])) == NULL)
@@ -774,7 +779,8 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		
 		// mount
 		{
-			int32_t seq_no = msr->sequence_number;
+// 			int32_t seq_no = msr->sequence_number;
+			int32_t seq_no = seq_no_fake;
 			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
 			long sampling_time = msr->starttime;
 			
@@ -811,6 +817,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 			BBPreleaseref(ret_tc->tables_columns[2].column_bats[3]);
 		}
 		
+		seq_no_fake++;
 	}
 	
 	/* Cleanup memory and close file */
