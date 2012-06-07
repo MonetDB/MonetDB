@@ -470,12 +470,12 @@ BATextend(BAT *b, BUN newcap)
 	b->batCapacity = newcap;
 
 	hheap_size *= Hsize(b);
-	if (b->H->heap.base && GDKdebug & EXTENDMASK)
+	if (b->H->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, hheap_size);
 	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
 		return NULL;
 	theap_size *= Tsize(b);
-	if (b->T->heap.base && GDKdebug & EXTENDMASK)
+	if (b->T->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, theap_size);
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;

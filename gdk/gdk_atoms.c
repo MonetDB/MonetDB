@@ -1203,7 +1203,7 @@ strPut(Heap *h, var_t *dst, const char *v)
 			/* if there is reserved space, first use the reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
-		EXTENDDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
+		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize) < 0) {
 			return 0;
 		}

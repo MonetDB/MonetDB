@@ -95,8 +95,9 @@ usage(char *prog)
 	fprintf(stderr,"The debug, testing & trace options:\n");
 	fprintf(stderr,"     --threads\n");
 	fprintf(stderr,"     --memory\n");
-	fprintf(stderr,"     --properties\n");
 	fprintf(stderr,"     --io\n");
+	fprintf(stderr,"     --heaps\n");
+	fprintf(stderr,"     --properties\n");
 	fprintf(stderr,"     --transactions\n");
 	fprintf(stderr,"     --modules\n");
 	fprintf(stderr,"     --algorithms\n");
@@ -231,6 +232,7 @@ main(int argc, char **av)
 		{"performance",0,0,0},
 		{"xproperties",0,0,0},
 		{"forcemito",0,0,0},
+		{"heaps",0,0,0},
 		{0, 0, 0, 0}
 	};
 
@@ -270,7 +272,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x",
+		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
 				    long_options, &option_index);
 
 		if (c == -1)
@@ -350,6 +352,10 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "threads") == 0) {
 				grpdebug |= GRPthreads;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "heaps") == 0) {
+				grpdebug |= GRPheaps;
 				break;
 			}
 			usage(prog);

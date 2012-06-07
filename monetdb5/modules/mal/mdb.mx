@@ -438,6 +438,8 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPproperties;
 	if( strcmp("io",*flg)==0)
 		GDKdebug |= GRPio;
+	if( strcmp("heaps",*flg)==0)
+		GDKdebug |= GRPheaps;
 	if( strcmp("transactions",*flg)==0)
 		GDKdebug |= GRPtransactions;
 	if( strcmp("modules",*flg)==0)

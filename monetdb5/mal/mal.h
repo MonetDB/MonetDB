@@ -71,6 +71,7 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 #define GRPmemory (MEMMASK | ALLOCMASK )
 #define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
 #define GRPio (IOMASK | PERFMASK )
+#define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
 #define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)

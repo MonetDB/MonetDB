@@ -2388,8 +2388,8 @@ VALptr(ValPtr v)
 #define OPTMASK		(1<<27)
 #define OPTDEBUG	if (GDKdebug & OPTMASK)
 
-#define EXTENDMASK	(1<<28)
-#define EXTENDDEBUG	if (GDKdebug & EXTENDMASK)
+#define HEAPMASK	(1<<28)
+#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
 
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)

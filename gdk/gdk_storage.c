@@ -627,11 +627,11 @@ BATload_intern(bat i, int lock)
 			BUN cap = b->batCapacity;
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
-				EXTENDDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
+				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
 				HEAPextend(&b->H->heap, headsize(b, cap));
 				b->batCapacity = cap;
 			} else {
-				EXTENDDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
+				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
 				HEAPextend(&b->T->heap, tailsize(b, cap));
 			}
 		}
