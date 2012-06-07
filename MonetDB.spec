@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -655,6 +655,19 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Jun 07 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.7-20120607
+- Rebuilt.
+
+* Wed May 23 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- clients: Resolved a cosmetical error where tab-characters would cause
+  misalignments in tabular result views.  For the time being, tabs are
+  now represented as a single space in tabular view.
+
+* Thu May 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- gdk: Limit number of detected CPU cores to 16 on 32-bits systems to avoid
+  running quickly out of addressable resources followed by a kill from
+  the OS.
+
 * Wed May 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.5-20120516
 - Rebuilt.
 
