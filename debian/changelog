@@ -1,3 +1,25 @@
+monetdb (11.9.7-20120607) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 07 Jun 2012 11:36:25 +0200
+
+monetdb (11.9.7-20120607) unstable; urgency=low
+
+  * clients: Resolved a cosmetical error where tab-characters would cause
+    misalignments in tabular result views.  For the time being, tabs are
+    now represented as a single space in tabular view.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 23 May 2012 11:36:24 +0200
+
+monetdb (11.9.7-20120607) unstable; urgency=low
+
+  * gdk: Limit number of detected CPU cores to 16 on 32-bits systems to avoid
+    running quickly out of addressable resources followed by a kill from
+    the OS.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 17 May 2012 11:36:24 +0200
+
 monetdb (11.9.5-20120516) unstable; urgency=low
 
   * Rebuilt.
