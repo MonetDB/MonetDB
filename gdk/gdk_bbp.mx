@@ -3318,6 +3318,11 @@ BBPquickdesc(bat bid, int delaccess)
  * so with caching *some* programs can be nearly twice as fast
  * (optimized compile), though I expect the gains to be smaller in
  * general.
+
+ * June 2012 
+ * Using the cache makes a difference between [ 823085 ] and [ 3076993 ] usec
+ * when you create 1M bats. The loop itself was [ 62576 ] usec (performanceTests/tst400h.mal)
+ * Indeed, this code is a candidate for removal to gain simplicity.
  */
 #define BATCACHE_NOTYPE(t) 	(ATOMstorage(t) > TYPE_str || BATatoms[t].atomFix != NULL)
 #define BATCACHE_SIZE 		1023	/* max size: 32767 */
