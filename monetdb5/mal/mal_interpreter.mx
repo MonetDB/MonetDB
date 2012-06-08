@@ -1625,19 +1625,15 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case ENDsymbol:
 		if (getInstrPtr(mb, 0)->token == FACTORYsymbol)
 			ret = shutdownFactory(cntxt, mb);
-#if @1
 		if (oldtimer)
 			cntxt->timer = oldtimer;
-#endif
 		if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 			garbageCollector(cntxt, mb, stk, TRUE);
-#if @1
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		runtimeProfile.ppc = 0; /* also finalize function call event */
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-#endif
 		stkpc = mb->stop;
 		continue;
 	default:
@@ -1647,11 +1643,9 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		ret = createScriptException(mb, stkpc, MAL,
 			NULL, "unkown operation");
-#if @1
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-#endif
 		stkpc= mb->stop;
 		continue;
 	}
@@ -2243,11 +2237,12 @@ safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.bval, TRUE);
 	}
+	runtimeProfileBegin(cntxt, pci->blk, nstk, 0, &runtimeProfile, 1);
 	ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 	GDKfree(nstk);
 	@:restoreTarget(@1,@3)@
 	@:exceptionHndlr(@1,@2,@3)@
-	runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
+	runtimeTiming(cntxt, pci->blk, nstk, 0, tid, lock, &runtimeProfile);
 }
 @c
 /*
