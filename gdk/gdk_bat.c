@@ -2385,55 +2385,18 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 
 /*
  * @- BATmadvise
+ * deprecated
  */
-#define madvise(adv, hp, len)						\
-	do {								\
-		if (adv >= 0 && (hp) && len > 0 && (hp)->base &&	\
-		    ((hp)->storage != STORE_MEM) &&			\
-		    MT_madvise((hp)->base, len, BUF_TO_MMAP[adv])) {	\
-			GDKsyserror("madvise(" PTRFMT ", " SZFMT ", %d) on " \
-				    #hp " " #adv " failed\n",		\
-				    PTRFMTCAST (hp)->base, len, adv);	\
-			return -1;					\
-		}							\
-	} while (0)
-
-static int BUF_TO_MMAP[] = {
-	/* BUF_NORMAL     */ MMAP_NORMAL,
-	/* BUF_RANDOM     */ MMAP_RANDOM,
-	/* BUF_SEQUENTIAL */ MMAP_SEQUENTIAL,
-	/* BUF_WILLNEED   */ MMAP_WILLNEED,
-	/* BUF_DONTNEED   */ MMAP_DONTNEED
-};
-
 int
 BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 {
+	(void) b;
+	(void) hb;
+	(void) tb;
+	(void) hhp;
+	(void) thp;
 	BATcheck(b, "BATmadvise");
 
-	/* A varsized string heap never has sequential access, setting
-	 * it is no good. */
-	assert(!(ATOMstorage(b->htype) == TYPE_str && b->H->vheap && hhp == BUF_SEQUENTIAL));
-	assert(!(ATOMstorage(b->ttype) == TYPE_str && b->T->vheap && thp == BUF_SEQUENTIAL));
-
-	/* If the BAT is read-only, set the madvice for the actually
-	 * used part of the BAT (e.g. till the free offset), else,
-	 * apply the advice to the entire BAT (the size), since
-	 * writing may extend to there */
-	if (BAThrestricted(b) == BAT_READ) {
-		madvise(hb, &b->H->heap, b->H->heap.free);
-		madvise(hhp, b->H->vheap, b->H->vheap->free);
-	} else {
-		madvise(hb, &b->H->heap, b->H->heap.size);
-		madvise(hhp, b->H->vheap, b->H->vheap->size);
-	}
-	if (BATtrestricted(b) == BAT_READ) {
-		madvise(tb, &b->T->heap, b->T->heap.free);
-		madvise(thp, b->T->vheap, b->T->vheap->free);
-	} else {
-		madvise(tb, &b->T->heap, b->T->heap.size);
-		madvise(thp, b->T->vheap, b->T->vheap->size);
-	}
 	return 0;
 }
 
@@ -2597,9 +2560,6 @@ backup_new(Heap *hp, int lockbat)
 static int
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
-	if (hp->storage == STORE_MMAP && hp->size >= MT_MMAP_TILE) {
-		MT_mmap_inform(hp->base, hp->size, 0, MMAP_NORMAL, (dstmode == BAT_READ) ? -1 : 1);	/* inform vmtrim of the new mode */
-	}
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
 		return hp->newstorage;	/* 0<=>2,1<=>3,a<=>b */
 

@@ -18,7 +18,6 @@ str ATOMname(int id);
 ptr ATOMnil(int id);
 int ATOMprint(int id, const void *val, stream *fd);
 void ATOMproperty(char *nme, char *property, GDKfcn fcn, int val);
-size_t BATaccess(BAT *b, int what, int advice, int load);
 BAT *BATalpha(BAT *b);
 BAT *BATantijoin(BAT *l, BAT *r);
 BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);

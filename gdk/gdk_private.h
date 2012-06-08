@@ -19,16 +19,6 @@
 
 /* This file should not be included in any file outside of this directory */
 
-typedef struct MT_mmap_hdl_t {
-	void *hdl;
-	int mode;
-	void *fixed;
-#ifdef NATIVE_WIN32
-	int hasLock;
-	void *map;
-#endif
-} MT_mmap_hdl;
-
 int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);
@@ -101,12 +91,6 @@ int lngCmp(const lng *r, const lng *l);
 void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
-int MT_madvise(void *p, size_t len, int advice);
-void MT_mmap_close(MT_mmap_hdl *hdl);
-void MT_mmap_inform(void *p, size_t len, int preload, int pattern, int writable);
-void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps);
-void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
-int MT_mmap_trim(size_t lim, void *err);
 int MT_msync(void *p, size_t off, size_t len, int mode);
 void *MT_vmalloc(size_t size, size_t *maxsize);
 void MT_vmfree(void *p, size_t size);

@@ -37,7 +37,7 @@
 #include <unistd.h>		/* sbrk on Solaris */
 #include <string.h>     /* strncpy */
 
-#if defined(__hpux)
+#ifdef __hpux
 extern char *sbrk(int);
 #endif
 
@@ -269,470 +269,6 @@ char *MT_heapbase = NULL;
 #include <semaphore.h>
 #endif
 
-typedef struct {
-	char path[128];		/* mapped file, retained for debugging */
-	char *base;		/* base address */
-	size_t len;		/* length of map */
-	size_t first_tile;	/* from here we started saving tiles */
-	size_t save_tile;	/* next tile to save */
-	size_t unload_tile;	/* next tile to unload */
-	int wrap_tile;		/* unloading has reached end of map? */
-	int last_tile;		/* saving has reached end of map? */
-	int fd;			/* open fd (==-1 for anon vm), retained to give posix_fadvise */
-	int usecnt;		/* number of threads accessing the heap now */
-	int random;		/* number of threads accessing the heap randomly now */
-	int writable;
-	int next;
-} MT_mmap_t;
-
-#ifdef HAVE_POSIX_FADVISE
-static int do_not_use_posix_fadvise = 0;
-#endif
-
-MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
-int MT_mmap_cur = -1, MT_mmap_busy = -1, MT_mmap_first = -1, MT_mmap_free = 0;
-
-pthread_mutex_t MT_mmap_lock, MT_mmap_relock;
-
-static void
-MT_mmap_empty(int i)
-{
-	MT_mmap_tab[i].path[0] = 0;
-	MT_mmap_tab[i].base = NULL;
-	MT_mmap_tab[i].len = 0;
-	MT_mmap_tab[i].writable = 0;
-	MT_mmap_tab[i].fd = -1;
-	MT_mmap_tab[i].usecnt = 0;
-	MT_mmap_tab[i].random = 0;
-}
-
-static void
-MT_mmap_init(void)
-{
-	int i;
-
-	/* create lock */
-	pthread_mutex_init(&MT_mmap_lock, 0);
-	pthread_mutex_init(&MT_mmap_relock, 0);
-
-	for (i = 0; i < MT_MMAP_BUFSIZE; i++) {
-		MT_mmap_tab[i].next = i + 1;
-		MT_mmap_empty(i);
-	}
-	MT_mmap_tab[i - 1].next = -1;
-}
-
-/* returns previous element (to facilitate deletion) */
-static int
-MT_mmap_find(void *base)
-{
-	/* maybe consider a hash table iso linked list?? */
-	int i, prev = MT_MMAP_BUFSIZE;
-
-	for (i = MT_mmap_first; i >= 0; i = MT_mmap_tab[i].next) {
-		if (MT_mmap_tab[i].base <= (char *) base && (char *) base < MT_mmap_tab[i].base + MT_mmap_tab[i].len) {
-			return prev;
-		}
-		prev = i;
-	}
-	return i;
-}
-
-static int
-MT_mmap_idx(void *base, size_t len)
-{
-	if (len > MT_MMAP_TILE) {
-		int i = MT_mmap_find(base);
-
-		if (i >= 0) {
-			if (i == MT_MMAP_BUFSIZE) {
-				return MT_mmap_first;
-			} else {
-				return MT_mmap_tab[i].next;
-			}
-		}
-	}
-	return -1;
-}
-
-#ifndef NATIVE_WIN32
-static int
-MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
-{
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	if (len > MT_MMAP_TILE && MT_mmap_free >= 0) {
-		int i = MT_mmap_free;
-
-		MT_mmap_free = MT_mmap_tab[i].next;
-		MT_mmap_tab[i].next = MT_mmap_first;
-		MT_mmap_first = i;
-		if (MT_mmap_cur == -1)
-			MT_mmap_cur = i;
-#ifdef MMAP_DEBUG
-		mnstr_printf(GDKstdout, "#MT_mmap_new: %s fd=%d\n", path, fd);
-#endif
-		strncpy(MT_mmap_tab[i].path, path, 128);
-		MT_mmap_tab[i].base = base;
-		MT_mmap_tab[i].len = len;
-		MT_mmap_tab[i].save_tile = 1;
-		MT_mmap_tab[i].last_tile = 0;
-		MT_mmap_tab[i].wrap_tile = 0;
-		MT_mmap_tab[i].first_tile = 0;
-		MT_mmap_tab[i].unload_tile = 0;
-		MT_mmap_tab[i].writable = writable;
-		MT_mmap_tab[i].fd = fd;
-		MT_mmap_tab[i].usecnt = 0;
-		MT_mmap_tab[i].random = 0;
-		fd = -fd;
-	}
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	return fd;
-}
-
-static void
-MT_mmap_del(void *base, size_t len)
-{
-	int relock = 0;
-	while (len > MT_MMAP_TILE) {
-		int prev;
-		if (relock)
-			(void) pthread_mutex_unlock(&MT_mmap_relock);
-		(void) pthread_mutex_lock(&MT_mmap_lock);
-		prev = MT_mmap_find(base);
-		if (prev >= 0) {
-			int ret, victim = (prev == MT_MMAP_BUFSIZE) ? MT_mmap_first : MT_mmap_tab[prev].next;
-			if (relock == 0 && MT_mmap_busy == victim) {
-				/* OOPS, the vmtrim thread is saving a tile of this heap... wait for it to finish with relock */
-				(void) pthread_mutex_unlock(&MT_mmap_lock);
-				relock = 1;
-				continue;
-			}
-			if (prev == MT_MMAP_BUFSIZE) {
-				MT_mmap_first = MT_mmap_tab[MT_mmap_first].next;
-			} else {
-				MT_mmap_tab[prev].next = MT_mmap_tab[victim].next;
-			}
-			if (MT_mmap_cur == victim) {
-				MT_mmap_cur = MT_mmap_first;
-			}
-#ifdef HAVE_POSIX_FADVISE
-			if (!do_not_use_posix_fadvise && MT_mmap_tab[victim].fd >= 0) {
-				/* tell the OS quite clearly that you want to drop this */
-				ret = posix_fadvise(MT_mmap_tab[victim].fd, 0LL, MT_mmap_tab[victim].len & ~(MT_pagesize() - 1), POSIX_FADV_DONTNEED);
-#ifdef MMAP_DEBUG
-				mnstr_printf(GDKstdout,
-					      "#MT_mmap_del: posix_fadvise(%s,fd=%d,%uMB,POSIX_FADV_DONTNEED) = %d\n",
-					      MT_mmap_tab[victim].path,
-					      MT_mmap_tab[victim].fd,
-					      (unsigned int) (MT_mmap_tab[victim].len >> 20),
-					      ret);
-#endif
-			}
-#endif
-			ret = close(MT_mmap_tab[victim].fd);
-#ifdef MMAP_DEBUG
-			mnstr_printf(GDKstdout,
-				      "#MT_mmap_del: close(%s fd=%d) = %d\n",
-				      MT_mmap_tab[victim].path,
-				      MT_mmap_tab[victim].fd,
-				      ret);
-#endif
-			MT_mmap_tab[victim].next = MT_mmap_free;
-			MT_mmap_empty(victim);
-			MT_mmap_free = victim;
-			(void) ret;
-		}
-		(void) pthread_mutex_unlock(&MT_mmap_lock);
-		if (relock)
-			(void) pthread_mutex_unlock(&MT_mmap_relock);
-		break;
-	}
-}
-
-#if 0
-static int
-MT_fadvise(void *base, size_t len, int advice)
-{
-	int ret = 0;
-
-#ifdef HAVE_POSIX_FADVISE
-	if (!do_not_use_posix_fadvise) {
-		int i;
-
-		(void) pthread_mutex_lock(&MT_mmap_lock);
-		i = MT_mmap_idx(base, len);
-		if (i >= 0) {
-			if (MT_mmap_tab[i].fd >= 0) {
-				ret = posix_fadvise(MT_mmap_tab[i].fd, 0, len & ~(MT_pagesize() - 1), advice);
-#ifdef MMAP_DEBUG
-				mnstr_printf(GDKstdout,
-					      "#MT_fadvise: posix_fadvise(%s,fd=%d,%uMB,%d) = %d\n",
-					      MT_mmap_tab[i].path,
-					      MT_mmap_tab[i].fd,
-					      (unsigned int) (len >> 20),
-					      advice, ret);
-#endif
-			}
-		}
-		(void) pthread_mutex_unlock(&MT_mmap_lock);
-	}
-#else
-	(void) base;
-	(void) len;
-	(void) advice;
-#endif
-	return ret;
-}
-#endif
-
-#endif /* NATIVE_WIN32 */
-
-
-static void
-MT_mmap_unload_tile(int i, size_t off, stream *err)
-{
-	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - off);
-	/* tell Linux to please stop caching this stuff */
-	int ret = posix_madvise(MT_mmap_tab[i].base + off, len & ~(MT_pagesize() - 1), POSIX_MADV_DONTNEED);
-
-	if (err) {
-		mnstr_printf(err,
-			      "#MT_mmap_unload_tile: posix_madvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
-			      MT_mmap_tab[i].path,
-			      (unsigned int) (off >> 20),
-			      (unsigned int) (len >> 20),
-			      MT_mmap_tab[i].fd,
-			      ret);
-	}
-#ifdef HAVE_POSIX_FADVISE
-	if (!do_not_use_posix_fadvise) {
-		/* tell the OS quite clearly that you want to drop this */
-		ret = posix_fadvise(MT_mmap_tab[i].fd, off, len & ~(MT_pagesize() - 1), POSIX_FADV_DONTNEED);
-		if (err) {
-			mnstr_printf(err,
-				      "#MT_mmap_unload_tile: posix_fadvise(%s,off=%uMB,%uMB,fd=%d,POSIX_MADV_DONTNEED) = %d\n",
-				      MT_mmap_tab[i].path,
-				      (unsigned int) (off >> 20),
-				      (unsigned int) (len >> 20),
-				      MT_mmap_tab[i].fd,
-				      ret);
-		}
-	}
-#endif
-}
-
-static int
-MT_mmap_save_tile(int i, size_t tile, stream *err)
-{
-	int t, ret;
-	size_t len = MIN((size_t) MT_MMAP_TILE, MT_mmap_tab[i].len - tile);
-
-	if (len == 0)
-		return 0;	/* nothing to do */
-
-	/* save to disk an 128MB tile, and observe how long this takes */
-	if (err) {
-		mnstr_printf(err,
-			      "#MT_mmap_save_tile: msync(%s,off=%uM,%u,SYNC)...\n",
-			      MT_mmap_tab[i].path,
-			      (unsigned int) (tile >> 20),
-			      (unsigned int) (len >> 20));
-	}
-	MT_mmap_busy = i;
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	t = GDKms();
-	ret = MT_msync(MT_mmap_tab[i].base, tile, len, MMAP_SYNC);
-	t = GDKms() - t;
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	MT_mmap_busy = -1;
-	if (err) {
-		mnstr_printf(err,
-			      "#MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n",
-			      MT_mmap_tab[i].path,
-			      (unsigned int) (tile >> 20),
-			      (unsigned int) (len >> 20),
-			      ret, t);
-	}
-	if (t > 200) {
-		/* this took time; so we should report back on our
-		   actions and await new orders */
-		/* note that MT_mmap_lock is already locked by our parent */
-		if (MT_mmap_tab[i].save_tile == 1) {
-			MT_mmap_tab[i].first_tile = tile;
-			/* leave first tile for later sequential use
-			   pass (start unloading after it) */
-			MT_mmap_tab[i].unload_tile = tile + MT_MMAP_TILE;
-		}
-		MT_mmap_tab[i].save_tile = tile + MT_MMAP_TILE;
-		return 1;
-	}
-	return 0;
-}
-
-/* round-robin next. this is to ensure some fairness if multiple large
-   results are produced simultaneously */
-static int
-MT_mmap_next(int i)
-{
-	if (i != -1) {
-		i = MT_mmap_tab[i].next;
-		if (i == -1)
-			i = MT_mmap_first;
-	}
-	return i;
-}
-
-int
-MT_mmap_trim(size_t target, void *fp)
-{
-	stream *err = (stream *) fp;
-	size_t off, rss = MT_getrss();
-	/* worry = 0   if rss < 17/20 target (target = .8RAM)
-	 * ----- start mmap sync zone ------------------------
-	 *       = 1   17/20target <= rss <18/20 target
-	 *       = 2   18/20target <= rss <19/20 target
-	 *       = 3   19/20target <= rss <target
-	 * ----- start mmap posix_fadvise don'tneed zone -----
-	 *       = 4   rss > target
-	 */
-	int i, worry = (int) MIN(MAX(16, rss * 20 / (size_t) MAX(1, target)) - 16, 4);
-
-	(void) pthread_mutex_lock(&MT_mmap_relock);
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	if (err) {
-		mnstr_printf(err, "#MT_mmap_trim(%u MB): rss = %u MB\n",
-			      (unsigned int) ((target) >> 20),
-			      (unsigned int) (rss >> 20));
-	}
-	assert((MT_mmap_cur == -1) == (MT_mmap_first == -1));	/* either both or neither is -1 */
-	/* try to selectively unload pages from the writable regions */
-	if (rss > target) {
-		size_t delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
-		int curprio, keepprio, maxprio = 0;
-
-		/* try to unload heap tiles, in order of precedence (usecnt) */
-		for (keepprio = 0; keepprio <= maxprio; keepprio++) {
-			for (i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
-				assert(i >= 0);
-
-				curprio = MT_mmap_tab[i].usecnt + MT_mmap_tab[i].writable + 4 * MT_mmap_tab[i].random;
-				if (maxprio < curprio)
-					maxprio = curprio;
-
-				if (MT_mmap_tab[i].fd >= 0 &&
-				    curprio == keepprio) {
-					size_t lim = (MT_mmap_tab[i].wrap_tile == 1) ? MT_mmap_tab[i].save_tile : MT_mmap_tab[i].len;
-					if (MT_mmap_tab[i].unload_tile >= lim) {
-						MT_mmap_tab[i].unload_tile = 0;
-						MT_mmap_tab[i].wrap_tile++;
-					}
-					while (MT_mmap_tab[i].unload_tile < lim &&
-					       MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].len) {
-						if (MT_mmap_tab[i].writable)
-							MT_mmap_save_tile(i, MT_mmap_tab[i].unload_tile, err);
-						MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
-						MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
-						if ((delta -= MT_MMAP_TILE) == 0) {
-							rss = MT_getrss();
-							if (rss < target) {
-								MT_mmap_cur = i;
-								goto done;
-							}
-							delta = ((rss - target) + 4 * MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE - 1);
-						}
-					}
-				}
-			}
-		}
-		rss = MT_getrss();
-	}
-done:
-	if (worry > 1) {
-		/* schedule background saves of tiles */
-		for (i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
-			assert(i >= 0);
-			if (MT_mmap_tab[i].writable &&
-			    MT_mmap_tab[i].last_tile <= 1 &&
-			    (MT_mmap_tab[i].random == 0 ||
-			     MT_mmap_tab[i].len > target)) {
-				if (MT_mmap_tab[i].save_tile == 1) {
-					/* first run, walk backwards
-					   until we hit an unsaved
-					   tile */
-					off = MT_mmap_tab[i].len & ~(MT_MMAP_TILE - 1);
-					for (;;) {
-						if (MT_mmap_save_tile(i, off, err))
-							goto bailout;
-						if (off < MT_MMAP_TILE)
-							break;
-						off -= MT_MMAP_TILE;
-					}
-				} else {
-					/* save the next tile */
-					for (off = MT_mmap_tab[i].save_tile; off + MT_MMAP_TILE < MT_mmap_tab[i].len; off += MT_MMAP_TILE) {
-						if (MT_mmap_save_tile(i, off, err))
-							goto bailout;
-					}
-					/* we seem to have run through
-					   all savable tiles */
-					if (MT_mmap_tab[i].last_tile++ == 0) {
-						MT_mmap_tab[i].save_tile = 0;	/* now start saving from the beginning */
-					}
-				}
-			}
-		}
-	}
-bailout:
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	(void) pthread_mutex_unlock(&MT_mmap_relock);
-	return (worry);
-}
-
-/* a thread informs it is going to (preload==1) or stops
-   using (preload==-1) a range of memory */
-void
-MT_mmap_inform(void *base, size_t len, int preload, int advice, int writable)
-{
-	int i, ret = 0;
-
-	assert(advice == MMAP_NORMAL || advice == MMAP_RANDOM || advice == MMAP_SEQUENTIAL || advice == MMAP_WILLNEED || advice == MMAP_DONTNEED);
-
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	i = MT_mmap_idx(base, len);
-	if (i >= 0) {
-		if (writable)
-			MT_mmap_tab[i].writable = (writable > 0);
-		MT_mmap_tab[i].random += preload * (advice == MMAP_WILLNEED);	/* done as a counter to keep track of multiple threads */
-		MT_mmap_tab[i].usecnt += preload;	/* active thread count */
-		if ( advice == MMAP_DONTNEED){
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_DONTNEED);
-			MT_mmap_tab[i].usecnt = 0;
-		} else
-		if (MT_mmap_tab[i].usecnt == 0)
-			ret = posix_madvise(MT_mmap_tab[i].base, MT_mmap_tab[i].len & ~(MT_pagesize() - 1), POSIX_MADV_NORMAL);
-	}
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	if (ret) {
-		mnstr_printf(GDKstdout,
-			      "#MT_mmap_inform: posix_madvise(file=%s, fd=%d, base=" PTRFMT ", len=" SZFMT "MB, advice=MMAP_SEQUENTIAL) = %d (%s)\n",
-			      (i >= 0 ? MT_mmap_tab[i].path : ""),
-			      (i >= 0 ? MT_mmap_tab[i].fd : -1),
-			      PTRFMTCAST base,
-			      len >> 20,
-			      errno, strerror(errno));
-	}
-}
-
-void *
-MT_mmap(char *path, int mode, off_t off, size_t len)
-{
-	MT_mmap_hdl hdl;
-	void *ret = MT_mmap_open(&hdl, path, mode, off, len, 0);
-
-	MT_mmap_close(&hdl);
-	return ret;
-}
-
 #ifndef NATIVE_WIN32
 #ifdef HAVE_POSIX_FADVISE
 #ifdef HAVE_UNAME
@@ -743,18 +279,7 @@ MT_mmap(char *path, int mode, off_t off, size_t len)
 void
 MT_init_posix(void)
 {
-#ifdef HAVE_POSIX_FADVISE
-#ifdef HAVE_UNAME
-	struct utsname ubuf;
-
-	/* do not use posix_fadvise on Linux systems running a 2.4 or
-	   older kernel */
-	do_not_use_posix_fadvise = uname(&ubuf) == 0 && strcmp(ubuf.sysname, "Linux") == 0 && strncmp(ubuf.release, "2.4", 3) <= 0;
-#endif
-#endif
 	MT_heapbase = (char *) sbrk(0);
-
-	MT_mmap_init();
 }
 
 /* return RSS in bytes */
@@ -838,52 +363,22 @@ MT_heapcur(void)
 }
 
 void *
-MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
+MT_mmap(char *path, int mode, off_t off, size_t len)
 {
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
 
-	(void) nremaps;
 	if (fd > 1) {
-		hdl->mode = mode;
-		hdl->fixed = NULL;
-		hdl->hdl = (void *) (ssize_t) fd;
-		ret = MT_mmap_remap(hdl, off, len);
+		ret = mmap(NULL,
+			   len,
+			   ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
+			   (mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED,
+			   fd,
+			   off);
 	}
-	if (ret != (void *) -1L) {
-		hdl->fixed = ret;
-		hdl->hdl = (void *) (ssize_t) MT_mmap_new(path, ret, len, fd, (mode & MMAP_WRITABLE));
-	}
-	return ret;
-}
-
-void *
-MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
-{
-	int fd = (int) (ssize_t) hdl->hdl;
-	void *ret = mmap(hdl->fixed,
-			 len,
-			 ((hdl->mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
-			 ((hdl->mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED) | (hdl->fixed ? MAP_FIXED : 0),
-			 (fd < 0) ? -fd : fd,
-			 off);
-
-	if (ret != (void *) -1L) {
-		if (hdl->mode & MMAP_ADVISE) {
-			(void) MT_madvise(ret, len & ~(MT_pagesize() - 1), hdl->mode & MMAP_ADVISE);
-		}
-		hdl->fixed = (void *) ((char *) ret + len);
-	}
-	return ret;
-}
-
-void
-MT_mmap_close(MT_mmap_hdl *hdl)
-{
-	int fd = (int) (ssize_t) hdl->hdl;
 	if (fd > 0)
 		close(fd);
-	hdl->hdl = NULL;
+	return ret;
 }
 
 int
@@ -894,7 +389,6 @@ MT_munmap(void *p, size_t len)
 #ifdef MMAP_DEBUG
 	mnstr_printf(GDKstdout, "#munmap(" LLFMT "," LLFMT ",%d) = %d\n", (long long) p, (long long) len, ret);
 #endif
-	MT_mmap_del(p, len);
 	return ret;
 }
 
@@ -913,27 +407,6 @@ MT_msync(void *p, size_t off, size_t len, int mode)
 	if (ret < 0)
 		return errno;
 	return ret;
-}
-
-int
-MT_madvise(void *p, size_t len, int advice)
-{
-#if 1
-	(void) p;
-	(void) len;
-	(void) advice;
-	return 0;
-#else
-	int ret = posix_madvise(p, len & ~(MT_pagesize() - 1), advice);
-
-#ifdef MMAP_DEBUG
-	mnstr_printf(GDKstdout, "#posix_madvise(" PTRFMT "," SZFMT ",%d) = %d\n",
-		      PTRFMTCAST p, len, advice, ret);
-#endif
-	if (MT_fadvise(p, len, advice))
-		ret = -1;
-	return ret;
-#endif
 }
 
 struct Mallinfo
@@ -1009,12 +482,14 @@ MT_ignore_exceptions(struct _EXCEPTION_POINTERS *ExceptionInfo)
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 
+static pthread_mutex_t MT_mmap_lock;
+
 void
 MT_init_posix(void)
 {
 	MT_heapbase = 0;
-	MT_mmap_init();
 	SetUnhandledExceptionFilter(MT_ignore_exceptions);
+	pthread_mutex_init(&MT_mmap_lock, 0);
 }
 
 size_t
@@ -1036,43 +511,10 @@ MT_heapcur(void)
 /* Windows mmap keeps a global list of base addresses for complex
    (remapped) memory maps the reason is that each remapped segment
    needs to be unmapped separately in the end. */
-typedef struct _remap_t {
-	struct _remap_t *next;
-	char *start;
-	char *end;
-	size_t cnt;
-	void *bases[1];		/* EXTENDS (cnt-1) BEYOND THE END OF THE STRUCT */
-} remap_t;
-
-remap_t *remaps = NULL;
-
-static remap_t *
-remap_find(char *base, int delete)
-{
-	remap_t *map, *prev = NULL;
-
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	for (map = remaps; map; map = map->next) {
-		if (base >= map->start && base < map->end) {
-			if (delete) {
-				if (prev)
-					prev->next = map->next;
-				else
-					remaps = map->next;
-				map->next = NULL;
-			}
-			break;
-		}
-	}
-	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	return map;
-}
-
 
 void *
-MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps)
+MT_mmap(char *path, int mode, off_t off, size_t len)
 {
-	void *ret = NULL;
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
 	DWORD mode2 = mode & MMAP_ADVISE;
@@ -1080,9 +522,8 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 	int mode4 = FILE_MAP_READ;
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
-	remap_t *map;
+	void *ret;
 
-	memset(hdl, 0, sizeof(MT_mmap_hdl));
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 	}
@@ -1127,127 +568,34 @@ MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size
 		CloseHandle(h1);
 		return (void *) -1;
 	}
-	hdl->hdl = (void *) h2;
-	hdl->mode = mode4;
 	CloseHandle(h1);
 
-	if (nremaps == 0) {
-		return MT_mmap_remap(hdl, off, len);	/* normal mmap(). no further remaps */
-	}
-	/* for complex mmaps we now make it very likely that the
-	   MapViewOfFileEx-es to a predetermined VM address will all
-	   succeed */
-	ret = VirtualAlloc(NULL, len, MEM_RESERVE, PAGE_READWRITE);
-	if (ret == NULL)
-		return (void *) -1;
-	hdl->fixed = ret;	/* now we have a VM region that is large enough */
+	ret = MapViewOfFileEx(h2, mode4, (DWORD) ((__int64) off >> 32), (DWORD) off, len, NULL);
+	CloseHandle(h2);
 
-	/* ensure exclusive VM access to MapViewOfFile and
-	   VirtualAlloc (almost.. malloc() may trigger it --
-	   ignored) */
-	(void) pthread_mutex_lock(&MT_mmap_lock);
-	hdl->hasLock = 1;
-
-	/* release the range, so we can MapViewOfFileEx into it later */
-	VirtualFree(ret, 0, MEM_RELEASE);
-
-	/* allocate a map record to administer all your bases (they
-	   are belong to us!) */
-	map = malloc(sizeof(remap_t) + sizeof(void *) * nremaps);
-	if (map == NULL)
-		return (void *) -1;
-
-	hdl->map = (void *) map;
-	map->cnt = 0;
-	map->start = (char *) hdl->fixed;
-	map->end = map->start + len;
-	return ret;
-}
-
-
-void *
-MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len)
-{
-	remap_t *map = (remap_t *) hdl->map;
-	void *ret;
-
-	ret = MapViewOfFileEx((HANDLE) hdl->hdl, hdl->mode, (DWORD) ((__int64) off >> 32), (DWORD) off, len, (void *) ((char *) hdl->fixed));
-	if (ret == NULL) {
-		return (void *) -1;
-	}
-	if (map)
-		map->bases[map->cnt++] = ret;	/* administer new base */
-	hdl->fixed = (void *) ((char *) ret + len);
-	return ret;
-}
-
-void
-MT_mmap_close(MT_mmap_hdl *hdl)
-{
-	if (hdl->hasLock) {
-		(void) pthread_mutex_unlock(&MT_mmap_lock);
-	}
-	if (hdl->hdl) {
-		CloseHandle((HANDLE) hdl->hdl);
-		hdl->hdl = NULL;
-	}
+	return ret ? ret : (void *) -1;
 }
 
 int
 MT_munmap(void *p, size_t dummy)
 {
-	remap_t *map = remap_find(p, TRUE);
 	int ret = 0;
 
 	(void) dummy;
-	if (map) {
-		/* remapped region; has multiple bases on which we
-		   must invoke the Windows API */
-		size_t i;
-
-		for (i = 0; i < map->cnt; i++)
-			if (UnmapViewOfFile(map->bases[i]) == 0)
-				ret = -1;
-		free(map);
-	} else {
-		/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
-		 * while Unix's   munmap          returns success==0, error==-1. */
-		if (UnmapViewOfFile(p) == 0)
-			ret = -1;
-	}
-	return ret;
+	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
+	 * while Unix's   munmap          returns success==0, error==-1. */
+	return -(UnmapViewOfFile(p) == 0);
 }
 
 int
 MT_msync(void *p, size_t off, size_t len, int mode)
 {
-	remap_t *map = remap_find(p, FALSE);
 	int ret = 0;
 
 	(void) mode;
-	if (map) {
-		/* remapped region; has multiple bases on which we
-		   must invoke the Windows API */
-		size_t i;
-		for (i = 0; i < map->cnt; i++)	/* oops, have to flush all now.. */
-			if (FlushViewOfFile(map->bases[i], 0) == 0)
-				ret = -1;
-	} else {
-		/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
-		 * while Unix's   munmap          returns success==0, error==-1. */
-		if (FlushViewOfFile(((char *) p) + off, len) == 0)
-			ret = -1;
-	}
-	return ret;
-}
-
-int
-MT_madvise(void *p, size_t len, int advice)
-{
-	(void) p;
-	(void) len;
-	(void) advice;
-	return 0;		/* would -1 be better? */
+	/*       Windows' UnmapViewOfFile returns success!=0, error== 0,
+	 * while Unix's   munmap          returns success==0, error==-1. */
+	return -(FlushViewOfFile(((char *) p) + off, len) == 0);
 }
 
 #ifndef _HEAPOK			/* MinGW */

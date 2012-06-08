@@ -559,8 +559,6 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 		mlock(task->fields[i], sizeof(char *) * task->limit);
 #endif
 		task->cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
-		/* advice memory manager on expected use of results */
-		BATmadvise(as->format[i].c[0], BUF_SEQUENTIAL, BUF_SEQUENTIAL, 0, 0);
 	}
 
 #ifdef _DEBUG_TABLET_

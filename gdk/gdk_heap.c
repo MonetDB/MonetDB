@@ -352,7 +352,6 @@ HEAPextend(Heap *h, size_t size)
 		HEAPfree(h);
 		h->maxsize = h->size = size;
 		if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
-			MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 			return 0;
 		}
 	} else {
@@ -416,7 +415,6 @@ HEAPextend(Heap *h, size_t size)
 				HEAPDEBUG mnstr_printf(GDKerr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
 				/* try to allocate a memory-mapped based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
-					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 					/* copy data to heap and free old memory */
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
@@ -433,7 +431,6 @@ HEAPextend(Heap *h, size_t size)
 				/* and load heap back in via memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
-					MT_madvise(h->base, h->size, MMAP_SEQUENTIAL);
 					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 					return 0;
 				}

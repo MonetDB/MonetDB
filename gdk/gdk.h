@@ -1595,9 +1595,8 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-#define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
-#define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
-gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
+#define BATaccessBegin(b,what,advice) ((void) 0)
+#define BATaccessEnd(b,what,advice) ((void) 0)
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
