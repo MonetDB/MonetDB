@@ -236,59 +236,55 @@ BATsetdims(BAT *b)
 static BATstore *
 BATnewstorage(int ht, int tt, BUN cap)
 {
-	BATstore *bs, *recycled;
+	BATstore *bs;
 	BAT *bn;
 
 	assert(cap <= BUN_MAX);
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = recycled = BBPrecycle(ht, tt, cap);
-	if (!bs)
-		bs = BATcreatedesc(ht, tt, (ht || tt));
+	bs = BATcreatedesc(ht, tt, (ht || tt));
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
 
-	if (!recycled) {
-		BATsetdims(bn);
-		bn->U->capacity = cap;
+	BATsetdims(bn);
+	bn->U->capacity = cap;
 
-		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
-			return NULL;
-		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			return NULL;
-		}
-
-		if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			if (tt)
-				HEAPfree(&bn->T->heap);
-			GDKfree(bn->H->vheap);
-			if (bn->T->vheap)
-				GDKfree(bn->T->vheap);
-			return NULL;
-		}
-		if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			if (tt)
-				HEAPfree(&bn->T->heap);
-			if (bn->H->vheap) {
-				HEAPfree(bn->H->vheap);
-				GDKfree(bn->H->vheap);
-			}
-			GDKfree(bn->T->vheap);
-			return NULL;
-		}
-		DELTAinit(bn);
-		BBPcacheit(bs, 1);
+	/* alloc the main heaps */
+	if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
+		return NULL;
 	}
+	if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		return NULL;
+	}
+
+	if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		if (tt)
+			HEAPfree(&bn->T->heap);
+		GDKfree(bn->H->vheap);
+		if (bn->T->vheap)
+			GDKfree(bn->T->vheap);
+		return NULL;
+	}
+	if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		if (tt)
+			HEAPfree(&bn->T->heap);
+		if (bn->H->vheap) {
+			HEAPfree(bn->H->vheap);
+			GDKfree(bn->H->vheap);
+		}
+		GDKfree(bn->T->vheap);
+		return NULL;
+	}
+	DELTAinit(bn);
+	BBPcacheit(bs, 1);
 	return bs;
 }
 

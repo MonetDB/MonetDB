@@ -55,7 +55,6 @@ void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void);
 void BBPinit(void);
 int BBPrecover(void);
-BATstore *BBPrecycle(int ht, int tt, size_t cap);
 void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
