@@ -19,7 +19,17 @@
 
 /* This file is included multiple times.  We expect a bunch of tokens
  * to be redefined differently each time (see gdk_ssort.c).  If the
- * token GDKssortimpl is defined, the main interface is defined.  */
+ * token GDKssortimpl is defined, the main interface is defined.
+ */
+
+/*
+ * This file implements a stable sort algorithm known as "timsort".
+ * The algorithm is a straight copy of the listsort function in the
+ * Python 2.5 source code, heavily modified to fit into the MonetDB
+ * environment.
+ * The original author of the sort algorithm was Tim Peters, the
+ * adaptation was done by Sjoerd Mullender.
+ */
 
 /* binarysort is the best method for sorting small arrays: it does few
  * compares, but can do data movement quadratic in the number of

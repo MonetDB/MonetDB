@@ -17,13 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @a Sjoerd Mullender
- * @* Ssort
- * This file implements a stable sort algorithm.  The algorithm is a
- * straight copy of the listsort function in the Python 2.5 source code,
- * heavily modified to fit into the MonetDB environment.
- */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
