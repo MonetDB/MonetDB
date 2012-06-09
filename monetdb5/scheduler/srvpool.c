@@ -52,6 +52,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "mal_dataflow.h"
 #include "mat.h"
 #include "srvpool.h"
 #include "optimizer.h"
