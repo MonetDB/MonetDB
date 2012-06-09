@@ -880,21 +880,16 @@ runDFLOWworker(void *t)
 			long delay, clk = (GDKusec()- usec)/1000;
 			int rss=0;
 			double factor = 1.0;
-			if ( clk > DELAYUNIT ) {
+			if ( clk > DELAYUNIT && task->todo->last ) {
 				mal_set_lock(mal_delayLock, "runMALdataflow");
 				asleep++;
-				/* speedup as we see more threads asleep */
-				clk = (long) (clk * (1.0- asleep/GDKnr_threads));
-				/* always keep one running to avoid all waiting for a chain context switch */
-				if ( asleep >= GDKnr_threads)
-					clk = -2 * DELAYUNIT;
 				mal_unset_lock(mal_delayLock, "runMALdataflow");
-				/* if there are no other instructions in the queue, then simply wait for them */
-				if ( task->todo->last ==  0) 
-					clk = -3 * DELAYUNIT;
 	
 				PARDEBUG mnstr_printf(GDKstdout,"#delay %d initial %ld\n", task->id, clk);
 				while (clk > 0 ){
+					/* always keep two running to avoid all waiting for a chain context switch */
+					if ( asleep >= GDKnr_threads - 1)
+						break;
 					/* speed up wake up when we have memory or too many sleepers */
 					/* don't call getrss too often */
 					if ( rss++ % 10 == 0)
