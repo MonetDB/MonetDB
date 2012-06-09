@@ -126,6 +126,7 @@ mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
+mal_export MT_Lock  mal_delayLock ;
 
 
 mal_export int mal_init(void);
