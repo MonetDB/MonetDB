@@ -869,18 +869,18 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;       /* already initialized */
-	mal_set_lock(mal_profileLock, "profileLock");
+	mal_set_lock(mal_contextLock, "profileLock");
 	_initTrace();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	mal_unset_lock(mal_contextLock, "profileLock");
 	return TRACE_init ? 0 : -1;
 }
 
 str
 cleanupProfiler(void)
 {
-	mal_set_lock(mal_profileLock, "cleanup");
+	mal_set_lock(mal_contextLock, "cleanup");
 	_cleanupProfiler();
-	mal_unset_lock(mal_profileLock, "cleanup");
+	mal_unset_lock(mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
 }
 
@@ -889,7 +889,7 @@ clearTrace(void)
 {
 	if (TRACE_init == 0)
 		return;     /* not initialized */
-	mal_set_lock(mal_profileLock, "cleanup");
+	mal_set_lock(mal_contextLock, "cleanup");
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
@@ -903,7 +903,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_writes->batCacheid);
 	TRACE_init = 0;
 	_initTrace();
-	mal_unset_lock(mal_profileLock, "cleanup");
+	mal_unset_lock(mal_contextLock, "cleanup");
 }
 
 BAT *
