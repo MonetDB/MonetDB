@@ -476,7 +476,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			}
 			FREE_EXCEPTION(ret);
 			ret = 0;
-			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			break;
 		case PATcall:
 			/* patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
@@ -486,12 +485,10 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			} else {
 				ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
 			}
-			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			break;
 		case CMDcall:
 			/* commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
 			ret =malCommandCall(stk, pci);
-			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			break;
 		case FACcall:
 /*
@@ -525,7 +522,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				}
 				ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 			}
-			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			break;
 		case FCNcall:
 /*
@@ -540,18 +536,24 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 
 				stk->pcup = stkpc;
 				nstk = prepareMALstack(pci->blk, pci->blk->vsize);
-				if (nstk == 0)
-					throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
+				if (nstk == 0){
+					ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
+					break;
+				}
 
 				/*safeguardStack*/
 				nstk->stkdepth = nstk->stksize + stk->stkdepth;
 				nstk->calldepth = stk->calldepth + 1;
 				nstk->up = stk;
-				if (nstk->calldepth > 256)
-					throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-				if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
+				if (nstk->calldepth > 256){
+					ret=createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+					break;
+				}
+				if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
 					/* we are running low on stack space */
-					throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+					ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+					break;
+				}
 
 				/* copy arguments onto destination stack */
 				q= getInstrPtr(pci->blk,0);
@@ -563,10 +565,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 					if (lhs->vtype == TYPE_bat)
 						BBPincref(lhs->val.bval, TRUE);
 				}
-				runtimeProfileBegin(cntxt, pci->blk, nstk, 0, &runtimeProfile, 1);
 				ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 				GDKfree(nstk);
-				runtimeTiming(cntxt, pci->blk, nstk, 0, tid, lock, &runtimeProfile);
 			}
 			break;
 		case NOOPsymbol:
@@ -668,13 +668,15 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				mdbStep(cntxt, mb, stk, stkpc);
 				if (stk->cmd == 'x' || stk->cmd == 'q' || cntxt->mode == FINISHING) {
 					stkpc = mb->stop;
-					fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+					fs->pc = -fs->pc;
+					goto finalize;
 				}
 				if (stk->cmd == 'r') {
 					stk->cmd = 'n';
 					stkpc = startpc;
 					exceptionVar = -1;
-					fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+					fs->pc = -fs->pc;
+					goto finalize;
 				}
 			}
 			/* Detect any exception received from the implementation. */
@@ -683,7 +685,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				GDKfree(ret);       /* no need to check for M5OutOfMemory */
 				ret = MAL_SUCCEED;
 				stkpc = mb->stop;
-				fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+				fs->pc = -fs->pc;
+				goto finalize;
 			}
 			/*
 			 * Exceptions are caught based on their name, which is part of the
@@ -703,9 +706,10 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			if (exceptionVar == -1) {
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				stkpc = mb->stop;
-				fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+				fs->pc = -fs->pc;
+				goto finalize;
 			}
 			/* assure correct variable type */
 			if (getVarType(mb, exceptionVar) == TYPE_str) {
@@ -733,7 +737,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				mdbStep(cntxt, mb, stk, stkpc);
 				if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 					stkpc = mb->stop;
-					fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+					fs->pc = -fs->pc; 
+					goto finalize;
 				}
 			}
 			/* skip to catch block or end */
@@ -755,20 +760,22 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-				fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret;
+				fs->pc = -fs->pc; 
+				stkpc = mb->stop;
+				goto finalize;
 			}
 			pci = getInstrPtr(mb, stkpc);
 		}
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
+		runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 	}
-	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-	if (ret)
-		fs->pc = -fs->pc;
+finalize:
 	GDKfree(backup);
 	GDKfree(garbage);
+	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+	if (ret && fs->pc > 0)
+		fs->pc = -fs->pc;
 	return ret;
 }
 

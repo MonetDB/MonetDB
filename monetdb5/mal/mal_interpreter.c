@@ -458,10 +458,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 		env->cmd = stk->cmd;
 	if (!stk->keepAlive && garbageControl(getInstrPtr(mb, 0)))
 		garbageCollector(cntxt, mb, stk, env != stk);
-	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (stk && stk != env)
 		GDKfree(stk);
+	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
 
@@ -574,7 +574,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int stkpc = 0;
 	MT_Lock *lock = NULL;
 	int tid = 0;
-	RuntimeProfileRecord runtimeProfile;
+	RuntimeProfileRecord runtimeProfile, runtimeProfileFunction;
 
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL)
@@ -583,8 +583,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		oldtimer = cntxt->timer = GDKusec();
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ) 
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
+	if ( startpc == 1 )  {
+		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
+		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -674,7 +676,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * their. They seem superflous and the way they are used will
  * cause errors in multi-assignment statements.
  */
-				/* assignStmt(@1,continue,stk)*/
 				for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 					lhs = &stk->stk[pci->argv[k]];
 					rhs = &stk->stk[pci->argv[i]];
@@ -684,22 +685,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				FREE_EXCEPTION(ret);
 				ret = 0;
-				runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 				break;
 			case PATcall:
-				/* patterncall(@1,continue,stk) */
 				if (pci->fcn == NULL) {
 					ret = createScriptException(mb, stkpc, MAL, NULL,
 						"address of pattern %s.%s missing", pci->modname, pci->fcnname);
-				} else {
+				} else
 					ret = (str)(*pci->fcn)(cntxt, mb, stk, pci);
-				}
-				runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 				break;
 			case CMDcall:
-				/* commandcall(@1,continue,stk) */
 				ret =malCommandCall(stk, pci);
-				runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 				break;
 			case FACcall:
 /*
@@ -707,7 +702,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * call to the factory manager.
  * Factory calls should deal with the reference counting.
  */
-				/* factorycall(@1,continue,stk) */
 				if (pci->blk == NULL)
 					ret = createScriptException(mb, stkpc, MAL, NULL,
 						"reference to MAL function missing");
@@ -733,7 +727,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					}
 					ret = runFactory(cntxt, pci->blk, mb, stk, pci);
 				}
-				runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 				break;
 			case FCNcall:
 /*
@@ -741,25 +734,30 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * a new stack frame and do housekeeping, such as garbagecollection of all
  * non-returned values.
  */
-				/* functioncall(@1,continue,stk) */
 				{	MalStkPtr nstk;
 					InstrPtr q;
 					int ii, arg;
 
 					stk->pcup = stkpc;
 					nstk = prepareMALstack(pci->blk, pci->blk->vsize);
-					if (nstk == 0)
-						throw(MAL,"mal.interpreter",MAL_STACK_FAIL);
+					if (nstk == 0){
+						ret= createException(MAL,"mal.interpreter",MAL_STACK_FAIL);
+						break;
+					}
 
 					/*safeguardStack*/
 					nstk->stkdepth = nstk->stksize + stk->stkdepth;
 					nstk->calldepth = stk->calldepth + 1;
 					nstk->up = stk;
-					if (nstk->calldepth > 256)
-						throw(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
-					if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater())
+					if (nstk->calldepth > 256) {
+						ret= createException(MAL, "mal.interpreter", MAL_CALLDEPTH_FAIL);
+						break;
+					}
+					if ((unsigned)nstk->stkdepth > THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()){
 						/* we are running low on stack space */
-						throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+						ret= createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
+						break;
+					}
 
 					/* copy arguments onto destination stack */
 					q= getInstrPtr(pci->blk,0);
@@ -771,10 +769,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (lhs->vtype == TYPE_bat)
 							BBPincref(lhs->val.bval, TRUE);
 					}
-					runtimeProfileBegin(cntxt, pci->blk, nstk, 0, &runtimeProfile, 1);
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
 					GDKfree(nstk);
-					runtimeTiming(cntxt, pci->blk, nstk, 0, tid, lock, &runtimeProfile);
 				}
 				break;
 			case NOOPsymbol:
@@ -789,9 +785,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					garbageCollector(cntxt, mb, stk, TRUE);
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					break;
+				}
 				stkpc = mb->stop;
 				continue;
 			default:
@@ -801,14 +798,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				ret = createScriptException(mb, stkpc, MAL,
 					NULL, "unkown operation");
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					break;
+				}
 				stkpc= mb->stop;
 				continue;
 			}
-			if ( pci->token != FACcall) {
-				/* Provide debugging support */
+
+			/* check for strong debugging after each MAL statement */
+			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
 					BAT *b;
 
@@ -831,9 +830,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						}
 					}
 				}
+
+				/* If needed recycle intermediate result */
 				if (pci->recycle > 0) {
 					RECYCLEexit(cntxt, mb, stk, pci, stk->clk);
 				}
+
+				/* general garbage collection */
 				if (ret == MAL_SUCCEED && garbageControl(pci)) {
 					for (i = 0; i < pci->argc; i++) {
 						int a = getArg(pci, i);
@@ -879,7 +882,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 
-			/* exceptionHndlr(@1, continue,stk) */
+			/* Exception handling */
 			if (GDKerrbuf && GDKerrbuf[0]) {
 				str oldret = ret;
 				ret = catchKernelException(cntxt, ret);
@@ -931,7 +934,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				if (exceptionVar == -1) {
 					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-						throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					stkpc = mb->stop;
 					continue;
 				}
@@ -983,13 +986,17 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 					runtimeProfile.ppc = 0; /* also finalize function call event */
 					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-						throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+						stkpc = mb->stop;
+					}
 					continue;
 				}
 				pci = getInstrPtr(mb, stkpc);
 			}
 		}
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
+		runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 
 /*
  * After the expression has been evaluated we should check for a
@@ -1151,9 +1158,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
-				continue;
+				break;
 			}
 			if (stkpc == mb->stop)
 				ret = createScriptException(mb, stkpc, MAL, ret,
@@ -1176,8 +1181,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* a fake multi-assignment */
 				if (env != NULL && pcicaller != NULL) {
 					InstrPtr pp = pci;
-					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-						throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 					pci = pcicaller;
 					for (i = 0; i < pci->retc; i++) {
 						rhs = &stk->stk[pp->argv[i]];
@@ -1191,20 +1194,23 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					/* reset the clock */
 					if (oldtimer)
 						cntxt->timer = oldtimer;
-				} else 
-				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-					throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+				} 
 			}
 			stkpc = mb->stop-1;
 			continue;
 		default:
 			stkpc++;
 		}
-		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
-			throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+		if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
+			ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
+			stkpc= mb->stop;
+		}
 	}
+	/* also produce event record for end of function call */
+	if ( startpc == 1 ) 
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfileFunction);
 
+	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {
 		str oldret = ret;
 		if (ret) {

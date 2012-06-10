@@ -54,7 +54,7 @@ void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
 	if( stk && mb->profiler != NULL ){
-		stk->clk= GDKusec();
+		prof->newclk = stk->clk= GDKusec();
 		if ( mb->profiler[stkpc].trace) {
 			mal_set_lock(mal_contextLock, "DFLOWdelay");
 			gettimeofday(&stk->clock, NULL);
@@ -85,9 +85,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 	else
 	if(stk != NULL && prof->ppc>= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace  && mb->profiler[stkpc].clk)
 	{
-		prof->newclk= GDKusec();
 		mb->profiler[stkpc].counter++;
-		mb->profiler[stkpc].ticks = prof->newclk - stk->clk;
+		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
 		mb->profiler[stkpc].clk += mb->profiler[stkpc].clk;
 		if( stkpc){
 			mb->profiler[stkpc].rbytes= getVolume(stk,getInstrPtr(mb,stkpc),0);
