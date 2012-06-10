@@ -566,10 +566,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int i, k;
 	InstrPtr pci = 0;
 	int exceptionVar, prevpc = 0;
-	str ret = 0;
+	str ret = 0, localGDKerrbuf= GDKerrbuf;
 	int stamp = -1;
-	ValPtr backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
-	int *garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
+	ValRecord backups[16];
+	ValPtr backup;
+	int garbages[16], *garbage;
 	lng oldtimer = 0;
 	int stkpc = 0;
 	MT_Lock *lock = NULL;
@@ -581,6 +582,15 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	if (cntxt->flags & timerFlag)
 		oldtimer = cntxt->timer = GDKusec();
+
+	/* prepare extended backup and garbage structures */
+	if ( mb->maxarg > 16 ){
+		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
+		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
+	} else {
+		backup = backups;
+		garbage = garbages;
+	}
 
 	/* also produce event record for start of function */
 	if ( startpc == 1 )  {
@@ -883,7 +893,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 
 			/* Exception handling */
-			if (GDKerrbuf && GDKerrbuf[0]) {
+			if (localGDKerrbuf && localGDKerrbuf[0]) {
 				str oldret = ret;
 				ret = catchKernelException(cntxt, ret);
 				if (ret != oldret)
@@ -1167,8 +1177,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		case YIELDsymbol:     /* to be defined */
 			if (oldtimer)
 				cntxt->timer = oldtimer;
-			GDKfree(backup);
-			GDKfree(garbage);
+			if ( backup != backups) GDKfree(backup);
+			if ( garbage != garbages) GDKfree(garbage);
 			return yieldFactory(mb, pci, stkpc);
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
@@ -1229,8 +1239,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		}
 		FREE_EXCEPTION(oldret);
 	}
-	GDKfree(backup);
-	GDKfree(garbage);
+	if ( backup != backups) GDKfree(backup);
+	if ( garbage != garbages) GDKfree(garbage);
 	return ret;
 }
 

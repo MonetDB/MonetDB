@@ -85,6 +85,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 	else
 	if(stk != NULL && prof->ppc>= 0 && mb->profiler != NULL && mb->profiler[stkpc].trace  && mb->profiler[stkpc].clk)
 	{
+		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
 		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
 		mb->profiler[stkpc].clk += mb->profiler[stkpc].clk;

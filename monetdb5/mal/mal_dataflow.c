@@ -383,8 +383,9 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	int i, k;
 	int exceptionVar = -1;
 	str ret = MAL_SUCCEED;
-	ValPtr backup = GDKzalloc(fs->mb->maxarg * sizeof(ValRecord));
-	int *garbage = (int*)GDKzalloc(fs->mb->maxarg * sizeof(int));
+	ValRecord backups[16];
+	ValPtr backup;
+	int garbages[16], *garbage;
 	Client cntxt = fs->cntxt;
 	MalBlkPtr mb = fs->mb;
 	MalStkPtr stk = fs->stk;
@@ -398,6 +399,15 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (stk == NULL || stkpc < 0)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
+
+	/* prepare extended backup and garbage structures */
+	if ( mb->maxarg > 16 ){
+		backup = GDKzalloc(mb->maxarg * sizeof(ValRecord));
+		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
+	} else {
+		backup = backups;
+		garbage = garbages;
+	}
 
 	pci = getInstrPtr(fs->mb, stkpc);
 #ifdef DEBUG_FLOW
@@ -416,8 +426,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			/* need a way to skip */
 			stkpc = mb->stop;
 			fs->state = -1;
-			GDKfree(backup);
-			GDKfree(garbage);
+			if ( backup != backups) GDKfree(backup);
+			if ( garbage != garbages) GDKfree(garbage);
 			return ret;
 		}
 		if (oldtimer) {
@@ -466,7 +476,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 		 */
 		switch (pci->token) {
 		case ASSIGNsymbol:
-			/* assignStmt(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t)*/
 			for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 				lhs = &stk->stk[pci->argv[k]];
 				rhs = &stk->stk[pci->argv[i]];
@@ -478,7 +487,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			ret = 0;
 			break;
 		case PATcall:
-			/* patterncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
 			if (pci->fcn == NULL) {
 				ret = createScriptException(mb, stkpc, MAL, NULL,
 					"address of pattern %s.%s missing", pci->modname, pci->fcnname);
@@ -487,7 +495,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			}
 			break;
 		case CMDcall:
-			/* commandcall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
 			ret =malCommandCall(stk, pci);
 			break;
 		case FACcall:
@@ -496,7 +503,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
  * call to the factory manager.
  * Factory calls should deal with the reference counting.
  */
-			/* factorycall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
 			if (pci->blk == NULL)
 				ret = createScriptException(mb, stkpc, MAL, NULL,
 					"reference to MAL function missing");
@@ -529,7 +535,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
  * a new stack frame and do housekeeping, such as garbagecollection of all
  * non-returned values.
  */
-			/* functioncall(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
 			{	MalStkPtr nstk;
 				InstrPtr q;
 				int ii, arg;
@@ -651,7 +656,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				}
 			}
 		}
-		/* exceptionHndlr(FAST,fs->pc = -fs->pc; GDKfree(backup); GDKfree(garbage); return ret,t) */
+		/* exceptionHndlr */
 		if (GDKerrbuf && GDKerrbuf[0]) {
 			str oldret = ret;
 			ret = catchKernelException(cntxt, ret);
@@ -770,8 +775,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 		runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 	}
 finalize:
-	GDKfree(backup);
-	GDKfree(garbage);
+	if ( backup != backups) GDKfree(backup);
+	if ( garbage != garbages) GDKfree(garbage);
 	if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (ret && fs->pc > 0)
