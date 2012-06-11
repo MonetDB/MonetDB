@@ -88,6 +88,7 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, RuntimeProfile pro
 		gettimeofday(&mb->profiler[stkpc].clock, NULL);
 		mb->profiler[stkpc].counter++;
 		mb->profiler[stkpc].ticks = GDKusec() - prof->newclk;
+		mb->profiler[stkpc].totalticks += mb->profiler[stkpc].ticks;
 		mb->profiler[stkpc].clk += mb->profiler[stkpc].clk;
 		if( stkpc){
 			mb->profiler[stkpc].rbytes= getVolume(stk,getInstrPtr(mb,stkpc),0);
