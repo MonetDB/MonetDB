@@ -1,8 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Wed May 23 2012 Fabian Groffen <fabian@cwi.nl>
-- Resolved a cosmetical error where tab-characters would cause
-  misalignments in tabular result views.  For the time being, tabs are
-  now represented as a single space in tabular view.
-

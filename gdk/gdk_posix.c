@@ -329,7 +329,7 @@ MT_getrss(void)
 	kvm_close(kd);
 
 	return rss * MT_pagesize();
-#else
+#elif defined(__linux__)
 	/* get RSS on Linux */
 	int fd;
 

@@ -229,10 +229,10 @@ decompose_filename(str nme)
 /*
  * @- HEAPalloc
  *
- * Normally, we use GDKmalloc for creating a new heap.  Huge heaps, though, come
- * from memory mapped files that we create with a large seek. This is fast, and leads to
- * files-with-holes on Unixes (on Windows, it actually always performs I/O which is not
- * nice).
+ * Normally, we use GDKmalloc for creating a new heap.  Huge heaps,
+ * though, come from memory mapped files that we create with a large
+ * seek. This is fast, and leads to files-with-holes on Unixes (on
+ * Windows, it actually always performs I/O which is not nice).
  */
 static size_t
 HEAPmargin(size_t maxsize)
@@ -357,7 +357,8 @@ HEAPextend(Heap *h, size_t size)
 			return 0;
 		}
 	} else {
-		/* extend a malloced heap, possibly switching over to file-mapped storage */
+		/* extend a malloced heap, possibly switching over to
+		 * file-mapped storage */
 		Heap bak = *h;
 		size_t cur = GDKmem_inuse(), tot = GDK_mem_maxsize;
 		int exceeds_swap = size > (tot + tot - MIN(tot + tot, cur));
@@ -370,7 +371,8 @@ HEAPextend(Heap *h, size_t size)
 		h->size = size;
 
 		if (can_mmap) {
-			/* in anonymous vm, if have to realloc anyway, we reserve some extra space */
+			/* in anonymous vm, if have to realloc anyway,
+			 * we reserve some extra space */
 			h->maxsize = HEAPmargin(MAX(size, h->maxsize));
 		} else {
 			h->maxsize = size;	/* for normal GDKmalloc, maxsize = size */

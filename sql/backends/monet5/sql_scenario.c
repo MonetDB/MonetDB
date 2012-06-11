@@ -57,6 +57,7 @@
 #include "optimizer.h"
 #include "opt_statistics.h"
 #include "opt_prelude.h"
+#include "opt_pipes.h"
 #include <unistd.h>
 
 static int SQLinitialized = 0;
@@ -1511,20 +1512,16 @@ SQLparser(Client c)
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (!cachable(m, s)) {
-			InstrPtr p;
-			MalBlkPtr curBlk;
+			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s);
-
-			curBlk = c->curprg->def;
-
-			p = newFcnCall(curBlk, "optimizer", "remap");
-			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
-			p = newFcnCall(curBlk, "optimizer", "multiplex");
-			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
-			optimizeMALBlock(c, curBlk);
-			c->curprg->def = curBlk;
+			trimMalBlk(c->curprg->def);
+			mb = c->curprg->def;
+        		chkProgram(c->fdout, c->nspace, mb);
+        		addOptimizerPipe(c, mb, "minimal_pipe");
+			optimizeMALBlock(c, mb);
+			c->curprg->def = mb;
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,
