@@ -129,11 +129,11 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		MSresetClientPrg(cntxt);
 		return;
 	}
-	cntxt->curprg = newFunction(putName("user",4), putName(nme, strlen(nme)), FUNCTIONsymbol);
+	cntxt->curprg = newFunction(putName("user", 4), putName(nme, strlen(nme)), FUNCTIONsymbol);
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
-	if( mod )
-		setModuleId(p,mod);
+	if (mod)
+		setModuleId(p, mod);
 	else
 		setModuleScope(p, cntxt->nspace);
 	setVarType(mb, findVariable(mb, nme), TYPE_void);
@@ -416,9 +416,9 @@ MSserveClient(void *dummy)
 	 * The scenarios are run until we finally close the last one.
 	 */
 	mb = c->curprg->def;
-	if ( c->glb == NULL)
+	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
-	if ( c->glb == NULL){
+	if (c->glb == NULL) {
 		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
 		c->mode = FINISHING + 1; /* == CLAIMED */
 	} else {
@@ -439,10 +439,9 @@ MSserveClient(void *dummy)
 					break;
 				resetScenario(c);
 			} while (c->scenario);
-		} while(c->scenario && c->mode != FINISHING);
+		} while (c->scenario && c->mode != FINISHING);
 	}
 	/*
-	 * @-
 	 * At this stage we should clean out the MAL block
 	 */
 	freeMalBlk(c->curprg->def);

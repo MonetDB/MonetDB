@@ -372,9 +372,10 @@ Client MCforkClient(Client father){
  * but through side effects of sharing IO descriptors,
  * also its children. Conversely, a child can not close a parent.
  */
-void freeClient(Client c)
+void
+freeClient(Client c)
 {
-	Thread t= c->mythread;
+	Thread t = c->mythread;
 	c->mode = FINISHING;
 
 #ifdef MAL_CLIENT_DEBUG
@@ -385,50 +386,45 @@ void freeClient(Client c)
 	/* scope list and curprg can not be removed,
 	   because the client may reside in a
 	   quit() command. Therefore the scopelist is re-used.
-	if( c->curprg ) {
+	if (c->curprg) {
 		freeSymbol(c->curprg);
-		c->curprg=0;
+		c->curprg = 0;
 	}
-	if( c->nspace) {
+	if (c->nspace) {
 		freeModule(c->nspace);
-		c->nspace=0;
+		c->nspace = 0;
 	}
-	   */
+	 */
 	c->scenario = NULL;
-	if(c->prompt)
+	if (c->prompt)
 		GDKfree(c->prompt);
 	c->prompt = NULL;
-	c->promptlength=-1;
-	if(c->errbuf){
+	c->promptlength = -1;
+	if (c->errbuf) {
 		GDKsetbuf(0);
-		if ( c->father == NULL)
+		if (c->father == NULL)
 			GDKfree(c->errbuf);
-		c->errbuf=0;
+		c->errbuf = 0;
 	}
 	c->father = 0;
 	c->login = c->lastcmd = 0;
-	c->delay =  0;
-	c->qtimeout =  0;
-	c->stimeout =  0;
-	if(c->rcc){
+	c->delay = 0;
+	c->qtimeout = 0;
+	c->stimeout = 0;
+	if (c->rcc) {
 		GDKfree(c->rcc);
 		c->rcc = NULL;
 	}
-	/*
-	 * @-
-	 * The threads may not be removed, but should become dormant
-	 */
 	c->user = oid_nil;
 	c->mythread = 0;
 	c->mode = FREECLIENT;
 	GDKfree(c->glb);
 	c->glb = NULL;
 	if (t)
-		THRdel(t);	/* you may perform suicide */
+		THRdel(t);  /* you may perform suicide */
 }
 
 /*
- * @-
  * If a client disappears from the scene (eof on stream), we should
  * terminate all its children. This is in principle a forcefull action,
  * because the children may be ignoring the primary IO streams.
@@ -440,68 +436,73 @@ void freeClient(Client c)
  * Furthermore, once we enter closeClient, the process in which it is
  * raised has already lost its file descriptors.
  */
-void MCcloseClient(Client c) {
-
+void MCcloseClient(Client c)
+{
 #ifdef MAL_DEBUG_CLIENT
-		printf("closeClient %d " OIDFMT "\n",(int) (c-mal_clients),c->user);
+	printf("closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
 #endif
 	/* free resources of a single thread */
-	if( !isAdministrator(c)) {
+	if (!isAdministrator(c)) {
 		freeClient(c);
 		return;
 	}
 
 	/* adm is set to disallow new clients entering */
-	mal_clients[CONSOLE].mode= FINISHING;
+	mal_clients[CONSOLE].mode = FINISHING;
 	mal_exit();
 }
 
 /*
- * @-
  * At the end of the server session all remaining structured are
  * explicitly released to simplify detection of memory leakage problems.
  */
-void MCcleanupClients(void){
+void
+MCcleanupClients(void)
+{
 	Client c;
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) {
+	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		/* if( c->nspace){ freeModuleList(c->nspace); c->nspace=0;}*/
-		if( c->prompt) {
+		if (c->prompt) {
 			GDKfree(c->prompt);
 			c->prompt = NULL;
 		}
 		c->user = oid_nil;
-		assert(c->bak==NULL);
+		assert(c->bak == NULL);
 		MCexitClient(c);
 	}
 }
 
 str
-MCsuspendClient(int id, unsigned int timeout){
-	if( id<0 || id>MAL_MAXCLIENTS)
-		throw(INVCRED,"mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace='S';
-	mal_clients[id].delay=timeout;
+MCsuspendClient(int id, unsigned int timeout)
+{
+	if (id < 0 || id > MAL_MAXCLIENTS)
+		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
+	mal_clients[id].itrace = 'S';
+	mal_clients[id].delay = timeout;
 	return MAL_SUCCEED;
 }
 
 str
-MCawakeClient(int id){
-	if( id<0 || id>MAL_MAXCLIENTS)
-		throw(INVCRED,"mal.clients", INVCRED_WRONG_ID);
-	mal_clients[id].itrace=0;
+MCawakeClient(int id)
+{
+	if (id < 0 || id > MAL_MAXCLIENTS)
+		throw(INVCRED, "mal.clients", INVCRED_WRONG_ID);
+	mal_clients[id].itrace = 0;
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * In embedded mode there can be at most one console client and one
  * Mapi connection. Moreover, the Mapi connection should disable the administrator
  * console.
  */
-int MCcountClients(void){
-	int cnt=0;
+int
+MCcountClients(void)
+{
+	int cnt = 0;
 	Client c;
-	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++)
-		if (c->mode != FREECLIENT) cnt++;
+	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++)
+		if (c->mode != FREECLIENT)
+			cnt++;
 	return cnt;
 }
 #if 0
