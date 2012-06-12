@@ -39,7 +39,6 @@ mal_export int fcnBinder(stream *out, Module scope, MalBlkPtr mb, InstrPtr p);
 extern str traceFcnName;
 mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
 
-#endif /*  _MAL_RESOLVE_H*/
 /*
  * @- Type resolution algorithm.
  * Every actual argument of a function call should be type compatible
@@ -50,3 +49,5 @@ mal_export void expandMacro(MalBlkPtr mb, InstrPtr p, MalBlkPtr mc);
  * type for subsequent use.
  */
 mal_export int resolveType(int dsttype, int srctype);
+
+#endif /*  _MAL_RESOLVE_H*/

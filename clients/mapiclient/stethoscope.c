@@ -120,7 +120,7 @@ usage(void)
 	fprintf(stderr, "  S = monitor start of instruction profiling\n");
 	fprintf(stderr, "  a = aggregate clock ticks per instruction\n");
 	fprintf(stderr, "  e = event counter\n");
-	fprintf(stderr, "  f = module.function name\n");
+	fprintf(stderr, "  f = enclosing module.function name\n");
 	fprintf(stderr, "  i = instruction counter\n");
 	fprintf(stderr, "  I = interpreter thread number\n");
 	fprintf(stderr, "  T = wall clock time\n");

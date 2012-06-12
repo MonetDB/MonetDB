@@ -912,7 +912,7 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 	rel->r = NULL;
 	rel->op = op_project;
 	rel->exps = e;
-	rel->card = CARD_MULTI;
+	rel->card = exps_card(e);
 	if (l) {
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
@@ -1063,6 +1063,8 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (!rel->exps)
 			rel->exps = new_exp_list(sql->sa);
 		append(rel->exps, e);
+		if (e->card > rel->card)
+			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
 		(void) rel_groupby_add_aggr(sql, rel, e);
 	}
@@ -2430,10 +2432,8 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_exp *param)
  */
 
 static void
-convert_arg(mvc *sql, int nr, sql_subtype *rt)
+convert_atom(atom *a, sql_subtype *rt)
 {
-	atom *a = sql_bind_arg(sql, nr);
-
 	if (atom_null(a)) {
 		if (a->data.vtype != rt->type->localtype) {
 			ptr p;
@@ -2452,13 +2452,19 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	atom *a;
 
 	/* exclude named variables */
-	if (exp->type != e_atom || exp->l /* atoms */ || exp->r /* named */ ||
-		(t->scale && t->type->eclass != EC_FLT))
+	if (exp->type != e_atom || (exp->l && !atom_null(exp->l)) /* atoms */ || exp->r /* named */ || exp->f /* list */) 
 		return NULL;
 
-	a = sql_bind_arg(sql, exp->flag);
+	if (exp->l)
+		a = exp->l;
+	else
+		a = sql_bind_arg(sql, exp->flag);
+
+	if ((!exp->l || !atom_null(a)) && (t->scale && t->type->eclass != EC_FLT))
+		return NULL;
+
 	if (a && atom_cast(a, t)) {
-		convert_arg(sql, exp->flag, t);
+		convert_atom(a, t);
 		exp->tpe = *t;
 		return exp;
 	}
@@ -2511,8 +2517,7 @@ static sql_exp *
 exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	if (strcmp(f->func->imp, "*") == 0 &&
-			f->func->res.type->scale == SCALE_FIX)
-	{
+			f->func->res.type->scale == SCALE_FIX) {
 		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
@@ -3291,7 +3296,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 		if (!an || !an->a) {
 			assert(0);
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 		} else {
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}
@@ -3993,6 +3998,13 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		if (f->func->fix_scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
 			r = exp_fix_scale(sql, t1, r, 0, 0);
+		} else if (f->func->fix_scale == SCALE_EQ) {
+			sql_arg *a1 = f->func->ops->h->data;
+			sql_arg *a2 = f->func->ops->h->next->data;
+			t1 = &a1->type;
+			t2 = &a2->type;
+			l = exp_fix_scale(sql, t1, l, 0, 0);
+			r = exp_fix_scale(sql, t2, r, 0, 0);
 		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, l, r);
 		} else if (f->func->fix_scale == SCALE_MUL) {
@@ -4039,6 +4051,13 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				if (f->func->fix_scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
 					r = exp_fix_scale(sql, t1, r, 0, 0);
+				} else if (f->func->fix_scale == SCALE_EQ) {
+					sql_arg *a1 = f->func->ops->h->data;
+					sql_arg *a2 = f->func->ops->h->next->data;
+					t1 = &a1->type;
+					t2 = &a2->type;
+					l = exp_fix_scale(sql, t1, l, 0, 0);
+					r = exp_fix_scale(sql, t2, r, 0, 0);
 				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, l, r);
 				} else if (f->func->fix_scale == SCALE_MUL) {
@@ -4100,8 +4119,6 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				exp_subtype(r)->type->sqlname);
 	return res;
 }
-
-#define SQLMAXDEPTH ((THREAD_STACK_SIZE/4096))
 
 static sql_exp *
 rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
@@ -5049,7 +5066,7 @@ rel_order_by(mvc *sql, sql_rel **R, symbol *orderby, int f )
 						if (!e)
 							return NULL;
 						e = exp_column(sql->sa, e->rname, e->r, exp_subtype(e), rel->card, has_nil(e), is_intern(e), e->type == e_column?e->f:NULL);
-					} else {
+					} else if (e->type == e_atom) {
 						return sql_error(sql, 02, "order not of type SQL_COLUMN\n");
 					}
 				}
@@ -5294,12 +5311,12 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		return exp_atom_ref(sql->sa, se->data.i_val, NULL);
 	}
 	case SQL_NULL:
-		return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+		return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("str"), NULL));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("void"), NULL));
 		} else {
 			return exp_atom(sql->sa, atom_dup(sql->sa, an->a));
 		}

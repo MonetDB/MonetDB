@@ -27,7 +27,6 @@
  * item of e.g. a BAT[void,bit] is (at least) integer aligned.
  * This optimizes processing on such BATs (DDBENCH).
  */
-#define DELTAprintf DELTADEBUG printf
 #define DELTAinit(P1)							\
 	do {								\
 		BATsetcount((P1), 0);					\
@@ -36,8 +35,10 @@
 		(P1)->batDeleted = (P1)->batInserted = (P1)->batFirst = 0; \
 		(P1)->H->shift = ATOMelmshift(Hsize(P1));		\
 		(P1)->T->shift = ATOMelmshift(Tsize(P1));		\
-		DELTAprintf(						\
-			"#DELTAinit %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n", \
+		DELTADEBUG printf(					\
+			"#DELTAinit %s free " SZFMT "," SZFMT " ins " BUNFMT \
+			" del " BUNFMT " first " BUNFMT " base " PTRFMT "," \
+			PTRFMT "\n",					\
 			BATgetId(P1),					\
 			(P1)->H->heap.free,				\
 			(P1)->T->heap.free,				\

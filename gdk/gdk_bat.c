@@ -236,59 +236,55 @@ BATsetdims(BAT *b)
 static BATstore *
 BATnewstorage(int ht, int tt, BUN cap)
 {
-	BATstore *bs, *recycled;
+	BATstore *bs;
 	BAT *bn;
 
 	assert(cap <= BUN_MAX);
 	/* and in case we don't have assertions enabled: limit the size */
 	if (cap > BUN_MAX)
 		cap = BUN_MAX;
-	bs = recycled = BBPrecycle(ht, tt, cap);
-	if (!bs)
-		bs = BATcreatedesc(ht, tt, (ht || tt));
+	bs = BATcreatedesc(ht, tt, (ht || tt));
 	if (bs == NULL)
 		return NULL;
 	bn = &bs->B;
 
-	if (!recycled) {
-		BATsetdims(bn);
-		bn->U->capacity = cap;
+	BATsetdims(bn);
+	bn->U->capacity = cap;
 
-		/* alloc the main heaps */
-		if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
-			return NULL;
-		}
-		if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			return NULL;
-		}
-
-		if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			if (tt)
-				HEAPfree(&bn->T->heap);
-			GDKfree(bn->H->vheap);
-			if (bn->T->vheap)
-				GDKfree(bn->T->vheap);
-			return NULL;
-		}
-		if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
-			if (ht)
-				HEAPfree(&bn->H->heap);
-			if (tt)
-				HEAPfree(&bn->T->heap);
-			if (bn->H->vheap) {
-				HEAPfree(bn->H->vheap);
-				GDKfree(bn->H->vheap);
-			}
-			GDKfree(bn->T->vheap);
-			return NULL;
-		}
-		DELTAinit(bn);
-		BBPcacheit(bs, 1);
+	/* alloc the main heaps */
+	if (ht && HEAPalloc(&bn->H->heap, cap, bn->H->width) < 0) {
+		return NULL;
 	}
+	if (tt && HEAPalloc(&bn->T->heap, cap, bn->T->width) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		return NULL;
+	}
+
+	if (ATOMheap(ht, bn->H->vheap, cap) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		if (tt)
+			HEAPfree(&bn->T->heap);
+		GDKfree(bn->H->vheap);
+		if (bn->T->vheap)
+			GDKfree(bn->T->vheap);
+		return NULL;
+	}
+	if (ATOMheap(tt, bn->T->vheap, cap) < 0) {
+		if (ht)
+			HEAPfree(&bn->H->heap);
+		if (tt)
+			HEAPfree(&bn->T->heap);
+		if (bn->H->vheap) {
+			HEAPfree(bn->H->vheap);
+			GDKfree(bn->H->vheap);
+		}
+		GDKfree(bn->T->vheap);
+		return NULL;
+	}
+	DELTAinit(bn);
+	BBPcacheit(bs, 1);
 	return bs;
 }
 
@@ -470,12 +466,12 @@ BATextend(BAT *b, BUN newcap)
 	b->batCapacity = newcap;
 
 	hheap_size *= Hsize(b);
-	if (b->H->heap.base && GDKdebug & EXTENDMASK)
+	if (b->H->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, hheap_size);
 	if (b->H->heap.base && HEAPextend(&b->H->heap, hheap_size) < 0)
 		return NULL;
 	theap_size *= Tsize(b);
-	if (b->T->heap.base && GDKdebug & EXTENDMASK)
+	if (b->T->heap.base && GDKdebug & HEAPMASK)
 		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, theap_size);
 	if (b->T->heap.base && HEAPextend(&b->T->heap, theap_size) < 0)
 		return NULL;
@@ -2124,27 +2120,28 @@ BATvmsize(BAT *b, int dirty)
 	BATcheck(b, "BATvmsize");
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->H->heap.dirty) ? HEAPvmsize(&b->H->heap) : 0) +
-		((dirty == 0 || b->T->heap.dirty) ? HEAPvmsize(&b->T->heap) : 0) +
-		(((dirty == 0 || b->H->heap.dirty) && b->H->hash) ? HEAPvmsize(b->H->hash->heap) : 0) +
-		(((dirty == 0 || b->T->heap.dirty) && b->T->hash) ? HEAPvmsize(b->T->hash->heap) : 0) +
-		((b->H->vheap && (dirty == 0 || b->H->vheap->dirty)) ? HEAPvmsize(b->H->vheap) : 0) +
-		((b->T->vheap && (dirty == 0 || b->T->vheap->dirty)) ? HEAPvmsize(b->T->vheap) : 0);
+	return (!dirty || b->H->heap.dirty ? HEAPvmsize(&b->H->heap) : 0) +
+		(!dirty || b->T->heap.dirty ? HEAPvmsize(&b->T->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPvmsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0) +
+		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPvmsize(b->H->vheap) : 0) +
+		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPvmsize(b->T->vheap) : 0);
 }
 
 size_t
 BATmemsize(BAT *b, int dirty)
 {
 	BATcheck(b, "BATmemsize");
-	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
+	if (b->batDirty ||
+	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
-	return ((dirty == 0 || b->batDirtydesc) ? sizeof(BATstore) : 0) +
-		((dirty == 0 || b->H->heap.dirty) ? HEAPmemsize(&b->H->heap) : 0) +
-		((dirty == 0 || b->T->heap.dirty) ? HEAPmemsize(&b->T->heap) : 0) +
-		(((dirty == 0 || b->H->heap.dirty) && b->H->hash) ? HEAPmemsize(b->H->hash->heap) : 0) +
-		(((dirty == 0 || b->T->heap.dirty) && b->T->hash) ? HEAPmemsize(b->T->hash->heap) : 0) +
-		((b->H->vheap && (dirty == 0 || b->H->vheap->dirty)) ? HEAPmemsize(b->H->vheap) : 0) +
-		((b->T->vheap && (dirty == 0 || b->T->vheap->dirty)) ? HEAPmemsize(b->T->vheap) : 0);
+	return (!dirty || b->batDirtydesc ? sizeof(BATstore) : 0) +
+		(!dirty || b->H->heap.dirty ? HEAPmemsize(&b->H->heap) : 0) +
+		(!dirty || b->T->heap.dirty ? HEAPmemsize(&b->T->heap) : 0) +
+		((!dirty || b->H->heap.dirty) && b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0) +
+		((!dirty || b->T->heap.dirty) && b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0) +
+		(b->H->vheap && (!dirty || b->H->vheap->dirty) ? HEAPmemsize(b->H->vheap) : 0) +
+		(b->T->vheap && (!dirty || b->T->vheap->dirty) ? HEAPmemsize(b->T->vheap) : 0);
 }
 
 /*
@@ -2384,55 +2381,18 @@ BATmmap(BAT *b, int hb, int tb, int hhp, int thp, int force)
 
 /*
  * @- BATmadvise
+ * deprecated
  */
-#define madvise(adv, hp, len)						\
-	do {								\
-		if (adv >= 0 && (hp) && len > 0 && (hp)->base &&	\
-		    ((hp)->storage != STORE_MEM) &&			\
-		    MT_madvise((hp)->base, len, BUF_TO_MMAP[adv])) {	\
-			GDKsyserror("madvise(" PTRFMT ", " SZFMT ", %d) on " \
-				    #hp " " #adv " failed\n",		\
-				    PTRFMTCAST (hp)->base, len, adv);	\
-			return -1;					\
-		}							\
-	} while (0)
-
-static int BUF_TO_MMAP[] = {
-	/* BUF_NORMAL     */ MMAP_NORMAL,
-	/* BUF_RANDOM     */ MMAP_RANDOM,
-	/* BUF_SEQUENTIAL */ MMAP_SEQUENTIAL,
-	/* BUF_WILLNEED   */ MMAP_WILLNEED,
-	/* BUF_DONTNEED   */ MMAP_DONTNEED
-};
-
 int
 BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
 {
+	(void) b;
+	(void) hb;
+	(void) tb;
+	(void) hhp;
+	(void) thp;
 	BATcheck(b, "BATmadvise");
 
-	/* A varsized string heap never has sequential access, setting
-	 * it is no good. */
-	assert(!(ATOMstorage(b->htype) == TYPE_str && b->H->vheap && hhp == BUF_SEQUENTIAL));
-	assert(!(ATOMstorage(b->ttype) == TYPE_str && b->T->vheap && thp == BUF_SEQUENTIAL));
-
-	/* If the BAT is read-only, set the madvice for the actually
-	 * used part of the BAT (e.g. till the free offset), else,
-	 * apply the advice to the entire BAT (the size), since
-	 * writing may extend to there */
-	if (BAThrestricted(b) == BAT_READ) {
-		madvise(hb, &b->H->heap, b->H->heap.free);
-		madvise(hhp, b->H->vheap, b->H->vheap->free);
-	} else {
-		madvise(hb, &b->H->heap, b->H->heap.size);
-		madvise(hhp, b->H->vheap, b->H->vheap->size);
-	}
-	if (BATtrestricted(b) == BAT_READ) {
-		madvise(tb, &b->T->heap, b->T->heap.free);
-		madvise(thp, b->T->vheap, b->T->vheap->free);
-	} else {
-		madvise(tb, &b->T->heap, b->T->heap.size);
-		madvise(thp, b->T->vheap, b->T->vheap->size);
-	}
 	return 0;
 }
 
@@ -2596,9 +2556,6 @@ backup_new(Heap *hp, int lockbat)
 static int
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
-	if (hp->storage == STORE_MMAP && hp->size >= MT_MMAP_TILE) {
-		MT_mmap_inform(hp->base, hp->size, 0, MMAP_NORMAL, (dstmode == BAT_READ) ? -1 : 1);	/* inform vmtrim of the new mode */
-	}
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
 		return hp->newstorage;	/* 0<=>2,1<=>3,a<=>b */
 
@@ -3042,7 +2999,7 @@ BATassertHeadProps(BAT *b)
 			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
 				if (hp)
 					GDKfree(hp);
-				THRprintf(GDKout,
+				THRprintf(GDKstdout,
 					  "#BATassertProps: cannot allocate "
 					  "hash table\n");
 				goto abort_check;
@@ -3055,7 +3012,7 @@ BATassertHeadProps(BAT *b)
 				GDKfree(ext);
 				GDKfree(hp->filename);
 				GDKfree(hp);
-				THRprintf(GDKout,
+				THRprintf(GDKstdout,
 					  "#BATassertProps: cannot allocate "
 					  "hash table\n");
 				goto abort_check;
@@ -3224,7 +3181,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 				GDKfree(ext);
 			hp = NULL;
 			ext = NULL;
-			THRprintf(GDKout,
+			THRprintf(GDKstdout,
 				  "#BATderiveProps: cannot allocate "
 				  "hash table: not doing full check\n");
 		}

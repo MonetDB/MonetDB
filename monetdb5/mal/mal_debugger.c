@@ -32,10 +32,6 @@
 #include "mal_parser.h"
 #include "mal_namespace.h"
 
-#ifdef HAVE_SBRK
-#include <unistd.h>
-#endif
-
 int MDBdelay;			/* do not immediately react */
 
 #define skipBlanc(c, X)    while (*(X) && isspace((int) *X)) { X++; }
@@ -727,10 +723,10 @@ retryRead:
 				/* watchout, you don't want to wait for locks by others */
 				mnstr_printf(out, "BBP contains %d entries\n", limit);
 				for (; i < limit; i++)
-					if ((BBP[i].lrefs || BBP[i].refs) && BBP[i].b[0]) {
-						mnstr_printf(out, "#[%d] %-15s", i, BBP[i].nme[0]);
-						if (BBP[i].b[0])
-							printBATproperties(out, BBP[i].b[0]);
+					if ((BBP_lrefs(i) || BBP_refs(i)) && BBP_cache(i)) {
+						mnstr_printf(out, "#[%d] %-15s", i, BBP_logical(i));
+						if (BBP_cache(i))
+							printBATproperties(out, BBP_cache(i));
 						if ((*b == 'd' && BBP_refs(i) == 0) || BBP_cache(i) == 0) {
 							mnstr_printf(out, "\n");
 							continue;
@@ -1516,18 +1512,13 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 
 /*
  * The memory positions for the BATs is useful information to
- * asses for memory fragmentation.
+ * assess for memory fragmentation.
  */
 static str
 memProfileVector(stream *out, int cells)
 {
 	str v;
 	int i;
-#ifdef HAVE_SBRK
-	long max = (long) sbrk(0);
-	long min = 0;
-	long granule = 0;
-#endif
 
 	if (cells <= 0)
 		return GDKstrdup("");
@@ -1544,9 +1535,6 @@ memProfileVector(stream *out, int cells)
 			BAT *b = BATdescriptor(i);
 			Heap *hp;
 			Hash *h;
-#ifdef HAVE_SBRK
-			long start, lim;
-#endif
 
 			mnstr_printf(out, "\tdesc=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST b, sizeof(*b));
 			hp = &b->H->heap;
@@ -1557,20 +1545,6 @@ memProfileVector(stream *out, int cells)
 			if (hp && hp->base) {
 				mnstr_printf(out, "\thead=" PTRFMT " size=" SZFMT "\n", PTRFMTCAST hp->base, hp->size);
 			}
-#ifdef HAVE_SBRK
-			if (min == 0) {
-				min = (long) b;
-				max = min + GDKmem_heapsize();
-				granule = (max - min) / cells;
-				mnstr_printf(out, "granule %ldK\n", granule / 1024);
-			}
-			start = (((long) b) - min) / granule;
-			lim = (((long) b) - min + sizeof(*b)) / granule;
-			mnstr_printf(out, "start %ld lim %ld\n", start, lim);
-			start = (((long) hp->base) - min) / granule;
-			lim = (((long) hp->base) - min + hp->size) / granule;
-			mnstr_printf(out, "start %ld lim %ld\n", start, lim);
-#endif
 
 			hp = b->H->vheap;
 			if (hp && hp->base) {
@@ -1604,7 +1578,6 @@ printBBPinfo(stream *out)
 	str v;
 
 	mnstr_printf(out, "#BBP memory layout\n");
-	mnstr_printf(out, "#heap maximum =" SZFMT "/M\n", GDKmem_heapsize() / (1024 * 1024));
 	v = memProfileVector(out, 32);
 	if (v) {
 		mnstr_printf(out, "#%s\n", v);

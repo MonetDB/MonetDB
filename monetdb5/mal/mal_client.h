@@ -179,7 +179,6 @@ typedef struct CLIENT {
 	 */
 	MT_Sema 	s;	    /* sema to (de)activate thread */ 
 	Thread      	mythread;
-	MT_Id		mypid;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    
 	/*

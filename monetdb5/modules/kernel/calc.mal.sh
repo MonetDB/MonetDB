@@ -206,9 +206,11 @@ EOF
 done
     echo
 
-for tp1 in $integer; do
-    for tp2 in $integer; do
+for tp1 in $numeric; do
+    for tp2 in $numeric; do
 	case $tp1$tp2 in
+	*dbl*) tp3=dbl;;
+	*flt*) tp3=flt;;
 	*bte*) tp3=bte;;
 	*sht*) tp3=sht;;
 	*int*) tp3=int;;
@@ -314,7 +316,7 @@ echo
 # EOF
 # done
 
-for tp1 in $alltypes; do
+for tp1 in void $alltypes; do
     for tp2 in void $alltypes; do
 	cat <<EOF
 pattern $tp1(v:$tp2) :$tp1
@@ -327,7 +329,7 @@ EOF
 done
 
 for func in min min_no_nil max max_no_nil; do
-    if [[ $func = *_no_nil ]]; then
+    if [[ $func == *_no_nil ]]; then
 	com=", ignoring nil values"
     else
 	com=

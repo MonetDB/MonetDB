@@ -1,0 +1,42 @@
+stdout of test 'aggregate_vs_positional_column_crash.Bug-3085` in directory 'test/BugTracker-2012` itself:
+
+
+# 21:48:51 >  
+# 21:48:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=39026" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 21:48:51 >  
+
+# MonetDB 5 server v11.9.2
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.778 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:39026/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:48:51 >  
+# 21:48:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=39026"
+# 21:48:51 >  
+
+#SELECT 1, (SELECT count(*) FROM tables);
+% .L2,	.tables # table_name
+% L2,	L1 # name
+% tinyint,	wrd # type
+% 1,	2 # length
+[ 1,	31	]
+#SELECT (SELECT count(*) FROM tables), 1;
+% .tables,	. # table_name
+% L1,	single_value # name
+% wrd,	tinyint # type
+% 2,	1 # length
+[ 31,	1	]
+
+# 21:48:51 >  
+# 21:48:51 >  "Done."
+# 21:48:51 >  
+

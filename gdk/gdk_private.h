@@ -19,16 +19,6 @@
 
 /* This file should not be included in any file outside of this directory */
 
-typedef struct MT_mmap_hdl_t {
-	void *hdl;
-	int mode;
-	void *fixed;
-#ifdef NATIVE_WIN32
-	int hasLock;
-	void *map;
-#endif
-} MT_mmap_hdl;
-
 int ALIGNcommit(BAT *b);
 int ALIGNundo(BAT *b);
 int ATOMheap(int id, Heap *hp, size_t cap);
@@ -65,9 +55,8 @@ void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void);
 void BBPinit(void);
 int BBPrecover(void);
-BATstore *BBPrecycle(int ht, int tt, size_t cap);
 void BBPreleaselref(bat i);
-void BBPtrim(size_t memdelta, size_t vmdelta);
+void BBPtrim(size_t delta);
 void BBPunshare(bat b);
 void GDKclrerr(void);
 FILE *GDKfilelocate(const char *nme, const char *mode, const char *ext);
@@ -76,7 +65,6 @@ void GDKlockHome(void);
 void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 void *GDKmallocmax(size_t size, size_t *maxsize, int emergency);
-size_t GDKmem_heapinuse(void);
 int GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2);
 int GDKmunmap(void *addr, size_t len);
 void *GDKreallocmax(void *pold, size_t size, size_t *maxsize, int emergency);
@@ -85,10 +73,6 @@ int GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode);
 int GDKssort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 int GDKssort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
 int GDKunlink(const char *dir, const char *nme, const char *extension);
-void *GDKvmalloc(size_t size, size_t * maxsize, int emergency);
-void GDKvmfree(void *blk, size_t size, size_t maxsize);
-void GDKvminc(size_t len);
-void *GDKvmrealloc(void *pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
@@ -106,12 +90,6 @@ int lngCmp(const lng *r, const lng *l);
 void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
-int MT_madvise(void *p, size_t len, int advice);
-void MT_mmap_close(MT_mmap_hdl *hdl);
-void MT_mmap_inform(void *p, size_t len, int preload, int pattern, int writable);
-void *MT_mmap_open(MT_mmap_hdl *hdl, char *path, int mode, off_t off, size_t len, size_t nremaps);
-void *MT_mmap_remap(MT_mmap_hdl *hdl, off_t off, size_t len);
-int MT_mmap_trim(size_t lim, void *err);
 int MT_msync(void *p, size_t off, size_t len, int mode);
 void *MT_vmalloc(size_t size, size_t *maxsize);
 void MT_vmfree(void *p, size_t size);
@@ -176,8 +154,7 @@ typedef struct {
 extern int BBP_dirty;	/* BBP table dirty? */
 extern batlock_t GDKbatLock[BBP_BATMASK + 1];
 extern bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-extern ptr GDK_mem_start;		/* sbrk(0) at start of the program */
-extern size_t GDK_mmap_minsize;	/* size after which we use tempfile VM rather than malloc/anonymous VM */
+extern size_t GDK_mmap_minsize;	/* size after which we use memory mapped files */
 extern MT_Lock GDKnameLock;
 extern int GDKrecovery;
 extern int GDKsilent;	/* should GDK shut up? */

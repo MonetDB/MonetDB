@@ -87,9 +87,9 @@
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 
-malType getPolyType(malType t, int *polytype);
-int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
-int typeKind(MalBlkPtr mb, InstrPtr p, int i);
+static malType getPolyType(malType t, int *polytype);
+static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
+static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
 #define MAXMALARG 256
 
@@ -883,7 +883,7 @@ chkProgram(stream *out, Module s, MalBlkPtr mb)
  * header leads to a dynamic typed statement. In principle we have
  * to type check the function upon each call.
  */
-int
+static int
 typeKind(MalBlkPtr mb, InstrPtr p, int i)
 {
 	malType t = getArgType(mb, p, i);
@@ -898,7 +898,7 @@ typeKind(MalBlkPtr mb, InstrPtr p, int i)
  * It suffices to determine the actual return value taking into
  * account the type variable constraints.
  */
-malType
+static malType
 getPolyType(malType t, int *polytype)
 {
 	int hi, ti;
@@ -926,7 +926,7 @@ getPolyType(malType t, int *polytype)
  * The routine returns the instanciated formal type for subsequent
  * type resolution.
  */
-int
+static int
 updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h, t, ret = 0;

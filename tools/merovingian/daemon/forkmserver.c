@@ -187,6 +187,16 @@ forkMserver(char *database, sabdb** stats, int force)
 			return(er);
 		}
 
+		/* refresh stats, now we will have a connection registered */
+		msab_freeStatus(stats);
+		er = msab_getStatus(stats, database);
+		if (er != NULL) {
+			/* since the client mserver lives its own life anyway,
+			 * it's not really a problem we exit here */
+			err e = newErr("%s", er);
+			free(er);
+			return(e);
+		}
 		return(NO_ERR);
 	}
 

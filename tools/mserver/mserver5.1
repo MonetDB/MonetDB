@@ -90,28 +90,28 @@ You can enable debug output for specific kernel operations.  By default
 debug is switched off for obvious reasons.  The value of gdk_debug is an
 integer, which value can be (a combination of):
 .EX
-          1 = thread-specific debug output
+          1 = THRDMASK     = thread-specific debug output
           2 = CHECKMASK    = property enforcing on new BATs
           4 = MEMMASK      = memory allocation
           8 = PROPMASK     = property checking on all values:
                              tells about wrongly set properties
          16 = IOMASK       = major IO activity
          32 = BATMASK      = BAT handling
-         64 = PARSEMASK    = parser debugging
+.\"         64 = PARSEMASK    = parser debugging
         128 = PARMASK      = Thread management
-        256 = TRGMASK      = Event management
+.\"        256 = TRGMASK      = Event management
         512 = TMMASK       = Transaction management
        1024 = TEMMASK      = Locks and Triggers
-       2048 = DLMASK       = Dynamic loading
+.\"       2048 = DLMASK       = Dynamic loading
        4096 = PERFMASK     = BBP Performance (?)
        8192 = DELTAMASK    = Delta debugging (?)
       16384 = LOADMASK     = Module loading
-      32768 = YACCMASK     = Yacc specific error messages
+.\"      32768 = YACCMASK     = Yacc specific error messages
     2097152 = ALGOMASK     = show join/select algorithm chosen
     4194304 = ESTIMASK     = show result size estimations
                              (for join, select)
-    8388608 = XPROPMASK    = extended property checking:
-                             tells also about not set properties
+.\"    8388608 = XPROPMASK    = extended property checking:
+.\"                             tells also about not set properties
    16777216 = JOINPROPMASK = disable property checking with
                              join & outerjoin (e.g., for
                              performance measurements)
@@ -122,7 +122,7 @@ integer, which value can be (a combination of):
                              for debugging (GDK developers, only)
   134217728 = OPTMASK      = trace the actions, decisions and
                              effects of MAL optimizers
-  268435456 = EXTENDMASK   = trace/debug HEAPextend;
+  268435456 = HEAPMASK   = trace/debug HEAPextend;
                              used only for development & debugging
   536870912 = FORCEMITOMASK = forcefully activate mitosis even on
                               small tables, i.e., split small tables

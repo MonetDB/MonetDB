@@ -112,8 +112,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		oid nextBatch;
 		if ((current->run = BATdescriptor(current->batId)) == NULL)
 			throw(MAL, "crackers.sortmerge", "Cannot access descriptor");
-		if (BATmadvise(current->run, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0)  
-			throw(MAL, "crackers.sortmerge", "Madvice failed");
 		nextBatch=bucketSize>(BATcount(current->run)-current->merged)?BATcount(current->run)-current->merged:bucketSize;
 		current->slice=BATslice(current->run,current->merged+1,current->merged+1+nextBatch);		
 		current->start=0;
@@ -232,8 +230,6 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 		current=CrackerIndex[m].smNode;
 		while(current!=NULL){
 			BAT *slice=BATdescriptor(current->batId);
-			if (BATmadvise(slice, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL, BUF_SEQUENTIAL) != 0)  
-				throw(MAL, "crackers.sortmerge", "Madvice failed");
 			if (slice==NULL)
 				throw(MAL, "crackers.sortmerge", "Cannot access slice");
 			current->slice=slice;
@@ -1400,10 +1396,7 @@ CRKselectSortMerge_@1(int *vid, int *bid, @1 *low, @1 *hgh, bit *inclusiveLow, b
 			current=smNode;
 		}
 		
- 	/*	if (BATmadvise(b, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED, BUF_DONTNEED) != 0)
-			throw(MAL, "crackers.sortmerge", "Madvice failed");
-	
-		if ((b = BATsave(b)) == NULL) 
+ 	/*	if ((b = BATsave(b)) == NULL) 
 			throw(MAL, "crackers.sortmerge", "BATsave failed");
 		BBPcold(b->batCacheid);*/
 		/*BATmode(b,PERSISTENT);*/

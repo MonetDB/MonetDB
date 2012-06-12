@@ -159,8 +159,11 @@ void
 profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
 	if (mb->profiler == NULL) return;
-	if (profileCounter[PROFdot].status == 1 && start && pc == 0)
+	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
+		mal_set_lock(mal_profileLock, "profileLock");
 		showFlowGraph(mb,stk,"stethoscope");
+		mal_unset_lock(mal_profileLock, "profileLock");
+	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;
 	if (myname == 0)
@@ -328,9 +331,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
 	}
 	if (profileCounter[PROFfunc].status) {
-		if (getModuleId(pci) && getFunctionId(pci)) {
-			log2("\"%s.%s\",\t",
-				getModuleId(pci), getFunctionId(pci));
+		if (getModuleId(getInstrPtr(mb,0)) && getFunctionId(getInstrPtr(mb,0))) {
+			log2("\"%s.%s\",\t", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
 		} else
 			log("\"%s\",\t", operatorName(pci->token));
 	}

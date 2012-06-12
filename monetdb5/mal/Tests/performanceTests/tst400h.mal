@@ -1,0 +1,12 @@
+# simple iterator loop test
+# cost of creating/GC simple BATs.
+
+io.print("small bat creation");
+t1:= alarm.usec();
+barrier (v,i):= language.newRange(0:lng);
+	b:= bat.new(:int,:int);
+	redo (v,i):= language.nextElement(1:lng,1000000:lng);
+exit	(v,i);
+t2:= alarm.usec();
+t1:= t2-t1;
+io.print(t1);

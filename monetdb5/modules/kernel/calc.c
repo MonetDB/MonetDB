@@ -680,6 +680,8 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ATOMextern(t1)) {
 		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
+	} else if (t1 == TYPE_void) {
+		memcpy(retval, p, sizeof(oid));
 	} else {
 		memcpy(retval, p, ATOMsize(t1));
 	}

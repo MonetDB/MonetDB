@@ -1248,7 +1248,8 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		BAT *tmp1;
 		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" BUNFMT ", _hi=" BUNFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
 
-		tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
+		//tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
+		tmp1 = BATsample(b, 128);	
 		if (tmp1) {
 			BAT *tmp2;
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));

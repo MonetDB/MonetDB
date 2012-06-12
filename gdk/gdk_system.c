@@ -495,25 +495,25 @@ pthread_sema_destroy(pthread_sema_t *s)
 void
 pthread_sema_up(pthread_sema_t *s)
 {
-	int status = pthread_mutex_lock(&(s->mutex));
+	(void)pthread_mutex_lock(&(s->mutex));
 
 	if (s->cnt++ < 0) {
 		/* wake up sleeping thread */
-		status = pthread_cond_signal(&(s->cond));
+		(void)pthread_cond_signal(&(s->cond));
 	}
-	status = pthread_mutex_unlock(&(s->mutex));
+	(void)pthread_mutex_unlock(&(s->mutex));
 }
 
 void
 pthread_sema_down(pthread_sema_t *s)
 {
-	int status = pthread_mutex_lock(&(s->mutex));
+	(void)pthread_mutex_lock(&(s->mutex));
 
 	if (--s->cnt < 0) {
 		/* thread goes to sleep */
-		status = pthread_cond_wait(&(s->cond), &(s->mutex));
+		(void)pthread_cond_wait(&(s->cond), &(s->mutex));
 	}
-	status = pthread_mutex_unlock(&(s->mutex));
+	(void)pthread_mutex_unlock(&(s->mutex));
 }
 #endif
 #endif
@@ -680,7 +680,18 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 	if (ncpus <= 0)
-		return MT_check_nr_cores_();
+		ncpus = MT_check_nr_cores_();
+#if SIZEOF_SIZE_T == SIZEOF_INT
+	/* On 32-bits systems with large amounts of cpus/cores, we quickly
+	 * run out of space due to the amount of threads in use.  Since it
+	 * is questionable whether many cores on a 32-bits system are going
+	 * to beneficial due to this, we simply limit the auto-detected
+	 * cores to 16 on 32-bits systems.  The user can always override
+	 * this via gdk_nr_threads. */
+	if (ncpus > 16)
+		ncpus = 16;
+#endif
+
 	return ncpus;
 }
 
@@ -689,7 +700,7 @@ MT_check_nr_cores(void)
 lng
 GDKusec(void)
 {
-	/* Return the time in milliseconds since an epoch.  The epoch
+	/* Return the time in microseconds since an epoch.  The epoch
 	   is roughly the time this program started. */
 #ifdef _MSC_VER
 	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */

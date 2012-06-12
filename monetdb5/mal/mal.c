@@ -197,6 +197,7 @@ MT_Lock     mal_contextLock;
 MT_Lock     mal_remoteLock;
 MT_Lock  	mal_profileLock ;
 MT_Lock     mal_copyLock;
+MT_Lock     mal_delayLock;
 /*
  * @-
  * Initialization of the MAL context
@@ -234,6 +235,7 @@ int mal_init(void){
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
+	MT_lock_init( &mal_delayLock, "mal_delayLock");
 
 	GDKprotect();
 	tstAligned();

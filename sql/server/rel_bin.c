@@ -322,12 +322,14 @@ exp_list( mvc *sql, list *exps, stmt *l, stmt *r, group *grp, stmt *sel)
 	node *n;
 	list *nl = sa_list(sql->sa);
 
-	/* create bat append values */
 	for( n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(sql, e, l, r, grp, sel);
 		
-		append(nl, i);
+		if (n->next && i && i->type == st_table) /* relational statement */
+			l = i->op1;
+		else
+			append(nl, i);
 	}
 	return stmt_list(sql->sa, nl);
 }
@@ -1434,9 +1436,10 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 				sql_idx *i = p->value;
 			
 				join = s = rel2bin_hash_lookup(sql, rel, left, right, i, en);
-				assert(s);
-				list_append(jns, s);
-				use_hash = 1;
+				if (s) {
+					list_append(jns, s);
+					use_hash = 1;
+				}
 			}
 
 			s = exp_bin(sql, e, left, right, NULL, NULL);

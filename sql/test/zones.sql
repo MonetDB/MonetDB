@@ -150,7 +150,6 @@ select fGetNearestObjIdAllEq(193.75,1.48,0.1) - nearest;
 drop function fGetNearestObjIdAllEq;
 drop function GetNearestObject;
 drop function GetNearbyObjects;
-drop function Alpha;
 drop table alphatest;
 drop table zonetest;
 drop table zoneindex;

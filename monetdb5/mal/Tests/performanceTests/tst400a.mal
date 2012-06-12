@@ -1,6 +1,10 @@
 # simple iterator loop test
 
+t0:= alarm.usec();
 barrier (b,v):= language.newRange(0:lng);
 	redo (b,v):= language.nextElement(1:lng,1000000:lng);
 exit	(b,v);
+t1:= alarm.usec();
+t1:= t1-t0;
+io.print(t1);
 io.print("end of loop");

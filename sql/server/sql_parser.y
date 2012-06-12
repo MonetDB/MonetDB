@@ -2806,7 +2806,7 @@ null:
 
 	  if (m->emode == m_normal && m->caching) {
 		/* replace by argument */
-		atom *a = atom_general(SA, sql_bind_localtype("str"), NULL);
+		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
 		sql_add_arg( m, a);
 		$$ = _symbol_create_list( SQL_COLUMN,
@@ -3998,7 +3998,7 @@ atom:
 	{ 
 	  mvc *m = (mvc*)parm;
 	
-	  if (m->emode == m_normal && m->caching) { 
+	  if (m->emode == m_normal && m->caching && m->argc < 100) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
@@ -4955,7 +4955,7 @@ ident:
  |  non_reserved_word
  ;
 
-non_reserved_word:  /* (lexicographically sorted for convenience) */
+non_reserved_word: 
   LARGE		{ $$ = sa_strdup(SA, "large"); }	/* sloppy: officially reserved */
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
 | OBJECT	{ $$ = sa_strdup(SA, "object"); }	/* sloppy: officially reserved */
@@ -4993,6 +4993,7 @@ non_reserved_word:  /* (lexicographically sorted for convenience) */
 |  SQL_TRACE	{ $$ = sa_strdup(SA, "trace"); }
 |  sqlTEXT     	{ $$ = sa_strdup(SA, "text"); }
 |  AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+|  NO		{ $$ = sa_strdup(SA, "no"); }
 /* SQL/XML non reserved words */
 |  STRIP	{ $$ = sa_strdup(SA, "strip"); }
 |  WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }

@@ -747,6 +747,7 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->s = s;
+	t->fix_scale = SCALE_EQ;
 	if (t->sql) {
 		t->query = t->imp;
 		t->imp = NULL;
@@ -769,6 +770,8 @@ load_func(sql_trans *tr, sql_schema *s, oid rid)
 				t -> res = a->type;
 			} else {
 				list_append(t->ops, a);
+				if (t->type == F_FUNC)
+					t->type = F_PROC;
 			}
 		} else {
 			list_append(t->ops, a);
@@ -2097,6 +2100,7 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_schema * s)
 	f->sql = of->sql;
 	f->side_effect = of->side_effect;
 	f->ops = list_new(sa, of->ops->destroy);
+	f->fix_scale = of->fix_scale;
 	for(n=of->ops->h; n; n = n->next) 
 		list_append(f->ops, arg_dup(sa, n->data));
 	f->res.type = NULL;
@@ -3664,6 +3668,7 @@ create_sql_func(sql_allocator *sa, char *func, list *args, sql_subtype *res, int
 	t->res.scale = t->res.digits = 0;
 	t->res.type = NULL;
 	t->query = (query)?sa_strdup(sa, query):NULL;
+	t->fix_scale = SCALE_EQ;
 	if (res)
 		t->res = *res;
 	t->s = NULL;
@@ -3688,6 +3693,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema * s, char *func, list *args, sql
 	sql = t->sql = (query)?1:0;
 	se = t->side_effect = res?FALSE:TRUE;
 	t->ops = sa_list(tr->sa);
+	t->fix_scale = SCALE_EQ;
 	for(n=args->h; n; n = n->next) 
 		list_append(t->ops, arg_dup(tr->sa, n->data));
 	t->res.scale = t->res.digits = 0;

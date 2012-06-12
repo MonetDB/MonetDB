@@ -89,7 +89,7 @@ int bits2digits(int bits)
 /* 3 casts are allowed (requires dynamic checks) (sofar not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_ANY */	{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, /* NULL */
 /* EC_TABLE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_BIT */	{ 0, 0, 1, 1, 1, 0, 2, 2, 2, 0, 0, 0, 0, 0 },
 /* EC_CHAR */	{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
@@ -287,25 +287,6 @@ sql_bind_localtype(char *name)
 	assert(0);
 	return NULL;
 }
-
-#if 0
-sql_type *
-sql_bind_type(char *name)
-{
-	node *n = types->h;
-
-	while (n) {
-		sql_type *t = n->data;
-
-		if (strcmp(t->base.name, name) == 0) {
-			return t;
-		}
-		n = n->next;
-	}
-	assert(0);
-	return NULL;
-}
-#endif
 
 int
 type_cmp(sql_type *t1, sql_type *t2)
@@ -702,6 +683,28 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, char *sqlfname, sql_subtype *t
 			}
 		}
 	}
+	if (tp->type->eclass == EC_NUM) {
+	 	/* add second round but now look for Decimals only */
+		for (n = funcs->h; n; n = n->next) {
+			sql_func *f = n->data;
+
+			if (!f->res.type)
+				continue;
+			if (strcmp(f->base.name, sqlfname) == 0 && list_length(f->ops) == nrargs) {
+				if (((sql_arg *) f->ops->h->data)->type.type->eclass == EC_DEC && 
+				    ((sql_arg *) f->ops->h->data)->type.type->localtype == tp->type->localtype) {
+
+					unsigned int scale = 0, digits;
+					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
+
+					fres->func = f;
+					digits = f->res.digits;
+					sql_init_subtype(&fres->res, f->res.type, digits, scale);
+					return fres;
+				}
+			}
+		}
+	}
 	return NULL;
 }
 
@@ -757,7 +760,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 				if (IS_FUNC(f)) { /* not needed for PROC/FILT */
 					/* fix the scale */
 					digits = f->res.digits;
-					if (f->fix_scale > SCALE_NONE) {
+					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ) {
 						for (n = ops->h; n; n = n->next) {
 							sql_subtype *a = n->data;
 
@@ -804,7 +807,7 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, char *sqlfname, list *ops, int 
 					sql_subfunc *fres = SA_ZNEW(sa, sql_subfunc);
 
 					fres->func = f;
-					if (f->fix_scale > SCALE_NONE) {
+					if (f->fix_scale > SCALE_NONE && f->fix_scale < SCALE_EQ) {
 						for (n = ops->h; n; n = n->next) {
 							sql_subtype *a = n->data;
 
@@ -1143,7 +1146,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_type *ANY, *TABLE;
 	sql_func *f;
 
-	ANY = sql_create_type(sa, "ANY", 0, 0, 0, EC_ANY, "any");
+	ANY = sql_create_type(sa, "ANY", 0, 0, 0, EC_ANY, "void");
 
 	t = ts;
 	TABLE = *t++ = sql_create_type(sa, "TABLE", 0, 0, 0, EC_TABLE, "bat");
@@ -1263,13 +1266,12 @@ sqltypeinit( sql_allocator *sa)
 	t++; /* LNG */
 	sql_create_aggr(sa, "prod", "aggr", "product", *(t), *(t));
 
-	for (t = numerical; t < floats; t++) 
+	for (t = numerical; t < dates; t++) 
 		sql_create_func(sa, "mod", "calc", "%", *t, *t, *t, SCALE_FIX);
 
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", *t, *t);
 		sql_create_aggr(sa, "prod", "aggr", "product", *t, *t);
-		sql_create_func(sa, "mod", "calc", "fmod", *t, *t, *t, SCALE_FIX);
 	}
 	/*
 	sql_create_aggr(sa, "avg", "aggr", "avg", BTE, DBL);

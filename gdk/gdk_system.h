@@ -110,7 +110,7 @@ gdk_export unsigned long long MT_clock(void);
 #define MT_locktrace_set(s,n)
 #endif
 
-#define MT_log(_impl, _object, _action, _caller, _fp) do { if (GDKdebug & 1024) { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
+#define MT_log(_impl, _object, _action, _caller, _fp) do { TEMDEBUG { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
 
 /* API */
 

@@ -266,7 +266,7 @@ AUTHaddUser(oid *uid, Client *c, str *username, str *passwd) {
 	BUN p;
 	oid *id;
 	str tmp;
-	str hash;
+	str hash = NULL;
 	BATiter useri;
 
 	rethrow("addUser", tmp, AUTHrequireAdmin(c));
@@ -452,7 +452,7 @@ str
 AUTHsetPassword(Client *c, str *username, str *passwd) {
 	BUN p;
 	str tmp;
-	str hash;
+	str hash = NULL;
 	oid id;
 	BATiter useri;
 

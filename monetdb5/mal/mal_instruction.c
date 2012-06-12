@@ -600,6 +600,7 @@ insertInstruction(MalBlkPtr mb, InstrPtr p, int pc)
  * fly. Then the expensive search is started anyway. It also means
  * that input which does not comply with the intended location of a
  * temporary variable should be flagged as an error. */
+/* Unsafe routine when called in parallel to materialise temporary variables */
 inline str
 getVarName(MalBlkPtr mb, int i)
 {
@@ -613,6 +614,21 @@ getVarName(MalBlkPtr mb, int i)
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
 	return nme;
+}
+
+inline void
+setVarName(MalBlkPtr mb, int i, str nme)
+{
+	char buf[PATHLENGTH];
+
+	if ( mb->var[i]->name)
+		GDKfree(mb->var[i]->name);
+
+	if (nme == 0) {
+		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+		nme = buf;
+	}
+	mb->var[i]->name = GDKstrdup(nme);
 }
 
 inline void

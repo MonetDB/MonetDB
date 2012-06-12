@@ -51,15 +51,15 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-		    BATgetId(b),
-		    b->H->heap.free,
-		    b->T->heap.free,
-		    b->batInserted,
-		    b->batDeleted,
-		    b->batFirst,
-		    PTRFMTCAST b->H->heap.base,
-		    PTRFMTCAST b->T->heap.base);
+	DELTADEBUG printf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			  BATgetId(b),
+			  b->H->heap.free,
+			  b->T->heap.free,
+			  b->batInserted,
+			  b->batDeleted,
+			  b->batFirst,
+			  PTRFMTCAST b->H->heap.base,
+			  PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
@@ -97,15 +97,15 @@ BATcommit(BAT *b)
 	}
 	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTAprintf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-		    BATgetId(b),
-		    b->H->heap.free,
-		    b->T->heap.free,
-		    b->batInserted,
-		    b->batDeleted,
-		    b->batFirst,
-		    PTRFMTCAST b->H->heap.base,
-		    PTRFMTCAST b->T->heap.base);
+	DELTADEBUG printf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			  BATgetId(b),
+			  b->H->heap.free,
+			  b->T->heap.free,
+			  b->batInserted,
+			  b->batDeleted,
+			  b->batFirst,
+			  PTRFMTCAST b->H->heap.base,
+			  PTRFMTCAST b->T->heap.base);
 	return b;
 }
 
@@ -144,7 +144,7 @@ BATundo(BAT *b)
 	BUN p, bunlast, bunfirst;
 
 	BATcheck(b, "BATundo");
-	DELTAprintf("#BATundo %s \n", BATgetId(b));
+	DELTADEBUG printf("#BATundo %s \n", BATgetId(b));
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;

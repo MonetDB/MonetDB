@@ -20,8 +20,6 @@
 #ifndef JAQLTREE_H
 #define JAQLTREE_H 1
 
-#include "stream.h"
-
 typedef struct _jvar {
 	char *vname;
 	int kind;
@@ -52,13 +50,23 @@ typedef struct _jc {
 	int vtop;
 } jc;
 
+/* the order here does matter for filter */
 enum treetype {
 	j_invalid,
-	j_output_var,
-	j_output,
+	j_var,
+	j_func,
+	j_pred,
+	j_operation,
+	j_null,
+	j_bool,
+	j_num,
+	j_dbl,
+	j_str,
 	j_json,
 	j_json_obj,
 	j_json_arr,
+	j_output_var,
+	j_output,
 	j_filter,
 	j_transform,
 	j_expand,
@@ -67,21 +75,13 @@ enum treetype {
 	j_join,
 	j_sort,
 	j_top,
-	j_comp,
 	j_op,
+	j_comp,
 	j_group_input,
 	j_join_input,
-	j_operation,
-	j_pred,
 	j_sort_arg,
 	j_arr_idx,
 	j_pair,
-	j_var,
-	j_num,
-	j_dbl,
-	j_str,
-	j_bool,
-	j_func,
 	j_func_arg,
 	j_error
 };
@@ -152,11 +152,11 @@ tree *make_number(long long int n);
 tree *make_double(double d);
 tree *make_string(char *s);
 tree *make_bool(char b);
+tree *make_null(void);
 tree *make_func_call(char *name, tree *args);
 tree *make_func_arg(tree *arg);
 tree *append_func_arg(tree *oarg, tree *narg);
 tree *set_func_input_from_pipe(tree *func);
-void printtree(stream *out, tree *t, int level, char op);
 void freetree(tree *t);
 void freevars(jvar *v);
 

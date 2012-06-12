@@ -579,7 +579,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 				ATOMname(t2), ATOMname(t1));		\
 			return 0;					\
 		} else if (!TYPEcomp(t1, t2)) {				\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(t2), ATOMname(t1));		\
 		}							\
 	} while (0)
@@ -595,12 +595,12 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 		if (BAThtype(P1) != BAThtype(P2) &&			\
 		    ATOMtype((P1)->htype) != ATOMtype((P2)->htype)) {	\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(BAThtype(P2)), ATOMname(BAThtype(P1))); \
 		}							\
 		if (BATttype(P1) != BATttype(P2) &&			\
 		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG THRprintf(GDKout,"#Interpreting %s as %s.\n", \
+			CHECKDEBUG THRprintf(GDKstdout,"#Interpreting %s as %s.\n", \
 				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
 		}							\
 	} while (0)
@@ -905,7 +905,6 @@ typedef int (*GDKfcn) ();
 #define batStamp	P->stamp
 #define batSharecnt	P->sharecnt
 #define batRestricted	P->restricted
-#define batLastused	P->lastused
 #define creator_tid	P->tid
 #define htype		H->type
 #define ttype		T->type
@@ -1596,9 +1595,8 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-#define BATaccessBegin(b,what,advice) BATaccess(b,what,advice,1)
-#define BATaccessEnd(b,what,advice) BATaccess(b,what,advice,-1)
-gdk_export size_t BATaccess(BAT *b, int what, int advice, int load);
+#define BATaccessBegin(b,what,advice) ((void) 0)
+#define BATaccessEnd(b,what,advice) ((void) 0)
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
@@ -1827,12 +1825,12 @@ gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int
  * The status and BAT persistency information is encoded in the status field.
  */
 typedef struct {
-	BAT *b[2];		/* if loaded: BAT* handle + reverse */
-	str nme[2];		/* logical name + reverse */
+	BAT *cache[2];		/* if loaded: BAT* handle + reverse */
+	str logical[2];		/* logical name + reverse */
 	str bak[2];		/* logical name + reverse backups */
 	bat next[2];		/* next BBP slot in link list */
-	BATstore *cache;	/* cached header info */
-	str path;		/* dir + basename for storage */
+	BATstore *desc;		/* the BAT descriptor */
+	str physical;		/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
@@ -1841,22 +1839,30 @@ typedef struct {
 	/* MT_Id pid;           non-zero thread-id if this BAT is private */
 } BBPrec;
 
-gdk_export bat BBPmaxsize;
 gdk_export bat BBPlimit;
-gdk_export BBPrec *BBP;
+#define N_BBPINIT	100
+#if SIZEOF_VOID_P == 4
+#define BBPINITLOG	11
+#else
+#define BBPINITLOG	13
+#endif
+#define BBPINIT		(1 << BBPINITLOG)
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
+gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
-#define BBP_cache(i)	BBP[ABS(i)].b[(i)<0]
-#define BBP_logical(i)  BBP[ABS(i)].nme[(i)<0]
-#define BBP_next(i)	BBP[ABS(i)].next[(i)<0]
-#define BBP_physical(i) BBP[ABS(i)].path
-#define BBP_options(i)  BBP[ABS(i)].options
-#define BBP_desc(i)	BBP[ABS(i)].cache
-#define BBP_refs(i)	BBP[ABS(i)].refs
-#define BBP_lrefs(i)	BBP[ABS(i)].lrefs
-#define BBP_lastused(i) BBP[ABS(i)].lastused
-#define BBP_status(i)	BBP[ABS(i)].status
-#define BBP_pid(i)	BBP[ABS(i)].pid
+#define BBP_cache(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].cache[(i)<0]
+#define BBP_logical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].logical[(i)<0]
+#define BBP_bak(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].bak[(i)<0]
+#define BBP_next(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].next[(i)<0]
+#define BBP_physical(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].physical
+#define BBP_options(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].options
+#define BBP_desc(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].desc
+#define BBP_refs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].refs
+#define BBP_lrefs(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lrefs
+#define BBP_lastused(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].lastused
+#define BBP_status(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].status
+#define BBP_pid(i)	BBP[ABS(i)>>BBPINITLOG][ABS(i)&(BBPINIT-1)].pid
 
 /* macros that nicely check parameters */
 #define BBPcacheid(b)	((b)->batCacheid)
@@ -1864,7 +1870,14 @@ gdk_export BBPrec *BBP;
 #define BBPcurstamp()	BBP_curstamp
 #define BBPrefs(i)	(BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	(BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
-#define BBPname(i)	(BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
+#define BBPname(i)							\
+	(BBPcheck((i), "BBPname") ?					\
+	 ((i) > 0 ?							\
+	  BBP[(i) >> BBPINITLOG][(i) & (BBPINIT - 1)].logical[0] :	\
+	  (BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] ?	\
+	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[1] :	\
+	   BBP[-(i) >> BBPINITLOG][-(i) & (BBPINIT - 1)].logical[0])) : \
+	 "")
 #define BBPvalid(i)	(BBP_logical(i) != NULL && *BBP_logical(i) != '.')
 #define BATgetId(b)	BBPname((b)->batCacheid)
 #define BBPfix(i)	BBPincref((i), FALSE)
@@ -2171,12 +2184,6 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
  * @tab GDKfree (void* blk)
  * @item str
  * @tab GDKstrdup (str s)
- * @item void*
- * @tab GDKvmalloc (size_t size, size_t *maxsize, int emergency)
- * @item void* @tab
- *  GDKvmrealloc (void* pold, size_t oldsize, size_t newsize, size_t oldmax, size_t *maxsize, int emergency)
- * @item void @tab
- *  GDKvmfree (void* blk, size_t size, size_t maxsize)
  * @end multitable
  *
  * These utilities are primarily used to maintain control over critical interfaces
@@ -2199,8 +2206,6 @@ gdk_export int	GDK_vm_trim;		/* allow trimming */
 gdk_export size_t GDKmem_inuse(void);	/* RAM/swapmem that MonetDB is really using now */
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
-gdk_export size_t GDKvm_heapsize(void);
-gdk_export size_t GDKmem_heapsize(void);
 
 gdk_export void *GDKmalloc(size_t size);
 gdk_export void *GDKzalloc(size_t size);
@@ -2313,6 +2318,7 @@ VALptr(ValPtr v)
    for a documentation of the following debug options.
 */
 
+#define THRDMASK	(1)
 #define CHECKMASK	(1<<1)
 #define CHECKDEBUG	if (GDKdebug & CHECKMASK)
 #define MEMMASK		(1<<2)
@@ -2323,26 +2329,34 @@ VALptr(ValPtr v)
 #define IODEBUG		if (GDKdebug & IOMASK)
 #define BATMASK		(1<<5)
 #define BATDEBUG	if (GDKdebug & BATMASK)
+/* PARSEMASK not used anymore
 #define PARSEMASK	(1<<6)
 #define PARSEDEBUG	if (GDKdebug & PARSEMASK)
+*/
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
+/* TRGMASK not used anymore
 #define TRGMASK		(1<<8)
 #define TRGDEBUG	if (GDKdebug & TRGMASK)
+*/
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
 #define TEMDEBUG	if (GDKdebug & TEMMASK)
+/* DLMASK not used anymore
 #define DLMASK		(1<<11)
 #define DLDEBUG		if (GDKdebug & DLMASK)
+*/
 #define PERFMASK	(1<<12)
 #define PERFDEBUG	if (GDKdebug & PERFMASK)
 #define DELTAMASK	(1<<13)
 #define DELTADEBUG	if (GDKdebug & DELTAMASK)
 #define LOADMASK	(1<<14)
 #define LOADDEBUG	if (GDKdebug & LOADMASK)
+/* YACCMASK not used anymore
 #define YACCMASK	(1<<15)
 #define YACCDEBUG	if (GDKdebug & YACCMASK)
+*/
 /*
 #define ?tcpip?		if (GDKdebug&(1<<16))
 #define ?monet_multiplex?	if (GDKdebug&(1<<17))
@@ -2354,8 +2368,10 @@ VALptr(ValPtr v)
 #define ALGODEBUG	if (GDKdebug & ALGOMASK)
 #define ESTIMASK	(1<<22)
 #define ESTIDEBUG	if (GDKdebug & ESTIMASK)
+/* XPROPMASK not used anymore
 #define XPROPMASK	(1<<23)
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
+*/
 
 #define JOINPROPMASK	(1<<24)
 #define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
@@ -2366,15 +2382,13 @@ VALptr(ValPtr v)
 #define ALLOCDEBUG	if (GDKdebug & ALLOCMASK)
 
 /* M5, only; cf.,
- * MonetDB5/src/optimizer/opt_prelude.mx
- * MonetDB5/src/mal/mal.mx
-
+ * monetdb5/mal/mal.h
+ */
 #define OPTMASK		(1<<27)
 #define OPTDEBUG	if (GDKdebug & OPTMASK)
-*/
 
-#define EXTENDMASK	(1<<28)
-#define EXTENDDEBUG	if (GDKdebug & EXTENDMASK)
+#define HEAPMASK	(1<<28)
+#define HEAPDEBUG	if (GDKdebug & HEAPMASK)
 
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
@@ -2463,8 +2477,8 @@ BBPcheck(register bat x, register const char *y)
 	if (x && x != bat_nil) {
 		register bat z = ABS(x);
 
-		if (z >= BBPsize || BBP[z].nme[0] == NULL) {
-			CHECKDEBUG THRprintf(GDKout,"#%s: range error %d\n", y, (int) x);
+		if (z >= BBPsize || BBP_logical(z) == NULL) {
+			CHECKDEBUG THRprintf(GDKstdout,"#%s: range error %d\n", y, (int) x);
 		} else {
 			return z;
 		}

@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.10.0
+%define version 11.12.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2012/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -658,6 +658,40 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Thu Jun 07 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.7-20120607
+- Rebuilt.
+
+* Wed May 23 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- clients: Resolved a cosmetical error where tab-characters would cause
+  misalignments in tabular result views.  For the time being, tabs are
+  now represented as a single space in tabular view.
+
+* Thu May 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- gdk: Limit number of detected CPU cores to 16 on 32-bits systems to avoid
+  running quickly out of addressable resources followed by a kill from
+  the OS.
+
+* Wed May 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.5-20120516
+- Rebuilt.
+
+* Tue May 15 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.5-20120516
+- merovingian: Fixed a bug where connecting to a stopped multiplex-funnel would result
+  in a 'there are no available connections' error.
+
+* Tue May 15 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.5-20120516
+- sql: Databases that were upgraded from the Aug2011 release have an error
+  in the catalog for SQL procedures.  This is now fixed.
+
+* Mon May 14 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.3-20120514
+- Rebuilt.
+
+* Wed May  2 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.3-20120514
+- buildtools: Windows: we now use OpenSSL 1.0.1b.
+
+* Fri Apr 27 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.3-20120514
+- gdk: Implemented MT_getrss for Mac OS X systems, this allows the server to
+  know about how much memory is currently in use.
+
 * Wed Apr 18 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.1-20120418
 - Rebuilt.
 

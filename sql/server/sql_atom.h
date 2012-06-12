@@ -30,7 +30,7 @@ typedef struct atom {
 	dbl d;
 } atom;
 
-#define atom_null(a) a->isnull
+#define atom_null(a) (((atom*)a)->isnull)
 
 extern atom *atom_bool( sql_allocator *sa, sql_subtype *tpe, bit t);
 extern atom *atom_int( sql_allocator *sa, sql_subtype *tpe, lng val);
