@@ -17,21 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @a M. Kersten
- * @v 0.0
- * @- Server Bootstrapping
- *
- * The MonetDB server uses a startup script to boot the system.
- * This script is an ordinary MAL program, but will mostly
- * consist of include statements to load modules of general interest.
- * The startup script is ran as user Admin.
- * Its location is described in Monet configuration file.
- * The default location is:  !!!%%% TODO %%%!!! <-- FIXME
- *
- * It may overwritten using a command line argument.
- *
- */
 #include "monetdb_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
@@ -44,13 +29,19 @@
 #include "mal_sabaoth.h"
 #include <gdk.h>	/* for opendir and friends */
 
+/*
+ * The MonetDB server uses a startup script to boot the system.
+ * This script is an ordinary MAL program, but will mostly
+ * consist of include statements to load modules of general interest.
+ * The startup script is ran as user Admin.
+ */
 int
 malBootstrap(void)
 {
 	Client c;
 	str bootfile = "mal_init", s;
 
-	c = MCinitClient((oid)0, 0, 0);
+	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
 	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
@@ -59,7 +50,7 @@ malBootstrap(void)
 		return 0;
 	}
 	MSinitClientPrg(c, "user", "main");
-	(void)MCinitClientThread(c);
+	(void) MCinitClientThread(c);
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
 		mnstr_printf(GDKout, "!%s\n", s);
@@ -77,47 +68,42 @@ malBootstrap(void)
 }
 
 /*
- * @+ Client main routine
- * Every client has a 'main' function to collect the statements.
- * Once the END instruction has been found, it is added to the
- * symbol table and a fresh container is being constructed.
- * Note, this scheme makes testing for recursive function calls a
- * little more difficult. Therefore, type checking should be performed
- * afterwards.
+ * Every client has a 'main' function to collect the statements.  Once
+ * the END instruction has been found, it is added to the symbol table
+ * and a fresh container is being constructed.  Note, this scheme makes
+ * testing for recursive function calls a little more difficult.
+ * Therefore, type checking should be performed afterwards.
  *
- * In interactive mode,  the closing statement is never reached.
- * The 'main' procedure is typically cleaned between successive external
- * messages except for its variables, which are considerd global.
- * This storage container is re-used when during the previous call
- * nothing was added.
- * At the end of the session we have to garbage collect the BATs
- * introduced.
+ * In interactive mode,  the closing statement is never reached.  The
+ * 'main' procedure is typically cleaned between successive external
+ * messages except for its variables, which are considerd global.  This
+ * storage container is re-used when during the previous call nothing
+ * was added.  At the end of the session we have to garbage collect the
+ * BATs introduced.
  */
-
 static void
 MSresetClientPrg(Client cntxt)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	cntxt->itrace = 0;	/* turn off any debugging */
+	cntxt->itrace = 0;  /* turn off any debugging */
 	mb = cntxt->curprg->def;
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
 	mb->stop = 1;
-	mb->errors=0;
-	p= mb->stmt[0];
+	mb->errors = 0;
+	p = mb->stmt[0];
 
 	p->gc = 0;
-	p->retc=1;
-	p->argc=1;
+	p->retc = 1;
+	p->argc = 1;
 	/* remove any MAL history */
-	if( mb->history){
+	if (mb->history) {
 		freeMalBlk(mb->history);
-		mb->history=0;
+		mb->history = 0;
 	}
 }
-
 
 void
 MSinitClientPrg(Client cntxt, str mod, str nme)
@@ -143,9 +129,8 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 }
 
 /*
- * @+ Client authorization
- * The default method to interact with the database server is to
- * connect using a port number. The first line received should contain
+ * The default method to interact with the database server is to connect
+ * using a port number. The first line received should contain
  * authorization information, such as user name.
  *
  * The scheduleClient receives a challenge response consisting of
@@ -227,11 +212,11 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	}
 
 	if (!GDKembedded && database != NULL && database[0] != '\0' &&
-			strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+		strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
-				"but this is database '%s', "
-				"did you mean to connect to monetdbd instead?\n",
+						   "but this is database '%s', "
+						   "did you mean to connect to monetdbd instead?\n",
 				database, GDKgetenv("gdk_dbname"));
 		/* flush the error to the client, and abort further execution */
 		mnstr_flush(fout);
@@ -258,12 +243,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			err = SABAOTHgetMyStatus(&stats);
 			if (err != MAL_SUCCEED) {
 				/* this is kind of awful, but we need to get rid of this
-			 	* message */
+				 * message */
 				fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
 				if (err != M5OutOfMemory)
 					GDKfree(err);
 				mnstr_printf(fout, "!internal server error, "
-						"please try again later\n");
+								   "please try again later\n");
 				mnstr_flush(fout);
 				GDKfree(command);
 				return;
@@ -271,10 +256,10 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			if (stats->locked == 1) {
 				if (uid == 0) {
 					mnstr_printf(fout, "#server is running in "
-							"maintenance mode\n");
+									   "maintenance mode\n");
 				} else {
 					mnstr_printf(fout, "!server is running in "
-							"maintenance mode, please try again later\n");
+									   "maintenance mode, please try again later\n");
 					mnstr_flush(fout);
 					SABAOTHfreeStatus(&stats);
 					GDKfree(command);
@@ -287,7 +272,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {
 			mnstr_printf(fout, "!maximum concurrent client limit reached "
-					"(%d), please try again later\n", MAL_MAXCLIENTS);
+							   "(%d), please try again later\n", MAL_MAXCLIENTS);
 			mnstr_flush(fout);
 			GDKfree(command);
 			return;
@@ -306,12 +291,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 		}
 	}
 
-	MSinitClientPrg(c,"user", "main");
+	MSinitClientPrg(c, "user", "main");
 
 	GDKfree(command);
 	if (MT_create_thread(&p, MSserveClient, (void *) c, MT_THR_DETACHED) != 0) {
 		mnstr_printf(fout, "!internal server error (cannot fork new "
-				"client thread), please try again later\n");
+						   "client thread), please try again later\n");
 		mnstr_flush(fout);
 		showException(c->fdout, MAL, "initClient", "cannot fork new client thread");
 		return;
@@ -319,27 +304,25 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 }
 
 /*
- * @+ Client services
- * After the client initialization has been finished, we
- * can start the interaction protocol. This involves parsing the
- * input in the context of an already defined procedure and upon
- * success, its execution.
+ * After the client initialization has been finished, we can start the
+ * interaction protocol. This involves parsing the input in the context
+ * of an already defined procedure and upon success, its execution.
  *
- * In essence, this calls for an incremental parsing operation,
- * because we should wait until a complete basic block has been detected.
- * Test, first collect the instructions before we take them all.
- * @-
+ * In essence, this calls for an incremental parsing operation, because
+ * we should wait until a complete basic block has been detected.  Test,
+ * first collect the instructions before we take them all.
+ *
  * In interactive mode, we should remove the instructions before
- * accepting new ones. The function signature remains the same
- * and the symbol table should also not be affected.
- * Aside from removing instruction, we should also condense the
- * variable stack, i.e. removing at least the temporary variables,
- * but maybe everything beyond a previous defined pont.
+ * accepting new ones. The function signature remains the same and the
+ * symbol table should also not be affected.  Aside from removing
+ * instruction, we should also condense the variable stack, i.e.
+ * removing at least the temporary variables, but maybe everything
+ * beyond a previous defined pont.
  *
- * Beware that we have to cleanup the global stack as well. This to avoid
- * subsequent calls to find garbage information.
- * However, this action is only required after a successful execution.
- * Otherwise, garbage collection is not needed.
+ * Beware that we have to cleanup the global stack as well. This to
+ * avoid subsequent calls to find garbage information.  However, this
+ * action is only required after a successful execution.  Otherwise,
+ * garbage collection is not needed.
  */
 void
 MSresetInstructions(MalBlkPtr mb, int start)
@@ -357,48 +340,46 @@ MSresetInstructions(MalBlkPtr mb, int start)
 }
 
 /*
- * @-
- * Determine the variable being used and clear non-used onces.
+ * Determine the variables being used and clear non-used onces.
  */
 void
 MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i, k;
-	bit *used= GDKzalloc(mb->vtop * sizeof(bit));
+	bit *used = GDKzalloc(mb->vtop * sizeof(bit));
 
-	for (i=0; i<start && start<mb->vtop; i++)
-		used[i]=1;
-	if (mb->errors==0)
-	for (i = start; i < mb->vtop; i++) {
-		if (used[i] || !isTmpVar(mb,i) ){
-			VarPtr v = getVar(mb,i);
-			assert(!mb->var[i]->value.vtype || isVarConstant(mb,i) );
+	for (i = 0; i < start && start < mb->vtop; i++)
+		used[i] = 1;
+	if (mb->errors == 0)
+		for (i = start; i < mb->vtop; i++) {
+			if (used[i] || !isTmpVar(mb, i)) {
+				VarPtr v = getVar(mb, i);
+				assert(!mb->var[i]->value.vtype || isVarConstant(mb, i));
 
-			/* keep all properties as well */
-			for (k=0; k< v->propc; k++)
-				used[mb->prps[k].var]=1;
-			used[i]= 1;
+				/* keep all properties as well */
+				for (k = 0; k < v->propc; k++)
+					used[mb->prps[k].var] = 1;
+				used[i] = 1;
+			}
+			if (glb && !used[i]) {
+				if (isVarConstant(mb, i))
+					garbageElement(cntxt, &glb->stk[i]);
+				/* clean stack entry */
+				glb->stk[i].vtype = TYPE_int;
+				glb->stk[i].len = 0;
+				glb->stk[i].val.pval = 0;
+			}
 		}
-		if (glb && !used[i]) {
-			if (isVarConstant(mb,i))
-				garbageElement(cntxt, &glb->stk[i]);
-			/* clean stack entry */
-			glb->stk[i].vtype = TYPE_int;
-			glb->stk[i].len = 0;
-			glb->stk[i].val.pval = 0;
-		}
-	}
-	if (mb->errors==0)
-		trimMalVariables_(mb,used,glb);
+
+	if (mb->errors == 0)
+		trimMalVariables_(mb, used, glb);
 	GDKfree(used);
 }
 
 /*
- * @-
- * Here we start the first client. We need to initialize
- * the corresponding thread and allocate space for the
- * global variables. Thereafter it is up to the scenario
- * interpreter to process input.
+ * This is a phtread started function.  Here we start the client. We
+ * need to initialize and allocate space for the global variables.
+ * Thereafter it is up to the scenario interpreter to process input.
  */
 void
 MSserveClient(void *dummy)
@@ -407,7 +388,7 @@ MSserveClient(void *dummy)
 	Client c = (Client) dummy;
 	str msg = 0;
 
-	if (!isAdministrator(c) && MCinitClientThread(c) < 0){
+	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
 		return;
 	}
@@ -459,22 +440,20 @@ MSserveClient(void *dummy)
 }
 
 /*
- * @+ MAL scenario components
- * The stages of processing user requests are controlled by a
- * scenario. The routines below are the default implementation.
- * The main issues to deal after parsing it to clean out the
- * Admin.main function from any information added erroneously.
+ * The stages of processing user requests are controlled by a scenario.
+ * The routines below are the default implementation.  The main issues
+ * to deal after parsing it to clean out the Admin.main function from
+ * any information added erroneously.
  *
- * Ideally this involves resetting the state of the client
- * 'main' function, i.e. the symbol table is reset and any
- * instruction added should be cleaned. Beware that the instruction
- * table may have grown in size.
- *
+ * Ideally this involves resetting the state of the client 'main'
+ * function, i.e. the symbol table is reset and any instruction added
+ * should be cleaned. Beware that the instruction table may have grown
+ * in size.
  */
 str
 MALinitClient(Client c)
 {
-	assert (c->state[0] == NULL);
+	assert(c->state[0] == NULL);
 	c->state[0] = c;
 	return NULL;
 }
@@ -483,8 +462,8 @@ str
 MALexitClient(Client c)
 {
 	if (c->glb && c->curprg->def->errors == 0)
-		garbageCollector(c, c->curprg->def, c->glb,TRUE);
-	if ( c-> bak)
+		garbageCollector(c, c->curprg->def, c->glb, TRUE);
+	if (c->bak)
 		return NULL;
 	c->mode = FINISHING;
 	return NULL;
@@ -493,11 +472,11 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
-	int r= 1;
+	int r = 1;
 
 	if (c == mal_clients) {
 		r = readConsole(c);
-		if (r < 0 && c->fdin->eof == 0 )
+		if (r < 0 && c->fdin->eof == 0)
 			r = MCreadClient(c);
 		if (r > 0)
 			return MAL_SUCCEED;
@@ -526,10 +505,10 @@ MALparser(Client c)
 		pushEndInstruction(c->curprg->def);
 		/* caught errors */
 		showErrors(c);
-		if( c->listing)
-			printFunction(c->fdout,c->curprg->def, 0, c->listing);
-		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def,1);
+		if (c->listing)
+			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		/* now the parsing is done we should advance the stream */
 		c->fdin->pos += c->yycur;
 		c->yycur = 0;
@@ -549,20 +528,20 @@ MALparser(Client c)
 
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
-		if( c->listing)
-			printFunction(c->fdout,c->curprg->def, 0, c->listing);
-		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def,1);
+		if (c->listing)
+			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
 	}
 	pushEndInstruction(c->curprg->def);
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 	if (c->curprg->def->errors) {
 		showErrors(c);
-		if( c->listing)
-			printFunction(c->fdout,c->curprg->def, 0, c->listing);
-		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def,1);
+		if (c->listing)
+			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		throw(MAL, "MAL.parser", SEMANTIC_GENERAL);
 	}
 	return MAL_SUCCEED;
@@ -587,7 +566,7 @@ MALengine(Client c)
 	MalBlkRecord oldstate = *c->curprg->def;
 	oldstate.stop = 0;
 
-	if( c->blkmode)
+	if (c->blkmode)
 		return MAL_SUCCEED;
 	prg = c->curprg;
 	if (prg == NULL)
@@ -597,14 +576,14 @@ MALengine(Client c)
 
 	if (prg->def->errors > 0) {
 		showErrors(c);
-		if (c->listing )
+		if (c->listing)
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
-		MSresetVariables(c,c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def,1);
+		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
+		resetMalBlk(c->curprg->def, 1);
 		throw(MAL, "mal.engine", PROGRAM_GENERAL);
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
-		return 0;	/* empty block */
+		return 0;   /* empty block */
 	if (c->glb) {
 		if (prg->def && c->glb->stksize < prg->def->vsize)
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
@@ -612,18 +591,17 @@ MALengine(Client c)
 		c->glb->blk = prg->def;
 		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
-	if (c->listing > 1 )
+	if (c->listing > 1)
 		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 
 	/*
-	 * @-
 	 * In interactive mode we should avoid early garbage collection of values.
 	 * This can be controlled by the clean up control at the instruction level
 	 * and marking all non-temporary variables as being (potentially) used.
 	 */
-	if (c->glb){
+	if (c->glb) {
 		c->glb->pcup = 0;
-		c->glb->keepAlive= TRUE; /* no garbage collection */
+		c->glb->keepAlive = TRUE; /* no garbage collection */
 	}
 	if (prg->def->errors == 0)
 		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
@@ -637,19 +615,19 @@ MALengine(Client c)
 			printFunction(c->fdout, c->curprg->def, 0, c->listing);
 		showErrors(c);
 	}
-	MSresetVariables(c,prg->def, c->glb, 0);
-	resetMalBlk(prg->def,1);
-	if (c->glb){
+	MSresetVariables(c, prg->def, c->glb, 0);
+	resetMalBlk(prg->def, 1);
+	if (c->glb) {
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
-	if( prg->def->profiler){
+	if (prg->def->profiler) {
 		GDKfree(prg->def->profiler);
-		prg->def->profiler= NULL;
+		prg->def->profiler = NULL;
 	}
 	prg->def->errors = 0;
-	if( c->itrace)
-		mnstr_printf(c->fdout,"mdb>#EOD\n");
+	if (c->itrace)
+		mnstr_printf(c->fdout, "mdb>#EOD\n");
 	return msg;
 }
 
