@@ -1177,7 +1177,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		cntxt->itrace = 'W';
 		mdbTrap(cntxt, mb, stk, pc);
 		while (cntxt->itrace == 'W')
-			MT_sleep_ms(cntxt->delay);
+			MT_sleep_ms(300);
 		mnstr_printf(mal_clients[0].fdout, "#Process %d woke up\n", (int) (cntxt - mal_clients));
 		return;
 	}

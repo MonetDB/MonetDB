@@ -279,8 +279,6 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNins(b, "debug", local_itoa(cntxt->debug), FALSE);
 	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNins(b, "login", s, FALSE);
-	CLTtimeConvert((time_t) cntxt->delay,s);
-	BUNins(b, "delay", s, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;
@@ -451,7 +449,7 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *id=  (int *) getArgReference(stk,pci,1);
 	(void) cntxt;
 	(void) mb;
-    return MCsuspendClient(*id,0);
+    return MCsuspendClient(*id);
 }
 
 str
