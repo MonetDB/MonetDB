@@ -118,6 +118,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->alternative = NULL;
 	mb->history = NULL;
 	mb->keephistory = 0;
+	mb->dotfile = 0;
 	mb->marker = 0;
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
@@ -200,6 +201,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->alternative = old->alternative;
 	mb->history = NULL;
 	mb->keephistory = old->keephistory;
+	mb->dotfile = old->dotfile;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 

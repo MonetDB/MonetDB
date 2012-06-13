@@ -160,9 +160,11 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
-		mal_set_lock(mal_profileLock, "profileLock");
-		showFlowGraph(mb,stk,"stethoscope");
-		mal_unset_lock(mal_profileLock, "profileLock");
+		if (mb->dotfile == 0){
+			mal_set_lock(mal_profileLock, "profileLock");
+			showFlowGraph(mb,stk,"stethoscope");
+			mal_unset_lock(mal_profileLock, "profileLock");
+		}
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
 		return;

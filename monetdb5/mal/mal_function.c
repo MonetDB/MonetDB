@@ -1069,14 +1069,44 @@ showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 	mnstr_printf(f, "\"];\n");
 }
 
+/* the stethoscope needs dot files for its graphical interface.
+ * They are produced whenever a main() is called.
+ * In all cases a single dot file is produced.
+ */
+#define MAXFLOWGRAPHS 128
+
+int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top);
+int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
+	int i;
+	InstrPtr p;
+
+	for ( i=0; i<top; i++)
+	if ( mblist[i] == mb)
+		return top;
+
+	if ( top == MAXFLOWGRAPHS)
+		return top; /* just bail out */
+	mblist[top] = mb;
+	stklist[top++] = stk;
+	for (i=1; i < mb->stop; i++){
+		p = getInstrPtr(mb,i);
+		if ( p->token == FCNcall || p->token == FACcall )
+			top =getFlowGraphs(p->blk, 0,mblist, stklist, top);
+	}
+	return top;
+}
+
 void
 showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 {
 	stream *f;
 	InstrPtr p;
-	int i, k;
+	int i, j,k, stethoscope=0;
 	char mapimode = 0;
 	buffer *bufstr = NULL;
+	MalBlkPtr mblist[MAXFLOWGRAPHS];
+	MalStkPtr stklist[MAXFLOWGRAPHS];
+	int top =0;
 
 	(void) stk;     /* fool the compiler */
 
@@ -1088,40 +1118,52 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		mapimode = 1;
 	} else if (idcmp(fname, "stethoscope") == 0) {
 		f = getProfilerStream();
+		stethoscope =1;
 	} else {
 		f = open_wastream(fname);
 	}
 	if ( f == NULL)
 		return;
-	p = getInstrPtr(mb, 0);
-	mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
-	p = getInstrPtr(mb, 0);
-	showFlowDetails(mb, stk, p, 0, f);
-	for (k = p->retc; k < p->argc; k++) {
-		showOutFlow(mb, 0, p->argv[k], f);
-	}
-	for (i = 1; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
 
-		showFlowDetails(mb, stk, p, i, f);
+	top = getFlowGraphs(mb,stk,mblist,stklist,0);
+	if ( stethoscope == 0)
+		top =1;
+	for( j=0; j< top; j++){
+		mb = mblist[j];
+		stk = stklist[j];
+		if ( (mb == 0 || mb->dotfile) && stethoscope)
+			continue; /* already sent */
+		p = getInstrPtr(mb, 0);
+		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
+		p = getInstrPtr(mb, 0);
+		showFlowDetails(mb, stk, p, 0, f);
+		for (k = p->retc; k < p->argc; k++) {
+			showOutFlow(mb, 0, p->argv[k], f);
+		}
+		for (i = 1; i < mb->stop; i++) {
+			p = getInstrPtr(mb, i);
 
-		for (k = 0; k < p->retc; k++)
-			showOutFlow(mb, i, p->argv[k], f);
+			showFlowDetails(mb, stk, p, i, f);
 
-		if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
-			for (k = p->retc; k < p->argc; k++)
-				if (getArgType(mb, p, k) != TYPE_void &&
-					!isVarConstant(mb, getArg(p, k)))
-					showOutFlow(mb, i, p->argv[k], f);
-
-		if (getFunctionId(p) == 0)
 			for (k = 0; k < p->retc; k++)
-				if (getArgType(mb, p, k) != TYPE_void)
-					showInFlow(mb, i, p->argv[k], f);
-		if (p->token == ENDsymbol)
-			break;
+				showOutFlow(mb, i, p->argv[k], f);
+
+			if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
+				for (k = p->retc; k < p->argc; k++)
+					if (getArgType(mb, p, k) != TYPE_void &&
+						!isVarConstant(mb, getArg(p, k)))
+						showOutFlow(mb, i, p->argv[k], f);
+
+			if (getFunctionId(p) == 0)
+				for (k = 0; k < p->retc; k++)
+					if (getArgType(mb, p, k) != TYPE_void)
+						showInFlow(mb, i, p->argv[k], f);
+			if (p->token == ENDsymbol)
+				break;
+		}
+		mnstr_printf(f, "}\n");
+		mb->dotfile++;
 	}
-	mnstr_printf(f, "}\n");
 
 	if (mapimode == 1) {
 		size_t maxlen = 0;
