@@ -294,6 +294,20 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 	MSinitClientPrg(c, "user", "main");
 
 	GDKfree(command);
+
+	/* NOTE ABOUT STARTING NEW THREADS
+	 * At this point we have conducted experiments (Jun 2012) with
+	 * reusing threads.  The implementation used was a lockless array of
+	 * semaphores to wake up threads to do work.  Experimentation on
+	 * Linux, Solaris and Darwin showed no significant improvements, in
+	 * most cases no improvements at all.  Hence the following
+	 * conclusion: thread reuse doesn't save up on the costs of just
+	 * forking new threads.  Since the latter means no difficulties of
+	 * properly maintaining a pool of threads and picking the workers
+	 * out of them, it is favourable just to start new threads on
+	 * demand. */
+
+	/* fork a new thread to handle this client */
 	if (MT_create_thread(&p, MSserveClient, (void *) c, MT_THR_DETACHED) != 0) {
 		mnstr_printf(fout, "!internal server error (cannot fork new "
 						   "client thread), please try again later\n");
