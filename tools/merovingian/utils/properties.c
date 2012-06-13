@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "properties.h"
 #include "utils.h"
-#include "muuid.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 
@@ -40,8 +39,6 @@ static confkeyval _internal_prop_keys[] = {
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
 	{"optpipe",  NULL, 0, STR},
-	{"master",   NULL, 0, STR},
-	{"slave",    NULL, 0, MURI},
 	{"readonly", NULL, 0, BOOLEAN},
 	{"nclients", NULL, 0, INT},
 	{"mfunnel",  NULL, 0, STR},
@@ -221,29 +218,6 @@ setProp(char *path, char *key, char *val)
 					return(strdup(buf));
 				}
 				value++;
-			}
-		} else if (strcmp(key, "master") == 0) {
-			/* basically this is either a boolean or a UUID (in practice
-			 * it is a freeform string, that sometimes happens to be a
-			 * UUID)
-			 * first perform a sneaky hack to do the boolean check */
-			kv->type = BOOLEAN;
-			if ((err = setConfVal(kv, val)) != NULL) {
-				free(err);
-				/* restore */
-				kv->type = STR;
-			} else {
-				/* restore */
-				kv->type = STR;
-				if (strcmp(kv->val, "yes") == 0) {
-					/* generate a unique ID for this database */
-					val = generateUUID();
-					if ((err = setConfVal(kv, val)) != NULL) {
-						/* can't fail */
-						assert(0);
-					}
-					free(val);
-				}
 			}
 		}
 	}
