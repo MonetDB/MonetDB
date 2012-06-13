@@ -29,7 +29,6 @@ lib_optimizer = {
 	NOINST
 	SOURCES = \
 		optimizer.mx \
-		opt_accessmode.mx \
 		opt_accumulators.mx \
 		opt_aliases.mx \
 		opt_cluster.mx \
@@ -91,7 +90,7 @@ headers_mal = {
 		opt_remoteQueries.mx opt_joinselect.mx \
 		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
 		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_groups.mx \
-		opt_accessmode.mx opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
+		opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
 		opt_statistics.mal opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
 		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx opt_origin.mx \
 		opt_mitosis.mx opt_octopus.mx opt_centipede.mx opt_history.mx
