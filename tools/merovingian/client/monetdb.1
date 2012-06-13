@@ -215,27 +215,6 @@ be changed.  See the
 .BR mserver5 (1)
 manpage for available pipelines.  Changing this setting is discouraged
 at all times.
-.IP "  master=<yes|no|id>"
-Defines if the database is to be started as a replication master 
-.RI ( yes ", " id "), or not (" no ).
-Replication masters are identified by slaves by their
-.IR id .
-When no
-.I id
-is given (when
-.I yes
-is given as argument), a UUID is generated for the master.  Note that
-the
-.I id
-is not required to be in the format of a UUID (see
-.BR uuid_generate (3)).
-.IP "  slave=<uri>"
-Defines if the database is to be started as a replication slave from the
-master identified by
-.IR uri .
-A valid URI looks like
-.BI mapi:monetdb:// hostname : port / database
-which is a regular mapi URI.
 .IP "  readonly=<yes|no>"
 Defines if the database has to be started in readonly mode.  Updates are
 rejected in this mode, and the server employs some read-only

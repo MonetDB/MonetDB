@@ -618,10 +618,6 @@ main(int argc, char *argv[])
 	_mero_db_props = getDefaultProps();
 	kv = findConfKey(_mero_db_props, "shared");
 	kv->val = strdup("yes");
-	kv = findConfKey(_mero_db_props, "master");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "slave");
-	kv->val = NULL; /* MURI */
 	kv = findConfKey(_mero_db_props, "readonly");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
