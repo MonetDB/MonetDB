@@ -2206,7 +2206,6 @@ str OCTOPUSgetVersion(int *res);
 str OCTOPUSmakeSchedule(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OCTOPUSregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OCTOPUSrun(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-str OPTaccessmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTaccumulators(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 void OPTaliasRemap(InstrPtr p, int *alias);
 str OPTaliases(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

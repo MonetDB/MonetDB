@@ -561,7 +561,6 @@ struct OPTcatalog {
 	int actions;
 	int debug;
 } optcatalog[]= {
-{"accessmode",	0,	0,	0,	DEBUG_OPT_ACCESSMODE},
 {"accumulators",0,	0,	0,	DEBUG_OPT_ACCUMULATORS},
 {"groups",		0,	0,	0,	DEBUG_OPT_GROUPS},
 {"aliases",		0,	0,	0,	DEBUG_OPT_ALIASES},
