@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Jun 14 2012 Fabian Groffen <fabian@cwi.nl>
+- Crackers code has been removed.  Development continues in the holindex
+  branch.
+
