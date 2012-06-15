@@ -236,9 +236,8 @@ All Rights Reserved.
   </target>
 
   <!--
-  This generates MonetDriver.java and MonetDBDatabase.java from their
-  ".java.in" equivalents.  It's required for importing the driver
-  version properties.
+  This generates MonetDriver.java from its ".java.in" equivalents.  It's
+  required for importing the driver version properties.
   -->
   <target name="driver" depends="prepare" unless="uptodate.drivers">
     <tstamp>
