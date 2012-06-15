@@ -41,6 +41,7 @@
  * The optimizers should all be equiped with debugging code
  * to easily trace their performance.
  */
+#define DEBUG_OPT_ACCESSMODE		1
 #define DEBUG_OPT_OPTIMIZER			2
 #define DEBUG_OPT_ALIASES			3
 #define DEBUG_OPT_REDUCE			4
