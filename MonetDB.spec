@@ -583,7 +583,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-assert=no \
 	--enable-bits=%{bits} \
 	--enable-console=yes \
-	--enable-crackers=no \
 	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
