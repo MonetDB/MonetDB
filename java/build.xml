@@ -152,7 +152,7 @@ All Rights Reserved.
   </target>
 
   <target name="jar_mero_control"
-    depends="compile_mero_control">
+    depends="compile_mcl,compile_mero_control">
     <jar jarfile="${mero-control-jar}">
       <fileset dir="${builddir}">
         <include name="${mero-control-package}/**/*.class" />
