@@ -2235,6 +2235,7 @@ str OPThistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTinline(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 int OPTisAlias(InstrPtr p);
 str OPTjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str OPTjoinselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTlegAdvice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int OPTlegAdviceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

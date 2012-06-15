@@ -58,7 +58,7 @@ mkdir -p ${buildbase}/geom/monetdb5/createdb
 cp ${srcdir}/geom/sql/[0-9][0-9]_*.sql ${buildbase}/geom/monetdb5/createdb 2>/dev/null
 
 # where compiled monetdb5 modules are to be found
-for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/compiler
+for d in optimizer scheduler modules/atoms modules/kernel modules/mal extras/crackers extras/compiler
 do
 	[ -d "${buildbase}/monetdb5/$d/.libs" ] &&
 		MOD_PATH="${MOD_PATH}:${buildbase}/monetdb5/$d"
