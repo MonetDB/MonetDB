@@ -41,7 +41,6 @@
  * The optimizers should all be equiped with debugging code
  * to easily trace their performance.
  */
-#define DEBUG_OPT_ACCESSMODE		1
 #define DEBUG_OPT_OPTIMIZER			2
 #define DEBUG_OPT_ALIASES			3
 #define DEBUG_OPT_REDUCE			4
@@ -62,7 +61,6 @@
 #define DEBUG_OPT_GARBAGE			19
 #define DEBUG_OPT_INLINE			20
 #define DEBUG_OPT_JOINPATH			21
-#define DEBUG_OPT_JOINSELECT		22
 #define DEBUG_OPT_MACRO				23
 #define DEBUG_OPT_MERGETABLE		24
 #define DEBUG_OPT_OCTOPUS			25

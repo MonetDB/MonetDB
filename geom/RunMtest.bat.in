@@ -46,7 +46,6 @@ set PATH=%buildbase%\monetdb5\tools;%PATH%
 rem modules (lib_*.dll and *.mal)
 set MOD_PATH=%buildbase%\geom\monetdb5
 set MOD_PATH=%buildbase%\monetdb5\extras\compiler;%MOD_PATH%
-set MOD_PATH=%buildbase%\monetdb5\extras\crackers;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\modules\atoms;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\modules\kernel;%MOD_PATH%
 set MOD_PATH=%buildbase%\monetdb5\modules\mal;%MOD_PATH%

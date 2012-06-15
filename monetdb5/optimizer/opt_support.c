@@ -583,7 +583,6 @@ struct OPTcatalog {
 {"history",		0,	0,	0,	DEBUG_OPT_HISTORY},
 {"inline",		0,	0,	0,	DEBUG_OPT_INLINE},
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
-{"joinselect",	0,	0,	0,	DEBUG_OPT_JOINSELECT},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
 {"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},

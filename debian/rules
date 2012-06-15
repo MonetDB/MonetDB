@@ -6,7 +6,6 @@ include /usr/share/cdbs/1/class/autotools.mk
 DEB_CONFIGURE_EXTRA_FLAGS := \
 	--enable-assert=no \
 	--enable-console=yes \
-	--enable-crackers=no \
 	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
