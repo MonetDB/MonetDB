@@ -2191,7 +2191,7 @@ BBPrename(bat bid, const char *nme)
  */
 @h
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
-#define BBPtrimmable(b) (BBPswappable(b) && b->P->lview == 0 && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
+#define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 /*
  * The BBP_ref contains the amount of live references to a BAT.  These
  * might be in recursive BATs, C or MAL variables.  The count is
@@ -2279,21 +2279,18 @@ incref(bat i, int logical, int lock)
 		if (hp) {
 			incref(hp, 0, lock);
 			b = getBBPdescriptor(hp, lock);
-			if (!bs->P.lview) {
-				bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
-				/* if we shared the hash before, share
-				 * it again note that if the parent's
-				 * hash is destroyed, we also don't
-				 * have a hash anymore */
-				if (bs->B.H->hash == (Hash *) -1)
-					bs->B.H->hash = b->H->hash;
-			}
+			bs->B.H->heap.base = b->H->heap.base + (size_t) bs->B.H->heap.base;
+			/* if we shared the hash before, share
+			 * it again note that if the parent's
+			 * hash is destroyed, we also don't
+			 * have a hash anymore */
+			if (bs->B.H->hash == (Hash *) -1)
+				bs->B.H->hash = b->H->hash;
 		}
 		if (tp) {
 			incref(tp, 0, lock);
 			b = getBBPdescriptor(tp, lock);
-			if (!bs->P.lview &&
-			    bs->B.H != bs->B.T) {  /* mirror? */
+			if (bs->B.H != bs->B.T) {  /* mirror? */
 				bs->B.T->heap.base = b->H->heap.base + (size_t) bs->B.T->heap.base;
 				/* if we shared the hash before, share
 				 * it again note that if the parent's
@@ -2389,12 +2386,10 @@ decref(bat i, int logical, int releaseShare, int lock)
 			assert(b == NULL || b->T->vheap == NULL || b->T->vheap->parentid == 0 || BBP_refs(b->T->vheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
-				if ((hp = b->H->heap.parentid) != 0 &&
-				    !b->P->lview)
+				if ((hp = b->H->heap.parentid) != 0)
 					b->H->heap.base = (char *) (b->H->heap.base - BBP_cache(hp)->H->heap.base);
 				if ((tp = b->T->heap.parentid) != 0 &&
-				    b->H != b->T &&
-				    !b->P->lview)
+				    b->H != b->T)
 					b->T->heap.base = (char *) (b->T->heap.base - BBP_cache(tp)->H->heap.base);
 				/* if a view shared the hash with its
 				 * parent, indicate this, but only if

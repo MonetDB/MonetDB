@@ -791,7 +791,6 @@ typedef struct {
 	 dirty:2,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
-	 lview:1,		/* bat is a *logical* view on parentid */
 	 set:1,			/* real set semantics */
 	 restricted:2,		/* access priviliges */
 	 persistence:2,		/* should the BAT persist on disk? */
@@ -2766,17 +2765,16 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * always refer to the same parent column (i.e. no correction needed)
  */
 #define isVIEW(x)							\
-	(!(x)->P->lview &&						\
-	 ((x)->H->heap.parentid ||					\
-	  (x)->T->heap.parentid ||					\
-	  ((x)->H->vheap && (x)->H->vheap->parentid != ABS((x)->batCacheid)) ||	\
-	  ((x)->T->vheap && (x)->T->vheap->parentid != ABS((x)->batCacheid))))
+	((x)->H->heap.parentid ||					\
+	 (x)->T->heap.parentid ||					\
+	 ((x)->H->vheap && (x)->H->vheap->parentid != ABS((x)->batCacheid)) || \
+	 ((x)->T->vheap && (x)->T->vheap->parentid != ABS((x)->batCacheid)))
 
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
-#define VIEWhparent(x)	((x)->P->lview?0:(x)->H->heap.parentid)
-#define VIEWvhparent(x)	(((x)->P->lview||(x)->H->vheap==NULL||(x)->H->vheap->parentid==ABS((x)->batCacheid))?0:(x)->H->vheap->parentid)
-#define VIEWtparent(x)	((x)->P->lview?0:(x)->T->heap.parentid)
-#define VIEWvtparent(x)	(((x)->P->lview||(x)->T->vheap==NULL||(x)->T->vheap->parentid==ABS((x)->batCacheid))?0:(x)->T->vheap->parentid)
+#define VIEWhparent(x)	((x)->H->heap.parentid)
+#define VIEWvhparent(x)	(((x)->H->vheap==NULL||(x)->H->vheap->parentid==ABS((x)->batCacheid))?0:(x)->H->vheap->parentid)
+#define VIEWtparent(x)	((x)->T->heap.parentid)
+#define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==ABS((x)->batCacheid))?0:(x)->T->vheap->parentid)
 
 /* VIEWparentcol(b) tells whether the head column was inherited from the parent
  * "as is". We must check whether the type was not overridden in the view.

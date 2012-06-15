@@ -1576,7 +1576,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATtmark_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
 #define BAThmark_default(b) BATmirror(BATmark(b,OIDnew(BATcount(b))))
 #define BATwcopy(b) BATcopy(b, b->htype, b->ttype, 1)
-#define BATrcopy(b) BATcopy(b, b->htype, b->ttype, 2)
 @c
 @:unary(histogram,BAThistogram)@
 @:unary(sort,BATsort)@
