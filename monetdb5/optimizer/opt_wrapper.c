@@ -1,0 +1,193 @@
+/*
+The contents of this file are subject to the MonetDB Public License
+Version 1.1 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+http://www.monetdb.org/Legal/MonetDBLicense
+
+Software distributed under the License is distributed on an "AS IS"
+basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+License for the specific language governing rights and limitations
+under the License.
+
+The Original Code is the MonetDB Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+Copyright August 2008-2011 MonetDB B.V.
+All Rights Reserved.
+*/
+
+/*  author M.L. Kersten
+ * The optimizer wrapper code is the interface to the MAL optimizer calls.
+ * It prepares the environment for the optimizers to do their work and removes
+ * the call itself to avoid endless recursions.
+ * 
+ * Before an optimizer is finished, it should leave a clean state behind.
+ * Moreover, the information of the optimization step is saved for
+ * debugging and analysis.
+ * 
+ * The wrapper expects the optimizers to return the number of
+ * actions taken, i.e. number of succesful changes to the code.
+
+*/
+
+#include "monetdb_config.h"
+#include "mal_listing.h"
+#include "opt_statistics.h"
+
+/*
+ * The optimizer used so far
+*/
+#include "opt_accumulators.h"
+#include "opt_aliases.h"
+#include "opt_cluster.h"
+#include "opt_coercion.h"
+#include "opt_centipede.h"
+#include "opt_cluster.h"
+#include "opt_commonTerms.h"
+#include "opt_compression.h"
+#include "opt_costModel.h"
+#include "opt_datacyclotron.h"
+#include "opt_dataflow.h"
+#include "opt_deadcode.h"
+#include "opt_dictionary.h"
+#include "opt_emptySet.h"
+#include "opt_evaluate.h"
+#include "opt_factorize.h"
+#include "opt_garbageCollector.h"
+#include "opt_groups.h"
+#include "opt_history.h"
+#include "opt_inline.h"
+#include "opt_joinpath.h"
+#include "opt_mapreduce.h"
+#include "opt_mergetable.h"
+#include "opt_mitosis.h"
+#include "opt_multiplex.h"
+#include "opt_origin.h"
+#include "opt_octopus.h"
+#include "opt_prejoin.h"
+#include "opt_pushranges.h"
+#include "opt_qep.h"
+#include "opt_recycler.h"
+#include "opt_reduce.h"
+#include "opt_remap.h"
+#include "opt_remoteQueries.h"
+#include "opt_reorder.h"
+#include "opt_singleton.h"
+#include "opt_statistics.h"
+#include "opt_strengthReduction.h"
+#include "opt_trace.h"
+
+struct{
+	str nme;
+	int (*fcn)();
+} codes[] = {
+	{"accumulators", &OPTaccumulatorsImplementation},
+	{"aliases", &OPTaliasesImplementation},
+	{"centipede", &OPTcentipedeImplementation},
+	{"cluster", &OPTclusterImplementation},
+	{"coercion", &OPTcoercionImplementation},
+	{"commonTerms", &OPTcommonTermsImplementation},
+	{"compression", &OPTcompressionImplementation},
+	{"costModel", &OPTcostModelImplementation},
+	{"datacyclotron", &OPTdatacyclotronImplementation},
+	{"dataflow", &OPTdataflowImplementation},
+	{"deadcode", &OPTdeadcodeImplementation},
+	{"dictionary", &OPTdictionaryImplementation},
+	{"emptySet", &OPTemptySetImplementation},
+	{"evaluate", &OPTevaluateImplementation},
+	{"factorize", &OPTfactorizeImplementation},
+	{"groups", &OPTgroupsImplementation},
+	{"garbageCollector", &OPTgarbageCollectorImplementation},
+	{"history", &OPThistoryImplementation},
+	{"inline", &OPTinlineImplementation},
+	{"joinPath", &OPTjoinPathImplementation},
+	{"mapreduce", &OPTmapreduceImplementation},
+	{"mergetable", &OPTmergetableImplementation},
+	{"mitosis", &OPTmitosisImplementation},
+	{"multiplex", &OPTmultiplexImplementation},
+	{"octopus", &OPToctopusImplementation},
+	{"origin", &OPToriginImplementation},
+	{"prejoin", &OPTprejoinImplementation},
+	{"pushranges", &OPTpushrangesImplementation},
+	{"dumpQEP", &OPTdumpQEPImplementation},
+	{"recycler", &OPTrecyclerImplementation},
+	{"reduce", &OPTreduceImplementation},
+	{"remap", &OPTremapImplementation},
+	{"remoteQueries", &OPTremoteQueriesImplementation},
+	{"reorder", &OPTreorderImplementation},
+	{"singleton", &OPTsingletonImplementation},
+	{"strengthReduction", &OPTstrengthReductionImplementation},
+	{"trace", &OPTtraceImplementation},
+	{0,0}
+};
+opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+#define OPTIMIZERDEBUG if (0) 
+
+str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str modnme;
+	str fcnnme;
+	str msg= MAL_SUCCEED;
+	Symbol s= NULL;
+	lng t,clk= GDKusec();
+	int i, actions = 0;
+	char optimizer[256];
+	InstrPtr q= copyInstruction(p);
+
+	optimizerInit();
+	snprintf(optimizer,256,"%s",getFunctionId(p));
+	OPTIMIZERDEBUG mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER %s\n",getModuleId(p));
+	if( p && p->argc > 1 ){
+		if( getArgType(mb,p,1) != TYPE_str ||
+			getArgType(mb,p,2) != TYPE_str ||
+			!isVarConstant(mb,getArg(p,1)) ||
+			!isVarConstant(mb,getArg(p,2))
+		) 
+			throw(MAL, optimizer, ILLARG_CONSTANTS);
+
+		if( stk != 0){
+			modnme= *(str*)getArgReference(stk,p,1);
+			fcnnme= *(str*)getArgReference(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		removeInstruction(mb, p);
+		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
+			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+		}
+		mb = s->def;
+		stk= 0;
+	} else if( p )
+		removeInstruction(mb, p);
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,modnme);
+		return MAL_SUCCEED;
+	}
+
+
+	for ( i=0; codes[i].nme; i++)
+	if ( strcmp(codes[i].nme, optimizer)== 0 ){
+		actions = (int)(*(codes[i].fcn))(cntxt, mb, stk,0);
+		break;	
+	}
+
+	msg= optimizerCheck(cntxt, mb, optimizer, actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	OPTIMIZERDEBUG {
+		mnstr_printf(cntxt->fdout,"=FINISHED %s  %d\n",optimizer, actions);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+	QOTupdateStatistics(getModuleId(q),actions,t);
+	addtoMalBlkHistory(mb,getModuleId(q));
+	freeInstruction(q);
+	return msg;
+}
+

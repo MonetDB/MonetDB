@@ -1,0 +1,239 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
+#include "monetdb_config.h"
+#include "opt_multiplex.h"
+#include "mal_interpreter.h"
+#include "opt_statistics.h"
+
+/*
+ * @-
+ * The generic solution to the multiplex operators is to translate
+ * them to a MAL loop.
+ * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
+ * structure:
+ *
+ * @verbatim
+ * 	resB:= bat.new(A1);
+ * barrier (mloop,h,t):= bat.newIterator(A1);
+ * 	$1:= algebra.find(A1,h);
+ * 	$2:= A2;	# in case of constant?
+ * 	...
+ * 	cr:= MOD.FCN($1,...,$n);
+ * 	bat.insert(resB,h,cr);
+ * 	redo (mloop,h,t):= bat.hasMoreElements(A1);
+ * end mloop;
+ * @end verbatim
+ *
+ * The algorithm consists of two phases: phase one deals with
+ * collecting the relevant information, phase two is the actual
+ * code construction.
+ */
+static str
+OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i = 2, mloop, resB, iter = 0, cr;
+	int hvar, tvar;
+	str mod, fcn;
+	int *alias;
+	InstrPtr q;
+	int ht, tt;
+
+	(void) cntxt;
+	(void) stk;
+	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
+	if (alias == NULL)
+		return NULL;
+	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
+	mod = putName(mod,strlen(mod));
+	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
+	fcn = putName(fcn,strlen(fcn));
+
+	/* search the iterator bat */
+	for (i = 3; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			iter = getArg(pci, i);
+			break;
+		}
+	if( i == pci->argc)
+		return createException(MAL, "optimizer.multiplex", 
+								"Iterator BAT type is missing");
+
+	OPTDEBUGmultiplex {
+		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
+		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL );
+		mnstr_printf(cntxt->fdout,"#multiplex against operator %d %s\n",iter, getTypeName(getVarType(mb,iter)));
+		printInstruction(cntxt->fdout,mb, 0, pci,LIST_MAL_ALL);
+	}
+	/*
+	 * Beware, the operator constant (arg=1) is passed along as well,
+	 * because in the end we issue a recursive function call that should
+	 * find the actual arguments at the proper place of the callee.
+	 */
+	/* resB := new(refBat) */
+	if (isAnyExpression(getArgType(mb, pci, 0)))
+		return createException(MAL, "optimizer.multiplex", "Target type is missing");
+	q = newFcnCall(mb, batRef, newRef);
+	resB = getArg(q, 0);
+
+	ht = getHeadType(getArgType(mb, pci, 0));
+	if (ht== TYPE_any)
+		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
+	tt = getTailType(getArgType(mb, pci, 0));
+	if (tt== TYPE_any)
+		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
+	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+	q = pushNil(mb, q, ht);
+	setVarUDFtype(mb,getArg(q,q->argc-1));
+	q = pushNil(mb, q, tt);
+	setVarUDFtype(mb,getArg(q,q->argc-1));
+	/* barrier (mloop,h,r) := newIterator(refBat); */
+	q = newFcnCall(mb, batRef, "newIterator");
+	q->barrier = BARRIERsymbol;
+	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
+	hvar = newTmpVariable(mb, TYPE_any);
+	q= pushReturn(mb, q, hvar);
+	tvar = newTmpVariable(mb, TYPE_any);
+	q= pushReturn(mb, q, tvar);
+	(void) pushArgument(mb, q, iter);
+
+	/* $1:= bat.find(Ai,h) or constant */
+	alias[i] = tvar;
+
+	for (i++; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			q = newFcnCall(mb, algebraRef, "find");
+			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
+			getArg(q, 0) = alias[i];
+			q= pushArgument(mb, q, getArg(pci, i));
+			(void) pushArgument(mb, q, hvar);
+		}
+
+	/* cr:= mod.CMD($1,...,$n); */
+	q = newFcnCall(mb, mod, fcn);
+	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
+
+	for (i = 3; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			q= pushArgument(mb, q, alias[i]);
+		} else {
+			q = pushArgument(mb, q, getArg(pci, i));
+		}
+
+	/* insert(resB,h,cr);  
+	   not append(resB, cr); the head type (oid) may dynamically change */
+	
+	q = newFcnCall(mb, batRef, insertRef);
+	q= pushArgument(mb, q, resB);
+	q= pushArgument(mb, q, hvar);
+	(void) pushArgument(mb, q, cr);
+
+/* redo (mloop,h,r):= hasMoreElements(refBat); */
+	q = newFcnCall(mb, batRef, "hasMoreElements");
+	q->barrier = REDOsymbol;
+	getArg(q, 0) = mloop;
+	q= pushReturn(mb, q, hvar);
+	q= pushReturn(mb, q, tvar);
+	(void) pushArgument(mb, q, iter);
+
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getArg(q, 0) = mloop;
+	q= pushReturn(mb, q, hvar);
+	(void) pushReturn(mb, q, tvar);
+
+	q = newAssignment(mb);
+	getArg(q, 0) = getArg(pci, 0);
+	(void) pushArgument(mb, q, resB);
+	GDKfree(alias);
+	return MAL_SUCCEED;
+}
+
+/*
+ * The multiplexSimple is called by the MAL scenario. It bypasses
+ * the optimizer infrastructure, to avoid excessive space allocation
+ * and interpretation overhead.
+ */
+str
+OPTmultiplexSimple(Client cntxt)
+{
+	MalBlkPtr mb= cntxt->curprg->def;
+	int i, doit=0;
+	InstrPtr p;
+	if(mb)
+	for( i=0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
+			doit++;
+	}
+	if( doit) {
+		OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		chkTypes(cntxt->fdout, cntxt->nspace, mb,TRUE);
+		if ( mb->errors == 0) {
+			chkFlow(cntxt->fdout, mb);
+			chkDeclarations(cntxt->fdout,mb);
+		}
+	}
+	return 0;
+}
+int
+OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr *old, p;
+	int i, limit, slimit, actions= 0;
+	str msg= MAL_SUCCEED;
+
+	(void) stk;
+	(void) pci;
+
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit = mb->ssize;
+	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
+		return 0;
+
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (msg == MAL_SUCCEED && 
+                    getModuleId(p) == malRef && 
+		    getFunctionId(p) == multiplexRef) {
+			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
+			if( msg== MAL_SUCCEED){
+				freeInstruction(p); 
+				old[i]=0;
+			} else {
+				pushInstruction(mb, p);
+			}
+			actions++;
+		} else if( old[i])
+			pushInstruction(mb, p);
+	}
+	for(;i<slimit; i++)
+		if( old[i])
+			freeInstruction(old[i]);
+	GDKfree(old);
+	DEBUGoptimizers {
+		mnstr_printf(cntxt->fdout,"#opt_multiplex: %d expansions\n", actions);
+		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop,
+		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
+	}
+	if (mb->errors){
+		/* rollback */
+	}
+	return mb->errors? 0: actions;
+}

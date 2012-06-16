@@ -28,71 +28,57 @@ MTSAFE
 lib_optimizer = {
 	NOINST
 	SOURCES = \
-		optimizer.mx \
-		opt_accumulators.mx \
-		opt_aliases.mx \
-		opt_cluster.mx \
-		opt_coercion.mx \
-		opt_commonTerms.mx \
-		opt_compression.mx \
-		opt_constants.mx \
-		opt_costModel.mx \
-		opt_datacyclotron.mx \
-		opt_dataflow.mx \
-		opt_deadcode.mx \
-		opt_dictionary.mx \
-		opt_emptySet.mx \
-		opt_evaluate.mx \
-		opt_factorize.mx \
-		opt_garbageCollector.mx \
-		opt_groups.mx \
-		opt_heuristics.mx \
-		opt_history.mx \
-		opt_inline.mx \
-		opt_joinpath.mx \
-		opt_macro.mx \
-		opt_mapreduce.mx \
-		opt_mergetable.mx \
-		opt_mitosis.mx \
-		opt_multiplex.mx \
-		opt_octopus.mx \
-		opt_origin.mx \
-		opt_peephole.mx \
-		opt_pipes.c opt_pipes.h \
-		opt_prejoin.mx \
+		optimizer.c \
+		opt_accumulators.c \
+		opt_aliases.c \
+		opt_cluster.c \
+		opt_coercion.c \
+		opt_commonTerms.c \
+		opt_compression.c \
+		opt_constants.c \
+		opt_costModel.c \
+		opt_datacyclotron.c \
+		opt_dataflow.c \
+		opt_deadcode.c \
+		opt_dictionary.c \
+		opt_emptySet.c \
+		opt_evaluate.c \
+		opt_factorize.c \
+		opt_garbageCollector.c \
+		opt_groups.c \
+		opt_history.c \
+		opt_inline.c \
+		opt_joinpath.c \
+		opt_macro.c \
+		opt_mapreduce.c \
+		opt_mergetable.c \
+		opt_mitosis.c \
+		opt_multiplex.c \
+		opt_octopus.c \
+		opt_origin.c \
+		opt_pipes.c \
+		opt_prejoin.c \
 		opt_prelude.c opt_prelude.h \
-		opt_pushranges.mx \
-		opt_qep.mx \
-		opt_recycler.mx \
-		opt_reduce.mx \
-		opt_remap.mx \
-		opt_remoteQueries.mx \
-		opt_reorder.mx \
-		opt_singleton.mx \
+		opt_pushranges.c \
+		opt_qep.c \
+		opt_recycler.c \
+		opt_reduce.c \
+		opt_remap.c \
+		opt_remoteQueries.c \
+		opt_reorder.c \
+		opt_singleton.c \
 		opt_statistics.c opt_statistics.h \
-		opt_strengthReduction.mx \
-		opt_support.c opt_support.h \
-		opt_centipede.mx \
-		opt_trace.mx
+		opt_strengthReduction.c \
+		opt_support.c \
+		opt_centipede.c \
+		opt_trace.c \
+		opt_wrapper.c
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = \
-		opt_support.mal optimizer.mx  opt_factorize.mx \
-		opt_deadcode.mx opt_garbageCollector.mx opt_strengthReduction.mx \
-		opt_aliases.mx opt_constants.mx opt_commonTerms.mx opt_datacyclotron.mx \
-		opt_coercion.mx opt_emptySet.mx opt_peephole.mx opt_multiplex.mx \
-		opt_singleton.mx opt_costModel.mx opt_reduce.mx opt_macro.mx \
-		opt_accumulators.mx opt_qep.mx opt_mergetable.mx \
-		opt_remoteQueries.mx \
-		opt_reorder.mx opt_prejoin.mx opt_compression.mx \
-		opt_evaluate.mx opt_inline.mx opt_pushranges.mx opt_groups.mx \
-		opt_joinpath.mx opt_heuristics.mx opt_remap.mx \
-		opt_statistics.mal opt_trace.mx  opt_recycler.mx opt_dataflow.mx \
-		opt_cluster.mx opt_dictionary.mx opt_mapreduce.mx opt_origin.mx \
-		opt_mitosis.mx opt_octopus.mx opt_centipede.mx opt_history.mx
+	SOURCES = optimizer.mal 
 }
 
 EXTRA_DIST = optimizerWrapper.mx opt_statistics.mal opt_support.mal

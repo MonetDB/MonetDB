@@ -1055,18 +1055,9 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 static void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
-	str s, msg;
-
+	(void) mb;     /* fool the compiler */
 	(void) stk;     /* fool the compiler */
-	msg = instruction2str(mb, stk, p, LIST_MAL_DEBUG);
-	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
-	for (s = msg; *s; s++)
-		if (*s == '"')
-			mnstr_printf(f, "\\\"");
-		else
-			mnstr_printf(f, "%c", *s);
-	GDKfree(msg);
-	mnstr_printf(f, "\"];\n");
+	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p));
 }
 
 /* the stethoscope needs dot files for its graphical interface.
