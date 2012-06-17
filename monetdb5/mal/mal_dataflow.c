@@ -839,7 +839,6 @@ runDFLOWworker(void *t)
 		} else
 			/* always execute, it does not affect memory claims */
 			fs = nxtfs;
-		assert(fs->pc > 0);
 		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= " LLFMT "," LLFMT " %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
 		fs->error = DFLOWstep(task, fs);
 

@@ -1,30 +1,26 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f url
-
-@c
 /*
- * @a M. Kersten
- * @a Y. Zhang
- * @v 1.3
- * @* The URL module
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ *  M. Kersten
+ *  Y. Zhang
+ * The URL module
  * The URL module contains a collection of commands to manipulate
  * Uniform Resource Locators - a resource on the World Wide Web-
  * represented as a string in Monet. The URL can represent
@@ -55,177 +51,7 @@ All Rights Reserved.
  * step would be to refine the atom STR, then it would be possible to
  * redefine hashing.
  */
-@mal
-module url;
 
-atom url:str;
-
-command url(s:str) :url
-address URLnew
-comment "Create an URL from a string literal";
-
-command url(s:url) :url
-address URLnoop
-comment "Create an URL from a string literal";
-
-command calc.url(s:str) :url
-address URLnoop
-comment "Create an URL from a string literal";
-
-command calc.url(s:url) :url
-address URLnoop
-comment "Create an URL from a string literal";
-
-command getAnchor(u:url) :str
-address URLgetAnchor
-comment "Extract the URL anchor (reference)";
-
-command getBasename(u:url) :str
-address URLgetBasename
-comment "Extract the URL base file name";
-
-command getContent(u:url) :str
-address URLgetContent
-comment "Get the URL resource in a local file";
-
-command getContext(u:url) :str
-address URLgetContext
-comment "Get the path context of a URL";
-
-command getDirectory(u:url) :bat[:int,:str]
-address URLgetDirectory
-comment "Extract directory names from the URL";
-
-command getDomain(u:url) :str
-address URLgetDomain
-comment "Extract Internet domain from the URL";
-
-command getExtension(u:url) :str
-address URLgetExtension
-comment "Extract the file extension of the URL";
-
-command getFile(u:url) :str
-address URLgetFile
-comment "Extract the last file name of the URL";
-
-command getHost(u:url) :str
-address URLgetHost
-comment "Extract the server name from the URL";
-
-command getPort(u:url) :str
-address URLgetPort
-comment "Extract the port id from the URL";
-
-command getProtocol(u:url) :str
-address URLgetProtocol
-comment "Extract the protocol from the URL";
-
-command getQuery(u:url) :str
-address URLgetQuery
-comment "Extract the query string from the URL";
-
-command getQueryArg(u:url) :bat[:str,:str]
-address URLgetQueryArg
-comment "Extract argument mappings from the URL";
-
-command getUser(u:url) :str
-address URLgetUser
-comment "Extract the user identity from the URL";
-
-command getRobotURL(u:url) :str
-address URLgetRobotURL
-comment "Extract the location of the robot control file";
-
-command isaURL(u:url) :bit
-address URLisaURL
-comment "Check conformity of the URL syntax";
-
-command new(p:str, h:str, prt:int, f:str) :url
-address URLnew4
-comment "Construct URL from protocol, host, port, and file";
-
-command new(prot:str, host:str, fnme:str) :url
-address URLnew3
-comment "Construct URL from protocol, host,and file";
-
-command fromstr() :url
-address URLfromString
-comment "Convert a string to an url. ";
-
-command tostr() :str
-address URLtoString
-comment "Convert url to string equivalent";
-# @-
-# @-
-# In Monet 5 we have a different notion on how to administer BATs.
-@= PseudoM5
-		/* BATrename(b,"@1_@2");*/
-		BATroles(b,"@1","@2");
-		BATmode(b,TRANSIENT);
-		*retval= b->batCacheid;
-@
-# @* Implementation Code
-# The URLs are stored as strings without further optimization.
-@= Pseudo
-		BATrename(b,"@1_@2");
-		BATroles(b,"@1","@2");
-		BATmode(b,TRANSIENT);
-		*retval= b;
-@
-@h
-/*
- * @-
- * The key action is to break an url into its constituents.
- * Parsing is done for each individual request, because this way we
- * secure concurrent use from different threads.
- */
-#ifndef URL_H
-#define URL_H
-
-#include <gdk.h>
-#include <ctype.h>
-
-typedef str url;
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define url_export extern __declspec(dllimport)
-#else
-#define url_export extern __declspec(dllexport)
-#endif
-#else
-#define url_export extern
-#endif
-
-url_export str escape_str(str *retval, str s);
-url_export str unescape_str(str *retval, str s);
-url_export str URLnoop(str *url, str *val);
-url_export str URLnew(str *url, str *val);
-url_export str URLgetAnchor(str *retval, str *val);
-url_export str URLgetBasename(str *retval, str *t);
-url_export str URLgetContent(str *retval, str *Str1);
-url_export str URLgetContext(str *retval, str *val);
-url_export str URLgetDirectory(int *ret, str *tv);
-url_export str URLgetDomain(str *retval, str *tv);
-url_export str URLgetExtension(str *retval, str *tv);
-url_export str URLgetFile(str *retval, str *tv);
-url_export str URLgetHost(str *retval, str *tv);
-url_export str URLgetPort(str *retval, str *tv);
-url_export str URLgetProtocol(str *retval, str *tv);
-url_export str URLgetQuery(str *retval, str *tv);
-url_export str URLgetQueryArg(int *ret, str *tv);
-url_export str URLgetUser(str *retval, str *tv);
-url_export str URLgetRobotURL(str *retval, str *tv);
-url_export str URLisaURL(bit *retval, str *tv);
-url_export str URLnew4(str *url, str *protocol, str *server,
-		int *port, str *file);
-url_export str URLnew3(str *url, str *protocol, str *server, str *file);
-url_export int URLfromString(str src, int *len, str *url);
-url_export int URLtoString(str *s, int *len, str src);
-
-#endif /* URL_H */
-
-@c
 #include "monetdb_config.h"
 #include "url.h"
 #include "mal.h"
@@ -370,7 +196,10 @@ url_getDirectory(BAT **retval, /* put pointer to BAT[int,str] record here. */
 			throw(PARSE, "url.getDirectory","server name too long");
 	}
 getDir_done:
-	@:Pseudo(dir,name)@
+	BATrename(b,"dir_name");
+	BATroles(b,"dir","name");
+	BATmode(b,TRANSIENT);
+	*retval= b;
 	return MAL_SUCCEED;
 }
 #endif
@@ -628,7 +457,10 @@ url_getQueryArg(BAT **retval, url t)
 		getword(name, val, '=');
 		BUNins(b, name, val, FALSE);
 	}
-	@:Pseudo(dir,name)@
+	BATrename(b,"dir_name");
+	BATroles(b,"dir","name");
+	BATmode(b,TRANSIENT);
+	*retval= b;
 	return MAL_SUCCEED;
 }
 #endif
@@ -872,7 +704,7 @@ url_new4(str *retval,   /* put string: pointer to char here. */
 #endif
 
 /*
- * @+ Utilities
+ * Utilities
  */
 
 #define LF 10
@@ -941,7 +773,7 @@ plustospace(char *str)
 
 
 /*
- * @- Wrapping
+ * Wrapping
  * Here you find the wrappers around the V4 url library included above.
  */
 

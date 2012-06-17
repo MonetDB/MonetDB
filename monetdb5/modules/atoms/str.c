@@ -1,29 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f str
-
-@c
 /*
- * @a N.J. Nes, M.L. Kersten
- * @v 1.1
- * @+ The String Module
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ *  N.J. Nes, M.L. Kersten
+ * The String Module
  * Strings can be created in many ways. Already in the built-in operations
  * each atom can be cast to a string using the str(atom) mil command.
  * The string module gives the possibility of construction string as a
@@ -68,260 +63,7 @@ All Rights Reserved.
  *
  * All functions in the module have now been converted to Unicode. Internally,
  * we use UTF-8 to store strings as Unicode in zero-terminated byte-sequences.
- * @* Module Definition
  */
-@mal
-module str;
-
-command str(s:str):str 
-address STRtostr
-comment "Noop routine.";
-command string(s:str,offset:int) :str 
-address STRTail
-comment "Return the tail s[offset..n] 
-	 of a string s[0..n].";
-command string(s:str,offset:int,count:int):str 
-address STRSubString
-comment "Return substring s[offset..offset+count] of a string s[0..n]";
-command +( l:str, r:str) :str 
-address STRConcat
-comment "Concatenate two strings.";
-
-command length( s:str ) :int 
-address STRLength
-comment "Return the length of a string.";
-
-command stringlength( s:str ) :int 
-address STRstringLength
-comment "Return the length of a right trimed string (SQL semantics).";
-
-command nbytes( s:str ) :int 
-address STRBytes
-comment "Return the string length in bytes.";
-
-command unicodeAt(s:str, index:int) :int 
-address STRWChrAt
-comment "get a unicode character 
-	(as an int) from a string position.";
-command unicode(wchar:int) :str 
-address STRFromWChr
-comment "convert a unicode to a character.";
-
-command codeset() :str 
-address STRcodeset
-comment "Return the locale's codeset";
-command iconv(org:str,fromCs:str,toCs:str):str 
-address STRIconv
-comment "String codeset conversion";
-
-command startsWith(s:str,prefix:str):bit 
-address STRPrefix
-comment "Prefix check.";
-command endsWith( s:str, suffix:str ) :bit 
-address STRSuffix
-comment "Suffix check.";
-
-command toLower( s:str ) :str 
-address STRLower
-comment "Convert a string to lower case.";
-command toUpper( s:str ) :str 
-address STRUpper
-comment "Convert a string to upper case.";
-
-command search( s:str, c:str ) :int 
-address STRstrSearch
-comment "Search for a substring. Returns 
-	 position, -1 if not found.";
-command r_search( s:str, c:str ) :int 
-address STRReverseStrSearch
-comment "Reverse search for a substring. Returns 
-	 position, -1 if not found.";
-
-command trim( s:str ) :str 
-address STRStrip
-comment "Strip whitespaces around a string.";
-command ltrim( s:str ) :str 
-address STRLtrim
-comment "Strip whitespaces from start of a string.";
-command rtrim( s:str ) :str 
-address STRRtrim
-comment "Strip whitespaces from end of a string.";
-
-command calc.max(s:str, t:str):str
-address STRmax
-comment "Select the maximum string in lexicographic order";
-command calc.max_no_nil(s:str, t:str):str
-address STRmax_no_nil
-comment "Select the maximum string in lexicographic order, ignoring nils";
-command calc.min(s:str, t:str):str
-address STRmin
-comment "Select the minimum string in lexicographic order";
-command calc.min_no_nil(s:str, t:str):str
-address STRmin_no_nil
-comment "Select the minimum string in lexicographic order, ignoring nils";
-
-module str;
-
-command substitute(s:str,src:str,dst:str,rep:bit) :str 
-address STRSubstitute
-comment "Substitute first occurrence of 'src' by 
-	'dst'.  Iff repeated = true this is 
-	repeated while 'src' can be found in the 
-	result string. In order to prevent 
-	recursion and result strings of unlimited 
-	size, repeating is only done iff src is 
-	not a substring of dst.";
-
-command like(s:str,pat:str):bit
-address STRlikewrap2
-comment "SQL pattern match function";
-command like(s:str,pat:str,esc:str):bit
-address STRlikewrap
-comment "SQL pattern match function";
-
-command ascii(s:str):int
-address STRascii
-comment "Return unicode of head of string";
-
-command substring(s:str, start:int):str
-address STRsubstringTail
-comment "Extract the tail of a string";
-
-command substring(s:str, start:int, len:int):str
-address STRsubstring
-comment "Extract a substring from str starting at start, for length len";
-
-command prefix(s:str,l:int):str
-address STRprefix
-comment "Extract the prefix of a given length";
-command suffix(s:str,l:int):str
-address STRsuffix
-comment "Extract the suffix of a given length";
-
-command stringleft(s:str,l:int):str
-address STRprefix;
-command stringright(s:str,l:int):str
-address STRsuffix;
-
-command locate(s1:str,s2:str):int
-address STRlocate
-comment "Locate the start position of a string";
-
-command locate(s1:str,s2:str,start:int):int
-address STRlocate2
-comment "Locate the start position of a string";
-
-command insert(s:str,start:int,l:int,s2:str):str
-address STRinsert
-comment "Insert a string into another";
-
-command replace(s:str,pat:str,s2:str):str
-address STRreplace
-comment "Insert a string into another";
-
-command repeat(s2:str,c:int):str
-address STRrepeat;
-
-command space(l:int):str
-address STRspace;
-
-command STRprelude() :void
-address strPrelude;
-
-command STRepilogue() :void
-address strEpilogue;
-
-str.STRprelude();	
-@h
-/*
- * @-
- * @* Implementation Code
- */
-#ifndef __string_H__
-#define __string_H__
-#include <gdk.h>
-#include "mal.h"
-#include "mal_exception.h"
-#include "ctype.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define str_export extern __declspec(dllimport)
-#else
-#define str_export extern __declspec(dllexport)
-#endif
-#else
-#define str_export extern
-#endif
-
-str_export bat *strPrelude(void);
-str_export str strEpilogue(void);
-str_export str STRtostr(str *res, str *src);
-str_export str STRConcat(str *res, str *val1, str *val2);
-str_export str STRLength(int *res, str *arg1);
-/* length of rtrimed string, needed for sql */
-str_export str STRstringLength(int *res, str *s);
-str_export str STRBytes(int *res, str *arg1);
-str_export str STRTail(str *res, str *arg1, int *offset);
-str_export str STRSubString(str *res, str *arg1, int *offset, int *length);
-str_export str STRFromWChr(str *res, int *at);
-str_export str STRWChrAt(int *res, str *arg1, int *at);
-str_export str STRcodeset(str *res);
-str_export str STRIconv(str *res, str *o, str *fp, str *tp);
-str_export str STRPrefix(bit *res, str *arg1, str *arg2);
-str_export str STRSuffix(bit *res, str *arg1, str *arg2);
-str_export str STRLower(str *res, str *arg1);
-str_export str STRUpper(str *res, str *arg1);
-str_export str STRstrSearch(int *res, str *arg1, str *arg2);
-str_export str STRReverseStrSearch(int *res, str *arg1, str *arg2);
-str_export str STRStrip(str *res, str *arg1);
-str_export str STRLtrim(str *res, str *arg1);
-str_export str STRRtrim(str *res, str *arg1);
-str_export str STRmin_no_nil(str *res, str *left, str *right);
-str_export str STRmax_no_nil(str *res, str *left, str *right);
-str_export str STRmin(str *res, str *left, str *right);
-str_export str STRmax(str *res, str *left, str *right);
-str_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g);
-
-str_export int strConcat(str *res, str s, ptr val, int t);
-str_export int strLength(int *res, str s);
-str_export int strSQLLength(int *res, str s);
-str_export int strBytes(int *res, str s);
-str_export int strTail(str *res, str s, int *offset);
-str_export int strSubString(str *res, str s, int *offset, int *length);
-str_export int strPrefix(bit *res, str s, str prefix);
-str_export int strLower(str *res, str s);
-str_export int strUpper(str *res, str s);
-str_export int strSuffix(bit *res, str s, str suffix);
-str_export int strStrSearch(int *res, str s, str s2);
-str_export int strReverseStrSearch(int *res, str s, str s2);
-str_export int strStrip(str *res, str s);
-str_export int strLtrim(str *res, str s);
-str_export int strRtrim(str *res, str s);
-str_export int strFromWChr(str *res, int *c);
-str_export int strWChrAt(int *res, str val, int *at);
-str_export int codeset(str *res);
-str_export int strIconv(str *res, str org, str f, str t);
-str_export int strSubstitute(str *res, str s, str src, str dst, bit *g);
-str_export str STRfindUnescapedOccurrence(str b, str c, str esc);
-str_export int STRlike(str s, str pat, str esc);
-str_export str STRsubstringTail(str *ret, str *s, int *start);
-str_export str STRsubstring(str *ret, str *s, int *start, int *l);
-str_export str STRlikewrap2(bit *ret, str *s, str *pat);
-str_export str STRlikewrap(bit *ret, str *s, str *pat, str *esc);
-str_export str STRascii(int *ret, str *s);
-str_export str STRprefix(str *ret, str *s, int *l);
-str_export str STRsuffix(str *ret, str *s, int *l);
-str_export str STRlocate(int *ret, str *s1, str *s2);
-str_export str STRlocate2(int *ret, str *s1, str *s2, int *start);
-str_export str STRinsert(str *ret, str *s, int *start, int *l, str *s2);
-str_export str STRreplace(str *ret, str *s1, str *s2, str *s3);
-str_export str STRrepeat(str *ret, str *s, int *c);
-str_export str STRspace(str *ret, int *l);
-
-#endif /* __string_H__ */
-
-@c
 #include "monetdb_config.h"
 #include "str.h"
 #include <string.h>
@@ -334,7 +76,7 @@ str_export str STRspace(str *ret, int *l);
 #endif
 
 /*
- * @+ UTF-8 Handling
+ * UTF-8 Handling
  * UTF-8 is a way to store Unicode strings in zero-terminated byte sequences, which you can e.g.
  * strcmp() with old 8-bit Latin-1 strcmp() functions and which then gives the same results as doing
  * the strcmp() on equivalent Latin-1 and ASCII character strings stored in simple one-byte sequences.
@@ -1374,7 +1116,7 @@ strPrelude(void)
 	return NULL;
 }
 
-str 
+str
 strEpilogue(void)
 {
 	if (UTF8_toupperBat)
@@ -1382,82 +1124,70 @@ strEpilogue(void)
 	return MAL_SUCCEED;
 }
 
-@= UTF8_CONV
-{
-	BUN UTF8_CONV_r;
-	int UTF8_CONV_v = (@1);
-	HASHfnd_int(UTF8_CONV_r, UTF8_@2Bati, &UTF8_CONV_v);
-	if (UTF8_CONV_r != BUN_NONE)
-		(@1) = *(int*) BUNtloc(UTF8_@2Bati, UTF8_CONV_r);
-}
-@= UTF8_GETCHAR
-	if (*@2 < 0x80) {
-		(@1) = *(@2)++;
-	} else if (*(@2) < 0xE0) {
-		(@1)  = (*(@2)++ & 0x1F) << 6;
-		(@1) |= (*(@2)++ & 0x3F);
-	} else if (*(@2) < 0xF0) {
-		(@1)  = (*(@2)++ & 0x0F) << 12;
-		(@1) |= (*(@2)++ & 0x3F) << 6;
-		(@1) |= (*(@2)++ & 0x3F);
-	} else if (*@2 < 0xF8) {
-		(@1)  = (*(@2)++ & 0x07) << 18;
-		(@1) |= (*(@2)++ & 0x3F) << 12;
-		(@1) |= (*(@2)++ & 0x3F) << 6;
-		(@1) |= (*(@2)++ & 0x3F);
-	} else if (*@2 < 0xFC) {
-		(@1)  = (*(@2)++ & 0x03) << 24;
-		(@1) |= (*(@2)++ & 0x3F) << 18;
-		(@1) |= (*(@2)++ & 0x3F) << 12;
-		(@1) |= (*(@2)++ & 0x3F) << 6;
-		(@1) |= (*(@2)++ & 0x3F);
-	} else if (*@2 < 0xFE) {
-		(@1)  = (*(@2)++ & 0x01) << 30;
-		(@1) |= (*(@2)++ & 0x3F) << 24;
-		(@1) |= (*(@2)++ & 0x3F) << 18;
-		(@1) |= (*(@2)++ & 0x3F) << 12;
-		(@1) |= (*(@2)++ & 0x3F) << 6;
-		(@1) |= (*(@2)++ & 0x3F);
-	} else {
-		(@1) = int_nil;
+#define UTF8_GETCHAR(X1,X2)\
+	if (*X2 < 0x80) {\
+		(X1) = *(X2)++;\
+	} else if (*(X2) < 0xE0) {\
+		(X1)  = (*(X2)++ & 0x1F) << 6;\
+		(X1) |= (*(X2)++ & 0x3F);\
+	} else if (*(X2) < 0xF0) {\
+		(X1)  = (*(X2)++ & 0x0F) << 12;\
+		(X1) |= (*(X2)++ & 0x3F) << 6;\
+		(X1) |= (*(X2)++ & 0x3F);\
+	} else if (*X2 < 0xF8) {\
+		(X1)  = (*(X2)++ & 0x07) << 18;\
+		(X1) |= (*(X2)++ & 0x3F) << 12;\
+		(X1) |= (*(X2)++ & 0x3F) << 6;\
+		(X1) |= (*(X2)++ & 0x3F);\
+	} else if (*X2 < 0xFC) {\
+		(X1)  = (*(X2)++ & 0x03) << 24;\
+		(X1) |= (*(X2)++ & 0x3F) << 18;\
+		(X1) |= (*(X2)++ & 0x3F) << 12;\
+		(X1) |= (*(X2)++ & 0x3F) << 6;\
+		(X1) |= (*(X2)++ & 0x3F);\
+	} else if (*X2 < 0xFE) {\
+		(X1)  = (*(X2)++ & 0x01) << 30;\
+		(X1) |= (*(X2)++ & 0x3F) << 24;\
+		(X1) |= (*(X2)++ & 0x3F) << 18;\
+		(X1) |= (*(X2)++ & 0x3F) << 12;\
+		(X1) |= (*(X2)++ & 0x3F) << 6;\
+		(X1) |= (*(X2)++ & 0x3F);\
+	} else {\
+		(X1) = int_nil;\
 	}
-@= UTF8_PUTCHAR
-	if ((@1) < 0
-#if SIZEOF_INT > 4
-	    || (int) (@1) >= 0x80000000
-#endif
-	   ) {
-		*(@2)++ = '\200';
-	} else if ((@1) < 0x80) {
-		*(@2)++ = (@1);
-	} else if ((@1) < 0x800) {
-		*(@2)++ = 0xC0 | ((@1) >> 6);
-		*(@2)++ = 0x80 | ((@1) & 0x3F);
-	} else if ((@1) < 0x10000) {
-		*(@2)++ = 0xE0 | ((@1) >> 12);
-		*(@2)++ = 0x80 | (((@1) >> 6) & 0x3F);
-		*(@2)++ = 0x80 | ((@1) & 0x3F);
-	} else if ((@1) < 0x200000) {
-		*(@2)++ = 0xF0 | ((@1) >> 18);
-		*(@2)++ = 0x80 | (((@1) >> 12) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 6) & 0x3F);
-		*(@2)++ = 0x80 | ((@1) & 0x3F);
-	} else if ((@1) < 0x4000000) {
-		*(@2)++ = 0xF8 | ((@1) >> 24);
-		*(@2)++ = 0x80 | (((@1) >> 18) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 12) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 6) & 0x3F);
-		*(@2)++ = 0x80 | ((@1) & 0x3F);
-	} else /* if ((@1) < 0x80000000) */ {
-		*(@2)++ = 0xFC | ((@1) >> 30);
-		*(@2)++ = 0x80 | (((@1) >> 24) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 18) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 12) & 0x3F);
-		*(@2)++ = 0x80 | (((@1) >> 6) & 0x3F);
-		*(@2)++ = 0x80 | ((@1) & 0x3F);
+
+#define UTF8_PUTCHAR(X1,X2)\
+	if ((X1) < 0 || (SIZEOF_INT > 4 && (int) (X1) >= 0x80000000)) {\
+		*(X2)++ = '\200';\
+	} else if ((X1) < 0x80) {\
+		*(X2)++ = (X1);\
+	} else if ((X1) < 0x800) {\
+		*(X2)++ = 0xC0 | ((X1) >> 6);\
+		*(X2)++ = 0x80 | ((X1) & 0x3F);\
+	} else if ((X1) < 0x10000) {\
+		*(X2)++ = 0xE0 | ((X1) >> 12);\
+		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
+		*(X2)++ = 0x80 | ((X1) & 0x3F);\
+	} else if ((X1) < 0x200000) {\
+		*(X2)++ = 0xF0 | ((X1) >> 18);\
+		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
+		*(X2)++ = 0x80 | ((X1) & 0x3F);\
+	} else if ((X1) < 0x4000000) {\
+		*(X2)++ = 0xF8 | ((X1) >> 24);\
+		*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
+		*(X2)++ = 0x80 | ((X1) & 0x3F);\
+	} else /* if ((X1) < 0x80000000) */ {\
+		*(X2)++ = 0xFC | ((X1) >> 30);\
+		*(X2)++ = 0x80 | (((X1) >> 24) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 18) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 12) & 0x3F);\
+		*(X2)++ = 0x80 | (((X1) >> 6) & 0x3F);\
+		*(X2)++ = 0x80 | ((X1) & 0x3F);\
 	}
-@
-@c
+
 static inline int
 UTF8_strlen(str val)
 {
@@ -1597,7 +1327,7 @@ strConcat(str *res, str s, ptr val, int t)
 	if (t != TYPE_str) {
 		BATatoms[t].atomToStr(&valstr, &l2, val);
 		val = (ptr) valstr;
-	} else 
+	} else
 		l2 = (int) strlen((str) val);
 
 	if (* (str) val == '\200' || *s == '\200')
@@ -1695,7 +1425,7 @@ strFromWChr(str *res, int *c)
 {
 	str s = *res = GDKmalloc(7);
 
-	@:UTF8_PUTCHAR(*c,s)@
+	UTF8_PUTCHAR(*c,s);
 	*s = 0;
 	return GDK_SUCCEED;
 }
@@ -1710,7 +1440,7 @@ strWChrAt(int *res, str val, int *at)
 	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_int);
 	s = (unsigned char *) UTF8_strtail((str) s, *at);
 	RETURN_NIL_IF(*s == 0, TYPE_int);
-	@:UTF8_GETCHAR(*res,s)@
+	UTF8_GETCHAR(*res,s);
 	return GDK_SUCCEED;
 }
 
@@ -1821,8 +1551,14 @@ strLower(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c,src)@
-		@:UTF8_CONV(c,tolower)@
+		UTF8_GETCHAR(c,src);
+		{
+			BUN UTF8_CONV_r;
+			int UTF8_CONV_v = (c);
+			HASHfnd_int(UTF8_CONV_r, UTF8_tolowerBati, &UTF8_CONV_v);
+			if (UTF8_CONV_r != BUN_NONE)
+				(c) = *(int*) BUNtloc(UTF8_tolowerBati, UTF8_CONV_r);
+		}
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1831,7 +1567,7 @@ strLower(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c,dst)@
+		UTF8_PUTCHAR(c,dst);
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1850,8 +1586,14 @@ strUpper(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c,src)@
-		@:UTF8_CONV(c,toupper)@
+		UTF8_GETCHAR(c,src);
+		{
+			BUN UTF8_CONV_r;
+			int UTF8_CONV_v = (c);
+			HASHfnd_int(UTF8_CONV_r, UTF8_toupperBati, &UTF8_CONV_v);
+			if (UTF8_CONV_r != BUN_NONE)
+				(c) = *(int*) BUNtloc(UTF8_toupperBati, UTF8_CONV_r);
+		}
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1860,7 +1602,7 @@ strUpper(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c,dst)@
+		UTF8_PUTCHAR(c,dst);
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1991,7 +1733,6 @@ strSQLLength(int *res, str s)
 }
 
 /*
- * @- Wrappers
  * Here you find the wrappers around the version 4 library code
  * It also contains the direct implementation of the string
  * matching support routines.
@@ -2012,7 +1753,6 @@ STRfindUnescapedOccurrence(str b, str c, str esc){
 	return 0;
 }
 /*
- * @-
  * The SQL like function return a boolean
  */
 int
@@ -2066,7 +1806,6 @@ STRtostr(str *res, str *src)
 }
 
 /*
- * @-
  * The concatenate operator requires a type in most cases.
  */
 str
@@ -2260,10 +1999,9 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 }
 
 /*
- * @-
  * A few old MIL procs implementations
  */
-str 
+str
 STRascii(int *ret, str *s){
 	int offset=0;
 	return STRWChrAt(ret,s,&offset);
@@ -2328,7 +2066,7 @@ STRinsert(str *ret, str *s, int *start, int *l, str *s2){
 		strncpy(v, *s,*start);
 		v[*start]=0;
 		strcat(v,*s2);
-		if( *start + *l < (int) strlen(*s)) 
+		if( *start + *l < (int) strlen(*s))
 			strcat(v,*s + *start + *l);
 	}
 	return MAL_SUCCEED;
@@ -2351,14 +2089,14 @@ STRrepeat(str *ret, str *s, int *c)
 		*ret = GDKstrdup(str_nil);
 	} else {
 		l = strlen(*s);
-		if (l >= INT_MAX) 
+		if (l >= INT_MAX)
 			throw(MAL, "str.repeat", "Allocation failed");
 		t = *ret = GDKmalloc( *c * l + 1);
 
 		if (!t)
 			throw(MAL, "str.repeat", "Allocation failed");
 		*t = 0;
-		for(i = *c; i>0; i--, t += l) 
+		for(i = *c; i>0; i--, t += l)
 			strcpy(t, *s);
 	}
 	return MAL_SUCCEED;

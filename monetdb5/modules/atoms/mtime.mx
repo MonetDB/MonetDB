@@ -2552,16 +2552,17 @@ union lng_tzone {
  * @- Wrapper
  * The Monet V5 API interface is defined here
  */
-@= TIMEZONES
-	ticks = @2;
-	tzone_create(&(ltz.tzval), &ticks);
-	vr.val.lval = ltz.lval;
-	tzbat = BUNins(tzbat,@1,&vr.val.lval,FALSE);
-@= TIMEZONES2
-	ticks = @2;
-	tzone_create_dst(&(ltz.tzval), &ticks,&@3,&@4);
-	vr.val.lval = ltz.lval;
-	tzbat = BUNins(tzbat,@1,&vr.val.lval,FALSE);
+#define TIMEZONES(X1,X2)\
+	ticks = X2;\
+	tzone_create(&(ltz.tzval), &ticks);\
+	vr.val.lval = ltz.lval;\
+	tzbat = BUNins(tzbat,X1,&vr.val.lval,FALSE);\
+
+#define TIMEZONES2(X1,X2,X3,X4)\
+	ticks = X2;\
+	tzone_create_dst(&(ltz.tzval), &ticks,&X3,&X4);\
+	vr.val.lval = ltz.lval;\
+	tzbat = BUNins(tzbat,X1,&vr.val.lval,FALSE);\
 @
 @c
 /*
@@ -2719,32 +2720,32 @@ MTIMEprelude(void)
 			throw(MAL, "time.prelude", "could not bind timezones");
 		}
 		vr.vtype = ATOMindex("timezone");
-		@:TIMEZONES("Wake Island", 12 * 60)@
-		@:TIMEZONES("Melbourne/Australia", 11 * 60)@
-		@:TIMEZONES("Brisbane/Australia", 10 * 60)@
-		@:TIMEZONES("Japan", 9 * 60)@
-		@:TIMEZONES("Singapore", 8 * 60)@
-		@:TIMEZONES("Thailand", 7 * 60)@
-		@:TIMEZONES("Pakistan", 5 * 60)@
-		@:TIMEZONES("United Arab Emirates", 4 * 60)@
-		@:TIMEZONES("GMT", 0 * 0)@
-		@:TIMEZONES("Azore Islands", -1 * 60)@
-		@:TIMEZONES("Hawaii/USA", -10 * 60)@
-		@:TIMEZONES("American Samoa", -11 * 60)@
+		TIMEZONES("Wake Island", 12 * 60);
+		TIMEZONES("Melbourne/Australia", 11 * 60);
+		TIMEZONES("Brisbane/Australia", 10 * 60);
+		TIMEZONES("Japan", 9 * 60);
+		TIMEZONES("Singapore", 8 * 60);
+		TIMEZONES("Thailand", 7 * 60);
+		TIMEZONES("Pakistan", 5 * 60);
+		TIMEZONES("United Arab Emirates", 4 * 60);
+		TIMEZONES("GMT", 0 * 0);
+		TIMEZONES("Azore Islands", -1 * 60);
+		TIMEZONES("Hawaii/USA", -10 * 60);
+		TIMEZONES("American Samoa", -11 * 60);
 		MTIMErule_fromstr(&RULE_MAR, &s1);
 		MTIMErule_fromstr(&RULE_OCT, &s2);
-		@:TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR)@
-		@:TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR)@
-		@:TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR)@
-		@:TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT)@
-		@:TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT)@
+		TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT);
+		TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR);
+		TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR);
+		TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR);
+		TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT);
+		TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT);
 	}
 	msg = "West/Europe";
 	return MTIMEtimezone(&tz, &msg);

@@ -28,18 +28,18 @@ MTSAFE
 lib_scheduler = {
 	NOINST
 	SOURCES = \
-		run_adder.c run_adder.h \
-		run_isolate.c run_isolate.h \
-		run_memo.c run_memo.h \
-		run_octopus.c run_octopus.h \
-		srvpool.c srvpool.h \
-		run_pipeline.mx 
+		run_adder.c \
+		run_isolate.c \
+		run_memo.c \
+		run_octopus.c \
+		srvpool.c \
+		run_pipeline.c  
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = run_adder.mal run_isolate.mal run_pipeline.mx run_memo.mal run_octopus.mal srvpool.mal
+	SOURCES = run_adder.mal run_isolate.mal run_memo.mal run_octopus.mal srvpool.mal
 }
 
 EXTRA_DIST_DIR = Tests
