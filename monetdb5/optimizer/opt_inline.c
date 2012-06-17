@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_inline.h"
-#include "opt_statistics.h"
 
 extern int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p);
 

@@ -28,7 +28,6 @@
 #include "monetdb_config.h"
 #include "opt_joinpath.h"
 #include "cluster.h"
-#include "opt_statistics.h"
 
 typedef struct{
 	int cnt;

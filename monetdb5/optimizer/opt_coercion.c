@@ -19,7 +19,6 @@
 
 #include "monetdb_config.h"
 #include "opt_coercion.h"
-#include "opt_statistics.h"
 
 static int
 coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)

@@ -44,7 +44,6 @@
 #include "monetdb_config.h"
 #include "opt_recycler.h"
 #include "mal_instruction.h"
-#include "opt_statistics.h"
 
 static lng recycleSeq = 0;		/* should become part of MAL block basics */
 static bte baseTableMode = 1;	/* only recycle base tables */

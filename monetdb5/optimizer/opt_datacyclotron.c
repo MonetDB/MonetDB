@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
-#include "opt_statistics.h"
 
 str
 addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc) {

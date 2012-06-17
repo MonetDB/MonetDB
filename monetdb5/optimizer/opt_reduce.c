@@ -20,7 +20,6 @@
 #include "monetdb_config.h"
 #include "opt_reduce.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 
 int
 OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

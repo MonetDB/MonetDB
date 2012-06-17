@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_aliases.h"
-#include "opt_statistics.h"
 
 int
 OPTisAlias(InstrPtr p){

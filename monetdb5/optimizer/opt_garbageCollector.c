@@ -22,7 +22,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "mal_properties.h"
-#include "opt_statistics.h"
 
 /*
  * Keeping variables around beyond their end-of-life-span

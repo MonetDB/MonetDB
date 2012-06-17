@@ -25,7 +25,6 @@
 #include "monetdb_config.h"
 #include "opt_remap.h"
 #include "opt_macro.h"
-#include "opt_statistics.h"
 
 static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module scope){

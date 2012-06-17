@@ -29,7 +29,6 @@
 #include "monetdb_config.h"
 #include "opt_accumulators.h"
 #include "mal_builder.h"
-#include "opt_statistics.h"
 
 int
 OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

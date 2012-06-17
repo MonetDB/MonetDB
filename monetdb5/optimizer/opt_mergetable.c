@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_mergetable.h"
-#include "opt_statistics.h"
 
 typedef enum mat_type {
 	mat_none = 0,	/* Simple mat aligned operations (ie batcalc etc) */

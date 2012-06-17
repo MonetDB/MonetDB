@@ -21,7 +21,6 @@
 #include "opt_aliases.h"
 #include "opt_deadcode.h"
 #include "mal_builder.h"
-#include "opt_statistics.h"
 
 #define propagate(X)									\
 	do {												\

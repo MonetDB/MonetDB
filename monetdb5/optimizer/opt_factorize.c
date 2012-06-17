@@ -20,7 +20,6 @@
 #include "opt_factorize.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include "opt_statistics.h"
 
 /*
  * @+ Factorize Implementation

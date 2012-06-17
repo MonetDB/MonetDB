@@ -32,7 +32,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "opt_constants.h"
-#include "opt_statistics.h"
 
 int
 OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

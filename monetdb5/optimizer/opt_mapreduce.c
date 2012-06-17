@@ -39,7 +39,6 @@ result sets should be assembled.
 #include "opt_mapreduce.h"
 #include "mal_interpreter.h"
 #include "remote.h"
-#include "opt_statistics.h"
 
 typedef struct _mapnode {
 	str uri;

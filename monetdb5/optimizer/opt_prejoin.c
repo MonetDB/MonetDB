@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_prejoin.h"
 #include "math.h"
-#include "opt_statistics.h"
 /*
  * The prejoin implementation should only become active if we
  * expect that we may end up with an IO access for each

@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_pushranges.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "opt_statistics.h"
 
 typedef struct RANGE{
 	int used;		/* how often it has been used */

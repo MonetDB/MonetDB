@@ -20,7 +20,6 @@
 #include "opt_remoteQueries.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include "opt_statistics.h"
 /*
  * The instruction sent is produced with a variation of call2str
  * from the debugger.

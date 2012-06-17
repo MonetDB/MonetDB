@@ -23,7 +23,6 @@
 #include "opt_dataflow.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 
 /*
  * dataflow processing incurs overhead and is only

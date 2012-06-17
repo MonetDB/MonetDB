@@ -33,7 +33,6 @@ All Rights Reserved.
 
 #include "monetdb_config.h"
 #include "mal_listing.h"
-#include "opt_statistics.h"
 
 /*
  * The optimizer used so far

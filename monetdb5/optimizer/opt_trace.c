@@ -41,7 +41,6 @@
 
 #include "monetdb_config.h"
 #include "opt_trace.h"
-#include "opt_statistics.h"
 
 static str defaultLog;
 static struct{

@@ -22,7 +22,6 @@
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
 #include "algebra.h"
-#include "opt_statistics.h"
 
 #define isDiction(X) (idx[X] && val[X])
 

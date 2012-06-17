@@ -22,7 +22,6 @@
  */
 #include "monetdb_config.h"
 #include "opt_history.h"
-#include "opt_statistics.h"
 
 str 
 OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){

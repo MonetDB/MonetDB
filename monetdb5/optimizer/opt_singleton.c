@@ -21,7 +21,6 @@
 #include "opt_aliases.h"
 #include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_builder.h"
-#include "opt_statistics.h"
 
 /*
  * When we run into an instruction that can not be optimized,

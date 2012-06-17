@@ -27,7 +27,6 @@
  */
 #include "monetdb_config.h"
 #include "opt_origin.h"
-#include "opt_statistics.h"
 
 int 
 OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -20,7 +20,6 @@
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 
 static int eligible(MalBlkPtr mb )
 {

@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_commonTerms.h"
 #include "mal_exception.h"
-#include "opt_statistics.h"
  /*
  * Caveat. A lot of time was lost due to constants that are indistinguisable
  * at the surface level. It may miss common expressions if their constants

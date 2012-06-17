@@ -19,7 +19,6 @@
 
 #include "monetdb_config.h"
 #include "opt_qep.h"
-#include "opt_statistics.h"
 
 static QEP
 QEPnew(int p, int c){

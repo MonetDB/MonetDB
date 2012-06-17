@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_deadcode.h"
-#include "opt_statistics.h"
 
 int 
 OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

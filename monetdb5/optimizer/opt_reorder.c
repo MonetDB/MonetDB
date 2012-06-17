@@ -57,7 +57,6 @@
 #include "opt_reorder.h"
 #include "mal_instruction.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 /*
  * Collect the statement dependencies in a table first
  * This can be done in linear time in size of the program.

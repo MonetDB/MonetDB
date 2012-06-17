@@ -156,7 +156,6 @@
 #include "mal_sabaoth.h"
 #include "remote.h"
 #include "mal_recycle.h"
-#include "opt_statistics.h"
 
 typedef struct MALPART {
 	str sch;

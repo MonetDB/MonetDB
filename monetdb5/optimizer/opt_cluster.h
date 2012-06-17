@@ -20,7 +20,6 @@
 #define _OPT_CLUSTER
 #include "opt_prelude.h"
 #include "opt_support.h"
-#include "opt_statistics.h"
 
 #define CLUSTER_THRESHOLD (BUN)(64*1024)
 

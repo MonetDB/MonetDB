@@ -28,7 +28,6 @@
 #include "mal_builder.h"
 #include "mal_recycle.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 #include "algebra.h"
 
 /* #define DEBUG_OPT_DETAIL*/

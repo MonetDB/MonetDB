@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_multiplex.h"
 #include "mal_interpreter.h"
-#include "opt_statistics.h"
 
 /*
  * @-

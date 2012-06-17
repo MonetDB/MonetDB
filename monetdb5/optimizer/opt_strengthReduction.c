@@ -19,7 +19,6 @@
 #include "monetdb_config.h"
 #include "opt_strengthReduction.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "opt_statistics.h"
 
 /*
  * @+ Strength reduction implementation

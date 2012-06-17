@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_compression.h"
-#include "opt_statistics.h"
 
 int
 OPTcompressionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

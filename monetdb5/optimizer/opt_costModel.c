@@ -18,7 +18,6 @@
 */
 #include "monetdb_config.h"
 #include "opt_costModel.h"
-#include "opt_statistics.h"
 
 /*
  * The cost formula are repetative
