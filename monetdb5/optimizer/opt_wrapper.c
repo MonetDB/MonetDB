@@ -162,11 +162,12 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 		mb = s->def;
 		stk= 0;
-	} else if( p )
+	} else if( p ) 
 		removeInstruction(mb, p);
 	if( mb->errors ){
 		/* when we have errors, we still want to see them */
-		addtoMalBlkHistory(mb,modnme);
+		addtoMalBlkHistory(mb,getModuleId(q));
+		freeInstruction(q);
 		return MAL_SUCCEED;
 	}
 
