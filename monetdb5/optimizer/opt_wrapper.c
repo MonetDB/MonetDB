@@ -46,7 +46,6 @@ All Rights Reserved.
 #include "opt_commonTerms.h"
 #include "opt_compression.h"
 #include "opt_costModel.h"
-#include "opt_datacyclotron.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
 #include "opt_dictionary.h"
@@ -89,7 +88,6 @@ struct{
 	{"commonTerms", &OPTcommonTermsImplementation},
 	{"compression", &OPTcompressionImplementation},
 	{"costModel", &OPTcostModelImplementation},
-	{"datacyclotron", &OPTdatacyclotronImplementation},
 	{"dataflow", &OPTdataflowImplementation},
 	{"deadcode", &OPTdeadcodeImplementation},
 	{"dictionary", &OPTdictionaryImplementation},

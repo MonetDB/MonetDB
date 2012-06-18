@@ -37,7 +37,6 @@ lib_optimizer = {
 		opt_compression.c \
 		opt_constants.c \
 		opt_costModel.c \
-		opt_datacyclotron.c \
 		opt_dataflow.c \
 		opt_deadcode.c \
 		opt_dictionary.c \

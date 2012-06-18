@@ -110,33 +110,6 @@ pattern optimizer.datacell(mod:str, fcn:str):str
 address OPTwrapper
 comment "Datacell expression optimizer";
 
-#opt_datacyclotron.mal
-
-module datacyclotron;
-
-pattern optimizer.datacyclotron():str
-address OPTwrapper;
-pattern optimizer.datacyclotron(mod:str, fcn:str):str
-address OPTwrapper
-comment "Datacyclotron code injection";
-
-
-pattern addReg(sch:str, tab:str, col:str, acc:int, part:int, f_bun:int, l_bun:int):int
-address addRegWrap
-comment "Add a regist for partition";
-
-pattern bind(schema:str, table:str, column:str, access:int, partition:int, fbun:int, lbun:int):int
-address DCYbind
-comment "Request a bat";
-
-pattern pin(req_id:int):bat[:any_1,:any_3]
-address DCYpin
-comment "Pin a request for a query";
-
-pattern unpin(req_id:int):void
-address DCYunpin
-comment "UnPin a request for a query";
-
 #opt_dataflow.mal
 
 pattern optimizer.dataflow():str
