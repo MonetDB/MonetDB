@@ -25,22 +25,31 @@ MTSAFE
 lib_atoms = {
 	NOINST
 	SOURCES = \
-		batxml.c \
-		blob.c \
-		color.c \
-		identifier.c \
+		batxml.c batxml.h \
+		blob.c blob.h \
+		color.c color.h \
+		identifier.c identifier.h \
 		inet.c inet.h \
 		mtime.mx \
-		streams.c \
-		str.c \
-		url.c \
-		xml.c
+		streams.c streams.h \
+		str.c str.h \
+		url.c url.h \
+		xml.c xml.h
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = \
+		batxml.mal \
+		blob.mal \
+		color.mal \
+		identifier.mal \
+		inet.mal \
+		streams.mal \
+		str.mal \
+		url.mal \
+		xml.mal \
 		mtime.mx 
 }
 
