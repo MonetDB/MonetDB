@@ -20,6 +20,8 @@
 #include "opt_datacyclotron.h"
 #include "mal_instruction.h"
 
+DCYcatalog *catalog;
+
 str
 addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc) {
 	int *res = (int*) getArgReference(stk,pc,0);

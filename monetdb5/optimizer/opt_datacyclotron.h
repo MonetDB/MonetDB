@@ -44,8 +44,6 @@ typedef struct DCYCATALOG {
 	struct DCYCATALOG *next;
 }DCYcatalog;
 
-DCYcatalog *catalog;
-
 opt_export str addRegWrap (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
 opt_export DCYcatalog* addRegist( str sch, str tab, str col, int acc, int part, int f_bun, int l_bun );
 opt_export DCYcatalog* findRegist( str sch, str tab, str col, int acc);
