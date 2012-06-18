@@ -109,7 +109,6 @@ include optimizer;
 
 include chopper;
 include cluster;
-include opt_cluster;
 include txtsim;
 include tokenizer;
 include zorder;
