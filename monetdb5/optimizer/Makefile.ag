@@ -29,48 +29,48 @@ lib_optimizer = {
 	NOINST
 	SOURCES = \
 		optimizer.c \
-		opt_accumulators.c \
-		opt_aliases.c \
-		opt_cluster.c \
-		opt_coercion.c \
-		opt_commonTerms.c \
-		opt_compression.c \
-		opt_constants.c \
-		opt_costModel.c \
-		opt_dataflow.c \
-		opt_deadcode.c \
-		opt_dictionary.c \
-		opt_emptySet.c \
-		opt_evaluate.c \
-		opt_factorize.c \
-		opt_garbageCollector.c \
-		opt_groups.c \
-		opt_history.c \
-		opt_inline.c \
-		opt_joinpath.c \
-		opt_macro.c \
-		opt_mapreduce.c \
-		opt_mergetable.c \
-		opt_mitosis.c \
-		opt_multiplex.c \
-		opt_octopus.c \
-		opt_origin.c \
-		opt_pipes.c \
-		opt_prejoin.c \
+		opt_accumulators.c opt_accumulators.h \
+		opt_aliases.c opt_aliases.h \
+		opt_cluster.c opt_cluster.h \
+		opt_coercion.c opt_coercion.h \
+		opt_commonTerms.c opt_commonTerms.h \
+		opt_compression.c opt_compression.h \
+		opt_constants.c opt_constants.h \
+		opt_costModel.c opt_costModel.h \
+		opt_dataflow.c opt_dataflow.h \
+		opt_deadcode.c opt_deadcode.h \
+		opt_dictionary.c opt_dictionary.h \
+		opt_emptySet.c opt_emptySet.h \
+		opt_evaluate.c opt_evaluate.h \
+		opt_factorize.c opt_factorize.h \
+		opt_garbageCollector.c opt_garbageCollector.h \
+		opt_groups.c opt_groups.h \
+		opt_history.c opt_history.h \
+		opt_inline.c opt_inline.h \
+		opt_joinpath.c opt_joinpath.h \
+		opt_macro.c opt_macro.h \
+		opt_mapreduce.c opt_mapreduce.h \
+		opt_mergetable.c opt_mergetable.h \
+		opt_mitosis.c opt_mitosis.h \
+		opt_multiplex.c opt_multiplex.h \
+		opt_octopus.c opt_octopus.h \
+		opt_origin.c opt_origin.h \
+		opt_pipes.c opt_pipes.h \
+		opt_prejoin.c opt_prejoin.h \
 		opt_prelude.c opt_prelude.h \
-		opt_pushranges.c \
-		opt_qep.c \
-		opt_recycler.c \
-		opt_reduce.c \
-		opt_remap.c \
-		opt_remoteQueries.c \
-		opt_reorder.c \
-		opt_singleton.c \
+		opt_pushranges.c opt_pushranges.h \
+		opt_qep.c opt_qep.h \
+		opt_recycler.c opt_recycler.h \
+		opt_reduce.c opt_reduce.h \
+		opt_remap.c opt_remap.h \
+		opt_remoteQueries.c opt_remoteQueries.h \
+		opt_reorder.c opt_reorder.h \
+		opt_singleton.c opt_singleton.h \
 		opt_statistics.c opt_statistics.h \
-		opt_strengthReduction.c \
-		opt_support.c \
-		opt_centipede.c \
-		opt_trace.c \
+		opt_strengthReduction.c opt_strengthReduction.h \
+		opt_support.c opt_support.h \
+		opt_centipede.c opt_centipede.h \
+		opt_trace.c opt_trace.h \
 		opt_wrapper.c
 }
 
