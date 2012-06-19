@@ -826,7 +826,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			snprintf(msg,BUFSIZ,"error in input %s",buf);
 			throw(MAL,  "io.import", "%s", msg);
 		}
-		p += tconvert(p, &lt, (ptr*)&lt);
+		p += tconvert(p, &lt, (ptr*)&t);
 		BUNins(b, h, t, FALSE);
 
 /*
