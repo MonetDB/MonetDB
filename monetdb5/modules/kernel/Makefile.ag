@@ -56,7 +56,7 @@ lib_kernel = {
 		microbenchmark.c microbenchmark.h \
 		mmath.mx \
 		sema.c \
-		status.x status.h \
+		status.c status.h \
 		unix.c
 }
 
