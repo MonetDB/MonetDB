@@ -1,29 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f status
-
-@c
 /*
- * @a M.L. Kersten, P. Boncz, N.Nes
- * @v 2.0
- * @+ System state information
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ * author M.L. Kersten, P. Boncz, N.Nes
+ * System state information
  * This document introduces a series of bats  and operations that provide access
  * to information stored within the Monet Version 5 internal data structures.
  * In all cases, pseudo BAT operation returns a transient BAT that
@@ -33,117 +29,20 @@ All Rights Reserved.
  * successively access it components. This can be avoided by first assigning
  * the pseudo BAT to a variable.
  */
-@mal
-module status;
 
-command cpuStatistics():bat[:str,:int] 
-address SYScpuStatistics
-comment "Global cpu usage information";
-command memStatistics():bat[:str,:wrd] 
-address SYSmemStatistics
-comment "Global memory usage information";
-command ioStatistics():bat[:str,:int] 
-address SYSioStatistics
-comment "Global IO activity information";
-command vmStatistics(minsize:lng):bat[:str,:lng] 
-address SYSvm_usage
-comment "Get a split-up of how much virtual memory blocks are in use";
-command memUsage(minsize:lng):bat[:str,:lng] 
-address SYSmem_usage
-comment "Get a split-up of how much memory blocks are in use";
-# @-
-# Some explanation of what mem_usage() and vm_usage() display:
-# @verbatim
-# > m:= status.memUsage(1024:lng); io.print(m);
-# #------------------------------#
-# # BAT:                 tmp_42  #
-# # (str)                (lng)   #
-# #------------------------------#
-# [ "buns/car_category",  400012 ] 100.000 string offsets
-# [ "buns/car_town",      400012 ] idem
-# [ "buns/car_class",     400012 ] idem
-# [ "tail/car_category",  266244 ] string tail heap
-# [ "tail/car_town",      266244 ] idem
-# [ "tail/car_class",     266244 ] idem
-# [ "_tot/buns",         1322996 ] the three bun heaps
-# [ "_tot/tail",          967762 ] the three tail heaps
-# [ "_tot/head",           70984 ] negligable
-# [ "_tot/bbp",            98866 ] BBP metadata structure
-# [ "_tot/mil",           102400 ] MIL interpreter stack space
-# [ "_tot/found",        2590144 ] buns+head+tail+bbp+mil
-# [ "_tot/malloc_heap",  2956048 ] in malloc heap
-# [ "_tot/malloc",       2956048 ] total consumed via malloc
-# [ "_tot/valloc",        201266 ] total consumed via virtualalloc
-# [ "_tot/mem",          3157314 ] total RAM+swap-file consumption
-#
-# >
-# > v:= status.vmStatistics(1024:lng); io.print(v);
-# #------------------------------#
-# # BAT:               tmp_42    #
-# # (str)              (lng)     #
-# #------------------------------#
-# [ "_tot/bbp",        50331648  ] 50MB reserved (100KB claimed)
-# [ "_tot/mil",        16777216  ] 16MB reserved (100KB claimed)
-# [ "_tot/found",      67108864  ] bbp+mil
-# [ "_tot/vm",         71244560  ] total address space consumption
-# >
-# @end verbatim
-# @+ MAL runtime status
-command batStatistics():bat[:str,:str] 
-address SYSgdkEnv
-comment "Show distribution of bats by kind";
-command getThreads():bat[:int,:str] 
-address SYSgdkThread
-comment "Produce overview of active threads";
+static void
+pseudo(int *ret, BAT *b, str X1,str X2) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 
-command mem_cursize():lng 
-address SYSgetmem_cursize
-comment "The amount of physical swapspace in KB that is currently in use";
-
-command mem_maxsize():lng 
-address SYSgetmem_maxsize
-comment "The maximum usable amount of physical swapspace in KB (target only)";
-
-command mem_maxsize(v:lng):void 
-address SYSsetmem_maxsize
-comment "Set the maximum usable amount of physical swapspace in KB";
-
-command vm_cursize():lng 
-address SYSgetvm_cursize
-comment "The amount of logical VM space in KB that is currently in use";
-
-command vm_maxsize():lng 
-address SYSgetvm_maxsize
-comment "The maximum usable amount of logical VM space in KB (target only)";
-
-command vm_maxsize(v:lng):void 
-address SYSsetvm_maxsize
-comment "Set the maximum usable amount of physical swapspace in KB";
-
-@h
-/*
- * @+ Implementation Code
- */
-#ifndef _SYS_H_
-#define _SYS_H_
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define status_export extern __declspec(dllimport)
-#else
-#define status_export extern __declspec(dllexport)
-#endif
-#else
-#define status_export extern
-#endif
-
-
-#endif
-/*
- * @-
- */
-@include kprelude.mx
-@c
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
@@ -162,9 +61,6 @@ comment "Set the maximum usable amount of physical swapspace in KB";
 # include <sys/resource.h>
 #endif
 
-@h
-status_export str SYSgetmem_cursize(lng *num);
-@c
 str
 SYSgetmem_cursize(lng *num)
 {
@@ -172,9 +68,6 @@ SYSgetmem_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSgetmem_maxsize(lng *num);
-@c
 str
 SYSgetmem_maxsize(lng *num)
 {
@@ -182,9 +75,6 @@ SYSgetmem_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSsetmem_maxsize(int *ret, lng *num);
-@c
 str
 SYSsetmem_maxsize(int *ret, lng *num)
 {
@@ -205,9 +95,6 @@ SYSsetmem_maxsize(int *ret, lng *num)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSgetvm_cursize(lng *num);
-@c
 str
 SYSgetvm_cursize(lng *num)
 {
@@ -215,9 +102,6 @@ SYSgetvm_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSgetvm_maxsize(lng *num);
-@c
 str
 SYSgetvm_maxsize(lng *num)
 {
@@ -225,9 +109,6 @@ SYSgetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSsetvm_maxsize(lng *num);
-@c
 str
 SYSsetvm_maxsize(lng *num)
 {
@@ -236,7 +117,7 @@ SYSsetvm_maxsize(lng *num)
 }
 
 /*
- * @- Performance
+ * Performance
  * To obtain a good impression of the Monet performance we need timing information.
  * The most detailed information is best obtained with the system profiler.
  *
@@ -254,9 +135,6 @@ static time_t clk = 0;
 static struct tms state;
 #endif
 
-@h
-status_export str SYScpuStatistics(int *ret);
-@c
 str
 SYScpuStatistics(int *ret)
 {
@@ -308,13 +186,10 @@ SYScpuStatistics(int *ret)
 	b = BUNins(b, "elapsystem", &i, FALSE);
 #endif
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(gdk,cpu)@
+	pseudo(ret,b,"gdk","cpu");
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSmemStatistics(int *ret);
-@c
 static char *memincr = NULL;
 str
 SYSmemStatistics(int *ret)
@@ -356,25 +231,29 @@ SYSmemStatistics(int *ret)
 	i = (wrd) m.fordblks;
 	b = BUNins(b, "fordblks", &i, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(gdk,mem)@
+	pseudo(ret,b,"gdk","mem");
 	return MAL_SUCCEED;
 }
 
-@= heap
-	if (@2) {
-		sz = HEAP@1size(@3);
-		if (sz > *minsize) {
-			sprintf(buf, "@4/%s", s);
-			BUNins(bn, buf, &sz, FALSE);
-		}
-		@4 += sz; tot += sz;
+#define heap(X1,X2,X3,X4)\
+	if (X1) {\
+		sz = HEAPmemsize(X2);\
+		if (sz > *minsize) {\
+			sprintf(buf, X4"/%s", s);\
+			BUNins(bn, buf, &sz, FALSE);\
+		}\
+		X3 += sz; tot += sz;\
 	}
-@
-@c
+#define heapvm(X1,X2,X3,X4)\
+	if (X1) {\
+		sz = HEAPvmsize(X2);\
+		if (sz > *minsize) {\
+			sprintf(buf, X4"/%s", s);\
+			BUNins(bn, buf, &sz, FALSE);\
+		}\
+		X3 += sz; tot += sz;\
+	}
 
-@h
-status_export str SYSmem_usage(int *ret, lng *minsize);
-@c
 str
 SYSmem_usage(int *ret, lng *minsize)
 {
@@ -416,12 +295,12 @@ SYSmem_usage(int *ret, lng *minsize)
 		if (b == NULL || isVIEW(b)) {
 			continue;
 		}
-		@:heap(mem,1,&b->H->heap,hbuns)@
-		@:heap(mem,1,&b->T->heap,tbuns)@
-		@:heap(mem,b->H->hash,b->H->hash->heap,hhsh)@
-		@:heap(mem,b->T->hash,b->T->hash->heap,thsh)@
-		@:heap(mem,b->H->vheap,b->H->vheap,head)@
-		@:heap(mem,b->T->vheap,b->T->vheap,tail)@
+		heap(1,&b->H->heap,hbuns,"hbuns");
+		heap(1,&b->T->heap,tbuns,"tbuns");
+		heap(b->H->hash,b->H->hash->heap,hhsh,"hhsh");
+		heap(b->T->hash,b->T->hash->heap,thsh,"thsh");
+		heap(b->H->vheap,b->H->vheap,head,"head");
+		heap(b->T->vheap,b->T->vheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/hbuns", &hbuns, FALSE);
@@ -469,9 +348,6 @@ SYSmem_usage(int *ret, lng *minsize)
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSvm_usage(int *ret, lng *minsize);
-@c
 str
 SYSvm_usage(int *ret, lng *minsize)
 {
@@ -495,12 +371,12 @@ SYSvm_usage(int *ret, lng *minsize)
 		if (b == NULL || isVIEW(b)) {
 			continue;
 		}
-		@:heap(vm,1,&b->H->heap,hbuns)@
-		@:heap(vm,1,&b->T->heap,tbuns)@
-		@:heap(vm,b->H->hash,b->H->hash->heap,hhsh)@
-		@:heap(vm,b->T->hash,b->T->hash->heap,thsh)@
-		@:heap(vm,b->H->vheap,b->H->vheap,head)@
-		@:heap(vm,b->T->vheap,b->T->vheap,tail)@
+		heapvm(1,&b->H->heap,hbuns,"hbuns");
+		heapvm(1,&b->T->heap,tbuns,"tbuns");
+		heapvm(b->H->hash,b->H->hash->heap,hhsh,"hshh");
+		heapvm(b->T->hash,b->T->hash->heap,thsh,"thsh");
+		heapvm(b->H->vheap,b->H->vheap,head,"head");
+		heapvm(b->T->vheap,b->T->vheap,tail,"tail");
 	}
 	/* totals per category */
 	BUNins(bn, "_tot/hbuns", &hbuns, FALSE);
@@ -533,9 +409,7 @@ SYSvm_usage(int *ret, lng *minsize)
 	return MAL_SUCCEED;
 }
 
-@h
 /*
- * @-
  * Additional information on the process utilization is given by
  * the ioStatistics command. The following information is obtained.
  *
@@ -568,8 +442,6 @@ SYSvm_usage(int *ret, lng *minsize)
  *
  * The BAT grows. It should be compacted.
  */
-status_export str SYSioStatistics(int *ret);
-@c
 str
 SYSioStatistics(int *ret)
 {
@@ -617,13 +489,10 @@ SYSioStatistics(int *ret)
 #endif
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(gdk,io)@
+	pseudo(ret,b,"gdk","io");
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSgdkEnv(int *ret);
-@c
 str
 SYSgdkEnv(int *ret)
 {
@@ -659,13 +528,10 @@ SYSgdkEnv(int *ret)
 	b = BUNins(b, "todisk", &BBPout, FALSE);
 	b = BUNins(b, "fromdisk", &BBPin, FALSE);
 	if (!(b->batDirty & 2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(gdk,env)@
+	pseudo(ret,b,"gdk","env");
 	return MAL_SUCCEED;
 }
 
-@h
-status_export str SYSgdkThread(int *ret);
-@c
 str
 SYSgdkThread(int *ret)
 {
@@ -681,6 +547,6 @@ SYSgdkThread(int *ret)
 			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(gdk,thread)@
+	pseudo(ret,b,"gdk","thread");
 	return MAL_SUCCEED;
 }

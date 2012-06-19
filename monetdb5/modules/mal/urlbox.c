@@ -1,162 +1,42 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f urlbox
-
-@c
 /*
- * @a Martin Kersten
- * @v 0.1
- * @* URL box
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author Martin Kersten
+ *  URL box
  * This module implements the flattened tree model for URLs.
  * It is targeted at the GGLETICK student project
  */
-@mal
-module urlbox
-comment "The URL box provides fast access to
-a large collection of url strings based on a
-vertical fragmented representation.";
-
-pattern open():void
-address URLBOXopen
-comment "Locate and open the URL box";
-pattern close():void
-address URLBOXclose
-comment "Close the URL box ";
-pattern destroy():void
-address URLBOXdestroy
-comment "Destroy the URL box";
-pattern take(u:str):oid
-address URLBOXtake
-comment "Get a handle for the URL";
-pattern deposit(u:str):void 		
-address URLBOXdeposit
-comment "Enter a new url into the box";
-command depositFile(fnme:str):void
-address URLBOXdepositFile;
-
-pattern releaseAll():void 
-address URLBOXreleaseAll
-comment "Release all elements from the box";
-pattern release(u:str):void 		
-address URLBOXrelease
-comment "Release a single URL value";
-pattern release(u:int):void 		
-address URLBOXreleaseOid
-comment "Release a single URL value";
-
-pattern toString(u:int):str 
-address URLBOXtoString
-comment "Get the string representation of an element in the box";
-
-pattern discard(name:str):void 		
-address URLBOXdiscard
-comment "Remove the URL from the box";
-pattern discard(name:int):void 		
-address URLBOXdiscardOid
-comment "Remove the URL from the box";
-pattern discard():void 		
-address URLBOXdiscardAll
-comment "Remove all URLs from the box";
-
-pattern newIterator()(:int,:str)
-address URLBOXnewIterator
-comment "Locate next element in the box";
-pattern hasMoreElements()(:int,:str)
-address URLBOXhasMoreElements
-comment "Locate next element in the box";
-
-command getLevel(i:int):bat[:int,:str]
-address URLBOXgetLevel;
-
-command getNames():bat[:int,:str]
-address URLBOXgetNames;
-command getCount():bat[:int,:lng]
-address URLBOXgetCount;
-command getCardinality():bat[:int,:lng]
-address URLBOXgetCardinality;
-command getSize():bat[:int,:lng]
-address URLBOXgetSize;
-pattern prelude():void 
-address URLBOXprelude
-comment "Initialize the URL box";
-
-urlbox.prelude();
-@h
 /*
- * @-
- * @+ Implementation
- */
-#ifndef _URL_BOX_H
-#define _URL_BOX_H
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define urlbox_export extern __declspec(dllimport)
-#else
-#define urlbox_export extern __declspec(dllexport)
-#endif
-#else
-#define urlbox_export extern
-#endif
-
-urlbox_export str URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdepositFile(int *r, str *fnme);
-urlbox_export str URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXreleaseOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscardOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-urlbox_export str URLBOXgetLevel(int *r, int *level);
-urlbox_export str URLBOXgetNames(int *r);
-urlbox_export str URLBOXgetCount(int *r);
-urlbox_export str URLBOXgetCardinality(int *r);
-urlbox_export str URLBOXgetSize(int *r);
-#endif /* _URL_BOX_H */
-
-/*
- * @- Module initializaton
+ *  Module initializaton
  * The content of this box my only be changed by the Administrator.
  */
-@= authorize
-	{
-		str tmp = NULL;
-		rethrow("urlBox.@1", tmp, AUTHrequireAdmin(&cntxt));
-	}
-@
-@c
 #include "monetdb_config.h"
 #include "urlbox.h"
 #include "mal_linker.h"
 #include "mal_authorize.h"
+
+/*
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
+#define authorize(X) { str tmp = NULL; rethrow("urlBox."X, tmp, AUTHrequireAdmin(&cntxt)); }
+#define OpenBox(X) authorize(X); box= findBox("urlbox"); if( box ==0) throw(MAL, "urlbox."X, BOX_CLOSED);
 
 #define MAXURLDEPTH 50
 static int urlDepth = 0;
@@ -172,7 +52,7 @@ URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(prelude)@
+	authorize("prelude");
 	box = openBox("urlbox");
 	if (box == 0)
 		throw(MAL, "urlbox.prelude", BOX_CLOSED);
@@ -185,7 +65,7 @@ URLBOXprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @- Operator implementation
+ * Operator implementation
  */
 str
 URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -194,7 +74,7 @@ URLBOXopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(open)@
+	authorize("open");
 	if (openBox("urlbox") != 0)
 		return MAL_SUCCEED;
 	throw(MAL, "urlbox.open", BOX_CLOSED);
@@ -207,7 +87,7 @@ URLBOXclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(close)@
+	authorize("close");
 	closeBox("urlbox", TRUE);
 	return MAL_SUCCEED;
 }
@@ -221,25 +101,12 @@ URLBOXdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:OpenBox(destroy)@
+	OpenBox("destroy");
 	destroyBox("urlbox");
 	return MAL_SUCCEED;
 }
 
 /*
- * @-
- * Access to a box calls for resolving the first parameter
- * to a named box.
- */
-@= OpenBox
-	@:authorize(@1)@
-	box= findBox("urlbox");
-	if( box ==0) 
-	throw(MAL, "urlbox.@1", BOX_CLOSED);
-@
-@c
-/*
- * @-
  * The real work starts here. We have to insert an URL.
  */
 static int
@@ -296,7 +163,6 @@ URLBOXinsert(char *tuple)
 		urlDepth= depth;
 	}
 	/*
-	 * @-
 	 * Find the common prefix first
 	 */
 	p= BUNfnd(BATmirror(urlBAT[0]),parts[0]);
@@ -310,7 +176,6 @@ URLBOXinsert(char *tuple)
 		}
 	else i = 0;
 	/*
-	 * @-
 	 * Insert the remainder as a new url string
 	 */
 	for( ; i<depth; i++){
@@ -386,7 +251,7 @@ URLBOXdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	@:OpenBox(deposit)@
+	OpenBox("deposit");
 	url = *(str*) getArgReference(stk, pci, 1);
 	if( strlen(url) <2048)
 		strcpy(tuple,url);
@@ -401,7 +266,7 @@ URLBOXtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Box box;
 
 	(void) cntxt;
-	@:OpenBox(take)@
+	OpenBox("take");
 	url = *(str*) getArgReference(stk, pci, 1);
 	url = GDKstrdup(url);
 	URLBOXchop(url, parts);
@@ -419,7 +284,7 @@ URLBOXrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
-	@:OpenBox(release)@
+	OpenBox("release");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "urlbox.release", OPERATION_FAILED);
@@ -434,7 +299,7 @@ URLBOXreleaseOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
-	@:OpenBox(release)@
+	OpenBox("release");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "urlbox.release", OPERATION_FAILED);
@@ -450,7 +315,7 @@ URLBOXreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:OpenBox(release)@
+	OpenBox("release");
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
@@ -463,7 +328,7 @@ URLBOXdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", OPERATION_FAILED);
@@ -477,7 +342,7 @@ URLBOXdiscardOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", OPERATION_FAILED);
@@ -491,7 +356,7 @@ URLBOXdiscardAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "urlbox.discard", OPERATION_FAILED);
@@ -508,7 +373,7 @@ URLBOXtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(toString)@
+	OpenBox("toString");
 	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
@@ -534,7 +399,7 @@ URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if ( nextBoxElement(box, cursor, v) < 0)
@@ -551,7 +416,7 @@ URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor=  (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if ( nextBoxElement(box, cursor, v) < 0)

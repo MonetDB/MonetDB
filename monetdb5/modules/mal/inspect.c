@@ -1,29 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f inspect
-
-@c
 /*
- * @a Martin Kersten
- * @v 1
- * @+ Inspection
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author Martin Kersten
+ * Inspection
  * This module introduces a series of commands that provide access
  * to information stored within the interpreter data structures.
  * It's primary use is debugging.
@@ -34,145 +29,24 @@ All Rights Reserved.
  * successively access it components. This can be avoided by first assigning
  * the pseudo BAT to a variable.
  */
-@mal
-module inspect;
-
-pattern getDefinition(mod:str,fcn:str) :bat[:str,:str] 
-address INSPECTgetDefinition
-comment "Returns a string representation of a specific function.";
-pattern getSignature(mod:str,fcn:str) :bat[:str,:str] 
-address INSPECTgetSignature
-comment "Returns the function signature(s).";
-pattern getAddress(mod:str,fcn:str) :bat[:str,:str] 
-address INSPECTgetAddress
-comment "Returns the function signature(s).";
-pattern getComment(mod:str,fcn:str) :bat[:str,:str]
-address INSPECTgetComment
-comment "Returns the function help information.";
-pattern getSource(mod:str,fcn:str):str
-address INSPECTgetSource
-comment "Return the original input for a function.";
-
-pattern getKind():bat[:oid,:str]
-address INSPECTgetkind
-comment "Obtain the instruction kind.";
-pattern getModule():bat[:oid,:str]
-address INSPECTgetAllModules
-comment "Obtain the function name.";
-pattern getFunction():bat[:oid,:str]
-address INSPECTgetAllFunctions
-comment "Obtain the function name.";
-pattern getSignatures():bat[:oid,:str]
-address INSPECTgetAllSignatures
-comment "Obtain the function signatures.";
-pattern getAddresses():bat[:oid,:str]
-address INSPECTgetAllAddresses
-comment "Obtain the function address.";
-
-
-pattern getSize():lng
-address INSPECTgetSize
-comment "Return the storage size for the current function (in bytes).";
-pattern getSize(mod:str):bat[:str,:lng]
-address INSPECTgetModuleSize
-comment "Return the storage size for a module (in bytes).";
-pattern getSize(mod:str,fcn:str):lng
-address INSPECTgetFunctionSize
-comment "Return the storage size for a function (in bytes).";
-
-pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
-address INSPECTtypeName
-comment "Return the concrete type of a variable (expression).";
-pattern getType(v:any_1) :str 
-address INSPECTtypeName
-comment "Return the concrete type of a variable (expression).";
-
-command getTypeName(v:int):str 
-address INSPECTtypename
-comment "Get the type name associated with a type id.";
-pattern getTypeIndex(v:bat[:any_1,:any_2]) (ht:int, tt:int)
-address INSPECTtypeIndex
-comment "Return the type index of a BAT head and tail.";
-pattern getTypeIndex(v:any_1):int 
-address INSPECTtypeIndex
-comment "Return the type index of a variable. For BATs, return
-the type index for its tail.";
-
-pattern equalType(l:any, r:any):bit
-address INSPECTequalType
-comment "Return true if both operands are of the same type";
-command getAtomNames():bat[:int,:str] 
-address INSPECTatom_names
-comment "Collect a BAT with the atom names.";
-command getAtomSuper():bat[:int,:str] 
-address INSPECTatom_sup_names
-comment "Collect a BAT with the atom names.";
-command getAtomSizes():bat[:int,:int] 
-address INSPECTatom_sizes
-comment "Collect a BAT with the atom sizes.";
-
-command getEnvironment():bat[:str,:str]
-address INSPECTgetEnvironment
-comment "Collect the environment variables.";
-# @-
-# @+ Implementation
-@include prelude.mx
-@h
-#ifdef _INSPECT_H
-#endif /* _INSPECT_H */
-@c
 #include "monetdb_config.h"
-#include "gdk.h"
-#include <stdarg.h>
-#include <time.h>
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_exception.h"
-#include "mal_debugger.h"
-#include "mal_interpreter.h"
-#include "mal_listing.h"
-#include "mal_namespace.h"
+#include "inspect.h"
 
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define inspect_export extern __declspec(dllimport)
-#else
-#define inspect_export extern __declspec(dllexport)
-#endif
-#else
-#define inspect_export extern
-#endif
-
-inspect_export str INSPECTgetFunction(int *ret);
-inspect_export str INSPECTgetModule(int *ret);
-inspect_export str INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTgetEnvironment(int *ret);
-inspect_export str INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTatom_names(int *ret);
-inspect_export str INSPECTatom_sup_names(int *ret);
-inspect_export str INSPECTatom_sizes(int *ret);
-inspect_export str INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-inspect_export str INSPECTtypename(str *ret, int *tpe);
-inspect_export str INSPECTtype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTtypeIndex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-inspect_export str INSPECTequalType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+static void
+pseudo(int *ret, BAT *b, str X1,str X2, str X3) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 
 /*
- * @+ Symbol table
+ * Symbol table
  * Mal symbol table and environment analysis.
  *
  * Collect symbol table information in a series of BATs for analysis
@@ -208,7 +82,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->outer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,symbol,function)@
+	pseudo(ret,b,"view","symbol","function");
 
 	return MAL_SUCCEED;
 }
@@ -241,7 +115,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->outer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,symbol,module)@
+	pseudo(ret,b,"view","symbol","module");
 
 	return MAL_SUCCEED;
 }
@@ -258,7 +132,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -275,7 +149,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->outer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,symbol,kind)@
+	pseudo(ret,b,"view","symbol","kind");
 
 	return MAL_SUCCEED;
 }
@@ -295,7 +169,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -312,7 +186,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->outer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view, symbol,address)@
+	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
 }
@@ -330,7 +204,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get@1", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
 	BATseqbase(b, k);
 	s = cntxt->nspace;
 	while (s) {
@@ -349,7 +223,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->outer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view, symbol,address)@
+	pseudo(ret,b,"view"," symbol","address");
 
 	return MAL_SUCCEED;
 }
@@ -386,7 +260,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,fcn,stmt)@
+	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
 }
@@ -431,7 +305,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,input,result)@
+	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
 
@@ -477,7 +351,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,input,result)@
+	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
 str
@@ -507,7 +381,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,input,result)@
+	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
 
@@ -591,7 +465,7 @@ INSPECTsymbolType(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = s->peer;
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,fcn,type)@
+	pseudo(ret,b,"view","fcn","type");
 	return MAL_SUCCEED;
 }
 
@@ -608,7 +482,7 @@ INSPECTatom_names(int *ret)
 		BUNins(b, &i, ATOMname(i), FALSE);
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,atom,name)@
+	pseudo(ret,b,"view","atom","name");
 
 	return MAL_SUCCEED;
 }
@@ -642,7 +516,7 @@ INSPECTatom_sup_names(int *ret)
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,atom,sup_name)@
+	pseudo(ret,b,"view","atom","sup_name");
 
 	return MAL_SUCCEED;
 }
@@ -663,7 +537,7 @@ INSPECTatom_sizes(int *ret)
 	}
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,atom,size)@
+	pseudo(ret,b,"view","atom","size");
 
 	return MAL_SUCCEED;
 }
@@ -725,7 +599,7 @@ INSPECTgetModuleSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUNins(b, *mod, &total, FALSE);
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,input,result)@
+	pseudo(ret,b,"view","input","result");
 	return MAL_SUCCEED;
 }
 
@@ -745,7 +619,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 /*
- * @+ Display routines
+ * Display routines
  */
 str
 INSPECTshowFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)

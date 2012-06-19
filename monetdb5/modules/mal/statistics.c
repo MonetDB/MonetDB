@@ -1,28 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f statistics
-
-@c
 /*
- * @a M.L. Kersten
- * @+ Statistics box.
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author M.L. Kersten
+ * Statistics box.
  * Most optimizers need easy access to key information
  * for proper plan generation. Amongst others, this
  * volatile information consists of the tuple count, size,
@@ -59,180 +55,9 @@ All Rights Reserved.
  * in your MAL program for inspection. Just
  * use the BBP bind operation to locate them in the buffer pool.
  */
-@mal
-module statistics;
-
-pattern open():void
-address STATopen
-comment "Locate and open the statistics box";
-pattern close():void
-address STATclose
-comment "Close the statistics box ";
-pattern destroy():void
-address STATdestroy
-comment "Destroy the statistics box";
-pattern take(name:any_1):any_2
-address STATtake
-comment "Take a variable out of the statistics box";
-pattern deposit(name:str) :void
-address STATdepositStr
-comment "Enter a new BAT into the statistics box";
-pattern deposit(name:bat[:any_1,:any_2]) :void
-address STATdeposit
-comment "Enter a new BAT into the statistics box";
-
-pattern releaseAll():void
-address STATreleaseAll
-comment "Release all variables in the box";
-pattern release(name:str) :void
-address STATreleaseStr
-comment "Release a single BAT from the  box";
-pattern release(name:bat[:any_1,:any_2]):void
-address STATrelease
-comment "Release a single BAT from the  box";
-pattern toString(name:any_1):str
-address STATtoString
-comment "Get the string representation of an element in the box";
-pattern discard(name:str) :void
-address STATdiscard
-comment "Release a BAT by name from the box";
-pattern discard(name:bat[:any_1,:any_2]) :void
-address STATdiscard2
-comment "Release a BAT variable from the box";
-pattern newIterator()(:lng,:str)
-address STATnewIterator
-comment "Locate next element in the box";
-pattern hasMoreElements()(:lng,:str)
-address STAThasMoreElements
-comment "Locate next element in the box";
-
-command update()
-address STATupdate
-comment "Check for stale information";
-
-command forceUpdate()
-address STATforceUpdateAll
-comment "Bring all information up to date";
-
-command forceUpdate(bnme:str)
-address STATforceUpdate
-comment "Bring the statistics up to date for one BAT";
-
-command prelude() :void
-address STATprelude
-comment "Initialize the statistics package";
-
-command epilogue() :void
-address STATepilogue
-comment "Release the resources of the statistics package";
-
-pattern dump() :void
-address STATdump
-comment "Display the statistics table";
-
-command getObjects():bat[:int,:str]
-address STATgetObjects
-comment "Return a table with BAT names managed";
-
-pattern getHotset():bat[:int,:str]
-address STATgetHotset
-comment "Return a table with BAT names that have been touched
-since the start of the session";
-
-pattern getCount(nme:str):lng
-address STATgetCount
-comment "Return latest stored count information";
-
-pattern getSize(nme:str):lng
-address STATgetSize
-comment "Return latest stored count information";
-
-pattern getMin(nme:str):lng
-address STATgetMin
-comment "Return latest stored minimum information";
-
-pattern getMax(nme:str):lng
-address STATgetMax
-comment "Return latest stored maximum information";
-
-pattern getHistogram(nme:str):bat[:any_1,:any_2]
-address STATgetHistogram
-comment "Return the latest histogram");
-# @- Implementation
-#
-# The Box can optimize its behaviour by e.g. keeping
-# often used histograms locked into memory or propagate
-# updates quickly. This is only applicable for objects
-# taken from the box and until it is released.
-#
-# The implementation is based on the assumption that in
-# most cases front-ends deal with BAT names as opposed to
-# the internal index.
-#
-# Furthermore, the code is split in two sections. The first
-# contains the primitves as they will also be used in
-# linked-in code. The second part provides a MAL interface.
-# It is assumed that any direct call obeys the semantics of
-# this interface.
-@include prelude.mx
-@h
-#ifndef _STATISTICS_DEF
-#define _STATISTICS_DEF
-
-/* #define DEBUG_STATISTICS */
-
-#include <mal.h>
-#include <mal_client.h>
-#include <mal_interpreter.h>
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define s_export extern __declspec(dllimport)
-#else
-#define s_export extern __declspec(dllexport)
-#endif
-#else
-#define s_export extern
-#endif
-
-#endif /* _STATISTICS_DEF */
-@c
-/*
- * @-
- */
 #include "monetdb_config.h"
 #include "statistics.h"
 #include "algebra.h"
-
-s_export str STATforceUpdateAll(int *ret);
-s_export str STATdrop(str nme);
-s_export str STATforceUpdateAll(int *ret);
-s_export str STATenroll(int *ret, str *nme);
-s_export str STATenrollHistogram(int *ret, str *nme);
-s_export str STATupdateAll(int *ret, int forced);
-s_export str STATupdate(int *ret);
-s_export str STATforceUpdate(int *ret, str *nme);
-s_export str STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATprelude(int *ret);
-s_export str STATepilogue(int *ret);
-s_export str STATopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdepositStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATdiscard2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATgetHotset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-s_export str STATgetObjects(int *bid);
-s_export str STATgetHistogram (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 
 BAT *STAT_id_inuse;		/* BATs information taken from the box */
 BAT *STAT_id_nme;		/* mapping from BBP index */
@@ -245,7 +70,6 @@ BAT *STAT_id_max_lng;
 BAT *STAT_id_histogram;
 
 /*
- * @-
  * The statistics are currently limited to the server session.
  * Upon need we can turn it into a persistent mode.
  */
@@ -421,7 +245,6 @@ STATenrollHistogram(int *ret, str *nme)
 }
 
 /*
- * @-
  * An update on all BATs in use can be requested.
  * The amount of work is somewhat limited by ensuring
  * that the underlying store has been changed
@@ -476,7 +299,6 @@ STATforceUpdateAll(int *ret)
 }
 
 /*
- * @-
  * Here the real work is done. This should be refined to
  * accomodate different base types .
  */
@@ -572,7 +394,7 @@ STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @- Module initializaton
+ *  Module initializaton
  * The content of this box my only be changed by the Administrator.
  */
 #include "mal_client.h"
@@ -583,7 +405,7 @@ STATdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 { str tmp = NULL; rethrow("statistics." X, tmp, AUTHrequireAdmin(&cntxt)); }
 
 /*
- * @- Operator implementation
+ * Operator implementation
  */
 #define OpenBox(X) \
 	authorize(X); \
@@ -659,7 +481,6 @@ STATdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * Access to a box calls for resolving the first parameter
  * to a named box.
  */
@@ -764,7 +585,6 @@ STATreleaseStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * We should keep track of all BATs taken from the Box, for this
  * can be used to upgrade the information quickly.
  * For example, the update functio only looks at those in use to detect
@@ -895,20 +715,15 @@ STATgetHotset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-STATgetObjects(int *bid)
+STATgetObjects(int *rid, int *bid)
 {
 	*bid = STAT_id_nme->batCacheid;
 	BBPincref(*bid, TRUE);
 	return MAL_SUCCEED;
 }
 
-/*
- * @-
- */
-@= stat
-s_export str STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
-STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+STATgetCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = (lng *)getArgReference(stk, pci, 0);
 	str *nme = (str *)getArgReference(stk, pci, 1);
@@ -920,24 +735,96 @@ STATget@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) pci;
 
-	OpenBox("get@1");
+	OpenBox("getCount");
 	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.get@1", RUNTIME_OBJECT_MISSING "%s", *nme);
+		throw(MAL, "statistics.getCount", RUNTIME_OBJECT_MISSING "%s", *nme);
 	STAT_id_nmei = bat_iterator(STAT_id_nme);
 	i= *(int*) BUNhead(STAT_id_nmei,p);
-	p= BUNfnd(STAT_id_@2, &i );
+	p= BUNfnd(STAT_id_count, &i );
 	if (p == BUN_NONE)
-		throw(MAL, "statistics.get@1", RUNTIME_OBJECT_MISSING);
-	*ret = *(lng*)Tloc(STAT_id_@2,p);
+		throw(MAL, "statistics.getCount", RUNTIME_OBJECT_MISSING);
+	*ret = *(lng*)Tloc(STAT_id_count,p);
 	return MAL_SUCCEED;
 }
-@
-@c
-@:stat(Count,count)@
-@:stat(Size,size)@
-@:stat(Min,min_lng)@
-@:stat(Max,max_lng)@
+
+str
+STATgetSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *ret = (lng *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
+	BATiter STAT_id_nmei;
+	Box box;
+	BUN p;
+	int i;
+	
+	(void) mb;
+	(void) pci;
+
+	OpenBox("getSize");
+	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getSize", RUNTIME_OBJECT_MISSING "%s", *nme);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	i= *(int*) BUNhead(STAT_id_nmei,p);
+	p= BUNfnd(STAT_id_size, &i );
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getSize", RUNTIME_OBJECT_MISSING);
+	*ret = *(lng*)Tloc(STAT_id_size,p);
+	return MAL_SUCCEED;
+}
+
+str
+STATgetMin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *ret = (lng *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
+	BATiter STAT_id_nmei;
+	Box box;
+	BUN p;
+	int i;
+	
+	(void) mb;
+	(void) pci;
+
+	OpenBox("getMin");
+	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getMin", RUNTIME_OBJECT_MISSING "%s", *nme);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	i= *(int*) BUNhead(STAT_id_nmei,p);
+	p= BUNfnd(STAT_id_min_lng, &i );
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getMin", RUNTIME_OBJECT_MISSING);
+	*ret = *(lng*)Tloc(STAT_id_min_lng,p);
+	return MAL_SUCCEED;
+}
+
+str
+STATgetMax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *ret = (lng *)getArgReference(stk, pci, 0);
+	str *nme = (str *)getArgReference(stk, pci, 1);
+	BATiter STAT_id_nmei;
+	Box box;
+	BUN p;
+	int i;
+	
+	(void) mb;
+	(void) pci;
+
+	OpenBox("getMax");
+	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getMax", RUNTIME_OBJECT_MISSING "%s", *nme);
+	STAT_id_nmei = bat_iterator(STAT_id_nme);
+	i= *(int*) BUNhead(STAT_id_nmei,p);
+	p= BUNfnd(STAT_id_max_lng, &i );
+	if (p == BUN_NONE)
+		throw(MAL, "statistics.getMax", RUNTIME_OBJECT_MISSING);
+	*ret = *(lng*)Tloc(STAT_id_max_lng,p);
+	return MAL_SUCCEED;
+}
 
 
 str

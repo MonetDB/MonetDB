@@ -1,38 +1,33 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f bbp
-
-@c
 /*
- * @v 2.0
- * @a M.L.Kersten, P. Boncz
- * @+ BAT Buffer Pool
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author M.L.Kersten, P. Boncz
+ * BAT Buffer Pool
  * The BBP module implements a box interface over the BAT buffer pool.
  * It is primarilly meant to ease inspection of the BAT collection managed
  * by the server.
  *
  * The two predominant approaches to use bbp is to access the BBP
- * with either @emph{bind} or @emph{take}. The former merely maps the BAT name
+ * with either bind() or take(). The former merely maps the BAT name
  * to the object in the bat buffer pool.
- * A more controlled scheme is to @emph{ deposit}, @emph{take}, @emph{release}
- * and @emph{ discard} elements.
+ * A more controlled scheme is to deposit(), take(), release()
+ * and discard() elements.
  * Any BAT B created can be brought under this scheme with the name N.
  * The association N->B is only maintained in the box administration
  * and not reflected in the BAT descriptor.
@@ -44,243 +39,23 @@ All Rights Reserved.
  * on the MAL runtime setting, but logically belong to the kernel/bat
  * module.
  */
-@mal
-module bbp;
+#include "monetdb_config.h"
+#include "bbp.h"
 
-command open():void		
-address CMDbbpopen
-comment "Locate the bbp box and open it.";
-command close():void		
-address CMDbbpclose
-comment "Close the bbp box.";
-command destroy():void		
-address CMDbbpdestroy
-comment "Destroy the box";
-pattern take(name:str) :bat[:any_1,:any_2] 
-address CMDbbptake
-comment "Load a particular bat.";
-pattern deposit(name:str,v:bat[:any_1,:any_2]) :void 			
-address CMDbbpdeposit
-comment "Enter a new bat into the bbp box.";
-pattern deposit(name:str,loc:str) :bat[:any_1,:any_2]
-address CMDbbpbindDefinition
-comment "Relate a logical name to a physical BAT in the buffer pool.";
-command commit(b:bat[:any_1,:any_2]):void 	
-address CMDbbpSubCommit
-comment "Commit updates for single BAT.";
-pattern commit():void 	
-address CMDbbpReleaseAll
-comment "Commit updates for this client.";
-pattern releaseAll():void 	
-address CMDbbpReleaseAll
-comment "Commit updates for this client.";
-pattern release(name:str,val:bat[:any_1,:any_2]) :void 			
-address CMDbbprelease
-comment "Commit updates and release this BAT.";
-pattern release(b:bat[:any_1,:any_2]):void
-address CMDbbpreleaseBAT
-comment "Remove the BAT from further consideration";
-pattern destroy(b:bat[:any_1,:any_2]):void
-address CMDbbpdestroyBAT1
-comment "Schedule a BAT for removal at session end.";
-pattern destroy(b:bat[:any_1,:any_2],immediate:bit)
-address CMDbbpdestroyBAT
-comment "Schedule a BAT for removal at session end or immediately.";
-pattern toString(name:str):str 	
-address CMDbbptoStr
-comment "Get the string representation of an element in the box.";
-pattern discard(name:str):void 
-address CMDbbpdiscard
-comment "Remove the BAT from the box.";
+static void
+pseudo(int *ret, BAT *b, str X1,str X2) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 
-pattern iterator(nme:str):lng 	
-address CMDbbpiterator
-comment "Locate the next element in the box.";
-
-pattern prelude():void 
-address CMDbbpprelude
-comment "Initialize the bbp box.";
-
-pattern bind(name:str):bat[:any_1,:any_2]
-address CMDbbpbind
-comment "Locate the BAT using its logical name";
-
-pattern bind(head:str,tail:str):bat[:any_1,:any_2]
-address CMDbbpbind2
-comment "Locate the BAT using the head and tail names in the BAT buffer pool");
-
-pattern bind(idx:int):bat[:any_1,:any_2] 
-address CMDbbpbindindex
-comment "Locate the BAT using its BBP index in the BAT buffer pool";
-
-command compress(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2]
-address CMDbbpcompress
-comment "Generate a compressed image of the BAT on a specific file";
-
-command decompress(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2] 
-address CMDbbpdecompress
-comment "Obtain a temporary decompressed image of a BAT from a specific file";
-
-command truncate(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2]
-address CMDbbptruncate
-comment "Truncate the heaps if a compressed image exist";
-
-command expand(b:bat[:any_1,:any_2],fnme:str):bat[:any_1,:any_2]
-address CMDbbpexpand
-comment "Expand a compressed image of BAT heaps";
-
-pattern getObjects():bat[:int,:str] 
-address CMDbbpGetObjects
-	comment "View of the box content.";
-
-# @+ BAT buffer pool
-# The following list of operations permits inspection of the
-# buffer pool
-command getIndex(b:bat[:any_1,:any_2]):int
-address CMDbbpgetIndex
-comment "Retrieve the index in the BBP";
-command getHeadType() :bat[:int,:str]		
-address CMDbbpHeadType
-comment "Map a BAT into its head type";
-command getTailType() :bat[:int,:str]		
-address CMDbbpTailType
-comment "Map a BAT into its tail type";
-command getNames() :bat[:int,:str] 	
-address CMDbbpNames
-comment "Map BAT into its bbp name";
-command getRNames() :bat[:int,:str] 	
-address CMDbbpRNames
-comment "Map a BAT into its bbp physical name";
-
-command get() (ns:bat[:any_1,:any_2], ht:bat[:int,:str], tt:bat[:int,:str],
-	     cnt:bat[:int,:lng], refcnt:bat[:int,:int], lrefcnt:bat[:int,:int],
-	     location:bat[:int,:str], heat:bat[:int,:int], dirty:bat[:int,:str], 
-	     status:bat[:int,:str], kind:bat[:int,:str]) 
-address CMDbbp
-comment "bpp";
-
-command getName( b:bat[:any_1,:any_2]):str
-address CMDbbpName
-comment "Map a BAT into its internal name";
-command getCount() :bat[:int,:lng] 	
-address CMDbbpCount
-comment "Create a BAT with the cardinalities of all known BATs";
-command getRefCount() :bat[:int,:int] 	
-address CMDbbpRefCount
-comment "Create a BAT with the (hard) reference counts";
-command getLRefCount() :bat[:int,:int] 	
-address CMDbbpLRefCount
-comment "Create a BAT with the logical reference counts";
-command getLocation() :bat[:int,:str] 	
-address CMDbbpLocation
-comment "Create a BAT with their disk locations";
-command getHeat() :bat[:int,:int] 	
-address CMDbbpHeat
-comment "Create a BAT with the heat values";
-command getDirty() :bat[:int,:str] 	
-address CMDbbpDirty
-comment "Create a BAT with the dirty/ diffs/clean status";
-command getStatus() :bat[:int,:str] 	
-address CMDbbpStatus
-comment "Create a BAT with the disk/load status";
-command getKind():bat[:int,:str] 
-address CMDbbpKind
-comment "Create a BAT with the persistency status";
-command getRefCount(b:bat[:any_1,:any_2]) :int
-address CMDgetBATrefcnt
-comment "Utility for debugging MAL interpreter";
-command getLRefCount(b:bat[:any_1,:any_2]) :int
-address CMDgetBATlrefcnt
-comment "Utility for debugging MAL interpreter";
-command getDiskSpace() :lng
-address CMDbbpDiskSpace
-comment "Estimate the amount of disk space occupied by dbfarm";
-command getPageSize():int
-address CMDgetPageSize
-comment "Obtain the memory page size";
-
-# @-
-@include prelude.mx
-@h
 /*
- * @+ Implementation section
- * In most cases we pass a BAT identifier, which should be unified
- * with a BAT descriptor. Upon failure we can simply abort the function.
- */
-#ifndef _BBP_H_
-#define _BBP_H_
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_module.h"
-#include "mal_session.h"
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_profiler.h"
-#include "bat5.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define bbp_export extern __declspec(dllimport)
-#else
-#define bbp_export extern __declspec(dllexport)
-#endif
-#else
-#define bbp_export extern
-#endif
-
-#ifdef _MSC_VER
-#define getcwd _getcwd
-#endif
-
-bbp_export str CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbindDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpbind2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-bbp_export str CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbptake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroyBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdestroyBAT1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpSubCommit(int *ret, int *bid);
-bbp_export str CMDbbpReleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbptoStr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-bbp_export str CMDbbpDiskSpace(lng *ret);
-bbp_export str CMDbbpDiskReads(lng *ret);
-bbp_export str CMDbbpDiskWrites(lng *ret);
-bbp_export str CMDgetPageSize(int *ret);
-bbp_export str CMDbbpNames(int *ret);
-bbp_export str CMDbbpName(str *ret, int *bid);
-bbp_export str CMDbbpRNames(int *ret);
-bbp_export str CMDbbpCount(int *ret);
-bbp_export str CMDbbpLocation(int *ret);
-bbp_export str CMDbbpHeat(int *ret);
-bbp_export str CMDbbpDirty(int *ret);
-bbp_export str CMDbbpStatus(int *ret);
-bbp_export str CMDbbpKind(int *ret);
-bbp_export str CMDbbpRefCount(int *ret);
-bbp_export str CMDbbpLRefCount(int *ret);
-bbp_export str CMDbbpgetIndex(int *res, int *bid);
-bbp_export str CMDgetBATrefcnt(int *res, int *bid);
-bbp_export str CMDgetBATlrefcnt(int *res, int *bid);
-bbp_export str CMDbbpcompress(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbpdecompress(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbptruncate(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
-#endif /* _BBP_H_*/
-
-@c
-/*
- * @-
  * Access to a box calls for resolving the first parameter
  * to a named box. The bbp box is automatically opened.
  */
@@ -308,7 +83,7 @@ CMDbbpprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @- Operator implementation
+ * Operator implementation
  */
 str
 CMDbbpopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -350,7 +125,6 @@ CMDbbpdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * Beware that once you deposit a BAT into a box, it should
  * increment the reference count to assure it is not
  * garbage collected. Moreover, it should be done so only once.
@@ -528,7 +302,6 @@ CMDbbpbindindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Compression and decompression are handled explicity. A compressed BAT is
  * recognized by its file extension on the heap name.
  * Compression of heaps can be useful to reduce the diskspace and as preparation
@@ -746,7 +519,6 @@ CMDbbpexpand(int *ret, int *bid, str *fnme)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Moving BATs in/out of the box also involves
  * checking the type already known for possible misfits.
  * Therefore, we need access to the runtime context.
@@ -803,7 +575,6 @@ CMDbbprelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * A BAT can be released to make room for others.
  * We decrease the reference count with one, but should not
  * immediately release it, because there may be aliases.
@@ -825,7 +596,6 @@ CMDbbpreleaseBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #if 0
 /*
- * @-
  * A BAT designated as garbage can be removed, provided we
  * do not keep additional references in the stack frame
  * Be careful here not to remove persistent BATs.
@@ -869,7 +639,6 @@ CMDbbpgarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 /*
- * @-
  * A BAT can be removed forever immediately or at the end of
  * a session. The references within the current frame
  * should also be zapped.
@@ -993,7 +762,7 @@ CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 /*
- * @+ BBP status
+ * BBP status
  * The BAT buffer pool datastructures describe the memory resident information
  * on the whereabouts of the BATs. The three predominant tables are made accessible
  * for inspection.
@@ -1003,16 +772,6 @@ CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * It may be the case that the user already introduced a BAT with this name,
  * it is simply removed first
  */
-@= Pseudo2
-	if (BBPindex("@1_@2") > 0) 
-		BATdelete(BBPdescriptor(BBPindex("@1_@2")));
-	BATroles(b,"@1","@2");
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-@
-@c
 str
 CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1035,7 +794,7 @@ CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ret = (int *) getArgReference(stk, pci, 0);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,objects)@
+	pseudo(ret,b,"bbp","objects");
 	return MAL_SUCCEED;
 }
 
@@ -1063,7 +822,7 @@ CMDbbpNames(int *ret)
 		}
 	BBPunlock("CMDbbpNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,name)@
+	pseudo(ret,b,"bbp","name");
 	return MAL_SUCCEED;
 }
 str
@@ -1106,7 +865,7 @@ CMDbbpRNames(int *ret)
 		}
 	BBPunlock("CMDbbpRNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,revname)@
+	pseudo(ret,b,"bbp","revname");
 	return MAL_SUCCEED;
 }
 
@@ -1133,12 +892,11 @@ CMDbbpCount(int *ret)
 			}
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,count)@
+	pseudo(ret,b,"bbp","count");
 	return MAL_SUCCEED;
 }
 
 /*
- * @-
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
@@ -1166,7 +924,7 @@ CMDbbpLocation(int *ret)
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLocation");
-	@:Pseudo2(bbp,location)@
+	pseudo(ret,b,"bbp","location");
 	return MAL_SUCCEED;
 }
 
@@ -1199,12 +957,11 @@ CMDbbpHeat(int *ret)
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpHeat");
-	@:Pseudo2(bbp,heat)@
+	pseudo(ret,b,"bbp","heat");
 	return MAL_SUCCEED;
 }
 
 /*
- * @-
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
 str
@@ -1227,12 +984,11 @@ CMDbbpDirty(int *ret)
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
-	@:Pseudo2(bbp,status)@
+	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
 
 /*
- * @-
  * The BAT status is redundantly stored in CMDbat_info.
  */
 str
@@ -1255,7 +1011,7 @@ CMDbbpStatus(int *ret)
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
-	@:Pseudo2(bbp,status)@
+	pseudo(ret,b,"bbp","status");
 	return MAL_SUCCEED;
 }
 
@@ -1284,7 +1040,7 @@ CMDbbpKind(int *ret)
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
-	@:Pseudo2(bbp,kind)@
+	pseudo(ret,b,"bbp","kind");
 	return MAL_SUCCEED;
 }
 
@@ -1307,7 +1063,7 @@ CMDbbpRefCount(int *ret)
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
-	@:Pseudo2(bbp,refcnt)@
+	pseudo(ret,b,"bbp","refcnt");
 	return MAL_SUCCEED;
 }
 
@@ -1330,7 +1086,7 @@ CMDbbpLRefCount(int *ret)
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
-	@:Pseudo2(bbp,lrefcnt)@
+	pseudo(ret,b,"bbp","lrefcnt");
 	return MAL_SUCCEED;
 }
 
@@ -1368,36 +1124,44 @@ CMDgetBATlrefcnt(int *res, int *bid)
 }
 
 
-/*
- * @-
- */
-@= headtailProperty
-bbp_export str CMDbbp@2( int *ret);
-str CMDbbp@2( int *ret){
+str CMDbbpHeadType( int *ret){
 	BAT	*b,*bn;
 	int	i;
 
 	b= BATnew(TYPE_int,TYPE_str,BBPsize);
 	if (b == 0) 
-		throw(MAL, "catalog.bbp@2", MAL_MALLOC_FAIL);
+		throw(MAL, "catalog.bbpHeadType", MAL_MALLOC_FAIL);
 
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		bn= BATdescriptor(i);
-		if(bn) BUNins(b, &i, BATatoms[BAT@1(bn)].name, FALSE);
+		if(bn) BUNins(b, &i, BATatoms[BAThtype(bn)].name, FALSE);
 		BBPunfix(bn->batCacheid);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo2(bbp,@2)@
+	pseudo(ret,b,"bbp","HeadType");
 	return MAL_SUCCEED;
 }
 
-@
-@c
-@:headtailProperty(htype,HeadType)@
-@:headtailProperty(ttype,TailType)@
+str CMDbbpTailType( int *ret){
+	BAT	*b,*bn;
+	int	i;
 
-bbp_export str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int *LOCATION, int *HEAT, int *DIRTY, int *STATUS, int *KIND);
+	b= BATnew(TYPE_int,TYPE_str,BBPsize);
+	if (b == 0) 
+		throw(MAL, "catalog.bbpTailType", MAL_MALLOC_FAIL);
+
+	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
+	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
+		bn= BATdescriptor(i);
+		if(bn) BUNins(b, &i, BATatoms[BATttype(bn)].name, FALSE);
+		BBPunfix(bn->batCacheid);
+	}
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	pseudo(ret,b,"bbp","TailType");
+	return MAL_SUCCEED;
+}
+
 str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int *LOCATION, int *HEAT, int *DIRTY, int *STATUS, int *KIND)
 {
 	BAT	*ns, *ht, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;

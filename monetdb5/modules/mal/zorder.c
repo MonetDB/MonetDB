@@ -1,28 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f zorder
-
-@c
 /*
- * @a Martin Kersten
- * @* Z-order
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author Martin Kersten
+ * Z-order
  * This module provides the primitives to implement 2-dim Z-order functionality.
  * Arrays stored in Z-order have a better locality of reference for many
  * operations. Slicing part of the array amounts to deriving a BAT with
@@ -33,88 +29,17 @@ All Rights Reserved.
  * any void headed BAT as a sorted Z-ordered representation.
  * This gives both fast point access and clustered slicing.
  */
-@mal
-module zorder;
 
-command encode(x:int,y:int):oid
-address ZORDencode_int_oid
-comment "Derive the z-order index from a value pair";
-
-command encode(x:bat[:oid,:int],y:bat[:oid,:int]):bat[:oid,:oid]
-address ZORDbatencode_int_oid
-comment "Derive the z-order index from a value pair";
-
-command decode(z:oid)(x:int,y:int)
-address ZORDdecode_int_oid
-comment "Derive the z-order pair";
-
-command decode(z:bat[:oid,:oid])(:bat[:oid,:int],:bat[:oid,:int])
-address ZORDbatdecode_int_oid
-comment "Derive the z-order pair";
-
-command decode_x(z:oid)(x:int)
-address ZORDdecode_int_oid_x
-comment "Derive the z-order x-coordinate";
-
-command decode_x(z:bat[:oid,:oid]):bat[:oid,:int]
-address ZORDbatdecode_int_oid_x
-comment "Derive the z-order x-coordinate";
-
-command decode_y(z:oid)(y:int)
-address ZORDdecode_int_oid_y
-comment "Derive the z-order y-coordinate";
-
-command decode_y(z:bat[:oid,:oid]):bat[:oid,:int]
-address ZORDbatdecode_int_oid_y
-comment "Derive the z-order y-coordinate";
-
-command sql_slice(xb:int, yb:int, xt:int, yt:int ):bat[:str,:bat]
-address ZORDsql_slice_int
-comment "Wrapper of the function zorder.slice() for SQL function";
-
-command slice(xb:int, yb:int, xt:int, yt:int ):bat[:oid,:oid]
-address ZORDslice_int
-comment "Extract the Z-order indices between two points";
-@h
-#ifndef _ZORDER_H
-#define _ZORDER_H
-
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define zorder_export extern __declspec(dllimport)
-#else
-#define zorder_export extern __declspec(dllexport)
-#endif
-#else
-#define zorder_export extern
-#endif
-
-zorder_export str ZORDencode_int_oid(oid *z, int *x, int *y);
-zorder_export str ZORDbatencode_int_oid(int *z, int *x, int *y);
-zorder_export str ZORDdecode_int_oid(int *x, int *y, oid *z);
-zorder_export str ZORDdecode_int_oid_x(int *x, oid *z);
-zorder_export str ZORDdecode_int_oid_y(int *y, oid *z);
-zorder_export str ZORDbatdecode_int_oid(int *x, int *y, int *z);
-zorder_export str ZORDbatdecode_int_oid_x(int *x, int *z);
-zorder_export str ZORDbatdecode_int_oid_y(int *y, int *z);
-zorder_export str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
-zorder_export str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt);
-
-#endif /* _ZORDER_H */
-
-@c
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
 #include "zorder.h"
 
-@= Zcode
-static inline @2 Zencode_@1_@2(@1 x, @1 y)
+static inline oid Zencode_int_oid(int x, int y)
 {
-	@2 v = 0;
+	oid v = 0;
 	int i,mask=1;
-	for ( i = 0; i < (int) (8 * sizeof(@2)/2) ; i++) {
+	for ( i = 0; i < (int) (8 * sizeof(oid)/2) ; i++) {
 		v |= ((x & 1) * mask);
 		x>>=1;
 		mask <<= 1;
@@ -125,12 +50,12 @@ static inline @2 Zencode_@1_@2(@1 x, @1 y)
 	return v;
 }
 
-static inline void Zdecode_@1_@2(@1 *x, @1 *y, @2 *z)
+static inline void Zdecode_int_oid(int *x, int *y, oid *z)
 {
-	@1 xv = 0, yv=0, mask =1;
-	@2 zv = *z;
+	int xv = 0, yv=0, mask =1;
+	oid zv = *z;
 	int i;
-	for ( i = 0; i < (int) (8 * sizeof(@2)); i+= 2) {
+	for ( i = 0; i < (int) (8 * sizeof(oid)); i+= 2) {
 		xv |= ((zv & 1) * mask);
 		zv >>= 1;
 		yv |= ((zv & 1) * mask);
@@ -140,24 +65,24 @@ static inline void Zdecode_@1_@2(@1 *x, @1 *y, @2 *z)
 	*x = xv;
 	*y = yv;
 }
-static inline void Zdecode_@1_@2_x(@1 *x, @2 *z)
+static inline void Zdecode_int_oid_x(int *x, oid *z)
 {
-	@1 xv = 0, mask =1;
-	@2 zv = *z;
+	int xv = 0, mask =1;
+	oid zv = *z;
 	int i;
-	for ( i = 0; i < (int) (8 * sizeof(@2)); i+= 2) {
+	for ( i = 0; i < (int) (8 * sizeof(oid)); i+= 2) {
 		xv |= ((zv & 1) * mask);
 		zv >>= 2;
 		mask <<=1;
 	}
 	*x = xv;
 }
-static inline void Zdecode_@1_@2_y(@1 *y, @2 *z)
+static inline void Zdecode_int_oid_y(int *y, oid *z)
 {
-	@1 yv=0, mask =1;
-	@2 zv = *z;
+	int yv=0, mask =1;
+	oid zv = *z;
 	int i;
-	for ( i = 0; i < (int) (8 * sizeof(@2)); i+= 2) {
+	for ( i = 0; i < (int) (8 * sizeof(oid)); i+= 2) {
 		zv >>= 1;
 		yv |= ((zv & 1) * mask);
 		zv >>= 1;
@@ -165,9 +90,6 @@ static inline void Zdecode_@1_@2_y(@1 *y, @2 *z)
 	}
 	*y = yv;
 }
-@
-@c
-@:Zcode(int,oid)@
 
 str 
 ZORDencode_int_oid(oid *z, int *x, int *y)

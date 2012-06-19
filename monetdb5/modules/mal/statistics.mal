@@ -1,0 +1,98 @@
+module statistics;
+
+pattern open():void
+address STATopen
+comment "Locate and open the statistics box";
+pattern close():void
+address STATclose
+comment "Close the statistics box ";
+pattern destroy():void
+address STATdestroy
+comment "Destroy the statistics box";
+pattern take(name:any_1):any_2
+address STATtake
+comment "Take a variable out of the statistics box";
+pattern deposit(name:str) :void
+address STATdepositStr
+comment "Enter a new BAT into the statistics box";
+pattern deposit(name:bat[:any_1,:any_2]) :void
+address STATdeposit
+comment "Enter a new BAT into the statistics box";
+
+pattern releaseAll():void
+address STATreleaseAll
+comment "Release all variables in the box";
+pattern release(name:str) :void
+address STATreleaseStr
+comment "Release a single BAT from the  box";
+pattern release(name:bat[:any_1,:any_2]):void
+address STATrelease
+comment "Release a single BAT from the  box";
+pattern toString(name:any_1):str
+address STATtoString
+comment "Get the string representation of an element in the box";
+pattern discard(name:str) :void
+address STATdiscard
+comment "Release a BAT by name from the box";
+pattern discard(name:bat[:any_1,:any_2]) :void
+address STATdiscard2
+comment "Release a BAT variable from the box";
+pattern newIterator()(:lng,:str)
+address STATnewIterator
+comment "Locate next element in the box";
+pattern hasMoreElements()(:lng,:str)
+address STAThasMoreElements
+comment "Locate next element in the box";
+
+command update()
+address STATupdate
+comment "Check for stale information";
+
+command forceUpdate()
+address STATforceUpdateAll
+comment "Bring all information up to date";
+
+command forceUpdate(bnme:str)
+address STATforceUpdate
+comment "Bring the statistics up to date for one BAT";
+
+command prelude() :void
+address STATprelude
+comment "Initialize the statistics package";
+
+command epilogue() :void
+address STATepilogue
+comment "Release the resources of the statistics package";
+
+pattern dump() :void
+address STATdump
+comment "Display the statistics table";
+
+command getObjects():bat[:int,:str]
+address STATgetObjects
+comment "Return a table with BAT names managed";
+
+pattern getHotset():bat[:int,:str]
+address STATgetHotset
+comment "Return a table with BAT names that have been touched
+since the start of the session";
+
+pattern getCount(nme:str):lng
+address STATgetCount
+comment "Return latest stored count information";
+
+pattern getSize(nme:str):lng
+address STATgetSize
+comment "Return latest stored count information";
+
+pattern getMin(nme:str):lng
+address STATgetMin
+comment "Return latest stored minimum information";
+
+pattern getMax(nme:str):lng
+address STATgetMax
+comment "Return latest stored maximum information";
+
+pattern getHistogram(nme:str):bat[:any_1,:any_2]
+address STATgetHistogram
+comment "Return the latest histogram");

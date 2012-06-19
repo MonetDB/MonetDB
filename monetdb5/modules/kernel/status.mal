@@ -1,0 +1,48 @@
+module status;
+
+command cpuStatistics():bat[:str,:int] 
+address SYScpuStatistics
+comment "Global cpu usage information";
+command memStatistics():bat[:str,:wrd] 
+address SYSmemStatistics
+comment "Global memory usage information";
+command ioStatistics():bat[:str,:int] 
+address SYSioStatistics
+comment "Global IO activity information";
+command vmStatistics(minsize:lng):bat[:str,:lng] 
+address SYSvm_usage
+comment "Get a split-up of how much virtual memory blocks are in use";
+command memUsage(minsize:lng):bat[:str,:lng] 
+address SYSmem_usage
+comment "Get a split-up of how much memory blocks are in use";
+
+command batStatistics():bat[:str,:str] 
+address SYSgdkEnv
+comment "Show distribution of bats by kind";
+command getThreads():bat[:int,:str] 
+address SYSgdkThread
+comment "Produce overview of active threads";
+
+command mem_cursize():lng 
+address SYSgetmem_cursize
+comment "The amount of physical swapspace in KB that is currently in use";
+
+command mem_maxsize():lng 
+address SYSgetmem_maxsize
+comment "The maximum usable amount of physical swapspace in KB (target only)";
+
+command mem_maxsize(v:lng):void 
+address SYSsetmem_maxsize
+comment "Set the maximum usable amount of physical swapspace in KB";
+
+command vm_cursize():lng 
+address SYSgetvm_cursize
+comment "The amount of logical VM space in KB that is currently in use";
+
+command vm_maxsize():lng 
+address SYSgetvm_maxsize
+comment "The maximum usable amount of logical VM space in KB (target only)";
+
+command vm_maxsize(v:lng):void 
+address SYSsetvm_maxsize
+comment "Set the maximum usable amount of physical swapspace in KB";

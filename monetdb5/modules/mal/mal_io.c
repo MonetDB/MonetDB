@@ -1,30 +1,26 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f mal_io
-
-@c
 /*
- * @a N.J. Nes, M.L. Kersten
- * @d 01/07/1996, 31/01/2002
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * author N.J. Nes, M.L. Kersten
+ * 01/07/1996, 31/01/2002
  *
- * @+ Input/Output module
+ * Input/Output module
  * The IO module provides simple @sc{ascii-io} rendering options.
  * It is modeled after the tuple formats, but does not
  * attempt to outline the results. Instead, it is geared at speed,
@@ -38,157 +34,9 @@ All Rights Reserved.
  * The commands to load and save a BAT from/to an ASCII dump
  * are efficient, but work only for binary tables.
  */
-@mal
-module io;
-pattern stdin():bstream
-address io_stdin
-comment "return the input stream to the database client";
-pattern stderr():streams
-address io_stderr
-comment "return the error stream for the database console";
-pattern stdout():streams
-address io_stdout
-comment "return the output stream for the database client";
 
-pattern print(val:any_1,lst:any...):void 
-address IOprint_val
-comment "Print a MAL value tuple .";
-
-pattern print(b1:bat[:any_1,:any]...):void 
-address IOtable
-comment "BATs are printed with '#' for legend 
-	lines, and the BUNs on seperate lines 
-	between brackets, containing each to 
-	comma separated values (head and tail). 
-	If multiple BATs are passed for printing, 
-	print() performs an implicit natural 
-	join, producing a multi attribute table.";
-
-pattern ftable( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):void
-address IOftable 
-comment "Print an n-ary table to a file.";
-
-pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):void
-address IOotable
-comment "The same as normal table print, but 
-	enforces to use the order of BAT 
-	number [1..argc] to do the printing.";
-
-pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
-address IOttable
-comment "Print an n-ary table. Like print, but does not print oid column";
-
-pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
-address IOtotable
-comment "Print an n-ary table.";
-pattern ftable(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...):void
-address IOfotable 
-comment "Print an n-ary table to a file.";
-
-pattern print(val:any_1):void 
-address IOprint_val
-comment "Print a MAL value tuple .";
-pattern print(val:bat[:any_1,:any_2]):void 
-address IOprint_val
-comment "Print a MAL value tuple .";
-
-pattern prompt(val:any_1):void 
-address IOprompt_val
-comment "Print a MAL value without brackets.";
-
-pattern printf(fmt:str,val:any...):void 
-address IOprintf
-comment "Select default format ";
-pattern printf(fmt:str):void 
-address IOprintf
-comment "Select default format ";
-
-pattern printf(filep:streams,fmt:str,val:any...):void 
-address IOprintfStream
-comment "Select default format ";
-pattern printf(filep:streams,fmt:str):void 
-address IOprintfStream
-comment "Select default format ";
-
-command data(fname:str):str
-address IOdatafile
-comment "Signals receipt of tuples in a file fname.
-It returns the name of the file, if it still exists.";
-
-command export(b:bat[:any_1,:any_2], filepath:str):bit  
-address IOexport
-comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
- is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
-
-command import(b:bat[:any_1,:any_2], filepath:str) :bat[:any_1,:any_2] 
-address IOimport
-comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
- parameter BAT. You have to create it! Its signature must match the dump,
- else parsing errors will occur and FALSE is returned.";
-
-@h
 /*
- * @-
- * @* Implementation Code
- *
- * The polymorphic print commands are collected here.
- * Watch out, the order of definitions is crucial, because the most
- * specific should be introduced last.
- */
-#ifndef _PRINT_H_
-#define _PRINT_H_
-
-#include <mal.h>
-#include <mal_instruction.h>
-#include <mal_interpreter.h>
-
-typedef struct {
-	int up, down;
-} bipipe;
-
-typedef FILE *fstream;
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define io_export extern __declspec(dllimport)
-#else
-#define io_export extern __declspec(dllexport)
-#endif
-#else
-#define io_export extern
-#endif
-
-io_export str IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-int i, int order, int printhead, int printorderby);
-io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
-str hd, str tl, int nobat);
-io_export str IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
-str hd, str tl, int nobat);
-io_export str IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOprint_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-io_export str IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtableAll(stream *f, Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-int i, int order, int printhead, int printorder);
-io_export str IOotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOfotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOftable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOttable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str IOexport(bit *ret, int *bid, str *fnme);
-io_export str IOdatafile(str *ret, str *fnme);
-io_export str IOimport(int *ret, int *bid, str *fnme);
-io_export str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-io_export str io_stderr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _PRINT_H_ */
-
-@c
-/*
- * @+ Printing
+ * Printing
  * The print commands are implemented as single instruction rules,
  * because they need access to the calling context.
  * At a later stage we can look into the issues related to
@@ -323,7 +171,6 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
  * The IOprintf_() gets a format str, and a sequence of (ptr,int) parameters
  * containing values and their type numbers. The printf() proved to be a
  * great risk; people formatting badly their "%s" format strings were crashing
@@ -332,44 +179,45 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * New implementation that repeatedly invokes sprintf => hacking the va_alist
  * for using vfsprintf proved to be too compiler-dependent (OLD approach).
  */
-@= writemem
-	if (dst+@1 > buf+size) {
-		ptrdiff_t offset = dst - buf;
-		do {
-			size *= 2;
-		} while (dst+@1 > buf+size);
-		buf = GDKrealloc(buf, size);
-		dst = buf + offset;
+#define writemem(X1)\
+	if (dst+X1 > buf+size) {\
+		ptrdiff_t offset = dst - buf;\
+		do {\
+			size *= 2;\
+		} while (dst+X1 > buf+size);\
+		buf = GDKrealloc(buf, size);\
+		dst = buf + offset;\
 	}
-@= sprintf
-	if (width > adds) {
-		str newadd;
-		newadd = GDKrealloc(add, width + 10);
-		if (newadd != NULL) {
-			adds = width + 10;
-			add = newadd;
-		}
+
+#define sprintf(X1)\
+	if (width > adds) {\
+		str newadd;\
+		newadd = GDKrealloc(add, width + 10);\
+		if (newadd != NULL) {\
+			adds = width + 10;\
+			add = newadd;\
+		}\
+	}\
+	n = snprintf(add, adds, meta, X1);\
+	while (n < 0 || (size_t) n >= adds) {\
+		size_t newadds;\
+		str newadd;\
+\
+		if (n >= 0)     /* glibc 2.1 */\
+			newadds = n + 1;   /* precisely what is needed */\
+		else            /* glibc 2.0 */\
+			newadds = n * 2;     /* twice the old size */\
+\
+		newadd = GDKrealloc(add, newadds);\
+		if (newadd == NULL)\
+			break;\
+\
+		adds = newadds;\
+		add = newadd;\
+		n = snprintf(add, adds, meta, X1);\
 	}
-	n = snprintf(add, adds, meta, @1);
-	while (n < 0 || (size_t) n >= adds) {
-		size_t newadds;
-		str newadd;
 
-		if (n >= 0)     /* glibc 2.1 */
-			newadds = n + 1;   /* precisely what is needed */
-		else            /* glibc 2.0 */
-			newadds = n * 2;     /* twice the old size */
 
-		newadd = GDKrealloc(add, newadds);
-		if (newadd == NULL)
-			break;
-
-		adds = newadds;
-		add = newadd;
-		n = snprintf(add, adds, meta, @1);
-	}
-@
-@c
 static char toofew_error[80] = OPERATION_FAILED " At least %d parameter(s) expected.\n";
 static char format_error[80] = OPERATION_FAILED " Error in format before param %d.\n";
 static char type_error[80] = OPERATION_FAILED " Illegal type in param %d.\n";
@@ -456,7 +304,7 @@ IOprintf_(str *res, str format, ...)
 				}
 				*(++ctrg) = 's';
 				*(++ctrg) = 0;
-				@:sprintf(niltext)@
+				sprintf(niltext);
 			} else if (strchr("cdiouxX", *cur) && !extra) {
 				int ival;
 
@@ -479,7 +327,7 @@ IOprintf_(str *res, str format, ...)
 					va_end(ap);
 					return_error(type_error);
 				}
-				@:sprintf(ival)@
+				sprintf(ival);
 			} else if (strchr("diouxX", *cur)) {
 #ifdef NATIVE_WIN32
 				ptrdiff_t i;
@@ -525,7 +373,7 @@ IOprintf_(str *res, str format, ...)
 				meta[extra + 1] = '6';
 				meta[extra + 2] = '4';
 #endif
-				@:sprintf(lval)@
+				sprintf(lval);
 			} else if (strchr("feEgG", *cur)) {
 				dbl dval;
 
@@ -538,7 +386,7 @@ IOprintf_(str *res, str format, ...)
 					return_error(type_error);
 				}
 				width += (1 + prec);
-				@:sprintf(dval)@
+				sprintf(dval);
 			} else if (*cur == 's') {
 				int length;
 
@@ -556,13 +404,13 @@ IOprintf_(str *res, str format, ...)
 					length = prec;
 				if ((size_t) length > width)
 					width = (size_t) length;
-				@:sprintf(p)@
+				sprintf(p);
 			} else {
 				va_end(ap);
 				return_error(format_error);
 			}
 			width = strlen(add);
-			@:writemem(width)@
+			writemem(width);
 			memcpy(dst, add, width);
 			dst += width;
 			paramseen = NULL;
@@ -575,12 +423,12 @@ IOprintf_(str *res, str format, ...)
 				dotseen = prec = 0;
 				width = 0;
 			} else {
-				@:writemem(1)@
+				writemem(1);
 				*dst++ = *cur;
 			}
 		} else {
 			escaped = 0;
-			@:writemem(1)@
+			writemem(1);
 			*dst++ = *cur;
 		}
 	}
@@ -593,7 +441,7 @@ IOprintf_(str *res, str format, ...)
 */
 	va_end(ap);
 
-	@:writemem(1)@
+	writemem(1);
 	*dst = 0;
 	*res = buf;
 	GDKfree(add);
@@ -704,7 +552,6 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 /*
- * @-
  * The table printing routine implementations rely on the multiprintf.
  * They merely differ in destination and order prerequisite
  */
@@ -790,16 +637,13 @@ IOtotable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @+ Bulk export/loading
+ * Bulk export/loading
  * To simplify conversion between versions and to interface with other
  * applications, we use a simple import/export operation.
  *
  * The conversion routine assumes space in the buffer for storing the result.
  */
-@include prelude.mx
-@c
 /*
- * @-
  * A BAT can be saved in Monet format using the export command.
  * It is of particular use in preparing an ASCII version for migration.
  * The exported file is saved in the context of the directory
@@ -852,7 +696,6 @@ IOexport(bit *ret, int *bid, str *fnme)
 }
 
 /*
- * @-
  * The import command reads a single BAT from an ASCII file. It assumes
  * a layout compatible with that produced by print or export.
  */
@@ -879,7 +722,6 @@ IOimport(int *ret, int *bid, str *fnme)
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 	/*
-	 * @-
 	 * Open the file. Memory map it to minimize buffering problems.
 	 */
 	if (fp == NULL) {
@@ -926,10 +768,7 @@ IOimport(int *ret, int *bid, str *fnme)
 		}
 
 	}
-	/*
-	 * @-
-	 * Parse a line. Copy it into a buffer. Concat broken lines with a slash.
-	 */
+	/* Parse a line. Copy it into a buffer. Concat broken lines with a slash.  */
 	while (cur < end) {
 		str dst = buf, src = cur, p = strchr(cur, '\n');
 		size_t l = p - cur;
@@ -938,7 +777,13 @@ IOimport(int *ret, int *bid, str *fnme)
 			p = end;
 		} else
 			while (src[l - 1] == '\\') {
-				@:memcpy@
+				if (buf+bufsize < dst+l) {
+					size_t len = dst - buf;
+					size_t inc = (size_t) ((dst+l) - buf);
+					buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
+					dst = buf + len;
+				}
+				memcpy(dst, src, l-1);
 				dst += l - 1;
 				src += l + 1;
 				if ((p = strchr(src, '\n')) == 0) {
@@ -947,11 +792,7 @@ IOimport(int *ret, int *bid, str *fnme)
 				}
 				l = p - src;
 			}
-		@:memcpy@
-		/*
-		 * @-
-		 */
-@= memcpy
+		
 		if (buf+bufsize < dst+l) {
 			size_t len = dst - buf;
 			size_t inc = (size_t) ((dst+l) - buf);
@@ -959,23 +800,15 @@ IOimport(int *ret, int *bid, str *fnme)
 			dst = buf + len;
 		}
 		memcpy(dst, src, l-1);
-@
-@c
 		dst[l] = 0;
 		cur = p + 1;
-		/*
-		 * @-
-		 * Parse the line, and insert a BUN.
-		 */
+		/* Parse the line, and insert a BUN.  */
 		for (p = buf; *p && GDKisspace(*p); p++)
 			;
 		if (*p == '#')
 			continue;
-			/*
-			 * @-
-			 */
-@= parsevalue
-		for (;*p && *p != @2; p++);
+
+		for (;*p && *p != '['; p++);
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
 		if (*p == 0) {
 			char msg[BUFSIZ];
@@ -983,15 +816,20 @@ IOimport(int *ret, int *bid, str *fnme)
 			snprintf(msg,BUFSIZ,"error in input %s",buf);
 			throw(MAL,  "io.import", "%s", msg);
 		}
-		p += @1(p, @3, @4);
-@
-@c
-		@:parsevalue(hconvert,'[',&lh,(ptr *) &h)@
-		@:parsevalue(tconvert,COMMA,&lt,(ptr *) &t)@
+		p += hconvert(p, &lh, (ptr*)&h);
+
+		for (;*p && *p != COMMA; p++);
+		if (*p) for (p++; *p && GDKisspace(*p); p++);
+		if (*p == 0) {
+			char msg[BUFSIZ];
+			BBPunfix(*ret=b->batCacheid);
+			snprintf(msg,BUFSIZ,"error in input %s",buf);
+			throw(MAL,  "io.import", "%s", msg);
+		}
+		p += tconvert(p, &lt, (ptr*)&lt);
 		BUNins(b, h, t, FALSE);
 
 /*
- * @-
  * Unmap already parsed memory, to keep the memory usage low.
  */
 #ifndef WIN32
@@ -1002,10 +840,7 @@ IOimport(int *ret, int *bid, str *fnme)
 		}
 #endif
 	}
-	/*
-	 * @-
-	 * Cleanup and exit. Return the filled BAT.
-	 */
+	/* Cleanup and exit. Return the filled BAT.  */
 	if (h)
 		GDKfree(h);
 	if (t)

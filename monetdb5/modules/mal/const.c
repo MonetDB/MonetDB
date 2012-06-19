@@ -1,30 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f const
-
-@c
 /*
- * @a Martin Kersten
- * @v 0.1
- * @+ Constants
- * The @code{const} module provides a box abstraction store for global constants.
+ *The contents of this file are subject to the MonetDB Public License
+ *Version 1.1 (the "License"); you may not use this file except in
+ *compliance with the License. You may obtain a copy of the License at
+ *http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ *Software distributed under the License is distributed on an "AS IS"
+ *basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ *License for the specific language governing rights and limitations
+ *under the License.
+ *
+ *The Original Code is the MonetDB Database System.
+ *
+ *The Initial Developer of the Original Code is CWI.
+ *Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ *Copyright August 2008-2012 MonetDB B.V.
+ *All Rights Reserved.
+*/
+/*
+ * author Martin Kersten
+ * Constants
+ * The const module provides a box abstraction store for global constants.
  * Between sessions, the value of the constants is saved on disk
  * in the form of a simple MAL program, which is scanned and made
  * available by opening the box.  A future implementation should
@@ -40,114 +35,27 @@ All Rights Reserved.
  * The constant box is protected with a simple authorization scheme,
  * prohibiting all updates unless issued by the system administrator.
  */
-@mal
-module const;
-
-pattern open():void
-address CSTopen
-comment "Locate and open the constant box.";
-pattern close():void
-address CSTclose
-comment "Close the constant box.";
-pattern destroy():void
-address CSTdestroy
-comment "Destroy the box.";
-pattern take(name:str):any_1 
-address CSTtake
-comment "Take a variable out of the box.";
-pattern deposit(name:str,val:any_1) :void 		
-address CSTdeposit
-comment "Add a variable to the box.";
-
-pattern releaseAll():void 
-address CSTreleaseAll
-comment "Release all variables in the box.";
-pattern release(name:str) :void 		
-address CSTrelease
-comment "Release a constant value.";
-pattern release(name:any_1):void 
-address CSTrelease
-comment "Release a constant value.";
-pattern toString(name:any_1):str 
-address CSTtoString
-comment "Get the string representation of an element in the box.";
-pattern discard(name:any_1) :void 		
-address CSTdiscard
-comment "Release the const from the box.";
-pattern newIterator()(:lng,:str)
-address CSTnewIterator
-comment "Locate next element in the box.";
-pattern hasMoreElements()(:lng,:str)
-address CSThasMoreElements
-comment "Locate next element in the box.";
-
-pattern prelude():void 
-address CSTprelude
-comment "Initialize the const box";
-
-command epiloque():void 
-address CSTepilogue
-comment "Cleanup the const box";
-
-const.prelude();
-@h
-/*
- * @-
- * @+ Implementation
- */
-#ifndef _CONST_H
-#define _CONST_H
-#include "clients.h"
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_authorize.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define const_export extern __declspec(dllimport)
-#else
-#define const_export extern __declspec(dllexport)
-#endif
-#else
-#define const_export extern
-#endif
-
-const_export str CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export str CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-const_export  str CSTepilogue(int *ret);
-#endif /* _CONST_H */
-/*
- * @- Module initializaton
- * The content of this box my only be changed by the Administrator.
- */
-@= authorize
-	{
-		str tmp = NULL;
-		rethrow("const.@1", tmp, AUTHrequireAdmin(&cntxt));
-	}
-@
- * @-
-@= insertBox
-	msg = @2;
-	insertToBox(box,@1,msg);
-	GDKfree(msg);
-@
-@c
 #include "monetdb_config.h"
 #include "const.h"
 
+#define authorize(X1) \
+	{ str tmp = NULL; rethrow("const."X1, tmp, AUTHrequireAdmin(&cntxt)); }
 
+#define insertBox(X1,X2)\
+	msg = X2;\
+	insertToBox(box,X1,msg);\
+	GDKfree(msg);
+
+/*
+ * Access to a box calls for resolving the first parameter
+ * to a named box.
+ */
+#define OpenBox(X1)\
+	authorize(X1);\
+	box= findBox("const");\
+	if( box ==0) \
+	throw(MAL, "const."X1, BOX_CLOSED);
+ 
 str
 CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -157,7 +65,7 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(prelude)@
+	authorize("prelude");
 	box = openBox("const");
 	if (box == 0)
 		throw(MAL, "const.prelude", BOX_CLOSED);
@@ -187,7 +95,7 @@ CSTepilogue(int *ret)
 }
 
 /*
- * @- Operator implementation
+ * Operator implementation
  */
 str
 CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -196,7 +104,7 @@ CSTopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(open)@
+	authorize("open");
 	if (openBox("const") != 0)
 		return MAL_SUCCEED;
 	throw(MAL, "const.open", BOX_CLOSED);
@@ -209,7 +117,7 @@ CSTclose(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:authorize(close)@
+	authorize("close");
 	if (closeBox("const", TRUE) == 0)
 		return MAL_SUCCEED;
 	throw(MAL, "const.close", BOX_CLOSED);
@@ -224,26 +132,11 @@ CSTdestroy(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:OpenBox(destroy)@
+	OpenBox("destroy");
 	destroyBox("const");
 	return MAL_SUCCEED;
 }
 
-/*
- * @-
- * Access to a box calls for resolving the first parameter
- * to a named box.
- */
-@= OpenBox
-	@:authorize(@1)@
-	box= findBox("const");
-	if( box ==0) 
-	throw(MAL, "const.@1", BOX_CLOSED);
-@
-@c
-/*
- * @-
- */
 str
 CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -252,7 +145,7 @@ CSTdeposit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Box box;
 
 	(void) cntxt;
-	@:OpenBox(deposit)@
+	OpenBox("deposit");
 	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,2);
 	if (depositBox(box, name, getArgType(mb,pci,1), v))
@@ -269,7 +162,7 @@ CSTtake(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr v;
 
 	(void) cntxt;
-	@:OpenBox(take)@
+	OpenBox("take");
 	name = *(str*) getArgReference(stk, pci, 1);
 	v = getArgReference(stk,pci,0);
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
@@ -287,7 +180,7 @@ CSTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 
-	@:OpenBox(release)@
+	OpenBox("release");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (releaseBox(box, name))
 		throw(MAL, "const.release", OPERATION_FAILED);
@@ -303,7 +196,7 @@ CSTreleaseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;		/* fool compiler */
-	@:OpenBox(release)@
+	OpenBox("release");
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
@@ -316,7 +209,7 @@ CSTdiscard(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = *(str*) getArgReference(stk, pci, 1);
 	if (discardBox(box, name) == 0)
 		throw(MAL, "const.discard", OPERATION_FAILED);
@@ -333,7 +226,7 @@ CSTtoString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(toString)@
+	OpenBox("toString");
 	nme = *(str*) getArgReference(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
@@ -359,7 +252,7 @@ CSTnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if ( nextBoxElement(box, cursor, v) < 0)
@@ -376,7 +269,7 @@ CSThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if ( nextBoxElement(box, cursor, v) < 0)

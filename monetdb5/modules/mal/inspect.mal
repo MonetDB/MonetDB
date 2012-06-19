@@ -1,0 +1,79 @@
+module inspect;
+
+pattern getDefinition(mod:str,fcn:str) :bat[:str,:str] 
+address INSPECTgetDefinition
+comment "Returns a string representation of a specific function.";
+pattern getSignature(mod:str,fcn:str) :bat[:str,:str] 
+address INSPECTgetSignature
+comment "Returns the function signature(s).";
+pattern getAddress(mod:str,fcn:str) :bat[:str,:str] 
+address INSPECTgetAddress
+comment "Returns the function signature(s).";
+pattern getComment(mod:str,fcn:str) :bat[:str,:str]
+address INSPECTgetComment
+comment "Returns the function help information.";
+pattern getSource(mod:str,fcn:str):str
+address INSPECTgetSource
+comment "Return the original input for a function.";
+
+pattern getKind():bat[:oid,:str]
+address INSPECTgetkind
+comment "Obtain the instruction kind.";
+pattern getModule():bat[:oid,:str]
+address INSPECTgetAllModules
+comment "Obtain the function name.";
+pattern getFunction():bat[:oid,:str]
+address INSPECTgetAllFunctions
+comment "Obtain the function name.";
+pattern getSignatures():bat[:oid,:str]
+address INSPECTgetAllSignatures
+comment "Obtain the function signatures.";
+pattern getAddresses():bat[:oid,:str]
+address INSPECTgetAllAddresses
+comment "Obtain the function address.";
+
+
+pattern getSize():lng
+address INSPECTgetSize
+comment "Return the storage size for the current function (in bytes).";
+pattern getSize(mod:str):bat[:str,:lng]
+address INSPECTgetModuleSize
+comment "Return the storage size for a module (in bytes).";
+pattern getSize(mod:str,fcn:str):lng
+address INSPECTgetFunctionSize
+comment "Return the storage size for a function (in bytes).";
+
+pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
+address INSPECTtypeName
+comment "Return the concrete type of a variable (expression).";
+pattern getType(v:any_1) :str 
+address INSPECTtypeName
+comment "Return the concrete type of a variable (expression).";
+
+command getTypeName(v:int):str 
+address INSPECTtypename
+comment "Get the type name associated with a type id.";
+pattern getTypeIndex(v:bat[:any_1,:any_2]) (ht:int, tt:int)
+address INSPECTtypeIndex
+comment "Return the type index of a BAT head and tail.";
+pattern getTypeIndex(v:any_1):int 
+address INSPECTtypeIndex
+comment "Return the type index of a variable. For BATs, return
+the type index for its tail.";
+
+pattern equalType(l:any, r:any):bit
+address INSPECTequalType
+comment "Return true if both operands are of the same type";
+command getAtomNames():bat[:int,:str] 
+address INSPECTatom_names
+comment "Collect a BAT with the atom names.";
+command getAtomSuper():bat[:int,:str] 
+address INSPECTatom_sup_names
+comment "Collect a BAT with the atom names.";
+command getAtomSizes():bat[:int,:int] 
+address INSPECTatom_sizes
+comment "Collect a BAT with the atom sizes.";
+
+command getEnvironment():bat[:str,:str]
+address INSPECTgetEnvironment
+comment "Collect the environment variables.";

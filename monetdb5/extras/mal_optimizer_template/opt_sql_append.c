@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f opt_sql_append
-
-@c
 /*
  * @a S. Manegold
  * @- SQL append show-case optimizer
@@ -81,43 +78,10 @@ All Rights Reserved.
  * It is mandatory to make optimizers part of the 'optimizer' module.
  * This allows the optimizer implementation to find them and react on them.
 */
-@mal
-pattern optimizer.sql_append():str
-address OPTsql_append
-comment "Avoid extra BAT copy with sql.append() whenever possible.";
-
-pattern optimizer.sql_append(mod:str, fcn:str):str
-address OPTsql_append
-comment "Avoid extra BAT copy with sql.append() whenever possible.";
-
-@h
-#ifndef _OPT_SQL_APPEND_
-#define _OPT_SQL_APPEND_
-
-#ifdef WIN32
-#ifndef LIBOPT_SQL_APPEND
-#define opt_sql_append_export extern __declspec(dllimport)
-#else
-#define opt_sql_append_export extern __declspec(dllexport)
-#endif
-#else
-#define opt_sql_append_export extern
-#endif
-
-#include "opt_prelude.h"
-
-/*@:exportOptimizer(sql_append)@*/
-opt_sql_append_export str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-
-#define DEBUG_OPT_SQL_APPEND 61
-#define OPTDEBUGsql_append if (optDebug & ((lng)1 << DEBUG_OPT_SQL_APPEND))
-
-#endif /* _OPT_SQL_APPEND_ */
-
-@c
 #include "monetdb_config.h"
 #include "opt_sql_append.h"
 #include "mal_interpreter.h"
+#include "opt_statistics.h"
 
 /* focus initially on persistent tables. */
 
@@ -276,8 +240,71 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 /* optimizers have to be registered in the optcatalog in opt_support.c.
  * you have to path the file accordingly.
  */
-@include ../../optimizer/optimizerWrapper.mx
-@c
-#include "opt_statistics.h"
 
-@:wrapOptimizer(sql_append,OPT_CHECK_ALL)@
+/* Optimizer code wrapper
+The optimizer wrapper code is the interface to the MAL optimizer calls.
+It prepares the environment for the optimizers to do their work and removes
+the call itself to avoid endless recursions.
+
+Before an optimizer is finished, it should leave a clean state behind.
+Moreover, the information of the optimization step is saved for
+debugging and analysis.
+
+The wrapper expects the optimizers to return the number of
+actions taken, i.e. number of succesful changes to the code.
+*/
+
+str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str modnme;
+	str fcnnme;
+	str msg= MAL_SUCCEED;
+	Symbol s= NULL;
+	lng t,clk= GDKusec();
+	int actions = 0;
+
+	optimizerInit();
+	if( p )
+		removeInstruction(mb, p);
+	OPTDEBUGsql_append mnstr_printf(cntxt->fdout,"=APPLY OPTIMIZER sql_append\n");
+	if( p && p->argc > 1 ){
+		if( getArgType(mb,p,1) != TYPE_str ||
+			getArgType(mb,p,2) != TYPE_str ||
+			!isVarConstant(mb,getArg(p,1)) ||
+			!isVarConstant(mb,getArg(p,2))
+		) {
+			throw(MAL, "optimizer.sql_append", ILLARG_CONSTANTS);
+		}
+		if( stk != 0){
+			modnme= *(str*)getArgReference(stk,p,1);
+			fcnnme= *(str*)getArgReference(stk,p,2);
+		} else {
+			modnme= getArgDefault(mb,p,1);
+			fcnnme= getArgDefault(mb,p,2);
+		}
+		s= findSymbol(cntxt->nspace, putName(modnme,strlen(modnme)),putName(fcnnme,strlen(fcnnme)));
+
+		if( s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "%s.%s",modnme,fcnnme);
+			throw(MAL, "optimizer.sql_append", RUNTIME_OBJECT_UNDEFINED ":%s", buf);
+		}
+		mb = s->def;
+		stk= 0;
+	} 
+	if( mb->errors ){
+		/* when we have errors, we still want to see them */
+		addtoMalBlkHistory(mb,"sql_append");
+		return MAL_SUCCEED;
+	}
+	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
+	msg= optimizerCheck(cntxt, mb, "optimizer.sql_append", actions, t=(GDKusec() - clk),OPT_CHECK_ALL);
+	OPTDEBUGsql_append {
+		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
+		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
+	}
+	DEBUGoptimizers
+		mnstr_printf(cntxt->fdout,"#opt_reduce: " LLFMT " ms\n",t);
+	QOTupdateStatistics("sql_append",actions,t);
+	addtoMalBlkHistory(mb,"sql_append");
+	return msg;
+}

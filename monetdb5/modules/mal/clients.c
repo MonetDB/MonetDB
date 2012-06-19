@@ -1,171 +1,33 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f clients
-
-@c
 /*
- * @a Martin Kersten, Fabian Groffen
- * @v 0.2
- * @+ Client Management
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ * author Martin Kersten, Fabian Groffen
+ * Client Management
  * Each online client is represented with an entry in the clients table.
  * The client may inspect his record at run-time and partially change its
  * properties.
  * The administrator sees all client records and has the right to
  * adjust global properties.
  */
-@mal
-module clients;
 
-pattern setListing(flag:int):int
-address CLTsetListing
-comment "Turn on/off echo of MAL instructions:
-	2 - show mal instruction,
-	4 - show details of type resolutoin, 
-	8 - show binding information.";
 
-pattern setHistory(s:str)
-address CLTsetHistory
-comment "Designate console history file for readline.";
-
-pattern getId():int
-address CLTgetClientId
-comment "Return a number that uniquely represents the current client.";
-
-pattern getInfo( ):bat[:str,:str] 
-address CLTInfo
-comment "Pseudo bat with client attributes.";
-
-pattern getScenario():str 
-address CLTgetScenario
-comment "Retrieve current scenario name.";
-pattern setScenario(msg:str):str 
-address CLTsetScenario
-comment "Switch to other scenario handler, return previous one.";
-
-pattern quit():void
-address CLTquit
-comment "Terminate the client session.";
-
-pattern quit(idx:int):void
-address CLTquit
-comment "Terminate the session for a single client using a soft error.
-It is the privilige of the console user.";
-
-# @-
-# Administrator operations
-command getLogins( ):bat[:int,:str] 
-address CLTLogin
-comment "Pseudo bat of client login time.";
-
-command getLastCommand( ):bat[:int,:str] 
-address CLTLastCommand
-comment "Pseudo bat of client's last command time.";
-
-command getActions( ):bat[:int,:int] 
-address CLTActions
-comment "Pseudo bat of client's command counts.";
-
-command getTime( ):bat[:int,:lng] 
-address CLTTime
-comment "Pseudo bat of client's total time usage(in usec).";
-
-command getUsers( ):bat[:int,:str] 
-address CLTusers
-comment "Pseudo bat of users logged in.";
-
-pattern stop(id:int)
-address CLTstop
-comment "Stop the query execution at the next eligble statement.";
-
-pattern suspend(id:int):void
-address CLTsuspend
-comment "Put a client process to sleep for some time.
-It will simple sleep for a second at a time, until
-the awake bit has been set in its descriptor";
-
-command wakeup(id:int):void
-address CLTwakeup
-comment "Wakeup a client process";
-
-pattern setTimeout(q:int,s:int):void
-address CLTsetTimeout
-comment "Abort a query after q seconds (q=0 means run undisturbed).
-The session timeout aborts the connection after spending too
-many seconds on query processing.";
-
-pattern getTimeout()(q:int,s:int)
-address CLTgetTimeout
-comment "A query is aborted after q seconds (q=0 means run undisturbed).
-The session timeout aborts the connection after spending too
-many seconds on query processing.";
-
-command shutdown(forced:bit):void
-address CLTshutdown
-comment "Close all client connections. If forced=false the
-clients are moved into FINISHING mode, which means that
-the process stops at the next cycle of the scenario.
-If forced=true all client processes are immediately killed";
-# @-
-@include prelude.mx
-@h
-/*
- * @+ Monet client data
- * Portions of the client record can be directly obtained for
- * backward compatibility. The routine clientInfo provides more
- * detailed information.
- */
-#ifndef _CLIENTS_H
-#define _CLIENTS_H
-#include "mal.h"
-#include "mal_interpreter.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define clients_export extern __declspec(dllimport)
-#else
-#define clients_export extern __declspec(dllexport)
-#endif
-#else
-#define clients_export extern
-#endif
-
-clients_export str CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTusers(int *ret);
-clients_export str CLTsetHistory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTLogin(int *ret);
-clients_export str CLTLastCommand(int *ret);
-clients_export str CLTActions(int *ret);
-clients_export str CLTTime(int *ret);
-clients_export str CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTgetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-clients_export str CLTwakeup(int *ret, int *id);
-
-clients_export str CLTshutdown(int *ret, bit *forced);
-@c
 #include "monetdb_config.h"
 #include "clients.h"
 #include "mcrypt.h"
@@ -178,6 +40,19 @@ clients_export str CLTshutdown(int *ret, bit *forced);
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
+
+static void
+pseudo(int *ret, BAT *b, str X1,str X2) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 
 str
 CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -280,7 +155,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	CLTtimeConvert((time_t) cntxt->login,s);
 	BUNins(b, "login", s, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,info,)@
+	pseudo(ret,b,"client","info");
 	return MAL_SUCCEED;
 }
 
@@ -301,7 +176,7 @@ CLTLogin(int *ret)
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,login,)@
+	pseudo(ret,b,"client","login");
 	return MAL_SUCCEED;
 }
 
@@ -322,7 +197,7 @@ CLTLastCommand(int *ret)
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,lastcommand,)@
+	pseudo(ret,b,"client","lastcommand");
 	return MAL_SUCCEED;
 }
 
@@ -341,7 +216,7 @@ CLTActions(int *ret)
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,actions,)@
+	pseudo(ret,b,"client","actions");
 	return MAL_SUCCEED;
 }
 str
@@ -359,12 +234,11 @@ CLTTime(int *ret)
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,usec,)@
+	pseudo(ret,b,"client","usec");
 	return MAL_SUCCEED;
 }
 
 /*
- * @-
  * Produce a list of clients currently logged in
  */
 str
@@ -381,7 +255,7 @@ CLTusers(int *ret)
 			b = BUNins(b, &i, local_itoa((int)c->user), FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(client,users,)@
+	pseudo(ret,b,"client","users");
 	return MAL_SUCCEED;
 }
 
@@ -480,16 +354,6 @@ CLTwakeup(int *ret, int *id)
     return MCawakeClient(*id);
 }
 
-@mal
-# @+ User administration
-# These commands (except changePassword, changeUsername and
-# checkPermission) can only be executed by the administrator.
-command md5sum(pw:str):str
-address CLTmd5sum
-comment "Return hex string representation of the MD5 hash of the given string";
-@h
-clients_export str CLTmd5sum(str *ret, str *pw);
-@c
 str CLTmd5sum(str *ret, str *pw) {
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
@@ -497,13 +361,6 @@ str CLTmd5sum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-@mal
-command sha1sum(pw:str):str
-address CLTsha1sum
-comment "Return hex string representation of the SHA-1 hash of the given string";
-@h
-clients_export str CLTsha1sum(str *ret, str *pw);
-@c
 str CLTsha1sum(str *ret, str *pw) {
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
@@ -511,13 +368,6 @@ str CLTsha1sum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-@mal
-command ripemd160sum(pw:str):str
-address CLTripemd160sum
-comment "Return hex string representation of the RIPEMD160 hash of the given string";
-@h
-clients_export str CLTripemd160sum(str *ret, str *pw);
-@c
 str CLTripemd160sum(str *ret, str *pw) {
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
@@ -525,13 +375,6 @@ str CLTripemd160sum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-@mal
-command sha2sum(pw:str, bits:int):str
-address CLTsha2sum
-comment "Return hex string representation of the SHA-2 hash with bits of the given string";
-@h
-clients_export str CLTsha2sum(str *ret, str *pw, int *bits);
-@c
 str CLTsha2sum(str *ret, str *pw, int *bits) {
 	char *mret;
 	switch (*bits) {
@@ -556,13 +399,6 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 	return MAL_SUCCEED;
 }
 
-@mal
-command backendsum(pw:str):str
-address CLTbackendsum
-comment "Return hex string representation of the currently used hash of the given string";
-@h
-clients_export str CLTbackendsum(str *ret, str *pw);
-@c
 str CLTbackendsum(str *ret, str *pw) {
 	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
@@ -570,13 +406,6 @@ str CLTbackendsum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-@mal
-pattern addUser(nme:str, pw:str):oid
-address CLTaddUser
-comment "Allow user with password access to the given scenarios";
-@h
-clients_export str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	oid *ret = (oid *)getArgReference(stk, pci, 0);
 	str *usr = (str *)getArgReference(stk, pci, 1);
@@ -587,13 +416,6 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHaddUser(ret, &cntxt, usr, pw);
 }
 
-@mal
-pattern removeUser(nme:str):void
-address CLTremoveUser
-comment "Remove the given user from the system";
-@h
-clients_export str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr;
 	(void)mb;
@@ -603,13 +425,6 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHremoveUser(&cntxt, usr);
 }
 
-@mal
-pattern getUsername():str
-address CLTgetUsername
-comment "Return the username of the currently logged in user";
-@h
-clients_export str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
 	(void)mb;
@@ -617,13 +432,6 @@ str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHgetUsername(ret, &cntxt);
 }
 
-@mal
-pattern getPasswordHash(user:str):str
-address CLTgetPasswordHash
-comment "Return the password hash of the given user";
-@h
-clients_export str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = (str *)getArgReference(stk, pci, 0);
 	str *user = (str *)getArgReference(stk, pci, 1);
@@ -633,13 +441,6 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	return AUTHgetPasswordHash(ret, &cntxt, user);
 }
 
-@mal
-pattern changeUsername(old:str, new:str):void
-address CLTchangeUsername
-comment "Change the username of the user into the new string";
-@h
-clients_export str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
@@ -649,13 +450,6 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHchangeUsername(&cntxt, old, new);
 }
 
-@mal
-pattern changePassword(old:str, new:str):void
-address CLTchangePassword
-comment "Change the password for the current user";
-@h
-clients_export str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
@@ -665,13 +459,6 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHchangePassword(&cntxt, old, new);
 }
 
-@mal
-pattern setPassword(user:str, pass:str):void
-address CLTsetPassword
-comment "Set the password for the given user";
-@h
-clients_export str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *new = (str *)getArgReference(stk, pci, 2);
@@ -681,13 +468,6 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHsetPassword(&cntxt, usr, new);
 }
 
-@mal
-pattern checkPermission(usr:str, pw:str):void
-address CLTcheckPermission
-comment "Check permission for a user, requires hashed password (backendsum)";
-@h
-clients_export str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = (str *)getArgReference(stk, pci, 1);
 	str *pw = (str *)getArgReference(stk, pci, 2);
@@ -704,13 +484,6 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	return msg;
 }
 
-@mal
-pattern getUsers():bat[:oid,:str]
-address CLTgetUsers
-comment "return a BAT with user id and name available in the system";
-@h
-clients_export str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-@c
 str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	bat *ret = (bat *)getArgReference(stk, pci, 0);
 	BAT *r = NULL;
@@ -730,5 +503,3 @@ str CLTshutdown(int *ret, bit *forced) {
 	(void) forced;
 	throw(MAL,"clients.shutdown", PROGRAM_NYI);
 }
-@h
-#endif /* _CLIENTS_H */

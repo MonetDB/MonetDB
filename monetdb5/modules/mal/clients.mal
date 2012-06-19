@@ -1,0 +1,149 @@
+module clients;
+
+pattern setListing(flag:int):int
+address CLTsetListing
+comment "Turn on/off echo of MAL instructions:
+	2 - show mal instruction,
+	4 - show details of type resolutoin, 
+	8 - show binding information.";
+
+pattern setHistory(s:str)
+address CLTsetHistory
+comment "Designate console history file for readline.";
+
+pattern getId():int
+address CLTgetClientId
+comment "Return a number that uniquely represents the current client.";
+
+pattern getInfo( ):bat[:str,:str] 
+address CLTInfo
+comment "Pseudo bat with client attributes.";
+
+pattern getScenario():str 
+address CLTgetScenario
+comment "Retrieve current scenario name.";
+pattern setScenario(msg:str):str 
+address CLTsetScenario
+comment "Switch to other scenario handler, return previous one.";
+
+pattern quit():void
+address CLTquit
+comment "Terminate the client session.";
+
+pattern quit(idx:int):void
+address CLTquit
+comment "Terminate the session for a single client using a soft error.
+It is the privilige of the console user.";
+
+# @-
+# Administrator operations
+command getLogins( ):bat[:int,:str] 
+address CLTLogin
+comment "Pseudo bat of client login time.";
+
+command getLastCommand( ):bat[:int,:str] 
+address CLTLastCommand
+comment "Pseudo bat of client's last command time.";
+
+command getActions( ):bat[:int,:int] 
+address CLTActions
+comment "Pseudo bat of client's command counts.";
+
+command getTime( ):bat[:int,:lng] 
+address CLTTime
+comment "Pseudo bat of client's total time usage(in usec).";
+
+command getUsers( ):bat[:int,:str] 
+address CLTusers
+comment "Pseudo bat of users logged in.";
+
+pattern stop(id:int)
+address CLTstop
+comment "Stop the query execution at the next eligble statement.";
+
+pattern suspend(id:int):void
+address CLTsuspend
+comment "Put a client process to sleep for some time.
+It will simple sleep for a second at a time, until
+the awake bit has been set in its descriptor";
+
+command wakeup(id:int):void
+address CLTwakeup
+comment "Wakeup a client process";
+
+pattern setTimeout(q:int,s:int):void
+address CLTsetTimeout
+comment "Abort a query after q seconds (q=0 means run undisturbed).
+The session timeout aborts the connection after spending too
+many seconds on query processing.";
+
+pattern getTimeout()(q:int,s:int)
+address CLTgetTimeout
+comment "A query is aborted after q seconds (q=0 means run undisturbed).
+The session timeout aborts the connection after spending too
+many seconds on query processing.";
+
+command shutdown(forced:bit):void
+address CLTshutdown
+comment "Close all client connections. If forced=false the
+clients are moved into FINISHING mode, which means that
+the process stops at the next cycle of the scenario.
+If forced=true all client processes are immediately killed";
+
+# @+ User administration
+# These commands (except changePassword, changeUsername and
+# checkPermission) can only be executed by the administrator.
+command md5sum(pw:str):str
+address CLTmd5sum
+comment "Return hex string representation of the MD5 hash of the given string";
+
+command sha1sum(pw:str):str
+address CLTsha1sum
+comment "Return hex string representation of the SHA-1 hash of the given string";
+
+command sha2sum(pw:str, bits:int):str
+address CLTsha2sum
+comment "Return hex string representation of the SHA-2 hash with bits of the given string";
+command ripemd160sum(pw:str):str
+address CLTripemd160sum
+comment "Return hex string representation of the RIPEMD160 hash of the given string";
+
+command backendsum(pw:str):str
+address CLTbackendsum
+comment "Return hex string representation of the currently used hash of the given string";
+
+pattern addUser(nme:str, pw:str):oid
+address CLTaddUser
+comment "Allow user with password access to the given scenarios";
+
+pattern removeUser(nme:str):void
+address CLTremoveUser
+comment "Remove the given user from the system";
+
+pattern getUsername():str
+address CLTgetUsername
+comment "Return the username of the currently logged in user";
+
+pattern getPasswordHash(user:str):str
+address CLTgetPasswordHash
+comment "Return the password hash of the given user";
+
+pattern changeUsername(old:str, new:str):void
+address CLTchangeUsername
+comment "Change the username of the user into the new string";
+
+pattern changePassword(old:str, new:str):void
+address CLTchangePassword
+comment "Change the password for the current user";
+
+pattern setPassword(user:str, pass:str):void
+address CLTsetPassword
+comment "Set the password for the given user";
+
+pattern checkPermission(usr:str, pw:str):void
+address CLTcheckPermission
+comment "Check permission for a user, requires hashed password (backendsum)";
+
+pattern getUsers():bat[:oid,:str]
+address CLTgetUsers
+comment "return a BAT with user id and name available in the system";

@@ -1,29 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f mdb
-
-@c
 /*
- * @a Martin Kersten
- * @v 1
- * @+ MAL debugger interface
+ *The contents of this file are subject to the MonetDB Public License
+ *Version 1.1 (the "License"); you may not use this file except in
+ *compliance with the License. You may obtain a copy of the License at
+ *http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ *Software distributed under the License is distributed on an "AS IS"
+ *basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ *License for the specific language governing rights and limitations
+ *under the License.
+ *
+ *The Original Code is the MonetDB Database System.
+ *
+ *The Initial Developer of the Original Code is CWI.
+ *Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ *Copyright August 2008-2012 MonetDB B.V.
+ *All Rights Reserved.
+*/
+/*
+ * author Martin Kersten
+ * MAL debugger interface
  * This module provides access to the functionality offered
  * by the MonetDB debugger and interpreter status.
  * It is primarilly used in interactive sessions to activate
@@ -50,251 +45,27 @@ All Rights Reserved.
  * termination of the process. Similar, creation of the post-mortum
  * information may fail due to an inconsistent state or insufficient resources.
  */
-@mal
-module mdb;
 
-pattern start():void 
-address MDBstart
-comment "Start interactive debugger";
-pattern start(clientid:int):void 
-address MDBstart
-comment "Start interactive debugger on a client";
-pattern start(mod:str,fcn:str):void 
-address MDBstartFactory
-comment "Start interactive debugger on a running factory";
+#include "mdb.h"
 
-pattern stop():void
-address MDBstop
-comment "Stop the interactive debugger";
-
-pattern inspect(mod:str,fcn:str):void
-address MDBinspect
-comment "Run the debugger on a specific function";
-
-command modules():bat[:int,:str] 
-address CMDmodules
-comment "List available modules";
-
-pattern setTrap(mod:str, fcn:str, b:bit):void
-address MDBtrapFunction
-comment "Suspend upon a call to the MAL function.";
-
-pattern setTrap(idx:int):void
-address mdbTrapClient
-comment "Call debugger for a specific process.";
-
-pattern setTrace(b:bit):void
-address MDBsetTrace
-comment "Turn on/off tracing of current routine";
-
-pattern setTrace(b:str):void
-address MDBsetVarTrace
-comment "Turn on/off tracing of a variable ";
-
-pattern setCatch(b:bit):void
-address MDBsetCatch
-comment "Turn on/off catching exceptions";
-
-pattern setThread(b:bit):void
-address MDBsetThread
-comment "Turn on/off thread identity for debugger";
-
-pattern setTimer(b:bit):void
-address MDBsetTimer
-comment "Turn on/off performance timer for debugger";
-
-pattern setMemoryTrace(b:bit):void
-address MDBsetBigfoot
-comment "Turn on/off memory foot print tracer for debugger";
-
-pattern setFlow(b:bit):void
-address MDBsetFlow
-comment "Turn on/off memory flow debugger";
-
-pattern setMemory(b:bit):void
-address MDBsetMemory
-comment "Turn on/off memory statistics tracing.";
-
-pattern setIO(b:bit):void
-address MDBsetIO
-comment "Turn on/off io statistics tracing";
-
-pattern setCount(b:bit):void
-address MDBsetCount
-comment "Turn on/off bat count statistics tracing";
-
-command getDebug():int
-address MDBgetDebug
-comment "Get the kernel debugging bit-set.
-See the MonetDB configuration file for details";
-
-command setDebug(flg:str):int
-address MDBsetDebugStr
-comment "Set the kernel debugging bit-set and return its previous value.
-The recognized options are: threads, memory, properties,
-io, transactions, modules, algorithms, estimates, xproperties.";
-command setDebug(flg:int):int
-address MDBsetDebug
-comment "Set the kernel debugging bit-set and return its previous value.";
-
-command getException(s:str):str
-address MDBgetExceptionVariable
-comment "Extract the variable name from the exception message";
-command getReason(s:str):str
-address MDBgetExceptionReason
-comment "Extract the reason from the exception message";
-command getContext(s:str):str
-address MDBgetExceptionContext
-comment "Extract the context string from the exception message";
-
-pattern list():void
-address MDBlist
-comment "Dump the current routine on standard out.";
-pattern listMapi():void
-address MDBlistMapi
-comment "Dump the current routine on standard out with Mapi prefix.";
-pattern list(M:str,F:str):void
-address MDBlist3
-comment "Dump the routine M.F on standard out.";
-pattern List():void 
-address MDBlistDetail
-comment "Dump the current routine on standard out.";
-pattern List(M:str,F:str):void 
-address MDBlist3Detail
-comment "Dump the routine M.F on standard out.";
-pattern var():void 
-address MDBvar
-comment "Dump the symboltable of current routine on standard out.";
-pattern var(M:str,F:str):void 
-address MDBvar3
-comment "Dump the symboltable of routine M.F on standard out.";
-pattern lifespan(M:str,F:str):void
-address MDBlifespan
-comment "Dump the current routine lifespan information on standard out.";
-
-pattern grab():void
-address mdbGrab
-comment "Call debugger for a suspended process.";
-pattern trap():void
-address mdbTrap
-comment "A suspended process for debugging.";
-
-pattern dot(s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the current routine in a format recognizable by the command 'dot' to the file s";
-
-pattern dot(M:str,F:str,s:str):void 
-address MDBshowFlowGraph
-comment "Dump the data flow of the function 
-	M.F in a format recognizable by the 
-	command 'dot' on the file s";
-
-pattern getStackDepth():int 
-address MDBStkDepth
-comment "Return the depth of the calling stack.";
-
-pattern getStackFrame(i:int):bat[:str,:str] 
-address MDBgetStackFrameN;
-pattern getStackFrame():bat[:str,:str] 
-address MDBgetStackFrame
-comment "Collect variable binding of current (n-th) stack frame.";
-pattern getStackTrace():bat[:void,:str]
-address MDBStkTrace;
-
-pattern dump()
-address MDBdump
-comment "Dump instruction, stacktrace, and stack";
-
-pattern getDefinition():bat[:void,:str] 
-address MDBgetDefinition
-comment "Returns a string representation of the current function 
-	with typing information attached";
-
-	# @-
-	# @+ Implementation
-@include prelude.mx
-@h
-#ifndef _MDB_H
-#define _MDB_H
-#endif /* _MDB_H */
-@c
-#include "monetdb_config.h"
-#include "gdk.h"
-#include "mutils.h"
-#include <stdarg.h>
-#include <time.h>
-#include <sys/types.h>
-#ifdef HAVE_DIRENT_H
-#include <dirent.h>
-#endif
-#include "mal_resolve.h"
-#include "mal_linker.h"
-#include "mal_client.h"
-#include "mal_exception.h"
-#include "mal_debugger.h"
-#include "mal_interpreter.h"
-#include "mal_namespace.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define mdb_export extern __declspec(dllimport)
-#else
-#define mdb_export extern __declspec(dllexport)
-#endif
-#else
-#define mdb_export extern
-#endif
-
-mdb_export str MDBstart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBstartFactory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str CMDmodules(int *bid);
-mdb_export str MDBsetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBsetVarTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBgetDebug(int *ret);
-mdb_export str MDBsetDebug(int *ret, int *flg);
-mdb_export str MDBsetDebugStr(int *ret, str *nme);
-mdb_export str MDBsetCatch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBsetTimer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetThread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetBigfoot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetFlow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetMemory(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetIO(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBsetCount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
-mdb_export str MDBgetExceptionReason(str *ret, str *msg);
-mdb_export str MDBgetExceptionContext(str *ret, str *msg);
-mdb_export str MDBlist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlistMapi(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBshowFlowGraph(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlistDetail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBvar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p);
-mdb_export str MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-mdb_export str MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-mdb_export str MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-mdb_export str MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p);
-mdb_export str MDBgrapTrappedProcess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mdb_export str MDBdummy(int *ret);
-
-/*
- * @-
- * The primary debugger controls
- */
 #define MDBstatus(X) \
 	if( stk->cmd && X==0 ) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger off\n"); \
 	else if(stk->cmd==0 && X) \
 		mnstr_printf(cntxt->fdout,"#Monet Debugger on\n");
 
+static void
+pseudo(int *ret, BAT *b, str X1,str X2, str X3) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s_%s", X1,X2,X3);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 #if 0
 str
 MDBtoggle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -584,7 +355,7 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /*
- * @+ Variables and stack information
+ * Variables and stack information
  * The variable information can be turned into a BAT for inspection as well.
  */
 
@@ -637,7 +408,7 @@ MDBgetStackFrame(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	if (b == 0)
 		throw(MAL, "mdb.getStackFrame", MAL_MALLOC_FAIL);
-	@:Pseudo(view,stk,frame)@
+	pseudo(ret,b,"view","stk","frame");
 	return MDBgetFrame(b, cntxt, m, s, 0);
 }
 
@@ -655,7 +426,7 @@ MDBgetStackFrameN(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "mdb.getStackFrame", ILLEGAL_ARGUMENT " Illegal depth.");
 	}
-	@:Pseudo(view,stk,frame)@
+	pseudo(ret,b,"view","stk","frame");
 	return MDBgetFrame(b, cntxt, m, s, n);
 }
 
@@ -707,12 +478,12 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	}
 	GDKfree(buf);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,stk,trace)@
+	pseudo(ret,b,"view","stk","trace");
 	return MAL_SUCCEED;
 }
 
 /*
- * @+ Display routines
+ * Display routines
  */
 str
 MDBlifespan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -827,7 +598,6 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 /*
- * @-
  * It is illustrative to dump the code when you
  * have encountered an error.
  */
@@ -848,7 +618,7 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		GDKfree(ps);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	@:Pseudo(view,fcn,stmt)@
+	pseudo(ret,b,"view","fcn","stmt");
 
 	return MAL_SUCCEED;
 }
@@ -967,7 +737,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 	
 /*
- * @- CMDmodules
+ * CMDmodules
  * Obtains a list of modules by looking at what files are present in the
  * module directory.
  */

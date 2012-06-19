@@ -1,0 +1,86 @@
+module io;
+pattern stdin():bstream
+address io_stdin
+comment "return the input stream to the database client";
+pattern stderr():streams
+address io_stderr
+comment "return the error stream for the database console";
+pattern stdout():streams
+address io_stdout
+comment "return the output stream for the database client";
+
+pattern print(val:any_1,lst:any...):void 
+address IOprint_val
+comment "Print a MAL value tuple .";
+
+pattern print(b1:bat[:any_1,:any]...):void 
+address IOtable
+comment "BATs are printed with '#' for legend 
+	lines, and the BUNs on seperate lines 
+	between brackets, containing each to 
+	comma separated values (head and tail). 
+	If multiple BATs are passed for printing, 
+	print() performs an implicit natural 
+	join, producing a multi attribute table.";
+
+pattern ftable( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):void
+address IOftable 
+comment "Print an n-ary table to a file.";
+
+pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):void
+address IOotable
+comment "The same as normal table print, but 
+	enforces to use the order of BAT 
+	number [1..argc] to do the printing.";
+
+pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
+address IOttable
+comment "Print an n-ary table. Like print, but does not print oid column";
+
+pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
+address IOtotable
+comment "Print an n-ary table.";
+pattern ftable(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...):void
+address IOfotable 
+comment "Print an n-ary table to a file.";
+
+pattern print(val:any_1):void 
+address IOprint_val
+comment "Print a MAL value tuple .";
+pattern print(val:bat[:any_1,:any_2]):void 
+address IOprint_val
+comment "Print a MAL value tuple .";
+
+pattern prompt(val:any_1):void 
+address IOprompt_val
+comment "Print a MAL value without brackets.";
+
+pattern printf(fmt:str,val:any...):void 
+address IOprintf
+comment "Select default format ";
+pattern printf(fmt:str):void 
+address IOprintf
+comment "Select default format ";
+
+pattern printf(filep:streams,fmt:str,val:any...):void 
+address IOprintfStream
+comment "Select default format ";
+pattern printf(filep:streams,fmt:str):void 
+address IOprintfStream
+comment "Select default format ";
+
+command data(fname:str):str
+address IOdatafile
+comment "Signals receipt of tuples in a file fname.
+It returns the name of the file, if it still exists.";
+
+command export(b:bat[:any_1,:any_2], filepath:str):bit  
+address IOexport
+comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
+ is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
+
+command import(b:bat[:any_1,:any_2], filepath:str) :bat[:any_1,:any_2] 
+address IOimport
+comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
+ parameter BAT. You have to create it! Its signature must match the dump,
+ else parsing errors will occur and FALSE is returned.";

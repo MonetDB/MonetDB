@@ -56,14 +56,14 @@ lib_kernel = {
 		microbenchmark.c microbenchmark.h \
 		mmath.mx \
 		sema.c \
-		status.mx \
+		status.x status.h \
 		unix.c
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = calc.mal bat5.mx algebra.mx status.mx unix.mal \
+	SOURCES = calc.mal bat5.mx algebra.mx status.mal unix.mal \
 		mmath.mx lock.mal sema.mal alarm.mal batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcalc.mal batmmath.mx \
 		group.mx aggr.mx array.mx \
