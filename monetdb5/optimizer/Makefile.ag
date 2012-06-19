@@ -80,6 +80,6 @@ headers_mal = {
 	SOURCES = optimizer.mal 
 }
 
-EXTRA_DIST = optimizerWrapper.mx opt_statistics.mal opt_support.mal
+EXTRA_DIST = optimizerWrapper.mx
 
 EXTRA_DIST_DIR = Tests
