@@ -30,19 +30,6 @@
  * the pseudo BAT to a variable.
  */
 
-static void
-pseudo(int *ret, BAT *b, str X1,str X2) {
-	char buf[BUFSIZ];
-	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
-	BATroles(b,X1,X2);
-	BATmode(b,TRANSIENT);
-	BATfakeCommit(b);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-}
-
 #include "monetdb_config.h"
 #include "gdk.h"
 #include <stdarg.h>
@@ -60,6 +47,19 @@ pseudo(int *ret, BAT *b, str X1,str X2) {
 #ifdef HAVE_SYS_RESOURCE_H
 # include <sys/resource.h>
 #endif
+
+static void
+pseudo(int *ret, BAT *b, str X1,str X2) {
+	char buf[BUFSIZ];
+	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
+	if (BBPindex(buf) <= 0)
+		BATname(b,buf);
+	BATroles(b,X1,X2);
+	BATmode(b,TRANSIENT);
+	BATfakeCommit(b);
+	*ret = b->batCacheid;
+	BBPkeepref(*ret);
+}
 
 str
 SYSgetmem_cursize(lng *num)
