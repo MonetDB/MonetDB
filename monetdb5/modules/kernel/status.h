@@ -35,12 +35,12 @@ status_export str SYSsetmem_maxsize(int *ret, lng *num);
 status_export str SYSgetvm_cursize(lng *num);
 status_export str SYSgetvm_maxsize(lng *num);
 status_export str SYSsetvm_maxsize(lng *num);
-status_export str SYSioStatistics(int *ret);
-status_export str SYScpuStatistics(int *ret);
-status_export str SYSmemStatistics(int *ret);
-status_export str SYSmem_usage(int *ret, lng *minsize);
-status_export str SYSvm_usage(int *ret, lng *minsize);
-status_export str SYSgdkEnv(int *ret);
-status_export str SYSgdkThread(int *ret);
+status_export str SYSioStatistics(int *ret,int *ret2);
+status_export str SYScpuStatistics(int *ret, int *ret2);
+status_export str SYSmemStatistics(int *ret, int *ret2);
+status_export str SYSmem_usage(int *ret, int *ret2, lng *minsize);
+status_export str SYSvm_usage(int *ret, int *ret2, lng *minsize);
+status_export str SYSgdkEnv(int *ret, int *ret2);
+status_export str SYSgdkThread(int *ret, int *ret2);
 
 #endif

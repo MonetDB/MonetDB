@@ -123,15 +123,15 @@ STATinit(void)
 	if( STAT_id_inuse) 
 		return;
 	mal_set_lock(mal_contextLock, "statistics");
-	STAT_id_inuse = STAT_create("id", "inuse", TYPE_int, TYPE_int);
-	STAT_id_nme = STAT_create("id", "nme", TYPE_int, TYPE_str);
-	STAT_id_expire = STAT_create("id", "expire", TYPE_int, TYPE_int);
-	STAT_id_stamp = STAT_create("id", "stamp", TYPE_int, TYPE_int);
-	STAT_id_count = STAT_create("id", "count", TYPE_int, TYPE_lng);
-	STAT_id_size = STAT_create("id", "size", TYPE_int, TYPE_lng);
-	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_int, TYPE_lng);
-	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
-	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
+	STAT_id_inuse = STAT_create("id", "inuse", TYPE_void, TYPE_int);
+	STAT_id_nme = STAT_create("id", "nme", TYPE_void, TYPE_str);
+	STAT_id_expire = STAT_create("id", "expire", TYPE_void, TYPE_int);
+	STAT_id_stamp = STAT_create("id", "stamp", TYPE_void, TYPE_int);
+	STAT_id_count = STAT_create("id", "count", TYPE_void, TYPE_lng);
+	STAT_id_size = STAT_create("id", "size", TYPE_void, TYPE_lng);
+	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_void, TYPE_lng);
+	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_void, TYPE_lng);
+	STAT_id_histogram = STAT_create("id", "histogram", TYPE_void, TYPE_str);
 	if (STAT_id_inuse == NULL ||
 		STAT_id_nme == NULL ||
 		STAT_id_expire == NULL ||
@@ -259,7 +259,6 @@ STATupdateAll(int *ret, int forced)
 
 	if (STAT_id_nme) {
 		BATiter STAT_id_nmei = bat_iterator(STAT_id_nme);
-		BATaccessBegin(STAT_id_nme,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(STAT_id_nme, p, q) {
 			name = (str) BUNtail(STAT_id_nmei, p);
 			i = BBPindex(name);
@@ -281,7 +280,6 @@ STATupdateAll(int *ret, int forced)
 				STATforceUpdate(ret, &name);
 			}
 		}
-		BATaccessEnd(STAT_id_nme,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	return MAL_SUCCEED;
 }

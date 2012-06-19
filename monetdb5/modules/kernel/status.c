@@ -49,16 +49,15 @@
 #endif
 
 static void
-pseudo(int *ret, BAT *b, str X1,str X2) {
-	char buf[BUFSIZ];
-	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
-	if (BBPindex(buf) <= 0)
-		BATname(b,buf);
-	BATroles(b,X1,X2);
+pseudo(int *ret, int *ret2, BAT *bn, BAT *b) {
+	BATmode(bn,TRANSIENT);
 	BATmode(b,TRANSIENT);
 	BATfakeCommit(b);
-	*ret = b->batCacheid;
+	BATfakeCommit(bn);
+	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
+	*ret2 = b->batCacheid;
+	BBPkeepref(*ret2);
 }
 
 str
@@ -136,10 +135,10 @@ static struct tms state;
 #endif
 
 str
-SYScpuStatistics(int *ret)
+SYScpuStatistics(int *ret, int *ret2)
 {
 	int i;
-	BAT *b;
+	BAT *b, *bn;
 #ifdef HAVE_TIMES
 	struct tms newst;
 # ifndef HZ
@@ -155,9 +154,13 @@ SYScpuStatistics(int *ret)
 # endif
 #endif
 
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0)
+	bn = BATnew(TYPE_void, TYPE_str, 32);
+	b = BATnew(TYPE_void, TYPE_int, 32);
+	if (b == 0 || bn == 0){
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
+	}
 #ifdef HAVE_TIMES
 	if (clk == 0) {
 		clk = time(0);
@@ -166,43 +169,58 @@ SYScpuStatistics(int *ret)
 	times(&newst);
 	/* store counters, ignore errors */
 	i = (int) (time(0) - clk);
-	b = BUNins(b, "elapsed", &i, FALSE);
+	bn = BUNappend(bn, "elapsed", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = newst.tms_utime * 1000 / HZ;
-	b = BUNins(b, "user", &i, FALSE);
+	bn = BUNappend(bn, "user", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (newst.tms_utime - state.tms_utime) * 1000 / HZ;
-	b = BUNins(b, "elapuser", &i, FALSE);
+	bn = BUNappend(bn, "elapuser", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = newst.tms_stime * 1000 / HZ;
-	b = BUNins(b, "system", &i, FALSE);
+	bn = BUNappend(b, "system", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (newst.tms_stime - state.tms_stime) * 1000 / HZ;
-	b = BUNins(b, "elapsystem", &i, FALSE);
+	bn = BUNappend(b, "elapsystem", FALSE);
+	b = BUNappend(b, &i, FALSE);
 
 	state = newst;
 #else
 	i = int_nil;
-	b = BUNins(b, "elapsed", &i, FALSE);
-	b = BUNins(b, "user", &i, FALSE);
-	b = BUNins(b, "elapuser", &i, FALSE);
-	b = BUNins(b, "system", &i, FALSE);
-	b = BUNins(b, "elapsystem", &i, FALSE);
+	bn = BUNins(bn, "elapsed", FALSE);
+	b = BUNins(b, &i, FALSE);
+	bn = BUNins(bn, "user", FALSE);
+	b = BUNins(b, &i, FALSE);
+	bn = BUNins(bn, "elapuser", FALSE);
+	b = BUNins(b, &i, FALSE);
+	bn = BUNins(bn, "system", FALSE);
+	b = BUNins(b, &i, FALSE);
+	bn = BUNins(bn, "elapsystem", FALSE);
+	b = BUNins(b, &i, FALSE);
 #endif
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"gdk","cpu");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
 
 static char *memincr = NULL;
 str
-SYSmemStatistics(int *ret)
+SYSmemStatistics(int *ret, int *ret2)
 {
 	struct Mallinfo m;
-	BAT *b;
+	BAT *b, *bn;
 	wrd i;
 
 	m = MT_mallinfo();
 
-	b = BATnew(TYPE_str, TYPE_wrd, 32);
-	if (b == 0)
+	bn = BATnew(TYPE_void,TYPE_str, 32);
+	b = BATnew(TYPE_void, TYPE_wrd, 32);
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
+	}
 
 	/* store counters, ignore errors */
 	if (memincr == NULL)
@@ -211,27 +229,38 @@ SYSmemStatistics(int *ret)
 	i = (wrd) (MT_heapcur() - memincr);
 
 	memincr = MT_heapcur();
-	b = BUNins(b, "memincr", &i, FALSE);
+	bn = BUNappend(bn, "memincr", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.arena;
-	b = BUNins(b, "arena", &i, FALSE);
+	bn = BUNappend(bn, "arena", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.ordblks;
-	b = BUNins(b, "ordblks", &i, FALSE);
+	bn = BUNappend(bn, "ordblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.smblks;
-	b = BUNins(b, "smblks", &i, FALSE);
+	bn = BUNappend(bn, "smblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.hblkhd;
-	b = BUNins(b, "hblkhd", &i, FALSE);
+	bn = BUNappend(bn, "hblkhd", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.hblks;
-	b = BUNins(b, "hblks", &i, FALSE);
+	bn = BUNappend(bn, "hblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.usmblks;
-	b = BUNins(b, "usmblks", &i, FALSE);
+	bn = BUNappend(bn, "usmblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.fsmblks;
-	b = BUNins(b, "fsmblks", &i, FALSE);
+	bn = BUNappend(bn, "fsmblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.uordblks;
-	b = BUNins(b, "uordblks", &i, FALSE);
+	bn = BUNappend(bn, "uordblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	i = (wrd) m.fordblks;
-	b = BUNins(b, "fordblks", &i, FALSE);
+	bn = BUNappend(bn, "fordblks", FALSE);
+	b = BUNappend(b, &i, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"gdk","mem");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
 
@@ -255,16 +284,20 @@ SYSmemStatistics(int *ret)
 	}
 
 str
-SYSmem_usage(int *ret, lng *minsize)
+SYSmem_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * BBPsize);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * BBPsize);
 	struct Mallinfo m;
 	char buf[1024];
 	bat i;
 
-	if (bn == NULL)
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
+	}
 	BBPlock("SYSmem_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -288,7 +321,8 @@ SYSmem_usage(int *ret, lng *minsize)
 
 		if (sz > *minsize) {
 			sprintf(buf, "desc/%s", s);
-			BUNins(bn, buf, &sz, FALSE);
+			BUNappend(bn, buf, FALSE);
+			BUNappend(b, &sz, FALSE);
 		}
 		tot += (lng) sz;
 
@@ -303,61 +337,83 @@ SYSmem_usage(int *ret, lng *minsize)
 		heap(b->T->vheap,b->T->vheap,tail,"tail");
 	}
 	/* totals per category */
-	BUNins(bn, "_tot/hbuns", &hbuns, FALSE);
-	BUNins(bn, "_tot/tbuns", &tbuns, FALSE);
-	BUNins(bn, "_tot/head", &head, FALSE);
-	BUNins(bn, "_tot/tail", &tail, FALSE);
-	BUNins(bn, "_tot/hhsh", &hhsh, FALSE);
-	BUNins(bn, "_tot/thsh", &thsh, FALSE);
-	BUNins(bn, "_tot/hind", &hind, FALSE);
-	BUNins(bn, "_tot/tind", &tind, FALSE);
+	BUNappend(bn, "_tot/hbuns", FALSE);
+	BUNappend(b, &hbuns, FALSE);
+	BUNappend(bn, "_tot/tbuns", FALSE);
+	BUNappend(b, &tbuns, FALSE);
+	BUNappend(bn, "_tot/head", FALSE);
+	BUNappend(b, &head, FALSE);
+	BUNappend(bn, "_tot/tail", FALSE);
+	BUNappend(b, &tail, FALSE);
+	BUNappend(bn, "_tot/hhsh", FALSE);
+	BUNappend(b, &hhsh, FALSE);
+	BUNappend(bn, "_tot/thsh", FALSE);
+	BUNappend(b, &thsh, FALSE);
+	BUNappend(bn, "_tot/hind", FALSE);
+	BUNappend(b, &hind, FALSE);
+	BUNappend(bn, "_tot/tind", FALSE);
+	BUNappend(b, &tind, FALSE);
 
 	/* special area 1: BBP rec */
 	sz = BBPlimit * sizeof(BBPrec) + n;
-	BUNins(bn, "_tot/bbp", &sz, FALSE);
+	BUNappend(bn, "_tot/bbp", FALSE);
+	BUNappend(b, &sz, FALSE);
 	tot += sz;
 
 	/* this concludes all major traceable Monet memory usages */
 	tot += sz;
-	BUNins(bn, "_tot/found", &tot, FALSE);
+	BUNappend(bn, "_tot/found", FALSE);
+	BUNappend(b, &tot, FALSE);
 
 	/* now look at what the global statistics report (to see if it coincides) */
 
 	/* how much *used* bytes in heap? */
 	m = MT_mallinfo();
 	sz = (size_t) m.usmblks + (size_t) m.uordblks + (size_t) m.hblkhd;
-	BUNins(bn, "_tot/malloc", &sz, FALSE);
+	BUNappend(bn, "_tot/malloc", FALSE);
+	BUNappend(b, &sz, FALSE);
 
 	/* measure actual heap size, includes wasted fragmented space and anon mmap space used by malloc() */
 	sz = GDKmem_inuse();
-	BUNins(bn, "_tot/heap", &sz, FALSE);
+	BUNappend(bn, "_tot/heap", FALSE);
+	BUNappend(b, &sz, FALSE);
 
 	tot = GDKmem_cursize();
 
 	/* allocated swap area memory that is not plain malloc() */
 	sz = MAX(0, sz - tot);
-	BUNins(bn, "_tot/valloc", &sz, FALSE);
+	BUNappend(bn, "_tot/valloc", FALSE);
+	BUNappend(b, &sz, FALSE);
 
 	/* swap-area memory is in either GDKvmalloc or heap */
-	BUNins(bn, "_tot/swapmem", &tot, FALSE);
+	BUNappend(bn, "_tot/swapmem", FALSE);
+	BUNappend(b, &tot, FALSE);
 
 	BBPunlock("SYSmem_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*ret2 = b->batCacheid;
+	BBPkeepref(b->batCacheid);
+
 	return MAL_SUCCEED;
 }
 
 str
-SYSvm_usage(int *ret, lng *minsize)
+SYSvm_usage(int *ret, int *ret2, lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 2 * BBPsize);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 2 * BBPsize);
 	char buf[1024];
 	bat i;
 
-	if (bn == NULL)
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
+	}
 	BBPlock("SYSvm_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b;
@@ -379,33 +435,47 @@ SYSvm_usage(int *ret, lng *minsize)
 		heapvm(b->T->vheap,b->T->vheap,tail,"tail");
 	}
 	/* totals per category */
-	BUNins(bn, "_tot/hbuns", &hbuns, FALSE);
-	BUNins(bn, "_tot/tbuns", &tbuns, FALSE);
-	BUNins(bn, "_tot/head", &head, FALSE);
-	BUNins(bn, "_tot/tail", &tail, FALSE);
-	BUNins(bn, "_tot/hhsh", &hhsh, FALSE);
-	BUNins(bn, "_tot/thsh", &thsh, FALSE);
-	BUNins(bn, "_tot/hind", &hind, FALSE);
-	BUNins(bn, "_tot/tind", &tind, FALSE);
+	BUNappend(bn, "_tot/hbuns", FALSE);
+	BUNappend(b, &hbuns, FALSE);
+	BUNappend(bn, "_tot/tbuns", FALSE);
+	BUNappend(b, &tbuns, FALSE);
+	BUNappend(bn, "_tot/head", FALSE);
+	BUNappend(b, &head, FALSE);
+	BUNappend(bn, "_tot/tail", FALSE);
+	BUNappend(b, &tail, FALSE);
+	BUNappend(bn, "_tot/hhsh", FALSE);
+	BUNappend(b, &hhsh, FALSE);
+	BUNappend(bn, "_tot/thsh", FALSE);
+	BUNappend(b, &thsh, FALSE);
+	BUNappend(bn, "_tot/hind", FALSE);
+	BUNappend(b, &hind, FALSE);
+	BUNappend(bn, "_tot/tind", FALSE);
+	BUNappend(b, &tind, FALSE);
 
 	/* special area 1: BBP rec */
 	sz = BBPlimit * sizeof(BBPrec);
-	BUNins(bn, "_tot/bbp", &sz, FALSE);
+	BUNappend(bn, "_tot/bbp", FALSE);
+	BUNappend(b, &sz, FALSE);
 	tot += sz;
 
 
 	/* this concludes all major traceable Monet virtual memory usages */
 	tot += sz;
-	BUNins(bn, "_tot/found", &tot, FALSE);
+	BUNappend(bn, "_tot/found", FALSE);
+	BUNappend(b, &tot, FALSE);
 
 	/* all VM is either GDKmmap or GDKvmalloc (possibly redirected GDKmalloc), *plus* the heap */
 	sz = GDKvm_cursize();
-	BUNins(bn, "_tot/vm", &sz, FALSE);
+	BUNappend(bn, "_tot/vm", FALSE);
+	BUNappend(b, &sz, FALSE);
 
 	BBPunlock("SYSvm_usage");
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
+	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
+	*ret2 = b->batCacheid;
+	BBPkeepref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -443,69 +513,94 @@ SYSvm_usage(int *ret, lng *minsize)
  * The BAT grows. It should be compacted.
  */
 str
-SYSioStatistics(int *ret)
+SYSioStatistics(int *ret, int *ret2)
 {
 #ifndef NATIVE_WIN32
 	struct rusage ru;
 #endif
 	int i;
-	BAT *b;
+	BAT *b, *bn;
 
 #ifndef NATIVE_WIN32
 	getrusage(RUSAGE_SELF, &ru);
 #endif
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0)
+	bn = BATnew(TYPE_void, TYPE_str, 32);
+	b = BATnew(TYPE_void, TYPE_int, 32);
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
+	}
 
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
 	i = ru.ru_maxrss;
-	BUNins(b, "maxrss", &i, FALSE);
+	BUNappend(bn, "maxrss", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_minflt;
-	BUNins(b, "minflt", &i, FALSE);
+	BUNappend(b, "minflt", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_majflt;
-	BUNins(b, "majflt", &i, FALSE);
+	BUNappend(bn, "majflt", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_nswap;
-	BUNins(b, "nswap", &i, FALSE);
+	BUNappend(bn, "nswap", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_inblock;
-	BUNins(b, "inblock", &i, FALSE);
+	BUNappend(bn, "inblock", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_oublock;
-	BUNins(b, "oublock", &i, FALSE);
+	BUNappend(bn, "oublock", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_nvcsw;
-	BUNins(b, "nvcsw", &i, FALSE);
+	BUNappend(bn, "nvcsw", FALSE);
+	BUNappend(b, &i, FALSE);
 	i = ru.ru_nivcsw;
-	BUNins(b, "ninvcsw", &i, FALSE);
+	BUNappend(bn, "ninvcsw", FALSE);
+	BUNappend(b, &i, FALSE);
 #else
 	i = int_nil;
-	BUNins(b, "maxrss", &i, FALSE);
-	BUNins(b, "minflt", &i, FALSE);
-	BUNins(b, "majflt", &i, FALSE);
-	BUNins(b, "nswap", &i, FALSE);
-	BUNins(b, "inblock", &i, FALSE);
-	BUNins(b, "oublock", &i, FALSE);
-	BUNins(b, "nvcsw", &i, FALSE);
-	BUNins(b, "ninvcsw", &i, FALSE);
+	BUNappend(bn, "maxrss", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "minflt", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "majflt", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "nswap", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "inblock", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "oublock", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "nvcsw", FALSE);
+	BUNappend(b, &i, FALSE);
+	BUNappend(bn, "ninvcsw", FALSE);
+	BUNappend(b, &i, FALSE);
 #endif
 
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"gdk","io");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
 
 str
-SYSgdkEnv(int *ret)
+SYSgdkEnv(int *ret, int *ret2)
 {
 	int pbat = 0;
 	int pdisk = 0;
 	int pheat = 0;
 	bat i;
 	int tmp = 0, per = 0;
-	BAT *b;
+	BAT *b,*bn;
 
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0)
+	bn = BATnew(TYPE_void, TYPE_str, 32);
+	b = BATnew(TYPE_void, TYPE_int, 32);
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
+	}
 
 	for (i = 1; i < BBPsize; i++) {
 		if (BBPvalid(i)) {
@@ -521,32 +616,46 @@ SYSgdkEnv(int *ret)
 			}
 		}
 	}
-	b = BUNins(b, "bats", &pbat, FALSE);
-	b = BUNins(b, "tmpbats", &tmp, FALSE);
-	b = BUNins(b, "perbats", &per, FALSE);
-	b = BUNins(b, "ondisk", &pdisk, FALSE);
-	b = BUNins(b, "todisk", &BBPout, FALSE);
-	b = BUNins(b, "fromdisk", &BBPin, FALSE);
+	bn = BUNappend(bn, "bats", FALSE);
+	b = BUNappend(b, &pbat, FALSE);
+	bn = BUNappend(bn, "tmpbats", FALSE);
+	b = BUNappend(b, &tmp, FALSE);
+	bn = BUNappend(bn, "perbats", FALSE);
+	b = BUNappend(b, &per, FALSE);
+	bn = BUNappend(bn, "ondisk", FALSE);
+	b = BUNappend(b, &pdisk, FALSE);
+	bn = BUNappend(bn, "todisk", FALSE);
+	b = BUNappend(b, &BBPout, FALSE);
+	bn = BUNappend(bn, "fromdisk", FALSE);
+	b = BUNappend(b, &BBPin, FALSE);
 	if (!(b->batDirty & 2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"gdk","env");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	pseudo(ret,ret2, bn,b);
 	return MAL_SUCCEED;
 }
 
 str
-SYSgdkThread(int *ret)
+SYSgdkThread(int *ret, int *ret2)
 {
-	BAT *b;
+	BAT *b, *bn;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, THREADS);
-	if (b == 0)
+	bn = BATnew(TYPE_void,TYPE_int, THREADS);
+	b = BATnew(TYPE_void, TYPE_str, THREADS);
+	if (b == 0 || bn == 0) {
+		if ( b) BBPreleaseref(b->batCacheid);
+		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
+	}
 
 	for (i = 0; i < THREADS; i++) {
-		if (GDKthreads[i].pid)
-			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name, FALSE);
+		if (GDKthreads[i].pid){
+			BUNappend(bn, &GDKthreads[i].tid, FALSE);
+			BUNappend(b, GDKthreads[i].name, FALSE);
+		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"gdk","thread");
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+	pseudo(ret,ret2,bn,b);
 	return MAL_SUCCEED;
 }
