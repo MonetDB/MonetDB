@@ -30,7 +30,7 @@ lib_atoms = {
 		color.c color.h \
 		identifier.c identifier.h \
 		inet.c inet.h \
-		mtime.mx \
+		mtime.c mtime.h \
 		streams.c streams.h \
 		str.c str.h \
 		url.c url.h \
@@ -50,8 +50,8 @@ headers_mal = {
 		str.mal \
 		url.mal \
 		xml.mal \
-		mtime.mx 
+		mtime.mal
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql batxml.sql str.mal batxml.mal url.mal streams.mal
+EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql batxml.sql str.mal batxml.mal url.mal streams.mal mtime.mal
