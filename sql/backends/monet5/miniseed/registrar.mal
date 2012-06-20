@@ -7,11 +7,3 @@ comment "read the files in the repository, fill and return a temp_container acco
 pattern register_table(ticket:lng, table_idx:int)(:any...)
 address register_table
 comment "fill the specified table from the temp_container."
-
-#pattern mseed_register_fil(ticket:lng)(:bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any])
-#address mseed_register_fil
-#comment "fill mseed.files table from the temp_container.";
-
-#pattern mseed_register_cat(ticket:lng)(:bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any], :bat[:oid,:any])
-#address mseed_register_cat
-#comment "fill mseed.catalog table from the temp_container.";

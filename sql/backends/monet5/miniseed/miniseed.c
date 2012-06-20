@@ -8,10 +8,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat** ret;
 	
-// 	int *ret0 = (int*) getArgReference(stk,pci,0);	//return value 1: BAT containing file_locations.
-// 	int *ret1 = (int*) getArgReference(stk,pci,1);	//return value 2: BAT containing seq_nos.
-// 	int *ret2 = (int*) getArgReference(stk,pci,2);	//return value 3: BAT containing timestamps.
-// 	int *ret3 = (int*) getArgReference(stk,pci,3);	//return value 4: BAT containing integer data.
 	str *targetfile = (str*) getArgReference(stk,pci,4); //arg 1: string containing the input file path.
 	BAT *btime, *bdata, *bfile, *bseqno; // BATs to return, representing columns of a table.
 	
@@ -23,7 +19,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int verbose = 1;
 	int r;
 	
-// 	printf("num_rets: %d\n", pci->retc);
 	ret = (bat**) GDKmalloc(pci->retc*sizeof(bat*));
 	if(ret == NULL)
 	{
@@ -84,16 +79,9 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		long num_samples = msr->numsamples;
 		int *data_samples = msr->datasamples;
 		
-		//long *sample_timestamps = (long*)malloc(num_samples*sizeof(long));
-		
-		//sample_timestamps[0] = start_time;
-		
 		int i = 0;
 		for(;i<num_samples;i++)
 		{
-// 			char* space = (char*) malloc(27*sizeof(char));
-// 			ms_hptime2isotimestr(sampling_time, space, 1);
-
 			timestamp sampling_timestamp;
 			lng st = (lng) sampling_time / 1000;
 			MTIMEtimestamp_lng(&sampling_timestamp, &st);
@@ -130,11 +118,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hub"), op_lt, (ptr) &high.value);
-	
-// 	BBPkeepref(*ret0 = bfile->batCacheid); //return BAT.
-// 	BBPkeepref(*ret1 = bseqno->batCacheid); //return BAT.
-// 	BBPkeepref(*ret2 = btime->batCacheid); //return BAT.
-// 	BBPkeepref(*ret3 = bdata->batCacheid); //return BAT.
 	
 	BBPkeepref(*ret[0] = bfile->batCacheid); //return BAT.
 	BBPkeepref(*ret[1] = bseqno->batCacheid); //return BAT.

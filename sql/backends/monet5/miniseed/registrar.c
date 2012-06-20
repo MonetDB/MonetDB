@@ -4,7 +4,6 @@
 #include "monetdb_config.h"
 
 #include "registrar.h"
-//#include "vault.h"
 #include "mtime.h"
 
 #include "sql_mvc.h"
@@ -570,7 +569,6 @@ str mseed_register(str file_path, temp_container* ret_tc)
 			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[1])) == NULL)
 				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 			ch[0] = msr->dataquality;
-// 			BUNappend(aBAT, (ptr) &(msr->dataquality), FALSE);
 			BUNappend(aBAT, (ptr) ch, FALSE);
 			BBPreleaseref(ret_tc->tables_columns[0].column_bats[1]);
 			
@@ -643,7 +641,6 @@ str mseed_register(str file_path, temp_container* ret_tc)
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[6])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 		ch[0] = msr->sampletype;
-// 		BUNappend(aBAT, (ptr) &(msr->sampletype), FALSE);
 		BUNappend(aBAT, (ptr) ch, FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[6]);
 		
@@ -699,7 +696,6 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 			if ((aBAT = BATdescriptor(ret_tc->tables_columns[0].column_bats[1])) == NULL)
 				throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 			ch[0] = msr->dataquality;
-			// 			BUNappend(aBAT, (ptr) &(msr->dataquality), FALSE);
 			BUNappend(aBAT, (ptr) ch, FALSE);
 			BBPreleaseref(ret_tc->tables_columns[0].column_bats[1]);
 			
@@ -772,13 +768,11 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[6])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
 		ch[0] = msr->sampletype;
-		// 		BUNappend(aBAT, (ptr) &(msr->sampletype), FALSE);
 		BUNappend(aBAT, (ptr) ch, FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[6]);
 		
 		// mount
 		{
-// 			int32_t seq_no = msr->sequence_number;
 			int32_t seq_no = seq_no_fake;
 			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
 			long sampling_time = msr->starttime;
@@ -951,88 +945,13 @@ str register_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	
 	for(c = 0; c < pci->retc; c++)
-	{
-		// see if BATs are filled
-		/* bat-id -> BAT-descriptor */
-// 		BAT *aBAT = NULL;
-		
-// 		if ((aBAT = BATdescriptor(tc->tables_columns[table_idx].column_bats[c])) == NULL)
-// 			throw(MAL, "registrar.register_table", RUNTIME_OBJECT_MISSING);
-		
-// can be uncommented for debugging to see if the BATs are filled
-// 		if (aBAT->ttype == TYPE_str) 
-// 		{
-// 			BATiter li;
-// 			BUN p = 0, q = 0;
-// 			/* create BAT iterator */
-// 			li = bat_iterator(aBAT);
-// 			
-// 			/* advice on sequential scan */
-// 			BATaccessBegin(aBAT, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-// 			
-// 			/* the core of the algorithm, expensive due to malloc/frees */
-// 			BATloop(aBAT, p, q) 
-// 			{
-// 				/* get original head & tail value */
-// // 				ptr h = BUNhead(li, p);
-// 				str s = (str) BUNtail(li, p);
-// 				printf("%s\n", s);
-// 			}
-// 			
-// 			BATaccessEnd(aBAT, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-// 		}
-		
-		
+	{	
 		*(int*) getArgReference(stk,pci,c) = tc->tables_columns[table_idx].column_bats[c];
 		BBPincref(tc->tables_columns[table_idx].column_bats[c], TRUE);
 	}
 	
 	return MAL_SUCCEED;
 }
-
-// str mseed_register_fil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-// {
-// 	int num_c_fil = 8;
-// 	int c;
-// 	int **rets = (int**)GDKmalloc(num_c_fil*sizeof(int*));
-// 	
-// 	lng *ticket_ptr = (lng*) getArgReference(stk,pci,num_c_fil);
-// 	lng ticket = *ticket_ptr;
-// 	temp_container *tc = (temp_container*) ticket;
-// 	
-// 	cntxt = cntxt; //to escape 'unused' parameter error.
-// 	mb = mb; //to escape 'unused' parameter error.
-// 	
-// 	for(c = 0; c < num_c_fil; c++)
-// 	{
-// 		rets[c] = (int*) getArgReference(stk,pci,c);
-// 		BBPincref(rets[c][0] = tc->tables_columns[0].column_bats[c], TRUE);
-// 	}
-// 	
-// 	return MAL_SUCCEED;
-// }
-// 
-// str mseed_register_cat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-// {
-// 	int num_c_cat = 7;
-// 	int c;
-// 	int **rets = (int**)GDKmalloc(num_c_cat*sizeof(int*));
-// 	
-// 	lng *ticket_ptr = (lng*) getArgReference(stk,pci,num_c_cat);
-// 	lng ticket = *ticket_ptr;
-// 	temp_container *tc = (temp_container*) ticket;
-// 	
-// 	cntxt = cntxt; //to escape 'unused' parameter error.
-// 	mb = mb; //to escape 'unused' parameter error.
-// 	
-// 	for(c = 0; c < num_c_cat; c++)
-// 	{
-// 		rets[c] = (int*) getArgReference(stk,pci,c);
-// 		BBPincref(rets[c][0] = tc->tables_columns[0].column_bats[c], TRUE);
-// 	}
-// 	
-// 	return MAL_SUCCEED;
-// }
 
 
 

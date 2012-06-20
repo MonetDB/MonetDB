@@ -6,14 +6,12 @@
 #include "../../modules/atoms/mtime.h"
 #include "sql.h"
 #include "dvf.h"
-//#include "../../optimizer/opt_mergetable.h"
 #include "mal_interpreter.h"
 
 #define NUM_RET_MOUNT 4
 
 int get_column_num(str schema_name, str table_name, str column_name);
 int get_column_type(str schema_name, str table_name, int column_num);
-// static int OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 int get_column_type(str schema_name, str table_name, int column_num)
 {
@@ -146,7 +144,6 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		{
 			startpc = i;
 			pushInstruction(mb, copyInstruction(old[i]));
-// 			save_pci = copyInstruction(old[i]);
 		}
 		/* check for
 		 * v7 := sql.bind(..., schema_name, data_table_name, ..., ...);
@@ -179,8 +176,6 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					
 					//create mount instruction
 					q = newInstruction(mb, ASSIGNsymbol);
-					//q->argc = NUM_RET_MOUNT + 1;
-					//q->retc = NUM_RET_MOUNT;
 					setModuleId(q, miniseedRef);
 					setFunctionId(q, mountRef);
 					for(; a < NUM_RET_MOUNT; a++)
@@ -198,9 +193,6 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					low.value.val.oval += 1;
 					high.value.val.oval += 1;
 					
-					// copy the value of constant string from stack. Otherwise cannot reach the actual value
-// 					VALcopy(&stk->stk[q->argv[NUM_RET_MOUNT]], &getVarConstant(mb, getArg(q, NUM_RET_MOUNT)));
-					
 					mounts[which_fl] = q;
 					which_fl++;
 					// push the new instruction
@@ -217,12 +209,9 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			
 			// new mat.new for the column being binded
 			r = newInstruction(mb, ASSIGNsymbol);
-			//r->argc = num_fl + 1;
-			//r->retc = 1;
 			setModuleId(r, matRef);
 			setFunctionId(r, newRef);
 			r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any)); // push tmp var to pass to markH.
-// 			r = pushReturn(mb, r, getArg(p, 0));
 			which_column = get_column_num(*schema_name, getVarConstant(mb, getArg(p, 3)).val.sval, 
 						      getVarConstant(mb, getArg(p, 4)).val.sval);
 			if(which_column < 0)
@@ -287,49 +276,10 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * *optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases(); optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();
 	 */
 	
-// 	o = newFcnCall(mb, "optimizer", "inline");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "remap");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "evaluate");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "costModel");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "coercions");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "emptySet");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "aliases");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
 	o = newFcnCall(mb, "optimizer", "mergetable");
 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "deadcode");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "commonTerms");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "groups");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "joinPath");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "reorder");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "deadcode");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "reduce");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "history");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "multiplex");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "accumulators");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
-// 	o = newFcnCall(mb, "optimizer", "garbageCollector");
-// 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
+
 	optimizeMALBlock(cntxt, mb);
-	//o = o;
-	
-// 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
-// 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN);
 	
 	/* New variables might have been created by the optimizers, so their values has to be copied into the stack. However, there might not be enough space in stack for them. We cannot reallocate the stack, but we may create our own enlarged stack, then run the rest of the plan with our own stack. */
 	
@@ -379,11 +329,6 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// adjust variable lifetimes
 	malGarbageCollector(mb);
 	
-	// checks
-	// 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	// 	chkFlow(cntxt->fdout, mb);
-	// 	chkDeclarations(cntxt->fdout, mb);
-	
 // 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 // 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN);
 	
@@ -391,15 +336,10 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// run rest of the plan
 	msg = runMALsequence(cntxt, mb, startpc+1, mb->stop, stk_new, stk_new, mb->stmt[startpc]);
 	
-// 	msg = runMAL(cntxt, mb, startpc+1, mb, stk, save_pci);
-	
 	if(msg != MAL_SUCCEED)
 	{
 		throw(MAL, "dvf.plan_modifier", "From the recursive call: %s", msg);
 	}
-	
-	// restore the commented out old plan
-// 	mb->stmt = old;
 	
 // 	chkProgram(cntxt->fdout, cntxt->nspace, copy_old);
 // 	printFunction(cntxt->fdout, copy_old, 0, LIST_MAL_EXPLAIN);

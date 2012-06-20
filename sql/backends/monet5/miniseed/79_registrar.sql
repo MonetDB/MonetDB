@@ -17,41 +17,8 @@ Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 */
 
--- Register a repository
--- CREATE FUNCTION get_tables_of_schema(schema_name string)
--- RETURNS table
--- BEGIN
--- 	RETURN SELECT t.id, t.name FROM _tables AS t, schemas AS s WHERE s.name = schema_name AND s.id = t.schema_id;
--- END; 
--- 
--- 
--- CREATE FUNCTION get_columns_of_table(table_id integer)
--- RETURNS table
--- BEGIN
--- 	RETURN SELECT c.name, c.type, c.number FROM _columns AS c WHERE c.table_id = table_id;
--- END;
-
-
 CREATE PROCEDURE register_repo(repo string, mode int)
 external name registrar.register_repo;
-
--- CREATE FUNCTION register_read(repo string)
--- RETURNS bigint external name registrar.register_read;
--- 
--- CREATE FUNCTION mseed_register_fil(ticket bigint)
--- RETURNS table(file_location string, dataquality char, network string, station string, location string, channel string, encoding tinyint, byte_order boolean) external name registrar.mseed_register_fil;
--- 
--- CREATE FUNCTION mseed_register_cat(ticket bigint)
--- RETURNS table(file_location string, seq_no integer, record_length integer, start_time timestamp, frequency double, sample_count bigint, sample_type char) external name registrar.mseed_register_cat;
--- 
--- CREATE PROCEDURE mseed_register_repo(repo string)
--- BEGIN
--- 	DECLARE ticket BIGINT;
--- 	SET ticket = register_read(repo);
--- 	INSERT INTO mseed.files SELECT * FROM mseed_register_fil(ticket);
--- 	INSERT INTO mseed.catalog SELECT * FROM mseed_register_cat(ticket);
--- 	register_cleanup(ticket);
--- END;
 
 
 

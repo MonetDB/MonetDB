@@ -229,7 +229,6 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			strcmp(getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(old[i1], 2)).val.sval) == 0 &&
 			strstr(getVarConstant(mb, getArg(p, 3)).val.sval, data_table_identifier) != NULL)
 		{
-			//str schema_name = GDKstrdup(getVarConstant(mb, getArg(p, 2)).val.sval);
 			
 			switch(state) 
 			{
@@ -277,7 +276,6 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					setFunctionId(q, planmodifierRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_void));
 					getArg(q, 1) = getArg(p, 2);
-					//q = pushArgument(mb, q, getArg(old[i2], 0));
 					getArg(q, 2) = getArg(t, 0);
 					
 					// insert the new instruction in pc i2+1

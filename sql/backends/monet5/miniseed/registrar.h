@@ -21,8 +21,6 @@
 
 vault_export str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 vault_export str register_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-//vault_export str mseed_register_fil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-//vault_export str mseed_register_cat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define _MSEED_DEBUG_
 
