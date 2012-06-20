@@ -19,7 +19,7 @@
 
 dvf_export str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-//TODO: What is the following line?
+/* TODO: What is the following line? */
 #define _DVF_DEBUG_
 
 #endif /* _DVF_H */

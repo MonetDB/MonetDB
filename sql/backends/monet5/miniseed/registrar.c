@@ -13,19 +13,19 @@
  * keeps BAT and other properties of columns of a table.
  */
 typedef struct {
-	bat *column_bats; //keeps bats of the columns: lower array
-	str *column_names; // names of columns that are kept in the higher array
-	str *column_types_strs; // type strings of columns
+	bat *column_bats; /* keeps bats of the columns: lower array */
+	str *column_names; /* names of columns that are kept in the higher array */
+	str *column_types_strs; /* type strings of columns */
 } temp_subcontainer;
 
 /*
  * keeps (some) tables of a schema.
  */
 typedef struct {
-	str schema_name; //schema or vault name
-	temp_subcontainer *tables_columns; //keeps tables: higher array
-	str *table_names; //names of tables that are kept in the higher array
-	int *num_columns; //number of columns in each table in the higher array
+	str schema_name; /* schema or vault name */
+	temp_subcontainer *tables_columns; /* keeps tables: higher array */
+	str *table_names; /* names of tables that are kept in the higher array */
+	int *num_columns; /* number of columns in each table in the higher array */
 	sht num_tables;
 } temp_container;
 
@@ -64,8 +64,8 @@ lng get_line_num(str filename)
 
 	fclose(f);
 
-// 	if(c != '\n')
-// 		lines++;
+/* 	if(c != '\n') */
+/* 		lines++; */
 
 	return lines;
 }
@@ -89,13 +89,13 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
 	{
 		if( s.st_mode & S_IFDIR )
 		{
-			//it's a directory
-			//traverse and collect all the files
+			/* it's a directory */
+			/* traverse and collect all the files */
 		}
 		else if( s.st_mode & S_IFREG )
 		{
-			//it's a file
-			//each line is a file_path
+			/* it's a file */
+			/* each line is a file_path */
 
 			FILE *file;
 			num_file_paths = get_line_num(repo_path);
@@ -113,8 +113,8 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
 				while ( fgets ( line, sizeof(line), file ) != NULL ) /* read a line */
 				{
 					int len_line = strlen(line);
-					// 			if(len_line == 1)
-					// 				continue;
+					/* 			if(len_line == 1) */
+					/* 				continue; */
 					if(line[len_line-1] == '\n')
 						line[len_line-1] = '\0';
 					file_paths[i] = GDKstrdup(line);
@@ -129,13 +129,13 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
 		}
 		else
 		{
-			//something else
+			/* something else */
 			return -1;
 		}
 	}
 	else
 	{
-		//error
+		/* error */
 		return -1;
 	}
 
@@ -153,7 +153,7 @@ lng get_file_paths(str repo_path, str** ret_file_paths)
  */
 str mseed_create_temp_container(temp_container* ret_tc)
 {
-	// cat: (metadata) catalog, fil: (metadata) files.
+	/* cat: (metadata) catalog, fil: (metadata) files. */
 	int num_tables = 2;
 	int num_c_fil = 8;
 	int num_c_cat = 7;
@@ -185,10 +185,10 @@ str mseed_create_temp_container(temp_container* ret_tc)
 	assert(cb_cat!=NULL);
 	assert(tscs!=NULL);
 
-	//cb_fil
+	/* cb_fil */
 	for(c = 0; c < num_c_fil; c++)
 	{
-		aBAT = BATnew(TYPE_void, ct_fil[c], 0); //create empty BAT for each column.
+		aBAT = BATnew(TYPE_void, ct_fil[c], 0); /* create empty BAT for each column. */
 		if ( aBAT == NULL)
 			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
 		BATseqbase(aBAT, 0);
@@ -197,10 +197,10 @@ str mseed_create_temp_container(temp_container* ret_tc)
 		BBPkeepref(cb_fil[c] = aBAT->batCacheid);
 	}
 
-	//cb_cat
+	/* cb_cat */
 	for(c = 0; c < num_c_cat; c++)
 	{
-		aBAT = BATnew(TYPE_void, ct_cat[c], 0); //create empty BAT for each column.
+		aBAT = BATnew(TYPE_void, ct_cat[c], 0); /* create empty BAT for each column. */
 		if ( aBAT == NULL)
 			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
 		BATseqbase(aBAT, 0);
@@ -255,7 +255,7 @@ str mseed_create_temp_container(temp_container* ret_tc)
  */
 str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 {
-	// cat: (metadata) catalog, fil: (metadata) files.
+	/* cat: (metadata) catalog, fil: (metadata) files. */
 	int num_tables = 3;
 	int num_c_fil = 8;
 	int num_c_cat = 7;
@@ -292,10 +292,10 @@ str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 	assert(cb_dat!=NULL);
 	assert(tscs!=NULL);
 
-	//cb_fil
+	/* cb_fil */
 	for(c = 0; c < num_c_fil; c++)
 	{
-		aBAT = BATnew(TYPE_void, ct_fil[c], 0); //create empty BAT for each column.
+		aBAT = BATnew(TYPE_void, ct_fil[c], 0); /* create empty BAT for each column. */
 		if ( aBAT == NULL)
 			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
 		BATseqbase(aBAT, 0);
@@ -304,10 +304,10 @@ str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 		BBPkeepref(cb_fil[c] = aBAT->batCacheid);
 	}
 
-	//cb_cat
+	/* cb_cat */
 	for(c = 0; c < num_c_cat; c++)
 	{
-		aBAT = BATnew(TYPE_void, ct_cat[c], 0); //create empty BAT for each column.
+		aBAT = BATnew(TYPE_void, ct_cat[c], 0); /* create empty BAT for each column. */
 		if ( aBAT == NULL)
 			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
 		BATseqbase(aBAT, 0);
@@ -316,10 +316,10 @@ str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 		BBPkeepref(cb_cat[c] = aBAT->batCacheid);
 	}
 
-	//cb_dat
+	/* cb_dat */
 	for(c = 0; c < num_c_dat; c++)
 	{
-		aBAT = BATnew(TYPE_void, ct_dat[c], 0); //create empty BAT for each column.
+		aBAT = BATnew(TYPE_void, ct_dat[c], 0); /* create empty BAT for each column. */
 		if ( aBAT == NULL)
 			throw(MAL,"mseed_create_temp_container",MAL_MALLOC_FAIL);
 		BATseqbase(aBAT, 0);
@@ -381,7 +381,7 @@ str mseed_create_temp_container_with_data_tables(temp_container* ret_tc)
 int concatenate_strs(str* words_to_concat, int num_words_to_concat, str* ret_concatenated)
 {
 	int w;
-	int total_len = 1; //null terminator
+	int total_len = 1; /* null terminator */
 	str tmp;
 
 	for(w = 0; w < num_words_to_concat; w++)
@@ -395,7 +395,7 @@ int concatenate_strs(str* words_to_concat, int num_words_to_concat, str* ret_con
 	}
 	*tmp = '\0';
 
-	return total_len-1; // without null terminator;
+	return total_len-1; /* without null terminator; */
 }
 
 /*
@@ -406,9 +406,9 @@ int concatenate_strs(str* words_to_concat, int num_words_to_concat, str* ret_con
  */
 str prepare_insertion(Client cntxt, temp_container* tc)
 {
-// form a sql query str like this:
-// 	CREATE FUNCTION mseed_register_fil(ticket bigint, table_idx int)
-// 	RETURNS table(file_location string, dataquality char, network string, station string, location string, channel string, encoding tinyint, byte_order boolean) external name registrar.register_table;
+/* form a sql query str like this: */
+/* 	CREATE FUNCTION mseed_register_fil(ticket bigint, table_idx int) */
+/* 	RETURNS table(file_location string, dataquality char, network string, station string, location string, channel string, encoding tinyint, byte_order boolean) external name registrar.register_table; */
 
 	int t, c;
 	str space = " ";
@@ -421,7 +421,7 @@ str prepare_insertion(Client cntxt, temp_container* tc)
 		str* words_to_concat;
 
 		if(tc->num_columns[t] <= 0)
-			break; //not a metadata table
+			break; /* not a metadata table */
 
 		num_words_to_concat = 4*(tc->num_columns[t]) - 1;
 		words_to_concat = (str*)GDKmalloc(num_words_to_concat*sizeof(str));
@@ -445,7 +445,7 @@ str prepare_insertion(Client cntxt, temp_container* tc)
 		sprintf(q, "CREATE FUNCTION %s_%s_reg(ticket bigint, table_idx int) RETURNS table(%s) external name registrar.register_table;\n", tc->schema_name, tc->table_names[t], concatenated);
 
 		if((msg =SQLstatementIntern(cntxt,&q,"registrar.create.function",TRUE,FALSE))!= MAL_SUCCEED)
-		{//create function query not succeeded, what to do
+		{/* create function query not succeeded, what to do */
 			return msg;
 		}
 
@@ -464,8 +464,8 @@ str prepare_insertion(Client cntxt, temp_container* tc)
  */
 str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc)
 {
-// form a sql query str like this:
-//INSERT INTO mseed.files SELECT * FROM mseed_files_reg(ticket, table_idx);
+/* form a sql query str like this: */
+/* INSERT INTO mseed.files SELECT * FROM mseed_files_reg(ticket, table_idx); */
 
 	int t;
 	long ticket = (long) tc;
@@ -478,19 +478,19 @@ str insert_into_vault(Client cntxt, MalBlkPtr mb, temp_container* tc)
 		sprintf(q, "INSERT INTO %s.%s SELECT * FROM %s_%s_reg(%ld, %d);\n", tc->schema_name, tc->table_names[t], tc->schema_name, tc->table_names[t], ticket, t);
 
 		if((msg =SQLstatementIntern(cntxt,&q,"registrar.insert",TRUE,FALSE))!= MAL_SUCCEED)
-		{//insert into query not succeeded, what to do
+		{/* insert into query not succeeded, what to do */
 			return msg;
 		}
 
 	}
 
 	if((msg = getSQLContext(cntxt, mb, &m, NULL))!= MAL_SUCCEED)
-	{//getting mvc failed, what to do
+	{/* getting mvc failed, what to do */
 		return msg;
 	}
 
 	if(mvc_commit(m, 0, NULL) < 0)
-	{//committing failed
+	{/* committing failed */
 		throw(MAL,"registrar.insert_into_vault", "committing failed\n");
 	}
 
@@ -522,7 +522,7 @@ str register_clean_up(temp_container* tc)
 	}
 
 	GDKfree(tc->tables_columns);
-// 	GDKfree(tc->schema_name);
+/* 	GDKfree(tc->schema_name); */
 	GDKfree(tc->table_names);
 	GDKfree(tc->num_columns);
 
@@ -612,7 +612,7 @@ str mseed_register(str file_path, temp_container* ret_tc)
 
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[1])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
-// 		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+/* 		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE); */
 		BUNappend(aBAT, (ptr) &(seq_no_fake), FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[1]);
 
@@ -739,7 +739,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 
 		if ((aBAT = BATdescriptor(ret_tc->tables_columns[1].column_bats[1])) == NULL)
 			throw(MAL, "mseed_register", RUNTIME_OBJECT_MISSING);
-//		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE);
+/* 		BUNappend(aBAT, (ptr) &(msr->sequence_number), FALSE); */
 		BUNappend(aBAT, (ptr) &(seq_no_fake), FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[1]);
 
@@ -771,10 +771,10 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		BUNappend(aBAT, (ptr) ch, FALSE);
 		BBPreleaseref(ret_tc->tables_columns[1].column_bats[6]);
 
-		// mount
+		/* mount */
 		{
 			int seq_no = seq_no_fake;
-			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
+			double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
 			long sampling_time = msr->starttime;
 
 			long num_samples = msr->samplecnt;
@@ -796,7 +796,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 				lng st = (lng) sampling_time / 1000;
 				MTIMEtimestamp_lng(&sampling_timestamp, &st);
 
-				// For each sample add one row to the table
+				/* For each sample add one row to the table */
 				BUNappend(bfile, (ptr) file_path, FALSE);
 				BUNappend(bseqno, (ptr) &seq_no, FALSE);
 				BUNappend(btime, (ptr) &sampling_timestamp, FALSE);
@@ -835,8 +835,8 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
  */
 str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *repo_path = (str*) getArgReference(stk,pci,pci->retc); //arg 1: repo_path
-	int mode = *(int*) getArgReference(stk,pci,pci->retc+1); //arg 2: mode 0:register only, mode 1: register+mount
+	str *repo_path = (str*) getArgReference(stk,pci,pci->retc); /* arg 1: repo_path */
+	int mode = *(int*) getArgReference(stk,pci,pci->retc+1); /* arg 2: mode 0:register only, mode 1: register+mount */
 	str *file_paths = NULL;
 	long num_file_paths;
 	temp_container *tc;
@@ -844,35 +844,35 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str err = NULL;
 	long start, finish;
 
-	//fetch file_paths from repo_path
+	/* fetch file_paths from repo_path */
 	num_file_paths = get_file_paths(*repo_path, &file_paths);
 	if(num_file_paths < 1 && file_paths == NULL)
-	{//problematic repo, what to do
+	{/* problematic repo, what to do */
 		throw(MAL,"registrar.register_repo", "Problematic repository: %s\n", err);
 	}
 
-	//create temp_container
+	/* create temp_container */
 	tc = (temp_container*)GDKmalloc(sizeof(temp_container));
 	assert(tc != NULL);
 	if(mode == 0)
-		err = mseed_create_temp_container(tc); // depending on design can get different argument(s)
+		err = mseed_create_temp_container(tc); /* depending on design can get different argument(s) */
 	else
-		err = mseed_create_temp_container_with_data_tables(tc); // depending on design can get different argument(s)
+		err = mseed_create_temp_container_with_data_tables(tc); /* depending on design can get different argument(s) */
 	if(err != MAL_SUCCEED)
-	{//temp_container creation failed, what to do
+	{/* temp_container creation failed, what to do */
 		throw(MAL,"registrar.register_repo", "temp_container creation failed: %s\n", err);
 	}
 
 	start = GDKms();
-	//loop through the file_paths in repo
+	/* loop through the file_paths in repo */
 	if(mode == 0)
 	{
 		for(i = 0; i < num_file_paths; i++)
 		{
 			err = mseed_register(file_paths[i], tc);
 			if(err != MAL_SUCCEED)
-			{//current file cannot be registered, what to do
-	// 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err);
+			{/* current file cannot be registered, what to do */
+	/* 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err); */
 				printf("registrar.register_repo: current file cannot be registered: %s\n", err);
 			}
 		}
@@ -883,8 +883,8 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		{
 			err = mseed_register_and_mount(file_paths[i], tc);
 			if(err != MAL_SUCCEED)
-			{//current file cannot be registered, what to do
-			// 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err);
+			{/* current file cannot be registered, what to do */
+			/* 			throw(MAL,"registrar.register_repo", "Current file cannot be registered: %s\n", err); */
 			printf("registrar.register_repo: current file cannot be registered and/or mounted: %s\n", err);
 			}
 		}
@@ -893,17 +893,17 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	printf("Time for extraction and transformation of (meta-)data: %ld milliseconds\n", finish - start);
 
 	start = GDKms();
-	//prepare sql functions for inserting temp_container into tables_to_be_filled
+	/* prepare sql functions for inserting temp_container into tables_to_be_filled */
 	err = prepare_insertion(cntxt, tc);
 	if(err != MAL_SUCCEED)
-	{//preparing the insertion failed, what to do
+	{/* preparing the insertion failed, what to do */
 		throw(MAL,"registrar.register_repo", "Insertion prepare failed: %s\n", err);
 	}
 
-	//insert temp_container into tables_to_be_filled
+	/* insert temp_container into tables_to_be_filled */
 	err = insert_into_vault(cntxt, mb, tc);
 	if(err != MAL_SUCCEED)
-	{//inserting the temp_container into one of the tables failed, what to do
+	{/* inserting the temp_container into one of the tables failed, what to do */
 		throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed: %s\n", err);
 	}
 	finish = GDKms();
@@ -911,7 +911,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	err = register_clean_up(tc);
 	if(err != MAL_SUCCEED)
-	{//inserting the temp_container into one of the tables failed, what to do
+	{/* inserting the temp_container into one of the tables failed, what to do */
 		throw(MAL,"registrar.register_repo", "Cleaning up the temp_container failed: %s\n", err);
 	}
 
@@ -931,16 +931,16 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str register_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int c;
-	lng ticket = *(lng*) getArgReference(stk,pci,pci->retc); //arg 1: ticket to the temp_container
-	int table_idx = *(int*) getArgReference(stk,pci,pci->retc+1); //arg 2: index of the table to be registered in the temp_container
+	lng ticket = *(lng*) getArgReference(stk,pci,pci->retc); /* arg 1: ticket to the temp_container */
+	int table_idx = *(int*) getArgReference(stk,pci,pci->retc+1); /* arg 2: index of the table to be registered in the temp_container */
 
-	temp_container *tc = (temp_container*) ticket; //filled temp_container taken
+	temp_container *tc = (temp_container*) ticket; /* filled temp_container taken */
 
-	cntxt = cntxt; //to escape 'unused' parameter error.
-	mb = mb; //to escape 'unused' parameter error.
+	cntxt = cntxt; /* to escape 'unused' parameter error. */
+	mb = mb; /* to escape 'unused' parameter error. */
 
 	if(pci->retc != tc->num_columns[table_idx])
-	{//inconsistency in the number of return BATs, what to do
+	{/* inconsistency in the number of return BATs, what to do */
 		throw(MAL,"registrar.register_table", OPERATION_FAILED);
 	}
 

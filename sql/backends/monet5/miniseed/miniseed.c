@@ -1,15 +1,15 @@
 #include "monetdb_config.h"
 
 #include "miniseed.h"
-//#include "vault.h"
+/* #include "vault.h" */
 #include "mtime.h"
 
 str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat** ret;
 
-	str *targetfile = (str*) getArgReference(stk,pci,4); //arg 1: string containing the input file path.
-	BAT *btime, *bdata, *bfile, *bseqno; // BATs to return, representing columns of a table.
+	str *targetfile = (str*) getArgReference(stk,pci,4); /* arg 1: string containing the input file path. */
+	BAT *btime, *bdata, *bfile, *bseqno; /* BATs to return, representing columns of a table. */
 
 	VarRecord low, high;
 	wrd num_rows = 0;
@@ -30,32 +30,32 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret[r] = (int*) getArgReference(stk,pci,r);
 	}
 
-	cntxt = cntxt; //to escape 'unused' parameter error.
-	mb = mb; //to escape 'unused' parameter error.
+	cntxt = cntxt; /* to escape 'unused' parameter error. */
+	mb = mb; /* to escape 'unused' parameter error. */
 
 	/* prepare to set low and high oids of return vars */
 	high.value.vtype= low.value.vtype= TYPE_oid;
 	low.value.val.oval= 0;
 
-	bfile = BATnew(TYPE_void, TYPE_str, 0); //create empty BAT for ret0.
+	bfile = BATnew(TYPE_void, TYPE_str, 0); /* create empty BAT for ret0. */
 	if ( bfile == NULL)
 		throw(MAL,"miniseed.mount",MAL_MALLOC_FAIL);
 	BATseqbase(bfile, 0);
-	bseqno = BATnew(TYPE_void, TYPE_int, 0); //create empty BAT for ret1.
+	bseqno = BATnew(TYPE_void, TYPE_int, 0); /* create empty BAT for ret1. */
 	if ( bseqno == NULL)
 		throw(MAL,"miniseed.mount",MAL_MALLOC_FAIL);
 	BATseqbase(bseqno, 0);
 
-	btime = BATnew(TYPE_void, TYPE_timestamp, 0); //create empty BAT for ret2.
+	btime = BATnew(TYPE_void, TYPE_timestamp, 0); /* create empty BAT for ret2. */
 	if ( btime == NULL)
 		throw(MAL,"miniseed.mount",MAL_MALLOC_FAIL);
 	BATseqbase(btime, 0);
-	bdata = BATnew(TYPE_void, TYPE_int, 0); //create empty BAT for ret3.
+	bdata = BATnew(TYPE_void, TYPE_int, 0); /* create empty BAT for ret3. */
 	if ( bdata == NULL)
 		throw(MAL,"miniseed.mount",MAL_MALLOC_FAIL);
 	BATseqbase(bdata, 0);
 
-	if(bfile == NULL || bseqno == NULL || btime == NULL || bdata == NULL) //exception handling.
+	if(bfile == NULL || bseqno == NULL || btime == NULL || bdata == NULL) /* exception handling. */
 	{
 		if(bfile)
 			BBPreleaseref(bfile->batCacheid);
@@ -68,12 +68,12 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"miniseed.mount", MAL_MALLOC_FAIL);
 	}
 
-	//loop through all records in the target mseed file.
+	/* loop through all records in the target mseed file. */
 	while ((retcode = ms_readmsr (&msr, *targetfile, 0, NULL, NULL, 1, 1, verbose)) == MS_NOERROR)
 	{
 
 		int seq_no = msr->sequence_number;
-		double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
+		double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
 		long sampling_time = msr->starttime;
 
 		long num_samples = msr->numsamples;
@@ -86,7 +86,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lng st = (lng) sampling_time / 1000;
 			MTIMEtimestamp_lng(&sampling_timestamp, &st);
 
-			// For each sample add one row to the table
+			/* For each sample add one row to the table */
 			BUNappend(bfile, (ptr) *targetfile, FALSE);
 			BUNappend(bseqno, (ptr) &seq_no, FALSE);
 			BUNappend(btime, (ptr) &sampling_timestamp, FALSE);
@@ -101,7 +101,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( retcode != MS_ENDOFFILE )
 		ms_log (2, "Cannot read %s: %s\n", *targetfile, ms_errorstr(retcode));
 
-	//cleanup memory and close file
+	/* cleanup memory and close file */
 	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
 
 	printf("num_rows: %ld\n", num_rows);
@@ -119,10 +119,10 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
 	varSetProp(mb, getArg(pci, 3), PropertyIndex("hub"), op_lt, (ptr) &high.value);
 
-	BBPkeepref(*ret[0] = bfile->batCacheid); //return BAT.
-	BBPkeepref(*ret[1] = bseqno->batCacheid); //return BAT.
-	BBPkeepref(*ret[2] = btime->batCacheid); //return BAT.
-	BBPkeepref(*ret[3] = bdata->batCacheid); //return BAT.
+	BBPkeepref(*ret[0] = bfile->batCacheid); /* return BAT. */
+	BBPkeepref(*ret[1] = bseqno->batCacheid); /* return BAT. */
+	BBPkeepref(*ret[2] = btime->batCacheid); /* return BAT. */
+	BBPkeepref(*ret[3] = bdata->batCacheid); /* return BAT. */
 
 	return MAL_SUCCEED;
 }

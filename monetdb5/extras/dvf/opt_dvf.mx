@@ -164,7 +164,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit= mb->stop;
 
 	/* iterate over the instructions of the input MAL program */
-	for (i = 1; i < limit; i++) // the plan signature can be skipped safely
+	for (i = 1; i < limit; i++) /* the plan signature can be skipped safely */
 	{
 		InstrPtr p = old[i];
 
@@ -233,18 +233,18 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			switch(state)
 			{
 				case 1:
-					// Error! What to do
+					/* Error! What to do */
 					return -1;
 					//throw(MAL,"optimizer.DVframework", "Schema of %s vault is not well-organized.\n", getVarConstant(mb, getArg(p, 2)).val.sval);
 				case 2:
-					// pattern found! What to do
+					/* pattern found! What to do */
 					/* (t1, t2) := group.done(v6);
 					 *  t3 := bat.mirror(t1);
 					 *  t4 := algebra.leftjoin(t3, v6);
 					 *  dvf.plan_modifier(schema_name, t4);
 					 */
 
-					// create group.done instruction
+					/* create group.done instruction */
 					r = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(r, groupRef);
 					setFunctionId(r, doneRef);
@@ -253,14 +253,14 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(old[i2], 0));
 
 
-					// create bat.mirror instruction
+					/* create bat.mirror instruction */
 					s = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(s, batRef);
 					setFunctionId(s, mirrorRef);
 					s = pushReturn(mb, s, newTmpVariable(mb, TYPE_bat));
 					s = pushArgument(mb, s, getArg(r, 0));
 
-					// create algebra.leftjoin instruction
+					/* create algebra.leftjoin instruction */
 					t = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(t, algebraRef);
 					setFunctionId(t, leftjoinRef);
@@ -268,7 +268,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					t = pushArgument(mb, t, getArg(s, 0));
 					t = pushArgument(mb, t, getArg(old[i2], 0));
 
-					// create dvf.plan_modifier instruction
+					/* create dvf.plan_modifier instruction */
 					q = newInstruction(mb, ASSIGNsymbol);
 					q->argc = 3;
 					q->retc = 1;
@@ -278,7 +278,7 @@ OPTdvfImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(q, 1) = getArg(p, 2);
 					getArg(q, 2) = getArg(t, 0);
 
-					// insert the new instruction in pc i2+1
+					/* insert the new instruction in pc i2+1 */
 					insertInstruction(mb, q, i2+1);
 					insertInstruction(mb, t, i2+1);
 					insertInstruction(mb, s, i2+1);

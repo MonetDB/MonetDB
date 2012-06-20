@@ -71,12 +71,12 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MalBlkPtr copy_old, copy_mb;
 	bit is_stack_new = FALSE;
 
-	BAT *BAT_fl = NULL; //BAT for file_locations
+	BAT *BAT_fl = NULL; /* BAT for file_locations */
 
 	bit after_first_data_bind = FALSE;
 
-	str *schema_name = (str*) getArgReference(stk,pci,1); //arg 1: schema_name
-	int bat_fl = *(int*) getArgReference(stk,pci,2); //arg 2: bat of file_locations
+	str *schema_name = (str*) getArgReference(stk,pci,1); /* arg 1: schema_name */
+	int bat_fl = *(int*) getArgReference(stk,pci,2); /* arg 2: bat of file_locations */
 
 	BATiter fli;
 
@@ -90,9 +90,9 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check for logical error: mb must never be NULL */
 	assert (mb != NULL);
 
-	cntxt = cntxt; //to escape 'unused' parameter error.
-	stk = stk; //to escape 'unused' parameter error.
-	pci = pci; //to escape 'unused' parameter error.
+	cntxt = cntxt; /* to escape 'unused' parameter error. */
+	stk = stk; /* to escape 'unused' parameter error. */
+	pci = pci; /* to escape 'unused' parameter error. */
 
 	if ((BAT_fl = BATdescriptor(bat_fl)) == NULL)
 		throw(MAL, "dvf.plan_modifier", RUNTIME_OBJECT_MISSING);
@@ -108,7 +108,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	num_fl = BAT_fl->U->count;
 
-	// when number of files to be mounted is 0.
+	/* when number of files to be mounted is 0. */
 	if(num_fl == 0)
 		goto finish;
 
@@ -161,7 +161,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			{
 				int which_fl = 0;
 				after_first_data_bind = TRUE;
-				// push mount instructions
+				/* push mount instructions */
 				/* create BAT iterator */
 				fli = bat_iterator(BAT_fl);
 
@@ -174,7 +174,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* get tail value */
 					str t = (str) BUNtail(fli, b1);
 
-					//create mount instruction
+					/* create mount instruction */
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, miniseedRef);
 					setFunctionId(q, mountRef);
@@ -195,7 +195,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 					mounts[which_fl] = q;
 					which_fl++;
-					// push the new instruction
+					/* push the new instruction */
 					pushInstruction(mb, q);
 					actions++;
 				}
@@ -207,11 +207,11 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			}
 
-			// new mat.new for the column being binded
+			/* new mat.new for the column being binded */
 			r = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(r, matRef);
 			setFunctionId(r, newRef);
-			r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any)); // push tmp var to pass to markH.
+			r = pushReturn(mb, r, newTmpVariable(mb, TYPE_any)); /* push tmp var to pass to markH. */
 			which_column = get_column_num(*schema_name, getVarConstant(mb, getArg(p, 3)).val.sval,
 						      getVarConstant(mb, getArg(p, 4)).val.sval);
 			if(which_column < 0)
@@ -224,38 +224,38 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			setVarInit(mb, getArg(r, 0));
 
-			// push the new instruction
+			/* push the new instruction */
 			pushInstruction(mb, r);
 			actions++;
 
-			// arrange oids of return val of mat.new
+			/* arrange oids of return val of mat.new */
 			s = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(s, algebraRef);
 			setFunctionId(s, markHRef);
-			s = pushReturn(mb, s, getArg(p, 0)); // push the ret of sql.bind as ret of (mat.new + algebra.markH)
+			s = pushReturn(mb, s, getArg(p, 0)); /* push the ret of sql.bind as ret of (mat.new + algebra.markH) */
 			s = pushArgument(mb, s, getArg(r, 0));
 			s = pushOid(mb, s, 0);
 
-			// push the new instruction
+			/* push the new instruction */
 			pushInstruction(mb, s);
 			actions++;
-// 			s = s;
+/* 			s = s; */
 
-			// comment out in the old for reusing the old
+			/* comment out in the old for reusing the old */
 			copy_old->stmt[i]->token = REMsymbol;
 
 		}
 		else
 		{
-			// push instruction
+			/* push instruction */
 			pushInstruction(mb, copyInstruction(old[i]));
 
 			if (p->token == ENDsymbol) break;
 
-			// comment out in the old for reusing the old
+			/* comment out in the old for reusing the old */
 			if(i > startpc)
 			{
-// 				old[i]->token = REMsymbol;
+/* 				old[i]->token = REMsymbol; */
 				copy_old->stmt[i]->token = REMsymbol;
 			}
 		}
@@ -283,7 +283,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* New variables might have been created by the optimizers, so their values has to be copied into the stack. However, there might not be enough space in stack for them. We cannot reallocate the stack, but we may create our own enlarged stack, then run the rest of the plan with our own stack. */
 
-	// arrange the new stack without freeing the old one.
+	/* arrange the new stack without freeing the old one. */
 	if (stk->stksize > mb->vsize)
 		stk_new = stk;
 	else
@@ -295,7 +295,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		is_stack_new = TRUE;
 	}
 
-	//copy values into the new stack
+	/* copy values into the new stack */
 	for (j = 0; j < mb->vtop; j++) {
 		lhs = &stk_new->stk[j];
 		if (isVarConstant(mb, j) > 0) {
@@ -326,14 +326,14 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	stk_new->blk = mb;
 
-	// adjust variable lifetimes
+	/* adjust variable lifetimes */
 	malGarbageCollector(mb);
 
-// 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
-// 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN);
+/* 	chkProgram(cntxt->fdout, cntxt->nspace, mb); */
+/* 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN); */
 
 	msg = msg;
-	// run rest of the plan
+	/* run rest of the plan */
 	msg = runMALsequence(cntxt, mb, startpc+1, mb->stop, stk_new, stk_new, mb->stmt[startpc]);
 
 	if(msg != MAL_SUCCEED)
@@ -341,8 +341,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "dvf.plan_modifier", "From the recursive call: %s", msg);
 	}
 
-// 	chkProgram(cntxt->fdout, cntxt->nspace, copy_old);
-// 	printFunction(cntxt->fdout, copy_old, 0, LIST_MAL_EXPLAIN);
+/* 	chkProgram(cntxt->fdout, cntxt->nspace, copy_old); */
+/* 	printFunction(cntxt->fdout, copy_old, 0, LIST_MAL_EXPLAIN); */
 
 	/* any remaining MAL instruction records are removed */
 	for(i = 0; i<slimit; i++)
