@@ -187,16 +187,16 @@ SYScpuStatistics(int *ret, int *ret2)
 	state = newst;
 #else
 	i = int_nil;
-	bn = BUNins(bn, "elapsed", FALSE);
-	b = BUNins(b, &i, FALSE);
-	bn = BUNins(bn, "user", FALSE);
-	b = BUNins(b, &i, FALSE);
-	bn = BUNins(bn, "elapuser", FALSE);
-	b = BUNins(b, &i, FALSE);
-	bn = BUNins(bn, "system", FALSE);
-	b = BUNins(b, &i, FALSE);
-	bn = BUNins(bn, "elapsystem", FALSE);
-	b = BUNins(b, &i, FALSE);
+	bn = BUNappend(bn, "elapsed", FALSE);
+	b = BUNappend(b, &i, FALSE);
+	bn = BUNappend(bn, "user", FALSE);
+	b = BUNappend(b, &i, FALSE);
+	bn = BUNappend(bn, "elapuser", FALSE);
+	b = BUNappend(b, &i, FALSE);
+	bn = BUNappend(bn, "system", FALSE);
+	b = BUNappend(b, &i, FALSE);
+	bn = BUNappend(bn, "elapsystem", FALSE);
+	b = BUNappend(b, &i, FALSE);
 #endif
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
