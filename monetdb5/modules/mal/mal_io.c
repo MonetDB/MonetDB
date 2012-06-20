@@ -189,7 +189,7 @@ IOprompt_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		dst = buf + offset;\
 	}
 
-#define sprintf(X1)\
+#define m5sprintf(X1)\
 	if (width > adds) {\
 		str newadd;\
 		newadd = GDKrealloc(add, width + 10);\
@@ -304,7 +304,7 @@ IOprintf_(str *res, str format, ...)
 				}
 				*(++ctrg) = 's';
 				*(++ctrg) = 0;
-				sprintf(niltext);
+				m5sprintf(niltext);
 			} else if (strchr("cdiouxX", *cur) && !extra) {
 				int ival;
 
@@ -327,7 +327,7 @@ IOprintf_(str *res, str format, ...)
 					va_end(ap);
 					return_error(type_error);
 				}
-				sprintf(ival);
+				m5sprintf(ival);
 			} else if (strchr("diouxX", *cur)) {
 #ifdef NATIVE_WIN32
 				ptrdiff_t i;
@@ -373,7 +373,7 @@ IOprintf_(str *res, str format, ...)
 				meta[extra + 1] = '6';
 				meta[extra + 2] = '4';
 #endif
-				sprintf(lval);
+				m5sprintf(lval);
 			} else if (strchr("feEgG", *cur)) {
 				dbl dval;
 
@@ -386,7 +386,7 @@ IOprintf_(str *res, str format, ...)
 					return_error(type_error);
 				}
 				width += (1 + prec);
-				sprintf(dval);
+				m5sprintf(dval);
 			} else if (*cur == 's') {
 				int length;
 
@@ -404,7 +404,7 @@ IOprintf_(str *res, str format, ...)
 					length = prec;
 				if ((size_t) length > width)
 					width = (size_t) length;
-				sprintf(p);
+				m5sprintf(p);
 			} else {
 				va_end(ap);
 				return_error(format_error);
