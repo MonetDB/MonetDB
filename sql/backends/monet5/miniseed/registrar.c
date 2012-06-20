@@ -552,7 +552,7 @@ str mseed_register(str file_path, temp_container* ret_tc)
 	BAT *aBAT = NULL;
 	int files_done = FALSE;
 	timestamp start_timestamp;
-	int32_t seq_no_fake = 1;
+	int seq_no_fake = 1;
 	lng st;
 	str ch = (str) GDKmalloc(2*sizeof(char));
 	ch[1] = '\0';
@@ -678,7 +678,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 	BAT *btime = NULL, *bdata = NULL, *bfile = NULL, *bseqno = NULL;
 	int files_done = FALSE;
 	timestamp start_timestamp;
-	int32_t seq_no_fake = 1;
+	int seq_no_fake = 1;
 	lng st;
 	long i;
 	str ch = (str) GDKmalloc(2*sizeof(char));
@@ -773,7 +773,7 @@ str mseed_register_and_mount(str file_path, temp_container* ret_tc)
 		
 		// mount
 		{
-			int32_t seq_no = seq_no_fake;
+			int seq_no = seq_no_fake;
 			double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
 			long sampling_time = msr->starttime;
 			

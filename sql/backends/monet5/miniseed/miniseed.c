@@ -72,7 +72,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while ((retcode = ms_readmsr (&msr, *targetfile, 0, NULL, NULL, 1, 1, verbose)) == MS_NOERROR)
 	{
 	
-		int32_t seq_no = msr->sequence_number;
+		int seq_no = msr->sequence_number;
 		double sample_interval = HPTMODULUS / msr->samprate; //calculate sampling interval from frequency
 		long sampling_time = msr->starttime;
 		
