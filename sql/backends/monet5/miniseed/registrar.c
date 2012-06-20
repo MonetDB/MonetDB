@@ -9,7 +9,6 @@
 
 #include "sql_mvc.h"
 #include "sql.h"
-#include "gdk_private.h"
 
 /*
  * keeps BAT and other properties of columns of a table.
@@ -513,7 +512,7 @@ str register_clean_up(temp_container* tc)
 	{	
 		for(c = 0; c < tc->num_columns[t]; c++)
 		{
-			BBPreleaselref(tc->tables_columns[t].column_bats[c]);
+			BBPdecref(tc->tables_columns[t].column_bats[c], TRUE);
 			GDKfree(tc->tables_columns[t].column_names[c]);
 			GDKfree(tc->tables_columns[t].column_types_strs[c]);
 		}
