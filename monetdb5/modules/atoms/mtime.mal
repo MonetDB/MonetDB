@@ -503,49 +503,49 @@ command year(d:date) :int
 address MTIMEdate_extract_year
 comment "extracts year from date (nonzero
 	value between -5867411 and +5867411).";
-command batmtime.year(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.year(d:bat[:oid,:date]):bat[:oid,:int]
 address MTIMEdate_extract_year_bulk;
 
 command month(d:date) :int
 address MTIMEdate_extract_month
 comment "extracts month from date";
-command batmtime.month(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.month(d:bat[:oid,:date]):bat[:oid,:int]
 address MTIMEdate_extract_month_bulk;
 
 command day(d:date) :int
 address MTIMEdate_extract_day
 comment "extracts day from date ";
-command batmtime.day(d:bat[:any_1,:date]):bat[:any_1,:int]
+command batmtime.day(d:bat[:oid,:date]):bat[:oid,:int]
 address MTIMEdate_extract_day_bulk;
 
 command hours(h:daytime) :int
 address MTIMEdaytime_extract_hours
 comment "extracts hour from daytime";
-command batmtime.hours(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+command batmtime.hours(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_hours_bulk;
 
 command minutes(d:daytime) :int
 address MTIMEdaytime_extract_minutes
 comment "extracts minutes from daytime";
-command minutes(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+command minutes(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
 command seconds(d:daytime) :int
 address MTIMEdaytime_extract_seconds
 comment "extracts seconds from daytime";
-command batmtime.seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+command batmtime.seconds(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
 command sql_seconds(d:daytime) :int
 address MTIMEdaytime_extract_sql_seconds
 comment "extracts seconds (with fractional milliseconds) from daytime";
-command batmtime.sql_seconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+command batmtime.sql_seconds(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_sql_seconds_bulk;
 
 command milliseconds(d:daytime) :int
 address MTIMEdaytime_extract_milliseconds
 comment "extracts milliseconds from daytime";
-command batmtime.milliseconds(d:bat[:any_1,:daytime]):bat[:any_1,:int]
+command batmtime.milliseconds(d:bat[:oid,:daytime]):bat[:oid,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
 command daytime(t:timestamp) :daytime

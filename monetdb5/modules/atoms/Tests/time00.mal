@@ -17,14 +17,14 @@ io.print(f);
 f:= calc.min(date_08,date_08);
 io.print(f);
 
-b:= bat.new(:int,:date);
-bat.insert(b,1,date_01);
-bat.insert(b,2,date_02);
-bat.insert(b,3,date_03);
-bat.insert(b,4,date_04);
-bat.insert(b,5,date_05);
-bat.insert(b,6,date_06);
-bat.insert(b,7,date_07);
+b:= bat.new(:oid,:date);
+bat.append(b,date_01);
+bat.append(b,date_02);
+bat.append(b,date_03);
+bat.append(b,date_04);
+bat.append(b,date_05);
+bat.append(b,date_06);
+bat.append(b,date_07);
 io.print(b);
 
 zy:= batmtime.year(b);
