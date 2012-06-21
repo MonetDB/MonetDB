@@ -9,7 +9,6 @@ cross
 intersect_diff_void
 intersect_diff_nil
 qsort
-refcnt
 reload
 semijoin
 str_heap

@@ -634,33 +634,6 @@ comment "Reuse a temporary BAT if you can. Otherwise,
 	allocate enough storage to accept result of an
  	operation (not involving the heap)";
 
-# @- Hash Split
-# The commands below is temporarilly postponed, because
-# we don;t handle nested bats
-command hashsplit( b:bat[:any_1,:any_2], buckects:int ) 
-		:bat[:int,:bat] 
-address ALGhashsplit
-comment "Split a BAT on tail column according (hash-value MOD buckets). 
-		Returns a recursive BAT, containing the fragments in the tail, 
-		their bucket number in the head.";
-
-command uhashsplit ( b:bat[:any_1,:any_2], buckets:int ) :bat[:int,:bat] 
-address ALGuhashsplit
-comment "Same as hashsplit, but only collect the head values in the fragments";
-# @- Range Split
-command rangesplit ( b:bat[:any_1,:any_2], ranges:int ) 
-		:bat[:any_2,:bat] 
-address ALGrangesplit
-comment "Split a BAT on tail column in 'ranges' equally sized consecutive 
-		ranges. Returns a recursive BAT, containing the fragments in the tail, 
-		the higher-bound of the range in the head. The higher bound of the last 
-	range is 'nil'.";
-
-command urangesplit( b:bat[:any_1,:any_2], ranges:int ) 
-		:bat[:any_2,:bat] 
-address ALGurangesplit
-comment "Same as rangesplit, but only collect the head values in the fragments" ;
-
 # @+ Common BAT Aggregates
 # These operations examine a BAT, and compute some simple aggregate result
 # over it.
@@ -1060,9 +1033,6 @@ algebra_export str ALGmarkHead_default(int *result, int *bid);
 algebra_export str ALGhmarkp(int *result, int *bid, int *nr_parts, int *part_nr);
 algebra_export str ALGmark_grp_1(int *result, int *bid, int *gid);
 algebra_export str ALGmark_grp_2(int *result, int *bid, int *gid, oid *base);
-algebra_export str ALGhashsplit(int *result, int *bid, int *nfrag);
-algebra_export str ALGrangesplit(int *result, int *bid, int *nfrag);
-algebra_export str ALGurangesplit(int *result, int *bid, int *nfrag);
 algebra_export str ALGhistogram_rev(int *result, int *bid);
 algebra_export str ALGlike(int *ret, int *bid, str *k);
 algebra_export str ALGslice(int *ret, bat *bid, lng *start, lng *end);
@@ -3230,86 +3200,6 @@ ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(g->batCacheid);
 	throw(MAL, "algebra.mark_grp", GDK_EXCEPTION);
-}
-
-str
-ALGhashsplit(int *result, int *bid, int *nfrag)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.hashsplit", RUNTIME_OBJECT_MISSING);
-	}
-	CMDhashsplit(&bn, b, nfrag);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.hashsplit", GDK_EXCEPTION);
-}
-
-str
-ALGuhashsplit(int *result, int *bid, int *nfrag)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.uhashsplit", RUNTIME_OBJECT_MISSING);
-	}
-	CMDuhashsplit(&bn, b, nfrag);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.uhashsplit", GDK_EXCEPTION);
-}
-
-str
-ALGrangesplit(int *result, int *bid, int *nfrag)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.rangesplit", RUNTIME_OBJECT_MISSING);
-	}
-	CMDrangesplit(&bn, b, nfrag);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.rangesplit", GDK_EXCEPTION);
-}
-
-str
-ALGurangesplit(int *result, int *bid, int *nfrag)
-{
-	BAT *b, *bn = NULL;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.urangesplit", RUNTIME_OBJECT_MISSING);
-	}
-	CMDurangesplit(&bn, b, nfrag);
-	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
-		*result = bn->batCacheid;
-		BBPkeepref(*result);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "algebra.urangesplit", GDK_EXCEPTION);
 }
 
 str
