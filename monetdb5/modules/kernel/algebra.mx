@@ -1638,6 +1638,7 @@ static int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
 }
 
 
+/*
 static int
 CMDhashsplit(BAT **res, BAT *b, int *nfrag)
 {
@@ -1694,6 +1695,7 @@ CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 	return (*res = BATrangesplit(b, (BUN) *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
+*/
 /*
  * @- Substring Select
  * The string pattern matching routine has been added. It should be
