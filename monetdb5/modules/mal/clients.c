@@ -138,41 +138,64 @@ str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret=  (int *) getArgReference(stk,pci,0);
-	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
+	int *ret2=  (int *) getArgReference(stk,pci,0);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
+	BAT *bn = BATnew(TYPE_void, TYPE_str, 12);
 	char s[26];
 
 	(void) mb;
-	if (b == 0)
+	if (b == 0 || bn == 0){
+		if ( b == 0) BBPreleaseref(b->batCacheid);
+		if ( bn == 0) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "clients.info", MAL_MALLOC_FAIL);
+	}
 
-	BUNins(b, "user", local_itoa((int)cntxt->user), FALSE);
-	BUNins(b, "password", "", FALSE); /* FIXME: get rid of this */
-	BUNins(b, "scenario", cntxt->scenario, FALSE);
-	BUNins(b, "timer", local_itoa((int) cntxt->timer), FALSE);
-	BUNins(b, "trace", local_itoa(cntxt->itrace), FALSE);
-	BUNins(b, "listing", local_itoa(cntxt->listing), FALSE);
-	BUNins(b, "debug", local_itoa(cntxt->debug), FALSE);
+	BUNappend(b, "user", FALSE);
+	BUNappend(bn, local_itoa((int)cntxt->user), FALSE);
+
+	BUNappend(b, "password", FALSE); /* FIXME: get rid of this */
+	BUNappend(bn, "", FALSE); /* FIXME: get rid of this */
+
+	BUNappend(b, "scenario", FALSE);
+	BUNappend(bn, cntxt->scenario, FALSE);
+
+	BUNappend(b, "timer", FALSE);
+	BUNappend(bn, local_itoa((int) cntxt->timer), FALSE);
+
+	BUNappend(b, "trace", FALSE);
+	BUNappend(bn, local_itoa(cntxt->itrace), FALSE);
+
+	BUNappend(b, "listing", FALSE);
+	BUNappend(bn, local_itoa(cntxt->listing), FALSE);
+
+	BUNappend(b, "debug", FALSE);
+	BUNappend(bn, local_itoa(cntxt->debug), FALSE);
+
 	CLTtimeConvert((time_t) cntxt->login,s);
-	BUNins(b, "login", s, FALSE);
+	BUNappend(b, "login", FALSE);
+	BUNappend(bn, s, FALSE);
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","info");
+	BBPkeepref(*ret2= bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 CLTLogin(int *ret)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
 	int i;
 	char s[26];
 
 	if (b == 0)
 		throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
+
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->login,s);
-			BUNins(b, &i, s, FALSE);
+			BUNappend(b, s, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -183,17 +206,18 @@ CLTLogin(int *ret)
 str
 CLTLastCommand(int *ret)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
 	int i;
 	char s[26];
 
 	if (b == 0)
 		throw(MAL, "clients.getLastCommand", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
-			BUNins(b, &i, s, FALSE);
+			BUNappend(b, s, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -204,15 +228,16 @@ CLTLastCommand(int *ret)
 str
 CLTActions(int *ret)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_int, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_int, 12);
 	int i;
 
 	if (b == 0)
 		throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
-			BUNins(b, &i, &c->actions, FALSE);
+			BUNappend(b, &c->actions, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -222,15 +247,16 @@ CLTActions(int *ret)
 str
 CLTTime(int *ret)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_lng, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_lng, 12);
 	int i;
 
 	if (b == 0)
 		throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil) {
-			BUNins(b, &i, &c->totaltime, FALSE);
+			BUNappend(b, &c->totaltime, FALSE);
 		}
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -244,15 +270,16 @@ CLTTime(int *ret)
 str
 CLTusers(int *ret)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_str, 12);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 12);
 	int i;
 
 	if (b == 0)
 		throw(MAL, "clients.users", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= CLAIMED && c->user != oid_nil)
-			b = BUNins(b, &i, local_itoa((int)c->user), FALSE);
+			BUNappend(b, &i, FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	pseudo(ret,b,"client","users");

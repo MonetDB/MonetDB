@@ -37,23 +37,23 @@ It is the privilige of the console user.";
 
 # @-
 # Administrator operations
-command getLogins( ):bat[:int,:str] 
+command getLogins( ):bat[:oid,:str] 
 address CLTLogin
 comment "Pseudo bat of client login time.";
 
-command getLastCommand( ):bat[:int,:str] 
+command getLastCommand( ):bat[:oid,:str] 
 address CLTLastCommand
 comment "Pseudo bat of client's last command time.";
 
-command getActions( ):bat[:int,:int] 
+command getActions( ):bat[:oid,:int] 
 address CLTActions
 comment "Pseudo bat of client's command counts.";
 
-command getTime( ):bat[:int,:lng] 
+command getTime( ):bat[:oid,:lng] 
 address CLTTime
 comment "Pseudo bat of client's total time usage(in usec).";
 
-command getUsers( ):bat[:int,:str] 
+command getUsers( ):bat[:oid,:str] 
 address CLTusers
 comment "Pseudo bat of users logged in.";
 
