@@ -34,9 +34,6 @@ command getContext(u:url) :str
 address URLgetContext
 comment "Get the path context of a URL";
 
-command getDirectory(u:url) :bat[:int,:str]
-address URLgetDirectory
-comment "Extract directory names from the URL";
 
 command getDomain(u:url) :str
 address URLgetDomain
@@ -65,10 +62,6 @@ comment "Extract the protocol from the URL";
 command getQuery(u:url) :str
 address URLgetQuery
 comment "Extract the query string from the URL";
-
-command getQueryArg(u:url) :bat[:str,:str]
-address URLgetQueryArg
-comment "Extract argument mappings from the URL";
 
 command getUser(u:url) :str
 address URLgetUser

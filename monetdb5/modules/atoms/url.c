@@ -877,17 +877,6 @@ URLgetContext(str *retval, str *val)
 }
 
 str
-URLgetDirectory(int *ret, str *tv)
-{
-	(void) ret;
-	(void) tv;
-	throw(MAL, "url.getDirectory", "not yet available");
-/* this operation requres a BAT context, should be defined elsewhere
-	url_getDirectory(ret, *tv);
-*/
-}
-
-str
 URLgetExtension(str *retval, str *tv)
 {
 	return url_getExtension(retval, *tv);
@@ -921,18 +910,6 @@ str
 URLgetQuery(str *retval, str *tv)
 {
 	return url_getQuery(retval, *tv);
-}
-
-str
-URLgetQueryArg(int *ret, str *tv)
-{
-	(void) ret;
-	(void) tv;
-	throw(MAL, "url.getQueryArg", "Not yet implemented");
-/*
-	url_getQueryArg(ret,*tv);
-	return MAL_SUCCEED;
-*/
 }
 
 str
