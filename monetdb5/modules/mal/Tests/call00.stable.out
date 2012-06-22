@@ -39,18 +39,18 @@ function user.main():void;
 end main;
 #-----------------------------------------#
 # view		input			  # name
-# str		str			  # type
-#-----------------------------------------#
-[ "user.tst",	  "(i:int,s:str):bit;"	  ]
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "(i:int,s:str):bit;"	  ]
 [ 2 ]
 hello world
 [ "function user.tst(i:int,s:str):bit;\n    j := calc.+(i,1);\n    io.print(j);\n# ignore comments \n    format := \"hello %s\\n\";\n    io.printf(format,s);\n    return tst := true;\nend tst;\n" ]
 #-----------------------------------------#
 # view		input			  # name
-# str		str			  # type
-#-----------------------------------------#
-[ "user.tst",	  "(i:int,s:str):bit;"	  ]
-[ "user.tst",	  "(i:int,s:str):bit;"	  ]
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "(i:int,s:str):bit;"	  ]
+[ 1@0,	  "(i:int,s:str):bit;"	  ]
 
 # 23:57:54 >  
 # 23:57:54 >  Done.

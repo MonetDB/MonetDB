@@ -12,7 +12,7 @@ catch SyntaxException:str;
 exit SyntaxException;
 
 # now do it with a function that returns something (a BAT in this case)
-bn:= bat.new(:int,:str);
+bn:= bat.new(:oid,:str);
 b := remote.put(conn,bn);
 catch MALException:str;
 	io.print("Received second init error from the remote site");
@@ -26,7 +26,7 @@ catch MALException:str;
 exit MALException;
 io.print(b);
 
-c:bat[:int,:str] := remote.get(conn, b);
+c:bat[:oid,:str] := remote.get(conn, b);
 io.print(c);
 catch MALException:str;
 	io.print("Received third error from the remote site");

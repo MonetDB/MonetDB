@@ -406,11 +406,8 @@ address SQLargRecord
 comment "Glue together the calling sequence";
 
 function sql_environment{inline}()(name:bat[:oid,:str],value:bat[:oid,:str]);
-	e := inspect.getEnvironment();
-	n := algebra.markT(e, 0:oid);
-	r := bat.reverse(n);
-	v := algebra.markH(e, 0:oid);
-	return (r,v);
+	(name,value):= inspect.getEnvironment();
+	return (name,value) := (name,value);
 end sql_environment;
 
 function clients{inline}()( user:bat[:oid,:str], login:bat[:oid,:str], lastcommand:bat[:oid,:str], actions:bat[:oid,:int], seconds:bat[:oid,:lng]);

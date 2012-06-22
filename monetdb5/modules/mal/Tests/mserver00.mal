@@ -1,8 +1,7 @@
 # Attempt to establish a client connection to yourself.
 
-z:= inspect.getEnvironment();
-ps:= algebra.find(z,"mapi_port");
-port:= calc.int(ps);
+fs:= inspect.getEnvironment("mapi_port");
+port:= calc.int(fs);
 #hs:= algebra.find(z,"host");
 hs:= "localhost";
 

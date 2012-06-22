@@ -1,17 +1,21 @@
 module inspect;
 
-pattern getDefinition(mod:str,fcn:str) :bat[:str,:str] 
+pattern getDefinition(mod:str,fcn:str) :bat[:oid,:str] 
 address INSPECTgetDefinition
 comment "Returns a string representation of a specific function.";
-pattern getSignature(mod:str,fcn:str) :bat[:str,:str] 
+
+pattern getSignature(mod:str,fcn:str) :bat[:oid,:str] 
 address INSPECTgetSignature
 comment "Returns the function signature(s).";
-pattern getAddress(mod:str,fcn:str) :bat[:str,:str] 
+
+pattern getAddress(mod:str,fcn:str) :bat[:oid,:str] 
 address INSPECTgetAddress
 comment "Returns the function signature(s).";
-pattern getComment(mod:str,fcn:str) :bat[:str,:str]
+
+pattern getComment(mod:str,fcn:str) :bat[:oid,:str]
 address INSPECTgetComment
 comment "Returns the function help information.";
+
 pattern getSource(mod:str,fcn:str):str
 address INSPECTgetSource
 comment "Return the original input for a function.";
@@ -36,9 +40,7 @@ comment "Obtain the function address.";
 pattern getSize():lng
 address INSPECTgetSize
 comment "Return the storage size for the current function (in bytes).";
-pattern getSize(mod:str):bat[:str,:lng]
-address INSPECTgetModuleSize
-comment "Return the storage size for a module (in bytes).";
+
 pattern getSize(mod:str,fcn:str):lng
 address INSPECTgetFunctionSize
 comment "Return the storage size for a function (in bytes).";
@@ -64,16 +66,19 @@ the type index for its tail.";
 pattern equalType(l:any, r:any):bit
 address INSPECTequalType
 comment "Return true if both operands are of the same type";
-command getAtomNames():bat[:int,:str] 
+command getAtomNames():bat[:oid,:str] 
 address INSPECTatom_names
 comment "Collect a BAT with the atom names.";
-command getAtomSuper():bat[:int,:str] 
+command getAtomSuper():bat[:oid,:str] 
 address INSPECTatom_sup_names
 comment "Collect a BAT with the atom names.";
-command getAtomSizes():bat[:int,:int] 
+command getAtomSizes():bat[:oid,:int] 
 address INSPECTatom_sizes
 comment "Collect a BAT with the atom sizes.";
 
-command getEnvironment():bat[:str,:str]
+command getEnvironment() (k:bat[:oid,:str], v:bat[:oid,:str])
 address INSPECTgetEnvironment
 comment "Collect the environment variables.";
+command getEnvironment(k:str) :str
+address INSPECTgetEnvironmentKey
+comment "Get the value of an environemnt variable";

@@ -1,8 +1,7 @@
 #An example for the SQL front-end
 #The remote table is located
 
-cat:= inspect.getEnvironment();
-fs := algebra.find(cat,"mapi_port");
+fs:= inspect.getEnvironment("mapi_port");
 port := calc.int(fs);
 io.printf("port %d\n",port);
 
