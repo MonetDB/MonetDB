@@ -302,6 +302,9 @@ doProfile(void *d)
 			printf("%s%s\n", id, response);
 			response = e + 1;
 		}
+		/* handle last line in buffer */
+		if ( *response)
+			printf("%s",response);
 		if (++i % 200) {
 			i = 0;
 			fflush(NULL);
