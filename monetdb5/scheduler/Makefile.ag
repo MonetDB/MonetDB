@@ -28,12 +28,12 @@ MTSAFE
 lib_scheduler = {
 	NOINST
 	SOURCES = \
-		run_adder.c \
-		run_isolate.c \
-		run_memo.c \
-		run_octopus.c \
-		srvpool.c \
-		run_pipeline.c  
+		run_adder.c run_adder.h \
+		run_isolate.c run_isolate.h \
+		run_memo.c run_memo.h \
+		run_octopus.c run_octopus.h \
+		srvpool.c srvpool.h \
+		run_pipeline.c run_pipeline.h
 }
 
 headers_mal = {
