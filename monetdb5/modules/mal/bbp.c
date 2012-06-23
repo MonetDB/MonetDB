@@ -746,13 +746,13 @@ str
 CMDbbpiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
-	lng *cursor;
+	oid *cursor;
 	ValPtr v;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgReference(stk, pci, 0);
+	cursor = (oid *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
 	if (nextBoxElement(box, cursor, v))
 		throw(MAL, "bbp.iterator", OPERATION_FAILED);

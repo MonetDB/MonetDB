@@ -45,23 +45,23 @@ pattern discard():void
 address URLBOXdiscardAll
 comment "Remove all URLs from the box";
 
-pattern newIterator()(:int,:str)
+pattern newIterator()(:oid,:str)
 address URLBOXnewIterator
 comment "Locate next element in the box";
-pattern hasMoreElements()(:int,:str)
+pattern hasMoreElements()(:oid,:str)
 address URLBOXhasMoreElements
 comment "Locate next element in the box";
 
-command getLevel(i:int):bat[:int,:str]
+command getLevel(i:int):bat[:oid,:str]
 address URLBOXgetLevel;
 
-command getNames():bat[:int,:str]
+command getNames():bat[:oid,:str]
 address URLBOXgetNames;
-command getCount():bat[:int,:lng]
+command getCount():bat[:oid,:lng]
 address URLBOXgetCount;
-command getCardinality():bat[:int,:lng]
+command getCardinality():bat[:oid,:lng]
 address URLBOXgetCardinality;
-command getSize():bat[:int,:lng]
+command getSize():bat[:oid,:lng]
 address URLBOXgetSize;
 pattern prelude():void 
 address URLBOXprelude

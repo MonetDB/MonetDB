@@ -185,13 +185,13 @@ BOXiterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
 	Box box;
-	lng *cursor;
+	oid *cursor;
 	ValPtr v;
 
 	(void) cntxt;
 	(void) mb;		/*fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgReference(stk, pci, 0);
+	cursor = (oid *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,2); 
 	(void) nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;

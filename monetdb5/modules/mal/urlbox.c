@@ -150,9 +150,10 @@ URLBOXinsert(char *tuple)
 				continue;
 			}
 
-			b = BATnew(TYPE_int, TYPE_str, 1024);
+			b = BATnew(TYPE_void, TYPE_str, 1024);
 			if (b == NULL)
 				throw(MAL, "urlbox.deposit", MAL_MALLOC_FAIL);
+			BATseqbase(b,0);
 
 			BATkey(b,TRUE);
 			BBPrename(b->batCacheid, buf);
@@ -394,15 +395,15 @@ str
 URLBOXnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
-	lng *cursor;
+	oid *cursor;
 	ValPtr v;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor = (lng *) getArgReference(stk, pci, 0);
+	cursor = (oid *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	if ( nextBoxElement(box, cursor, v) < 0)
+	if ( nextBoxElement(box, cursor, v) == oid_nil)
 		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -411,15 +412,15 @@ str
 URLBOXhasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
-	lng *cursor;
+	oid *cursor;
 	ValPtr v;
 
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor=  (lng *) getArgReference(stk, pci, 0);
+	cursor=  (oid *) getArgReference(stk, pci, 0);
 	v = getArgReference(stk,pci,1);
-	if ( nextBoxElement(box, cursor, v) < 0)
+	if ( nextBoxElement(box, cursor, v) == oid_nil)
 		throw(MAL, "urlbox.iterator", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -437,11 +438,12 @@ str
 URLBOXgetNames(int *r){
 	BAT *b;
 	int i;
-	b= BATnew(TYPE_int,TYPE_str, urlDepth+1);
+	b= BATnew(TYPE_void,TYPE_str, urlDepth+1);
 	if( b== NULL)
 		throw(MAL, "urlbox.getNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for(i=0; i<urlDepth; i++){
-		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid), FALSE);
+		BUNappend(b, BBPname(urlBAT[i]->batCacheid), FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -453,12 +455,13 @@ URLBOXgetCount(int *r){
 	int i;
 	lng cnt;
 
-	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	b= BATnew(TYPE_oid,TYPE_lng, urlDepth+1);
 	if( b== NULL)
 		throw(MAL, "urlbox.getNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for(i=0; i<urlDepth; i++){
 		cnt = (lng) BATcount(urlBAT[i]);
-		BUNins(b,&i, &cnt, FALSE);
+		BUNappend(b, &cnt, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
@@ -470,12 +473,13 @@ URLBOXgetCardinality(int *r){
 	int i;
 	lng cnt;
 
-	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	b= BATnew(TYPE_void,TYPE_lng, urlDepth+1);
 	if( b== NULL)
 		throw(MAL, "urlbox.getNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for(i=0; i<urlDepth; i++){
 		bn = (BAT *) BATkunique(BATmirror(urlBAT[i]));
-		cnt = (lng) BATcount(bn);
+		cnt = (oid) BATcount(bn);
 		BBPunfix(bn->batCacheid);
 		BUNins(b,&i, &cnt, FALSE);
 	}
@@ -494,9 +498,10 @@ URLBOXgetSize(int *r){
 	lng tot;
 	size_t size;
 
-	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	b= BATnew(TYPE_void,TYPE_lng, urlDepth+1);
 	if( b== NULL)
 		throw(MAL, "urlbox.getNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 	for(i=0; i<urlDepth; i++){
 		bn= urlBAT[i];
 		size = ROUND_UP(sizeof(BATstore), blksize);
@@ -516,7 +521,7 @@ URLBOXgetSize(int *r){
 		}
 		tot = size;
 		BBPunfix(bn->batCacheid);
-		BUNins(b,&i, &tot, FALSE);
+		BUNappend(b, &tot, FALSE);
 	}
 	*r = b->batCacheid;
 	BBPkeepref(*r);
