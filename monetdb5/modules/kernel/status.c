@@ -161,6 +161,8 @@ SYScpuStatistics(int *ret, int *ret2)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 #ifdef HAVE_TIMES
 	if (clk == 0) {
 		clk = time(0);
@@ -221,6 +223,8 @@ SYSmemStatistics(int *ret, int *ret2)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 
 	/* store counters, ignore errors */
 	if (memincr == NULL)
@@ -298,6 +302,8 @@ SYSmem_usage(int *ret, int *ret2, lng *minsize)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 	BBPlock("SYSmem_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
@@ -414,6 +420,8 @@ SYSvm_usage(int *ret, int *ret2, lng *minsize)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 	BBPlock("SYSvm_usage");
 	for (i = 1; i < BBPsize; i++) {
 		BAT *b;
@@ -531,6 +539,8 @@ SYSioStatistics(int *ret, int *ret2)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 
 #ifndef NATIVE_WIN32
 	/* store counters, ignore errors */
@@ -601,6 +611,8 @@ SYSgdkEnv(int *ret, int *ret2)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 
 	for (i = 1; i < BBPsize; i++) {
 		if (BBPvalid(i)) {
@@ -647,6 +659,8 @@ SYSgdkThread(int *ret, int *ret2)
 		if ( bn) BBPreleaseref(bn->batCacheid);
 		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
 	}
+	BATseqbase(b,0);
+	BATseqbase(bn,0);
 
 	for (i = 0; i < THREADS; i++) {
 		if (GDKthreads[i].pid){
