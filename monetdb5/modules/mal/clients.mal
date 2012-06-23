@@ -15,7 +15,7 @@ pattern getId():int
 address CLTgetClientId
 comment "Return a number that uniquely represents the current client.";
 
-pattern getInfo( ):bat[:str,:str] 
+pattern getInfo( )(:bat[:oid,:str],:bat[:oid,:str])
 address CLTInfo
 comment "Pseudo bat with client attributes.";
 

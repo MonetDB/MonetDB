@@ -496,6 +496,10 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
 	}
+	b = BATmirror(b);
+	BATseqbase(b,0);
+	bn = BATmirror(bn);
+	BATseqbase(bn,0);
 
 	BBPkeepref(*ret = b->batCacheid);
 	BBPkeepref(*ret2 = bn->batCacheid);
