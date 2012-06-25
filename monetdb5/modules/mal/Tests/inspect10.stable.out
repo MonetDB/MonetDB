@@ -45,9 +45,9 @@ end dummy;
 get function properties
 #-----------------------------------------#
 # view		input			  # name
-# str		str			  # type
-#-----------------------------------------#
-[ "user.dummy",	  "(i:int):void;"	  ]
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "(i:int):void;"	  ]
 function user.dummy(i:int):void;
     io.print(i);
     b := mdb.getDefinition();
