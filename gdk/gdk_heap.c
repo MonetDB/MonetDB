@@ -158,7 +158,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 				/* resize file ? */
 				FILE *fp;
 				long_str fn;
-				int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+
 				GDKfilepath(fn, HCDIR, e->fn, NULL);
 
 		     		if ((fp = fopen(fn, "rb+")) != NULL &&
@@ -174,7 +174,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 		      		   fputc('\n', fp) >= 0 &&
 		      		   fflush(fp) >= 0 &&
 		      		   fclose(fp) >= 0) {
-					void *base = GDKload(fn, NULL, *maxsz, *maxsz, mod);
+					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
 					GDKmunmap(e->base, e->maxsz);
 					e->base = base;
 					e->maxsz = *maxsz;
