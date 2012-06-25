@@ -408,7 +408,7 @@ HEAPextend(Heap *h, size_t size)
 			if (fp != NULL) {
 				fclose(fp);
 				if (h->storage == STORE_MEM) {
-					int newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
+					storage_t newmode = h->newstorage == STORE_MMAP && existing && !h->forcemap ? STORE_PRIV : h->newstorage;
 					/* make sure we really MMAP */
 					if (must_mmap && h->newstorage == STORE_MEM)
 						newmode = STORE_MMAP;
