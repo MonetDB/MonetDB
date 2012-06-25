@@ -605,6 +605,14 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 	} while (0)
 
+/* Heap storage modes */
+typedef enum {
+	STORE_MEM = 0,		/* load into GDKmalloced memory */
+	STORE_MMAP = 1,		/* mmap() into virtual memory */
+	STORE_PRIV = 2,		/* BAT copy of copy-on-write mmap */
+	STORE_INVALID		/* invalid value, used to indicate error */
+} storage_t;
+
 typedef struct {
 	size_t maxsize;		/* maximum realloc size (bytes) */
 	size_t free;		/* index where free area starts. */
@@ -612,11 +620,11 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	str filename;		/* file containing image of the heap */
 
-	char storage;		/* storage mode (mmap/malloc). */
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
 		      forcemap:1;  /* force STORE_MMAP even if heap exists */
-	bte newstorage;		/* new desired storage mode at re-allocation. */
+	storage_t storage;	/* storage mode (mmap/malloc). */
+	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
@@ -1567,10 +1575,6 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
  * call it issues buffer management advice to the OS kernel, as for the
  * expected usage pattern of the memory in a heap.
  */
-/* Heap storage modes */
-#define STORE_MEM	0	/* load into GDKmalloced memory */
-#define STORE_MMAP	1	/* mmap() into virtual memory */
-#define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
 
 gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 

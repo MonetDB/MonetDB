@@ -924,9 +924,9 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 			bs->@1.heap.size = (size_t) size;
 			bs->@1.heap.base = NULL;
 			bs->@1.heap.filename = NULL;
-			bs->@1.heap.storage = (char) storage;
+			bs->@1.heap.storage = (storage_t) storage;
 			bs->@1.heap.copied = 0;
-			bs->@1.heap.newstorage = (bte) storage;
+			bs->@1.heap.newstorage = (storage_t) storage;
 			bs->@1.heap.dirty = 0;
 			nread += n;
 		}
@@ -954,10 +954,10 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 			bs->@1.vheap->size = (size_t) size;
 			bs->@1.vheap->base = NULL;
 			bs->@1.vheap->filename = NULL;
-			bs->@1.vheap->storage = (char) storage;
+			bs->@1.vheap->storage = (storage_t) storage;
 			bs->@1.vheap->copied = 0;
 			bs->@1.vheap->hashash = @1hashash != 0;
-			bs->@1.vheap->newstorage = (bte) storage;
+			bs->@1.vheap->newstorage = (storage_t) storage;
 			bs->@1.vheap->dirty = 0;
 			bs->@1.vheap->parentid = bid;
 			nread += n;
@@ -1461,7 +1461,7 @@ new_bbpentry(stream *s, bat i)
 			  BBP_desc(i)->@1.align,
 			  BBP_desc(i)->@1.heap.free,
 			  BBP_desc(i)->@1.heap.size,
-			  BBP_desc(i)->@1.heap.newstorage) < 0)
+			  (int) BBP_desc(i)->@1.heap.newstorage) < 0)
 		return -1;
 @
 @c
@@ -1473,7 +1473,7 @@ new_bbpentry(stream *s, bat i)
 	    mnstr_printf(s, " " SZFMT " " SZFMT " %d",
 			  BBP_desc(i)->@1.vheap->free,
 			  BBP_desc(i)->@1.vheap->size,
-			  BBP_desc(i)->@1.vheap->newstorage) < 0)
+			  (int) BBP_desc(i)->@1.vheap->newstorage) < 0)
 		return -1;
 @
 @c

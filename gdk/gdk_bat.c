@@ -2500,7 +2500,7 @@ backup_new(Heap *hp, int lockbat)
 #define ACCESSMODE(wr,rd) ((wr)?BAT_WRITE:(rd)?BAT_READ:-1)
 
 /* transition heap from readonly to writable */
-static int
+static storage_t
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
@@ -2513,19 +2513,19 @@ HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = 1;
-		return backup_new(hp, BBP_THREADMASK) ? -1 : STORE_MMAP;	/* only called for existing bats */
+		return backup_new(hp, BBP_THREADMASK) ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 	}
 	return hp->storage;	/* 7=>5 */
 }
 
 /* heap changes persistence mode (at commit point) */
-static int
+static storage_t
 HEAPcommitpersistence(Heap *hp, int writable, int existing)
 {
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
 			hp->dirty = 1;
-			return backup_new(hp, -1) ? -1 : STORE_MMAP;	/* only called for existing bats */
+			return backup_new(hp, -1) ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 		}
 		return hp->newstorage;	/* 4=>0,5=>1,7=>3,c=>a no change */
 	}
@@ -2546,7 +2546,7 @@ int
 BATcheckmodes(BAT *b, int existing)
 {
 	int wr = (b->batRestricted == BAT_WRITE);
-	int m0 = 0, m1 = 0, m2 = 0, m3 = 0;
+	storage_t m0 = 0, m1 = 0, m2 = 0, m3 = 0;
 	int dirty = 0;
 
 	BATcheck(b, "BATcheckmodes");
@@ -2571,7 +2571,8 @@ BATcheckmodes(BAT *b, int existing)
 		m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
 		dirty |= (b->T->vheap->newstorage != m3);
 	}
-	if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+	if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
+	    m2 == STORE_INVALID || m3 == STORE_INVALID)
 		return -1;
 
 	if (dirty) {
@@ -2624,7 +2625,7 @@ BATsetaccess(BAT *b, int newmode)
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
-		int m0, m1, m2 = 0, m3 = 0;
+		storage_t m0, m1, m2 = 0, m3 = 0;
 		int b0, b1, b2 = 0, b3 = 0;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
@@ -2650,7 +2651,8 @@ BATsetaccess(BAT *b, int newmode)
 			b3 = b->T->vheap->newstorage;
 			m3 = HEAPchangeaccess(b->T->vheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
-		if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+		if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
+		    m2 == STORE_INVALID || m3 == STORE_INVALID)
 			return NULL;
 
 		/* set new access mode and mmap modes */

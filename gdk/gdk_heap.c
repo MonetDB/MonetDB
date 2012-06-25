@@ -104,7 +104,7 @@ HEAPcacheInit(void)
 }
 
 static int
-HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
+HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_file)
 {
 	int added = 0;
 
@@ -126,18 +126,18 @@ HEAPcacheAdd( void *base, size_t maxsz, char *fn, int storage, int free_file )
 	}
 	if (!added)
 		return GDKmunmap(base, maxsz);
-	HEAPDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, storage, free_file, hc->used);
+	HEAPDEBUG fprintf(stderr, "#HEAPcacheAdd (%s) " SZFMT " " PTRFMT " %d %d %d\n", fn, maxsz, PTRFMTCAST base, (int) storage, free_file, hc->used);
 	return 0;
 }
 
 static void *
-HEAPcacheFind( size_t *maxsz, char *fn, int mode )
+HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 {
 	void *base = NULL;
 
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
 	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
-		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, mode, hc->used);
+		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc->used);
 		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
 
 		if (hc->used) {
@@ -295,7 +295,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 
 		if (stat(nme, &st) != 0) {
 			h->storage = STORE_MMAP;
-			h->base = HEAPcacheFind(&h->maxsize, of, h->storage );
+			h->base = HEAPcacheFind(&h->maxsize, of, h->storage);
 			h->filename = of;
 		} else {
 			char *ext;
@@ -640,7 +640,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	}
 
 	HEAPDEBUG {
-		fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->storage, h->free, h->size);
+		fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->storage, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
 	   file that is open in MAP_PRIVATE (FILE_MAP_COPY)
@@ -696,7 +696,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 static int
 HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 {
-	int store = h->newstorage;
+	storage_t store = h->newstorage;
 	long_str extension;
 
 	if (h->base == NULL) {
@@ -712,7 +712,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 		store = h->storage;
 	}
 	HEAPDEBUG {
-		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, h->newstorage, h->free, h->size);
+		fprintf(stderr, "#HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->newstorage, h->free, h->size);
 	}
 	return GDKsave(nme, ext, h->base, h->free, store);
 }

@@ -245,11 +245,11 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 int
-GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
+GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
 {
 	int fd = -1, err = 0;
 
-	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MMAP) {
 		/*
@@ -268,7 +268,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		if (size)
 			err = MT_msync(buf, 0, size, MMAP_SYNC);
 		if (err)
-			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
+			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
 		IODEBUG THRprintf(GDKstdout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
@@ -281,7 +281,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", mode);
+					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", (int) mode);
 					break;
 				}
 				size -= ret;
@@ -297,10 +297,10 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images
 			 * (BBPrecover on restart will kill them) */
-			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 		}
 	} else if (mode != STORE_MMAP) {
-		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
 	return err;
 }
@@ -311,12 +311,12 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
  * defined in their implementation.
  */
 char *
-GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
+GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t mode)
 {
 	char *ret = NULL;
 
 	IODEBUG {
-		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(nme, "rb", ext);
@@ -452,26 +452,27 @@ DESCsetmodes(BAT *b)
 	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
 	int brestrict = (b->batRestricted == BAT_WRITE);
 	int ret = 0;
+	storage_t m;
 
 	if (b->batMaphead) {
-		int m = STORE_MODE(b->batMaphead, brestrict, existing);
+		m = STORE_MODE(b->batMaphead, brestrict, existing);
 		ret |= m != b->H->heap.newstorage || m != b->H->heap.storage;
 		b->H->heap.newstorage = b->H->heap.storage = m;
 	}
 	if (b->batMaptail) {
-		int m = STORE_MODE(b->batMaptail, brestrict, existing);
+		m = STORE_MODE(b->batMaptail, brestrict, existing);
 		ret |= b->T->heap.newstorage != m || b->T->heap.storage != m;
 		b->T->heap.newstorage = b->T->heap.storage = m;
 	}
 	if (b->H->vheap && b->batMaphheap) {
 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		int m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
+		m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
 		ret |= b->H->vheap->newstorage != m || b->H->vheap->storage != m;
 		b->H->vheap->newstorage = b->H->vheap->storage = m;
 	}
 	if (b->T->vheap && b->batMaptheap) {
 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		int m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
+		m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
 		ret |= b->T->vheap->newstorage != m || b->T->vheap->storage != m;
 		b->T->vheap->newstorage = b->T->vheap->storage = m;
 	}
