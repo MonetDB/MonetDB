@@ -2626,7 +2626,7 @@ BATsetaccess(BAT *b, int newmode)
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
 		storage_t m0, m1, m2 = 0, m3 = 0;
-		int b0, b1, b2 = 0, b3 = 0;
+		storage_t b0, b1, b2 = 0, b3 = 0;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 
