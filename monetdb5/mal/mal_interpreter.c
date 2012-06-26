@@ -1074,6 +1074,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				else
 					stkpc++;
 				break;
+			case TYPE_oid:
+				if (v->val.oval != oid_nil)
+					stkpc = pci->jump;
+				else
+					stkpc++;
+				break;
 			case TYPE_sht:
 				if (v->val.shval >= 0 && v->val.shval != sht_nil)
 					stkpc = pci->jump;
