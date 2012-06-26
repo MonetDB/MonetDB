@@ -1790,7 +1790,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 	}
 	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	c->hsorted = BAThordered(b);
-	c->hrevsorted = BAThordered(b);
+	c->hrevsorted = BAThrevordered(b);
 	c->tsorted = BATtordered(b);
 	c->trevsorted = BATtrevordered(b);
 	c->H->nonil = b->H->nonil;
