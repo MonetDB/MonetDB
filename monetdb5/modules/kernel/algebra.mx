@@ -1773,16 +1773,16 @@ CMDlike(BAT **ret, BAT *b, str s)
 	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->hvarsized) {
 		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy))
-			if (BUNfastins(c, BUNhvar(bi, u), BUNtvar(bi, u)) == NULL) {
+			if (like(BUNtvar(bi, u), t, yy) &&
+				BUNfastins(c, BUNhvar(bi, u), BUNtvar(bi, u)) == NULL) {
 				BBPreclaim(c);
 				GDKfree(t);
 				return GDK_FAIL;
 			}
 	} else {
 		BATloop(b, u, v)
-			if (like(BUNtvar(bi, u), t, yy))
-			if (BUNfastins(c, BUNhloc(bi, u), BUNtvar(bi, u)) == NULL) {
+			if (like(BUNtvar(bi, u), t, yy) &&
+				BUNfastins(c, BUNhloc(bi, u), BUNtvar(bi, u)) == NULL) {
 				BBPreclaim(c);
 				GDKfree(t);
 				return GDK_FAIL;
