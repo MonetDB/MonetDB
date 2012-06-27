@@ -424,7 +424,9 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 			space = mnstr_printf(toConsole, "INTERVAL SECOND");
 		else
 			fprintf(stderr, "Internal error: unrecognized second interval %s\n", c_type_digits);
-	} else if (strcmp(c_type, "clob") == 0) {
+	} else if (strcmp(c_type, "clob") == 0 ||
+		   (strcmp(c_type, "varchar") == 0 &&
+		    strcmp(c_type_digits, "0") == 0)) {
 		space = mnstr_printf(toConsole, "CHARACTER LARGE OBJECT");
 		if (strcmp(c_type_digits, "0") != 0)
 			space += mnstr_printf(toConsole, "(%s)", c_type_digits);
