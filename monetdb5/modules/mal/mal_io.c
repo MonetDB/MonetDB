@@ -761,21 +761,24 @@ IOimport(int *ret, int *bid, str *fnme)
 		}
 #endif
 		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, (size_t) st.st_size);
-		end = cur + st.st_size;
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");
 		}
+		end = cur + st.st_size;
 
 	}
 	/* Parse a line. Copy it into a buffer. Concat broken lines with a slash.  */
 	while (cur < end) {
-		str dst = buf, src = cur, p = strchr(cur, '\n');
-		size_t l = p - cur;
+		str dst = buf, src = cur, p;
+		size_t l;
 
-		if (!p) {
-			p = end;
-		} else
+		/* like p = strchr(cur, '\n') but with extra bounds check */
+		for (p = cur; p < end && *p != '\n'; p++)
+			;
+		l = p - cur;
+
+		if (p < end) {
 			while (src[l - 1] == '\\') {
 				if (buf+bufsize < dst+l) {
 					size_t len = dst - buf;
@@ -786,20 +789,21 @@ IOimport(int *ret, int *bid, str *fnme)
 				memcpy(dst, src, l-1);
 				dst += l - 1;
 				src += l + 1;
-				if ((p = strchr(src, '\n')) == 0) {
-					p = end;
+				for (p = src; p < end && *p != '\n'; p++)
+					;
+				if (p == end)
 					break;
-				}
 				l = p - src;
 			}
-		
+		}
+
 		if (buf+bufsize < dst+l) {
 			size_t len = dst - buf;
 			size_t inc = (size_t) ((dst+l) - buf);
 			buf = (char*) GDKrealloc((void*) buf, bufsize = MAX(inc,bufsize)*2);
 			dst = buf + len;
 		}
-		memcpy(dst, src, l-1);
+		memcpy(dst, src, l);
 		dst[l] = 0;
 		cur = p + 1;
 		/* Parse the line, and insert a BUN.  */
@@ -808,8 +812,11 @@ IOimport(int *ret, int *bid, str *fnme)
 		if (*p == '#')
 			continue;
 
-		for (;*p && *p != '['; p++);
-		if (*p) for (p++; *p && GDKisspace(*p); p++);
+		for (;*p && *p != '['; p++)
+			;
+		if (*p)
+			for (p++; *p && GDKisspace(*p); p++)
+				;
 		if (*p == 0) {
 			char msg[BUFSIZ];
 			BBPunfix(*ret=b->batCacheid);
