@@ -224,13 +224,13 @@ ODBCutf82wchar(const SQLCHAR *s,
 				c |= *s++ & 0x3F;
 			}
 		}
-		if ((c & 0xF8) == 0xD8) {
-			/* UTF-8 encoded high or low surrogate */
-			return "Illegal code point";
-		}
 		if (c > 0x10FFFF) {
 			/* cannot encode as UTF-16 */
 			return "Codepoint too large to be representable in UTF-16";
+		}
+		if ((c & 0x1FFF800) == 0xD800) {
+			/* UTF-8 encoded high or low surrogate */
+			return "Illegal code point";
 		}
 		if (c <= 0xFFFF) {
 			if (--buflen > 0 && p != NULL)
