@@ -2546,7 +2546,7 @@ int
 BATcheckmodes(BAT *b, int existing)
 {
 	int wr = (b->batRestricted == BAT_WRITE);
-	storage_t m0 = 0, m1 = 0, m2 = 0, m3 = 0;
+	storage_t m0 = STORE_MEM, m1 = STORE_MEM, m2 = STORE_MEM, m3 = STORE_MEM;
 	int dirty = 0;
 
 	BATcheck(b, "BATcheckmodes");
@@ -2625,8 +2625,8 @@ BATsetaccess(BAT *b, int newmode)
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
-		storage_t m0, m1, m2 = 0, m3 = 0;
-		storage_t b0, b1, b2 = 0, b3 = 0;
+		storage_t m0, m1, m2 = STORE_MEM, m3 = STORE_MEM;
+		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 
