@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_bbp
-
-@c
 /*
  * @a M. L. Kersten, P. Boncz, N. J. Nes
  * @* BAT Buffer Pool (BBP)
@@ -84,63 +81,7 @@ All Rights Reserved.
  * is memory resident as required because of the 'pointer' sharing.
  * @end table
  */
-@h
-#ifndef _GDK_BBP_H_
-#define _GDK_BBP_H_
 
-#define BBPLOADED	1	/* set if bat in memory */
-#define BBPSWAPPED	2	/* set if dirty bat is not in memory */
-#define BBPTMP          4	/* set if non-persistent bat has image on disk */
-#define BBPDELETED	16	/* set if bat persistent at last commit is now transient */
-#define BBPEXISTING	32	/* set if bat was already persistent at end of last commit */
-#define BBPNEW 		64	/* set if bat has become persistent since last commit */
-#define BBPPERSISTENT	(BBPEXISTING|BBPNEW)	/* mask for currently persistent bats */
-#define BBPSTATUS	127
-
-#define BBPUNLOADING	128	/* set while we are unloading */
-#define BBPLOADING	256	/* set while we are loading */
-#define BBPSAVING       512	/* set while we are saving */
-#define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
-#define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
-#define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
-#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING)
-
-#define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
-#define BBPLASTUSED(x)  ((x) & 0x7fffffff)	/* stamp is always a positive int */
-
-gdk_export int BBPin;		/* BATs swapped into BBP  */
-gdk_export int BBPout;		/* BATs swapped out of BBP */
-gdk_export bat BBPsize;		/* current occupied size of BBP array */
-
-/* global calls */
-gdk_export bat BBPimportEntry(char *nme);
-gdk_export int BBPdir(int cnt, bat *subcommit);
-
-/* update interface */
-gdk_export void BBPclear(bat bid);
-#ifdef LIBGDK			/* only used within GDK */
-extern bat BBPinsert(BATstore *bs);
-#endif
-gdk_export int BBPreclaim(BAT *b);
-gdk_export int BBPsave(BAT *b);
-gdk_export int BBPrename(bat bid, const char *nme);
-
-/* query interface */
-gdk_export bat BBPindex(const char *nme);
-gdk_export BAT *BBPdescriptor(bat b);
-
-/* swapping interface */
-gdk_export int BBPsync(int cnt, bat *subcommit);
-gdk_export int BBPincref(bat b, int logical);
-gdk_export void BBPkeepref(bat i);
-gdk_export void BBPreleaseref(bat i);
-gdk_export int BBPdecref(bat b, int logical);
-gdk_export void BBPshare(bat b);
-
-@c
-/*
- * @
- */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -165,11 +106,6 @@ bat BBPsize = 0;		/* current used size of BBP array */
  * tuned for perfect hashing (1 lookup). The bucket chain uses the
  * 'next' field in the BBPrec records.
  */
-@h
-#define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && ((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))	/* (strncmp((s), "tmp_", 4) == 0) */
-#define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
-
-@c
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
 bat BBP_mask = 0;		/* number of buckets = & mask */
 
@@ -221,7 +157,6 @@ BBP_delete(bat i)
 }
 
 /*
- * @-
  * other globals
  */
 int BBP_curstamp = 0;		/* unique stamp for creation of a bat */
@@ -231,7 +166,6 @@ int BBPin = 0;			/* bats loaded statistic */
 int BBPout = 0;			/* bats saved statistic */
 
 /*
-
  * @+ BBP Consistency and Concurrency
  * While GDK provides the basic building blocks for an ACID system, in
  * itself it is not such a system, as we this would entail too much
@@ -290,33 +224,6 @@ int BBPout = 0;			/* bats saved statistic */
  * read actions are to go on unlocked while other entries in the BBP
  * may be modified).
  */
-@h
-#define BBP_status_set(bid, mode, nme)		\
-	do {					\
-		BBP_status(bid) = mode;		\
-	} while (0)
-
-#define BBP_status_on(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) | flags, nme);
-
-#define BBP_status_off(bid, flags, nme)					\
-		BBP_status_set(bid, BBP_status(bid) & ~(flags), nme);
-
-#define BBP_unload_inc(bid, nme)			\
-	do {						\
-		gdk_set_lock(GDKunloadLock, nme);	\
-		BBPunloadCnt++;				\
-		gdk_unset_lock(GDKunloadLock, nme);	\
- 	} while (0)
-
-#define BBP_unload_dec(bid, nme)					\
-	do {								\
-		gdk_set_lock(GDKunloadLock, nme);			\
-		if (--BBPunloadCnt == 0) gdk_signal_cond(GDKunloadCond, nme); \
-		assert(BBPunloadCnt >= 0);				\
-		gdk_unset_lock(GDKunloadLock, nme);			\
-	} while (0)
-@c
 static MT_Id locked_by = 0;
 
 static inline MT_Id
@@ -749,14 +656,134 @@ fixoidheap(void)
  * descriptor separately.  The default src=0 is to read the full
  * BBPdir file.
  */
+static int
+heapinit(COLrec *col, const char *buf, int *hashash, const char *HT, int oidsize, int bbpversion, lng batid)
+{
+	int t;
+	char type[11];
+	unsigned short width;
+	unsigned short var;
+	unsigned short properties;
+	lng nokey0;
+	lng nokey1;
+	lng nosorted;
+	lng norevsorted;
+	lng base;
+	lng align;
+	lng free;
+	lng size;
+	unsigned short storage;
+	int n;
+
+	(void) oidsize;		/* only used when SIZEOF_OID==8 */
+
+	norevsorted = 0; /* default for first case */
+	if (bbpversion <= GDKLIBRARY_SORTED_BYTE ?
+	    sscanf(buf,
+		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &base, &align, &free,
+		   &size, &storage,
+		   &n) < 12
+	    :
+	    sscanf(buf,
+		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &align, &free, &size, &storage,
+		   &n) < 13)
+		GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+
+	*hashash = var & 2;
+	var &= ~2;
+	/* silently convert chr columns to bte */
+	if (strcmp(type, "chr") == 0)
+		strcpy(type, "bte");
+	if ((t = ATOMindex(type)) < 0)
+		t = ATOMunknown_find(type);
+	else if (BATatoms[t].varsized != var)
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.varsized mismatch for BAT " LLFMT "\n", HT, batid);
+	else if (var && t != 0 ?
+		 BATatoms[t].size < width ||
+		 (width != 1 && width != 2 && width != 4
+#if SIZEOF_VAR_T == 8
+		  && width != 8
+#endif
+			 ) :
+		 BATatoms[t].size != width
+#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
+		 && (t != TYPE_oid || oidsize == 0 || width != oidsize)
+#endif
+		)
+		GDKfatal("BBPinit: inconsistent entry in BBP.dir: %s.size mismatch for BAT " LLFMT "\n", HT, batid);
+	col->type = t;
+	col->width = width;
+	col->varsized = var != 0;
+	col->shift = ATOMelmshift(width);
+	assert_shift_width(col->shift,col->width);
+	col->nokey[0] = (BUN) nokey0;
+	col->nokey[1] = (BUN) nokey1;
+	col->sorted = (bit) ((properties & 0x0001) != 0);
+	col->revsorted = (bit) ((properties & 0x0080) != 0);
+	col->key = (properties & 0x0100) != 0;
+	col->dense = (properties & 0x0200) != 0;
+	col->nonil = (properties & 0x0400) != 0;
+	col->nil = (properties & 0x0800) != 0;
+	col->nosorted = (BUN) nosorted;
+	col->norevsorted = (BUN) norevsorted;
+	col->seq = base < 0 ? oid_nil : (oid) base;
+	col->align = (oid) align;
+	col->heap.maxsize = (size_t) size;
+	col->heap.free = (size_t) free;
+	col->heap.size = (size_t) size;
+	col->heap.base = NULL;
+	col->heap.filename = NULL;
+	col->heap.storage = (storage_t) storage;
+	col->heap.copied = 0;
+	col->heap.newstorage = (storage_t) storage;
+	col->heap.dirty = 0;
+	return n;
+}
+
+static int
+vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
+{
+	int n = 0;
+	lng free, size;
+	unsigned short storage;
+
+	if (col->varsized && col->type != TYPE_void) {
+		col->vheap = GDKzalloc(sizeof(Heap));
+		if (col->vheap == NULL)
+			GDKfatal("BBPinit: cannot allocate memory for heap.");
+		if (sscanf(buf,
+			   " %lld %lld %hu"
+			   "%n",
+			   &free, &size, &storage, &n) < 3)
+			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+		col->vheap->maxsize = (size_t) size;
+		col->vheap->free = (size_t) free;
+		col->vheap->size = (size_t) size;
+		col->vheap->base = NULL;
+		col->vheap->filename = NULL;
+		col->vheap->storage = (storage_t) storage;
+		col->vheap->copied = 0;
+		col->vheap->hashash = hashash != 0;
+		col->vheap->newstorage = (storage_t) storage;
+		col->vheap->dirty = 0;
+		col->vheap->parentid = bid;
+	}
+	return n;
+}
+
 static BATstore *
 BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
 	BATstore *bs;
-
-	(void) oidsize;		/* only used when SIZEOF_OID==8 */
 
 	/* read the BBP.dir and insert the BATs into the BBP */
 	while (fgets(buf, sizeof(buf), fp) != NULL) {
@@ -843,129 +870,10 @@ BBPreadEntries(FILE *fp, char *src, int *min_stamp, int *max_stamp, int oidsize,
 		bs->P.map_hheap = (char) map_hheap;
 		bs->P.map_theap = (char) map_theap;
 
-@= heapinit
-		{
-			int t;
-			char type[11];
-			unsigned short width;
-			unsigned short var;
-			unsigned short properties;
-			lng nokey0;
-			lng nokey1;
-			lng nosorted;
-			lng norevsorted;
-			lng base;
-			lng align;
-			lng free;
-			lng size;
-			unsigned short storage;
-			int n;
-
-			norevsorted = 0; /* default for first case */
-			if (bbpversion <= GDKLIBRARY_SORTED_BYTE ?
-			    sscanf(buf + nread,
-				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
-				   "%n",
-				   type, &width, &var, &properties, &nokey0,
-				   &nokey1, &nosorted, &base, &align, &free,
-				   &size, &storage,
-				   &n) < 12
-			    :
-			    sscanf(buf + nread,
-				   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
-				   "%n",
-				   type, &width, &var, &properties, &nokey0,
-				   &nokey1, &nosorted, &norevsorted, &base,
-				   &align, &free, &size, &storage,
-				   &n) < 13)
-				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-
-			@1hashash = var & 2;
-			var &= ~2;
-			/* silently convert chr columns to bte */
-                        if (strcmp(type, "chr") == 0)
-                        	strcpy(type, "bte");
-			if ((t = ATOMindex(type)) < 0)
-				t = ATOMunknown_find(type);
-			else if (BATatoms[t].varsized != var)
-				GDKfatal("BBPinit: inconsistent entry in BBP.dir: @1.varsized mismatch for BAT " LLFMT "\n", batid);
-			else if (var && t != 0 ?
-				 BATatoms[t].size < width ||
-				 (width != 1 && width != 2 && width != 4
-#if SIZEOF_VAR_T == 8
-				  && width != 8
-#endif
-				 ) :
-				 BATatoms[t].size != width
-#if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
-				 && (t != TYPE_oid || oidsize == 0 || width != oidsize)
-#endif
-				)
-				GDKfatal("BBPinit: inconsistent entry in BBP.dir: @1.size mismatch for BAT " LLFMT "\n", batid);
-			bs->@1.type = t;
-			bs->@1.width = width;
-			bs->@1.varsized = var != 0;
-			bs->@1.shift = ATOMelmshift(width);
-			assert_shift_width(bs->@1.shift,bs->@1.width);
-			bs->@1.nokey[0] = (BUN) nokey0;
-			bs->@1.nokey[1] = (BUN) nokey1;
-			bs->@1.sorted = (bit) ((properties & 0x0001) != 0);
-			bs->@1.revsorted = (bit) ((properties & 0x0080) != 0);
-			bs->@1.key = (properties & 0x0100) != 0;
-			bs->@1.dense = (properties & 0x0200) != 0;
-			bs->@1.nonil = (properties & 0x0400) != 0;
-			bs->@1.nil = (properties & 0x0800) != 0;
-			bs->@1.nosorted = (BUN) nosorted;
-			bs->@1.norevsorted = (BUN) norevsorted;
-			bs->@1.seq = base < 0 ? oid_nil : (oid) base;
-			bs->@1.align = (oid) align;
-			bs->@1.heap.maxsize = (size_t) size;
-			bs->@1.heap.free = (size_t) free;
-			bs->@1.heap.size = (size_t) size;
-			bs->@1.heap.base = NULL;
-			bs->@1.heap.filename = NULL;
-			bs->@1.heap.storage = (storage_t) storage;
-			bs->@1.heap.copied = 0;
-			bs->@1.heap.newstorage = (storage_t) storage;
-			bs->@1.heap.dirty = 0;
-			nread += n;
-		}
-@
-@c
-		@:heapinit(H)@
-		@:heapinit(T)@
-
-@= vheapinit
-		if (bs->@1.varsized && bs->@1.type != TYPE_void) {
-			lng free, size;
-			unsigned short storage;
-			int n;
-
-			bs->@1.vheap = GDKzalloc(sizeof(Heap));
-			if (bs->@1.vheap == NULL)
-				GDKfatal("BBPinit: cannot allocate memory for heap.");
-			if (sscanf(buf + nread,
-				   " %lld %lld %hu"
-				   "%n",
-				   &free, &size, &storage, &n) < 3)
-				GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
-			bs->@1.vheap->maxsize = (size_t) size;
-			bs->@1.vheap->free = (size_t) free;
-			bs->@1.vheap->size = (size_t) size;
-			bs->@1.vheap->base = NULL;
-			bs->@1.vheap->filename = NULL;
-			bs->@1.vheap->storage = (storage_t) storage;
-			bs->@1.vheap->copied = 0;
-			bs->@1.vheap->hashash = @1hashash != 0;
-			bs->@1.vheap->newstorage = (storage_t) storage;
-			bs->@1.vheap->dirty = 0;
-			bs->@1.vheap->parentid = bid;
-			nread += n;
-		}
-@
-@c
-		@:vheapinit(H)@
-		@:vheapinit(T)@
+		nread += heapinit(&bs->H, buf + nread, &Hhashash, "H", oidsize, bbpversion, batid);
+		nread += heapinit(&bs->T, buf + nread, &Thashash, "T", oidsize, bbpversion, batid);
+		nread += vheapinit(&bs->H, buf + nread, Hhashash, bid);
+		nread += vheapinit(&bs->T, buf + nread, Thashash, bid);
 
 		if (buf[nread] != '\n' && buf[nread] != ' ')
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -1091,63 +999,77 @@ BBPheader(FILE *fp, bat *limit, oid *BBPoid, int *OIDsize, int silent)
  * using symbolic links to its source. Presumably this would lead to a
  * transparent behavior.
  */
-@= linkHeap
-	if (lstat(@3, &st) < 0) {
-		GDKerror("BBPimportEntry: file '%s' does not exist.\n", @3);
-		BBPdestroy(bn);
-		return 0;
-	}
-	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@4");
-	GDKcreatedir(path);
-	IODEBUG mnstr_printf(GDKstdout, "#symlink %s ->%s\n", @3, path);
-	if (symlink(@3, path) < 0) {
-		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, @3);
-		BBPdestroy(bn);
-		return 0;
-	}
-	bn->@1->@2.free = bn->@1->@2.size = (size_t) st.st_size;
-	bn->@1->@2.storage = (bn->@1->@2.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	if (bn->@1->@2.filename) {
-		GDKfree(bn->@1->@2.filename);
-		bn->@1->@2.filename = 0;
-	}
-	if (HEAPload(&bn->@1->@2, BBP_physical(bn->batCacheid), "@4", TRUE) < 0) {
-		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", @3);
-		BBPdestroy(bn);
-		return 0;
-	}
+#ifndef WIN32
+static int
+linkHeap(BAT *bn, COLrec *col, const char *file, const char *ext)
+{
+	struct stat st;
+	long_str path;
 
-@= linkvHeap
-	if (lstat(@2, &st) < 0) {
-		GDKerror("BBPimportEntry: file '%s' does not exist.\n", @2);
+	if (lstat(file, &st) < 0) {
+		GDKerror("BBPimportEntry: file '%s' does not exist.\n", file);
 		BBPdestroy(bn);
 		return 0;
 	}
-	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), "@3");
+	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), ext);
 	GDKcreatedir(path);
-	IODEBUG mnstr_printf(GDKstdout, "#symlink %s ->%s\n", @2, path);
-	if (symlink(@2, path) < 0) {
-		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, @2);
+	IODEBUG mnstr_printf(GDKstdout, "#symlink %s ->%s\n", file, path);
+	if (symlink(file, path) < 0) {
+		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, file);
 		BBPdestroy(bn);
 		return 0;
 	}
-	if (bn->@1->vheap == 0)
-		bn->@1->vheap = (Heap *) GDKzalloc(sizeof(Heap));
-	bn->@1->vheap->parentid = bn->batCacheid;
-	bn->@1->vheap->free = bn->@1->vheap->size = (size_t) st.st_size;
-	bn->@1->vheap->storage = (bn->@1->vheap->size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	if (bn->@1->vheap->filename) {
-		GDKfree(bn->@1->vheap->filename);
-		bn->@1->vheap->filename = 0;
+	col->heap.free = col->heap.size = (size_t) st.st_size;
+	col->heap.storage = (col->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
+	if (col->heap.filename) {
+		GDKfree(col->heap.filename);
+		col->heap.filename = 0;
 	}
-	if (HEAPload(bn->@1->vheap, BBP_physical(bn->batCacheid), "@3", TRUE) < 0) {
-		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", @2);
+	if (HEAPload(&col->heap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
+		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", file);
 		BBPdestroy(bn);
 		return 0;
 	}
+	return 1;
+}
 
-@
-@c
+static int
+linkvHeap(BAT *bn, COLrec *col, const char *file, const char *ext)
+{
+	struct stat st;
+	long_str path;
+
+	if (lstat(file, &st) < 0) {
+		GDKerror("BBPimportEntry: file '%s' does not exist.\n", file);
+		BBPdestroy(bn);
+		return 0;
+	}
+	GDKfilepath(path, BATDIR, BBP_physical(bn->batCacheid), ext);
+	GDKcreatedir(path);
+	IODEBUG mnstr_printf(GDKstdout, "#symlink %s ->%s\n", file, path);
+	if (symlink(file, path) < 0) {
+		GDKerror("BBPimportEntry: cannot link '%s' -> '%s'\n", path, file);
+		BBPdestroy(bn);
+		return 0;
+	}
+	if (col->vheap == 0)
+		col->vheap = (Heap *) GDKzalloc(sizeof(Heap));
+	col->vheap->parentid = bn->batCacheid;
+	col->vheap->free = col->vheap->size = (size_t) st.st_size;
+	col->vheap->storage = (col->vheap->size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
+	if (col->vheap->filename) {
+		GDKfree(col->vheap->filename);
+		col->vheap->filename = 0;
+	}
+	if (HEAPload(col->vheap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
+		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", file);
+		BBPdestroy(bn);
+		return 0;
+	}
+	return 1;
+}
+#endif
+
 bat
 BBPimportEntry(char *nme)
 {
@@ -1166,7 +1088,6 @@ BBPimportEntry(char *nme)
 	char bufhheap[BUFSIZ];
 	char buftheap[BUFSIZ];
 	char path[BUFSIZ];
-	struct stat st;
 	oid BBPoid;
 	bat limit;
 	int bbpversion;
@@ -1226,16 +1147,16 @@ BBPimportEntry(char *nme)
 	bn->batCopiedtodisk = 1;
 
 	if (bn->htype != TYPE_void ) {
-		@:linkHeap(H,heap,bufhead,head)@
-		if (bn->hvarsized) {
-			@:linkvHeap(H,bufhheap,hheap)@
-		}
+		if (!linkHeap(bn, bn->H, bufhead, "head"))
+			return 0;
+		if (bn->hvarsized && !linkvHeap(bn, bn->H, bufhheap, "hheap"))
+			return 0;
 	}
 	if (bn->ttype != TYPE_void ) {
-		@:linkHeap(T,heap,buftail,tail)@
-		if (bn->tvarsized) {
-			@:linkvHeap(T,buftheap,theap)@
-		}
+		if (!linkHeap(bn, bn->T, buftail, "tail"))
+			return 0;
+		if (bn->tvarsized && !linkvHeap(bn, bn->T, buftheap, "theap"))
+			return 0;
 	}
 	BATsetaccess(bn, BAT_READ);
 	BATderiveProps(bn, 0);
@@ -1446,39 +1367,53 @@ new_bbpentry(stream *s, bat i)
 			  (unsigned char) BBP_desc(i)->P.map_hheap,
 			  (unsigned char) BBP_desc(i)->P.map_theap) < 0)
 		return -1;
-@= columnprint
-	t = BBP_desc(i)->@1.type;
-	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " " BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+	t = BBP_desc(i)->H.type;
+	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
+			 BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
 			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
-			  BBP_desc(i)->@1.width,
-			  BBP_desc(i)->@1.varsized | (BBP_desc(i)->@1.vheap ? BBP_desc(i)->@1.vheap->hashash << 1 : 0),
-			 ((unsigned short) BBP_desc(i)->@1.sorted & 0x01) | (((unsigned short) BBP_desc(i)->@1.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->@1.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->@1.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->@1.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->@1.nil & 0x01) << 11),
-			  BBP_desc(i)->@1.nokey[0],
-			  BBP_desc(i)->@1.nokey[1],
-			  BBP_desc(i)->@1.nosorted,
-			  BBP_desc(i)->@1.norevsorted,
-			  BBP_desc(i)->@1.seq,
-			  BBP_desc(i)->@1.align,
-			  BBP_desc(i)->@1.heap.free,
-			  BBP_desc(i)->@1.heap.size,
-			  (int) BBP_desc(i)->@1.heap.newstorage) < 0)
+			  BBP_desc(i)->H.width,
+			  BBP_desc(i)->H.varsized | (BBP_desc(i)->H.vheap ? BBP_desc(i)->H.vheap->hashash << 1 : 0),
+			 ((unsigned short) BBP_desc(i)->H.sorted & 0x01) | (((unsigned short) BBP_desc(i)->H.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->H.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->H.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->H.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->H.nil & 0x01) << 11),
+			  BBP_desc(i)->H.nokey[0],
+			  BBP_desc(i)->H.nokey[1],
+			  BBP_desc(i)->H.nosorted,
+			  BBP_desc(i)->H.norevsorted,
+			  BBP_desc(i)->H.seq,
+			  BBP_desc(i)->H.align,
+			  BBP_desc(i)->H.heap.free,
+			  BBP_desc(i)->H.heap.size,
+			  (int) BBP_desc(i)->H.heap.newstorage) < 0)
 		return -1;
-@
-@c
-	@:columnprint(H)@
-	@:columnprint(T)@
+	t = BBP_desc(i)->T.type;
+	if (mnstr_printf(s, " %s %u %u %u " BUNFMT " " BUNFMT " " BUNFMT " "
+			 BUNFMT " " OIDFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+			  t >= 0 ? BATatoms[t].name : ATOMunknown_name(t),
+			  BBP_desc(i)->T.width,
+			  BBP_desc(i)->T.varsized | (BBP_desc(i)->T.vheap ? BBP_desc(i)->T.vheap->hashash << 1 : 0),
+			 ((unsigned short) BBP_desc(i)->T.sorted & 0x01) | (((unsigned short) BBP_desc(i)->T.revsorted & 0x01) << 7) | (((unsigned short) BBP_desc(i)->T.key & 0x01) << 8) | (((unsigned short) BBP_desc(i)->T.dense & 0x01) << 9) | (((unsigned short) BBP_desc(i)->T.nonil & 0x01) << 10) | (((unsigned short) BBP_desc(i)->T.nil & 0x01) << 11),
+			  BBP_desc(i)->T.nokey[0],
+			  BBP_desc(i)->T.nokey[1],
+			  BBP_desc(i)->T.nosorted,
+			  BBP_desc(i)->T.norevsorted,
+			  BBP_desc(i)->T.seq,
+			  BBP_desc(i)->T.align,
+			  BBP_desc(i)->T.heap.free,
+			  BBP_desc(i)->T.heap.size,
+			  (int) BBP_desc(i)->T.heap.newstorage) < 0)
+		return -1;
 
-@= vheapprint
-	if (BBP_desc(i)->@1.vheap &&
+	if (BBP_desc(i)->H.vheap &&
 	    mnstr_printf(s, " " SZFMT " " SZFMT " %d",
-			  BBP_desc(i)->@1.vheap->free,
-			  BBP_desc(i)->@1.vheap->size,
-			  (int) BBP_desc(i)->@1.vheap->newstorage) < 0)
+			  BBP_desc(i)->H.vheap->free,
+			  BBP_desc(i)->H.vheap->size,
+			  (int) BBP_desc(i)->H.vheap->newstorage) < 0)
 		return -1;
-@
-@c
-	@:vheapprint(H)@
-	@:vheapprint(T)@
+	if (BBP_desc(i)->T.vheap &&
+	    mnstr_printf(s, " " SZFMT " " SZFMT " %d",
+			  BBP_desc(i)->T.vheap->free,
+			  BBP_desc(i)->T.vheap->size,
+			  (int) BBP_desc(i)->T.vheap->newstorage) < 0)
+		return -1;
 
 	if (BBP_options(i))
 		mnstr_printf(s, " %s", BBP_options(i));
@@ -2178,7 +2113,6 @@ BBPrename(bat bid, const char *nme)
 }
 
 /*
-
  * @+ BBP swapping Policy
  * The BAT can be moved back to disk using the routine BBPfree.  It
  * frees the storage for other BATs. After this call BAT* references
@@ -2189,15 +2123,6 @@ BBPrename(bat bid, const char *nme)
  * BBPswappable: may this bat be unloaded?  Only real bats without
  * memory references can be unloaded.
  */
-@h
-#define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
-#define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
-/*
- * The BBP_ref contains the amount of live references to a BAT.  These
- * might be in recursive BATs, C or MAL variables.  The count is
- * incremented with BBPfix and decremented with BBPunfix.
- */
-@c
 static inline void
 BBPspin(bat i, str s, int event)
 {
@@ -3290,7 +3215,6 @@ dirty_bat(bat *i, int subcommit)
 }
 
 /*
-
  * @- backup-bat
  * Backup-bat moves all files of a BAT to a backup directory. Only
  * after this succeeds, it may be saved. If some failure occurs
@@ -3374,7 +3298,6 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 }
 
 /*
-
  * @- BBPprepare
  *
  * this routine makes sure there is a BAKDIR/, and initiates one if
@@ -3540,7 +3463,6 @@ BBPbackup(BAT *b, bit subcommit)
 }
 
 /*
-
  * @+ Atomic Write
  * The atomic BBPsync() function first safeguards the old images of
  * all files to be written in BAKDIR. It then saves all files. If that
@@ -4032,5 +3954,3 @@ BBPatom_load(int atom)
 }
 #endif
 
-@h
-#endif /* _GDK_BBP_H_ */
