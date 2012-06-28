@@ -18,9 +18,8 @@
  */
 
 /*
- * @f remote
- * @a Fabian Groffen, Martin Kersten
- * @+ Remote querying functionality
+ * Fabian Groffen, Martin Kersten
+ * Remote querying functionality
  * Communication with other mservers at the MAL level is a delicate task.
  * However, it is indispensable for any distributed functionality.  This
  * module provides an abstract way to store and retrieve objects on a
@@ -66,21 +65,7 @@
  *
  */
 #include "monetdb_config.h"
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_interpreter.h>
-#include <mal_function.h> /* for printFunction */
-#include <mal_listing.h>
-#include <mal_instruction.h> /* for getmodule/func macros */
-#include <mapi.h>
-#include "remote.h"	/* for the implementation of the functions */
-#include "mutils.h"
-
-#ifndef WIN32
-#include <sys/socket.h> /* socket */
-#include <sys/un.h> /* sockaddr_un */
-#endif
-#include <unistd.h> /* gethostname */
+#include "remote.h"
 
 /*
  * Technically, these methods need to be serialised per connection,
@@ -94,24 +79,6 @@
  * used to issue a safe, but blocking get/put/exec/register request.
  */
 
-/* #define _DEBUG_REMOTE */
-
-#define RMTT_L_ENDIAN   0<<1
-#define RMTT_B_ENDIAN   1<<1
-#define RMTT_32_BITS    0<<2
-#define RMTT_64_BITS    1<<2
-#define RMTT_32_OIDS    0<<3
-#define RMTT_64_OIDS    1<<3
-
-typedef struct _connection {
-	MT_Lock            lock;      /* lock to avoid interference */
-	str                name;      /* the handle for this connection */
-	Mapi               mconn;     /* the Mapi handle for the connection */
-	unsigned char      type;      /* binary profile of the connection target */
-	size_t             nextid;    /* id counter */
-	struct _connection *next;     /* the next connection in the list */
-} *connection;
-
 static connection conns = NULL;
 static unsigned char localtype = 0;
 
@@ -122,7 +89,7 @@ static inline str RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in);
  * Returns a BAT with valid redirects for the given pattern.  If
  * merovingian is not running, this function throws an error.
  */
-remote_export str RMTresolve(int *ret, str *pat) {
+str RMTresolve(int *ret, str *pat) {
 #ifdef WIN32
 	throw(MAL, "remote.resolve", "merovingian is not available on "
 			"your platform, sorry"); /* please upgrade to Linux, etc. */

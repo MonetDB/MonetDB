@@ -538,7 +538,9 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 				BBPincref(lhs->val.bval, TRUE);
 		}
 		stk->cmd = debug;
+		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
+		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		break;
 	case FACTORYsymbol:
 	case FACcall:
@@ -994,8 +996,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				if (stkpc == mb->stop) {
 					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-					runtimeProfile.ppc = 0; /* also finalize function call event */
-					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 						stkpc = mb->stop;
@@ -1216,9 +1216,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			stkpc= mb->stop;
 		}
 	}
-	/* also produce event record for end of function call */
-	if ( startpc == 1 ) 
-		runtimeProfileExit(cntxt, mb, stk, &runtimeProfileFunction);
 
 	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {

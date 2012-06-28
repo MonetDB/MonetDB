@@ -28,7 +28,7 @@ lib_opt_sql_append = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
-	SOURCES = opt_sql_append.mx
+	SOURCES = opt_sql_append.c opt_sql_append.h
 	LIBS = ../../tools/libmonetdb5 \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
@@ -38,7 +38,7 @@ lib_opt_sql_append = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = opt_sql_append.mx
+	SOURCES = opt_sql_append.mal
 }
 
 headers_opt_sql_append_autoload = {

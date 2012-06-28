@@ -28,7 +28,7 @@ catch SyntaxException:str ;
     io.printf("!%s\n",SyntaxException);
 exit SyntaxException:str ;
 # now do it with a function that returns something (a BAT in this case) 
-    bn := bat.new(:int,:str);
+    bn := bat.new(:oid,:str);
     b := remote.put(conn,bn);
 catch MALException:str ;
     io.print("Received second init error from the remote site");
@@ -41,7 +41,7 @@ catch MALException:str ;
     io.printf("!%s\n",MALException);
 exit MALException:str ;
     io.print(b);
-    c:bat[:int,:str]  := remote.get(conn,b);
+    c:bat[:oid,:str]  := remote.get(conn,b);
     io.print(c);
 catch MALException:str ;
     io.print("Received third error from the remote site");
@@ -66,48 +66,48 @@ exit MALException:str ;
     remote.disconnect(conn);
 end main;
 [ "Received first error from the remote site" ]
-!SyntaxException:remote.exec:(mapi:monetdb://monetdb@madrid.ins.cwi.nl/mTests_modules_mal) rmt0__8_void := io.print.bla();
+!SyntaxException:remote.exec:(mapi:monetdb://monetdb@vienna.ins.cwi.nl/mTests_modules_mal) rmt0__8_void := io.print.bla();
 SyntaxException:parseError:                    ^'(' expected
 
-[ "rmt1_bn_bat_int_str" ]
-[ "rmt1_bn_bat_int_str" ]
+[ "rmt1_bn_bat_oid_str" ]
+[ "rmt1_bn_bat_oid_str" ]
 #-------------------------#
 # h	t		  # name
 # int	str		  # type
 #-------------------------#
-[ 0,	  "void"	  ]
-[ 1,	  "bit"		  ]
-[ 2,	  "bte"		  ]
-[ 3,	  "sht"		  ]
-[ 4,	  "BAT"		  ]
-[ 5,	  "int"		  ]
-[ 6,	  "oid"		  ]
-[ 7,	  "wrd"		  ]
-[ 8,	  "ptr"		  ]
-[ 9,	  "flt"		  ]
-[ 10,	  "dbl"		  ]
-[ 11,	  "lng"		  ]
-[ 12,	  "str"		  ]
-[ 13,	  "lock"	  ]
-[ 14,	  "sema"	  ]
-[ 15,	  "streams"	  ]
-[ 16,	  "bstream"	  ]
-[ 17,	  "blob"	  ]
-[ 18,	  "sqlblob"	  ]
-[ 19,	  "color"	  ]
-[ 20,	  "url"		  ]
-[ 21,	  "date"	  ]
-[ 22,	  "daytime"	  ]
-[ 23,	  "timestamp"	  ]
-[ 24,	  "timezone"	  ]
-[ 25,	  "zrule"	  ]
-[ 26,	  "inet"	  ]
-[ 27,	  "identifier"	  ]
-[ 28,	  "xml"		  ]
-[ 29,	  "pcre"	  ]
-[ 30,	  "mbr"		  ]
-[ 31,	  "wkb"		  ]
-[ 32,	  "mapentry"	  ]
+[ 0@0,	  "void"	  ]
+[ 1@0,	  "bit"		  ]
+[ 2@0,	  "bte"		  ]
+[ 3@0,	  "sht"		  ]
+[ 4@0,	  "BAT"		  ]
+[ 5@0,	  "int"		  ]
+[ 6@0,	  "oid"		  ]
+[ 7@0,	  "wrd"		  ]
+[ 8@0,	  "ptr"		  ]
+[ 9@0,	  "flt"		  ]
+[ 10@0,	  "dbl"		  ]
+[ 11@0,	  "lng"		  ]
+[ 12@0,	  "str"		  ]
+[ 13@0,	  "lock"	  ]
+[ 14@0,	  "sema"	  ]
+[ 15@0,	  "streams"	  ]
+[ 16@0,	  "bstream"	  ]
+[ 17@0,	  "blob"	  ]
+[ 18@0,	  "sqlblob"	  ]
+[ 19@0,	  "color"	  ]
+[ 20@0,	  "url"		  ]
+[ 21@0,	  "date"	  ]
+[ 22@0,	  "daytime"	  ]
+[ 23@0,	  "timestamp"	  ]
+[ 24@0,	  "timezone"	  ]
+[ 25@0,	  "zrule"	  ]
+[ 26@0,	  "inet"	  ]
+[ 27@0,	  "identifier"	  ]
+[ 28@0,	  "xml"		  ]
+[ 29@0,	  "pcre"	  ]
+[ 30@0,	  "mbr"		  ]
+[ 31@0,	  "wkb"		  ]
+[ 32@0,	  "mapentry"	  ]
 [ "rmt2__8_void" ]
 [ nil ]
 

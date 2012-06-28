@@ -264,7 +264,6 @@ static void
 q_enqueue_(queue *q, FlowStatus d)
 {
 	if (q->last == q->size) {
-		/* enlarge buffer */
 		q->size <<= 1;
 		q->data = GDKrealloc(q->data, sizeof(void*) * q->size);
 	}
@@ -334,8 +333,7 @@ q_dequeue(queue *q)
 }
 
 /* it makes sense to give priority to those
- * instructions that carry a lot of temporary arguments
- * It will reduce the footprint of the database.
+ * instructions that were first in the plan
  */
 static void
 queue_sort(queue *q)
@@ -345,14 +343,11 @@ queue_sort(queue *q)
 
 	for (i = 0; i < q->last; i++)
 		for (j = i + 1; j < q->last; j++)
-			if (((FlowStatus)q->data[i])->argclaim > ((FlowStatus)q->data[j])->argclaim) {
+			if (((FlowStatus)q->data[i])->pc < ((FlowStatus)q->data[j])->pc) {
 				f = q->data[i];
 				q->data[i] = q->data[j];
 				q->data[j] = f;
 			}
-	/* decay, because it is likely flushed */
-	for (i = 0; i < q->last; i++)
-		((FlowStatus)q->data[i])->argclaim /= 2;
 }
 
 /*
@@ -839,7 +834,6 @@ runDFLOWworker(void *t)
 		} else
 			/* always execute, it does not affect memory claims */
 			fs = nxtfs;
-		assert(fs->pc > 0);
 		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d thr= %d claim= " LLFMT "," LLFMT " %s\n", fs->pc, task->id, fs->argclaim, fs->hotclaim, fs->error ? fs->error : "");
 		fs->error = DFLOWstep(task, fs);
 
@@ -1156,7 +1150,7 @@ DFLOWscheduler(DataFlow flow)
 					queued++;
 					oldq++;
 				}
-		if (0 && oldq != queued) /* invalidate */
+		if (oldq != queued) 
 			queue_sort(flow->todo);
 		MT_lock_unset(&flow->todo->l, "q_enqueue");
 

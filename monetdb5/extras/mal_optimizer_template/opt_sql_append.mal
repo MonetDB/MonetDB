@@ -1,0 +1,7 @@
+pattern optimizer.sql_append():str
+address OPTsql_append
+comment "Avoid extra BAT copy with sql.append() whenever possible.";
+
+pattern optimizer.sql_append(mod:str, fcn:str):str
+address OPTsql_append
+comment "Avoid extra BAT copy with sql.append() whenever possible.";

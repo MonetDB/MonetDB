@@ -665,7 +665,7 @@ BATdestroy( BATstore *bs )
  * BAT copying is an often used operation. So it deserves attention.
  * When making a copy of a BAT, the following aspects are of
  * importance:
-
+ *
  * - the requested head and tail types. The purpose of the copy may be
  *   to slightly change these types (e.g. void <-> oid). We may also
  *   remap between types as long as they share the same
@@ -688,49 +688,13 @@ BATdestroy( BATstore *bs )
  * In GDK, the result is a BAT that is BAT_WRITE iff (writable ==
  * TRUE).
  *
- * There is a special parameter setting (writable == 2), which does
- * create an independent BAT (not a view that shares the same heaps),
- * however tries to share VM heap resources using copy-on-write
- * maps. Note that the result of this is a read-only BAT
- * (BAT_READ). The copy-on-write VM tricks can be used to isolate
- * these copies from changes in the parent.
- *
  * In these cases the copy becomes a logical view on the original,
  * which ensures that the original cannot be modified or destroyed
  * (which could affect the shared heaps).
  */
 static int
-HEAPshare(Heap *dst, Heap *src, int copy_on_write)
+heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
-	/* use copy-on-write mmap for isolatable copy */
-	if (src->storage == STORE_MMAP) {
-		*dst = *src;
-		dst->base = (char *) -1;
-		dst->filename = GDKstrdup(src->filename);
-		if (dst->filename) {
-			char path[PATHLENGTH];
-
-			GDKfilepath(path, BATDIR, dst->filename, NULL);
-			dst->base = GDKmmap(path, MMAP_READ | MMAP_SEQUENTIAL | (copy_on_write ? MMAP_COPY : 0), 0, dst->maxsize);
-			if (dst->base != (char *) -1) {
-				dst->copied = 1;
-				dst->newstorage = dst->storage = copy_on_write ? STORE_PRIV : STORE_MMAP;
-				return 0;
-			}
-			GDKfree(dst->filename);
-			dst->filename = NULL;
-		}
-	}
-	return -1;
-}
-
-static int
-heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src, int *remap)
-{
-	if (*remap && HEAPshare(dst, src, *remap) == 0) {
-		return 0;	/* use a shared memory heap */
-	}
-	*remap = 0;
 	if (src->filename && src->newstorage != STORE_MEM) {
 		str nme = BBP_physical(bn->batCacheid);
 
@@ -869,11 +833,6 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		} else if (bunstocopy == BUN_NONE) {
 			/* case (3): just copy the heaps; if possible
 			 * with copy-on-write VM support */
-			int remap = writable == 2;
-			int hremap = remap && BAThrestricted(b) != BAT_WRITE && ht != TYPE_void;
-			int tremap = remap && BATtrestricted(b) != BAT_WRITE && tt != TYPE_void;
-			int hvremap = hremap && ATOMstorage(ht) == TYPE_str && !GDK_ELIMDOUBLES(b->H->vheap);
-			int tvremap = tremap && ATOMstorage(tt) == TYPE_str && !GDK_ELIMDOUBLES(b->T->vheap);
 			BUN hcap = 0, tcap = 0;
 			Heap bhhp, bthp, hhp, thp;
 			memset(&bhhp, 0, sizeof(Heap));
@@ -881,10 +840,10 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			memset(&hhp, 0, sizeof(Heap));
 			memset(&thp, 0, sizeof(Heap));
 
-			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap, &hremap) < 0) ||
-			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap, &tremap) < 0) ||
-			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap, &hvremap) < 0) ||
-			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap, &tvremap) < 0)) {
+			if ((b->htype && heapcopy(bn, "head", &bhhp, &b->H->heap) < 0) ||
+			    (b->ttype && heapcopy(bn, "tail", &bthp, &b->T->heap) < 0) ||
+			    (bn->H->vheap && heapcopy(bn, "hheap", &hhp, b->H->vheap) < 0) ||
+			    (bn->T->vheap && heapcopy(bn, "theap", &thp, b->T->vheap) < 0)) {
 				HEAPfree(&thp);
 				HEAPfree(&hhp);
 				HEAPfree(&bthp);
@@ -918,18 +877,6 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			 * the heap as in the source */
 			bn->batFirst = b->batFirst;
 			bn->batInserted = b->batInserted;
-
-			/* if we have copy-on-write heaps, bn is a
-			 * logical view on b to ensure the heaps stay
-			 * stable */
-			if (hremap || hvremap) {
-				bn->P->lview = TRUE;
-				BBPshare(bn->H->heap.parentid = b->batCacheid);
-			}
-			if (tremap || tvremap) {
-				bn->P->lview = TRUE;
-				BBPshare(bn->T->heap.parentid = -b->batCacheid);
-			}
 		} else if (BATatoms[ht].atomFix || BATatoms[tt].atomFix || (ht && tt) || ATOMstorage(MAX(ht, tt)) >= TYPE_str) {
 			/* case (4): one-by-one BUN insert (really slow) */
 			BUN p, q, r = BUNfirst(bn);
@@ -2553,7 +2500,7 @@ backup_new(Heap *hp, int lockbat)
 #define ACCESSMODE(wr,rd) ((wr)?BAT_WRITE:(rd)?BAT_READ:-1)
 
 /* transition heap from readonly to writable */
-static int
+static storage_t
 HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 {
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
@@ -2566,19 +2513,19 @@ HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 	}
 	if (hp->storage == STORE_MMAP) {	/* 6=>4 */
 		hp->dirty = 1;
-		return backup_new(hp, BBP_THREADMASK) ? -1 : STORE_MMAP;	/* only called for existing bats */
+		return backup_new(hp, BBP_THREADMASK) ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 	}
 	return hp->storage;	/* 7=>5 */
 }
 
 /* heap changes persistence mode (at commit point) */
-static int
+static storage_t
 HEAPcommitpersistence(Heap *hp, int writable, int existing)
 {
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
 			hp->dirty = 1;
-			return backup_new(hp, -1) ? -1 : STORE_MMAP;	/* only called for existing bats */
+			return backup_new(hp, -1) ? STORE_INVALID : STORE_MMAP;	/* only called for existing bats */
 		}
 		return hp->newstorage;	/* 4=>0,5=>1,7=>3,c=>a no change */
 	}
@@ -2599,7 +2546,7 @@ int
 BATcheckmodes(BAT *b, int existing)
 {
 	int wr = (b->batRestricted == BAT_WRITE);
-	int m0 = 0, m1 = 0, m2 = 0, m3 = 0;
+	storage_t m0 = STORE_MEM, m1 = STORE_MEM, m2 = STORE_MEM, m3 = STORE_MEM;
 	int dirty = 0;
 
 	BATcheck(b, "BATcheckmodes");
@@ -2624,7 +2571,8 @@ BATcheckmodes(BAT *b, int existing)
 		m3 = HEAPcommitpersistence(b->T->vheap, wr || ta, existing);
 		dirty |= (b->T->vheap->newstorage != m3);
 	}
-	if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+	if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
+	    m2 == STORE_INVALID || m3 == STORE_INVALID)
 		return -1;
 
 	if (dirty) {
@@ -2662,21 +2610,6 @@ BATcheckmodes(BAT *b, int existing)
 		}							\
 	} while (0)
 
-static int
-batunshare(BAT *b, str fcn)
-{
-	if (b->H->heap.base)
-		heap_unshare(&b->H->heap, head, 0);
-	if (b->T->heap.base)
-		heap_unshare(&b->T->heap, tail, 0);
-	if (b->H->vheap)
-		heap_unshare(b->H->vheap, H->vheap, ABS(b->batCacheid));
-	if (b->T->vheap)
-		heap_unshare(b->T->vheap, T->vheap, ABS(b->batCacheid));
-	b->P->lview = 0;
-	return 0;
-}
-
 BAT *
 BATsetaccess(BAT *b, int newmode)
 {
@@ -2692,13 +2625,8 @@ BATsetaccess(BAT *b, int newmode)
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
-		int m0, m1, m2 = 0, m3 = 0;
-		int b0, b1, b2 = 0, b3 = 0;
-
-		/* copy-on-write isolated bats that change mode should
-		 * be made independent */
-		if (b->P->lview && newmode != BAT_READ && batunshare(b, "BATsetaccess") < 0)
-			return NULL;
+		storage_t m0, m1, m2 = STORE_MEM, m3 = STORE_MEM;
+		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
 
@@ -2723,7 +2651,8 @@ BATsetaccess(BAT *b, int newmode)
 			b3 = b->T->vheap->newstorage;
 			m3 = HEAPchangeaccess(b->T->vheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
-		if (m0 < 0 || m1 < 0 || m2 < 0 || m3 < 0)
+		if (m0 == STORE_INVALID || m1 == STORE_INVALID ||
+		    m2 == STORE_INVALID || m3 == STORE_INVALID)
 			return NULL;
 
 		/* set new access mode and mmap modes */
@@ -2803,10 +2732,6 @@ BATmode(BAT *b, int mode)
 	if (mode != b->batPersistence) {
 		bat bid = ABS(b->batCacheid);
 
-		if (b->P->lview) {
-			if (batunshare(b, "BATmode") < 0)
-				return NULL;
-		}
 		if (mode == PERSISTENT) {
 			check_type(b->htype);
 			check_type(b->ttype);
@@ -3142,6 +3067,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	COLsettrivprop(b, b->H);
 	cmpf = BATatoms[b->htype].atomCmp;
 	nilp = ATOMnilptr(b->htype);
+	b->batDirtydesc = 1;	/* we will be changing things */
 	if (b->htype == TYPE_void || b->batCount <= 1) {
 		/* COLsettrivprop has already taken care of all
 		 * properties except for (no)nil if count == 1 */
@@ -3162,6 +3088,54 @@ BATderiveHeadProps(BAT *b, int expensive)
 	sorted = revsorted = (BATatoms[b->htype].linear != 0);
 	dense = (b->htype == TYPE_oid);
 	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
+	/* if no* props already set correctly, we can maybe speed
+	 * things up, if not set correctly, reset them now and set
+	 * them later */
+	if (!b->hkey &&
+	    b->H->nokey[0] >= b->batFirst &&
+	    b->H->nokey[0] < b->batFirst + b->batCount &&
+	    b->H->nokey[1] >= b->batFirst &&
+	    b->H->nokey[1] < b->batFirst + b->batCount &&
+	    b->H->nokey[0] != b->H->nokey[1] &&
+	    cmpf(BUNhead(bi, b->H->nokey[0]),
+		 BUNhead(bi, b->H->nokey[1])) == 0) {
+		/* we found proof that the column doesn't deserve the
+		 * key property, no need to check the hard way */
+		expensive = 0;
+		key = 0;
+	} else {
+		b->H->nokey[0] = 0;
+		b->H->nokey[1] = 0;
+	}
+	if (!b->hsorted &&
+	    b->H->nosorted > b->batFirst &&
+	    b->H->nosorted < b->batFirst + b->batCount &&
+	    cmpf(BUNhead(bi, b->H->nosorted - 1),
+		 BUNhead(bi, b->H->nosorted)) > 0) {
+		sorted = 0;
+	} else {
+		b->H->nosorted = 0;
+	}
+	if (!b->hrevsorted &&
+	    b->H->norevsorted > b->batFirst &&
+	    b->H->norevsorted < b->batFirst + b->batCount &&
+	    cmpf(BUNhead(bi, b->H->norevsorted - 1),
+		 BUNhead(bi, b->H->norevsorted)) < 0) {
+		revsorted = 0;
+	} else {
+		b->H->norevsorted = 0;
+	}
+	if (dense &&
+	    !b->hdense &&
+	    b->H->nodense >= b->batFirst &&
+	    b->H->nodense < b->batFirst + b->batCount &&
+	    (b->H->nodense == b->batFirst ?
+	     * (oid *) BUNhead(bi, b->H->nodense) == oid_nil :
+	     * (oid *) BUNhead(bi, b->H->nodense - 1) + 1 != * (oid *) BUNhead(bi, b->H->nodense))) {
+		dense = 0;
+	} else {
+		b->H->nodense = 0;
+	}
 	if (expensive) {
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
@@ -3190,16 +3164,30 @@ BATderiveHeadProps(BAT *b, int expensive)
 		valp = BUNhead(bi, p);
 		if (prev) {
 			cmp = cmpf(prev, valp);
-			if (cmp < 0)
+			if (cmp < 0) {
 				revsorted = 0;
-			else if (cmp > 0)
+				if (b->H->norevsorted == 0)
+					b->H->norevsorted = p;
+			} else if (cmp > 0) {
 				sorted = 0;
-			else
+				if (b->H->nosorted == 0)
+					b->H->nosorted = p;
+			} else {
 				key = 0;
-			if (dense && * (oid *) prev + 1 != * (oid *) valp)
+				if (b->H->nokey[0] == 0 &&
+				    b->H->nokey[1] == 0) {
+					b->H->nokey[0] = p - 1;
+					b->H->nokey[1] = p;
+				}
+			}
+			if (dense && * (oid *) prev + 1 != * (oid *) valp) {
 				dense = 0;
+				if (b->H->nodense == 0)
+					b->H->nodense = p;
+			}
 		} else if (dense && (sqbs = * (oid *) valp) == oid_nil) {
 			dense = 0;
+			b->H->nodense = p;
 		}
 		prev = valp;
 		if (nonil && cmpf(valp, nilp) == 0)
@@ -3209,8 +3197,11 @@ BATderiveHeadProps(BAT *b, int expensive)
 			for (hb = hs->hash[prb];
 			     hb != BUN_NONE;
 			     hb = hs->link[hb])
-				if (cmpf(valp, BUNhead(bi, hb)) == 0)
+				if (cmpf(valp, BUNhead(bi, hb)) == 0) {
 					key = 0;
+					b->H->nokey[0] = hb;
+					b->H->nokey[1] = p;
+				}
 			hs->link[p] = hs->hash[prb];
 			hs->hash[prb] = p;
 		}

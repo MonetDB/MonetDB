@@ -17,18 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @f opt_statistics
- * @a Martin Kersten
- * @v 0.1
- * @+ Optimizer Statistics
- * The optimizers statistics are collected in a small catalog.
- * It provides a basis for off-line analysis of their contribution
- * and a source of information of dynamic optimization decisions.
- *
- * The command is stored in the inspection module, because it
- * otherwise interferes with the general optimizer phase.
- */
 #include "monetdb_config.h"
 #include "opt_statistics.h"
 /*

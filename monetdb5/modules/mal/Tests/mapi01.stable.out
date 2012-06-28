@@ -16,8 +16,7 @@ stdout of test 'mapi01` in directory 'modules/mal` itself:
 function user.main():void;
 # First test of the remoteQueries optimizer 
 # we create a remote bat and fake a bind operation. 
-    cat := inspect.getEnvironment();
-    fs := algebra.find(cat,"mapi_port");
+    fs := inspect.getEnvironment("mapi_port");
     port := calc.int(fs);
 #io.printf("port %d\n",port); 
     mid := mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal");

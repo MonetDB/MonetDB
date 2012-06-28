@@ -28,8 +28,8 @@ bin_monetdb = {
 	LIBS = ../utils/libmeroutil \
 		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
-		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmsabaoth \
+		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmutils \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \

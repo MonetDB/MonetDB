@@ -969,9 +969,9 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 	strcpy(p, "maxsize");
 	BUNins(bn, buf, local_utoa(hp->maxsize),FALSE);
 	strcpy(p, "storage");
-	BUNins(bn, buf, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage & STORE_PRIV) ? "private map" : "malloced",FALSE);
+	BUNins(bn, buf, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced",FALSE);
 	strcpy(p, "newstorage");
-	BUNins(bn, buf, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage & STORE_PRIV) ? "private map" : "memory mapped",FALSE);
+	BUNins(bn, buf, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped",FALSE);
 	strcpy(p, "filename");
 	BUNins(bn, buf, hp->filename ? hp->filename : "no file",FALSE);
 }

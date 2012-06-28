@@ -28,8 +28,8 @@ function user.main():void;
 #	io.print("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 
     ca_a := transaction.commit();
     da_a := io.printf("#~BeginVariableOutput~#\n");
-    ea_a := status.ioStatistics();
-    fa_a := io.print(ea_a);
+    (ea_a,ea_b) := status.ioStatistics();
+    fa_a := io.print(ea_a,ea_b);
     ga_a := io.printf("#~EndVariableOutput~#\n");
 #	io.print("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();"); 
     ha_a := transaction.commit();
@@ -56,43 +56,41 @@ function user.main():void;
     bb_a := transaction.commit();
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");"); 
     cb_a := io.printf("#~BeginVariableOutput~#\n");
-    db_a := status.ioStatistics();
-    eb_a := io.print(db_a);
+    (db_a,db_b) := status.ioStatistics();
+    eb_a := io.print(db_a,db_b);
     fb_a := io.printf("#~EndVariableOutput~#\n");
 #	io.print("quit();"); 
     gb_a := clients.quit();
 end main;
 #~BeginVariableOutput~#
-#-------------------------#
-# gdk		io	  # name
-# str		int	  # type
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  3974	  ]
-[ "majflt",	  0	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  32	  ]
-[ "nvcsw",	  2	  ]
-[ "ninvcsw",	  5	  ]
+#-----------------------------------------#
+# h	t		t		  # name
+# void	str		int		  # type
+#-----------------------------------------#
+[ 0@0,	  "maxrss",	  26528		  ]
+[ 1@0,	  "majflt",	  1718511981	  ]
+[ 2@0,	  "nswap",	  7088		  ]
+[ 3@0,	  "inblock",	  0		  ]
+[ 4@0,	  "oublock",	  0		  ]
+[ 5@0,	  "nvcsw",	  0		  ]
+[ 6@0,	  "ninvcsw",	  1144		  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); 
 #printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
-#-------------------------#
-# gdk		io	  # name
-# str		int	  # type
-#-------------------------#
-[ "maxrss",	  0	  ]
-[ "minflt",	  3978	  ]
-[ "majflt",	  0	  ]
-[ "nswap",	  0	  ]
-[ "inblock",	  0	  ]
-[ "oublock",	  40	  ]
-[ "nvcsw",	  2	  ]
-[ "ninvcsw",	  5	  ]
+#-----------------------------------------#
+# h	t		t		  # name
+# void	str		int		  # type
+#-----------------------------------------#
+[ 0@0,	  "maxrss",	  26584		  ]
+[ 1@0,	  "majflt",	  1718511981	  ]
+[ 2@0,	  "nswap",	  7102		  ]
+[ 3@0,	  "inblock",	  0		  ]
+[ 4@0,	  "oublock",	  0		  ]
+[ 5@0,	  "nvcsw",	  0		  ]
+[ 6@0,	  "ninvcsw",	  1152		  ]
 #~EndVariableOutput~#
 #quit();
 

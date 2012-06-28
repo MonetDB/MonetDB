@@ -134,7 +134,8 @@ typedef struct MALBLK {
 	int flowfixed;				/* all flow instructions are fixed */
 	ProfPtr profiler;
 	struct MALBLK *history;		/* of optimizer actions */
-	int keephistory;			/* do we need the history at all */
+	short keephistory;			/* do we need the history at all */
+	short dotfile;				/* sent dot file to stethoscope? */
 	str marker;					/* history points are marked for backtracking */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */

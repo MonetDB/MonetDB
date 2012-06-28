@@ -605,6 +605,14 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 		}							\
 	} while (0)
 
+/* Heap storage modes */
+typedef enum {
+	STORE_MEM = 0,		/* load into GDKmalloced memory */
+	STORE_MMAP = 1,		/* mmap() into virtual memory */
+	STORE_PRIV = 2,		/* BAT copy of copy-on-write mmap */
+	STORE_INVALID		/* invalid value, used to indicate error */
+} storage_t;
+
 typedef struct {
 	size_t maxsize;		/* maximum realloc size (bytes) */
 	size_t free;		/* index where free area starts. */
@@ -612,11 +620,11 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	str filename;		/* file containing image of the heap */
 
-	char storage;		/* storage mode (mmap/malloc). */
 	unsigned int copied:1,	/* a copy of an existing map. */
 		      hashash:1,/* the string heap contains hash values */
 		      forcemap:1;  /* force STORE_MMAP even if heap exists */
-	bte newstorage;		/* new desired storage mode at re-allocation. */
+	storage_t storage;	/* storage mode (mmap/malloc). */
+	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bte dirty;		/* specific heap dirty marker */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
@@ -791,7 +799,6 @@ typedef struct {
 	 dirty:2,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
-	 lview:1,		/* bat is a *logical* view on parentid */
 	 set:1,			/* real set semantics */
 	 restricted:2,		/* access priviliges */
 	 persistence:2,		/* should the BAT persist on disk? */
@@ -1568,10 +1575,6 @@ gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
  * call it issues buffer management advice to the OS kernel, as for the
  * expected usage pattern of the memory in a heap.
  */
-/* Heap storage modes */
-#define STORE_MEM	0	/* load into GDKmalloced memory */
-#define STORE_MMAP	1	/* mmap() into virtual memory */
-#define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
 
 gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 
@@ -2766,17 +2769,16 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  * always refer to the same parent column (i.e. no correction needed)
  */
 #define isVIEW(x)							\
-	(!(x)->P->lview &&						\
-	 ((x)->H->heap.parentid ||					\
-	  (x)->T->heap.parentid ||					\
-	  ((x)->H->vheap && (x)->H->vheap->parentid != ABS((x)->batCacheid)) ||	\
-	  ((x)->T->vheap && (x)->T->vheap->parentid != ABS((x)->batCacheid))))
+	((x)->H->heap.parentid ||					\
+	 (x)->T->heap.parentid ||					\
+	 ((x)->H->vheap && (x)->H->vheap->parentid != ABS((x)->batCacheid)) || \
+	 ((x)->T->vheap && (x)->T->vheap->parentid != ABS((x)->batCacheid)))
 
 #define isVIEWCOMBINE(x) ((x)->H == (x)->T)
-#define VIEWhparent(x)	((x)->P->lview?0:(x)->H->heap.parentid)
-#define VIEWvhparent(x)	(((x)->P->lview||(x)->H->vheap==NULL||(x)->H->vheap->parentid==ABS((x)->batCacheid))?0:(x)->H->vheap->parentid)
-#define VIEWtparent(x)	((x)->P->lview?0:(x)->T->heap.parentid)
-#define VIEWvtparent(x)	(((x)->P->lview||(x)->T->vheap==NULL||(x)->T->vheap->parentid==ABS((x)->batCacheid))?0:(x)->T->vheap->parentid)
+#define VIEWhparent(x)	((x)->H->heap.parentid)
+#define VIEWvhparent(x)	(((x)->H->vheap==NULL||(x)->H->vheap->parentid==ABS((x)->batCacheid))?0:(x)->H->vheap->parentid)
+#define VIEWtparent(x)	((x)->T->heap.parentid)
+#define VIEWvtparent(x)	(((x)->T->vheap==NULL||(x)->T->vheap->parentid==ABS((x)->batCacheid))?0:(x)->T->vheap->parentid)
 
 /* VIEWparentcol(b) tells whether the head column was inherited from the parent
  * "as is". We must check whether the type was not overridden in the view.

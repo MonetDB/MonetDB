@@ -536,15 +536,15 @@ discardBox(Box box, str name)
  * The elements can be obtained using iterator, which returns the name
  * of the next element in the box.
  */
-int
-nextBoxElement(Box box, lng *cursor, ValPtr v)
+oid
+nextBoxElement(Box box, oid *cursor, ValPtr v)
 {
-	if (*cursor >= box->sym->vtop) {
-		*cursor = -1;
+	if (*cursor >= (oid) box->sym->vtop) {
+		*cursor = (oid) oid_nil;
 		return 0;
 	}
 	if ( box->val == NULL)
-		return -1;
+		return oid_nil;
 	v->vtype = TYPE_str;
 	v->val.sval = getBoxName(box, *cursor);
 	*cursor = *cursor + 1;

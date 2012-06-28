@@ -49,6 +49,6 @@ mal_export int discardBox(Box box, str name);
 mal_export str getBoxName(Box box, lng i);
 mal_export str getBoxNames(int *bid);
 mal_export str toString(Box box, lng i);
-mal_export int nextBoxElement(Box box, lng *cursor, ValPtr v);
+mal_export oid nextBoxElement(Box box, oid *cursor, ValPtr v);
 
 #endif /* _MAL_BOX_H */

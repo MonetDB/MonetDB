@@ -221,11 +221,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		char mydoproxy;
 		char nthreads[24];
 		char nclients[24];
-		char master[512]; /* possibly undersized */
-		char slave[512]; /* possibly undersized */
 		char pipeline[512];
 		char *readonly = NULL;
-		char *argv[28];	/* for the exec arguments */
+		char *argv[24];	/* for the exec arguments */
 		int c = 0;
 		unsigned int mport;
 
@@ -258,22 +256,6 @@ forkMserver(char *database, sabdb** stats, int force)
 			snprintf(pipeline, sizeof(pipeline), "sql_optimizer=%s", kv->val);
 		} else {
 			pipeline[0] = '\0';
-		}
-
-		kv = findConfKey(ckv, "master");
-		/* can't have master configured by default */
-		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-			snprintf(master, sizeof(master), "replication_master=%s", kv->val);
-		} else {
-			master[0] = '\0';
-		}
-
-		kv = findConfKey(ckv, "slave");
-		/* can't have slave configured by default */
-		if (kv->val != NULL) {
-			snprintf(slave, sizeof(slave), "replication_slave=%s", kv->val);
-		} else {
-			slave[0] = '\0';
 		}
 
 		kv = findConfKey(ckv, "readonly");
@@ -346,12 +328,6 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		if (pipeline[0] != '\0') {
 			argv[c++] = "--set"; argv[c++] = pipeline;
-		}
-		if (master[0] != '\0') {
-			argv[c++] = "--set"; argv[c++] = master;
-		}
-		if (slave[0] != '\0') {
-			argv[c++] = "--set"; argv[c++] = slave;
 		}
 		if (readonly != NULL) {
 			argv[c++] = readonly;

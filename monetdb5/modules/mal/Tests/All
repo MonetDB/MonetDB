@@ -14,8 +14,8 @@ register00
 
 mserver00
 
-statistics00
-statistics01
+# statistics00
+#statistics01
 
 call00
 
