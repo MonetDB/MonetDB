@@ -3067,6 +3067,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	COLsettrivprop(b, b->H);
 	cmpf = BATatoms[b->htype].atomCmp;
 	nilp = ATOMnilptr(b->htype);
+	b->batDirtydesc = 1;	/* we will be changing things */
 	if (b->htype == TYPE_void || b->batCount <= 1) {
 		/* COLsettrivprop has already taken care of all
 		 * properties except for (no)nil if count == 1 */
@@ -3087,6 +3088,54 @@ BATderiveHeadProps(BAT *b, int expensive)
 	sorted = revsorted = (BATatoms[b->htype].linear != 0);
 	dense = (b->htype == TYPE_oid);
 	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
+	/* if no* props already set correctly, we can maybe speed
+	 * things up, if not set correctly, reset them now and set
+	 * them later */
+	if (!b->hkey &&
+	    b->H->nokey[0] >= b->batFirst &&
+	    b->H->nokey[0] < b->batFirst + b->batCount &&
+	    b->H->nokey[1] >= b->batFirst &&
+	    b->H->nokey[1] < b->batFirst + b->batCount &&
+	    b->H->nokey[0] != b->H->nokey[1] &&
+	    cmpf(BUNhead(bi, b->H->nokey[0]),
+		 BUNhead(bi, b->H->nokey[1])) == 0) {
+		/* we found proof that the column doesn't deserve the
+		 * key property, no need to check the hard way */
+		expensive = 0;
+		key = 0;
+	} else {
+		b->H->nokey[0] = 0;
+		b->H->nokey[1] = 0;
+	}
+	if (!b->hsorted &&
+	    b->H->nosorted > b->batFirst &&
+	    b->H->nosorted < b->batFirst + b->batCount &&
+	    cmpf(BUNhead(bi, b->H->nosorted - 1),
+		 BUNhead(bi, b->H->nosorted)) > 0) {
+		sorted = 0;
+	} else {
+		b->H->nosorted = 0;
+	}
+	if (!b->hrevsorted &&
+	    b->H->norevsorted > b->batFirst &&
+	    b->H->norevsorted < b->batFirst + b->batCount &&
+	    cmpf(BUNhead(bi, b->H->norevsorted - 1),
+		 BUNhead(bi, b->H->norevsorted)) < 0) {
+		revsorted = 0;
+	} else {
+		b->H->norevsorted = 0;
+	}
+	if (dense &&
+	    !b->hdense &&
+	    b->H->nodense >= b->batFirst &&
+	    b->H->nodense < b->batFirst + b->batCount &&
+	    (b->H->nodense == b->batFirst ?
+	     * (oid *) BUNhead(bi, b->H->nodense) == oid_nil :
+	     * (oid *) BUNhead(bi, b->H->nodense - 1) + 1 != * (oid *) BUNhead(bi, b->H->nodense))) {
+		dense = 0;
+	} else {
+		b->H->nodense = 0;
+	}
 	if (expensive) {
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
@@ -3115,16 +3164,30 @@ BATderiveHeadProps(BAT *b, int expensive)
 		valp = BUNhead(bi, p);
 		if (prev) {
 			cmp = cmpf(prev, valp);
-			if (cmp < 0)
+			if (cmp < 0) {
 				revsorted = 0;
-			else if (cmp > 0)
+				if (b->H->norevsorted == 0)
+					b->H->norevsorted = p;
+			} else if (cmp > 0) {
 				sorted = 0;
-			else
+				if (b->H->nosorted == 0)
+					b->H->nosorted = p;
+			} else {
 				key = 0;
-			if (dense && * (oid *) prev + 1 != * (oid *) valp)
+				if (b->H->nokey[0] == 0 &&
+				    b->H->nokey[1] == 0) {
+					b->H->nokey[0] = p - 1;
+					b->H->nokey[1] = p;
+				}
+			}
+			if (dense && * (oid *) prev + 1 != * (oid *) valp) {
 				dense = 0;
+				if (b->H->nodense == 0)
+					b->H->nodense = p;
+			}
 		} else if (dense && (sqbs = * (oid *) valp) == oid_nil) {
 			dense = 0;
+			b->H->nodense = p;
 		}
 		prev = valp;
 		if (nonil && cmpf(valp, nilp) == 0)
@@ -3134,8 +3197,11 @@ BATderiveHeadProps(BAT *b, int expensive)
 			for (hb = hs->hash[prb];
 			     hb != BUN_NONE;
 			     hb = hs->link[hb])
-				if (cmpf(valp, BUNhead(bi, hb)) == 0)
+				if (cmpf(valp, BUNhead(bi, hb)) == 0) {
 					key = 0;
+					b->H->nokey[0] = hb;
+					b->H->nokey[1] = p;
+				}
 			hs->link[p] = hs->hash[prb];
 			hs->hash[prb] = p;
 		}
