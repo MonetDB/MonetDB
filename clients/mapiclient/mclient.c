@@ -3047,7 +3047,8 @@ main(int argc, char **argv)
 
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
-			mnstr_printf(toConsole, "auto commit mode: on\n");
+			mnstr_printf(toConsole, "auto commit mode: %s\n",
+				     mapi_get_autocommit(mid) ? "on" : "off");
 	}
 
 	if (mode == SQL && settz)
