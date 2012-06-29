@@ -1,29 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f tokenizer
-
-@c
 /*
- * @a Lefteris Sidirourgos
- * @v 0.1
- * @* Tokenizer
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ * author Lefteris Sidirourgos
+ * Tokenizer
  * This module implements a vertical fragmented tokenizer for strings. It is based
  * on the ideas of the urlbox module by mk.
  *
@@ -49,91 +45,6 @@ All Rights Reserved.
  * administrative issues and security aspects (e.g., opening a tokenizer of
  * a different schema) should be addressed more thoroughly.
  */
-@mal
-module tokenizer
-comment "The tokenizer provides fast access to a large collection of strings
-based on a vertical fragmented representation.";
-
-command open(name:str):void
-address TKNZRopen
-comment "open the named tokenizer store, a new one is created if the specified name does not exist";
-
-command close():void
-address TKNZRclose
-comment "close the current tokenizer store";
-
-pattern take(i:oid):str
-address TKNZRtakeOid
-comment "reconstruct and returns the i-th string";
-
-pattern locate(s:str):oid
-address TKNZRlocate
-comment "if the given string is in the store returns its oid, otherwise oid_nil";
-
-command append(u:str):oid
-address TKNZRappend
-comment "tokenize a new string and append it to the tokenizer (duplicate elimination is performed)";
-
-command depositFile(fnme:str):void
-address TKNZRdepositFile
-comment "batch insertion from a file of strings to tokenize, each string is separated by a new line";
-
-command getLevel(i:int):bat[:oid,:str]
-address TKNZRgetLevel
-comment "administrative function that returns the bat on level i";
-
-command getIndex():bat[:void,:oid]
-address TKNZRgetIndex
-comment "administrative function that returns the INDEX bat";
-
-command getCount():bat[:void,:wrd]
-address TKNZRgetCount
-comment "debugging function that returns the size of the bats at each level";
-
-command getCardinality():bat[:void,:wrd]
-address TKNZRgetCardinality
-comment "debugging function that returns the unique tokens at each level";
-
-@h
-/*
- * @-
- * @+ Implementation
- */
-#ifndef _TKNZR_H
-#define _TKNZR_H
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define tokenizer_export extern __declspec(dllimport)
-#else
-#define tokenizer_export extern __declspec(dllexport)
-#endif
-#else
-#define tokenizer_export extern
-#endif
-
-@= params
-(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-@
-@h
-tokenizer_export str TKNZRopen             (int *r, str *name);
-tokenizer_export str TKNZRclose            (int *r);
-tokenizer_export str TKNZRappend          (oid *pos, str *tuple);
-tokenizer_export str TKNZRlocate           @:params@
-tokenizer_export str TKNZRtakeOid          @:params@
-tokenizer_export str TKNZRdepositFile      (int *r, str *fnme);
-tokenizer_export str TKNZRgetLevel         (int *r, int *level);
-tokenizer_export str TKNZRgetIndex         (int *r);
-tokenizer_export str TKNZRgetCount         (int *r);
-tokenizer_export str TKNZRgetCardinality   (int *r);
-
-#endif /* _TKNZR_H */
-
-@c
 #include "monetdb_config.h"
 #include "bat5.h"
 #include "tokenizer.h"
@@ -228,20 +139,14 @@ TKNZRopen(int *ret, str *in)
 	return MAL_SUCCEED;
 }
 
-@= init_check
-if (TRANS == NULL) {
-	throw(MAL, "tokenizer", "no tokenizer store open");
-}
-
-@
-@c
 str
 TKNZRclose(int *r)
 {
 	int i;
 	(void) r;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	TMsubcommit(TRANS);
 
@@ -258,7 +163,7 @@ TKNZRclose(int *r)
 }
 
 /*
- * @- Tokenize operations
+ * Tokenize operations
  * The tokenizer operation assumes a private copy to mark the
  * end of the token separators with a zero byte. Tokens are
  * separated by a single character for simplicity.
@@ -284,7 +189,27 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 	return depth;
 }
 
-@= insert
+str
+TKNZRappend(oid *pos, str *s)
+{
+	str url;
+	str batname;
+	str parts[MAX_TKNZR_DEPTH];
+	int i, new, r, depth;
+	BAT *b;
+	BUN p;
+	BUN idx = 0;
+	oid prv = 0;
+	oid comp;
+
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
+
+	if ((url = GDKstrdup(*s)) == NULL) {
+		throw(MAL, "tokenizer.append",
+				OPERATION_FAILED "could not allocate memory");
+	}
+
 	depth = TKNZRtokenize(url, parts, '/');
 	new = depth;
 
@@ -330,11 +255,7 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 		}
 		tokenDepth = depth;
 	}
-
-@
- * @-
- * Find the common prefix first
-@= findcommon
+	/* findcommn */
 	p = BUNfnd(BATmirror(tokenBAT[0]), parts[0]);
 	if (p != BUN_NONE) {
 		prv = (oid) p;
@@ -357,10 +278,17 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 		i = 0;
 	}
 
-@
- * @-
- * Insert the remainder as a new string
-@= insremainder
+	if (i == depth) {
+		comp = COMP(prv, depth);
+		*pos = BUNfnd(BATmirror(tokenBAT[INDEX]), (ptr) &comp);
+		if (*pos != BUN_NONE) {
+			/* the string is already there */
+			GDKfree(url);
+			return MAL_SUCCEED;
+		}
+	}
+
+	/* insremainder */
 	for(; i < depth; i++){
 		idx = BATcount(tokenBAT[i]);
 		if (idx > MAX_h) {
@@ -381,43 +309,6 @@ TKNZRtokenize(str in, str *parts, char tkn) {
 		}
 		prv = (oid) idx;
 	}
-
-@
-@c
-str
-TKNZRappend(oid *pos, str *s)
-{
-	str url;
-	str batname;
-	str parts[MAX_TKNZR_DEPTH];
-	int i, new, r, depth;
-	BAT *b;
-	BUN p;
-	BUN idx = 0;
-	oid prv = 0;
-	oid comp;
-
-	@:init_check@
-
-	if ((url = GDKstrdup(*s)) == NULL) {
-		throw(MAL, "tokenizer.append",
-				OPERATION_FAILED "could not allocate memory");
-	}
-
-	@:insert@
-	@:findcommon@
-
-	if (i == depth) {
-		comp = COMP(prv, depth);
-		*pos = BUNfnd(BATmirror(tokenBAT[INDEX]), (ptr) &comp);
-		if (*pos != BUN_NONE) {
-			/* the string is already there */
-			GDKfree(url);
-			return MAL_SUCCEED;
-		}
-	}
-
-	@:insremainder@
 
 	*pos = (oid) BATcount(tokenBAT[INDEX]);
 	comp = COMP(prv, depth);
@@ -444,7 +335,8 @@ TKNZRdepositFile(int *r, str *fnme)
 	char buf[PATHLENGTH];
 	oid pos;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	(void) r;
 	if( **fnme == '/')
@@ -504,7 +396,8 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	url = (str) GDKmalloc(sizeof(char)*
 			(strlen(*(str*) getArgReference(stk, pci, 1))+1));
@@ -565,7 +458,8 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	id = *(oid*) getArgReference(stk, pci, 1);
 	if (id >= BATcount(tokenBAT[INDEX])) {
@@ -598,7 +492,8 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 TKNZRgetIndex (int *r) {
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 	*r = tokenBAT[INDEX]->batCacheid;
 	BBPincref(*r, TRUE);
 	return MAL_SUCCEED;
@@ -607,7 +502,8 @@ TKNZRgetIndex (int *r) {
 str
 TKNZRgetLevel (int *r, int *level) {
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 	if( *level < 0 || *level >= tokenDepth)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
 	*r = tokenBAT[*level]->batCacheid;
@@ -621,7 +517,8 @@ TKNZRgetCount (int *r) {
 	int i;
 	wrd cnt;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 	b= BATnew(TYPE_void, TYPE_wrd, tokenDepth+1);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
@@ -644,7 +541,8 @@ TKNZRgetCardinality (int *r) {
 	int i;
 	wrd cnt;
 
-	@:init_check@
+	if (TRANS == NULL)
+		throw(MAL, "tokenizer", "no tokenizer store open");
 	b= BATnew(TYPE_void,TYPE_wrd, tokenDepth+1);
 	if (b == NULL)
 		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);

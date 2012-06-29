@@ -57,7 +57,7 @@ lib_mal = {
 		sabaoth.c sabaoth.h \
 		tablet.c tablet.h \
 		tablet_sql.c \
-		tokenizer.mx \
+		tokenizer.c tokenizer.h \
 		trader.c trader.h \
 		transaction.c \
 		txtsim.c txtsim.h \
@@ -78,9 +78,9 @@ headers_mal = {
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mx trader.mal \
-		tokenizer.mx zorder.mal sample.mal
+		tokenizer.mal zorder.mal sample.mal
 }
 
-EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal
+EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal
 
 EXTRA_DIST_DIR = Tests
