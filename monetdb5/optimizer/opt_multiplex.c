@@ -29,14 +29,14 @@
  *
  * @verbatim
  * 	resB:= bat.new(A1);
- * barrier (mloop,h,t):= bat.newIterator(A1);
+ * barrier (h,t):= iterator.new(A1);
  * 	$1:= algebra.find(A1,h);
  * 	$2:= A2;	# in case of constant?
  * 	...
  * 	cr:= MOD.FCN($1,...,$n);
  * 	bat.insert(resB,h,cr);
- * 	redo (mloop,h,t):= bat.hasMoreElements(A1);
- * end mloop;
+ * 	redo (h,t):= iterator.next(A1);
+ * end h;
  * @end verbatim
  *
  * The algorithm consists of two phases: phase one deals with
@@ -46,7 +46,7 @@
 static str
 OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i = 2, mloop, resB, iter = 0, cr;
+	int i = 2, resB, iter = 0, cr;
 	int hvar, tvar;
 	str mod, fcn;
 	int *alias;
@@ -70,8 +70,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 	if( i == pci->argc)
-		return createException(MAL, "optimizer.multiplex", 
-								"Iterator BAT type is missing");
+		return createException(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
 
 	OPTDEBUGmultiplex {
 		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
@@ -91,25 +90,22 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	resB = getArg(q, 0);
 
 	ht = getHeadType(getArgType(mb, pci, 0));
-	if (ht== TYPE_any)
+	if (ht== TYPE_any || ht != TYPE_oid)
 		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
 	tt = getTailType(getArgType(mb, pci, 0));
 	if (tt== TYPE_any)
 		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-	q = pushNil(mb, q, ht);
-	setVarUDFtype(mb,getArg(q,q->argc-1));
-	q = pushNil(mb, q, tt);
-	setVarUDFtype(mb,getArg(q,q->argc-1));
-	/* barrier (mloop,h,r) := newIterator(refBat); */
-	q = newFcnCall(mb, batRef, "newIterator");
+	q = pushType(mb, q, ht);
+	q = pushType(mb, q, tt);
+	/* barrier (h,r) := iterator.new(refBat); */
+	q = newFcnCall(mb, iteratorRef, newRef);
 	q->barrier = BARRIERsymbol;
-	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
 	hvar = newTmpVariable(mb, TYPE_any);
-	q= pushReturn(mb, q, hvar);
+	getArg(q,0) = hvar;
 	tvar = newTmpVariable(mb, TYPE_any);
 	q= pushReturn(mb, q, tvar);
-	(void) pushArgument(mb, q, iter);
+	(void) pushArgument(mb,q,iter);
 
 	/* $1:= bat.find(Ai,h) or constant */
 	alias[i] = tvar;
@@ -142,18 +138,16 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q= pushArgument(mb, q, hvar);
 	(void) pushArgument(mb, q, cr);
 
-/* redo (mloop,h,r):= hasMoreElements(refBat); */
-	q = newFcnCall(mb, batRef, "hasMoreElements");
+/* redo (h,r):= iterator.next(refBat); */
+	q = newFcnCall(mb, iteratorRef, nextRef);
 	q->barrier = REDOsymbol;
-	getArg(q, 0) = mloop;
-	q= pushReturn(mb, q, hvar);
+	getArg(q,0) = hvar;
 	q= pushReturn(mb, q, tvar);
-	(void) pushArgument(mb, q, iter);
+	(void) pushArgument(mb,q,iter);
 
 	q = newAssignment(mb);
 	q->barrier = EXITsymbol;
-	getArg(q, 0) = mloop;
-	q= pushReturn(mb, q, hvar);
+	getArg(q,0) = hvar;
 	(void) pushReturn(mb, q, tvar);
 
 	q = newAssignment(mb);

@@ -1,11 +1,11 @@
 #beware that the ESoptimizer does not remove the type of MALException
 function do{inline}(V1:bat[:oid,:int]);
-barrier (x,y,z):= bat.newIterator(V1);
+barrier (x,z):= iterator.new(V1);
 	io.print("loop");
 catch MALException:str;
 	io.print(MALException);
 exit MALException;
-exit(x,y,z);
+exit(x,z);
 end do;
 
 function tst();

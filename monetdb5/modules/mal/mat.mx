@@ -126,7 +126,6 @@ comment "retrieve the definition from the partition catalogue";
 
 # @-
 # @+ Implementation
-@include prelude.mx
 @h
 #ifndef _INSPECT_H
 #define _INSPECT_H 

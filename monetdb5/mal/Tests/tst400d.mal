@@ -9,10 +9,10 @@ dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
 dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
-barrier (v,i):= language.newRange(0:lng);
+barrier i:= 0:lng;
 	z:= bat.insert(b,1,1);
-	redo (v,i):= language.nextElement(1:lng,1000000:lng);
-exit	(v,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit	i;
 
 mdb.setDebug(dbgmsk_restore);
 

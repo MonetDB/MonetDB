@@ -123,19 +123,18 @@ end count;
 
 function range(start:bat[:oid,:lng], vend:bat[:oid,:lng], skip:bat[:oid,:lng]):bat[:oid,:lng];
 	ret := bat.new(:oid,:lng);
-	barrier (b,h,t) := bat.newIterator(start);
+	barrier (h,t) := iterator.new(start);
 		iend := algebra.fetch(vend, h);
 		iskip := algebra.fetch(skip, h);
 		# TODO: use array.series from sciql
 #		ret := array.series(t, iskip, iend, 1, 1);
 		iend := calc.+(iend, 1);
-		barrier (v,i) := language.newRange(t);
+		barrier i := t;
 				ret := bat.insert(ret, h, i);
-				redo (v,i) := language.nextElement(iskip, iend);
-		exit (v,i);
-		redo (b,h,t) := bat.hasMoreElements(start);
-	exit (b,h,t);
-
+				redo i := iterator.next(iskip, iend);
+		exit i;
+		redo (h,t) := iterator.next(start);
+	exit (h,t);
 	return ret;
 end range;
 

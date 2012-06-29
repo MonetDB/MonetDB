@@ -12,17 +12,17 @@ stdout of test 'GCexample01` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.qry():void;
-    b := bat.new(:int,:int);
-    c := bat.new(:int,:int);
-    d := bat.new(:int,:int);
-    bat.insert(b,1,1);
-barrier (x,y,z) := bat.newIterator(b);
+    b := bat.new(:oid,:int);
+    c := bat.new(:oid,:int);
+    d := bat.new(:oid,:int);
+    bat.append(b,1);
+barrier (x,z) := iterator.new(b);
     io.print(x);
-exit (x,y,z);
-barrier (x,y,z) := bat.newIterator(c);
+exit (x,z);
+barrier (x,z) := iterator.new(c);
     io.print(x);
-    redo (x,y,z) := bat.hasMoreElements(c);
-exit (x,y,z);
+    redo (x,z) := iterator.next(c);
+exit (x,z);
 # do not close d, it may be reused 
 barrier go := true;
     io.print(d);
@@ -34,25 +34,25 @@ function user.main():void;
     mdb.List("user","qry");
 end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
-    b:bat[:int,:int]  := bat.new(:int,:int);#  1 b:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    c:bat[:int,:int]  := bat.new(:int,:int);#  2 c:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    d:bat[:int,:int]  := bat.new(:int,:int);#  3 d:bat[:int,:int] := CMDBATnew(_2:int, _2:int) {G}
-    bat.insert(b,1,1);                  #  4 _5:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _6:int, _6:int) {G}
-barrier (x,y,z) := bat.newIterator(b);  #  5 (x:lng, y:int, z:int) := CHPbunIterator(b:bat[:int,:int]) {GJ7}
-    io.print(x);                        #  6 _10:void := IOprint_val(x:lng) 
-exit (x,y,z);                           #  7 (x:lng, y:int, z:int) 
-    b:bat[:int,:int]  := nil:bat[:int,:int];#  8 b:bat[:int,:int] := _17:bat[:int,:int] {G}
-barrier (x,y,z) := bat.newIterator(c);  #  9 (x:lng, y:int, z:int) := CHPbunIterator(c:bat[:int,:int]) {GJ12}
-    io.print(x);                        # 10 _11:void := IOprint_val(x:lng) 
-    redo (x,y,z) := bat.hasMoreElements(c);# 11 (x:lng, y:int, z:int) := CHPbunHasMoreElements(c:bat[:int,:int]) {GJ10}
-exit (x,y,z);                           # 12 (x:lng, y:int, z:int) 
-    c:bat[:int,:int]  := nil:bat[:int,:int];# 13 c:bat[:int,:int] := _19:bat[:int,:int] {G}
+    b:bat[:oid,:int]  := bat.new(:oid,:int);#  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    c:bat[:oid,:int]  := bat.new(:oid,:int);#  2 c:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    d:bat[:oid,:int]  := bat.new(:oid,:int);#  3 d:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    bat.append(b,1);                    #  4 _6:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _7:int) {G}
+barrier (x,z) := iterator.new(b);       #  5 (x:oid, z:int) := ITRbunIterator(b:bat[:oid,:int]) {GJ7}
+    io.print(x);                        #  6 _10:void := IOprint_val(x:oid) 
+exit (x,z);                             #  7 (x:oid, z:int) 
+    b:bat[:oid,:int]  := nil:bat[:oid,:int];#  8 b:bat[:oid,:int] := _17:bat[:oid,:int] {G}
+barrier (x,z) := iterator.new(c);       #  9 (x:oid, z:int) := ITRbunIterator(c:bat[:oid,:int]) {GJ12}
+    io.print(x);                        # 10 _11:void := IOprint_val(x:oid) 
+    redo (x,z) := iterator.next(c);     # 11 (x:oid, z:int) := ITRbunNext(c:bat[:oid,:int]) {GJ10}
+exit (x,z);                             # 12 (x:oid, z:int) 
+    c:bat[:oid,:int]  := nil:bat[:oid,:int];# 13 c:bat[:oid,:int] := _19:bat[:oid,:int] {G}
 # do not close d, it may be reused 
 barrier go := true;                     # 15 go:bit := _14:bit {J18}
-    io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:int,:int]) {G}
+    io.print(d);                        # 16 _15:void := IOprint_val(d:bat[:oid,:int]) {G}
     redo go := true;                    # 17 go:bit := _14:bit {J16}
 exit go;                                # 18 go:bit 
-    d:bat[:int,:int]  := nil:bat[:int,:int];# 19 d:bat[:int,:int] := _21:bat[:int,:int] {G}
+    d:bat[:oid,:int]  := nil:bat[:oid,:int];# 19 d:bat[:oid,:int] := _21:bat[:oid,:int] {G}
 end qry;                                # 20  
 
 # 23:17:49 >  

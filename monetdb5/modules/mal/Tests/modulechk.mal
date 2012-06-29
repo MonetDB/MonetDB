@@ -1,0 +1,17 @@
+function test();
+c := mdb.modules();
+mods := algebra.kunique(c);
+s := "\\nModules: ";
+sep := "";
+barrier (h:oid,t:str) := iterator.new(mods);
+		s := s + sep;
+		s := s + "\'";
+		s := s + t;
+		s := s + "\'";
+		sep := ",";
+redo (h:oid,t:str) := iterator.next(mods);
+exit h;
+s := s + "\\n";
+io.printf(s);
+end test;
+test();

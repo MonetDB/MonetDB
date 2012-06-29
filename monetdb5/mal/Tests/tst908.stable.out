@@ -39,10 +39,10 @@ end perftst;
 function user.main():void;
 # the multiplex code blocks. 
     b := bat.new(:oid,:lng);
-barrier (v,i) := language.newRange(0:lng);
+barrier i := 0:lng;
     bat.append(b,i);
-    redo (v,i) := language.nextElement(1:lng,10:lng);
-exit (v,i);
+    redo i := iterator.next(1:lng,10:lng);
+exit i;
     user.perftst(b,1:lng);
 end main;
 [ "perftst" ]

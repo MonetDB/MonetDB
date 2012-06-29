@@ -1022,7 +1022,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			case TYPE_bte:
-				if (v->val.btval < 0 || v->val.btval == bte_nil)
+				if (v->val.btval == bte_nil)
 					stkpc = pci->jump;
 				break;
 			case TYPE_oid:
@@ -1030,24 +1030,27 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			case TYPE_sht:
-				if (v->val.shval < 0 || v->val.shval == sht_nil)
+				if (v->val.shval == sht_nil)
 					stkpc = pci->jump;
 				break;
 			case TYPE_int:
-				if (v->val.ival < 0 || v->val.ival == int_nil)
+				if (v->val.ival == int_nil)
 					stkpc = pci->jump;
 				break;
 			case TYPE_lng:
-				if (v->val.lval < 0 || v->val.lval == lng_nil)
+				if (v->val.lval == lng_nil)
 					stkpc = pci->jump;
 				break;
 			case TYPE_flt:
+				if (v->val.fval == flt_nil)
+					stkpc = pci->jump;
+				break;
 			case TYPE_dbl:
-				if (v->val.dval < 0 || v->val.dval == dbl_nil)
+				if (v->val.dval == dbl_nil)
 					stkpc = pci->jump;
 				break;
 			case TYPE_str:
-				if (v->len == 0 || v->val.sval == str_nil)
+				if (v->val.sval == str_nil)
 					stkpc = pci->jump;
 				break;
 			default:
@@ -1063,13 +1066,13 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* skip to end of barrier, depending on the type */
 			switch (v->vtype) {
 			case TYPE_bit:
-				if (v->val.btval == TRUE && v->val.btval != bit_nil)
+				if (v->val.btval == TRUE )
 					stkpc = pci->jump;
 				else
 					stkpc++;
 				break;
 			case TYPE_str:
-				if (v->len > 0 && v->val.sval != str_nil)
+				if (v->val.sval != str_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;
@@ -1081,37 +1084,43 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc++;
 				break;
 			case TYPE_sht:
-				if (v->val.shval >= 0 && v->val.shval != sht_nil)
-					stkpc = pci->jump;
-				else
-					stkpc++;
-				break;
-			case TYPE_bat:
-				if (v->val.bval > 0)
+				if (v->val.shval != sht_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;
 				break;
 			case TYPE_int:
-				if (v->val.ival >= 0 && v->val.ival != int_nil)
+				if (v->val.ival != int_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;
 				break;
 			case TYPE_wrd:
-				if (v->val.wval >= 0 && v->val.wval != wrd_nil)
+				if (v->val.wval != wrd_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;
 				break;
 			case TYPE_bte:
-				if (v->val.btval >= 0 && v->val.btval != bte_nil)
+				if (v->val.btval != bte_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;
 				break;
 			case TYPE_lng:
-				if (v->val.lval >= 0 && v->val.lval != lng_nil)
+				if (v->val.lval != lng_nil)
+					stkpc = pci->jump;
+				else
+					stkpc++;
+				break;
+			case TYPE_flt:
+				if (v->val.fval != flt_nil)
+					stkpc = pci->jump;
+				else
+					stkpc++;
+				break;
+			case TYPE_dbl:
+				if (v->val.dval != dbl_nil)
 					stkpc = pci->jump;
 				else
 					stkpc++;

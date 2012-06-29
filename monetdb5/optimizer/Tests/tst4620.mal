@@ -8,10 +8,10 @@ function algebra.joinPath( a:bat[:any_1,:any_2],
 end joinPath;
 
 b:= bat.new(:int,:int);
-barrier (k,v):= language.newRange(0:int);
+barrier v:= 0:int;
         bat.insert(b,v,v);
-        redo (k,v):= language.nextElement(1:int,100:int);
-exit (k,v);
+        redo v:= iterator.next(1:int,100:int);
+exit v;
 
 i:= aggr.count(b);
 io.print(i);

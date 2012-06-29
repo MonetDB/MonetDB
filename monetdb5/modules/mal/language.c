@@ -1,29 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f language
-
-@c
 /*
- * @a Martin Kersten
- * @v 1.0
- * @+ Language Extensions
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ *  Martin Kersten
+ * Language Extensions
  * Iterators over scalar ranges are often needed, also at the MAL level.
  * The barrier and control primitives are sufficient to mimic them directly.
  *
@@ -37,141 +32,6 @@ All Rights Reserved.
  * For the call variants we have
  * to determine an easy way to exchange the parameter/return values.
  */
-@mal
-module language;
-
-command newRange(v:oid)(:bit,:oid) 
-address RNGnewRange_oid; 
-command newRange(v:sht)(:bit,:sht) 
-address RNGnewRange_sht; 
-command newRange(v:int)(:bit,:int) 
-address RNGnewRange_int; 
-command newRange(v:lng)(:bit,:lng) 
-address RNGnewRange_lng; 
-command newRange(v:flt)(:bit,:flt) 
-address RNGnewRange_flt; 
-command newRange(v:dbl)(:bit,:dbl)
-address RNGnewRange_dbl 
-comment "This routine introduces an iterator
-	over a scalar domain.";
-
-command nextElement(step:oid,last:oid)(:bit,:oid)
-address RNGnextElement_oid; 
-command nextElement(step:sht,last:sht)(:bit,:sht)
-address RNGnextElement_sht; 
-command nextElement(step:int,last:int)(:bit,:int)
-address RNGnextElement_int; 
-command nextElement(step:lng,last:lng)(:bit,:lng)
-address RNGnextElement_lng; 
-command nextElement(step:flt,last:flt)(:bit,:flt)
-address RNGnextElement_flt; 
-command nextElement(step:dbl,last:dbl)(:bit,:dbl)
-address RNGnextElement_dbl 
-comment "Advances the iterator with a fixed value
-	until it becomes >= last.";
-
-command raise(msg:str) :str 
-address CMDraise
-comment "Raise an exception labeled 
-	with a specific message.";
-command assert(v:bit,term:str):void
-address MALassertBit;
-command assert(v:sht,term:str):void
-address MALassertSht;
-command assert(v:int,term:str):void
-address MALassertInt;
-command assert(v:lng,term:str):void
-address MALassertLng;
-command assert(v:str,term:str):void
-address MALassertStr;
-command assert(v:oid,term:str):void
-address MALassertOid;
-pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
-address MALassertTriple
-comment "Assertion test.";
-
-pattern assertSpace(depth:int)
-address safeguardStack
-comment "Ensures that the current call does not consume
-more than depth*vtop elements on the stack.";
-
-pattern dataflow():int
-address MALstartDataflow
-comment "The current guarded block is executed using dataflow control. ";
-
-pattern register(m:str,f:str,code:str,help:str):void
-address CMDregisterFunction
-comment"Compile the code string and register it as a MAL function.";
-
-pattern setMemoryTrace(flg:bit):void
-address CMDsetMemoryTrace
-comment "Set the flag to trace the memory footprint";
-pattern setThreadTrace(flg:bit):void
-address CMDsetThreadTrace
-comment "Set the flag to trace the interpreter threads";
-pattern setTimerTrace(flg:bit):void
-address CMDsetTimerTrace
-comment "Set the flag to trace the execution time";
-pattern setIOTrace(flg:bit):void
-address CMDsetIOTrace
-comment "Set the flag to trace the IO";
-
-pattern call(s:str):void
-address CMDcallString
-comment "Evaluate a MAL string program.";
-pattern call(s:bat[:oid,:str]):void
-address CMDcallBAT
-comment "Evaluate a program stored in a BAT.";
-pattern source(f:str):void
-address CMDevalFile
-comment "Merge the instructions stored in the 
-	file with the current program.";
-
-@h
-/*
- * @+ Dummy code
- */
-#ifndef _LANGUAGE_H
-#define _LANGUAGE_H
-#include "mal.h"
-#include "mal_module.h"
-#include "mal_session.h"
-#include "mal_resolve.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "mal_dataflow.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define language_export extern __declspec(dllimport)
-#else
-#define language_export extern __declspec(dllexport)
-#endif
-#else
-#define language_export extern
-#endif
-
-language_export str CMDraise(str *ret, str *msg);
-language_export str MALassertBit(int *ret, bit *val, str *msg);
-language_export str MALassertStr(int *ret, str *val, str *msg);
-language_export str MALassertOid(int *ret, oid *val, str *msg);
-language_export str MALassertSht(int *ret, sht *val, str *msg);
-language_export str MALassertInt(int *ret, int *val, str *msg);
-language_export str MALassertLng(int *ret, lng *val, str *msg);
-language_export str MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetThreadTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetIOTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDsetTimerTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDcallBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDincludeFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-language_export str CMDdebug(int *ret, int *flg);
-language_export str MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-#endif /* _LANGUAGE_H */
-@c
 
 #include "monetdb_config.h"
 #include "language.h"
@@ -236,7 +96,7 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 }
 
 /*
- * @+ Printing
+ * Printing
  * The print commands are implemented as single instruction rules,
  * because they need access to the calling context.
  * At a later stage we can look into the issues related to
@@ -245,7 +105,7 @@ MALassertTriple(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
  * because you have to prepare for the worst (e.g. mismatch format
  * identifier and argument value)
  *
- * @- Input redirectionrs
+ * Input redirectionrs
  */
 str
 CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -268,13 +128,13 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if (stk->cmd ){
-		*ret = 1; /* ignore dataflow request */
+		*ret = 0; /* ignore dataflow request */
 		return MAL_SUCCEED;
 	}
 	if ( getPC(mb, pci) > pci->jump)
 		throw(MAL,"language.dataflow","Illegal statement range");
 	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
-	*ret = -1;	/* continue at end of block */
+	*ret = 0;	/* continue at end of block */
 	return msg;
 }
 
@@ -332,7 +192,6 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 /*
- * @-
  * Calling a BAT is simply translated into a concatenation of
  * all the unquoted strings and then passing it to the callEval.
  */
@@ -366,7 +225,7 @@ CMDdebug(int *ret, int *flg)
 }
 
 /*
- * @+ MAL iterator code
+ * MAL iterator code
  * This module contains the framework for the construction of iterators.
  * Iterators enumerate elements in a collection defined by a few parameters,
  * e.g. a lower/upper bound.
@@ -383,45 +242,6 @@ CMDdebug(int *ret, int *flg)
  * to simplify data-flow analysis.
  *
  * We assume that the range boundaries comply with the underlying domain.
- */
-@= newRange
-language_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
-str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
-	*res = TRUE;
-	*i= *first;
-	return MAL_SUCCEED;
-}
-
-@= nextElement
-language_export str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last);
-str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
-	@1 v = *i;
-	v = v + *step;
-	*i = v;
-	*res = v < *last;
-	return MAL_SUCCEED;
-}
-@
-@c
-
-@:newRange(oid)@
-@:newRange(lng)@
-@:newRange(int)@
-@:newRange(sht)@
-@:newRange(flt)@
-@:newRange(dbl)@
-
-@:nextElement(oid)@
-@:nextElement(lng)@
-@:nextElement(int)@
-@:nextElement(sht)@
-@:nextElement(flt)@
-@:nextElement(dbl)@
-
-/*
- * @-
- * There are a few more atom-airy storage types we have to introduce here:
- * OID, str, void, bit, ptr
  */
 str
 CMDsetMemoryTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

@@ -301,30 +301,30 @@ function user.main():void;
     io.print(tzone_bat);
 #io.print(tzone_bat.bat.setColumn("tzone")); 
     X_210 := bat.new(nil:oid,nil:int);
-barrier (X_214,X_215,X_216) := bat.newIterator(tzone_bat);
-    X_218 := mtime.minutes(X_216);
-    bat.insert(X_210,X_215,X_218);
-    redo (X_214,X_215,X_216) := bat.hasMoreElements(tzone_bat);
-exit (X_214,X_215,X_216);
+barrier (X_214,X_215) := iterator.new(tzone_bat);
+    X_217 := mtime.minutes(X_215);
+    bat.insert(X_210,X_214,X_217);
+    redo (X_214,X_215) := iterator.next(tzone_bat);
+exit (X_214,X_215);
     kd_a:bat[:oid,:int]  := X_210;
     bat.setColumn(kd_a,"minutes");
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 
-    X_223 := bat.new(nil:oid,nil:zrule);
-barrier (X_226,X_227,X_228) := bat.newIterator(tzone_bat);
-    X_230 := mtime.start_dst(X_228);
-    bat.insert(X_223,X_227,X_230);
-    redo (X_226,X_227,X_228) := bat.hasMoreElements(tzone_bat);
-exit (X_226,X_227,X_228);
-    md_a:bat[:oid,:zrule]  := X_223;
+    X_222 := bat.new(nil:oid,nil:zrule);
+barrier (X_225,X_226) := iterator.new(tzone_bat);
+    X_228 := mtime.start_dst(X_226);
+    bat.insert(X_222,X_225,X_228);
+    redo (X_225,X_226) := iterator.next(tzone_bat);
+exit (X_225,X_226);
+    md_a:bat[:oid,:zrule]  := X_222;
     bat.setColumn(md_a,"start_dst");
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 
-    X_235 := bat.new(nil:oid,nil:zrule);
-barrier (X_237,X_238,X_239) := bat.newIterator(tzone_bat);
-    X_241 := mtime.end_dst(X_239);
-    bat.insert(X_235,X_238,X_241);
-    redo (X_237,X_238,X_239) := bat.hasMoreElements(tzone_bat);
-exit (X_237,X_238,X_239);
-    od_a:bat[:oid,:zrule]  := X_235;
+    X_233 := bat.new(nil:oid,nil:zrule);
+barrier (X_235,X_236) := iterator.new(tzone_bat);
+    X_238 := mtime.end_dst(X_236);
+    bat.insert(X_233,X_235,X_238);
+    redo (X_235,X_236) := iterator.next(tzone_bat);
+exit (X_235,X_236);
+    od_a:bat[:oid,:zrule]  := X_233;
     bat.setColumn(od_a,"end_dst");
     io.print("print(kd_a,md_a,od_a)");
     qd_a := io.print(kd_a,md_a,od_a);
@@ -369,7 +369,7 @@ end main;
 [ 11@0,	  1439,		  nil,						  nil						  ]
 [ 12@0,	  60,		  nil,						  nil						  ]
 [ 13@0,	  nil,		  nil,						  nil						  ]
-[ 15@0,	  nil,		  nil,						  nil						  ]
+[ 14@0,	  nil,		  nil,						  nil						  ]
 
 # 07:59:02 >  
 # 07:59:02 >  Done.

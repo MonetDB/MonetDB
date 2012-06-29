@@ -1,6 +1,6 @@
-chopper01
-chopper02
-chopper03
+iterator01
+iterator02
+iterator03
 clients01
 
 compress
@@ -13,6 +13,8 @@ inspect10
 register00
 
 mserver00
+
+modulechk.mal
 
 # statistics00
 #statistics01

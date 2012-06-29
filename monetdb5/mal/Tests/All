@@ -196,7 +196,7 @@ tst801
 tst802
 tst803
 tst804
-tst805
+#tst805 invalid, no BAT columns
 tst810
 tst819
 tst820

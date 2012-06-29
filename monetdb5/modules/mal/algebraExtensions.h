@@ -18,7 +18,6 @@
  */
 
 /*
- * @include prelude.mx
  * @+ Implementation section
  * In most cases we pass a BAT identifier, which should be unified
  * with a BAT descriptor. Upon failure we can simply abort the function.

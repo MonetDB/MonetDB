@@ -29,51 +29,51 @@ stdout of test 'tst904` in directory 'mal` itself:
 function user.main():void;
 # the multiplex code blocks using CONSTANTS. 
     clients.setListing(15);
-    b := bat.new(:lng,:lng);
+    b := bat.new(:oid,:lng);
     i := -1:lng;
-barrier (v,i) := language.newRange(0:lng);
-    bat.insert(b,i,i);
-    redo (v,i) := language.nextElement(1:lng,10:lng);
-exit (v,i);
+barrier i := 0:lng;
+    bat.append(b,i);
+    redo i := iterator.next(1:lng,10:lng);
+exit i;
     io.print(b);
     c := 1;
-    X_20 := bat.new(nil:lng,nil:lng);
-barrier (X_23,X_24,X_25) := bat.newIterator(b);
+    X_20 := bat.new(nil:oid,nil:lng);
+barrier (X_24,X_25) := iterator.new(b);
     X_27 := calc.+(X_25,c);
     bat.insert(X_20,X_24,X_27);
-    redo (X_23,X_24,X_25) := bat.hasMoreElements(b);
-exit (X_23,X_24,X_25);
-    xz:bat[:lng,:lng]  := X_20;
+    redo (X_24,X_25) := iterator.next(b);
+exit (X_24,X_25);
+    xz:bat[:oid,:lng]  := X_20;
     io.print(xz);
 end main;
 #-----------------#
 # h	tmp_4	  # name
 # lng	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-[ 4,	  4	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
-[ 8,	  8	  ]
-[ 9,	  9	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
 #-----------------#
 # h	tmp_5	  # name
 # lng	lng	  # type
 #-----------------#
-[ 0,	  1	  ]
-[ 1,	  2	  ]
-[ 2,	  3	  ]
-[ 3,	  4	  ]
-[ 4,	  5	  ]
-[ 5,	  6	  ]
-[ 6,	  7	  ]
-[ 7,	  8	  ]
-[ 8,	  9	  ]
-[ 9,	  10	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ 7@0,	  8	  ]
+[ 8@0,	  9	  ]
+[ 9@0,	  10	  ]
 
 # 08:01:36 >  
 # 08:01:36 >  Done.

@@ -30,11 +30,12 @@ br:= bat.reverse(b);
 bp:= algebra.project(br,2:oid);
 bpr:= bat.reverse(bp);
 l2:= algebra.union(l,bpr);
+io.print(l2);
 
 r:= bat.new(:oid,:int);
-bat.insert(r, 1:oid,1);
-bat.insert(r, 0:oid,2);
-bat.insert(r, 2:oid,3);
+bat.append(r, 1);
+bat.append(r, 2);
+bat.append(r, 3);
 
 z:bat[:oid,:int]:= mal.multiplex("calc","+",l2,r);
 c:= aggr.count(z);

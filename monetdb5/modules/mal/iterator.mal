@@ -1,0 +1,50 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2012 MonetDB B.V.
+# All Rights Reserved.
+
+module iterator;
+
+command new(b:bat[:oid,:any_2], size:lng) (:lng,:bat[:oid,:any_2])
+address ITRnewChunk
+comment "Create an iterator with fixed granule size.
+	  The result is a view.";
+
+command next(b:bat[:oid,:any_2], size:lng) (:lng, :bat[:oid,:any_2])
+address ITRnextChunk
+comment "Produce the next chunk for processing.";
+
+pattern new(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+address ITRbunIterator
+comment "Process the buns one by one extracted from a void table.";
+
+pattern next(b:bat[:oid,:any_2]) (h:oid, t:any_2)
+address ITRbunNext
+comment "Produce the next bun for processing.";
+
+
+command next(step:oid,last:oid):oid
+address ITRnext_oid; 
+command next(step:sht,last:sht):sht
+address ITRnext_sht; 
+command next(step:int,last:int):int
+address ITRnext_int; 
+command next(step:lng,last:lng):lng
+address ITRnext_lng; 
+command next(step:flt,last:flt):flt
+address ITRnext_flt; 
+command next(step:dbl,last:dbl):dbl
+address ITRnext_dbl 
+comment "Advances the iterator with a fixed value";

@@ -30,12 +30,12 @@ end main;
 # view	fcn					  # name
 # int	str					  # type
 #-------------------------------------------------#
-[ 0,	  "function user.dummy(i:int):void;"	  ]
-[ 1,	  "    io.print(i);"			  ]
-[ 2,	  "     := mdb.getDefinition();"	  ]
-[ 3,	  "    io.print(b);"			  ]
-[ 4,	  "    mdb.list();"			  ]
-[ 5,	  "end dummy;"				  ]
+[ 0@0,	  "function user.dummy(i:int):void;"	  ]
+[ 1@0,	  "    io.print(i);"			  ]
+[ 2@0,	  "     := mdb.getDefinition();"	  ]
+[ 3@0,	  "    io.print(b);"			  ]
+[ 4@0,	  "    mdb.list();"			  ]
+[ 5@0,	  "end dummy;"				  ]
 function user.dummy(i:int):void;
     io.print(i);
     b := mdb.getDefinition();

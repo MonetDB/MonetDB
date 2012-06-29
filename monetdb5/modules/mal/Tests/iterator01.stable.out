@@ -1,4 +1,4 @@
-stdout of test 'chopper01` in directory 'modules/mal` itself:
+stdout of test 'iterator01` in directory 'modules/mal` itself:
 
 
 # 00:03:53 >  
@@ -13,42 +13,41 @@ stdout of test 'chopper01` in directory 'modules/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:37931/
 function user.main():void;
-    t := bat.new(:int,:url);
+    t := bat.new(:oid,:url);
     cb_a := url.url("http://www.cwi.nl");
-    db_a := bat.insert(t,1,cb_a);
+    db_a := bat.append(t,cb_a);
     eb_a := url.url("http://www.cwi.nl/~monet");
-    fb_a := bat.insert(t,2,eb_a);
+    fb_a := bat.append(t,eb_a);
     gb_a := url.url("http://www.cwi.nl/~mk/Acoi/doc/features.html");
-    hb_a := bat.insert(t,3,gb_a);
+    hb_a := bat.append(t,gb_a);
     ib_a := url.url("http://www.educ.uva.nl/schoolweb/rocloka.htm");
-    jb_a := bat.insert(t,4,ib_a);
+    jb_a := bat.append(t,ib_a);
     kb_a := url.url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
-    lb_a := bat.insert(t,5,kb_a);
+    lb_a := bat.append(t,kb_a);
     mb_a := url.url("http://www.edgeonline.com/");
-    nb_a := bat.insert(t,6,mb_a);
+    nb_a := bat.append(t,mb_a);
     ob_a := url.url("http://robotics.stanford.edu/icons/ ");
-    pb_a := bat.insert(t,7,ob_a);
+    pb_a := bat.append(t,ob_a);
     qb_a := io.print("build a table finished");
     io.print(t);
-    rb := bat.new(:int,:url);
     io.print("start loop");
-barrier (mloop:lng ,h:int ,B2:url ) := bat.newIterator(t);
+barrier (h:oid ,B2:url ) := iterator.new(t);
     io.print(B2);
-    redo (mloop:lng ,h:int ,B2:url ) := bat.hasMoreElements(t);
-exit mloop:lng ;
+    redo (h:oid ,B2:url ) := iterator.next(t);
+exit h:oid ;
 end main;
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#
 # h	t								  # name
 # int	url								  # type
 #-------------------------------------------------------------------------#
-[ 1,	  "http://www.cwi.nl"						  ]
-[ 2,	  "http://www.cwi.nl/~monet"					  ]
-[ 3,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"		  ]
-[ 4,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
-[ 5,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
-[ 6,	  "http://www.edgeonline.com/"					  ]
-[ 7,	  "http://robotics.stanford.edu/icons/ "			  ]
+[ 0@0,	  "http://www.cwi.nl"						  ]
+[ 1@0,	  "http://www.cwi.nl/~monet"					  ]
+[ 2@0,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"		  ]
+[ 3@0,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
+[ 4@0,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
+[ 5@0,	  "http://www.edgeonline.com/"					  ]
+[ 6@0,	  "http://robotics.stanford.edu/icons/ "			  ]
 [ "start loop" ]
 [ "http://www.cwi.nl" ]
 [ "http://www.cwi.nl/~monet" ]

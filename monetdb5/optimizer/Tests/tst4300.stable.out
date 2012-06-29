@@ -16,10 +16,10 @@ function user.main():void;
 #some join operations 
 #mdb.start(); 
     b := bat.new(:lng,:lng);
-barrier (k,v) := language.newRange(0:lng);
+barrier v := 0:lng;
     bat.insert(b,v,v);
-    redo (k,v) := language.nextElement(1:lng,100:lng);
-exit (k,v);
+    redo v := iterator.next(1:lng,100:lng);
+exit v;
     i := aggr.count(b);
     io.print(i);
     c := algebra.select(b,0:lng,9:lng);

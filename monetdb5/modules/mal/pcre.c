@@ -18,24 +18,16 @@
  */
 
 /*
- * @f pcre
- * @a N. Nes
- * @+ PCRE library interface
+ * N. Nes
+ * PCRE library interface
  * The  PCRE library is a set of functions that implement regular
  * expression pattern matching using the same syntax  and  semantics  as  Perl,
  * with  just  a  few  differences.  The  current  implementation of PCRE
  * (release 4.x) corresponds approximately with Perl 5.8, including  support
  * for  UTF-8  encoded  strings.   However,  this support has to be
  * explicitly enabled; it is not the default.
- */
-/*
- * @-
- * @verbatim
+ * 
  * ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
- * @end verbatim
- *
- * @+ Implementation
- * @include prelude.mx
  */
 #include "monetdb_config.h"
 #include <string.h>

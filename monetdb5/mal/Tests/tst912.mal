@@ -2,7 +2,7 @@
 # the multiplex code blocks.
 
 factory getChunk(b:bat[:oid,:lng], size:lng)(bb:bit,c:bat[:oid,:lng]);
-    (chk,c):= bat.newIterator(b,size);
+    (chk,c):= iterator.new(b,size);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -13,7 +13,7 @@ mdb.setDebug(dbgmsk_set);
 
 barrier allways:= chk>=0;
     yield (bb,c):= (true,c);
-    (chk,c):= bat.hasMoreElements(b,size);
+    (chk,c):= iterator.next(b,size);
     redo allways:= chk>=0;
 exit allways;
 
@@ -60,12 +60,12 @@ dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
 r:= mmath.srand(0);
-barrier (go,i):= language.newRange(0:lng);
+barrier i:= 0:lng;
 	k:= mmath.rand();
 	l:= calc.lng(k);
 	bat.insert(b,nil:oid,l);
-	redo (go,i):= language.nextElement(1:lng,1000000:lng);
-exit (go,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
 
 mdb.setDebug(dbgmsk_restore);
 

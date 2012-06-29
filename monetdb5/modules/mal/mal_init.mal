@@ -107,7 +107,7 @@ include sample;
 
 include optimizer;
 
-include chopper;
+include iterator;
 include cluster;
 include txtsim;
 include tokenizer;

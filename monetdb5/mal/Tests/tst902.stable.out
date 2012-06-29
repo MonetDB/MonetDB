@@ -38,38 +38,38 @@ stdout of test 'tst902` in directory 'mal` itself:
 function user.main():void;
 # what is the overhead of MAL in multiplex situations 
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 
-    b := bat.new(:lng,:lng);
-barrier (k,v) := language.newRange(0:lng);
-    bat.insert(b,v,v);
-    redo (k,v) := language.nextElement(1:lng,10:lng);
-exit (k,v);
+    b := bat.new(:oid,:lng);
+barrier v := 0:lng;
+    bat.append(b,v);
+    redo v := iterator.next(1:lng,10:lng);
+exit v;
     c := algebra.copy(b);
-    d := bat.new(:lng,:lng);
-barrier (w,h,t) := bat.newIterator(b);
+    d := bat.new(:oid,:lng);
+barrier (h,t) := iterator.new(b);
     B1 := algebra.find(b,h);
     B2 := algebra.find(c,h);
     t := calc.+(B1,B2);
     bat.insert(d,h,t);
-    redo (w,h,t) := bat.hasMoreElements(b);
+    redo (h,t) := iterator.next(b);
 catch GDKerror:str ;
 exit GDKerror:str ;
-exit w;
+exit (h,t);
     io.print(d);
 end main;
 #-----------------#
 # h	tmp_6	  # name
 # lng	lng	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  2	  ]
-[ 2,	  4	  ]
-[ 3,	  6	  ]
-[ 4,	  8	  ]
-[ 5,	  10	  ]
-[ 6,	  12	  ]
-[ 7,	  14	  ]
-[ 8,	  16	  ]
-[ 9,	  18	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  4	  ]
+[ 3@0,	  6	  ]
+[ 4@0,	  8	  ]
+[ 5@0,	  10	  ]
+[ 6@0,	  12	  ]
+[ 7@0,	  14	  ]
+[ 8@0,	  16	  ]
+[ 9@0,	  18	  ]
 
 # 08:01:33 >  
 # 08:01:33 >  Done.

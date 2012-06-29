@@ -18,7 +18,7 @@ pattern inspect(mod:str,fcn:str):void
 address MDBinspect
 comment "Run the debugger on a specific function";
 
-command modules():bat[:int,:str] 
+command modules():bat[:oid,:str] 
 address CMDmodules
 comment "List available modules";
 
@@ -152,7 +152,7 @@ pattern dump()
 address MDBdump
 comment "Dump instruction, stacktrace, and stack";
 
-pattern getDefinition():bat[:void,:str] 
+pattern getDefinition():bat[:oid,:str] 
 address MDBgetDefinition
 comment "Returns a string representation of the current function 
 	with typing information attached";

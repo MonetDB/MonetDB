@@ -606,15 +606,16 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 {
 	int i, *ret = (int *) getArgReference(stk, p, 0);
 	str ps;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
 	(void) cntxt;
 	if (b == 0)
 		throw(MAL, "mdb.getDefinition",  MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	for (i = 0; i < m->stop; i++) {
 		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
-		BUNins(b, &i, ps, FALSE);
+		BUNappend(b, ps, FALSE);
 		GDKfree(ps);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -744,7 +745,7 @@ MDBtrapFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static BAT *
 TBL_getdir(void)
 {
-	BAT *b = BATnew(TYPE_int, TYPE_str, 100);
+	BAT *b = BATnew(TYPE_void, TYPE_str, 100);
 	int i = 0;
 
 	char *mod_path;
@@ -753,6 +754,9 @@ TBL_getdir(void)
 	struct dirent *dent;
 	DIR *dirp = NULL;
 
+	if ( b == 0)
+		return 0;
+	BATseqbase(b,0);
 	mod_path = GDKgetenv("monet_mod_path");
 	if (mod_path == NULL)
 		return b;
@@ -797,7 +801,7 @@ TBL_getdir(void)
 		if (len < extlen || strcmp(dent->d_name + len - extlen, MAL_EXT) != 0)
 			continue;
 		dent->d_name[len - extlen] = 0;
-		BUNins(b, &i, dent->d_name, FALSE);
+		BUNappend(b, dent->d_name, FALSE);
 		i++;
 	}
 	return b;

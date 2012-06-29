@@ -2,7 +2,6 @@
 # Copyright (c) 1993-2001, CWI. All rights reserved.
 
 # Predefined code segment
-#use "mal/iterator";		CAUSES an ERROR!!
 	v0:= calc.oid(20000000);
 	v1:= calc.setoid(v0);
 #setoid(oid(20000000));

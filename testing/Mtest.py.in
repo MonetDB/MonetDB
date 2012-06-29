@@ -1435,14 +1435,14 @@ def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
                 mods := algebra.kunique(c);
                 s := "\\nModules: ";
                 sep := "";
-                barrier (mloop:lng,h:int,t:str) := bat.newIterator(mods);
+                barrier (h:oid,t:str) := iterator.new(mods);
                         s := s + sep;
                         s := s + "\'";
                         s := s + t;
                         s := s + "\'";
                         sep := ",";
-                redo (mloop:lng,h:int,t:str) := bat.hasMoreElements(mods);
-                exit mloop;
+                redo (h:oid,t:str) := iterator.next(mods);
+                exit h;
                 s := s + "\\n";
                 io.printf(s);
                 clients.quit();

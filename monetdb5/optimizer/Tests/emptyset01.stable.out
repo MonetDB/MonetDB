@@ -12,12 +12,12 @@ stdout of test 'emptyset01` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.do{inline}(V1:bat[:oid,:int]):void;
-barrier (x,y,z) := bat.newIterator(V1);
+barrier (x,z) := iterator.new(V1);
     io.print("loop");
 catch MALException:str ;
     io.print(MALException);
 exit MALException:str ;
-exit (x,y,z);
+exit (x,z);
 end do;
 function user.tst():void;
     V1 := bat.new(:oid,:int);
@@ -44,12 +44,12 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     V16 := algebra.markT(V12);          #  6 V16:bat[:oid,:oid] := ALGtmark_default(V12:bat[:oid,:int]) {G}
     V17 := algebra.join(V16,V7);        #  7 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
     bat.append(V1,V17);                 #  8 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
-barrier (X_17,X_18,X_19) := bat.newIterator(V1);#  9 (_17:lng, _18:oid, _19:int) := CHPbunIterator(V1:bat[:oid,:int]) {GJ14}
-    io.print("loop");                   # 10 _20:void := IOprint_val(_21:str) {G}
+barrier (X_17,X_18) := iterator.new(V1);#  9 (_17:oid, _18:int) := ITRbunIterator(V1:bat[:oid,:int]) {GJ14}
+    io.print("loop");                   # 10 _19:void := IOprint_val(_20:str) {G}
 catch MALException:str ;                # 11 MALException:str {J13}
-    io.print(MALException);             # 12 _23:void := IOprint_val(MALException:str) {G}
+    io.print(MALException);             # 12 _22:void := IOprint_val(MALException:str) {G}
 exit MALException:str ;                 # 13 MALException:str 
-exit (X_17,X_18,X_19);                  # 14 (_17:lng, _18:oid, _19:int) 
+exit (X_17,X_18);                       # 14 (_17:oid, _18:int) 
     io.print("done");                   # 15 _13:void := IOprint_val(_14:str) {G}
 end tst;	# 16  
 

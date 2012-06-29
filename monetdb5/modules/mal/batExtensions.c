@@ -34,7 +34,6 @@
  * access the runtime stack to (push)pull the values needed.
  */
 /*
- * @include prelude.mx
  * @+ Implementation section
  * In most cases we pass a BAT identifier, which should be unified
  * with a BAT descriptor. Upon failure we can simply abort the function.
@@ -73,6 +72,9 @@ be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+be_export str CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+be_export str CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /*
  * @-
@@ -549,5 +551,78 @@ CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		o= o + (oid) BATcount(b);
 		BBPunfix(b->batCacheid);
 	}
+	return MAL_SUCCEED;
+}
+
+/*
+ * The fetch operations are all pretty straight forward, provided
+ * you know the underlying type. Often it is cheaper to use
+ * the extended BAT iterator, because then it can re-use the
+ * BAT descriptor.
+ */
+str
+CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	oid *cursor;
+	int *bid;
+	BUN limit;
+	ValPtr head;
+	oid o;
+
+	(void) cntxt;
+	cursor = (oid *) getArgReference(stk, pci, 2);
+	bid = (int *) getArgReference(stk, pci, 1);
+	head = getArgReference(stk,pci,0);
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "chop.getHead", INTERNAL_BAT_ACCESS);
+	}
+	limit = BUNlast(b);
+	if (*cursor == oid_nil || *cursor >= (oid) limit) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "mal.getHead", RANGE_ERROR);
+	}
+
+	/* get head = ... */
+	if( getArgType(mb,pci,3) == TYPE_void){
+		o = (oid)*cursor +  b->hseqbase;
+		VALinit(head, TYPE_oid, &o);
+	} else {
+ 		BATiter bi = bat_iterator(b);
+		VALinit(head, getArgType(mb, pci, 3), BUNhead(bi, (BUN)*cursor));
+	}
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+ 	BATiter bi;
+	BAT *b;
+	oid *cursor;
+	int *bid;
+	BUN limit;
+	ValPtr tail;
+
+	(void) cntxt;
+	cursor = (oid *) getArgReference(stk, pci, 2);
+	bid = (int *) getArgReference(stk, pci, 1);
+	tail = getArgReference(stk,pci,0);
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "chop.getTail", INTERNAL_BAT_ACCESS);
+	}
+	limit = BUNlast(b);
+	if (*cursor == oid_nil || *cursor >= (oid) limit) {
+		BBPunfix(b->batCacheid);
+		throw(OUTOFBNDS, "mal.getTail", RANGE_ERROR);
+	}
+
+	/* get tail = ... */
+	bi = bat_iterator(b);
+	VALinit(tail, getArgType(mb, pci, 3), BUNtail(bi, (BUN)*cursor));
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
