@@ -1083,7 +1083,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	   a lock and only on tables without idx */
 	if (locked && sql->user_id != USER_MONETDB) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-		    "COPY INTO from .. LOCKED requires administrator rights");
+		    "COPY INTO from .. LOCKED requires database administrator rights");
 	}
 	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -1112,7 +1112,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-					"COPY INTO from file(s) requires administrator rights, "
+					"COPY INTO from file(s) requires database administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
 
@@ -1163,7 +1163,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-				"binary COPY INTO requires administrator rights");
+				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
 
@@ -1261,7 +1261,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 		struct stat fs;
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-					"COPY INTO file requires administrator rights, "
+					"COPY INTO file requires database administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
 		if (filename && !MT_path_absolute(filename))
 			return sql_error(sql, 02, "COPY INTO: filename must "
