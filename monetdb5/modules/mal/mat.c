@@ -1,29 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f mat
-
-@c
 /*
- * @a Martin Kersten
- * @v 1
- * @+ Multiple association tables
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ * Martin Kersten
+ * Multiple association tables
  * A MAT is a convenient way to deal represent horizontal fragmented
  * tables. It combines the definitions of several, type compatible
  * BATs under a single name.
@@ -40,130 +36,6 @@ All Rights Reserved.
  *
  * The primitives below are chosen to accomodate the SQL
  * front-end to produce reasonable efficient code.
- */
-@mal
-module mat;
-
-pattern new(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpack
-comment "Define a Merge Association Table (MAT). Faal back to the pack operation
-when this is called ";
-
-pattern pack(:any_2...):bat[:void,:any_2]
-address MATpackValues
-comment "Materialize the MAT (of values) into a BAT";
-
-pattern pack(:any_2...):bat[:oid,:any_2]
-address MATpackValues
-comment "Materialize the MAT (of values) into a BAT";
-
-pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpack
-comment "Materialize the MAT into a BAT";
-
-pattern pack2(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpack2
-comment "Materialize the MAT into a BAT (by an append all)";
-
-pattern pack3(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpack3
-comment "Materialize the MAT into a BAT by considering the heads as void. (used in centipede)";
-
-pattern slice(first:wrd, last:wrd, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern slice(first:int, last:int, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern slice(first:lng, last:lng, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATpackSlice
-comment "Materialize a sliced MAT into a BAT";
-
-pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATproject
-comment "project using the map bat (contains which bat to use in scan order)";
-
-pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:void,:any_2]
-address MATproject
-comment "project using the map bat (contains which bat to use in scan order)";
-
-pattern sortTail(b:bat[:any_1,:any_2]...)
-	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
-address MATsortTail
-comment "Returns a BAT copy sorted on the head column.";
-
-pattern sortReverseTail(b:bat[:any_1,:any_2]...)
-	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
-address MATsortReverseTail
-comment "Returns a BAT copy sorted on the head column.";
-
-pattern refine(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
-	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
-address MATrefine
-comment "refine map.";
-
-pattern refine_reverse(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
-	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
-address MATrefineReverse
-comment "refine map.";
-
-pattern print(b:bat[:any_1,:any_2]...):void
-address MATprint;
-
-pattern newIterator(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MATnewIterator
-comment "Create an iterator over a MAT";
-
-pattern hasMoreElements(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
-address MAThasMoreElements
-comment "Find the next element in the merge table";
-
-command info(g:str, e:str):bat[:any_1,:any_2]
-address MATinfo
-comment "retrieve the definition from the partition catalogue";
-
-# @-
-# @+ Implementation
-@h
-#ifndef _INSPECT_H
-#define _INSPECT_H 
-#include <stdarg.h>
-#include "mal_resolve.h"
-#include "mal_exception.h"
-#include "mal_interpreter.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define mat_export extern __declspec(dllimport)
-#else
-#define mat_export extern __declspec(dllexport)
-#endif
-#else
-#define mat_export extern
-#endif
-
-mat_export str MATpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpack2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpack3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATpackSlice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATnewIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATdummy(int *ret, str *grp);
-mat_export str MATinfo(int *ret, str *grp, str *elm);
-mat_export str MATprint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mat_export str MATproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATrefine(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATsortReverseTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATsortTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mat_export str MATrefineReverse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-#endif /* _INSPECT_H */
-@c
-/*
- * @-
- * Mal symbol table and environment analysis.
  */
 #include "monetdb_config.h"
 #include "mat.h"
@@ -202,7 +74,6 @@ MAThasMoreElements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * The pack is an ordinary multi BAT insert. Oid synchronistion
  * between pieces should be ensured by the code generators.
  * The pack operation could be quite expensive, because it
@@ -595,18 +466,18 @@ MATproject_any( BAT *map, BAT **bats, int len )
 	return res;
 }
 
-@= project
+/* The type-specific projection operators */
 static BAT *
-MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
+MATproject_bte( BAT *map, BAT **bats, int len, int ttpe )
 {
 	BAT *res;
 	int i;
 	BUN j, cnt = BATcount(map);
-	@1 *resT, **batsT;
+	bte *resT, **batsT;
 	bte *mapT;
 
 	res = BATnew(TYPE_void, ttpe, cnt);
-	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	batsT = (bte**)GDKmalloc(sizeof(bte*) * len);
 	if (res == NULL || batsT == NULL) {
 		if (res)
 			BBPreclaim(res);
@@ -615,10 +486,10 @@ MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
 		return NULL;
 	}
 	BATseqbase(res, map->hseqbase);
-	resT = (@1*)Tloc(res, 0);
+	resT = (bte*)Tloc(res, 0);
 	mapT = (bte*)Tloc(map, 0);
 	for (i=0; i<len; i++)
-		batsT[i] = (@1*)Tloc(bats[i], 0);
+		batsT[i] = (bte*)Tloc(bats[i], 0);
 	for (j=0; j<cnt; j++)
 		resT[j] = *batsT[mapT[j]]++;
 	BATsetcount(res, j);
@@ -626,12 +497,99 @@ MATproject_@1( BAT *map, BAT **bats, int len, int ttpe )
 	GDKfree(batsT);
 	return res;
 }
-@
-@c
-@:project(bte)@
-@:project(sht)@
-@:project(int)@
-@:project(lng)@
+
+static BAT *
+MATproject_sht( BAT *map, BAT **bats, int len, int ttpe )
+{
+	BAT *res;
+	int i;
+	BUN j, cnt = BATcount(map);
+	sht *resT, **batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (sht**)GDKmalloc(sizeof(sht*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	resT = (sht*)Tloc(res, 0);
+	mapT = (bte*)Tloc(map, 0);
+	for (i=0; i<len; i++)
+		batsT[i] = (sht*)Tloc(bats[i], 0);
+	for (j=0; j<cnt; j++)
+		resT[j] = *batsT[mapT[j]]++;
+	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
+	GDKfree(batsT);
+	return res;
+}
+
+static BAT *
+MATproject_int( BAT *map, BAT **bats, int len, int ttpe )
+{
+	BAT *res;
+	int i;
+	BUN j, cnt = BATcount(map);
+	int *resT, **batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (int**)GDKmalloc(sizeof(int*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	resT = (int*)Tloc(res, 0);
+	mapT = (bte*)Tloc(map, 0);
+	for (i=0; i<len; i++)
+		batsT[i] = (int*)Tloc(bats[i], 0);
+	for (j=0; j<cnt; j++)
+		resT[j] = *batsT[mapT[j]]++;
+	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
+	GDKfree(batsT);
+	return res;
+}
+
+static BAT *
+MATproject_lng( BAT *map, BAT **bats, int len, int ttpe )
+{
+	BAT *res;
+	int i;
+	BUN j, cnt = BATcount(map);
+	lng *resT, **batsT;
+	bte *mapT;
+
+	res = BATnew(TYPE_void, ttpe, cnt);
+	batsT = (lng**)GDKmalloc(sizeof(lng*) * len);
+	if (res == NULL || batsT == NULL) {
+		if (res)
+			BBPreclaim(res);
+		if (batsT)
+			GDKfree(batsT);
+		return NULL;
+	}
+	BATseqbase(res, map->hseqbase);
+	resT = (lng*)Tloc(res, 0);
+	mapT = (bte*)Tloc(map, 0);
+	for (i=0; i<len; i++)
+		batsT[i] = (lng*)Tloc(bats[i], 0);
+	for (j=0; j<cnt; j++)
+		resT[j] = *batsT[mapT[j]]++;
+	BATsetcount(res, j);
+	res->hrevsorted = j <= 1;
+	GDKfree(batsT);
+	return res;
+}
 
 /*
  *  Mitosis-pieces are usually slices (views) of a base table/BAT.
@@ -781,9 +739,8 @@ error:
 	throw(SQL, "mat.project","Cannot access descriptor");
 }
 
-@= sort_any2
 static BAT*
-MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i2, BUN cnt_i2) 
+MATsortloop_rev( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i2, BUN cnt_i2) 
 {
 	int c;
 	BUN val_i1 = BUNfirst(i1);
@@ -799,11 +756,11 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 	if (map_i1 == NULL) {
 		/* map_i1 = 0 */
 		while ( val_i1 < end_i1 && val_i2 < end_i2) {
-			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) @2 0) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) >= 0) {
 				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
 				*map_res++ = 0;
 				val_i1++;
-			} else if (c @3 0) {
+			} else if (c < 0) {
 				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
 				*map_res++ = map_i2;
 				val_i2++;
@@ -816,11 +773,11 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 		}
 	} else {
 		while ( val_i1 < end_i1 && val_i2 < end_i2) {
-			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) @2 0) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) >= 0) {
 				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
 				*map_res++ = *map_i1++;
 				val_i1++;
-			} else if (c @3 0) {
+			} else if (c < 0) {
 				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
 				*map_res++ = map_i2;
 				val_i2++;
@@ -839,11 +796,65 @@ MATsortloop_@1( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map
 	}
 	return res;
 }
-@
-@c
 
-@:sort_any2(rev,>=,<)@
-@:sort_any2(,<=,>)@
+static BAT*
+MATsortloop_( bte *map_res, BAT *i1, bte *map_i1, BUN cnt_i1, BAT *i2, bte map_i2, BUN cnt_i2) 
+{
+	int c;
+	BUN val_i1 = BUNfirst(i1);
+	BUN val_i2 = BUNfirst(i2);
+	BUN end_i1 = val_i1 + cnt_i1;
+	BUN end_i2 = val_i2 + cnt_i2;
+	BATiter bi_i1 = bat_iterator(i1); 
+	BATiter bi_i2 = bat_iterator(i2);
+	int (*cmp) (const void *, const void *) = BATatoms[i1->ttype].atomCmp;
+	BAT *res = BATnew(TYPE_void, i1->ttype, cnt_i1 + cnt_i2);
+
+	BATseqbase(res, 0);
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) <= 0) {
+				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+				*map_res++ = 0;
+				val_i1++;
+			} else if (c > 0) {
+				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+				*map_res++ = map_i2;
+				val_i2++;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+			*map_res++ = 0;
+			val_i1++;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if ((c = cmp(BUNtail(bi_i1,val_i1),BUNtail(bi_i2,val_i2))) <= 0) {
+				BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+				*map_res++ = *map_i1++;
+				val_i1++;
+			} else if (c > 0) {
+				BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+				*map_res++ = map_i2;
+				val_i2++;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			BUNappend(res, BUNtail(bi_i1,val_i1), FALSE);
+			*map_res++ = *map_i1++;
+			val_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		BUNappend(res, BUNtail(bi_i2,val_i2), FALSE);
+		*map_res++ = map_i2;
+		val_i2++;
+	}
+	return res;
+}
+
 static BAT *
 MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 {
@@ -884,20 +895,19 @@ MATsort_any( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	return res;
 }
 
-@= sort2
 static int
-MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, BUN cnt_i1, @1 *val_i2, bte map_i2, BUN cnt_i2 ) {
+MATsortloop_bte_rev( bte *val_res, bte *map_res, bte *val_i1, bte *map_i1, BUN cnt_i1, bte *val_i2, bte map_i2, BUN cnt_i2 ) {
 
-	@1 *end_i1 = val_i1 + cnt_i1;
-	@1 *end_i2 = val_i2 + cnt_i2;
+	bte *end_i1 = val_i1 + cnt_i1;
+	bte *end_i2 = val_i2 + cnt_i2;
 
 	if (map_i1 == NULL) {
 		/* map_i1 = 0 */
 		while ( val_i1 < end_i1 && val_i2 < end_i2) {
-			if (*val_i1 @3 *val_i2) {
+			if (*val_i1 >= *val_i2) {
 				*val_res++ = *val_i1++;
 				*map_res++ = 0;
-			} else if (*val_i1 @4 *val_i2) {
+			} else if (*val_i1 < *val_i2) {
 				*val_res++ = *val_i2++;
 				*map_res++ = map_i2;
 			}
@@ -908,10 +918,10 @@ MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, BUN cnt_i
 		}
 	} else {
 		while ( val_i1 < end_i1 && val_i2 < end_i2) {
-			if (*val_i1 @3 *val_i2) {
+			if (*val_i1 >= *val_i2) {
 				*val_res++ = *val_i1++;
 				*map_res++ = *map_i1++;
-			} else if (*val_i1 @4 *val_i2) {
+			} else if (*val_i1 < *val_i2) {
 				*val_res++ = *val_i2++;
 				*map_res++ = map_i2;
 			}
@@ -927,18 +937,315 @@ MATsortloop_@1_@2( @1 *val_res, bte *map_res, @1 *val_i1, bte *map_i1, BUN cnt_i
 	}
 	return 0;
 }
-@
-@c
 
-@= sort
-@:sort2(@1,rev,>=,<)@
-@:sort2(@1,,<=,>)@
+static int
+MATsortloop_bte_( bte *val_res, bte *map_res, bte *val_i1, bte *map_i1, BUN cnt_i1, bte *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	bte *end_i1 = val_i1 + cnt_i1;
+	bte *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+/* combined pair */
+static int
+MATsortloop_sht_rev( sht *val_res, bte *map_res, sht *val_i1, bte *map_i1, BUN cnt_i1, sht *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	sht *end_i1 = val_i1 + cnt_i1;
+	sht *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_sht_( sht *val_res, bte *map_res, sht *val_i1, bte *map_i1, BUN cnt_i1, sht *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	sht *end_i1 = val_i1 + cnt_i1;
+	sht *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_int_rev( int *val_res, bte *map_res, int *val_i1, bte *map_i1, BUN cnt_i1, int *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	int *end_i1 = val_i1 + cnt_i1;
+	int *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_int_( int *val_res, bte *map_res, int *val_i1, bte *map_i1, BUN cnt_i1, int *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	int *end_i1 = val_i1 + cnt_i1;
+	int *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_lng_rev( lng *val_res, bte *map_res, lng *val_i1, bte *map_i1, BUN cnt_i1, lng *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	lng *end_i1 = val_i1 + cnt_i1;
+	lng *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 >= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 < *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+static int
+MATsortloop_lng_( lng *val_res, bte *map_res, lng *val_i1, bte *map_i1, BUN cnt_i1, lng *val_i2, bte map_i2, BUN cnt_i2 ) {
+
+	lng *end_i1 = val_i1 + cnt_i1;
+	lng *end_i2 = val_i2 + cnt_i2;
+
+	if (map_i1 == NULL) {
+		/* map_i1 = 0 */
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = 0;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = 0;
+		}
+	} else {
+		while ( val_i1 < end_i1 && val_i2 < end_i2) {
+			if (*val_i1 <= *val_i2) {
+				*val_res++ = *val_i1++;
+				*map_res++ = *map_i1++;
+			} else if (*val_i1 > *val_i2) {
+				*val_res++ = *val_i2++;
+				*map_res++ = map_i2;
+			}
+		}
+		while ( val_i1 < end_i1 ) {
+			*val_res++ = *val_i1++;
+			*map_res++ = *map_i1++;
+		}
+	}
+	while ( val_i2 < end_i2 ) {
+		*val_res++ = *val_i2++;
+		*map_res++ = map_i2;
+	}
+	return 0;
+}
+
+/* multi-bat sort primitives */
 static BAT *
-MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
+MATsort_lng( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 {
 	BAT *res;
 	int i;
-	@1 *resT, **batsT, *in;
+	lng *resT, **batsT, *in;
 	bte *mapT;
 	BUN len1, len2;
 	bte *map_in = NULL;
@@ -947,11 +1254,11 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	*map = BATnew(TYPE_void, TYPE_bte, cnt);
 	BATseqbase(res, 0);
 	BATseqbase(*map, 0);
-	resT = (@1*)Tloc(res, 0);
+	resT = (lng*)Tloc(res, 0);
 	mapT = (bte*)Tloc(*map, 0);
-	batsT = (@1**)GDKmalloc(sizeof(@1*) * len);
+	batsT = (lng**)GDKmalloc(sizeof(lng*) * len);
 	for (i=0; i<len; i++)
-		batsT[i] = (@1*)Tloc(bats[i], 0);
+		batsT[i] = (lng*)Tloc(bats[i], 0);
 	/* merge */
 	in = batsT[0];
 	len1 = BATcount(bats[0]);
@@ -960,12 +1267,12 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	for (i=1; i<len; i++) {
 		len2 = BATcount(bats[i]);
 		if (rev) {
-			MATsortloop_@1_rev( resT+cnt-len1-len2, 
+			MATsortloop_lng_rev( resT+cnt-len1-len2, 
 					mapT+cnt-len1-len2, 
 				        in, map_in, len1, 
 					batsT[i], i, len2);
 		} else {
-			MATsortloop_@1_( resT+cnt-len1-len2, 
+			MATsortloop_lng_( resT+cnt-len1-len2, 
 					mapT+cnt-len1-len2, 
 				        in, map_in, len1, 
 					batsT[i], i, len2);
@@ -981,12 +1288,150 @@ MATsort_@1( BAT **map, BAT **bats, int len, BUN cnt, int rev )
 	GDKfree(batsT);
 	return res;
 }
-@
-@c
-@:sort(bte)@
-@:sort(sht)@
-@:sort(int)@
-@:sort(lng)@
+static BAT *
+MATsort_int( BAT **map, BAT **bats, int len, BUN cnt, int rev )
+{
+	BAT *res;
+	int i;
+	int *resT, **batsT, *in;
+	bte *mapT;
+	BUN len1, len2;
+	bte *map_in = NULL;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(res, 0);
+	BATseqbase(*map, 0);
+	resT = (int*)Tloc(res, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	batsT = (int**)GDKmalloc(sizeof(int*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (int*)Tloc(bats[i], 0);
+	/* merge */
+	in = batsT[0];
+	len1 = BATcount(bats[0]);
+	map_in = NULL;
+	/* TODO: change into a tree version */
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			MATsortloop_int_rev( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		} else {
+			MATsortloop_int_( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		}
+		in = resT+cnt-len1-len2;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(res, len1);
+	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
+	GDKfree(batsT);
+	return res;
+}
+static BAT *
+MATsort_sht( BAT **map, BAT **bats, int len, BUN cnt, int rev )
+{
+	BAT *res;
+	int i;
+	sht *resT, **batsT, *in;
+	bte *mapT;
+	BUN len1, len2;
+	bte *map_in = NULL;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(res, 0);
+	BATseqbase(*map, 0);
+	resT = (sht*)Tloc(res, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	batsT = (sht**)GDKmalloc(sizeof(sht*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (sht*)Tloc(bats[i], 0);
+	/* merge */
+	in = batsT[0];
+	len1 = BATcount(bats[0]);
+	map_in = NULL;
+	/* TODO: change into a tree version */
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			MATsortloop_sht_rev( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		} else {
+			MATsortloop_sht_( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		}
+		in = resT+cnt-len1-len2;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(res, len1);
+	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
+	GDKfree(batsT);
+	return res;
+}
+static BAT *
+MATsort_bte( BAT **map, BAT **bats, int len, BUN cnt, int rev )
+{
+	BAT *res;
+	int i;
+	bte *resT, **batsT, *in;
+	bte *mapT;
+	BUN len1, len2;
+	bte *map_in = NULL;
+
+	res = BATnew(TYPE_void, bats[0]->ttype, cnt);
+	*map = BATnew(TYPE_void, TYPE_bte, cnt);
+	BATseqbase(res, 0);
+	BATseqbase(*map, 0);
+	resT = (bte*)Tloc(res, 0);
+	mapT = (bte*)Tloc(*map, 0);
+	batsT = (bte**)GDKmalloc(sizeof(bte*) * len);
+	for (i=0; i<len; i++)
+		batsT[i] = (bte*)Tloc(bats[i], 0);
+	/* merge */
+	in = batsT[0];
+	len1 = BATcount(bats[0]);
+	map_in = NULL;
+	/* TODO: change into a tree version */
+	for (i=1; i<len; i++) {
+		len2 = BATcount(bats[i]);
+		if (rev) {
+			MATsortloop_bte_rev( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		} else {
+			MATsortloop_bte_( resT+cnt-len1-len2, 
+					mapT+cnt-len1-len2, 
+				        in, map_in, len1, 
+					batsT[i], i, len2);
+		}
+		in = resT+cnt-len1-len2;
+		map_in = mapT+cnt-len1-len2;
+		len1 += len2;
+	}
+	BATsetcount(res, len1);
+	BATsetcount(*map, len1);
+	res->hrevsorted = len1 <= 1;
+	(*map)->hrevsorted = len1 <= 1;
+	GDKfree(batsT);
+	return res;
+}
 
 static str
 MATsort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rev)

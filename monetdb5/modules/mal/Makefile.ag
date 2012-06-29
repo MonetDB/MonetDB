@@ -46,7 +46,7 @@ lib_mal = {
 		mal_io.c mal_io.h \
 		mal_mapi.c mal_mapi.h \
 		manual.c manual.h \
-		mat.mx \
+		mat.c mat.h \
 		mdb.c mdb.h \
 		mkey.c mkey.h \
 		pcre.c \
@@ -73,7 +73,7 @@ headers_mal = {
 		profiler.mal const.mal attach.mal batExtensions.mal algebraExtensions.mal \
 		inspect.mal manual.mal mal_io.mal pqueue.mx mkey.mal \
 		iterator.mal clients.mal \
-		factories.mal groupby.mal mdb.mal pcre.mal tablet.mal mat.mx \
+		factories.mal groupby.mal mdb.mal pcre.mal tablet.mal mat.mal \
 		urlbox.mal transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
@@ -81,6 +81,6 @@ headers_mal = {
 		tokenizer.mx zorder.mal sample.mal
 }
 
-EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal
+EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal
 
 EXTRA_DIST_DIR = Tests

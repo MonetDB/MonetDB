@@ -1,0 +1,82 @@
+module mat;
+
+pattern new(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack
+comment "Define a Merge Association Table (MAT). Faal back to the pack operation
+when this is called ";
+
+pattern pack(:any_2...):bat[:void,:any_2]
+address MATpackValues
+comment "Materialize the MAT (of values) into a BAT";
+
+pattern pack(:any_2...):bat[:oid,:any_2]
+address MATpackValues
+comment "Materialize the MAT (of values) into a BAT";
+
+pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack
+comment "Materialize the MAT into a BAT";
+
+pattern pack2(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack2
+comment "Materialize the MAT into a BAT (by an append all)";
+
+pattern pack3(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack3
+comment "Materialize the MAT into a BAT by considering the heads as void. (used in centipede)";
+
+pattern slice(first:wrd, last:wrd, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpackSlice
+comment "Materialize a sliced MAT into a BAT";
+
+pattern slice(first:int, last:int, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpackSlice
+comment "Materialize a sliced MAT into a BAT";
+
+pattern slice(first:lng, last:lng, b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpackSlice
+comment "Materialize a sliced MAT into a BAT";
+
+pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATproject
+comment "project using the map bat (contains which bat to use in scan order)";
+
+pattern project(map:bat[:void,:bte], b:bat[:any_1,:any_2]...):bat[:void,:any_2]
+address MATproject
+comment "project using the map bat (contains which bat to use in scan order)";
+
+pattern sortTail(b:bat[:any_1,:any_2]...)
+	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
+address MATsortTail
+comment "Returns a BAT copy sorted on the head column.";
+
+pattern sortReverseTail(b:bat[:any_1,:any_2]...)
+	(sorted:bat[:void,:any_2], map:bat[:void,:bte]) 
+address MATsortReverseTail
+comment "Returns a BAT copy sorted on the head column.";
+
+pattern refine(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
+	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
+address MATrefine
+comment "refine map.";
+
+pattern refine_reverse(sorted:bat[:void,:any_2], map:bat[:void,:bte], b:bat[:any_1,:any_3]...)
+	(rsorted:bat[:void,:oid], rmap:bat[:void,:bte]) 
+address MATrefineReverse
+comment "refine map.";
+
+pattern print(b:bat[:any_1,:any_2]...):void
+address MATprint;
+
+pattern newIterator(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATnewIterator
+comment "Create an iterator over a MAT";
+
+pattern hasMoreElements(grp:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MAThasMoreElements
+comment "Find the next element in the merge table";
+
+command info(g:str, e:str):bat[:any_1,:any_2]
+address MATinfo
+comment "retrieve the definition from the partition catalogue";
+

@@ -68,7 +68,6 @@ address ARRAYproject
 comment "Fill an array representation with constants ";
 
 # @- Implementation
-@include ../mal/prelude.mx
 @c
 /*============================================================================*/
 #include "monetdb_config.h"

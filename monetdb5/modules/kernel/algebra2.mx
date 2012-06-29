@@ -345,10 +345,6 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 @:sumcmd(flt)@
 @:sumcmd(dbl)@
 
-/*
- * @-
- */
-@include ../mal/prelude.mx
 @c
 /*
  * @-
