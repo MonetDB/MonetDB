@@ -150,7 +150,7 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			r = pushArgument(mb, r, oublock);
 			getArg(r,0)=oublock;
 
-			q = newStmt(mb, "profiler", "getDisjReads");
+			q = newStmt(mb, "profiler", "getDiskReads");
 			r = newStmt1(mb, calcRef, "-");
 			r = pushArgument(mb, r, getArg(q,0));
 			r = pushArgument(mb, r, inblock);
