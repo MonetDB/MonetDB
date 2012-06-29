@@ -34,7 +34,7 @@ lib_mal = {
 		bbp.c bbp.h \
 		box.c box.h \
 		clients.c clients.h \
-		cluster.mx \
+		cluster.c cluster.h \
 		const.c  const.h \
 		constraints.c constraints.h \
 		factories.c factories.h \
@@ -77,7 +77,7 @@ headers_mal = {
 		urlbox.mal transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		cluster.mx trader.mal \
+		cluster.mal trader.mal \
 		tokenizer.mal zorder.mal sample.mal
 }
 
