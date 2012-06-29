@@ -33,12 +33,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_0607DD25BFA34B92B0BF84584D3D8BCA"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_0629084AD55F45E68F61C23D1DE3973D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -88,6 +82,12 @@
         "Entry"
         {
         "MsmKey" = "8:_15E2F9C224BC494DBFDBDC5F2240C5B8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_194A6F995A234CC5B8650C94DB016E7D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -214,6 +214,12 @@
         "Entry"
         {
         "MsmKey" = "8:_40394F4823F44CD3A470CD95E71BB27C"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_408C39BCDDB245629617C46A515FDE5B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -495,12 +501,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_929EE4AE7E524A1CBC69C7718D412876"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_93CA9CC1926A47799A85CA3B714E124B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -627,12 +627,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_BA22F04D137D421199EB04EE1D228A8F"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_BC1C1FC22A804319853B31D079C4B80A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -646,12 +640,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C018DA1557904EE0BC56B946A5EAA8C7"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C3D9984F15D64164AECDEFF66981A97E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -819,6 +807,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_F0E97FF56DD3481A9F8E9E678CF5FF20"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_F2F5DBA5F4ED478BB2F5C2CFF3E00856"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -850,6 +844,12 @@
         "Entry"
         {
         "MsmKey" = "8:_F827A21B394243CA9A2DA27D42DA0C93"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F8FBE794D0B1450A8AA40FD71D4F0E73"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -993,26 +993,6 @@
             "TargetName" = "8:mapi.h"
             "Tag" = "8:"
             "Folder" = "8:_989FA9CE087440658DD935632B4A7B5A"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0607DD25BFA34B92B0BF84584D3D8BCA"
-            {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win32-vs10\\lib\\libeay32.lib"
-            "TargetName" = "8:libeay32.lib"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1193,6 +1173,26 @@
             "TargetName" = "8:counters.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_194A6F995A234CC5B8650C94DB016E7D"
+            {
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\ssleay32.dll"
+            "TargetName" = "8:ssleay32.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -1613,6 +1613,26 @@
             "TargetName" = "8:factories.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_408C39BCDDB245629617C46A515FDE5B"
+            {
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\lib\\ssleay32.lib"
+            "TargetName" = "8:ssleay32.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -2527,26 +2547,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_929EE4AE7E524A1CBC69C7718D412876"
-            {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win32-vs10\\bin\\libeay32.dll"
-            "TargetName" = "8:libeay32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_93CA9CC1926A47799A85CA3B714E124B"
             {
             "SourcePath" = "8:lib\\monetdb5\\createdb\\11_times.sql"
@@ -2967,26 +2967,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BA22F04D137D421199EB04EE1D228A8F"
-            {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win32-vs10\\lib\\ssleay32.lib"
-            "TargetName" = "8:ssleay32.lib"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_BC1C1FC22A804319853B31D079C4B80A"
             {
             "SourcePath" = "8:lib\\monetdb5\\createdb\\16_tracelog.sql"
@@ -3033,26 +3013,6 @@
             "TargetName" = "8:batmtime.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C3D9984F15D64164AECDEFF66981A97E"
-            {
-            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.0d.win32-vs10\\bin\\ssleay32.dll"
-            "TargetName" = "8:ssleay32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -3607,6 +3567,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F0E97FF56DD3481A9F8E9E678CF5FF20"
+            {
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\lib\\libeay32.lib"
+            "TargetName" = "8:libeay32.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F2F5DBA5F4ED478BB2F5C2CFF3E00856"
             {
             "SourcePath" = "8:lib\\monetdb5\\box.mal"
@@ -3711,6 +3691,26 @@
             {
             "SourcePath" = "8:lib\\libmapi.lib"
             "TargetName" = "8:libmapi.lib"
+            "Tag" = "8:"
+            "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F8FBE794D0B1450A8AA40FD71D4F0E73"
+            {
+            "SourcePath" = "8:C:\\Libraries\\openssl-1.0.1b.win32-vs10\\bin\\libeay32.dll"
+            "TargetName" = "8:libeay32.dll"
             "Tag" = "8:"
             "Folder" = "8:_A3C9BE5CA72B42628868618D180581DA"
             "Condition" = "8:"

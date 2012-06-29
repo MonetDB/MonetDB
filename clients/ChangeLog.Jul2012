@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri Jun 29 2012 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
+  of a connection handle.
+
