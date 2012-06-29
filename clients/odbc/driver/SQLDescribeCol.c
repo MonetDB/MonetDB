@@ -91,7 +91,7 @@ SQLDescribeCol_(ODBCStmt *stmt,
 	/* also see SQLDescribeParam */
 	if (ColumnSizePtr) {
 		*ColumnSizePtr = ODBCLength(rec, SQL_DESC_LENGTH);
-		if (*ColumnSizePtr == SQL_NO_TOTAL)
+		if (*ColumnSizePtr == (SQLULEN) SQL_NO_TOTAL)
 			*ColumnSizePtr = 0;
 	}
 
