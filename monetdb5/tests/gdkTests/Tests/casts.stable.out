@@ -3642,9 +3642,9 @@ Caught exception
 # s := "2147483647"; s_oid := calc.oid(s); io.print(s_oid);
 [ 2147483647@0 ]
 # s := "2147483648"; s_oid := calc.oid(s); io.print(s_oid);
-[ nil ]
+Caught exception
 # s := "2147483649"; s_oid := calc.oid(s); io.print(s_oid);
-[ nil ]
+Caught exception
 # s := "-2147483647"; s_oid := calc.oid(s); io.print(s_oid);
 Caught exception
 # s := "-2147483648"; s_oid := calc.oid(s); io.print(s_oid);

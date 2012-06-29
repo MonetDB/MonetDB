@@ -486,9 +486,6 @@ def msc_headers(fd, var, headers, msc):
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
 
-def msc_doc(fd, var, docmap, msc):
-    docmap['TARGETS']=[]
-
 def msc_binary(fd, var, binmap, msc):
 
     if type(binmap) == type([]):
@@ -1090,7 +1087,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'LIB': msc_library,
                 'BINS': msc_bins,
                 'BIN': msc_binary,
-                'DOC': msc_doc,
                 'SCRIPTS': msc_scripts,
                 'INCLUDES': msc_includes,
                 'MTSAFE': msc_mtsafe,

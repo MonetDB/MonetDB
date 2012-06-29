@@ -445,45 +445,6 @@ def am_headers(fd, var, headers, am):
     for src in headers['SOURCES']:
         am['EXTRA_DIST'].append(src)
 
-def am_doc(fd, var, docmap, am):
-    docdir = "pkgdatadir"
-    if docmap.has_key("DIR"):
-        docdir = docmap["DIR"][0] # use first name given
-    docdir = am_translate_dir(docdir, am)
-
-    name = var[4:]
-    if name[0] == "_":
-        name = name[1:]
-
-    doc_ext = ['pdf', 'ps', 'bdy.tex', 'bdy.html', 'html']
-
-    srcs = name+"_DOCS ="
-    for target in docmap['TARGETS']:
-        t, ext = split_filename(target)
-        if ext in doc_ext:
-            srcs = srcs + " " + target
-            am['DocList'].append("\t%s/%s\n" % (docdir, target))
-    fd.write(srcs + "\n")
-
-    fd.write("if DOCTOOLS\n")
-    fd.write("all-local-%s: $(%s_DOCS)\n" % (name, name))
-    fd.write("install-data-local-%s: $(%s_DOCS)\n" % (name, name))
-    fd.write("\t-mkdir -p $(DESTDIR)%s\n" % docdir)
-    fd.write("\t$(INSTALL) $(%s_DOCS) $(DESTDIR)%s\n" % (name, docdir))
-    fd.write("uninstall-local-%s: \n" % name)
-    fd.write("\tcd $(DESTDIR)%s; $(RM) $(%s_DOCS)\n" % (docdir, name))
-    fd.write("else\n")
-    fd.write("all-local-%s: \n" % name)
-    fd.write("install-data-local-%s: \n" % name)
-    fd.write("uninstall-local-%s: \n" % name)
-    fd.write("endif\n")
-    am['ALL'].append(name)
-    am['DATA_INSTALL'].append(name)
-    am['UNINSTALL'].append(name)
-
-    am_find_ins(am, docmap)
-    am_deps(fd, docmap['DEPS'], am)
-
 def am_normalize(name):
     return name.replace('-', '_')
 
@@ -1176,7 +1137,6 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'LIB': am_library,
                 'BINS': am_bins,
                 'BIN': am_binary,
-                'DOC': am_doc,
                 'INCLUDES': am_includes,
                 'MTSAFE': am_mtsafe,
                 'SCRIPTS': am_scripts,
