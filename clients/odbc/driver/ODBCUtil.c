@@ -281,7 +281,7 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 	char buf[512];
 
 	nquery = dupODBCstring(query, length);
-	if (noscan)
+	if (noscan == SQL_NOSCAN_ON)
 		return nquery;
 	p = nquery;
 	while ((p = strchr(p, '{')) != NULL) {
