@@ -346,6 +346,7 @@ int yydebug=1;
 	opt_seps
 	opt_nr
 	string_commalist
+	string_commalist_contents
 	paramlist
 	opt_paramlist
 	opt_typelist
@@ -2466,14 +2467,13 @@ copyfrom_stmt:
 	  append_string(l, $8);
 	  append_int(l, $9);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-/* binary copy from */
-   | COPY opt_nr INTO qname FROM '(' string_commalist ')'
+   | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */
 	{ dlist *l = L();
 	  if ($2 != NULL) {
 	  	yyerror("COPY INTO: cannot pass number of records when using binary COPY INTO");
 		YYABORT;
 	  }
-	  append_list(l, $4);
+	  append_list(l, $5);
 	  append_list(l, $7);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
   | COPY select_no_parens_orderby INTO string opt_seps opt_null_string
@@ -2538,8 +2538,13 @@ opt_locked:
  ;
 
 string_commalist:
+	string_commalist_contents          { $$ = $1; }
+ |	'(' string_commalist_contents ')'  { $$ = $2; }
+ ;
+
+string_commalist_contents:
     string		{ $$ = append_string(L(), $1); }
- |  string_commalist ',' string
+ |  string_commalist_contents ',' string
 			{ $$ = append_string($1, $3); }
  ;
 
