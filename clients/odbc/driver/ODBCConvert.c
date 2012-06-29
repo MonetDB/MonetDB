@@ -1042,7 +1042,9 @@ ODBCFetch(ODBCStmt *stmt,
 	if (type == SQL_C_DEFAULT)
 		type = ODBCDefaultType(irdrec);
 
-	if (precision == UNAFFECTED || scale == UNAFFECTED || datetime_interval_precision == UNAFFECTED) {
+	if (precision == UNAFFECTED ||
+	    scale == UNAFFECTED ||
+	    datetime_interval_precision == UNAFFECTED) {
 		if (ardrec) {
 			if (precision == UNAFFECTED)
 				precision = ardrec->sql_desc_precision;
@@ -1849,7 +1851,7 @@ ODBCFetch(ODBCStmt *stmt,
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
 
 			if (origlenp)
-				*origlenp = n * 2;	/* # of bytes, not chars */
+				*origlenp = n * sizeof(SQLWCHAR); /* # of bytes, not chars */
 			free(ptr);
 		}
 #endif
