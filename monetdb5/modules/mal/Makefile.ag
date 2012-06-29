@@ -41,7 +41,7 @@ lib_mal = {
 		groupby.c groupby.h \
 		histogram.h \
 		inspect.c inspect.h \
-		iterator.c  iteratore.h \
+		iterator.c  iterator.h \
 		language.c language.h \
 		mal_io.c mal_io.h \
 		mal_mapi.c mal_mapi.h \
