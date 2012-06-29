@@ -427,7 +427,12 @@ parse_substr(int *ret, str s, int min, str list[], int size)
 	return j;
 }
 
-#define date_dayofweek(v)	(((v) - 1) % 7 + 1)
+static int
+date_dayofweek(date v)
+{
+	v %= 7;
+	return v <= 0 ? v + 7 : v;
+}
 
 #define SKIP_DAYS(d,w,i) d += i; w = (w + i)%7; if (w <= 0) w += 7;
 
