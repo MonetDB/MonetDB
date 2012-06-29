@@ -102,7 +102,6 @@ include constraints; # experimental
 include mal_mapi;
 
 include profiler;
-include statistics;	# experimental
 include sample;
 
 include optimizer;
