@@ -25,7 +25,6 @@
  */
 #ifndef _ALGEBRA_EXTENSIONS_H
 #define _ALGEBRA_EXTENSIONS_H
-#include "mal_box.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"
