@@ -50,7 +50,7 @@ lib_mal = {
 		mdb.c mdb.h \
 		mkey.c mkey.h \
 		pcre.c \
-		pqueue.mx \
+		pqueue.c pqueue.h \
 		profiler.c profiler.h \
 		recycle.c recycle.h \
 		remote.c remote.h \
@@ -71,7 +71,7 @@ headers_mal = {
 	DIR = libdir/monetdb5
 	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
 		profiler.mal const.mal attach.mal batExtensions.mal algebraExtensions.mal \
-		inspect.mal manual.mal mal_io.mal pqueue.mx mkey.mal \
+		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal tablet.mal mat.mal \
 		urlbox.mal transaction.mal \
@@ -81,6 +81,6 @@ headers_mal = {
 		tokenizer.mal zorder.mal sample.mal
 }
 
-EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal
+EXTRA_DIST = algebraExtensions.mal attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal pqueue.mal
 
 EXTRA_DIST_DIR = Tests
