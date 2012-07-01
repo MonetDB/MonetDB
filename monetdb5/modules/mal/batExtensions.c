@@ -40,7 +40,6 @@
  *
  */
 #include "monetdb_config.h"
-#include "mal_box.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"
@@ -75,19 +74,6 @@ be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 be_export str CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-/*
- * @-
- * Access to a box calls for resolving the first parameter
- * to a named box. The bbp box is automatically opened.
- */
-#define OpenBox(X) \
-	box= findBox("bbp");\
-	if(box == 0 )\
-		box= openBox("bbp");\
-	if( box ==0) \
-		throw(MAL, "bbp." X, BOX_CLOSED);
-
 
 /*
  * @- Operator implementation
