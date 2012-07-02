@@ -1,0 +1,316 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2012 MonetDB B.V.
+# All Rights Reserved.
+
+module geom;
+
+# @' overwrite lng needed for fixed size! Sizes are fixed in geom.prelude
+atom mbr:lng;
+
+command tostr() :str		address mbrTOSTR;
+command fromstr() :mbr		address mbrFROMSTR;
+command hash() :int		address mbrHASH;
+command null() :int		address mbrNULL;
+command cmp() :int		address mbrCOMP;
+command read()			address mbrREAD;
+command write()			address mbrWRITE;
+
+command mbr(v:str) :mbr address mbrFromString;
+
+atom wkb;
+
+command tostr() :str		address wkbTOSTR;
+command fromstr() :wkb		address wkbFROMSTR;
+command hash() :int		address wkbHASH;
+command null() :int		address wkbNULL;
+command cmp() :int		address wkbCOMP;
+command read()			address wkbREAD;
+command write()			address wkbWRITE;
+
+command put() :int		address wkbPUT;
+command del() :int		address wkbDEL;
+command length() :int		address wkbLENGTH;
+command heap() :int		address wkbHEAP;
+
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
+command FromText{unsafe}(w:str, type:int) :wkb	address wkbFromText;
+
+module geom;
+
+function PointFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,1);
+	return x;
+end PointFromText;
+function CurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,2);
+	return x;
+end CurveFromText;
+function LineFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,2);
+	return x;
+end LineFromText;
+function SurfaceFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,3);
+	return x;
+end SurfaceFromText;
+function PolyFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,3);
+	return x;
+end PolyFromText;
+function MultiPointFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,4);
+	return x;
+end MultiPointFromText;
+function MultiCurveFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,5);
+	return x;
+end MultiCurveFromText;
+function MultiLineFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,5);
+	return x;
+end MultiLineFromText;
+function MultiSurfaceFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,6);
+	return x;
+end MultiSurfaceFromText;
+function MultiPolyFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,6);
+	return x;
+end MultiPolyFromText;
+function GeomFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,7);
+	return x;
+end GeomFromText;
+function GeomCollectionFromText{unsafe}( wkt:str, srid:sht ) :wkb;
+	x := wkb.FromText(wkt,7);
+	return x;
+end GeomCollectionFromText;
+
+command mbroverlaps(a:mbr, b:mbr) :bit
+address mbroverlaps
+comment "Returns true if the two mbrs overlap";
+
+
+command AsText(w:wkb) :str	address wkbAsText;
+command mbr(:flt,:flt,:flt,:flt) :mbr
+address ordinatesMBR
+comment "Creates the mbr for the given (xmin,ymin) and (xmax,ymax).";
+
+command mbr(:wkb) :mbr
+address wkbMBR
+comment "Creates the mbr for the given wkb.";
+
+# @+ ogc basic methods
+command Dimension(w:wkb) :int
+address wkbDimension
+comment "The inherent dimension of this geometry object, which must be less than or equal to the coordinate dimension. This specification is restricted to geometries in two-dimensional coordinate space.";
+
+command GeometryTypeId(w:wkb) :int
+address wkbGeometryTypeId
+comment "Returns the name of the instantiable subtype of Geometry of which this Geometry instance is a member. The name of the instantiable subtype of Geometry is returned as string.";
+
+command SRID(w:wkb) :int
+address wkbSRID
+comment "Returns the Spatial Reference System ID for this Geometry.";
+
+command Envelope(w:wkb) :wkb
+address wkbEnvelope
+comment "The minimum bounding box for this Geometry, returned as a Geometry. The polygon is defined by the corner points of the bounding box ((MINX,MINY),(MAXX,MINY),(MAXX,MAXY),(MINX,MAXY)).";
+
+command IsEmpty(w:wkb) :bit
+address wkbIsEmpty
+comment "Returns true if this Geometry is the empty geometry. If true, then this Geometry represents the empty point set, for the coordinate space.";
+
+command IsSimple(w:wkb) :bit
+address wkbIsSimple
+comment "Returns true if this Geometry has no anomalous geometric points, such as self intersection or self tangency. The description of each instantiable geometric class will include the specific conditions that cause an instance of that class to be classified as not simple.";
+
+command Boundary(w:wkb) :wkb
+address wkbBoundary
+comment "Returns the closure of the combinatorial boundary of this Geometry.";
+
+# @+ ogc spatial relation methods
+
+command Equals(a:wkb, b:wkb) :bit
+address wkbEquals
+comment "Returns true if these Geometries are 'spatially equal'";
+
+command Disjoint(a:wkb, b:wkb) :bit
+address wkbDisjoint
+comment "Returns true if these Geometries are 'spatially disjoint'";
+
+command Intersect(a:wkb, b:wkb) :bit
+address wkbIntersect
+comment "Returns true if these Geometries 'spatially intersect'";
+
+command Touches(a:wkb, b:wkb) :bit
+address wkbTouches
+comment "Returns true if these Geometries 'spatially touch' each other";
+
+command Crosses(a:wkb, b:wkb) :bit
+address wkbCrosses
+comment "Returns true if the Geometry a 'spatially crosses' Geometry b";
+
+command Within(a:wkb, b:wkb) :bit
+address wkbWithin
+comment "Returns true if the Geometry a 'spatially within' Geometry b";
+
+command Contains(a:wkb, b:wkb) :bit
+address wkbContains
+comment "Returns true if the Geometry a 'spatially contains' Geometry b";
+
+command Overlaps(a:wkb, b:wkb) :bit
+address wkbOverlaps
+comment "Returns true if the Geometry a 'spatially overlaps' Geometry b";
+
+command Relate(a:wkb, b:wkb, intersectionPatternMatrix:str) :bit
+address wkbRelate
+comment "Returns true if the Geometry a 'spatially related' to Geometry b, by testing for intersection between the Interior, Boundary and Exterior of the two geometries as specified by the values in the intersectionPatternMatrix.";
+
+# @+ ogc constructor functions
+command point(x:dbl,y:dbl) :wkb
+address wkbcreatepoint
+comment "Construct a point from two geometries";
+
+module batgeom;
+command point(x:bat[:oid,:dbl],y:bat[:oid,:dbl]) :bat[:oid,:wkb]
+address wkbcreatepoint_bat
+comment "Construct a point-BAT from two geometry-BATs";
+module geom;
+
+# @+ ogc information methods
+command X(g:wkb) :dbl
+address wkbgetcoordX
+comment "Returns the x-coordinate of a point geometry.";
+
+command Y(g:wkb) :dbl
+address wkbgetcoordY
+comment "Returns the y-coordinate of a point geometry.";
+
+# @+ ogc Spatial Analysis methods
+
+command Area(g:wkb) :dbl
+address wkbArea
+comment "Returns the area of the geometry.";
+
+command Length(g:wkb) :dbl
+address wkbLength
+comment "Returns the length of the geometry.";
+
+command Distance(a:wkb, b:wkb) :dbl
+address wkbDistance
+comment "Returns the shortest distance between any two points in the two geometries as calculated in the spatial reference system of this Geometries.";
+
+command Buffer(a:wkb, distance:dbl) :wkb
+address wkbBuffer
+comment "Returns a geometry that represents all points whose distance from this geometry is less than or equal to distance. Calculations are in the Spatial Reference System of this Geometry.";
+
+command ConvexHull(a:wkb) :wkb
+address wkbConvexHull
+comment "Returns a geometry that represents the convex hull of this geometry.";
+
+command Intersection(a:wkb, b:wkb) :wkb
+address wkbIntersection
+comment "Returns a geometry that represents the point set intersection of Geometry a with b.";
+
+command Union(a:wkb, b:wkb) :wkb
+address wkbUnion
+comment "Returns a geometry that represents the point set union of Geometry a with b.";
+
+command Difference(a:wkb, b:wkb) :wkb
+address wkbDifference
+comment "Returns a geometry that represents the point set difference of Geometry a with b.";
+
+command SymDifference(a:wkb, b:wkb) :wkb
+address wkbSymDifference
+comment "Returns a geometry that represents the point set semmetric difference of Geometry a with b.";
+
+
+command prelude():void	address geom_prelude;
+command epilogue():void address geom_epilogue;
+
+geom.prelude();
+
+module calc;
+
+command mbr{unsafe}(v:str) :mbr address mbrFromString;
+command mbr(v:mbr) :mbr address mbrFromMBR;
+command wkb{unsafe}(v:str) :wkb address wkbFromString;
+command wkb(v:wkb) :wkb address wkbFromWKB;
+
+function point{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,1);
+	return x;
+end point;
+function curve{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,2);
+	return x;
+end curve;
+function linestring{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,2);
+	return x;
+end linestring;
+function surface{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,3);
+	return x;
+end surface;
+function polygon{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,3);
+	return x;
+end polygon;
+function multipoint{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,4);
+	return x;
+end multipoint;
+function multicurve{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,5);
+	return x;
+end multicurve;
+function multilinestring{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,5);
+	return x;
+end multilinestring;
+function multisurface{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,6);
+	return x;
+end multisurface;
+function multipolygon{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,6);
+	return x;
+end multipolygon;
+function geometry{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,7);
+	return x;
+end geometry;
+function geomcollection{unsafe}( wkt:str ) :wkb;
+	x := wkb.FromText(wkt,7);
+	return x;
+end geomcollection;
+
+module geom;
+command calc.isnil(v:wkb):bit
+address wkbIsnil
+comment "Nil test for wkb value";
+
+
+# wkbPoint := 1;
+# wkbLineString := 2;
+# wkbPolygon := 3;
+# wkbMultiPoint := 4;
+# wkbMultiLineString := 5;
+# wkbMultiPolygon := 6;
+# wkbGeometryCollection := 7;
+
