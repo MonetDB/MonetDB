@@ -1,6 +1,9 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Mon Jul  2 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Created seperate RPM and DEB packages for MonetDB/JAQL.
+
 * Tue Jun  5 2012 Sjoerd Mullender <sjoerd@acm.org>
 - Removed --enable-bits option from configure.
 
