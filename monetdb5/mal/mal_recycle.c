@@ -827,30 +827,30 @@ isBindInstr(InstrPtr p)
 static void
 RECYCLEsync(InstrPtr p)
 {
-        int i, j, k;
-        InstrPtr q;
+	int i, j, k;
+	InstrPtr q;
 	ValPtr pa, qa;
 
-        for (i=0; i<recycleBlk->stop; i++) {
-                q = getInstrPtr(recycleBlk,i);
+	for (i=0; i<recycleBlk->stop; i++) {
+		q = getInstrPtr(recycleBlk,i);
 		if ( q->token != NOOPsymbol ) continue;
-                if ((getFunctionId(p) != getFunctionId(q)) ||
+		if ((getFunctionId(p) != getFunctionId(q)) ||
 			(p->argc != q->argc) ||
 			(getModuleId(p) != getModuleId(q)))
-                        continue;
-                for (j=p->retc; j<p->argc; j++)
-                        if( VALcmp( &getVarConstant(recycleBlk,getArg(p,j)),
-				 &getVarConstant(recycleBlk,getArg(q,j))))
-                                break;
-                if (j == p->argc) {
+			continue;
+		for (j=p->retc; j<p->argc; j++)
+			if( VALcmp( &getVarConstant(recycleBlk,getArg(p,j)),
+						&getVarConstant(recycleBlk,getArg(q,j))))
+				break;
+		if (j == p->argc) {
 			for(k=0; k< p->retc; k++){
 				pa = &getVarConstant(recycleBlk,getArg(p,k));
-		                qa = &getVarConstant(recycleBlk,getArg(q,k));
+				qa = &getVarConstant(recycleBlk,getArg(q,k));
 				if (qa->vtype == TYPE_bat)
-		                        BBPdecref( *(int*)VALget(qa), TRUE);
+					BBPdecref( *(const int*)VALptr(qa), TRUE);
 				VALcopy(qa,pa);
 				if (qa->vtype == TYPE_bat)
-                                        BBPincref( *(int*)VALget(qa), TRUE);
+					BBPincref( *(const int*)VALptr(qa), TRUE);
 			}
 		}
 	}
@@ -868,7 +868,7 @@ VALisNil(ValPtr p)
     cmp = BATatoms[tpe].atomCmp;
     nilptr = ATOMnilptr(tpe);
 
-    return ( (*cmp)(VALget(p), nilptr) == 0 );
+    return ( (*cmp)(VALptr(p), nilptr) == 0 );
 
 }
 
@@ -924,7 +924,7 @@ setSelectProp(InstrPtr q)
 
 		bid = getVarConstant(recycleBlk, getArg(q,0)).val.bval;
 
-		if ( (*cmp)(VALget(lb), nilptr) == 0 ) {
+		if ( (*cmp)(VALptr(lb), nilptr) == 0 ) {
 			/* try to propagate from base relation */
 			if ( varGetProp(recycleBlk, getArg(q,1), tlbProp) != NULL )
 				lb = &varGetProp(recycleBlk, getArg(q,1), tlbProp)->value;
@@ -937,7 +937,7 @@ setSelectProp(InstrPtr q)
 				varSetProp(recycleBlk, getArg(q,1), tlbProp, op_gte, lb);
 			}
 		}
-		if ( (*cmp)(VALget(ub), nilptr) == 0 ){
+		if ( (*cmp)(VALptr(ub), nilptr) == 0 ){
 			if ( varGetProp(recycleBlk, getArg(q,1), tubProp) != NULL )
 				ub = &varGetProp(recycleBlk, getArg(q,1), tubProp)->value;
 			else {
@@ -1010,7 +1010,7 @@ RECYCLEnew(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p, lng rd, lng wr, 
 		if (c<0)
 			c = defConstant(recycleBlk, v->vtype, &cst);
 		if (v->vtype == TYPE_bat)
-			BBPincref( *(int*)VALget(v), TRUE);
+			BBPincref( *(const int*)VALptr(v), TRUE);
 		setVarUsed(recycleBlk,c);
 	 	setArg(q,i,c);
 	}
@@ -1145,8 +1145,8 @@ selectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 			if (p->argc <=4)
 				cover = boundcheck(li,lcomp) && boundcheck(hi,rcomp);
 			else {
-				lip = *(bit*)VALget(&s->stk[getArg(p,4)]);
-				hip = *(bit*)VALget(&s->stk[getArg(p,5)]);
+				lip = *(const bit*)VALptr(&s->stk[getArg(p,4)]);
+				hip = *(const bit*)VALptr(&s->stk[getArg(p,5)]);
 				cover = ( boundcheck(li || neg(lip),lcomp) && boundcheck(hi || neg(hip),rcomp) );
 			}
 	}
@@ -1227,15 +1227,15 @@ marginEq(ValPtr p, ValPtr q)
 {
     int (*cmp) (const void *, const void *);
     int tpe;
-    ptr nilptr, pp, pq;
+    const void *nilptr, *pp, *pq;
 
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
     cmp = BATatoms[tpe].atomCmp;
     nilptr = ATOMnilptr(tpe);
-    pp = VALget(p);
-    pq = VALget(q);
+    pp = VALptr(p);
+    pq = VALptr(q);
     if( (*cmp)(pp, nilptr) == 0  && (*cmp)(pq, nilptr) == 0 )  return 1;
 	if( (*cmp)(pp, nilptr) == 0  || (*cmp)(pq, nilptr) == 0 )  return 0;
     return ((*cmp)(pp, pq) == 0 );
@@ -1247,15 +1247,15 @@ lessEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 
     int (*cmp) (const void *, const void *);
     int tpe, c;
-    ptr nilptr, pp, pq;
+    const void *nilptr, *pp, *pq;
 
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
     cmp = BATatoms[tpe].atomCmp;
     nilptr = ATOMnilptr(tpe);
-    pp = VALget(p);
-    pq = VALget(q);
+    pp = VALptr(p);
+    pq = VALptr(q);
     if( (*cmp)(pp, nilptr) == 0 ) return 1; /* p is nil */
     if( (*cmp)(pq, nilptr) == 0 )  return 0;
     c = (*cmp)(pp, pq);
@@ -1279,15 +1279,15 @@ greaterEq(ValPtr p, bit pi, ValPtr q, bit qi, bit eq)
 
     int (*cmp) (const void *, const void *);
     int tpe, c;
-    ptr nilptr, pp, pq;
+    const void *nilptr, *pp, *pq;
 
     if( p == 0 || q == 0 ) return  0;
     if( (tpe = p ->vtype) != q->vtype ) return  0;
 
     cmp = BATatoms[tpe].atomCmp;
     nilptr = ATOMnilptr(tpe);
-    pp = VALget(p);
-    pq = VALget(q);
+    pp = VALptr(p);
+    pq = VALptr(q);
     if( (*cmp)(pp, nilptr) == 0 ) return 1; /* p is nil */
     if( (*cmp)(pq, nilptr) == 0 )  return 0;
     c = (*cmp)(pp, pq);
@@ -1435,23 +1435,23 @@ intLen(ValPtr l, ValPtr h)
 
     switch (ATOMstorage(l->vtype)) {
     case TYPE_bte:
-        len =  *(bte *)VALget(h) -  *(bte *)VALget(l) + 1;
+        len =  *(const bte *)VALptr(h) -  *(const bte *)VALptr(l) + 1;
 		break;
     case TYPE_sht:
-        len =  *(sht *)VALget(h) -  *(sht *)VALget(l) + 1;
+        len =  *(const sht *)VALptr(h) -  *(const sht *)VALptr(l) + 1;
 		break;
     case TYPE_void:
     case TYPE_int:
-        len =  *(int *)VALget(h) -  *(int *)VALget(l) + 1;
+        len =  *(const int *)VALptr(h) -  *(const int *)VALptr(l) + 1;
 		break;
     case TYPE_flt:
-        len =  *(flt *)VALget(h) -  *(flt *)VALget(l);
+        len =  *(const flt *)VALptr(h) -  *(const flt *)VALptr(l);
 		break;
     case TYPE_dbl:
-        len =  *(dbl *)VALget(h) -  *(dbl *)VALget(l);
+        len =  *(const dbl *)VALptr(h) -  *(const dbl *)VALptr(l);
 		break;
     case TYPE_lng:
-		len =  (double) (*(lng *)VALget(h) -  *(lng *)VALget(l) + 1);
+		len =  (double) (*(const lng *)VALptr(h) -  *(const lng *)VALptr(l) + 1);
 		break;
     default:
         len = 0;
@@ -1889,8 +1889,8 @@ selectMultiSubsume(InstrPtr p, MalStkPtr s)
 	VALcopy(&qry.low, &s->stk[getArg(p,2)]);
 	VALcopy(&qry.hgh, &s->stk[getArg(p,3)]);
 	if ( p->argc > 4 ){
-		qry.li = *(bit*)VALget(&s->stk[getArg(p,4)]);
-		qry.hi = *(bit*)VALget(&s->stk[getArg(p,5)]);
+		qry.li = *(const bit*)VALptr(&s->stk[getArg(p,4)]);
+		qry.hi = *(const bit*)VALptr(&s->stk[getArg(p,5)]);
 	} else {
 		qry.li = TRUE;
 		qry.hi = TRUE;
@@ -1925,14 +1925,14 @@ static bit
 thetaselectSubsume(InstrPtr p, InstrPtr q, MalStkPtr s)
 {
 	ValPtr pval, qval;
-	str pop, qop;
+	const char *pop, *qop;
 	bit pi, qi;
 
 	qval = &getVar(recycleBlk,getArg(q,2))->value;
-	qop = (str)getVarValue(recycleBlk,getArg(q,3));
+	qop = (const char *)getVarValue(recycleBlk,getArg(q,3));
 
 	pval = &s->stk[getArg(p,2)];
-	pop = (str)VALget(&s->stk[getArg(p,3)]);
+	pop = (const char *)VALptr(&s->stk[getArg(p,3)]);
 
 	if ( pop[0] != qop[0] ) return 0;
 	pi = ( pop[1] == '=' );
@@ -2322,7 +2322,7 @@ RECYCLEexitImpl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng ticks
 	cacheLimit = recycleCacheLimit?recycleCacheLimit:HARDLIMIT_STMT;
 
 	v = &stk->stk[getArg(p,0)]; /* don't count memory for persistent bats */
-	if ((v->vtype == TYPE_bat) && (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT))
+	if ((v->vtype == TYPE_bat) && (BBP_status( *(const int*)VALptr(v)) & BBPPERSISTENT))
 		wr = 0;
 
     if (octopusRef == 0)

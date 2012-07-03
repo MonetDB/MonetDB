@@ -360,7 +360,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 					u= getVar(mb,getArg(q,k));
 					cmp = BATatoms[w->value.vtype].atomCmp;
 					if ( w->value.vtype == u->value.vtype &&
-						(*cmp)(VALget(&w->value), VALget(&u->value)) == 0)
+						(*cmp)(VALptr(&w->value), VALptr(&u->value)) == 0)
 						continue;
 			}
 			return FALSE;

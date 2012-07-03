@@ -1398,10 +1398,10 @@ convertConstant(int type, ValPtr vr)
 }
 
 int
-fndConstant(MalBlkPtr mb, ValPtr cst, int depth)
+fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 {
 	int i, k;
-	ptr p = VALget(cst);
+	const void *p = VALptr(cst);
 
 	k = mb->vtop - depth;
 	if (k < 0)
@@ -1409,7 +1409,7 @@ fndConstant(MalBlkPtr mb, ValPtr cst, int depth)
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
 
-		if (v && isVarConstant(mb, i) && v->type == cst->vtype && p && ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
+		if (v && isVarConstant(mb, i) && v->type == cst->vtype && p && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
 	}
 	return -1;
@@ -1837,7 +1837,7 @@ varGetPropStr(MalBlkPtr mb, int var)
 			VarPtr v = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t) p->op);
 
-			ATOMformat(v->type, VALget(&v->value), &t);
+			ATOMformat(v->type, VALptr(&v->value), &t);
 			switch (v->type) {
 			case TYPE_oid:
 				sprintf(s, "%s%s%s:oid", nme, op, t);

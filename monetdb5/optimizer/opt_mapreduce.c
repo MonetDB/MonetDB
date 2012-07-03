@@ -554,7 +554,7 @@ OPTmapreduceImplementation(
 				/* sql.mvc(): we need this statement everywhere */
 				copy = SINGLE_DUP;
 			} else if (getFunctionId(p) == bindRef) {
-				if (*(int *)VALget(&getVar(map, getArg(p, 5))->value) == 0) {
+				if (*(const int *)VALptr(&getVar(map, getArg(p, 5))->value) == 0) {
 					str schema = VALget(&getVar(map, getArg(p, 2))->value);
 					/* check if this is a column from a mapreduce schema (mr_*) */
 					if (strncmp(schema, "mr_", 3) != 0)

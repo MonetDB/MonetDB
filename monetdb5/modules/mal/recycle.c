@@ -102,7 +102,7 @@ RECYCLEdump(stream *s)
 #endif
 		v = &getVarConstant(recycleBlk,getArg(recycleBlk->stmt[i],0));
 		if ((v->vtype == TYPE_bat) &&
-			 (BBP_status( *(int*)VALget(v)) & BBPPERSISTENT)) {
+			 (BBP_status( *(const int*)VALptr(v)) & BBPPERSISTENT)) {
 			msg = BKCbatsize(&sz, (int*)VALget(v));
 			if ( msg == MAL_SUCCEED )
 				persmem += sz;

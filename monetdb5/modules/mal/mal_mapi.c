@@ -1474,14 +1474,14 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BATseqbase(b, hval.val.oval);
 		if (ott != tt)
 			BATseqbase(BATmirror(b), tval.val.oval);
-		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
+		BUNins(b,VALptr(&hval),VALptr(&tval), FALSE);
 	}
 	while( mapi_fetch_row(hdl)){
 		fld1= mapi_fetch_field(hdl,0);
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld1, ht, &hval);
 		SERVERfieldAnalysis(fld2, tt, &tval);
-		BUNins(b,VALget(&hval),VALget(&tval), FALSE);
+		BUNins(b,VALptr(&hval),VALptr(&tval), FALSE);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	*ret = b->batCacheid;
