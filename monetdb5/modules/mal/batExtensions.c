@@ -18,10 +18,8 @@
  */
 
 /*
- * @f batExtensions
- * @v 2.0
- * @a M.L.Kersten
- * @+ BAT Extensions
+ * M.L.Kersten
+ * BAT Algebra Extensions
  * The kernel libraries are unaware of the MAL runtime semantics.
  * This calls for declaring some operations in the MAL module section
  * and register them in the kernel modules explicitly.
@@ -33,48 +31,7 @@
  * Another example concerns the (un)pack operations, which direct
  * access the runtime stack to (push)pull the values needed.
  */
-/*
- * @+ Implementation section
- * In most cases we pass a BAT identifier, which should be unified
- * with a BAT descriptor. Upon failure we can simply abort the function.
- *
- */
-#include "monetdb_config.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
-#include "bat5.h"
-#include "algebra.h"
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define be_export extern __declspec(dllimport)
-#else
-#define be_export extern __declspec(dllexport)
-#endif
-#else
-#define be_export extern
-#endif
-
-be_export str CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDBATflush(int *res, int *bid);
-be_export str CMDBATreduce(int *ret, int *bid);
-be_export str CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBATderivedByName(int *ret, str *nme);
-be_export str CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDBBPprojectNil(int *ret, int *bid);
-be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-be_export str CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
+#include "batExtensions.h"
 /*
  * @- Operator implementation
  * A BAT designated as garbage can be removed, provided we
@@ -611,4 +568,40 @@ CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	VALinit(tail, getArgType(mb, pci, 3), BUNtail(bi, (BUN)*cursor));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt){
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "bbp.project", INTERNAL_BAT_ACCESS);
+	}
+
+	if (ATOMvarsized(tt)) {
+		if (p == 0 || *(str *) p == 0)
+			p = (ptr *) str_nil;
+		else
+			p = *(ptr **) p;
+	}
+	bn = BATconst(b, tt, p);
+	BBPunfix(b->batCacheid);
+	if (bn) {
+		*result = bn->batCacheid;
+		BBPkeepref(bn->batCacheid);
+		return MAL_SUCCEED;
+	}
+	throw(MAL, "bbp.project", INTERNAL_OBJ_CREATE);
+}
+
+str
+ALGprojectCst(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *result = (int *) getArgReference(stk, pci, 0);
+	int *bid = (int *) getArgReference(stk, pci, 1);
+	ptr *p = (ptr *) getArgReference(stk, pci, 2);
+	int tt = getArgType(mb, pci, 2);
+
+	(void) cntxt;
+	return ALGprojectCstBody(result, bid, p, tt);
 }

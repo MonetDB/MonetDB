@@ -28,7 +28,6 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		algebraExtensions.c algebraExtensions.h \
 		attach.c attach.h \
 		batExtensions.c \
 		bbp.c bbp.h \
