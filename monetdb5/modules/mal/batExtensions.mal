@@ -70,6 +70,7 @@ pattern bat.pack(v:any_1):bat[:oid,:any_1]
 address CMDbatsingleton
 comment "Create a BAT and store the value";
 
+module algebra;
 pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2]
 address ALGprojectCst
 comment "Fill the tail column with a newly typed constant.";
