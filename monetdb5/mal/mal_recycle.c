@@ -857,21 +857,6 @@ RECYCLEsync(InstrPtr p)
 }
 #endif
 
-static bit
-VALisNil(ValPtr p)
-{
-
-    int (*cmp) (const void *, const void *);
-    int tpe = p ->vtype;
-    ptr nilptr;
-
-    cmp = BATatoms[tpe].atomCmp;
-    nilptr = ATOMnilptr(tpe);
-
-    return ( (*cmp)(VALptr(p), nilptr) == 0 );
-
-}
-
 static void
 setSelectProp(InstrPtr q)
 {
@@ -1716,8 +1701,8 @@ findSolution(rngPtr qry, int *pcs, int cnt)
 	sol.comp = 0;
 
 	/* complete init. of query range */
-	if ( VALisNil(&qry->low) ) 	VALcopy(&qry->low, &clow);
-	if ( VALisNil(&qry->hgh) ) 	VALcopy(&qry->hgh, &chgh);
+	if ( VALisnil(&qry->low) ) 	VALcopy(&qry->low, &clow);
+	if ( VALisnil(&qry->hgh) ) 	VALcopy(&qry->hgh, &chgh);
 	est = (size_t) (ccnt * intLen(&qry->low,&qry->hgh) / maxlen);   /* selection size estimate*/
 
 	/* estimate overhead of base pieces*/
