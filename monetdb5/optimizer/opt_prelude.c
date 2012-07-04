@@ -150,6 +150,7 @@ str partitionRef;
 str pcreRef;
 str pinRef;
 str plusRef;
+str singleRef;
 str sqlplusRef;
 str printRef;
 str preludeRef;
@@ -183,7 +184,6 @@ str semijoinRef;
 str setAccessRef;
 str setWriteModeRef;
 str sliceRef;
-str singleRef;
 str sortHRef;
 str sortHTRef;
 str sortRef;
@@ -233,7 +233,6 @@ int notnilProp;
 int rowsProp;
 int fileProp;
 int runonceProp;
-int singletonProp;
 int unsafeProp;
 
 int stableProp;
@@ -457,7 +456,6 @@ void optimizerInit(void){
 		notnilProp = PropertyIndex("notnil");
 		rowsProp = PropertyIndex("rows");
 		runonceProp = PropertyIndex("runonce");
-		singletonProp = PropertyIndex("singleton");
 		unsafeProp = PropertyIndex("unsafe");
 		sqlfunctionProp = PropertyIndex("sqlfunction");
 

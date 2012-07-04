@@ -458,14 +458,6 @@ pattern optimizer.selcrack(mod:str, fcn:str):str
 address OPTwrapper
 comment "Selection cracking";
 
-#opt_singleton.mal
-
-pattern optimizer.singleton():str
-address OPTwrapper;
-pattern optimizer.singleton(mod:str, fcn:str):str
-address OPTwrapper
-comment "Perform singleton optimization";
-
 #opt_statistics.mal
 
 command inspect.getStatistics(nme:str):bat[:any_1,:any_2]

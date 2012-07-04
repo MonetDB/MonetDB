@@ -232,7 +232,6 @@ opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
 opt_export int fileProp;			/* str */
 opt_export int runonceProp;		/* binary */
-opt_export int singletonProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
 
 opt_export int stableProp;		/* binary */
