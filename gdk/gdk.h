@@ -2301,14 +2301,9 @@ VALptr(const ValRecord *v)
 {
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (const void *) &v->val.oval;
-	case TYPE_bit: return (const void *) &v->val.btval;
 	case TYPE_bte: return (const void *) &v->val.btval;
 	case TYPE_sht: return (const void *) &v->val.shval;
-	case TYPE_bat: return (const void *) &v->val.bval;
 	case TYPE_int: return (const void *) &v->val.ival;
-	case TYPE_oid: return (const void *) &v->val.oval;
-	case TYPE_wrd: return (const void *) &v->val.wval;
-	case TYPE_ptr: return (const void *) v->val.pval;
 	case TYPE_flt: return (const void *) &v->val.fval;
 	case TYPE_dbl: return (const void *) &v->val.dval;
 	case TYPE_lng: return (const void *) &v->val.lval;

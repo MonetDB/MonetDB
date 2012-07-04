@@ -96,24 +96,16 @@ void *
 VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void:
-		return (void *) &v->val.oval;
-	case TYPE_bte:
-		return (void *) &v->val.btval;
-	case TYPE_sht:
-		return (void *) &v->val.shval;
-	case TYPE_int:
-		return (void *) &v->val.ival;
-	case TYPE_flt:
-		return (void *) &v->val.fval;
-	case TYPE_dbl:
-		return (void *) &v->val.dval;
-	case TYPE_lng:
-		return (void *) &v->val.lval;
-	case TYPE_str:
-		return (void *) v->val.sval;
+	case TYPE_void: return (void *) &v->val.oval;
+	case TYPE_bte: return (void *) &v->val.btval;
+	case TYPE_sht: return (void *) &v->val.shval;
+	case TYPE_int: return (void *) &v->val.ival;
+	case TYPE_flt: return (void *) &v->val.fval;
+	case TYPE_dbl: return (void *) &v->val.dval;
+	case TYPE_lng: return (void *) &v->val.lval;
+	case TYPE_str: return (void *) v->val.sval;
+	default:       return (void *) v->val.pval;
 	}
-	return NULL;
 }
 
 void
