@@ -60,21 +60,4 @@ pattern bat.partition(b:bat[:any_1,:any_2],pieces:int,part:int):bat[:any_1,:any_
 address CMDbatpartition2
 comment "Create a series of cheap slices over the first argument. The BUNs are distributed evenly.";
 
-pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
-address CMDbatunpack
-comment "Extract the first tuple from a BAT.";
-pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
-address CMDbatpack
-comment "Pack a pair of values into a BAT.";
-pattern bat.pack(v:any_1):bat[:oid,:any_1]
-address CMDbatsingleton
-comment "Create a BAT and store the value";
-
-module algebra;
-pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2]
-address ALGprojectCst
-comment "Fill the tail column with a newly typed constant.";
-pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address ALGprojectCst
-comment "Fill the tail column with a constant taken from the aligned BAT.";
 
