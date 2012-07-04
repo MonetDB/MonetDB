@@ -42,3 +42,4 @@ aggregate_vs_positional_column_crash.Bug-3085
 predicate_select.Bug-3090
 hash_join_crash.Bug-3089
 row-number-nyi.Bug-3087
+insert_serial_with_unique_key.Bug-3091
