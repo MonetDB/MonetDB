@@ -1401,15 +1401,19 @@ int
 fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 {
 	int i, k;
-	const void *p = VALptr(cst);
+	const void *p;
 
+	/* pointers never match */
+	if (ATOMstorage(cst->vtype) == TYPE_ptr)
+		return -1;
+
+	p = VALptr(cst);
 	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
-
-		if (v && isVarConstant(mb, i) && v->type == cst->vtype && p && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
+		if (v && isVarConstant(mb, i) && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
 	}
 	return -1;
