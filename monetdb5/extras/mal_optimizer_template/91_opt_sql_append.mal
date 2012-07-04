@@ -16,6 +16,4 @@
 # All Rights Reserved.
 
 # This loads the opt_sql_append optimizer module
-library opt_sql_append;
 include opt_sql_append;
-
