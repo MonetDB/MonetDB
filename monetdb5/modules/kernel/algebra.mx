@@ -722,8 +722,8 @@ end @1;
 @:sumprod_definition(@1,lng,@2,dbl)@
 
 @= avg_definition
-command avg (b:bat[:any_1,:@1] ) :dbl 
-address ALGavg_@1
+command avg (b:bat[:any_1,:@1] ) :dbl
+address ALGavg
 comment "Gives the avg of all tail values";
 @
 @mal
@@ -857,17 +857,7 @@ module algebra;
 algebra_export ptr BATmax(BAT *b, ptr aggr);
 algebra_export ptr BATmin(BAT *b, ptr aggr);
 
-@= avg_export
-algebra_export str ALGavg_@1(dbl *res, int *bid);
-@
-@h
-@:avg_export(bte)@
-@:avg_export(sht)@
-@:avg_export(int)@
-@:avg_export(wrd)@
-@:avg_export(lng)@
-@:avg_export(flt)@
-@:avg_export(dbl)@
+algebra_export str ALGavg(dbl *res, int *bid);
 
 @= stdev_export
 algebra_export str ALGstdev_@1(dbl *res, int *bid);
@@ -3713,53 +3703,24 @@ str ALGreuse(int *ret, int *bid)
  * @+ BAT avg operation
  * The avg aggregate only works for int and float fields.
  */
-@= avg_implementation
-static int
-CMDavg_@1(dbl* res, BAT *b)
+str
+ALGavg(dbl *res, int *bid)
 {
-	BUN cnt = BATcount(b);
-
-	if (cnt) {
-		bit t = TRUE;
-		dbl result=0;
-
-		CMDsum_@1_dbl(&result, b, &t);
-		*res = result/cnt;
-	} else {
-		*res = dbl_nil;
-	}
-	return GDK_SUCCEED;
-}
-
-@
-@c
-@:avg_implementation(bte)@
-@:avg_implementation(sht)@
-@:avg_implementation(int)@
-@:avg_implementation(wrd)@
-@:avg_implementation(lng)@
-@:avg_implementation(flt)@
-@:avg_implementation(dbl)@
-
-@= avg_impl
-str ALGavg_@1(dbl *res, int *bid) {
 	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
-	}
-	CMDavg_@1(res,b);
+	int ret;
+	BUN cnt;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
+	ret = BATcalcavg(b, res, &cnt);
+	/* backward compatibility: return nil if there are nils in the input */
+	if (cnt < BATcount(b))
+		*res = dbl_nil;
 	BBPreleaseref(b->batCacheid);
+	if (ret == GDK_FAIL)
+		throw(MAL, "algebra.avg", SEMANTIC_TYPE_MISMATCH);
 	return MAL_SUCCEED;
 }
-@
-@c
-@:avg_impl(bte)@
-@:avg_impl(sht)@
-@:avg_impl(int)@
-@:avg_impl(wrd)@
-@:avg_impl(lng)@
-@:avg_impl(flt)@
-@:avg_impl(dbl)@
 
 /*
  * @+ BAT standard deviation
