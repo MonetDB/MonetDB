@@ -132,7 +132,7 @@ int strElimDoubles(Heap *h);
 void strHeap(Heap *d, size_t cap);
 var_t strLocate(Heap *h, const char *v);
 var_t strPut(Heap *b, var_t *off, const char *src);
-int VALprint(stream *fd, ValPtr res);
+int VALprint(stream *fd, const ValRecord *res);
 void VIEWdestroy(BAT *b);
 BAT *VIEWreset(BAT *b);
 void VIEWunlink(BAT *b);

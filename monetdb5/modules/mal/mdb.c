@@ -394,7 +394,7 @@ MDBgetFrame(BAT *b, Client cntxt, MalBlkPtr mb, MalStkPtr s, int depth)
 	if (s != 0)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			ATOMformat(v->vtype, VALget(v), &buf);
+			ATOMformat(v->vtype, VALptr(v), &buf);
 			BUNins(b, getVarName(mb, i), buf, FALSE);
 		}
 	return MAL_SUCCEED;

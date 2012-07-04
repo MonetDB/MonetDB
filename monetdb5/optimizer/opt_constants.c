@@ -67,10 +67,10 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				y= cst[k];
 				if ( x->type == y->type &&
 					 x->value.vtype == y->value.vtype &&
-					ATOMcmp(x->value.vtype, VALget(&x->value), VALget(&y->value)) == 0){
+					ATOMcmp(x->value.vtype, VALptr(&x->value), VALptr(&y->value)) == 0){
 					OPTDEBUGconstants {
 						mnstr_printf(cntxt->fdout,"#opt_constants: matching elements %s %d %d ", getVarName(mb,i), i,k);
-						ATOMprint(x->value.vtype,VALget(&x->value),cntxt->fdout);
+						ATOMprint(x->value.vtype,VALptr(&x->value),cntxt->fdout);
 						mnstr_printf(cntxt->fdout,"\n");
 					}
 					/* re-use a constant */

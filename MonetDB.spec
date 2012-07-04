@@ -359,6 +359,28 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
+%package jaql
+Summary: MonetDB5 JAQL
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description jaql
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the JAQL extension for MonetDB5.  JAQL is a
+querly language for JavaScript Object Notation (JSON).
+
+%files jaql
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_jaql.mal
+%{_libdir}/monetdb5/jaql*.mal
+%{_libdir}/monetdb5/json*.mal
+%{_libdir}/monetdb5/lib_jaql.so
+%{_libdir}/monetdb5/lib_json.so
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -411,9 +433,10 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
+%exclude %{_libdir}/monetdb5/jaql*.mal
+%exclude %{_libdir}/monetdb5/json*.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_jaql.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
@@ -423,6 +446,8 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
+%exclude %{_libdir}/monetdb5/lib_jaql.so
+%exclude %{_libdir}/monetdb5/lib_json.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
 

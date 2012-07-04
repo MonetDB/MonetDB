@@ -714,17 +714,17 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export int VALformat(char **buf, ValPtr res);
-gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
+gdk_export int VALformat(char **buf, const ValRecord *res);
+gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
 gdk_export void *VALget(ValPtr v);
-gdk_export int VALcmp(ValPtr p, ValPtr q);
+gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
+gdk_export int VALisnil(const ValRecord *v);
 
 /*
-
  * @- The BAT record
  * The elements of the BAT structure are introduced in the remainder.
  * Instead of using the underlying types hidden beneath it, one should
@@ -2295,24 +2295,25 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #define putenv _putenv
 #endif
 
-static inline void *
-VALptr(ValPtr v)
+/* also see VALget */
+static inline const void *
+VALptr(const ValRecord *v)
 {
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void: return (void *) &v->val.oval;
-	case TYPE_bit: return (void *) &v->val.btval;
-	case TYPE_bte: return (void *) &v->val.btval;
-	case TYPE_sht: return (void *) &v->val.shval;
-	case TYPE_bat: return (void *) &v->val.bval;
-	case TYPE_int: return (void *) &v->val.ival;
-	case TYPE_oid: return (void *) &v->val.oval;
-	case TYPE_wrd: return (void *) &v->val.wval;
-	case TYPE_ptr: return (void *) v->val.pval;
-	case TYPE_flt: return (void *) &v->val.fval;
-	case TYPE_dbl: return (void *) &v->val.dval;
-	case TYPE_lng: return (void *) &v->val.lval;
-	case TYPE_str: return (void *) v->val.sval;
-	default:       return (void *) v->val.pval;
+	case TYPE_void: return (const void *) &v->val.oval;
+	case TYPE_bit: return (const void *) &v->val.btval;
+	case TYPE_bte: return (const void *) &v->val.btval;
+	case TYPE_sht: return (const void *) &v->val.shval;
+	case TYPE_bat: return (const void *) &v->val.bval;
+	case TYPE_int: return (const void *) &v->val.ival;
+	case TYPE_oid: return (const void *) &v->val.oval;
+	case TYPE_wrd: return (const void *) &v->val.wval;
+	case TYPE_ptr: return (const void *) v->val.pval;
+	case TYPE_flt: return (const void *) &v->val.fval;
+	case TYPE_dbl: return (const void *) &v->val.dval;
+	case TYPE_lng: return (const void *) &v->val.lval;
+	case TYPE_str: return (const void *) v->val.sval;
+	default:       return (const void *) v->val.pval;
 	}
 }
 

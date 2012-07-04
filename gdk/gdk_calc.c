@@ -871,33 +871,7 @@ int
 VARcalcisnil(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void:
-		ret->val.btval = (bit) 1;
-		break;
-	case TYPE_bte:
-		ret->val.btval = (bit) (v->val.btval == bte_nil);
-		break;
-	case TYPE_sht:
-		ret->val.btval = (bit) (v->val.shval == sht_nil);
-		break;
-	case TYPE_int:
-	case TYPE_bat:
-		ret->val.btval = (bit) (v->val.ival == int_nil);
-		break;
-	case TYPE_lng:
-		ret->val.btval = (bit) (v->val.lval == lng_nil);
-		break;
-	case TYPE_flt:
-		ret->val.btval = (bit) (v->val.fval == flt_nil);
-		break;
-	case TYPE_dbl:
-		ret->val.btval = (bit) (v->val.dval == dbl_nil);
-		break;
-	default:
-		ret->val.btval = (bit) (*BATatoms[v->vtype].atomCmp)(VALptr((ValPtr) v), ATOMnilptr(v->vtype)) == 0;
-		break;
-	}
+	ret->val.btval = (bit) VALisnil(v);
 	return GDK_SUCCEED;
 }
 
@@ -905,33 +879,7 @@ int
 VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = TYPE_bit;
-	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void:
-		ret->val.btval = (bit) 0;
-		break;
-	case TYPE_bte:
-		ret->val.btval = (bit) (v->val.btval != bte_nil);
-		break;
-	case TYPE_sht:
-		ret->val.btval = (bit) (v->val.shval != sht_nil);
-		break;
-	case TYPE_int:
-	case TYPE_bat:
-		ret->val.btval = (bit) (v->val.ival != int_nil);
-		break;
-	case TYPE_lng:
-		ret->val.btval = (bit) (v->val.lval != lng_nil);
-		break;
-	case TYPE_flt:
-		ret->val.btval = (bit) (v->val.fval != flt_nil);
-		break;
-	case TYPE_dbl:
-		ret->val.btval = (bit) (v->val.dval != dbl_nil);
-		break;
-	default:
-		ret->val.btval = (bit) (*BATatoms[v->vtype].atomCmp)(VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0;
-		break;
-	}
+	ret->val.btval = (bit) !VALisnil(v);
 	return GDK_SUCCEED;
 }
 
@@ -1926,7 +1874,7 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcaddcst");
 
@@ -1989,7 +1937,7 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = add_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstadd");
@@ -2027,9 +1975,9 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 int
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
-	if (add_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), ret->vtype, 1,
+	if (add_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcadd") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -2112,9 +2060,9 @@ VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	bte one = 1;
 
-	if (add_typeswitchloop((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	if (add_typeswitchloop(VALptr(v), v->vtype, 0,
 			       &one, TYPE_bte, 0,
-			       VALptr(ret), ret->vtype, 1,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcincr") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -3106,7 +3054,7 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcsubcst");
 
@@ -3170,7 +3118,7 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = sub_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstsub");
@@ -3213,9 +3161,9 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 int
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
-	if (sub_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), ret->vtype, 1,
+	if (sub_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcsub") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -3298,9 +3246,9 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 {
 	bte one = 1;
 
-	if (sub_typeswitchloop((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	if (sub_typeswitchloop(VALptr(v), v->vtype, 0,
 			       &one, TYPE_bte, 0,
-			       VALptr(ret), ret->vtype, 1,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcdecr") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -4373,7 +4321,7 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = mul_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmulcst");
 
@@ -4448,7 +4396,7 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = mul_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmul");
@@ -4498,9 +4446,9 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 int
 VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
-	if (mul_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), ret->vtype, 1,
+	if (mul_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcmul") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -5591,7 +5539,7 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = div_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcdivcst");
 
@@ -5669,7 +5617,7 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = div_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstdiv");
@@ -5702,9 +5650,9 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 int
 VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
-	if (div_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), ret->vtype, 1,
+	if (div_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcdiv") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -6623,7 +6571,7 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = mod_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmodcst");
 
@@ -6681,7 +6629,7 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = mod_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmod");
@@ -6714,9 +6662,9 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 int
 VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
-	if (mod_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), ret->vtype, 1,
+	if (mod_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), ret->vtype, 1,
 			       abort_on_error, "VARcalcmod") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -6887,10 +6835,10 @@ BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = xor_typeswitchloop(Tloc(b, b->U->first), 1,
-				  VALptr((ValPtr) v), 0,
+				  VALptr(v), 0,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcxorcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -6952,11 +6900,11 @@ BATcalccstxor(const ValRecord *v, BAT *b, int accum)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = xor_typeswitchloop(VALptr((ValPtr) v), 0,
+	nils = xor_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstxor");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -6992,9 +6940,9 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (xor_typeswitchloop(VALptr((ValPtr) lft), 0,
-			       VALptr((ValPtr) rgt), 0,
-			       VALptr(ret), lft->vtype, 1, 0,
+	if (xor_typeswitchloop(VALptr(lft), 0,
+			       VALptr(rgt), 0,
+			       VALget(ret), lft->vtype, 1, 0,
 			       "VARcalcxor") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -7179,10 +7127,10 @@ BATcalcorcst(BAT *b, const ValRecord *v, int accum)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = or_typeswitchloop(Tloc(b, b->U->first), 1,
-				 VALptr((ValPtr) v), 0,
+				 VALptr(v), 0,
 				 Tloc(bn, bn->U->first), b->T->type,
 				 b->U->count,
-				 b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalcorcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -7244,11 +7192,11 @@ BATcalccstor(const ValRecord *v, BAT *b, int accum)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = or_typeswitchloop(VALptr((ValPtr) v), 0,
+	nils = or_typeswitchloop(VALptr(v), 0,
 				 Tloc(b, b->U->first), 1,
 				 Tloc(bn, bn->U->first), b->T->type,
 				 b->U->count,
-				 b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalccstor");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -7284,9 +7232,9 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (or_typeswitchloop(VALptr((ValPtr) lft), 0,
-			      VALptr((ValPtr) rgt), 0,
-			      VALptr(ret), lft->vtype, 1, 0,
+	if (or_typeswitchloop(VALptr(lft), 0,
+			      VALptr(rgt), 0,
+			      VALget(ret), lft->vtype, 1, 0,
 			      "VARcalcor") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -7467,10 +7415,10 @@ BATcalcandcst(BAT *b, const ValRecord *v, int accum)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = and_typeswitchloop(Tloc(b, b->U->first), 1,
-				  VALptr((ValPtr) v), 0,
+				  VALptr(v), 0,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcandcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -7532,11 +7480,11 @@ BATcalccstand(const ValRecord *v, BAT *b, int accum)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = and_typeswitchloop(VALptr((ValPtr) v), 0,
+	nils = and_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
-				  b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstand");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -7572,9 +7520,9 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	}
 
-	if (and_typeswitchloop(VALptr((ValPtr) lft), 0,
-			       VALptr((ValPtr) rgt), 0,
-			       VALptr(ret), lft->vtype, 1, 0,
+	if (and_typeswitchloop(VALptr(lft), 0,
+			       VALptr(rgt), 0,
+			       VALget(ret), lft->vtype, 1, 0,
 			       "VARcalcand") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -7773,7 +7721,7 @@ BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = lsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalclshcst");
@@ -7820,7 +7768,7 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = lsh_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
@@ -7855,9 +7803,9 @@ int
 VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (lsh_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), 1,
+	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), 1,
 			       abort_on_error, "VARcalclsh") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -8054,7 +8002,7 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	nils = rsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
-				  VALptr((ValPtr) v), v->vtype, 0,
+				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalcrshcst");
@@ -8101,7 +8049,7 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	nils = rsh_typeswitchloop(VALptr((ValPtr) v), v->vtype, 0,
+	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
@@ -8136,9 +8084,9 @@ int
 VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
 {
 	ret->vtype = lft->vtype;
-	if (rsh_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0,
-			       VALptr(ret), 1,
+	if (rsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
+			       VALptr(rgt), rgt->vtype, 0,
+			       VALget(ret), 1,
 			       abort_on_error, "VARcalcrsh") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
@@ -8658,10 +8606,10 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 	bn = BATcalclt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			      VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcltcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -8687,13 +8635,13 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalclt_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalclt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstlt");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -8711,9 +8659,9 @@ int
 VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (lt_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalclt") == BUN_NONE)
+	if (lt_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalclt") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -9232,10 +9180,10 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 	bn = BATcalcgt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			      VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgtcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -9261,13 +9209,13 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalcgt_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalcgt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstgt");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -9285,9 +9233,9 @@ int
 VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (gt_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalcgt") == BUN_NONE)
+	if (gt_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalcgt") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -9806,10 +9754,10 @@ BATcalclecst(BAT *b, const ValRecord *v)
 	bn = BATcalcle_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			      VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalclecst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -9835,13 +9783,13 @@ BATcalccstle(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalcle_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalcle_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstle");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -9859,9 +9807,9 @@ int
 VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (le_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalcle") == BUN_NONE)
+	if (le_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalcle") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10380,10 +10328,10 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 	bn = BATcalcge_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			      VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgecst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -10409,13 +10357,13 @@ BATcalccstge(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalcge_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalcge_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstge");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -10433,9 +10381,9 @@ int
 VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (ge_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalcge") == BUN_NONE)
+	if (ge_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalcge") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -10954,9 +10902,9 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 	bn = BATcalceq_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0, NULL, 0,
+			      VALptr(v), v->vtype, 0, NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalceqcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -10982,12 +10930,12 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalceq_intern((const void *) VALptr((ValPtr) v), v->vtype, 0, NULL, 0,
+	bn = BATcalceq_intern(VALptr(v), v->vtype, 0, NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccsteq");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -11005,9 +10953,9 @@ int
 VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (eq_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalceq") == BUN_NONE)
+	if (eq_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalceq") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -11526,10 +11474,10 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 	bn = BATcalcne_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
-			      (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			      VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcnecst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -11555,13 +11503,13 @@ BATcalccstne(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalcne_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalcne_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
 			      b->U->count,
-			      b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstne");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -11579,9 +11527,9 @@ int
 VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bit;
-	if (ne_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			      (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			      VALptr(ret), 1, 0, "VARcalcne") == BUN_NONE)
+	if (ne_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			      VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			      VALget(ret), 1, 0, "VARcalcne") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -12101,10 +12049,10 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 	bn = BATcalccmp_intern(Tloc(b, b->U->first), b->T->type, 1,
 			       b->T->vheap ? b->T->vheap->base : NULL,
 			       b->T->width,
-			       (const void *) VALptr((ValPtr) v), v->vtype, 0,
+			       VALptr(v), v->vtype, 0,
 			       NULL, 0,
 			       b->U->count,
-			       b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccmpcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -12130,13 +12078,13 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	bn = BATcalccmp_intern((const void *) VALptr((ValPtr) v), v->vtype, 0,
+	bn = BATcalccmp_intern(VALptr(v), v->vtype, 0,
 			       NULL, 0,
 			       Tloc(b, b->U->first), b->T->type, 1,
 			       b->T->vheap ? b->T->vheap->base : NULL,
 			       b->T->width,
 			       b->U->count,
-			       b->T->nonil && ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0,
+			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccstcmp");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
@@ -12154,9 +12102,9 @@ int
 VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_bte;
-	if (cmp_typeswitchloop((const void *) VALptr((ValPtr) lft), lft->vtype, 0, NULL, 0,
-			       (const void *) VALptr((ValPtr) rgt), rgt->vtype, 0, NULL, 0,
-			       VALptr(ret), 1, 0, "VARcalccmp") == BUN_NONE)
+	if (cmp_typeswitchloop(VALptr(lft), lft->vtype, 0, NULL, 0,
+			       VALptr(rgt), rgt->vtype, 0, NULL, 0,
+			       VALget(ret), 1, 0, "VARcalccmp") == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -12305,8 +12253,8 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-			       (const void *) VALptr((ValPtr) lo), 0,
-			       (const void *) VALptr((ValPtr) hi), 0,
+			       VALptr(lo), 0,
+			       VALptr(hi), 0,
 			       b->T->type, b->U->count,
 			       b->H->seq, "BATcalcbetweencstcst");
 
@@ -12340,10 +12288,10 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-			       Tloc(lo, lo->U->first), 1,
-			       (const void *) VALptr((ValPtr) hi), 0,
-			       b->T->type, b->U->count,
-			       b->H->seq, "BATcalcbetweenbatcst");
+				   Tloc(lo, lo->U->first), 1,
+				   VALptr(hi), 0,
+				   b->T->type, b->U->count,
+				   b->H->seq, "BATcalcbetweenbatcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
@@ -12376,10 +12324,10 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-			       (const void *) VALptr((ValPtr) lo), 0,
-			       Tloc(hi, hi->U->first), 1,
-			       b->T->type, b->U->count,
-			       b->H->seq, "BATcalcbetweencstbat");
+				   VALptr(lo), 0,
+				   Tloc(hi, hi->U->first), 1,
+				   b->T->type, b->U->count,
+				   b->H->seq, "BATcalcbetweencstbat");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(hi, USE_TAIL, MMAP_SEQUENTIAL);
@@ -13089,7 +13037,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 
 	if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
-		    (*BATatoms[v->vtype].atomCmp)(VALptr((ValPtr) v),
+		    (*BATatoms[v->vtype].atomCmp)(VALptr(v),
 						  ATOMnilptr(v->vtype)) == 0) {
 			ret->val.sval = GDKstrdup(str_nil);
 		} else if (v->vtype == TYPE_str) {
@@ -13098,35 +13046,35 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			ret->val.sval = NULL;
 			(*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
 							&ret->len,
-							VALptr((ValPtr) v));
+							VALptr(v));
 		}
 	} else if (ret->vtype == TYPE_void) {
 		if (abort_on_error &&
-		    ATOMcmp(v->vtype, VALptr((ValPtr) v), ATOMnilptr(v->vtype)) != 0)
+		    ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0)
 			nils = BUN_NONE;
 		ret->val.oval = oid_nil;
 	} else if (v->vtype == TYPE_void) {
 		nils = convert_typeswitchloop(&oid_nil, TYPE_oid,
-					      VALptr(ret), ret->vtype,
+					      VALget(ret), ret->vtype,
 					      1, abort_on_error);
 	} else if (v->vtype == TYPE_str) {
 		if (v->val.sval == NULL || strcmp(v->val.sval, str_nil) == 0) {
 			nils = convert_typeswitchloop(&bte_nil, TYPE_bte,
-						      VALptr(ret), ret->vtype,
+						      VALget(ret), ret->vtype,
 						      1, abort_on_error);
 		} else {
-			p = VALptr(ret);
+			p = VALget(ret);
 			ret->len = BATatoms[ret->vtype].size;
 			if ((*BATatoms[ret->vtype].atomFromStr)(v->val.sval,
 								&ret->len,
 								&p) <= 0) {
 				nils = BUN_NONE;
 			}
-			assert(p == VALptr(ret));
+			assert(p == VALget(ret));
 		}
 	} else {
-		nils = convert_typeswitchloop(VALptr((ValPtr) v), v->vtype,
-					      VALptr(ret), ret->vtype,
+		nils = convert_typeswitchloop(VALptr(v), v->vtype,
+					      VALget(ret), ret->vtype,
 					      1, abort_on_error);
 	}
 	if (nils == BUN_NONE + 1) {
