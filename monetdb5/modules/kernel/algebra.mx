@@ -534,11 +534,11 @@ address ALGprojectNIL
 comment "Extract the head of a BAT.";
 
 @= projectGrp
-command project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
-address ALGprojecthead_@1
+pattern project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
+address ALGprojecthead
 comment "Fill the head with a constant, e.g. [0~b]";
-command project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
-address ALGprojecttail_@1
+pattern project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
+address ALGprojecttail
 comment "Fill the tail with a constant, e.g. [0~b]";
 @
 @mal
@@ -842,6 +842,7 @@ module algebra;
 
 #include <gdk.h>
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -1056,20 +1057,8 @@ algebra_export str ALGprojectNIL(int *ret, int *bid);
 algebra_export str ALGselectNotNil(int *result, int *bid);
 algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 
-@= project_export
-algebra_export str ALGprojecthead_@1(int *ret, void *val, int *bid);
-algebra_export str ALGprojecttail_@1(int *ret, int *bid, void *val);
-@
-@h
-@:project_export(int)@
-@:project_export(sht)@
-@:project_export(lng)@
-@:project_export(oid)@
-@:project_export(flt)@
-@:project_export(dbl)@
-@:project_export(str)@
-@:project_export(bte)@
-@:project_export(bit)@
+algebra_export str ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+algebra_export str ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 algebra_export str ALGidentity(int *ret, int *bid);
 algebra_export str ALGmaterialize(int *ret, int *bid);
@@ -3614,22 +3603,25 @@ ALGprojectNIL(int *ret, int *bid)
  * @-
  * The constant versions are typed by the parser
  */
-@= projectImpl
 str
-ALGprojecthead_@1(int *ret, void *val, int *bid)
+ALGprojecthead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = getArgReference(stk, pci, 0);
+	const ValRecord *v = &stk->stk[getArg(pci, 1)];
+	bat bid = * (bat *) getArgReference(stk, pci, 2);
 	BAT *b, *bn;
 
-	@:getBATdescriptor(bid,b,"batcalc.project")@
-
+	(void) cntxt;
+	(void) mb;
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	b = BATmirror(b);
-#if TYPE_@1 == TYPE_str
-	val = *(str **) val;
-#endif
-	bn = BATconst(b, TYPE_@1, val);
+	bn = BATconst(b, v->vtype, VALptr(v));
+	if (bn == NULL) {
+		*ret = 0;
+		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
+	}
 	bn = BATmirror(bn);
-
-	@:tstBAT("algebra.project")@
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
@@ -3637,19 +3629,24 @@ ALGprojecthead_@1(int *ret, void *val, int *bid)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
-ALGprojecttail_@1(int *ret, int *bid, void *val)
+ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int *ret = getArgReference(stk, pci, 0);
+	bat bid = * (bat *) getArgReference(stk, pci, 1);
+	const ValRecord *v = &stk->stk[getArg(pci, 2)];
 	BAT *b, *bn;
 
-	@:getBATdescriptor(bid,b,"batcalc.project")@
-
-#if TYPE_@1 == TYPE_str
-	val = *(str **) val;
-#endif
-	bn = BATconst(b, TYPE_@1, val);
-
-	@:tstBAT("algebra.project")@
+	(void) cntxt;
+	(void) mb;
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
+	bn = BATconst(b, v->vtype, VALptr(v));
+	if (bn == NULL) {
+		*ret = 0;
+		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
+	}
 	if (!(bn->batDirty&2))
 		bn = BATsetaccess(bn, BAT_READ);
 	*ret= bn->batCacheid;
@@ -3657,20 +3654,6 @@ ALGprojecttail_@1(int *ret, int *bid, void *val)
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-@
-@c
-/*
- * @-
- */
-@:projectImpl(int)@
-@:projectImpl(sht)@
-@:projectImpl(lng)@
-@:projectImpl(oid)@
-@:projectImpl(flt)@
-@:projectImpl(dbl)@
-@:projectImpl(str)@
-@:projectImpl(bte)@
-@:projectImpl(bit)@
 
 
 /* You don;t have to materialize the oids.
