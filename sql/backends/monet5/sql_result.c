@@ -1,58 +1,25 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f sql_result
-
-@c
 /*
- * @a N.J. Nes
- * @*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+
+/*
+ * author N.J. Nes
  */
-@h
-#ifndef sql_result_H
-#define sql_result_H
-
-#include "mal_client.h"
-#include <stream.h>
-#include <sql_mvc.h>
-#include <sql_catalog.h>
-#include <sql_qc.h>
-#include <sql_parser.h>		/* sql_error */
-
-extern int mvc_export_affrows(mvc *m, stream *s, lng val, str w);
-extern int mvc_export_operation(mvc *m, stream *s, str w);
-extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype, str w, str ns);
-extern int mvc_export_result(mvc *c, stream *s, int res_id);
-extern int mvc_export_head(mvc *c, stream *s, int res_id, int only_header);
-extern int mvc_export_prepare(mvc *c, stream *s, cq *q, str w);
-extern int mvc_export_chunk(mvc *m, stream *s, int res_id, BUN offset, BUN nr);
-
-extern BAT **mvc_import_table(Client cntxt, mvc *c, bstream *s, char *sname, char *tname, char *sep, char *rsep, char *ssep, char *ns, lng nr, lng offset, int locked);
-extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
-
-extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
-extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
-
-extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
-
-#endif /* sql_result_H */
-@c
 
 #include "monetdb_config.h"
 #include "sql_result.h"
@@ -63,67 +30,62 @@ extern int convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, in
 #include <bat/bat_storage.h>
 #include <rel_exp.h>
 
-@= dec_tostr
-	char buf[32];
-	@1 v = *(@1*)a;
-	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0;
-	int l;
-
-	if (v == @1_nil) {
-		if (*len < 5){
-			if (*Buf)
-				GDKfree(*Buf);
-			*len = 5;
-			*Buf = GDKmalloc(*len);
-		}
-		strcpy(*Buf, "NULL");
-		return 4;
-	}
-		
-	if (v<0)
-		v = -v;
-
-	buf[cur--] = 0;
-	if (scale){
-		for (i=0; i<scale; i++) {
-			buf[cur--] = (char) (v%10 + '0');
-			v /= 10;
-		}
-		buf[cur--] = '.';
-	}
-	while (v) {
-		buf[cur--] = (char ) (v%10 + '0');
-		v /= 10;
-		done = 1;
-	}
-	if (!done)
-		buf[cur--] = '0';
-	if (neg)
-		buf[cur--] = '-';
-	l = (32-cur-1);
-	if (*len < l){
-		if (*Buf)
-			GDKfree(*Buf);
-		*len = l+1;
-		*Buf = GDKmalloc(*len);
-	}
-	strcpy(*Buf, buf+cur+1);
-	return l-1;
-@
-@c
+#define DEC_TOSTR(X) \
+	char buf[32]; \
+	X v = *(X*)a; \
+	int scale = (int)(ptrdiff_t)extra, cur = 31, neg = (v<0)?1:0, i, done = 0; \
+	int l; \
+	if (v == X##_nil) { \
+		if (*len < 5){ \
+			if (*Buf) \
+				GDKfree(*Buf); \
+			*len = 5; \
+			*Buf = GDKmalloc(*len); \
+		} \
+		strcpy(*Buf, "NULL"); \
+		return 4; \
+	} \
+	if (v<0) \
+		v = -v; \
+	buf[cur--] = 0; \
+	if (scale){ \
+		for (i=0; i<scale; i++) { \
+			buf[cur--] = (char) (v%10 + '0'); \
+			v /= 10; \
+		} \
+		buf[cur--] = '.'; \
+	} \
+	while (v) { \
+		buf[cur--] = (char ) (v%10 + '0'); \
+		v /= 10; \
+		done = 1; \
+	} \
+	if (!done) \
+		buf[cur--] = '0'; \
+	if (neg) \
+		buf[cur--] = '-'; \
+	l = (32-cur-1); \
+	if (*len < l){ \
+		if (*Buf) \
+			GDKfree(*Buf); \
+		*len = l+1; \
+		*Buf = GDKmalloc(*len); \
+	} \
+	strcpy(*Buf, buf+cur+1); \
+	return l-1; 
 
 static int
 dec_tostr(void *extra, char **Buf, int *len, int type, ptr a)
 {
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
-		@:dec_tostr(bte)@
+		DEC_TOSTR(bte);
 	} else if (type == TYPE_sht) {
-		@:dec_tostr(sht)@
+		DEC_TOSTR(sht);
 	} else if (type == TYPE_int) {
-		@:dec_tostr(int)@
+		DEC_TOSTR(int);
 	} else if (type == TYPE_lng) {
-		@:dec_tostr(lng)@
+		DEC_TOSTR(lng);
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
 	}
@@ -264,9 +226,8 @@ bat_max_strlength(BAT *b)
 	return max;
 }
 
-@= bat_max_xlength
 static size_t
-bat_max_@1length(BAT *b)
+bat_max_btelength(BAT *b)
 {
 	BUN p, q;
 	lng max = 0;
@@ -276,9 +237,9 @@ bat_max_@1length(BAT *b)
 
 	BATloop(b, p, q) {
 		lng m = 0;
-		@1 l = *((@1 *)BUNtail(bi, p));
+		bte l = *((bte *)BUNtail(bi, p));
 
-		if (l != @1_nil)
+		if (l != bte_nil)
 			m = l;
 		if (m > max) max = m;
 		if (m < min) min = m;
@@ -293,65 +254,144 @@ bat_max_@1length(BAT *b)
 	ret++;
 	return ret;
 }
-@
-@c
-@:bat_max_xlength(bte)@
-@:bat_max_xlength(sht)@
-@:bat_max_xlength(int)@
-@:bat_max_xlength(lng)@
 
-@= dec_frstr
-	sql_column *col = c->extra;
-	sql_subtype *t = &col->type;
+static size_t
+bat_max_shtlength(BAT *b)
+{
+	BUN p, q;
+	lng max = 0;
+	lng min = 0;
+	size_t ret = 0;
+	BATiter bi = bat_iterator(b);
 
-	unsigned int i, neg = 0;
-	@1 *r;
-	@1 res = 0;
-	if (*s == '-'){
-		neg = 1;
-		s++;
-	} else if (*s == '+'){
-		neg = 0;
-		s++;
+	BATloop(b, p, q) {
+		lng m = 0;
+		sht l = *((sht *)BUNtail(bi, p));
+
+		if (l != sht_nil)
+			m = l;
+		if (m > max) max = m;
+		if (m < min) min = m;
 	}
-	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) {
-		if (!*s || *s < '0' || *s > '9') 
-			return NULL;
-		res *= 10;
-		res += (*s-'0');
+
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
 	}
-	if (!*s && t->scale) {
-		for( i = 0; i < t->scale; i++) {
-			res *= 10;
-		}
+	while (max /= 10)
+		ret++;
+	ret++;
+	return ret;
+}
+
+static size_t
+bat_max_intlength(BAT *b)
+{
+	BUN p, q;
+	lng max = 0;
+	lng min = 0;
+	size_t ret = 0;
+	BATiter bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		lng m = 0;
+		int l = *((int *)BUNtail(bi, p));
+
+		if (l != int_nil)
+			m = l;
+		if (m > max) max = m;
+		if (m < min) min = m;
 	}
-	if (*s) {
-		if (*s != '.') 
-			return NULL;
-		s++;
-		for( i = 0; *s && i < t->scale; i++, s++) {
-			if (*s < '0' || *s > '9') 
-				return NULL;
-			res *= 10;
-			res += (*s-'0');
-		}
-		for( ; i < t->scale; i++) {
-			res *= 10;
-		}
+
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
 	}
-	if (*s) 
-		return NULL;
-	r = c->data;
-	if (!r)
-		r = (@1*)GDKmalloc(sizeof(@1));
-	c->data = r;
-	if (neg)
-		*r = -res;
-	else
-		*r = res;
+	while (max /= 10)
+		ret++;
+	ret++;
+	return ret;
+}
+
+static size_t
+bat_max_lnglength(BAT *b)
+{
+	BUN p, q;
+	lng max = 0;
+	lng min = 0;
+	size_t ret = 0;
+	BATiter bi = bat_iterator(b);
+
+	BATloop(b, p, q) {
+		lng m = 0;
+		lng l = *((lng *)BUNtail(bi, p));
+
+		if (l != lng_nil)
+			m = l;
+		if (m > max) max = m;
+		if (m < min) min = m;
+	}
+
+	if (-min > max / 10) {
+		max = -min;
+		ret++;		/* '-' */
+	}
+	while (max /= 10)
+		ret++;
+	ret++;
+	return ret;
+}
+
+#define DEC_FRSTR(X) \
+	sql_column *col = c->extra; \
+	sql_subtype *t = &col->type; \
+ \
+	unsigned int i, neg = 0; \
+	X *r; \
+	X res = 0; \
+	if (*s == '-'){ \
+		neg = 1; \
+		s++; \
+	} else if (*s == '+'){ \
+		neg = 0; \
+		s++; \
+	} \
+	for (i = 0; i < (t->digits-t->scale) && *s != '.' && *s; i++, s++) { \
+		if (!*s || *s < '0' || *s > '9')  \
+			return NULL; \
+		res *= 10; \
+		res += (*s-'0'); \
+	} \
+	if (!*s && t->scale) { \
+		for( i = 0; i < t->scale; i++) { \
+			res *= 10; \
+		} \
+	} \
+	if (*s) { \
+		if (*s != '.')  \
+			return NULL; \
+		s++; \
+		for( i = 0; *s && i < t->scale; i++, s++) { \
+			if (*s < '0' || *s > '9')  \
+				return NULL; \
+			res *= 10; \
+			res += (*s-'0'); \
+		} \
+		for( ; i < t->scale; i++) { \
+			res *= 10; \
+		} \
+	} \
+	if (*s)  \
+		return NULL; \
+	r = c->data; \
+	if (!r) \
+		r = (X*)GDKmalloc(sizeof(X)); \
+	c->data = r; \
+	if (neg) \
+		*r = -res; \
+	else \
+		*r = res; \
 	return (ptr*)r;
-@
-@c
 
 static ptr *
 dec_frstr(Column *c, int type, char *s, char *e, char quote)
@@ -362,13 +402,13 @@ dec_frstr(Column *c, int type, char *s, char *e, char quote)
 	if (s == e) {
 		return NULL;
 	} else if (type == TYPE_bte) {
-		@:dec_frstr(bte)@
+		DEC_FRSTR(bte);
 	} else if (type == TYPE_sht) {
-		@:dec_frstr(sht)@
+		DEC_FRSTR(sht);
 	} else if (type == TYPE_int) {
-		@:dec_frstr(int)@
+		DEC_FRSTR(int);
 	} else if (type == TYPE_lng) {
-		@:dec_frstr(lng)@
+		DEC_FRSTR(lng);
 	}
 	return NULL;
 }
@@ -664,7 +704,6 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 }
 
 /*
- * @-
  * mvc_export_result dumps the sql header information and the
  * first part (reply_size) of the result set. It should be produced in Monet format to
  * enable mapi to work with it.
@@ -829,12 +868,11 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 
 
 /*
- * @-
  * improved formatting of positive integers
  */
-@= mvc_send
+
 static int
-mvc_send_@1(stream *s, @1 cnt){
+mvc_send_bte(stream *s, bte cnt){
 	char buf[50], *b;
 	int neg = cnt <0;
 	if(neg) cnt = -cnt;
@@ -848,12 +886,54 @@ mvc_send_@1(stream *s, @1 cnt){
 	else b++;
 	return mnstr_write(s, b, 50- (b-buf),1)==1;
 }
-@
-@c
-@:mvc_send(bte)@
-@:mvc_send(sht)@
-@:mvc_send(int)@
-@:mvc_send(lng)@
+
+static int
+mvc_send_sht(stream *s, sht cnt){
+	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
+	b= buf+49;
+	do{
+		*b--= (char) ('0'+ (cnt % 10));
+		cnt /=10;
+	} while(cnt>0);
+	if( neg) 
+		*b = '-'; 
+	else b++;
+	return mnstr_write(s, b, 50- (b-buf),1)==1;
+}
+
+static int
+mvc_send_int(stream *s, int cnt){
+	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
+	b= buf+49;
+	do{
+		*b--= (char) ('0'+ (cnt % 10));
+		cnt /=10;
+	} while(cnt>0);
+	if( neg) 
+		*b = '-'; 
+	else b++;
+	return mnstr_write(s, b, 50- (b-buf),1)==1;
+}
+
+static int
+mvc_send_lng(stream *s, lng cnt){
+	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
+	b= buf+49;
+	do{
+		*b--= (char) ('0'+ (cnt % 10));
+		cnt /=10;
+	} while(cnt>0);
+	if( neg) 
+		*b = '-'; 
+	else b++;
+	return mnstr_write(s, b, 50- (b-buf),1)==1;
+}
 
 int
 convert2str( mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)

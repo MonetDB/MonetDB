@@ -70,18 +70,11 @@ pattern bat.pack(v:any_1):bat[:oid,:any_1]
 address CMDbatsingleton
 comment "Create a BAT and store the value";
 
-pattern bat.setBase(b:bat[:any_1,:any_2],c:bat[:any_1,:any_2]...):void
-address CMDsetBase
-comment "Give the non-empty BATs consecutive oid bases.";
+module algebra;
+pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2]
+address ALGprojectCst
+comment "Fill the tail column with a newly typed constant.";
+pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGprojectCst
+comment "Fill the tail column with a constant taken from the aligned BAT.";
 
-# The head and tail values can also be extracted using the cursor.
-# It points to the first bun in the chunk under consideration.
-# It is often more effective due to use the iterator with automatic
-# extraction of head and tail value; the overhead involved is much less.
-pattern bat.getHead(b:bat[:any_1,:any],i:lng):any_1
-address ITRgetHead
-comment "return the BUN head value using the cursor.";
-
-pattern bat.getTail(b:bat[:any_2,:any_1],i:lng):any_1
-address ITRgetTail
-comment "return the BUN tail value using the cursor.";
