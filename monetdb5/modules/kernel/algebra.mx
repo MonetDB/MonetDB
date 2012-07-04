@@ -1057,8 +1057,8 @@ algebra_export str ALGselectNotNil(int *result, int *bid);
 algebra_export str ALGuhashsplit(int *result, int *bid, int *nfrag);
 
 @= project_export
-algebra_export str ALGprojecthead_@1(int *ret, @1 *val, int *bid);
-algebra_export str ALGprojecttail_@1(int *ret, int *bid, @1 *val);
+algebra_export str ALGprojecthead_@1(int *ret, void *val, int *bid);
+algebra_export str ALGprojecttail_@1(int *ret, int *bid, void *val);
 @
 @h
 @:project_export(int)@
@@ -3616,13 +3616,16 @@ ALGprojectNIL(int *ret, int *bid)
  */
 @= projectImpl
 str
-ALGprojecthead_@1(int *ret, @1 *val, int *bid)
+ALGprojecthead_@1(int *ret, void *val, int *bid)
 {
 	BAT *b, *bn;
 
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
 	b = BATmirror(b);
+#if TYPE_@1 == TYPE_str
+	val = *(str **) val;
+#endif
 	bn = BATconst(b, TYPE_@1, val);
 	bn = BATmirror(bn);
 
@@ -3635,12 +3638,15 @@ ALGprojecthead_@1(int *ret, @1 *val, int *bid)
 	return MAL_SUCCEED;
 }
 str
-ALGprojecttail_@1(int *ret, int *bid, @1 *val)
+ALGprojecttail_@1(int *ret, int *bid, void *val)
 {
 	BAT *b, *bn;
 
 	@:getBATdescriptor(bid,b,"batcalc.project")@
 
+#if TYPE_@1 == TYPE_str
+	val = *(str **) val;
+#endif
 	bn = BATconst(b, TYPE_@1, val);
 
 	@:tstBAT("algebra.project")@
