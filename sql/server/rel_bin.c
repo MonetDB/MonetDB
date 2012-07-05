@@ -310,6 +310,9 @@ value_list( mvc *sql, list *vals)
 	for( n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(sql, e, NULL, NULL, NULL, NULL);
+
+		if (list_length(vals) == 1)
+			return i;
 		
 		s = stmt_append(sql->sa, s, i);
 	}
@@ -2719,11 +2722,12 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 
 	if (list_length(k->columns) > 1) {
 		node *m;
-		stmt *s = nth(inserts, 0)->op1;
+		stmt *s, *ins = nth(inserts, 0)->op1;
 		sql_subaggr *sum;
 		stmt *ssum = NULL;
 		stmt *col = NULL;
 
+		s = ins;
 		/* 1st stage: find out if original contains same values */
 		if (s->key && s->nrcols == 0) {
 			s = stmt_relselect_init(sql->sa);
@@ -2760,7 +2764,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_binop(sql->sa, stmt_aggr(sql->sa, s, NULL, cnt, 1), stmt_atom_wrd(sql->sa, 0), ne);
 
 		/* 2e stage: find out if inserted are unique */
-		if ((!idx_inserts && nth(inserts,0)->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
+		if ((!idx_inserts && ins->nrcols) || (idx_inserts && idx_inserts->nrcols)) {	/* insert columns not atoms */
 			stmt *ss = NULL;
 			sql_subfunc *or = sql_bind_func_result(sql->sa, sql->session->schema, "or", bt, bt, bt);
 			/* implementation uses sort,refine, key check */
