@@ -41,16 +41,7 @@ be_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATderivedByName(int *ret, str *nme);
 be_export str CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
-be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDBBPprojectNil(int *ret, int *bid);
 be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-be_export str CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDgetTail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-be_export str ALGprojectCst(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str ALGprojectCstBody(bat *result, int *bid, ptr *p, int tt);
 
 #endif /* _BAT_EXTENSIONS_ */
