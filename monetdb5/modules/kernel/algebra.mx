@@ -533,24 +533,13 @@ command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]
 address ALGprojectNIL
 comment "Extract the head of a BAT.";
 
-@= projectGrp
-pattern project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
+pattern project(v:any_3,b:bat[:any_2,:any_1]) :bat[:any_3,:any_1]
 address ALGprojecthead
 comment "Fill the head with a constant, e.g. [0~b]";
-pattern project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
+pattern project(b:bat[:any_2,:any_1],v:any_3) :bat[:any_2,:any_3]
 address ALGprojecttail
 comment "Fill the tail with a constant, e.g. [0~b]";
-@
-@mal
-	@:projectGrp(bit)@
-	@:projectGrp(bte)@
-	@:projectGrp(str)@
-	@:projectGrp(oid)@
-	@:projectGrp(int)@
-	@:projectGrp(sht)@
-	@:projectGrp(lng)@
-	@:projectGrp(flt)@
-	@:projectGrp(dbl)@
+
 # @+ OID Introducing Commands
 # For relational processing, some operators are necessary to produce newly
 # initiated OID columns, for representing n-ary (intermediary) relations.
