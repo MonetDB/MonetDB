@@ -130,7 +130,7 @@ pattern $op(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbat${name}cstenlarge
 comment "Return B $op V, guarantee no overflow by returning larger type";
 pattern $op(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
-address CMDbat${name}cstsignal
+address CMDbat${name}cstenlarge
 comment "Return V $op B, guarantee no overflow by returning larger type";
 
 EOF
