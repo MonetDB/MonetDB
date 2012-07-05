@@ -32,77 +32,6 @@
  * access the runtime stack to (push)pull the values needed.
  */
 #include "batExtensions.h"
-/*
- * @- Operator implementation
- * A BAT designated as garbage can be removed, provided we
- * do not keep additional references in the stack frame
- * Be careful here not to remove persistent BATs.
- * Note that we clear the dirty bit to ensure that
- * the BAT is not written back to store before being freed.
- */
-str
-CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *bid;
-	BAT *b;
-
-	(void) mb;
-	(void) cntxt;
-	bid = (int *) getArgReference(stk, pci, 1);
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.setGarbage", INTERNAL_BAT_ACCESS);
-
-	b->batDirty= FALSE;
-	BBPunfix(b->batCacheid);
-	if (*bid)
-		BBPdecref(*bid,TRUE);
-	*bid = 0;
-	return MAL_SUCCEED;
-}
-
-str
-CMDBATflush(int *ret, int *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.flush", INTERNAL_BAT_ACCESS);
-
-	/* use memory advice to release the BAT */
-	/* TO BE PROVIDED */
-	BBPunfix(b->batCacheid);
-	if (*bid)
-		BBPdecref(*bid,TRUE);
-	*ret = 0;
-	return MAL_SUCCEED;
-}
-
-str
-CMDBATreduce(int *ret, int *bid)
-{
-	BAT *b;
-	int old= GDKdebug;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.reduce", INTERNAL_BAT_ACCESS);
-
-	/* reduce memory footprint by dropping hashes
-	of non-persistent bats */
-	if( !isVIEW(b) && b->batSharecnt==0){
-#ifdef TRACE_ADVICE
-		if(b->hhash)
-			printf("found hhash %s " SZFMT "\n",BBP_logical(b->batCacheid), (size_t) BATcount(b) * sizeof(BUN));
-		if(b->thash)
-			printf("found thash %s " SZFMT "\n",BBP_logical(b->batCacheid), (size_t) BATcount(b) * sizeof(BUN));
-#endif
-		/* disable DeadBeef production */
-		GDKdebug &= ~DEADBEEFMASK;
-		HASHdestroy(b);
-	}
-	BBPkeepref(*ret=b->batCacheid);
-	GDKdebug = old;
-	return MAL_SUCCEED;
-}
 
 /*
  * @+ BAT enhancements
@@ -315,33 +244,6 @@ CMDBBPprojectNil(int *ret, int *bid)
 	throw(MAL, "bat.project", INTERNAL_OBJ_CREATE);
 }
 
-str
-CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int bid;
-	BUN p;
-	ValPtr head, tail;
-
-	(void) cntxt;
-	bid = *(int *) getArgReference(stk, pci, 2);
-
-	if ((b = BATdescriptor(bid)) == NULL) {
-		throw(MAL, "bat.unpack", INTERNAL_BAT_ACCESS);
-	}
-
-	head =  getArgReference(stk,pci,0);
-	tail =  getArgReference(stk,pci,1);
-	p = BUNfirst(b);
-	if (p < BUNlast(b)) {
-		BATiter bi = bat_iterator(b);
-		VALinit(head, getArgType(mb, pci, 0), BUNhead(bi, p));
-		VALinit(tail, getArgType(mb, pci, 1), BUNtail(bi, p));
-	}
-
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
 /*
  * @-
  * If the optimizer has not determined the partition bounds we derive one here.
@@ -429,51 +331,6 @@ CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret= (int *) getArgReference(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	BAT *b;
-	int *ret;
-	int ht, tt;
-	BUN cap = 0;
-
-	(void) cntxt;
-	ht = getArgType(mb, pci, 1);
-	tt = getArgType(mb, pci, 2);
-	ret = (int *) getArgReference(stk, pci, 0);
-
-	if (ht == TYPE_any || tt == TYPE_any)
-		throw(MAL, "bat.pack", SEMANTIC_TYPE_ERROR);
-	if (isaBatType(ht))
-		ht = TYPE_bat;
-	if (isaBatType(tt))
-		tt = TYPE_bat;
-	b = BATnew(ht, tt, cap);
-	BUNins(b, (ptr) getArgReference(stk, pci, 1), getArgReference(stk, pci, 2), FALSE);
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
-	return MAL_SUCCEED;
-}
-str
-CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *ret = (int*) getArgReference(stk,pci,0);
-	BAT *b;
-	oid o = 0;
-	(void) cntxt;
-
-	b= BATnew(TYPE_oid, getArgType(mb,pci,1), BATTINY);
-	if ( b == NULL)
-		throw(MAL, "bat.pack", MAL_MALLOC_FAIL);
-	BATseqbase(b,o);
-	BUNins(b, &o, getArgReference(stk,pci,1), FALSE);
-
-	*ret = b->batCacheid;
-	BBPkeepref(*ret);
 	return MAL_SUCCEED;
 }
 

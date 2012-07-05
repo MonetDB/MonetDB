@@ -36,9 +36,6 @@
 #define be_export extern
 #endif
 
-be_export str CMDBATsetGarbage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDBATflush(int *res, int *bid);
-be_export str CMDBATreduce(int *ret, int *bid);
 be_export str CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBATnewDerived(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
@@ -46,11 +43,8 @@ be_export str CMDBATderivedByName(int *ret, str *nme);
 be_export str CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p);
 be_export str CMDBBPproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDBBPprojectNil(int *ret, int *bid);
-be_export str CMDbatunpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDbatpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatpack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-be_export str CMDbatsingleton(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 be_export str CMDsetBase(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 be_export str CMDgetHead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
