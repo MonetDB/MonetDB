@@ -47,7 +47,6 @@ include streams;
 include bat5;
 include batExtensions;
 include algebra;
-include algebraExtensions;
 include calc;
 include status;
 include group;
