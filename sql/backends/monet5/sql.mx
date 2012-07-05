@@ -779,23 +779,53 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(dbl,wrd)@
 @:mal_cast2(dbl,lng)@
 
-@= mal_interval
-command calc.month_interval( v:@1, ek:int, sk:int ) :int
-address month_interval_@1
-comment "cast @1 to a month_interval and check for overflow";
+command calc.month_interval( v:str, ek:int, sk:int ) :int
+address month_interval_str
+comment "cast str to a month_interval and check for overflow";
 
-command calc.second_interval( v:@1, ek:int, sk:int ) :lng
-address second_interval_@1
-comment "cast @1 to a second_interval and check for overflow";
-@
-@mal
+command calc.second_interval( v:str, ek:int, sk:int ) :lng
+address second_interval_str
+comment "cast str to a second_interval and check for overflow";
 
-@:mal_interval(str)@
-@:mal_interval(bte)@
-@:mal_interval(sht)@
-@:mal_interval(int)@
-@:mal_interval(wrd)@
-@:mal_interval(lng)@
+pattern calc.month_interval( v:bte, ek:int, sk:int ) :int
+address month_interval
+comment "cast bte to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:bte, ek:int, sk:int ) :lng
+address second_interval
+comment "cast bte to a second_interval and check for overflow";
+
+pattern calc.month_interval( v:sht, ek:int, sk:int ) :int
+address month_interval
+comment "cast sht to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:sht, ek:int, sk:int ) :lng
+address second_interval
+comment "cast sht to a second_interval and check for overflow";
+
+pattern calc.month_interval( v:int, ek:int, sk:int ) :int
+address month_interval
+comment "cast int to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:int, ek:int, sk:int ) :lng
+address second_interval
+comment "cast int to a second_interval and check for overflow";
+
+pattern calc.month_interval( v:wrd, ek:int, sk:int ) :int
+address month_interval
+comment "cast wrd to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:wrd, ek:int, sk:int ) :lng
+address second_interval
+comment "cast wrd to a second_interval and check for overflow";
+
+pattern calc.month_interval( v:lng, ek:int, sk:int ) :int
+address month_interval
+comment "cast lng to a month_interval and check for overflow";
+
+pattern calc.second_interval( v:lng, ek:int, sk:int ) :lng
+address second_interval
+comment "cast lng to a second_interval and check for overflow";
 
 command calc.rowid(v:any_1, schema:str, table:str) :oid
 address sql_rowid
@@ -1374,17 +1404,10 @@ sql5_export str @1_trunc_wrap( @1 *res, @1 *v, int *r );
 #define degrees(x)       ((x) * 180.0/3.14159265358979323846 )
 sql5_export str SQLdbl_alpha(dbl *res, dbl *decl, dbl *theta);
 sql5_export str SQLbat_alpha(bat *res, bat *decl, dbl *theta);
-@= c_interval_export
-sql5_export str month_interval_@1( int *ret, @1 *s, int *ek, int *sk );
-sql5_export str second_interval_@1( lng *res, @1 *s, int *ek, int *sk );
-@
-@h
-@:c_interval_export(bte)@
-@:c_interval_export(sht)@
-@:c_interval_export(int)@
-@:c_interval_export(wrd)@
-@:c_interval_export(lng)@
-@:c_interval_export(daytime)@
+sql5_export str month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str month_interval_daytime( int *ret, daytime *s, int *ek, int *sk );
+sql5_export str second_interval_daytime( lng *res, daytime *s, int *ek, int *sk );
 @= simpleupcast_export
 sql5_export str @2_2_@1( @1 *res, @2 *v );
 sql5_export str bat@2_2_@1( int *res, int *v );
@@ -5882,16 +5905,36 @@ second_interval_str( lng *res, str *s, int *d, int *sk )
 	return MAL_SUCCEED;
 }
 
-@= c_interval
 str
-month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
-	int k = digits2ek(*d);
-	int r = (int)*s;
+month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *) getArgReference(stk, pci, 0);
+	int k = digits2ek(* (int *) getArgReference(stk, pci, 2));
+	int r;
 
-	(void)sk;
-	switch(k) {
-	case iyear: 	
+	(void) cntxt;
+	(void) mb;
+	switch (getArgType(mb, pci, 1)) {
+	case TYPE_bte:
+		r = stk->stk[getArg(pci, 1)].val.btval;
+		break;
+	case TYPE_sht:
+		r = stk->stk[getArg(pci, 1)].val.shval;
+		break;
+	case TYPE_int:
+		r = stk->stk[getArg(pci, 1)].val.ival;
+		break;
+	case TYPE_wrd:
+		r = (int) stk->stk[getArg(pci, 1)].val.wval;
+		break;
+	case TYPE_lng:
+		r = (int) stk->stk[getArg(pci, 1)].val.lval;
+		break;
+	}
+	switch (k) {
+	case iyear:
 		r *= 12;
+		break;
 	case imonth:
 		break;
 	default:
@@ -5900,14 +5943,35 @@ month_interval_@1( int *ret, @1 *s, int *d, int *sk ){
 	*ret = r;
 	return MAL_SUCCEED;
 }
-str
-second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
-	int k = digits2ek(*d);
-	lng r = *s;
 
-	(void)sk;
-	switch(k) {
-	case iday: 	
+str
+second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	lng *ret = (lng *) getArgReference(stk, pci, 0);
+	int k = digits2ek(* (int *) getArgReference(stk, pci, 2));
+	lng r;
+
+	(void) cntxt;
+	(void) mb;
+	switch (getArgType(mb, pci, 1)) {
+	case TYPE_bte:
+		r = stk->stk[getArg(pci, 1)].val.btval;
+		break;
+	case TYPE_sht:
+		r = stk->stk[getArg(pci, 1)].val.shval;
+		break;
+	case TYPE_int:
+		r = stk->stk[getArg(pci, 1)].val.ival;
+		break;
+	case TYPE_wrd:
+		r = stk->stk[getArg(pci, 1)].val.wval;
+		break;
+	case TYPE_lng:
+		r = stk->stk[getArg(pci, 1)].val.lval;
+		break;
+	}
+	switch (k) {
+	case iday:
 		r *= 24;
 	case ihour:
 		r *= 60;
@@ -5917,18 +5981,11 @@ second_interval_@1( lng *res, @1 *s, int *d, int *sk ){
 		r *= 1000;
 		break;
 	default:
-		throw(ILLARG, "calc.second_interval","illegal argument");
+		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
-	*res = r;
+	*ret = r;
 	return MAL_SUCCEED;
 }
-@
-@c
-@:c_interval(bte)@
-@:c_interval(sht)@
-@:c_interval(int)@
-@:c_interval(wrd)@
-@:c_interval(lng)@
 
 @mal
 command calc.second_interval( v:daytime, ek:int, sk:int ) :lng
@@ -6115,25 +6172,24 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-@= rnk
-str 
-sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+static str
+do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *name)
 {
 	BAT *r, *b, *g;
 	BUN p, q;
 	BATiter bi, gi;
 	int (*ocmp)(const void *, const void *);
 	int (*gcmp)(const void *, const void *);
-	ptr oc, gc;
-	int rank = 1, nrank = @3;
+	const void *oc, *gc, *on, *gn;
+	int rank = 1;
+	int c;
 
 	if( (b = BATdescriptor(*bid)) == NULL )
-		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
+		throw(SQL, name, "Cannot access descriptor");
 	if( (g = BATdescriptor(*gid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql.@1rank_grp", "Cannot access descriptor");
+		throw(SQL, name, "Cannot access descriptor");
 	}
-	(void)gpe;
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
 	ocmp = BATatoms[b->ttype].atomCmp;
@@ -6143,32 +6199,31 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	if (!ALIGNsynced(b, g)) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(g->batCacheid);
-		throw(SQL, "sql.@1rank_grp", "bats not aligned");
+		throw(SQL, name, "bats not aligned");
 	}
 	if (!BATtordered(b)) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(g->batCacheid);
-		throw(SQL, "sql.@1rank_grp", "bat not sorted");
+		throw(SQL, name, "bat not sorted");
 	}
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(g->batCacheid);
-		throw(SQL, "sql.@1rank_grp", "cannot allocate result bat");
+		throw(SQL, name, "cannot allocate result bat");
 	}
 	BATloop(b, p, q) {
-		ptr on = BUNtail(bi, p);
-		ptr gn = BUNtail(gi, p);
-		int c = 0;
+		on = BUNtail(bi, p);
+		gn = BUNtail(gi, p);
 
-		if ((c = ocmp(on, oc)) != 0) 
+		if ((c = ocmp(on, oc)) != 0)
 			rank = nrank;
-		if (gcmp(gn, gc) != 0) 
-			c = rank = nrank = 1;  
+		if (gcmp(gn, gc) != 0)
+			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
 		BUNins(r, BUNhead(bi,p), &rank, FALSE);
-		@2;
+		nrank += !dense || c;
 	}
 	BBPunfix(b->batCacheid);
 	BBPunfix(g->batCacheid);
@@ -6176,20 +6231,21 @@ sql_@1rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
 	return MAL_SUCCEED;
 }
 
-str
-sql_@1rank(bat *rid, bat *bid)
-{ 
+static str
+do_sql_rank(bat *rid, bat *bid, int nrank, int dense, const char *name)
+{
 	BAT *r, *b;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
-	ptr cur;
+	const void *cur, *n;
 	BUN p, q;
-	int rank = 1, nrank = @3;
+	int rank = 1;
+	int c;
 
 	if( (b = BATdescriptor(*bid)) == NULL )
-		throw(SQL, "sql.@1rank", "Cannot access descriptor");
+		throw(SQL, name, "Cannot access descriptor");
 	if (!BATtordered(b) && !BATtrevordered(b))
-		throw(SQL, "sql.@1rank", "bat not sorted");
+		throw(SQL, name, "bat not sorted");
 
 	bi = bat_iterator(b);
 	cmp = BATatoms[b->ttype].atomCmp;
@@ -6197,7 +6253,7 @@ sql_@1rank(bat *rid, bat *bid)
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL){
 		BBPreleaseref(b->batCacheid);
-		throw(SQL, "sql.@1rank", "cannot allocate result bat");
+		throw(SQL, name, "cannot allocate result bat");
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
@@ -6206,24 +6262,44 @@ sql_@1rank(bat *rid, bat *bid)
 		}
 	} else {
 		BATloop(b, p, q) {
-			ptr n = BUNtail(bi, p);
-			int c = 0;
-	
-			if ((c = cmp(n, cur)) != 0) 
-				rank = nrank; 
+			n = BUNtail(bi, p);
+			if ((c = cmp(n, cur)) != 0)
+				rank = nrank;
 			cur = n;
 			BUNins(r, BUNhead(bi,p), &rank, FALSE);
-			@2;
+			nrank += !dense || c;
 		}
 	}
 	BBPunfix(b->batCacheid);
 	BBPkeepref(*rid = r->batCacheid);
 	return MAL_SUCCEED;
 }
-@
-@c
-@:rnk(,(void)c;nrank++,1)@
-@:rnk(dense_,nrank+=(c?1:0),2)@
+
+str
+sql_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+{
+	(void) gpe;
+	return do_sql_rank_grp(rid, bid, gid, 1, 0, "sql.rank_grp");
+}
+
+str
+sql_dense_rank_grp(bat *rid, bat *bid, bat *gid, bat *gpe)
+{
+	(void) gpe;
+	return do_sql_rank_grp(rid, bid, gid, 2, 1, "sql.dense_rank_grp");
+}
+
+str
+sql_rank(bat *rid, bat *bid)
+{
+	return do_sql_rank(rid, bid, 1, 0, "sql.rank");
+}
+
+str
+sql_dense_rank(bat *rid, bat *bid)
+{
+	return do_sql_rank(rid, bid, 2, 1, "sql.dense_rank");
+}
 
 str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str s, t, *ret;
@@ -6391,9 +6467,9 @@ SQLcluster2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * @- Vacuum cleaning tables
  * Shrinking and re-using space to vacuum clean the holes in the relations.
  */
-@= vacuum
-str
-SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+       str (*func)(int *, int *, int *), const char *name)
 {
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
@@ -6412,19 +6488,19 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@1","3F000!Schema missing");
+		throw(SQL,name,"3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@1","42S02!Table missing");
+		throw(SQL,name,"42S02!Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(SQL,"sql.@1","42000!insufficient privileges");
+		throw(SQL,name,"42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
-		throw(SQL,"sql.@1","@1 not allowed on tables with indices");
-	if (has_snapshots(m->session->tr)) 
-		throw(SQL,"sql.@1","@1 not allowed on snapshots");
-	if (!m->session->auto_commit) 
-		throw(SQL,"sql.@1","@1 only allowed in auto commit mode");
+		throw(SQL,name, "%s not allowed on tables with indices", name + 4);
+	if (has_snapshots(m->session->tr))
+		throw(SQL,name, "%s not allowed on snapshots", name + 4);
+	if (!m->session->auto_commit)
+		throw(SQL,name, "%s only allowed in auto commit mode", name + 4);
 
 	/* lock the store, for single user/transaction */
 	store_lock();
@@ -6446,7 +6522,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the deletions BAT*/
 	del = mvc_bind_dbat(m, *sch, *tbl, RD_INS);
 
-	/* this code is insecure, because something may 
+	/* this code is insecure, because something may
 	   go wrong while we compress the columns.
 	   A two-phase action reduces the risks, but not all.
 	   e.g. a crash during update of the catalog. */
@@ -6455,13 +6531,13 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (o = t->columns.set->h; o; o = o->next,i++) {
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
-		if (b == NULL || 
-		    (msg = BKC@1BAT(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
+		if (b == NULL ||
+		    (msg = (*func)(&bid, &(b->batCacheid), &(del->batCacheid))) != NULL) {
 			for( i--; i>=0; i--)
 				BBPreleaseref(bids[i]);
 			store_unlock();
 			if (!msg)
-				throw(SQL,"sql.@1","Can not access descriptor");
+				throw(SQL,name,"Can not access descriptor");
 			return msg;
 		}
 		BBPreleaseref(b->batCacheid);
@@ -6474,7 +6550,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( i--; i>=0; i--)
 			BBPreleaseref(bids[i]);
 		store_unlock();
-		throw(SQL,"sql.@1","Too many columns to handle, use copy instead");
+		throw(SQL,name,"Too many columns to handle, use copy instead");
 	}
 
 	i=0;
@@ -6505,15 +6581,23 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 }
-@
-@c
-@:vacuum(shrink)@
-@:vacuum(reuse)@
+
+str
+SQLshrink(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return vacuum(cntxt, mb, stk, pci, BKCshrinkBAT, "sql.shrink");
+}
+
+str
+SQLreuse(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return vacuum(cntxt, mb, stk, pci, BKCreuseBAT, "sql.reuse");
+}
 
 /*
- * @-
- * The vacuum operation inspects the table for ordered properties and will keep them.
- * To avoid expensive shuffles, the reorganisation is balanced by the number of outstanding deletions.
+ * The vacuum operation inspects the table for ordered properties and
+ * will keep them.  To avoid expensive shuffles, the reorganisation is
+ * balanced by the number of outstanding deletions.
  */
 str
 SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -6535,17 +6619,17 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@1","3F000!Schema missing");
+		throw(SQL,"sql.vacuum","3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@1","42S02!Table missing");
+		throw(SQL,"sql.vacuum","42S02!Table missing");
 
 	if (m->user_id != USER_MONETDB)
-		throw(SQL,"sql.@1","42000!insufficient privileges");
+		throw(SQL,"sql.vacuum","42000!insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
-		throw(SQL,"sql.@1","vacuum not allowed on tables with indices");
+		throw(SQL,"sql.vacuum","vacuum not allowed on tables with indices");
 	if (has_snapshots(m->session->tr)) 
-		throw(SQL,"sql.@1","vacuum not allowed on snapshots");
+		throw(SQL,"sql.vacuum","vacuum not allowed on snapshots");
 
 	tr = m->session->tr;
 
@@ -6556,7 +6640,7 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		c = o->data;
 		b = store_funcs.bind_col(tr, c, 0);
 		if (b == NULL) 
-			throw(SQL,"sql.@1","Can not access descriptor");
+			throw(SQL,"sql.vacuum","Can not access descriptor");
 		ordered |= BATtordered(b);
 		cnt = BATcount(b);
 		BBPreleaseref(b->batCacheid);
@@ -6614,10 +6698,12 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /*
- * @-
- * Take a SQL table and compress its columns using the dictionary compression scheme.
+ * Take a SQL table and compress its columns using the dictionary
+ * compression scheme.
  */
-@= compression
+static str
+compression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int compr)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_schema	*s;
@@ -6660,7 +6746,10 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d->ibid = e->batCacheid; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 		snprintf(buf,BUFSIZ,"%s/%s/%s/0", *sch, *tbl, c->base.name);
-		msg = @1;
+		if (compr)
+			msg = DICTcompress(&ret, &nme, &b->batCacheid);
+		else
+			msg = DICTdecompress(&ret, &nme);
 		BBPkeepref(e->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		BBPdecref(b->batCacheid, TRUE);
@@ -6670,19 +6759,27 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t->base.wtime = s->base.wtime = tr->wtime = tr->stime;
 	t->base.rtime = s->base.rtime = tr->rtime = tr->stime;
 	return msg;
-@
-@c
-str SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:compression(DICTcompress(&ret, &nme, &b->batCacheid))@
 }
-str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:compression(DICTdecompress(&ret, &nme))@
+
+str
+SQLnewDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return compression(cntxt, mb, stk, pci, 1);
 }
+
+str
+SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return compression(cntxt, mb, stk, pci, 0);
+}
+
 /*
- * @-
  * LZ compression is inherited from the underlying stream implementation.
  */
-@= gzcompression
+static str
+gzcompression(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+	      str (*func)(int *, int *, str *), const char *name)
+{
 	str *sch = (str *) getArgReference(stk,pci,1);
 	str *tbl = (str *) getArgReference(stk,pci,2);
 	sql_schema	*s;
@@ -6698,10 +6795,10 @@ str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		return msg;
    	s = mvc_bind_schema(m, *sch);
 	if ( s == NULL)
-		throw(SQL,"sql.@2","3F000!Schema missing");
+		throw(SQL,name,"3F000!Schema missing");
 	t = mvc_bind_table(m, s, *tbl);
 	if ( t == NULL)
-		throw(SQL,"sql.@2","42S02!Table missing");
+		throw(SQL,name,"42S02!Table missing");
 
 	/* actually build the hash on the multi-column primary key */
 
@@ -6712,27 +6809,42 @@ str SQLdropDictionary(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		for ( i= 0; i<3; i++) {
 			b = store_funcs.bind_col(tr, c, i);
 			if (b == NULL)
-				throw(SQL,"sql.@2","Can not access descriptor");
+				throw(SQL,name,"Can not access descriptor");
 			snprintf(buf,PATHLENGTH,"%s_%s_%s_%d", *sch, *tbl, c->base.name,i);
-			msg = @1;
+			msg = (*func)(&ret, &b->batCacheid, &sbuf);
 			BBPreleaseref(b->batCacheid);
 		}
 	}
 	return msg;
-@
-@c
-str SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpcompress(&ret, &b->batCacheid,&sbuf),gzcompress)@
 }
-str SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpdecompress(&ret, &b->batCacheid,&sbuf),gzdecompress)@
+
+str
+SQLgzcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return gzcompression(cntxt, mb, stk, pci, CMDbbpcompress,
+			     "sql.gzcompress");
 }
-str SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbptruncate(&ret, &b->batCacheid,&sbuf),truncate)@
+str
+SQLgzdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return gzcompression(cntxt, mb, stk, pci, CMDbbpdecompress,
+			     "sql.gzdecompress");
 }
-str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	@:gzcompression(CMDbbpexpand(&ret, &b->batCacheid,&sbuf),expand)@
+
+str
+SQLtruncate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return gzcompression(cntxt, mb, stk, pci, CMDbbptruncate,
+			     "sql.truncate");
 }
+
+str
+SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return gzcompression(cntxt, mb, stk, pci, CMDbbpexpand,
+			     "sql.expand");
+}
+
 /*
  * @- Shredding RDF documents through SQL
  * Wrapper around the RDF shredder of the rdf module of M5.
@@ -6749,30 +6861,6 @@ str SQLexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
  * property, object. Finally, there is one more table called rdf.map$gid$ that
  * maps oids to strings (i.e., the lexical representation).
  */
-@= crt_tbl
-sprintf(buff, "@2%d", @1);
-@2_tbl = mvc_create_table(m, sch, buff, tt_table, 0, SQL_PERSIST, 0, 3);
-mvc_create_column(m, @2_tbl, "@3", &tpe);
-mvc_create_column(m, @2_tbl, "@4", &tpe);
-mvc_create_column(m, @2_tbl, "@5", &tpe);
-
-@= crt_col
-s = BATdescriptor(g[@2]);
-p = BATdescriptor(g[@3]);
-o = BATdescriptor(g[@4]);
-store_funcs.append_col(m->session->tr, mvc_bind_column(m, @1, "subject"),
-		s, TYPE_bat);
-store_funcs.append_col(m->session->tr, mvc_bind_column(m, @1, "property"),
-		p, TYPE_bat);
-store_funcs.append_col(m->session->tr, mvc_bind_column(m, @1, "object"),
-		o, TYPE_bat);
-BBPunfix(s->batCacheid);
-BBPunfix(p->batCacheid);
-BBPunfix(o->batCacheid);
-
-
-@
-@c
 str
 SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -6828,14 +6916,55 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* sql_find_subtype(&tpe, "int", 32, 0); */
 	}
 #if STORE == TRIPLE_STORE
-	@:crt_tbl(id,spo,subject,property,object)@
-	@:crt_tbl(id,sop,subject,object,property)@
-	@:crt_tbl(id,pso,property,subject,object)@
-	@:crt_tbl(id,pos,property,object,subject)@
-	@:crt_tbl(id,osp,object,subject,property)@
-	@:crt_tbl(id,ops,object,property,subject)@
+	sprintf(buff, "spo%d", id);
+	spo_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, spo_tbl, "subject", &tpe);
+	mvc_create_column(m, spo_tbl, "property", &tpe);
+	mvc_create_column(m, spo_tbl, "object", &tpe);
+
+	sprintf(buff, "sop%d", id);
+	sop_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, sop_tbl, "subject", &tpe);
+	mvc_create_column(m, sop_tbl, "object", &tpe);
+	mvc_create_column(m, sop_tbl, "property", &tpe);
+
+	sprintf(buff, "pso%d", id);
+	pso_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, pso_tbl, "property", &tpe);
+	mvc_create_column(m, pso_tbl, "subject", &tpe);
+	mvc_create_column(m, pso_tbl, "object", &tpe);
+
+	sprintf(buff, "pos%d", id);
+	pos_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, pos_tbl, "property", &tpe);
+	mvc_create_column(m, pos_tbl, "object", &tpe);
+	mvc_create_column(m, pos_tbl, "subject", &tpe);
+
+	sprintf(buff, "osp%d", id);
+	osp_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, osp_tbl, "object", &tpe);
+	mvc_create_column(m, osp_tbl, "subject", &tpe);
+	mvc_create_column(m, osp_tbl, "property", &tpe);
+
+	sprintf(buff, "ops%d", id);
+	ops_tbl = mvc_create_table(m, sch, buff, tt_table, 0,
+				   SQL_PERSIST, 0, 3);
+	mvc_create_column(m, ops_tbl, "object", &tpe);
+	mvc_create_column(m, ops_tbl, "property", &tpe);
+	mvc_create_column(m, ops_tbl, "subject", &tpe);
+
 #elif STORE == MLA_STORE
-	@:crt_tbl(id,spo,subject,property,object)@
+	sprintf(buff, "spo%d", id);
+	spo_tbl = mvc_create_table(m, sch, buff, tt_table,
+				   0, SQL_PERSIST, 0, 3);
+	mvc_create_column(m, spo_tbl, "subject", &tpe);
+	mvc_create_column(m, spo_tbl, "property", &tpe);
+	mvc_create_column(m, spo_tbl, "object", &tpe);
 #endif /* STORE */
 
 	sprintf(buff, "map%d", id);
@@ -6864,14 +6993,112 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(s->batCacheid);
 
 #if STORE == TRIPLE_STORE
-	@:crt_col(spo_tbl,S_sort,P_PO,O_PO)@
-	@:crt_col(sop_tbl,S_sort,P_OP,O_OP)@
-	@:crt_col(pso_tbl,S_SO,P_sort,O_SO)@
-	@:crt_col(pos_tbl,S_OS,P_sort,O_OS)@
-	@:crt_col(osp_tbl,S_SP,P_SP,O_sort)@
-	@:crt_col(ops_tbl,S_PS,P_PS,O_sort)@
+	s = BATdescriptor(g[S_sort]);
+	p = BATdescriptor(g[P_PO]);
+	o = BATdescriptor(g[O_PO]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
+	s = BATdescriptor(g[S_sort]);
+	p = BATdescriptor(g[P_OP]);
+	o = BATdescriptor(g[O_OP]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, sop_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, sop_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, sop_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
+	s = BATdescriptor(g[S_SO]);
+	p = BATdescriptor(g[P_sort]);
+	o = BATdescriptor(g[O_SO]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pso_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pso_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pso_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
+	s = BATdescriptor(g[S_OS]);
+	p = BATdescriptor(g[P_sort]);
+	o = BATdescriptor(g[O_OS]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pos_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pos_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, pos_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
+	s = BATdescriptor(g[S_SP]);
+	p = BATdescriptor(g[P_SP]);
+	o = BATdescriptor(g[O_sort]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, osp_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, osp_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, osp_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
+	s = BATdescriptor(g[S_PS]);
+	p = BATdescriptor(g[P_PS]);
+	o = BATdescriptor(g[O_sort]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, ops_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, ops_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, ops_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
 #elif STORE == MLA_STORE
-	@:crt_col(spo_tbl,S_sort,P_sort,O_sort)@
+	s = BATdescriptor(g[S_sort]);
+	p = BATdescriptor(g[P_sort]);
+	o = BATdescriptor(g[O_sort]);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "subject"),
+			       s, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "property"),
+			       p, TYPE_bat);
+	store_funcs.append_col(m->session->tr,
+			       mvc_bind_column(m, spo_tbl, "object"),
+			       o, TYPE_bat);
+	BBPunfix(s->batCacheid);
+	BBPunfix(p->batCacheid);
+	BBPunfix(o->batCacheid);
 #endif /* STORE */
 
 	/* unfix graph */
