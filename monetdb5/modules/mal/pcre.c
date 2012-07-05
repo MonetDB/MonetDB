@@ -1250,7 +1250,7 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			int pos;
 			pcre *re;
 
-			if ( !*isens)
+			if (*isens)
 				options |= PCRE_CASELESS;
 			if ((re = pcre_compile(ppat, options, &err_p, &errpos, NULL)) == NULL) {
 				BBPreleaseref(strs->batCacheid);
