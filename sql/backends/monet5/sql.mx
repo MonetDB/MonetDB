@@ -5930,6 +5930,8 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = (int) stk->stk[getArg(pci, 1)].val.lval;
 		break;
+	default:
+		throw(ILLARG, "calc.month_interval","illegal argument");
 	}
 	switch (k) {
 	case iyear:
@@ -5969,6 +5971,8 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
 		break;
+	default:
+		throw(ILLARG, "calc.sec_interval", "illegal argument");
 	}
 	switch (k) {
 	case iday:
