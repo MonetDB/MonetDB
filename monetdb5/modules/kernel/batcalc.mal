@@ -368,7 +368,7 @@ pattern +(b:bat[:oid,:bte],v:bte) :bat[:oid,:sht]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:bte,b:bat[:oid,:bte]) :bat[:oid,:sht]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:bte],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -378,7 +378,7 @@ pattern +(b:bat[:oid,:bte],v:sht) :bat[:oid,:int]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:bte,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:bte],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -388,7 +388,7 @@ pattern +(b:bat[:oid,:bte],v:int) :bat[:oid,:lng]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:bte,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:bte],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -398,7 +398,7 @@ pattern +(b:bat[:oid,:bte],v:flt) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:bte,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:sht],b2:bat[:oid,:bte]) :bat[:oid,:int]
@@ -408,7 +408,7 @@ pattern +(b:bat[:oid,:sht],v:bte) :bat[:oid,:int]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:sht,b:bat[:oid,:bte]) :bat[:oid,:int]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:sht],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -418,7 +418,7 @@ pattern +(b:bat[:oid,:sht],v:sht) :bat[:oid,:int]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:sht,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:sht],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -428,7 +428,7 @@ pattern +(b:bat[:oid,:sht],v:int) :bat[:oid,:lng]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:sht,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:sht],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -438,7 +438,7 @@ pattern +(b:bat[:oid,:sht],v:flt) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:sht,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:int],b2:bat[:oid,:bte]) :bat[:oid,:lng]
@@ -448,7 +448,7 @@ pattern +(b:bat[:oid,:int],v:bte) :bat[:oid,:lng]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:int,b:bat[:oid,:bte]) :bat[:oid,:lng]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:int],b2:bat[:oid,:sht]) :bat[:oid,:lng]
@@ -458,7 +458,7 @@ pattern +(b:bat[:oid,:int],v:sht) :bat[:oid,:lng]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:int,b:bat[:oid,:sht]) :bat[:oid,:lng]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:int],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -468,7 +468,7 @@ pattern +(b:bat[:oid,:int],v:int) :bat[:oid,:lng]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:int,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:int],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -478,7 +478,7 @@ pattern +(b:bat[:oid,:int],v:flt) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:int,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:lng],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -488,7 +488,7 @@ pattern +(b:bat[:oid,:lng],v:flt) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:lng,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:flt],b2:bat[:oid,:bte]) :bat[:oid,:dbl]
@@ -498,7 +498,7 @@ pattern +(b:bat[:oid,:flt],v:bte) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:flt,b:bat[:oid,:bte]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:flt],b2:bat[:oid,:sht]) :bat[:oid,:dbl]
@@ -508,7 +508,7 @@ pattern +(b:bat[:oid,:flt],v:sht) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:flt,b:bat[:oid,:sht]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:flt],b2:bat[:oid,:int]) :bat[:oid,:dbl]
@@ -518,7 +518,7 @@ pattern +(b:bat[:oid,:flt],v:int) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:flt,b:bat[:oid,:int]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:flt],b2:bat[:oid,:lng]) :bat[:oid,:dbl]
@@ -528,7 +528,7 @@ pattern +(b:bat[:oid,:flt],v:lng) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:flt,b:bat[:oid,:lng]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 command +(b1:bat[:oid,:flt],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -538,7 +538,7 @@ pattern +(b:bat[:oid,:flt],v:flt) :bat[:oid,:dbl]
 address CMDbatADDcstenlarge
 comment "Return B + V, guarantee no overflow by returning larger type";
 pattern +(v:flt,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatADDcstsignal
+address CMDbatADDcstenlarge
 comment "Return V + B, guarantee no overflow by returning larger type";
 
 
@@ -549,7 +549,7 @@ pattern -(b:bat[:oid,:bte],v:bte) :bat[:oid,:sht]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:bte,b:bat[:oid,:bte]) :bat[:oid,:sht]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:bte],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -559,7 +559,7 @@ pattern -(b:bat[:oid,:bte],v:sht) :bat[:oid,:int]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:bte,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:bte],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -569,7 +569,7 @@ pattern -(b:bat[:oid,:bte],v:int) :bat[:oid,:lng]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:bte,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:bte],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -579,7 +579,7 @@ pattern -(b:bat[:oid,:bte],v:flt) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:bte,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:sht],b2:bat[:oid,:bte]) :bat[:oid,:int]
@@ -589,7 +589,7 @@ pattern -(b:bat[:oid,:sht],v:bte) :bat[:oid,:int]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:sht,b:bat[:oid,:bte]) :bat[:oid,:int]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:sht],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -599,7 +599,7 @@ pattern -(b:bat[:oid,:sht],v:sht) :bat[:oid,:int]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:sht,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:sht],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -609,7 +609,7 @@ pattern -(b:bat[:oid,:sht],v:int) :bat[:oid,:lng]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:sht,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:sht],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -619,7 +619,7 @@ pattern -(b:bat[:oid,:sht],v:flt) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:sht,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:int],b2:bat[:oid,:bte]) :bat[:oid,:lng]
@@ -629,7 +629,7 @@ pattern -(b:bat[:oid,:int],v:bte) :bat[:oid,:lng]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:int,b:bat[:oid,:bte]) :bat[:oid,:lng]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:int],b2:bat[:oid,:sht]) :bat[:oid,:lng]
@@ -639,7 +639,7 @@ pattern -(b:bat[:oid,:int],v:sht) :bat[:oid,:lng]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:int,b:bat[:oid,:sht]) :bat[:oid,:lng]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:int],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -649,7 +649,7 @@ pattern -(b:bat[:oid,:int],v:int) :bat[:oid,:lng]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:int,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:int],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -659,7 +659,7 @@ pattern -(b:bat[:oid,:int],v:flt) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:int,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:lng],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -669,7 +669,7 @@ pattern -(b:bat[:oid,:lng],v:flt) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:lng,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:flt],b2:bat[:oid,:bte]) :bat[:oid,:dbl]
@@ -679,7 +679,7 @@ pattern -(b:bat[:oid,:flt],v:bte) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:flt,b:bat[:oid,:bte]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:flt],b2:bat[:oid,:sht]) :bat[:oid,:dbl]
@@ -689,7 +689,7 @@ pattern -(b:bat[:oid,:flt],v:sht) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:flt,b:bat[:oid,:sht]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:flt],b2:bat[:oid,:int]) :bat[:oid,:dbl]
@@ -699,7 +699,7 @@ pattern -(b:bat[:oid,:flt],v:int) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:flt,b:bat[:oid,:int]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:flt],b2:bat[:oid,:lng]) :bat[:oid,:dbl]
@@ -709,7 +709,7 @@ pattern -(b:bat[:oid,:flt],v:lng) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:flt,b:bat[:oid,:lng]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 command -(b1:bat[:oid,:flt],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -719,7 +719,7 @@ pattern -(b:bat[:oid,:flt],v:flt) :bat[:oid,:dbl]
 address CMDbatSUBcstenlarge
 comment "Return B - V, guarantee no overflow by returning larger type";
 pattern -(v:flt,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatSUBcstsignal
+address CMDbatSUBcstenlarge
 comment "Return V - B, guarantee no overflow by returning larger type";
 
 
@@ -730,7 +730,7 @@ pattern *(b:bat[:oid,:bte],v:bte) :bat[:oid,:sht]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:bte,b:bat[:oid,:bte]) :bat[:oid,:sht]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:bte],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -740,7 +740,7 @@ pattern *(b:bat[:oid,:bte],v:sht) :bat[:oid,:int]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:bte,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:bte],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -750,7 +750,7 @@ pattern *(b:bat[:oid,:bte],v:int) :bat[:oid,:lng]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:bte,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:bte],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -760,7 +760,7 @@ pattern *(b:bat[:oid,:bte],v:flt) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:bte,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:sht],b2:bat[:oid,:bte]) :bat[:oid,:int]
@@ -770,7 +770,7 @@ pattern *(b:bat[:oid,:sht],v:bte) :bat[:oid,:int]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:sht,b:bat[:oid,:bte]) :bat[:oid,:int]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:sht],b2:bat[:oid,:sht]) :bat[:oid,:int]
@@ -780,7 +780,7 @@ pattern *(b:bat[:oid,:sht],v:sht) :bat[:oid,:int]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:sht,b:bat[:oid,:sht]) :bat[:oid,:int]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:sht],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -790,7 +790,7 @@ pattern *(b:bat[:oid,:sht],v:int) :bat[:oid,:lng]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:sht,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:sht],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -800,7 +800,7 @@ pattern *(b:bat[:oid,:sht],v:flt) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:sht,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:int],b2:bat[:oid,:bte]) :bat[:oid,:lng]
@@ -810,7 +810,7 @@ pattern *(b:bat[:oid,:int],v:bte) :bat[:oid,:lng]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:int,b:bat[:oid,:bte]) :bat[:oid,:lng]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:int],b2:bat[:oid,:sht]) :bat[:oid,:lng]
@@ -820,7 +820,7 @@ pattern *(b:bat[:oid,:int],v:sht) :bat[:oid,:lng]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:int,b:bat[:oid,:sht]) :bat[:oid,:lng]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:int],b2:bat[:oid,:int]) :bat[:oid,:lng]
@@ -830,7 +830,7 @@ pattern *(b:bat[:oid,:int],v:int) :bat[:oid,:lng]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:int,b:bat[:oid,:int]) :bat[:oid,:lng]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:int],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -840,7 +840,7 @@ pattern *(b:bat[:oid,:int],v:flt) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:int,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:lng],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -850,7 +850,7 @@ pattern *(b:bat[:oid,:lng],v:flt) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:lng,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:flt],b2:bat[:oid,:bte]) :bat[:oid,:dbl]
@@ -860,7 +860,7 @@ pattern *(b:bat[:oid,:flt],v:bte) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:flt,b:bat[:oid,:bte]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:flt],b2:bat[:oid,:sht]) :bat[:oid,:dbl]
@@ -870,7 +870,7 @@ pattern *(b:bat[:oid,:flt],v:sht) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:flt,b:bat[:oid,:sht]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:flt],b2:bat[:oid,:int]) :bat[:oid,:dbl]
@@ -880,7 +880,7 @@ pattern *(b:bat[:oid,:flt],v:int) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:flt,b:bat[:oid,:int]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:flt],b2:bat[:oid,:lng]) :bat[:oid,:dbl]
@@ -890,7 +890,7 @@ pattern *(b:bat[:oid,:flt],v:lng) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:flt,b:bat[:oid,:lng]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 command *(b1:bat[:oid,:flt],b2:bat[:oid,:flt]) :bat[:oid,:dbl]
@@ -900,7 +900,7 @@ pattern *(b:bat[:oid,:flt],v:flt) :bat[:oid,:dbl]
 address CMDbatMULcstenlarge
 comment "Return B * V, guarantee no overflow by returning larger type";
 pattern *(v:flt,b:bat[:oid,:flt]) :bat[:oid,:dbl]
-address CMDbatMULcstsignal
+address CMDbatMULcstenlarge
 comment "Return V * B, guarantee no overflow by returning larger type";
 
 
