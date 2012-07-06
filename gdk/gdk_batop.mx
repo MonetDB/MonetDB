@@ -2763,8 +2763,10 @@ BATconst(BAT *b, int tailtype, const void *v)
 				bn = VIEWcreate(b, bt);
 				BBPunfix(bt->batCacheid);
 			}
-			if (b != o)
+			if (b != o) {
 				BBPunfix(b->batCacheid);
+				b = o;
+			}
 		}
 	} else {
 		if (tailtype == TYPE_bat) {
