@@ -22,7 +22,7 @@ SELECT count(*) from sampleData;
 -- Median tests
 SELECT median(numValue) FROM sampleData;  -- should return 6.5 (or 6, or 7)
 SELECT median(groupID) FROM sampleData;  -- should return 2
-SELECT groupID, median(numValue) FROM sampleData ORDER BY groupID;  -- should return (4, 5, 34.5, 18,  0)
+SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID;  -- should return (6, 5, 34.5, 18,  0)
 
 
 SELECT R.groupID, AVG(1.0*R.numValue) AS medianValue
