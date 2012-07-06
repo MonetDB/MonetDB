@@ -34,7 +34,8 @@
 static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 static char GDKdbnameStr[PATHLENGTH] = { 0 };
 
-BAT *GDKenv = NULL;
+BAT *GDKkey = NULL;
+BAT *GDKval = NULL;
 
 #include <signal.h>
 
@@ -116,10 +117,10 @@ GDKenvironment(str dbname, str dbfarm)
 char *
 GDKgetenv(const char *name)
 {
-	BUN b = BUNfnd(GDKenv, (ptr) name);
+	BUN b = BUNfnd(BATmirror(GDKkey), (ptr) name);
 
 	if (b != BUN_NONE) {
-		BATiter GDKenvi = bat_iterator(GDKenv);
+		BATiter GDKenvi = bat_iterator(GDKval);
 		return BUNtail(GDKenvi, b);
 	}
 	return NULL;
@@ -160,8 +161,10 @@ GDKgetenv_int(const char *name, int def)
 void
 GDKsetenv(str name, str value)
 {
-	BUNins(GDKenv, name, value, FALSE);
-	BATfakeCommit(GDKenv);
+	BUNappend(GDKkey, name, FALSE);
+	BUNappend(GDKval, value, FALSE);
+	BATfakeCommit(GDKkey);
+	BATfakeCommit(GDKval);
 }
 
 
@@ -1214,12 +1217,21 @@ GDKinit(opt *set, int setlen)
 
 	HEAPcacheInit();
 
-	GDKenv = BATnew(TYPE_str, TYPE_str, 100);
-	if (GDKenv == NULL)
+	GDKkey = BATnew(TYPE_void, TYPE_str, 100);
+	GDKval = BATnew(TYPE_void, TYPE_str, 100);
+	if (GDKkey == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
-	BATkey(GDKenv, BOUND2BTRUE);
-	BATrename(GDKenv, "monet_environment");
-	BATmode(GDKenv, TRANSIENT);
+	if (GDKval == NULL)
+		GDKfatal("GDKinit: Could not create environment BAT");
+	BATseqbase(GDKkey,0);
+	BATkey(GDKkey, BOUND2BTRUE);
+	BATrename(GDKkey, "environment_key");
+	BATmode(GDKkey, TRANSIENT);
+
+	BATseqbase(GDKval,0);
+	BATkey(GDKval, BOUND2BTRUE);
+	BATrename(GDKval, "environment_val");
+	BATmode(GDKval, TRANSIENT);
 
 	n = (opt *) malloc(setlen * sizeof(opt));
 	for (i = 0; i < setlen; i++) {
