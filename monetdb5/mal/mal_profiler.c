@@ -142,12 +142,13 @@ deactivateCounter(str name)
  * The offline processing structure is the easiest. We merely have to
  * produce a correct tuple format for the front-end.
  */
-#define log(X, Y) if (eventstream) if (mnstr_printf(eventstream, X, Y) < 0) \
-		{ closeProfilerStream(); }
-#define log0(X) if (eventstream) if (mnstr_printf(eventstream, X) < 0)	\
-		{ closeProfilerStream(); }
-#define log2(X, Y, Z) if (eventstream) if (mnstr_printf(eventstream, X, Y, Z) < 0) \
-		{ closeProfilerStream(); }
+#define log(...)												\
+	do {														\
+		if (eventstream)										\
+			if (mnstr_printf(eventstream, __VA_ARGS__) < 0) {	\
+				closeProfilerStream();							\
+			}													\
+	} while (0)
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
 
 /*
@@ -186,68 +187,68 @@ offlineProfilerHeader(void)
 		mal_unset_lock(mal_profileLock, "profileLock");
 		return ;
 	}
-	log0("# ");
+	log("# ");
 	if (profileCounter[PROFevent].status) {
-		log0("event,\tstatus,\t");
+		log("event,\tstatus,\t");
 	}
 	if (profileCounter[PROFtime].status) {
-		log0("time,\t");
+		log("time,\t");
 	}
 	if (profileCounter[PROFthread].status) {
-		log0("thread,\t");
+		log("thread,\t");
 	}
 	if (profileCounter[PROFflow].status)
-		log0("claim,\tmemory,\t");
+		log("claim,\tmemory,\t");
 	if (profileCounter[PROFfunc].status) {
-		log0("function,\t");
+		log("function,\t");
 	}
 	if (profileCounter[PROFpc].status) {
-		log0("pc,\t");
+		log("pc,\t");
 	}
 	if (profileCounter[PROFticks].status) {
-		log0("usec,\t");
+		log("usec,\t");
 	}
 	if (profileCounter[PROFcpu].status) {
-		log0("utime,\t");
-		log0("cutime,\t");
-		log0("stime,\t");
-		log0("cstime,\t");
+		log("utime,\t");
+		log("cutime,\t");
+		log("stime,\t");
+		log("cstime,\t");
 	}
 
 	if (profileCounter[PROFmemory].status) {
-		log0("maxrss,\t");
-		log0("arena,\t");
-		log0("ordblks,\t");
-		log0("smblks,\t");
-		log0("hblkhd,\t");
-		log0("hblks,\t");
-		log0("fsmblks,\t");
-		log0("uordblks,\t");
+		log("maxrss,\t");
+		log("arena,\t");
+		log("ordblks,\t");
+		log("smblks,\t");
+		log("hblkhd,\t");
+		log("hblks,\t");
+		log("fsmblks,\t");
+		log("uordblks,\t");
 	}
 	if (profileCounter[PROFreads].status)
-		log0("blk reads,\t");
+		log("blk reads,\t");
 	if (profileCounter[PROFwrites].status)
-		log0("blk writes,\t");
+		log("blk writes,\t");
 	if (profileCounter[PROFprocess].status) {
-		log0("pg reclaim,\t");
-		log0("pg faults,\t");
-		log0("swaps,\t");
-		log0("ctxt switch,\t");
-		log0("inv switch,\t");
+		log("pg reclaim,\t");
+		log("pg faults,\t");
+		log("swaps,\t");
+		log("ctxt switch,\t");
+		log("inv switch,\t");
 	}
 	if (profileCounter[PROFrbytes].status)
-		log0("rbytes,\t");
+		log("rbytes,\t");
 	if (profileCounter[PROFwbytes].status)
-		log0("wbytes,\t");
+		log("wbytes,\t");
 	if (profileCounter[PROFaggr].status)
-		log0("count,\t totalticks,\t");
+		log("count,\t totalticks,\t");
 	if (profileCounter[PROFstmt].status)
-		log0("stmt,\t");
+		log("stmt,\t");
 	if (profileCounter[PROFtype].status)
-		log0("types,\t");
+		log("types,\t");
 	if (profileCounter[PROFuser].status)
-		log0("user,\t");
-	log0("# name\n");
+		log("user,\t");
+	log("# name\n");
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
@@ -295,15 +296,15 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #endif
 
 	/* make basic profile event tuple  */
-	log0("[ ");
+	log("[ ");
 	if (profileCounter[PROFevent].status) {
 		log("%d,\t", eventcounter);
 	}
 	if (profileCounter[PROFstart].status) {
 		if ( start) {
-			log0("\"start\",\t");
+			log("\"start\",\t");
 		} else {
-			log0("\"done\" ,\t");
+			log("\"done\" ,\t");
 		}
 	}
 	if (profileCounter[PROFtime].status) {
@@ -334,7 +335,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 	if (profileCounter[PROFfunc].status) {
 		if (getModuleId(getInstrPtr(mb,0)) && getFunctionId(getInstrPtr(mb,0))) {
-			log2("\"%s.%s\",\t", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
+			log("\"%s.%s\",\t", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)));
 		} else
 			log("\"%s\",\t", operatorName(pci->token));
 	}
@@ -388,7 +389,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log(LLFMT ",\t", mb->profiler[pc].wbytes);
 
 	if (profileCounter[PROFaggr].status)
-		log2("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
+		log("%d,\t" LLFMT ",\t", mb->profiler[pc].counter, mb->profiler[pc].totalticks);
 
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -402,7 +403,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		if (stmtq != NULL) {
 			log(" \"%s\",\t", stmtq);
 			GDKfree(stmtq);
-		} else log0(" ,\t");
+		} else log(" ,\t");
 		GDKfree(stmt);
 	}
 	if (profileCounter[PROFtype].status) {
@@ -421,7 +422,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		log(" %d", idx);
 	}
-	log0(" ]\n");
+	log(" ]\n");
 	eventcounter++;
 	flushLog();
 	mal_unset_lock(mal_profileLock, "profileLock");
