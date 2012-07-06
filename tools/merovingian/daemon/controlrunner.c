@@ -146,12 +146,14 @@ control_authorise(
 	pwd = mcrypt_hashPassword(algo,
 			getConfVal(_mero_props, "passphrase"), chal);
 	if (strcmp(pwd, passwd) != 0) {
+		free(pwd);
 		Mfprintf(_mero_ctlout, "%s: permission denied "
 				"(bad passphrase)\n", host);
 		mnstr_printf(fout, "!access denied\n");
 		mnstr_flush(fout);
 		return 0;
 	}
+	free(pwd);
 
 	mnstr_printf(fout, "=OK\n");
 	mnstr_flush(fout);
@@ -422,6 +424,8 @@ static void ctl_handle_client(
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("!");
 					}
+					freeConfFile(props);
+					free(props);
 				}
 			} else if (strcmp(p, "destroy") == 0) {
 				err e = db_destroy(q);
@@ -520,7 +524,7 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
-			} else if (strchr(p, '=') != NULL) {
+			} else if (strchr(p, '=') != NULL) { /* set */
 				char *val;
 				char doshare = 0;
 
@@ -644,10 +648,12 @@ static void ctl_handle_client(
 					/* send defaults to client */
 					writePropsBuf(_mero_db_props, &pbuf);
 					send_list();
-					free(props);
 
 					Mfprintf(_mero_ctlout, "%s: served default property "
 							"list\n", origin);
+					freeConfFile(props);
+					free(props);
+					free(pbuf);
 					break;
 				}
 
@@ -658,6 +664,8 @@ static void ctl_handle_client(
 					Mfprintf(_mero_ctlerr, "%s: get: msab_getStatus: "
 							"%s\n", origin, e);
 					freeErr(e);
+					freeConfFile(props);
+					free(props);
 					break;
 				}
 				if (stats == NULL) {
@@ -666,6 +674,8 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2),
 							"unknown database: %s\n", q);
 					send_client("!");
+					freeConfFile(props);
+					free(props);
 					break;
 				}
 
@@ -676,6 +686,7 @@ static void ctl_handle_client(
 				send_list();
 				freeConfFile(props);
 				free(props);
+				free(pbuf);
 				msab_freeStatus(&stats);
 
 				Mfprintf(_mero_ctlout, "%s: served property list for "

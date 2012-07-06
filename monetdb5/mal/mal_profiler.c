@@ -437,8 +437,10 @@ setLogFile(stream *fd, Module mod, str fname)
 {
 	(void)mod;      /* still unused */
 	mal_set_lock(mal_profileLock, "profileLock");
-	if (eventstream )
+	if (eventstream ) {
+		mal_unset_lock(mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", "Log file already set");
+	}
 	if (strcmp(fname, "console") == 0)
 		eventstream = mal_clients[0].fdout;
 	else if (strcmp(fname, "stdout") == 0)
@@ -446,6 +448,7 @@ setLogFile(stream *fd, Module mod, str fname)
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	mal_unset_lock(mal_profileLock, "profileLock");
@@ -457,8 +460,10 @@ setLogStream(Module cntxt, str host, int port)
 {
 	(void)cntxt;        /* still unused */
 	mal_set_lock(mal_profileLock, "profileLock");
-	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL)
+	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
+	}
 	eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
@@ -469,8 +474,10 @@ setLogStreamStream(Module cntxt, stream *s)
 {
 	(void)cntxt;        /* still unused */
 	mal_set_lock(mal_profileLock, "profileLock");
-	if ((eventstream = s) == NULL)
+	if ((eventstream = s) == NULL) {
+		mal_unset_lock(mal_profileLock, "profileLock");
 		throw(ILLARG, "mal.profiler", "stream must not be NULL");
+	}
 	eventstream = wbstream(eventstream, BUFSIZ);
 	mal_unset_lock(mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
