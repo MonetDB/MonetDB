@@ -29,19 +29,20 @@
 #     changed), increment CURRENT, and set AGE and REVISION to 0.
 #     IMPORTANT: also change debian package names for the relevant
 #     library.  This involves renaming the file in debian/ and
-#     updating references to the package in debian/control.
+#     updating references to the package in debian/control.  The version
+#     number should match the ELF SONAME
 
 # the numbers are: <CURRENT>:<REVISION>:<AGE>
 
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
-GDK_VERSION=5:2:0
+GDK_VERSION=6:0:0
 
 # version of the MAPI library (subdirectory clients/mapilib)
-MAPI_VERSION=6:1:0
+MAPI_VERSION=6:2:0
 
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras)
-MONETDB5_VERSION=11:2:0
+MONETDB5_VERSION=12:0:0
 
 # version of the STREAM library (subdirectory common/stream)
-STREAM_VERSION=4:1:1
+STREAM_VERSION=4:2:1
