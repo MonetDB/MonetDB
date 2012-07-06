@@ -1,16 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Wed Apr  4 2012 Sjoerd Mullender <sjoerd@acm.org>
-- The sorted property, which was used to maintain whether a column in
-  a BAT was sorted or reverse sorted, has been replaced by a pair of
-  properties, sorted and revsorted.  These new properties can be set
-  independently (unlike the old sorted property), and so if both are set,
-  the column must be constant.  In addition, internal property checking
-  has been overhauled.  Now, when a property is set incorrectly, and
-  when assertions are enabled, an assertion will go off.  There is also
-  a function which can derive properties.
-
-* Thu Mar 15 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Implemented proper overflow checking on all arithmetic operations.
-

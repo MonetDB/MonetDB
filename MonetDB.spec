@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2012/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -679,6 +679,48 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Fri Jul 06 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.1-20120706
+- Rebuilt.
+
+* Mon Jul  2 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Created seperate RPM and DEB packages for MonetDB/JAQL.
+
+* Fri Jun 29 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- sql: COPY INTO now accepts optional parenthesis for file argument.
+  Binary COPY INTO now requires 'COPY BINARY INTO'.
+
+* Fri Jun 29 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- clients: ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
+  of a connection handle.
+
+* Thu Jun 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- monetdb5: Crackers code has been removed.  Development continues in the holindex
+  branch.
+
+* Wed Jun 13 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- merovingian: Removed erroneously (re-)added master and slave properties, this
+  functionality is currently not working.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Removed --enable-bits option from configure.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Split the MonetDB-client-ruby RPM package into two and named them in
+  accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- gdk: The sorted property, which was used to maintain whether a column in
+  a BAT was sorted or reverse sorted, has been replaced by a pair of
+  properties, sorted and revsorted.  These new properties can be set
+  independently (unlike the old sorted property), and so if both are set,
+  the column must be constant.  In addition, internal property checking
+  has been overhauled.  Now, when a property is set incorrectly, and
+  when assertions are enabled, an assertion will go off.  There is also
+  a function which can derive properties.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- gdk: Implemented proper overflow checking on all arithmetic operations.
+
 * Thu Jun 07 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.7-20120607
 - Rebuilt.
 

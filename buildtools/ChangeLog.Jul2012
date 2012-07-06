@@ -1,13 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Mon Jul  2 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Created seperate RPM and DEB packages for MonetDB/JAQL.
-
-* Tue Jun  5 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Removed --enable-bits option from configure.
-
-* Thu Apr 19 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Split the MonetDB-client-ruby RPM package into two and named them in
-  accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
-
