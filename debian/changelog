@@ -1,3 +1,75 @@
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Fri, 06 Jul 2012 11:02:22 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * buildtools: Created seperate RPM and DEB packages for MonetDB/JAQL.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 2 Jul 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * sql: COPY INTO now accepts optional parenthesis for file argument.
+    Binary COPY INTO now requires 'COPY BINARY INTO'.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 29 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * clients: ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
+    of a connection handle.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * monetdb5: Crackers code has been removed.  Development continues in the holindex
+    branch.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 14 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * merovingian: Removed erroneously (re-)added master and slave properties, this
+    functionality is currently not working.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 13 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * buildtools: Removed --enable-bits option from configure.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * buildtools: Split the MonetDB-client-ruby RPM package into two and named them in
+    accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * gdk: The sorted property, which was used to maintain whether a column in
+    a BAT was sorted or reverse sorted, has been replaced by a pair of
+    properties, sorted and revsorted.  These new properties can be set
+    independently (unlike the old sorted property), and so if both are set,
+    the column must be constant.  In addition, internal property checking
+    has been overhauled.  Now, when a property is set incorrectly, and
+    when assertions are enabled, an assertion will go off.  There is also
+    a function which can derive properties.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
+
+monetdb (11.11.1-20120706) unstable; urgency=low
+
+  * gdk: Implemented proper overflow checking on all arithmetic operations.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 7 Jun 2012 11:02:20 +0200
+
 monetdb (11.9.7-20120607) unstable; urgency=low
 
   * Rebuilt.

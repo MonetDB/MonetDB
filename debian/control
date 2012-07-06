@@ -9,7 +9,7 @@ Build-Depends: debhelper (>= 5), autotools-dev, cdbs, bison, flex, libbz2-dev, l
 # Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
 
-Package: libmonetdb4
+Package: libmonetdb6
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libmonetdb1, libmonetdb2, libmonetdb-dev
