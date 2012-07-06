@@ -619,7 +619,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 
 	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
-	list *join_exps = new_exp_list(sql->sa);
+	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
@@ -668,9 +668,10 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		nnlls = ups;
 	}
 
+	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
 	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
 	nnlls->exps = join_exps;
-	nnlls = rel_project(sql->sa, nnlls, rel_projections(sql, nnlls->l, NULL, 1, 1));
+	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
