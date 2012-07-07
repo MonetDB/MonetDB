@@ -177,12 +177,14 @@ setProp(char *path, char *key, char *val)
 	if (kv == NULL) {
 		snprintf(buf, sizeof(buf), "no such property: %s", key);
 		freeConfFile(props);
+		free(props);
 		return(strdup(buf));
 	}
 
 	/* first just attempt to set the value (type-check) in memory */
 	if ((err = setConfVal(kv, val)) != NULL) {
 		freeConfFile(props);
+		free(props);
 		return(err);
 	}
 
@@ -193,6 +195,7 @@ setProp(char *path, char *key, char *val)
 				snprintf(buf, sizeof(buf), "expected 'proxy' or 'redirect' "
 						"for property 'forward', got: %s", val);
 				freeConfFile(props);
+				free(props);
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
@@ -200,6 +203,7 @@ setProp(char *path, char *key, char *val)
 			/* check if tag matches [A-Za-z0-9./]+ */
 			if (*value == '\0') {
 				freeConfFile(props);
+				free(props);
 				return(strdup("tag to share cannot be empty"));
 			}
 			while (*value != '\0') {
@@ -215,6 +219,7 @@ setProp(char *path, char *key, char *val)
 							"in tag name '%s'\n",
 							*value, (int)(value - val), val);
 					freeConfFile(props);
+					free(props);
 					return(strdup(buf));
 				}
 				value++;
@@ -225,6 +230,7 @@ setProp(char *path, char *key, char *val)
 	/* ok, if we've reached this point we can write this stuff out! */
 	writeProps(props, path);
 	freeConfFile(props);
+	free(props);
 
 	return(NULL);
 }

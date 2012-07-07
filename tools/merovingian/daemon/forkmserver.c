@@ -96,6 +96,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (force == 0) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					kv->val, database);
+			freeConfFile(ckv);
+			free(ckv);
 			return(NO_ERR);
 		} else {
 			Mfprintf(stdout, "startup of %s under maintenance "
@@ -109,11 +111,15 @@ forkMserver(char *database, sabdb** stats, int force)
 		err e = newErr("could not retrieve uplog information: %s", er);
 		free(er);
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
 		return(e);
 	}
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
+			freeConfFile(ckv);
+			free(ckv);
 			return(NO_ERR);
 		case SABdbCrashed:
 			t = localtime(&info.lastcrash);
@@ -144,6 +150,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		break;
 		default:
 			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
 			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
@@ -151,12 +159,16 @@ forkMserver(char *database, sabdb** stats, int force)
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 	if (pipe(pfde) == -1) {
 		close(pfdo[0]);
 		close(pfdo[1]);
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 
@@ -184,8 +196,12 @@ forkMserver(char *database, sabdb** stats, int force)
 		{
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					getErrMsg(er));
+			freeConfFile(ckv);
+			free(ckv);
 			return(er);
 		}
+		freeConfFile(ckv);
+		free(ckv);
 
 		/* refresh stats, now we will have a connection registered */
 		msab_freeStatus(stats);
@@ -205,6 +221,8 @@ forkMserver(char *database, sabdb** stats, int force)
 	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					"(did you create the database with `monetdb create %s`?)",
 					database, database));
@@ -354,6 +372,10 @@ forkMserver(char *database, sabdb** stats, int force)
 		exit(1);
 	} else if (pid > 0) {
 		int i;
+
+		/* don't need this, child did */
+		freeConfFile(ckv);
+		free(ckv);
 
 		/* make sure no entries are shot while adding and that we
 		 * deliver a consistent state */

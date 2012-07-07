@@ -2179,10 +2179,8 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	psub = stmt_list(sql->sa, pl);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
-		stmt *s = exp_bin(sql, exp, sub, NULL, NULL, NULL);
+		stmt *s = exp_bin(sql, exp, sub, psub, NULL, NULL);
 
-		if (!s)
-			s = exp_bin(sql, exp, sub, psub, NULL, NULL);
 		if (!s) {
 			assert(0);
 			return NULL;
@@ -3879,7 +3877,8 @@ rel2bin_update( mvc *sql, sql_rel *rel, list *refs)
 		if (i) {
 			stmt *is = bin_find_column(sql->sa, update, ce->l, ce->r);
 
-			is = stmt_join(sql->sa, stmt_reverse(sql->sa, tid), is, cmp_equal);
+			if (is)
+				is = stmt_join(sql->sa, stmt_reverse(sql->sa, tid), is, cmp_equal);
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || i->type == no_idx)
 				is = NULL;
 			if (i->key) {

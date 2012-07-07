@@ -695,7 +695,7 @@ static void ctl_handle_client(
 			} else if (strcmp(p, "status") == 0) {
 				sabdb *stats;
 				sabdb *topdb;
-				char *sdb;
+				char *sdb = NULL;
 
 				if (strcmp(q, "#all") == 0)
 					/* list all */

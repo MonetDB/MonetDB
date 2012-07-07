@@ -1612,7 +1612,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref)
 				tpe->comp_type) {
 				temp_table = stack_find_rel_var(sql, tname);
 				t = tpe->comp_type;
-			} else {
+			} else if (sql->use_views){
 				temp_table = stack_find_rel_view(sql, tname);
 			}
 			if (temp_table)
@@ -1771,7 +1771,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 
 		/* some views are just in the stack,
 		   like before and after updates views */
-		if (!exp) {
+		if (!exp && sql->use_views) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
 			if (v) {
@@ -5067,6 +5067,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 	sql_rel *res = NULL;
 	SelectNode *sn = NULL;
 	int used = 0;
+	int old = sql->use_views;
 
 	if (sq->token != SQL_SELECT)
 		return table_ref(sql, rel, sq);
@@ -5080,6 +5081,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 		return sql_error(sql, 01, "SELECT: ORDER BY only allowed on outermost SELECT");
 
 
+	sql->use_views = 1;
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
 		dnode *n = NULL;
@@ -5111,8 +5113,10 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek)
 			res = rel_crossproduct(sql->sa, rel, res, op_join);
 		}
 	} else if (toplevel || !res) {	/* only on top level query */
+		sql->use_views = old;
 		return rel_simple_select(sql, rel, sn->where, sn->selection, sn->distinct);
 	}
+	sql->use_views = old;
 	if (res)
 		rel = rel_select_exp(sql, res, rel, sn, ek);
 	return rel;

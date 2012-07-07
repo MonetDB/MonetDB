@@ -7466,7 +7466,7 @@ address SQLmiddle;
 
 function aggr.median(a:bat[:oid,:any_1]):any_1;
 	v := algebra.sortTail(a);
-	return sql.middle_val(a);
+	return sql.middle_val(v);
 end aggr.median;
 
 function aggr.median(a:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1];
