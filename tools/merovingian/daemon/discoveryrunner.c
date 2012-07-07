@@ -89,6 +89,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 			free(rdb->conn);
 			free(rdb->fullname);
 			free(rdb);
+			rdb = prv;
 			hadmatch = 1;
 			/* in the future, there may be more, so keep looking */
 		}
