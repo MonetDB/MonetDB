@@ -383,7 +383,7 @@ BAThash(BAT *b, BUN masksize)
 		bat p = VIEWhparent(b);
 		o = b;
 		b = BATdescriptor(p);
-		if (!ALIGNsynced(o, b)) {
+		if (!ALIGNsynced(o, b) || BUNfirst(o) != BUNfirst(b)) {
 			BBPunfix(b->batCacheid);
 			b = o;
 			o = NULL;
