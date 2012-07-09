@@ -679,6 +679,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Mon Jul 09 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.3-20120709
+- Rebuilt.
+
+* Sat Jul  7 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.3-20120709
+- merovingian: Fixed misc memory leaks, which caused monetdbd to grow in memory size
+  over time.
+
 * Fri Jul 06 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.1-20120706
 - Rebuilt.
 

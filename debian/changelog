@@ -1,3 +1,16 @@
+monetdb (11.11.3-20120709) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Mon, 09 Jul 2012 10:05:31 +0200
+
+monetdb (11.11.3-20120709) unstable; urgency=low
+
+  * merovingian: Fixed misc memory leaks, which caused monetdbd to grow in memory size
+    over time.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Sat, 7 Jul 2012 10:05:31 +0200
+
 monetdb (11.11.1-20120706) unstable; urgency=low
 
   * Rebuilt.
