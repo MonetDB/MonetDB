@@ -924,3 +924,26 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 }
 
+str
+CMDstr2qgrams(int *ret, str *val)
+{
+	BAT *bn;
+	int i, len = (int)strlen(*val) +4;
+	str s = GDKzalloc( len);
+	char qgram[4];
+
+	s[0]=0;
+	strcat(s,"##");
+	strcat(s,*val);
+	strcat(s,"$$");
+	qgram[3]=0;
+	bn = BATnew(TYPE_void, TYPE_str, (int) strlen(*val));
+	BATseqbase(bn,0);
+	
+	for ( i= 0; i< len -4; i++){
+		strncpy(qgram,s+i,4);
+		BUNappend(bn,qgram,FALSE);
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}

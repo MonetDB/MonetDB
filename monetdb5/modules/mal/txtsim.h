@@ -52,6 +52,7 @@ txtsim_export str soundex_impl(str *res, str *Name);
 txtsim_export str stringdiff_impl(int *res, str *s1, str*s2);
 txtsim_export str CMDqgramnormalize(str *res, str *input);
 txtsim_export str CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k);
+txtsim_export str CMDstr2qgrams(int *ret, str *val);
 
 #endif /*_TXTSIM_H*/
 

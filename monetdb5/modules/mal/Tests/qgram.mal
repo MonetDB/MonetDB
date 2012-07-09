@@ -1,0 +1,2 @@
+b := txtsim.str2qgrams("hello world");
+io.print(b);
