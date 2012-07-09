@@ -63,6 +63,7 @@ class Server:
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
+        self.socket = None
 
     def connect(self, hostname, port, username, password, database, language):
         """ connect to a MonetDB database using the mapi protocol"""
@@ -259,3 +260,7 @@ class Server:
                 raise OperationalError(error[1])
             pos += length
 
+
+    def __del__(self):
+        if self.socket:
+            self.socket.close()
