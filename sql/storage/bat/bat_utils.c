@@ -132,7 +132,7 @@ update_table_bat(BAT *b, BAT *ub)
 {
 	if (ub && BATcount(ub)) {
 		void_replace_bat(b, ub, TRUE);
-		BATclear(ub);
+		BATclear(ub, TRUE);
 		BATcommit(ub);
 	}
 }

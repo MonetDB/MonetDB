@@ -24,7 +24,7 @@
 #include <gdk_logger.h>
 
 #define bat_set_access(b,access) b->P->restricted = access
-#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
+#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b,TRUE);bat_set_access(b,BAT_READ)
 
 extern BAT *temp_descriptor(log_bid b);
 extern BAT *quick_descriptor(log_bid b);

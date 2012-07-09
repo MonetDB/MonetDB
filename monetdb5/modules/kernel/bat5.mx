@@ -1689,7 +1689,7 @@ BKCdelete_all(int *r, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
-	bn=BATclear(b);
+	bn=BATclear(b, FALSE);
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete_all", OPERATION_FAILED);

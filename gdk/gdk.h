@@ -1494,7 +1494,7 @@ gdk_export int BATgetaccess(BAT *b);
  * @- BAT manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT *
- * @tab BATclear (BAT *b)
+ * @tab BATclear (BAT *b, int force)
  * @item BAT *
  * @tab BATcopy (BAT *b, int ht, int tt, int writeable)
  * @item BAT *
@@ -1525,7 +1525,7 @@ gdk_export int BATgetaccess(BAT *b);
  * a state change in the BAT (as previously): both views on the BAT
  * exist at the same time.
  */
-gdk_export BAT *BATclear(BAT *b);
+gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);

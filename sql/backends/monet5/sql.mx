@@ -6494,7 +6494,7 @@ SQL@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d->ibid = bids[i]; /* use the insert bat */
 		c->base.wtime = c->base.rtime = tr->stime;
 	}
-	BATclear(del);
+	BATclear(del, TRUE);
 	BBPreleaseref(del->batCacheid);
 	/* bat was cleared */
 	t->cleared = 1;
