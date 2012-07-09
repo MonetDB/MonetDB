@@ -80,6 +80,19 @@ class Test_Capabilities(capabilities.DatabaseTest):
             username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
     leak_test = False
 
+    def test_description(self):
+        self.table = self.new_table_name()
+        self.cursor.execute("create table %s (c VARCHAR(1024), d DECIMAL(9,4), n VARCHAR(1) NOT NULL)" % self.table);
+        self.cursor.execute("insert into %s VALUES ('test', 12345.1234, 'x')" % self.table)
+        self.cursor.execute('select * from %s' % self.table)
+        description = self.cursor.description
+        shouldbe = [
+            ('c', 'varchar', None, 1024, None, None, None),
+            ('d', 'decimal', None, 9, 9, 4, None),
+            ('n', 'varchar', None, 1, None, None, None),
+        ]
+        self.assertEqual(description, shouldbe, "cursor.description is incorrect")
+
     def test_bigresult(self):
         self.cursor.execute('select count(*) from tables')
         r = self.cursor.fetchone()
@@ -87,9 +100,7 @@ class Test_Capabilities(capabilities.DatabaseTest):
         self.cursor.arraysize=1000
         self.cursor.execute('select * from tables, tables')
         r = self.cursor.fetchall()
-        self.assertEquals(len(r), n**2)
-
-
+        self.assertEqual(len(r), n**2)
 
 
 
@@ -122,10 +133,9 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
     def _connect(self):
         try:
             con = self.driver.connect( *self.connect_args, **self.connect_kwargs)
+            return con
         except AttributeError:
             self.fail("No connect method found in self.driver module")
-        finally:
-            return con
 
 
     def tearDown(self):
