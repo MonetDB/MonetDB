@@ -407,15 +407,16 @@ class Cursor:
             rows = []
 
             # set up fields for description
-            empty = [None]*columns
-            table_name = empty
-            column_name = empty
-            type = empty
-            display_size = empty
-            internal_size = empty
-            precision = empty
-            scale = empty
-            null_ok = empty
+            table_name = [None]*columns
+            column_name = [None]*columns
+            type_ = [None]*columns
+            display_size = [None]*columns
+            internal_size = [None]*columns
+            precision = [None]*columns
+            scale = [None]*columns
+            null_ok = [None]*columns
+
+            typesizes = [(0,0)]*columns
 
             for line in lines[1:]:
                 if line.startswith(mapi.MSG_HEADER):
@@ -428,17 +429,23 @@ class Cursor:
                     elif identity == "name":
                         column_name = values
                     elif identity == "type":
-                        type = values
+                        type_ = values
                     elif identity == "length":
-                        internal_size = [int(x) for x in values]
-                        display_size = internal_size
+                        pass # not used
+                    elif identity == "typesizes":
+                        typesizes = [[int(j) for j in i.split()] for i in values]
+                        internal_size = [x[0] for x in typesizes]
+                        for num, typeelem in enumerate(type_):
+                            if typeelem in ['decimal']:
+                                precision[num] = typesizes[num][0]
+                                scale[num] = typesizes[num][1]
                     else:
                         self.messages.append((InterfaceError,
                             "unknown header field"))
                         self.__exception_handler(InterfaceError,
                                 "unknown header field")
 
-                    self.description = list(zip(column_name, type,
+                    self.description = list(zip(column_name, type_,
                         display_size, internal_size, precision, scale, null_ok))
 
                 if line.startswith(mapi.MSG_TUPLE):
