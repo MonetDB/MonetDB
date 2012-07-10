@@ -93,13 +93,14 @@ test_TIMESTAMP (__main__.Test_Capabilities) ... ok
 test_TIMESTAMPTZ (__main__.Test_Capabilities) ... ok
 test_TINYINT (__main__.Test_Capabilities) ... ok
 test_bigresult (__main__.Test_Capabilities) ... ok
+test_description (__main__.Test_Capabilities) ... ok
 test_fractional_TIMESTAMP (__main__.Test_Capabilities) ... ok
 test_small_CHAR (__main__.Test_Capabilities) ... ok
 test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 18 tests
+Ran 19 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok
