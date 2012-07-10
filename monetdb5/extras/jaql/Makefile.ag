@@ -71,3 +71,4 @@ headers_autoload = {
 }
 
 EXTRA_DIST = json.mal jaql.mal 30_jaql.mal
+EXTRA_DIST_DIR = jaqltests Tests
