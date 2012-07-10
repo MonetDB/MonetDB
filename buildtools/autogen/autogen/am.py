@@ -1037,7 +1037,7 @@ def am_ant(fd, var, ant, am):
     if ant.has_key("COND"):
         fd.write("\nif " + ant["COND"][0] +"\n\n")
 
-    fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)`\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" -Dbasedir=\"`$(anttranslatepath) $(srcdir)`\" %s\n" % (target, target))
+    fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)/%s`\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" -Dbasedir=\"`$(anttranslatepath) $(srcdir)`\" %s\n" % (target, target, target))
 
     for file in ant['FILES']:
         sfile = file.replace(".", "_")

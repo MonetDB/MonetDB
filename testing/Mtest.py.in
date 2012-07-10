@@ -2254,15 +2254,22 @@ def randomPort(l,h) :
     repeat = randomPortRepeat
     port = 0
     rpt = 0
+    ports = []
     while rpt < repeat:
         port = random.randrange(l,h,1)
+        ports.append(port)
         busy, host, Serrno, Serrstr, S = CheckPort(port)
         S[0].close()
         S[1].close()
         if busy:
             rpt = rpt + 1
+            port = 0
         else:
             break
+    else:
+        if sys.platform == 'linux2':
+            print 'Ports tried:',`ports`
+            os.system('netstat -ap')
     return (port,host)
 ### randomPort(l,h) #
 
@@ -2277,14 +2284,13 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
 ! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
 """ % (SERVER, host, port, Serrno, Serrstr)
         newport = eval(dft[SERVER+'PORT'])
-        busy, host, Serrno, Serrstr, S = CheckPort(int(newport))
-        if busy:
+        if newport == 0:
             S[0].close()
             S[1].close()
             Smsg = Smsg + """
-! Socket-Check failed for %sserver on <%s:%d> with #%d; '%s' !
+! Socket-Check failed for %sserver on <%s> !
 ! Giving up after %d attepts !
-""" % (SERVER, host, int(newport), Serrno, Serrstr, randomPortRepeat)
+""" % (SERVER, host, randomPortRepeat)
             return None, Smsg
 
         env[SERVER+'PORT'] = newport
@@ -2928,7 +2934,7 @@ else:
     HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 # check the host port actually works
-_, HOST = randomPort(30000,39999);
+_, HOST = randomPort(30000,39999)
 os.environ['HOST'] = HOST
 
 if os.name == "nt":
@@ -3360,6 +3366,8 @@ def main(argv) :
             #TODO:
             # make sure, that PATHs are absolute
     if THISFILE == "Mtest.py":
+        if env['MAPIPORT'] == 0:
+            ErrXit('Cannot find a workable MAPIPORT')
         if env['MONETDB_MOD_PATH']:
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
