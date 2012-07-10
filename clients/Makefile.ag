@@ -21,6 +21,8 @@ EXTRA_DIST = RunMtest.in RunMtest.bat.in \
 		RunMapprove.in \
 		Runmclient.bat.in
 
+EXTRA_DIST_DIR = Tests
+
 TESTS = RunMtest
 TESTS_ENVIRONMENT = $(SHELL)
 
