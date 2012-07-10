@@ -1,3 +1,17 @@
+monetdb (11.11.5-20120710) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Tue, 10 Jul 2012 11:52:59 +0200
+
+monetdb (11.11.5-20120710) unstable; urgency=low
+
+  * gdk: Fixed intermittent problem that joins and selects return incorrect
+    results and possibly inconsistent databases. The problems only occurred
+    after a series of queries and updates, therefore it was hard to reproduce.
+
+ -- Niels Nes <niels@cwi.nl>  Mon, 9 Jul 2012 11:52:58 +0200
+
 monetdb (11.11.3-20120709) unstable; urgency=low
 
   * Rebuilt.

@@ -679,6 +679,14 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jul 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.5-20120710
+- Rebuilt.
+
+* Mon Jul  9 2012 Niels Nes <niels@cwi.nl> - 11.11.5-20120710
+- gdk: Fixed intermittent problem that joins and selects return incorrect
+  results and possibly inconsistent databases. The problems only occurred
+  after a series of queries and updates, therefore it was hard to reproduce.
+
 * Mon Jul 09 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.3-20120709
 - Rebuilt.
 
