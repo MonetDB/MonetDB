@@ -354,7 +354,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* clean out basket */
 			bn = BATjoin( BATmirror(bs), b, BUN_NONE);
 			b = BATsetaccess(b, BAT_WRITE);
-			BATclear(b);
+			BATclear(b, FALSE);
 			BATins(b,bn, FALSE);
 			BBPreleaseref(bn->batCacheid);
 		}
@@ -379,7 +379,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATcopy(b, b->htype, b->ttype,TRUE);
 			v = BATslice(bn, baskets[bskt].winstride,BATcount(bn));
 			b = BATsetaccess(b, BAT_WRITE);
-			BATclear(b);
+			BATclear(b, FALSE);
 			BATins(b,v, FALSE);
 			BATsetcount(bn, baskets[bskt].winsize);
 			cnt = (int) BATcount(bn);
@@ -395,7 +395,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ret= (int*) getArgReference(stk,pci,i);
 			b = baskets[bskt].primary[i];
 			bn = BATcopy(b, b->htype, b->ttype,TRUE);
-			BATclear(b);
+			BATclear(b, FALSE);
 			*ret = bn->batCacheid;
 			BBPkeepref(*ret);
 		}
