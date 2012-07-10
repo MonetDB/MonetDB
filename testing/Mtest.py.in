@@ -2254,8 +2254,10 @@ def randomPort(l,h) :
     repeat = randomPortRepeat
     port = 0
     rpt = 0
+    ports = []
     while rpt < repeat:
         port = random.randrange(l,h,1)
+        ports.append(port)
         busy, host, Serrno, Serrstr, S = CheckPort(port)
         S[0].close()
         S[1].close()
@@ -2264,6 +2266,10 @@ def randomPort(l,h) :
             port = 0
         else:
             break
+    else:
+        if sys.platform == 'linux2':
+            print 'Ports tried:',`ports`
+            os.system('netstat -ap')
     return (port,host)
 ### randomPort(l,h) #
 
