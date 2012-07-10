@@ -1347,7 +1347,9 @@ sql_rel *
 rel_updates(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
+	int old = sql->use_views;
 
+	sql->use_views = 1;
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{
@@ -1398,7 +1400,9 @@ rel_updates(mvc *sql, symbol *s)
 	}
 		break;
 	default:
+		sql->use_views = old;
 		return sql_error(sql, 01, "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
+	sql->use_views = old;
 	return ret;
 }

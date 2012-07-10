@@ -32,7 +32,7 @@ typedef struct sql_bat {
 } sql_bat;
 
 #define bat_set_access(b,access) b->P->restricted = access
-#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b);bat_set_access(b,BAT_READ)
+#define bat_clear(b) bat_set_access(b,BAT_WRITE);BATclear(b,TRUE);bat_set_access(b,BAT_READ)
 
 /* initialize bat storage call back functions interface */
 extern int su_storage_init( store_functions *sf );

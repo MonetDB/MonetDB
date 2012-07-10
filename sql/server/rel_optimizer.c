@@ -1779,7 +1779,24 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
-		/* possibly a groupby column is renamed */
+		while (ne && f->op == op_project && ne->type == e_column) {
+			sql_exp *oe = e, *one = ne;
+
+			e = ne;
+			ne = NULL;
+			if (e->l)
+				ne = exps_bind_column2(f->exps, e->l, e->r);
+			if (!ne && !e->l)
+				ne = exps_bind_column(f->exps, e->r, NULL);
+			if (!ne || ne == one) {
+				ne = one;
+				e = oe;
+				break;
+			}
+			if (ne->type != e_column && ne->type != e_atom)
+				return NULL;
+		}
+		/* possibly a groupby/project column is renamed */
 		if (is_groupby(f->op) && f->r) {
 			sql_exp *gbe = NULL;
 			if (ne->l) 

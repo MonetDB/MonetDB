@@ -54,10 +54,10 @@ class Connection:
         if host is not None:
             hostname = host
         self.mapi = mapi.Server()
-        self.autocommit = autocommit
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
             password=password, database=database, language="sql")
-        self.set_autocommit(self.autocommit)
+        self.set_autocommit(autocommit)
+        self.set_sizeheader(True)
         self.use_unicode=use_unicode
 
 
@@ -88,6 +88,14 @@ class Connection:
         self.command("Xauto_commit %s" % int(autocommit))
         self.autocommit = autocommit
 
+
+    def set_sizeheader(self, sizeheader):
+        """
+        Set sizeheader on or off. When enabled monetdb will return
+        the size a type. 'sizeheader' must be a boolean.
+        """
+        self.command("Xsizeheader %s" % int(sizeheader))
+        self.sizeheader = sizeheader
 
 
     def commit(self):

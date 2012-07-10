@@ -417,7 +417,7 @@ bodyRestart:
 			b = baskets[em->bskt].primary[k];
 			em->table.format[k].c[0] =  BATcopy(b, b->htype, b->ttype,TRUE);
 			em->table.format[k].ci[0] = bat_iterator(b);
-			BATclear(b);
+			BATclear(b, FALSE);
 		}
 		BSKTunlock(&em->lck, &em->name);
 		if ((cnt = BATcount(em->table.format[0].c[0]))) {

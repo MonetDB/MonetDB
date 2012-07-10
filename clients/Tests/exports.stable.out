@@ -90,7 +90,7 @@ BAT *BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
 BAT *BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
 BAT *BATcalcxor(BAT *b1, BAT *b2, int accum);
 BAT *BATcalcxorcst(BAT *b, const ValRecord *v, int accum);
-BAT *BATclear(BAT *b);
+BAT *BATclear(BAT *b, int force);
 BAT *BATcommit(BAT *b);
 BAT *BATconst(BAT *l, int tt, const void *val);
 BAT *BATconvert(BAT *b, int tp, int abort_on_error);

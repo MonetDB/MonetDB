@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Jul  9 2012 Niels Nes <niels@cwi.nl>
+- Fixed intermittent problem that joins and selects return incorrect
+  results and possibly inconsistent databases. The problems only occurred
+  after a series of queries and updates, therefore it was hard to reproduce.
+

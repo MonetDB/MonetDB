@@ -492,7 +492,7 @@ BATextend(BAT *b, BUN newcap)
  * the heaps by copying a standard small empty image over them.
  */
 BAT *
-BATclear(BAT *b)
+BATclear(BAT *b, int force)
 {
 	BUN p, q;
 	int voidbat;
@@ -511,7 +511,7 @@ BATclear(BAT *b)
 	}
 
 	/* small BAT: delete all elements by hand */
-	if (!voidbat && b->batCount < 20) {
+	if (!force && !voidbat && b->batCount < 20) {
 		BATloopDEL(b, p, q) {
 			p = BUNdelete(b, p, FALSE);
 		}
@@ -585,7 +585,10 @@ BATclear(BAT *b)
 		}
 	}
 
-	b->batFirst = b->batInserted;
+	if (force)
+                b->batFirst = b->batDeleted = b->batInserted = 0;
+	else
+		b->batFirst = b->batInserted;
 	BATsetcount(b,0);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);

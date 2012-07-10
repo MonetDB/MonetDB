@@ -234,7 +234,7 @@ la_bat_clear(logger *lg, logaction *la)
 	if (b) {
 		int access = b->P->restricted;
 		b->P->restricted = BAT_WRITE;
-		BATclear(b);
+		BATclear(b, TRUE);
 		b->P->restricted = access;
 		logbat_destroy(b);
 	}
@@ -884,7 +884,7 @@ logger_commit(logger *lg)
 
 	/* cleanup old snapshots */
 	if (BATcount(lg->snapshots)) {
-		BATclear(lg->snapshots);
+		BATclear(lg->snapshots, FALSE);
 		BATcommit(lg->snapshots);
 	}
 	return bm_commit(lg);
@@ -1828,7 +1828,7 @@ assert(lb->P->restricted > BAT_WRITE);
 	}
 	res = bm_subcommit(lg->catalog, lg->catalog, n, lg->debug);
 	BBPreclaim(n);
-	BATclear(lg->freed);
+	BATclear(lg->freed, FALSE);
 	BATcommit(lg->freed);
 	return res != 0 ? LOG_ERR : LOG_OK;
 }
