@@ -2694,111 +2694,71 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 BAT *
 BATconst(BAT *b, int tailtype, const void *v)
 {
-	BAT *bn = NULL;
-	BUN p, q, r;
-	BUN cnt = BATcount(b);
-	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	void *p;
+	BUN i, n;
 
 	BATcheck(b, "BATconst");
-	if (!v)
+	if (v == NULL)
 		return NULL;
-	if (BAThrestricted(b) == BAT_READ &&
-	    !ATOMvarsized(tailtype) && tailtype != TYPE_bat) {
-		BAT *o = b;
-		if (BUNfirst(b))
-			b = BATslice(b, 0, BATcount(b));
-		if (tailtype == TYPE_void) {
-			oid seqbase = oid_nil;
-
-			bn = VIEWhead(b);
-			if (b != o)
-				BBPunfix(b->batCacheid);
-			BATseqbase(BATmirror(bn), seqbase);
-			bn->T->nonil = 0;
-			return bn;
-		} else {
-			BAT *bt = BATnew(TYPE_void, tailtype, cnt);
-
-			if (!bt)
-				return NULL;
-			bt->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
-			switch (ATOMsize(ATOMstorage(tailtype))) {
-			case 1:{
-				bte *d = (bte *) Tloc(bt, BUNfirst(bt)), V = *(const bte *) v;
-				for (r = 0; r < cnt; r++)
-					d[r] = V;
-				BATsetcount(bt, cnt);
-				break;
-			}
-			case 2:{
-				sht *d = (sht *) Tloc(bt, BUNfirst(bt)), V = *(const sht *) v;
-				for (r = 0; r < cnt; r++)
-					d[r] = V;
-				BATsetcount(bt, cnt);
-				break;
-			}
-			case 4:{
-				int *d = (int *) Tloc(bt, BUNfirst(bt)), V = *(const int *) v;
-				for (r = 0; r < cnt; r++)
-					d[r] = V;
-				BATsetcount(bt, cnt);
-				break;
-			}
-			case 8:{
-				lng *d = (lng *) Tloc(bt, BUNfirst(bt)), V = *(const lng *) v;
-				for (r = 0; r < cnt; r++)
-					d[r] = V;
-				BATsetcount(bt, cnt);
-				break;
-			}
-			default:
-				for (r = BUNfirst(bt), cnt += r; r < cnt; r++)
-					bunfastins_nocheck(bt, r, NULL, v, 0, Tsize(bt));
-			}
-			if (b->htype == TYPE_void) {
-				bn = bt;
-				BATseqbase(bn, b->hseqbase);
-				ALIGNsetH(bn, b);
-				bn->hrevsorted = (bn->U->count <= 1 || b->hseqbase == oid_nil);
-			} else {
-				bn = VIEWcreate(b, bt);
-				BBPunfix(bt->batCacheid);
-			}
-			if (b != o) {
-				BBPunfix(b->batCacheid);
-				b = o;
-			}
-		}
-	} else {
-		if (tailtype == TYPE_bat) {
-			v = &((BAT *) v)->batCacheid;
-		}
-		bn = BATnew(b->htype, tailtype, BATcount(b));
-		if (bn == NULL)
-			return bn;
-		r = BUNfirst(bn);
-		BATloop(b, p, q) {
-			bunfastins_nocheck(bn, r, BUNhead(bi, p), v, Hsize(bn), Tsize(bn));
-			r++;
-		}
-		ALIGNsetH(bn, b);
-		bn->hsorted = b->hsorted || BATcount(bn) <= 1;
-		bn->hrevsorted = b->hrevsorted || BATcount(bn) <= 1;
-		bn->H->nonil = b->H->nonil;
+	n = BATcount(b);
+	bn = BATnew(TYPE_void, tailtype, n);
+	if (bn == NULL)
+		return NULL;
+	p = Tloc(bn, bn->U->first);
+	switch (ATOMstorage(tailtype)) {
+	case TYPE_void:
+		v = &oid_nil;
+		BATseqbase(BATmirror(bn), oid_nil);
+		bn->T->nil = n >= 1;
+		break;
+	case TYPE_bte:
+		for (i = 0; i < n; i++)
+			((bte *) p)[i] = * (bte *) v;
+		bn->T->nil = n >= 1 && * (bte *) v == bte_nil;
+		break;
+	case TYPE_sht:
+		for (i = 0; i < n; i++)
+			((sht *) p)[i] = * (sht *) v;
+		bn->T->nil = n >= 1 && * (sht *) v == sht_nil;
+		break;
+	case TYPE_int:
+	case TYPE_flt:
+		assert(sizeof(int) == sizeof(flt));
+		for (i = 0; i < n; i++)
+			((int *) p)[i] = * (int *) v;
+		bn->T->nil = n >= 1 && (ATOMstorage(tailtype) == TYPE_int ? * (int *) v == int_nil : * (flt *) v == flt_nil);
+		break;
+	case TYPE_lng:
+	case TYPE_dbl:
+		assert(sizeof(lng) == sizeof(dbl));
+		for (i = 0; i < n; i++)
+			((lng *) p)[i] = * (lng *) v;
+		bn->T->nil = n >= 1 && (ATOMstorage(tailtype) == TYPE_lng ? * (lng *) v == lng_nil : * (dbl *) v == dbl_nil);
+		break;
+	default:
+		bn->T->nil = n >= 1 && ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) == 0;
+		for (i = BUNfirst(bn), n += i; i < n; i++)
+			tfastins_nocheck(bn, i, v, Tsize(bn));
+		break;
 	}
-	/* set tail properties */
+	BATsetcount(bn, BATcount(b));
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
-	bn->tkey = BATcount(bn) <= 1;
-	bn->T->nonil = (ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) != 0);
-	BATsetprop_wrd(bn, GDK_AGGR_CARD, (wrd) (BATcount(b) > 0));
-	if (tailtype == TYPE_bit) {
-		BATsetprop_wrd(bn, GDK_AGGR_SIZE, (*(const bit *) v == TRUE) ? (wrd) BATcount(b) : 0);
+	bn->T->nonil = !bn->T->nil;
+	bn->T->key = BATcount(bn) <= 1;
+	if (b->H->type != bn->H->type) {
+		BAT *bnn = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = bnn;
+	} else {
+		BATseqbase(bn, b->hseqbase);
 	}
+
 	return bn;
-      bunins_failed:
-	if (bn)
-		BBPreclaim(bn);
+
+  bunins_failed:
+	BBPreclaim(bn);
 	return NULL;
 }
 

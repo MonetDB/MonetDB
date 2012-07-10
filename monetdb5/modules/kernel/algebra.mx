@@ -3617,7 +3617,7 @@ ALGprojectNIL(int *ret, int *bid)
         throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
     }
 
-    bn = BATconst(b, TYPE_void, (ptr) &int_nil);
+    bn = BATconst(b, TYPE_void, (ptr) &oid_nil);
     if (bn) {
         *ret = bn->batCacheid;
         BBPkeepref(bn->batCacheid);
