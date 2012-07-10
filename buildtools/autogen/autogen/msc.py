@@ -1055,7 +1055,7 @@ def msc_ant(fd, var, ant, msc):
     fd.write("callant%d.bat:\n" % callantno)
     fd.write("\techo @set thisdir=%%~dp0>callant%d.bat\n" % callantno)
     fd.write("\techo @set thisdir=%%thisdir:~0,-1%%>>callant%d.bat\n" % callantno)
-    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, callantno))
+    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\\%s\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, target, callantno))
     fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
     fd.write("\tcallant%d.bat\n" % callantno)
     callantno = callantno + 1
