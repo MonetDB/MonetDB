@@ -13,7 +13,7 @@ pattern print(val:any_1,lst:any...):void
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print(b1:bat[:any_1,:any]...):void 
+pattern print(b1:bat[:oid,:any]...):void 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 

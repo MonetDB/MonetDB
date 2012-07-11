@@ -93,7 +93,7 @@ command dumpTrace():void
 address CMDdumpTrace
 comment "List the events collected";
 
-command getTrace(e:str):bat[:int,:any_1]
+command getTrace(e:str):bat[:oid,:any_1]
 address CMDgetTrace
 comment "Get the trace details of a specific event";
 

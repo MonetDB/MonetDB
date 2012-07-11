@@ -18,9 +18,8 @@
  */
 
 /*
- * @f profiler
- * @a Martin Kersten
- * @+ Performance profiler
+ * Martin Kersten
+ * Performance profiler
  * A key issue in developing fast programs using the Monet database
  * back-end requires a keen eye on where performance is lost.
  * Although performance tracking and measurements are highly

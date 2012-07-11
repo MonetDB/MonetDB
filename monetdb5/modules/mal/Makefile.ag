@@ -55,7 +55,6 @@ lib_mal = {
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
 		tablet.c tablet.h \
-		tablet_sql.c \
 		tokenizer.c tokenizer.h \
 		trader.c trader.h \
 		transaction.c \
@@ -72,7 +71,7 @@ headers_mal = {
 		profiler.mal const.mal attach.mal batExtensions.mal \
 		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
 		iterator.mal clients.mal \
-		factories.mal groupby.mal mdb.mal pcre.mal tablet.mal mat.mal \
+		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
 		urlbox.mal transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \

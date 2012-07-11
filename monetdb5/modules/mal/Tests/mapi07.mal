@@ -18,7 +18,7 @@ low:= 5+1;
 mapi.put(mid,"low",low);
 i:lng:= mapi.rpc(mid,"e:=algebra.select(rb,low,7); i:=aggr.count(e); io.print(i);");
 io.printf(" count %d\n",i);
-d:bat[:int,:int]:= mapi.rpc(mid,"io.print(i);");
+d:bat[:oid,:int]:= mapi.rpc(mid,"io.print(i);");
 io.print(d);
 mapi.disconnect(mid);
 optimizer.remoteQueries();
