@@ -60,31 +60,31 @@ function user.main():void;
     profiler.activate("pc");
     profiler.activate("stmt");
 #profiler.setFilter("*","*"); 
-    profiler.setFilter("*","insert");
+    profiler.setFilter("*","append");
     profiler.openStream("/tmp/MonetEvents");
     o := calc.oid(20000000);
     calc.setoid(o);
 #test basic functionality of the BAT library. 
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
     io.printf("#~BeginVariableOutput~#\n");
     binfo := bat.info(b);
     io.print(binfo);
     io.printf("#~EndVariableOutput~#\n");
     profiler.start();
-    err := bat.insert(b,1,15);
-    err := bat.insert(b,2,4);
+    err := bat.append(b,15);
+    err := bat.append(b,4);
     n0 := calc.int(nil);
-    err := bat.insert(b,3,n0);
-    err := bat.insert(b,4,16);
-    err := bat.insert(b,5,25);
-    err := bat.insert(b,6,36);
-    err := bat.insert(b,7,49);
-    err := bat.insert(b,8,64);
-    err := bat.insert(b,9,n0);
-    err := bat.insert(b,n0,n0);
-    err := bat.insert(b,n0,81);
+    err := bat.append(b,n0);
+    err := bat.append(b,16);
+    err := bat.append(b,25);
+    err := bat.append(b,36);
+    err := bat.append(b,49);
+    err := bat.append(b,64);
+    err := bat.append(b,n0);
+    err := bat.append(b,n0);
+    err := bat.append(b,81);
     io.print(b);
     io.print(b,b,b);
     profiler.stop();
@@ -96,14 +96,14 @@ end main;
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
-[ "batId",		  "tmp_672"	  ]
-[ "batCacheid",		  "442"		  ]
+[ "batId",		  "tmp_665"	  ]
+[ "batCacheid",		  "437"		  ]
 [ "hparentid",		  "0"		  ]
 [ "tparentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
 [ "batCount",		  "0"		  ]
 [ "batCapacity",	  "256"		  ]
-[ "head",			  "int"		  ]
+[ "head",		  "void"	  ]
 [ "tail",			  "int"		  ]
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
@@ -114,11 +114,11 @@ end main;
 [ "hsorted",		  "1"		  ]
 [ "hrevsorted",		  "1"		  ]
 [ "hident",			  "h"		  ]
-[ "hdense",			  "0"		  ]
+[ "hdense",		  "1"		  ]
 [ "hseqbase",			  "0@0"		  ]
 [ "hkey",		  "1"		  ]
-[ "hvarsized",			  "0"		  ]
-[ "halign",			  "20000000"	  ]
+[ "hvarsized",		  "1"		  ]
+[ "halign",		  "0"		  ]
 [ "hnosorted",		  "0"		  ]
 [ "hnorevsorted",	  "0"		  ]
 [ "hnodense",		  "0"		  ]
@@ -146,25 +146,25 @@ end main;
 [ "batFirst",		  "0"		  ]
 [ "htop",		  "0"		  ]
 [ "ttop",		  "0"		  ]
-[ "batStamp",		  "1409"	  ]
-[ "lastUsed",		  "872523"	  ]
-[ "curStamp",		  "1506"	  ]
+[ "batStamp",		  "225"		  ]
+[ "lastUsed",		  "21415"	  ]
+[ "curStamp",		  "226"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",	  "dirty"	  ]
 [ "H->heap.dirty",	  "clean"	  ]
 [ "T->heap.dirty",	  "clean"	  ]
 [ "head.free",		  "0"		  ]
-[ "head.size",		  "1024"	  ]
-[ "head.maxsize",	  "1024"	  ]
-[ "head.storage",	  "malloced"	  ]
+[ "head.size",		  "0"		  ]
+[ "head.maxsize",	  "0"		  ]
+[ "head.storage",	  "absent"	  ]
 [ "head.newstorage",	  "malloced"	  ]
-[ "head.filename",	  "06/672.head"	  ]
+[ "head.filename",	  "no file"	  ]
 [ "tail.free",		  "0"		  ]
 [ "tail.size",		  "1024"	  ]
 [ "tail.maxsize",	  "1024"	  ]
 [ "tail.storage",	  "malloced"	  ]
 [ "tail.newstorage",	  "malloced"	  ]
-[ "tail.filename",	  "06/672.tail"	  ]
+[ "tail.filename",	  "06/665.tail"	  ]
 [ "H->vheap->dirty",	  "clean"	  ]
 [ "T->vheap->dirty",	  "clean"	  ]
 #~EndVariableOutput~#
@@ -173,31 +173,32 @@ end main;
 # h	tmp_4	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  15	  ]
-[ 2,	  4	  ]
-[ 3,	  nil	  ]
-[ 4,	  16	  ]
-[ 5,	  25	  ]
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  nil	  ]
-[ nil,	  nil	  ]
-[ nil,	  81	  ]
+[ 0@0,	  15	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  nil	  ]
+[ 3@0,	  16	  ]
+[ 4@0,	  25	  ]
+[ 5@0,	  36	  ]
+[ 6@0,	  49	  ]
+[ 7@0,	  64	  ]
+[ 8@0,	  nil	  ]
+[ 9@0,	  nil	  ]
+[ 10@0,	  81	  ]
 #---------------------------------#
 # h	tmp_4	tmp_4	tmp_4	  # name
 # int	int	int	int	  # type
 #---------------------------------#
-[ 1,	  15,	  15,	  15	  ]
-[ 2,	  4,	  4,	  4	  ]
-[ 3,	  nil,	  nil,	  nil	  ]
-[ 4,	  16,	  16,	  16	  ]
-[ 5,	  25,	  25,	  25	  ]
-[ 6,	  36,	  36,	  36	  ]
-[ 7,	  49,	  49,	  49	  ]
-[ 8,	  64,	  64,	  64	  ]
-[ 9,	  nil,	  nil,	  nil	  ]
-# Performance profiling stopped
+[ 0@0,	  15,	  15,	  15	  ]
+[ 1@0,	  4,	  4,	  4	  ]
+[ 2@0,	  nil,	  nil,	  nil	  ]
+[ 3@0,	  16,	  16,	  16	  ]
+[ 4@0,	  25,	  25,	  25	  ]
+[ 5@0,	  36,	  36,	  36	  ]
+[ 6@0,	  49,	  49,	  49	  ]
+[ 7@0,	  64,	  64,	  64	  ]
+[ 8@0,	  nil,	  nil,	  nil	  ]
+[ 9@0,	  nil,	  nil,	  nil	  ]
+[ 10@0,	  81,	  81,	  81	  ]
 
 # 08:01:11 >  
 # 08:01:11 >  Done.

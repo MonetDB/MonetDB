@@ -34,15 +34,15 @@
 #	io.print("# > b := bat.new(int,int);\n");
 #	io.print("# > b.import(\"/home/quak/tmp/testt\");\n");
 #	io.print("var a := bat.new(int,int);");
-	a := bat.new(nil:int,nil:int);
+	a := bat.new(nil:oid,nil:int);
 #	io.print("a.insert(1,1);");
-	aa_a := bat.insert(a,1,1);
+	aa_a := bat.append(a,1);
 #	io.print("a.print();");
 	ba_a := io.print(a);
 #	io.print("a.export(\"testt\");");
 	ca_a := io.export(a,"testt");
 #	io.print("var b := bat.new(int,int);");
-	b := bat.new(nil:int,nil:int);
+	b := bat.new(nil:oid,nil:int);
 #	io.print("b.import(\"testt\");");
 	da_a := io.import(b,"testt");
 #	io.print("b.print();");

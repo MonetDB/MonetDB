@@ -71,9 +71,9 @@ end refs;
 function user.main():void;
 #this test is used to monitor reference count setting 
 #create a persistent bat and destroy it in test 612 
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
 #refs(); 
-    bat.insert(b,23,32);
+    bat.append(b,32);
 #refs(); 
     bat.setName(b,"tasks");
 #refs(); 
@@ -83,7 +83,7 @@ function user.main():void;
     io.print("open box");
     bbp.open();
 #user.refs(); 
-    t:bat[:int,:int]  := bbp.bind("tasks");
+    t:bat[:oid,:int]  := bbp.bind("tasks");
     io.print(t);
     bbp.release(t);
 #user.refs(); 
@@ -94,7 +94,7 @@ exit MALException:str ;
 # the bat is still visible, because the destroy only 
 # marks it for deletion at the end of session or 
 # when the reference counters drop to zero 
-    t:bat[:int,:int]  := bbp.bind("tasks");
+    t:bat[:oid,:int]  := bbp.bind("tasks");
 #user.refs(); 
 # to really remove, we get rid of the current 
 # references as well 
@@ -116,7 +116,7 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 23,	  32	  ]
+[ 0@0,	  32	  ]
 [ nil ]
 [ "BAT was destroyed" ]
 [ "BAT was removed from the box" ]

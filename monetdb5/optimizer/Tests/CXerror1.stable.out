@@ -14,7 +14,7 @@ stdout of test 'CXerror1` in directory 'optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.f1():void;
 # create bat 
-    xxx := bat.new(:void,:dbl);
+    xxx := bat.new(:oid,:dbl);
     bat.setName(xxx,"xxx");
     bat.setPersistent(xxx,true);
     transaction.commit();

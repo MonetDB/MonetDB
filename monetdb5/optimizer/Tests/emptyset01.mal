@@ -1,5 +1,5 @@
 #beware that the ESoptimizer does not remove the type of MALException
-function do{inline}(V1:bat[:oid,:int]);
+function do{inline}(V1:bat[:oid,:oid]);
 barrier (x,z):= iterator.new(V1);
 	io.print("loop");
 catch MALException:str;
@@ -9,9 +9,9 @@ exit(x,z);
 end do;
 
 function tst();
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V10{rows=0:lng} := bat.new(:int,:oid);
+    V1 := bat.new(:oid,:oid);
+    V7 := bat.new(:oid,:oid);
+    V10{rows=0:lng} := bat.new(:oid,:oid);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markT(V12);

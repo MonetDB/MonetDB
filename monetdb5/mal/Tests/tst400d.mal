@@ -1,6 +1,6 @@
 # simple iterator loop test
 
-	b:= bat.new(:int,:int);
+	b:= bat.new(:oid,:int);
 
 INT_MAX := 2147483647;
 dbgmsk_restore := mdb.getDebug();
@@ -10,7 +10,7 @@ dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
 barrier i:= 0:lng;
-	z:= bat.insert(b,1,1);
+	z:= bat.append(b,1);
 	redo i:= iterator.next(1:lng,1000000:lng);
 exit	i;
 

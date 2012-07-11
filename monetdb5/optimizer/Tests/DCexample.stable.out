@@ -18,8 +18,8 @@ function user.main():void;
 end main;
 [ "done" ]
 function user.main():void;              #  0 main:void := user.main() {G}
-    io.print("done");                   #  1 _10:void := IOprint_val(_11:str) {G}
-    mdb.List();                         #  2 _13:void := MDBlistDetail() 
+    io.print("done");                   #  1 _9:void := IOprint_val(_10:str) {G}
+    mdb.List();                         #  2 _12:void := MDBlistDetail() 
 end main;                               #  3  
 
 # 23:53:03 >  

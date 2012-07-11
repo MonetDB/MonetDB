@@ -12,20 +12,20 @@ stdout of test 'DCexample2` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.main():void;
-    b := bat.new(:int,:int);
-    bat.insert(b,4,2);
-    bat.insert(b,9,5);
-    bat.insert(b,6,3);
+    b := bat.new(:oid,:int);
+    bat.append(b,2);
+    bat.append(b,5);
+    bat.append(b,3);
     b := algebra.sort(b);
     mdb.List();
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:int,:int);            #  1 b:bat[:int,:int] := CMDBATnew(_3:int, _3:int) {G}
-    bat.insert(b,4,2);                  #  2 _4:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _5:int, _6:int) {G}
-    bat.insert(b,9,5);                  #  3 _7:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _8:int, _9:int) {G}
-    bat.insert(b,6,3);                  #  4 _10:bat[:int,:int] := BKCinsert_bun(b:bat[:int,:int], _11:int, _12:int) {G}
-    b := algebra.sort(b);               #  5 b:bat[:int,:int] := ALGhsort(b:bat[:int,:int]) {G}
-    mdb.List();                         #  6 _15:void := MDBlistDetail() 
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_3:oid, _4:int) {G}
+    bat.append(b,2);                    #  2 _5:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _6:int) {G}
+    bat.append(b,5);                    #  3 _7:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _8:int) {G}
+    bat.append(b,3);                    #  4 _9:bat[:oid,:int] := BKCappend_val_wrap(b:bat[:oid,:int], _10:int) {G}
+    b := algebra.sort(b);               #  5 b:bat[:oid,:int] := ALGhsort(b:bat[:oid,:int]) {G}
+    mdb.List();                         #  6 _13:void := MDBlistDetail() 
 end main;	# 7  
 
 # 22:31:27 >  

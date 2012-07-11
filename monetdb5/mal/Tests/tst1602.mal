@@ -13,7 +13,7 @@ barrier	sj_a:= true;
 	uj_a := i;
 	vj_a := calc.>=(uj_a,0);
 barrier	tj_a:= vj_a;
-	xj_a := bat.insert(int_1M,nil:oid,i);
+	xj_a := bat.append(int_1M,i);
 redo	sj_a;
 exit	tj_a;
 exit	sj_a;
@@ -58,7 +58,7 @@ mdb.setDebug(dbgmsk_restore);
         yg_a := calc.-(x,t);
         ah_a := io.printf("%d ms\n",yg_a);
 
-	M2:= bat.new(:lng,:lng,1000000);
+	M2:= bat.new(:oid,:lng,1000000);
 	i:= 1000000:lng;
 
 mdb.setDebug(dbgmsk_set);
@@ -68,7 +68,7 @@ barrier	sj_b:= true;
 	uj_b := i;
 	vj_b := calc.>=(uj_b,0);
 barrier	tj_b:= vj_b;
-	xj_b := bat.insert(M2,i,i);
+	xj_b := bat.append(M2,i);
 redo	sj_b;
 exit	tj_b;
 exit	sj_b;

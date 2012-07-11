@@ -45,10 +45,10 @@ pattern getSize(mod:str,fcn:str):lng
 address INSPECTgetFunctionSize
 comment "Return the storage size for a function (in bytes).";
 
-pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
+pattern getType(v:any_1) :str 
 address INSPECTtypeName
 comment "Return the concrete type of a variable (expression).";
-pattern getType(v:any_1) :str 
+pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
 address INSPECTtypeName
 comment "Return the concrete type of a variable (expression).";
 

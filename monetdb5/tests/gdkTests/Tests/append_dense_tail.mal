@@ -11,7 +11,7 @@ bat.append(b,0@0);
  bat.append(a,b);
 io.print(a);
 # check important properties
-f:= bat.new(:void,:str);
+f:= bat.new(:oid,:str);
 bat.append(f,"hseqbase");
 bat.append(f,"hdense");
 bat.append(f,"tseqbase");

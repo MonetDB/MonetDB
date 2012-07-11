@@ -1,8 +1,8 @@
 # save/load tests
 
-a:= bat.new(:int,:int);
-bat.insert(a,0,123);
-bat.insert(a,0,321);
+a:= bat.new(:oid,:int);
+bat.append(a,123);
+bat.append(a,321);
 bat.setName(a,"aaa");
 io.print(a);
 

@@ -12,7 +12,7 @@ stdout of test 'scanselect` in directory 'tests/gdkTests` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    x := bat.new(:void,:int);
+    x := bat.new(:oid,:int);
     bat.append(x,1);
     bat.append(x,2);
     bat.append(x,1);

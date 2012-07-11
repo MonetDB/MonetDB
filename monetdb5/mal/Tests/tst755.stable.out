@@ -29,12 +29,12 @@ end test;
 #
 !TypeException:user.test[1]:'calc.+' undefined in: k:any := calc.+(_4:int, _5:str)
 !MALException:user.test[0]:Error in cloned function
-!TypeException:user.main[5]:'user.test' undefined in: _7:void := user.test(c:bat[:int,:str], _8:str)
+!TypeException:user.main[5]:'user.test' undefined in: _7:void := user.test(c:bat[:oid,:str], _8:str)
 function user.main():void;
 # Polymorphic function tests 
 # Catching a pervasive error a.s.a.p. 
 # The function may not be cloned and a secondary error is generated 
-    c := bat.new(:int,:str);
+    c := bat.new(:oid,:str);
     user.test(c,"hello");
 end main;
 

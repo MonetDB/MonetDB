@@ -42,8 +42,8 @@ stdout of test 'tst1012` in directory 'mal` itself:
 function user.main():void;
 # the first of a series of BBP test cases 
     bbp.open();
-    b := bat.new(:int,:int);
-    bat.insert(b,1,2);
+    b := bat.new(:oid,:int);
+    bat.append(b,2);
     bbp.deposit("mysecondbat",b);
     c := bbp.take("mysecondbat");
     io.print(c);
@@ -74,7 +74,7 @@ end main;
 # h	tmp_4	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 [ true ]
 [ false ]
 [ "" ]
@@ -85,7 +85,7 @@ end main;
 # h	tmp_4	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 
 # 07:58:54 >  
 # 07:58:54 >  Done.

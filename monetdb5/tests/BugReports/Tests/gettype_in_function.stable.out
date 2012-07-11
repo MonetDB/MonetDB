@@ -30,8 +30,8 @@ function user.main():void;
 # but now it is a "any", should be "str" 
     user.typetest(p);
 # more fun with a BAT 
-    b := bat.new(:str,:int);
-    t := inspect.getType(b);
+    b := bat.new(:oid,:int);
+    (h,t) := inspect.getType(b);
 # here it is what we expect 
     io.print(t);
 # now it is "any" even though the above problem was fixed 
@@ -40,7 +40,7 @@ function user.main():void;
     user.typetest(p);
 # extended 
     i := 1:int;
-    d := bat.new(:str,:flt);
+    d := bat.new(:oid,:flt);
     tii := inspect.getTypeIndex(i);
     io.print(tii);
     tni := inspect.getTypeName(tii);
@@ -65,17 +65,17 @@ function user.main():void;
 end main;
 [ "str" ]
 [ "str" ]
-[ "bat[:str,:int]" ]
-[ "bat[:str,:int]" ]
+[ "int" ]
+[ "bat[:oid,:int]" ]
 [ "str" ]
 [ 5 ]
 [ "int" ]
 [ 9 ]
-[ 12, 9]
+[ 6, 9]
 [ "flt" ]
-[ "str" ]
+[ "oid" ]
 [ true ]
-[ true ]
+[ false ]
 [ false ]
 
 # 12:26:33 >  

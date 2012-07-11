@@ -2,12 +2,12 @@
 # or ignoring.
 # a typical case is to try to rename an existing (persistent) bat
 
-	b:bat[:int,:int]:= bat.new(:int,:int);
+	b:bat[:oid,:int]:= bat.new(:oid,:int);
 	bat.setName(b,"mybat");
 	#setPersistent(b);
 	bat.setColumn(b,"first","second");
 	io.print(b);
-	c:= bat.new(:int,:str);
+	c:= bat.new(:oid,:str);
 	bat.setName(c,"mybat");
 	io.print(c);
 	#setPersistent(c);

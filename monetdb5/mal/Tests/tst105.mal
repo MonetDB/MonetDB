@@ -5,6 +5,6 @@ module bat2;
 command new(h:any_1,t:any_2) :bat[:any_1, :any_2] 
 address GDKbatnew;
 
-a:= bat2.new(:str,:int);
-b:= bat2.new(:str,:int);
-c:= bat.new(:str,:int);
+a:= bat2.new(:oid,:int);
+b:= bat2.new(:oid,:int);
+c:= bat.new(:oid,:int);

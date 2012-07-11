@@ -45,9 +45,9 @@
 	aa_a := calc.oid(20000000:lng);
 	ba_a := calc.setoid(aa_a);
 #	io.print("var a := bat.new(int,str);");
-	a := bat.new(nil:int,nil:str);
+	a := bat.new(nil:oid,nil:str);
 #	io.print("a.insert(1,\"hello world\");");
-	ca_a := bat.insert(a,1,"hello world");
+	ca_a := bat.append(a,"hello world");
 #	io.print("a.print();");
 	da_a := io.print(a);
 #	io.print("a.mark(nil).print();");

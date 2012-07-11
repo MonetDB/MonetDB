@@ -1,8 +1,6 @@
 append_dense_tail
 bat_replace
 bat_insert
-binsearchmultijoin
-binsemijoin
 binsemijoin2
 casts
 cross

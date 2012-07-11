@@ -33,7 +33,7 @@ function user.main():void;
     z := z;
     io.print(z);
     io.print("done");
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
     i := bbp.getLRefCount(b);
     io.print(i);
     b := b;

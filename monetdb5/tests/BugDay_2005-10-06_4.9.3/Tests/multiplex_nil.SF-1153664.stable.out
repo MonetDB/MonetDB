@@ -13,31 +13,31 @@ stdout of test 'multiplex_nil.SF-1153664` in directory 'tests/BugDay_2005-10-06_
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    a := bat.new(:int,:int);
-    bat.insert(a,1,2);
-    bat.insert(a,2,3);
-    b := bat.new(:int,:int);
-    bat.insert(b,1,4);
-    bat.insert(b,2,9);
+    a := bat.new(:oid,:int);
+    bat.append(a,2);
+    bat.append(a,3);
+    b := bat.new(:oid,:int);
+    bat.append(b,4);
+    bat.append(b,9);
     io.print(a,b);
-    b := bat.new(:int,:int);
-    bat.insert(b,nil:int,nil:int);
-    bat.insert(b,1,4);
-    bat.insert(b,2,9);
+    b := bat.new(:oid,:int);
+    bat.append(b,nil:int);
+    bat.append(b,4);
+    bat.append(b,9);
     io.print(a,b);
 end main;
 #-------------------------#
 # h	t	t	  # name
 # int	int	int	  # type
 #-------------------------#
-[ 1,	  2,	  4	  ]
-[ 2,	  3,	  9	  ]
+[ 0@0,	  2,	  4	  ]
+[ 1@0,	  3,	  9	  ]
 #-------------------------#
 # h	t	t	  # name
 # int	int	int	  # type
 #-------------------------#
-[ 1,	  2,	  4	  ]
-[ 2,	  3,	  9	  ]
+[ 0@0,	  2,	  nil	  ]
+[ 1@0,	  3,	  4	  ]
 
 # 18:47:23 >  
 # 18:47:23 >  Done.

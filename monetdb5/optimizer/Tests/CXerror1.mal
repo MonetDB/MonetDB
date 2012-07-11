@@ -1,7 +1,7 @@
 #provided by roberto
 function user.f1();
   # create bat
-  xxx := bat.new(:void, :dbl);
+  xxx := bat.new(:oid, :dbl);
   bat.setName(xxx,"xxx");
   bat.setPersistent(xxx,true);
   transaction.commit();

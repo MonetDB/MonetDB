@@ -1,2 +1,2 @@
-c:= bat.new(:int,:int,-5000);
+c:= bat.new(:oid,:int,-5000);
 io.print(c);

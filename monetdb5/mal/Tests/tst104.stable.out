@@ -9,17 +9,21 @@ stdout of test 'tst104` in directory 'mal` itself:
 # Serving database 'mTests_src_mal', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
-command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:36368/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+command user.f(a:any_1,b:bat[:any_1,:any_2],c:any_2):any_2 address dummy;
 !TypeException:user.main[4]:object code for command user.f missing
-!TypeException:user.main[4]:'user.f' undefined in: a:any := user.f(_7:int, b:bat[:str,:int], _8:str)
+!TypeException:user.main[4]:'user.f' undefined in: a:str := user.f(_7:oid, b:bat[:oid,:str], _8:str)
 function user.main():void;
 # check propagation of type variables over bats 
 # can be checked after bat module has been added 
-    b := bat.new(:str,:int);
-    a := user.f(1,b,"hello");
+    b := bat.new(:oid,:str);
+    a := user.f(1@0,b,"hello");
 end main;
 
 # 07:58:56 >  

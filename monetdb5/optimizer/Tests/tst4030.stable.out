@@ -14,11 +14,11 @@ stdout of test 'tst4030` in directory 'optimizer` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.main():void;
 # testing subsumption optimalisation 
-    r := bat.new(:int,:int);
-    bat.insert(r,5,1);
-    bat.insert(r,6,2);
-    bat.insert(r,7,3);
-    bat.insert(r,8,4);
+    r := bat.new(:oid,:int);
+    bat.append(r,1);
+    bat.append(r,2);
+    bat.append(r,3);
+    bat.append(r,4);
     s := algebra.select(r,0,5);
 # equal to a copy 
     io.print(s);
@@ -32,17 +32,17 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 5,	  1	  ]
-[ 6,	  2	  ]
-[ 7,	  3	  ]
-[ 8,	  4	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  4	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 5,	  1	  ]
-[ 6,	  2	  ]
-[ 7,	  3	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
 [ "done" ]
 
 # 23:52:52 >  

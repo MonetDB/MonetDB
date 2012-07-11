@@ -18,68 +18,42 @@ function user.main():void;
     bat.append(a,0);
     bat.append(a,1);
     bat.append(a,nil:int);
-    b := bat.new(:int,:int);
-    bat.insert(b,0,0);
-    bat.insert(b,0,1);
-    bat.insert(b,0,2);
-    bat.insert(b,0,3);
-    bat.insert(b,0,4);
-    bat.insert(b,0,5);
-    bat.insert(b,0,6);
-    bat.insert(b,0,7);
-    bat.insert(b,0,8);
-    bat.insert(b,0,9);
-    bat.insert(b,0,nil:int);
-    bat.insert(b,1,0);
-    bat.insert(b,1,1);
-    bat.insert(b,1,2);
-    bat.insert(b,1,3);
-    bat.insert(b,1,4);
-    bat.insert(b,1,5);
-    bat.insert(b,1,6);
-    bat.insert(b,1,7);
-    bat.insert(b,1,8);
-    bat.insert(b,1,9);
-    bat.insert(b,1,nil:int);
-    bat.insert(b,nil:int,0);
-    bat.insert(b,nil:int,1);
-    bat.insert(b,nil:int,2);
-    bat.insert(b,nil:int,3);
-    bat.insert(b,nil:int,4);
-    bat.insert(b,nil:int,5);
-    bat.insert(b,nil:int,6);
-    bat.insert(b,nil:int,7);
-    bat.insert(b,nil:int,8);
-    bat.insert(b,nil:int,9);
-    bat.insert(b,nil:int,nil:int);
-    c0 := bat.reverse(b);
-    c1 := batcalc.oid(c0);
-    c := bat.reverse(c1);
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
+    bat.append(b,4);
+    bat.append(b,5);
+    bat.append(b,6);
+    bat.append(b,7);
+    bat.append(b,8);
+    bat.append(b,9);
+    bat.append(b,nil:int);
+    c := bat.reverse(b);
     d := bat.reverse(a);
-    io.print(a);
-    io.print(d);
     io.print(b);
     io.print(c);
     io.print("semijoin tests b,d");
-    z1 := algebra.semijoin(b,d);
+    z1 := algebra.semijoin(b,b);
     io.print(z1);
-    z2 := algebra.semijoin(d,b);
+    z2 := algebra.semijoin(d,d);
     io.print(z2);
-    z3 := algebra.semijoin(c,a);
+    z3 := algebra.semijoin(a,a);
     io.print(z3);
-    z4 := algebra.semijoin(a,c);
+    z4 := algebra.semijoin(c,c);
     io.print(z4);
 # (try to) force different semijoin implementations 
-    a1 := bat.new(:int,:oid);
-    bat.insert(a1,1,1@0);
-    bat.insert(a1,2,2@0);
-    bat.insert(a1,nil:int,nil:oid);
+    a1 := bat.new(:oid,:oid);
+    bat.append(a1,1@0);
+    bat.append(a1,2@0);
+    bat.append(a1,nil:oid);
     a1s := algebra.sort(a1);
-    c1 := bat.new(:int,:oid);
-    bat.insert(c1,nil:int,nil:oid);
+    c1 := bat.new(:oid,:oid);
+    bat.append(c1,nil:oid);
 barrier i := 1;
     oi := calc.oid(i);
-    bat.insert(c1,i,oi);
+    bat.append(c1,oi);
     redo i := iterator.next(1,100);
 exit i;
     c1s := algebra.sort(c1);
@@ -93,19 +67,6 @@ exit i;
     io.print(e);
     f := algebra.semijoin(c1s,a1s);
     io.print(f);
-    bat.setWriteMode(a1s);
-    bat.insert(a1s,nil:int,nil:oid);
-    bat.setReadMode(a1s);
-    bat.setWriteMode(c1s);
-    bat.insert(c1s,nil:int,nil:oid);
-    bat.setReadMode(c1s);
-# hash => kinsertsect & revsemijoin 
-#ah:=algebra.copy(a1); 
-#bat.accbuild(ah,"hash"); 
-#ch:=algebra.copy(c); 
-#bat.accbuild(ch,"hash"); 
-#k:=algebra.semijoin(ah,ch);io.print(k); 
-#l:=algebra.semijoin(ch,ah);io.print(l); 
 end main;
 #-----------------#
 # h	t	  # name
@@ -113,9 +74,48 @@ end main;
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
-[ 2@0,	  nil	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+[ 10@0,	  nil	  ]
 #-----------------#
 # t	h	  # name
+# int	void	  # type
+#-----------------#
+[ 0,	  0@0	  ]
+[ 1,	  1@0	  ]
+[ 2,	  2@0	  ]
+[ 3,	  3@0	  ]
+[ 4,	  4@0	  ]
+[ 5,	  5@0	  ]
+[ 6,	  6@0	  ]
+[ 7,	  7@0	  ]
+[ 8,	  8@0	  ]
+[ 9,	  9@0	  ]
+[ nil,	  10@0	  ]
+[ "semijoin tests b,d" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+[ 10@0,	  nil	  ]
+#-----------------#
+# h	t	  # name
 # int	void	  # type
 #-----------------#
 [ 0,	  0@0	  ]
@@ -123,170 +123,55 @@ end main;
 [ nil,	  2@0	  ]
 #-----------------#
 # h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 0,	  0	  ]
-[ 0,	  1	  ]
-[ 0,	  2	  ]
-[ 0,	  3	  ]
-[ 0,	  4	  ]
-[ 0,	  5	  ]
-[ 0,	  6	  ]
-[ 0,	  7	  ]
-[ 0,	  8	  ]
-[ 0,	  9	  ]
-[ 0,	  nil	  ]
-[ 1,	  0	  ]
-[ 1,	  1	  ]
-[ 1,	  2	  ]
-[ 1,	  3	  ]
-[ 1,	  4	  ]
-[ 1,	  5	  ]
-[ 1,	  6	  ]
-[ 1,	  7	  ]
-[ 1,	  8	  ]
-[ 1,	  9	  ]
-[ 1,	  nil	  ]
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-[ nil,	  3	  ]
-[ nil,	  4	  ]
-[ nil,	  5	  ]
-[ nil,	  6	  ]
-[ nil,	  7	  ]
-[ nil,	  8	  ]
-[ nil,	  9	  ]
-[ nil,	  nil	  ]
-#-----------------#
-# t	h	  # name
 # oid	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
-[ 0@0,	  1	  ]
-[ 0@0,	  2	  ]
-[ 0@0,	  3	  ]
-[ 0@0,	  4	  ]
-[ 0@0,	  5	  ]
-[ 0@0,	  6	  ]
-[ 0@0,	  7	  ]
-[ 0@0,	  8	  ]
-[ 0@0,	  9	  ]
-[ 0@0,	  nil	  ]
-[ 1@0,	  0	  ]
 [ 1@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 1@0,	  3	  ]
-[ 1@0,	  4	  ]
-[ 1@0,	  5	  ]
-[ 1@0,	  6	  ]
-[ 1@0,	  7	  ]
-[ 1@0,	  8	  ]
-[ 1@0,	  9	  ]
-[ 1@0,	  nil	  ]
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
-[ nil,	  3	  ]
-[ nil,	  4	  ]
-[ nil,	  5	  ]
-[ nil,	  6	  ]
-[ nil,	  7	  ]
-[ nil,	  8	  ]
-[ nil,	  9	  ]
-[ nil,	  nil	  ]
-[ "semijoin tests b,d" ]
+[ 2@0,	  nil	  ]
 #-----------------#
 # h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 0,	  0	  ]
-[ 0,	  1	  ]
-[ 0,	  2	  ]
-[ 0,	  3	  ]
-[ 0,	  4	  ]
-[ 0,	  5	  ]
-[ 0,	  6	  ]
-[ 0,	  7	  ]
-[ 0,	  8	  ]
-[ 0,	  9	  ]
-[ 0,	  nil	  ]
-[ 1,	  0	  ]
-[ 1,	  1	  ]
-[ 1,	  2	  ]
-[ 1,	  3	  ]
-[ 1,	  4	  ]
-[ 1,	  5	  ]
-[ 1,	  6	  ]
-[ 1,	  7	  ]
-[ 1,	  8	  ]
-[ 1,	  9	  ]
-[ 1,	  nil	  ]
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
+# oid	int	  # type
 #-----------------#
 [ 0,	  0@0	  ]
 [ 1,	  1@0	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 0@0,	  1	  ]
-[ 0@0,	  2	  ]
-[ 0@0,	  3	  ]
-[ 0@0,	  4	  ]
-[ 0@0,	  5	  ]
-[ 0@0,	  6	  ]
-[ 0@0,	  7	  ]
-[ 0@0,	  8	  ]
-[ 0@0,	  9	  ]
-[ 0@0,	  nil	  ]
-[ 1@0,	  0	  ]
-[ 1@0,	  1	  ]
-[ 1@0,	  2	  ]
-[ 1@0,	  3	  ]
-[ 1@0,	  4	  ]
-[ 1@0,	  5	  ]
-[ 1@0,	  6	  ]
-[ 1@0,	  7	  ]
-[ 1@0,	  8	  ]
-[ 1@0,	  9	  ]
-[ 1@0,	  nil	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ 0@0,	  0	  ]
-[ 1@0,	  1	  ]
+[ 2,	  2@0	  ]
+[ 3,	  3@0	  ]
+[ 4,	  4@0	  ]
+[ 5,	  5@0	  ]
+[ 6,	  6@0	  ]
+[ 7,	  7@0	  ]
+[ 8,	  8@0	  ]
+[ 9,	  9@0	  ]
+[ nil,	  10@0	  ]
 [ "slices" ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type
 #-----------------#
-[ nil,	  nil	  ]
-[ 1,	  1@0	  ]
-[ 2,	  2@0	  ]
+[ 0@0,	  1@0	  ]
+[ 1@0,	  2@0	  ]
+[ 2@0,	  nil	  ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type
 #-----------------#
-[ nil,	  nil	  ]
-[ 1,	  1@0	  ]
+[ 0@0,	  nil	  ]
+[ 1@0,	  1@0	  ]
 [ "semijoin tests a1,c1" ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type
 #-----------------#
-[ 1,	  1@0	  ]
-[ 2,	  2@0	  ]
+[ 0@0,	  1@0	  ]
+[ 1@0,	  2@0	  ]
+[ 2@0,	  nil	  ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type
 #-----------------#
-[ 1,	  1@0	  ]
-[ 2,	  2@0	  ]
+[ 0@0,	  nil	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
 
 # 22:53:06 >  
 # 22:53:06 >  Done.

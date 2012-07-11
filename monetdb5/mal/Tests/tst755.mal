@@ -6,5 +6,5 @@ function test(b:bat[:any_1,:any_2],c:any_2):void;
 	io.print(k);
 end test;
 
-c:= bat.new(:int,:str);
+c:= bat.new(:oid,:str);
 user.test(c,"hello");

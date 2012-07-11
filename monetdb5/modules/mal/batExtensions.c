@@ -49,17 +49,14 @@ CMDBATclone(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	(void) cntxt;
 
 	bid = *(int *) getArgReference(s, p, 3);
-	if ((b = BATdescriptor(bid)) == NULL) {
+	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
-	}
+	
 	res = (int *) getArgReference(s, p, 0);
 	ht = getArgType(m, p, 1);
 	tt = getArgType(m, p, 2);
 	cap = BATcount(b) + 64;
-	/*
-	 * @-
-	 * Cloning should include copying of the properties.
-	 */
+	/* Cloning should include copying of the properties.  */
 	BBPunfix(b->batCacheid);
 	bn= BATnew(ht,tt,cap);
 	if( bn == NULL){
@@ -193,10 +190,7 @@ CMDBATnewint(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return (str) BKCnewBAT(res, &ht, &tt, &cap);
 }
 
-/*
- * @-
- * If the optimizer has not determined the partition bounds we derive one here.
- */
+/* If the optimizer has not determined the partition bounds we derive one here.  */
 str
 CMDbatpartition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

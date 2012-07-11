@@ -26,8 +26,8 @@ stdout of test 'tst611` in directory 'mal` itself:
 function user.main():void;
 # initialization of BATs on the stack 
 # caused a problem when executed in interactve mode 
-    RKA := bat.new(:int,:int,1048576);
-    bat.insert(RKA,1:int,360:int);
+    RKA := bat.new(:oid,:int,1048576);
+    bat.append(RKA,360:int);
     io.print(RKA);
 #the next one should fail 
     bat.setWriteMode(RKB);

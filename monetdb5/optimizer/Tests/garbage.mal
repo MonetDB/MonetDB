@@ -1,6 +1,6 @@
 function tst();
-  b:= bat.new(:int,:int);
-  c{keep}:= bat.new(:int,:int);
+  b:= bat.new(:oid,:int);
+  c{keep}:= bat.new(:oid,:int);
   io.print(b);
 end tst;
 optimizer.garbageCollector("user","tst");

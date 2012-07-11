@@ -67,7 +67,7 @@ stdout of test 'tst031` in directory 'mal` itself:
 #
 function user.main():void;
 # testing the void semantics, both replace and delete fail (void != oid) 
-    b := bat.new(:void,:int);
+    b := bat.new(:oid,:int);
     bat.append(b,0);
     bat.append(b,1);
     bat.append(b,2);
@@ -110,18 +110,18 @@ function user.main():void;
 # the void,void bat they still consume space 
 # shouldn't that be avoided or limited to at most 1 pair? 
     io.print("void,void bat");
-    f := bat.new(:void,:void);
-    bat.insert(f,nil:void,nil:void);
-    bat.insert(f,nil:void,nil:void);
+    f := bat.new(:oid,:oid);
+    bat.insert(f,nil:oid,nil:oid);
+    bat.insert(f,nil:oid,nil:oid);
     io.print(f);
 end main;
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ nil,	  0	  ]
-[ nil,	  1	  ]
-[ nil,	  2	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 [ "oid as a vid column" ]
 #-----------------#
 # h	t	  # name

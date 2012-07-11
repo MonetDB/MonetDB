@@ -42,16 +42,16 @@ exit ifpart;
 end remote_internal_serveget;
 function user.main():void;
 #test basic interaction scheme 
-    remote_test_id_0 := bat.new(:int,:str,33);
-    bat.insert(remote_test_id_0,0:int,"void":str);
-    user.remote_internal_servegetbat("bat[:int,:str]",remote_test_id_0);
+    remote_test_id_0 := bat.new(:oid,:str,33);
+    bat.append(remote_test_id_0,"oid":str);
+    user.remote_internal_servegetbat("bat[:oid,:str]",remote_test_id_0);
 end main;
 [ 1 ]
 #-----------------#
 # h	t	  # name
 # int	str	  # type
 #-----------------#
-[ 0,	  "void"  ]
+[ 0@0,	  "oid"	  ]
 
 # 01:39:39 >  
 # 01:39:39 >  Done.

@@ -1,5 +1,5 @@
 # testing the void semantics, both replace and delete fail (void != oid)
-b:= bat.new(:void,:int);
+b:= bat.new(:oid,:int);
 bat.append(b,0);
 bat.append(b,1);
 bat.append(b,2);
@@ -46,8 +46,8 @@ io.print(e);
 # the void,void bat they still consume space
 # shouldn't that be avoided or limited to at most 1 pair?
 io.print("void,void bat");
-f:= bat.new(:void,:void);
-bat.insert(f,nil:void,nil:void);
-bat.insert(f,nil:void,nil:void);
+f:= bat.new(:oid,:oid);
+bat.insert(f,nil:oid,nil:oid);
+bat.insert(f,nil:oid,nil:oid);
 io.print(f);
 

@@ -10,16 +10,16 @@ barrier if := conn1 == conn2;
 	io.printf("!oops: %s == %s\n", conn1, conn2);
 exit if;
 
-b := bat.new(:int, :int);
+b := bat.new(:oid,:int);
 
-bat.insert(b, 1, 2);
+bat.append(b, 1);
 rb1 := remote.put(conn1, b);
 
-bat.insert(b, 3, 4);
+bat.append(b, 3);
 rb2 := remote.put(conn2, b);
 
-lb1:bat[:int,:int] := remote.get(conn1, rb1);
-lb2:bat[:int,:int] := remote.get(conn2, rb2);
+lb1:bat[:oid,:int] := remote.get(conn1, rb1);
+lb2:bat[:oid,:int] := remote.get(conn2, rb2);
 
 io.print(lb1);
 io.print(lb2);

@@ -34,11 +34,11 @@ stdout of test 'tst034` in directory 'mal` itself:
 #
 function user.main():void;
 # test the reference counting scheme 
-    b := bat.new(:int,:int);
-    bat.insert(b,0,0);
-    bat.insert(b,1,1);
-    bat.insert(b,2,2);
-    bat.insert(b,3,3);
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
     i := bbp.getLRefCount(b);
     io.printf("start of selections %d [1]\n",i);
     z := algebra.select(b,0,2);
@@ -61,29 +61,29 @@ start of selections 5 [1]
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 z select 1 [1]
 select 5 [1]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
 select 5 [1]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
-[ 2,	  2	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
+[ 1@0,	  1	  ]
 
 # 22:30:08 >  
 # 22:30:08 >  Done.

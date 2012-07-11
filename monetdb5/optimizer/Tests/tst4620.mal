@@ -7,19 +7,19 @@ function algebra.joinPath( a:bat[:any_1,:any_2],
     return zz;
 end joinPath;
 
-b:= bat.new(:int,:int);
-barrier v:= 0:int;
-        bat.insert(b,v,v);
-        redo v:= iterator.next(1:int,100:int);
+b:= bat.new(:oid,:oid);
+barrier v:= 0:oid;
+        bat.append(b,v);
+        redo v:= iterator.next(1:oid,100:oid);
 exit v;
 
 i:= aggr.count(b);
 io.print(i);
 
-c:= algebra.select(b,0:int,9:int);
+c:= algebra.select(b,0:oid,9:oid);
 i:= aggr.count(c);
 io.print(i);
-d:= algebra.select(b,0:int,49:int);
+d:= algebra.select(b,0:oid,49:oid);
 i:= aggr.count(d);
 io.print(i);
 

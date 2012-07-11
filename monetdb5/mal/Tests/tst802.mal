@@ -3,7 +3,7 @@ function tst(b:bat[:any_1,:any_2]):bat;
 	return b;
 end tst;
 
-z:= bat.new(:int,:int);
+z:= bat.new(:oid,:int);
 b:= nil:bat;
 b:= z;
 #io.print(b);
