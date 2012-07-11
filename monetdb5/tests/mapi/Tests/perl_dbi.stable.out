@@ -35,20 +35,23 @@ data sources: dbi:monetdb:
 field[0]: 2, last index: 0
 field[0]: 3, last index: 0
 ERROR REPORTED: DBD::monetdb::st execute failed: SyntaxException:parseError:( xyz 1);;
-SyntaxException:parseError:     ^<identifier> expected at /ufs/fabian/scratch/monetdb/Aug2011/program-x86_64/lib/perl5/vendor_perl/5.12.3/x86_64-linux/MonetDB/CLI/MapiPP.pm line 125.
-bun: 3, three
-bun: 7, seven
-rows: 2, fields: 2
-field[0,0]: 3
-field[0,1]: three
-field[1,0]: 7
-field[1,1]: seven
-head[0]: 3
-head[1]: 7
-field[0]: 3
-field[1]: three
-field[0]: 3
-field[1]: three
+SyntaxException:parseError:     ^<identifier> expected at /export/scratch1/mk/current//Linux/lib64/perl5/vendor_perl/MonetDB/CLI/MapiPP.pm line 125.
+bun: 0@0, one
+bun: 1@0, two
+bun: 2@0, three
+rows: 3, fields: 2
+field[0,0]: 0@0
+field[0,1]: one
+field[1,0]: 1@0
+field[1,1]: two
+field[2,0]: 2@0
+field[2,1]: three
+head[0]: 0@0
+head[1]: 1@0
+field[0]: 0@0
+field[1]: one
+field[0]: 0@0
+field[1]: one
 
 Finished
 

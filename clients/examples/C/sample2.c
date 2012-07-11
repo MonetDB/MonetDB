@@ -38,7 +38,8 @@ main(int argc, char **argv)
 	/* a parameter binding test */
 	char *nme = 0;
 	int age = 0;
-	char *parm[] = { "peter", "25", 0 };
+	char *parm[] = { "peter", 0 };
+	char *parm2[] = { "25", 0 };
 	Mapi dbh= NULL;
 	MapiHdl hdl = NULL;
 
@@ -66,29 +67,40 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		if (mapi_bind(hdl, 0, &nme))
+			die(dbh, hdl);
+		if (mapi_bind_var(hdl, 1, MAPI_INT, &age))
+			die(dbh, hdl);
+		while (mapi_fetch_row(hdl)) {
+			printf("%s is %d\n", nme, age);
+		}
 	} else if (strcmp(argv[3], "mal") == 0) {
-		if ((hdl = mapi_query(dbh, "emp := bat.new(:str,:int);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "emp := bat.new(:oid,:str);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "age := bat.new(:oid,:int);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query_array(dbh, "bat.insert(emp,\"?\",?);", parm)) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query_array(dbh, "bat.append(emp,\"?\");", parm)) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query_array(dbh, "bat.append(age,?);", parm2)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "io.print(emp,age);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		if (mapi_bind(hdl, 1, &nme))
+			die(dbh, hdl);
+		if (mapi_bind_var(hdl, 2, MAPI_INT, &age))
+			die(dbh, hdl);
+		while (mapi_fetch_row(hdl)) {
+			printf("%s is %d\n", nme, age);
+		}
 	} else {
 		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);
 		exit(1);
 	}
 
-	if (mapi_bind(hdl, 0, &nme))
-		die(dbh, hdl);
-	if (mapi_bind_var(hdl, 1, MAPI_INT, &age))
-		die(dbh, hdl);
-	while (mapi_fetch_row(hdl)) {
-		printf("%s is %d\n", nme, age);
-	}
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	if (mapi_close_handle(hdl) != MOK)

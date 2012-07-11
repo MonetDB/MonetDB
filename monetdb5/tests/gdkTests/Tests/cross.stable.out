@@ -31,6 +31,7 @@ function user.main():void;
     bat.append(a,1);
     ar := bat.reverse(a);
     io.print(ar);
+    bat.append(a,2);
     ar := bat.reverse(a);
     c := algebra.crossproduct(ar,ar);
     io.print(c);
@@ -51,9 +52,6 @@ function user.main():void;
     io.print(ab);
     ba := algebra.crossproduct(b,ar);
     io.print(ba);
-    bat.append(a,2);
-    ar := bat.reverse(a);
-    io.print(ar);
     ar := bat.reverse(a);
     c := algebra.crossproduct(ar,ar);
     io.print(c);
@@ -109,6 +107,9 @@ end main;
 # int	oid	  # type
 #-----------------#
 [ 1,	  0@0	  ]
+[ 1,	  1@0	  ]
+[ 2,	  0@0	  ]
+[ 2,	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # oid	int	  # type
@@ -131,6 +132,9 @@ end main;
 # int	oid	  # type
 #-----------------#
 [ 1,	  0@0	  ]
+[ 1,	  1@0	  ]
+[ 2,	  0@0	  ]
+[ 2,	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -141,17 +145,13 @@ end main;
 # int	int	  # type
 #-----------------#
 [ 1,	  11	  ]
+[ 2,	  11	  ]
 #-----------------#
 # h	t	  # name
 # void	oid	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
-#-----------------#
-# h	t	  # name
-# int	oid	  # type
-#-----------------#
-[ 1,	  0@0	  ]
-[ 2,	  1@0	  ]
+[ 0@0,	  1@0	  ]
 #-----------------#
 # h	t	  # name
 # int	oid	  # type

@@ -51,13 +51,15 @@ my $dbh = DBI->connect( $dsn,
   my $sth = $dbh->prepare('( xyz 1);');
   eval { $sth->execute }; print "ERROR REPORTED: $@" if $@;
 }
-$dbh->do('b:=bat.new(:int,:str);');
-$dbh->do('bat.insert(b,3,"three");');
+$dbh->do('b:=bat.new(:oid,:str);');
+$dbh->do('bat.append(b,"one");');
+$dbh->do('bat.append(b,"two");');
+$dbh->do('bat.append(b,"three");');
 {
   # variable binding stuff:
-  my $sth = $dbh->prepare('bat.insert(b,?,?);');
+	$dbh->do('c:=bat.new(:oid,:int);');
+  my $sth = $dbh->prepare('bat.append(c,?);');
   $sth->bind_param( 1,     7 , DBI::SQL_INTEGER() );
-  $sth->bind_param( 2,'seven' );
   $sth->execute;
 }
 {
