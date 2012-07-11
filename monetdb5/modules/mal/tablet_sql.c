@@ -18,10 +18,9 @@
  */
 
 /*
- * @f tablet_sql
- * @a Niels Nes, Martin Kersten
+ *  Niels Nes, Martin Kersten
  *
- * @- Parallel bulk load for SQL
+ * Parallel bulk load for SQL
  * The COPY INTO command for SQL is heavily CPU bound, which means
  * that ideally we would like to exploit the multi-cores to do that
  * work in parallel.
