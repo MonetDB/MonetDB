@@ -928,22 +928,28 @@ str
 CMDstr2qgrams(int *ret, str *val)
 {
 	BAT *bn;
-	int i, len = (int)strlen(*val) +4;
-	str s = GDKzalloc( len);
-	char qgram[4];
+	size_t i, len = strlen(*val) + 5;
+	str s = GDKmalloc(len);
+	char qgram[5];
 
-	s[0]=0;
-	strcat(s,"##");
-	strcat(s,*val);
-	strcat(s,"$$");
-	qgram[3]=0;
-	bn = BATnew(TYPE_void, TYPE_str, (int) strlen(*val));
-	BATseqbase(bn,0);
-	
-	for ( i= 0; i< len -4; i++){
-		strncpy(qgram,s+i,4);
-		BUNappend(bn,qgram,FALSE);
+	if (s == NULL)
+		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+	strcpy(s, "##");
+	strcpy(s + 2, *val);
+	strcpy(s + len - 3, "$$");
+	qgram[4] = 0;				/* we're going to deal with 4 char strings */
+	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val));
+	if (bn == NULL) {
+		GDKfree(s);
+		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bn, 0);
+
+	for (i = 0; i < len - 4; i++){
+		strncpy(qgram, s + i, 4);
+		BUNappend(bn, qgram, FALSE);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
+	GDKfree(s);
 	return MAL_SUCCEED;
 }
