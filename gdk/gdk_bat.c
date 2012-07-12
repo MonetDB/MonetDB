@@ -1585,6 +1585,14 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 		BUN prv, nxt;
 
 		ALIGNinp(b, "BUNreplace", force);	/* zap alignment info */
+		if (b->T->nil &&
+		    atom_CMP(BUNtail(bi, p), ATOMnilptr(b->ttype), b->ttype) == 0 &&
+		    atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0) {
+			/* if old value is nil and new value isn't,
+			 * we're not sure anymore about the nil
+			 * property, so we must clear it */
+			b->T->nil = 0;
+		}
 		tacc_update(del,tail,p,pit);
 		Treplacevalue(b, BUNtloc(bi, p), t);
 		tacc_update(ins,tail,p,pit);
