@@ -58,7 +58,6 @@ debian/tmp/usr/lib/monetdb5/statistics.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/status.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/str.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/streams.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/tablet.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/tokenizer.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/trader.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/transaction.mal usr/lib/monetdb5
