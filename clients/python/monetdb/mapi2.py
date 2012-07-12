@@ -31,11 +31,6 @@ from cStringIO import StringIO
 
 from monetdb.monetdb_exceptions import *
 
-# Windows doesn't support MSG_WAITALL flag for recv
-flags = 0
-if hasattr(socket, 'MSG_WAITALL'):
-    flags = socket.MSG_WAITALL
-
 logger = logging.getLogger("monetdb")
 
 MAX_PACKAGE_LENGTH = (1024*8)-2
@@ -232,7 +227,7 @@ class Server:
         count = bytes
         while count > 0:
             try:
-                recv = self.socket.recv(bytes, flags)
+                recv = self.socket.recv(bytes)
                 logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             except socket.error, error:
                 raise OperationalError(error[1])
