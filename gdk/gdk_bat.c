@@ -2165,6 +2165,7 @@ BAT *
 BATseqbase(BAT *b, oid o)
 {
 	BATcheck(b, "BATseqbase");
+	assert(o <= oid_nil);
 	if (ATOMtype(b->htype) == TYPE_oid) {
 		if (b->hseqbase != o) {
 			b->batDirtydesc = TRUE;
