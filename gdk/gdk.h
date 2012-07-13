@@ -2199,7 +2199,7 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, off_t off, size_t len);
 
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */

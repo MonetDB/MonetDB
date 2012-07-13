@@ -363,7 +363,7 @@ MT_heapcur(void)
 }
 
 void *
-MT_mmap(char *path, int mode, off_t off, size_t len)
+MT_mmap(const char *path, int mode, off_t off, size_t len)
 {
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
@@ -513,7 +513,7 @@ MT_heapcur(void)
    needs to be unmapped separately in the end. */
 
 void *
-MT_mmap(char *path, int mode, off_t off, size_t len)
+MT_mmap(const char *path, int mode, off_t off, size_t len)
 {
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
