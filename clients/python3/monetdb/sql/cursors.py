@@ -27,7 +27,7 @@ logger = logging.getLogger("monetdb")
 
 
 
-class Cursor(object):
+class Cursor:
     """This object represents a database cursor, which is used to manage
     the context of a fetch operation. Cursors created from the same
     connection are not isolated, i.e., any changes done to the

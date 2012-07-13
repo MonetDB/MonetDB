@@ -6,4 +6,5 @@ export TSTUSERNAME="monetdb"
 export TSTPASSWORD="monetdb"
 export TSTDEBUG="no"
 
-nosetests ./runtests.py
+nosetests3 ./runtests.py
+

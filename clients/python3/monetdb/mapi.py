@@ -16,9 +16,7 @@
 # All Rights Reserved.
 
 """
-this is the python 2.* implementation of the mapi API.
-
-the python 3.* implementation is in mapi3.py
+This is the python3 implementation of the MAPI protocol.
 """
 
 import socket
@@ -26,22 +24,15 @@ import logging
 import struct
 import hashlib
 import platform
-
-from cStringIO import StringIO
+from io import BytesIO
 
 from monetdb.monetdb_exceptions import *
-
-# Windows doesn't support MSG_WAITALL flag for recv
-flags = 0
-if hasattr(socket, 'MSG_WAITALL'):
-    flags = socket.MSG_WAITALL
 
 logger = logging.getLogger("monetdb")
 
 MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
-MSG_MORE = "\1\2\n"
 MSG_INFO = "#"
 MSG_ERROR = "!"
 MSG_Q = "&"
@@ -83,7 +74,7 @@ class Server:
 
         try:
             self.socket.connect((hostname, port))
-        except socket.error, error:
+        except socket.error as error:
             (error_code, error_str) = error
             raise OperationalError(error_str)
 
@@ -155,15 +146,12 @@ class Server:
         logger.debug("II: executing command %s" % operation)
 
         if self.state != STATE_READY:
-            raise(ProgrammingError, "Not connected")
+            raise ProgrammingError
 
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
             return
-        if response == MSG_MORE:
-            # tell server it isn't going to get more
-            return self.cmd("")
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:
@@ -181,12 +169,21 @@ class Server:
 
         if protocol == '9':
             algo = challenges[5]
-            try:
-                h = hashlib.new(algo)
-                h.update(password)
-                password = h.hexdigest()
-            except ValueError, e:
-                raise NotSupportedError(e.message)
+            if algo == 'SHA512':
+                password = hashlib.sha512(password.encode()).hexdigest()
+            elif algo == 'SHA384':
+                password = hashlib.sha384(password.encode()).hexdigest()
+            elif algo == 'SHA256':
+                password = hashlib.sha256(password.encode()).hexdigest()
+            elif algo == 'SHA224':
+                password = hashlib.sha224(password.encode()).hexdigest()
+            elif algo == 'SHA1':
+                password = hashlib.sha1(password.encode()).hexdigest()
+            elif algo == 'MD5':
+                password = hashlib.md5(password.encode()).hexdigest()
+            else:
+                raise NotSupportedError("The %s hash algorithm is not " +
+                    "supported" % algo)
         elif protocol != "8":
             raise NotSupportedError("We only speak protocol v8 and v9")
 
@@ -213,7 +210,7 @@ class Server:
 
     def __getblock(self):
         """ read one mapi encoded block """
-        result = StringIO()
+        result = BytesIO()
         last = 0
         while not last:
             flag = self.__getbytes(2)
@@ -222,19 +219,20 @@ class Server:
             last = unpacked & 1
             logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
             result.write(self.__getbytes(length))
-        logger.debug("RX: %s" % result.getvalue())
-        return result.getvalue()
+        result_str = result.getvalue()
+        logger.debug("RX: length: %i payload: %s" % (len(result_str), result_str))
+        return result_str.decode()
 
 
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
-        result = StringIO()
+        result = BytesIO()
         count = bytes
         while count > 0:
             try:
-                recv = self.socket.recv(bytes, flags)
+                recv = self.socket.recv(bytes)
                 logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
-            except socket.error, error:
+            except socket.error as error:
                 raise OperationalError(error[1])
             count -= len(recv)
             result.write(recv)
@@ -246,7 +244,7 @@ class Server:
         pos = 0
         last = 0
         while not last:
-            data = block[pos:pos+MAX_PACKAGE_LENGTH]
+            data = block[pos:pos+MAX_PACKAGE_LENGTH].encode()
             length = len(data)
             if length < MAX_PACKAGE_LENGTH:
                 last = 1
@@ -256,7 +254,7 @@ class Server:
             try:
                 self.socket.send(flag)
                 self.socket.send(data)
-            except socket.error, error:
+            except socket.error as error:
                 raise OperationalError(error[1])
             pos += length
 
@@ -264,3 +262,4 @@ class Server:
     def __del__(self):
         if self.socket:
             self.socket.close()
+

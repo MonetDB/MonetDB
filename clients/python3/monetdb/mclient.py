@@ -24,6 +24,7 @@ import getopt
 
 from monetdb import mapi
 
+
 def main(argv) :
     hostname = 'localhost'
     port = '50000'
@@ -67,7 +68,9 @@ def main(argv) :
               language = language,
               database = database)
     print "#mclient (python) connected to %s:%d as %s" % (hostname, int(port), username)
+
     fi = sys.stdin
+
     prompt = '%s>' % language
 
     sys.stdout.write(prompt.encode('utf-8'))
@@ -88,3 +91,4 @@ def main(argv) :
 
 if __name__ == "__main__":
     main(sys.argv)
+

@@ -3,16 +3,16 @@
    Use ``rst2html.py`` to convert this file to HTML.
 
 ==========================================
-The MonetDB MAPI and SQL client python API
+The MonetDB MAPI and SQL client python3 API
 ==========================================
 
 
 Introduction
 ============
 
-This is the new native python client API.  This API is cross-platform,
+This is the native python3 client API.  This API is cross-platform,
 and doesn't depend on any monetdb libraries.  It has support for
-python 2.5+ and is Python DBAPI 2.0 compatible.
+python 3.0+ and is Python DBAPI 2.0 compatible.
 
 
 Installation

@@ -27,7 +27,7 @@ from monetdb.monetdb_exceptions import *
 logger = logging.getLogger("monetdb")
 
 
-class Pythonizer(object):
+class Pythonizer:
     """ convert mapi type to python type """
 
     def __init__(self, use_unicode=False):
@@ -162,7 +162,7 @@ class Pythonizer(object):
             raise ProgrammingError("type %s is not supported by Python API" % type_code)
 
 
-class Monetizer(object):
+class Monetizer:
     """ convert python type to mapi type """
 
     def __init__(self):

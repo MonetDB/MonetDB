@@ -89,6 +89,18 @@ class Test_DBAPI20(dbapi20.DatabaseAPI20Test):
     connect_kwargs = dict(database=TSTDB, port=MAPIPORT, hostname=TSTHOSTNAME,
             username=TSTUSERNAME, password=TSTPASSWORD, autocommit=False)
 
+    def test_Exceptions(self):
+        # we override this since StandardError is depricated in python 3
+        self.assertTrue(issubclass(self.driver.Warning,Exception))
+        self.assertTrue(issubclass(self.driver.Error,Exception))
+        self.assertTrue(issubclass(self.driver.InterfaceError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.DatabaseError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.OperationalError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.IntegrityError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.InternalError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.ProgrammingError, self.driver.Error))
+        self.assertTrue(issubclass(self.driver.NotSupportedError, self.driver.Error))
+
 if __name__ == '__main__':
     suite1 = unittest.TestLoader().loadTestsFromTestCase(Test_Capabilities)
     TextTestRunnerNoTime(verbosity=3).run(suite1)

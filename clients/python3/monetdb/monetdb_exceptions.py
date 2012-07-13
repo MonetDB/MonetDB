@@ -15,14 +15,17 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-class Warning(StandardError):
+# DBAPI states that we should subclass StandardError.
+# StandardError is depricated in python 3.0, so we use Exception
+
+class Warning(Exception):
     """Exception raised for important warnings like data
     truncations while inserting, etc. It must be a subclass of
     the Python StandardError (defined in the module
     exceptions)."""
     pass
 
-class Error(StandardError):
+class Error(Exception):
     """Exception that is the base class of all other error
     exceptions. You can use this to catch all errors with one
     single 'except' statement. Warnings are not considered
