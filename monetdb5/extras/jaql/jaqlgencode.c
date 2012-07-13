@@ -51,6 +51,16 @@ typedef struct _jgvar {
 
 #define MAXJAQLARG 23
 
+#ifdef JAQL_ANNOTATE_MALPLANS
+#define MALCOMMENT(mb, X, ...) { \
+	char _comment_buf[1024]; \
+	snprintf(_comment_buf, sizeof(_comment_buf), X, ##__VA_ARGS__); \
+	(void)newComment(mb, _comment_buf); \
+}
+#else
+#define MALCOMMENT(mb, X, ...)
+#endif
+
 static int dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems);
 static int dumpnextid(MalBlkPtr mb, int j1);
 static int matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltypes)[MAXJAQLARG], int (*dynaarg)[MAXJAQLARG][7]);
@@ -92,6 +102,8 @@ dumpwalkvar(MalBlkPtr mb, int j1, int j5)
 	InstrPtr q;
 	int a, b;
 
+	MALCOMMENT(mb, "dumpwalkvar(X_%d,X_%d) {", j1, j5);
+
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
 	setFunctionId(q, putName("selectH", 7));
@@ -130,6 +142,8 @@ dumpwalkvar(MalBlkPtr mb, int j1, int j5)
 	q = pushArgument(mb, q, a);
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
+
+	MALCOMMENT(mb, "} dumpwalkvar(X_%d,X_%d)", j1, j5);
 	return a;
 }
 
@@ -140,6 +154,8 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0;
+
+	MALCOMMENT(mb, "dumparrrefvar(X_%d,X_%d) {", elems, j5);
 
 	/* array indirection, entries must be arrays */
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -152,6 +168,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 	pushInstruction(mb, q);
 
 	if (t->nval == -1 && t->tval1 == NULL) {
+		MALCOMMENT(mb, "| t->nval == -1 && t->tval1 == NULL: all array members in a single array");
 		/* all array members (return as a single array) */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -161,6 +178,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		b = getArg(q, 0);
 		pushInstruction(mb, q);
 	} else if (t->nval == -1 && t->tval1 != NULL) {
+		MALCOMMENT(mb, "| t->nval == -1 && t->tval1 != NULL: all array members followed by object deref");
 		/* all array members of which objects will be dereferenced */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
@@ -186,6 +204,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		pushInstruction(mb, q);
 	} else {
 		/* xth array member */
+		MALCOMMENT(mb, "| t->nval == %lld: xth array member", t->nval);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
 		setFunctionId(q, mirrorRef);
@@ -291,6 +310,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		pushInstruction(mb, q);
 	}
 
+	MALCOMMENT(mb, "} dumparrrefvar(X_%d,X_%d)", elems, j5);
 	return b;
 }
 
@@ -306,6 +326,8 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 
 	assert(t && t->type == j_var);
 
+	MALCOMMENT(mb, "dumprefvar(X_%d) {", elems);
+
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, batRef);
 	setFunctionId(q, mirrorRef);
@@ -315,11 +337,14 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 	pushInstruction(mb, q);
 
 	/* just var, has no derefs or anything, so all */
-	if (t->tval1 == NULL)
+	if (t->tval1 == NULL) {
+		MALCOMMENT(mb, "} dumprefvar(X_%d)", elems);
 		return b;
+	}
 
 	a = elems;
 	for (t = t->tval1; t != NULL; t = t->tval1) {
+		MALCOMMENT(mb, "| dereferencing %s", t->sval);
 		if (t->type == j_arr_idx) {
 			c = dumparrrefvar(mb, t, a, j->j5);
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -407,6 +432,7 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 		}
 		/* retrieve kinds on multiple indirections */
 		if (a != elems && t->tval1 != NULL) {
+			MALCOMMENT(mb, "| re-retrieving kinds");
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
 			setFunctionId(q, semijoinRef);
@@ -420,6 +446,7 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 	if (encapsulate) {
 		/* we have to return the results as arrays here, since they are
 		 * multi-value (x[*].y) */
+		MALCOMMENT(mb, "| encapsulating result in array for x[*].y construct");
 		a = dumpnextid(mb, j->j1);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);
@@ -482,6 +509,8 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 		j->j1 = getArg(q, 0);
 		pushInstruction(mb, q);
 	}
+
+	MALCOMMENT(mb, "} dumprefvar(X_%d)", elems);
 	return b;
 }
 
@@ -503,6 +532,8 @@ dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 				 || t->tval1->type == j_str || t->tval1->type == j_bool
 				 || t->tval1->type == j_null))
 		  );
+
+	MALCOMMENT(mb, "dumpin(X_%d) {", elems);
 
 	switch (t->tval3->type) {
 		case j_json_arr:
@@ -934,6 +965,7 @@ dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 			assert(0);
 	}
 
+	MALCOMMENT(mb, "} dumpin(X_%d)", elems);
 	return g;
 }
 
@@ -957,6 +989,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 			 || t->tval3->type == j_str || t->tval3->type == j_bool) &&
 			(t->tval1->type == j_var || t->tval1->type == j_operation)
 		  );
+
+	MALCOMMENT(mb, "dumpcomp(X_%d) {", elems);
 
 	if (t->tval1->type == j_operation) {
 		a = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
@@ -1454,6 +1488,8 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 			pushInstruction(mb, q);
 		}
 	}
+
+	MALCOMMENT(mb, "} dumpcomp(X_%d)", elems);
 	return g;
 }
 
@@ -1553,6 +1589,8 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 
 	jgvar *jgraph = NULL, *ograph = NULL;
 
+	MALCOMMENT(mb, "dumppredjoin() {");
+
 	/* iterate through all predicates and load the set from the correct
 	 * JSON variable */
 	for (pred = t->tval2; pred != NULL; pred = pred->next) {
@@ -1569,6 +1607,9 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			} \
 		}
 		locate_var(ljv, pred->tval1->sval);
+		MALCOMMENT(mb, "| located %s = (X_%d,X_%d,X_%d,X_%d,X_%d,X_%d,X_%d)",
+				ljv->name,
+				ljv->j1, ljv->j2, ljv->j3, ljv->j4, ljv->j5, ljv->j6, ljv->j7);
 		a = dumpwalkvar(mb, ljv->j1, ljv->j5);
 		tj.j1 = ljv->j1;
 		tj.j5 = ljv->j5;
@@ -1755,6 +1796,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		a = getArg(q, 0);
 		pushInstruction(mb, q);
 		/* a now contains matching oids in head l, in tail r */
+		MALCOMMENT(mb, "| %d: matching oids in head l, in tail r", a);
 
 		if (ljv->preserve == 1) {
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -2308,6 +2350,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 
 	/* create new objects */
 	for (vars = js; vars->name != NULL; vars++) {
+		MALCOMMENT(mb, "| creating new objects for %s", vars->name);
 		/* names of the pairs we create (for each var) */
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, algebraRef);
@@ -2369,6 +2412,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 	pushInstruction(mb, q);
 
 	/* generate kind entries for the new objects */
+	MALCOMMENT(mb, "| generating kind entries");
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
 	setFunctionId(q, projectRef);
@@ -2413,6 +2457,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 
 	/* merge everything into one */
 	for (vars = &js[1]; vars->name != NULL; vars++) {
+		MALCOMMENT(mb, "| merging %s into main document", vars->name);
 		q = newInstruction(mb, ASSIGNsymbol);
 		setModuleId(q, batRef);
 		setFunctionId(q, insertRef);
@@ -2480,6 +2525,8 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		ograph = jgraph;
 	}
 	GDKfree(ograph);
+
+	MALCOMMENT(mb, "} dumppredjoin()");
 }
 
 static int
@@ -2498,6 +2545,8 @@ dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 	assert(t->tval1->type == j_pred);
 	assert(t->tval2->cval == j_and || t->tval2->cval == j_or);
 	assert(t->tval3->type == j_pred);
+
+	MALCOMMENT(mb, "dumppred(X_%d) {", elems);
 
 	l = dumppred(j, cntxt, mb, t->tval1, elems);
 	r = dumppred(j, cntxt, mb, t->tval3, elems);
@@ -2523,6 +2572,7 @@ dumppred(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		pushInstruction(mb, q);
 	}
 
+	MALCOMMENT(mb, "} dumppred(X_%d)", elems);
 	return a;
 }
 
@@ -2555,6 +2605,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0;
 
 	assert (t != NULL);
+
+	MALCOMMENT(mb, "dumpvariabletransformation(X_%d) {", elems);
 
 	switch (t->type) {
 		case j_str:
@@ -2646,6 +2698,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 
+			MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 			return b;
 		case j_var:
 			b = dumprefvar(j, mb, t, elems);
@@ -2751,6 +2804,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 
+			MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 			return b;
 		case j_operation: {
 			int r, s;
@@ -3346,6 +3400,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
 
+			MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 			return a;
 		}
 		case j_pair:
@@ -3407,6 +3462,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 
+				MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 				return a;
 			}
 
@@ -3557,6 +3613,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			j->j7 = getArg(q, 0);
 			pushInstruction(mb, q);
 
+			MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 			return b;
 		case j_json_obj:
 			g = 1;
@@ -3685,6 +3742,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushType(mb, q, TYPE_oid);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
+				MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 				return a;
 			}
 
@@ -4322,6 +4380,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 
+				MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 				return a;
 			} else {
 				InstrPtr r;
@@ -4518,6 +4577,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 
+				MALCOMMENT(mb, "} dumpvariabletransformation(X_%d)", elems);
 				return a;
 			}
 		}
@@ -4676,6 +4736,9 @@ dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
 	InstrPtr q;
 	int a;
 
+	MALCOMMENT(mb, "dumpvalsfromarr(X_%d,X_%d,X_%d,X_%d,X_%d) {",
+			j1, j2, j3, j4, j5);
+
 	a = dumpwalkvar(mb, j1, j5);
 
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -4728,6 +4791,9 @@ dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
 	q = pushArgument(mb, q, a);
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
+
+	MALCOMMENT(mb, "} dumpvalsfromarr(X_%d,X_%d,X_%d,X_%d,X_%d)",
+			j1, j2, j3, j4, j5);
 	return a;
 }
 
@@ -5011,6 +5077,9 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 {
 	InstrPtr r;
 	int a = 0, b = 0, i = 0;
+
+	MALCOMMENT(mb, "conditionalcall() {");
+
 	for (i = 0; i < coltpos; i++) {
 		switch (coltypes[i]) {
 			case j_json:
@@ -5098,6 +5167,7 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 				}
 				/* we passed copies above, so need to free the original */
 				freeInstruction(q);
+				MALCOMMENT(mb, "} conditionalcall()");
 				return;
 			default:
 				q = pushArgument(mb, q, dynaarg[i][0]);
@@ -5107,6 +5177,8 @@ conditionalcall(int *ret, MalBlkPtr mb, tree *t,
 
 	q = pushReturn(mb, q, *ret);
 	pushInstruction(mb, q);
+
+	MALCOMMENT(mb, "} conditionalcall()");
 }
 
 
