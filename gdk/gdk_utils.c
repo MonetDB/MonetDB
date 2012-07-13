@@ -1027,7 +1027,7 @@ GDKstrdup(const char *s)
  * allocations affect only the logical VM resources.
  */
 void *
-GDKmmap(char *path, int mode, off_t off, size_t len)
+GDKmmap(const char *path, int mode, off_t off, size_t len)
 {
 	void *ret = MT_mmap(path, mode, off, len);
 
