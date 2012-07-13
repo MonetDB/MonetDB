@@ -784,9 +784,10 @@ CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("getObjects");
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "bbp.getObjects", INTERNAL_OBJ_CREATE);
+	BATseqbase(b,0);
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
 		BUNins(b, &v->val.bval, getVarName(box->sym, i), FALSE);
