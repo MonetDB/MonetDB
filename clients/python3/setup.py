@@ -26,7 +26,7 @@ def read(fname):
 setup(name='monetdb',
     version='11.11.6',
     description='Native MonetDB client Python API',
-    long_description=read('README.rest'),
+    long_description=read('README.rst'),
     author='MonetDB BV',
     author_email='info@monetdb.org',
     url='http://www.monetdb.org/',

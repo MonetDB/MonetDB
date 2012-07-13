@@ -1015,7 +1015,7 @@ def msc_python(fd, var, python, msc):
         msc['SCRIPTS'].append('target_python_%s' % f)
         srcs = map(lambda x: x.strip('\'" ').replace('.', '\\'),
                    pyre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
-        fd.write('target_python_%s: %s %s\n' % (f, ' '.join(srcs), f))
+        fd.write('target_python_%s: %s README.rst %s\n' % (f, ' '.join(srcs), f))
         fd.write('\t$(PYTHON) %s build\n' % f)
         for src in srcs:
             fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
@@ -1023,6 +1023,8 @@ def msc_python(fd, var, python, msc):
             fd.write('\t$(INSTALL) "$(srcdir)\\%s"\\*.py "%s"\n' % (src, src))
         fd.write('%s: "$(srcdir)\\%s"\n' % (f, f))
         fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (f, f))
+        fd.write('README.rst: "$(srcdir)\\README.rst"\n')
+        fd.write('\t$(INSTALL) "$(srcdir)\\README.rst" "README.rst"\n')
         msc['INSTALL'][f] = f, '', '', '', ''
         fd.write('install_%s:\n' % f)
         fd.write('\t$(PYTHON) %s install --prefix "$(prefix)"\n' % f)

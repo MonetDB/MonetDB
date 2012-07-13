@@ -1004,6 +1004,7 @@ def am_python(fd, var, python, am):
             pkgdirs.append(pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
+        fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/README.rst' .\n")
         fd.write("\t$(PYTHON) '%s' build\n" % f)
     fd.write('install-exec-local-%s:\n' % var)
     for f in python['FILES']:
