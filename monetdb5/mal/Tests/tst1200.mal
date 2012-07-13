@@ -531,22 +531,27 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #
 	rh_a := bat.setColumn(timestamp_bat,"timestamp");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
-	tzz:bat[:oid,:timezone]:= bbp.bind("timezones");
-	timezones:= bat.reverse(tzz);
+	tzname:bat[:oid,:str]:= bbp.bind("timezone_name");
+	tzdef:bat[:oid,:timezone]:= bbp.bind("timezone_def");
+	tzn:= bat.reverse(tzname);
 	io.print("print(timezones)");
-	io.print(timezones);
-	sh_a:timezone := algebra.find(timezones,"Wake Island");
+	io.print(tzname,tzdef);
+	o:= algebra.find(tzn,"Wake Island");
+	sh_a:timezone := algebra.fetch(tzdef,o);
 	th_a:bat[:oid,:date] := mal.multiplex("mtime","date",timestamp_bat,sh_a);
 	bat.setColumn(th_a,"Wake Island");
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"),
-	vh_a:timezone := algebra.find(timezones,"Wake Island");
+	o := algebra.find(tzn,"Wake Island");
+	vh_a:timezone := algebra.fetch(tzdef,o);
 	wh_a:bat[:oid,:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,vh_a);
 #      [daytime](timestamp_bat,algebra.find(timezones,"Wake Island")),
-	xh_a:timezone := algebra.find(timezones,"American Samoa");
+	o := algebra.find(tzn,"American Samoa");
+	xh_a:timezone := algebra.fetch(tzdef,o);
 	yh_a:bat[:oid,:date] := mal.multiplex("mtime","date",timestamp_bat,xh_a);
 	ai_a := bat.setColumn(yh_a,"American Samoa");
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).bat.setColumn("American Samoa"),
-	bi_a:timezone := algebra.find(timezones,"American Samoa");
+	o := algebra.find(tzn,"American Samoa");
+	bi_a:timezone := algebra.fetch(tzdef,o);
 	ci_a:bat[:oid,:daytime] := mal.multiplex("mtime","daytime",timestamp_bat,bi_a);
 	io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");
 	di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);
@@ -579,10 +584,12 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	ti_a := io.print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);
 #	[/]([diff](timestamp_plus, timestamp_minus),calc.lng(60*60*1000)).bat.setColumn("diff"));
 #
-	ui_a:timezone := algebra.find(timezones,"West/Europe");
+	o := algebra.find(tzn,"West/Europe");
+	ui_a:timezone := algebra.fetch(tzdef,o);
 	timestamp_eur:bat[:oid,:timestamp]:= mal.multiplex("mtime","timestamp",date_seq,daytime_00,ui_a);
 #var timestamp_eur := [timestamp](date_seq, daytime_00, algebra.find(timezones,"West/Europe"));
-	vi_a:timezone := algebra.find(timezones,"Andes/Brazil");
+	o := algebra.find(tzn,"Andes/Brazil");
+	vi_a:timezone := algebra.fetch(tzdef,o);
 	timestamp_bra:bat[:oid,:timestamp]:= mal.multiplex("mtime","timestamp",date_seq,daytime_00,vi_a);
 #var timestamp_bra := [timestamp](date_seq, daytime_00, algebra.find(timezones,"Andes/Brazil"));
 #
@@ -594,13 +601,15 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #	[dayname]([dayofweek](date_seq)).bat.setColumn("day"),
 	bj_a := bat.setColumn(timestamp_eur,"West/Europe");
 #	timestamp_eur.bat.setColumn("West/Europe"),
-	cj_a:timezone := algebra.find(timezones,"West/Europe");
+	o := algebra.find(tzn,"West/Europe");
+	cj_a:timezone := algebra.find(tzdef,o);
 	dj_a:bat[:oid,:bit] := mal.multiplex("mtime","dst",timestamp_eur,cj_a);
 	ej_a := bat.setColumn(dj_a,"dst");
 #	[dst](timestamp_eur,algebra.find(timezones,"West/Europe")).bat.setColumn("dst"),
 	fj_a := bat.setColumn(timestamp_bra,"Andes/Brazil");
 #	timestamp_bra.bat.setColumn("Andes/Brazil"),
-	gj_a:timezone := algebra.find(timezones,"Andes/Brazil");
+	o := algebra.find(tzn,"Andes/Brazil");
+	gj_a:timezone := algebra.fetch(tzdef,o);
 	hj_a:bat[:oid,:bit] := mal.multiplex("mtime","dst",timestamp_bra,gj_a);
 	ij_a := bat.setColumn(hj_a,"dst");
 	io.print("print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)");
