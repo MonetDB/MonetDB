@@ -4744,7 +4744,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	list *pre_prj = NULL;
 	list *outer_gbexps = NULL;
 	sql_rel *inner = NULL;
-	int decorrelated = 0;
+	int decorrelated = 0, projection = 0;
 
 	assert(sn->s.token == SQL_SELECT);
 	if (!sn->selection)
@@ -4973,6 +4973,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			sql_exp *e = rel_lastexp(sql, rel->r);
 			list *exps = list_dup(pre_prj, (fdup)NULL);
 
+			projection = 1;
 			exps = list_merge(exps, rel_projections(sql, outer, NULL, 1, 1), (fdup)NULL);
 			rel = rel_project(sql->sa, rel, exps);
 			rel_project_add_exp(sql, rel, e);
@@ -4990,6 +4991,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 	if (outer && pre_prj) {
 		sql_rel *l;
 		node *n;
+		list *exps;
 
 		if (outer_gbexps) {
 			assert(is_groupby(rel->op));
@@ -5003,7 +5005,20 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			rel->exps = outer_gbexps;
 			exps_fix_card(outer_gbexps, rel->card);
 		}
-		l = rel = rel_project(sql->sa, rel, pre_prj);
+		if (projection) {
+			exps = new_exp_list(sql->sa);
+			for (n = pre_prj->h; n; n = n->next) {
+				sql_exp *pe = n->data;
+
+				if (!exp_name(pe))
+					exp_label(sql->sa, pe, ++sql->label);
+				pe = exp_column(sql->sa, exp_relname(pe), exp_name(pe), exp_subtype(pe), exp_card(pe), has_nil(pe), is_intern(pe));
+				append(exps, pe);
+			}
+		} else {
+			exps = pre_prj;
+		}
+		l = rel = rel_project(sql->sa, rel, exps);
 		while(l && l->op != op_join)
 			l = l->l;
 		if (l && l->op == op_join && l->l == outer && ek.card != card_set)

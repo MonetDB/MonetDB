@@ -1447,7 +1447,7 @@ char *
 BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 {
 	BAT *i,*b;
-	int param=0;
+	int param=BAT_WRITE;
 	(void) r;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
@@ -1466,7 +1466,7 @@ char *
 BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 {
 	BAT *i,*b;
-	int param=0;
+	int param=BAT_WRITE;
 	(void) r;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
@@ -1485,7 +1485,7 @@ str
 BKCinsert_bat(int *r, int *bid, int *sid)
 {
 	BAT *i,*b, *s;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
@@ -1511,7 +1511,7 @@ str
 BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 {
 	BAT *i,*b, *s;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
@@ -1538,7 +1538,7 @@ str
 BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 {
 	BAT *i,*b;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
@@ -1560,7 +1560,7 @@ str
 BKCreplace_bat(int *r, int *bid, int *sid)
 {
 	BAT *i, *b, *bn, *s;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
@@ -1735,7 +1735,7 @@ str
 BKCdelete_bat(int *r, int *bid, int *sid)
 {
 	BAT *i,*b, *s;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
@@ -1797,7 +1797,7 @@ char *
 BKCappend_wrap(int *r, int *bid, int *uid)
 {
 	BAT *b, *i, *u;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
@@ -1818,7 +1818,7 @@ str
 BKCappend_val_wrap(int *r, int *bid, ptr u)
 {
 	BAT *i,*b;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
@@ -1835,7 +1835,7 @@ str
 BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
 {
 	BAT *i,*b;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
@@ -1853,7 +1853,7 @@ char *
 BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 {
 	BAT *b,*i, *u;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
@@ -1874,7 +1874,7 @@ str
 BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
 {
 	BAT *b,*i;
-	int param=0;
+	int param=BAT_WRITE;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);

@@ -23,31 +23,31 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multi attribute table.";
 
-pattern ftable( filep:streams, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):void
+pattern ftable( filep:streams, b1:bat[:oid,:any], b:bat[:oid,:any]... ):void
 address IOftable 
 comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):void
+pattern print(order:int,b:bat[:oid,:any], b2:bat[:oid,:any]...):void
 address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
-pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
+pattern table(b1:bat[:oid,:any], b2:bat[:oid,:any]...):void 
 address IOttable
 comment "Print an n-ary table. Like print, but does not print oid column";
 
-pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):void 
+pattern table(order:int, b1:bat[:oid,:any], b2:bat[:oid,:any]...):void 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable(fp:streams, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...):void
+pattern ftable(fp:streams, order:int, b1:bat[:oid,:any], b:bat[:oid,:any]...):void
 address IOfotable 
 comment "Print an n-ary table to a file.";
 
 pattern print(val:any_1):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
-pattern print(val:bat[:any_1,:any_2]):void 
+pattern print(val:bat[:oid,:any_2]):void 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
@@ -74,12 +74,12 @@ address IOdatafile
 comment "Signals receipt of tuples in a file fname.
 It returns the name of the file, if it still exists.";
 
-command export(b:bat[:any_1,:any_2], filepath:str):bit  
+command export(b:bat[:oid,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import(b:bat[:any_1,:any_2], filepath:str) :bat[:any_1,:any_2] 
+command import(b:bat[:oid,:any_2], filepath:str) :bat[:oid,:any_2] 
 address IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,

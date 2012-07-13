@@ -67,9 +67,9 @@ function user.main():void;              #  0 main:void := user.main() {G}
     X_36 := aggr.count(X_32);           # 12 _36:wrd := ALGcount_bat(_32:bat[:oid,:oid]) {G}
     X_37 := aggr.count(X_33);           # 13 _37:wrd := ALGcount_bat(_33:bat[:oid,:oid]) {G}
     X_38 := aggr.count(X_34);           # 14 _38:wrd := ALGcount_bat(_34:bat[:oid,:oid]) {G}
-    X_35 := mat.pack(X_36,X_37,X_38);   # 15 _35:bat[:void,:wrd] := MATpackValues(_36:wrd, _37:wrd, _38:wrd) {G}
-    X_39 := algebra.selectNotNil(X_35); # 16 _39:bat[:void,:wrd] := ALGselectNotNil(_35:bat[:void,:wrd]) {G}
-    i := aggr.sum(X_39);                # 17 i:wrd := aggr.sum(_39:bat[:void,:wrd]) {G}
+    X_35 := mat.pack(X_36,X_37,X_38);   # 15 _35:bat[:oid,:wrd] := MATpackValues(_36:wrd, _37:wrd, _38:wrd) {G}
+    X_39 := algebra.selectNotNil(X_35); # 16 _39:bat[:oid,:wrd] := ALGselectNotNil(_35:bat[:oid,:wrd]) {G}
+    i := aggr.sum(X_39);                # 17 i:wrd := aggr.sum(_39:bat[:oid,:wrd]) {G}
     s := mat.pack(X_32,X_33,X_34);      # 18 s:bat[:oid,:oid] := MATpack(_32:bat[:oid,:oid], _33:bat[:oid,:oid], _34:bat[:oid,:oid]) {G}
     io.print(s);                        # 19 _16:void := IOprint_val(s:bat[:oid,:oid]) {G}
     io.print(i);                        # 20 _17:void := IOprint_val(i:wrd) 

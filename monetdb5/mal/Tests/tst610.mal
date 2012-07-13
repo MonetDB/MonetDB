@@ -41,7 +41,7 @@ io.print(t);
 catch MALException:str;
 io.print("BAT was destroyed");
 exit MALException;
-z:bat[:any_1,:any_2]:= bbp.bind("tasks");
+z:bat[:oid,:any_2]:= bbp.bind("tasks");
 io.print(z);
 #it is not in the box anymore either
 catch MALException:str;

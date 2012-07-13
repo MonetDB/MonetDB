@@ -30,14 +30,14 @@ command getLevel(i:int):bat[:oid,:str]
 address TKNZRgetLevel
 comment "administrative function that returns the bat on level i";
 
-command getIndex():bat[:void,:oid]
+command getIndex():bat[:oid,:oid]
 address TKNZRgetIndex
 comment "administrative function that returns the INDEX bat";
 
-command getCount():bat[:void,:wrd]
+command getCount():bat[:oid,:wrd]
 address TKNZRgetCount
 comment "debugging function that returns the size of the bats at each level";
 
-command getCardinality():bat[:void,:wrd]
+command getCardinality():bat[:oid,:wrd]
 address TKNZRgetCardinality
 comment "debugging function that returns the unique tokens at each level";

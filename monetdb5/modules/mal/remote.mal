@@ -51,7 +51,7 @@ command isalive(conn:str):int
 address RMTisalive
 comment "check if conn is still valid and connected";
 
-pattern batload(ht:any_1, tt:any_2, size:int):bat[:any_1,:any_2]
+pattern batload(ht:oid, tt:any_2, size:int):bat[:oid,:any_2]
 address RMTbatload
 comment "create a BAT of the given type and size, and load values from the input stream";
 

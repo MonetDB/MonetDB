@@ -15,12 +15,12 @@ io.print(b);
 bat.save(a);
 bat.save(b);
 
-ar:bat[:int,:int]:= bat.load("aaa");
+ar:bat[:oid,:int]:= bat.load("aaa");
 io.print(ar);
 br:bat[:oid,:str]:= bat.load("bbb");
 io.print(br);
 
 
 #and an error
-er:bat[:int,:int]:= bbp.bind("bbb");
+er:bat[:oid,:int]:= bbp.bind("bbb");
 io.print(er);

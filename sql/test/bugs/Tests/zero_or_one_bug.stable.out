@@ -60,7 +60,7 @@ Ready.
 #FROM  my_table1 x
 #;
 % .,	.my_table2 # table_name
-% isnull_not_isnull_id1,	L2 # name
+% L3,	L2 # name
 % int,	varchar # type
 % 1,	0 # length
 [ 1,	NULL	]
@@ -78,7 +78,7 @@ Ready.
 #FROM  my_table1 x
 #;
 % .,	.my_table2 # table_name
-% isnull_not_isnull_id1,	my_col1 # name
+% L3,	my_col1 # name
 % int,	varchar # type
 % 1,	0 # length
 [ 1,	NULL	]

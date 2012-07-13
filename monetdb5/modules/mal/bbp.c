@@ -784,9 +784,10 @@ CMDbbpGetObjects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;		/* fool compiler */
 	OpenBox("getObjects");
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "bbp.getObjects", INTERNAL_OBJ_CREATE);
+	BATseqbase(b,0);
 	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
 		BUNins(b, &v->val.bval, getVarName(box->sym, i), FALSE);
@@ -804,20 +805,18 @@ CMDbbpNames(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpNames");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i)) ) {
-				BUNins(b, &i, BBP_logical(i), FALSE);
-				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i)) && !BBPtmpcheck(BBP_logical(-i))) {
-					int j = -i;
-
-					BUNins(b, &j, BBP_logical(j), FALSE);
-				}
+				BUNappend(b, BBP_logical(i), FALSE);
+				if (BBP_logical(-i) && (BBP_refs(-i) || BBP_lrefs(-i)) && !BBPtmpcheck(BBP_logical(-i)))
+					BUNappend(b,  BBP_logical(-i), FALSE);
 			}
 		}
 	BBPunlock("CMDbbpNames");
@@ -851,17 +850,18 @@ CMDbbpRNames(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "bbp.getRNames", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpRNames");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			if (BBP_logical(-i)) {
-				BUNins(b, &i, BBP_logical(-i), FALSE);
+				BUNappend(b, BBP_logical(-i), FALSE);
 			} else
-				BUNins(b, &i, BBP_logical(i), FALSE);
+				BUNappend(b, BBP_logical(i), FALSE);
 		}
 	BBPunlock("CMDbbpRNames");
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -876,9 +876,10 @@ CMDbbpCount(int *ret)
 	int i;
 	lng l;
 
-	b = BATnew(TYPE_int, TYPE_lng, BBPsize);
+	b = BATnew(TYPE_void, TYPE_lng, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpCount", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
@@ -886,7 +887,7 @@ CMDbbpCount(int *ret)
 				bn = BATdescriptor(i);
 				if (bn) {
 					l = BATcount(bn);
-					BUNins(b, &i, &l, FALSE);
+					BUNappend(b,  &l, FALSE);
 					BBPunfix(bn->batCacheid);
 				}
 			}
@@ -910,16 +911,17 @@ CMDbbpLocation(int *ret)
 	if (getcwd(cwd, MAXPATHLEN) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpLocation", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpLocation");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				snprintf(buf,MAXPATHLEN,"%s/bat/%s",cwd,BBP_physical(i));
-				BUNins(b, &i, buf, FALSE);
+				BUNappend(b, buf, FALSE);
 			}
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
@@ -938,9 +940,10 @@ CMDbbpHeat(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_void, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpHeat", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpHeat");
 	for (i = 1; i < BBPsize; i++)
@@ -970,9 +973,10 @@ CMDbbpDirty(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpDirty", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpDirty");
 	for (i = 1; i < BBPsize; i++)
@@ -980,7 +984,7 @@ CMDbbpDirty(int *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				BAT *bn = BBP_cache(i);
 
-				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
+				BUNappend(b, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpDirty");
@@ -997,9 +1001,10 @@ CMDbbpStatus(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpStatus", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpStatus");
 	for (i = 1; i < BBPsize; i++)
@@ -1007,7 +1012,7 @@ CMDbbpStatus(int *ret)
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 				char *loc = BBP_cache(i) ? "load" : "disk";
 
-				BUNins(b, &i, loc, FALSE);
+				BUNappend(b, loc, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpStatus");
@@ -1021,9 +1026,10 @@ CMDbbpKind(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	b = BATnew(TYPE_void, TYPE_str, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpKind", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpKind");
 	for (i = 1; i < BBPsize; i++)
@@ -1036,7 +1042,7 @@ CMDbbpKind(int *ret)
 				else
 					mode = "persistent";
 				if (mode)
-					BUNins(b, &i, mode, FALSE);
+					BUNappend(b, mode, FALSE);
 			}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpKind");
@@ -1050,16 +1056,17 @@ CMDbbpRefCount(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_void, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpRefCount", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpRefCount");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_refs(i);
 
-			BUNins(b, &i, &refs, FALSE);
+			BUNappend(b, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpRefCount");
@@ -1073,16 +1080,17 @@ CMDbbpLRefCount(int *ret)
 	BAT *b;
 	int i;
 
-	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	b = BATnew(TYPE_void, TYPE_int, BBPsize);
 	if (b == 0)
 		throw(MAL, "catalog.bbpLRefCount", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	BBPlock("CMDbbpLRefCount");
 	for (i = 1; i < BBPsize; i++)
 		if (i != b->batCacheid && BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 			int refs = BBP_lrefs(i);
 
-			BUNins(b, &i, &refs, FALSE);
+			BUNappend(b, &refs, FALSE);
 		}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
 	BBPunlock("CMDbbpLRefCount");
@@ -1124,37 +1132,19 @@ CMDgetBATlrefcnt(int *res, int *bid)
 }
 
 
-str CMDbbpHeadType( int *ret){
+str CMDbbpType( int *ret){
 	BAT	*b,*bn;
 	int	i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
-		throw(MAL, "catalog.bbpHeadType", MAL_MALLOC_FAIL);
-
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
-	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-		bn= BATdescriptor(i);
-		if(bn) BUNins(b, &i, BATatoms[BAThtype(bn)].name, FALSE);
-		BBPunfix(bn->batCacheid);
-	}
-	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);
-	pseudo(ret,b,"bbp","HeadType");
-	return MAL_SUCCEED;
-}
-
-str CMDbbpTailType( int *ret){
-	BAT	*b,*bn;
-	int	i;
-
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
+	b= BATnew(TYPE_void,TYPE_str,BBPsize);
 	if (b == 0) 
 		throw(MAL, "catalog.bbpTailType", MAL_MALLOC_FAIL);
+	BATseqbase(b,0);
 
 	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
 	if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
 		bn= BATdescriptor(i);
-		if(bn) BUNins(b, &i, BATatoms[BATttype(bn)].name, FALSE);
+		if(bn) BUNappend(b, BATatoms[BATttype(bn)].name, FALSE);
 		BBPunfix(bn->batCacheid);
 	}
 	if (!(b->batDirty&2)) b = BATsetaccess(b, BAT_READ);

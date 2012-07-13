@@ -12550,773 +12550,773 @@ command avg2(b:bat[:oid,:dbl]) (:dbl, :lng)
 address CMDcalcavg2
 comment "average and number of non-nil values of B";
 
-command bit(b:bat[:any_1,:void]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:void]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from void to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:void]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:void]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from void to bit";
 
-command bit(b:bat[:any_1,:bit]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:bit]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from bit to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:bit]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from bit to bit";
 
-command bit(b:bat[:any_1,:bte]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:bte]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from bte to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:bte]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from bte to bit";
 
-command bit(b:bat[:any_1,:sht]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:sht]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from sht to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:sht]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from sht to bit";
 
-command bit(b:bat[:any_1,:int]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:int]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from int to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:int]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:int]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from int to bit";
 
-command bit(b:bat[:any_1,:wrd]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:wrd]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from wrd to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:wrd]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from wrd to bit";
 
-command bit(b:bat[:any_1,:lng]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:lng]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from lng to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:lng]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from lng to bit";
 
-command bit(b:bat[:any_1,:flt]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:flt]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from flt to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:flt]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from flt to bit";
 
-command bit(b:bat[:any_1,:dbl]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:dbl]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from dbl to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:dbl]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from dbl to bit";
 
-command bit(b:bat[:any_1,:oid]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from oid to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from oid to bit";
 
-command bit(b:bat[:any_1,:str]) :bat[:any_1,:bit]
+command bit(b:bat[:oid,:str]) :bat[:oid,:bit]
 address CMDconvertsignal_bit
 comment "cast from str to bit, signal error on overflow";
-command bit_noerror(b:bat[:any_1,:str]) :bat[:any_1,:bit]
+command bit_noerror(b:bat[:oid,:str]) :bat[:oid,:bit]
 address CMDconvert_bit
 comment "cast from str to bit";
 
-command bte(b:bat[:any_1,:void]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:void]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from void to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:void]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:void]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from void to bte";
 
-command bte(b:bat[:any_1,:bit]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:bit]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from bit to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:bit]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from bit to bte";
 
-command bte(b:bat[:any_1,:bte]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from bte to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:bte]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from bte to bte";
 
-command bte(b:bat[:any_1,:sht]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:sht]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from sht to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:sht]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from sht to bte";
 
-command bte(b:bat[:any_1,:int]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:int]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from int to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:int]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:int]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from int to bte";
 
-command bte(b:bat[:any_1,:wrd]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:wrd]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from wrd to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:wrd]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from wrd to bte";
 
-command bte(b:bat[:any_1,:lng]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:lng]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from lng to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:lng]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from lng to bte";
 
-command bte(b:bat[:any_1,:flt]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:flt]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from flt to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:flt]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from flt to bte";
 
-command bte(b:bat[:any_1,:dbl]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:dbl]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from dbl to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:dbl]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from dbl to bte";
 
-command bte(b:bat[:any_1,:oid]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from oid to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:oid]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from oid to bte";
 
-command bte(b:bat[:any_1,:str]) :bat[:any_1,:bte]
+command bte(b:bat[:oid,:str]) :bat[:oid,:bte]
 address CMDconvertsignal_bte
 comment "cast from str to bte, signal error on overflow";
-command bte_noerror(b:bat[:any_1,:str]) :bat[:any_1,:bte]
+command bte_noerror(b:bat[:oid,:str]) :bat[:oid,:bte]
 address CMDconvert_bte
 comment "cast from str to bte";
 
-command sht(b:bat[:any_1,:void]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:void]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from void to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:void]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:void]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from void to sht";
 
-command sht(b:bat[:any_1,:bit]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:bit]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from bit to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:bit]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from bit to sht";
 
-command sht(b:bat[:any_1,:bte]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:bte]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from bte to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:bte]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from bte to sht";
 
-command sht(b:bat[:any_1,:sht]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:sht]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from sht to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:sht]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from sht to sht";
 
-command sht(b:bat[:any_1,:int]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:int]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from int to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:int]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:int]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from int to sht";
 
-command sht(b:bat[:any_1,:wrd]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:wrd]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from wrd to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:wrd]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from wrd to sht";
 
-command sht(b:bat[:any_1,:lng]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:lng]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from lng to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:lng]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from lng to sht";
 
-command sht(b:bat[:any_1,:flt]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:flt]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from flt to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:flt]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from flt to sht";
 
-command sht(b:bat[:any_1,:dbl]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:dbl]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from dbl to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:dbl]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from dbl to sht";
 
-command sht(b:bat[:any_1,:oid]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from oid to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:oid]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from oid to sht";
 
-command sht(b:bat[:any_1,:str]) :bat[:any_1,:sht]
+command sht(b:bat[:oid,:str]) :bat[:oid,:sht]
 address CMDconvertsignal_sht
 comment "cast from str to sht, signal error on overflow";
-command sht_noerror(b:bat[:any_1,:str]) :bat[:any_1,:sht]
+command sht_noerror(b:bat[:oid,:str]) :bat[:oid,:sht]
 address CMDconvert_sht
 comment "cast from str to sht";
 
-command int(b:bat[:any_1,:void]) :bat[:any_1,:int]
+command int(b:bat[:oid,:void]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from void to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:void]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:void]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from void to int";
 
-command int(b:bat[:any_1,:bit]) :bat[:any_1,:int]
+command int(b:bat[:oid,:bit]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from bit to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:bit]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from bit to int";
 
-command int(b:bat[:any_1,:bte]) :bat[:any_1,:int]
+command int(b:bat[:oid,:bte]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from bte to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:bte]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from bte to int";
 
-command int(b:bat[:any_1,:sht]) :bat[:any_1,:int]
+command int(b:bat[:oid,:sht]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from sht to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:sht]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from sht to int";
 
-command int(b:bat[:any_1,:int]) :bat[:any_1,:int]
+command int(b:bat[:oid,:int]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from int to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:int]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:int]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from int to int";
 
-command int(b:bat[:any_1,:wrd]) :bat[:any_1,:int]
+command int(b:bat[:oid,:wrd]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from wrd to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:wrd]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from wrd to int";
 
-command int(b:bat[:any_1,:lng]) :bat[:any_1,:int]
+command int(b:bat[:oid,:lng]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from lng to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:lng]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from lng to int";
 
-command int(b:bat[:any_1,:flt]) :bat[:any_1,:int]
+command int(b:bat[:oid,:flt]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from flt to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:flt]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from flt to int";
 
-command int(b:bat[:any_1,:dbl]) :bat[:any_1,:int]
+command int(b:bat[:oid,:dbl]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from dbl to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:dbl]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from dbl to int";
 
-command int(b:bat[:any_1,:oid]) :bat[:any_1,:int]
+command int(b:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from oid to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:oid]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from oid to int";
 
-command int(b:bat[:any_1,:str]) :bat[:any_1,:int]
+command int(b:bat[:oid,:str]) :bat[:oid,:int]
 address CMDconvertsignal_int
 comment "cast from str to int, signal error on overflow";
-command int_noerror(b:bat[:any_1,:str]) :bat[:any_1,:int]
+command int_noerror(b:bat[:oid,:str]) :bat[:oid,:int]
 address CMDconvert_int
 comment "cast from str to int";
 
-command wrd(b:bat[:any_1,:void]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:void]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from void to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:void]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:void]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from void to wrd";
 
-command wrd(b:bat[:any_1,:bit]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:bit]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from bit to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:bit]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from bit to wrd";
 
-command wrd(b:bat[:any_1,:bte]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:bte]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from bte to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:bte]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from bte to wrd";
 
-command wrd(b:bat[:any_1,:sht]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:sht]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from sht to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:sht]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from sht to wrd";
 
-command wrd(b:bat[:any_1,:int]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:int]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from int to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:int]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:int]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from int to wrd";
 
-command wrd(b:bat[:any_1,:wrd]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:wrd]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from wrd to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:wrd]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from wrd to wrd";
 
-command wrd(b:bat[:any_1,:lng]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:lng]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from lng to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:lng]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from lng to wrd";
 
-command wrd(b:bat[:any_1,:flt]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:flt]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from flt to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:flt]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from flt to wrd";
 
-command wrd(b:bat[:any_1,:dbl]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:dbl]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from dbl to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:dbl]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from dbl to wrd";
 
-command wrd(b:bat[:any_1,:oid]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from oid to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:oid]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from oid to wrd";
 
-command wrd(b:bat[:any_1,:str]) :bat[:any_1,:wrd]
+command wrd(b:bat[:oid,:str]) :bat[:oid,:wrd]
 address CMDconvertsignal_wrd
 comment "cast from str to wrd, signal error on overflow";
-command wrd_noerror(b:bat[:any_1,:str]) :bat[:any_1,:wrd]
+command wrd_noerror(b:bat[:oid,:str]) :bat[:oid,:wrd]
 address CMDconvert_wrd
 comment "cast from str to wrd";
 
-command lng(b:bat[:any_1,:void]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:void]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from void to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:void]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:void]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from void to lng";
 
-command lng(b:bat[:any_1,:bit]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:bit]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from bit to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:bit]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from bit to lng";
 
-command lng(b:bat[:any_1,:bte]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:bte]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from bte to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:bte]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from bte to lng";
 
-command lng(b:bat[:any_1,:sht]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:sht]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from sht to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:sht]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from sht to lng";
 
-command lng(b:bat[:any_1,:int]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:int]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from int to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:int]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:int]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from int to lng";
 
-command lng(b:bat[:any_1,:wrd]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:wrd]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from wrd to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:wrd]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from wrd to lng";
 
-command lng(b:bat[:any_1,:lng]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:lng]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from lng to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:lng]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from lng to lng";
 
-command lng(b:bat[:any_1,:flt]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:flt]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from flt to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:flt]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from flt to lng";
 
-command lng(b:bat[:any_1,:dbl]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:dbl]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from dbl to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:dbl]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from dbl to lng";
 
-command lng(b:bat[:any_1,:oid]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from oid to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:oid]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from oid to lng";
 
-command lng(b:bat[:any_1,:str]) :bat[:any_1,:lng]
+command lng(b:bat[:oid,:str]) :bat[:oid,:lng]
 address CMDconvertsignal_lng
 comment "cast from str to lng, signal error on overflow";
-command lng_noerror(b:bat[:any_1,:str]) :bat[:any_1,:lng]
+command lng_noerror(b:bat[:oid,:str]) :bat[:oid,:lng]
 address CMDconvert_lng
 comment "cast from str to lng";
 
-command flt(b:bat[:any_1,:void]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:void]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from void to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:void]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:void]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from void to flt";
 
-command flt(b:bat[:any_1,:bit]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:bit]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from bit to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:bit]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from bit to flt";
 
-command flt(b:bat[:any_1,:bte]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:bte]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from bte to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:bte]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from bte to flt";
 
-command flt(b:bat[:any_1,:sht]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:sht]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from sht to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:sht]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from sht to flt";
 
-command flt(b:bat[:any_1,:int]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:int]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from int to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:int]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:int]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from int to flt";
 
-command flt(b:bat[:any_1,:wrd]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:wrd]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from wrd to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:wrd]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from wrd to flt";
 
-command flt(b:bat[:any_1,:lng]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:lng]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from lng to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:lng]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from lng to flt";
 
-command flt(b:bat[:any_1,:flt]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:flt]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from flt to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:flt]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from flt to flt";
 
-command flt(b:bat[:any_1,:dbl]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:dbl]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from dbl to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:dbl]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from dbl to flt";
 
-command flt(b:bat[:any_1,:oid]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from oid to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:oid]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from oid to flt";
 
-command flt(b:bat[:any_1,:str]) :bat[:any_1,:flt]
+command flt(b:bat[:oid,:str]) :bat[:oid,:flt]
 address CMDconvertsignal_flt
 comment "cast from str to flt, signal error on overflow";
-command flt_noerror(b:bat[:any_1,:str]) :bat[:any_1,:flt]
+command flt_noerror(b:bat[:oid,:str]) :bat[:oid,:flt]
 address CMDconvert_flt
 comment "cast from str to flt";
 
-command dbl(b:bat[:any_1,:void]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:void]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from void to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:void]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:void]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from void to dbl";
 
-command dbl(b:bat[:any_1,:bit]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:bit]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from bit to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:bit]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from bit to dbl";
 
-command dbl(b:bat[:any_1,:bte]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:bte]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from bte to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:bte]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from bte to dbl";
 
-command dbl(b:bat[:any_1,:sht]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:sht]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from sht to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:sht]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from sht to dbl";
 
-command dbl(b:bat[:any_1,:int]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:int]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from int to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:int]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:int]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from int to dbl";
 
-command dbl(b:bat[:any_1,:wrd]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:wrd]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from wrd to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:wrd]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from wrd to dbl";
 
-command dbl(b:bat[:any_1,:lng]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:lng]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from lng to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:lng]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from lng to dbl";
 
-command dbl(b:bat[:any_1,:flt]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:flt]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from flt to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:flt]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from flt to dbl";
 
-command dbl(b:bat[:any_1,:dbl]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:dbl]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from dbl to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:dbl]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from dbl to dbl";
 
-command dbl(b:bat[:any_1,:oid]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from oid to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:oid]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from oid to dbl";
 
-command dbl(b:bat[:any_1,:str]) :bat[:any_1,:dbl]
+command dbl(b:bat[:oid,:str]) :bat[:oid,:dbl]
 address CMDconvertsignal_dbl
 comment "cast from str to dbl, signal error on overflow";
-command dbl_noerror(b:bat[:any_1,:str]) :bat[:any_1,:dbl]
+command dbl_noerror(b:bat[:oid,:str]) :bat[:oid,:dbl]
 address CMDconvert_dbl
 comment "cast from str to dbl";
 
-command oid(b:bat[:any_1,:void]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:void]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from void to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:void]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:void]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from void to oid";
 
-command oid(b:bat[:any_1,:bit]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:bit]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from bit to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:bit]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from bit to oid";
 
-command oid(b:bat[:any_1,:bte]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:bte]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from bte to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:bte]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from bte to oid";
 
-command oid(b:bat[:any_1,:sht]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:sht]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from sht to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:sht]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from sht to oid";
 
-command oid(b:bat[:any_1,:int]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:int]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from int to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:int]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:int]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from int to oid";
 
-command oid(b:bat[:any_1,:wrd]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:wrd]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from wrd to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:wrd]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from wrd to oid";
 
-command oid(b:bat[:any_1,:lng]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:lng]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from lng to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:lng]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from lng to oid";
 
-command oid(b:bat[:any_1,:flt]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:flt]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from flt to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:flt]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from flt to oid";
 
-command oid(b:bat[:any_1,:dbl]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:dbl]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from dbl to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:dbl]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from dbl to oid";
 
-command oid(b:bat[:any_1,:oid]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from oid to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:oid]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from oid to oid";
 
-command oid(b:bat[:any_1,:str]) :bat[:any_1,:oid]
+command oid(b:bat[:oid,:str]) :bat[:oid,:oid]
 address CMDconvertsignal_oid
 comment "cast from str to oid, signal error on overflow";
-command oid_noerror(b:bat[:any_1,:str]) :bat[:any_1,:oid]
+command oid_noerror(b:bat[:oid,:str]) :bat[:oid,:oid]
 address CMDconvert_oid
 comment "cast from str to oid";
 
-command str(b:bat[:any_1,:void]) :bat[:any_1,:str]
+command str(b:bat[:oid,:void]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from void to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:void]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:void]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from void to str";
 
-command str(b:bat[:any_1,:bit]) :bat[:any_1,:str]
+command str(b:bat[:oid,:bit]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from bit to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:bit]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:bit]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from bit to str";
 
-command str(b:bat[:any_1,:bte]) :bat[:any_1,:str]
+command str(b:bat[:oid,:bte]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from bte to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:bte]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:bte]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from bte to str";
 
-command str(b:bat[:any_1,:sht]) :bat[:any_1,:str]
+command str(b:bat[:oid,:sht]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from sht to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:sht]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:sht]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from sht to str";
 
-command str(b:bat[:any_1,:int]) :bat[:any_1,:str]
+command str(b:bat[:oid,:int]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from int to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:int]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:int]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from int to str";
 
-command str(b:bat[:any_1,:wrd]) :bat[:any_1,:str]
+command str(b:bat[:oid,:wrd]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from wrd to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:wrd]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:wrd]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from wrd to str";
 
-command str(b:bat[:any_1,:lng]) :bat[:any_1,:str]
+command str(b:bat[:oid,:lng]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from lng to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:lng]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:lng]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from lng to str";
 
-command str(b:bat[:any_1,:flt]) :bat[:any_1,:str]
+command str(b:bat[:oid,:flt]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from flt to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:flt]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:flt]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from flt to str";
 
-command str(b:bat[:any_1,:dbl]) :bat[:any_1,:str]
+command str(b:bat[:oid,:dbl]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from dbl to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:dbl]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:dbl]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from dbl to str";
 
-command str(b:bat[:any_1,:oid]) :bat[:any_1,:str]
+command str(b:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from oid to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:oid]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:oid]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from oid to str";
 
-command str(b:bat[:any_1,:str]) :bat[:any_1,:str]
+command str(b:bat[:oid,:str]) :bat[:oid,:str]
 address CMDconvertsignal_str
 comment "cast from str to str, signal error on overflow";
-command str_noerror(b:bat[:any_1,:str]) :bat[:any_1,:str]
+command str_noerror(b:bat[:oid,:str]) :bat[:oid,:str]
 address CMDconvert_str
 comment "cast from str to str";
 

@@ -71,7 +71,7 @@ ITRnewChunk(lng *res, int *vid, int *bid, lng *granule)
 	/*  printf("set bat chunk bound to " LLFMT " " BUNFMT " - " BUNFMT "\n",
 	 *granule, first, MIN(cnt,(BUN) *granule)); */
 	VIEWbounds(b, view, (BUN) first, first + MIN(cnt, (BUN) * granule));
-	BATseqbase(view, first - 1);
+	BATseqbase(view, b->hseqbase);
 	*vid = view->batCacheid;
 	BBPkeepref(view->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -108,7 +108,7 @@ ITRnextChunk(lng *res, int *vid, int *bid, lng *granule)
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
 	VIEWbounds(b, view, i, i + (BUN) * granule);
-	BATseqbase(view, i - 1);
+	BATseqbase(view, b->hseqbase == oid_nil ? oid_nil : b->hseqbase + i - BUNfirst(b));
 	BBPkeepref(*vid = view->batCacheid);
 	BBPunfix(b->batCacheid);
 	*res = i;

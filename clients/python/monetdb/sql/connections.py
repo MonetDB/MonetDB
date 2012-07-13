@@ -132,7 +132,6 @@ class Connection(object):
         #return self.execute('ROLLBACK')
 
 
-
     def cursor(self):
         """
         Return a new Cursor Object using the connection.  If the
@@ -159,6 +158,16 @@ class Connection(object):
         if not self.mapi:
             raise Error("connection closed")
         return True
+
+
+    def settimeout(self,timeout):
+        """ set the amount of time before a connection times out """
+        self.mapi.socket.settimeout(timeout)
+
+
+    def gettimeout(self):
+        """ get the amount of time before a connection times out """
+        return self.mapi.socket.gettimeout()
 
 
     # these are required by the python DBAPI

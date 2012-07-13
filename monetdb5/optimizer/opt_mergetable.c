@@ -1237,10 +1237,10 @@ mat_pack_sort(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int mirror_mid, in
 		setFunctionId(pck,getFunctionId(s)); 
 		/* double outputs (sorted values and map) */
 		if (has_mirror)
-			getArg(pck,0) = newTmpVariable(mb, newBatType(TYPE_void,stpe));
+			getArg(pck,0) = newTmpVariable(mb, newBatType(TYPE_oid,stpe));
 		else
-			getArg(pck,0) = (i)?newTmpVariable(mb, newBatType(TYPE_void,stpe)):getArg(mirror->mi, 0);
-		getArg(pck,1) = newTmpVariable(mb, newBatType(TYPE_void,TYPE_bte));
+			getArg(pck,0) = (i)?newTmpVariable(mb, newBatType(TYPE_oid,stpe)):getArg(mirror->mi, 0);
+		getArg(pck,1) = newTmpVariable(mb, newBatType(TYPE_oid,TYPE_bte));
 		/* ugh.., second arg not pushed, durty fix */
 		pck->argc = 2;
 		pck->retc = 2;
@@ -1287,7 +1287,7 @@ static void
 mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 {
 	int tp = getArgType(mb,p,0), k;
-	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_void,tp):tp;
+	int battp = (getModuleId(p)==aggrRef)?newBatType(TYPE_oid,tp):tp;
 	int v = newTmpVariable(mb, battp);
 	InstrPtr r = NULL, s = NULL, q = NULL;
 
@@ -1317,7 +1317,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 		s = newInstruction(mb,ASSIGNsymbol);
 		setModuleId(s, algebraRef);
 		setFunctionId(s, selectNotNilRef);
-		getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_void,tp));
+		getArg(s,0) = newTmpVariable(mb, newBatType(TYPE_oid,tp));
 		s = pushArgument(mb, s, getArg(r,0));
 		pushInstruction(mb, s);
 		r = s;
