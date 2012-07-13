@@ -1596,7 +1596,7 @@ union lng_tzone {
 };
 
 /*
- * @- Wrapper
+ * Wrapper
  * The Monet V5 API interface is defined here
  */
 #define TIMEZONES(X1, X2)									\
@@ -1604,7 +1604,8 @@ union lng_tzone {
 		ticks = (X2);										\
 		tzone_create(&ltz.tzval, &ticks);					\
 		vr.val.lval = ltz.lval;								\
-		tzbat = BUNins(tzbat, (X1), &vr.val.lval, FALSE);	\
+		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);	\
+		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
 	} while (0)
 
 #define TIMEZONES2(X1, X2, X3, X4)							\
@@ -1612,7 +1613,8 @@ union lng_tzone {
 		ticks = (X2);										\
 		tzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4));	\
 		vr.val.lval = ltz.lval;								\
-		tzbat = BUNins(tzbat, (X1), &vr.val.lval, FALSE);	\
+		tzbatnme = BUNappend(tzbatnme, (X1), FALSE);	\
+		tzbatdef = BUNappend(tzbatdef, &vr.val.lval, FALSE);	\
 	} while (0)
 
 /*
@@ -1877,7 +1879,8 @@ MTIMEdaytime_GE(bit *ret, daytime *v, daytime *w)
 	return MAL_SUCCEED;
 }
 
-static BAT *timezones = NULL;
+static BAT *timezone_name = NULL;
+static BAT *timezone_def = NULL;
 
 str
 MTIMEprelude(void)
@@ -1901,16 +1904,25 @@ MTIMEprelude(void)
 		throw(MAL, "time.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		BAT *tzbat = BATnew(TYPE_str, ATOMindex("timezone"), 30);
+		BAT *tzbatnme = BATnew(TYPE_void, TYPE_str, 30);
+		BAT *tzbatdef = BATnew(TYPE_void, ATOMindex("timezone"), 30);
 
-		if (tzbat == NULL)
+		if (tzbatnme == NULL || tzbatdef == NULL)
 			throw(MAL, "time.prelude", "failed to create box");
-		BBPrename(tzbat->batCacheid, "timezones");
-		timezones = tzbat;
-		newVariable(box->sym, GDKstrdup("timezones"),
+		BBPrename(tzbatnme->batCacheid, "timezone_name");
+		BBPrename(tzbatdef->batCacheid, "timezone_def");
+		BATseqbase(tzbatnme,0);
+		BATseqbase(tzbatdef,0);
+		timezone_name = tzbatnme;
+		timezone_def = tzbatnme;
+
+		newVariable(box->sym, GDKstrdup("timezone_name"),
 					newBatType(TYPE_str, ATOMindex("timezone")));
-		if (bindBAT(box, "timezones", "timezones")) {
-			throw(MAL, "time.prelude", "could not bind timezones");
+		if (bindBAT(box, "timezone_name", "timezone_name")) {
+			throw(MAL, "time.prelude", "could not bind timezone_name");
+		}
+		if (bindBAT(box, "timezone_def", "timezone_def")) {
+			throw(MAL, "time.prelude", "could not bind timezone_def");
 		}
 		vr.vtype = ATOMindex("timezone");
 		TIMEZONES("Wake Island", 12 * 60);
@@ -1979,9 +1991,9 @@ MTIMEtimezone(tzone *ret, str *name)
 	tzone *z;
 	BATiter tzi;
 
-	if ((p = BUNfnd(timezones, s)) == BUN_NONE)
+	if ((p = BUNfnd(BATmirror(timezone_name), s)) == BUN_NONE)
 		throw(MAL, "mtime.setTimezone", "unknown timezone");
-	tzi = bat_iterator(timezones);
+	tzi = bat_iterator(timezone_name);
 	z = (tzone *) BUNtail(tzi, p);
 	if ((s = tzone_set_local(z)) != MAL_SUCCEED)
 		return s;
