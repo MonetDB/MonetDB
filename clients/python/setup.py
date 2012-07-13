@@ -38,7 +38,7 @@ setup(name='monetdb',
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: Other/Proprietary License",
-        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
     ]
 )
 

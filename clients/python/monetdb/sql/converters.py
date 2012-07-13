@@ -179,23 +179,12 @@ class Monetizer(object):
             decimal.Decimal: self.__string,
             datetime.timedelta: self.__escape,
             datetime.date: self.__escape,
-            # I don't think these should be used:
-            #list: self.__string,
-            #tuple: self.__string,
-            #range: self.__string,
-            #set: self.__string,
-            #frozenset: self.__string,
-            #dict: self.__string,
-            #Ellipsis: self.__string,
-            #self.mapping[bytearray] = self.__string # python2.6 only
         }
 
         (major, minor, micro, level, serial)  = sys.version_info
-        if (major == 3) or (major == 2 and minor == 6):
+        if (major == 2 and minor >= 6):
             # bytes type is only supported by python 2.6 and higher
             self.mapping[bytes] = self.__bytes
-        if (major != 3):
-            self.mapping[unicode] = self.__unicode
 
     def convert(self, data):
         try:
