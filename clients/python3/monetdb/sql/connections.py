@@ -160,6 +160,14 @@ class Connection:
             raise Error("connection closed")
         return True
 
+    def settimeout(self,timeout):
+        """ set the amount of time before a connection times out """
+        self.mapi.socket.settimeout(timeout)
+
+
+    def gettimeout(self):
+        """ get the amount of time before a connection times out """
+        return self.mapi.socket.gettimeout()
 
     # these are required by the python DBAPI
     Warning = Warning
