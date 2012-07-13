@@ -90,7 +90,6 @@ bbp_export str CMDbbpcompress(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbpdecompress(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbptruncate(int *ret, int *bid, str *fnme);
 bbp_export str CMDbbpexpand(int *ret, int *bid, str *fnme);
-bbp_export str CMDbbpHeadType( int *ret);
-bbp_export str CMDbbpTailType( int *ret);
+bbp_export str CMDbbpType( int *ret);
 bbp_export str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int *LOCATION, int *HEAT, int *DIRTY, int *STATUS, int *KIND);
 #endif /* _BBP_H_*/

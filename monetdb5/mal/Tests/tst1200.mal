@@ -531,7 +531,8 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #
 	rh_a := bat.setColumn(timestamp_bat,"timestamp");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
-	timezones:bat[:str,:timezone]:= bbp.bind("timezones");
+	tzz:bat[:oid,:timezone]:= bbp.bind("timezones");
+	timezones:= bat.reverse(tzz);
 	io.print("print(timezones)");
 	io.print(timezones);
 	sh_a:timezone := algebra.find(timezones,"Wake Island");
