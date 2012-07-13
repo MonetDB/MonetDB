@@ -21,6 +21,8 @@ stdout of test 'qgram` in directory 'modules/mal` itself:
 function user.main():void;
     b := txtsim.str2qgrams("hello world");
     io.print(b);
+    b := txtsim.str2qgrams("hällö wørłð");
+    io.print(b);
 end main;
 #-------------------------#
 # h	t		  # name
@@ -38,6 +40,22 @@ end main;
 [ 9@0,	  "orld"  ]
 [ 10@0,	  "rld$"  ]
 [ 11@0,	  "ld$$"  ]
+#-------------------------#
+# h	t		  # name
+# void	str		  # type
+#-------------------------#
+[ 0@0,	  "##hä"	  ]
+[ 1@0,	  "#häl"	  ]
+[ 2@0,	  "häll"	  ]
+[ 3@0,	  "ällö"	  ]
+[ 4@0,	  "llö "	  ]
+[ 5@0,	  "lö w"	  ]
+[ 6@0,	  "ö wø"	  ]
+[ 7@0,	  " wør"	  ]
+[ 8@0,	  "wørł"	  ]
+[ 9@0,	  "ørłð"	  ]
+[ 10@0,	  "rłð$"	  ]
+[ 11@0,	  "łð$$"	  ]
 
 # 23:21:31 >  
 # 23:21:31 >  "Done."

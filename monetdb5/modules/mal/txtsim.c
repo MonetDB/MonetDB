@@ -924,20 +924,44 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 }
 
+/* copy up to utf8len UTF-8 encoded characters from src to buf
+ * stop early if buf (size given by bufsize) is too small, or if src runs out
+ * return number of UTF-8 characters copied (excluding NUL)
+ * close with NUL if enough space */
+static size_t
+utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
+{
+	size_t cnt = 0;
+
+	while (utf8len != 0 && *src != 0 && bufsize != 0) {
+		bufsize--;
+		utf8len--;
+		cnt++;
+		if (((*buf++ = *src++) & 0x80) != 0) {
+			while ((*src & 0xC0) == 0x80 && bufsize != 0) {
+				*buf++ = *src++;
+				bufsize--;
+			}
+		}
+	}
+	if (bufsize != 0)
+		*buf = 0;
+	return cnt;
+}
+
 str
 CMDstr2qgrams(int *ret, str *val)
 {
 	BAT *bn;
 	size_t i, len = strlen(*val) + 5;
 	str s = GDKmalloc(len);
-	char qgram[5];
+	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
 
 	if (s == NULL)
 		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
 	strcpy(s, "##");
 	strcpy(s + 2, *val);
 	strcpy(s + len - 3, "$$");
-	qgram[4] = 0;				/* we're going to deal with 4 char strings */
 	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val));
 	if (bn == NULL) {
 		GDKfree(s);
@@ -945,9 +969,15 @@ CMDstr2qgrams(int *ret, str *val)
 	}
 	BATseqbase(bn, 0);
 
-	for (i = 0; i < len - 4; i++){
-		strncpy(qgram, s + i, 4);
+	i = 0;
+	while (s[i]) {
+		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
+			break;
 		BUNappend(bn, qgram, FALSE);
+		if ((s[i++] & 0xC0) == 0xC0) {
+			while ((s[i] & 0xC0) == 0x80)
+				i++;
+		}
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	GDKfree(s);
