@@ -1626,6 +1626,9 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		pushInstruction(mb, q);
 
 		locate_var(rjv, pred->tval3->sval);
+		MALCOMMENT(mb, "| located %s = (X_%d,X_%d,X_%d,X_%d,X_%d,X_%d,X_%d)",
+				rjv->name,
+				rjv->j1, rjv->j2, rjv->j3, rjv->j4, rjv->j5, rjv->j6, rjv->j7);
 		a = dumpwalkvar(mb, rjv->j1, rjv->j5);
 		tj.j1 = rjv->j1;
 		tj.j5 = rjv->j5;
@@ -1796,7 +1799,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		a = getArg(q, 0);
 		pushInstruction(mb, q);
 		/* a now contains matching oids in head l, in tail r */
-		MALCOMMENT(mb, "| %d: matching oids in head l, in tail r", a);
+		MALCOMMENT(mb, "| X_%d: matching oids in head l, in tail r", a);
 
 		if (ljv->preserve == 1) {
 			q = newInstruction(mb, ASSIGNsymbol);
