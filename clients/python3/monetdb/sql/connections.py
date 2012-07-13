@@ -19,36 +19,27 @@ import sys
 import logging
 
 from monetdb.sql import cursors
-from monetdb.monetdb_exceptions import *
+from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
 
 class Connection:
-    """This represents a MonetDB SQL database connection"""
+    """A MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
-
 
     def __init__(self, username="monetdb", password="monetdb",
         hostname="localhost", port=50000, database="demo", autocommit=False,
-        use_unicode=False, user=None, host=None):
+        user=None, host=None):
         """ Set up a connection to a MonetDB SQL database.
 
-        user/username -- username for connection (default: monetdb)
-        password -- password for connection (default: monetdb)
-        host/hostname -- hostname to connect to (default: localhost)
-        port -- port to connect to (default: 50000)
-        database -- name of the database (default: demo)
-        autocommit -- enable/disable auto commit (default: False,
-                      required by DBAPI)
-        use_unicode -- use unicode for strings or not (default: False,
-                       only has effect on python2 since python3 is
-                       always unicode)
-
-        If user and username are provided, user overrides the value of username.
-        If host and hostname are provided, host overrides the value of hostname.
+        username   -- username for connection (default: monetdb)
+        password   -- password for connection (default: monetdb)
+        hostname   -- hostname to connect to (default: localhost)
+        port       -- port to connect to (default: 50000)
+        database   -- name of the database (default: demo)
+        autocommit -- enable/disable auto commit (default: False)
         """
-
         if user is not None:
             username = user
         if host is not None:
@@ -58,18 +49,14 @@ class Connection:
             password=password, database=database, language="sql")
         self.set_autocommit(autocommit)
         self.set_sizeheader(True)
-        self.use_unicode=use_unicode
-
 
     def close(self):
-        """ Close the connection now (rather than whenever __del__ is
-        called).  The connection will be unusable from this point
-        forward; an Error (or subclass) exception will be raised
-        if any operation is attempted with the connection. The
-        same applies to all cursor objects trying to use the
-        connection.  Note that closing a connection without
-        committing the changes first will cause an implicit
-        rollback to be performed.
+        """ Close the connection. The connection will be unusable from this
+        point forward; an Error  exception will be raised if any operation
+        is attempted with the connection. The same applies to all cursor
+        objects trying to use the connection.  Note that closing a connection
+        without committing the changes first will cause an implicit rollback
+        to be performed.
         """
 
         if self.mapi:
@@ -80,14 +67,12 @@ class Connection:
         else:
             raise Error("already closed")
 
-
     def set_autocommit(self, autocommit):
         """
         Set auto commit on or off. 'autocommit' must be a boolean
         """
         self.command("Xauto_commit %s" % int(autocommit))
         self.autocommit = autocommit
-
 
     def set_sizeheader(self, sizeheader):
         """
@@ -96,7 +81,6 @@ class Connection:
         """
         self.command("Xsizeheader %s" % int(sizeheader))
         self.sizeheader = sizeheader
-
 
     def commit(self):
         """
@@ -108,12 +92,8 @@ class Connection:
         Database modules that do not support transactions should
         implement this method with void functionality.
         """
-
         self.__mapi_check()
         return self.cursor().execute('COMMIT')
-        #return self.execute('COMMIT')
-
-
 
     def rollback(self):
         """
@@ -126,12 +106,8 @@ class Connection:
         committing the changes first will cause an implicit
         rollback to be performed.
         """
-
         self.__mapi_check()
         return self.cursor().execute('ROLLBACK')
-        #return self.execute('ROLLBACK')
-
-
 
     def cursor(self):
         """
@@ -142,17 +118,14 @@ class Connection:
         """
         return cursors.Cursor(self)
 
-
     def execute(self, query):
         """ use this for executing SQL queries """
         return self.command('s' + query + ';')
-
 
     def command(self, command):
         """ use this function to send low level mapi commands """
         self.__mapi_check()
         return self.mapi.cmd(command)
-
 
     def __mapi_check(self):
         """ check if there is a connection with a server """
@@ -163,7 +136,6 @@ class Connection:
     def settimeout(self,timeout):
         """ set the amount of time before a connection times out """
         self.mapi.socket.settimeout(timeout)
-
 
     def gettimeout(self):
         """ get the amount of time before a connection times out """
@@ -180,4 +152,3 @@ class Connection:
     InternalError = InternalError
     ProgrammingError = ProgrammingError
     NotSupportedError = NotSupportedError
-

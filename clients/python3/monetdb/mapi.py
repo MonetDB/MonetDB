@@ -26,7 +26,7 @@ import hashlib
 import platform
 from io import BytesIO
 
-from monetdb.monetdb_exceptions import *
+from monetdb.exceptions import *
 
 logger = logging.getLogger("monetdb")
 
