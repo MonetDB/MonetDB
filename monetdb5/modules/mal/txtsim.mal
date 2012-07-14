@@ -53,7 +53,7 @@ command qgramnormalize(input:str): str
 address CMDqgramnormalize
 comment "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space";
 
-command qgramselfjoin(qgram:bat[:oid, :oid], id:bat[:oid, :oid], pos:bat[:oid, :int], len:bat[:oid, :int], c:flt, k:int) :bat[:int, :int]
+command qgramselfjoin(qgram:bat[:oid, :oid], id:bat[:oid, :oid], pos:bat[:oid, :int], len:bat[:oid, :int], c:flt, k:int) (:bat[:oid,:int],:bat[:oid, :int])
 address CMDqgramselfjoin
 comment "QGram self-join on ordered(!) qgram tables and sub-ordered q-gram positions";
 

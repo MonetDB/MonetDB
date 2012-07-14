@@ -875,11 +875,11 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 /* ============ Q-GRAM SELF JOIN ============== */
 
 str
-CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
+CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
 {
 	BUN n = BATcount(qgram);
 	BUN i, j;
-	BAT *bn;
+	BAT *bn, *bn2;
 
 	oid *qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
 	int *ibuf = (int *) Tloc(id, BUNfirst(id));
@@ -904,12 +904,19 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
 	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
-	*res = bn = BATnew(TYPE_int, TYPE_int, n);
+	*res = bn = BATnew(TYPE_void, TYPE_int, n);
+	*res2 = bn2 = BATnew(TYPE_void, TYPE_int, n);
+	if (bn == NULL || bn2 == NULL){
+		if (bn) BBPreclaim(bn);
+		if (bn2) BBPreclaim(bn2);
+		throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
+	}
 
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
-				bunfastins(bn, ibuf + i, ibuf + j);
+				BUNappend(bn, ibuf + i, FALSE);
+				BUNappend(bn2, ibuf + j, FALSE);
 			}
 		}
 	}
@@ -918,10 +925,11 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	bn->hrevsorted = bn->trevsorted = 0;
 	bn->H->nonil = bn->T->nonil = 0;
 
+	bn2->hsorted = bn2->tsorted = 0;
+	bn2->hrevsorted = bn2->trevsorted = 0;
+	bn2->H->nonil = bn2->T->nonil = 0;
+
 	return MAL_SUCCEED;
-      bunins_failed:
-	BBPreclaim(bn);
-	throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 }
 
 /* copy up to utf8len UTF-8 encoded characters from src to buf
