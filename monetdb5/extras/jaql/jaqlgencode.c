@@ -5883,6 +5883,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							(t->tval1->next == NULL && t->tval1->tval1 == NULL));
 					w = t->tval1;
 					if (w == NULL) {
+						MALCOMMENT(mb, "simple group into {");
 						/* simple "into" query: equivalent of a single group */
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, algebraRef);
@@ -5957,8 +5958,10 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						t->tval1 = GDKzalloc(sizeof(tree));
 						t->tval1->type = j_var;
 						t->tval1->sval = GDKstrdup("$");
+						MALCOMMENT(mb, "} simple group into");
 						continue;
 					}
+					MALCOMMENT(mb, "group into single input {");
 					/* recall:
 					 *   sval = varname of group key
 					 *   tval1 = source input (if co-group)
@@ -6120,12 +6123,14 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					t->tval1->type = j_var;
 					t->tval1->sval = GDKstrdup("$");
 
+					MALCOMMENT(mb, "} group into single input");
 					continue;
 				} else { /* co-group */
 					json_var *js;
 					tree *w, *preds, *pw;
 					int i;
 
+					MALCOMMENT(mb, "co-group {");
 					/* first compute with join */
 					for (i = 0, w = t->tval1; w != NULL; w = w->next, i++)
 						;
@@ -6173,6 +6178,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					t->tval1->next = NULL;
 					freetree(t->tval1->tval1);
 					t->tval1->tval1 = NULL;
+					MALCOMMENT(mb, "} co-group");
 					continue; /* reevaluate this group */
 				}
 				assert(0);
