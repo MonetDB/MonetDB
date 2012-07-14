@@ -344,8 +344,9 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 
 	a = elems;
 	for (t = t->tval1; t != NULL; t = t->tval1) {
-		MALCOMMENT(mb, "| dereferencing %s", t->sval);
 		if (t->type == j_arr_idx) {
+			MALCOMMENT(mb, "| dereferencing [%c]",
+					t->nval == -1 ? '*' : '0' + (char)t->nval);
 			c = dumparrrefvar(mb, t, a, j->j5);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
@@ -367,6 +368,7 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 			if (t->tval1 != NULL && t->nval == -1)
 				encapsulate = 1;
 		} else {
+			MALCOMMENT(mb, "| dereferencing %s", t->sval);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, putName("jaql", 4));
 			setFunctionId(q, uselectRef);
