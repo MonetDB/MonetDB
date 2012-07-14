@@ -24,10 +24,8 @@ io.print(c);
 
 io.print("semijoin tests b,d");
 z1:= algebra.semijoin(b,b); io.print(z1);
-z2:= algebra.semijoin(d,d); io.print(z2);
 
 z3:= algebra.semijoin(a,a); io.print(z3);
-z4:= algebra.semijoin(c,c); io.print(z4);
 
 # (try to) force different semijoin implementations
 

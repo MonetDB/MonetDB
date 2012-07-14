@@ -37,12 +37,8 @@ function user.main():void;
     io.print("semijoin tests b,d");
     z1 := algebra.semijoin(b,b);
     io.print(z1);
-    z2 := algebra.semijoin(d,d);
-    io.print(z2);
     z3 := algebra.semijoin(a,a);
     io.print(z3);
-    z4 := algebra.semijoin(c,c);
-    io.print(z4);
 # (try to) force different semijoin implementations 
     a1 := bat.new(:oid,:oid);
     bat.append(a1,1@0);
@@ -116,33 +112,11 @@ end main;
 [ 10@0,	  nil	  ]
 #-----------------#
 # h	t	  # name
-# int	void	  # type
-#-----------------#
-[ 0,	  0@0	  ]
-[ 1,	  1@0	  ]
-[ nil,	  2@0	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
+# void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  nil	  ]
-#-----------------#
-# h	t	  # name
-# oid	int	  # type
-#-----------------#
-[ 0,	  0@0	  ]
-[ 1,	  1@0	  ]
-[ 2,	  2@0	  ]
-[ 3,	  3@0	  ]
-[ 4,	  4@0	  ]
-[ 5,	  5@0	  ]
-[ 6,	  6@0	  ]
-[ 7,	  7@0	  ]
-[ 8,	  8@0	  ]
-[ 9,	  9@0	  ]
-[ nil,	  10@0	  ]
 [ "slices" ]
 #-----------------#
 # h	t	  # name

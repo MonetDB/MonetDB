@@ -40,8 +40,6 @@ function user.main():void;
     io.print(br);
     l0 := algebra.copy(b);
     io.print(l0);
-    l1 := algebra.copy(br);
-    io.print(l1);
 end main;
 #-----------------#
 # h	tmp_4	  # name
@@ -64,13 +62,6 @@ end main;
 [ 0@0,	  1	  ]
 [ 1@0,	  4	  ]
 [ 2@0,	  9	  ]
-#-----------------#
-# h	tmp_6	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  0@0	  ]
-[ 4,	  1@0	  ]
-[ 9,	  2@0	  ]
 
 # 07:58:46 >  
 # 07:58:46 >  Done.

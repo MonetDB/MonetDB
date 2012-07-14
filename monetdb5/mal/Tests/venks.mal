@@ -40,7 +40,7 @@ largeR:= bat.reverse(large);
 smallR:= bat.reverse(small);
 
 t0:= alarm.usec();
-sj:= algebra.kintersect(largeR,smallR);
+sj:= algebra.kintersect(large,small);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#kintersect(largeRev,smallRev) %d\n",d0);
@@ -58,7 +58,7 @@ io.printf("#count %d\n",v);
 #io.print(j);
 
 t0:= alarm.usec();
-sj2:= algebra.kintersect(smallR,largeR);
+sj2:= algebra.kintersect(small,large);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#kintersect(smallRev,largeRev) %d\n",d0);

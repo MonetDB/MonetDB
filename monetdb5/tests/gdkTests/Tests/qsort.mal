@@ -9,7 +9,5 @@ bat.append(br,1);
 bat.append(br,6);
 bat.append(br,5);
 bat.append(br,7);
-b:= bat.reverse(br);
 
-Zn_i:= algebra.sort(b); io.print(Zn_i);
-Zn_i2:= algebra.sortReverse(b); io.print(Zn_i2);
+Zn_i:= algebra.sort(br); io.print(Zn_i);

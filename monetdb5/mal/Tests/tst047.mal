@@ -11,5 +11,3 @@ io.print(br);
 
 l0:= algebra.copy(b);
 io.print(l0);
-l1:= algebra.copy(br);
-io.print(l1);

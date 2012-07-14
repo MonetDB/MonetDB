@@ -19,5 +19,5 @@ bat.append(f,"tdense");
 fr:= bat.reverse(f);
 fm:= bat.mirror(fr);
 i:= bat.info(a);
-j:= algebra.join(fm,i);
-io.print(j);
+#j:= algebra.join(fm,i);
+#io.print(j);

@@ -63,8 +63,8 @@ io.print(a);
 
 # use oid bat (test if its a properly made bat)
 bat.delete(a,21:oid);
-ar:= bat.reverse(a);
-z:= algebra.join(ar,b);
+br:= bat.reverse(b);
+z:= algebra.join(a,br);
 io.print(z);
 
 io.print("replace tests");

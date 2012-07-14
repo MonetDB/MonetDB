@@ -34,8 +34,8 @@ function user.main():void;
     fr := bat.reverse(f);
     fm := bat.mirror(fr);
     i := bat.info(a);
-    j := algebra.join(fm,i);
-    io.print(j);
+#j:= algebra.join(fm,i); 
+#io.print(j); 
 end main;
 #-----------------#
 # h	t	  # name
@@ -44,14 +44,6 @@ end main;
 [ 0@0,	  0@0	  ]
 [ 1@0,	  0@0	  ]
 [ 2@0,	  0@0	  ]
-#-------------------------#
-# h		t	  # name
-# str		str	  # type
-#-------------------------#
-[ "hdense",	  "1"	  ]
-[ "hseqbase",	  "0@0"	  ]
-[ "tdense",	  "0"	  ]
-[ "tseqbase",	  "0@0"	  ]
 
 # 09:01:01 >  
 # 09:01:01 >  Done.

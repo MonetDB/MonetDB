@@ -9,9 +9,14 @@ stdout of test 'CXerror1` in directory 'optimizer` itself:
 # Serving database 'mTests_src_optimizer', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008- MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.ins.cwi.nl:37870/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+
 function user.f1():void;
 # create bat 
     xxx := bat.new(:oid,:dbl);
@@ -20,8 +25,7 @@ function user.f1():void;
     transaction.commit();
 # check existance 
     xxx_1 := bbp.getNames();
-    xxx_2 := bat.reverse(xxx_1);
-    xxx_3 := algebra.exist(xxx_2,"xxx");
+    xxx_3 := algebra.exist(xxx_1,"xxx");
 # if it exists, print it 
 barrier ifb := xxx_3;
     a := bbp.bind("xxx");
