@@ -184,6 +184,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	int i, k, unmatched = 0, s1;
 	/* int foundbutwrong=0; */
 	int polytype[MAXTYPEVAR];
+	int returns[256];
 	int *returntype = NULL;
 	/*
 	 * Within a module find the subscope to locate the element in its list
@@ -206,7 +207,11 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	if (s == 0)
 		return -1;
 
-	returntype = (int *) GDKzalloc(p->retc * sizeof(int));
+	if ( p->retc < 256){
+		for(i=0; i< p->retc; i++) returns[i] = 0;
+		returntype = returns;
+	} else 
+		returntype = (int *) GDKzalloc(p->retc * sizeof(int));
 	if (returntype == 0)
 		return -1;
 
@@ -527,7 +532,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			mnstr_printf(out, "Finished matching\n");
 		}
 #endif
-		if (returntype)
+		if (returntype && returntype != returns)
 			GDKfree(returntype);
 		return s1;
 	} /* while */
@@ -543,7 +548,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 								"type conflict in assignment");
 		}
 	 */
-	if (returntype)
+	if (returntype && returntype != returns)
 		GDKfree(returntype);
 	return -3;
 }
