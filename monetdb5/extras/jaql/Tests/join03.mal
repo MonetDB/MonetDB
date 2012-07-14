@@ -1,0 +1,8 @@
+# identified a bug in preserve, preserving all inputs lead to no
+# preservation at all
+
+jaql.x("A=[1,2];");
+jaql.x("B=[{\"a\":1,\"b\":4},{\"a\":1,\"b\":5}];");
+jaql.x("join preserve A, B where A == B.a into {B.*, A};");
+jaql.x("join preserve A, preserve B where A == B.a into {B.*, A};");
+jaql.x("join A, preserve B where A == B.a into {B.*, A};");
