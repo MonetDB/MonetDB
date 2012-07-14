@@ -1802,6 +1802,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		MALCOMMENT(mb, "| X_%d: matching oids in head l, in tail r", a);
 
 		if (ljv->preserve == 1) {
+			MALCOMMENT(mb, "| preserve elems from %s", ljv->name);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
 			setFunctionId(q, mirrorRef);
@@ -1842,6 +1843,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			}
 		}
 		if (rjv->preserve == 1) {
+			MALCOMMENT(mb, "| preserve elems from %s", rjv->name);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
 			setFunctionId(q, reverseRef);
