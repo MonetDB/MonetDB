@@ -1581,7 +1581,7 @@ static void
 dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 {
 	InstrPtr q;
-	int a = 0, b = 0, c = 0, d = 0, l = 0, r = 0;
+	int a = 0, b = 0, c = 0, d = 0, e = 0, l = 0, r = 0;
 	tree *pred;
 	jc tj;
 	json_var *vars, *ljv, *rjv;
@@ -1807,7 +1807,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			setFunctionId(q, mirrorRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, d);
-			l = getArg(q, 0);
+			e = l = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
@@ -1815,8 +1815,31 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, a);
-			a = getArg(q, 0);
+			l = getArg(q, 0);
 			pushInstruction(mb, q);
+			if (rjv->preserve == 1) {
+				/* build diff, so we can append this to the outerjoin on
+				 * ljv done below */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kdifference", 11));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, a);
+				l = getArg(q, 0);
+				pushInstruction(mb, q);
+				/* reorder to original input order */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, leftjoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushArgument(mb, q, l);
+				l = getArg(q, 0);
+				pushInstruction(mb, q);
+			} else {
+				a = l;
+			}
 		}
 		if (rjv->preserve == 1) {
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -1828,21 +1851,30 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			e = a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, algebraRef);
+			setFunctionId(q, putName("kdifference", 11));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, r);
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			/* reorder to original input order */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
 			setFunctionId(q, mirrorRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, r);
 			r = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, batRef);
-			setFunctionId(q, reverseRef);
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, a);
-			a = getArg(q, 0);
-			pushInstruction(mb, q);
-			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);
-			setFunctionId(q, putName("outerjoin", 9));
+			setFunctionId(q, leftjoinRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, r);
 			q = pushArgument(mb, q, a);
@@ -1850,11 +1882,29 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, batRef);
+			setFunctionId(q, insertRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, e);
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
 			setFunctionId(q, reverseRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
+			if (ljv->preserve == 1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, a);
+				q = pushArgument(mb, q, l);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+			}
 		}
 
 		q = newInstruction(mb, ASSIGNsymbol);
