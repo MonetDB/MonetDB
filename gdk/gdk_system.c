@@ -749,3 +749,30 @@ GDKms(void)
 	return (int) (GDKusec() / 1000);
 }
 
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+void MT_init_cpu_set(){}
+int MT_set_affinity(int pid){ return 0;}
+void MT_unset_affinity(int cpu){}
+#else
+
+static cpu_set_t *cpu_set_mask;
+static size_t cpu_set_size;
+
+void MT_init_cpu_set(void)
+{
+	int nrcpus = MT_check_nr_cores_();
+	cpu_set_mask = CPU_ALLOC(nrcpus);
+	cpu_set_size = CPU_ALLOC_SIZE(nrcpus);
+}
+
+int MT_set_affinity(int pid){
+	int cpu = pid % MT_check_nr_cores();
+	//printf("#set affinity %d to %d out of %d\n", pid, cpu, MT_check_nr_cores());
+	sched_setaffinity(cpu, cpu_set_size, cpu_set_mask);
+	return cpu;
+}
+void MT_unset_affinity(int cpu){
+	//printf("#unset affinity %d \n", cpu);
+	CPU_CLR(cpu,cpu_set_mask);
+}
+#endif

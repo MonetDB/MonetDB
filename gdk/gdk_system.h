@@ -233,4 +233,17 @@ gdk_export int MT_check_nr_cores(void);
  */
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
+
+#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
+gdk_export void MT_init_cpu_set(void);
+gdk_export int MT_set_affinity(int pid);
+gdk_export void MT_unset_affinity(int cpu);
+#else
+#define _GNU_SOURCE_
+#include <sched.h>
+gdk_export void MT_init_cpu_set(void);
+gdk_export int MT_set_affinity(int pid);
+gdk_export void MT_unset_affinity(int cpu);
+#endif
+
 #endif /*_GDK_SYSTEM_H_*/
