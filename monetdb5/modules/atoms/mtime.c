@@ -1915,7 +1915,7 @@ MTIMEprelude(void)
 		BATseqbase(tzbatnme,0);
 		BATseqbase(tzbatdef,0);
 		timezone_name = tzbatnme;
-		timezone_def = tzbatnme;
+		timezone_def = tzbatdef;
 
 		newVariable(box->sym, GDKstrdup("timezone_name"),
 					newBatType(TYPE_str, ATOMindex("timezone")));
