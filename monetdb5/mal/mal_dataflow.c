@@ -614,6 +614,16 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 					if (isaBatType(getArgType(mb, pci, i))) {
 						bat bid = stk->stk[a].val.bval;
 
+#ifndef NDEBUG
+#if 0	/* when needed, enable */
+						if (i < pci->retc  && bid){
+							BAT *b = BATdescriptor(bid);
+							BATassertHeadProps(b);
+							BBPunfix(b->batCacheid);
+						}
+#endif
+#endif
+						/* Check output properties */
 						/* update the bigfoot information only if we need to gc */
 						if (cntxt->flags & bigfootFlag)
 							updateBigFoot(cntxt, bid, TRUE);
@@ -811,8 +821,12 @@ runDFLOWworker(void *t)
 	Thread thr;
 	int i, local = 0, last = 0;
 	long usec=0;
+	//int cpu;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
+
+	//cpu = MT_set_affinity(task->id);
+
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKerrbuf[0] = 0;
 	while (task) {
@@ -915,6 +929,7 @@ runDFLOWworker(void *t)
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
+	//MT_unset_affinity(cpu);
 	THRdel(thr);
 }
 

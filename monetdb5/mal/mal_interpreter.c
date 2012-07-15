@@ -856,6 +856,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(getArgType(mb, pci, i))) {
 							bat bid = stk->stk[a].val.bval;
 
+#ifndef NDEBUG	
+#if 0	/* when needed, enable */
+							if (i < pci->retc  && bid){
+								BAT *b = BATdescriptor(bid);
+								BATassertHeadProps(b);
+								BBPunfix(b->batCacheid);
+							}
+#endif
+#endif
+
 							/* update the bigfoot information only if we need to gc */
 							if (cntxt->flags & bigfootFlag)
 								updateBigFoot(cntxt, bid, TRUE);
