@@ -1898,8 +1898,7 @@ MTIMEprelude(void)
 	monettime_prelude();
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
-	(void) timezone_name;	/* fake use */
-	(void) timezone_def;
+	(void) timezone_def; /* StM: statically declared, set, but never used !??? */
 	/* here we should initialize the time box as well */
 	box = openBox("time");
 	if (box == 0)
