@@ -2336,10 +2336,6 @@ VALptr(const ValRecord *v)
 #define PARDEBUG	if (GDKdebug & PARMASK)
 #define HEADLESSMASK	(1<<8)
 #define HEADLESSDEBUG	if ( GDKdebug & HEADLESSMASK)
-/* TRGMASK not used anymore
-#define TRGMASK		(1<<8)
-#define TRGDEBUG	if (GDKdebug & TRGMASK)
-*/
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)
