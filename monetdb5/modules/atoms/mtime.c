@@ -1898,7 +1898,6 @@ MTIMEprelude(void)
 	monettime_prelude();
 	tz = *tzone_nil;			/* to ensure initialized variables */
 
-	(void) timezone_def; /* StM: statically declared, set, but never used !??? */
 	/* here we should initialize the time box as well */
 	box = openBox("time");
 	if (box == 0)
@@ -1994,7 +1993,7 @@ MTIMEtimezone(tzone *ret, str *name)
 
 	if ((p = BUNfnd(BATmirror(timezone_name), s)) == BUN_NONE)
 		throw(MAL, "mtime.setTimezone", "unknown timezone");
-	tzi = bat_iterator(timezone_name);
+	tzi = bat_iterator(timezone_def);
 	z = (tzone *) BUNtail(tzi, p);
 	if ((s = tzone_set_local(z)) != MAL_SUCCEED)
 		return s;
