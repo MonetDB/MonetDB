@@ -89,6 +89,11 @@ BATcreatedesc(int ht, int tt, int heapnames)
 
 	if (bs == NULL)
 		return NULL;
+	HEADLESSDEBUG {
+		if ( ht != TYPE_void && ht != TYPE_oid)
+			fprintf(stderr, "#headless violation in BATcreatedesc %d\n", ht);
+			
+	}
 	/*
 	 * assert needed in the kernel to get symbol eprintf resolved.
 	 * Else modules using assert fail to load.
@@ -2799,7 +2804,7 @@ BATmode(BAT *b, int mode)
  * is not actually used anywhere, but it is checked. */
 
 #ifndef NDEBUG
-void
+static void
 BATassertHeadProps(BAT *b)
 {
 	BATiter bi = bat_iterator(b);

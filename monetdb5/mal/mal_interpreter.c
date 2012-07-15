@@ -860,7 +860,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 #if 0	/* when needed, enable */
 							if (i < pci->retc  && bid){
 								BAT *b = BATdescriptor(bid);
-								BATassertHeadProps(b);
+								BATassertProps(b);
 								BBPunfix(b->batCacheid);
 							}
 #endif
