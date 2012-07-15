@@ -2799,7 +2799,7 @@ BATmode(BAT *b, int mode)
  * is not actually used anywhere, but it is checked. */
 
 #ifndef NDEBUG
-static void
+void
 BATassertHeadProps(BAT *b)
 {
 	BATiter bi = bat_iterator(b);

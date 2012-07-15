@@ -23,6 +23,7 @@
 gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
 gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
 gdk_export BAT *BATattach(int tt, const char *heapfile);
+gdk_export void BATassertHeadProps(BAT *b);
 
 extern int default_ident(char *s);
 extern oid MAXoid(BAT *i);
