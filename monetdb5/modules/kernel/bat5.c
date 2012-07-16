@@ -2151,6 +2151,20 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 }
 
 str
+BKCsetSequenceBase(int *r, int *bid, oid *o)
+{
+    BAT *b;
+
+    if ((b = BATdescriptor(*bid)) == NULL) {
+        throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
+    }
+    BATseqbase(b, *o);
+    *r = b->batCacheid;
+    BBPkeepref(b->batCacheid);
+    return MAL_SUCCEED;
+}
+
+str
 BKCsetSequenceBaseNil(int *r, int *bid, oid *o)
 {
 	oid ov = oid_nil;

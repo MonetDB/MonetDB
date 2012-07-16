@@ -45,10 +45,11 @@
 
 batstr_export str STRbatPrefix(int *ret, int *l, int *r);
 batstr_export str STRbatPrefixcst(int *ret, int *l, str *cst);
+batstr_export str STRcstPrefixbat(int *ret, str *cst, int *r);
 batstr_export str STRbatSuffix(int *ret, int *l, int *r);
-batstr_export str STRbatSuffixcst(int *ret, int *l, int *cst)
-batstr_export str STRcstSuffixbat(int *ret, int *cst, int *r)
-batstr_export str STRbattrSearch(int *ret, int *l, int *r);
+batstr_export str STRbatSuffixcst(int *ret, int *l, str *cst);
+batstr_export str STRcstSuffixbat(int *ret, str *cst, int *r);
+batstr_export str STRbatstrSearch(int *ret, int *l, int *r);
 batstr_export str STRbatstrSearchcst(int *ret, int *l, str *cst);
 batstr_export str STRcststrSearchbat(int *ret, str *cst, int *r);
 batstr_export str STRbatRstrSearch(int *ret, int *l, int *r);
@@ -59,7 +60,7 @@ batstr_export str STRbatConCatcst(int *ret, int *l, str *cst);
 batstr_export str STRcstConCatbat(int *ret, str *cst, int *r);
 batstr_export str STRbatTail(int *ret, int *l, int *r);
 batstr_export str STRbatTailcst(int *ret, int *l, int *cst);
-batstr_export str STRbatWCharAt(int *ret, int *l, int *r);
+batstr_export str STRbatWChrAt(int *ret, int *l, int *r);
 batstr_export str STRbatWChrAtcst(int *ret, int *l, int *cst);
 batstr_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 

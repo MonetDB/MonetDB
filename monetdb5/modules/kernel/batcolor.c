@@ -116,62 +116,62 @@ BATwalk(Luminance,CLRluminance,color,int)
 BATwalk(Cr,CLRcr,color,int)
 BATwalk(Cb,CLRcb,color,int)
 
-#define BATwalk3(X1,X2,X3,X4)
-str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)
-{   
-	BATiter bi, b2i, b3i;
-	BAT *bn, *b2,*b3, *b;
-	BUN p,q,p2,p3;
-	X3 *x, *x2, *x3;
-	X4 y, *yp = &y;
-
-	prepareOperand(b,l,"##X1");
-	b2= BATdescriptor(*bid2);
-	if(b2== NULL) 
-		throw(MAL, "batcolor.##X1",RUNTIME_OBJECT_MISSING);
-	b3= BATdescriptor(*bid3);
-	if(b3== NULL) 
-		throw(MAL, "batcolor.##X1",RUNTIME_OBJECT_MISSING);
-	prepareResult(bn,b,getTypeIndex("##X4",-1,TYPE_int),"##X1");
-
-	bi = bat_iterator(b);
-	b2i = bat_iterator(b2);
-	b3i = bat_iterator(b3);
-
-	p2= BUNfirst(b2);
-	p3= BUNfirst(b3);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATloop(b, p, q) {
-		ptr h = BUNhead(bi,p);
-		x= (X3 *) BUNtail(bi,p);
-		x2= (X3 *) BUNtail(b2i,p);
-		x3= (X3 *) BUNtail(b3i,p);
-		if (x== 0 || *x == X3##_nil ||
-		   x2== 0 || *x2 == X3##_nil ||
-		   x3== 0 || *x3 == @3_nil) {
-			y = X4##_nil;
-			bn->T->nonil = 0;
-		} else 
-			X2(yp,x,x2,x3);
-		bunfastins(bn, h, yp);
-		p2++;
-		p3++;
-	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	bn->H->nonil = b->H->nonil;
-	finalizeResult(ret,bn,b);
-	return MAL_SUCCEED;
-bunins_failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(bn->batCacheid);
-	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");
+#define BATwalk3(X1,X2,X3,X4)\
+str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)\
+{   \
+	BATiter bi, b2i, b3i;\
+	BAT *bn, *b2,*b3, *b;\
+	BUN p,q,p2,p3;\
+	X3 *x, *x2, *x3;\
+	X4 y, *yp = &y;\
+\
+	prepareOperand(b,l,"##X1");\
+	b2= BATdescriptor(*bid2);\
+	if(b2== NULL) \
+		throw(MAL, "batcolor.##X1",RUNTIME_OBJECT_MISSING);\
+	b3= BATdescriptor(*bid3);\
+	if(b3== NULL) \
+		throw(MAL, "batcolor.##X1",RUNTIME_OBJECT_MISSING);\
+	prepareResult(bn,b,getTypeIndex("##X4",-1,TYPE_int),"##X1");\
+\
+	bi = bat_iterator(b);\
+	b2i = bat_iterator(b2);\
+	b3i = bat_iterator(b3);\
+\
+	p2= BUNfirst(b2);\
+	p3= BUNfirst(b3);\
+	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessBegin(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessBegin(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATloop(b, p, q) {\
+		ptr h = BUNhead(bi,p);\
+		x= (X3 *) BUNtail(bi,p);\
+		x2= (X3 *) BUNtail(b2i,p);\
+		x3= (X3 *) BUNtail(b3i,p);\
+		if (x== 0 || *x == X3##_nil ||\
+		   x2== 0 || *x2 == X3##_nil ||\
+		   x3== 0 || *x3 == X3##_nil) {\
+			y = X4##_nil;\
+			bn->T->nonil = 0;\
+		} else \
+			X2(yp,x,x2,x3);\
+		bunfastins(bn, h, yp);\
+		p2++;\
+		p3++;\
+	}\
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	bn->H->nonil = b->H->nonil;\
+	finalizeResult(ret,bn,b);\
+	return MAL_SUCCEED;\
+bunins_failed:\
+	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
+	BBPreleaseref(b->batCacheid);\
+	BBPreleaseref(bn->batCacheid);\
+	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");\
 }
 
 BATwalk3(Hsv,CLRhsv,flt,color)

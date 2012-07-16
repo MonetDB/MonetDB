@@ -16,13 +16,12 @@
  * Copyright August 2008-2012 MonetDB B.V.
  * All Rights Reserved.
 */
-#ifdef _BATMATH_H
+#ifndef _BATMATH_H
 #define _BATMATH_H
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"
-#include "batmmath.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -40,9 +39,9 @@
 #define degreesf(x)      ((flt) degrees(x))
 
 
-#define scienceDef(Oper)\
-batmmath_export str CMDscience_bat_dbl_##Oper(int *ret, int *bid);\
-batmmath_export str CMDscience_bat_flt_##Oper(int *ret, int *bid);
+#define scienceDef(X1)\
+batmmath_export str CMDscience_bat_dbl_##X1(int *ret, int *bid);\
+batmmath_export str CMDscience_bat_flt_##X1(int *ret, int *bid);
 
 scienceDef(asin)
 scienceDef(acos)
@@ -63,8 +62,8 @@ scienceDef(ceil)
 scienceDef(fabs)
 scienceDef(floor)
 
-batmmath_export str CMDscience_bat_cst_atan2_dbl(int *ret, int *bid, @2 *d);
-batmmath_export str CMDscience_bat_cst_atan2_dbl(int *ret, int *bid, @2 *d);
-batmmath_export str CMDscience_bat_cst_pow_dbl(int *ret, int *bid, @2 *d);
-batmmath_export str CMDscience_bat_cst_pow_flt(int *ret, int *bid, @2 *d);
+batmmath_export str CMDscience_bat_cst_atan2_dbl(int *ret, int *bid, dbl *d);
+batmmath_export str CMDscience_bat_cst_atan2_flt(int *ret, int *bid, flt *d);
+batmmath_export str CMDscience_bat_cst_pow_dbl(int *ret, int *bid, dbl *d);
+batmmath_export str CMDscience_bat_cst_pow_flt(int *ret, int *bid, flt *d);
 #endif  /* _BATMATH_H */

@@ -152,7 +152,7 @@ str MATHunary##X1##X3(X3 *res , X3 *a ) {\
 	dbl tmp1,tmp2;\
 	str msg= MAL_SUCCEED;\
 	if (*a == X3##_nil) {\
-		*res = X3##_nil;\
+		*res =X3##_nil;\
 	} else {\
 		tmp1= *a;\
 		X2##_unary( &tmp1, &tmp2 );\
@@ -162,8 +162,36 @@ str MATHunary##X1##X3(X3 *res , X3 *a ) {\
 }
 
 #define unopM5(X1,X2) \
-  unopbaseM5(X1,X2,dbl)\
-  unopbaseM5(X1,X2,flt)
+str MATHunary##X1##dbl(dbl *res , dbl *a ) {\
+#ifdef DEBUG\
+		printf( "MATHunary##X1##dbl\n");\
+#endif\
+	dbl tmp1,tmp2;\
+	str msg= MAL_SUCCEED;\
+	if (*a == dbl_nil) {\
+		*res =dbl_nil;\
+	} else {\
+		tmp1= *a;\
+		X2##_unary( &tmp1, &tmp2 );\
+		*res = (dbl) tmp2;\
+	}\
+   return msg;\
+}\
+str MATHunary##X1##flt(flt *res , flt *a ) {\
+#ifdef DEBUG\
+		printf( "MATHunary##X1##flt\n");\
+#endif\
+	dbl tmp1,tmp2;\
+	str msg= MAL_SUCCEED;\
+	if (*a == flt_nil) {\
+		*res =flt_nil;\
+	} else {\
+		tmp1= *a;\
+		X2##_unary( &tmp1, &tmp2 );\
+		*res = (flt) tmp2;\
+	}\
+   return msg;\
+}
 
 #define binopbaseM5(X1,X2,X3)\
 str MATHbinary##X1##X3(X3 *res, X3 *a, X3 *b ) {\
@@ -185,9 +213,9 @@ str MATHbinary##X1##X3(X3 *res, X3 *a, X3 *b ) {\
   binopbaseM5(X,Y,flt)
 
 #define roundM5(X1)\
-str MATHbinary_ROUND##X1(1X *res, X1 *x, int *y) {\
-  if(*x == X1_nil || *y == int_nil) {\
-	*res = X1_nil;\
+str MATHbinary_ROUND##X1(X1 *res, X1 *x, int *y) {\
+  if(*x == X1##_nil || *y == int_nil) {\
+	*res = X1##_nil;\
   } else {\
 	dbl factor = pow(10,*y), integral;\
 	dbl tmp = *y>0?modf(*x,&integral):*x;\
