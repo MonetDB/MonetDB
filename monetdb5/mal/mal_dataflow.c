@@ -614,15 +614,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 					if (isaBatType(getArgType(mb, pci, i))) {
 						bat bid = stk->stk[a].val.bval;
 
-#ifndef NDEBUG
-#if 0	/* when needed, enable */
-						if (i < pci->retc  && bid){
-							BAT *b = BATdescriptor(bid);
-							BATassertProps(b);
-							BBPunfix(b->batCacheid);
-						}
-#endif
-#endif
 						/* Check output properties */
 						/* update the bigfoot information only if we need to gc */
 						if (cntxt->flags & bigfootFlag)
