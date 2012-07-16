@@ -15,6 +15,10 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+"""
+functions for converting python objects to monetdb SQL format
+"""
+
 import datetime
 import logging
 import decimal

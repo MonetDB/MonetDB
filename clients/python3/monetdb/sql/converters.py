@@ -15,6 +15,10 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+"""
+Backwards compatible converterts
+"""
+
 from monetdb.sql import monetize
 from monetdb.sql import pythonize
 

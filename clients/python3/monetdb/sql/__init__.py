@@ -29,12 +29,12 @@ def connect(*args, **kwargs):
 connect.__doc__ = Connection.__init__.__doc__
 
 __all__ = [ 'BINARY', 'Binary', 'connect', 'Connection', 'DATE',
-    'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks',
-    'TimestampFromTicks', 'DataError', 'DatabaseError', 'Error',
-    'FIELD_TYPE', 'IntegrityError', 'InterfaceError', 'InternalError',
-    'MySQLError', 'NULL', 'NUMBER', 'NotSupportedError', 'DBAPISet',
-    'OperationalError', 'ProgrammingError', 'ROWID', 'STRING', 'TIME',
-    'TIMESTAMP', 'Set', 'Warning', 'apilevel', 'connect', 'connections',
-    'constants', 'cursors', 'debug', 'escape', 'escape_dict',
-    'escape_sequence', 'escape_string', 'get_client_info',
-    'paramstyle', 'string_literal', 'threadsafety', 'version_info']
+            'Date', 'Time', 'Timestamp', 'DateFromTicks', 'TimeFromTicks',
+            'TimestampFromTicks', 'DataError', 'DatabaseError', 'Error',
+            'FIELD_TYPE', 'IntegrityError', 'InterfaceError', 'InternalError',
+            'MySQLError', 'NULL', 'NUMBER', 'NotSupportedError', 'DBAPISet',
+            'OperationalError', 'ProgrammingError', 'ROWID', 'STRING', 'TIME',
+            'TIMESTAMP', 'Set', 'Warning', 'apilevel', 'connect', 'connections',
+            'constants', 'cursors', 'debug', 'escape', 'escape_dict',
+            'escape_sequence', 'escape_string', 'get_client_info',
+            'paramstyle', 'string_literal', 'threadsafety', 'version_info']

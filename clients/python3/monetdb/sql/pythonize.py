@@ -15,49 +15,25 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+"""
+functions for converting monetdb SQL fields to Python objects
+"""
+
 import logging
 import time
 import datetime
 from decimal import Decimal
-from monetdb.sql import type_codes
+from monetdb.sql import types
+import monetdb.exceptions
+import re
 
 logger = logging.getLogger("monetdb")
 
 def strip(data):
     """ returns a python string, chops off quotes,
-    replaces escape characters.
-    inverse of escape"""
+    replaces escape characters"""
+    return bytes(data[1:-1], "utf-8").decode("unicode_escape")
 
-    c_escapes = {'n':'\n', 't':'\t', 'r':'\r', '"':'\"'}
-    a = []
-    n = 0
-    for c in data:
-        if c == '\\':
-            n = n + 1
-        else:
-            if n > 0:
-                if n % 2 == 0:
-                    # even number of slashes: '\' '\' 'n' --> '\' 'n'
-                    a.extend(['\\'] * int(n/2))
-                    a.append(c)
-                    n = 0
-                else:
-                    # odd number of slashes: '\' '\' '\' 'n' --> '\' '\n'
-                    a.extend(['\\'] * int((n - 1)/2))
-                    if c in c_escapes.keys():
-                        a.append(c_escapes[c])
-                    else:
-                        logging.warning('unsupported escape character: \\%s' % c)
-                    n = 0
-            else:
-                a.append(c)
-                n = 0
-    if n > 0:
-        a.extend(['\\'] * (n/2))
-        a.append(c)
-    data = ''.join(a)
-
-    return data[1:-1]
 
 def py_bool(data):
     """ return python boolean """
@@ -104,31 +80,31 @@ def py_blob(x):
     return ''.join(map(lambda x: chr(int(x, 16)), x.split(" ")))
 
 mapping = {
-    type_codes.CHAR: strip,
-    type_codes.VARCHAR: strip,
-    type_codes.CLOB: strip,
-    type_codes.BLOB: str,
-    type_codes.DECIMAL: Decimal,
-    type_codes.SMALLINT: int,
-    type_codes.INT: int,
-    type_codes.WRD: int,
-    type_codes.BIGINT: int,
-    type_codes.SERIAL: int,
-    type_codes.REAL: float,
-    type_codes.DOUBLE: float,
-    type_codes.BOOLEAN: py_bool,
-    type_codes.DATE: py_date,
-    type_codes.TIME: py_time,
-    type_codes.TIMESTAMP: py_timestamp,
-    type_codes.TIMESTAMPTZ: py_timestamptz,
-    type_codes.INTERVAL: strip,
-    type_codes.MONTH_INTERVAL: strip,
-    type_codes.SEC_INTERVAL: strip,
-    type_codes.TINYINT: int,
-    type_codes.SHORTINT: int,
-    type_codes.MEDIUMINT: int,
-    type_codes.LONGINT: int,
-    type_codes.FLOAT: float,
+    types.CHAR: strip,
+    types.VARCHAR: strip,
+    types.CLOB: strip,
+    types.BLOB: str,
+    types.DECIMAL: Decimal,
+    types.SMALLINT: int,
+    types.INT: int,
+    types.WRD: int,
+    types.BIGINT: int,
+    types.SERIAL: int,
+    types.REAL: float,
+    types.DOUBLE: float,
+    types.BOOLEAN: py_bool,
+    types.DATE: py_date,
+    types.TIME: py_time,
+    types.TIMESTAMP: py_timestamp,
+    types.TIMESTAMPTZ: py_timestamptz,
+    types.INTERVAL: strip,
+    types.MONTH_INTERVAL: strip,
+    types.SEC_INTERVAL: strip,
+    types.TINYINT: int,
+    types.SHORTINT: int,
+    types.MEDIUMINT: int,
+    types.LONGINT: int,
+    types.FLOAT: float,
 }
 
 def convert(data, type_code):
@@ -177,12 +153,12 @@ class DBAPISet(frozenset):
         else:
             return other in self
 
-STRING    = DBAPISet([type_codes.VARCHAR])
-BINARY    = DBAPISet([type_codes.BLOB])
-NUMBER    = DBAPISet([type_codes.DECIMAL, type_codes.DOUBLE, type_codes.REAL,
-                      type_codes.BIGINT, type_codes.SMALLINT])
-DATE      = DBAPISet([type_codes.DATE])
-TIME      = DBAPISet([type_codes.TIME])
-TIMESTAMP = DBAPISet([type_codes.TIMESTAMP])
+STRING    = DBAPISet([types.VARCHAR])
+BINARY    = DBAPISet([types.BLOB])
+NUMBER    = DBAPISet([types.DECIMAL, types.DOUBLE, types.REAL,
+                      types.BIGINT, types.SMALLINT])
+DATE      = DBAPISet([types.DATE])
+TIME      = DBAPISet([types.TIME])
+TIMESTAMP = DBAPISet([types.TIMESTAMP])
 DATETIME  = TIMESTAMP
 ROWID     = DBAPISet()
