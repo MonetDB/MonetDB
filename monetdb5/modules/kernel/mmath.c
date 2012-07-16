@@ -145,10 +145,7 @@ math_unary_FINITE(bit *res, dbl *a)
 }
 
 #define unopbaseM5(X1,X2,X3)\
-str MATHunary##X1##X3(X3 *res , X3 *a ) {\
-#ifdef DEBUG\
-		printf( "MATHunary##X1##X3\n");\
-#endif\
+str MATHunary##X1##X3 (X3 *res , X3 *a ) {\
 	dbl tmp1,tmp2;\
 	str msg= MAL_SUCCEED;\
 	if (*a == X3##_nil) {\
@@ -163,9 +160,6 @@ str MATHunary##X1##X3(X3 *res , X3 *a ) {\
 
 #define unopM5(X1,X2) \
 str MATHunary##X1##dbl(dbl *res , dbl *a ) {\
-#ifdef DEBUG\
-		printf( "MATHunary##X1##dbl\n");\
-#endif\
 	dbl tmp1,tmp2;\
 	str msg= MAL_SUCCEED;\
 	if (*a == dbl_nil) {\
@@ -178,9 +172,6 @@ str MATHunary##X1##dbl(dbl *res , dbl *a ) {\
    return msg;\
 }\
 str MATHunary##X1##flt(flt *res , flt *a ) {\
-#ifdef DEBUG\
-		printf( "MATHunary##X1##flt\n");\
-#endif\
 	dbl tmp1,tmp2;\
 	str msg= MAL_SUCCEED;\
 	if (*a == flt_nil) {\
@@ -195,14 +186,11 @@ str MATHunary##X1##flt(flt *res , flt *a ) {\
 
 #define binopbaseM5(X1,X2,X3)\
 str MATHbinary##X1##X3(X3 *res, X3 *a, X3 *b ) {\
-#ifdef DEBUG\
-		printf( "MATHbinary##X1\n");\
-#endif\
    if (*a == X3##_nil || *b == X3##_nil) {\
 		*res = X3##_nil;\
    } else {\
 		dbl r1 ,a1 = *a, b1 = *b;\
-		X2_binary( &a1, &b1, &r1);\
+		X2##_binary( &a1, &b1, &r1);\
 		*res= (X3) r1;\
    }\
    return MAL_SUCCEED;\

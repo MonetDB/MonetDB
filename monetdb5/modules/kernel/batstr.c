@@ -573,7 +573,7 @@ str STRbatstrSearch(int *ret, int *l, int *r)
 	prepareOperand2(left,l,right,r,"search");
 	if( BATcount(left) != BATcount(right) )
 		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult2(bn,left,right,TYPE_bit,"search");
+	prepareResult2(bn,left,right,TYPE_int,"search");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -611,7 +611,7 @@ str STRbatstrSearchcst(int *ret, int *l, str *cst)
 	int v, *vp= &v;
 
 	prepareOperand(left,l,"search");
-	prepareResult(bn,left,TYPE_bit,"search");
+	prepareResult(bn,left,TYPE_int,"search");
 
 	lefti = bat_iterator(left);
 
@@ -769,7 +769,7 @@ bunins_failed:
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatConCat(int *ret, int *l, int *r)
+str STRbatConcat(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
@@ -779,7 +779,7 @@ str STRbatConCat(int *ret, int *l, int *r)
 	prepareOperand2(left,l,right,r,"+");
 	if( BATcount(left) != BATcount(right) )
 		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult2(bn,left,right,TYPE_bit,"+");
+	prepareResult2(bn,left,right,TYPE_str,"+");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -809,7 +809,7 @@ bunins_failed:
 	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatConCatcst(int *ret, int *l, str *cst)
+str STRbatConcatcst(int *ret, int *l, str *cst)
 {   
 	BATiter lefti;
 	BAT *bn, *left;
@@ -817,7 +817,7 @@ str STRbatConCatcst(int *ret, int *l, str *cst)
 	str v, *vp= &v;
 
 	prepareOperand(left,l,"+");
-	prepareResult(bn,left,TYPE_bit,"+");
+	prepareResult(bn,left,TYPE_str,"+");
 
 	lefti = bat_iterator(left);
 
@@ -840,7 +840,7 @@ bunins_failed:
 	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstConCatbat(int *ret, str *cst, int *r)
+str STRcstConcatbat(int *ret, str *cst, int *r)
 {   
 	BATiter righti;
 	BAT *bn, *right;
