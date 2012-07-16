@@ -18,6 +18,6 @@ bat.append(f,"tseqbase");
 bat.append(f,"tdense");
 fr:= bat.reverse(f);
 fm:= bat.mirror(fr);
-i:= bat.info(a);
+#i:= bat.info(a);
 #j:= algebra.join(fm,i);
 #io.print(j);

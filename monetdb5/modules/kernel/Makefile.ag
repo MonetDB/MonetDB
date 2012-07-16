@@ -40,7 +40,7 @@ lib_kernel = {
 		aggr.mx \
 		alarm.c alarm.h \
 		algebra.mx \
-		array.mx \
+		array.c array.h \
 		bat5.c bat5.h \
 		batcalc.c \
 		batcolor.mx \
@@ -54,7 +54,7 @@ lib_kernel = {
 		lock.c lock.h \
 		logger.c \
 		microbenchmark.c microbenchmark.h \
-		mmath.mx \
+		mmath.c mmath.h \
 		sema.c \
 		status.c status.h \
 		unix.c
@@ -64,9 +64,9 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = calc.mal bat5.mal algebra.mx status.mal unix.mal \
-		mmath.mx lock.mal sema.mal alarm.mal batstr.mx batmtime.mx \
+		mmath.mal lock.mal sema.mal alarm.mal batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcalc.mal batmmath.mx \
-		group.mx aggr.mx array.mx \
+		group.mx aggr.mx array.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
