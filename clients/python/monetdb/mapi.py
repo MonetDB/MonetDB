@@ -27,7 +27,7 @@ import platform
 
 from cStringIO import StringIO
 
-from monetdb.monetdb_exceptions import *
+from monetdb.exceptions import *
 
 logger = logging.getLogger("monetdb")
 

@@ -24,7 +24,7 @@ import getopt
 
 from monetdb import mapi
 
-def main(argv) :
+def main() :
     hostname = 'localhost'
     port = '50000'
     username = 'monetdb'
@@ -33,7 +33,7 @@ def main(argv) :
     database = ''
     encoding = None
 
-    opts, args = getopt.getopt(argv[1:], '',
+    opts, args = getopt.getopt(sys.argv[1:], '',
                                ['host=', 'port=', 'user=', 'passwd=',
                                 'language=', 'database=', 'encoding='])
     for o, a in opts:
@@ -87,4 +87,4 @@ def main(argv) :
     s.disconnect()
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

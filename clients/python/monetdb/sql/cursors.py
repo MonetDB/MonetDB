@@ -16,15 +16,12 @@
 # All Rights Reserved.
 
 import logging
-import sys
 
-from monetdb.sql import converters
-from monetdb.monetdb_exceptions import *
+from monetdb.sql import monetize, pythonize
+from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
-
-
 
 
 class Cursor(object):
@@ -33,10 +30,7 @@ class Cursor(object):
     connection are not isolated, i.e., any changes done to the
     database by a cursor are immediately visible by the other
     cursors"""
-
-
     def __init__(self, connection):
-
         """This read-only attribute return a reference to the Connection
         object on which the cursor was created."""
         self.connection = connection
@@ -95,12 +89,6 @@ class Cursor(object):
         #Only select queries have query ID
         self.__query_id = -1
 
-        # the type converters
-        self.__pythonizer = converters.Pythonizer(use_unicode=self.connection.use_unicode)
-        self.__monetizer = converters.Monetizer()
-
-
-
         """This is a Python list object to which the interface appends
         tuples (exception class, exception value) for all messages
         which the interfaces receives from the underlying database for
@@ -115,7 +103,7 @@ class Cursor(object):
         placed into this list, so checking the list allows the user to
         verify correct operation of the method calls.
 
-        ."""
+        """
         self.messages = []
 
 
@@ -182,16 +170,16 @@ class Cursor(object):
 
         if parameters:
             if isinstance(parameters, dict):
-                query = operation % dict([(k, self.__monetizer.convert(v))
+                query = operation % dict([(k, monetize.convert(v))
                     for (k,v) in parameters.items()])
             elif type(parameters) == list:
-                query = operation % tuple([self.__monetizer.convert(item)
+                query = operation % tuple([monetize.convert(item)
                     for item in parameters])
             elif type(parameters) == tuple:
-                query = operation % tuple([self.__monetizer.convert(item)
+                query = operation % tuple([monetize.convert(item)
                     for item in parameters])
             elif isinstance(parameters, str):
-                query = operation % self.__monetizer.convert(parameters)
+                query = operation % monetize.convert(parameters)
             else:
                 self.__exception_handler(ValueError,
                         "Parameters should be None, dict or list, now it is %s"
@@ -528,7 +516,7 @@ class Cursor(object):
         # values in a row are seperated by \t
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
-            return tuple([self.__pythonizer.convert(element.strip(),
+            return tuple([pythonize.convert(element.strip(),
                 description[1]) for (element, description) in
                 zip(elements, self.description)])
         else:

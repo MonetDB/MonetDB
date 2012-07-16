@@ -936,11 +936,13 @@ class DatabaseAPI20Test(unittest.TestCase):
             con.close()
 
 
-    def test_newline(self):
+    def test_escape(self):
         teststrings = [
             'abc\ndef',
             'abc\\ndef',
             'abc\\\ndef',
+            'abc\\\\ndef',
+            'abc\\\\\ndef',
             'abc"def',
             'abc""def',
             'abc\'def',
@@ -949,7 +951,11 @@ class DatabaseAPI20Test(unittest.TestCase):
             "abc\"\"def",
             "abc'def",
             "abc''def",
-            ]
+            "abc\tdef",
+            "abc\\tdef",
+            "abc\\\tdef",
+            "\\x"
+        ]
 
         con = self._connect()
         try:

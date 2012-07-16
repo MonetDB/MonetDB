@@ -28,7 +28,6 @@ import array
 import unittest
 import sys
 
-
 class DatabaseTest(unittest.TestCase):
 
     db_module = None
@@ -36,8 +35,6 @@ class DatabaseTest(unittest.TestCase):
     connect_kwargs = dict()
     create_table_extra = ''
     rows = 10
-    debug = False
-    leak_test = False
 
     def setUp(self):
         import gc
@@ -46,26 +43,10 @@ class DatabaseTest(unittest.TestCase):
         self.cursor = db.cursor()
         self.BLOBText = ''.join([chr(i) for i in range(33,127)] * 100);
         self.BLOBBinary = self.db_module.Binary(''.join([chr(i) for i in range(256)] * 16))
-
-        # in python 3 everything is unicode
-        major = sys.version_info[0]
-        if major == 3:
-            self.BLOBUText = ''.join([chr(i) for i in range(1,16384)])
-        else:
-            self.BLOBUText = unicode(''.join([unichr(i) for i in range(1,16384)]))
-
+        self.BLOBUText = unicode(''.join([unichr(i) for i in range(1,16384)]))
 
     def tearDown(self):
-        if self.leak_test:
-            import gc
-            del self.cursor
-            orphans = gc.collect()
-            self.assertFalse(orphans, "%d orphaned objects found after deleting cursor" % orphans)
-
-            del self.connection
-            orphans = gc.collect()
-            self.failIf(orphans, "%d orphaned objects found after deleting connection" % orphans)
-
+        self.connection.close()
 
     def table_exists(self, name):
         try:
@@ -76,10 +57,8 @@ class DatabaseTest(unittest.TestCase):
         else:
             return True
 
-
     def quote_identifier(self, ident):
         return '"%s"' % ident
-
 
     def new_table_name(self):
         i = id(self.cursor)
@@ -88,7 +67,6 @@ class DatabaseTest(unittest.TestCase):
             if not self.table_exists(name):
                 return name
             i = i + 1
-
 
     def create_table(self, columndefs):
         """ Create a table using a list of column definitions given in
@@ -105,7 +83,6 @@ class DatabaseTest(unittest.TestCase):
                              ',\n'.join(columndefs),
                              self.create_table_extra))
 
-
     def check_data_integrity(self, columndefs, generator):
         self.create_table(columndefs)
         insert_statement = ('INSERT INTO %s VALUES (%s)' %
@@ -113,24 +90,18 @@ class DatabaseTest(unittest.TestCase):
                              ','.join(['%s'] * len(columndefs))))
         data = [ [ generator(i,j) for j in range(len(columndefs)) ]
                  for i in range(self.rows) ]
-        if self.debug:
-            print(data)
         self.cursor.executemany(insert_statement, data)
         self.connection.commit()
         # verify
         self.cursor.execute('select * from %s' % self.table)
         l = self.cursor.fetchall()
-        if self.debug:
-            print(l)
         self.assertEqual(len(l), self.rows)
         try:
             for i in range(self.rows):
                 for j in range(len(columndefs)):
                     self.assertEqual(l[i][j], generator(i,j))
         finally:
-            if not self.debug:
-                self.cursor.execute('drop table %s' % (self.table))
-
+            self.cursor.execute('drop table %s' % (self.table))
 
     def test_transactions(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
@@ -165,7 +136,6 @@ class DatabaseTest(unittest.TestCase):
         self.assertTrue(len(l) == 1, "ROLLBACK didn't work")
         self.cursor.execute('drop table %s' % (self.table))
 
-
     def test_truncation(self):
         columndefs = ( 'col1 INT', 'col2 VARCHAR(255)')
         def generator(row, col):
@@ -180,8 +150,7 @@ class DatabaseTest(unittest.TestCase):
         try:
             self.cursor.execute(insert_statement, (0, '0'*256))
         except Warning:
-            if self.debug:
-                print(self.cursor.messages)
+            pass
         except self.connection.Error:
             pass
         else:
@@ -197,8 +166,7 @@ class DatabaseTest(unittest.TestCase):
                     data.append(generator(i,j))
                 self.cursor.execute(insert_statement,tuple(data))
         except Warning:
-            if self.debug:
-                print(self.cursor.messages)
+            pass
         except self.connection.Error:
             pass
         else:
@@ -212,15 +180,13 @@ class DatabaseTest(unittest.TestCase):
                      for i in range(self.rows) ]
             self.cursor.executemany(insert_statement, data)
         except Warning:
-            if self.debug:
-                print(self.cursor.messages)
+            pass
         except self.connection.Error:
             pass
         else:
             self.fail("Over-long columns did not generate warnings/exception with executemany()")
 
         self.connection.rollback()
-
 
     def test_CHAR(self):
         # Character data
@@ -230,7 +196,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(255)','col2 char(255)'),
             generator)
 
-
     def test_INT(self):
         # Number data
         def generator(row,col):
@@ -238,7 +203,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
             ('col1 INT',),
             generator)
-
 
     def test_DECIMAL(self):
         # DECIMAL
@@ -264,7 +228,6 @@ class DatabaseTest(unittest.TestCase):
             generator)
 
 
-
     def test_DATE(self):
         ticks = time()
         def generator(row,col):
@@ -272,7 +235,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 DATE',),
                  generator)
-
 
     def test_TIME(self):
         ticks = time()
@@ -282,7 +244,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIME',),
                  generator)
 
-
     def test_DATETIME(self):
         ticks = time()
         def generator(row,col):
@@ -290,7 +251,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 TIMESTAMP',),
                  generator)
-
 
     def test_TIMESTAMP(self):
         ticks = time()
@@ -308,8 +268,6 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMPTZ',),
                   generator)
 
-
-
     def test_fractional_TIMESTAMP(self):
         ticks = time()
         def generator(row,col):
@@ -318,14 +276,12 @@ class DatabaseTest(unittest.TestCase):
                  ('col1 TIMESTAMP',),
                  generator)
 
-
     def test_TEXT(self):
         def generator(row,col):
             return self.BLOBText # 'BLOB Text ' * 1024
         self.check_data_integrity(
                  ('col2 TEXT',),
                  generator)
-
 
     def test_BLOB(self):
         def generator(row,col):
@@ -336,7 +292,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
                  ('col1 INT','col2 BLOB'),
                  generator)
-
 
     def test_TINYINT(self):
         # Number data
@@ -349,7 +304,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 TINYINT',),
             generator)
 
-
     def test_small_CHAR(self):
         # Character data
         def generator(row,col):
@@ -361,26 +315,26 @@ class DatabaseTest(unittest.TestCase):
             ('col1 char(1)','col2 char(1)'),
             generator)
 
-
     def test_description(self):
         self.table = self.new_table_name()
-        self.cursor.execute("create table %s (c VARCHAR(1024), d DECIMAL(9,4), n VARCHAR(1) NOT NULL)" % self.table);
-        self.cursor.execute("insert into %s VALUES ('test', 12345.1234, 'x')" % self.table)
-        self.cursor.execute('select * from %s' % self.table)
-        description = self.cursor.description
         shouldbe = [
             ('c', 'varchar', None, 1024, None, None, None),
             ('d', 'decimal', None, 9, 9, 4, None),
             ('n', 'varchar', None, 1, None, None, None),
         ]
-        self.assertEqual(description, shouldbe, "cursor.description is incorrect")
-
+        try:
+            self.cursor.execute("create table %s (c VARCHAR(1024), d DECIMAL(9,4), n VARCHAR(1) NOT NULL)" % self.table);
+            self.cursor.execute("insert into %s VALUES ('test', 12345.1234, 'x')" % self.table)
+            self.cursor.execute('select * from %s' % self.table)
+            self.assertEqual(self.cursor.description, shouldbe, "cursor.description is incorrect")
+        finally:
+            self.cursor.execute('drop table %s' % (self.table))
 
     def test_bigresult(self):
         self.cursor.execute('select count(*) from tables')
         r = self.cursor.fetchone()
         n = r[0]
-        self.cursor.arraysize=1000
+        self.cursor.arraysize=100000
         self.cursor.execute('select * from tables, tables')
         r = self.cursor.fetchall()
         self.assertEqual(len(r), n**2)
