@@ -962,41 +962,27 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	}
 @= hashselect
 	switch(ATOMstorage(b->htype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:valselect(@1,_bte)@
 		break;
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:valselect(@1,_sht)@
 		break;
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:valselect(@1,_int)@
 		break;
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:valselect(@1,_flt)@
 		break;
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:valselect(@1,_dbl)@
 		break;
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:valselect(@1,_lng)@
 		break;
-#endif
-#ifndef NOEXPAND_STR
 	case TYPE_str:
 		@:stringselect(@1)@
 		break;
-#endif
 	default:
 		if (b->hvarsized) {
 			@:valselect(@1,var)@
@@ -1500,36 +1486,24 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
 	m = mark;
 	i = mark;
 	switch (ATOMstorage(t = b->htype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:restrict1(simple,bte,loc)@
 		break;
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:restrict1(simple,sht,loc)@
 		break;
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:restrict1(simple,int,loc)@
 		break;
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:restrict1(simple,flt,loc)@
 		break;
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:restrict1(simple,dbl,loc)@
 		break;
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:restrict1(simple,lng,loc)@
 		break;
-#endif
 	default:
 		if (b->hvarsized) {
 			@:restrict1(atom,t,var)@
@@ -1542,36 +1516,24 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
 	/* second phase */
 	if (b->hvarsized) {
 		switch (ATOMstorage(t = b->ttype)) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:restrict2(simple,bte,var,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:restrict2(simple,sht,var,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:restrict2(simple,int,var,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:restrict2(simple,flt,var,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			@:restrict2(simple,dbl,var,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			@:restrict2(simple,lng,var,loc)@
 			break;
-#endif
 		default:
 			if (b->tvarsized) {
 				@:restrict2(atom,t,var,var)@
@@ -1582,32 +1544,22 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
 		}
 	} else {
 		switch (ATOMstorage(t = b->ttype)) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:restrict2(simple,bte,loc,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:restrict2(simple,sht,loc,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:restrict2(simple,int,loc,loc)@
 			break;
-#endif
-#ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:restrict2(simple,flt,loc,loc)@
 			break;
-#endif
-#if !defined(NOEXPAND_LNG) || !defined(NOEXPAND_DBL)
 		case TYPE_dbl:
 		case TYPE_lng:
 			@:restrict2(simple,lng,loc,loc)@
 			break;
-#endif
 		default:
 			if (b->tvarsized) {
 				@:restrict2(atom,t,loc,var)@
@@ -2319,36 +2271,24 @@ BATrangesplit(BAT *b, BUN n, int unary)
 				goto bunins_failed;
 		}
 		switch (tpe = ATOMstorage(b->ttype)) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:rangesplit(simple,loc,bte)@
 			break;
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:rangesplit(simple,loc,sht)@
 			break;
-#endif
-#ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:rangesplit(simple,loc,int)@
 			break;
-#endif
-#ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:rangesplit(simple,loc,flt)@
 			break;
-#endif
-#ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			@:rangesplit(simple,loc,dbl)@
 			break;
-#endif
-#ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			@:rangesplit(simple,loc,lng)@
 			break;
-#endif
 		default:
 			if (b->tvarsized) {
 				@:rangesplit(atom,var,tpe)@

@@ -181,30 +181,18 @@ All Rights Reserved.
 	}
 @= elim_doubles
 	switch (ATOMstorage(b->htype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:elim(@1,loc,_bte,simple_CMP(h,BUNhloc(bi,r),bte))@
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:elim(@1,loc,_sht,simple_CMP(h,BUNhloc(bi,r),sht))@
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:elim(@1,loc,_int,simple_CMP(h,BUNhloc(bi,r),int))@
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:elim(@1,loc,_flt,simple_CMP(h,BUNhloc(bi,r),flt))@
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:elim(@1,loc,_dbl,simple_CMP(h,BUNhloc(bi,r),dbl))@
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:elim(@1,loc,_lng,simple_CMP(h,BUNhloc(bi,r),lng))@
-#endif
 	case TYPE_str:
 		if (b->H->vheap->hashash) {
 			@:elim(@1,var,_str_hv,GDK_STRCMP(h,BUNhvar(bi,r)))@
@@ -758,30 +746,18 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		@:voidcheck(@2,@1)@
 	} else {
 		switch(ATOMstorage(r->htype)) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:check(@2,loc,bte,simple_CMP(h,h2,bte),@1,bte_EQ)@
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:check(@2,loc,sht,simple_CMP(h,h2,sht),@1,sht_EQ)@
-#endif
-#ifndef NOEXPAND_INT
 		case TYPE_int:
 			@:check(@2,loc,int,simple_CMP(h,h2,int),@1,int_EQ)@
-#endif
-#ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			@:check(@2,loc,flt,simple_CMP(h,h2,flt),@1,flt_EQ)@
-#endif
-#ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			@:check(@2,loc,dbl,simple_CMP(h,h2,dbl),@1,dbl_EQ)@
-#endif
-#ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			@:check(@2,loc,lng,simple_CMP(h,h2,lng),@1,lng_EQ)@
-#endif
 		default:
 			if (r->hvarsized) {
 				@:checkall(@2,var,var,((*merge)(h,h2)),@1,0==cmp)@

@@ -382,30 +382,18 @@ int
 ATOMcmp(int t, const void *l, const void *r)
 {
 	switch (ATOMstorage(t)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		return simple_CMP(l, r, bte);
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		return simple_CMP(l, r, sht);
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		return simple_CMP(l, r, int);
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		return simple_CMP(l, r, flt);
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		return simple_CMP(l, r, lng);
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		return simple_CMP(l, r, dbl);
-#endif
 	default:
 		return (l == r) ? 0 : atom_CMP(l, r, t);
 	}
