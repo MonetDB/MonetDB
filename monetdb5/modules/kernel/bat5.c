@@ -1,29 +1,24 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f bat5
-
-@c
 /*
- * @v 2.0
- * @a Peter Boncz, M.L. Kersten
- * @+ Binary Association Tables
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ * 
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ * 
+ * The Original Code is the MonetDB Database System.
+ * 
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+*/
+/*
+ * Peter Boncz, M.L. Kersten
+ * Binary Association Tables
  * This module contains the commands and patterns to manage Binary
  * Association Tables (BATs). The relational operations you can execute
  * on BATs have the form of a neat algebra, described in algebra.mx
@@ -41,680 +36,11 @@ All Rights Reserved.
  * and we have to de-reference them before entering the gdk library.
  * (Actual a design error in gdk to differentiate passing int/str)
  * This calls for knowledge on the underlying BAT types`s
- * @-
  */
-@= derefStr
-{ if( @1->@2type >= TYPE_str  && ATOMstorage(@1->@2type) >= TYPE_str)
- { if(@3== 0 || *(str*)@3==0) @3 = (str)str_nil;
-   else @3 = *(str *)@3; 
-}}
-@
-@mal
-# @-
-# The code speaks for itself
-#
-# #command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
-# #address BKCaccess;
-#
-# #command setSequenceBase( b:bat[:oid,:any_1], base:oid):void
-# #address BKCsetSequenceBase
-# #comment "Set the sequence base for the void column of a BAT.";
-module bat;
-command attach(tt:int, heapfile:str) :bat[:void,:any_1]
-address BKCattach
-comment "Returns a new BAT with dense head and tail of the given type and uses
-        the given file to initialize the tail. The file will be owned by the
-        server."
 
-command densebat(size:wrd) :bat[:void,:void]
-address BKCdensebat
-comment "Creates a new [void,void] BAT of size 'size'."
-
-command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
-address BKCreverse
-comment "Returns the reverse view of a BAT (head is tail and tail is head).
-        BEWARE  no copying is involved; input and output refer to the 
-        same object!";
-
-command mirror(b:bat[:any_1,:any_2]) :bat[:any_1,:any_1] 
-address BKCmirror
-comment "Returns the head-mirror image of a BAT (two head columns).";
-
-command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCorder
-comment "Sorts the BAT itself on the head, in place. ";
-command orderReverse(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCorder_rev
-comment "Reverse sorts the BAT itself on the head, in place. ";
-
-command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCrevert
-comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the 
-        BAT sequence module)";
-
-# @+ BAT properties
-# Properties of BATs not necessarily require loading the BAT completely.
-# The BAT identifier can be used to access the descriptors.
-# These properties can be inspected with the
-# @emph{info(BAT[:any_1,:any_2]) :bat[str,str] } command:
-# @verbatim
-# > car_age.info.print;
-# #---------------------------------#
-# # BAT:               tmp_31       #
-# # (str)              (str)        #
-# #---------------------------------#
-# [ "batId",           "car_age"    ] # logical bat name
-# [ "batCacheid",      "26"         ] # BBP index
-# [ "batParentid",     "0"          ] # set if a BAT is a view
-# [ "head",            "void"       ] # physical head-type
-# [ "tail",            "int"        ] # physical tail-type
-# [ "batPersistence",  "persistent" ] # transient/session/persistent
-# [ "batRestricted",   "updatable"  ] # read-only/append-only/updatable
-# [ "batDirty",        "clean"      ] # clean/dirty
-# [ "batRefcnt",       "1"          ] # physical refcount
-# [ "batLRefcnt",      "1"          ] # logical refcount (total)
-# [ "batPlevel",       "1"          ] # logical refcount (persistent part)
-# [ "batSet",          "0"          ] # [head,tail] combinations are unique
-# [ "batCopiedtodisk", "1"          ] # has been saved or not
-# @end verbatim
-#
-# Per column, a number of properties are kept. We only show the head-properties; the tail properties
-# have the first character of their named replaced by 't' (@emph{sorted}, @emph{tdense}, etc.):
-#
-# @verbatim
-# [ "hsorted",         "1"          ] # column is known to be sorted
-# [ "hdense",          "1"          ] # column is known to be densely ascended
-# [ "hseqbase",        "0@0"        ] # if densely ascending first value
-# @end verbatim
-#
-# As described in the @[<a href="www/gdk.html#mod_1_3_0">GDK Technical Reference</a>@,
-# BATs store their data in one to six heaps. For each column type that is @emph{variable-sized} -
-# like @emph{str} - another
-# heap might be present (@emph{hheap} and @emph{theap}).
-#
-# @verbatim
-# [ "head.free",    "400004"     ] # occupied size in bytes
-# [ "head.size",    "400012"     ] # allocated size in bytes
-# [ "head.maxsize", "400012"     ] # reserver virtual memory in bytes
-# [ "head.storage", "malloced"   ] # malloced/mmap/priv
-# @end verbatim
-#
-# Properties steer the algorithms that Monet uses to execute algebra command. For instance,
-# the @emph{find(bat[:any_1,:any_2] b, :any_1) :any_2} that looks up a tail value by head,
-# uses binary search if and only if the head column is sorted (in other cases, hash-lookup
-# and scan are execution options).
-#
-# Sometimes new (extension) code contains bugs in the property management, leaving false
-# properties on produced BATs. You can imagine that later on, this leads to additional
-# bugs, as e,g, the binary search algorithms will yield erroneous results on a non-sorted
-# sequence.
-command info ( b:bat[:any_1,:any_2]) (:bat[:oid,:str], :bat[:oid,:str])
-address BKCinfo
-comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
-        It contains all properties of the BAT record. See the BAT documentation 
-        in GDK for more information.";
-
-command getSize ( b:bat[:any_1,:any_2]) :lng
-address BKCbatsize
-comment "Calculate the size of the BAT descriptor, heaps and indices in bytes.";
-
-command getMemorySize ( b:bat[:any_1,:any_2]) :lng
-address BKCbatvmsize
-comment "Calculate the size of the BAT heaps and indices in bytes
-rounded to the memory page size (see bbp.getPageSize()).";
-
-command getDiskSize ( b:bat[:any_1,:any_2]) :lng
-address BKCbatdisksize
-comment "Approximate size of the (persistent) BAT heaps as stored on disk 
-in pages of 512 bytes. Indices are not included, as they only live temporarily
-in virtual memory.";
-
-command getCapacity(b:bat[:any_1,:any_2]):lng 
-address BKCgetCapacity
-comment "Returns the current allocation size (in max number of elements) of a BAT.";
-
-command getHeadType(b:bat[:any_1,:any_2] ) :str 
-address BKCgetHeadType
-comment "Returns the type of the head column of a BAT, as an integer type number.";
-
-command getTailType( b:bat[:any_1,:any_2] ) :str 
-address BKCgetTailType 
-comment "Returns the type of the tail column of a BAT, as an integer type number.";
-
-command getRole ( bid:bat[:any_1,:any_2] ) :str 
-address BKCgetRole
-comment "Returns the rolename of the head column of a BAT.";
-
-command setKey( b:bat[:any_1,:any_2], mode:bit) :bat[:any_1,:any_2] 
-address BKCsetkey
-comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
-	function does not automatically eliminate duplicates. 
-        Use b := b.kunique;";
-
-command isaKey( b:bat[:any_1,:any_2]) :bit 
-address BKCgetKey
-comment "return whether the head column of a BAT is unique (key).";
-
-command setSet( b:bat[:any_1,:any_2], mode:bit) :bat[:any_1,:any_2] 
-address BKCsetSet
-comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
-        the kernel will silently block insertions that cause a duplicate 
-        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set 
-        to TRUE, this function does not automatically eliminate duplicates. 
-        Use b := b.sunique; Returns the BAT itself.";
-
-command isaSet( b:bat[:any_1,:any_1]) :bit 
-address BKCisaSet
-comment "return whether the BAT mode is set to unique.";
-
-command setAccess( b:bat[:any_1,:any_2], mode:str) :bat[:any_1,:any_2]
-address BKCsetAccess
-comment "Try to change the update access priviliges 
-	to this BAT. Mode:
-	 r[ead-only]      - allow only read access.
-	 a[append-only]   - allow reads and update.
-	 w[riteable]      - allow all operations.
-	BATs are updatable by default. On making a BAT read-only, 
-        all subsequent updates fail with an error message.Returns 
-        the BAT itself.";
-
-command setAppendMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetAppendMode
-comment "Change access privilige of BAT to append only";
-
-command setReadMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetReadMode
-comment "Change access privilige of BAT to read only";
-
-command setWriteMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCsetWriteMode
-comment "Change access privilige of BAT to read and write";
-
-command getAccess( b:bat[:any_1,:any_2]):str 
-address BKCgetAccess
-comment "return the access mode attached to this BAT as a character.";
-
-command hasAppendMode( b:bat[:any_1,:any_2]):bit 
-address BKChasAppendMode
-comment "return true if to this BAT is append only.";
-
-command hasWriteMode( b:bat[:any_1,:any_2]):bit 
-address BKChasWriteMode
-comment "return true if to this BAT is read and write.";
-
-command hasReadMode( b:bat[:any_1,:any_2]):bit 
-address BKChasReadMode
-comment "return true if to this BAT is read only.";
-
-
-command getSequenceBase( b:bat[:oid,:any_1]):oid 
-address BKCgetSequenceBase
-comment "Get the sequence base for the void column of a BAT.";
-
-command isSorted(b:bat[:any_1,:any_2]) :bit 
-address BKCisSorted
-comment "Returns whether a BAT is ordered on head or not.";
-command isSortedReverse(b:bat[:any_1,:any_2]) :bit 
-address BKCisSortedReverse
-comment "Returns whether a BAT is ordered on head or not.";
-
-command getStorageSize(b:bat[:any_1,:any_2]) :lng 
-address BKCgetStorageSize
-comment "Determine the total space (in bytes) reserved for a BAT.";
-
-command getSpaceUsed(b:bat[:any_1,:any_2]) :lng 
-address BKCgetSpaceUsed
-comment "Determine the total space (in bytes) occupied by a BAT.";
-
-# @- BAT updates
-# Update commands come in many disguises.  Note that we don;t return
-# the BAT id, but merely a success/failure code.
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2]
-address BKCinsert_bat
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2], force:bit):bat[:any_1,:any_2]
-address BKCinsert_bat_force
-comment "Insert all BUNs of the second BAT into the first.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCinsert_bun
-comment "Insert one BUN[h,t] in a BAT.";
-
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCinsert_bun_force
-comment "Insert one BUN[h,t] in a BAT.";
-
-# @+
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCreplace_bat
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bat_force
-comment "Perform replace for all BUNs of the second BAT into the first.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCreplace_bun
-comment "Replace the tail value of one BUN that has some head value.";
-
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCreplace_bun_force
-comment "Replace the tail value of one BUN that has some head value.";
-# @-
-# The SQL append/inplace commands
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2] ) :bat[:any_1,:any_2]
-address BKCappend_wrap
-comment "append the content of u to i";
-
-command append( i:bat[:any_1,:any_2], u:bat[:any_1,:any_2], force:bit ) :bat[:any_1,:any_2]
-address BKCappend_force_wrap
-comment "append the content of u to i";
-
-command append(i:bat[:oid,:any_1], u:any_1):bat[:oid,:any_1]
-address BKCappend_val_wrap
-comment "append the value u to i";
-
-command append(i:bat[:void,:any_1], u:any_1):bat[:void,:any_1]
-address BKCappend_val_wrap
-comment "append the value u to i";
-
-command append(i:bat[:any_1,:void], u:any_1):bat[:any_1,:void]
-address BKCappend_reverse_val_wrap
-comment "append the value u to i";
-
-command append(i:bat[:any_1,:any_2], u:any_2, force:bit):bat[:any_1,:any_2]
-address BKCappend_val_force_wrap
-comment "append the value u to i";
-
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCbun_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCbat_inplace
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], id:any_1, t:any_2, force:bit) :bat[:any_1,:any_2]
-address BKCbun_inplace_force
-comment "inplace replace values on the given locations";
-
-command inplace( o:bat[:any_1,:any_2], d:bat[:any_1,:any_2], force:bit) :bat[:any_1,:any_2]
-address BKCbat_inplace_force
-comment "inplace replace values on the given locations";
-
-command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
-address BKCdelete_bun
-comment "Delete one specific BUN.";
-
-command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2]
-address BKCdelete
-comment "Delete all BUNs with a certain tail value.";
-
-command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
-address BKCdelete_all
-comment "Delete all BUNs in a BAT.";
-
-command deleteHead(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :void
-address BKCdelete_bat
-comment "Delete from the first BAT all BUNs with a corresponding head  
-        in the second.";
-
-command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
-address BKCdelete_bat_bun
-comment "Delete from the first BAT all BUNs with a corresponding BUN 
-        in the second.";
-
-command getAlpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetAlpha
-comment "Obtain the list of BUNs added";
-command getDelta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCgetDelta
-comment "Obtain the list of BUNs deleted";
-# @- BAT I/O, Persistency
-# The BAT Buffer Pool (BBP) manages all known BATs. It administers
-# their logical and physical names and a reference count. BATs can
-# either be @emph{persistent} or @emph{transient}. The BBP also manages
-# swapping on a BAT level:a BAT is either loaded entirely or not.
-# MAL variables of type @emph{bat} can either be loaded or not. When
-# the Monet server is started, all BATs are swapped out. If an unloaded
-# bat-variable is used as an operand in a command, it is automatically
-# loaded.  The BBP applies a simple but effective LRU based swapping
-# algorithm. BATs have a @emph{heat}, which drops over time, and is
-# increased when a BAT is used by some command.  If the size of the
-# allocated arena gets to be large, BATs may be swapped out.
-#
-# Note, we should move old-fashioned mil operator definitions
-# into a separate module.
-command setName ( b:bat[:any_1,:any_2] , s:str) :void
-address BKCsetName
-comment "Give a logical name to a BAT. ";
-
-command getName ( b:bat[:any_1,:any_2]) :str 
-address BKCgetBBPname
-comment "Gives back the logical name of a BAT.";
-
-command setRole( b:bat[:any_1,:any_2], h:str, t:str) :void
-address BKCsetRole
-comment "Give a logical name to the columns of a BAT.";
-
-command setColumn( b:bat[:any_1,:any_2], t:str) :void
-address BKCsetColumn
-comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:any_1,:any_2], h:str, t:str) :void
-address BKCsetColumns
-comment "Give both columns of a BAT a new name.";
-
-
-command isTransient( b:bat[:any_1,:any_2]) :bit 
-address BKCisTransient;
-command setTransient( b:bat[:any_1,:any_2]) :void
-address BKCsetTransient
-comment "Make the BAT transient.  Returns 
-	boolean which indicates if the
-BAT administration has indeed changed.";
-
-command isPersistent( b:bat[:any_1,:any_2]) :bit 
-address BKCisPersistent;
-command setPersistent( b:bat[:any_1,:any_2],f:bit) :void
-address BKCpersists
-comment "Backward compatibility";
-command setPersistent( b:bat[:any_1,:any_2]) :void
-address BKCsetPersistent
-comment "Make the BAT persistent.";
-
-command save(nme:bat[:any_1,:any_2]) :void
-address BKCsave2;
-
-command save(nme:str) :bit 
-address BKCsave
-comment "Save a BAT to storage, if it was loaded and dirty.  
-        Returns whether IO was necessary.  Please realize that 
-	calling this function violates the atomic commit protocol!!";
-
-
-command load(name:str) :bat[:any_1,:any_2] 
-address BKCload
-comment "Load a particular BAT from disk";
-
-command unload(name:str) :bit 
-address BKCunload
-comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
-        Returns whether the unload indeed happened. ";
-
-command isCached(b:bat[:any_1,:any_2]):bit 
-address BKCisCached
-comment "Bat is stored in main memory.";
-
-command getHeat(b:bat[:any_1,:any_2]) :lng 
-address BKCheat
-comment "Return the current BBP heat (LRU stamp)";
-
-command setCold(b:bat[:any_1,:any_1]) :void 
-address BKCcoldBAT
-comment "Makes a BAT very cold for the BBP. The chance of being choses 
-        for swapout is big, afterwards.";
-command setHot(b:bat[:any_1,:any_2]) :void 
-address BKChotBAT
-comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
-        swapout is small, afterwards.";
-
-# @- Heap Specific Commands
-# BATs are stored in memory in a number of Heap objects. A heap is nothing
-# more than a contiguous range of memory. Bats are saved to disk by just writing
-# away their image. This approach without pointer swizzling makes it possible
-# to either load an image into an alloced range of memory (STORE_MEM), or
-# memory-map (STORE_MMAP) an image into virtual memory.
-#
-# The heap images of a BAT are stored in the @emph{$MONETHOME/dbfarm/$DB/bat/}
-# directory.  For each bat X, the following heaps are stored:
-# @table @code
-# @item[X.buns]
-#     an array with all the fixed-size parts of all BUNs.
-# @item[X.hheap]
-#     if the head column contains a variable sized atoms (e.g. str),
-# then the fixed-size part of a BUN contains an integer byte-offset into
-# the heap. String values themselves are stored in this the X.hheap.
-# @item[X.theap]
-#     similar to X.hheap, but for the tail column.
-# @item[X.desc]
-# the BAT descriptor. Stores most of the properties of a BAT.
-# @end table
-#
-# Each of these heaps can be compressed using the Unix @emph{compress}
-# utility forming a X.ext.Z file. Monet will automatically decompress it
-# upon load. Compressed heaps cannot be memory mapped.
-#
-#
-# For more technical information on BATs, we refer to the
-# @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
-# documentation.
-command setMemoryMap(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
-address BKCmmap
-comment "For each individual heap, you can change the allocation mode 
-        to either STORE_MEM or STORE_MMAP. Passing an int(nil) means:
-        no change.  Changing a dirty STORE_MEM heap into STORE_MMAP, 
-	will cause a BAT save (this has to happen before the heap can 
-        be mapped into virtual memory). These modes are persistent. ";
-
-command setMemoryMap(b:bat[:any_1,:any_2], mode:int):bit 
-address BKCmmap2
-comment "Alias for mmap(b, mode, mode, mode, mode)";
-
-command setMemoryAdvise(b:bat[:any_1,:any_2], head_mode:int, tail_mode:int, hheap_mode:int, theap_mode:int) :bit 
-address BKCmadvise
-comment "Modern Operating Systems allow users to influence the buffer 
-        management policy of virtual memory. This is a crucial feature 
-        for database systems, and eliminates the need to reimplement 
-	the OS in a database buffer manager.  The supported flags are 
-        BUF_NORMAL (the normal adaptive kernel algorithm),
-	BUF_RANDOM (no page prefetching), 
-	BUF_SEQUENTIAL (prefetch and swapout),
-	BUF_WILLNEED (load everything with prefetch), 
-	BUF_DONTNEED (swapout).
-	These buffer management modes are not persistent. 
-	Returns the BAT operated upon.";
-
-command setMemoryAdvise(b:bat[:any_1,:any_2], mode:int):bit 
-address BKCmadvise2
-comment "alias for madvise(b, mode, mode, mode, mode)";
-
-command setHash(b:bat[:any_1,:any_2],prop:bit):bit 
-address BKCsetHash;
-
-# @- Synced BATs
-# The binary model of Monet has important advantages when working in
-# main-memory. Tables are thin and very efficiently processed. The binary
-# model gives rise, however, to a larger-than-normal number of join
-# and semijoin operations. Relations are split up in vertical parts that
-# are very much related to each other. Then, for instance, multiple
-# similar semijoins occur on different vertical parts. By equipping the
-# kernel with knowledge about the correspondence of these parts, we
-# can greatly limit the amount of work to be done.
-#
-# When two BATs effectively contain the same sequence of head elements,
-# we call them 'synced'. This is implemented by storing a very large
-# OID for each column. An update to the column destroys this OID.
-# By comparing two OIDs the Monet kernel can very quickly decide that
-# two columns are exactly equal. All BAT algebra operations propagate
-# these 'sync' OIDs with their own propagation rules.
-command isSynced (b1:bat[:any_1,:any_2], b2:bat[:any_3,:any_4]) :bit 
-address BKCisSynced
-comment "Tests whether two BATs are synced or not. ";
-
-# @- Constants
-# The following constants have not been integrated in the code base
-#
-# #Constants have been added to mal/const.mx prelude
-# #    STORE_MEM   := 0;     # load into GDKmalloced memory
-# #    STORE_MMAP  := 1;     # mmap() into virtual memory
-# #    STORE_COMPR := 2;     # currently not implemented this way
-# #    BUF_NORMAL    := 0;   # No further special treatment
-# #    BUF_RANDOM    := 1;   # Expect random page references
-# #    BUF_SEQUENTIAL:= 2;   # Expect sequential page references
-# #    BUF_WILLNEED  := 3;   # Will need these pages
-# #    BUF_DONTNEED  := 4;   # Don't need these pages
-#
-# @- Shrinking BATs
-# The SQL front-end uses a multi-BAT representation for relational tables.
-# This includes a list of tuples to be deleted at some convenient time.
-# The primitives to consolidate the information consists of shrink()
-# and reuse().
-# The former simply compresses the underlying BAT skipping over all
-# oids mentioned as to-be-deleted. The reuse() operator takes the tail
-# of the BAT an fills all the holes that occur due to the deletion list.
-command shrink(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
-address BKCshrinkBAT
-comment "Shrink the BAT based on a list of entries identified as to-be-deleted";
-
-command shrinkMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
-address BKCshrinkBATmap
-comment "Derive the oid mapping for shrink BAT based on list of to-be-deleted";
-
-command reuse(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:any_1]
-address BKCreuseBAT
-comment "Shuffle the values around to restore a dense representation of buns.";
-
-command reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
-address BKCreuseBATmap
-comment "Derive the oid mapping for reuse BAT based on list of to-be-deleted";
-
-@h
-/*
- * @+ Implementation Code
- * In Version 5, we are not going to support recursive BATs.
- * It is up to the programmer to translate a bat into a
- * bat-name or batCacheid
- */
-#ifndef _BAT_H_
-#define _BAT_H_
-
-#include <mal.h>
-#include <gdk.h>
-
-#ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
-#define bat5_export extern __declspec(dllimport)
-#else
-#define bat5_export extern __declspec(dllexport)
-#endif
-#else
-#define bat5_export extern
-#endif
-
-bat5_export char *BKCsetRole(int *r, int *bid, char **hname, char **tname);
-bat5_export char *BKCdestroyImmediate(signed char *r, int *bid);
-bat5_export char *BKCgetAlpha(int *r, int *bid);
-bat5_export char *BKCgetDelta(int *r, int *bid);
-bat5_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
-bat5_export char *BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
-bat5_export char *BKCdelete(int *r, int *bid, ptr h);
-bat5_export char *BKCdelete_bat(int *r, int *bid, int *bnid);
-bat5_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
-bat5_export char *BKCdestroy(signed char *r, int *bid);
-bat5_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
-bat5_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
-bat5_export str BKCnewBAT(int *res, int *ht, int *tt, BUN *cap);
-bat5_export str BKCattach(int *ret, int *tt, str *heapfile);
-bat5_export str BKCdensebat(int *ret, wrd *size);
-bat5_export str BKCreverse(int *ret, int *bid);
-bat5_export str BKCmirror(int *ret, int *bid);
-bat5_export str BKCrevert(int *ret, int *bid);
-bat5_export str BKCorder(int *ret, int *bid);
-bat5_export str BKCorder_rev(int *ret, int *bid);
-bat5_export str BKCinsert_bat(int *r, int *bid, int *sid);
-bat5_export str BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force);
-bat5_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
-bat5_export str BKCreplace_bat(int *r, int *bid, int *sid);
-bat5_export str BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force);
-bat5_export str BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force);
-bat5_export str BKCdelete_all(int *r, int *bid);
-bat5_export str BKCdelete_bat_bun(int *r, int *bid, int *sid);
-bat5_export str BKCdelete_bat(int *r, int *bid, int *sid);
-bat5_export str BKCdestroy_bat(bit *r, str *input);
-bat5_export str BKCappend_wrap(int *r, int *bid, int *uid);
-bat5_export str BKCappend_val_wrap(int *r, int *bid, ptr u);
-bat5_export str BKCappend_reverse_val_wrap(int *r, int *bid, ptr u);
-bat5_export str BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force);
-bat5_export str BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force);
-bat5_export str BKCbun_inplace(int *r, int *bid, oid *id, ptr t);
-bat5_export str BKCbat_inplace(int *r, int *bid, int *rid);
-bat5_export str BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force);
-bat5_export str BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force);
-bat5_export str BKCgetCapacity(lng *res, int *bid);
-bat5_export str BKCgetHeadType(str *res, int *bid);
-bat5_export str BKCgetTailType(str *res, int *bid);
-bat5_export str BKCgetRole(str *res, int *bid);
-bat5_export str BKCsetkey(int *res, int *bid, bit *param);
-bat5_export str BKCsetSet(int *res, int *bid, bit *param);
-bat5_export str BKCisaSet(bit *res, int *bid);
-bat5_export str BKCisSorted(bit *res, int *bid);
-bat5_export str BKCisSortedReverse(bit *res, int *bid);
-bat5_export str BKCgetKey(bit *ret, int *bid);
-bat5_export str BKCpersists(int *r, int *bid, bit *flg);
-bat5_export str BKCsetPersistent(int *r, int *bid);
-bat5_export str BKCisPersistent(bit *res, int *bid);
-bat5_export str BKCsetTransient(int *r, int *bid);
-bat5_export str BKCisTransient(bit *res, int *bid);
-bat5_export str BKCaccess(int *res, int *bid, int *m);
-bat5_export str BKCsetAccess(int *res, int *bid, str *param);
-bat5_export str BKCgetAccess(str *res, int *bid);
-bat5_export str BKCinfo(int *ret1, int *ret2, int *bid);
-bat5_export str BKCbatsize(lng *tot, int *bid);
-bat5_export str BKCbatvmsize(lng *tot, int *bid);
-bat5_export str BKCbatdisksize(lng *tot, int *bid);
-bat5_export str BKCgetStorageSize(lng *tot, int *bid);
-bat5_export str BKCgetSpaceUsed(lng *tot, int *bid);
-bat5_export str BKCgetStorageSize_str(lng *tot, str batname);
-bat5_export str BKCisSynced(bit *ret, int *bid1, int *bid2);
-bat5_export str BKCsetColumn(int *r, int *bid, str *tname);
-bat5_export str BKCsetColumns(int *r, int *bid, str *hname, str *tname);
-bat5_export str BKCsetName(int *r, int *bid, str *s);
-bat5_export str BKCgetBBPname(str *ret, int *bid);
-bat5_export str BKCunload(bit *res, str *input);
-bat5_export str BKCisCached(bit *res, int *bid);
-bat5_export str BKCload(int *res, str *input);
-bat5_export str BKChot(int *res, str *input);
-bat5_export str BKCcold(int *res, str *input);
-bat5_export str BKCcoldBAT(int *res, int *bid);
-bat5_export str BKCheat(int *res, str *input);
-bat5_export str BKChotBAT(int *res, int *bid);
-bat5_export str BKCsave(bit *res, str *input);
-bat5_export str BKCsave2(int *r, int *bid);
-bat5_export str BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
-bat5_export str BKCmmap2(bit *res, int *bid, int *bns);
-bat5_export str BKCmadvise(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp);
-bat5_export str BKCmadvise2(bit *res, int *bid, int *mode);
-bat5_export str BKCaccbuild(int *ret, int *bid, str *acc, ptr *param);
-bat5_export str BKCaccbuild_std(int *ret, int *bid, int *acc);
-bat5_export str BKCsetHash(bit *ret, int *bid, bit *prop);
-bat5_export str BKCsetSequenceBase(int *r, int *bid, oid *o);
-bat5_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
-bat5_export str BKCgetSequenceBase(oid *r, int *bid);
-bat5_export str BKCshrinkBAT(int *ret, int *bid, int *did);
-bat5_export str BKCreuseBAT(int *ret, int *bid, int *did);
-bat5_export str BKCshrinkBATmap(int *ret, int *bid, int *did);
-bat5_export str BKCreuseBATmap(int *ret, int *bid, int *did);
-
-#endif /*_BAT_H_*/
-
-@c
 #include "monetdb_config.h"
 #include "bat5.h"
 #include "mal_exception.h"
-/*
- * @-
- */
-@= batconvert
-	(BAT@2type(@1) == TYPE_bat)?(ptr)&((BAT*)@2)->batCacheid:(ptr)@2
-
-@
-@c
-/*
- * @+ Information Functions
- */
 
 static int
 CMDnew(BAT **ret, int *ht, int *tt, BUN *cap)
@@ -774,7 +100,6 @@ CMDmirror(BAT **ret, BAT *b)
 }
 
 /*
- * @-
  * The next collection of operators fill a hole in the MonetDB kernel libraries.
  * It provide handy operations on void-BATs.
  */
@@ -1240,7 +565,7 @@ CMDbatsize(lng *tot, BAT *b, int force)
 }
 
 /*
- * @+ Synced BATs
+ * Synced BATs
  */
 static int
 CMDsynced(bit *ret, BAT *b1, BAT *b2)
@@ -1250,7 +575,7 @@ CMDsynced(bit *ret, BAT *b1, BAT *b2)
 }
 
 /*
- * @+ BBP Management, IO
+ * BBP Management, IO
  */
 static int
 CMDrename(bit *retval, BAT *b, str s)
@@ -1345,9 +670,9 @@ CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
 
 
 /*
- * @- Wrapping
+ * Wrapping
  * The remainder contains the wrapper code over the version 4
- * @+ InformationFunctions
+ * InformationFunctions
  * In most cases we pass a BAT identifier, which should be unified
  * with a BAT descriptor. Upon failure we can simply abort the function.
  *
@@ -1497,23 +822,6 @@ BKCorder_rev(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
-/*
- * @-
- * Insertions into the BAT may involve void types (=no storage required)
- * These cases should actually be captured during BUNins, because they
- * may emerge internally as well.
- */
-@= void_insertbun
-if (b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
-    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b))))
-{
-printf("val " OIDFMT " seqbase " OIDFMT " pos " BUNFMT "\n", *(oid*)@1,
-	b->@1seqbase,  BUNgetpos(b, BUNlast(b)) );
-      throw(MAL, "bat.insert", OPERATION_FAILED " Insert non-nil values in a void column.");
-}
-@
-@c
-
 char *
 BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 {
@@ -1525,8 +833,14 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
-	@:derefStr(b,h,h)@
-	@:derefStr(b,t,t)@
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str){
+		if(h== 0 || *(str*)h==0) h = (str)str_nil;
+		else h = *(str *)h; 
+	}
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	{	if(t== 0 || *(str*)t==0) t = (str)str_nil;
+		else t = *(str *)t; 
+	}
 	BUNins(b, h, t, FALSE);
 	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(i->batCacheid);
@@ -1544,8 +858,16 @@ BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
-	@:derefStr(b,h,h)@
-	@:derefStr(b,t,t)@
+	
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
+	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
+	   else h = *(str *)h; 
+	}
+	
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	 { if(t== 0 || *(str*)t==0) t = (str)str_nil;
+	   else t = *(str *)t; 
+	}
 	BUNins(b, h, t, *force);
 	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(i->batCacheid);
@@ -1615,8 +937,16 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
 	CMDsetaccess(&b,i,&param);
-	@:derefStr(b,h,h)@
-	@:derefStr(b,t,t)@
+	
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
+	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
+	   else h = *(str *)h; 
+	}
+
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
+	   else t = *(str *)t; 
+	}
 	if (BUNreplace(b, h, t, 0) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(i->batCacheid);
@@ -1664,8 +994,16 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,h)@
-	@:derefStr(b,t,t)@
+	
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
+	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
+	   else h = *(str *)h; 
+	}
+	
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
+	   else t = *(str *)t; 
+	}
 	bn= BUNreplace(b, h, t, *force);
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -1713,8 +1051,16 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,h)@
-	@:derefStr(b,t,t)@
+	
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
+	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
+	   else h = *(str *)h; 
+	}
+	
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
+	   else t = *(str *)t; 
+	}
 	bn= BUNdel(b, h, t, FALSE);
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -1737,7 +1083,11 @@ BKCdelete(int *r, int *bid, ptr h)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
-	@:derefStr(b,h,h)@
+	
+	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
+	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
+	   else h = *(str *)h; 
+	}
 	bn= BUNdelHead(b, h, FALSE);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
@@ -1895,7 +1245,10 @@ BKCappend_val_wrap(int *r, int *bid, ptr u)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
 
-	@:derefStr(b,t,u)@
+	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
+	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
+	   else u = *(str *)u; 
+	}
 	CMDsetaccess(&i,b,&param);
 	BUNappend(i, u, FALSE);
 	BBPkeepref(*r=i->batCacheid);
@@ -1913,7 +1266,10 @@ BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
 	}
 
 	CMDsetaccess(&i,b,&param);
-	@:derefStr(i,t,u)@
+	if( i->ttype >= TYPE_str  && ATOMstorage(i->ttype) >= TYPE_str)
+	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
+	   else u = *(str *)u; 
+	}
 	BUNappend(BATmirror(i), u, FALSE);
 	BBPkeepref(*r=i->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -1952,7 +1308,10 @@ BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
 	}
 
 	CMDsetaccess(&i,b,&param);
-	@:derefStr(i,t,u)@
+	if( i->ttype >= TYPE_str  && ATOMstorage(i->ttype) >= TYPE_str)
+	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
+	   else u = *(str *)u; 
+	}
 	BUNappend(i, u, *force);
 	BBPkeepref(*r=i->batCacheid);
 	BBPreleaseref(b->batCacheid);
@@ -2159,7 +1518,6 @@ BKCisSortedReverse(bit *res, int *bid)
 }
 
 /*
- * @-
  * We must take care of the special case of a nil column (TYPE_void,seqbase=nil)
  * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
  * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
@@ -2239,18 +1597,11 @@ BKCisTransient(bit *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-/*
- * @-
- */
-@= accessMode_export
-bat5_export str BKCset@1(int *res, int *bid) ;
-bat5_export str BKChas@1(bit *res, int *bid);
-@= accessMode
-str BKCset@1(int *res, int *bid) {
+str BKCsetWriteMode(int *res, int *bid) {
 	BAT *b, *bn = NULL;
-	int param=@2;
+	int param=0;
     if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.set@1", RUNTIME_OBJECT_MISSING);
+        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
     }
 	CMDsetaccess(&bn,b,&param);
 	BBPkeepref(*res=bn->batCacheid);
@@ -2258,39 +1609,56 @@ str BKCset@1(int *res, int *bid) {
 	return MAL_SUCCEED;
 }
 
-str BKChas@1(bit *res, int *bid) {
+str BKChasWriteMode(bit *res, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.set@1", RUNTIME_OBJECT_MISSING);
+        throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
     }
-	*res = BATgetaccess(b)=='@3';
+	*res = BATgetaccess(b)=='w';
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
-@
-@h
-/*
- * @-
- */
-@:accessMode_export(WriteMode,0,w)@
-@:accessMode_export(ReadMode,1,r)@
-@:accessMode_export(AppendMode,2,a)@
-@c
-@:accessMode(WriteMode,0,w)@
-@:accessMode(ReadMode,1,r)@
-@:accessMode(AppendMode,2,a)@
 
-str
-BKCaccess(int *res, int *bid, int *m)
-{
+str BKCsetReadMode(int *res, int *bid) {
 	BAT *b, *bn = NULL;
+	int param=1;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
+    }
+	CMDsetaccess(&bn,b,&param);
+	BBPkeepref(*res=bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setAccess", RUNTIME_OBJECT_MISSING);
-	}
-	CMDsetaccess(&bn, b, m);
-	*res = bn->batCacheid;
-	BBPkeepref(bn->batCacheid);
+str BKChasReadMode(bit *res, int *bid) {
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
+    }
+	*res = BATgetaccess(b)=='r';
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str BKCsetAppendMode(int *res, int *bid) {
+	BAT *b, *bn = NULL;
+	int param=2;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
+    }
+	CMDsetaccess(&bn,b,&param);
+	BBPkeepref(*res=bn->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str BKChasAppendMode(bit *res, int *bid) {
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
+    }
+	*res = BATgetaccess(b)=='a';
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2358,7 +1726,7 @@ BKCgetAccess(str *res, int *bid)
 }
 
 /*
- * @- Property management
+ * Property management
  * All property operators should ensure exclusive access to the BAT
  * descriptor.
  * Where necessary use the primary view to access the properties
@@ -2467,7 +1835,7 @@ BKCgetStorageSize_str(lng *tot, str batname)
 }
 
 /*
- * @+ Synced BATs
+ * Synced BATs
  */
 str
 BKCisSynced(bit *ret, int *bid1, int *bid2)
@@ -2488,7 +1856,7 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
 }
 
 /*
- * @+ Role Management
+ * Role Management
  */
 char *
 BKCsetRole(int *r, int *bid, char **hname, char **tname)
@@ -2745,7 +2113,7 @@ BKCmadvise2(bit *res, int *bid, int *mode)
 }
 
 /*
- * @+ Accelerator Control
+ * Accelerator Control
  */
 str
 BKCaccbuild(int *ret, int *bid, str *acc, ptr *param)
@@ -2783,20 +2151,6 @@ BKCsetHash(bit *ret, int *bid, bit *prop)
 }
 
 str
-BKCsetSequenceBase(int *r, int *bid, oid *o)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.setSequenceBase", RUNTIME_OBJECT_MISSING);
-	}
-	BATseqbase(b, *o);
-	*r = b->batCacheid;
-	BBPkeepref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
 BKCsetSequenceBaseNil(int *r, int *bid, oid *o)
 {
 	oid ov = oid_nil;
@@ -2819,27 +2173,21 @@ BKCgetSequenceBase(oid *r, int *bid)
 }
 
 /*
- * @-
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-@= shrinkloop
-{
-	@1 *p = (@1*)Tloc(b, BUNfirst(b));
-	@1 *q = (@1*)Tloc(b, BUNlast(b));
-	@1 *r = (@1*)Tloc(bn, BUNfirst(bn));
+#define shrinkloop(Type) {\
+	Type *p = (Type*)Tloc(b, BUNfirst(b));\
+	Type *q = (Type*)Tloc(b, BUNlast(b));\
+	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
+	cnt=0;\
+	for (;p<q; oidx++, p++) {\
+		if ( o < ol && *o == oidx ){\
+			o++;\
+		} else {\
+			cnt++;\
+			*r++ = *p;\
+	} } }
 
-	cnt=0;
-	for (;p<q; oidx++, p++) {
-		if ( o < ol && *o == oidx ){
-			o++;
-		} else {
-			cnt++;
-			*r++ = *p;
-		}
-	}
-}
-@
-@c
 str
 BKCshrinkBAT(int *ret, int *bid, int *did)
 {
@@ -2878,13 +2226,13 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 	BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: @:shrinkloop(bte)@ break;
-	case TYPE_sht: @:shrinkloop(sht)@ break;
-	case TYPE_int: @:shrinkloop(int)@ break;
-	case TYPE_lng: @:shrinkloop(lng)@ break;
-	case TYPE_flt: @:shrinkloop(flt)@ break;
-	case TYPE_dbl: @:shrinkloop(dbl)@ break;
-	case TYPE_oid: @:shrinkloop(oid)@ break;
+	case TYPE_bte: shrinkloop(bte) break;
+	case TYPE_sht: shrinkloop(sht) break;
+	case TYPE_int: shrinkloop(int) break;
+	case TYPE_lng: shrinkloop(lng) break;
+	case TYPE_flt: shrinkloop(flt) break;
+	case TYPE_dbl: shrinkloop(dbl) break;
+	case TYPE_oid: shrinkloop(oid) break;
 	default:
 		if (ATOMvarsized(bn->ttype)) {
 			BUN p = BUNfirst(b);
@@ -2902,10 +2250,10 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:@:shrinkloop(bte)@ break;
-			case 2:@:shrinkloop(sht)@ break;
-			case 4:@:shrinkloop(int)@ break;
-			case 8:@:shrinkloop(lng)@ break;
+			case 1:shrinkloop(bte) break;
+			case 2:shrinkloop(sht) break;
+			case 4:shrinkloop(int) break;
+			case 8:shrinkloop(lng) break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}
@@ -2998,30 +2346,25 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Shrinking a void-headed BAT using a list of oids to ignore.
  */
-@= reuseloop
-{
-	@1 *p = (@1*)Tloc(b, BUNfirst(b));
-	@1 *q = (@1*)Tloc(b, BUNlast(b));
-	@1 *r = (@1*)Tloc(bn, BUNfirst(bn));
+#define reuseloop(Type) {\
+	Type *p = (Type*)Tloc(b, BUNfirst(b));\
+	Type *q = (Type*)Tloc(b, BUNlast(b));\
+	Type *r = (Type*)Tloc(bn, BUNfirst(bn));\
+	for (;p<q; oidx++, p++) {\
+		if ( *o == oidx ){\
+			while ( *ol == bidx && ol>o) {\
+				bidx--;\
+				ol--;q--;\
+			}\
+			*r++ = *(--q);\
+			o += (o < ol);\
+			bidx--;\
+		} else\
+			*r++ = *p; \
+} }
 
-	for (;p<q; oidx++, p++) {
-		if ( *o == oidx ){
-			while ( *ol == bidx && ol>o) {
-				bidx--;
-				ol--;q--;
-			}
-			*r++ = *(--q);
-			o += (o < ol);
-			bidx--;
-		} else
-			*r++ = *p; 
-	}
-}
-@
-@c
 str
 BKCreuseBAT(int *ret, int *bid, int *did)
 {
@@ -3060,13 +2403,13 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
     BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
-	case TYPE_bte: @:reuseloop(bte)@ break;
-	case TYPE_sht: @:reuseloop(sht)@ break;
-	case TYPE_int: @:reuseloop(int)@ break;
-	case TYPE_lng: @:reuseloop(lng)@ break;
-	case TYPE_flt: @:reuseloop(flt)@ break;
-	case TYPE_dbl: @:reuseloop(dbl)@ break;
-	case TYPE_oid: @:reuseloop(oid)@ break;
+	case TYPE_bte: reuseloop(bte) break;
+	case TYPE_sht: reuseloop(sht) break;
+	case TYPE_int: reuseloop(int) break;
+	case TYPE_lng: reuseloop(lng) break;
+	case TYPE_flt: reuseloop(flt) break;
+	case TYPE_dbl: reuseloop(dbl) break;
+	case TYPE_oid: reuseloop(oid) break;
 	case TYPE_str: /* to be done based on its index width */
 	default:
 		if (ATOMvarsized(bn->ttype)) {
@@ -3088,10 +2431,10 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 			}
 		} else {
 			switch( b->T->width){
-			case 1:@:reuseloop(bte)@ break;
-			case 2:@:reuseloop(sht)@ break;
-			case 4:@:reuseloop(int)@ break;
-			case 8:@:reuseloop(lng)@ break;
+			case 1:reuseloop(bte) break;
+			case 2:reuseloop(sht) break;
+			case 4:reuseloop(int) break;
+			case 8:reuseloop(lng) break;
 			default:
 				throw(MAL, "bat.shrink", "Illegal argument type");
 			}

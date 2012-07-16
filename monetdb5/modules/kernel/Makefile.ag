@@ -41,7 +41,7 @@ lib_kernel = {
 		alarm.c alarm.h \
 		algebra.mx \
 		array.mx \
-		bat5.mx \
+		bat5.c bat5.h \
 		batcalc.c \
 		batcolor.mx \
 		batifthen.mx \
@@ -63,7 +63,7 @@ lib_kernel = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = calc.mal bat5.mx algebra.mx status.mal unix.mal \
+	SOURCES = calc.mal bat5.mal algebra.mx status.mal unix.mal \
 		mmath.mx lock.mal sema.mal alarm.mal batstr.mx batmtime.mx \
 		batcolor.mx batifthen.mx batcalc.mal batmmath.mx \
 		group.mx aggr.mx array.mx \
