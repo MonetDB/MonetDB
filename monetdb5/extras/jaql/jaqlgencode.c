@@ -6114,13 +6114,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					int i;
 
 					MALCOMMENT(mb, "co-group {");
-					/* first compute with join */
+					/* first compute with join (preserve all group keys) */
 					for (i = 0, w = t->tval1; w != NULL; w = w->next, i++)
 						;
 					js = GDKmalloc(sizeof(json_var) * (i + 1));
 					for (i = 0, w = t->tval1; w != NULL; w = w->next, i++) {
 						js[i].name = w->tval3->sval; /* always _IDENT */
-						js[i].preserve = 0;
+						js[i].preserve = 1;
 						dumpgetvar(mb, w->tval1->sval,
 								&js[i].j1, &js[i].j2, &js[i].j3, &js[i].j4,
 								&js[i].j5, &js[i].j6, &js[i].j7);
