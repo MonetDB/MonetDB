@@ -3134,6 +3134,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 	    cmpf(BUNhead(bi, b->H->nosorted - 1),
 		 BUNhead(bi, b->H->nosorted)) > 0) {
 		sorted = 0;
+		dense = 0;
 	} else {
 		b->H->nosorted = 0;
 	}
@@ -3181,7 +3182,9 @@ BATderiveHeadProps(BAT *b, int expensive)
 				  "hash table: not doing full check\n");
 		}
 	}
-	BATloop(b, p, q) {
+	for (q = BUNlast(b), p = BUNfirst(b);
+	     p < q && (sorted || revsorted || (key && hs));
+	     p++) {
 		valp = BUNhead(bi, p);
 		if (prev) {
 			cmp = cmpf(prev, valp);
@@ -3233,8 +3236,6 @@ BATderiveHeadProps(BAT *b, int expensive)
 			hs->link[p] = hs->hash[prb];
 			hs->hash[prb] = p;
 		}
-		if (!sorted && !revsorted && !(key && hs))
-			break;
 	}
 	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 	if (hs) {
