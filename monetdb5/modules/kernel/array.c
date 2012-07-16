@@ -30,6 +30,8 @@
  * The optimization is captured in a contraction macro.
  */
 
+#include "array.h"
+
 #define new_bat(b, s, TYPE)										\
 		do {													\
 			(b) = BATnew(TYPE_void, TYPE_##TYPE, (BUN) (s));	\
@@ -319,14 +321,13 @@ ARRAYgridBATshift_lng(lng *ret, lng *bid, lng *groups, lng *groupsize, lng *clus
 }
 
 #define arraymultiply(X1,X2)\
-str\
+str \
 ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
 	BAT *bn, *b, *r;\
 	BUN p,q, s,t;\
 	X2 val;\
 	oid o= oid_nil;\
 	BATiter bi, ri;\
-\
 	if( (b= BATdescriptor(*bid)) == NULL ){\
 		 throw(MAL, "array.*", RUNTIME_OBJECT_MISSING);\
 	}\
@@ -336,7 +337,6 @@ ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
 	}\
 	bn= BATnew(TYPE_void, TYPE_##X2, BATcount(b)*BATcount(r));\
 	BATseqbase(bn,0);\
-\
 	bi = bat_iterator(b);\
 	ri = bat_iterator(r);\
 	BATloop(b,p,q){\
@@ -346,7 +346,7 @@ ARRAYmultiply_##X1##_##X2(int *ret, int *bid, int *rid){\
 		}\
 	}\
 	bn->T->nonil = b->T->nonil & r->T->nonil;\
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \\
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
 	*ret= bn->batCacheid;\
 	BBPkeepref(*ret);\
 	BBPreleaseref(b->batCacheid);\

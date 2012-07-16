@@ -1,0 +1,64 @@
+module batcolor;
+command str(b:bat[:oid,:color]):bat[:oid,:str]
+address CLRbatStr
+comment "Identity mapping for string bats";
+
+command color(s:bat[:oid,:str]):bat[:oid,:color]
+address CLRbatColor
+comment "Converts string to color";
+
+command rgb(r:bat[:oid,:int], g:bat[:oid,:int], b:bat[:oid,:int]):bat[:oid,:color] 
+address CLRbatRgb
+comment	"Converts an RGB triplets to a color atom";
+
+command red(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatRed
+comment	"Extracts red component from a color atom";
+
+command green(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatGreen
+comment	"Extracts green component from a color atom";
+
+command blue (c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatBlue
+comment	"Extracts blue component from a color atom";
+
+command hue(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatHueInt
+comment	"Extracts hue component from a color atom";
+
+command saturation(c:bat[:oid,:color]) :bat[:oid,:int]
+address CLRbatSaturationInt
+comment	"Extracts saturation component from a color atom";
+
+command value(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatValueInt
+comment	"Extracts value component from a color atom";
+
+command hsv(h:bat[:oid,:flt],s:bat[:oid,:flt], v:bat[:oid,:flt]) :bat[:oid,:color] 
+address CLRbatHsv
+comment	"Converts an HSV triplets to a color atom";
+
+command hue(c:bat[:oid,:color]) :bat[:oid,:flt] 
+address CLRbatHue
+comment	"Extracts hue component from a color atom";
+
+command saturation(c:bat[:oid,:color]) :bat[:oid,:flt] 
+address CLRbatSaturation
+comment	"Extracts saturation component from a color atom";
+
+command value(c:bat[:oid,:color]) :bat[:oid,:flt] 
+address CLRbatValue
+comment	"Extracts value component from a color atom";
+
+command luminance (c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatLuminance
+comment	"Extracts Y(luminance) component from a color atom";
+
+command cr(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatCr
+comment	"Extracts Cr(red color) component from a color atom";
+
+command cb(c:bat[:oid,:color]) :bat[:oid,:int] 
+address CLRbatCb
+comment	"Extracts Cb(blue color) component from a color atom";

@@ -679,42 +679,6 @@
 /* Define if you do not want assertions */
 /* #undef NDEBUG */
 
-/* Define if you don't want to expand the bat type */
-/* #undef NOEXPAND_BAT */
-
-/* Define if you don't want to expand the bit type */
-/* #undef NOEXPAND_BIT */
-
-/* Define if you don't want to expand the bte type */
-/* #undef NOEXPAND_BTE */
-
-/* Define if you don't want to expand the dbl type */
-/* #undef NOEXPAND_DBL */
-
-/* Define if you don't want to expand the flt type */
-/* #undef NOEXPAND_FLT */
-
-/* Define if you don't want to expand the int type */
-/* #undef NOEXPAND_INT */
-
-/* Define if you don't want to expand the lng type */
-/* #undef NOEXPAND_LNG */
-
-/* Define if you don't want to expand the oid type */
-/* #undef NOEXPAND_OID */
-
-/* Define if you don't want to expand the ptr type */
-/* #undef NOEXPAND_PTR */
-
-/* Define if you don't want to expand the sht type */
-/* #undef NOEXPAND_SHT */
-
-/* Define if you don't want to expand the str type */
-/* #undef NOEXPAND_STR */
-
-/* Define if you don't want to expand the wrd type */
-/* #undef NOEXPAND_WRD */
-
 /* Name of package */
 #define PACKAGE "MonetDB"
 

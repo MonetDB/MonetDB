@@ -467,28 +467,20 @@ BAThash(BAT *b, BUN masksize)
 			}
 
 			switch (tpe) {
-#ifndef NOEXPAND_BTE
 			case TYPE_bte:
 				starthash(bte);
 				break;
-#endif
-#ifndef NOEXPAND_SHT
 			case TYPE_sht:
 				starthash(sht);
 				break;
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 			case TYPE_int:
 			case TYPE_flt:
 				starthash(int);
 				break;
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 			case TYPE_dbl:
 			case TYPE_lng:
 				starthash(lng);
 				break;
-#endif
 			default:
 				for (; r < p; r++) {
 					ptr v = BUNhead(bi, r);
@@ -507,28 +499,20 @@ BAThash(BAT *b, BUN masksize)
 		/* finish the hashtable with the current mask */
 		p = r;
 		switch (tpe) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			finishhash(bte);
 			break;
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			finishhash(sht);
 			break;
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
 			finishhash(int);
 			break;
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
 			finishhash(lng);
 			break;
-#endif
 		default:
 			for (; p < q; p++) {
 				ptr v = BUNhead(bi, p);
@@ -558,24 +542,16 @@ BUN
 HASHprobe(Hash *h, const void *v)
 {
 	switch (ATOMstorage(h->type)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		return hash_bte(h, v);
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		return hash_sht(h, v);
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
 		return hash_int(h, v);
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
 		return hash_lng(h, v);
-#endif
 	default:
 		return hash_any(h, v);
 	}
@@ -811,30 +787,18 @@ SORTfnd@2(BAT *b, const void *v)
 {
 	if (b && b->@1sorted) {
 		switch(ATOMstorage(b->@1type)) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			return SORTfnd@2_bte(b, v);
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			return SORTfnd@2_sht(b, v);
-#endif
-#ifndef NOEXPAND_INT
 		case TYPE_int:
 			return SORTfnd@2_int(b, v);
-#endif
-#ifndef NOEXPAND_FLT
 		case TYPE_flt:
 			return SORTfnd@2_flt(b, v);
-#endif
-#ifndef NOEXPAND_DBL
 		case TYPE_dbl:
 			return SORTfnd@2_dbl(b, v);
-#endif
-#ifndef NOEXPAND_LNG
 		case TYPE_lng:
 			return SORTfnd@2_lng(b, v);
-#endif
 		default:
 			if (b->@1varsized) {
 				return SORTfnd@2_var(b, v);

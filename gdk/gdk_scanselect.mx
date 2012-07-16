@@ -114,89 +114,30 @@ All Rights Reserved.
  *
  * VOIDput & SIMPLEput should go to gdk_atoms where ATOMput is defined.
  */
-#ifdef NOEXPAND_BTE
-#ifndef NOEXPAND_BIT
-#define NOEXPAND_BIT 1
-#endif
-#endif
 
-#ifdef NOEXPAND_INT
-#ifndef NOEXPAND_FLT
-#define NOEXPAND_FLT 1
-#endif
-#ifndef NOEXPAND_BAT
-#define NOEXPAND_BAT 1
-#endif
-#if SIZEOF_OID == SIZEOF_INT && !defined(NOEXPAND_OID)
-#define NOEXPAND_OID 1
-#endif
-#if SIZEOF_WRD == SIZEOF_INT && !defined(NOEXPAND_WRD)
-#define NOEXPAND_WRD 1
-#endif
-#if SIZEOF_PTR == SIZEOF_INT && !defined(NOEXPAND_PTR)
-#define NOEXPAND_PTR 1
-#endif
-#endif
-
-#ifdef NOEXPAND_LNG
-#ifndef NOEXPAND_DBL
-#define NOEXPAND_DBL 1
-#endif
-#if SIZEOF_OID == SIZEOF_LNG && !defined(NOEXPAND_OID)
-#define NOEXPAND_OID 1
-#endif
-#if SIZEOF_WRD == SIZEOF_LNG && !defined(NOEXPAND_WRD)
-#define NOEXPAND_WRD 1
-#endif
-#if SIZEOF_PTR == SIZEOF_LNG && !defined(NOEXPAND_PTR)
-#define NOEXPAND_PTR 1
-#endif
-#endif
-
-#if defined(NOEXPAND_BTE) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_BTE(tpe,hp,dst,p,src)		\
-	if (tpe == TYPE_bte) {			\
-		*(bte*) dst = *(bte*) src;	\
-	} else
-#else
-#define ATOM_PUT_BTE(tpe,hp,dst,p,src)
-#endif
-#if defined(NOEXPAND_SHT) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_SHT(tpe,hp,dst,p,src)		\
-	if (tpe == TYPE_sht) {			\
-		((sht*) dst)[p] = *(sht*) src;	\
-	} else
-#else
-#define ATOM_PUT_SHT(tpe,hp,dst,p,src)
-#endif
-#if defined(NOEXPAND_INT) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_INT(tpe,hp,dst,p,src)		\
-	if (tpe == TYPE_int) {			\
-		((int*) dst)[p] = *(int*) src;	\
-	} else
-#else
-#define ATOM_PUT_INT(tpe,hp,dst,p,src)
-#endif
-#if defined(NOEXPAND_LNG) || defined(SKIP_TYPE_EXPANSIONS)
-#define ATOM_PUT_LNG(tpe,hp,dst,p,src)		\
-	if (tpe == TYPE_lng) {			\
-		((lng*) dst)[p] = *(lng*) src;	\
-	} else
-#else
-#define ATOM_PUT_LNG(tpe,hp,dst,p,src)
-#endif
-
-#define FIXEDATOM_PUT(b,tpe,p,src,SRC)					\
+#define FIXEDATOM_PUT(b, tpe, p, src, SRC)				\
 	do {								\
-		ATOM_PUT_BTE(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
-		ATOM_PUT_SHT(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
-		ATOM_PUT_INT(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
-		ATOM_PUT_LNG(tpe,(b)->SRC->vheap,(b)->SRC->heap.base,(p),(src)) \
-		if (tpe == TYPE_bat) {					\
-			BBPincref(* (bat *) (src), TRUE);			\
-			((bat*) (b)->SRC->heap.base)[p] = *(bat*) (src);			\
-		} else {						\
-			memcpy(SRC##loc((b),(p)), (src), (size_t) ATOMsize(tpe)); \
+		switch (tpe) {						\
+		case TYPE_bte:						\
+			((bte*) (b)->SRC->heap.base)[p] = *(bte*) (src); \
+			break;						\
+		case TYPE_sht:						\
+			((sht*) (b)->SRC->heap.base)[p] = *(sht*) (src); \
+			break;						\
+		case TYPE_int:						\
+			((int*) (b)->SRC->heap.base)[p] = *(int*) (src); \
+			break;						\
+		case TYPE_lng:						\
+			((lng*) (b)->SRC->heap.base)[p] = *(lng*) (src); \
+			break;						\
+		case TYPE_bat:						\
+			BBPincref(* (bat *) (src), TRUE);		\
+			((bat*) (b)->SRC->heap.base)[p] = *(bat*) (src); \
+			break;						\
+		default:						\
+			memcpy(SRC##loc((b),(p)), (src),		\
+			       (size_t) ATOMsize(tpe));			\
+			break;						\
 		}							\
 	} while (0)
 #define VARATOM_PUT(b,tpe,p,src,SRC) SRC##putvalue((b),SRC##loc((b),(p)),(src),1)
@@ -285,9 +226,6 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit
 #include "gdk.h"
 #include "gdk_private.h"
 
-#if defined(__sgi) && defined(__GNUC__) && (SIZEOF_VOID_P == 8)
-#define SKIP_TYPE_EXPANSIONS
-#endif
 #include "gdk_scanselect.h"
 #include "gdk_scanselect_defs_bte.h"
 #include "gdk_scanselect_defs_sht.h"
@@ -401,30 +339,16 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit
 	    otherwise it's empty
 */
 @= seqscanHTput
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_BTE
 	if (AsHt == TYPE_bte) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
-	} else
-#endif	/* NOEXPAND_BTE */
-#ifndef NOEXPAND_SHT
-	if (AsHt == TYPE_sht) {
+	} else if (AsHt == TYPE_sht) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),)@
-	} else
-#endif	/* NOEXPAND_SHT */
-#ifndef NOEXPAND_INT
-	if (bn->htype != TYPE_bat && (AsHt == TYPE_int || AsHt == TYPE_flt)) {
+	} else if (bn->htype != TYPE_bat && (AsHt == TYPE_int || AsHt == TYPE_flt)) {
 		/* ensure use of ATOMput for TYPE_bat */
 		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),)@
-	} else
-#endif	/* NOEXPAND_INT */
-#ifndef NOEXPAND_LNG
-	if (AsHt == TYPE_dbl || AsHt == TYPE_lng) {
+	} else if (AsHt == TYPE_dbl || AsHt == TYPE_lng) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),)@
-	} else
-#endif	/* NOEXPAND_LNG */
-#endif	/* SKIP_TYPE_EXPANSIONS */
-	if (b->hvarsized) {
+	} else if (b->hvarsized) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),)@
 	} else {
 		@:seqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),)@
@@ -537,40 +461,20 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit
  * Adding test for v != nil for types where nil != MIN.
  */
 @= seqscanTTget
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_BTE
 	if (AsTt == TYPE_bte) {
 		@:seqscanIF(bte,bte,tloc,simple,bte,)@
-	} else
-#endif	/* NOEXPAND_BTE */
-#ifndef NOEXPAND_SHT
-	if (AsTt == TYPE_sht) {
+	} else if (AsTt == TYPE_sht) {
 		@:seqscanIF(sht,sht,tloc,simple,sht,)@
-	} else
-#endif	/* NOEXPAND_SHT */
-#ifndef NOEXPAND_INT
-	if (AsTt == TYPE_int && t != TYPE_bat) {
+	} else if (AsTt == TYPE_int && t != TYPE_bat) {
 		/* ensure use of ATOMput for TYPE_bat */
 		@:seqscanIF(int,int,tloc,simple,int,)@
-	} else
-#endif	/* NOEXPAND_INT */
-#ifndef NOEXPAND_FLT
-	if (AsTt == TYPE_flt) {
+	} else if (AsTt == TYPE_flt) {
 		@:seqscanIF(flt,int,tloc,simple,flt,)@
-	} else
-#endif	/* NOEXPAND_FLT */
-#ifndef NOEXPAND_DBL
-	if (AsTt == TYPE_dbl) {
+	} else if (AsTt == TYPE_dbl) {
 		@:seqscanIF(dbl,lng,tloc,simple,dbl,)@
-	} else
-#endif	/* NOEXPAND_DBL */
-#ifndef NOEXPAND_LNG
-	if (AsTt == TYPE_lng) {
+	} else if (AsTt == TYPE_lng) {
 		@:seqscanIF(lng,lng,tloc,simple,lng,)@
-	} else
-#endif	/* NOEXPAND_LNG */
-#endif	/* SKIP_TYPE_EXPANSIONS */
-	if (b->tvarsized) {
+	} else if (b->tvarsized) {
 		if (equi && t == TYPE_str && strElimDoubles(b->T->vheap)) {
 			/* Single-valued sequential scans for strings are
 			 * optimized when double elemination is in effect,
@@ -598,12 +502,7 @@ BAT *
 BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit hi, int equi, int nequi, int lval, int hval, int nocheck)
 {
 	int t = b->ttype;
-
-#ifndef SKIP_TYPE_EXPANSIONS
-#if !defined(NOEXPAND_BTE) || !defined(NOEXPAND_SHT) || !defined(NOEXPAND_INT) || !defined(NOEXPAND_LNG)
 	int AsHt = ATOMstorage(bn->htype), AsTt = ATOMstorage(t);
-#endif
-#endif
 	var_t str_idx = 0;
 
 	@:seqscanTTget@
