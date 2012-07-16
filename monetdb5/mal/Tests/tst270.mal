@@ -16,8 +16,8 @@ calc.setoid(o);
 
 b:= bat.new(:oid,:int);
 io.printf("#~BeginVariableOutput~#\n"); 
-binfo:= bat.info(b);
-io.print(binfo); 
+(bk,bv):= bat.info(b);
+io.print(bk,bv); 
 io.printf("#~EndVariableOutput~#\n");
 
 profiler.start();
