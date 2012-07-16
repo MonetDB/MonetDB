@@ -1420,13 +1420,16 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNins(r, &v, buf, FALSE);
 								break;
 							case 'n':
-								BUNins(r, &v, (ptr)str_nil, FALSE);
+								snprintf(buf, sizeof(buf), "(null)");
+								BUNins(r, &v, buf, FALSE);
 								break;
 							default:
 								/* JSON piece (object/array), serialise */
 								(void)s;
 								/* TODO: implement right call */;
-								BUNins(r, &v, (ptr)str_nil, FALSE);
+								snprintf(buf, sizeof(buf),
+										"FIXME: not yet implemented");
+								BUNins(r, &v, buf, FALSE);
 								break;
 						}
 					}
@@ -1460,7 +1463,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'n':
 							default:
-								d = dbl_nil;
+								d = 0.1 / 0.0;
 								BUNins(r, &v, &d, FALSE);
 								break;
 						}
@@ -1495,12 +1498,17 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'n':
 							default:
-								l = lng_nil;
+								l = 0;
 								BUNins(r, &v, &l, FALSE);
 								break;
 						}
 					}
 					break;
+			}
+			if (BATcount(b) == 0) {
+				r = BATnew(TYPE_oid, TYPE_lng, 1);
+				l = lng_nil;
+				BUNins(r, &v, &l, FALSE);
 			}
 		}
 	}
