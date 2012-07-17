@@ -23,10 +23,12 @@ function user.main():void;
     jaql.x("join preserve A, B where A == B.a into {B.*, A};");
     jaql.x("join preserve A, preserve B where A == B.a into {B.*, A};");
     jaql.x("join A, preserve B where A == B.a into {B.*, A};");
+    jaql.x("group A by g = $ as ga, B by g = $.a as gb into { \"grp\" : g, \"cnt\": count(gb) };");
 end main;
 [ { "a": 1, "b": 4, "A": 1 }, { "a": 1, "b": 5, "A": 1 }, { "A": 2 } ]
 [ { "a": 1, "b": 4, "A": 1 }, { "a": 1, "b": 5, "A": 1 }, { "A": 2 } ]
 [ { "a": 1, "b": 4, "A": 1 }, { "a": 1, "b": 5, "A": 1 } ]
+[ { "grp": 1, "cnt": 2 }, { "grp": 2, "cnt": 0 } ]
 
 # 09:27:06 >  
 # 09:27:06 >  "Done."
