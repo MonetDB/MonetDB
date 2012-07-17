@@ -49,7 +49,7 @@ end main;
 [ "hello" ]
 [ { "world": [ 0, 2, true, null ] } ]
 [ "hello", [ 0, 2, true, null ] ]
-[ "hello", null ]
+[ "hello" ]
 
 # 22:47:10 >  
 # 22:47:10 >  "Done."
