@@ -1433,6 +1433,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 						}
 					}
+					if (BATcount(b) == 0)
+						BUNins(r, &v, str_nil, FALSE);
 					break;
 				case TYPE_dbl:
 					if (r == NULL)
@@ -1467,6 +1469,10 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNins(r, &v, &d, FALSE);
 								break;
 						}
+					}
+					if (BATcount(b) == 0) {
+						d = dbl_nil;
+						BUNins(r, &v, &d, FALSE);
 					}
 					break;
 				case TYPE_lng:
@@ -1503,12 +1509,11 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 						}
 					}
+					if (BATcount(b) == 0) {
+						l = lng_nil;
+						BUNins(r, &v, &l, FALSE);
+					}
 					break;
-			}
-			if (BATcount(b) == 0) {
-				r = BATnew(TYPE_oid, TYPE_lng, 1);
-				l = lng_nil;
-				BUNins(r, &v, &l, FALSE);
 			}
 		}
 	}
