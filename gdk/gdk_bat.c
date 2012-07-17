@@ -299,6 +299,8 @@ BATnew(int ht, int tt, BUN cap)
 	BATstore *bs;
 
 	assert(cap <= BUN_MAX);
+	assert(ht != TYPE_bat);
+	assert(tt != TYPE_bat);
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
@@ -763,6 +765,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 	BAT *bn = NULL;
 
 	BATcheck(b, "BATcopy");
+	assert(ht != TYPE_bat);
+	assert(tt != TYPE_bat);
 	cnt = b->batCount;
 
 	/* maybe a bit ugly to change the requested bat types?? */
@@ -2730,7 +2734,6 @@ BATgetaccess(BAT *b)
 #define check_type(tp)							\
 	do {								\
 		if (ATOMisdescendant((tp), TYPE_ptr) ||			\
-		    ATOMisdescendant((tp), TYPE_bat) ||			\
 		    BATatoms[tp].atomUnfix ||				\
 		    BATatoms[tp].atomFix) {				\
 			GDKerror("BATmode: %s type implies that %s[%s,%s] " \
@@ -2817,6 +2820,7 @@ BATassertHeadProps(BAT *b)
 	assert(b != NULL);
 	assert(b->htype >= TYPE_void);
 	assert(b->htype < GDKatomcnt);
+	assert(b->htype != TYPE_bat);
 
 	cmpf = BATatoms[b->htype].atomCmp;
 	nilp = ATOMnilptr(b->htype);

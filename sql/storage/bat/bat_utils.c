@@ -227,7 +227,7 @@ bat_utils_init(void)
 	int t;
 
 	for (t=1; t<GDKatomcnt; t++) {
-		if (BATatoms[t].name[0]) {
+		if (t != TYPE_bat && BATatoms[t].name[0]) {
 			eubats[t] = BATnew(TYPE_oid, t, 0);
 			ebats[t] = BATnew(TYPE_void, t, 0);
 			BATseqbase(ebats[t],0);

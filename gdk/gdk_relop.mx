@@ -734,14 +734,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		bn = @1fetchjoin_@2_bte(bn, l, r);
 	} else if (ATOMstorage(rtt) == TYPE_sht) {
 		bn = @1fetchjoin_@2_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (ATOMstorage(rtt) == TYPE_int ||
-		    ATOMstorage(rtt) == TYPE_flt
+	} else if (ATOMstorage(rtt) == TYPE_int ||
+		   ATOMstorage(rtt) == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || ATOMstorage(rtt) == TYPE_oid
+		   || ATOMstorage(rtt) == TYPE_oid
 #endif
-			   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = @1fetchjoin_@2_int(bn, l, r);
 	} else if (ATOMstorage(rtt) == TYPE_lng ||
 		   ATOMstorage(rtt) == TYPE_dbl
@@ -762,14 +760,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@:fetchjoin_switch_rtt(@1,bte)@
 	} else if (ATOMstorage(lht) == TYPE_sht) {
 		@:fetchjoin_switch_rtt(@1,sht)@
-	} else if (lht != TYPE_bat &&
-		   (ATOMstorage(lht) == TYPE_int ||
-		    ATOMstorage(lht) == TYPE_flt
+	} else if (ATOMstorage(lht) == TYPE_int ||
+		   ATOMstorage(lht) == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || ATOMstorage(lht) == TYPE_oid
+		   || ATOMstorage(lht) == TYPE_oid
 #endif
-			   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:fetchjoin_switch_rtt(@1,int)@
 	} else if (ATOMstorage(lht) == TYPE_lng ||
 		   ATOMstorage(lht) == TYPE_dbl
@@ -1115,10 +1111,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			@:voidfetchjoin(Tbte)@
 		} else if (ATOMstorage(tpe) == TYPE_sht) {
 			@:voidfetchjoin(Tsht)@
-		} else if (tpe != TYPE_bat &&
-			   (ATOMstorage(tpe) == TYPE_int ||
-			    ATOMstorage(tpe) == TYPE_flt)) {
-			/* ensure use of ATOMput for TYPE_bat */
+		} else if (ATOMstorage(tpe) == TYPE_int ||
+			   ATOMstorage(tpe) == TYPE_flt) {
 			@:voidfetchjoin(Tint)@
 		} else if (ATOMstorage(tpe) == TYPE_lng ||
 			   ATOMstorage(tpe) == TYPE_dbl) {
@@ -2572,13 +2566,11 @@ bunins_failed:
 		bn = antijoin_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = antijoin_@1_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (rts == TYPE_int || rts == TYPE_flt
+	} else if (rts == TYPE_int || rts == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || rts == TYPE_oid
+		   || rts == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = antijoin_@1_int(bn, l, r);
 	} else if (rts == TYPE_lng || rts == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2603,13 +2595,11 @@ bunins_failed:
 		@:antijoin_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:antijoin_switch_rtt(sht)@
-	} else if (lht != TYPE_bat &&
-		   (lhs == TYPE_int || lhs == TYPE_flt
+	} else if (lhs == TYPE_int || lhs == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || lhs == TYPE_oid
+		   || lhs == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:antijoin_switch_rtt(int)@
 	} else if (lhs == TYPE_lng || lhs == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2746,13 +2736,11 @@ bunins_failed:
 		bn = cross_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = cross_@1_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (rts == TYPE_int || rts == TYPE_flt
+	} else if (rts == TYPE_int || rts == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || rts == TYPE_oid
+		   || rts == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = cross_@1_int(bn, l, r);
 	} else if (rts == TYPE_lng || rts == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2777,13 +2765,11 @@ bunins_failed:
 		@:cross_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:cross_switch_rtt(sht)@
-	} else if (lht != TYPE_bat &&
-		   (lhs == TYPE_int || lhs == TYPE_flt
+	} else if (lhs == TYPE_int || lhs == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || lhs == TYPE_oid
+		   || lhs == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:cross_switch_rtt(int)@
 	} else if (lhs == TYPE_lng || lhs == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
