@@ -1153,11 +1153,8 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 		if (v != oid_nil) {
 			z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
 					*startoid, v, &jb, &jbr);
-		} else {
-			BUNappend(jbr.kind, "n", FALSE);
-			z = BUNlast(jbr.kind) - 1 + *startoid;
+			BUNins(jbr.array, &w, &z, FALSE);
 		}
-		BUNins(jbr.array, &w, &z, FALSE);
 	}
 
 	unloadbats();
