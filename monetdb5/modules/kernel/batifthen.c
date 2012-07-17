@@ -174,7 +174,8 @@ CMDifThen(int *ret, int *bid, int *tid)
 			}
 		}
 		break;
-	throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+        default:
+        	throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
 	}
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
