@@ -1,0 +1,90 @@
+command batcalc.ifthen(b:bat[:oid,:bit], v:bit) :bat[:oid,:bit] 
+address CMDifThenCst_bit
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:bte) :bat[:oid,:bte] 
+address CMDifThenCst_bte
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:sht) :bat[:oid,:sht] 
+address CMDifThenCst_sht
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:int) :bat[:oid,:int] 
+address CMDifThenCst_int
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:lng) :bat[:oid,:lng] 
+address CMDifThenCst_lng
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:oid) :bat[:oid,:oid] 
+address CMDifThenCst_oid
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:flt) :bat[:oid,:flt] 
+address CMDifThenCst_flt
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:dbl) :bat[:oid,:dbl] 
+address CMDifThenCst_dbl
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthen(b:bat[:oid,:bit], v:str) :bat[:oid,:str] 
+address CMDifThenCst_str
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:bit, w:bit) :bat[:oid,:bit] 
+address CMDifThenElseCst_bit
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:bte, w:bte) :bat[:oid,:bte] 
+address CMDifThenElseCst_bte
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:sht, w:sht) :bat[:oid,:sht] 
+address CMDifThenElseCst_sht
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:int, w:int) :bat[:oid,:int] 
+address CMDifThenElseCst_int
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:lng, w:lng) :bat[:oid,:lng] 
+address CMDifThenElseCst_lng
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:oid, w:oid) :bat[:oid,:oid] 
+address CMDifThenElseCst_oid
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:flt, w:flt) :bat[:oid,:flt] 
+address CMDifThenElseCst_flt
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:dbl, w:dbl) :bat[:oid,:dbl] 
+address CMDifThenElseCst_dbl
+comment "Ifthen operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], v:str, w:str) :bat[:oid,:str] 
+address CMDifThenElseCst_str
+comment "Ifthen operation to assemble a conditional result ";
+
+
+command batcalc.ifthen(b:bat[:oid,:bit], t:bat[:oid,:any_1]) :bat[:oid,:any_1] 
+address CMDifThen
+comment "If-then operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:oid,:any_1], e:bat[:oid,:any_1]) :bat[:oid,:any_1] 
+address CMDifThenElse
+comment "If-then-else operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], e:any_1, t:bat[:oid,:any_1])
+	:bat[:oid,:any_1] 
+address CMDifThenElseCst1
+comment "If-then-else operation to assemble a conditional result ";
+
+command batcalc.ifthenelse(b:bat[:oid,:bit], t:bat[:oid,:any_1], e:any_1)
+	:bat[:oid,:any_1] 
+address CMDifThenElseCst2
+comment "If-then-else operation to assemble a conditional result ";
