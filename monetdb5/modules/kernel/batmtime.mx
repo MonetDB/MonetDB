@@ -128,9 +128,18 @@ batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
  * @- Comparison operator implementation for temporal objects
  * The structure of this code is copied from the arithmetic scheme.
  * @-
-@include kprelude.mx
- * @-
- * The basic wrappers code structures.
+@= voidresultBAT
+	bn = BATnew(TYPE_void, @1, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
+	if (bn == NULL) {
+		throw(MAL, @2, MAL_MALLOC_FAIL);
+	}
+	bn->hsorted = b->hsorted;
+	bn->hrevsorted = b->hrevsorted;
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->H->nonil = 1;
+	bn->T->nonil = b->T->nonil;
 @= unarybaselineCode
 str MTIMEbat_@1_@2_@3(int *ret, int *l)
 {	
@@ -138,7 +147,8 @@ str MTIMEbat_@1_@2_@3(int *ret, int *l)
 	@1 *p, *q, *t;
 	bit *o;
 
-	@:getBATdescriptor(l,b,"batcalc.@2")@
+	if ((b = BATdescriptor(*l)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	@:voidresultBAT(@3,"batcalc.@2")@
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
@@ -184,8 +194,13 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	@1 *p, *q, *t;
 	bit *o;
 
-	@:getBATdescriptor(l,b,"batcalc.@2")@
-	@:getBATdescriptor(r,right,"batcalc.@2", BBPreleaseref(b->batCacheid);)@
+	if ((b = BATdescriptor(*l)) == NULL) {
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
+	if ((right = BATdescriptor(*r)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
 	@:chkSize(b,right,batcalc.@2)@
 	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
 
@@ -245,9 +260,16 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 	@1 *p, *q, *t;
 	bit *o;
 
-	@:getBATdescriptor(l,b,"batcalc.@2")@
-	@:getBATdescriptor(r,right,"batcalc.@2", BBPreleaseref(b->batCacheid);)@
-	@:getBATdescriptor(d,bn,"batcalc.@2", BBPreleaseref(b->batCacheid);BBPreleaseref(right->batCacheid);)@
+	if ((b = BATdescriptor(*l)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	if ((right = BATdescriptor(*r)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
+	if ((bn = BATdescriptor(*d)) == NULL) {
+		BBPreleaseref(b->batCacheid);BBPreleaseref(right->batCacheid);
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
 	@:chkSize(bn,b,batcalc.@2)@
 	@:chkSize(bn,right,batcalc.@2)@
 
@@ -298,7 +320,8 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 	@1 *p, *q;
 	bit *o;
 
-	@:getBATdescriptor(l,b,"batcalc.@2")@
+	if ((b = BATdescriptor(*l)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
 	BATsetcount(bn, BATcount(b));
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -346,7 +369,8 @@ str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
 	@1 *p, *q;
 	bit *o;
 
-	@:getBATdescriptor(l,b,"batcalc.@2")@
+	if ((b = BATdescriptor(*l)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
 	BATsetcount(bn, BATcount(b));
 
@@ -392,8 +416,13 @@ str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst)
 	@1 *p, *q;
 	bit *o;
 
-	@:getBATdescriptor(r,bn,"batcalc.@2")@
-	@:getBATdescriptor(l,b,"batcalc.@2", BBPreleaseref(bn->batCacheid);)@
+	if ((bn = BATdescriptor(*r)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	if ((b = BATdescriptor(*l)) == NULL) {
+		BBPreleaseref(bn->batCacheid);
+		@4;
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
 	@:chkSize(bn,b,batcalc.@2)@
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
@@ -429,8 +458,12 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 	@1 *p, *q;
 	bit *o;
 
-	@:getBATdescriptor(r,bn,"batcalc.@2")@
-	@:getBATdescriptor(l,b,"batcalc.@2", BBPreleaseref(bn->batCacheid);)@
+	if ((bn = BATdescriptor(*r)) == NULL)
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	if ((b = BATdescriptor(*l)) == NULL) {
+		BBPreleaseref(bn->batCacheid);
+		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
+	}
 	@:chkSize(bn,b,batcalc.@2)@
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
@@ -519,7 +552,8 @@ str MTIMEunaryISNIL(int *ret, int *bid)
     BAT *b,*bn;
     bit *o;
 
-    @:getBATdescriptor(bid,b,"batcalc.isnil")@
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batcalc.isnil", RUNTIME_OBJECT_MISSING);
     @:voidresultBAT(TYPE_bit,"batcalc.isnil")@
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
