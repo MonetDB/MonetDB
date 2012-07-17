@@ -1448,10 +1448,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			mnstr_flush(toConsole);
 			if (formatter == TABLEformatter || formatter == CLEANformatter) {
-				fprintf(stderr, "%s", reply);
+				mapi_noexplain(mid, "");
 			} else {
-				mapi_explain_result(hdl, stderr);
+				mapi_noexplain(mid, NULL);
 			}
+			mapi_explain_result(hdl, stderr);
 			errseen = 1;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
@@ -1600,6 +1601,11 @@ doRequest(Mapi mid, const char *buf)
 		SQLsetSpecial(buf);
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			mapi_noexplain(mid, "");
+		} else {
+			mapi_noexplain(mid, NULL);
+		}
 		mapi_explain(mid, stderr);
 		errseen = 1;
 		return 1;
@@ -1619,6 +1625,11 @@ doRequest(Mapi mid, const char *buf)
 			break;						\
 		case MERROR:						\
 			/* some error, but try to continue */		\
+			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
+				mapi_noexplain(mid, ""); \
+			} else { \
+				mapi_noexplain(mid, NULL); \
+			} \
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -1629,6 +1640,11 @@ doRequest(Mapi mid, const char *buf)
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
+			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
+				mapi_noexplain(mid, ""); \
+			} else { \
+				mapi_noexplain(mid, NULL); \
+			} \
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -2552,6 +2568,11 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			mapi_noexplain(mid, "");
+		} else {
+			mapi_noexplain(mid, NULL);
+		}
 		mapi_explain(mid, stderr);
 		errseen = 1;
 		return;
