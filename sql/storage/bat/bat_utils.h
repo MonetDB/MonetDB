@@ -40,8 +40,6 @@ extern void update_table_bat(BAT *b, BAT *ub);
 extern BUN append_inserted(BAT *b, BAT *i );
 extern BUN copy_inserted(BAT *b, BAT *i );
 
-extern void leaks(void);
-
 extern BAT *ebats[MAXATOMS];
 extern BAT *eubats[MAXATOMS];
 

@@ -11,7 +11,9 @@ HAVE_JAQL?transform00
 HAVE_JAQL?transform02
 HAVE_JAQL?join00
 HAVE_JAQL?join02
+HAVE_JAQL?join03
 HAVE_JAQL?group00
+HAVE_JAQL?group02
 HAVE_JAQL?sort00
 HAVE_JAQL?top00
 HAVE_JAQL?variable00

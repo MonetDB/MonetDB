@@ -21,44 +21,6 @@
 #include "bat_utils.h"
 
 void
-leaks(void)
-{
-	int pbat = 0;
-	int pdisk = 0;
-	int pheat = 0;
-	bat i;
-	int tmp = 0, per = 0;
-	BAT *b;
-
-	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0)
-		return ;
-
-	for (i = 1; i < BBPsize; i++) {
-	        if (i != b->batCacheid && BBPvalid(i) && !(BBP_status(i) & BBPUNSTABLE)) {
-			pbat++;
-			if (BBP_cache(i)) {
-				pheat += BBP_lastused(i);
-				if (BBP_cache(i)->batPersistence == PERSISTENT)
-					per++;
-				else
-					tmp++;
-			} else {
-				pdisk++;
-			}
-		}
-	}
-	b = BUNins(b, "bats", &pbat, FALSE);
-	b = BUNins(b, "tmpbats", &tmp, FALSE);
-	b = BUNins(b, "perbats", &per, FALSE);
-	b = BUNins(b, "ondisk", &pdisk, FALSE);
-	b = BUNins(b, "todisk", &BBPout, FALSE);
-	b = BUNins(b, "fromdisk", &BBPin, FALSE);
-	BATprint(b);
-	bat_destroy(b);
-}
-
-void
 bat_destroy(BAT *b)
 {
 	if (b)
