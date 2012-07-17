@@ -848,7 +848,7 @@ str STRcstConcatbat(int *ret, str *cst, int *r)
 	str v, *vp= &v;
 
 	prepareOperand(right,r,"+");
-	prepareResult(bn,right,TYPE_bit,"+");
+	prepareResult(bn,right,TYPE_str,"+");
 
 	righti = bat_iterator(right);
 
