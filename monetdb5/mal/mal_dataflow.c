@@ -813,11 +813,8 @@ runDFLOWworker(void *t)
 	Thread thr;
 	int i, local = 0, last = 0;
 	long usec=0;
-	//int cpu;
 
 	thr = THRnew(MT_getpid(), "DFLOWworker");
-
-	//cpu = MT_set_affinity(task->id);
 
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKerrbuf[0] = 0;
@@ -927,7 +924,6 @@ runDFLOWworker(void *t)
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);
-	//MT_unset_affinity(cpu);
 	THRdel(thr);
 }
 
