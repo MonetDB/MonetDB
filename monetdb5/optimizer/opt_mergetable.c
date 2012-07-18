@@ -1985,7 +1985,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 getFunctionId(p)== sumRef ||
 		    	 getFunctionId(p) == prodRef)) ||
 		    (getModuleId(p) == algebraRef &&
-		     getFunctionId(p) == kuniqueRef)) &&
+		     getFunctionId(p) == tuniqueRef)) &&
 			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0) {
 			mat_aggr(mb, p, mat, m);
 			actions++;

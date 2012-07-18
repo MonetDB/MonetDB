@@ -1450,16 +1450,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, e);
 				q = pushArgument(mb, q, l);
 			} else {
-				int k;
-
-				q = newStmt2(mb, batRef, reverseRef);
+				q = newStmt2(mb, algebraRef, tuniqueRef);
 				q = pushArgument(mb, q, l);
-				k = getDestVar(q);
-				q = newStmt1(mb, algebraRef, "kunique");
-				q = pushArgument(mb, q, k);
-				k = getDestVar(q);
-				q = newStmt2(mb, batRef, reverseRef);
-				q = pushArgument(mb, q, k);
 			}
 			s->nr = getDestVar(q);
 			break;

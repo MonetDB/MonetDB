@@ -992,7 +992,7 @@ stmt_unique(sql_allocator *sa, stmt *s, group *g)
 	if (g) 
 		ns->op2 = g->grp;
 	ns->nrcols = s->nrcols;
-	ns->key = 1;		/* ?? maybe change key to unique ? */
+	ns->key = 1;	
 	ns->aggr = s->aggr;
 	ns->t = s->t;
 	return ns;
