@@ -70,6 +70,6 @@ headers_mal = {
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = aggr_ri.mx kprelude.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
+EXTRA_DIST = aggr_ri.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
 
 EXTRA_DIST_DIR = Tests
