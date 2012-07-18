@@ -30,28 +30,25 @@ All Rights Reserved.
  * In line with the batcalc module, we assume that
  * if two bat operands are provided that they are already
  * aligned on the head. Moreover, the head of the BATs
- * are limited to :void, which can be cheaply realized using
+ * are limited to :oid, which can be cheaply realized using
  * the GRPsplit operation.
  */
 @= compareOp
 command batcalc.@2( l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
-address MTIMEbat_@1_@3;
-
-command batcalc.@2( l:bat[:void,:@1], r:bat[:void,:@1]) :bat[:void,:bit]
 address MTIMEbat_@1_@3
 comment "Compare a bat of @1 against each other";
 command batcalc.@2( l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
 address MTIMEbat_@1_@3_cst;
-command batcalc.@2( l:bat[:void,:@1], r:@1) :bat[:void,:bit]
+command batcalc.@2(r:@1, l:bat[:oid,:@1]) :bat[:oid,:bit]
 address MTIMEbat_@1_cst_@3
 comment "Compare a bat of @1 against a singleton";
 
-command batcalc.@2(a:bat[:void,:bit], l:bat[:void,:@1], r:bat[:void,:@1]) :bat[:void,:bit]
+command batcalc.@2(a:bat[:oid,:bit], l:bat[:oid,:@1], r:bat[:oid,:@1]) :bat[:oid,:bit]
 address MTIMEaccum_@1_@3
 comment "Compare a bat of @1 against each other";
-command batcalc.@2(a:bat[:void,:bit], l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
+command batcalc.@2(a:bat[:oid,:bit], l:bat[:oid,:@1], r:@1) :bat[:oid,:bit]
 address MTIMEaccum_@1_@3_cst;
-command batcalc.@2(a:bat[:void,:bit], l:bat[:void,:@1], r:@1) :bat[:void,:bit]
+command batcalc.@2(a:bat[:oid,:bit], r:@1, l:bat[:oid,:@1]) :bat[:oid,:bit]
 address MTIMEaccum_@1_cst_@3
 comment "Compare a bat of @1 against a singleton";
 
@@ -64,24 +61,35 @@ comment "Compare a bat of @1 against a singleton";
 @:compareOp(@1,>,GT)@
 @:compareOp(@1,>=,GE)@
 
-@= unaryISNIL
-    command batcalc.isnil(b:bat[:any_1,:@1]):bat[:any_1,:bit]
-    address MTIMEunaryISNIL
-    comment "Unary check for nil over the tail of the bat";
-
-    command batcalc.isnil(b:bat[:void,:@1]):bat[:oid,:bit]
-    address MTIMEunaryISNIL
-    comment "Unary check for nil over the tail of the bat";
-
-@
 @mal
 @:compareGrp(date)@
 @:compareGrp(daytime)@
 @:compareGrp(timestamp)@
 
-@:unaryISNIL(date)@
-@:unaryISNIL(daytime)@
-@:unaryISNIL(timestamp)@
+command batcalc.isnil(b:bat[:any_1,:date]):bat[:any_1,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
+command batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
+command batcalc.isnil(b:bat[:any_1,:daytime]):bat[:any_1,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
+command batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
+command batcalc.isnil(b:bat[:any_1,:timestamp]):bat[:any_1,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
+command batcalc.isnil(b:bat[:oid,:timestamp]):bat[:oid,:bit]
+address MTIMEunaryISNIL
+comment "Unary check for nil over the tail of the bat";
+
 
 @h
 /*
@@ -112,9 +120,6 @@ comment "Compare a bat of @1 against a singleton";
  * head column. This is not checked and may be mis-used to deploy the
  * implementation for shifted window arithmetic as well.
  */
-@= chkSize
-	if( BATcount(@1) != BATcount(@2) )
-		throw(MAL, "batcalc.@3", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 @= implDef
 batmtime_export str MTIMEbat_@1_@2(int *ret, int *l, int *r);
@@ -124,68 +129,18 @@ batmtime_export str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r);
 batmtime_export str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst);
 batmtime_export str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l);
 
-@
- * @- Comparison operator implementation for temporal objects
- * The structure of this code is copied from the arithmetic scheme.
- * @-
-@= voidresultBAT
-	bn = BATnew(TYPE_void, @1, BATcount(b));
-	BATseqbase(bn, b->hseqbase);
-	if (bn == NULL) {
-		throw(MAL, @2, MAL_MALLOC_FAIL);
-	}
-	bn->hsorted = b->hsorted;
-	bn->hrevsorted = b->hrevsorted;
-	bn->tsorted = b->tsorted;
-	bn->trevsorted = b->trevsorted;
-	bn->H->nonil = 1;
+@c
+#define resultBAT(Type,Error)\
+	bn = BATnew(TYPE_void, Type, BATcount(b));\
+	BATseqbase(bn, b->hseqbase);\
+	if (bn == NULL) \
+		throw(MAL, Error, MAL_MALLOC_FAIL);\
+	bn->hsorted = b->hsorted;\
+	bn->hrevsorted = b->hrevsorted;\
+	bn->tsorted = b->tsorted;\
+	bn->trevsorted = b->trevsorted;\
+	bn->H->nonil = 1;\
 	bn->T->nonil = b->T->nonil;
-@= unarybaselineCode
-str MTIMEbat_@1_@2_@3(int *ret, int *l)
-{	
-	BAT *bn, *b;
-	@1 *p, *q, *t;
-	bit *o;
-
-	if ((b = BATdescriptor(*l)) == NULL)
-		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
-	@:voidresultBAT(@3,"batcalc.@2")@
-
-	o = (bit*)Tloc(bn,BUNfirst(bn));
-	p = (@1*)Tloc(b,BUNfirst(b));
-	q = (@1*)Tloc(b,BUNlast(b));
-	t = (@1*)Tloc(right,BUNfirst(right));
-		
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(right, USE_TAIL, MMAP_SEQUENTIAL);
-	if (b->T->nonil)
-		for (;p<q; p++, t++, o++)
-			@1@2(o,p,t);
-	else
-		for (;p<q; p++, t++, o++) 
-			if ( @1_isnil(*p))
-				*o = bit_nil;
-			else @1@2(o,p,t);
-
-	BATaccessEnd(right, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-
-	BATsetcount(bn, BATcount(b));
-    	if (b->htype != bn->htype) {
-        	BAT *r = VIEWcreate(b,bn);
-
-        	BBPreleaseref(bn->batCacheid);
-        	bn = r;
-    	}
-
-	bn->tsorted = 0;
-	bn->trevsorted = 0;
-	BATkey(BATmirror(bn),FALSE);
-	BBPkeepref(*ret= bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
 
 @= baselineCode
 str MTIMEbat_@1_@2(int *ret, int *l, int *r)
@@ -201,8 +156,9 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkSize(b,right,batcalc.@2)@
-	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
+	if( BATcount(b) != BATcount(right) )
+		throw(MAL, "batcalc.@2", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	resultBAT(TYPE_bit,"batcalc.@2")
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
@@ -270,8 +226,10 @@ str MTIMEaccum_@1_@2(int *ret, int *d, int *l, int *r)
 		BBPreleaseref(b->batCacheid);BBPreleaseref(right->batCacheid);
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkSize(bn,b,batcalc.@2)@
-	@:chkSize(bn,right,batcalc.@2)@
+	if( BATcount(bn) != BATcount(b) )
+		throw(MAL, "batcalc.@2", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	if( BATcount(bn) != BATcount(right) )
+		throw(MAL, "batcalc.@2", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
@@ -322,7 +280,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 
 	if ((b = BATdescriptor(*l)) == NULL)
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
-	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
+	resultBAT(TYPE_bit,"batcalc.@2")
 	BATsetcount(bn, BATcount(b));
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
@@ -371,7 +329,7 @@ str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
 
 	if ((b = BATdescriptor(*l)) == NULL)
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
-	@:voidresultBAT(TYPE_bit,"batcalc.@2")@
+	resultBAT(TYPE_bit,"batcalc.@2")
 	BATsetcount(bn, BATcount(b));
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
@@ -423,7 +381,8 @@ str MTIMEaccum_@1_@2_cst(int *ret, int *r, int *l, @1 *cst)
 		@4;
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkSize(bn,b,batcalc.@2)@
+	if( BATcount(bn) != BATcount(b) )
+		throw(MAL, "batcalc.@2", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
@@ -464,7 +423,8 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 		BBPreleaseref(bn->batCacheid);
 		throw(MAL, "batcalc.@2", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkSize(bn,b,batcalc.@2)@
+	if( BATcount(bn) != BATcount(b) )
+		throw(MAL, "batcalc.@2", ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
@@ -493,9 +453,6 @@ str MTIMEaccum_@1_cst_@2(int *ret, int *r, @1 *cst, int *l)
 	return MAL_SUCCEED;
 }
 
-@
- * @-
- * The implementation section.
 @= implCmpGrpDef
 @:implDef(@1,EQ)@
 @:implDef(@1,NEQ)@
@@ -532,20 +489,6 @@ batmtime_export str MTIMEunaryISNIL(int *ret, int *bid);
 @:baselineCode(timestamp,GT)@
 @:baselineCode(timestamp,GE)@
 
-@= accumUnaryISNIL
-{
-    @1 *p = (@1*)Tloc(b,BUNfirst(b));
-    @1 *q = (@1*)Tloc(b,BUNlast(b)); 
-    BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-    if (b->T->nonil){
-        for(; p<q; p++, o++ )
-            *o = FALSE;
-    } else
-        for(; p<q; p++, o++ )
-            *o = @1_isnil(*p);
-    BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-}
-@
 @c
 str MTIMEunaryISNIL(int *ret, int *bid)
 {
@@ -554,18 +497,41 @@ str MTIMEunaryISNIL(int *ret, int *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.isnil", RUNTIME_OBJECT_MISSING);
-    @:voidresultBAT(TYPE_bit,"batcalc.isnil")@
+    resultBAT(TYPE_bit,"batcalc.isnil")
 
 	o = (bit*)Tloc(bn,BUNfirst(bn));
+	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( BATttype(b) == TYPE_date) {
-		@:accumUnaryISNIL(date)@ 
+		date *p = (date*)Tloc(b,BUNfirst(b));
+		date *q = (date*)Tloc(b,BUNlast(b)); 
+		if (b->T->nonil){
+			for(; p<q; p++, o++ )
+				*o = FALSE;
+		} else
+			for(; p<q; p++, o++ )
+				*o = date_isnil(*p);
 	} else
 	if ( BATttype(b) == TYPE_daytime) {
-		@:accumUnaryISNIL(daytime)@ 
+		daytime *p = (daytime*)Tloc(b,BUNfirst(b));
+		daytime *q = (daytime*)Tloc(b,BUNlast(b)); 
+		if (b->T->nonil){
+			for(; p<q; p++, o++ )
+				*o = FALSE;
+		} else
+			for(; p<q; p++, o++ )
+				*o = daytime_isnil(*p);
 	} else
 	if ( BATttype(b) == TYPE_timestamp) {
-		@:accumUnaryISNIL(timestamp)@ 
+		timestamp *p = (timestamp*)Tloc(b,BUNfirst(b));
+		timestamp *q = (timestamp*)Tloc(b,BUNlast(b)); 
+		if (b->T->nonil){
+			for(; p<q; p++, o++ )
+				*o = FALSE;
+		} else
+			for(; p<q; p++, o++ )
+				*o = timestamp_isnil(*p);
 	} 
+	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, BATcount(b));
     bn->tsorted = 0;
