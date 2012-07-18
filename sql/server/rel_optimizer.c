@@ -3607,6 +3607,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			/* create new sum/cnt exp */
 
 			/* For now we always convert to dbl */
+			/* TODO fix this conversion could be don after sum! */
 			dbl_t = sql_bind_localtype("dbl");
 			cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
 			sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
@@ -3621,6 +3622,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			args = new_exp_list(sql->sa);
 			append(args, cond);
 			append(args, exp_atom(sql->sa, atom_general(sql->sa, dbl_t, NULL)));
+			/* TODO only ifthenelse if value column may have nil's*/
 			append(args, cnt_d);
 			ifthen = find_func(sql, "ifthenelse", args);
 			assert(ifthen);
