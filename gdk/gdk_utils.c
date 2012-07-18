@@ -1298,7 +1298,6 @@ GDKinit(opt *set, int setlen)
 	GDK_mmap_minsize = MIN( 1<<30 , (GDK_mem_maxsize_max/6) / (GDKnr_threads ? GDKnr_threads : 1) );
 	/*    per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
-	//MT_init_cpu_set();
 
 	if (!GDKembedded &&
 	    ((p = mo_find_option(set, setlen, "gdk_vmtrim")) == NULL ||
