@@ -1967,8 +1967,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4)
-			assert(0); 
+		/* median */
+		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4) {
+			error++;
+			goto fail;
+		}
 		/*
 		 * @-
 		 * Aggregate handling is a prime target for optimization.
