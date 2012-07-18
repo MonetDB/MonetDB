@@ -362,6 +362,10 @@ comment "Returns the intersection taken over only the *head* columns of two BATs
 		Does *not* do double- elimination over the 'left' BUNs.
 		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
 	or: 'kunique(kintersect(left,right))'.";
+command tintersect( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
+		:bat[:any_1,:any_2] 
+address ALGtintersect;
+
 # @- Bun-differing elements
 command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
 		:bat[:any_1,:any_2] 
@@ -385,6 +389,9 @@ comment "Returns the difference taken over only the *head* columns of two BATs.
 		If you want this, use:
 	 'kdifference(left.kunique,right.kunique)' 
 	or: 'kdifference(left,right).kunique'.";
+command tdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
+		:bat[:any_1,:any_2] 
+address ALGtdiff;
 # @- Unions on bun
 command union ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2]) 
 		:bat[:any_1,:any_2] 
@@ -408,6 +415,9 @@ comment "Returns the union of two BATs; looking at head-columns only.
 		If you want this, do:
 	'kunion(left.kunique,right.kunique)' 
 	or: 'sunion(left,right).kunique'.";
+command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
+		:bat[:any_1,:any_2] 
+address ALGtunion;
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
@@ -976,6 +986,7 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGunaryExport(copy)@
 @:ALGunaryExport(kunique)@
 @:ALGunaryExport(sunique)@
+@:ALGunaryExport(tunique)@
 @:ALGbinaryExport(cross)@
 @:ALGbinaryExport(antijoin)@
 @:ALGbinaryestimateExport(join)@
@@ -986,10 +997,13 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryExport(semijoin)@
 @:ALGbinaryExport(sunion)@
 @:ALGbinaryExport(kunion)@
+@:ALGbinaryExport(tunion)@
 @:ALGbinaryExport(sintersect)@
 @:ALGbinaryExport(kintersect)@
+@:ALGbinaryExport(tintersect)@
 @:ALGbinaryExport(sdiff)@
 @:ALGbinaryExport(kdiff)@
+@:ALGbinaryExport(tdiff)@
 @:ALGbinaryintExport(sample)@
 
 algebra_export str ALGtunique(int *result, int *bid);
@@ -2688,7 +2702,7 @@ ALGsample(bat *result, bat *bid, int *param)
 }
 
 
-/* add item missing in the kernel */
+/* add items missing in the kernel */
 str
 ALGtunique(int *result, int *bid)
 {
@@ -2708,6 +2722,87 @@ ALGtunique(int *result, int *bid)
 	}
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.tunique", GDK_EXCEPTION);
+}
+
+str
+ALGtunion(int *result, int *bid, int *bid2)
+{
+	BAT *b, *b2, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL){
+		BBPreleaseref(*bid2);
+		throw(MAL, "algebra.tunion", RUNTIME_OBJECT_MISSING);
+	}
+	
+	bn = BATkunion(BATmirror(b),BATmirror(b2));
+	if (bn) {
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	throw(MAL, "algebra.tunion", GDK_EXCEPTION);
+}
+
+str
+ALGtdiff(int *result, int *bid, int *bid2)
+{
+	BAT *b, *b2, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL){
+		BBPreleaseref(*bid2);
+		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+	}
+	
+	bn = BATkdiff(BATmirror(b),BATmirror(b2));
+	if (bn) {
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	throw(MAL, "algebra.tdifference", GDK_EXCEPTION);
+}
+
+str
+ALGtintersect(int *result, int *bid, int *bid2)
+{
+	BAT *b, *b2, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+	if ((b2 = BATdescriptor(*bid2)) == NULL){
+		BBPreleaseref(*bid2);
+		throw(MAL, "algebra.tdifference", RUNTIME_OBJECT_MISSING);
+	}
+	
+	bn = BATsemijoin(BATmirror(b),BATmirror(b2));
+	if (bn) {
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		*result = bn->batCacheid;
+		BBPkeepref(*result);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		return MAL_SUCCEED;
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(b2->batCacheid);
+	throw(MAL, "algebra.tdifference", GDK_EXCEPTION);
 }
 
 str
