@@ -40,6 +40,7 @@ main(int argc, char **argv)
 	int age = 0;
 	char *parm[] = { "peter", 0 };
 	char *parm2[] = { "25", 0 };
+	char *parm3[] = { "peter", "25", 0 };
 	Mapi dbh= NULL;
 	MapiHdl hdl = NULL;
 
@@ -61,7 +62,7 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query_array(dbh, "insert into emp values('?', ?)", parm)) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query_array(dbh, "insert into emp values('?', ?)", parm3)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);

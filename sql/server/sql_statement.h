@@ -76,14 +76,16 @@ typedef enum stmt_type {
 	st_uselect,
 	st_uselect2,
 	st_uselectN,
-	st_semijoin,
 	st_relselect,
+	st_tinter,
+	st_tdiff,
 
 	st_releqjoin,
 	st_join,
 	st_join2,
 	st_joinN,
 	st_outerjoin,
+	st_inter,
 	st_diff,
 	st_union,
 
@@ -246,7 +248,8 @@ extern stmt *stmt_genselect(sql_allocator *sa, stmt *op1, stmt *op2, stmt *op3, 
 #define isEqJoin(j) \
 	(j->type == st_join && (j->flag == cmp_equal || j->flag == cmp_project))
 
-extern stmt *stmt_semijoin(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2);
 
 extern stmt *stmt_relselect_init(sql_allocator *sa);
 extern void stmt_relselect_fill(stmt *relselect, stmt *select);
@@ -265,6 +268,7 @@ extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp)
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_outerjoin(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype);
 
+extern stmt *stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_list(sql_allocator *sa, list *l);

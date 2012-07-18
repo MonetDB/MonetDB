@@ -203,7 +203,7 @@ row2cols(mvc *sql, stmt *sub)
 
 /* Here we also recognize 'IN'.
  * We change that into a 
- * mark(reverse(semijoin( reverse(column), bat_of_vals)), 0). 
+ * tintersect( column, bat_of_vals)). 
  */
 static int
 are_equality_exps( list *exps ) 
@@ -267,9 +267,9 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, group 
 			s = stmt_append(sql->sa, s, i);
 		}
 		if (in)
-			s = stmt_mark_tail(sql->sa, stmt_reverse(sql->sa, stmt_semijoin(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, s))), 0);
+			s = stmt_tinter(sql->sa, c, s);
 		else 
-			s = stmt_reverse(sql->sa, stmt_diff(sql->sa, stmt_reverse(sql->sa, c), stmt_reverse(sql->sa, stmt_unique(sql->sa, s, NULL))));
+			s = stmt_tdiff(sql->sa, c, stmt_unique(sql->sa, s, NULL));
 		s = stmt_const(sql->sa, s, NULL);
 	}
 	return s;
@@ -564,7 +564,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 			print_stmtlist(sql->sa, right);
 		}
 		if (s && sel)
-			s = stmt_semijoin(sql->sa, s, sel);
+			s = stmt_inter(sql->sa, s, sel);
 	 }	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
@@ -590,7 +590,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 
 			/* Here we also recognize 'IN'.
 			 * We change that into a 
-			 * reverse(semijoin( reverse(column), bat_of_vals)). 
+			 * tintersect( column, bat_of_vals). 
 			 */
 			if (are_equality_exps(e->l) && are_equality_exps(e->r))
 				if ((s = handle_equality_exps(sql, e->l, e->r, left, right, grp)) != NULL)
@@ -741,7 +741,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp, stmt *sel)
 						stmt_binop(sql->sa, l, r, lf), 
 						stmt_binop(sql->sa, l, r2, rf), a);
 				} else if (l->nrcols > 0 && r->nrcols > 0 && r2->nrcols > 0) {
-					s = stmt_semijoin(sql->sa, 
+					s = stmt_inter(sql->sa, 
 						stmt_uselect(sql->sa, l, r, range2lcompare(e->flag)),
 						stmt_uselect(sql->sa, l, r2, range2rcompare(e->flag)));
 				} else {
@@ -1647,10 +1647,10 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 				/*assert(0);*/
 				/* should be handled by join list (reljoin) */
 				if (s->h == join->h) {
-					join = stmt_semijoin(sql->sa, join,s);
-				} else {
+					join = stmt_inter(sql->sa, join,s);
+				} else { 
 					join = stmt_reverse(sql->sa, join);
-					join = stmt_semijoin(sql->sa, join,s);
+					join = stmt_inter(sql->sa, join, s);
 					join = stmt_reverse(sql->sa, join);
 				}
 				continue;
@@ -1719,18 +1719,18 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 
 	/* We did a full join, thats too much. 
-	   Reduce this using difference and semijoin */
+	   Reduce this using difference and intersect */
 	if (rel->op == op_anti) {
 		stmt *c = left->op4.lval->h->data;
 		join = stmt_diff(sql->sa, c, stmt_reverse(sql->sa, jl));
 	} else {
 		stmt *c = left->op4.lval->h->data;
-		join = stmt_semijoin(sql->sa, c, stmt_reverse(sql->sa, jl));
+		join = stmt_inter(sql->sa, c, stmt_reverse(sql->sa, jl));
 	}
 
 	join = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join,0));
 
-	/* semijoin all the left columns */
+	/* project all the left columns */
 	for( n = left->op4.lval->h; n; n = n->next ) {
 		stmt *c = n->data;
 		char *rnme = table_name(sql->sa, c);
@@ -3141,7 +3141,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 				if (updates[c->c->colnr]) {
 					upd = updates[c->c->colnr]->op1;
 				} else {
-					upd = stmt_semijoin(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), updates[updcol]->op1);
+					upd = stmt_inter(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), updates[updcol]->op1);
 				}
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					sql_subtype *t = tail_type(upd);
@@ -3176,7 +3176,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *idx_updates, int u
 					upd = updates[c->c->colnr]->op1;
 				} else if (updates) {
 					upd = updates[updcol]->op1;
-					upd = stmt_semijoin(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
+					upd = stmt_inter(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
 				} else {
 					upd = stmt_bat(sql->sa, c->c, ts, RDONLY);
 				}
@@ -3322,8 +3322,7 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 	s->flag = NO_HASH;
 
 	rows = stmt_idxbat(sql->sa, k->idx, fts, RDONLY);
-	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
-	rows = stmt_reverse(sql->sa, rows);
+	rows = stmt_tinter(sql->sa, rows, stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, updates[updcol]->op1, 0)));
 
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *fc = m->data;
@@ -3334,19 +3333,19 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt **updates, int updcol)
 			upd = updates[c->c->colnr]->op1;
 		} else {
 			upd = updates[updcol]->op1;
-			upd = stmt_semijoin(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
+			upd = stmt_inter(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
 			stmt *nn = upd;
 
 			nn = stmt_uselect(sql->sa, nn, stmt_atom(sql->sa, atom_general(sql->sa, &c->c->type, NULL)), cmp_equal);
 			if (null)
-				null = stmt_semijoin(sql->sa, null, nn);
+				null = stmt_inter(sql->sa, null, nn);
 			else
 				null = nn;
 			nulls = 1;
 		}
-		stmt_releqjoin_fill(s, upd, stmt_semijoin(sql->sa, stmt_bat(sql->sa, fc->c, fts, RDONLY), rows ));
+		stmt_releqjoin_fill(s, upd, stmt_inter(sql->sa, stmt_bat(sql->sa, fc->c, fts, RDONLY), rows ));
 	}
 	/* add missing nulls */
 	if (nulls)
@@ -3418,8 +3417,7 @@ sql_update_cascade_Fkeys(mvc *sql, sql_key *k, int updcol, stmt **updates, int a
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
 
 	rows = stmt_idxbat(sql->sa, k->idx, NULL, RDONLY);
-	rows = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, rows), updates[updcol]->op1);
-	rows = stmt_reverse(sql->sa, rows);
+	rows = stmt_tinter(sql->sa, rows, stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, updates[updcol]->op1, 0)));
 		
 	new_updates = table_update_stmts(sql, t, &len);
 	for (m = k->idx->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
@@ -3533,7 +3531,7 @@ hash_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 			upd = updates[c->c->colnr]->op1;
 		} else if (updates && updcol >= 0) {
 			upd = updates[updcol]->op1;
-			upd = stmt_semijoin(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
+			upd = stmt_inter(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
 		} else { /* created idx/key using alter */ 
 			upd = stmt_bat(sql->sa, c->c, ts, RDONLY);
 		}
@@ -3614,7 +3612,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 			upd = updates[c->c->colnr]->op1;
 		} else if (updates && updcol >= 0) {
 			upd = updates[updcol]->op1;
-			upd = stmt_semijoin(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
+			upd = stmt_inter(sql->sa, stmt_bat(sql->sa, c->c, ts, RDONLY), upd);
 		} else { /* created idx/key using alter */ 
 			upd = stmt_bat(sql->sa, c->c, ts, RDONLY);
 			updcolumn = c->c;
@@ -3651,7 +3649,7 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		stmt *upd = new_updates[c->c->colnr];
 
 		if (nulls) /* remove nulls */
-			upd = stmt_semijoin(sql->sa, upd, nnull); 
+			upd = stmt_inter(sql->sa, upd, nnull); 
 		stmt_releqjoin_fill(s, check_types(sql, &rc->c->type, upd, type_equal), stmt_bat(sql->sa, rc->c, rts, RDONLY));
 	}
 	/* add missing nulls */
@@ -3996,7 +3994,7 @@ sql_delete_ukey(mvc *sql, stmt *deletes, sql_key *k, list *l)
 			stmt *s;
 
 			s = stmt_idxbat(sql->sa, fk->idx, NULL, RDONLY);
-			s = stmt_semijoin(sql->sa, stmt_reverse(sql->sa, s), deletes);
+			s = stmt_inter(sql->sa, stmt_reverse(sql->sa, s), deletes);
 			switch (((sql_fkey*)fk)->on_delete) {
 				case ACT_NO_ACTION: 
 					break;

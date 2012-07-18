@@ -48,11 +48,13 @@ tail_column(stmt *st)
 	case st_uselect:
 	case st_uselect2:
 	case st_uselectN:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
 	case st_limit:
 	case st_limit2:
 	case st_sample:
 
+	case st_inter:
 	case st_diff:
 	case st_union:
 
@@ -82,7 +84,7 @@ tail_column(stmt *st)
 	case st_rs_column:
 	case st_idxbat:
 
-		/* required for eliminate_semijoin() in sql_rel2bin.mx */
+		/* required for eliminate_intersect() in sql_rel2bin.mx */
 	case st_relselect:
 
 		/* some statements have no column coming from any basetable */
@@ -125,7 +127,8 @@ head_column(stmt *st)
 	case st_uselect:
 	case st_uselect2:
 	case st_uselectN:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
 	case st_limit:
 	case st_limit2:
 	case st_sample:
@@ -134,6 +137,7 @@ head_column(stmt *st)
 	case st_join2:
 	case st_joinN:
 	case st_outerjoin:
+	case st_inter:
 	case st_diff:
 	case st_union:
 
@@ -175,7 +179,7 @@ head_column(stmt *st)
 	case st_list:
 		return head_column(st->op4.lval->h->data);
 
-		/* required for eliminate_semijoin() in sql_rel2bin.mx */
+		/* required for eliminate_intersect() in sql_rel2bin.mx */
 		/* st_temp has no head column coming from any basetable */
 	case st_atom:
 	case st_var:
@@ -220,15 +224,15 @@ head_column(stmt *st)
 	return NULL;
 }
 
-/* basecolum is used by eliminate_semijoins and shrink_ranges to reduce the
- * number of semijoins and selects.
+/* basecolum is used by eliminate_intersect and shrink_ranges to reduce the
+ * number of intersect and selects.
  * There we need too know which columns come from the same basecolumn.
  */
 sql_column *
 basecolumn(stmt *st)
 {
 	if (!st)
-		return NULL;	/* required for shrink_select_ranges() and eliminate_semijoin() */
+		return NULL;	/* required for shrink_select_ranges() and eliminate_intersect() */
 	switch (st->type) {
 	case st_reverse:
 		return basecolumn(head_column(st->op1));
@@ -480,7 +484,7 @@ shrink_select_ranges(mvc *sql, list *oldsels)
 			 *  =>  x<=a<=min(x,y)
 			 *
 			 * in both cases we end up with just a single select
-			 * instead of two selects plus a semijoin
+			 * instead of two selects plus a intersect
 			 */
 			for (n = sels1[cmp_equal]->h; n; n = n->next) {
 				stmt *sl, *sr, *s = n->data;
@@ -704,9 +708,9 @@ releqjoin( mvc *sql, int flag, list *l1, list *l2 )
 
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal);
 
-		/* TODO the semijoin may break the order!! */
-		l = stmt_semijoin(sql->sa, l, cmp);
-		r = stmt_semijoin(sql->sa, r, cmp);
+		/* TODO the intersect may break the order!! */
+		l = stmt_inter(sql->sa, l, cmp);
+		r = stmt_inter(sql->sa, r, cmp);
 	}
 	res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), r, cmp_equal);
 	return res;
@@ -723,9 +727,9 @@ find_unique( stmt *s, void *v)
 	return -1;
 }
 
-/* push the semijoin of (select,s) through the select statement (select) */
+/* push the intersect of (select,s) through the select statement (select) */
 static stmt *
-push_semijoin( mvc *sql, stmt *select, stmt *s )
+push_intersect( mvc *sql, stmt *select, stmt *s )
 {
 	if (select->type == st_list){ 
 		list *l = sa_list(sql->sa);
@@ -735,7 +739,7 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 			stmt *a = n->data, *n;
 
 			if (a->nrcols) {
-				n = push_semijoin(sql, a, s);
+				n = push_intersect(sql, a, s);
 				if (n == a) 
 					return select;
 				list_append(l, n);
@@ -751,20 +755,20 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		sql_subtype *t = types->h->next->data;
 		stmt *op1 = select->op1;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		return stmt_convert(sql->sa, op1, f, t);
 	}
 	if (select->type == st_unop){ 
 		stmt *op1 = select->op1;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		op1 = stmt_unop(sql->sa, op1, select->op4.funcval);
 		return op1;
 	}
 	if (select->type == st_alias){ 
 		stmt *op1 = select->op1;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		op1 = stmt_alias(sql->sa, op1, table_name(sql->sa, select), column_name(sql->sa, select));
 		return op1;
 	}
@@ -772,62 +776,59 @@ push_semijoin( mvc *sql, stmt *select, stmt *s )
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
 		if (op1->nrcols) 
-			op1 = push_semijoin(sql, op1, s);
+			op1 = push_intersect(sql, op1, s);
 		if (op2->nrcols) 
-			op2 = push_semijoin(sql, op2, s);
+			op2 = push_intersect(sql, op2, s);
 		return stmt_binop(sql->sa, op1, op2, select->op4.funcval);
 	}
 	if (select->type == st_Nop) {
 		stmt *ops = select->op1;
 		if (ops->nrcols) 
-			ops = push_semijoin(sql, ops, s);
+			ops = push_intersect(sql, ops, s);
 		return stmt_Nop(sql->sa, ops, select->op4.funcval);
 	}
 	if (select->type == st_diff) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		return stmt_diff(sql->sa, op1, op2);
 	}
 	if (select->type == st_const) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		return stmt_const(sql->sa, op1, op2);
 	}
 	if (select->type == st_union) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
 
-		op1 = push_semijoin(sql, op1, s);
-		op2 = push_semijoin(sql, op2, s);
+		op1 = push_intersect(sql, op1, s);
+		op2 = push_intersect(sql, op2, s);
 		return stmt_union(sql->sa, op1, op2);
 	}
 	if (select->type == st_mark) {
 		stmt *op1 = select->op1;
 		stmt *op2 = select->op2;
 
-		op1 = push_semijoin(sql, op1, s);
+		op1 = push_intersect(sql, op1, s);
 		return stmt_mark_tail(sql->sa, op1, op2->op4.aval->data.val.oval);
 	}
 
-	/* semijoin(reverse(semijoin(reverse(x)),s) */
-	if (select->type == st_reverse &&
-	    select->op1->type == st_semijoin &&
-	    select->op1->op1->type == st_reverse) {
-		stmt *op1 = select->op1->op1->op1;
-		stmt *op2 = select->op1->op2;
+	if (select->type == st_tinter) {
+		stmt *op1 = select->op1;
+		stmt *op2 = select->op2;
 
-		op1 = push_semijoin(sql, op1, s );
-		return stmt_reverse(sql->sa, stmt_semijoin(sql->sa,  stmt_reverse(sql->sa, op1), op2));
+		op1 = push_intersect(sql, op1, s );
+		return stmt_tinter(sql->sa, op1, op2);
 	}
 	if (select->type != st_select2 && select->type != st_uselect2 &&
 	    select->type != st_select && select->type != st_uselect)
-		return stmt_semijoin(sql->sa, select, s);
+		return stmt_inter(sql->sa, select, s);
 
-	s = push_semijoin(sql, select->op1, s);
+	s = push_intersect(sql, select->op1, s);
 	if (select->type == st_select2) {
 		comp_type cmp = (comp_type)select->flag;
 		stmt *op2 = select->op2;
@@ -878,7 +879,7 @@ push_select_stmt( mvc *c, list *l, stmt *sel )
 		if (!s->nrcols) /* predicate */
 			stmt_uselect(c->sa, stmt_const(c->sa, sel, stmt_bool(c->sa, 1)), s, cmp_equal); 
 		else
-			sel = push_semijoin(c, s, sel);
+			sel = push_intersect(c, s, sel);
 	}
 	return sel;
 }
@@ -969,9 +970,9 @@ rel2bin(mvc *c, stmt *s)
 		return res;
 	}
 
-	case st_semijoin: {
+	case st_tinter: {
 /*
-		stmt *res = push_semijoin(c, rel2bin(c, s->op1), rel2bin(c, s->op2));
+		stmt *res = push_intersect(c, rel2bin(c, s->op1), rel2bin(c, s->op2));
 		s->optimized = res->optimized = 2;
 		if (res != s) {
 			assert(s->rewritten==NULL);
@@ -979,15 +980,8 @@ rel2bin(mvc *c, stmt *s)
 		}
 		return res;
 */
-
-		/* here we should rewrite semijoins into mirrorjoins */
-		/* select(t.a,l1,h1).semijoin(select(t.b,l2,h2)); */
-		/* select(t.a,l1,h1).mirror().join(t.b).select(l2,l2); */
-		/* in the bin_optimizer we should make sure the 
-		   mirror and projection join are pushed through 
-		   the 'delta column'. 
-		*/
 	}
+	case st_tdiff:
 	case st_limit: 
 	case st_limit2: 
 	case st_sample: 
@@ -1005,6 +999,7 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_temp:
 	case st_single:
+	case st_inter:
 	case st_diff:
 	case st_union:
 	case st_outerjoin:
