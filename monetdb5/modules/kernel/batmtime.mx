@@ -66,23 +66,11 @@ comment "Compare a bat of @1 against a singleton";
 @:compareGrp(daytime)@
 @:compareGrp(timestamp)@
 
-command batcalc.isnil(b:bat[:any_1,:date]):bat[:any_1,:bit]
-address MTIMEunaryISNIL
-comment "Unary check for nil over the tail of the bat";
-
 command batcalc.isnil(b:bat[:oid,:date]):bat[:oid,:bit]
 address MTIMEunaryISNIL
 comment "Unary check for nil over the tail of the bat";
 
-command batcalc.isnil(b:bat[:any_1,:daytime]):bat[:any_1,:bit]
-address MTIMEunaryISNIL
-comment "Unary check for nil over the tail of the bat";
-
 command batcalc.isnil(b:bat[:oid,:daytime]):bat[:oid,:bit]
-address MTIMEunaryISNIL
-comment "Unary check for nil over the tail of the bat";
-
-command batcalc.isnil(b:bat[:any_1,:timestamp]):bat[:any_1,:bit]
 address MTIMEunaryISNIL
 comment "Unary check for nil over the tail of the bat";
 

@@ -1,12 +1,12 @@
 include mal_compiler;
 function tst903();
-    b:= bat.new(:void,:lng);
-    barrier (go,i):= language.newRange(0:lng);
+    b:= bat.new(:oid,:lng);
+    barrier i:= 0:lng;
         k:= mmath.rand();
         l:= calc.lng(k);
-        bat.insert(b,nil,l);
-        redo (go,i):= language.nextElement(1:lng,1000000:lng);
-    exit (go,i);
+        bat.append(b,l);
+        redo i:= iterator.next(1:lng,1000000:lng);
+    exit i;
 end tst903;
 
 t0:= alarm.usec();
