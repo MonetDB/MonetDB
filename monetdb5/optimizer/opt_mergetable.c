@@ -1967,8 +1967,11 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4)
-			assert(0); 
+		/* median */
+		if (match == 3 && getModuleId(p) == aggrRef && p->argc == 4) {
+			error++;
+			goto fail;
+		}
 		/*
 		 * @-
 		 * Aggregate handling is a prime target for optimization.
@@ -1985,7 +1988,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 getFunctionId(p)== sumRef ||
 		    	 getFunctionId(p) == prodRef)) ||
 		    (getModuleId(p) == algebraRef &&
-		     getFunctionId(p) == kuniqueRef)) &&
+		     getFunctionId(p) == tuniqueRef)) &&
 			(m=isMATalias(getArg(p,1), mat, mtop)) >= 0) {
 			mat_aggr(mb, p, mat, m);
 			actions++;

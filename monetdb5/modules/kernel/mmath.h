@@ -17,7 +17,6 @@
  * All Rights Reserved.
 */
 /*
- * @-
  * The constants defined in math.h are defined in const.mx
  */
 #ifndef __MMATH_H__
@@ -42,11 +41,11 @@ extern double fabs(double x);
 #define mmath_export extern
 #endif
 
-#define unopbaseM5_export(X1,X2,X3)\
+#define unopbaseM5_export(X1,X2)\
 mmath_export str MATHunary##X1##X2(X2 *res , X2 *a );
 
-#define unopM5_export(X1)\\
-  unopbaseM5_export(X1,dbl)\\
+#define unopM5_export(X1)\
+  unopbaseM5_export(X1,dbl)\
   unopbaseM5_export(X1,flt)
 
 #define binopbaseM5_export(X1,X2,X3)\
@@ -79,7 +78,7 @@ binopM5_export(_POW)
 unopM5_export(_SQRT)
 
 unopM5_export(_CEIL)
-unopbaseM5_export(_FABS,dbl,dbl)
+unopbaseM5_export(_FABS,dbl)
 unopM5_export(_FLOOR)
 binopbaseM5_export(_ROUND,dbl,int)
 binopbaseM5_export(_ROUND,flt,int)

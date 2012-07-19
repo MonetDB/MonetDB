@@ -1546,7 +1546,9 @@ store_manager(void)
 		MT_lock_unset(&bs_lock, "store_manager");
 		if (logging && res == LOG_OK)
 			res = logger_funcs.cleanup();
+		MT_lock_set(&bs_lock, "store_manager");
 		logging = 0;
+		MT_lock_unset(&bs_lock, "store_manager");
 		if (res != LOG_OK)
 			GDKfatal("write-ahead logging failure, disk full?");
 	}

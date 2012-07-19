@@ -2133,12 +2133,6 @@ gdk_export oid OIDnew(oid inc);
  * @item BAT*
  * @tab
  *  BAThash (BAT *b, BUN masksize)
- * @item BAT *
- * @tab
- *  BAThashsplit (BAT *b, BUN n, int unary)
- * @item BAT *
- * @tab
- *  BATrangesplit  (BAT *b, int n)
  * @end multitable
  *
  * The current BAT implementation supports one search accelerator:
@@ -2147,14 +2141,8 @@ gdk_export oid OIDnew(oid inc);
  * failure to create the supportive structures.
  *
  * The hash data structures are currently maintained during update operations.
- *
- * A BAT can be redistributed over n buckets using a hash
- * function with BAThashsplit. The return value is a list of BAT
- * pointers.  Similarly, a range partitioning based is supported.
  */
 gdk_export BAT *BAThash(BAT *b, BUN masksize);
-gdk_export BAT *BAThashsplit(BAT *b, BUN n, int unary);
-gdk_export BAT *BATrangesplit(BAT *b, BUN n, int unary);
 gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 
 /* low level functions */

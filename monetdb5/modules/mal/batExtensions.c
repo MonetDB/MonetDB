@@ -95,12 +95,8 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = (BUN) lcap;
 	}
 
-	if (ht == TYPE_any || tt == TYPE_any)
+	if (ht == TYPE_any || tt == TYPE_any || isaBatType(ht) || isaBatType(tt))
 		throw(MAL, "bat.new", SEMANTIC_TYPE_ERROR);
-	if (isaBatType(ht))
-		ht = TYPE_bat;
-	if (isaBatType(tt))
-		tt = TYPE_bat;
 	return (str) BKCnewBAT(res, &ht, &tt, &cap);
 }
 

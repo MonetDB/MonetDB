@@ -48,12 +48,10 @@ str CMDscience_bat_##X2##_##X1(int *ret, int *bid)\
 {\
 	BAT *b,*bn;\
 	X2 *o, *p, *q;\
-\
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, X3, RUNTIME_OBJECT_MISSING);
-	}
-	voidresultBAT(TYPE_##X2,"batcalc.##X1")\
-\
+	if ((b = BATdescriptor(*bid)) == NULL) {\
+		throw(MAL, "##X2", RUNTIME_OBJECT_MISSING);\
+	}\
+	voidresultBAT(TYPE_##X2,"batcalc.##X1"); \
 	o = (X2*) Tloc(bn, BUNfirst(bn));\
 	p = (X2*) Tloc(b, BUNfirst(b));\
 	q = (X2*) Tloc(b, BUNlast(b));\
@@ -71,9 +69,7 @@ str CMDscience_bat_##X2##_##X1(int *ret, int *bid)\
 	bn->tsorted = 0;\
 	bn->trevsorted = 0;\
 	BATkey(BATmirror(bn),0);           \
-	\
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); \
-\
 	if (b->htype != bn->htype) {\
 		BAT *r = VIEWcreate(b,bn);\
 \
@@ -91,11 +87,10 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 	BAT *b,*bn;\
 	X2 *o, *p, *q;\
 \
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, X3, RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = BATdescriptor(*bid)) == NULL) {\
+		throw(MAL, "##X2", RUNTIME_OBJECT_MISSING);\
+	}\
 	voidresultBAT(TYPE_##X2,"batcalc.##X1")\
-\
 	o = (X2*) Tloc(bn, BUNfirst(bn));\
 	p = (X2*) Tloc(b, BUNfirst(b));\
 	q = (X2*) Tloc(b, BUNlast(b));\
@@ -130,7 +125,7 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 
 #define scienceImpl(Operator)\
 scienceFcnImpl(Operator,dbl,)\
-scienceFcnImpl(Operator,flt,f)
+scienceFcnImpl(Operator,flt,)
 
 scienceImpl(asin)
 scienceImpl(acos)

@@ -763,9 +763,8 @@ BATreplace(BAT *b, BAT *n, bit force)
  * void-columns (in this case, the seqbase has to be recomputed in the result).
  *
  * Note that the BATslice() is used indirectly as well as a special
- * case for BATselect (range selection on sorted column), BATrangesplit
- * (fragmentation on sorted column) and BATsemijoin (when two dense columns
- * are semijoined).
+ * case for BATselect (range selection on sorted column) and
+ * BATsemijoin (when two dense columns are semijoined).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */
@@ -935,64 +934,64 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
  * need an implementation for selecting nil (in MIL, this is done
  * through is the "isnil" predicate). So we implement it here.
  */
-@= valselect
-	HASHloop@2(bi, b->H->hash, i, tl) {
-		if (q < r)
-			bunfastins_nocheck(bn, q, BUNt@1(bi, i), tl, Hsize(bn), Tsize(bn));
-		q++;
-	}
-@= stringselect
-	if (strElimDoubles(b->H->vheap)) {
-		BUN p;
-		size_t j;
+#define hashselectloop(EXT, BUNtail)					\
+	do {								\
+		HASHloop##EXT(bi, b->H->hash, i, tl) {			\
+			if (q < r) {					\
+				bunfastins_nocheck(bn, q, BUNtail(bi, i), \
+						   tl, Hsize(bn), Tsize(bn)); \
+			}						\
+			q++;						\
+		}							\
+	} while (0)
+#define hashselect(BUNtail)						\
+	do {								\
+		switch (ATOMstorage(b->htype)) {			\
+		case TYPE_bte:						\
+			hashselectloop(_bte, BUNtail);			\
+			break;						\
+		case TYPE_sht:						\
+			hashselectloop(_sht, BUNtail);			\
+			break;						\
+		case TYPE_int:						\
+			hashselectloop(_int, BUNtail);			\
+			break;						\
+		case TYPE_flt:						\
+			hashselectloop(_flt, BUNtail);			\
+			break;						\
+		case TYPE_dbl:						\
+			hashselectloop(_dbl, BUNtail);			\
+			break;						\
+		case TYPE_lng:						\
+			hashselectloop(_lng, BUNtail);			\
+			break;						\
+		case TYPE_str:						\
+			if (strElimDoubles(b->H->vheap)) {		\
+				size_t j;				\
+									\
+				HASHloop_fstr(bi, b->H->hash, i, j, tl) { \
+					if (q < r)			\
+						bunfastins_nocheck(bn, q, \
+								   BUNtail(bi, i), \
+								   tl,	\
+								   Hsize(bn), \
+								   Tsize(bn)); \
+					q++;				\
+				}					\
+			} else {					\
+				hashselectloop(_str, BUNtail);		\
+			}						\
+			break;						\
+		default:						\
+			if (b->hvarsized) {				\
+				hashselectloop(var, BUNtail);		\
+			} else {					\
+				hashselectloop(loc, BUNtail);		\
+			}						\
+			break;						\
+		}							\
+	} while (0)
 
-		HASHloop_fstr(bi, b->H->hash, p, j, tl) {
-			if (q < r)
-				bunfastins_nocheck(bn, q, BUNt@1(bi, p), tl, Hsize(bn), Tsize(bn));
-			q++;
-		}
-	} else {
-		BUN p;
-
-		HASHloop_str(bi, b->H->hash, p, tl) {
-			if (q < r)
-				bunfastins_nocheck(bn, q, BUNt@1(bi, p), tl, Hsize(bn), Tsize(bn));
-			q++;
-		}
-	}
-@= hashselect
-	switch(ATOMstorage(b->htype)) {
-	case TYPE_bte:
-		@:valselect(@1,_bte)@
-		break;
-	case TYPE_sht:
-		@:valselect(@1,_sht)@
-		break;
-	case TYPE_int:
-		@:valselect(@1,_int)@
-		break;
-	case TYPE_flt:
-		@:valselect(@1,_flt)@
-		break;
-	case TYPE_dbl:
-		@:valselect(@1,_dbl)@
-		break;
-	case TYPE_lng:
-		@:valselect(@1,_lng)@
-		break;
-	case TYPE_str:
-		@:stringselect(@1)@
-		break;
-	default:
-		if (b->hvarsized) {
-			@:valselect(@1,var)@
-		} else {
-			@:valselect(@1,loc)@
-		}
-		break;
-	}
-@
-@c
 static BAT *
 BAT_hashselect(BAT *b, BAT *bn, const void *tl)
 {
@@ -1016,9 +1015,9 @@ BAT_hashselect(BAT *b, BAT *bn, const void *tl)
 		r = (BUN) BATcapacity(bn);
 
 		if (b->tvarsized) {
-			@:hashselect(var)@
+			hashselect(BUNtvar);
 		} else {
-			@:hashselect(loc)@
+			hashselect(BUNtloc);
 		}
 		if (q <= r)
 			break;
@@ -1999,320 +1998,6 @@ BATrevert(BAT *b)
 	b->hdense = FALSE;
 	b->tdense = FALSE;
 	return b;
-}
-
-/*
- * @+ BAT partitioning
- * For distributed processing we support hash and range
- * partitioning operators: BATsplithash and BATsplitrange.
- *
- * The part_bat function creates a partition BAT.
- */
-static BAT *
-part_bat(BAT *b, int ht, int tt, BUN expected_size, int respect_order)
-{
-	BAT *bn = BATnew(ht, tt, (BUN) ((double) expected_size * BATMARGIN));
-
-	if (bn) {
-		BATkey(bn, BAThkey(b));
-		BATkey(BATmirror(bn), BATtkey(b));
-		bn->hsorted = respect_order && BAThordered(b);
-		bn->tsorted = respect_order && BATtordered(b);
-		bn->hrevsorted = respect_order && BAThrevordered(b);
-		bn->trevsorted = respect_order && BATtrevordered(b);
-		bn->H->nonil = b->H->nonil;
-		bn->T->nonil = b->T->nonil;
-	}
-	return bn;
-}
-
-/*
- * @- hash partitioning
- */
-#define BUNhash(bx,hx,tx)\
-	/* assert(n <= 0x40000000); */\
-	i = (int)(HASHprobe(&h,tx)%n); \
-	if ((r = BUNfnd(bx, &i)) != BUN_NONE){\
-		bat bid = *(bat*)BUNtloc(metabati,r); \
-		bunfastins(BBPdescriptor(bid), hx, tx);\
-	}
-
-BAT *
-BAThashsplit(BAT *b, BUN n, int unary)
-{
-	BAT *metabat, *bn, *bf;
-	BUN r;
-	Hash h;
-	BUN cnt;
-	int i = 0;
-
-	/* assert(n <= 0x40000000); */
-	BATcheck(b, "BAThashsplit");
-	if (n > BATcount(b)) {
-		PROPDEBUG THRprintf(GDKout, "#BAThashsplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").\n", n, BATcount(b));
-		n = BATcount(b);
-	}
-	if (n < 1) {
-		GDKerror("BAThashsplit: number of ranges must not be less than 1!\n");
-		return 0;
-	}
-
-	metabat = BATnew(TYPE_int, TYPE_bat, n);
-	if (metabat == NULL)
-		return NULL;
-	bn = unary ? VIEWhead_(b, b->batRestricted) : b;
-	if (n <= 1) {
-		if (BUNins(metabat, &i, &bn->batCacheid, FALSE) == NULL)
-			goto bunins_failed;
-	} else {
-		BUN p, q;
-		BATiter metabati;
-
-		for (i = 2; i < (int) n; i *= 2)
-			;
-		h.mask = i - 1;
-		h.type = BATttype(b);
-		cnt = (BUN) (BATMARGIN * (double) BATbuncount(b) / (double) n);
-		for (i = 0; i < (int) n; i++) {
-			bf = part_bat(bn, BAThtype(bn), BATttype(bn), cnt, TRUE);
-			if (bf == NULL) {
-				BBPreclaim(metabat);
-				return NULL;
-			}
-			if (BUNins(metabat, &i, &bf->batCacheid, FALSE) == NULL)
-				goto bunins_failed;
-		}
-		metabati = bat_iterator(metabat);
-		updateloop(metabat, b, BUNhash);
-		BATloop(metabat, p, q) {
-			bat bt = *(bat *) BUNtail(metabati, p);
-
-			BBPunfix(bt);
-		}
-	}
-	return metabat;
-      bunins_failed:
-	BBPreclaim(metabat);
-	return NULL;
-}
-
-/*
- * Range partitioning ensures that identical values appear in one
- * partition only. The routine also tries to deliver partitions of
- * uniform size.
- */
-BAT *
-BATrangesplit(BAT *b, BUN n, int unary)
-{
-	BAT *metabat, *slice, *histo, *bf = NULL, *bn, *m;
-	int target, tpe, *sizes = NULL;
-	int zz = 0;
-	BUN yy = 0;
-	ptr *seps = NULL, nilval;
-	BUN r, s;
-	BATiter histoi, bi = bat_iterator(b);
-	dbl scale;
-	BUN thorough = (n <= 1 || BATtvoid(b) || BATtordered(b)) ? 1 : 10;
-
-	BATcheck(b, "BATrangesplit");
-	if (n > BATcount(b)) {
-		PROPDEBUG THRprintf(GDKout, "#BATrangesplit: reduced number of ranges (" BUNFMT ") to number of tuples (" BUNFMT ").\n", n, BATcount(b));
-		n = BATcount(b);
-	}
-	if (n < 1) {
-		GDKerror("BAThashsplit: number of ranges must not be less than 1!\n");
-		return 0;
-	}
-
-	/* assert(BATcount(b)/n <= 0x7fffffff); */
-	bn = unary ? VIEWhead_(b, b->batRestricted) : b;
-	m = BATmirror(b);
-	metabat = BATnew(BATttype(b), TYPE_bat, n);
-	BATcheck(metabat, "BATrangesplit 2");
-	nilval = ATOMnilptr(BATttype(b));
-
-	/*
-	 * We use sampling to determine bucket sizes.
-	 * Uniform bucket sizes are the ideal to be achieved.
-	 * If necessary though, we deliver less than n buckets.
-	 */
-	slice = BATsample(b, MIN(MAX(30 * n * thorough, 100 * thorough), BATcount(b)));
-	histo = BAThistogram(slice);
-	target = (int) (BATcount(b) / n);	/* see assert above */
-	scale = ((dbl) BATcount(b)) / ((dbl) BATcount(slice));
-	BBPreclaim(slice);
-	if ((sizes = (int *) GDKmalloc(2 * n * sizeof(int))) == NULL)
-		goto bunins_failed;
-	if ((seps = (ptr *) GDKmalloc(2 * n * sizeof(ptr))) == NULL)
-		goto bunins_failed;
-	/*
-	 * Use the histogram to determine good split boundaries on b.
-	 */
-	BATorder(histo);
-	histoi = bat_iterator(histo);
-	BATloop(histo, r, s) {
-		int cnt = *(int *) BUNtloc(histoi, r);
-		int add = (int) (scale * cnt);
-
-		if (zz + add > target) {
-			if ((zz + add - target) < (target - zz)) {
-				sizes[yy] = zz + add;
-				seps[yy] = ATOMdup(histo->htype, BUNhead(histoi, r));
-				add = 0;
-			} else {
-				sizes[yy] = zz;
-				seps[yy] = ATOMdup(histo->htype, BUNhead(histoi, (r - 1)));
-			}
-			zz = 0;
-			yy++;
-		}
-		zz += add;
-	}
-	if (yy) {
-		if ((sizes[yy - 1] + zz - target) > (target - zz)) {
-			sizes[yy] = zz;
-		} else {
-			yy--;	/* join with the last */
-		}
-	}
-	seps[yy] = nilval;
-	BBPreclaim(histo);
-
-	if (n > 1 && n != yy + 1) {
-		PROPDEBUG THRprintf(GDKout, "#rangesplit: delivering " BUNFMT " instead of " BUNFMT " fragments\n", yy + 1, n);
-		n = yy + 1;
-	}
-	/*
-	 * CASE 1: just one bucket.
-	 * This is done without copying b.
-	 */
-	if (n <= 1) {
-		if (BUNins(metabat, nilval, &bn->batCacheid, FALSE) == NULL)
-			goto bunins_failed;
-
-	/*
-	 * CASE 2: sorted on fragmentation column.
-	 * We can again avoid copying, by giving slices (views) on the source BAT.
-	 * Virtual oids (void) is a special subcase with positional lookup instead
-	 * of binary search.
-	 */
-	} else if (BATtvoid(b) || BATtordered(b)) {
-		BUN l, h = 0, o = BUNfirst(b);
-
-		for (yy = 0; yy < n; yy++) {
-			l = h;
-			if (yy == n - 1) {
-				r = BUNlast(m);
-				h = r - o;
-			} else if (BATtdense(b)) {
-				h = ((*(oid *) seps[yy]) - b->tseqbase) + 1;
-			} else {
-				r = SORTfndlast(m, seps[yy]);
-				h = r - o;
-			}
-			bf = BATslice(bn, l, h);	/* produces view bat */
-			if (BUNins(metabat, seps[yy], &bf->batCacheid, FALSE) == NULL)
-				goto bunins_failed;
-		}
-
-		/*
-		 * CASE 3: full scan.
-		 * If it ain't sorted then we gotta scan the whole thing and split.
-		 * This is heavy stuff so we optimize execution according to datatype.
-		 *
-		 * DELETED: simple walk-through list approach
-		 * 		for(yy=0; yy<n-1; yy++) {
-		 * 			if (@@1_LE(val, seps[yy], @@3)) break;
-		 * 		}
-		 * 		bunfastins(bats[yy], BUNhead(b,r), val);
-		 *
-		 * We now use binary search for getting to the right bucket, so
-		 * that this routine also works efficiently on many buckets.
-		 */
-@= rangesplit
-	BATloop(b, r, s) {
-		const void *val = BUNt@2(bi, r);
-		BUN lo = 0;
-		BUN hi = n - 1;
-		for (;;) {
-			yy = (lo + hi) / 2;
-			if (yy < n - 1 && @1_GT(val, seps[yy], @3)) {
-				lo = yy + 1;
-				if (lo >= hi) {
-					yy = hi;
-					break;
-				}
-			} else if (yy > 0 && @1_LE(val, seps[yy - 1], @3)) {
-				hi = yy - 1;
-				if (hi <= lo) {
-					yy = lo;
-					break;
-				}
-			} else {
-				break;
-			}
-		}
-		bunfastins(bats[yy], BUNhead(bi, r), val);
-	}
-@
-@c
-	} else {
-		BAT **bats = (BAT **) GDKmalloc(n * sizeof(BAT *));
-
-		if (bats == NULL)
-			goto bunins_failed;
-		for (yy = 0; yy < n; yy++) {
-			bats[yy] = part_bat(bn, BAThtype(bn), bn->ttype, sizes[yy], TRUE);
-			if (bats[yy] == NULL) {
-				BBPreclaim(metabat);
-				return NULL;
-			}
-			if (BUNins(metabat, seps[yy], &bats[yy]->batCacheid, FALSE) == NULL)
-				goto bunins_failed;
-		}
-		switch (tpe = ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			@:rangesplit(simple,loc,bte)@
-			break;
-		case TYPE_sht:
-			@:rangesplit(simple,loc,sht)@
-			break;
-		case TYPE_int:
-			@:rangesplit(simple,loc,int)@
-			break;
-		case TYPE_flt:
-			@:rangesplit(simple,loc,flt)@
-			break;
-		case TYPE_dbl:
-			@:rangesplit(simple,loc,dbl)@
-			break;
-		case TYPE_lng:
-			@:rangesplit(simple,loc,lng)@
-			break;
-		default:
-			if (b->tvarsized) {
-				@:rangesplit(atom,var,tpe)@
-			} else {
-				@:rangesplit(atom,loc,tpe)@
-			}
-			break;
-		}
-		for (yy = 0; yy < n; yy++)
-			BBPunfix(bats[yy]->batCacheid);
-		GDKfree(bats);
-	}
-	for (yy = 0; yy < n - 1; yy++)
-		GDKfree(seps[yy]);
-	GDKfree(seps);
-	GDKfree(sizes);
-
-	return metabat;
-
-      bunins_failed:
-	GDKfree(seps);
-	GDKfree(sizes);
-	BBPreclaim(metabat);
-	return NULL;
 }
 
 /*

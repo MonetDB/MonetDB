@@ -130,10 +130,6 @@ All Rights Reserved.
 		case TYPE_lng:						\
 			((lng*) (b)->SRC->heap.base)[p] = *(lng*) (src); \
 			break;						\
-		case TYPE_bat:						\
-			BBPincref(* (bat *) (src), TRUE);		\
-			((bat*) (b)->SRC->heap.base)[p] = *(bat*) (src); \
-			break;						\
 		default:						\
 			memcpy(SRC##loc((b),(p)), (src),		\
 			       (size_t) ATOMsize(tpe));			\
@@ -343,8 +339,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit
 		@:seqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),)@
 	} else if (AsHt == TYPE_sht) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),)@
-	} else if (bn->htype != TYPE_bat && (AsHt == TYPE_int || AsHt == TYPE_flt)) {
-		/* ensure use of ATOMput for TYPE_bat */
+	} else if (AsHt == TYPE_int || AsHt == TYPE_flt) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),)@
 	} else if (AsHt == TYPE_dbl || AsHt == TYPE_lng) {
 		@:seqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),)@
@@ -465,8 +460,7 @@ BAT *BAT_scanselect(BAT *b, BAT *bn, const void *tl, const void *th, bit li, bit
 		@:seqscanIF(bte,bte,tloc,simple,bte,)@
 	} else if (AsTt == TYPE_sht) {
 		@:seqscanIF(sht,sht,tloc,simple,sht,)@
-	} else if (AsTt == TYPE_int && t != TYPE_bat) {
-		/* ensure use of ATOMput for TYPE_bat */
+	} else if (AsTt == TYPE_int) {
 		@:seqscanIF(int,int,tloc,simple,int,)@
 	} else if (AsTt == TYPE_flt) {
 		@:seqscanIF(flt,int,tloc,simple,flt,)@

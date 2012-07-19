@@ -262,8 +262,12 @@ group_export int CTrefine_rev(BAT **res, BAT *b, BAT *a);
 #endif /* _GROUP_H_ */
 @c
 #include "monetdb_config.h"
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_atom.h"
 #include "group.h"
 #include "algebra.h"
+
 static int TYPE_mapentry;
 
 
@@ -1707,24 +1711,7 @@ CTrefine_rev(BAT **res, BAT *b, BAT *a)
 	return refine(res, b, a, TRUE);
 }
 
-/*
- * @- Wrapping
- * Wrapping the version 4 xtables code base
- */
-#include "mal.h"
-#include "mal_exception.h"
-#include "mal_atom.h"
 
-/*
- * @-
- * Recall that we only support void- and oid- typed heads.
- * This is captured as a runtime check in the implementation.
- */
-@= chkHeader
-	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
-		throw(MAL, "group.@2", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
-@
-@c
 str
 GRPprelude(void)
 {
@@ -1963,7 +1950,8 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 
 		return rtrn;
 	}
-	@:chkHeader(b,GRPgroup)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPgroup", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if (CTgroup(&bn, &histo, b) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.new",OPERATION_FAILED);
@@ -1995,7 +1983,8 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPgroup)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPgroup", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if (CTgroup_custom(&bn, &histo, b, N, rng) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.new",OPERATION_FAILED);
@@ -2028,18 +2017,21 @@ GRPderive(int *hid, int *mid, int *ct_histoid, int *ct_mapid, int *bid)
 	if ((ct_map = BATdescriptor(*ct_mapid)) == NULL) {
 		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(ct_map,GRPderive)@
+	if(ct_map->htype != TYPE_oid && ct_map->htype != TYPE_void)
+		throw(MAL, "group.GRPderive", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((ct_histo = BATdescriptor(*ct_histoid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
 		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(ct_histo,GRPderive)@
+	if(ct_histo->htype != TYPE_oid && ct_histo->htype != TYPE_void)
+		throw(MAL, "group.GRPderive", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPreleaseref(ct_map->batCacheid);
 		BBPreleaseref(ct_histo->batCacheid);
 		throw(MAL, "group.derive", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPderive)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.derive", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if( derive(&histo, &bn, ct_histo, ct_map, b, tailtype(b, TRUE)) == GDK_FAIL){
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(ct_map->batCacheid);
@@ -2072,12 +2064,14 @@ GRPrefine(int *retid, int *bid, int *aid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPrefine)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.refine", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(a,GRPrefine)@
+	if(a->htype != TYPE_oid && a->htype != TYPE_void)
+		throw(MAL, "group.GRPrefine", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	CTrefine(&bn, b, a);
 	if (!bn){
@@ -2100,12 +2094,14 @@ GRPrefine_rev(int *retid, int *bid, int *aid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPrefine_rev)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPrefine", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.refine", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(a,GRPrefine_rev)@
+	if(a->htype != TYPE_oid && a->htype != TYPE_void)
+		throw(MAL, "group.GRPrefine", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	CTrefine_rev(&bn, b, a);
 	if (!bn){
@@ -2350,7 +2346,8 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
 
-	@:chkHeader(b,GRPsum_@1_@3)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPsum_@1_@3", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
@@ -2362,7 +2359,8 @@ str GRPsum_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		throw(MAL, "group.sum", MAL_MALLOC_FAIL);
 	}
 
-	@:chkHeader(e,GRPsum_@1_@3)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPsum_@1_@3", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	/* init: set all sums to zero */
 	bn->tsorted = bn->hsorted = 0;
 	bn->trevsorted = bn->hrevsorted = 0;
@@ -2428,7 +2426,8 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 	if( (b= BATdescriptor(*bid)) == NULL )
 		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
 
-	@:chkHeader(b,GRPprod_@1_@3)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPgroup_@1_@3", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.prod", RUNTIME_OBJECT_MISSING);
@@ -2440,7 +2439,8 @@ str GRPprod_@1_@3(int *retval, int *bid, int  *eid, bit *ignore_nils)
 		throw(MAL, "group.prod", MAL_MALLOC_FAIL);
 	}
 
-	@:chkHeader(e,GRPprod_@1_@3)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPprod_@1_@3", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	/* init: set all prods to one */
 	bn->tsorted = bn->hsorted = 0;
 	bn->trevsorted = bn->hrevsorted = 0;
@@ -2530,12 +2530,14 @@ str GRPavg_@1(int *ret, int *bid, int *eid)
 	if ((b = BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPavg_@1)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPavg_@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(e,GRPavg_@1)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPavg_@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -2626,12 +2628,14 @@ str GRPvar_@1(int *ret, int *bid, int *eid)
 	if ((b = BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPavg_@1)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPavg_@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if( (e= BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(e,GRPavg_@1)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPavg_@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	bn = BATnew(e->htype, BATttype(b), BATcount(e));
 	if (bn == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -2872,12 +2876,14 @@ GRP@1(int *retval, int *bid, int *eid)
 	if ((b = BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRP@1)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRP@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((e = BATdescriptor(*eid)) == NULL ){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.@1", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(e,GRP@1)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRP@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	if (b->ttype == TYPE_void) {
 		res = CMDaggr_@1_oid(&bn, b, e);
@@ -2972,12 +2978,14 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		throw(MAL, "group.count", RUNTIME_OBJECT_MISSING);
 	}
 
-	@:chkHeader(b,GRPaggr_count)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPaggr_count", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.count", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(e,GRPaggr_count)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPaggr_count", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	if (bn == NULL){
@@ -3064,12 +3072,14 @@ GRPsize(int *retval, int *bid, int *eid)
 		throw(MAL, "group.size", RUNTIME_OBJECT_MISSING);
 	}
 
-	@:chkHeader(b,GRPsize)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPsize", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "group.size", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(e,GRPsize)@
+	if(e->htype != TYPE_oid && e->htype != TYPE_void)
+		throw(MAL, "group.GRPsize", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	bn = BATnew(e->htype, TYPE_wrd, BATcount(e));
 	if (bn == NULL){
@@ -3148,7 +3158,8 @@ str GRPslidingsum_@1(int *retval, int *bid, int  *size, int *shift)
 	if( (b= BATdescriptor(*bid)) == NULL ){
 		throw(MAL, "group.sum", RUNTIME_OBJECT_MISSING);
 	}
-	@:chkHeader(b,GRPwindowsum_@1)@
+	if(b->htype != TYPE_oid && b->htype != TYPE_void)
+		throw(MAL, "group.GRPwindowsum_@1", SEMANTIC_TYPE_ERROR "(v)oid head required\n");
 
 	/* init: set all sums to zero */
 	bn= BATnew( TYPE_void, TYPE_@2, BATcount(b)/ *size +1);

@@ -65,9 +65,12 @@ typedef struct logger {
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */
-	BAT *catalog;		/* int, str */
-	BAT *seqs;		/* int, lng */
-	BAT *snapshots;		/* int, int the bid and tid of snapshot bat */
+	BAT *catalog_bid;	/* int bid column */
+	BAT *catalog_nme;	/* str name column */
+	BAT *seqs_id;		/* int id column */
+	BAT *seqs_val;		/* lng value column */
+	BAT *snapshots_bid;	/* int bid column */
+	BAT *snapshots_tid;	/* int tid column */
 	BAT *freed;		/* snapshots can be created and destroyed,
 				   in a single logger transaction.
 				   These snapshot bats should be freed

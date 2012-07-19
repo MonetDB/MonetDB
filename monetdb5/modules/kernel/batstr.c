@@ -30,6 +30,7 @@
  * are limited to :void, which can be cheaply realized using
  * the GRPsplit operation.
  */
+#include "batstr.h"
 
 #define prepareOperand(X,Y,Z) \
 	if( (X= BATdescriptor(*Y)) == NULL ) \
@@ -127,7 +128,7 @@ str STRbatstringLength(int *ret, int *l)
 			y= int_nil;
 			bn->T->nonil = 0;
 		} else 
-			@2(yp,x);
+			strSQLLength(yp,x);
 		bunfastins(bn, h, yp);
 	}
 	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -500,7 +501,7 @@ bunins_failed:
 	throw(MAL, "batstr." "suffix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatSuffixcst(int *ret, int *l, int *cst)
+str STRbatSuffixcst(int *ret, int *l, str *cst)
 {   
 	BATiter lefti;
 	BAT *bn, *left;
@@ -531,7 +532,7 @@ bunins_failed:
 	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstSuffixbat(int *ret, int *cst, int *r)
+str STRcstSuffixbat(int *ret, str *cst, int *r)
 {   
 	BATiter righti;
 	BAT *bn, *right;
@@ -567,12 +568,12 @@ str STRbatstrSearch(int *ret, int *l, int *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"search");
 	if( BATcount(left) != BATcount(right) )
 		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult2(bn,left,right,TYPE_bit,"search");
+	prepareResult2(bn,left,right,TYPE_int,"search");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -585,7 +586,6 @@ str STRbatstrSearch(int *ret, int *l, int *r)
 		str tr = (str) BUNtail(righti,p);
 		STRstrSearch(vp, &tl, &tr);
 		bunfastins(bn, h, vp);
-		;
 	}
 	bn->T->nonil = 0;
 	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -608,10 +608,10 @@ str STRbatstrSearchcst(int *ret, int *l, str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand(left,l,"search");
-	prepareResult(bn,left,TYPE_bit,"search");
+	prepareResult(bn,left,TYPE_int,"search");
 
 	lefti = bat_iterator(left);
 
@@ -621,7 +621,6 @@ str STRbatstrSearchcst(int *ret, int *l, str *cst)
 		str tl = (str) BUNtail(lefti,p);
 		STRstrSearch(vp, &tl, cst);
 		bunfastins(bn, h, vp);
-		;
 	}
 	bn->T->nonil = 0;
 	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -640,7 +639,7 @@ str STRcststrSearchbat(int *ret, str *cst, int *r)
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand(right,r,"search");
 	prepareResult(bn,right,TYPE_bit,"search");
@@ -671,7 +670,7 @@ str STRbatRstrSearch(int *ret, int *l, int *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"r_search");
 	if( BATcount(left) != BATcount(right) )
@@ -712,7 +711,7 @@ str STRbatRstrSearchcst(int *ret, int *l, str *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand(left,l,"r_search");
 	prepareResult(bn,left,TYPE_bit,"r_search");
@@ -744,7 +743,7 @@ str STRcstRstrSearchbat(int *ret, str *cst, int *r)
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand(right,r,"r_search");
 	prepareResult(bn,right,TYPE_bit,"r_search");
@@ -770,17 +769,17 @@ bunins_failed:
 	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatConCat(int *ret, int *l, int *r)
+str STRbatConcat(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	str v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"+");
 	if( BATcount(left) != BATcount(right) )
 		throw(MAL, "batstr.compare##X3", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult2(bn,left,right,TYPE_bit,"+");
+	prepareResult2(bn,left,right,TYPE_str,"+");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -793,7 +792,6 @@ str STRbatConCat(int *ret, int *l, int *r)
 		str tr = (str) BUNtail(righti,p);
 		STRConcat(vp, &tl, &tr);
 		bunfastins(bn, h, v);
-		;
 	}
 	bn->T->nonil = 0;
 	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -811,15 +809,15 @@ bunins_failed:
 	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRbatConCatcst(int *ret, int *l, str *cst)
+str STRbatConcatcst(int *ret, int *l, str *cst)
 {   
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	str v, *vp= &v;
 
 	prepareOperand(left,l,"+");
-	prepareResult(bn,left,TYPE_bit,"+");
+	prepareResult(bn,left,TYPE_str,"+");
 
 	lefti = bat_iterator(left);
 
@@ -829,7 +827,6 @@ str STRbatConCatcst(int *ret, int *l, str *cst)
 		str tl = (str) BUNtail(lefti,p);
 		STRConcat(vp, &tl, cst);
 		bunfastins(bn, h, v);
-		;
 	}
 	bn->T->nonil = 0;
 	BATaccessEnd(left, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
@@ -843,15 +840,15 @@ bunins_failed:
 	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
 }
 
-str STRcstConCatbat(int *ret, str *cst, int *r)
+str STRcstConcatbat(int *ret, str *cst, int *r)
 {   
 	BATiter righti;
 	BAT *bn, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	str v, *vp= &v;
 
 	prepareOperand(right,r,"+");
-	prepareResult(bn,right,TYPE_bit,"+");
+	prepareResult(bn,right,TYPE_str,"+");
 
 	righti = bat_iterator(right);
 
@@ -951,7 +948,7 @@ str STRbatWChrAt(int *ret, int *l, int *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"+");
 	if( BATcount(left) != BATcount(right) )
@@ -992,7 +989,7 @@ str STRbatWChrAtcst(int *ret, int *l, int *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	bit v, *vp= &v;
+	int v, *vp= &v;
 
 	prepareOperand(left,l,"+");
 	prepareResult(bn,left,TYPE_bit,"+");
@@ -1055,7 +1052,6 @@ bunins_failed:
 }
 
 /*
- * @-
  * The pattern matching routine is optimized for SQL pattern structures.
  */
 #define percent "\001"
@@ -1105,7 +1101,6 @@ STRbatlike_uselect2(int *ret, int *bid, str *pat)
 	return STRbatlike_uselect(ret,bid,pat,&esc);
 }
 /*
- * @-
  * The substring functions require slightly different arguments
  */
 batstr_export str STRbatsubstringcst(int *ret, int *bid, int *start, int *length);

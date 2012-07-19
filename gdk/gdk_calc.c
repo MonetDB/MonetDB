@@ -816,7 +816,6 @@ BATcalcisnil(BAT *b)
 		ISNIL_TYPE(sht);
 		break;
 	case TYPE_int:
-	case TYPE_bat:
 		ISNIL_TYPE(int);
 		break;
 	case TYPE_lng:

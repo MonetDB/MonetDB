@@ -363,8 +363,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 		rtrn = aggrX3_@1_bte_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_sht) {
 		rtrn = aggrX3_@1_sht_loc_ptr(ret, b, e);
-	} else if (b->ttype != TYPE_bat && (tt == TYPE_int || tt == TYPE_flt)) {
-		/* ensure use of ATOMput for TYPE_bat */
+	} else if (tt == TYPE_int || tt == TYPE_flt) {
 		rtrn = aggrX3_@1_int_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_dbl || tt == TYPE_lng) {
 		rtrn = aggrX3_@1_lng_loc_ptr(ret, b, e);

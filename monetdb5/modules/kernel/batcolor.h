@@ -50,6 +50,7 @@ batcolor_export str CLRbatGreen(int *ret, int *l);
 batcolor_export str CLRbatBlue(int *ret, int *l);
 batcolor_export str CLRbatSaturation(int *ret, int *l);
 batcolor_export str CLRbatValue(int *ret, int *l);
+batcolor_export str CLRbatHue(int *ret, int *l);
 batcolor_export str CLRbatHueInt(int *ret, int *l);
 batcolor_export str CLRbatSaturationInt(int *ret, int *l);
 batcolor_export str CLRbatValueInt(int *ret, int *l);
