@@ -36,7 +36,7 @@ Ready.
 % 66 # length
 function user.s1_1{autoCommit=true}(A0:flt):void;
     X_24 := nil:bat[:oid,:dbl];
-barrier X_57 := language.dataflow();
+barrier X_62 := language.dataflow();
     X_3 := sql.mvc();
     X_4:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
     X_9:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",2);
@@ -53,7 +53,7 @@ barrier X_57 := language.dataflow();
     X_22 := algebra.markT(X_20,0@0:oid);
     X_23 := bat.reverse(X_22);
     X_24 := algebra.leftjoin(X_23,X_18);
-exit X_57;
+exit X_62;
     X_25 := sql.resultSet(1,1,X_24);
     sql.rsColumn(X_25,"sys.tab_2826","d","double",53,0,X_24);
     X_32 := io.stdout();
