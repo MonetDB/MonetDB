@@ -187,7 +187,7 @@ CMDifThen(int *ret, int *bid, int *tid)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
@@ -253,7 +253,7 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
 	wrapup
@@ -356,7 +356,7 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, cnt);
@@ -474,7 +474,7 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
@@ -564,7 +564,7 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -650,7 +650,7 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATsetcount(bn, cnt);
 	BBPreleaseref(tb->batCacheid);
