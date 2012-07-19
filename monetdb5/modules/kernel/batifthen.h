@@ -33,8 +33,6 @@
 #endif
 
 batifthen_export str CMDifThen(int *ret, int *bid, int *tid);
-batifthen_export str CMDifThenCst(int *ret, int *bid, ptr *tid);
-batifthen_export str CMDifThenElseCst(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElse(int *ret, int *bid, int *tid, int *eid);
 batifthen_export str CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid);
 batifthen_export str CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val);
@@ -54,6 +52,7 @@ batifthen_export str CMDifThenElseCst_bte(int *ret, int *bid, ptr *tid, ptr *eid
 batifthen_export str CMDifThenElseCst_sht(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElseCst_int(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElseCst_lng(int *ret, int *bid, ptr *tid, ptr *eid);
+batifthen_export str CMDifThenElseCst_oid(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElseCst_flt(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElseCst_dbl(int *ret, int *bid, ptr *tid, ptr *eid);
 batifthen_export str CMDifThenElseCst_str(int *ret, int *bid, ptr *tid, ptr *eid);

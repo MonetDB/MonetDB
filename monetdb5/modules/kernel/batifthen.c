@@ -377,6 +377,9 @@ str CMDifThenElseCst_int(int *ret, int *bid, ptr *tid, ptr *eid){
 str CMDifThenElseCst_lng(int *ret, int *bid, ptr *tid, ptr *eid){
 	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_lng);
 }
+str CMDifThenElseCst_oid(int *ret, int *bid, ptr *tid, ptr *eid){
+	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_oid);
+}
 str CMDifThenElseCst_flt(int *ret, int *bid, ptr *tid, ptr *eid){
 	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_flt);
 }
