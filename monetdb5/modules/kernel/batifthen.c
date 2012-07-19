@@ -26,8 +26,10 @@
 
 #define resBAT2(X1,X2)\
 	bn = BATnew(ATOMtype(b->htype), X1, BATcount(b));\
-	if (bn == NULL)\
+	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
+	}\
 	bn->hsorted = b->hsorted;\
 	bn->hrevsorted = b->hrevsorted;\
 	bn->tsorted = b->tsorted;\
@@ -38,8 +40,10 @@
 
 #define resBAT(X1,X2)\
 	bn = BATnew(ATOMtype(b->htype), TYPE_##X1, BATcount(b));\
-	if (bn == NULL)\
+	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
+	}\
 	bn->hsorted = b->hsorted;\
 	bn->hrevsorted = b->hrevsorted;\
 	bn->tsorted = b->tsorted;\
@@ -56,6 +60,7 @@
 		bn = BATnew(b->htype, TYPE_##X1, BATcount(b));\
 	}\
 	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
 	bn->hsorted = b->hsorted;\
@@ -71,6 +76,7 @@
 	bn = BATnew(TYPE_void, X1, BATcount(b));\
 	BATseqbase(bn, b->hseqbase);\
 	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
 	bn->hsorted = b->hsorted;\
@@ -151,14 +157,17 @@ CMDifThen(int *ret, int *bid, int *tid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifthen", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	bi = bat_iterator(b);
 	tbi = bat_iterator(tb);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	switch(tb->ttype){
 	case TYPE_bit: ifthenImpl(bit,TYPE_bit,bit_nil); break;
@@ -187,10 +196,14 @@ CMDifThen(int *ret, int *bid, int *tid)
 		}
 		break;
 	default:
+		BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPreleaseref(tb->batCacheid);
 	wrapup
 }
@@ -225,7 +238,7 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	switch(type){
 	case TYPE_bit: ifThenCst(bit,TYPE_bit,bit_nil); break;
 	case TYPE_bte: ifThenCst(bte,TYPE_bte,bte_nil); break;
@@ -253,9 +266,11 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 		}
 		break;
 	default:
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	wrapup
 }
 str CMDifThenCst_bit(int *ret, int *bid, ptr *tid)
@@ -322,7 +337,7 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 	cnt = BATcount(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	switch(type){
 	case TYPE_bit: ifthenelsecstImpl(bit); break;
 	case TYPE_bte: ifthenelsecstImpl(bte); break;
@@ -356,9 +371,11 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 		}
 		break;
 	default:
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, cnt);
 	void_wrapup
 }
@@ -429,17 +446,20 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
 	if ((eb = BATdescriptor(*eid)) == NULL) {
-		BBPreleaseref(b->batCacheid); BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) || BATcount(b) != BATcount(eb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	if( BATcount(b) != BATcount(eb) )
-		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b, BUNfirst(b));
-	BATaccessBegin(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(eb,USE_TAIL, MMAP_SEQUENTIAL);
 	switch(tb->ttype){
@@ -477,9 +497,15 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 		}
 		break;
 	default:
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(eb,USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(eb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, cnt);
@@ -526,8 +552,11 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(eb) )
+	if( BATcount(b) != BATcount(eb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -567,6 +596,8 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		}
 		break;
 	default:
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	cnt = BATcount(b);
@@ -614,8 +645,11 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -653,6 +687,8 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 		}
 		break;
 	default:
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATsetcount(bn, cnt);
