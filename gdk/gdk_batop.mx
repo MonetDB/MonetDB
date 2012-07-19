@@ -934,64 +934,64 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
  * need an implementation for selecting nil (in MIL, this is done
  * through is the "isnil" predicate). So we implement it here.
  */
-@= valselect
-	HASHloop@2(bi, b->H->hash, i, tl) {
-		if (q < r)
-			bunfastins_nocheck(bn, q, BUNt@1(bi, i), tl, Hsize(bn), Tsize(bn));
-		q++;
-	}
-@= stringselect
-	if (strElimDoubles(b->H->vheap)) {
-		BUN p;
-		size_t j;
+#define hashselectloop(EXT, BUNtail)					\
+	do {								\
+		HASHloop##EXT(bi, b->H->hash, i, tl) {			\
+			if (q < r) {					\
+				bunfastins_nocheck(bn, q, BUNtail(bi, i), \
+						   tl, Hsize(bn), Tsize(bn)); \
+			}						\
+			q++;						\
+		}							\
+	} while (0)
+#define hashselect(BUNtail)						\
+	do {								\
+		switch (ATOMstorage(b->htype)) {			\
+		case TYPE_bte:						\
+			hashselectloop(_bte, BUNtail);			\
+			break;						\
+		case TYPE_sht:						\
+			hashselectloop(_sht, BUNtail);			\
+			break;						\
+		case TYPE_int:						\
+			hashselectloop(_int, BUNtail);			\
+			break;						\
+		case TYPE_flt:						\
+			hashselectloop(_flt, BUNtail);			\
+			break;						\
+		case TYPE_dbl:						\
+			hashselectloop(_dbl, BUNtail);			\
+			break;						\
+		case TYPE_lng:						\
+			hashselectloop(_lng, BUNtail);			\
+			break;						\
+		case TYPE_str:						\
+			if (strElimDoubles(b->H->vheap)) {		\
+				size_t j;				\
+									\
+				HASHloop_fstr(bi, b->H->hash, i, j, tl) { \
+					if (q < r)			\
+						bunfastins_nocheck(bn, q, \
+								   BUNtail(bi, i), \
+								   tl,	\
+								   Hsize(bn), \
+								   Tsize(bn)); \
+					q++;				\
+				}					\
+			} else {					\
+				hashselectloop(_str, BUNtail);		\
+			}						\
+			break;						\
+		default:						\
+			if (b->hvarsized) {				\
+				hashselectloop(var, BUNtail);		\
+			} else {					\
+				hashselectloop(loc, BUNtail);		\
+			}						\
+			break;						\
+		}							\
+	} while (0)
 
-		HASHloop_fstr(bi, b->H->hash, p, j, tl) {
-			if (q < r)
-				bunfastins_nocheck(bn, q, BUNt@1(bi, p), tl, Hsize(bn), Tsize(bn));
-			q++;
-		}
-	} else {
-		BUN p;
-
-		HASHloop_str(bi, b->H->hash, p, tl) {
-			if (q < r)
-				bunfastins_nocheck(bn, q, BUNt@1(bi, p), tl, Hsize(bn), Tsize(bn));
-			q++;
-		}
-	}
-@= hashselect
-	switch(ATOMstorage(b->htype)) {
-	case TYPE_bte:
-		@:valselect(@1,_bte)@
-		break;
-	case TYPE_sht:
-		@:valselect(@1,_sht)@
-		break;
-	case TYPE_int:
-		@:valselect(@1,_int)@
-		break;
-	case TYPE_flt:
-		@:valselect(@1,_flt)@
-		break;
-	case TYPE_dbl:
-		@:valselect(@1,_dbl)@
-		break;
-	case TYPE_lng:
-		@:valselect(@1,_lng)@
-		break;
-	case TYPE_str:
-		@:stringselect(@1)@
-		break;
-	default:
-		if (b->hvarsized) {
-			@:valselect(@1,var)@
-		} else {
-			@:valselect(@1,loc)@
-		}
-		break;
-	}
-@
-@c
 static BAT *
 BAT_hashselect(BAT *b, BAT *bn, const void *tl)
 {
@@ -1015,9 +1015,9 @@ BAT_hashselect(BAT *b, BAT *bn, const void *tl)
 		r = (BUN) BATcapacity(bn);
 
 		if (b->tvarsized) {
-			@:hashselect(var)@
+			hashselect(BUNtvar);
 		} else {
-			@:hashselect(loc)@
+			hashselect(BUNtloc);
 		}
 		if (q <= r)
 			break;
