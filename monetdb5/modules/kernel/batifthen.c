@@ -88,6 +88,12 @@
  * implementation for shifted window arithmetic as well.
  */
 #define wrapup\
+	bn->T->nil = nil;\
+	bn->T->nonil = !nil;\
+	if (nil) {\
+		bn->tsorted = FALSE;\
+		bn->trevsorted = FALSE;\
+	}\
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);\
     *ret= bn->batCacheid;\
     BBPkeepref(*ret);\
@@ -95,6 +101,12 @@
     return MAL_SUCCEED;
 
 #define void_wrapup\
+	bn->T->nil = nil;\
+	bn->T->nonil = !nil;\
+	if (nil) {\
+		bn->tsorted = FALSE;\
+		bn->trevsorted = FALSE;\
+	}\
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);\
 	if (b->htype != bn->htype) {\
 		BAT *r = VIEWcreate(b,bn);\
@@ -112,15 +124,15 @@
 #define ifthenImpl(X1,X2,X3)\
 		{ X1 nilval=  (X1) X3, *val;\
 			resBAT2(X2,"batcalc.ifThen")\
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);\
+			nil = FALSE;\
 			BATloop(b, p, q) {\
 				if (*t == bit_nil) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);\
-					bn->T->nonil = 0;\
-					bn->T->nil = 1;\
+					nil = TRUE;\
 				} else if (*t) {\
 					val = (X1*) BUNtail(tbi,p);\
 					BUNfastins(bn, BUNhead(bi,p), val);\
+					nil |= (*val == nilval);\
 				}\
 				t++;\
 			}\
@@ -131,7 +143,7 @@ CMDifThen(int *ret, int *bid, int *tid)
 	BATiter bi, tbi;
 	BAT *b, *tb, *bn;
 	BUN p,q;
-	bit *t;
+	bit *t, nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
@@ -159,23 +171,23 @@ CMDifThen(int *ret, int *bid, int *tid)
 	case TYPE_dbl: ifthenImpl(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
 		{
-
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
+					nil = TRUE;
 				} else if (*t ) {
 					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				}
 				t++;
 			}
 		}
 		break;
-        default:
-        	throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+	default:
+		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
 	}
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
@@ -185,15 +197,19 @@ CMDifThen(int *ret, int *bid, int *tid)
 
 #define ifThenCst(X1,X2,X3)\
 		{ X1 nilval= (X1) X3;\
+			bit v_nil = (*(X1*)tid == nilval);\
 			resBAT2(X2,"batcalc.ifThen")\
+			nil = FALSE;\
 			BATloop(b, p, q) {\
-				if (*t == bit_nil) \
+				if (*t == bit_nil) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);\
-				else if (*t) \
+					nil = TRUE;\
+				} else if (*t) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) tid);\
+					nil |= v_nil;\
+				}\
 				t++;\
 			}\
-			bn->T->nonil = (b->T->nonil && *(X1*)tid != nilval);\
 		}
 
 static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
@@ -201,7 +217,7 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	BATiter bi;
 	BAT *b, *bn;
 	BUN p,q;
-	bit *t;
+	bit *t, nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
@@ -221,14 +237,17 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	case TYPE_dbl: ifThenCst(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
 		{
+			bit v_nil = (strcmp(*(str*)tid, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
-				} else if (*t ) 
+					nil = TRUE;
+				} else if (*t ) {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
+					nil |= v_nil;
+				}
 				t++;
 			}
 		}
@@ -269,28 +288,32 @@ str CMDifThenCst_str(int *ret, int *bid, ptr *tid)
 #define ifthenelsecstImpl(Type)\
 	{ Type nilval= (Type) Type##_nil, *dst;\
 		BUN o;\
+		bit t_nil = (*(Type*)tid == nilval);\
+		bit e_nil = (*(Type*)eid == nilval);\
 		voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 		bn->tsorted = FALSE;\
 		bn->trevsorted = FALSE;\
 		BATkey(BATmirror(bn), FALSE);\
 		dst = (Type*)Tloc(bn, BUNfirst(bn));\
-		bn->T->nonil = (b->T->nonil && *(Type*)tid != nilval && *(Type*)eid != nilval);\
+		nil = FALSE;\
 		for (o=0; o<cnt; o++) {\
 			if (t[o] == bit_nil) {\
 				dst[o] = nilval;\
-				bn->T->nil =1 ;\
-				bn->T->nonil = 0;\
-			} else if (t[o]) \
+				nil = TRUE;\
+			} else if (t[o]) {\
 				dst[o] = *(Type*)tid;\
-			else\
+				nil |= t_nil;\
+			} else {\
 				dst[o] = *(Type*)eid;\
+				nil |= e_nil;\
+			}\
 		}\
 	}
 
 static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type)
 {
 	BAT *b, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -313,18 +336,21 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 		{
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit t_nil = (strcmp(*(str*)tid, str_nil) == 0);
+			bit e_nil = (strcmp(*(str*)eid, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = b->T->nonil;
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
-				} else if (*t ) 
+					nil = TRUE;
+				} else if (*t ) {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
-				else
+					nil |= t_nil;
+				} else {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)eid);
-
+					nil |= e_nil;
+				}
 				t++;
 			}
 		}
@@ -371,22 +397,26 @@ str CMDifThenElseCst_str(int *ret, int *bid, ptr *tid, ptr *eid){
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	tbv = (Type*)Tloc(tb, BUNfirst(tb));\
 	ebv = (Type*)Tloc(eb, BUNfirst(eb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = tbv[o];\
-		else\
+			nil |= (tbv[o] == nilval);\
+		} else {\
 			dst[o] = ebv[o];\
+			nil |= (ebv[o] == nilval);\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);\
 }
 
 str
 CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 {
 	BAT *b, *tb, *eb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -424,19 +454,20 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
+					nil = TRUE;
 				} else if (*t ) {
 					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				} else{
 					str val = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				}
 				t++;
 			}
@@ -457,28 +488,33 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 #define ifthenelsecst1(Type)\
 { Type nilval= (Type) Type##_nil, *dst, *ebv;\
 	BUN o;\
+	bit t_nil = (*(Type*)val == nilval);\
 	voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 	bn->tsorted = FALSE;\
 	bn->trevsorted = FALSE;\
 	BATkey(BATmirror(bn), FALSE);\
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	ebv = (Type*)Tloc(eb, BUNfirst(eb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = *(Type*)val;\
-		else\
+			nil |= t_nil;\
+		} else {\
 			dst[o] = ebv[o];\
+			nil |= (ebv[o] == nilval);\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && eb->T->nonil && *(Type*)val != nilval);\
 }
 
 str
 CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 {
 	BAT *b, *eb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
@@ -507,18 +543,20 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit t_nil = (strcmp(*(str*)val, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && eb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
-				} else if (*t ) 
+					nil = TRUE;
+				} else if (*t ) {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
-				else {
+					nil |= t_nil;
+				} else {
 					str v = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
+					nil |= (strcmp(v, str_nil) == 0);
 				}
 
 				t++;
@@ -538,28 +576,33 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 #define ifthenelsecst2(Type)\
 { Type nilval= (Type) Type##_nil, *dst, *tbv;\
 	BUN o;\
+	bit e_nil = (*(Type*)val == nilval);\
 	voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 	bn->tsorted = FALSE;\
 	bn->trevsorted = FALSE;\
 	BATkey(BATmirror(bn), FALSE);\
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	tbv = (Type*)Tloc(tb, BUNfirst(tb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = tbv[o];\
-		else \
+			nil |= (tbv[o] == nilval);\
+		} else {\
 			dst[o] = *(Type*)val;\
+			nil |= e_nil;\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && tb->T->nonil && *(Type*)val != nilval);\
 }
 
 str
 CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 {
 	BAT *b, *tb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -587,18 +630,21 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 		  BATiter tbi = bat_iterator(tb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit e_nil = (strcmp(*(str*)val, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
-					bn->T->nonil = 0;
+					nil = TRUE;
 				} else if (*t ) {
 					str v = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
-				} else
+					nil |= (strcmp(v, str_nil) == 0);
+				} else {
 					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
+					nil |= e_nil;
+				}
 				t++;
 			}
 		}
