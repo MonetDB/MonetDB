@@ -158,16 +158,16 @@ CMDifThen(int *ret, int *bid, int *tid)
 	case TYPE_flt: ifthenImpl(flt,TYPE_flt,flt_nil); break;
 	case TYPE_dbl: ifthenImpl(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 
 			resBAT(str,"batcalc.ifThen")
 			bn->T->nonil = (b->T->nonil && tb->T->nonil);
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) {
-					str *val = (str*) BUNtail(tbi,p);
+					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
 				}
 				t++;
@@ -220,15 +220,15 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	case TYPE_flt: ifThenCst(flt,TYPE_flt,flt_nil); break;
 	case TYPE_dbl: ifThenCst(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 			resBAT(str,"batcalc.ifThen")
 			bn->T->nonil = (b->T->nonil);
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), *(str*) tid);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
 				t++;
 			}
 		}
@@ -310,7 +310,7 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 	case TYPE_flt: ifthenelsecstImpl(flt); break;
 	case TYPE_dbl: ifthenelsecstImpl(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
 
@@ -318,12 +318,12 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 			bn->T->nonil = b->T->nonil;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), (str)tid);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
 				else
-					BUNfastins(bn, BUNhead(bi,p), (str)eid);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)eid);
 
 				t++;
 			}
@@ -419,7 +419,7 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 	case TYPE_flt: ifthenelseImpl(flt); break;
 	case TYPE_dbl: ifthenelseImpl(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter tbi = bat_iterator(tb);
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
@@ -429,13 +429,13 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 			bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) {
-					str *val = (str*) BUNtail(tbi,p);
+					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
 				} else{
-					str *val = (str*) BUNtail(ebi,p);
+					str val = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
 				}
 				t++;
@@ -503,7 +503,7 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 	case TYPE_flt: ifthenelsecst1(flt); break;
 	case TYPE_dbl: ifthenelsecst1(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
@@ -512,12 +512,12 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 			bn->T->nonil = (b->T->nonil && eb->T->nonil);
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), *(str*)val);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
 				else {
-					str *v = (str*) BUNtail(ebi,p);
+					str v = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
 				}
 
@@ -583,7 +583,7 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 	case TYPE_flt: ifthenelsecst2(flt); break;
 	case TYPE_dbl: ifthenelsecst2(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter tbi = bat_iterator(tb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
@@ -592,13 +592,13 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 			bn->T->nonil = (b->T->nonil && tb->T->nonil);
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
 					bn->T->nonil = 0;
 				} else if (*t ) {
-					str *v = (str*) BUNtail(tbi,p);
+					str v = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
 				} else
-					BUNfastins(bn, BUNhead(bi,p), *(str*)val);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
 				t++;
 			}
 		}
