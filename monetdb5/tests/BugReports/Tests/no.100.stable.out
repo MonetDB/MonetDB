@@ -60,9 +60,9 @@ function user.main():void;
     aa_a := calc.oid(20000000:lng);
     ba_a := calc.setoid(aa_a);
 #	io.print("var a := bat.new(int,str);"); 
-    a := bat.new(nil:int,nil:str);
+    a := bat.new(nil:oid,nil:str);
 #	io.print("a.insert(1,\"hello world\");"); 
-    ca_a := bat.insert(a,1,"hello world");
+    ca_a := bat.append(a,"hello world");
 #	io.print("a.print();"); 
     da_a := io.print(a);
 #	io.print("a.mark(nil).print();"); 
@@ -96,32 +96,32 @@ end main;
 # h	t		  # name
 # int	str		  # type
 #-------------------------#
-[ 1,	  "hello world"	  ]
+[ 0@0,	  "hello world"	  ]
 #-----------------#
 # h	t	  # name
 # int	void	  # type
 #-----------------#
-[ 1,	  0@0	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # t	h	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
+[ 0@0,	  0@0	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
-[ 0@0,	  1	  ]
+[ 0@0,	  0@0	  ]
 
 # 07:27:15 >  
 # 07:27:15 >  Done.

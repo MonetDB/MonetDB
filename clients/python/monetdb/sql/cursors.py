@@ -16,27 +16,21 @@
 # All Rights Reserved.
 
 import logging
-import sys
 
-from monetdb.sql import converters
-from monetdb.monetdb_exceptions import *
+from monetdb.sql import monetize, pythonize
+from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
 
 
-
-
-class Cursor:
+class Cursor(object):
     """This object represents a database cursor, which is used to manage
     the context of a fetch operation. Cursors created from the same
     connection are not isolated, i.e., any changes done to the
     database by a cursor are immediately visible by the other
     cursors"""
-
-
     def __init__(self, connection):
-
         """This read-only attribute return a reference to the Connection
         object on which the cursor was created."""
         self.connection = connection
@@ -95,12 +89,6 @@ class Cursor:
         #Only select queries have query ID
         self.__query_id = -1
 
-        # the type converters
-        self.__pythonizer = converters.Pythonizer(use_unicode=self.connection.use_unicode)
-        self.__monetizer = converters.Monetizer()
-
-
-
         """This is a Python list object to which the interface appends
         tuples (exception class, exception value) for all messages
         which the interfaces receives from the underlying database for
@@ -115,7 +103,7 @@ class Cursor:
         placed into this list, so checking the list allows the user to
         verify correct operation of the method calls.
 
-        ."""
+        """
         self.messages = []
 
 
@@ -182,16 +170,16 @@ class Cursor:
 
         if parameters:
             if isinstance(parameters, dict):
-                query = operation % dict([(k, self.__monetizer.convert(v))
+                query = operation % dict([(k, monetize.convert(v))
                     for (k,v) in parameters.items()])
             elif type(parameters) == list:
-                query = operation % tuple([self.__monetizer.convert(item)
+                query = operation % tuple([monetize.convert(item)
                     for item in parameters])
             elif type(parameters) == tuple:
-                query = operation % tuple([self.__monetizer.convert(item)
+                query = operation % tuple([monetize.convert(item)
                     for item in parameters])
             elif isinstance(parameters, str):
-                query = operation % self.__monetizer.convert(parameters)
+                query = operation % monetize.convert(parameters)
             else:
                 self.__exception_handler(ValueError,
                         "Parameters should be None, dict or list, now it is %s"
@@ -407,15 +395,16 @@ class Cursor:
             rows = []
 
             # set up fields for description
-            empty = [None]*columns
-            table_name = empty
-            column_name = empty
-            type = empty
-            display_size = empty
-            internal_size = empty
-            precision = empty
-            scale = empty
-            null_ok = empty
+            table_name = [None]*columns
+            column_name = [None]*columns
+            type_ = [None]*columns
+            display_size = [None]*columns
+            internal_size = [None]*columns
+            precision = [None]*columns
+            scale = [None]*columns
+            null_ok = [None]*columns
+
+            typesizes = [(0,0)]*columns
 
             for line in lines[1:]:
                 if line.startswith(mapi.MSG_HEADER):
@@ -428,17 +417,23 @@ class Cursor:
                     elif identity == "name":
                         column_name = values
                     elif identity == "type":
-                        type = values
+                        type_ = values
                     elif identity == "length":
-                        internal_size = [int(x) for x in values]
-                        display_size = internal_size
+                        pass # not used
+                    elif identity == "typesizes":
+                        typesizes = [[int(j) for j in i.split()] for i in values]
+                        internal_size = [x[0] for x in typesizes]
+                        for num, typeelem in enumerate(type_):
+                            if typeelem in ['decimal']:
+                                precision[num] = typesizes[num][0]
+                                scale[num] = typesizes[num][1]
                     else:
                         self.messages.append((InterfaceError,
                             "unknown header field"))
                         self.__exception_handler(InterfaceError,
                                 "unknown header field")
 
-                    self.description = list(zip(column_name, type,
+                    self.description = list(zip(column_name, type_,
                         display_size, internal_size, precision, scale, null_ok))
 
                 if line.startswith(mapi.MSG_TUPLE):
@@ -521,7 +516,7 @@ class Cursor:
         # values in a row are seperated by \t
         elements = line[1:-1].split(',\t')
         if len(elements) == len(self.description):
-            return tuple([self.__pythonizer.convert(element.strip(),
+            return tuple([pythonize.convert(element.strip(),
                 description[1]) for (element, description) in
                 zip(elements, self.description)])
         else:

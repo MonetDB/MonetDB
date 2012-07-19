@@ -488,10 +488,10 @@ INSPECTgetEnvironment(int *ret, int *ret2)
 {
 	BAT *b, *bn;
 
-	b= VIEWhead(GDKenv);
+	b= VIEWhead(BATmirror(GDKkey));
 	if (b == 0)
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
-	bn= VIEWhead(BATmirror(GDKenv));
+	bn= VIEWhead(BATmirror(GDKval));
 	if (bn == 0){
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);

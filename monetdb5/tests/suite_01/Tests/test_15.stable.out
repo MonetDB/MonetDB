@@ -67,13 +67,13 @@ end main;
 # h	t		t		  # name
 # void	str		int		  # type
 #-----------------------------------------#
-[ 0@0,	  "maxrss",	  26528		  ]
+[ 0@0,	  "maxrss",	  23856		  ]
 [ 1@0,	  "majflt",	  1718511981	  ]
-[ 2@0,	  "nswap",	  7088		  ]
+[ 2@0,	  "nswap",	  6421		  ]
 [ 3@0,	  "inblock",	  0		  ]
 [ 4@0,	  "oublock",	  0		  ]
 [ 5@0,	  "nvcsw",	  0		  ]
-[ 6@0,	  "ninvcsw",	  1144		  ]
+[ 6@0,	  "ninvcsw",	  136		  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -84,13 +84,13 @@ end main;
 # h	t		t		  # name
 # void	str		int		  # type
 #-----------------------------------------#
-[ 0@0,	  "maxrss",	  26584		  ]
+[ 0@0,	  "maxrss",	  23904		  ]
 [ 1@0,	  "majflt",	  1718511981	  ]
-[ 2@0,	  "nswap",	  7102		  ]
+[ 2@0,	  "nswap",	  6433		  ]
 [ 3@0,	  "inblock",	  0		  ]
 [ 4@0,	  "oublock",	  0		  ]
 [ 5@0,	  "nvcsw",	  0		  ]
-[ 6@0,	  "ninvcsw",	  1152		  ]
+[ 6@0,	  "ninvcsw",	  176		  ]
 #~EndVariableOutput~#
 #quit();
 

@@ -31,7 +31,7 @@ INCLUDES = ../lib \
 lib__geom = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = geom.mx
+	SOURCES = geom.c
 	LIBS = ../lib/libgeom \
 		   ../../gdk/libbat \
 	       ../../common/stream/libstream \
@@ -42,7 +42,7 @@ lib__geom = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = geom.mx
+	SOURCES = geom.mal
 }
 
 headers_autoload = {
@@ -51,4 +51,4 @@ headers_autoload = {
 	SOURCES = 30_geom.mal
 }
 
-EXTRA_DIST = 30_geom.mal
+EXTRA_DIST = 30_geom.mal geom.mal

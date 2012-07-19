@@ -62,32 +62,32 @@ function user.main():void;
     k := user.one(1);
     l := user.three(1,2,3);
     p := user.pow(1,2);
-    b := bat.new(:int,:int);
-    bat.insert(b,1,1);
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
     io.print("do multiplex three test");
-    X_23 := bat.new(nil:int,nil:int);
-barrier (X_26,X_27,X_28) := bat.newIterator(b);
+    X_23 := bat.new(nil:oid,nil:int);
+barrier (X_27,X_28) := iterator.new(b);
     X_30 := user.three(X_28,2,3);
     bat.insert(X_23,X_27,X_30);
-    redo (X_26,X_27,X_28) := bat.hasMoreElements(b);
-exit (X_26,X_27,X_28);
-    z:bat[:int,:int]  := X_23;
+    redo (X_27,X_28) := iterator.next(b);
+exit (X_27,X_28);
+    z:bat[:oid,:int]  := X_23;
     io.print("do multiplex one test");
-    X_35 := bat.new(nil:int,nil:int);
-barrier (X_37,X_38,X_39) := bat.newIterator(b);
-    X_41 := user.one(X_39);
-    bat.insert(X_35,X_38,X_41);
-    redo (X_37,X_38,X_39) := bat.hasMoreElements(b);
-exit (X_37,X_38,X_39);
-    z:bat[:int,:int]  := X_35;
+    X_35 := bat.new(nil:oid,nil:int);
+barrier (X_37,X_38) := iterator.new(b);
+    X_40 := user.one(X_38);
+    bat.insert(X_35,X_37,X_40);
+    redo (X_37,X_38) := iterator.next(b);
+exit (X_37,X_38);
+    z:bat[:oid,:int]  := X_35;
     io.print("do multiplex pow test");
-    X_46 := bat.new(nil:int,nil:int);
-barrier (X_48,X_49,X_50) := bat.newIterator(b);
-    X_52 := user.pow(X_50,2);
-    bat.insert(X_46,X_49,X_52);
-    redo (X_48,X_49,X_50) := bat.hasMoreElements(b);
-exit (X_48,X_49,X_50);
-    z:bat[:int,:int]  := X_46;
+    X_45 := bat.new(nil:oid,nil:int);
+barrier (X_47,X_48) := iterator.new(b);
+    X_50 := user.pow(X_48,2);
+    bat.insert(X_45,X_47,X_50);
+    redo (X_47,X_48) := iterator.next(b);
+exit (X_47,X_48);
+    z:bat[:oid,:int]  := X_45;
     io.print(z);
 end main;
 [ 1 ]
@@ -101,7 +101,7 @@ end main;
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 
 # 08:01:38 >  
 # 08:01:38 >  Done.

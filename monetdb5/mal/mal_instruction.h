@@ -273,7 +273,7 @@ mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
-mal_export int fndConstant(MalBlkPtr mb, ValPtr cst, int depth);
+mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
 mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export int newProperty(MalBlkPtr mb);

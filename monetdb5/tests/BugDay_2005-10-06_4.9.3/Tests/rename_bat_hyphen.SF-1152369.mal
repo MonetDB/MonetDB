@@ -1,4 +1,4 @@
-a:= bat.new(:int,:int);
+a:= bat.new(:oid,:int);
 bat.setName(a,"x_");
 io.print(a);
 

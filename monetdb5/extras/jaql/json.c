@@ -1153,11 +1153,8 @@ JSONextract(int *rkind, int *rstring, int *rinteger, int *rdoble, int *rarray, i
 		if (v != oid_nil) {
 			z = json_copy_entry(bik, bis, bii, bid, bia, bio, bin,
 					*startoid, v, &jb, &jbr);
-		} else {
-			BUNappend(jbr.kind, "n", FALSE);
-			z = BUNlast(jbr.kind) - 1 + *startoid;
+			BUNins(jbr.array, &w, &z, FALSE);
 		}
-		BUNins(jbr.array, &w, &z, FALSE);
 	}
 
 	unloadbats();
@@ -1420,16 +1417,21 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								BUNins(r, &v, buf, FALSE);
 								break;
 							case 'n':
-								BUNins(r, &v, (ptr)str_nil, FALSE);
+								snprintf(buf, sizeof(buf), "(null)");
+								BUNins(r, &v, buf, FALSE);
 								break;
 							default:
 								/* JSON piece (object/array), serialise */
 								(void)s;
 								/* TODO: implement right call */;
-								BUNins(r, &v, (ptr)str_nil, FALSE);
+								snprintf(buf, sizeof(buf),
+										"FIXME: not yet implemented");
+								BUNins(r, &v, buf, FALSE);
 								break;
 						}
 					}
+					if (BATcount(b) == 0)
+						BUNins(r, &v, str_nil, FALSE);
 					break;
 				case TYPE_dbl:
 					if (r == NULL)
@@ -1460,10 +1462,14 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'n':
 							default:
-								d = dbl_nil;
+								d = 0.0;
 								BUNins(r, &v, &d, FALSE);
 								break;
 						}
+					}
+					if (BATcount(b) == 0) {
+						d = dbl_nil;
+						BUNins(r, &v, &d, FALSE);
 					}
 					break;
 				case TYPE_lng:
@@ -1495,10 +1501,14 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'n':
 							default:
-								l = lng_nil;
+								l = 0;
 								BUNins(r, &v, &l, FALSE);
 								break;
 						}
+					}
+					if (BATcount(b) == 0) {
+						l = lng_nil;
+						BUNins(r, &v, &l, FALSE);
 					}
 					break;
 			}

@@ -130,7 +130,7 @@ pattern $op(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbat${name}cstenlarge
 comment "Return B $op V, guarantee no overflow by returning larger type";
 pattern $op(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
-address CMDbat${name}cstsignal
+address CMDbat${name}cstenlarge
 comment "Return V $op B, guarantee no overflow by returning larger type";
 
 EOF
@@ -482,10 +482,10 @@ done
 for tp1 in $alltypes; do
     for tp2 in void $alltypes; do
 	cat <<EOF
-command $tp1(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+command $tp1(b:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDconvertsignal_$tp1
 comment "cast from $tp2 to $tp1, signal error on overflow";
-command ${tp1}_noerror(b:bat[:any_1,:$tp2]) :bat[:any_1,:$tp1]
+command ${tp1}_noerror(b:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDconvert_$tp1
 comment "cast from $tp2 to $tp1";
 

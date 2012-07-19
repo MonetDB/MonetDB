@@ -38,12 +38,12 @@ stmt_uselect_select(stmt *s)
 }
 
 static stmt *
-eliminate_semijoin(sql_allocator *sa, stmt *s)
+eliminate_inter(sql_allocator *sa, stmt *s)
 {
 	stmt *s1, *s2;
 	sql_column *bc1, *bc2;
 
-	assert(s->type == st_semijoin);
+	assert(s->type == st_inter);
 	s1 = s->op1;
 	s2 = s->op2;
 	bc1 = basecolumn(s1);
@@ -53,7 +53,7 @@ eliminate_semijoin(sql_allocator *sa, stmt *s)
 		int match2 = (PSEL(s2) || RSEL(s2));
 
 		if (match1 && match2) {
-			/* semijoin( select(x,..), select(x,..) ) */
+			/* intersect( select(x,..), select(x,..) ) */
 			int swap = 0;
 
 			if (PSEL(s1) && s1->flag == cmp_equal) {
@@ -87,7 +87,7 @@ eliminate_semijoin(sql_allocator *sa, stmt *s)
 				s1 = stmt_uselect_select(s1);
 			}
 		} else if (match1) {
-			/* semijoin( select(x,..), f(x) )  =>  semijoin( f(x), select(x,..) ) */
+			/* intersect( select(x,..), f(x) )  =>  intersect( f(x), select(x,..) ) */
 			stmt *os;
 			int m;
 
@@ -99,18 +99,18 @@ eliminate_semijoin(sql_allocator *sa, stmt *s)
 			s2 = os;
 		}
 		if (match2 && 0) {
-			/* semijoin( f(x), select(x,..) )  =>  select( f(x), .. ) */
+			/* intersect( f(x), select(x,..) )  =>  select( f(x), .. ) */
 			stmt *ns = NULL;
 
 			switch (s2->type) {
 			case st_select:
 			case st_uselect:
-				/* uselect => select  as semijoin also propagates the left input's tail */
+				/* uselect => select  as intersect also propagates the left input's tail */
 				ns = stmt_select(sa, s1, s2->op2, (comp_type) s2->flag);
 				break;
 			case st_select2:
 			case st_uselect2:
-				/* uselect => select  as semijoin also propagates the left input's tail */
+				/* uselect => select  as intersect also propagates the left input's tail */
 				ns = stmt_select2(sa, s1, s2->op2, s2->op3, s2->flag);
 				break;
 			default:
@@ -247,13 +247,13 @@ _bin_optimizer(mvc *c, stmt *s)
 		return s;
 	}
 
-	case st_semijoin:{
+	case st_inter:{
 
 		stmt *j = NULL;
 		stmt *os, *ns;
 
-		os = stmt_semijoin(c->sa, _bin_optimizer(c, s->op1), _bin_optimizer(c, s->op2));
-		/* try to push the semijoin through the (fetch) join */
+		os = stmt_inter(c->sa, _bin_optimizer(c, s->op1), _bin_optimizer(c, s->op2));
+		/* try to push the intersect through the (fetch) join */
 		if (os->op1->type == st_join) {
 			j = os->op1;
 			/* equi join on same base table */
@@ -261,7 +261,7 @@ _bin_optimizer(mvc *c, stmt *s)
 		    		j->op1->t == j->op2->h ) {
 				stmt *l = j->op1;
 				stmt *r = j->op2;
-				s = stmt_semijoin(c->sa, l, os->op2);
+				s = stmt_inter(c->sa, l, os->op2);
 				l = _bin_optimizer(c, s);
 				os = stmt_join( c->sa, l, r, cmp_equal);
 				os->optimized = 3; 
@@ -269,7 +269,7 @@ _bin_optimizer(mvc *c, stmt *s)
 			}
 		} 
 		if (!mvc_debug_on(c, 4096) && os->nrcols) {
-			ns = eliminate_semijoin(c->sa, os);
+			ns = eliminate_inter(c->sa, os);
 		} else {
 			ns = os;
 		}
@@ -400,6 +400,8 @@ _bin_optimizer(mvc *c, stmt *s)
 		return s;
 	}
 
+	case st_tinter:
+	case st_tdiff:
 	case st_temp:
 	case st_single:
 	case st_diff:

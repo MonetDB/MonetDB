@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Jul 17 2012 Fabian Groffen <fabian@cwi.nl>
+- mclient no longer prints the SQLSTATE at the start of each error
+  returned by the SQL-server.
+

@@ -1,5 +1,5 @@
 # detect empty ranges
-b := bat.new(:void,:int);
+b := bat.new(:oid,:int);
 s1:= algebra.select(b,80,90);
 s2:= algebra.select(b,90,80);
 s3:= algebra.select(b,80,80);

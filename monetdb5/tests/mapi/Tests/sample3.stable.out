@@ -23,15 +23,10 @@ Ready.
 # 22:25:16 >  
 
 
-# 22:09:51 >  
-# 22:09:51 >  sample3 draco 40178 mil
-# 22:09:51 >  
+rows received 1 with 3 fields
+h=0@0 t=peter t=25 
 
-rows received 2 with 2 fields
-h=John t=23 
-h=Mary t=22 
-
-# 22:25:17 >  
-# 22:25:17 >  Done.
-# 22:25:17 >  
+# 12:57:58 >  
+# 12:57:58 >  "Done."
+# 12:57:58 >  
 

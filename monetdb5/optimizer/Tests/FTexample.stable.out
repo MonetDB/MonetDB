@@ -12,8 +12,8 @@ stdout of test 'FTexample` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.test(s:str):wrd;
-    b := bat.new(:int,:str);
-    bat.insert(b,1,"hello");
+    b := bat.new(:oid,:str);
+    bat.append(b,"hello");
     z := algebra.select(b,s,s);
     i := aggr.count(z);
     return test := i;
@@ -23,11 +23,11 @@ function user.main():void;
     mdb.List("user","test");
 end main;
 factory user.test(s:str):wrd;           #  0 test:wrd := user.test(s:str) {G}
-    b := bat.new(:int,:str);            #  1 b:bat[:int,:str] := CMDBATnew(_3:int, _4:str) {G}
-    bat.insert(b,1,"hello");            #  2 _5:bat[:int,:str] := BKCinsert_bun(b:bat[:int,:str], _6:int, _7:str) {G}
-barrier always := true;                 #  3 always:bit := _11:bit {J8}
-    z := algebra.select(b,s,s);         #  4 z:bat[:int,:str] := ALGselect(b:bat[:int,:str], s:str, s:str) {G}
-    i := aggr.count(z);                 #  5 i:wrd := ALGcount_bat(z:bat[:int,:str]) {G}
+    b := bat.new(:oid,:str);            #  1 b:bat[:oid,:str] := CMDBATnew(_3:oid, _4:str) {G}
+    bat.append(b,"hello");              #  2 _5:bat[:oid,:str] := BKCappend_val_wrap(b:bat[:oid,:str], _6:str) {G}
+barrier always := true;                 #  3 always:bit := _10:bit {J8}
+    z := algebra.select(b,s,s);         #  4 z:bat[:oid,:str] := ALGselect(b:bat[:oid,:str], s:str, s:str) {G}
+    i := aggr.count(z);                 #  5 i:wrd := ALGcount_bat(z:bat[:oid,:str]) {G}
     yield test := i;                    #  6 test:wrd := i:wrd 
     redo always;                        #  7 always:bit {J4}
 exit always;                            #  8 always:bit 

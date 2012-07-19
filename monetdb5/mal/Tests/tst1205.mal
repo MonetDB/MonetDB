@@ -38,23 +38,6 @@ mtime.timezone_local(lzone);
 	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
 #var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
 # 
-	rule_bat:= bat.new(:str,:zrule,10);
-#var rule_bat := bat.new(str,rule,10);
-	bat.insert(rule_bat,"jan",rule_jan);
-	bat.insert(rule_bat,"feb",rule_feb);
-	bat.insert(rule_bat,"mar",rule_mar);
-	bat.insert(rule_bat,"apr",rule_apr);
-#rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
-	bat.insert(rule_bat,"may",rule_may);
-	bat.insert(rule_bat,"jun",rule_jun);
-	bat.insert(rule_bat,"jul",rule_jul);
-	bat.insert(rule_bat,"aug",rule_aug);
-#rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
-	bat.insert(rule_bat,"sep",rule_sep);
-	bat.insert(rule_bat,"oct",rule_oct);
-	bat.insert(rule_bat,"nov",rule_nov);
-	bat.insert(rule_bat,"dec",rule_dec);
-#rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
 #
 #
 ##line 580 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
@@ -129,7 +112,7 @@ mtime.timezone_local(lzone);
 #tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
-    date_seq:= bat.new(:int,:date);
+    date_seq:= bat.new(:oid,:date);
     date_00:= mtime.date(2000,01,01);
 #var date_seq := bat.new(int, date);
     i:= -375;
@@ -140,7 +123,7 @@ barrier lf_a:= true;
 barrier mf_a:= of_a;
 #while ((i :+= 1) < 375) {
     pf_a := mtime.adddays(date_00,i);
-    bat.insert(date_seq,i,pf_a);
+    bat.append(date_seq,pf_a);
 #   date_seq.bat.insert(i,adddays(date_00,i));
 redo    lf_a;
 exit    mf_a;
@@ -151,19 +134,19 @@ exit    lf_a;
 #
 	rf_a := bat.setColumn(date_seq,"date");
 #io.print(date_seq.bat.setColumn("date"),
-	sf_a:bat[:int,:int] := mal.multiplex("mtime","weekofyear",date_seq);
+	sf_a:bat[:oid,:int] := mal.multiplex("mtime","weekofyear",date_seq);
 	tf_a := bat.setColumn(sf_a,"weekofyear");
 #      [weekofyear](date_seq).bat.setColumn("weekofyear"),
-	uf_a:bat[:int,:int] := mal.multiplex("mtime","dayofweek",date_seq);
-	vf_a:bat[:int,:str] := mal.multiplex("mtime","dayname",uf_a);
+	uf_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	vf_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",uf_a);
 	wf_a := bat.setColumn(vf_a,"dayofweek");
 #      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"),
-	xf_a:bat[:int,:int] := mal.multiplex("mtime","dayofweek",date_seq);
-	yf_a:bat[:int,:str] := mal.multiplex("mtime","dayname",xf_a);
-	ag_a:bat[:int,:int] := mal.multiplex("mtime","daynum",yf_a);
+	xf_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",date_seq);
+	yf_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",xf_a);
+	ag_a:bat[:oid,:int] := mal.multiplex("mtime","daynum",yf_a);
 	bg_a := bat.setColumn(ag_a,"num");
 #      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"),
-	cg_a:bat[:int,:int] := mal.multiplex("mtime","dayofyear",date_seq);
+	cg_a:bat[:oid,:int] := mal.multiplex("mtime","dayofyear",date_seq);
 	dg_a := bat.setColumn(cg_a,"dayofyear");
 io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);

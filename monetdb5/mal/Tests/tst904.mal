@@ -1,12 +1,12 @@
 # the multiplex code blocks using CONSTANTS.
 clients.setListing(15);
-b:= bat.new(:lng,:lng);
+b:= bat.new(:oid,:lng);
 i:= -1:lng;
-barrier (v,i):= language.newRange(0:lng);
-	bat.insert(b,i,i);
-	redo (v,i):= language.nextElement(1:lng,10:lng);
-exit (v,i);
+barrier i:= 0:lng;
+	bat.append(b,i);
+	redo i:= iterator.next(1:lng,10:lng);
+exit i;
 io.print(b);
 c:= 1;
-xz:bat[:lng,:lng]:= mal.multiplex("calc","+",b,c);
+xz:bat[:oid,:lng]:= mal.multiplex("calc","+",b,c);
 io.print(xz);

@@ -233,4 +233,5 @@ gdk_export int MT_check_nr_cores(void);
  */
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
+
 #endif /*_GDK_SYSTEM_H_*/

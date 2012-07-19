@@ -1,7 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Wed Jun 13 2012 Fabian Groffen <fabian@cwi.nl>
-- Removed erroneously (re-)added master and slave properties, this
-  functionality is currently not working.
+* Wed Jul 18 2012 Fabian Groffen <fabian@cwi.nl>
+- Resolved a problem where automatic starting of a database initiated by
+  multiple clients at the same time could cause failed starts.  Bug #3107
 

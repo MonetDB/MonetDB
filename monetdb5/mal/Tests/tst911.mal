@@ -11,9 +11,9 @@ function choptest(b:bat[:oid,:lng], size:lng, base:lng);
     dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
     mdb.setDebug(dbgmsk_set);
 
-    barrier (chk,c):= bat.newIterator(b,size);
+    barrier (chk,c):= iterator.new(b,size);
         t:= algebra.select(c, 256000:lng,266000:lng);
-        redo (chk,c):= bat.hasMoreElements(b,size);
+        redo (chk,c):= iterator.next(b,size);
     exit (chk,c);
 
     mdb.setDebug(dbgmsk_restore);
@@ -41,12 +41,12 @@ dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
 r:= mmath.srand(0);
-barrier (go,i):= language.newRange(0:lng);
+barrier i:= 0:lng;
 	k:= mmath.rand();
 	l:= calc.lng(k);
 	bat.insert(b,nil:oid,l);
-	redo (go,i):= language.nextElement(1:lng,1000000:lng);
-exit (go,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
 
 mdb.setDebug(dbgmsk_restore);
 

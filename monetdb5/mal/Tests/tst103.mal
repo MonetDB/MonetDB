@@ -1,10 +1,12 @@
 # check propagation of type variables over bats
 
-function f(a:any_1, b:any_2):bat[:any_2,:any_1] ;
-	return f:=bat.new(:any_2,:any_1); 
+function f(a:any_1, b:any_2)(u:bat[:oid,:any_1], w:bat[:oid,:any_2]);
+	x:=bat.new(:oid,:any_1); 
+	y:=bat.new(:oid,:any_2); 
+	return (u,w):=(x,y);
 end f;
 
-a:= user.f(1,"hello");
-b:= user.f(1,"world");
-c:= user.f(1.0, -3);
-d:= user.f(true,false);
+(a,a1):= user.f(1,"hello");
+(b,b1):= user.f(1,"world");
+(c,c1):= user.f(1.0, -3);
+(d,d1):= user.f(true,false);

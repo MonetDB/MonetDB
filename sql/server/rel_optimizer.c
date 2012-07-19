@@ -1779,7 +1779,24 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		if (!ne || (ne->type != e_column && ne->type != e_atom))
 			return NULL;
-		/* possibly a groupby column is renamed */
+		while (ne && f->op == op_project && ne->type == e_column) {
+			sql_exp *oe = e, *one = ne;
+
+			e = ne;
+			ne = NULL;
+			if (e->l)
+				ne = exps_bind_column2(f->exps, e->l, e->r);
+			if (!ne && !e->l)
+				ne = exps_bind_column(f->exps, e->r, NULL);
+			if (!ne || ne == one) {
+				ne = one;
+				e = oe;
+				break;
+			}
+			if (ne->type != e_column && ne->type != e_atom)
+				return NULL;
+		}
+		/* possibly a groupby/project column is renamed */
 		if (is_groupby(f->op) && f->r) {
 			sql_exp *gbe = NULL;
 			if (ne->l) 
@@ -3590,6 +3607,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			/* create new sum/cnt exp */
 
 			/* For now we always convert to dbl */
+			/* TODO fix this conversion could be don after sum! */
 			dbl_t = sql_bind_localtype("dbl");
 			cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
 			sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
@@ -3604,6 +3622,7 @@ rel_avg2sum_count(int *changes, mvc *sql, sql_rel *rel)
 			args = new_exp_list(sql->sa);
 			append(args, cond);
 			append(args, exp_atom(sql->sa, atom_general(sql->sa, dbl_t, NULL)));
+			/* TODO only ifthenelse if value column may have nil's*/
 			append(args, cnt_d);
 			ifthen = find_func(sql, "ifthenelse", args);
 			assert(ifthen);

@@ -425,20 +425,3 @@ str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
-
-zorder_export 
-str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt)
-{
-    int slice_ret;
-	BAT *t = BATnew(TYPE_str, TYPE_bat, 1);
-    str bla;
-
-    rethrow("ZORDsql_slice_int", bla, 
-            ZORDslice_int(&slice_ret, xb, yb, xt, yt));
-
-	BUNins(t, "z", &slice_ret, FALSE);
-    BBPdecref(slice_ret, TRUE);
-	*r = t->batCacheid;
-	BBPkeepref(*r);
-	return MAL_SUCCEED;
-}

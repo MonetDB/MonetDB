@@ -25,20 +25,20 @@ stdout of test 'tst400` in directory 'mal` itself:
 #exit	(v2,i);
 #
 function user.main():void;
-barrier (v1,i) := language.newRange(0);
+barrier i := 0;
     io.print("do something");
-    redo (v1,i) := language.nextElement(1,2);
-exit (v1,i);
-    io.printf("left first loop with %d\n",v1);
+    redo i := iterator.next(1,2);
+exit i;
+    io.printf("left first loop with %d\n",i);
     io.print("next iteration");
-barrier (v2,i) := language.newRange(0);
+barrier i := 0;
     io.print("do something else");
-    redo (v2,i) := language.nextElement(2,5);
-exit (v2,i);
+    redo i := iterator.next(2,5);
+exit i;
 end main;
 [ "do something" ]
 [ "do something" ]
-left first loop with 0
+left first loop with nil
 [ "next iteration" ]
 [ "do something else" ]
 [ "do something else" ]

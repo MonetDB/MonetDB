@@ -20,20 +20,22 @@ function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:a
 end joinPath;
 function user.main():void;
 # the first test for macro expansions and inversions 
-    a := bat.new(:int,:int);
-    b := bat.new(:int,:int);
-    c := bat.new(:int,:int);
-    h := user.joinPath(a,b,c);
-    r := algebra.joinPath(a,b,c);
+    a := bat.new(:oid,:int);
+    b := bat.new(:oid,:int);
+    br := bat.reverse(b);
+    c := bat.new(:oid,:int);
+    h := user.joinPath(a,br,c);
+    r := algebra.joinPath(a,br,c);
     mdb.List();
 function user.main():void;              #  0 main:void := user.main() {G}
 # the first test for macro expansions and inversions 
-    a := bat.new(:int,:int);            #  2 a:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    b := bat.new(:int,:int);            #  3 b:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    c := bat.new(:int,:int);            #  4 c:bat[:int,:int] := CMDBATnew(_6:int, _6:int) {G}
-    h := user.joinPath(a,b,c);          #  5 h:bat[:int,:int] := user.joinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {PG}
-    r := algebra.joinPath(a,b,c);       #  6 r:bat[:any,:any] := ALGjoinPath(a:bat[:int,:int], b:bat[:int,:int], c:bat[:int,:int]) {G}
-    mdb.List();                         #  7 _12:void := MDBlistDetail() 
+    a := bat.new(:oid,:int);            #  2 a:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
+    b := bat.new(:oid,:int);            #  3 b:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
+    br := bat.reverse(b);               #  4 br:bat[:int,:oid] := BKCreverse(b:bat[:oid,:int]) {G}
+    c := bat.new(:oid,:int);            #  5 c:bat[:oid,:int] := CMDBATnew(_6:oid, _7:int) {G}
+    h := user.joinPath(a,br,c);         #  6 h:bat[:oid,:int] := user.joinPath(a:bat[:oid,:int], br:bat[:int,:oid], c:bat[:oid,:int]) {PG}
+    r := algebra.joinPath(a,br,c);      #  7 r:bat[:any,:any] := ALGjoinPath(a:bat[:oid,:int], br:bat[:int,:oid], c:bat[:oid,:int]) {G}
+    mdb.List();                         #  8 _14:void := MDBlistDetail() 
 
 # 19:36:05 >  
 # 19:36:05 >  Done.

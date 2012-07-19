@@ -16,14 +16,14 @@ stdout of test 'qep00` in directory 'optimizer` itself:
 # demonstrate the QEP construction 
     J1 := algebra.join(E1,R2);
         E1 := algebra.select(R,1,3);
-            R := bat.new(:void,:int);
+            R := bat.new(:oid,:int);
         R2 := bat.reverse(E2);
             E2 := algebra.select(S,4,9);
-                S := bat.new(:void,:int);
+                S := bat.new(:oid,:int);
 function user.main():void;
 # demonstrate the QEP construction 
-    R := bat.new(:void,:int);
-    S := bat.new(:void,:int);
+    R := bat.new(:oid,:int);
+    S := bat.new(:oid,:int);
     E1 := algebra.select(R,1,3);
     E2 := algebra.select(S,4,9);
     R2 := bat.reverse(E2);

@@ -39,8 +39,7 @@ drop table t;
 
 create table t(u url);
 
--- this works on UNIX, on Windows we likely need an extra / after file://
-insert into t values ('file://$TSTSRCDIR/url_script_test.Bug-2972.txt');
+insert into t values ('$UTSTSRCDIR/url_script_test.Bug-2972.txt');
 
 select getContent(u) from t;
 

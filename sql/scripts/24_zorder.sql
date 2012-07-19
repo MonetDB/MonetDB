@@ -23,6 +23,3 @@ create function zorder_decode_x(z oid) returns integer
 create function zorder_decode_y(z oid) returns integer
     external name zorder.decode_y;
 
-create function zorder_slice(xb integer, yb integer, xt integer, yt integer) returns table (z oid)
-    external name zorder.sql_slice;
-

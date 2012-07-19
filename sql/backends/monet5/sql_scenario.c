@@ -482,6 +482,23 @@ sql_update_jul2012(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2012(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+	/* new function sys.alpha */
+	pos += snprintf(buf+pos, bufsize-pos, "drop function sys.zorder_slice;\n");
+
+	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -626,6 +643,21 @@ SQLinitClient(Client c)
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
 			if ((err = sql_update_jul2012(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
+		}
+		/* if function sys.zorder_slice() does exist, we need
+		 * to update */
+		{
+			list *l = sa_list(m->sa);
+			sql_find_subtype(&tp, "int", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			if (sql_bind_func_(m->sa, mvc_bind_schema(m,"sys"),
+					   "zorder_slice", l, F_FUNC )) {
+				if ((err = sql_update_oct2012(c)) != NULL)
+					fprintf(stderr, "!%s\n", err);
+			}
 		}
 	}
 	fflush(stdout);

@@ -28,37 +28,35 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		algebraExtensions.c algebraExtensions.h \
 		array.mx \
 		attach.c attach.h \
 		batExtensions.c \
 		bbp.c bbp.h \
 		box.c box.h \
-		chopper.c \
 		clients.c clients.h \
-		cluster.mx \
+		cluster.c cluster.h \
 		const.c  const.h \
 		constraints.c constraints.h \
 		factories.c factories.h \
 		groupby.c groupby.h \
 		histogram.h \
 		inspect.c inspect.h \
-		language.mx \
+		iterator.c  iterator.h \
+		language.c language.h \
 		mal_io.c mal_io.h \
 		mal_mapi.c mal_mapi.h \
 		manual.c manual.h \
-		mat.mx \
+		mat.c mat.h \
 		mdb.c mdb.h \
 		mkey.c mkey.h \
 		pcre.c \
-		pqueue.mx \
+		pqueue.c pqueue.h \
 		profiler.c profiler.h \
 		recycle.c recycle.h \
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
 		tablet.c tablet.h \
-		tablet_sql.c \
-		tokenizer.mx \
+		tokenizer.c tokenizer.h \
 		trader.c trader.h \
 		transaction.c \
 		txtsim.c txtsim.h \
@@ -70,18 +68,19 @@ lib_mal = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = array.mx language.mx constraints.mal mal_init.mal box.mal bbp.mal \
-		profiler.mal const.mal attach.mal batExtensions.mal algebraExtensions.mal \
-		inspect.mal manual.mal mal_io.mal pqueue.mx mkey.mal \
-		chopper.mal clients.mal \
-		factories.mal groupby.mal mdb.mal pcre.mal tablet.mal mat.mx \
+	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
+		profiler.mal const.mal attach.mal batExtensions.mal \
+		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
+		iterator.mal clients.mal \
+		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
 		urlbox.mal transaction.mal \
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		cluster.mx trader.mal \
-		tokenizer.mx zorder.mal sample.mal
+		cluster.mal trader.mal \
+		tokenizer.mal zorder.mal sample.mal \
+		array.mx
 }
 
-EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal
+EXTRA_DIST = attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal pqueue.mal
 
 EXTRA_DIST_DIR = Tests

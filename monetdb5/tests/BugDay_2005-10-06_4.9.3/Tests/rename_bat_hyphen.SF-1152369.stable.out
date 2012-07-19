@@ -13,7 +13,7 @@ stdout of test 'rename_bat_hyphen.SF-1152369` in directory 'tests/BugDay_2005-10
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    a := bat.new(:int,:int);
+    a := bat.new(:oid,:int);
     bat.setName(a,"x_");
     io.print(a);
 #bat("x-").print(); 

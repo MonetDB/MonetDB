@@ -43,6 +43,8 @@ main(int argc, char **argv)
 	Mapi dbh;
 	MapiHdl hdl = NULL;
 	mapi_int64 rows, i;
+	char *parm[] = { "peter", 0 };
+	char *parm2[] = { "25", 0 };
 	int j;
 
 	if (argc != 4) {
@@ -74,19 +76,19 @@ main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 	} else if (strcmp(argv[3], "mal") == 0) {
-		if ((hdl = mapi_query(dbh, "emp := bat.new(:str,:int);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "emp := bat.new(:oid,:str);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "age := bat.new(:oid,:int);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"John\",23);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query_array(dbh, "bat.append(emp,\"?\");", parm)) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query_array(dbh, "bat.append(age,?);", parm2)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"Mary\",22);")) == NULL || mapi_error(dbh))
-			die(dbh, hdl);
-		if (mapi_close_handle(hdl) != MOK)
-			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "io.print(emp,age);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 	} else {
 		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);

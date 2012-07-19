@@ -135,11 +135,11 @@ exit MALException:str ;
     io.printf("# io.print(-1.0:int);\n");
     io.print(-1:int);
     io.printf("# io.print(2147483647.0:int);\n");
-    io.print(nil:int);
+    io.print(2147483647:int);
     io.printf("# io.print(2147483648.0:int);\n");
-    io.print(nil:int);
+    io.print(2147483647:int);
     io.printf("# io.print(2147483649.0:int);\n");
-    io.print(nil:int);
+    io.print(2147483647:int);
     io.printf("# io.print(-2147483647.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483648.0:int);\n");
@@ -2400,11 +2400,11 @@ Caught exception
 # io.print(-1.0:int);
 [ -1 ]
 # io.print(2147483647.0:int);
-[ nil ]
+[ 2147483647 ]
 # io.print(2147483648.0:int);
-[ nil ]
+[ 2147483647 ]
 # io.print(2147483649.0:int);
-[ nil ]
+[ 2147483647 ]
 # io.print(-2147483647.0:int);
 [ nil ]
 # io.print(-2147483648.0:int);
@@ -3644,9 +3644,9 @@ Caught exception
 # s := "2147483647"; s_oid := calc.oid(s); io.print(s_oid);
 [ 2147483647@0 ]
 # s := "2147483648"; s_oid := calc.oid(s); io.print(s_oid);
-[ nil ]
+Caught exception
 # s := "2147483649"; s_oid := calc.oid(s); io.print(s_oid);
-[ nil ]
+Caught exception
 # s := "-2147483647"; s_oid := calc.oid(s); io.print(s_oid);
 Caught exception
 # s := "-2147483648"; s_oid := calc.oid(s); io.print(s_oid);

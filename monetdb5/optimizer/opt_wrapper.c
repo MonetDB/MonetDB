@@ -71,7 +71,6 @@ All Rights Reserved.
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_singleton.h"
 #include "opt_statistics.h"
 #include "opt_strengthReduction.h"
 #include "opt_trace.h"
@@ -113,7 +112,6 @@ struct{
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
-	{"singleton", &OPTsingletonImplementation},
 	{"strengthReduction", &OPTstrengthReductionImplementation},
 	{"trace", &OPTtraceImplementation},
 	{0,0}

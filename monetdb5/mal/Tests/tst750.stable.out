@@ -29,7 +29,7 @@ end test;
 function user.main():void;
 # Polymorphic function tests 
 # Cloning two versions of a single function 
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
     user.test(b,2);
 end main;
 [ 3 ]

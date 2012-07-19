@@ -1,7 +1,8 @@
 # A collection of forloops, which should not execute
 function foo();
-barrier	H := batoperatie;
-	Tail:= algebra.fetch(b,H);
+	b:= bat.new(:oid,:int);
+barrier	H := true;
+	T:= 1;
 	#body
 redo 	H;
 exit	H;
@@ -10,11 +11,10 @@ exit	H;
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
 # 'randen' van het blok. (redo L, leave L)
 # een while loop
-barrier L := chop.hasMoreElements(b);
-	H:= chop.head(b);
-	v:= chop.nextElement(b);
-redo	L;
-exit	L;
+barrier (h,t) := iterator.new(b);
+	(h,t):= iterator.next(b);
+redo	(h,t);
+exit	(h,t);
 	
 #een do-while loop
 	entry:= true;

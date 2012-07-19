@@ -53,26 +53,26 @@ function user.main():void;
     profiler.activate("ticks");
 #profiler.activate("pc"); 
     profiler.activate("stmt");
-    profiler.setFilter("*","insert");
+    profiler.setFilter("*","append");
     o := calc.oid(20000000);
     calc.setoid(o);
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
 #test basic functionality of the BAT library. 
 #focussed on integers 
 #it includes insertions,deletions,selections, and joins. 
     profiler.start();
-    err := bat.insert(b,1,15);
-    err := bat.insert(b,2,4);
+    err := bat.append(b,15);
+    err := bat.append(b,4);
     n0 := calc.int(nil);
-    err := bat.insert(b,3,n0);
-    err := bat.insert(b,4,16);
-    err := bat.insert(b,5,25);
-    err := bat.insert(b,6,36);
-    err := bat.insert(b,7,49);
-    err := bat.insert(b,8,64);
-    err := bat.insert(b,9,n0);
-    err := bat.insert(b,n0,n0);
-    err := bat.insert(b,n0,81);
+    err := bat.append(b,n0);
+    err := bat.append(b,16);
+    err := bat.append(b,25);
+    err := bat.append(b,36);
+    err := bat.append(b,49);
+    err := bat.append(b,64);
+    err := bat.append(b,n0);
+    err := bat.append(b,n0);
+    err := bat.append(b,81);
     io.print(b);
     io.print(b,b,b);
     profiler.stop();
@@ -90,30 +90,32 @@ end main;
 # h	tmp_13	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  15	  ]
-[ 2,	  4	  ]
-[ 3,	  nil	  ]
-[ 4,	  16	  ]
-[ 5,	  25	  ]
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  nil	  ]
-[ nil,	  nil	  ]
-[ nil,	  81	  ]
+[ 0@0,	  15	  ]
+[ 1@0,	  4	  ]
+[ 2@0,	  nil	  ]
+[ 3@0,	  16	  ]
+[ 4@0,	  25	  ]
+[ 5@0,	  36	  ]
+[ 6@0,	  49	  ]
+[ 7@0,	  64	  ]
+[ 8@0,	  nil	  ]
+[ 9@0,	  nil	  ]
+[ 10@0,	  81	  ]
 #---------------------------------#
 # h	tmp_13	tmp_13	tmp_13	  # name
 # int	int	int	int	  # type
 #---------------------------------#
-[ 1,	  15,	  15,	  15	  ]
-[ 2,	  4,	  4,	  4	  ]
-[ 3,	  nil,	  nil,	  nil	  ]
-[ 4,	  16,	  16,	  16	  ]
-[ 5,	  25,	  25,	  25	  ]
-[ 6,	  36,	  36,	  36	  ]
-[ 7,	  49,	  49,	  49	  ]
-[ 8,	  64,	  64,	  64	  ]
-[ 9,	  nil,	  nil,	  nil	  ]
+[ 0@0,	  15,	  15,	  15	  ]
+[ 1@0,	  4,	  4,	  4	  ]
+[ 2@0,	  nil,	  nil,	  nil	  ]
+[ 3@0,	  16,	  16,	  16	  ]
+[ 4@0,	  25,	  25,	  25	  ]
+[ 5@0,	  36,	  36,	  36	  ]
+[ 6@0,	  49,	  49,	  49	  ]
+[ 7@0,	  64,	  64,	  64	  ]
+[ 8@0,	  nil,	  nil,	  nil	  ]
+[ 9@0,	  nil,	  nil,	  nil	  ]
+[ 10@0,	  81,	  81,	  81	  ]
 #~BeginVariableOutput~#
 #~EndVariableOutput~#
 

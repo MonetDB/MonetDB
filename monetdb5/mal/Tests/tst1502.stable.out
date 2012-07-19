@@ -99,8 +99,6 @@ function user.main():void;
     io.print(xs);
     io.print("hsort xrev");
     xrev := bat.reverse(x);
-    xsrev := algebra.sort(xrev);
-    io.print(xsrev);
 end main;
 [ "sort x" ]
 #-----------------#
@@ -116,18 +114,6 @@ end main;
 [ 7@0,	  3	  ]
 [ 8@0,	  3	  ]
 [ "hsort xrev" ]
-#-----------------#
-# h	tmp_8	  # name
-# chr	void	  # type
-#-----------------#
-[ 1,	  1@0	  ]
-[ 1,	  2@0	  ]
-[ 2,	  3@0	  ]
-[ 2,	  4@0	  ]
-[ 2,	  5@0	  ]
-[ 2,	  6@0	  ]
-[ 3,	  7@0	  ]
-[ 3,	  8@0	  ]
 
 # 07:59:07 >  
 # 07:59:07 >  Done.

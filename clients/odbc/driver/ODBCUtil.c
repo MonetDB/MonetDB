@@ -277,20 +277,25 @@ char *
 ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 {
 	char *nquery;
-	char *p;
+	char *p, *q;
 	char buf[512];
+	unsigned yr, mt, dy, hr, mn, sc;
+	unsigned long fr = 0;
+	int n, pr;
 
 	nquery = dupODBCstring(query, length);
-	if (noscan)
+	if (noscan == SQL_NOSCAN_ON)
 		return nquery;
-	p = nquery;
-	while ((p = strchr(p, '{')) != NULL) {
-		char *q = p;
-		unsigned yr, mt, dy, hr, mn, sc;
-		unsigned long fr = 0;
-		int n, pr;
-
-		if (sscanf(p, "{ts '%u-%u-%u %u:%u:%u%n", &yr, &mt, &dy, &hr, &mn, &sc, &n) >= 6) {
+	/* scan from the back in preparation for dealing with nested escapes */
+	q = nquery + length;
+	while (q > nquery) {
+		if (*--q != '{')
+			continue;
+		p = q;
+		while (*++p == ' ')
+			;
+		if (sscanf(p, "ts '%u-%u-%u %u:%u:%u%n",
+			   &yr, &mt, &dy, &hr, &mn, &sc, &n) >= 6) {
 			p += n;
 			pr = 0;
 			if (*p == '.') {
@@ -301,27 +306,34 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 				if (e > p) {
 					pr = (int) (e - p);
 					p = e;
-				} else
-					goto skip;
+				} else {
+					continue;
+				}
 			}
-			if (*p++ != '\'' || *p++ != '}') {
-				p--;
-				goto skip;
-			}
-			if (pr > 0)
-				snprintf(buf, sizeof(buf), "TIMESTAMP '%u-%u-%u %u:%u:%u.%0*lu'",
+			if (*p != '\'')
+				continue;
+			while (*++p && *p == ' ')
+				;
+			if (*p != '}')
+				continue;
+			p++;
+			if (pr > 0) {
+				snprintf(buf, sizeof(buf),
+					 "TIMESTAMP '%04u-%02u-%02u %02u:%02u:%02u.%0*lu'",
 					 yr, mt, dy, hr, mn, sc, pr, fr);
-			else
-				snprintf(buf, sizeof(buf), "TIMESTAMP '%u-%u-%u %u:%u:%u'",
+			} else {
+				snprintf(buf, sizeof(buf),
+					 "TIMESTAMP '%04u-%02u-%02u %02u:%02u:%02u'",
 					 yr, mt, dy, hr, mn, sc);
+			}
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
-			p = q + n;
-		} else if (sscanf(p, "{t '%u:%u:%u%n", &hr, &mn, &sc, &n) >= 3) {
+			q += n;
+		} else if (sscanf(p, "t '%u:%u:%u%n", &hr, &mn, &sc, &n) >= 3) {
 			p += n;
 			pr = 0;
 			if (*p == '.') {
@@ -333,40 +345,48 @@ ODBCTranslateSQL(const SQLCHAR *query, size_t length, SQLUINTEGER noscan)
 					pr = (int) (e - p);
 					p = e;
 				} else
-					goto skip;
+					continue;
 			}
-			if (*p++ != '\'' || *p++ != '}') {
-				p--;
-				goto skip;
-			}
-			if (pr > 0)
-				snprintf(buf, sizeof(buf), "TIME '%u:%u:%u.%0*lu'",
+			if (*p != '\'')
+				continue;
+			while (*++p && *p == ' ')
+				;
+			if (*p != '}')
+				continue;
+			p++;
+			if (pr > 0) {
+				snprintf(buf, sizeof(buf),
+					 "TIME '%02u:%02u:%02u.%0*lu'",
 					 hr, mn, sc, pr, fr);
-			else
-				snprintf(buf, sizeof(buf), "TIME '%u:%u:%u'",
-					 hr, mn, sc);
+			} else {
+				snprintf(buf, sizeof(buf),
+					 "TIME '%02u:%02u:%02u'", hr, mn, sc);
+			}
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
-			p = q + n;
-		} else if (sscanf(p, "{d '%u-%u-%u'}%n", &yr, &mt, &dy, &n) >= 3) {
+			q += n;
+		} else if (sscanf(p, "d '%u-%u-%u'%n", &yr, &mt, &dy, &n) >= 3) {
 			p += n;
+			while (*p == ' ')
+				p++;
+			if (*p != '}')
+				continue;
+			p++;
 			pr = 0;
-			snprintf(buf, sizeof(buf), "DATE '%u-%u-%u'",
-					 yr, mt, dy);
+			snprintf(buf, sizeof(buf),
+				 "DATE '%04u-%02u-%02u'", yr, mt, dy);
 			n = (int) (q - nquery);
 			pr = (int) (p - q);
 			q = malloc(length - pr + strlen(buf) + 1);
 			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
-			p = q + n;
+			q += n;
 		}
-	  skip:
-		p++;
 	}
 	return nquery;
 }

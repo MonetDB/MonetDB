@@ -46,14 +46,14 @@
 #endif
 
 #ifdef _MSC_VER
-#include <Psapi.h>		/* for GetModuleFileName */
+#include <Psapi.h>      /* for GetModuleFileName */
 #endif
 
 #ifdef _CRTDBG_MAP_ALLOC
 /* Windows only:
    our definition of new and delete clashes with the one if
    _CRTDBG_MAP_ALLOC is defined.
-*/
+ */
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
@@ -75,7 +75,7 @@ mserver_abort()
 #endif
 
 static void usage(char *prog)
-	__attribute__((__noreturn__));
+__attribute__((__noreturn__));
 
 static void
 usage(char *prog)
@@ -92,20 +92,20 @@ usage(char *prog)
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
-	fprintf(stderr,"The debug, testing & trace options:\n");
-	fprintf(stderr,"     --threads\n");
-	fprintf(stderr,"     --memory\n");
-	fprintf(stderr,"     --io\n");
-	fprintf(stderr,"     --heaps\n");
-	fprintf(stderr,"     --properties\n");
-	fprintf(stderr,"     --transactions\n");
-	fprintf(stderr,"     --modules\n");
-	fprintf(stderr,"     --algorithms\n");
-	fprintf(stderr,"     --xproperties\n");
-	fprintf(stderr,"     --performance\n");
-	fprintf(stderr,"     --optimizers\n");
-	fprintf(stderr,"     --forcemito\n");
-	fprintf(stderr,"     --debug=<bitmask>\n");
+	fprintf(stderr, "The debug, testing & trace options:\n");
+	fprintf(stderr, "     --threads\n");
+	fprintf(stderr, "     --memory\n");
+	fprintf(stderr, "     --io\n");
+	fprintf(stderr, "     --heaps\n");
+	fprintf(stderr, "     --properties\n");
+	fprintf(stderr, "     --transactions\n");
+	fprintf(stderr, "     --modules\n");
+	fprintf(stderr, "     --algorithms\n");
+	fprintf(stderr, "     --xproperties\n");
+	fprintf(stderr, "     --performance\n");
+	fprintf(stderr, "     --optimizers\n");
+	fprintf(stderr, "     --forcemito\n");
+	fprintf(stderr, "     --debug=<bitmask>\n");
 
 	exit(0);
 }
@@ -119,9 +119,9 @@ monet_hello(void)
 	char *linkinfo = "dynamically";
 #endif
 
-	dbl    sz_mem_h;
+	dbl sz_mem_h;
 	char  *qc = " kMGTPE";
-	int    qi = 0;
+	int qi = 0;
 
 	monet_memory = MT_npages() * MT_pagesize();
 	sz_mem_h = (dbl) monet_memory;
@@ -140,7 +140,7 @@ monet_hello(void)
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
 	printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs %s linked\n",
 			HOST, sizeof(ptr) * 8, sizeof(oid) * 8, linkinfo);
-	printf("# Found %.3f %ciB available main-memory.\n", 
+	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
@@ -157,7 +157,7 @@ absolute_path(str s)
 	if (!MT_path_absolute(s)) {
 		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
 
-		if ( ret )
+		if (ret)
 			sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
 		return ret;
 	}
@@ -186,14 +186,15 @@ monet_init(opt *set, int setlen)
 	return 1;
 }
 
-static void emergencyBreakpoint(void){
+static void emergencyBreakpoint(void)
+{
 	/* just a handle to break after system initialization for GDB */
 }
 
 static void
 handler(int sig)
 {
-	(void)sig;
+	(void) sig;
 	mal_exit();
 }
 
@@ -202,63 +203,63 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int idx = 0, grpdebug=0, debug = 0, setlen = 0, listing = 0, i = 0;
+	int idx = 0, grpdebug = 0, debug = 0, setlen = 0, listing = 0, i = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
 
 	static struct option long_options[] = {
-		{"config", 1, 0, 'c'},
-		{"dbname", 1, 0, 0},
-		{"dbfarm", 1, 0, 0},
-		{"dbinit", 1, 0, 0},
-		{"daemon", 1, 0, 0},
-		{"debug", 2, 0, 'd'},
-		{"help", 0, 0, 'h'},
-		{"version", 0, 0, 0},
-		{"readonly", 0, 0, 'r'},
-		{"single-user", 0, 0, 0},
-		{"set", 1, 0, 's'},
-		{"trace", 0, 0, 't'},
-		{"threads",0,0,0},
-		{"memory",0,0,0},
-		{"properties",0,0,0},
-		{"io",0,0,0},
-		{"transaction",0,0,0},
-		{"modules",0,0,0},
-		{"algorithms",0,0,0},
-		{"optimizers",0,0,0},
-		{"performance",0,0,0},
-		{"xproperties",0,0,0},
-		{"forcemito",0,0,0},
-		{"heaps",0,0,0},
-		{0, 0, 0, 0}
+		{ "config", 1, 0, 'c' },
+		{ "dbname", 1, 0, 0 },
+		{ "dbfarm", 1, 0, 0 },
+		{ "dbinit", 1, 0, 0 },
+		{ "daemon", 1, 0, 0 },
+		{ "debug", 2, 0, 'd' },
+		{ "help", 0, 0, 'h' },
+		{ "version", 0, 0, 0 },
+		{ "readonly", 0, 0, 'r' },
+		{ "single-user", 0, 0, 0 },
+		{ "set", 1, 0, 's' },
+		{ "trace", 0, 0, 't' },
+		{ "threads", 0, 0, 0 },
+		{ "memory", 0, 0, 0 },
+		{ "properties", 0, 0, 0 },
+		{ "io", 0, 0, 0 },
+		{ "transaction", 0, 0, 0 },
+		{ "modules", 0, 0, 0 },
+		{ "algorithms", 0, 0, 0 },
+		{ "optimizers", 0, 0, 0 },
+		{ "performance", 0, 0, 0 },
+		{ "xproperties", 0, 0, 0 },
+		{ "forcemito", 0, 0, 0 },
+		{ "heaps", 0, 0, 0 },
+		{ 0, 0, 0, 0 }
 	};
 
 #if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(mserver_abort);
 #endif
-        if (setlocale(LC_CTYPE, "") == NULL) {
-                GDKfatal("cannot set locale\n");
-        }
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		GDKfatal("cannot set locale\n");
+	}
 
 #ifdef HAVE_MALLOPT
 	if (malloc_init) {
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-            if (mallopt(M_MXFAST, 192)) {
-                fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
-            }
+		if (mallopt(M_MXFAST, 192)) {
+			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
+		}
 #ifdef M_BLKSZ
-            if (mallopt(M_BLKSZ, 8*1024)) {
-                fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-            }
+		if (mallopt(M_BLKSZ, 8 * 1024)) {
+			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+		}
 #endif
-        }
-	malloc_init=0;
+	}
+	malloc_init = 0;
 #else
-	(void) malloc_init;	/* still unused */
+	(void) malloc_init; /* still unused */
 #endif
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
@@ -273,7 +274,7 @@ main(int argc, char **av)
 		int option_index = 0;
 
 		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
-				    long_options, &option_index);
+				long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -359,7 +360,7 @@ main(int argc, char **av)
 				break;
 			}
 			usage(prog);
-			/* not reached */
+		/* not reached */
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
@@ -373,7 +374,7 @@ main(int argc, char **av)
 		case 'r':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly", "yes");
 			break;
-		case 's':{
+		case 's': {
 			/* should add option to a list */
 			char *tmp = strchr(optarg, '=');
 
@@ -384,17 +385,17 @@ main(int argc, char **av)
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			}
 		}
-			break;
-		case 't':	/* trace option, ignored to reduce testweb complaints
-			fprintf(stderr, "#warning: trace option not yet supported\n");
-			*/
+		break;
+		case 't':   /* trace option, ignored to reduce testweb complaints
+			           fprintf(stderr, "#warning: trace option not yet supported\n");
+			         */
 			break;
 		case 'h':
 		case '?':
 			usage(prog);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
-							"code '%c' 0%o\n",c, c);
+							"code '%c' 0%o\n", c, c);
 			usage(prog);
 		}
 	}
@@ -407,13 +408,13 @@ main(int argc, char **av)
 
 		if (debug)
 			mo_print_options(set, setlen);
-		debug |= grpdebug;	/* add the algorithm tracers */
-		snprintf(buf, sizeof(long_str)-1, "%d", debug);
+		debug |= grpdebug;  /* add the algorithm tracers */
+		snprintf(buf, sizeof(long_str) - 1, "%d", debug);
 		setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", buf);
 	}
 
 	monet_script = (str *) GDKmalloc(sizeof(str) * (argc + 1));
-	if ( monet_script ){
+	if (monet_script) {
 		monet_script[idx] = NULL;
 		while (optind < argc) {
 			monet_script[idx] = absolute_path(av[optind]);
@@ -423,7 +424,7 @@ main(int argc, char **av)
 		}
 	}
 
-	if (monet_init(set, setlen) == 0 ) {
+	if (monet_init(set, setlen) == 0) {
 		mo_free_options(set, setlen);
 		return 0;
 	}
@@ -459,14 +460,14 @@ main(int argc, char **av)
 				}
 			} else {
 				printf("#warning: unusable binary location, "
-						"please use --set monet_mod_path=/path/to/... to "
-						"allow finding modules\n");
+					   "please use --set monet_mod_path=/path/to/... to "
+					   "allow finding modules\n");
 				fflush(NULL);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
-					"please use --set monet_mod_path=/path/to/... to "
-					"allow finding modules\n");
+				   "please use --set monet_mod_path=/path/to/... to "
+				   "allow finding modules\n");
 			fflush(NULL);
 		}
 		if (modpath != NULL)
@@ -526,9 +527,9 @@ main(int argc, char **av)
 		 * holds the secret */
 		char secret[1024];
 		char *secretp = secret;
-		FILE* secretf;
+		FILE *secretf;
 		size_t len;
-		
+
 		if (GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
@@ -551,7 +552,7 @@ main(int argc, char **av)
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-						"(" SZFMT "), enlarge your vault key!\n", len);
+								"(" SZFMT "), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}
@@ -579,22 +580,24 @@ main(int argc, char **av)
 	MSinitClientPrg(mal_clients, "user", "main");
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit) 
+	if (dbinit)
 		callString(mal_clients, dbinit, listing);
 
 	emergencyBreakpoint();
-	if (monet_script) for (i = 0; monet_script[i]; i++) {
-		str msg = evalFile(mal_clients, monet_script[i], listing);
-		/* check for internal exception message to terminate */
-		if (msg) {
-			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-				mal_exit();
-			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
-			GDKfree(msg);
+	if (monet_script)
+		for (i = 0; monet_script[i]; i++) {
+			str msg = evalFile(mal_clients, monet_script[i], listing);
+			/* check for internal exception message to terminate */
+			if (msg) {
+				if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
+					mal_exit();
+				fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
+				GDKfree(msg);
+			}
+			GDKfree(monet_script[i]);
+			monet_script[i] = 0;
 		}
-		GDKfree(monet_script[i]);
-		monet_script[i] = 0;
-	}
+
 	if (monet_script)
 		GDKfree(monet_script);
 #ifdef HAVE_CONSOLE
@@ -602,8 +605,8 @@ main(int argc, char **av)
 		MSserveClient(mal_clients);
 	} else
 #endif
-		while (1) 
-			MT_sleep_ms(5000);
+	while (1)
+		MT_sleep_ms(5000);
 
 	/* mal_exit calls MT_global_exit, so statements after this call will
 	 * never get reached */

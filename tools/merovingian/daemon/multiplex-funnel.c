@@ -64,7 +64,6 @@ MFconnectionManager(void *d)
 	multiplexlist *w;
 	char buf[1024];
 	size_t len;
-	void *p;
 	char *msg;
 	struct timeval tv;
 	fd_set fds;
@@ -86,12 +85,12 @@ MFconnectionManager(void *d)
 					strerror(errno));
 			break;
 		}
-		if (read(mfpipe[0], &p, sizeof(void *)) < 0) {
+		if (read(mfpipe[0], &msg, sizeof(msg)) < 0) {
 			Mfprintf(stderr, "failed reading from notification pipe: %s\n",
 					strerror(errno));
 			break;
 		}
-		msg = (char *)p;
+		/* we just received a POINTER to a string! */
 
 		/* intended behaviour:
 		 * - additions don't change any connection targets, they only
@@ -225,6 +224,8 @@ MFconnectionManager(void *d)
 			}
 		}
 		pthread_mutex_unlock(&mpl_lock);
+
+		free(msg); /* alloced by multiplexNotify* */
 	}
 }
 
@@ -232,30 +233,36 @@ void
 multiplexNotifyAddedDB(const char *database)
 {
 	char dbslash[256];
-	void *p;
+	char *p;
 
 	if (mfmanager == 0)
 		return;
 
 	snprintf(dbslash, sizeof(dbslash), "+%s/", database);
 	p = strdup(dbslash);
-	if (write(mfpipe[1], &p, sizeof(void *)) != sizeof(void *))
+	if (write(mfpipe[1], &p, sizeof(p)) != sizeof(p)) {
 		Mfprintf(stderr, "failed to write notify added message to mfpipe\n");
+		free(p);
+	}
+	/* p is freed by MFconnectionManager */
 }
 
 void
 multiplexNotifyRemovedDB(const char *database)
 {
 	char dbslash[256];
-	void *p;
+	char *p;
 
 	if (mfmanager == 0)
 		return;
 
 	snprintf(dbslash, sizeof(dbslash), "-%s/", database);
 	p = strdup(dbslash);
-	if (write(mfpipe[1], &p, sizeof(void *)) != sizeof(void *))
+	if (write(mfpipe[1], &p, sizeof(p)) != sizeof(p)) {
 		Mfprintf(stderr, "failed to write notify removed message to mfpipe\n");
+		free(p);
+	}
+	/* p is freed by MFconnectionManager */
 }
 
 /* ultra ugly, we peek inside Sabaoth's internals to update the uplog

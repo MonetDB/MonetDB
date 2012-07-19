@@ -14,23 +14,23 @@ stdout of test 'intersect_diff_nil` in directory 'tests/gdkTests` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    a := bat.new(:int,:int);
-    b := bat.new(:int,:int);
+    a := bat.new(:oid,:int);
+    b := bat.new(:oid,:int);
     n := nil:int;
-    bat.insert(a,1,1);
-    bat.insert(a,n,2);
-    bat.insert(a,3,3);
-    bat.insert(a,n,n);
-    bat.insert(a,5,5);
-    bat.insert(a,6,n);
-    bat.insert(a,7,7);
-    bat.insert(b,-1,-1);
-    bat.insert(b,n,2);
-    bat.insert(b,-3,-3);
-    bat.insert(b,n,n);
-    bat.insert(b,-5,-5);
-    bat.insert(b,6,n);
-    bat.insert(b,-7,-7);
+    bat.append(a,1);
+    bat.append(a,2);
+    bat.append(a,3);
+    bat.append(a,n);
+    bat.append(a,5);
+    bat.append(a,n);
+    bat.append(a,7);
+    bat.append(b,-1);
+    bat.append(b,2);
+    bat.append(b,-3);
+    bat.append(b,n);
+    bat.append(b,-5);
+    bat.append(b,n);
+    bat.append(b,-7);
     ka := algebra.kintersect(a,b);
     io.print(ka);
     ka := algebra.kintersect(b,a);
@@ -52,12 +52,34 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 6,	  nil	  ]
+[ 0@0,	  1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  nil	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  nil	  ]
+[ 6@0,	  7	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 6,	  nil	  ]
+[ 0@0,	  -1	  ]
+[ 1@0,	  2	  ]
+[ 2@0,	  -3	  ]
+[ 3@0,	  nil	  ]
+[ 4@0,	  -5	  ]
+[ 5@0,	  nil	  ]
+[ 6@0,	  -7	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1@0,	  2	  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 1@0,	  2	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -70,44 +92,22 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
-[ nil,	  2	  ]
-[ 3,	  3	  ]
-[ nil,	  nil	  ]
-[ 5,	  5	  ]
-[ 7,	  7	  ]
+[ 0@0,	  1	  ]
+[ 2@0,	  3	  ]
+[ 3@0,	  nil	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  nil	  ]
+[ 6@0,	  7	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ -1,	  -1	  ]
-[ nil,	  2	  ]
-[ -3,	  -3	  ]
-[ nil,	  nil	  ]
-[ -5,	  -5	  ]
-[ -7,	  -7	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
-[ nil,	  2	  ]
-[ 3,	  3	  ]
-[ nil,	  nil	  ]
-[ 5,	  5	  ]
-[ 6,	  nil	  ]
-[ 7,	  7	  ]
-#-----------------#
-# h	t	  # name
-# int	int	  # type
-#-----------------#
-[ -1,	  -1	  ]
-[ nil,	  2	  ]
-[ -3,	  -3	  ]
-[ nil,	  nil	  ]
-[ -5,	  -5	  ]
-[ 6,	  nil	  ]
-[ -7,	  -7	  ]
+[ 0@0,	  -1	  ]
+[ 2@0,	  -3	  ]
+[ 3@0,	  nil	  ]
+[ 4@0,	  -5	  ]
+[ 5@0,	  nil	  ]
+[ 6@0,	  -7	  ]
 
 # 15:27:41 >  
 # 15:27:41 >  Done.

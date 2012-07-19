@@ -1,8 +1,8 @@
 # save/load tests
 
-a:= bat.new(:int,:int);
-bat.insert(a,0,123);
-bat.insert(a,0,321);
+a:= bat.new(:oid,:int);
+bat.append(a,123);
+bat.append(a,321);
 bat.setName(a,"aaa");
 io.print(a);
 
@@ -15,12 +15,12 @@ io.print(b);
 bat.save(a);
 bat.save(b);
 
-ar:bat[:int,:int]:= bat.load("aaa");
+ar:bat[:oid,:int]:= bat.load("aaa");
 io.print(ar);
 br:bat[:oid,:str]:= bat.load("bbb");
 io.print(br);
 
 
 #and an error
-er:bat[:int,:int]:= bbp.bind("bbb");
+er:bat[:oid,:int]:= bbp.bind("bbb");
 io.print(er);

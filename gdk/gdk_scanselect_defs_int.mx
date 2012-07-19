@@ -32,11 +32,7 @@ All Rights Reserved.
  * heap.
  * Adding test for v != nil for types where nil != MIN.
 @= DEFseqscanTTget
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_INT
 	@:DEFseqscanIF(int,int,tloc,simple,int,,@1)@
-#endif
-#endif	/* SKIP_TYPE_EXPANSIONS */
 @
 @h
 /*

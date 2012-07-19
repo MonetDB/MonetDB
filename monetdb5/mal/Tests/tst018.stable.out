@@ -31,7 +31,7 @@ function user.main():void;
     i := 23;
     i := nil;
     io.print(i);
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
     b := nil;
     io.print(b);
     s := "hello";

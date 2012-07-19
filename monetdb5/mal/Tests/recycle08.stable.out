@@ -24,10 +24,10 @@ stdout of test 'recycle08` in directory 'mal` itself:
 #end bind;
 function user.bind(s:str,t:str,c:str,i:int):bat[:oid,:int];
     b := bat.new(:oid,:int);
-barrier (go,i) := language.newRange(0:int);
+barrier i := 0:int;
     bat.append(b,i);
-    redo (go,i) := language.nextElement(1:int,1000:int);
-exit (go,i);
+    redo i := iterator.next(1:int,1000:int);
+exit i;
     return bind := b;
 end bind;
 #

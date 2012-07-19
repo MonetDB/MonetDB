@@ -875,11 +875,11 @@ fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 /* ============ Q-GRAM SELF JOIN ============== */
 
 str
-CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
+CMDqgramselfjoin(BAT **res, BAT **res2, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int *k)
 {
 	BUN n = BATcount(qgram);
 	BUN i, j;
-	BAT *bn;
+	BAT *bn, *bn2;
 
 	oid *qbuf = (oid *) Tloc(qgram, BUNfirst(qgram));
 	int *ibuf = (int *) Tloc(id, BUNfirst(id));
@@ -904,12 +904,19 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	ERRORcheck((Tsize(pos) != ATOMsize(pos->ttype)), "CMDqgramselfjoin: pos is not a true void bat");
 	ERRORcheck((Tsize(len) != ATOMsize(len->ttype)), "CMDqgramselfjoin: len is not a true void bat");
 
-	*res = bn = BATnew(TYPE_int, TYPE_int, n);
+	*res = bn = BATnew(TYPE_void, TYPE_int, n);
+	*res2 = bn2 = BATnew(TYPE_void, TYPE_int, n);
+	if (bn == NULL || bn2 == NULL){
+		if (bn) BBPreclaim(bn);
+		if (bn2) BBPreclaim(bn2);
+		throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
+	}
 
 	for (i = 0; i < n - 1; i++) {
 		for (j = i + 1; (j < n && qbuf[j] == qbuf[i] && pbuf[j] <= (pbuf[i] + (*k + *c * MYMIN(lbuf[i], lbuf[j])))); j++) {
 			if (ibuf[i] != ibuf[j] && abs(lbuf[i] - lbuf[j]) <= (*k + *c * MYMIN(lbuf[i], lbuf[j]))) {
-				bunfastins(bn, ibuf + i, ibuf + j);
+				BUNappend(bn, ibuf + i, FALSE);
+				BUNappend(bn2, ibuf + j, FALSE);
 			}
 		}
 	}
@@ -918,9 +925,69 @@ CMDqgramselfjoin(BAT **res, BAT *qgram, BAT *id, BAT *pos, BAT *len, flt *c, int
 	bn->hrevsorted = bn->trevsorted = 0;
 	bn->H->nonil = bn->T->nonil = 0;
 
+	bn2->hsorted = bn2->tsorted = 0;
+	bn2->hrevsorted = bn2->trevsorted = 0;
+	bn2->H->nonil = bn2->T->nonil = 0;
+
 	return MAL_SUCCEED;
-      bunins_failed:
-	BBPreclaim(bn);
-	throw(MAL, "txtsim.qgramselfjoin", MAL_MALLOC_FAIL);
 }
 
+/* copy up to utf8len UTF-8 encoded characters from src to buf
+ * stop early if buf (size given by bufsize) is too small, or if src runs out
+ * return number of UTF-8 characters copied (excluding NUL)
+ * close with NUL if enough space */
+static size_t
+utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
+{
+	size_t cnt = 0;
+
+	while (utf8len != 0 && *src != 0 && bufsize != 0) {
+		bufsize--;
+		utf8len--;
+		cnt++;
+		if (((*buf++ = *src++) & 0x80) != 0) {
+			while ((*src & 0xC0) == 0x80 && bufsize != 0) {
+				*buf++ = *src++;
+				bufsize--;
+			}
+		}
+	}
+	if (bufsize != 0)
+		*buf = 0;
+	return cnt;
+}
+
+str
+CMDstr2qgrams(int *ret, str *val)
+{
+	BAT *bn;
+	size_t i, len = strlen(*val) + 5;
+	str s = GDKmalloc(len);
+	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
+
+	if (s == NULL)
+		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+	strcpy(s, "##");
+	strcpy(s + 2, *val);
+	strcpy(s + len - 3, "$$");
+	bn = BATnew(TYPE_void, TYPE_str, (BUN) strlen(*val));
+	if (bn == NULL) {
+		GDKfree(s);
+		throw(MAL, "txtsim.str2qgram", MAL_MALLOC_FAIL);
+	}
+	BATseqbase(bn, 0);
+
+	i = 0;
+	while (s[i]) {
+		if (utf8strncpy(qgram, sizeof(qgram), s + i, 4) < 4)
+			break;
+		BUNappend(bn, qgram, FALSE);
+		if ((s[i++] & 0xC0) == 0xC0) {
+			while ((s[i] & 0xC0) == 0x80)
+				i++;
+		}
+	}
+	BBPkeepref(*ret = bn->batCacheid);
+	GDKfree(s);
+	return MAL_SUCCEED;
+}

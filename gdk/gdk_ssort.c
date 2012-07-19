@@ -269,7 +269,6 @@ merge_compute_minrun(ssize_t n)
 }
 
 
-#ifndef NOEXPAND_BTE
 #define COPY		COPY_bte
 
 #define binarysort	binarysort_bte
@@ -301,9 +300,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_SHT
 #define COPY		COPY_sht
 
 #define binarysort	binarysort_sht
@@ -335,9 +332,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_INT
 #define COPY		COPY_int
 
 #define binarysort	binarysort_int
@@ -369,9 +364,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_LNG
 #define COPY		COPY_lng
 
 #define binarysort	binarysort_lng
@@ -403,9 +396,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_FLT
 #define COPY		COPY_flt
 
 #define binarysort	binarysort_flt
@@ -437,9 +428,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_DBL
 #define COPY		COPY_dbl
 
 #define binarysort	binarysort_dbl
@@ -471,9 +460,7 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
-#ifndef NOEXPAND_OID
 #define COPY		COPY_oid
 
 #define binarysort	binarysort_oid
@@ -505,7 +492,6 @@ merge_compute_minrun(ssize_t n)
 #undef merge_at
 
 #undef COPY
-#endif
 
 #define COPY		COPY_any
 

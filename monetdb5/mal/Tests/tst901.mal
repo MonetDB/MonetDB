@@ -1,10 +1,10 @@
 # the multiplex code blocks.
 
 b:= bat.new(:oid,:int);
-barrier (v,i):= language.newRange(0:int);
+barrier i:= 0:int;
 	bat.append(b,i);
-	redo (v,i):= language.nextElement(1:int,10:int);
-exit (v,i);
+	redo i:= iterator.next(1:int,10:int);
+exit i;
 c:= algebra.copy(b);
 io.print(c);
 x:= batcalc.+(b,c);

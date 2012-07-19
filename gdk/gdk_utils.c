@@ -34,7 +34,8 @@
 static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
 static char GDKdbnameStr[PATHLENGTH] = { 0 };
 
-BAT *GDKenv = NULL;
+BAT *GDKkey = NULL;
+BAT *GDKval = NULL;
 
 #include <signal.h>
 
@@ -116,10 +117,10 @@ GDKenvironment(str dbname, str dbfarm)
 char *
 GDKgetenv(const char *name)
 {
-	BUN b = BUNfnd(GDKenv, (ptr) name);
+	BUN b = BUNfnd(BATmirror(GDKkey), (ptr) name);
 
 	if (b != BUN_NONE) {
-		BATiter GDKenvi = bat_iterator(GDKenv);
+		BATiter GDKenvi = bat_iterator(GDKval);
 		return BUNtail(GDKenvi, b);
 	}
 	return NULL;
@@ -160,8 +161,10 @@ GDKgetenv_int(const char *name, int def)
 void
 GDKsetenv(str name, str value)
 {
-	BUNins(GDKenv, name, value, FALSE);
-	BATfakeCommit(GDKenv);
+	BUNappend(GDKkey, name, FALSE);
+	BUNappend(GDKval, value, FALSE);
+	BATfakeCommit(GDKkey);
+	BATfakeCommit(GDKval);
 }
 
 
@@ -316,16 +319,10 @@ int GDK_vm_trim = 1;
 static volatile size_t GDK_mallocedbytes_estimate = 0;
 static volatile size_t GDK_vm_cursize = 0;
 
-#ifndef NDEBUG
 static MT_Lock mbyteslock;
-#define malloc_lock() gdk_set_lock(mbyteslock, "malloc")
-#define	malloc_unlock()	gdk_unset_lock(mbyteslock, "malloc");
-#define malloc_lock_init() MT_lock_init(&mbyteslock, "mbyteslock")
-#else
-#define malloc_lock()
-#define	malloc_unlock()
-#define malloc_lock_init()
-#endif
+#define malloc_lock(func)	gdk_set_lock(mbyteslock, func)
+#define	malloc_unlock(func)	gdk_unset_lock(mbyteslock, func);
+#define malloc_lock_init()	MT_lock_init(&mbyteslock, "mbyteslock")
 
 size_t _MT_pagesize = 0;	/* variable holding memory size */
 size_t _MT_npages = 0;		/* variable holding page size */
@@ -441,9 +438,9 @@ GDKmem_inuse(void)
 	/* RAM/swapmem that Monet is really using now */
 	size_t mem_mallocedbytes_estimate;
 
-	malloc_lock();
+	malloc_lock("GDKmem_inuse");
 	mem_mallocedbytes_estimate = GDK_mallocedbytes_estimate;
-	malloc_unlock();
+	malloc_unlock("GDKmem_inuse");
 
 	return mem_mallocedbytes_estimate;
 }
@@ -454,9 +451,9 @@ GDKvm_cursize(void)
 	/* current Monet VM address space usage */
 	size_t vm_cursize;
 
-	gdk_set_lock(GDKthreadLock, "GDKvm_cursize");
+	malloc_lock("GDKvm_cursize");
 	vm_cursize = GDK_vm_cursize;
-	gdk_unset_lock(GDKthreadLock, "GDKvm_cursize");
+	malloc_unlock("GDKvm_cursize");
 
 	return vm_cursize + GDKmem_inuse();
 }
@@ -485,18 +482,18 @@ GDKmem_heapcheck(int t)
 	do {							\
 		int _idx;					\
 								\
-		malloc_lock();					\
+		malloc_lock("heapinc");				\
 		GDK_mallocedbytes_estimate += (_memdelta);	\
 		GDKmallidx(_idx, _memdelta);			\
 		GDK_nmallocs[_idx]++;				\
-		malloc_unlock();				\
+		malloc_unlock("heapinc");			\
 	} while (0)
 #define heapdec(memdelta)						\
 	do {								\
 		size_t _memdelta = (size_t) (memdelta);			\
 		int _idx;						\
 									\
-		malloc_lock();						\
+		malloc_lock("heapdec");					\
 		if (_memdelta > GDK_mallocedbytes_estimate) {		\
 			/* clearly, the stats are off: it should never	\
 			 * become less-than-zero */			\
@@ -506,19 +503,19 @@ GDKmem_heapcheck(int t)
 		}							\
 		GDKmallidx(_idx, _memdelta);				\
 		GDK_nmallocs[_idx]--;					\
-		malloc_unlock();					\
+		malloc_unlock("heapdec");				\
 	} while (0)
 #else
 #define heapinc(_memdelta)					\
 	do {							\
-		malloc_lock();					\
+		malloc_lock("heapinc");				\
 		GDK_mallocedbytes_estimate += (_memdelta);	\
-		malloc_unlock();				\
+		malloc_unlock("heapinc");			\
 	} while (0)
 #define heapdec(memdelta)						\
 	do {								\
 		size_t _memdelta = (size_t) (memdelta);			\
-		malloc_lock();						\
+		malloc_lock("heapdec");					\
 		if (_memdelta > GDK_mallocedbytes_estimate) {		\
 			/* clearly, the stats are off: it should never	\
 			 * become less-than-zero */			\
@@ -526,7 +523,7 @@ GDKmem_heapcheck(int t)
 		} else {						\
 			GDK_mallocedbytes_estimate -= _memdelta;	\
 		}							\
-		malloc_unlock();					\
+		malloc_unlock("heapdec");				\
 	} while (0)
 #endif
 
@@ -536,45 +533,45 @@ GDKmem_heapcheck(int t)
 		size_t _vmdelta = (size_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 		int _idx;						\
 									\
-		gdk_set_lock(GDKthreadLock, fcn);			\
+		malloc_lock(fcn);					\
 		GDKmallidx(_idx, _vmdelta);				\
 		GDK_vm_nallocs[_idx]++;					\
 		GDK_vm_cursize += _vmdelta;				\
-		gdk_unset_lock(GDKthreadLock, fcn);			\
+		malloc_unlock(fcn);					\
 	} while (0)
 #define memdec(vmdelta, fcn)						\
 	do {								\
 		size_t _vmdelta = (size_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 		int _idx;						\
 									\
-		gdk_set_lock(GDKthreadLock, fcn);			\
+		malloc_lock(fcn);					\
 		GDKmallidx(_idx, _vmdelta);				\
 		GDK_vm_nallocs[_idx]--;					\
 		if (_vmdelta > GDK_vm_cursize)                          \
 			GDK_vm_cursize = 0;                             \
 		else                                                    \
 			GDK_vm_cursize -= _vmdelta;                     \
-		gdk_unset_lock(GDKthreadLock, fcn);			\
+		malloc_unlock(fcn);					\
 	} while (0)
 #else
 #define meminc(vmdelta, fcn)						\
 	do {								\
 		size_t _vmdelta = (size_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 									\
-		gdk_set_lock(GDKthreadLock, fcn);			\
+		malloc_lock(fcn);					\
 		GDK_vm_cursize += _vmdelta;				\
-		gdk_unset_lock(GDKthreadLock, fcn);			\
+		malloc_unlock(fcn);					\
 	} while (0)
 #define memdec(vmdelta, fcn)						\
 	do {								\
 		size_t _vmdelta = (size_t) SEG_SIZE((vmdelta),MT_VMUNITLOG); \
 									\
-		gdk_set_lock(GDKthreadLock, fcn);			\
+		malloc_lock(fcn);					\
 		if (_vmdelta > GDK_vm_cursize)                          \
 			GDK_vm_cursize = 0;                             \
 		else                                                    \
 			GDK_vm_cursize -= _vmdelta;                     \
-		gdk_unset_lock(GDKthreadLock, fcn);			\
+		malloc_unlock(fcn);					\
 	} while (0)
 #endif
 
@@ -598,28 +595,28 @@ GDKmemdump(void)
 	{
 		int i;
 
-		malloc_lock();
+		malloc_lock("GDKmemdump");
 		THRprintf(GDKstdout, "#memory histogram\n");
 		for (i = 3; i < GDK_HISTO_MAX_BIT - 1; i++) {
 			size_t j = 1 << i;
 
 			THRprintf(GDKstdout, "# " SZFMT " " SZFMT "\n", j, GDK_nmallocs[i]);
 		}
-		malloc_unlock();
+		malloc_unlock("GDKmemdump");
 	}
 #endif
 #ifdef GDK_VM_KEEPHISTO
 	{
 		int i;
 
-		gdk_set_lock(GDKthreadLock, "GDKmemdump");
+		malloc_lock("GDKmemdump");
 		THRprintf(GDKstdout, "\n#virtual memory histogram\n");
 		for (i = 12; i < GDK_HISTO_MAX_BIT - 1; i++) {
 			size_t j = 1 << i;
 
 			THRprintf(GDKstdout, "# " SZFMT " " SZFMT "\n", j, GDK_vm_nallocs[i]);
 		}
-		gdk_unset_lock(GDKthreadLock, "GDKmemdump");
+		malloc_unlock("GDKmemdump");
 	}
 #endif
 }
@@ -1030,7 +1027,7 @@ GDKstrdup(const char *s)
  * allocations affect only the logical VM resources.
  */
 void *
-GDKmmap(char *path, int mode, off_t off, size_t len)
+GDKmmap(const char *path, int mode, off_t off, size_t len)
 {
 	void *ret = MT_mmap(path, mode, off, len);
 
@@ -1220,12 +1217,21 @@ GDKinit(opt *set, int setlen)
 
 	HEAPcacheInit();
 
-	GDKenv = BATnew(TYPE_str, TYPE_str, 100);
-	if (GDKenv == NULL)
+	GDKkey = BATnew(TYPE_void, TYPE_str, 100);
+	GDKval = BATnew(TYPE_void, TYPE_str, 100);
+	if (GDKkey == NULL)
 		GDKfatal("GDKinit: Could not create environment BAT");
-	BATkey(GDKenv, BOUND2BTRUE);
-	BATrename(GDKenv, "monet_environment");
-	BATmode(GDKenv, TRANSIENT);
+	if (GDKval == NULL)
+		GDKfatal("GDKinit: Could not create environment BAT");
+	BATseqbase(GDKkey,0);
+	BATkey(GDKkey, BOUND2BTRUE);
+	BATrename(GDKkey, "environment_key");
+	BATmode(GDKkey, TRANSIENT);
+
+	BATseqbase(GDKval,0);
+	BATkey(GDKval, BOUND2BTRUE);
+	BATrename(GDKval, "environment_val");
+	BATmode(GDKval, TRANSIENT);
 
 	n = (opt *) malloc(setlen * sizeof(opt));
 	for (i = 0; i < setlen; i++) {

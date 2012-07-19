@@ -52,7 +52,7 @@ end tmp1;
 #
 function user.main():void;
 # dealing with BAT references in functions 
-    b := bat.new(:int,:int);
+    b := bat.new(:oid,:int);
     d := user.tmp1(b);
     i := bbp.getLRefCount(d);
     io.print(i);

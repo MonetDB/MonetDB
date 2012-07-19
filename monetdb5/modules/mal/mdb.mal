@@ -18,7 +18,7 @@ pattern inspect(mod:str,fcn:str):void
 address MDBinspect
 comment "Run the debugger on a specific function";
 
-command modules():bat[:int,:str] 
+command modules():bat[:oid,:str] 
 address CMDmodules
 comment "List available modules";
 
@@ -140,19 +140,19 @@ pattern getStackDepth():int
 address MDBStkDepth
 comment "Return the depth of the calling stack.";
 
-pattern getStackFrame(i:int):bat[:str,:str] 
+pattern getStackFrame(i:int)(:bat[:oid,:str] ,:bat[:oid,:str])
 address MDBgetStackFrameN;
-pattern getStackFrame():bat[:str,:str] 
+pattern getStackFrame()(:bat[:oid,:str] ,:bat[:oid,:str])
 address MDBgetStackFrame
 comment "Collect variable binding of current (n-th) stack frame.";
-pattern getStackTrace():bat[:void,:str]
+pattern getStackTrace()(:bat[:oid,:str], :bat[:oid,:str])
 address MDBStkTrace;
 
 pattern dump()
 address MDBdump
 comment "Dump instruction, stacktrace, and stack";
 
-pattern getDefinition():bat[:void,:str] 
+pattern getDefinition():bat[:oid,:str] 
 address MDBgetDefinition
 comment "Returns a string representation of the current function 
 	with typing information attached";

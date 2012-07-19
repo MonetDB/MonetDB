@@ -193,7 +193,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 		    !isaBatType(getArgType(mq, q, 1)) ){
 				/* handle nil assignment */
 				if( ATOMcmp(getArgGDKType(mq, q, 1),
-					VALget(&getVar(mq, getArg(q,1))->value),
+					VALptr(&getVar(mq, getArg(q,1))->value),
 					ATOMnilptr(getArgType(mq, q, 1))) == 0) {
 				ValRecord cst;
 				int tpe = newBatType(TYPE_oid,getArgType(mq, q, 1));

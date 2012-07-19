@@ -6,10 +6,11 @@ function user.joinPath( a:bat[:any_1,:any_2], b:bat[:any_2,:any_3], c:bat[:any_3
 	return zz;
 end joinPath;
 
-a:= bat.new(:int,:int);
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);
-g:= algebra.join(a,b);
+a:= bat.new(:oid,:int);
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);
+br:= bat.reverse(b);
+g:= algebra.join(a,br);
 h:= algebra.join(g,c);
 
 optimizer.orcam("user","joinPath");

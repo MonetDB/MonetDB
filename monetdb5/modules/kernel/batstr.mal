@@ -1,0 +1,115 @@
+module batstr;
+
+command batstr.length( s:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatLength
+comment "Return the length of a string.";
+
+command batstr.stringlength( s:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatstringLength
+comment "Return the length of a right trimed string.";
+
+command batstr.nbytes( s:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatBytes
+comment "Return the string length in bytes.";
+
+command batstr.toLower( s:bat[:oid,:str] ) :bat[:oid,:str]
+address STRbatLower
+comment "Convert a string to lower case.";
+command batstr.toUpper( s:bat[:oid,:str] ) :bat[:oid,:str]
+address STRbatUpper
+comment "Convert a string to upper case.";
+
+command batstr.trim( s:bat[:oid,:str] ) :bat[:oid,:str]
+address STRbatStrip
+comment "Strip whitespaces around a string.";
+command batstr.ltrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+address STRbatLtrim
+comment "Strip whitespaces from start of a string.";
+command batstr.rtrim( s:bat[:oid,:str] ) :bat[:oid,:str]
+address STRbatRtrim
+comment "Strip whitespaces from end of a string.";
+
+command batstr.startsWith(s:bat[:oid,:str],prefix:bat[:oid,:str]):bat[:oid,:bit]
+address STRbatPrefix
+comment "Prefix check.";
+command batstr.startsWith(s:bat[:oid,:str],prefix:str):bat[:oid,:bit]
+address STRbatPrefixcst
+comment "Prefix check.";
+
+command batstr.endsWith( s:bat[:oid,:str], suffix:bat[:oid,:str] ) :bat[:oid,:bit]
+address STRbatSuffix
+comment "Suffix check.";
+command batstr.endsWith( s:bat[:oid,:str], suffix:str ) :bat[:oid,:bit]
+address STRbatSuffixcst
+comment "Suffix check.";
+
+command batstr.search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatstrSearch
+comment "Search for a substring. Returns position, -1 if not found.";
+command batstr.search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+address STRbatstrSearchcst
+comment "Search for a substring. Returns position, -1 if not found.";
+
+command batstr.r_search( s:bat[:oid,:str], c:bat[:oid,:str] ) :bat[:oid,:int]
+address STRbatRstrSearch
+comment "Reverse search for a substring. Returns position, -1 if not found.";
+command batstr.r_search( s:bat[:oid,:str], c:str ) :bat[:oid,:int]
+address STRbatRstrSearchcst
+comment "Reverse search for a substring. Returns position, -1 if not found.";
+
+command batcalc.+( l:bat[:oid,:str], r:bat[:oid,:str]) :bat[:oid,:str]
+address STRbatConcat
+comment "Concatenate two strings.";
+command batcalc.+( l:bat[:oid,:str], r:str) :bat[:oid,:str]
+address STRbatConcatcst
+comment "Concatenate a string to a bat of strings.";
+command batcalc.+( l:str, r:bat[:oid,:str]) :bat[:oid,:str]
+address STRcstConcatbat
+comment "Concatenate two strings.";
+
+command batstr.string(b:bat[:oid,:str],offset:bat[:oid,:int]) :bat[:oid,:str]
+address STRbatTail
+comment "Return the tail s[offset..n] of a string s[0..n].";
+command batstr.string(b:bat[:oid,:str],offset:int) :bat[:oid,:str]
+address STRbatTailcst
+comment "Return the tail s[offset..n] of a string s[0..n].";
+
+command batstr.substring( s:bat[:oid,:str], start:bat[:oid,:int], 
+	index:bat[:oid,:int]) :bat[:oid,:str]
+address STRbatsubstring
+comment "Substring extraction using [start,start+length]";
+
+command batstr.substring( s:bat[:oid,:str], start:int, index:int)
+	:bat[:oid,:str]
+address STRbatsubstringcst
+comment "Substring extraction using [start,start+length]";
+
+command batstr.unicodeAt(s:bat[:oid,:str], index:bat[:oid,:int]) :bat[:oid,:int]
+address STRbatWChrAt
+comment "get a unicode character (as an int) from a string position.";
+command batstr.unicodeAt(s:bat[:oid,:str], index:int) :bat[:oid,:int]
+address STRbatWChrAtcst
+comment "get a unicode character (as an int) from a string position.";
+
+command batstr.substitute(s:bat[:oid,:str],src:str,dst:str,rep:bit):bat[:oid,:str]
+address STRbatSubstitutecst
+comment "Substitute first occurrence of 'src' by
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst.";
+
+command batstr.like_uselect(s:bat[:oid,:str],pat:str):bat[:oid,:void]
+address STRbatlike_uselect2
+comment "Perform SQL like operation against a string bat";
+
+command batstr.like_uselect(s:bat[:oid,:str],pat:str,esc:str):bat[:oid,:void]
+address STRbatlike_uselect
+comment "Perform SQL like operation against a string bat";
+
+command batstr.replace(s:bat[:oid,:str],pat:str,s2:str):bat[:oid,:str]
+address STRbatreplace
+comment "Insert a string into another";
+

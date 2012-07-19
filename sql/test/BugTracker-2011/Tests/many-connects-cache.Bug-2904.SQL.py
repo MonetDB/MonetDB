@@ -31,9 +31,7 @@ clients = []
 for i in range(50):
     c = process.client('sql', args = ['-s', 'SELECT rad(55.81689)'],
                        user = 'testuser', passwd = 'testpassword',
-#                       stdout = process.PIPE,
-#                       stderr = process.PIPE
-                       )
+                       stdout = process.PIPE, stderr = process.PIPE)
     clients.append(c)
 
 for c in clients:

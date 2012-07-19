@@ -47,7 +47,6 @@ include streams;
 include bat5;
 include batExtensions;
 include algebra;
-include algebraExtensions;
 include calc;
 include status;
 include group;
@@ -86,7 +85,6 @@ include bbp;
 include const;
 include box;
 include mal_io;
-include tablet;
 include factories;
 include recycle;
 include remote;
@@ -102,12 +100,11 @@ include constraints; # experimental
 include mal_mapi;
 
 include profiler;
-include statistics;	# experimental
 include sample;
 
 include optimizer;
 
-include chopper;
+include iterator;
 include cluster;
 include txtsim;
 include tokenizer;

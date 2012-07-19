@@ -39,6 +39,5 @@ zorder_export str ZORDbatdecode_int_oid(int *x, int *y, int *z);
 zorder_export str ZORDbatdecode_int_oid_x(int *x, int *z);
 zorder_export str ZORDbatdecode_int_oid_y(int *y, int *z);
 zorder_export str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
-zorder_export str ZORDsql_slice_int(int *r, int *xb, int *yb, int *xt, int *yt);
 
 #endif /* _ZORDER_H */

@@ -40,6 +40,8 @@
 #include "forkmserver.h"
 
 
+static pthread_mutex_t fork_lock = PTHREAD_MUTEX_INITIALIZER;
+
 /**
  * Fork an mserver and detach.  Before forking off, Sabaoth is consulted
  * to see if forking makes sense, or whether it is necessary at all, or
@@ -86,6 +88,29 @@ forkMserver(char *database, sabdb** stats, int force)
 	 * more than one entry in the list, so we assume we have the right
 	 * one here. */
 
+	if ((*stats)->state == SABdbRunning)
+		/* return before doing expensive stuff, when this db just seems
+		 * to be running */
+		return(NO_ERR);
+
+	/* Make sure we only start one mserver5 at the same time, this is a
+	 * horsedrug for preventing race-conditions where two or more
+	 * clients start the same database at the same time, because they
+	 * were all identified as being SABdbInactive.  If this "global"
+	 * lock ever becomes a problem, we can reduce it to a per-database
+	 * lock instead. */
+	pthread_mutex_lock(&fork_lock);
+
+	/* refetch the status, as it may have changed */
+	msab_freeStatus(stats);
+	er = msab_getStatus(stats, database);
+	if (er != NULL) {
+		err e = newErr("%s", er);
+		free(er);
+		pthread_mutex_unlock(&fork_lock);
+		return(e);
+	}
+
 	ckv = getDefaultProps();
 	readProps(ckv, (*stats)->path);
 	kv = findConfKey(ckv, "type");
@@ -96,6 +121,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		if (force == 0) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
 					kv->val, database);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
 			return(NO_ERR);
 		} else {
 			Mfprintf(stdout, "startup of %s under maintenance "
@@ -109,11 +137,17 @@ forkMserver(char *database, sabdb** stats, int force)
 		err e = newErr("could not retrieve uplog information: %s", er);
 		free(er);
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
 		return(e);
 	}
 
 	switch ((*stats)->state) {
 		case SABdbRunning:
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
 			return(NO_ERR);
 		case SABdbCrashed:
 			t = localtime(&info.lastcrash);
@@ -144,6 +178,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		break;
 		default:
 			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
 			return(newErr("unknown state: %d", (int)(*stats)->state));
 	}
 
@@ -151,12 +188,18 @@ forkMserver(char *database, sabdb** stats, int force)
 	 * child have the same descriptor set */
 	if (pipe(pfdo) == -1) {
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 	if (pipe(pfde) == -1) {
 		close(pfdo[0]);
 		close(pfdo[1]);
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
 		return(newErr("unable to create pipe: %s", strerror(errno)));
 	}
 
@@ -184,8 +227,13 @@ forkMserver(char *database, sabdb** stats, int force)
 		{
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
 					getErrMsg(er));
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
 			return(er);
 		}
+		freeConfFile(ckv);
+		free(ckv);
 
 		/* refresh stats, now we will have a connection registered */
 		msab_freeStatus(stats);
@@ -195,8 +243,10 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * it's not really a problem we exit here */
 			err e = newErr("%s", er);
 			free(er);
+			pthread_mutex_unlock(&fork_lock);
 			return(e);
 		}
+		pthread_mutex_unlock(&fork_lock);
 		return(NO_ERR);
 	}
 
@@ -205,6 +255,9 @@ forkMserver(char *database, sabdb** stats, int force)
 	snprintf(vaultkey, sizeof(vaultkey), "%s/.vaultkey", (*stats)->path);
 	if (stat(vaultkey, &statbuf) == -1) {
 		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
 		return(newErr("cannot start database '%s': no .vaultkey found "
 					"(did you create the database with `monetdb create %s`?)",
 					database, database));
@@ -355,6 +408,10 @@ forkMserver(char *database, sabdb** stats, int force)
 	} else if (pid > 0) {
 		int i;
 
+		/* don't need this, child did */
+		freeConfFile(ckv);
+		free(ckv);
+
 		/* make sure no entries are shot while adding and that we
 		 * deliver a consistent state */
 		pthread_mutex_lock(&_mero_topdp_lock);
@@ -389,6 +446,7 @@ forkMserver(char *database, sabdb** stats, int force)
 				 * it's not really a problem we exit here */
 				err e = newErr("%s", er);
 				free(er);
+				pthread_mutex_unlock(&fork_lock);
 				return(e);
 			}
 			if ((*stats)->state == SABdbRunning &&
@@ -436,6 +494,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * starting */
 			if (dp == NULL) {
 				pthread_mutex_unlock(&_mero_topdp_lock);
+				pthread_mutex_unlock(&fork_lock);
 				switch (state) {
 					case SABdbRunning:
 						/* right, it's not there, but it's running */
@@ -466,6 +525,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			 * we don't want */
 			terminateProcess(dp);
 			pthread_mutex_unlock(&_mero_topdp_lock);
+			pthread_mutex_unlock(&fork_lock);
 
 			switch (state) {
 				case SABdbRunning:
@@ -508,6 +568,7 @@ forkMserver(char *database, sabdb** stats, int force)
 					"mode during startup\n", database);
 		}
 
+		pthread_mutex_unlock(&fork_lock);
 		return(NO_ERR);
 	}
 	/* forking failed somehow, cleanup the pipes */

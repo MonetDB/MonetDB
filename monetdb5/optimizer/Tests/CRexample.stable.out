@@ -14,7 +14,7 @@ stdout of test 'CRexample` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.main():void;
-    b := bat.new(:void,:int);
+    b := bat.new(:oid,:int);
     s4 := algebra.select(b,50,75);
     io.print(s4);
     mdb.List();
@@ -24,9 +24,9 @@ end main;
 # void	int	  # type
 #-----------------#
 function user.main():void;              #  0 main:void := user.main() {G}
-    b := bat.new(:void,:int);           #  1 b:bat[:void,:int] := CMDBATnew(_2:void, _3:int) {G}
-    s4 := algebra.select(b,50,75);      #  2 s4:bat[:void,:int] := ALGselect(b:bat[:void,:int], _11:int, _14:int) {G}
-    io.print(s4);                       #  3 _15:void := IOprint_val(s4:bat[:void,:int]) {G}
+    b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
+    s4 := algebra.select(b,50,75);      #  2 s4:bat[:oid,:int] := ALGselect(b:bat[:oid,:int], _11:int, _14:int) {G}
+    io.print(s4);                       #  3 _15:void := IOprint_val(s4:bat[:oid,:int]) {G}
     mdb.List();                         #  4 _18:void := MDBlistDetail() 
 end main;                               #  5  
 

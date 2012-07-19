@@ -38,7 +38,7 @@ end dir;
 #    return i;
 #end createBAT;
 function user.createBAT(name:str):BAT;
-    res := bat.new(:int,:int);
+    res := bat.new(:oid,:int);
     bat.setName(res,name);
     i := calc.getBATidentifier(res);
     j := i;

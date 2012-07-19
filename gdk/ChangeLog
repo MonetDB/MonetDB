@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Jul 17 2012 Sjoerd Mullender <sjoerd@acm.org>
+- BAT-of-BATs is no longer allowed.  It was already not allowed to
+  make these types of BATs persistent, but now they can't be created at
+  all anymore.
+

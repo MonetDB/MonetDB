@@ -441,8 +441,7 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 		rtrn = aggrX3_@13_bte_loc_ptr(ret, b, g, e);
 	} else if (tt == TYPE_sht) {
 		rtrn = aggrX3_@13_sht_loc_ptr(ret, b, g, e);
-	} else if (b->ttype != TYPE_bat && (tt == TYPE_int || tt == TYPE_flt)) {
-		/* ensure use of ATOMput for TYPE_bat */
+	} else if (tt == TYPE_int || tt == TYPE_flt) {
 		rtrn = aggrX3_@13_int_loc_ptr(ret, b, g, e);
 	} else if (tt == TYPE_dbl || tt == TYPE_lng) {
 		rtrn = aggrX3_@13_lng_loc_ptr(ret, b, g, e);

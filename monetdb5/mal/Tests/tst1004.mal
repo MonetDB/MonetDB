@@ -2,8 +2,8 @@
 
 io.print("Start test");
 bbp.open();
-b:= bat.new(:int,:int);
-bat.insert(b,1,2);
+b:= bat.new(:oid,:int);
+bat.append(b,2);
 bbp.deposit("myfirstbat",b);
 c:= bbp.take("myfirstbat");
 catch MALException:str;

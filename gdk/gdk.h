@@ -714,17 +714,17 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export int VALformat(char **buf, ValPtr res);
-gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
+gdk_export int VALformat(char **buf, const ValRecord *res);
+gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
 gdk_export void *VALget(ValPtr v);
-gdk_export int VALcmp(ValPtr p, ValPtr q);
+gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
+gdk_export int VALisnil(const ValRecord *v);
 
 /*
-
  * @- The BAT record
  * The elements of the BAT structure are introduced in the remainder.
  * Instead of using the underlying types hidden beneath it, one should
@@ -1501,7 +1501,7 @@ gdk_export int BATgetaccess(BAT *b);
  * @- BAT manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT *
- * @tab BATclear (BAT *b)
+ * @tab BATclear (BAT *b, int force)
  * @item BAT *
  * @tab BATcopy (BAT *b, int ht, int tt, int writeable)
  * @item BAT *
@@ -1532,7 +1532,7 @@ gdk_export int BATgetaccess(BAT *b);
  * a state change in the BAT (as previously): both views on the BAT
  * exist at the same time.
  */
-gdk_export BAT *BATclear(BAT *b);
+gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
@@ -2133,12 +2133,6 @@ gdk_export oid OIDnew(oid inc);
  * @item BAT*
  * @tab
  *  BAThash (BAT *b, BUN masksize)
- * @item BAT *
- * @tab
- *  BAThashsplit (BAT *b, BUN n, int unary)
- * @item BAT *
- * @tab
- *  BATrangesplit  (BAT *b, int n)
  * @end multitable
  *
  * The current BAT implementation supports one search accelerator:
@@ -2147,14 +2141,8 @@ gdk_export oid OIDnew(oid inc);
  * failure to create the supportive structures.
  *
  * The hash data structures are currently maintained during update operations.
- *
- * A BAT can be redistributed over n buckets using a hash
- * function with BAThashsplit. The return value is a list of BAT
- * pointers.  Similarly, a range partitioning based is supported.
  */
 gdk_export BAT *BAThash(BAT *b, BUN masksize);
-gdk_export BAT *BAThashsplit(BAT *b, BUN n, int unary);
-gdk_export BAT *BATrangesplit(BAT *b, BUN n, int unary);
 gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 
 /* low level functions */
@@ -2199,7 +2187,7 @@ gdk_export BAT *BAThashjoin(BAT *l, BAT *r, BUN estimate);
 #define GDK_HISTO_MAX_BIT	((int) (sizeof(size_t)<<3))
 
 /* we prefer to use vm_alloc routines on size > GDKmmap */
-gdk_export void *GDKmmap(char *path, int mode, off_t off, size_t len);
+gdk_export void *GDKmmap(const char *path, int mode, off_t off, size_t len);
 
 gdk_export size_t GDK_mem_bigsize;	/* size after which we use anonymous VM rather than malloc */
 gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
@@ -2295,24 +2283,20 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #define putenv _putenv
 #endif
 
-static inline void *
-VALptr(ValPtr v)
+/* also see VALget */
+static inline const void *
+VALptr(const ValRecord *v)
 {
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void: return (void *) &v->val.oval;
-	case TYPE_bit: return (void *) &v->val.btval;
-	case TYPE_bte: return (void *) &v->val.btval;
-	case TYPE_sht: return (void *) &v->val.shval;
-	case TYPE_bat: return (void *) &v->val.bval;
-	case TYPE_int: return (void *) &v->val.ival;
-	case TYPE_oid: return (void *) &v->val.oval;
-	case TYPE_wrd: return (void *) &v->val.wval;
-	case TYPE_ptr: return (void *) v->val.pval;
-	case TYPE_flt: return (void *) &v->val.fval;
-	case TYPE_dbl: return (void *) &v->val.dval;
-	case TYPE_lng: return (void *) &v->val.lval;
-	case TYPE_str: return (void *) v->val.sval;
-	default:       return (void *) v->val.pval;
+	case TYPE_void: return (const void *) &v->val.oval;
+	case TYPE_bte: return (const void *) &v->val.btval;
+	case TYPE_sht: return (const void *) &v->val.shval;
+	case TYPE_int: return (const void *) &v->val.ival;
+	case TYPE_flt: return (const void *) &v->val.fval;
+	case TYPE_dbl: return (const void *) &v->val.dval;
+	case TYPE_lng: return (const void *) &v->val.lval;
+	case TYPE_str: return (const void *) v->val.sval;
+	default:       return (const void *) v->val.pval;
 	}
 }
 
@@ -2338,10 +2322,8 @@ VALptr(ValPtr v)
 */
 #define PARMASK		(1<<7)
 #define PARDEBUG	if (GDKdebug & PARMASK)
-/* TRGMASK not used anymore
-#define TRGMASK		(1<<8)
-#define TRGDEBUG	if (GDKdebug & TRGMASK)
-*/
+#define HEADLESSMASK	(1<<8)
+#define HEADLESSDEBUG	if ( GDKdebug & HEADLESSMASK)
 #define TMMASK		(1<<9)
 #define TMDEBUG		if (GDKdebug & TMMASK)
 #define TEMMASK		(1<<10)

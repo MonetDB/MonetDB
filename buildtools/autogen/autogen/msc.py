@@ -486,9 +486,6 @@ def msc_headers(fd, var, headers, msc):
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
 
-def msc_doc(fd, var, docmap, msc):
-    docmap['TARGETS']=[]
-
 def msc_binary(fd, var, binmap, msc):
 
     if type(binmap) == type([]):
@@ -1018,7 +1015,7 @@ def msc_python(fd, var, python, msc):
         msc['SCRIPTS'].append('target_python_%s' % f)
         srcs = map(lambda x: x.strip('\'" ').replace('.', '\\'),
                    pyre.search(open(os.path.join(msc['cwd'], f)).read()).group(1).split(', '))
-        fd.write('target_python_%s: %s %s\n' % (f, ' '.join(srcs), f))
+        fd.write('target_python_%s: %s README.rst %s\n' % (f, ' '.join(srcs), f))
         fd.write('\t$(PYTHON) %s build\n' % f)
         for src in srcs:
             fd.write('%s: "$(srcdir)\\%s"\n' % (src, src))
@@ -1026,6 +1023,8 @@ def msc_python(fd, var, python, msc):
             fd.write('\t$(INSTALL) "$(srcdir)\\%s"\\*.py "%s"\n' % (src, src))
         fd.write('%s: "$(srcdir)\\%s"\n' % (f, f))
         fd.write('\t$(INSTALL) "$(srcdir)\\%s" "%s"\n' % (f, f))
+        fd.write('README.rst: "$(srcdir)\\README.rst"\n')
+        fd.write('\t$(INSTALL) "$(srcdir)\\README.rst" "README.rst"\n')
         msc['INSTALL'][f] = f, '', '', '', ''
         fd.write('install_%s:\n' % f)
         fd.write('\t$(PYTHON) %s install --prefix "$(prefix)"\n' % f)
@@ -1058,7 +1057,7 @@ def msc_ant(fd, var, ant, msc):
     fd.write("callant%d.bat:\n" % callantno)
     fd.write("\techo @set thisdir=%%~dp0>callant%d.bat\n" % callantno)
     fd.write("\techo @set thisdir=%%thisdir:~0,-1%%>>callant%d.bat\n" % callantno)
-    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, callantno))
+    fd.write("\techo @$(ANT) -f $(srcdir)\\build.xml \"-Dbuilddir=%%thisdir%%\\%s\" \"-Djardir=%%thisdir%%\" %s>>callant%d.bat\n" % (target, target, callantno))
     fd.write("%s_ant_target: callant%d.bat\n" % (target, callantno))
     fd.write("\tcallant%d.bat\n" % callantno)
     callantno = callantno + 1
@@ -1090,7 +1089,6 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'LIB': msc_library,
                 'BINS': msc_bins,
                 'BIN': msc_binary,
-                'DOC': msc_doc,
                 'SCRIPTS': msc_scripts,
                 'INCLUDES': msc_includes,
                 'MTSAFE': msc_mtsafe,

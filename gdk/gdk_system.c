@@ -748,4 +748,3 @@ GDKms(void)
 {
 	return (int) (GDKusec() / 1000);
 }
-

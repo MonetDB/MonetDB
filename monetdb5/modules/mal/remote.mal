@@ -51,14 +51,14 @@ command isalive(conn:str):int
 address RMTisalive
 comment "check if conn is still valid and connected";
 
-pattern batload(ht:any_1, tt:any_2, size:int):bat[:any_1,:any_2]
+pattern batload(ht:oid, tt:any_2, size:int):bat[:oid,:any_2]
 address RMTbatload
 comment "create a BAT of the given type and size, and load values from the input stream";
 
 pattern batbincopy(b:bat):void
 address RMTbincopyto
 comment "dump BAT b in binary form to the stream";
-pattern batbincopy():bat[:void,:any]
+pattern batbincopy():bat[:oid,:any]
 address RMTbincopyfrom
 comment "store the binary BAT data in the BBP and return as BAT";
 

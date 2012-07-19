@@ -322,36 +322,24 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 	r_start = r_end = BUNfirst(r);
 
 	switch (loc) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:mergejoin(simple,loc,loc,bte)@
 		break;
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:mergejoin(simple,loc,loc,sht)@
 		break;
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:mergejoin(simple,loc,loc,int)@
 		break;
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:mergejoin(simple,loc,loc,flt)@
 		break;
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:mergejoin(simple,loc,loc,lng)@
 		break;
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:mergejoin(simple,loc,loc,dbl)@
 		break;
-#endif
 	default:
 		/* watch it: l->tvarsized may be set due to void l */
 		if (l->tvarsized) {
@@ -513,24 +501,16 @@ BAThashjoin(BAT *l, BAT *r, BUN estimate)
 	if (BATcount(l) > BATcount(r)/10)
 		BATaccessBegin(r, USE_HEAD | USE_TAIL | USE_HHASH, MMAP_WILLNEED);
 	switch (any = ATOMstorage(l->ttype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:hashjoin(simple,bte,tloc,bte)@
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:hashjoin(simple,sht,tloc,sht)@
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
 		@:hashjoin(simple,int,tloc,int)@
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
 		@:hashjoin(simple,lng,tloc,lng)@
-#endif
 	case TYPE_str:
 		if (l->T->vheap->hashash) {
 			@:hashjoin(atom,str_hv,tail,any)@
@@ -754,14 +734,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		bn = @1fetchjoin_@2_bte(bn, l, r);
 	} else if (ATOMstorage(rtt) == TYPE_sht) {
 		bn = @1fetchjoin_@2_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (ATOMstorage(rtt) == TYPE_int ||
-		    ATOMstorage(rtt) == TYPE_flt
+	} else if (ATOMstorage(rtt) == TYPE_int ||
+		   ATOMstorage(rtt) == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || ATOMstorage(rtt) == TYPE_oid
+		   || ATOMstorage(rtt) == TYPE_oid
 #endif
-			   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = @1fetchjoin_@2_int(bn, l, r);
 	} else if (ATOMstorage(rtt) == TYPE_lng ||
 		   ATOMstorage(rtt) == TYPE_dbl
@@ -782,14 +760,12 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		@:fetchjoin_switch_rtt(@1,bte)@
 	} else if (ATOMstorage(lht) == TYPE_sht) {
 		@:fetchjoin_switch_rtt(@1,sht)@
-	} else if (lht != TYPE_bat &&
-		   (ATOMstorage(lht) == TYPE_int ||
-		    ATOMstorage(lht) == TYPE_flt
+	} else if (ATOMstorage(lht) == TYPE_int ||
+		   ATOMstorage(lht) == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || ATOMstorage(lht) == TYPE_oid
+		   || ATOMstorage(lht) == TYPE_oid
 #endif
-			   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:fetchjoin_switch_rtt(@1,int)@
 	} else if (ATOMstorage(lht) == TYPE_lng ||
 		   ATOMstorage(lht) == TYPE_dbl
@@ -1135,10 +1111,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			@:voidfetchjoin(Tbte)@
 		} else if (ATOMstorage(tpe) == TYPE_sht) {
 			@:voidfetchjoin(Tsht)@
-		} else if (tpe != TYPE_bat &&
-			   (ATOMstorage(tpe) == TYPE_int ||
-			    ATOMstorage(tpe) == TYPE_flt)) {
-			/* ensure use of ATOMput for TYPE_bat */
+		} else if (ATOMstorage(tpe) == TYPE_int ||
+			   ATOMstorage(tpe) == TYPE_flt) {
 			@:voidfetchjoin(Tint)@
 		} else if (ATOMstorage(tpe) == TYPE_lng ||
 			   ATOMstorage(tpe) == TYPE_dbl) {
@@ -1690,24 +1664,16 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		}
 @= outerjoinswitch
 		switch (any) {
-#ifndef NOEXPAND_BTE
 		case TYPE_bte:
 			@:outerjoinloop(simple,bte,@1,@2,bte)@
-#endif
-#ifndef NOEXPAND_SHT
 		case TYPE_sht:
 			@:outerjoinloop(simple,sht,@1,@2,sht)@
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 		case TYPE_int:
 		case TYPE_flt:
 			@:outerjoinloop(simple,int,@1,@2,int)@
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 		case TYPE_dbl:
 		case TYPE_lng:
 			@:outerjoinloop(simple,lng,@1,@2,lng)@
-#endif
 		case TYPE_str:
 			if (l->T->vheap->hashash) {
 				@:outerjoinloop(atom,str_hv,@1,@2,any)@
@@ -1902,24 +1868,12 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 			goto bunins_failed;
 		break;
 @= nlthetajoin_tpe
-#ifndef NOEXPAND_BTE
 	@:nlthetajoin_@1(bte,@2,@3)@
-#endif
-#ifndef NOEXPAND_SHT
 	@:nlthetajoin_@1(sht,@2,@3)@
-#endif
-#ifndef NOEXPAND_INT
 	@:nlthetajoin_@1(int,@2,@3)@
-#endif
-#ifndef NOEXPAND_LNG
 	@:nlthetajoin_@1(lng,@2,@3)@
-#endif
-#ifndef NOEXPAND_FLT
 	@:nlthetajoin_@1(flt,@2,@3)@
-#endif
-#ifndef NOEXPAND_DBL
 	@:nlthetajoin_@1(dbl,@2,@3)@
-#endif
 @
 @c
 @:nlthetajoin_tpe(impl,gt,>)@
@@ -2129,30 +2083,18 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	}
 
 	switch (loc = var = ATOMstorage(l->htype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:binsemijoin(loc,bte,simple)@
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:binsemijoin(loc,sht,simple)@
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		@:binsemijoin(loc,int,simple)@
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		@:binsemijoin(loc,flt,simple)@
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		@:binsemijoin(loc,dbl,simple)@
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		@:binsemijoin(loc,lng,simple)@
-#endif
 	default:
 		if (l->hvarsized) {
 			if (r->hvarsized) {
@@ -2293,24 +2235,16 @@ BATrevsemijoin(BAT *l, BAT *r)
 		goto bunins_failed;
 
 	switch (any = ATOMstorage(l->htype)) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		@:revsemijoin(simple,bte,hloc,bte)@
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		@:revsemijoin(simple,sht,hloc,sht)@
-#endif
-#if !defined(NOEXPAND_INT) || !defined(NOEXPAND_FLT)
 	case TYPE_int:
 	case TYPE_flt:
 		@:revsemijoin(simple,int,hloc,int)@
-#endif
-#if !defined(NOEXPAND_DBL) || !defined(NOEXPAND_LNG)
 	case TYPE_dbl:
 	case TYPE_lng:
 		@:revsemijoin(simple,lng,hloc,lng)@
-#endif
 	case TYPE_str:
 		if (r->H->vheap->hashash) {
 			@:revsemijoin(atom,str_hv,head,any)@
@@ -2632,13 +2566,11 @@ bunins_failed:
 		bn = antijoin_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = antijoin_@1_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (rts == TYPE_int || rts == TYPE_flt
+	} else if (rts == TYPE_int || rts == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || rts == TYPE_oid
+		   || rts == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = antijoin_@1_int(bn, l, r);
 	} else if (rts == TYPE_lng || rts == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2663,13 +2595,11 @@ bunins_failed:
 		@:antijoin_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:antijoin_switch_rtt(sht)@
-	} else if (lht != TYPE_bat &&
-		   (lhs == TYPE_int || lhs == TYPE_flt
+	} else if (lhs == TYPE_int || lhs == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || lhs == TYPE_oid
+		   || lhs == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:antijoin_switch_rtt(int)@
 	} else if (lhs == TYPE_lng || lhs == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2806,13 +2736,11 @@ bunins_failed:
 		bn = cross_@1_bte(bn, l, r);
 	} else if (rts == TYPE_sht) {
 		bn = cross_@1_sht(bn, l, r);
-	} else if (rtt != TYPE_bat &&
-		   (rts == TYPE_int || rts == TYPE_flt
+	} else if (rts == TYPE_int || rts == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || rts == TYPE_oid
+		   || rts == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		bn = cross_@1_int(bn, l, r);
 	} else if (rts == TYPE_lng || rts == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG
@@ -2837,13 +2765,11 @@ bunins_failed:
 		@:cross_switch_rtt(bte)@
 	} else if (lhs == TYPE_sht) {
 		@:cross_switch_rtt(sht)@
-	} else if (lht != TYPE_bat &&
-		   (lhs == TYPE_int || lhs == TYPE_flt
+	} else if (lhs == TYPE_int || lhs == TYPE_flt
 #if SIZEOF_OID == SIZEOF_INT
-		    || lhs == TYPE_oid
+		   || lhs == TYPE_oid
 #endif
-		   )) {
-		/* ensure use of ATOMput for TYPE_bat */
+		) {
 		@:cross_switch_rtt(int)@
 	} else if (lhs == TYPE_lng || lhs == TYPE_dbl
 #if SIZEOF_OID == SIZEOF_LNG

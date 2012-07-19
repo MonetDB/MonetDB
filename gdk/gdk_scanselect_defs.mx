@@ -183,20 +183,10 @@ Expand on output-head-type; usually inherited from input-head-type.
 	@[10]: c/h
 */
 @= DEFseqscanHTput
-#ifndef SKIP_TYPE_EXPANSIONS
-#ifndef NOEXPAND_BTE
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,bte,bte,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_BTE */
-#ifndef NOEXPAND_SHT
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,sht,sht,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_SHT */
-#ifndef NOEXPAND_INT
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,int,int,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_INT */
-#ifndef NOEXPAND_LNG
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,lng,lng,BUNhloc(bi,p),,@[10])@
-#endif	/* NOEXPAND_LNG */
-#endif	/* SKIP_TYPE_EXPANSIONS */
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,fix,fix,BUNhloc(bi,p),,@[10])@
 	@:DEFseqscanTTput(@1,@2,@3,@4,@5,var,var,BUNhvar(bi,p),,@[10])@
 @-

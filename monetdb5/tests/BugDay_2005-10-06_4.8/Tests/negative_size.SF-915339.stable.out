@@ -13,7 +13,7 @@ stdout of test 'negative_size.SF-915339` in directory 'tests/BugDay_2005-10-06_4
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-    c := bat.new(:int,:int,-5000);
+    c := bat.new(:oid,:int,-5000);
     io.print(c);
 end main;
 !MALException:bat.new:Argument must be positive

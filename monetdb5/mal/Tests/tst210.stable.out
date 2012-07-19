@@ -23,8 +23,8 @@ stdout of test 'tst210` in directory 'mal` itself:
 #
 function user.main():void;
 # simple renaming of a bat; 
-    b := bat.new(:int,:int);
-    bat.insert(b,1,1);
+    b := bat.new(:oid,:int);
+    bat.append(b,1);
     io.print(b);
     bat.setName(b,"myhome");
     bat.setColumn(b,"first","last");
@@ -34,12 +34,12 @@ end main;
 # h	tmp_4	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
+[ 0@0,	  1	  ]
 #-----------------#
 # first	last	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
+[ 0@0,	  1	  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

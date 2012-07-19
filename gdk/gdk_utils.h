@@ -22,7 +22,8 @@
 
 #include <monet_options.h>
 
-gdk_export BAT *GDKenv;
+gdk_export BAT *GDKkey;
+gdk_export BAT *GDKval;
 
 gdk_export char *GDKgetenv(const char *name);
 

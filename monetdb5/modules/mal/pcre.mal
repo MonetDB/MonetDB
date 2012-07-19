@@ -38,39 +38,39 @@ command index(pat:pcre, s:str) :int
 address PCREindex
 comment "match a pattern, return matched position (or 0 when not found)";
 
-command select(pat:str, strs:bat[:any_1,:str]):bat[:any_1,:str]
+command select(pat:str, strs:bat[:oid,:str]):bat[:oid,:str]
 address PCREselectDef
 comment "Select tuples based on the pattern";
 
-command uselect(pat:str, strs:bat[:any_1,:str]):bat[:any_1,:void]
+command uselect(pat:str, strs:bat[:oid,:str]):bat[:oid,:oid]
 address PCREuselectDef
 comment "Select tuples based on the pattern, only returning the head";
 
-command like_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+command like_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCRElike_uselect_pcre;
 
-command like_filter(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+command like_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCRElike_uselect_pcre;
 
-command like_filter(s:bat[:any_1,:str], pat:bat[:any_2,:str], esc:str):bat[:any_1,:any_2]
+command like_filter(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
 address PCRElike_join_pcre;
 
-command ilike_uselect(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+command ilike_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCREilike_uselect_pcre;
 
-command ilike_filter(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:void]
+command ilike_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCREilike_uselect_pcre;
 
-command ilike_filter(s:bat[:any_1,:str], pat:bat[:any_2,:str], esc:str):bat[:any_1,:any_2]
+command ilike_filter(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
 address PCREilike_join_pcre;
 
-command like_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str]
+command like_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
 address PCRElike_select_pcre;
 
-command ilike_select(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:str]
+command ilike_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
 address PCREilike_select_pcre;
 
-function ilike_filter(s:bat[:any_1,:str], pat:str) :bat[:any_1,:str];
+function ilike_filter(s:bat[:oid,:str], pat:str) :bat[:oid,:str];
 	return ilike_select(s, pat, "");
 end ilike_filter;
 
@@ -100,7 +100,7 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replaceme
 	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".
 	   Returns the replaced string, or if no matches found, the original string.";
 
-command replace(orig:bat[:any_1,:str],pat:str,repl:str,flag:str):bat[:any_1,:str]
+command replace(orig:bat[:oid,:str],pat:str,repl:str,flag:str):bat[:oid,:str]
 address PCREreplace_bat_wrap;
 
 command pcre_quote(s:str):str
@@ -130,16 +130,16 @@ address PCREnotlike3;
 command not_like(s:str, pat:str):bit
 address PCREnotlike2;
 
-command batstr.like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit]
+command batstr.like(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit]
 address BATPCRElike;
 
-command batstr.like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit]
+command batstr.like(s:bat[:oid,:str], pat:str):bat[:oid,:bit]
 address BATPCRElike2;
 
-command batstr.not_like(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit]
+command batstr.not_like(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit]
 address BATPCREnotlike;
 
-command batstr.not_like(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit]
+command batstr.not_like(s:bat[:oid,:str], pat:str):bat[:oid,:bit]
 address BATPCREnotlike2;
 
 command ilike(s:str, pat:str, esc:str):bit
@@ -154,15 +154,15 @@ address PCREnotilike3;
 command not_ilike(s:str, pat:str):bit
 address PCREnotilike2;
 
-command batstr.ilike(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit]
+command batstr.ilike(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit]
 address BATPCREilike;
 
-command batstr.ilike(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit]
+command batstr.ilike(s:bat[:oid,:str], pat:str):bat[:oid,:bit]
 address BATPCREilike2;
 
-command batstr.not_ilike(s:bat[:any_1,:str], pat:str, esc:str):bat[:any_1,:bit]
+command batstr.not_ilike(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:bit]
 address BATPCREnotilike;
 
-command batstr.not_ilike(s:bat[:any_1,:str], pat:str):bat[:any_1,:bit]
+command batstr.not_ilike(s:bat[:oid,:str], pat:str):bat[:oid,:bit]
 address BATPCREnotilike2;
 

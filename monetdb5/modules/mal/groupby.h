@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @-
- * @include prelude.mx
- * @+ Implementation code
- */
 #ifndef _GROUPBY_H
 #define _GROUPBY_H
 

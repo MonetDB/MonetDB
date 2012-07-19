@@ -21,10 +21,10 @@ stdout of test 'tst029` in directory 'mal` itself:
 #io.printf("%s\n",s);
 #
 function user.main():void;
-    b := bat.new(:int,:str);
-    bat.insert(b,1,"io.print(1);");
-    bat.insert(b,2,"io.print(\"hello\");");
-    bat.insert(b,3,"s:=\"goodbye\";io.print(s);");
+    b := bat.new(:oid,:str);
+    bat.append(b,"io.print(1);");
+    bat.append(b,"io.print(\"hello\");");
+    bat.append(b,"s:=\"goodbye\";io.print(s);");
     io.print(b);
     s := algebra.fetch(b,2);
     io.printf("%s\n",s);
@@ -33,9 +33,9 @@ end main;
 # h	t				  # name
 # int	str				  # type
 #-----------------------------------------#
-[ 1,	  "io.print(1);"		  ]
-[ 2,	  "io.print(\"hello\");"	  ]
-[ 3,	  "s:=\"goodbye\";io.print(s);"	  ]
+[ 0@0,	  "io.print(1);"		  ]
+[ 1@0,	  "io.print(\"hello\");"	  ]
+[ 2@0,	  "s:=\"goodbye\";io.print(s);"	  ]
 s:="goodbye";io.print(s);
 
 # 22:30:08 >  

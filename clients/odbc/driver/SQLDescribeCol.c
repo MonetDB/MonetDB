@@ -89,8 +89,11 @@ SQLDescribeCol_(ODBCStmt *stmt,
 		*DataTypePtr = rec->sql_desc_concise_type;
 
 	/* also see SQLDescribeParam */
-	if (ColumnSizePtr)
+	if (ColumnSizePtr) {
 		*ColumnSizePtr = ODBCLength(rec, SQL_DESC_LENGTH);
+		if (*ColumnSizePtr == (SQLULEN) SQL_NO_TOTAL)
+			*ColumnSizePtr = 0;
+	}
 
 	/* also see SQLDescribeParam */
 	if (DecimalDigitsPtr) {

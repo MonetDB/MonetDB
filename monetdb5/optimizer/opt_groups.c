@@ -28,40 +28,45 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	InstrPtr *old;
 	int limit,slimit;
-    Lifespan span;
-
-
+    	Lifespan span;
 
 	(void) cntxt;
 	(void) stk;
-    span= setLifespan(mb);
-    if( span == NULL)
-        return 0;
-	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
+    	span= setLifespan(mb);
+    	if( span == NULL)
+        	return 0;
+	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL) {
+		GDKfree(span);
 		return 0;
+	}
 
 	/* beware, new variables and instructions are introduced */
 	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
-	if ( pc == NULL)
+	if ( pc == NULL) {
+		GDKfree(span);
 		return 0;
+	}
 
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
-	if ( newMalBlkStmt(mb,mb->ssize) <0)
+	if ( newMalBlkStmt(mb,mb->ssize) <0) {
+		GDKfree(span);
+		GDKfree(pc);
 		return 0;
+	}
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
 		if (getModuleId(p) == groupRef && p->argc == 3 && getFunctionId(p) == newRef ){
-				setFunctionId(p, multicolumnsRef);
-				pc[getArg(p,0)] = i;
-				pc[getArg(p,1)] = i;
-				actions++;
-				OPTDEBUGgroups {
-					mnstr_printf(cntxt->fdout,"#new groups instruction\n");
-					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-				}
+			setFunctionId(p, multicolumnsRef);
+			pc[getArg(p,0)] = i;
+			pc[getArg(p,1)] = i;
+			actions++;
+			OPTDEBUGgroups {
+				mnstr_printf(cntxt->fdout,"#new groups instruction\n");
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
+			}
 		}
 		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
 			/*
@@ -87,10 +92,11 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pushInstruction(mb,p);
 	}
 	for(; i<slimit; i++)
-	if(old[i])
-		freeInstruction(old[i]);
+		if(old[i])
+			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(pc);
+	GDKfree(span);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_groups: %d statements glued\n",actions);
 	return actions;

@@ -225,7 +225,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			continue;
 		}
 		if (flowblock == 0){
-			flowblock = newTmpVariable(mb,TYPE_int);
+			flowblock = newTmpVariable(mb,TYPE_bit);
 			entries = 0;
 			start = i;
 		}

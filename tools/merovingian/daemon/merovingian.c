@@ -48,13 +48,11 @@
  * number of times over a recent period.  Note that to date, no such
  * thing has been implemented as the need for it has not arisen yet.
  *
- * By default, merovingian will monitor and control the dbfarm in the
- * build-time configured prefix under var/monetdb5/dbfarm.  However,
- * when a path is given as first argument, merovingian will attempt to
- * monitor and control the directory the path points to.  This allows
- * users to create their own dbfarm, but also expert users to run
- * multiple merovingians on the same system easily, since the
- * (persistent) configuration is read from the dbfarm directory.
+ * merovingian will monitor and control the dbfarm given by path in the
+ * first argument.  This allows users to create their own dbfarm, but
+ * also expert users to run multiple merovingians on the same system
+ * easily, since the (persistent) configuration is read from the dbfarm
+ * directory.
  */
 
 #include "monetdb_config.h"

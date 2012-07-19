@@ -1,15 +1,15 @@
 #provided by roberto
 function user.f1();
   # create bat
-  xxx := bat.new(:void, :dbl);
+  xxx := bat.new(:oid, :dbl);
   bat.setName(xxx,"xxx");
   bat.setPersistent(xxx,true);
   transaction.commit();
   
   # check existance
   xxx_1 := bbp.getNames();
-  xxx_2 := bat.reverse(xxx_1);
-  xxx_3 := algebra.exist(xxx_2,"xxx");
+  xr:= bat.reverse(xxx_1);
+  xxx_3 := algebra.exist(xr,"xxx");
   
   # if it exists, print it
   barrier ifb := xxx_3;

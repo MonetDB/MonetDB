@@ -180,7 +180,6 @@ struct OPTcatalog {
 {"replication",	0,	0,	0,	DEBUG_OPT_REPLICATION},
 {"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
-{"singleton",	0,	0,	0,	DEBUG_OPT_SINGLETON},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
@@ -360,7 +359,7 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 					u= getVar(mb,getArg(q,k));
 					cmp = BATatoms[w->value.vtype].atomCmp;
 					if ( w->value.vtype == u->value.vtype &&
-						(*cmp)(VALget(&w->value), VALget(&u->value)) == 0)
+						(*cmp)(VALptr(&w->value), VALptr(&u->value)) == 0)
 						continue;
 			}
 			return FALSE;

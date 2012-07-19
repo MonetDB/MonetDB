@@ -1,8 +1,8 @@
-b:= bat.new(:int,:int);
-bat.insert(b,0,0);
-bat.insert(b,1,1);
-bat.insert(b,2,2);
-bat.insert(b,3,3);
+b:= bat.new(:oid,:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
 
 z:= algebra.select(b,0,2); io.print(z);
 z:= algebra.select(b,0,2,true,true); io.print(z);

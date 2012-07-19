@@ -200,22 +200,22 @@ pattern rpc(key:int,qry:str...):any
 address SERVERmapi_rpc_single_row
 comment "Send a simple query for execution and fetch result.";
 
-pattern rpc(key:int,qry:str):bat[:any_1,:any_2]
+pattern rpc(key:int,qry:str):bat[:oid,:any_2]
 address SERVERmapi_rpc_bat;
 
 command rpc(key:int,qry:str):void
 address SERVERquery
 comment "Send a simple query for execution.";
 
-pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:any_1,:any_2]
+pattern bind(key:int,rschema:str,rtable:str,rcolumn:str,i:int):bat[:oid,:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 
-pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:any_1,:any_2]
+pattern bind(key:int,rschema:str,rtable:str,i:int):bat[:oid,:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 
-pattern bind(key:int,remoteName:str):bat[:any_1,:any_2]
+pattern bind(key:int,remoteName:str):bat[:oid,:any_2]
 address SERVERbindBAT
 comment "Bind a remote variable to a local one.";
 

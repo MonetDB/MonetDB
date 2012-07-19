@@ -19,10 +19,10 @@ end f;
 function user.main():void;
 #possible leak in constant string handling 
 #confirmed feb 2009 
-barrier (go,i) := language.newRange(0:lng);
+barrier i := 0:lng;
     user.f();
-    redo (go,i) := language.nextElement(1:lng,1000:lng);
-exit (go,i);
+    redo i := iterator.next(1:lng,1000:lng);
+exit i;
 end main;
 
 # 07:49:22 >  
