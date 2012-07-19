@@ -1462,7 +1462,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								break;
 							case 'n':
 							default:
-								d = 0.1 / (1.0 - 1.0);
+								d = 0.0;
 								BUNins(r, &v, &d, FALSE);
 								break;
 						}
