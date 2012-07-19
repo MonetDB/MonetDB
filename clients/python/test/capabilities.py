@@ -24,9 +24,8 @@
 
 """
 from time import time
-import array
 import unittest
-import sys
+
 
 class DatabaseTest(unittest.TestCase):
 
@@ -37,7 +36,6 @@ class DatabaseTest(unittest.TestCase):
     rows = 10
 
     def setUp(self):
-        import gc
         db = self.db_module.connect(*self.connect_args, **self.connect_kwargs)
         self.connection = db
         self.cursor = db.cursor()
@@ -227,7 +225,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 DOUBLE',),
             generator)
 
-
     def test_DATE(self):
         ticks = time()
         def generator(row,col):
@@ -313,6 +310,13 @@ class DatabaseTest(unittest.TestCase):
             return chr(i)
         self.check_data_integrity(
             ('col1 char(1)','col2 char(1)'),
+            generator)
+
+    def test_BOOL(self):
+        def generator(row,col):
+            return bool(row%2)
+        self.check_data_integrity(
+            ('col1 BOOL',),
             generator)
 
     def test_description(self):

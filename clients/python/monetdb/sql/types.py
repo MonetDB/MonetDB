@@ -15,8 +15,10 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-# definition of types, for more info:
-# http://www.monetdb.org/Documentation/Manuals/SQLreference/Datatypes
+"""
+definition of MonetDB column types, for more info:
+http://www.monetdb.org/Documentation/Manuals/SQLreference/Datatypes
+"""
 
 CHAR = 'char'                      # (L) character string with length L
 VARCHAR = 'varchar'                # (L) string with atmost length L
@@ -38,9 +40,9 @@ INTERVAL = 'interval'              # (Q) a temporal interval
 MONTH_INTERVAL = 'month_interval'
 SEC_INTERVAL = 'sec_interval'
 WRD = 'wrd'
+TINYINT = 'tinyint'
 
 # Not on the website:
-TINYINT = 'tinyint'
 SHORTINT = 'shortint'
 MEDIUMINT = 'mediumint'
 LONGINT = 'longint'

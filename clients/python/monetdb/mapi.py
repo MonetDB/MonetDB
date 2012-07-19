@@ -23,11 +23,9 @@ import socket
 import logging
 import struct
 import hashlib
-import platform
-
 from cStringIO import StringIO
 
-from monetdb.exceptions import *
+from monetdb.exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
 logger = logging.getLogger("monetdb")
 
@@ -53,13 +51,23 @@ STATE_READY = 1
 
 
 class Server(object):
+    """
+    MAPI (low level MonetDB API) connection
+    """
+
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
-        self.socket = None
+        self.socket = ""
+        self.hostname = ""
+        self.port = 0
+        self.username = ""
+        self.password = ""
+        self.database = ""
+        self.language = ""
 
     def connect(self, hostname, port, username, password, database, language):
-        """ connect to a MonetDB database using the mapi protocol"""
+        """ setup connection to MAPI server"""
 
         self.hostname = hostname
         self.port = port
@@ -78,7 +86,7 @@ class Server(object):
             self.socket.connect((hostname, port))
         except socket.error, error:
             (error_code, error_str) = error
-            raise OperationalError(error_str)
+            raise OperationalError(error_str + " (%s)" % error_code)
 
         self.__login()
 
@@ -169,7 +177,6 @@ class Server(object):
         """ generate a response to a mapi login challenge """
         challenges = challenge.split(':')
         salt, identity, protocol, hashes, endian = challenges[:5]
-
         password = self.password
 
         if protocol == '9':
