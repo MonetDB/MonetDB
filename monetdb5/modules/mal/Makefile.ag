@@ -61,7 +61,8 @@ lib_mal = {
 		txtsim.c txtsim.h \
 		urlbox.c urlbox.h \
 		zorder.c zorder.h \
-		sample.c sample.h
+		sample.c sample.h \
+		calc.c batcalc.c
 }
 
 headers_mal = {
@@ -76,9 +77,10 @@ headers_mal = {
 		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
 		cluster.mal trader.mal \
-		tokenizer.mal zorder.mal sample.mal
+		tokenizer.mal zorder.mal sample.mal \
+		calc.mal batcalc.mal
 }
 
-EXTRA_DIST = attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal pqueue.mal
+EXTRA_DIST = attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal batcalc.mal
 
 EXTRA_DIST_DIR = Tests
