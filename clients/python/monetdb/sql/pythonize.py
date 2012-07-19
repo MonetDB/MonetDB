@@ -28,7 +28,7 @@ from monetdb.exceptions import ProgrammingError
 def strip(data):
     """ returns a python string, with chopped off quotes,
     and replaced escape characters"""
-    return data[1:-1].decode('string_escape')
+    return data[1:-1].decode('string_escape').decode('utf-8')
 
 def py_bool(data):
     """ return python boolean """
