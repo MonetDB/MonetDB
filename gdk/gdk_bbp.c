@@ -1192,10 +1192,12 @@ BBPinit(void)
 		if ((fp = GDKfilelocate("BBP", "r", "dir")) == NULL)
 			GDKfatal("BBPinit: cannot open recovered BBP.dir.");
 	} else if ((fp = GDKfilelocate("BBP", "r", "dir")) == NULL) {
-		/* there was no BBP.dir either. Panic! try to use a BBP.bak */
+		/* there was no BBP.dir either. Panic! try to use a
+		 * BBP.bak */
 		GDKfilepath(buf, BAKDIR, "BBP", "bak");
 		if (stat(buf, &st) < 0) {
-			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir): create a new one */
+			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
+			 * create a new one */
 			IODEBUG THRprintf(GDKstdout, "#BBPdir: initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
 			if (BBPdir(0, NULL) < 0)
 				goto bailout;
@@ -3381,19 +3383,19 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
 		char ext[16];
-   		int mvret = 0;
+		int mvret = 0;
 
 		if (h->filename && h->newstorage == STORE_PRIV)
 			snprintf(ext, sizeof(ext), "%s.new", extbase);
 		else
 			snprintf(ext, sizeof(ext), "%s", extbase);
 		if (tp && dirty && !file_exists(BAKDIR, nme, ext)) {
-                	/* file will be saved (is dirty), move the old
+			/* file will be saved (is dirty), move the old
 			 * image into backup */
 		        mvret = heap_move(h, srcdir, subcommit ? SUBDIR : BAKDIR, nme, ext);
-       		} else if (subcommit && tp &&
+		} else if (subcommit && tp &&
 			   (dirty || file_exists(BAKDIR, nme, ext))) {
-                	/* file is clean. move the backup into the
+			/* file is clean. move the backup into the
 			 * subcommit dir (commit should eliminate
 			 * backup) */
 			mvret = file_move(BAKDIR, SUBDIR, nme, ext);
@@ -3403,11 +3405,11 @@ do_backup(const char *srcdir, const char *nme, const char *extbase,
                  * before, i.e. after a BATmaterialize on a persistent
                  * bat as a workaround, do not complain about move
                  * failure if the source file is nonexistent
- 		 */
+		 */
 		if (mvret && file_exists(srcdir, nme, ext)) {
 			ret |= mvret;
 		}
-       		if (subcommit &&
+		if (subcommit &&
 		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
 			long_str kill_ext;
 

@@ -18,23 +18,21 @@
  */
 
 /*
- * @f gdk_storage
  * @a M. L. Kersten, P. Boncz, N. Nes
  *
  * @* Database Storage Management
- * Contains routines for writing and reading GDK data to and from disk.
- * This section contains the primitives to manage the disk-based images
- * of the BATs. It relies on the existence of a UNIX file system, including
- * memory mapped files. Solaris and IRIX have different implementations of
- * madvise().
+ * Contains routines for writing and reading GDK data to and from
+ * disk.  This section contains the primitives to manage the
+ * disk-based images of the BATs. It relies on the existence of a UNIX
+ * file system, including memory mapped files. Solaris and IRIX have
+ * different implementations of madvise().
  *
- * The current version assumes that all BATs are stored on a single disk
- * partition. This simplistic assumption should be replaced in the near
- * future by a multi-volume version. The intension is to use several
- * BAT home locations.
- * The files should be owned by the database server. Otherwise, IO
- * operations are likely to fail. This is accomplished by setting the
- * GID and UID upon system start.
+ * The current version assumes that all BATs are stored on a single
+ * disk partition. This simplistic assumption should be replaced in
+ * the near future by a multi-volume version. The intension is to use
+ * several BAT home locations.  The files should be owned by the
+ * database server. Otherwise, IO operations are likely to fail. This
+ * is accomplished by setting the GID and UID upon system start.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -46,9 +44,6 @@
 #include <fcntl.h>
 #endif
 
-/*
- * @
- */
 void
 GDKfilepath(str path, const char *dir, const char *name, const char *ext)
 {
@@ -237,8 +232,8 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 /*
  * @+ Save and load.
  * The BAT is saved on disk in several files. The extension DESC
- * denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP
- * the other heaps. The storage mechanism off a file can be memory mapped
+ * denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP the
+ * other heaps. The storage mechanism off a file can be memory mapped
  * (STORE_MMAP) or malloced (STORE_MEM).
  *
  * These modes indicates the disk-layout and the intended mapping.
@@ -276,7 +271,8 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode
 			 * 32-bits signed result (= OS BUG)! write()
 			 * on Windows only takes int as size */
 			while (size > 0) {
-				/* circumvent problems by writing huge buffers in chunks <= 1GB */
+				/* circumvent problems by writing huge
+				 * buffers in chunks <= 1GB */
 				ssize_t ret = write(fd, buf, (unsigned) MIN(1 << 30, size));
 
 				if (ret < 0) {
@@ -394,17 +390,16 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
  *
  * Between sessions the BATs comprising the database are saved on
  * disk.  To simplify code, we assume a UNIX directory called its
- * physical @%home@ where they are to be located.
- * The subdirectories BAT and PRG contain what its name says.
+ * physical @%home@ where they are to be located.  The subdirectories
+ * BAT and PRG contain what its name says.
  *
  * A BAT created by @%BATnew@ is considered temporary until one calls
  * the routine @%BATsave@. This routine reserves disk space and checks
  * for name clashes.
  *
- * Saving and restoring BATs is left to the upper layers. The library merely
- * copies the data into place.
- * Failure to read or write the BAT results in a NULL, otherwise
- * it returns the BAT pointer.
+ * Saving and restoring BATs is left to the upper layers. The library
+ * merely copies the data into place.  Failure to read or write the
+ * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
 static BATstore *
 DESCload(int i)
@@ -756,57 +751,55 @@ BATdelete(BAT *b)
 }
 
 /*
- * @
- *
  * @+ Printing and debugging
  * Printing BATs is based on the multi-join on heads. The multijoin
- * exploits all possible Monet properties and accelerators. Due
- * to this property, the n-ary table printing is quite fast and
- * can be used for producing ASCII dumps of large tables.
+ * exploits all possible Monet properties and accelerators. Due to
+ * this property, the n-ary table printing is quite fast and can be
+ * used for producing ASCII dumps of large tables.
  *
- * It all works with hooks.  The multijoin routine finds matching ranges
- * of rows. For each found match in a column it first calls a value-routine
- * hook. This routine we use to format a substring.
- * For each found match-tuple (the Cartesian product of all matches
- * across columns) a match routine hook is called. We use this routine
- * to print a line.
- * Due to this setup, we only format each value once, though it
- * might participate in many lines (due to the Cartesian product).
+ * It all works with hooks.  The multijoin routine finds matching
+ * ranges of rows. For each found match in a column it first calls a
+ * value-routine hook. This routine we use to format a substring.  For
+ * each found match-tuple (the Cartesian product of all matches across
+ * columns) a match routine hook is called. We use this routine to
+ * print a line.  Due to this setup, we only format each value once,
+ * though it might participate in many lines (due to the Cartesian
+ * product).
  *
- * The multijoin is quite complex, and we use a @%col_format_t@
- * struct to keep track of column specific data.
- * The multiprint can indicate arbitrary orderings. This is done
- * by passing a pattern-string that matches the following regexp:
+ * The multijoin is quite complex, and we use a @%col_format_t@ struct
+ * to keep track of column specific data.  The multiprint can indicate
+ * arbitrary orderings. This is done by passing a pattern-string that
+ * matches the following regexp:
  *
  * @verbatim
- * 	"[X:] Y0 {,Yi}"
+ *	"[X:] Y0 {,Yi}"
  * @end verbatim
  *
- * where X and Yi are column numbers, @strong{starting at 1} for the first
- * BAT parameter.
+ * where X and Yi are column numbers, @strong{starting at 1} for the
+ * first BAT parameter.
  *
  * The table ordering has two aspects:
  * @enumerate
  * @item (1)
- *  	the order in which the matches appear (a.k.a. the major ordering).
- * 	This is equivalent to the order of the head values of the BATs
- * 	(as we match=multijoin on head value).
+ *	the order in which the matches appear (a.k.a. the major
+ *	ordering).  This is equivalent to the order of the head values
+ *	of the BATs (as we match=multijoin on head value).
  * @item (2)
- * 	within each match, the order in which the Cartesian
- *    	product is produced. This is used to sub-order on
- * 	the tail values of the BATs = the columns in the table.
+ *	within each match, the order in which the Cartesian product is
+ *	produced. This is used to sub-order on the tail values of the
+ *	BATs = the columns in the table.
  * @end enumerate
  *
- * Concerning (1), the multijoin limits itself to *respecting*
- * the order one one elected BAT, that can be identified with X.
- * Using this, a major ordering on tail value can be enforced,
- * by first passing "Bx.reverse.sort.reverse" (BAT ordered on tail).
- * As the multijoin will respect the order of X, its tail values
- * will be printed in sorted order.
+ * Concerning (1), the multijoin limits itself to *respecting* the
+ * order one one elected BAT, that can be identified with X.  Using
+ * this, a major ordering on tail value can be enforced, by first
+ * passing "Bx.reverse.sort.reverse" (BAT ordered on tail).  As the
+ * multijoin will respect the order of X, its tail values will be
+ * printed in sorted order.
  *
- * Concerning sub-ordering on other columns (2), the multijoin
- * itself employs qsort() to order the Cartesian product on
- * the matched tail values.
+ * Concerning sub-ordering on other columns (2), the multijoin itself
+ * employs qsort() to order the Cartesian product on the matched tail
+ * values.
  */
 #define LINE(s,	X)	do {						\
 				int n=X-1;				\

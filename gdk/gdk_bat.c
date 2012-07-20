@@ -92,7 +92,7 @@ BATcreatedesc(int ht, int tt, int heapnames)
 	HEADLESSDEBUG {
 		if ( ht != TYPE_void && ht != TYPE_oid)
 			fprintf(stderr, "#headless violation in BATcreatedesc %d\n", ht);
-			
+
 	}
 	/*
 	 * assert needed in the kernel to get symbol eprintf resolved.
@@ -802,7 +802,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			bn->tseqbase = b->tseqbase;
 		}
 	} else {
-		/* check whether we need case (4); BUN-by-BUN copy (by setting bunstocopy != BUN_NONE) */
+		/* check whether we need case (4); BUN-by-BUN copy (by
+		 * setting bunstocopy != BUN_NONE) */
 		if (ATOMsize(ht) != ATOMsize(b->htype) ||
 		    ATOMsize(tt) != ATOMsize(b->ttype)) {
 			/* oops, void materialization */
@@ -815,7 +816,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 			bat hp = VIEWhparent(b), tp = VIEWtparent(b);
 
 			if (isVIEWCOMBINE(b) ||	/* oops, mirror view! */
-			    /* reduced slice view: do not copy too much garbage */
+			    /* reduced slice view: do not copy too
+			     * much garbage */
 			    (hp != 0 && BATcapacity(BBP_cache(hp)) > cnt + cnt) ||
 			    (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt))
 				bunstocopy = cnt;
@@ -839,7 +841,8 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		}
 
 		if (ht == TYPE_void && tt == TYPE_void) {
-			/* case (2): a void,void result => nothing to copy! */
+			/* case (2): a void,void result => nothing to
+			 * copy! */
 			bn->H->heap.free = 0;
 			bn->T->heap.free = 0;
 		} else if (bunstocopy == BUN_NONE) {
@@ -1355,7 +1358,7 @@ BUNappend(BAT *b, const void *t, bit force)
  * instead of doing
  * 	BATloop(b,p,q) BUNdelete(b,p,FALSE)
  * one now must do:
- * 	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
+ *	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
  */
 static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
@@ -2391,7 +2394,7 @@ BATmadvise(BAT *b, int hb, int tb, int hhp, int thp)
  *
  * access:
  *     whether the BAT is BAT_READ or BAT_WRITE. Note that BAT_APPEND
- *     is ususally the same as BAT_READ (as our concern are only data pages
+ *     is usually the same as BAT_READ (as our concern are only data pages
  *     that already existed at the last commit).
  *
  * storage:
@@ -3005,15 +3008,15 @@ BATassertHeadProps(BAT *b)
  * The properties currently maintained are:
  *
  * dense	Only valid for TYPE_oid columns: each value in the
- * 		column is exactly one more than the previous value.
- * 		This implies sorted, key, nonil.
+ *		column is exactly one more than the previous value.
+ *		This implies sorted, key, nonil.
  * nil		There is at least one NIL value in the column.
  * nonil	There are no NIL values in the column.
  * key		All values in the column are distinct.
  * sorted	The column is sorted (ascending).  If also revsorted,
- * 		then all values are equal.
+ *		then all values are equal.
  * revsorted	The column is reversely sorted (descending).  If
- * 		also sorted, then all values are equal.
+ *		also sorted, then all values are equal.
  * set		The combinations of head and tail values are distinct.
  *
  * The "key" property consists of two bits.  The lower bit, when set,

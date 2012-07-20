@@ -31,17 +31,17 @@
  * @item bat selections
  * select, slice, sample, fragment and restrict.
  * Note: non hash-/index-supported scanselects have been "outsourced"
- * to gdk_scanselect.mx as the fully expanded code grows too large to be
- * (conveniently) compiled in a single file.
+ * to gdk_scanselect.mx as the fully expanded code grows too large to
+ * be (conveniently) compiled in a single file.
  * @item bat partitioning
  * hash partition, range partitioning
  * @end itemize
- * We factor out all possible overhead by inlining code.
- * This includes the macros BUNhead and BUNtail,
- * which do a test to see whether the atom resides in the buns or in a
- * variable storage heap. The updateloop(dstbat, srcbat, operation) macro
- * invokes operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns
- * of the srcbat, but testing only once where they reside.
+ * We factor out all possible overhead by inlining code.  This
+ * includes the macros BUNhead and BUNtail, which do a test to see
+ * whether the atom resides in the buns or in a variable storage
+ * heap. The updateloop(dstbat, srcbat, operation) macro invokes
+ * operation(dstbat, BUNhead(srcbat), BUNtail(srcbat)) on all buns of
+ * the srcbat, but testing only once where they reside.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -60,8 +60,8 @@
 
 /*
  * @+ BAT insert/delete/replace
- * The content of a BAT can be appended to (removed from) another using
- * BATins (BATdel).
+ * The content of a BAT can be appended to (removed from) another
+ * using BATins (BATdel).
  */
 static BAT *
 insert_string_bat(BAT *b, BAT *n, int append)
@@ -739,12 +739,13 @@ BATreplace(BAT *b, BAT *n, bit force)
  *
  * @- BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
- * execution by avoiding to copy when the BAT is memory mapped (in this
- * case, an independent submap is created) or else when it is read-only,
- * then a VIEW bat is created as a result.
+ * execution by avoiding to copy when the BAT is memory mapped (in
+ * this case, an independent submap is created) or else when it is
+ * read-only, then a VIEW bat is created as a result.
  *
- * If a new copy has to be created, this function takes care to preserve
- * void-columns (in this case, the seqbase has to be recomputed in the result).
+ * If a new copy has to be created, this function takes care to
+ * preserve void-columns (in this case, the seqbase has to be
+ * recomputed in the result).
  *
  * Note that the BATslice() is used indirectly as well as a special
  * case for BATselect (range selection on sorted column) and
@@ -910,13 +911,13 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 
 /*
  * @-  Value Selections
- * The string search is optimized for the degenerated case
- * that th = tl, and double elimination in the string heap.
+ * The string search is optimized for the degenerated case that th =
+ * tl, and double elimination in the string heap.
  *
- * We allow value selections on the nil atom. This is formally
- * not correct, as in MIL (nil = nil) != true.  However, we do
- * need an implementation for selecting nil (in MIL, this is done
- * through is the "isnil" predicate). So we implement it here.
+ * We allow value selections on the nil atom. This is formally not
+ * correct, as in MIL (nil = nil) != true.  However, we do need an
+ * implementation for selecting nil (in MIL, this is done through is
+ * the "isnil" predicate). So we implement it here.
  */
 #define hashselectloop(EXT, BUNtail)					\
 	do {								\
@@ -1017,12 +1018,12 @@ BAT_hashselect(BAT *b, BAT *bn, const void *tl)
  * @- Range Selections
  * The routine BATselect locates the BAT subset whose tail component
  * satisfies the range condition T l <[=] tail <[=] h. Either boundary
- * is included in the result iff the respective bit parameter "li"/"hi"
- * is TRUE. A nil value in either dimension defines infinity.  The value
- * is set accordingly.
+ * is included in the result iff the respective bit parameter
+ * "li"/"hi" is TRUE. A nil value in either dimension defines
+ * infinity.  The value is set accordingly.
  *
- * Range selections without lower or upper bound use the nil atom
- * to indicate this (this is somewhat confusing). Note, however, that
+ * Range selections without lower or upper bound use the nil atom to
+ * indicate this (this is somewhat confusing). Note, however, that
  * through the definition of MIL we do not want the nils to appear in
  * the result (as (nil @{<,=,>@} ANY) = bit(nil) != true).
  */
@@ -1109,9 +1110,10 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 
 	/*
 	 * @- Slice Implementations
-	 * When the result is a dense slice of the BAT, we can optimize.
-	 * A slice does not need to copy the BAT selected on, it can just
-	 * give back a 'view' on the memory of the existing BAT. See BATslice().
+	 * When the result is a dense slice of the BAT, we can
+	 * optimize.  A slice does not need to copy the BAT selected
+	 * on, it can just give back a 'view' on the memory of the
+	 * existing BAT. See BATslice().
 	 */
 	if (BATtordered(b)) {
 		BAT *v = tail ? b : VIEWhead_(b, b->batRestricted);
@@ -1157,8 +1159,10 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 				else
 					p = SORTfndlast(b, tl);
 			} else {
-				/* No lower bound, we must still exclude nils. They are in
-				 * front, so we can still slice, by starting after them.
+				/* No lower bound, we must still
+				 * exclude nils. They are in front, so
+				 * we can still slice, by starting
+				 * after them.
 				 */
 				p = SORTfndlast(b, nil);
 			}
@@ -1202,7 +1206,8 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		return bn;
 	}
 	/*
-	 * Use sampling to determine a good result size, when the bat is large.
+	 * Use sampling to determine a good result size, when the bat
+	 * is large.
 	 */
 	if (BATtkey(b)) {
 		estimate = 1;
@@ -1211,7 +1216,6 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		BAT *tmp1;
 		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" BUNFMT ", _hi=" BUNFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
 
-		//tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
 		tmp1 = BATsample(b, 128);
 		if (tmp1) {
 			BAT *tmp2;
@@ -1248,8 +1252,10 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 				&& (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4
 				&& estimate < batcnt / 100
 				&& batcnt * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < (GDK_mem_maxsize / 2) /* MT_npages() * MT_pagesize() / (GDKnr_threads ? GDKnr_threads : 1) */ ) {
-			/* Build a hash-table on the fly for equi-select on persistent BAT
-			 * if tail-type is large (wide) and selectivity is low and BAT + hash-table fit in memory */
+			/* Build a hash-table on the fly for
+			 * equi-select on persistent BAT if tail-type
+			 * is large (wide) and selectivity is low and
+			 * BAT + hash-table fit in memory */
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (building hash-table on the fly)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
@@ -1263,8 +1269,9 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		return NULL;	/* error occurred */
 	}
 	/*
-	 * Propagate alignment info. Key properties are inherited from the parent.
-	 * Hash changes the order; IDX yields ordered tail; scan respects original order.
+	 * Propagate alignment info. Key properties are inherited from
+	 * the parent.  Hash changes the order; IDX yields ordered
+	 * tail; scan respects original order.
 	 */
 	if (BATcount(bn)) {
 		BATkey(bn, BAThkey(b));
@@ -1349,10 +1356,10 @@ BATuselect(BAT *b, const void *h, const void *t)
  * @- Top-N selection
  *
  * The top-N elements can be easily obtained by trimming the
- * space. The auxiliary index structures are removed.
- * For non-variable size BATs it merely requires
- * adjustment of the free space labels. Other BATs require
- * a loop through the tuples to be deleted. [todo]
+ * space. The auxiliary index structures are removed.  For
+ * non-variable size BATs it merely requires adjustment of the free
+ * space labels. Other BATs require a loop through the tuples to be
+ * deleted. [todo]
  */
 int
 BATtopN(BAT *b, BUN topN)
@@ -1375,12 +1382,12 @@ BATtopN(BAT *b, BUN topN)
 }
 
 /*
- * The baseline algorithm for fragment location is a two-phase process.
- * First we search on the 1st
- * dimension and collect the qualifying BUNs in a marking on the
- * stack. In the second phase, the tail is analyzed for all items
- * already marked and qualifying associations are copied into the result.
- * An index is exploited when possible.
+ * The baseline algorithm for fragment location is a two-phase
+ * process.  First we search on the 1st dimension and collect the
+ * qualifying BUNs in a marking on the stack. In the second phase, the
+ * tail is analyzed for all items already marked and qualifying
+ * associations are copied into the result.  An index is exploited
+ * when possible.
  */
 #define restrict1(cmptype, TYPE, BUNhead)				\
 	do {								\
@@ -2187,23 +2194,28 @@ BATconst(BAT *b, int tailtype, const void *v)
 /*
  * @+ BAT Aggregates
  *
- * We retain the size() and card() aggregate results in the column descriptor.
- * We would like to have such functionality in an extensible way for many aggregates,
- * for DD (1) we do not want to change the binary BAT format on disk and (2) aggr
- * and size are the most relevant aggregates.
+ * We retain the size() and card() aggregate results in the column
+ * descriptor.  We would like to have such functionality in an
+ * extensible way for many aggregates, for DD (1) we do not want to
+ * change the binary BAT format on disk and (2) aggr and size are the
+ * most relevant aggregates.
  *
- * It is all hacked into the aggr[3] records; three adjacent integers that
- * were left over in the column record. We refer to these as if it where an int aggr[3] array.
- * The below routines set and retrieve the aggregate values from the tail of the BAT, as many
+ * It is all hacked into the aggr[3] records; three adjacent integers
+ * that were left over in the column record. We refer to these as if
+ * it where an int aggr[3] array.  The below routines set and retrieve
+ * the aggregate values from the tail of the BAT, as many
  * aggregate-manipulating BAT functions work on tail.
  *
- * The rules are as follows: aggr[0] contains the alignment ID of the column (if set i.e. nonzero).
- * Hence, if this value is nonzero and equal to b->talign, the precomputed aggregate values in
- * aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one of them may be set
- * at the time. This is encoded by the value int_nil, which cannot occur in these two aggregates.
+ * The rules are as follows: aggr[0] contains the alignment ID of the
+ * column (if set i.e. nonzero).  Hence, if this value is nonzero and
+ * equal to b->talign, the precomputed aggregate values in
+ * aggr[GDK_AGGR_SIZE] and aggr[GDK_AGGR_CARD] hold. However, only one
+ * of them may be set at the time. This is encoded by the value
+ * int_nil, which cannot occur in these two aggregates.
  *
- * This was now extended to record the property whether we know there is a nil value present
- * by mis-using the highest bits of both GDK_AGGR_SIZE and GDK_AGGR_CARD.
+ * This was now extended to record the property whether we know there
+ * is a nil value present by mis-using the highest bits of both
+ * GDK_AGGR_SIZE and GDK_AGGR_CARD.
  */
 #define GDK_NIL_BIT 0x80000000	/* (1 << 31) */
 
