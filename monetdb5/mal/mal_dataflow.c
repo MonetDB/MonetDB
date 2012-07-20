@@ -1123,7 +1123,10 @@ DFLOWscheduler(DataFlow flow)
 			PARDEBUG mnstr_printf(GDKstdout, "#errors encountered %s ", f->error ? f->error : "unknown");
 			if (ret == MAL_SUCCEED)
 				ret = f->error;
-			else {
+			else if (strcmp(ret, f->error) == 0) {
+				GDKfree(f->error);
+				f->error = MAL_SUCCEED;
+			} else {
 				/* collect all errors encountered */
 				str z = (char *) GDKmalloc(strlen(ret) + strlen(f->error) + 2);
 				if (z) {
