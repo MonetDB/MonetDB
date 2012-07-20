@@ -726,8 +726,8 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				ret = MAL_SUCCEED;
 				mal_unset_lock(mal_contextLock, "exception handler");
 			} else {
-				mnstr_printf(cntxt->fdout, "%s", ret);
-				FREE_EXCEPTION(ret);
+				fs->pc = -fs->pc;
+				goto finalize;
 			}
 			/* position yourself at the catch instruction for further
 			 * decisions */
