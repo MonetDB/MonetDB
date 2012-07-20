@@ -25,7 +25,6 @@ import logging
 
 import capabilities
 import dbapi20
-import pythonize
 
 warnings.filterwarnings('error')
 
