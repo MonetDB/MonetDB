@@ -1,25 +1,22 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
 
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f gdk_batop
-
-@c
 /*
  * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes
  * @* Common BAT Operations
@@ -69,156 +66,137 @@ All Rights Reserved.
 static BAT *
 insert_string_bat(BAT *b, BAT *n, int append)
 {
-	BATiter ni;		/* iterators */
-	int ht, tt;		/* head and tail types */
-	size_t hoff = ~(size_t) 0, toff = ~(size_t) 0;	/* head and tail offsets */
+	BATiter ni;		/* iterator */
+	int tt;			/* tail type */
+	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, q;		/* loop variables */
 	oid o = 0;		/* in case we're appending */
 	ptr hp, tp;		/* head and tail value pointers */
-	unsigned char hbv, tbv;	/* head and tail value-as-bte */
-	unsigned short hsv, tsv; /* head and tail value-as-sht */
+	unsigned char tbv;	/* tail value-as-bte */
+	unsigned short tsv;	/* tail value-as-sht */
 #if SIZEOF_VAR_T == 8
-	unsigned int hiv, tiv;	/* head and tail value-as-int */
+	unsigned int tiv;	/* tail value-as-int */
 #endif
-	var_t hvv, tvv;		/* head and tail value-as-var_t */
 	var_t v;		/* value */
-	int nhw, ntw, bhw, btw;	/* shortcuts for {b,n}->{H,T}->width */
+	int ntw, btw;		/* shortcuts for {b,n}->t->width */
 
-	assert(!append || b->H->type == TYPE_void || b->H->type == TYPE_oid);
+	assert(b->H->type == TYPE_void || b->H->type == TYPE_oid);
 	if (n->batCount == 0)
 		return b;
 	ni = bat_iterator(n);
-	bhw = b->H->width;
 	btw = b->T->width;
-	nhw = n->H->width;
 	ntw = n->T->width;
 	hp = NULL;
 	tp = NULL;
-@= prep_strapp
-	@1t = b->@1type;
-	if (@1t == TYPE_str &&
-	    (!GDK_ELIMDOUBLES(b->@2->vheap) || b->batCount == 0) &&
-	    !GDK_ELIMDOUBLES(n->@2->vheap) &&
-	    b->@2->vheap->hashash == n->@2->vheap->hashash &&
-	    /* if needs to be kept unique, take slow path */
-	    (b->@1key & BOUND2BTRUE) == 0 &&
-	    /* if view, only copy if significant part of parent is used */
-	    (VIEW@1parent(n) == 0 ||
-	     BATcapacity(BBP_cache(VIEW@1parent(n))) < 2 * BATcount(n))) {
-		/* append string heaps */
-		@1off = b->batCount == 0 ? 0 : b->@2->vheap->free;
-		/* make sure we get alignment right */
-		@1off = (@1off + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
-		assert(((@1off >> GDK_VARSHIFT) << GDK_VARSHIFT) == @1off);
-		if (HEAPextend(b->@2->vheap, @1off + n->@2->vheap->size) < 0) {
-			@1off = ~ (size_t) 0;
-			goto bunins_failed;
-		}
-		memcpy(b->@2->vheap->base + @1off, n->@2->vheap->base, n->@2->vheap->size);
-		b->@2->vheap->free = @1off + n->@2->vheap->free;
-		/* flush double-elimination hash table */
-		memset(b->@2->vheap->base, 0, GDK_STRHASHSIZE);
-		if (b->@2->width < SIZEOF_VAR_T &&
-		    ((size_t) 1 << 8 * b->@2->width) < (b->@2->width <= 2 ? (b->@2->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->@2->vheap->size >> GDK_VARSHIFT))) {
-			/* offsets aren't going to fit */
-			if (GDKupgradevarheap(b->@2, (var_t) (b->@2->vheap->size >> GDK_VARSHIFT), 0) == GDK_FAIL) {
-				@1off = ~ (size_t) 0;
-				goto bunins_failed;
-			}
-			b@1w = b->@2->width;
-		}
-		switch (b@1w) {
-		case 1:
-			@1t = TYPE_bte;
-			break;
-		case 2:
-			@1t = TYPE_sht;
-			break;
-#if SIZEOF_VAR_T == 8
-		case 4:
-			@1t = TYPE_int;
-			break;
-#endif
-		default:
-			@1t = TYPE_var;
-			break;
-		}
-		b->@2->varsized = 0;
-		n->@2->varsized = 0;
-		b->@2->type = @1t;
-	}
-@
-@c
-	if (!append) {
-		@:prep_strapp(h,H)@
-	} else if (b->H->type != TYPE_void) {
+	if (b->H->type != TYPE_void) {
 		hp = &o;
 		o = MAXoid(b);
 	}
-	@:prep_strapp(t,T)@
+	tt = b->ttype;
+	if (tt == TYPE_str &&
+	    (!GDK_ELIMDOUBLES(b->T->vheap) || b->batCount == 0) &&
+	    !GDK_ELIMDOUBLES(n->T->vheap) &&
+	    b->T->vheap->hashash == n->T->vheap->hashash &&
+	    /* if needs to be kept unique, take slow path */
+	    (b->tkey & BOUND2BTRUE) == 0 &&
+	    /* if view, only copy if significant part of parent is used */
+	    (VIEWtparent(n) == 0 ||
+	     BATcapacity(BBP_cache(VIEWtparent(n))) < 2 * BATcount(n))) {
+		/* append string heaps */
+		toff = b->batCount == 0 ? 0 : b->T->vheap->free;
+		/* make sure we get alignment right */
+		toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
+		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size) < 0) {
+			toff = ~ (size_t) 0;
+			goto bunins_failed;
+		}
+		memcpy(b->T->vheap->base + toff, n->T->vheap->base, n->T->vheap->size);
+		b->T->vheap->free = toff + n->T->vheap->free;
+		/* flush double-elimination hash table */
+		memset(b->T->vheap->base, 0, GDK_STRHASHSIZE);
+		if (b->T->width < SIZEOF_VAR_T &&
+		    ((size_t) 1 << 8 * b->T->width) < (b->T->width <= 2 ? (b->T->vheap->size >> GDK_VARSHIFT) - GDK_VAROFFSET : (b->T->vheap->size >> GDK_VARSHIFT))) {
+			/* offsets aren't going to fit */
+			if (GDKupgradevarheap(b->T, (var_t) (b->T->vheap->size >> GDK_VARSHIFT), 0) == GDK_FAIL) {
+				toff = ~ (size_t) 0;
+				goto bunins_failed;
+			}
+			btw = b->T->width;
+		}
+		switch (btw) {
+		case 1:
+			tt = TYPE_bte;
+			break;
+		case 2:
+			tt = TYPE_sht;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			tt = TYPE_int;
+			break;
+#endif
+		default:
+			tt = TYPE_var;
+			break;
+		}
+		b->T->varsized = 0;
+		n->T->varsized = 0;
+		b->T->type = tt;
+	}
 
 	BATloop(n, p, q) {
-@= read_strapp
-		@1p = b->@2->type ? BUN@3(ni, p) : NULL;
-		if (@1off != ~ (size_t) 0) {
-			assert(@1p != NULL);
-			switch (n@1w) {
+		if (!append)
+			hp = b->H->type ? BUNhloc(ni, p) : NULL;
+
+		tp = b->T->type ? BUNtail(ni, p) : NULL;
+		if (toff != ~ (size_t) 0) {
+			assert(tp != NULL);
+			switch (ntw) {
 			case 1:
-				v = (var_t) * (unsigned char *) @1p + GDK_VAROFFSET;
+				v = (var_t) * (unsigned char *) tp + GDK_VAROFFSET;
 				break;
 			case 2:
-				v = (var_t) * (unsigned short *) @1p + GDK_VAROFFSET;
+				v = (var_t) * (unsigned short *) tp + GDK_VAROFFSET;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
-				v = (var_t) * (unsigned int *) @1p;
+				v = (var_t) * (unsigned int *) tp;
 				break;
 #endif
 			default:
-				v = * (var_t *) @1p;
+				v = * (var_t *) tp;
 				break;
 			}
-			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + @1off) >> GDK_VARSHIFT);
+			v = (var_t) ((((size_t) v << GDK_VARSHIFT) + toff) >> GDK_VARSHIFT);
 			assert(v >= GDK_VAROFFSET);
-			assert(((size_t) v << GDK_VARSHIFT) < b->@2->vheap->free);
-			switch (b@1w) {
+			assert(((size_t) v << GDK_VARSHIFT) < b->T->vheap->free);
+			switch (btw) {
 			case 1:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 8));
-				@1bv = (unsigned char) (v - GDK_VAROFFSET);
-				@1p = (ptr) &@1bv;
+				tbv = (unsigned char) (v - GDK_VAROFFSET);
+				tp = (ptr) &tbv;
 				break;
 			case 2:
 				assert(v - GDK_VAROFFSET < ((var_t) 1 << 16));
-				@1sv = (unsigned short) (v - GDK_VAROFFSET);
-				@1p = (ptr) &@1sv;
+				tsv = (unsigned short) (v - GDK_VAROFFSET);
+				tp = (ptr) &tsv;
 				break;
 #if SIZEOF_VAR_T == 8
 			case 4:
 				assert(v < ((var_t) 1 << 32));
-				@1iv = (unsigned int) v;
-				@1p = (ptr) &@1iv;
+				tiv = (unsigned int) v;
+				tp = (ptr) &tiv;
 				break;
 #endif
 			default:
-				@1vv = v;
-				@1p = (ptr) &@1vv;
+				tp = (ptr) &v;
 				break;
 			}
 		}
-@
-@c
-		if (!append) {
-			@:read_strapp(h,H,head)@
-		}
-		@:read_strapp(t,T,tail)@
 		bunfastins(b, hp, tp);
 		if (append)
 			o++;
-	}
-	if (hoff != ~(size_t) 0) {
-		b->H->varsized = 1;
-		n->H->varsized = 1;
-		b->H->type = TYPE_str;
 	}
 	if (toff != ~(size_t) 0) {
 		b->T->varsized = 1;
@@ -227,11 +205,6 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	}
 	return b;
       bunins_failed:
-	if (hoff != ~(size_t) 0) {
-		b->H->varsized = 1;
-		n->H->varsized = 1;
-		b->H->type = TYPE_str;
-	}
 	if (toff != ~(size_t) 0) {
 		b->T->varsized = 1;
 		n->T->varsized = 1;
@@ -251,6 +224,10 @@ BATins(BAT *b, BAT *n, bit force)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return b;
 	}
+	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
+		GDKerror("BATins: input must be (V)OID headed\n");
+		return NULL;
+	}
 	ALIGNins(b, "BATins", force);
 	BATcompatible(b, n);
 
@@ -261,7 +238,10 @@ BATins(BAT *b, BAT *n, bit force)
 		return NULL;
 	}
 
-	if (b->htype != TYPE_void && (b->ttype == TYPE_void || (!b->H->hash && b->T->hash && ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
+	if (b->htype != TYPE_void &&
+	    (b->ttype == TYPE_void ||
+	     (!b->H->hash && b->T->hash &&
+	      ATOMstorage(b->ttype) == TYPE_int))) {	/* OIDDEPEND */
 		return BATmirror(BATins(BATmirror(b), BATmirror(n), force));
 	}
 
@@ -454,6 +434,10 @@ BATappend(BAT *b, BAT *n, bit force)
 
 	if (b == NULL || n == NULL || (sz = BATcount(n)) == 0) {
 		return b;
+	}
+	if (b->htype != TYPE_void && b->htype != TYPE_oid) {
+		GDKerror("BATappend: input must be (V)OID headed\n");
+		return NULL;
 	}
 	ALIGNapp(b, "BATappend", force);
 	BATcompatible(b, n);
@@ -1228,7 +1212,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp1 = BATslice(b=%s, _lo=" BUNFMT ", _hi=" BUNFMT ");\n", BATgetId(b), BATgetId(b), _lo, _hi);
 
 		//tmp1 = BATslice(b, _lo, _hi);	/* slice keeps all parent properties */
-		tmp1 = BATsample(b, 128);	
+		tmp1 = BATsample(b, 128);
 		if (tmp1) {
 			BAT *tmp2;
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));
@@ -1398,54 +1382,55 @@ BATtopN(BAT *b, BUN topN)
  * already marked and qualifying associations are copied into the result.
  * An index is exploited when possible.
  */
-@= restrict1
-	if (BAThordered(b)) {
-		BUN p1, p2;
+#define restrict1(cmptype, TYPE, BUNhead)				\
+	do {								\
+		if (BAThordered(b)) {					\
+			BUN p1, p2;					\
+									\
+			b = BATmirror(b);				\
+			SORTloop(b, p1, p2, hl, hh) {			\
+				*m++ = p1;				\
+			}						\
+			b = BATmirror(b);				\
+		} else {						\
+			int lval = !cmptype##_EQ(ATOMnilptr(t), hl, TYPE); \
+			int hval = !cmptype##_EQ(ATOMnilptr(t), hh, TYPE); \
+									\
+			if (hval && lval && cmptype##_GT(hl,hh,TYPE)) {	\
+				GDKerror("BATrestrict: illegal head range.\n");	\
+			} else {					\
+				BATiter bi = bat_iterator(b);		\
+									\
+				BATloop(b, p, l) {			\
+					if ((!lval || cmptype##_LE(hl, BUNhead(bi, p), TYPE)) && \
+					    (!hval || cmptype##_LE(BUNhead(bi, p), hh, TYPE))) { \
+						*m++ = p;		\
+					}				\
+				}					\
+			}						\
+		}							\
+	} while (0)
 
-		b = BATmirror(b);
-		SORTloop(b, p1, p2, hl, hh) {
-			*m++ = p1;
-		}
-		b = BATmirror(b);
-	} else {
-		int lval = !@1_EQ(ATOMnilptr(t), hl, @2);
-		int hval = !@1_EQ(ATOMnilptr(t), hh, @2);
+#define restrict2(cmptype, TYPE, BUNhead, BUNtail)			\
+	do {								\
+		tl = cmptype##_EQ(ATOMnilptr(t), tl, TYPE) ? 0 : tl;	\
+		th = cmptype##_EQ(ATOMnilptr(t), th, TYPE) ? 0 : th;	\
+		if (th && tl && cmptype##_GT(tl, th, TYPE)) {		\
+			GDKerror("BATrestrict: illegal tail range.\n");	\
+		} else {						\
+			BATiter bi = bat_iterator(b);			\
+									\
+			for (; i < m; i++) {				\
+				const void *v = BUNtail(bi, *i);	\
+									\
+				if ((!tl || cmptype##_LE(tl, v, TYPE)) && \
+				    (!th || cmptype##_LE(v, th, TYPE))) { \
+					bunfastins(bn, BUNhead(bi, *i), v); \
+				}					\
+			}						\
+		}							\
+	} while (0)
 
-		if (hval && lval && @1_GT(hl,hh,@2)) {
-			GDKerror("BATrestrict: illegal head range.\n");
-		} else {
-			BATiter bi = bat_iterator(b);
-
-			BATloop(b, p, l) {
-				if ((!lval || @1_LE(hl, BUNh@3(bi, p), @2)) &&
-				    (!hval || @1_LE(BUNh@3(bi, p), hh, @2))) {
-					*m++ = p;
-				}
-			}
-		}
-	}
-@
-@= restrict2
-	{
-		tl = @1_EQ(ATOMnilptr(t), tl, @2) ? 0 : tl;
-		th = @1_EQ(ATOMnilptr(t), th, @2) ? 0 : th;
-		if (th && tl && @1_GT(tl, th, @2)) {
-			GDKerror("BATrestrict: illegal tail range.\n");
-		} else {
-			BATiter bi = bat_iterator(b);
-
-			for (; i < m; i++) {
-				const void *v = BUNt@4(bi, *i);
-
-				if ((!tl || @1_LE(tl, v, @2)) &&
-				    (!th || @1_LE(v, th, @2))) {
-					bunfastins(bn, BUNh@3(bi, *i), v);
-				}
-			}
-		}
-	}
-@
-@c
 BAT *
 BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th)
 {
@@ -1486,28 +1471,28 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
 	i = mark;
 	switch (ATOMstorage(t = b->htype)) {
 	case TYPE_bte:
-		@:restrict1(simple,bte,loc)@
+		restrict1(simple, bte, BUNhloc);
 		break;
 	case TYPE_sht:
-		@:restrict1(simple,sht,loc)@
+		restrict1(simple, sht, BUNhloc);
 		break;
 	case TYPE_int:
-		@:restrict1(simple,int,loc)@
+		restrict1(simple, int, BUNhloc);
 		break;
 	case TYPE_flt:
-		@:restrict1(simple,flt,loc)@
+		restrict1(simple, flt, BUNhloc);
 		break;
 	case TYPE_dbl:
-		@:restrict1(simple,dbl,loc)@
+		restrict1(simple, dbl, BUNhloc);
 		break;
 	case TYPE_lng:
-		@:restrict1(simple,lng,loc)@
+		restrict1(simple, lng, BUNhloc);
 		break;
 	default:
 		if (b->hvarsized) {
-			@:restrict1(atom,t,var)@
+			restrict1(atom, t, BUNhvar);
 		} else {
-			@:restrict1(atom,t,loc)@
+			restrict1(atom, t, BUNhloc);
 		}
 		break;
 	}
@@ -1516,54 +1501,54 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
 	if (b->hvarsized) {
 		switch (ATOMstorage(t = b->ttype)) {
 		case TYPE_bte:
-			@:restrict2(simple,bte,var,loc)@
+			restrict2(simple, bte, BUNhvar, BUNtloc);
 			break;
 		case TYPE_sht:
-			@:restrict2(simple,sht,var,loc)@
+			restrict2(simple, sht, BUNhvar, BUNtloc);
 			break;
 		case TYPE_int:
-			@:restrict2(simple,int,var,loc)@
+			restrict2(simple, int, BUNhvar, BUNtloc);
 			break;
 		case TYPE_flt:
-			@:restrict2(simple,flt,var,loc)@
+			restrict2(simple, flt, BUNhvar, BUNtloc);
 			break;
 		case TYPE_dbl:
-			@:restrict2(simple,dbl,var,loc)@
+			restrict2(simple, dbl, BUNhvar, BUNtloc);
 			break;
 		case TYPE_lng:
-			@:restrict2(simple,lng,var,loc)@
+			restrict2(simple, lng, BUNhvar, BUNtloc);
 			break;
 		default:
 			if (b->tvarsized) {
-				@:restrict2(atom,t,var,var)@
+				restrict2(atom, t, BUNhvar, BUNtvar);
 			} else {
-				@:restrict2(atom,t,var,loc)@
+				restrict2(atom, t, BUNhvar, BUNtloc);
 			}
 			break;
 		}
 	} else {
 		switch (ATOMstorage(t = b->ttype)) {
 		case TYPE_bte:
-			@:restrict2(simple,bte,loc,loc)@
+			restrict2(simple, bte, BUNhloc, BUNtloc);
 			break;
 		case TYPE_sht:
-			@:restrict2(simple,sht,loc,loc)@
+			restrict2(simple, sht, BUNhloc, BUNtloc);
 			break;
 		case TYPE_int:
-			@:restrict2(simple,int,loc,loc)@
+			restrict2(simple, int, BUNhloc, BUNtloc);
 			break;
 		case TYPE_flt:
-			@:restrict2(simple,flt,loc,loc)@
+			restrict2(simple, flt, BUNhloc, BUNtloc);
 			break;
 		case TYPE_dbl:
 		case TYPE_lng:
-			@:restrict2(simple,lng,loc,loc)@
+			restrict2(simple, lng, BUNhloc, BUNtloc);
 			break;
 		default:
 			if (b->tvarsized) {
-				@:restrict2(atom,t,loc,var)@
+				restrict2(atom, t, BUNhloc, BUNtvar);
 			} else {
-				@:restrict2(atom,t,loc,loc)@
+				restrict2(atom, t, BUNhloc, BUNtloc);
 			}
 			break;
 		}
