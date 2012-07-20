@@ -89,7 +89,7 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5195	queryhistory	2000		0	true	0	false	0	
 5209	callhistory	2000		0	true	0	false	0	
 5226	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
-5841	systemfunctions	2000		0	true	0	false	0	
+5832	systemfunctions	2000		0	true	0	false	0	
 
 # 20:18:14 >  
 # 20:18:14 >  "Done."

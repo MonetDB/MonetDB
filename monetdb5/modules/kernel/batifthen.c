@@ -26,8 +26,10 @@
 
 #define resBAT2(X1,X2)\
 	bn = BATnew(ATOMtype(b->htype), X1, BATcount(b));\
-	if (bn == NULL)\
+	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
+	}\
 	bn->hsorted = b->hsorted;\
 	bn->hrevsorted = b->hrevsorted;\
 	bn->tsorted = b->tsorted;\
@@ -38,8 +40,10 @@
 
 #define resBAT(X1,X2)\
 	bn = BATnew(ATOMtype(b->htype), TYPE_##X1, BATcount(b));\
-	if (bn == NULL)\
+	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
+	}\
 	bn->hsorted = b->hsorted;\
 	bn->hrevsorted = b->hrevsorted;\
 	bn->tsorted = b->tsorted;\
@@ -56,6 +60,7 @@
 		bn = BATnew(b->htype, TYPE_##X1, BATcount(b));\
 	}\
 	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
 	bn->hsorted = b->hsorted;\
@@ -71,6 +76,7 @@
 	bn = BATnew(TYPE_void, X1, BATcount(b));\
 	BATseqbase(bn, b->hseqbase);\
 	if (bn == NULL) {\
+		BBPreleaseref(b->batCacheid);\
 		throw(MAL, X2, MAL_MALLOC_FAIL);\
 	}\
 	bn->hsorted = b->hsorted;\
@@ -88,6 +94,12 @@
  * implementation for shifted window arithmetic as well.
  */
 #define wrapup\
+	bn->T->nil = nil;\
+	bn->T->nonil = !nil;\
+	if (nil) {\
+		bn->tsorted = FALSE;\
+		bn->trevsorted = FALSE;\
+	}\
     if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);\
     *ret= bn->batCacheid;\
     BBPkeepref(*ret);\
@@ -95,6 +107,12 @@
     return MAL_SUCCEED;
 
 #define void_wrapup\
+	bn->T->nil = nil;\
+	bn->T->nonil = !nil;\
+	if (nil) {\
+		bn->tsorted = FALSE;\
+		bn->trevsorted = FALSE;\
+	}\
 	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);\
 	if (b->htype != bn->htype) {\
 		BAT *r = VIEWcreate(b,bn);\
@@ -112,15 +130,15 @@
 #define ifthenImpl(X1,X2,X3)\
 		{ X1 nilval=  (X1) X3, *val;\
 			resBAT2(X2,"batcalc.ifThen")\
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);\
+			nil = FALSE;\
 			BATloop(b, p, q) {\
 				if (*t == bit_nil) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);\
-					bn->T->nonil = 0;\
-					bn->T->nil = 1;\
+					nil = TRUE;\
 				} else if (*t) {\
 					val = (X1*) BUNtail(tbi,p);\
 					BUNfastins(bn, BUNhead(bi,p), val);\
+					nil |= (*val == nilval);\
 				}\
 				t++;\
 			}\
@@ -131,7 +149,7 @@ CMDifThen(int *ret, int *bid, int *tid)
 	BATiter bi, tbi;
 	BAT *b, *tb, *bn;
 	BUN p,q;
-	bit *t;
+	bit *t, nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
@@ -139,14 +157,17 @@ CMDifThen(int *ret, int *bid, int *tid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifthen", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	bi = bat_iterator(b);
 	tbi = bat_iterator(tb);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	switch(tb->ttype){
 	case TYPE_bit: ifthenImpl(bit,TYPE_bit,bit_nil); break;
@@ -158,42 +179,50 @@ CMDifThen(int *ret, int *bid, int *tid)
 	case TYPE_flt: ifthenImpl(flt,TYPE_flt,flt_nil); break;
 	case TYPE_dbl: ifthenImpl(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
-
+		{
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
 				} else if (*t ) {
-					str *val = (str*) BUNtail(tbi,p);
+					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				}
 				t++;
 			}
 		}
 		break;
-        default:
-        	throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+	default:
+		BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPreleaseref(tb->batCacheid);
 	wrapup
 }
 
 #define ifThenCst(X1,X2,X3)\
 		{ X1 nilval= (X1) X3;\
+			bit v_nil = (*(X1*)tid == nilval);\
 			resBAT2(X2,"batcalc.ifThen")\
+			nil = FALSE;\
 			BATloop(b, p, q) {\
-				if (*t == bit_nil) \
+				if (*t == bit_nil) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) & nilval);\
-				else if (*t) \
+					nil = TRUE;\
+				} else if (*t) {\
 					BUNfastins(bn, BUNhead(bi,p), (ptr) tid);\
+					nil |= v_nil;\
+				}\
 				t++;\
 			}\
-			bn->T->nonil = (b->T->nonil && *(X1*)tid != nilval);\
 		}
 
 static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
@@ -201,7 +230,7 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	BATiter bi;
 	BAT *b, *bn;
 	BUN p,q;
-	bit *t;
+	bit *t, nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.ifthen", RUNTIME_OBJECT_MISSING);
@@ -209,7 +238,7 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	bi = bat_iterator(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	switch(type){
 	case TYPE_bit: ifThenCst(bit,TYPE_bit,bit_nil); break;
 	case TYPE_bte: ifThenCst(bte,TYPE_bte,bte_nil); break;
@@ -220,23 +249,28 @@ static str CMDifThenCstImpl(int *ret, int *bid, ptr *tid, int type)
 	case TYPE_flt: ifThenCst(flt,TYPE_flt,flt_nil); break;
 	case TYPE_dbl: ifThenCst(dbl,TYPE_dbl,dbl_nil); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
+			bit v_nil = (strcmp(*(str*)tid, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
-				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), *(str*) tid);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
+				} else if (*t ) {
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
+					nil |= v_nil;
+				}
 				t++;
 			}
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT);
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"batcalc.ifthen",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_HEAD, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	wrapup
 }
 str CMDifThenCst_bit(int *ret, int *bid, ptr *tid)
@@ -269,28 +303,32 @@ str CMDifThenCst_str(int *ret, int *bid, ptr *tid)
 #define ifthenelsecstImpl(Type)\
 	{ Type nilval= (Type) Type##_nil, *dst;\
 		BUN o;\
+		bit t_nil = (*(Type*)tid == nilval);\
+		bit e_nil = (*(Type*)eid == nilval);\
 		voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 		bn->tsorted = FALSE;\
 		bn->trevsorted = FALSE;\
 		BATkey(BATmirror(bn), FALSE);\
 		dst = (Type*)Tloc(bn, BUNfirst(bn));\
-		bn->T->nonil = (b->T->nonil && *(Type*)tid != nilval && *(Type*)eid != nilval);\
+		nil = FALSE;\
 		for (o=0; o<cnt; o++) {\
 			if (t[o] == bit_nil) {\
 				dst[o] = nilval;\
-				bn->T->nil =1 ;\
-				bn->T->nonil = 0;\
-			} else if (t[o]) \
+				nil = TRUE;\
+			} else if (t[o]) {\
 				dst[o] = *(Type*)tid;\
-			else\
+				nil |= t_nil;\
+			} else {\
 				dst[o] = *(Type*)eid;\
+				nil |= e_nil;\
+			}\
 		}\
 	}
 
 static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type)
 {
 	BAT *b, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -299,7 +337,7 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 	cnt = BATcount(b);
 	t = (bit*)Tloc(b,BUNfirst(b));
 
-	BATaccessBegin(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	switch(type){
 	case TYPE_bit: ifthenelsecstImpl(bit); break;
 	case TYPE_bte: ifthenelsecstImpl(bte); break;
@@ -310,29 +348,34 @@ static str CMDifThenElseCstImpl(int *ret, int *bid, ptr *tid, ptr *eid, int type
 	case TYPE_flt: ifthenelsecstImpl(flt); break;
 	case TYPE_dbl: ifthenelsecstImpl(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit t_nil = (strcmp(*(str*)tid, str_nil) == 0);
+			bit e_nil = (strcmp(*(str*)eid, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = b->T->nonil;
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
-				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), (str)tid);
-				else
-					BUNfastins(bn, BUNhead(bi,p), (str)eid);
-
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
+				} else if (*t ) {
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)tid);
+					nil |= t_nil;
+				} else {
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)eid);
+					nil |= e_nil;
+				}
 				t++;
 			}
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, cnt);
 	void_wrapup
 }
@@ -350,6 +393,9 @@ str CMDifThenElseCst_int(int *ret, int *bid, ptr *tid, ptr *eid){
 }
 str CMDifThenElseCst_lng(int *ret, int *bid, ptr *tid, ptr *eid){
 	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_lng);
+}
+str CMDifThenElseCst_oid(int *ret, int *bid, ptr *tid, ptr *eid){
+	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_oid);
 }
 str CMDifThenElseCst_flt(int *ret, int *bid, ptr *tid, ptr *eid){
 	return CMDifThenElseCstImpl(ret, bid, tid, eid, TYPE_flt);
@@ -371,22 +417,26 @@ str CMDifThenElseCst_str(int *ret, int *bid, ptr *tid, ptr *eid){
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	tbv = (Type*)Tloc(tb, BUNfirst(tb));\
 	ebv = (Type*)Tloc(eb, BUNfirst(eb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = tbv[o];\
-		else\
+			nil |= (tbv[o] == nilval);\
+		} else {\
 			dst[o] = ebv[o];\
+			nil |= (ebv[o] == nilval);\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);\
 }
 
 str
 CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 {
 	BAT *b, *tb, *eb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -396,17 +446,20 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
 	if ((eb = BATdescriptor(*eid)) == NULL) {
-		BBPreleaseref(b->batCacheid); BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) || BATcount(b) != BATcount(eb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	if( BATcount(b) != BATcount(eb) )
-		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b, BUNfirst(b));
-	BATaccessBegin(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessBegin(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(eb,USE_TAIL, MMAP_SEQUENTIAL);
 	switch(tb->ttype){
@@ -419,33 +472,40 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 	case TYPE_flt: ifthenelseImpl(flt); break;
 	case TYPE_dbl: ifthenelseImpl(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter tbi = bat_iterator(tb);
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil && eb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
 				} else if (*t ) {
-					str *val = (str*) BUNtail(tbi,p);
+					str val = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				} else{
-					str *val = (str*) BUNtail(ebi,p);
+					str val = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), val);
+					nil |= (strcmp(val, str_nil) == 0);
 				}
 				t++;
 			}
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
+		BATaccessEnd(eb,USE_TAIL, MMAP_SEQUENTIAL);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		BBPreleaseref(eb->batCacheid);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
-	BATaccessEnd(b,USE_TAIL, MMAP_SEQUENTIAL);
+	BATaccessEnd(b,USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(tb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(eb,USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, cnt);
@@ -457,28 +517,33 @@ CMDifThenElse(int *ret, int *bid, int *tid, int *eid)
 #define ifthenelsecst1(Type)\
 { Type nilval= (Type) Type##_nil, *dst, *ebv;\
 	BUN o;\
+	bit t_nil = (*(Type*)val == nilval);\
 	voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 	bn->tsorted = FALSE;\
 	bn->trevsorted = FALSE;\
 	BATkey(BATmirror(bn), FALSE);\
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	ebv = (Type*)Tloc(eb, BUNfirst(eb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = *(Type*)val;\
-		else\
+			nil |= t_nil;\
+		} else {\
 			dst[o] = ebv[o];\
+			nil |= (ebv[o] == nilval);\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && eb->T->nonil && *(Type*)val != nilval);\
 }
 
 str
 CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 {
 	BAT *b, *eb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) 
@@ -487,8 +552,11 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(eb) )
+	if( BATcount(b) != BATcount(eb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(eb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -503,22 +571,24 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 	case TYPE_flt: ifthenelsecst1(flt); break;
 	case TYPE_dbl: ifthenelsecst1(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter ebi = bat_iterator(eb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit t_nil = (strcmp(*(str*)val, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && eb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
-				} else if (*t ) 
-					BUNfastins(bn, BUNhead(bi,p), *(str*)val);
-				else {
-					str *v = (str*) BUNtail(ebi,p);
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
+				} else if (*t ) {
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
+					nil |= t_nil;
+				} else {
+					str v = (str) BUNtail(ebi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
+					nil |= (strcmp(v, str_nil) == 0);
 				}
 
 				t++;
@@ -526,7 +596,9 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(eb->batCacheid);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -538,28 +610,33 @@ CMDifThenElseCst1(int *ret, int *bid, ptr *val, int *eid)
 #define ifthenelsecst2(Type)\
 { Type nilval= (Type) Type##_nil, *dst, *tbv;\
 	BUN o;\
+	bit e_nil = (*(Type*)val == nilval);\
 	voidresultBAT(TYPE_##Type,"batcalc.ifThenElse")\
 	bn->tsorted = FALSE;\
 	bn->trevsorted = FALSE;\
 	BATkey(BATmirror(bn), FALSE);\
 	dst = (Type*)Tloc(bn, BUNfirst(bn));\
 	tbv = (Type*)Tloc(tb, BUNfirst(tb));\
+	nil = FALSE;\
 	for (o=0; o<cnt; o++) {\
-		if (t[o] == bit_nil) \
+		if (t[o] == bit_nil) {\
 			dst[o] = nilval;\
-		else if (t[o]) \
+			nil = TRUE;\
+		} else if (t[o]) {\
 			dst[o] = tbv[o];\
-		else \
+			nil |= (tbv[o] == nilval);\
+		} else {\
 			dst[o] = *(Type*)val;\
+			nil |= e_nil;\
+		}\
 	}\
-	bn->T->nonil = (b->T->nonil && tb->T->nonil && *(Type*)val != nilval);\
 }
 
 str
 CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 {
 	BAT *b, *tb, *bn;
-	bit *t;
+	bit *t, nil;
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -568,8 +645,11 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(b) != BATcount(tb) )
+	if( BATcount(b) != BATcount(tb) ) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
 		throw(MAL, "batcalc.ifThenElse", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	cnt = BATcount(b);
 	t = (bit*) Tloc(b,BUNfirst(b));
@@ -583,28 +663,33 @@ CMDifThenElseCst2(int *ret, int *bid, int *tid, ptr *val)
 	case TYPE_flt: ifthenelsecst2(flt); break;
 	case TYPE_dbl: ifthenelsecst2(dbl); break;
 	case TYPE_str:
-		{ str nilval= (str) str_nil;
+		{
 		  BATiter tbi = bat_iterator(tb);
 		  BATiter bi = bat_iterator(b);
 		  BUN p,q;
-
+			bit e_nil = (strcmp(*(str*)val, str_nil) == 0);
 			resBAT(str,"batcalc.ifThen")
-			bn->T->nonil = (b->T->nonil && tb->T->nonil);
+			nil = FALSE;
 			BATloop(b, p, q) {
 				if (*t == bit_nil)  {
-					BUNfastins(bn, BUNhead(bi,p), (ptr) nilval);
-					bn->T->nonil = 0;
+					BUNfastins(bn, BUNhead(bi,p), (ptr) str_nil);
+					nil = TRUE;
 				} else if (*t ) {
-					str *v = (str*) BUNtail(tbi,p);
+					str v = (str) BUNtail(tbi,p);
 					BUNfastins(bn, BUNhead(bi,p), v);
-				} else
-					BUNfastins(bn, BUNhead(bi,p), *(str*)val);
+					nil |= (strcmp(v, str_nil) == 0);
+				} else {
+					BUNfastins(bn, BUNhead(bi,p), (ptr) *(str*)val);
+					nil |= e_nil;
+				}
 				t++;
 			}
 		}
 		break;
 	default:
-		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT);
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(tb->batCacheid);
+		throw(MAL,"batcalc.ifthenelse",ILLEGAL_ARGUMENT " Type not supported");
 	}
 	BATsetcount(bn, cnt);
 	BBPreleaseref(tb->batCacheid);
