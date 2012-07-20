@@ -1124,16 +1124,15 @@ DFLOWscheduler(DataFlow flow)
 				f->error = MAL_SUCCEED;
 			} else {
 				/* collect all errors encountered */
-				str z = (char *) GDKmalloc(strlen(ret) + strlen(f->error) + 2);
+				str z = (char *) GDKrealloc(ret, strlen(ret) + strlen(f->error) + 2);
 				if (z) {
-					strcpy(z, ret);
 					if (z[strlen(z) - 1] != '\n')
 						strcat(z, "\n");
 					strcat(z, f->error);
-					GDKfree(f->error);
-					GDKfree(ret);
 					ret = z;
 				}
+				GDKfree(f->error);
+				f->error = MAL_SUCCEED;
 			}
 			/* first error terminates the batch a.s.a.p. */
 			todo = 0;
