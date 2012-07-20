@@ -435,8 +435,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	}
 
 	/*runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 0);*/
-	FREE_EXCEPTION(ret);
-	ret = MAL_SUCCEED;
 	if (pci->recycle > 0)
 		t->clk = GDKusec();
 	if (!RECYCLEentry(cntxt, mb, stk, pci)) {
@@ -482,8 +480,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				if (lhs->vtype == TYPE_bat && lhs->val.bval)
 					BBPincref(lhs->val.bval, TRUE);
 			}
-			FREE_EXCEPTION(ret);
-			ret = 0;
 			break;
 		case PATcall:
 			if (pci->fcn == NULL) {
@@ -727,7 +723,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				v->vtype = TYPE_str;
 				v->val.sval = ret;
 				v->len = (int) strlen(v->val.sval);
-				ret = 0;
+				ret = MAL_SUCCEED;
 				mal_unset_lock(mal_contextLock, "exception handler");
 			} else {
 				mnstr_printf(cntxt->fdout, "%s", ret);
