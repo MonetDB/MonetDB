@@ -1588,355 +1588,161 @@ BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *
  * @+ BAT Sorting
  * BATsort returns a sorted copy. BATorder sorts the BAT itself.
  */
-#ifdef HAVE_RESTRICT
-#define __r     restrict
-#else
-#ifdef HAVE___RESTRICT__
-#define __r     __restrict__
-#else
-#define __r
-#endif
-#endif
-
-@:sort(,,rev,_rev,>)@
-@:sort(rev,_rev,,,<)@
-
-@= chk_order
-	/* for [tpe,void], we have fast 128-at-a-time routines */
-	if (b->hkey == 0) {
-		/* sorted and key? */
-		while (cur + 128 < end) {
-			if (!chk_order_key@2_@1((@1 *) BUNhloc(bi,cur))) {
-				key = FALSE;
-				break;
-			}
-			cur += 128;
-		}
-	}
-	/* sorted? */
-	while (cur + 128 < end) {
-		if (!chk_order@2_@1((@1 *) BUNhloc(bi,cur)))
-			break;
-		cur += 128;
-	}
-	/* finish remaining <128 tuples */
-	if (cur < end) {
-		@1 val, prv = *(@1*)BUNhloc(bi,cur);
-		cur++;
-		if (b->hkey == 0 && key) {
-			/* sorted and key? */
-			while (cur < end) {
-				val = *(@1*)BUNhloc(bi,cur);
-				if (prv @3= val) {
-					key = FALSE;
-					break;
-				}
-				prv = val;
-				cur++;
-			}
-		}
-		/* sorted? */
-		while (cur < end) {
-			val = *(@1*)BUNhloc(bi,cur);
-			if (prv @3 val) {
-				/* record negative position info */
-				b->H->no@2sorted = cur;
-				return FALSE;
-			}
-			prv = val;
-			cur++;
-		}
-	}
-
-@= sort_key_tpe
-static int
-chk_order@1@3_@4(@4*__r col)
+int
+BATordered(BAT* b)
 {
-	int i, r = 1;
-
-	for (i = 0; i < 128; i += 4) {
-		r &= (col[i + 1] @2 col[i + 0]) &
-		     (col[i + 2] @2 col[i + 1]) &
-		     (col[i + 3] @2 col[i + 2]) &
-		     (col[i + 4] @2 col[i + 3]);
-	}
-	return r;
+	if (!b->hsorted)
+		BATderiveHeadProps(b, 0);
+	return b->hsorted;
 }
-
-@= sort_tpe
-@:sort_key_tpe(_key,@2,@3,@1)@
-@:sort_key_tpe(,@2=,@3,@1)@
-
-@= sort
-@:sort_tpe(bte,@5,@1)@
-@:sort_tpe(sht,@5,@1)@
-@:sort_tpe(int,@5,@1)@
-@:sort_tpe(lng,@5,@1)@
-@:sort_tpe(flt,@5,@1)@
-@:sort_tpe(dbl,@5,@1)@
 
 int
-BATordered@2(BAT* b)
+BATordered_rev(BAT* b)
 {
-	BUN cnt = BATcount(b);
-	bit key = (cnt < 2);
-
-	if (!BATh@1ordered(b) && cnt > 0) {
-		int (*cmp)(const void *, const void *) = BATatoms[b->htype].atomCmp;
-		BUN cur = BUNfirst(b);
-		BUN end = BUNlast(b);
-		BATiter bi = bat_iterator(b);
-
-		key = TRUE;
-
-		/* we may have negative information already; this saves a scan */
-		if (b->H->no@1sorted > cur && b->H->no@1sorted < end &&
-		    cmp(BUNhead(bi, (BUN) (b->H->no@1sorted - 1)), BUNhead(bi, (BUN) b->H->no@1sorted)) @5 0) {
-			return FALSE;
-		}
-
-		/* for [tpe,void] bats, we have fast 128-at-a-time routines */
-		if (ATOMstorage(b->htype) == TYPE_bte) {
-			@:chk_order(bte,@1,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_sht) {
-			@:chk_order(sht,@1,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_int) {
-			@:chk_order(int,@1,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_lng) {
-			@:chk_order(lng,@1,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_flt) {
-			@:chk_order(flt,@1,@5)@
-		} else if (ATOMstorage(b->htype) == TYPE_dbl) {
-			@:chk_order(dbl,@1,@5)@
-		} else {
-			/* check sortedness tuple-by-tuple */
-			if (b->H->vheap) {
-				char *base = Hbase(b);
-				char *prv = base + BUNhvaroff(bi, cur);
-
-				cur ++;
-				if (b->hkey == 0) {
-					/* sorted and key? */
-					while (cur < end) {
-						char *val = base + BUNhvaroff(bi, cur);
-
-						if (cmp(prv, val) @5= 0) {
-							key = FALSE;
-							break;
-						}
-						prv = val;
-						cur++;
-					}
-				}
-				/* sorted? */
-				while (cur < end) {
-					char *val = base + BUNhvaroff(bi, cur);
-
-					if (cmp(prv, val) @5 0) {
-						/* record negative position info */
-						b->H->no@1sorted = cur;
-						return FALSE;
-					}
-					prv = val;
-					cur ++;
-				}
-			} else {
-				BUN prv = cur;
-
-				cur ++;
-				if (b->hkey == 0) {
-					/* sorted and key? */
-					while (cur < end) {
-						if (cmp(BUNhloc(bi,prv), BUNhloc(bi,cur)) @5= 0){
-							key = FALSE;
-							break;
-						}
-						prv = cur;
-						cur ++;
-					}
-				}
-				/* sorted? */
-				while (cur < end) {
-					if (cmp(BUNhloc(bi,prv), BUNhloc(bi,cur)) @5 0){
-						/* record negative position info */
-						b->H->no@1sorted = cur;
-						return FALSE;
-					}
-					prv = cur;
-					cur ++;
-				}
-			}
-		}
-	}
-	if (b->hkey == 0 && key) {
-		b->batDirtydesc = TRUE;
-		BATkey(b, TRUE);
-	}
-	/* it is @1sorted! set the properties */
-	if (!b->h@1sorted) {
-		b->batDirtydesc = TRUE;
-	}
-	b->h@1sorted = 1;
-	return TRUE;
+	if (!b->hrevsorted)
+		BATderiveHeadProps(b, 0);
+	return b->hrevsorted;
 }
 
-@:sort1(@1,@2,@3,@4,@5,,q)@
-@:sort1(@1,@2,@3,@4,@5,s,s)@
-
-@= sort1
-BAT *
-BAT@6sort@2(BAT *b)
+/* Sort b according to stable and reverse, do it in-place if copy is
+ * unset, otherwise do it on a copy */
+static BAT *
+BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 {
-	BAT *bn;
-	int tt = 0;
-
-	BATcheck(b, "BATsort@2");
- 	tt = b->ttype;
-	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
-		/* b's head is void-nil, hence we return a read-only
-		 * copy/view of b */
-		return BATcopy(b, b->htype, b->ttype, FALSE);
-	}
-
-#if 0 @5 1
-	if (b->htype != TYPE_void && BATordered_rev(b))
-#else
-	if (b->htype == TYPE_void ||
-	    (b->htype != TYPE_void && BATordered(b)))
-#endif
-	{
-		/* b is already ordered as desired, hence we return a
-		 * read-only copy/view of b */
-		return BATcopy(b, b->htype, b->ttype, FALSE);
-	}
-	if (BATcount(b) < 2) {
-		BATiter bi = bat_iterator(b);
-
-		/* with fewer than 2 BUNs, b is ordered, hence we
-		 * return a read-only copy/view of b */
+	BATcheck(b, func);
+	/* set some trivial properties (probably not necessary, but
+	 * it's cheap) */
+	if (b->htype == TYPE_void) {
 		b->hsorted = 1;
-		b->hrevsorted = 1;
-		if (b->htype == TYPE_oid) {
-			oid h = * (oid *) BUNhloc(bi, BUNfirst(b));
-
-			if (h != oid_nil) {
-				b->hdense = 1;
-				b->hseqbase = h;
-			}
-		}
-		return BATcopy(b, b->htype, b->ttype, FALSE);
+		b->hrevsorted = b->hseqbase == oid_nil || b->U->count <= 1;
+		b->hkey |= b->hseqbase != oid_nil;
+	} else if (b->U->count <= 1) {
+		b->hsorted = b->hrevsorted = 1;
 	}
-	/* a void tail column 0,1,2,3,... must be materialized to oid
-	 * before sorting */
-	if (tt == TYPE_void && b->tseqbase != oid_nil) {
-		tt = TYPE_oid;
-	}
-
-#if 0 @5 1
-	if (b->htype == TYPE_void ||
-	    (b->htype != TYPE_void &&
-#if '@7' == 's'			/* no duplicates if using stable sort */
-	     b->hkey &&
-#endif
-	     BATordered(b)))
-#else
-	if (b->htype != TYPE_void &&
-#if '@7' == 's'			/* no duplicates if using stable sort */
-	    b->hkey &&
-#endif
-	    BATordered_rev(b))
-#endif
-	{
-		/* b is ordered in the opposite direction, hence we
-		 * return a reverted copy of b */
-		/* a void head column must be materialized to oid
-		 * before reverting */
-		int ht = b->htype;
-
-		if (ht == TYPE_void && b->hseqbase != oid_nil) {
-			ht = TYPE_oid;
-		}
-		bn = BATrevert(BATcopy(b, ht, tt, TRUE));
-		return bn;	/* can be NULL in case of failure */
-	}
-	bn = BATcopy(b, b->htype, tt, TRUE);
-	if (bn == NULL)
-		return bn;
-	return BAT@6order@2(bn);
-}
-
-BAT *
-BAT@6order@2(BAT *b)
-{
-	BATcheck(b, "BATorder@2");
-	if (b->htype == TYPE_void && b->hseqbase == oid_nil) {
-		/* b's head is void-nil, hence we return b as is */
-		return b;
-	}
-#if 0 @5 1
-	if (b->htype != TYPE_void && BATordered_rev(b))
-#else
-	if (b->htype == TYPE_void ||
-	    (b->htype != TYPE_void && BATordered(b)))
-#endif
-	{
+	if (reverse ? b->hrevsorted : b->hsorted) {
 		/* b is already ordered as desired, hence we return b
 		 * as is */
-		return b;
+		return copy ? BATcopy(b, b->htype, b->ttype, FALSE) : b;
 	}
-	if (BATcount(b) < 2) {
-		/* with fewer than 2 BUNs, b is ordered, hence we
-		 * return b as is */
-		b->hsorted = 1;
-		b->hrevsorted = 1;
-		return b;
-	}
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+	if (copy) {
+		/* now make a writable copy that we're going to sort
+		 * materialize any VOID columns while we're at it */
+		b = BATcopy(b, BAThtype(b), BATttype(b), TRUE);
+	} else if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
 		/* materialize void-tail in-place */
+		/* note, we don't need to materialize the head column:
+		 * if it is void, either we didn't get here (already
+		 * sorted correctly), or we will fall into BATrevert
+		 * below which does the materialization for us */
 		b = BATmaterializet(b);
 		if (b == NULL)
 			return NULL;
 	}
-#if 0 @5 1
-	if (b->htype == TYPE_void ||
-	    (b->htype != TYPE_void &&
-#if '@7' == 's'			/* no duplicates if using stable sort */
-	     b->hkey &&
-#endif
-	     BATordered(b)))
-#else
-	if (b->htype != TYPE_void &&
-#if '@7' == 's'			/* no duplicates if using stable sort */
-	    b->hkey &&
-#endif
-	    BATordered_rev(b))
-#endif
-	{
+
+	if ((reverse ? b->hsorted : b->hrevsorted) && (!stable || b->hkey)) {
 		/* b is ordered in the opposite direction, hence we
-		 * revert b */
-		b = BATrevert(b);
-		return b;
+		 * revert b (note that if requesting stable sort, the
+		 * column needs to be key) */
+		return BATrevert(b);
 	}
-	GDK@7sort@2(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
-		    b->H->vheap ? b->H->vheap->base : NULL,
-		    BATcount(b), Hsize(b), Tsize(b), b->htype);
+	if (reverse) {
+		if (stable) {
+			if (GDKssort_rev(Hloc(b, BUNfirst(b)),
+					 Tloc(b, BUNfirst(b)),
+					 b->H->vheap ? b->H->vheap->base : NULL,
+					 BATcount(b), Hsize(b), Tsize(b),
+					 b->htype) < 0) {
+				if (copy)
+					BBPreclaim(b);
+				return NULL;
+			}
+		} else {
+			GDKqsort_rev(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
+				     b->H->vheap ? b->H->vheap->base : NULL,
+				     BATcount(b), Hsize(b), Tsize(b), b->htype);
+		}
+		b->hrevsorted = 1;
+		b->hsorted = b->U->count <= 1;
+	} else {
+		if (stable) {
+			if (GDKssort(Hloc(b, BUNfirst(b)),
+				     Tloc(b, BUNfirst(b)),
+				     b->H->vheap ? b->H->vheap->base : NULL,
+				     BATcount(b), Hsize(b), Tsize(b),
+				     b->htype) < 0) {
+				if (copy)
+					BBPreclaim(b);
+				return NULL;
+			}
+		} else {
+			GDKqsort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
+				 b->H->vheap ? b->H->vheap->base : NULL,
+				 BATcount(b), Hsize(b), Tsize(b), b->htype);
+		}
+		b->hsorted = 1;
+		b->hrevsorted = b->U->count <= 1;
+	}
+	b->tsorted = b->trevsorted = 0;
 	HASHdestroy(b);
-	ALIGNdel(b, "BATorder@2", FALSE);
-	b->h@1sorted = TRUE;
-	b->h@3sorted = FALSE;
-	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
-	b->hdense = FALSE;
-	b->tdense = FALSE;
+	ALIGNdel(b, func, FALSE);
+	b->hdense = 0;
+	b->tdense = 0;
 	b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = TRUE;
 
 	return b;
 }
-@
-@c
+
+BAT *
+BATorder(BAT *b)
+{
+	return BATorder_internal(b, 0, 0, 0, "BATorder");
+}
+
+BAT *
+BATorder_rev(BAT *b)
+{
+	return BATorder_internal(b, 0, 1, 0, "BATorder_rev");
+}
+
+BAT *
+BATsorder(BAT *b)
+{
+	return BATorder_internal(b, 1, 0, 0, "BATsorder");
+}
+
+BAT *
+BATsorder_rev(BAT *b)
+{
+	return BATorder_internal(b, 1, 1, 0, "BATsorder_rev");
+}
+
+BAT *
+BATsort(BAT *b)
+{
+	return BATorder_internal(b, 0, 0, 1, "BATsort");
+}
+
+BAT *
+BATsort_rev(BAT *b)
+{
+	return BATorder_internal(b, 0, 1, 1, "BATsort_rev");
+}
+
+BAT *
+BATssort(BAT *b)
+{
+	return BATorder_internal(b, 1, 0, 1, "BATssort");
+}
+
+BAT *
+BATssort_rev(BAT *b)
+{
+	return BATorder_internal(b, 1, 1, 1, "BATssort_rev");
+}
+
 /*
  * @+ Reverse a BAT
- * BATrevert rearranges a BAT in reverse order on head.
+ * BATrevert rearranges a BAT in reverse order.
  */
 BAT *
 BATrevert(BAT *b)
