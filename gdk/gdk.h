@@ -3244,6 +3244,10 @@ gdk_export BAT *BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecor
 gdk_export BAT *BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi);
 gdk_export BAT *BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi);
 gdk_export int VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRecord *hi);
+gdk_export BAT *BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2);
+gdk_export BAT *BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2);
+gdk_export BAT *BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2);
 
 gdk_export BAT *BATconvert(BAT *b, int tp, int abort_on_error);
 gdk_export int VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);

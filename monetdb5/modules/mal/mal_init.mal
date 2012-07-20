@@ -71,7 +71,6 @@ include batxml;
 # The hardwired multiplex extensions
 include batmmath;
 include batcalc;
-include batifthen;
 include batmtime;
 include batstr;
 include batcolor;

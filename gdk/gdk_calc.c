@@ -32,6 +32,11 @@
 static int
 checkbats(BAT *b1, BAT *b2, const char *func)
 {
+	if ((b1->H->type != TYPE_void && b1->H->type != TYPE_oid) ||
+	    (b2 != NULL && b2->H->type != TYPE_void && b2->H->type != TYPE_oid)) {
+		GDKerror("%s: inputs must have (V)OID head.\n", func);
+		return GDK_FAIL;
+	}
 	if (b2 != NULL) {
 		if (b1->U->count != b2->U->count) {
 			GDKerror("%s: inputs not the same size.\n", func);
@@ -12380,6 +12385,242 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRec
 	return GDK_SUCCEED;
 }
 
+#define IFTHENELSELOOP(TYPE)						\
+	do {								\
+		for (i = 0; i < cnt; i++) {				\
+			if (src[i] == bit_nil) {			\
+				if (hd)					\
+					*hd++ = (oid) i + off;		\
+				((TYPE *) dst)[j++] = * (TYPE *) nil;	\
+				nils++;					\
+			} else if (src[i]) {				\
+				if (hd)					\
+					*hd++ = (oid) i + off;		\
+				((TYPE *) dst)[j++] = ((TYPE *) col1)[k]; \
+			} else if (col2) {				\
+				((TYPE *) dst)[j++] = ((TYPE *) col2)[l]; \
+			}						\
+			k += incr1;					\
+			l += incr2;					\
+		}							\
+	} while (0)
+
+static BAT *
+BATcalcifthenelse_intern(BAT *b,
+			 const void *col1, int incr1, const char *heap1, int width1, int nonil1,
+			 const void *col2, int incr2, const char *heap2, int width2, int nonil2,
+			 int tpe)
+{
+	BAT *bn;
+	void *dst;
+	oid *hd;
+	BUN i, j, k, l;
+	BUN nils = 0;
+	const void *nil;
+	const void *p;
+	const bit *src;
+	oid off = BAThdense(b) ? b->H->seq : 0;
+	BUN cnt = b->U->count;
+
+	assert(col2 != NULL || incr2 == 0);
+
+	bn = BATnew(col2 || off == oid_nil ? TYPE_void : TYPE_oid, tpe, cnt);
+	if (bn == NULL)
+		return NULL;
+
+	src = (const bit *) Tloc(b, b->U->first);
+
+	nil = ATOMnilptr(tpe);
+	dst = (void *) Tloc(bn, bn->U->first);
+	hd = col2 || off == oid_nil ? NULL : (oid *) Hloc(bn, bn->U->first);
+	j = k = l = 0;
+	if (bn->T->varsized) {
+		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
+		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
+		for (i = 0; i < cnt; i++) {
+			if (src[i] == bit_nil) {
+				p = nil;
+				nils++;
+			} else if (src[i]) {
+				if (heap1)
+					p = heap1 + VarHeapVal(col1, k, width1);
+				else
+					p = col1;
+			} else if (col2) {
+				if (heap2)
+					p = heap2 + VarHeapVal(col2, l, width2);
+				else
+					p = col2;
+			} else {
+				p = NULL;
+			}
+			if (p) {
+				tfastins_nocheck(bn, j, p, Tsize(bn));
+				if (hd)
+					*hd++ = (oid) i + off;
+				j++;
+			}
+			k += incr1;
+			l += incr2;
+		}
+	} else {
+		assert(heap1 == NULL);
+		assert(heap2 == NULL);
+		switch (bn->T->width) {
+		case 1:
+			IFTHENELSELOOP(bte);
+			break;
+		case 2:
+			IFTHENELSELOOP(sht);
+			break;
+		case 4:
+			IFTHENELSELOOP(int);
+			break;
+		case 8:
+			IFTHENELSELOOP(lng);
+			break;
+		default:
+			for (i = 0; i < cnt; i++) {
+				if (src[i] == bit_nil) {
+					p = nil;
+					nils++;
+				} else if (src[i]) {
+					p = ((const char *) col1) + k * width1;
+				} else if (col2) {
+					p = ((const char *) col2) + l * width2;
+				} else {
+					p = NULL;
+				}
+				if (p) {
+					memcpy(dst, p, bn->T->width);
+					if (hd)
+						*hd++ = (oid) i + off;
+					j++;
+					dst = (void *) ((char *) dst + bn->T->width);
+				}
+				k += incr1;
+				l += incr2;
+			}
+		}
+	}
+
+	BATsetcount(bn, j);
+	bn = BATseqbase(bn, b->H->seq);
+
+	bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->revsorted = bn->U->count <= 1 || nils == bn->U->count;
+	bn->T->key = bn->U->count <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0 && nonil1 && (col2 == NULL || nonil2);
+
+	if (hd) {
+		bn->H->sorted = 1;
+		bn->H->revsorted = bn->U->count <= 1;
+		bn->H->key = 1;
+		bn->H->nil = 0;
+		bn->H->nonil = 1;
+	}
+
+	if (b->H->type != bn->H->type && bn->U->count == b->U->count) {
+		BAT *bnn = VIEWcreate(b, bn);
+		BBPunfix(bn->batCacheid);
+		bn = bnn;
+	} else if (bn->U->count < b->U->count && !BAThdense(b)) {
+		const oid *oids = (const oid *) Hloc(b, b->U->first);
+		cnt = bn->U->count;
+		hd = (oid *) Hloc(bn, bn->U->first);
+		for (i = 0; i < cnt; i++) {
+			*hd = oids[*hd];
+			hd++;
+		}
+	}
+
+	return bn;
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+BAT *
+BATcalcifthenelse(BAT *b, BAT *b1, BAT *b2)
+{
+	BATcheck(b, "BATcalcifthenelse");
+	BATcheck(b1, "BATcalcifthenelse");
+	/* b2 may be NULL */
+
+	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
+		return NULL;
+	if (b2 && checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+		return NULL;
+	if (b->T->type != TYPE_bit ||
+	    (b2 != NULL && b1->T->type != b2->T->type)) {
+		GDKerror("BATcalcifthenelse: \"then\" and \"else\" BATs have different types.\n");
+		return NULL;
+	}
+	return BATcalcifthenelse_intern(b,
+					Tloc(b1, b1->U->first), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
+					b2 ? Tloc(b2, b2->U->first) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					b1->T->type);
+}
+
+BAT *
+BATcalcifthenelsecst(BAT *b, BAT *b1, const ValRecord *c2)
+{
+	BATcheck(b, "BATcalcifthenelsecst");
+	BATcheck(b1, "BATcalcifthenelsecst");
+	BATcheck(c2, "BATcalcifthenelsecst");
+
+	if (checkbats(b, b1, "BATcalcifthenelse") == GDK_FAIL)
+		return NULL;
+	if (b->T->type != TYPE_bit || b1->T->type != c2->vtype) {
+		GDKerror("BATcalcifthenelsecst: \"then\" and \"else\" BATs have different types.\n");
+		return NULL;
+	}
+	return BATcalcifthenelse_intern(b,
+					Tloc(b1, b1->U->first), 1, b1->T->vheap ? b1->T->vheap->base : NULL, b1->T->width, b1->T->nonil,
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					b1->T->type);
+}
+
+BAT *
+BATcalcifthencstelse(BAT *b, const ValRecord *c1, BAT *b2)
+{
+	BATcheck(b, "BATcalcifthenelsecst");
+	BATcheck(c1, "BATcalcifthenelsecst");
+	/* b2 may be NULL */
+
+	if (checkbats(b, b2, "BATcalcifthenelse") == GDK_FAIL)
+		return NULL;
+	if (b->T->type != TYPE_bit ||
+	    (b2 != NULL && b2->T->type != c1->vtype)) {
+		GDKerror("BATcalcifthencstelse: \"then\" and \"else\" BATs have different types.\n");
+		return NULL;
+	}
+	return BATcalcifthenelse_intern(b,
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
+					b2 ? Tloc(b2, b2->U->first) : NULL, b2 != NULL, b2 && b2->T->vheap ? b2->T->vheap->base : NULL, b2 ? b2->T->width : 0, b2 && b2->T->nonil,
+					c1->vtype);
+}
+
+BAT *
+BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
+{
+	BATcheck(b, "BATcalcifthenelsecst");
+	BATcheck(c1, "BATcalcifthenelsecst");
+	BATcheck(c2, "BATcalcifthenelsecst");
+
+	if (checkbats(b, NULL, "BATcalcifthenelse") == GDK_FAIL)
+		return NULL;
+	if (b->T->type != TYPE_bit || c1->vtype != c2->vtype) {
+		GDKerror("BATcalcifthencstelsecst: \"then\" and \"else\" BATs have different types.\n");
+		return NULL;
+	}
+	return BATcalcifthenelse_intern(b,
+					VALptr(c1), 0, NULL, 0, !VALisnil(c1),
+					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
+					c1->vtype);
+}
+
 #define convertimpl_copy(TYPE)					\
 static BUN							\
 convert_##TYPE##_##TYPE(const TYPE *src, TYPE *dst, BUN cnt)	\
@@ -13181,7 +13422,7 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 	void *src;
 
 	src = Tloc(b, b->U->first);
-	cnt = BATcount(b);
+	cnt = b->U->count;
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch (ATOMstorage(b->T->type)) {

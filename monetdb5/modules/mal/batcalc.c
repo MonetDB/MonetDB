@@ -1400,3 +1400,68 @@ BATCONVERT_TYPE(oid)
 batcalc_export str CMDconvert_str(bat *ret, bat *bid);
 batcalc_export str CMDconvertsignal_str(bat *ret, bat *bid);
 BATCONVERT_TYPE(str)
+
+batcalc_export str CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b, *b1, *b2, *bn;
+	int tp1, tp2;
+	bat *ret;
+
+	(void) cntxt;
+	(void) mb;
+
+	ret = (bat *) getArgReference(stk, pci, 0);
+	b = BATdescriptor(* (bat *) getArgReference(stk, pci, 1));
+	if (b == NULL)
+		throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+
+	tp1 = stk->stk[getArg(pci, 2)].vtype;
+	if (tp1 == TYPE_bat || isaBatType(tp1)) {
+		b1 = BATdescriptor(* (bat *) getArgReference(stk, pci, 2));
+		if (b1 == NULL) {
+			BBPreleaseref(b->batCacheid);
+			throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+		}
+		if (pci->argc == 4) {
+			tp2 = stk->stk[getArg(pci, 3)].vtype;
+			if (tp2 == TYPE_bat || isaBatType(tp2)) {
+				b2 = BATdescriptor(* (bat *) getArgReference(stk, pci, 3));
+				if (b2 == NULL) {
+					BBPreleaseref(b->batCacheid);
+					BBPreleaseref(b1->batCacheid);
+					throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+				}
+				bn = BATcalcifthenelse(b, b1, b2);
+				BBPreleaseref(b2->batCacheid);
+			} else {
+				bn = BATcalcifthenelsecst(b, b1, &stk->stk[getArg(pci, 3)]);
+			}
+		} else {
+			bn = BATcalcifthenelse(b, b1, NULL);
+		}
+		BBPreleaseref(b1->batCacheid);
+	} else {
+		if (pci->argc == 4) {
+			tp2 = stk->stk[getArg(pci, 3)].vtype;
+			if (tp2 == TYPE_bat || isaBatType(tp2)) {
+				b2 = BATdescriptor(* (bat *) getArgReference(stk, pci, 3));
+				if (b2 == NULL) {
+					BBPreleaseref(b->batCacheid);
+					throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+				}
+				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2);
+				BBPreleaseref(b2->batCacheid);
+			} else {
+				bn = BATcalcifthencstelsecst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
+			}
+		} else {
+			bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], NULL);
+		}
+	}
+	BBPreleaseref(b->batCacheid);
+	BBPkeepref(*ret = bn->batCacheid);
+	return MAL_SUCCEED;
+}

@@ -492,3 +492,30 @@ comment "cast from $tp2 to $tp1";
 EOF
     done
 done
+
+cat <<EOF
+pattern ifthen(b:bat[:oid,:bit], v1:any_1) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:oid,:bit], v1:any_1, v2:any_1) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:oid,:bit], b1:bat[:oid,:any_1], v2:any_1) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:oid,:bit], v1:any_1, b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+pattern ifthen(b:bat[:oid,:bit], b1:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then operation to assemble a conditional result";
+
+pattern ifthenelse(b:bat[:oid,:bit], b1:bat[:oid,:any_1], b2:bat[:oid,:any_1]) :bat[:oid,:any_1]
+address CMDifthen
+comment "If-then-else operation to assemble a conditional result";
+
+EOF
