@@ -1375,8 +1375,8 @@ typedef var_t stridx_t; /* TODO: should also be unsigned short, but kept at var_
 #define BUNtloc(bi,p)	Tloc((bi).b,p)
 #define BUNhpos(bi,p)	(Hpos(&(bi),p))
 #define BUNtpos(bi,p)	(Tpos(&(bi),p))
-#define BUNhvar(bi,p)	((bi).b->htype?(Hbase((bi).b)+BUNhvaroff(bi,p)):BUNhpos(bi,p))
-#define BUNtvar(bi,p)	((bi).b->ttype?(Tbase((bi).b)+BUNtvaroff(bi,p)):BUNtpos(bi,p))
+#define BUNhvar(bi,p)	((bi).b->htype?Hbase((bi).b)+BUNhvaroff(bi,p):BUNhpos(bi,p))
+#define BUNtvar(bi,p)	((bi).b->ttype?Tbase((bi).b)+BUNtvaroff(bi,p):BUNtpos(bi,p))
 #define BUNhead(bi,p)	((bi).b->hvarsized?BUNhvar(bi,p):BUNhloc(bi,p))
 #define BUNtail(bi,p)	((bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p))
 
