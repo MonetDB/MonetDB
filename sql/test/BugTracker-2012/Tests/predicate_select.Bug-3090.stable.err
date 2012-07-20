@@ -33,10 +33,6 @@ stderr of test 'predicate_select.Bug-3090` in directory 'test/BugTracker-2012` i
 MAPI  = monetdb@sofia:39129
 QUERY = select * from tables where name;
 ERROR = !conversion from string to type bit failed.
-        !conversion from string to type bit failed.
-        !conversion from string to type bit failed.
-        !conversion from string to type bit failed.
-        !conversion from string to type bit failed.
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."
