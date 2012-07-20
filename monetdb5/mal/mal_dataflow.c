@@ -866,7 +866,7 @@ runDFLOWworker(void *t)
 		 * result just produced. Then we can continue with it right
 		 * away.  We are just looking for the last block, which means we
 		 * are safe from concurrent actions
-		 * All eligable instructions are queued
+		 * All eligible instructions are queued
 		 */
 		nxtfs = 0;
 		if (fs->pc >= 0)
