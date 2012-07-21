@@ -580,7 +580,7 @@ address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
 		the head that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:any_1,:oid] 
+command markH( b:bat[:any_1,:any_2], nr_parts:int, part_nr:int ) :bat[:oid,:any_2] 
 address ALGhmarkp
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
 	the head that starts at base (i.e. [base,..base+b.count()-1] ).
