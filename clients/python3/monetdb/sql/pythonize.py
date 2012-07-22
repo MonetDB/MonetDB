@@ -32,7 +32,7 @@ logger = logging.getLogger("monetdb")
 def strip(data):
     """ returns a python string, chops off quotes,
     replaces escape characters"""
-    return bytes(data[1:-1], "utf-8").decode("unicode_escape")
+    return ''.join([w.encode('utf-8').decode('unicode_escape') if '\\' in w else w for w in re.split('([\000-\200]+)', data[1:-1])])
 
 
 def py_bool(data):

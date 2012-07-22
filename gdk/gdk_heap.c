@@ -21,33 +21,35 @@
  * @f gdk_heap
  * @a Peter Boncz, Wilko Quak
  * @+ Atom Heaps
- * Heaps are the basic mass storage structure of Monet. A heap is a handle
- * to a large, possibly huge, contiguous area of main memory, that can
- * be allocated in various ways (discriminated by the heap->storage field):
+ * Heaps are the basic mass storage structure of Monet. A heap is a
+ * handle to a large, possibly huge, contiguous area of main memory,
+ * that can be allocated in various ways (discriminated by the
+ * heap->storage field):
  *
  * @table @code
  * @item STORE_MEM: malloc-ed memory
  * small (or rather: not huge) heaps are allocated with GDKmalloc.
  * Notice that GDKmalloc may redirect big requests to anonymous
- * virtual memory to prevent @emph{memory fragmentation} in the
- * malloc library (see gdk_utils.mx).
+ * virtual memory to prevent @emph{memory fragmentation} in the malloc
+ * library (see gdk_utils.mx).
  *
  * @item STORE_MMAP: read-only mapped region
- * this is a file on disk that is mapped into virtual memory.
- * This is normally done MAP_SHARED, so we can use msync() to commit dirty
+ * this is a file on disk that is mapped into virtual memory.  This is
+ * normally done MAP_SHARED, so we can use msync() to commit dirty
  * data using the OS virtual memory management.
  *
  * @item STORE_PRIV: read-write mapped region
- * in order to preserve ACID properties, we use a different memory mapping
- * on virtual memory that is writable. This is because in case of a crash
- * on a dirty STORE_MMAP heap, the OS may have written some of the dirty pages
- * to disk and other not (but it is impossible to determine which).  The OS
- * MAP_PRIVATE mode does not modify the file on which is being mapped, rather
- * creates substitute pages dynamically taken from the swap file when modifications
- * occur. This is the only way to make writing to mmap()-ed regions safe.
- * To save changes, we created a new file X.new; as some OS-es do not
- * allow to write into a file that has a mmap open on it (e.g. Windows).
- * Such X.new files take preference over X files when opening them.
+ * in order to preserve ACID properties, we use a different memory
+ * mapping on virtual memory that is writable. This is because in case
+ * of a crash on a dirty STORE_MMAP heap, the OS may have written some
+ * of the dirty pages to disk and other not (but it is impossible to
+ * determine which).  The OS MAP_PRIVATE mode does not modify the file
+ * on which is being mapped, rather creates substitute pages
+ * dynamically taken from the swap file when modifications occur. This
+ * is the only way to make writing to mmap()-ed regions safe.  To save
+ * changes, we created a new file X.new; as some OS-es do not allow to
+ * write into a file that has a mmap open on it (e.g. Windows).  Such
+ * X.new files take preference over X files when opening them.
  * @end table
  * Read also the discussion in BATsetaccess (gdk_bat.mx).
  *
@@ -57,9 +59,9 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-/* The heap cache should reduce mmap/munmap calls which are very expensive.
- * Instead we try to reuse mmap's. This however requires file renames.
- * The cache has a limited size!
+/* The heap cache should reduce mmap/munmap calls which are very
+ * expensive.  Instead we try to reuse mmap's. This however requires
+ * file renames.  The cache has a limited size!
  */
 
 #define HEAP_CACHE_SIZE 5
@@ -67,7 +69,7 @@
 typedef struct heap_cache_e {
 	void *base;
 	size_t maxsz;
-	char fn[PATHLENGTH]; 	/* tmp file name */
+	char fn[PATHLENGTH];	/* tmp file name */
 } heap_cache_e;
 
 typedef struct heap_cache {
@@ -161,19 +163,19 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 
 				GDKfilepath(fn, HCDIR, e->fn, NULL);
 
-		     		if ((fp = fopen(fn, "rb+")) != NULL &&
+				if ((fp = fopen(fn, "rb+")) != NULL &&
 #ifdef _WIN64
-		      		   _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+				   _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-		      		   fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+				   fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
-		      		   fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+				   fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
 #endif
 #endif
-		      		   fputc('\n', fp) >= 0 &&
-		      		   fflush(fp) >= 0 &&
-		      		   fclose(fp) >= 0) {
+				   fputc('\n', fp) >= 0 &&
+				   fflush(fp) >= 0 &&
+				   fclose(fp) >= 0) {
 					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
 					GDKmunmap(e->base, e->maxsz);
 					e->base = base;
@@ -183,7 +185,8 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 			base = e->base;
 			*maxsz = e->maxsz;
 			if (GDKmove(HCDIR, e->fn, NULL, BATDIR, fn, NULL)<0) {
-				/* try to create the directory, if that was the problem */
+				/* try to create the directory, if
+				 * that was the problem */
 				char path[PATHLENGTH];
 
 				GDKfilepath(path, BATDIR, fn, NULL);
@@ -322,17 +325,21 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 /*
  * @- HEAPextend
  *
- * Normally (last case in the below code), we use GDKrealloc, except for the case that the
- * heap extends to a huge size, in which case we open memory mapped file.
+ * Normally (last case in the below code), we use GDKrealloc, except
+ * for the case that the heap extends to a huge size, in which case we
+ * open memory mapped file.
  *
- * Observe that we may assume that the BAT is writable here (otherwise, why extend?).
+ * Observe that we may assume that the BAT is writable here
+ * (otherwise, why extend?).
  *
- * For memory mapped files, we may try to extend the file after the end, and also
- * extend the VM space we already have. This may fail, e.g. due to VM fragmentation
- * or no swap space (we map the new segment STORE_PRIV). Also, some OS-es might
- * not support this at all (NOEXTEND_PRIVMAP).
+ * For memory mapped files, we may try to extend the file after the
+ * end, and also extend the VM space we already have. This may fail,
+ * e.g. due to VM fragmentation or no swap space (we map the new
+ * segment STORE_PRIV). Also, some OS-es might not support this at all
+ * (NOEXTEND_PRIVMAP).
  *
- * The other way is to just save the mmap-ed heap, free it and reload it.
+ * The other way is to just save the mmap-ed heap, free it and reload
+ * it.
  */
 int
 HEAPextend(Heap *h, size_t size)
@@ -365,7 +372,7 @@ HEAPextend(Heap *h, size_t size)
 		int can_mmap = h->filename && (size >= GDK_mem_bigsize || h->newstorage != STORE_MEM);
 		int small_cpy = (h->size * 4 < size) && (size >= GDK_mmap_minsize);
 		/* the last condition is to use explicit MMAP instead
-		   of anonymous MMAP in GDKmalloc */
+		 * of anonymous MMAP in GDKmalloc */
 		int must_mmap = can_mmap && (small_cpy || exceeds_swap || h->newstorage != STORE_MEM || size >= GDK_mem_bigsize);
 
 		h->size = size;
@@ -378,7 +385,8 @@ HEAPextend(Heap *h, size_t size)
 			h->maxsize = size;	/* for normal GDKmalloc, maxsize = size */
 		}
 
-		/* try GDKrealloc if the heap size stays within reasonable limits */
+		/* try GDKrealloc if the heap size stays within
+		 * reasonable limits */
 		if (!must_mmap) {
 			void *p = h->base;
 			h->newstorage = h->storage = STORE_MEM;
@@ -394,10 +402,10 @@ HEAPextend(Heap *h, size_t size)
 			int existing = 0;
 
 			/* if the heap file already exists, we want to
-			   switch to STORE_PRIV (copy-on-write memory
-			   mapped files), but if the heap file doesn't
-			   exist yet, the BAT is new and we can use
-			   STORE_MMAP */
+			 * switch to STORE_PRIV (copy-on-write memory
+			 * mapped files), but if the heap file doesn't
+			 * exist yet, the BAT is new and we can use
+			 * STORE_MMAP */
 			fp = GDKfilelocate(nme, "rb", ext);
 			if (fp != NULL) {
 				existing = 1;
@@ -417,14 +425,17 @@ HEAPextend(Heap *h, size_t size)
 				}
 				h->base = NULL;
 				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
-				/* try to allocate a memory-mapped based heap */
+				/* try to allocate a memory-mapped
+				 * based heap */
 				if (HEAPload(h, nme, ext, FALSE) >= 0) {
-					/* copy data to heap and free old memory */
+					/* copy data to heap and free
+					 * old memory */
 					memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak);
 					return 0;
 				}
-				/* couldn't allocate, now first save data to file */
+				/* couldn't allocate, now first save
+				 * data to file */
 				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
 					*h = bak;
 					return -1;
@@ -432,7 +443,8 @@ HEAPextend(Heap *h, size_t size)
 				/* then free memory */
 				HEAPfree(&bak);
 				of = NULL;	/* file name is freed by HEAPfree */
-				/* and load heap back in via memory-mapped file */
+				/* and load heap back in via
+				 * memory-mapped file */
 				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
 					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
@@ -473,9 +485,9 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	assert(c->width < width);
 	assert(c->shift < shift);
 	/* if copyall is set, we need to convert the whole heap, since
-	   we may be in the middle of an insert loop that adjusts the
-	   free value at the end; otherwise only copy the area
-	   indicated by the "free" pointer */
+	 * we may be in the middle of an insert loop that adjusts the
+	 * free value at the end; otherwise only copy the area
+	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
 	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
 		return GDK_FAIL;
@@ -536,8 +548,8 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 
 /*
  * @- HEAPcopy
- * simple: alloc and copy. Notice that we suppose a preallocated dst->filename (or NULL),
- * which might be used in HEAPalloc().
+ * simple: alloc and copy. Notice that we suppose a preallocated
+ * dst->filename (or NULL), which might be used in HEAPalloc().
  */
 int
 HEAPcopy(Heap *dst, Heap *src)
@@ -553,8 +565,8 @@ HEAPcopy(Heap *dst, Heap *src)
 
 /*
  * @- HEAPfree
- * Is now called even on heaps without memory, just to free the pre-allocated filename.
- * simple: alloc and copy.
+ * Is now called even on heaps without memory, just to free the
+ * pre-allocated filename.  simple: alloc and copy.
  */
 static int
 HEAPfree_(Heap *h, int free_file)
@@ -595,8 +607,8 @@ HEAPfree(Heap *h)
  *
  * If we find file X.new, we move it over X (if present) and open it.
  *
- * This routine initializes the h->filename without deallocating
- * its previous contents.
+ * This routine initializes the h->filename without deallocating its
+ * previous contents.
  */
 static int
 HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc)
@@ -618,14 +630,14 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	sprintf(h->filename, "%s.%s", nme, ext);
 
 	/* round up mmap heap sizes to REMAP_PAGE_MAXSIZE (usually
-	   512KB) segments */
+	 * 512KB) segments */
 	if ((h->storage != STORE_MEM) && (minsize != h->size)) {
 		h->size = minsize;
 		h->maxsize = MAX(minsize, h->maxsize);
 	}
 
 	/* when a bat is made read-only, we can truncate any unused
-	   space at the end of the heap */
+	 * space at the end of the heap */
 	if (trunc && truncsize < h->size) {
 		fp = (FILE *) GDKfilelocate(nme, "mrb+", ext);
 		if (fp) {
@@ -643,9 +655,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 		fprintf(stderr, "#HEAPload(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", nme, ext, (int) h->storage, h->free, h->size);
 	}
 	/* On some OSs (WIN32,Solaris), it is prohibited to write to a
-	   file that is open in MAP_PRIVATE (FILE_MAP_COPY)
-	   solution: we write to a file named .ext.new
-	   This file, if present, takes precedence. */
+	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
+	 * we write to a file named .ext.new.  This file, if present,
+	 * takes precedence. */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
 	for (p = srcpath; *p; p++)
@@ -684,14 +696,17 @@ HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 /*
  * @- HEAPsave
  *
- * Saving STORE_MEM will do a write(fd, buf, size) in GDKsave (explicit IO).
+ * Saving STORE_MEM will do a write(fd, buf, size) in GDKsave
+ * (explicit IO).
  *
- * Saving a STORE_PRIV heap X means that we must actually write to X.new, thus
- * we convert the mode passed to GDKsave to STORE_MEM.
+ * Saving a STORE_PRIV heap X means that we must actually write to
+ * X.new, thus we convert the mode passed to GDKsave to STORE_MEM.
  *
- * Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit IO).
+ * Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit
+ * IO).
  *
- * After GDKsave returns successfully (>=0), we assume the heaps are safe on stable storage.
+ * After GDKsave returns successfully (>=0), we assume the heaps are
+ * safe on stable storage.
  */
 static int
 HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
@@ -725,7 +740,8 @@ HEAPsave(Heap *h, const char *nme, const char *ext)
 
 /*
  * @- HEAPdelete
- * Delete any saved heap file. For memory mapped files, also try to remove any remaining X.new
+ * Delete any saved heap file. For memory mapped files, also try to
+ * remove any remaining X.new
  */
 int
 HEAPdelete(Heap *h, const char *o, const char *ext)
@@ -777,8 +793,8 @@ HEAPvmsize(Heap *h)
 
 /*
  * @- HEAPmemsize
- * count all memory that takes up swap space. We conservatively count STORE_PRIV heaps as
- * fully backed by swap space.
+ * count all memory that takes up swap space. We conservatively count
+ * STORE_PRIV heaps as fully backed by swap space.
  */
 size_t
 HEAPmemsize(Heap *h)
@@ -791,21 +807,25 @@ HEAPmemsize(Heap *h)
 
 /*
  * @+ Standard Heap Library
- * This library contains some routines which implement a @emph{ malloc} and @emph{
- * free} function on the Monet @emph{Heap} structure. They are useful when
- * implementing a new @emph{ variable-size} atomic data type, or for implementing
- * new search accelerators.  All functions start with the prefix @emph{HEAP_}. T
+ * This library contains some routines which implement a @emph{
+ * malloc} and @emph{ free} function on the Monet @emph{Heap}
+ * structure. They are useful when implementing a new @emph{
+ * variable-size} atomic data type, or for implementing new search
+ * accelerators.  All functions start with the prefix @emph{HEAP_}. T
  *
- * Due to non-careful design, the HEADER field was found to be 32/64-bit dependent.
- * As we do not (yet) want to change the BAT image on disk, This is now fixed by
- * switching on-the-fly between two representations. We ensure that the 64-bit memory
- * representation is just as long as the 32-bits version (20 bytes) so the rest of
- * the heap never needs to shift. The function HEAP_checkformat converts at load
- * time dynamically between the layout found on disk and the memory format.
- * Recognition of the header mode is done by looking at the first two ints:
- * alignment must be 4 or 8, and head can never be 4 or eight.
+ * Due to non-careful design, the HEADER field was found to be
+ * 32/64-bit dependent.  As we do not (yet) want to change the BAT
+ * image on disk, This is now fixed by switching on-the-fly between
+ * two representations. We ensure that the 64-bit memory
+ * representation is just as long as the 32-bits version (20 bytes) so
+ * the rest of the heap never needs to shift. The function
+ * HEAP_checkformat converts at load time dynamically between the
+ * layout found on disk and the memory format.  Recognition of the
+ * header mode is done by looking at the first two ints: alignment
+ * must be 4 or 8, and head can never be 4 or eight.
  *
- * TODO: user HEADER64 for both 32 and 64 bits (requires BAT format change)
+ * TODO: user HEADER64 for both 32 and 64 bits (requires BAT format
+ * change)
  */
 /* #define DEBUG */
 /* #define TRACE */
@@ -866,9 +886,7 @@ HEAP_printstatus(Heap *heap)
 		  "#HEAP has head " SZFMT " and alignment %d and size " SZFMT "\n",
 		  hheader->head, hheader->alignment, heap->free);
 
-	/*
-	   // Walk the blocklist;
-	 */
+	/* Walk the blocklist */
 	block = hheader->firstblock;
 
 	while (block < heap->free) {
@@ -897,31 +915,23 @@ HEAP_printstatus(Heap *heap)
 static void
 HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 {
-	/*
-	   // Find position of header block.
-	 */
+	/* Find position of header block. */
 	HEADER *hheader = HEAP_index(heap, 0, HEADER);
 
-	/*
-	   // Calculate position of first and only free block.
-	 */
+	/* Calculate position of first and only free block. */
 	size_t head = roundup_num((size_t) (roundup_8(sizeof(HEADER)) + roundup_8(nprivate)), alignment);
 	CHUNK *headp = HEAP_index(heap, head, CHUNK);
 
 	assert(roundup_8(sizeof(HEADER)) + roundup_8(nprivate) <= VAR_MAX);
 
-	/*
-	   // Fill header block.
-	 */
+	/* Fill header block. */
 	hheader->head = head;
 	hheader->sizefcn = NULL;
 	hheader->alignment = alignment;
 	hheader->firstblock = head;
 	hheader->version = HEAPVERSION;
 
-	/*
-	   // Fill first free block.
-	 */
+	/* Fill first free block. */
 	assert(heap->size - head <= VAR_MAX);
 	headp->size = (size_t) (heap->size - head);
 	headp->next = 0;
@@ -934,18 +944,14 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 void
 HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 {
-	/*
-	   // For now we know about two alignments.
-	 */
+	/* For now we know about two alignments. */
 	if (alignment != 8) {
 		alignment = 4;
 	}
 	if ((size_t) alignment < sizeof(size_t))
 		alignment = (int) sizeof(size_t);
 
-	/*
-	   // Calculate number of bytes needed for heap + structures.
-	 */
+	/* Calculate number of bytes needed for heap + structures. */
 	{
 		size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
 
@@ -955,9 +961,7 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 		heap->free = heap->size;
 	}
 
-	/*
-	   // initialize heap as empty
-	 */
+	/* initialize heap as empty */
 	HEAP_empty(heap, nprivate, alignment);
 }
 
@@ -980,10 +984,9 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	if (nbytes < sizeof(CHUNK))
 		nbytes = (size_t) sizeof(CHUNK);
 
-	/*
-	   // block  -- points to block with acceptable size (if available).
-	   // trail  -- points to predecessor of block.
-	   // ttrail -- points to predecessor of trail.
+	/* block  -- points to block with acceptable size (if available).
+	 * trail  -- points to predecessor of block.
+	 * ttrail -- points to predecessor of trail.
 	 */
 	ttrail = 0;
 	trail = 0;
@@ -1002,9 +1005,8 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		trail = block;
 	}
 
-	/*
-	   // If no block of acceptable size is found we try to enlarge the heap.
-	 */
+	/* If no block of acceptable size is found we try to enlarge
+	 * the heap. */
 	if (block == 0) {
 		size_t newsize;
 
@@ -1017,10 +1019,8 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		THRprintf(GDKstdout, "#No block found\n");
 #endif
 
-		/*
-		   // Double the size of the heap.
-		   // TUNE: increase heap by diffent amount.
-		 */
+		/* Double the size of the heap.
+		 * TUNE: increase heap by diffent amount. */
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s " SZFMT " " SZFMT "\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize) < 0)
 			return 0;
@@ -1038,10 +1038,8 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		assert(heap->free - block <= VAR_MAX);
 		blockp->size = (size_t) (heap->free - block);	/* determine size of allocated block */
 
-		/*
-		   // Try to join the last block in the freelist and the newly allocated
-		   // memory
-		 */
+		/* Try to join the last block in the freelist and the
+		 * newly allocated memory */
 		if ((trail != 0) && (trail + trailp->size == block)) {
 #ifdef TRACE
 			THRprintf(GDKstdout, "#Glue newly generated block to adjacent last\n");
@@ -1055,17 +1053,14 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		}
 	}
 
-	/*
-	   // Now we have found a block which is big enough in block.
-	   // The predecessor of this block is in trail.
-	 */
+	/* Now we have found a block which is big enough in block.
+	 * The predecessor of this block is in trail. */
 	trailp = HEAP_index(heap, trail, CHUNK);
 	blockp = HEAP_index(heap, block, CHUNK);
 
-	/*
-	   // If selected block is bigger than block needed split block in two.
-	   // TUNE: use different amount than 2*sizeof(CHUNK)
-	 */
+	/* If selected block is bigger than block needed split block
+	 * in two.
+	 * TUNE: use different amount than 2*sizeof(CHUNK) */
 	if (blockp->size >= nbytes + 2 * sizeof(CHUNK)) {
 		size_t newblock = block + nbytes;
 		CHUNK *newblockp = HEAP_index(heap, newblock, CHUNK);
@@ -1077,9 +1072,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		blockp->size = nbytes;
 	}
 
-	/*
-	   // Delete block from freelist
-	 */
+	/* Delete block from freelist */
 	if (trail == 0) {
 		hheader->head = blockp->next;
 	} else {
@@ -1108,10 +1101,9 @@ HEAP_free(Heap *heap, var_t mem)
 	block -= hheader->alignment;
 	blockp = HEAP_index(heap, block, CHUNK);
 
-	/*
-	   // block   -- block which we want to free
-	   // before  -- first free block before block
-	   // after   -- first free block after block
+	/* block   -- block which we want to free
+	 * before  -- first free block before block
+	 * after   -- first free block after block
 	 */
 
 	before = 0;
@@ -1124,16 +1116,14 @@ HEAP_free(Heap *heap, var_t mem)
 	beforep = HEAP_index(heap, before, CHUNK);
 	afterp = HEAP_index(heap, after, CHUNK);
 
-	/*
-	   // If it is not the last free block.
-	 */
+	/* If it is not the last free block. */
 	if (after != 0) {
 		/*
-		   // If this block and the block after are consecutive.
+		 * If this block and the block after are consecutive.
 		 */
 		if (block + blockp->size == after) {
 			/*
-			   // We unite them.
+			 * We unite them.
 			 */
 			blockp->size += afterp->size;
 			blockp->next = afterp->next;
@@ -1141,21 +1131,21 @@ HEAP_free(Heap *heap, var_t mem)
 			blockp->next = after;
 	} else {
 		/*
-		   // It is the last block in the freelist.
+		 * It is the last block in the freelist.
 		 */
 		blockp->next = 0;
 	}
 
 	/*
-	   //  If it is not the first block in the list.
+	 * If it is not the first block in the list.
 	 */
 	if (before != 0) {
 		/*
-		   // If the before block and this block are consecutive.
+		 * If the before block and this block are consecutive.
 		 */
 		if (before + beforep->size == block) {
 			/*
-			   // We unite them.
+			 * We unite them.
 			 */
 			beforep->size += blockp->size;
 			beforep->next = blockp->next;
@@ -1163,7 +1153,7 @@ HEAP_free(Heap *heap, var_t mem)
 			beforep->next = block;
 	} else {
 		/*
-		   //  Add block at head of free list.
+		 * Add block at head of free list.
 		 */
 		hheader->head = block;
 	}
@@ -1197,7 +1187,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	}
 
 	/*
-	   // Create bitmasks that will hold all valid block positions
+	 * Create bitmasks that will hold all valid block positions
 	 */
 	hr->validmask = (int *) GDKzalloc(sizeof(int) * ++nwords);
 	freemask = (int *) GDKzalloc(sizeof(int) * nwords);
@@ -1208,7 +1198,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	}
 
 	/*
-	   // Walk the freelist; register them in freemask
+	 * Walk the freelist; register them in freemask
 	 */
 	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
 		size_t idx = block >> alignshift;
@@ -1227,7 +1217,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	}
 
 	/*
-	   // Walk the blocklist; register in validmask/eliminate from freemask
+	 * Walk the blocklist; register in validmask/eliminate from freemask
 	 */
 	block = hheader->firstblock;
 	while (block < heap->free) {
@@ -1251,7 +1241,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	}
 
 	/*
-	   // Check if there are left over free blocks
+	 * Check if there are left over free blocks
 	 */
 	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
 		size_t idx = block >> alignshift;
@@ -1273,9 +1263,9 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 }
 
 /*
- * @-
- * The HEAP_init() function is called in the BAT load sequence, if Monet sees that a
- * standard heap is being loaded (it looks for a directly registered HEAP_check ADT function).
+ * The HEAP_init() function is called in the BAT load sequence, if
+ * Monet sees that a standard heap is being loaded (it looks for a
+ * directly registered HEAP_check ADT function).
  */
 /* reinitialize the size function after a load */
 void
@@ -1287,7 +1277,8 @@ HEAP_init(Heap *heap, int tpe)
 		hheader->sizefcn = BATatoms[tpe].atomLen;
 	}
 
-	/* make sure the freelist does not point after the end of the heap */
+	/* make sure the freelist does not point after the end of the
+	 * heap */
 	if (hheader->head > heap->free) {
 		hheader->head = 0;	/* cut off free block */
 	} else if (hheader->head) {
@@ -1309,7 +1300,8 @@ HEAP_init(Heap *heap, int tpe)
 	}
 }
 
-/* a heap is mmapabble (in append-only mode) if it only has a hole at the end */
+/* a heap is mmapabble (in append-only mode) if it only has a hole at
+ * the end */
 int
 HEAP_mmappable(Heap *heap)
 {

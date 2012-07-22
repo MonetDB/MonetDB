@@ -23,7 +23,7 @@ from monetdb.sql import monetize
 from monetdb.sql import pythonize
 
 class Pythonizer:
-    def __init__(self, use_unicode):
+    def __init__(self):
         pass
 
     def convert(self, data, type_code):

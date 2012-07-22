@@ -35,8 +35,7 @@
  */
 #ifdef HAVE_PTHREAD_H
 /* don't re-include config.h; on Windows, don't redefine pid_t in an
-   incompatible way
- */
+ * incompatible way */
 #undef HAVE_CONFIG_H
 #ifdef pid_t
 #undef pid_t

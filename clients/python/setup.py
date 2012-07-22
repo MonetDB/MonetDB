@@ -23,7 +23,7 @@ from distutils.core import setup
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(name='monetdb',
+setup(name='python-monetdb',
     version='11.11.6',
     description='Native MonetDB client Python API',
     long_description=read('README.rst'),

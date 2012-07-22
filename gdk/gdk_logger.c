@@ -24,46 +24,49 @@
  * @v 2.0
  *
  * @* Introduction
- * In the philosophy of MonetDB, transaction management overhead should only
- * be paid when necessary. Transaction management is for this purpose
- * implemented as a separate module and applications are required to
- * obey the transaction policy, e.g. obtaining/releasing locks.
+ * In the philosophy of MonetDB, transaction management overhead
+ * should only be paid when necessary. Transaction management is for
+ * this purpose implemented as a separate module and applications are
+ * required to obey the transaction policy, e.g. obtaining/releasing
+ * locks.
  *
- * This module is designed to support efficient logging of the SQL database.
- * Once loaded, the SQL compiler will insert the proper calls at
- * transaction commit to include the changes in the log file.
+ * This module is designed to support efficient logging of the SQL
+ * database.  Once loaded, the SQL compiler will insert the proper
+ * calls at transaction commit to include the changes in the log file.
  *
- * The logger uses a directory to store its log files. One master log file
- * stores information about the version of the logger and the transaction
- * log files. This file is a simple ascii file with the following format:
+ * The logger uses a directory to store its log files. One master log
+ * file stores information about the version of the logger and the
+ * transaction log files. This file is a simple ascii file with the
+ * following format:
  *  @code{6DIGIT-VERSION\n[log file number \n]*]*}
- * The transaction log files have a binary format, which stores fixed size
- * logformat headers (flag,nr,bid), where the flag is the type of update logged.
- * The nr field indicates how many changes there were (in case of inserts/deletes).
- * The bid stores the bid identifier.
+ * The transaction log files have a binary format, which stores fixed
+ * size logformat headers (flag,nr,bid), where the flag is the type of
+ * update logged.  The nr field indicates how many changes there were
+ * (in case of inserts/deletes).  The bid stores the bid identifier.
  *
- * The key decision to be made by the user is the location of the log file.
- * Ideally, it should be stored in fail-safe environment, or at least
- * the log and databases should be on separate disk columns.
+ * The key decision to be made by the user is the location of the log
+ * file.  Ideally, it should be stored in fail-safe environment, or at
+ * least the log and databases should be on separate disk columns.
  *
- * This file system may reside on the same hardware as the database server
- * and therefore the writes are done to the same disk, but could also
- * reside on another system and then the changes are flushed through the network.
- * The logger works under the assumption that it is called to safeguard
- * updates on the database when it has an exclusive lock on
- * the latest version. This lock should be guaranteed by the calling
- * transaction manager first.
+ * This file system may reside on the same hardware as the database
+ * server and therefore the writes are done to the same disk, but
+ * could also reside on another system and then the changes are
+ * flushed through the network.  The logger works under the assumption
+ * that it is called to safeguard updates on the database when it has
+ * an exclusive lock on the latest version. This lock should be
+ * guaranteed by the calling transaction manager first.
  *
- * Finding the updates applied to a BAT is relatively easy, because each
- * BAT contains a delta structure. On commit these changes are
- * written to the log file and the delta management is reset. Since each
- * commit is written to the same log file, the beginning and end are
- * marked by a log identifier.
+ * Finding the updates applied to a BAT is relatively easy, because
+ * each BAT contains a delta structure. On commit these changes are
+ * written to the log file and the delta management is reset. Since
+ * each commit is written to the same log file, the beginning and end
+ * are marked by a log identifier.
  *
- * A server restart should only (re)process blocks which are completely
- * written to disk. A log replay therefore ends in a commit or abort on
- * the changed bats. Once all logs have been read, the changes to
- * the bats are made persistent, i.e. a bbp sub-commit is done.
+ * A server restart should only (re)process blocks which are
+ * completely written to disk. A log replay therefore ends in a commit
+ * or abort on the changed bats. Once all logs have been read, the
+ * changes to the bats are made persistent, i.e. a bbp sub-commit is
+ * done.
  *
  * @* Implementation Code
  */
@@ -78,10 +81,9 @@ static BUN BUNfndT( BAT *b, ptr v)
 	return BUNfnd(BATmirror(b), v);
 }
 /*
- * @-
- * The log record encoding is geared at reduced storage space, but
- * at the expense of readability. A user can not easily inspect the
- * log a posteriori to check what has happened.
+ * The log record encoding is geared at reduced storage space, but at
+ * the expense of readability. A user can not easily inspect the log a
+ * posteriori to check what has happened.
  *
  */
 #define LOG_START	1
@@ -392,7 +394,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 			tr->changes[tr->nr].b = r;
 			tr->nr++;
 		}
-	} else {		/* bat missing ERROR or ignore ? currently error. */
+	} else {
+		/* bat missing ERROR or ignore ? currently error. */
 		res = LOG_ERR;
 	}
 	return res;
@@ -438,8 +441,11 @@ la_bat_updates(logger *lg, logaction *la)
 					const void *t = BUNtail(bi, p);
 
 					if (BUNfnd(b, h) == BUN_NONE) {
-						/* if value doesn't exist, insert it
-						   if b void headed, maintain that by inserting nils */
+						/* if value doesn't
+						 * exist, insert it if
+						 * b void headed,
+						 * maintain that by
+						 * inserting nils */
 						if (b->htype == TYPE_void) {
 							if (b->batCount == 0 && *(const oid *) h != oid_nil)
 								b->hseqbase = *(const oid *) h;
@@ -588,7 +594,7 @@ la_bat_use(logger *lg, logaction *la)
 }
 
 
-#define TR_SIZE 	1024
+#define TR_SIZE		1024
 
 static trans *
 tr_create(trans *tr, int tid)
@@ -848,7 +854,6 @@ logger_readlog(logger *lg, char *filename)
 }
 
 /*
- * @-
  * The log files are incrementally numbered. They are processed in the
  * same sequence.
  */
@@ -871,10 +876,10 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 
 			if ((res = logger_readlog(lg, buf)) != 0) {
 				/* we cannot distinguish errors from
-				   incomplete transactions (even if we
-				   would log aborts in the logs).
-				   So we simply abort and move to the next
-				   log file */
+				 * incomplete transactions (even if we
+				 * would log aborts in the logs). So
+				 * we simply abort and move to the
+				 * next log file */
 				(void) res;
 			}
 		}
@@ -1051,9 +1056,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 	snprintf(filename, BUFSIZ, "%s%s", lg->dir, LOGFILE);
 	snprintf(bak, BUFSIZ, "%s.bak", filename);
 
-	/* try to open logfile backup, or failing that, the file itself.
-	   we need to know whether this file exists when checking the
-	   database consistency later on */
+	/* try to open logfile backup, or failing that, the file
+	 * itself. we need to know whether this file exists when
+	 * checking the database consistency later on */
 	if ((fp = fopen(bak, "r")) != NULL) {
 		fclose(fp);
 		GDKunlink(lg->dir, LOGFILE, NULL);
@@ -1153,7 +1158,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 	if (catalog_bid == 0) {
 		log_bid bid = 0;
 
-		/* catalog does not exist, so the log file also shouldn't exist */
+		/* catalog does not exist, so the log file also
+		 * shouldn't exist */
 		if (fp != NULL) {
 			logger_fatal("logger_new: there is no logger catalog, but there is a log file.\n"
 				     "Are you sure you are using the correct combination of database\n"
@@ -1204,8 +1210,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		}
 	} else {
 		/* find the persistent catalog. As non persistent bats
-		   require a logical reference we also add a logical
-		   reference for the persistent bats */
+		 * require a logical reference we also add a logical
+		 * reference for the persistent bats */
 		BUN p, q;
 		BAT *b = BATdescriptor(catalog_bid), *n;
 
@@ -1483,9 +1489,8 @@ logger_exit(logger *lg)
 		fprintf(fp, LLFMT "\n", lg->id);
 		fclose(fp);
 
-		/* atomic action, switch to new log, keep old for later
-		   cleanup actions
-		 */
+		/* atomic action, switch to new log, keep old for
+		 * later cleanup actions */
 		snprintf(ext, BUFSIZ, "bak-" LLFMT, lg->id);
 
 		if (GDKmove(lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, ext) < 0)
@@ -1564,10 +1569,9 @@ logger_sequence(logger *lg, int seq, lng *id)
 }
 
 /*
- * @-
- * Changes made to the BAT descriptor should be stored in the log files.
- * Actually, we need to save the descriptor file, perhaps we should simply
- * introduce a versioning scheme.
+ * Changes made to the BAT descriptor should be stored in the log
+ * files.  Actually, we need to save the descriptor file, perhaps we
+ * should simply introduce a versioning scheme.
  */
 int
 log_bat_persists(logger *lg, BAT *b, char *name)
@@ -2017,7 +2021,8 @@ logger_del_bat(logger *lg, log_bid bid)
 
 	assert(p != BUN_NONE);
 
-	/* if this is a not logger commited snapshot bat, make it transient */
+	/* if this is a not logger commited snapshot bat, make it
+	 * transient */
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = BUNfndT(lg->snapshots_bid, &bid)) != BUN_NONE) {
 
@@ -2045,7 +2050,7 @@ logger_find_bat(logger *lg, char *name)
 	log_bid res = 0;
 	BUN p = BUNfndT(lg->catalog_nme, name);
 
-	if (p != BUN_NONE) 
+	if (p != BUN_NONE)
 		res = *(log_bid *) Tloc(lg->catalog_bid, p);
 	return res;
 }

@@ -419,7 +419,6 @@ end main;
 # void	int	  # type
 #-----------------#
 [ 0@0,	  3	  ]
-!MALException:algebra.find:GDK reported error.can not find element
 
 
 # 23:46:00 >  

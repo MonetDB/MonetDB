@@ -1831,7 +1831,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		 * @throws SQLException if an database error occurs
 		 */
 		String getLine(int row) throws SQLException {
-			if (row >= tuplecount || row < 0) return null;
+			if (row >= tuplecount || row < 0)
+				return null;
 
 			int block = (row - blockOffset) / cacheSize;
 			int blockLine = (row - blockOffset) % cacheSize;
@@ -1850,42 +1851,36 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					for (int i = 0; i < block; i++)
 						resultBlocks[i] = null;
 
-					if (MonetConnection.seqCounter - 1 == seqnr) {
+					if (MonetConnection.seqCounter - 1 == seqnr &&
+							!cacheSizeSetExplicitly &&
+							tuplecount - row > cacheSize &&
+							cacheSize < MonetConnection.DEF_FETCHSIZE * 10)
+					{
 						// there has no query been issued after this
-						// one, so we can consider this a uninterrupted
-						// continuation request.  Let's increase the
-						// blocksize if it was not explicitly set,
-						// as the chances are high that we won't bother
-						// anyone else by doing so, and just gaining
-						// some performance.
-						if (!cacheSizeSetExplicitly) {
-							// store the previous position in the
-							// blockOffset variable
-							blockOffset += cacheSize;
+						// one, so we can consider this an uninterrupted
+						// continuation request.  Let's once increase
+						// the cacheSize as it was not explicitly set,
+						// since the chances are high that we won't
+						// bother anyone else by doing so, and just
+						// gaining some performance.
 
-							// increase the cache size (a lot)
-							cacheSize *= 10;
+						// store the previous position in the
+						// blockOffset variable
+						blockOffset += cacheSize;
 
-							// Java string are UTF-16, right?
-							long free = Runtime.getRuntime().freeMemory() / 2;
-							// we run the risk that we kill ourselves
-							// here, but maybe that's better to continue
-							// as long as possible, than asking too much
-							// too soon
-							if (cacheSize > free)
-								cacheSize = (int)free;	// it must fit
+						// increase the cache size (a lot)
+						cacheSize *= 10;
 
-							// by changing the cacheSize, we also
-							// change the block measures.  Luckily
-							// we don't care about previous blocks
-							// because we have a forward running
-							// pointer only.  However, we do have
-							// to recalculate the block number, to
-							// ensure the next call to find this
-							// new block.
-							block = (row - blockOffset) / cacheSize;
-							blockLine = (row - blockOffset) % cacheSize;
-						}
+						// by changing the cacheSize, we also
+						// change the block measures.  Luckily
+						// we don't care about previous blocks
+						// because we have a forward running
+						// pointer only.  However, we do have
+						// to recalculate the block number, to
+						// ensure the next call to find this
+						// new block.
+						block = (row - blockOffset) / cacheSize;
+						blockLine = (row - blockOffset) % cacheSize;
 					}
 				}
 

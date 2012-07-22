@@ -20,29 +20,33 @@ functions for converting python objects to monetdb SQL format
 """
 
 import datetime
-import logging
 import decimal
 
-logger = logging.getLogger("monetdb")
 
 def monet_none(data):
+    """
+    returns a NULL string
+    """
     return "NULL"
 
 def monet_bool(data):
-    if data:
-        return "true"
-    else:
-        return "false"
+    """
+    returns "true" or "false"
+    """
+    return ["false", "true"][bool(data)]
 
 def monet_escape(data):
+    """
+    returns an escaped string
+    """
     data = str(data).replace( "\\", "\\\\")
     data = data.replace( "\'", "\\\'")
     return "'%s'" % str(data)
 
-def monet_string(data):
-    return str(data)
-
 def monet_bytes(data):
+    """
+    converts bytes to string
+    """
     return monet_escape(data)
 
 def monet_unicode(data):
@@ -51,14 +55,14 @@ def monet_unicode(data):
 mapping = {
     type(None): monet_none,
     bool: monet_bool,
-    int: monet_string,
-    float: monet_string,
-    complex: monet_string,
-    int: monet_string,
+    int: str,
+    float: str,
+    complex: str,
+    int: str,
     str: monet_escape,
     datetime.datetime: monet_escape,
     datetime.time: monet_escape,
-    decimal.Decimal: monet_string,
+    decimal.Decimal: str,
     datetime.timedelta: monet_escape,
     datetime.date: monet_escape,
     bytes: monet_bytes,
@@ -66,6 +70,9 @@ mapping = {
 }
 
 def convert(data):
+    """
+    Calls the appropriate convertion function based upon the python type
+    """
     try:
         return mapping[type(data)](data)
     except KeyError:
