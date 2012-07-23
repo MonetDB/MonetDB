@@ -18,34 +18,28 @@
  */
 
 /*
- * @f gdk_delta
  * @a M. L. Kersten, P. Boncz, N. Nes
  * @* Delta management
- * The basis for transaction management is to keep track of
- * elements inserted, deleted, and replaced.
- * This information is stored within the BAT structure using three
- * delta markers.
- * Inserted denotes
- * the first added BUN since the last commit. Deleted points to the BUNs removed.
- * The deletion list is terminated at @%first@, where space is reserved for swapping
- * BUNs upon deletion. Initialization of the BAT is extended as follows:
- *
+ * The basis for transaction management is to keep track of elements
+ * inserted, deleted, and replaced.  This information is stored within
+ * the BAT structure using three delta markers.  Inserted denotes the
+ * first added BUN since the last commit. Deleted points to the BUNs
+ * removed.  The deletion list is terminated at @%first@, where space
+ * is reserved for swapping BUNs upon deletion. Initialization of the
+ * BAT is extended as follows:
  */
+
 /*
- * @
- *
- * @-
- * Impact on hashing and indexing.
- * The hash structure is maintained for all elements to be deleted ?.
- *
+ * Impact on hashing and indexing.  The hash structure is maintained
+ * for all elements to be deleted ?.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 
 /*
- * @-
- * batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
+ * batcommit really forgets the atoms guarded for an undo; we just
+ * need to free their heap space (only if necessary).
  */
 BAT *
 BATcommit(BAT *b)
@@ -110,8 +104,8 @@ BATcommit(BAT *b)
 }
 
 /*
- * @-
- * BATfakeCommit() flushed the delta info, but leaves the BAT marked clean.
+ * BATfakeCommit() flushed the delta info, but leaves the BAT marked
+ * clean.
  */
 BAT *
 BATfakeCommit(BAT *b)
@@ -129,13 +123,10 @@ BATfakeCommit(BAT *b)
 }
 
 /*
- * @
- * @-
- * The routine @%BATundo@ restores the BAT to the previous commit point.
- * The inserted elements are removed from the accelerators, deleted from the
- * heap. The guarded elements from uncommitted deletes are
- * inserted into the accelerators.
- * @-
+ * The routine @%BATundo@ restores the BAT to the previous commit
+ * point.  The inserted elements are removed from the accelerators,
+ * deleted from the heap. The guarded elements from uncommitted
+ * deletes are inserted into the accelerators.
  */
 BAT *
 BATundo(BAT *b)
@@ -228,10 +219,9 @@ BATundo(BAT *b)
 }
 
 /*
- * @-
  * The proposed modifications can be obtained through the @%BATalpha@
- * and @%BATdelta@ routines , which return the inserted and deleted BUNs,
- * respectively.
+ * and @%BATdelta@ routines , which return the inserted and deleted
+ * BUNs, respectively.
  */
 BAT *
 BATprev(BAT *b)

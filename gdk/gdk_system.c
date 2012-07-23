@@ -18,22 +18,22 @@
  */
 
 /*
- * @f gdk_system
  * @a Niels Nes, Peter Boncz
  * @+ Threads
- * This file contains a wrapper layer for threading, hence the underscore
- * convention MT_x (Multi-Threading).  As all platforms that MonetDB runs
- * on now support POSIX Threads (pthreads), this wrapping layer has become
- * rather thin.
+ * This file contains a wrapper layer for threading, hence the
+ * underscore convention MT_x (Multi-Threading).  As all platforms
+ * that MonetDB runs on now support POSIX Threads (pthreads), this
+ * wrapping layer has become rather thin.
  *
- * In the late 1990s when multi-threading support was introduced in MonetDB,
- * pthreads was just emerging as a standard API and not widely adopted yet.
- * The earliest MT implementation focused on SGI Unix and provided multi-
- * threading using multiple processses, and shared memory.
+ * In the late 1990s when multi-threading support was introduced in
+ * MonetDB, pthreads was just emerging as a standard API and not
+ * widely adopted yet.  The earliest MT implementation focused on SGI
+ * Unix and provided multi- threading using multiple processses, and
+ * shared memory.
  *
- * One of the relics of this model, namely the need to pre-allocate locks and
- * semaphores, and consequently a maximum number of them, has been removed in
- * the latest iteration of this layer.
+ * One of the relics of this model, namely the need to pre-allocate
+ * locks and semaphores, and consequently a maximum number of them,
+ * has been removed in the latest iteration of this layer.
  *
  */
 /*
@@ -182,8 +182,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 
 	if (winthread_cs_init == 0) {
 		/* we only get here before any threads are created,
-		   and this is the only time that winthread_cs_init is
-		   ever changed */
+		 * and this is the only time that winthread_cs_init is
+		 * ever changed */
 		InitializeCriticalSection(&winthread_cs);
 		winthread_cs_init = 1;
 	}
@@ -521,9 +521,9 @@ pthread_sema_down(pthread_sema_t *s)
 #if !defined(WIN32) && defined(PROFILE) && defined(HAVE_PTHREAD_H)
 #undef pthread_create
 /* for profiling purposes (btw configure with --enable-profile *and*
-   --disable-shared --enable-static) without setting the ITIMER_PROF
-   per thread, all profiling info for everything except the main
-   thread is lost. */
+ * --disable-shared --enable-static) without setting the ITIMER_PROF
+ * per thread, all profiling info for everything except the main
+ * thread is lost. */
 #include <stdlib.h>
 
 /* Our data structure passed to the wrapper */
@@ -578,7 +578,7 @@ gprof_pthread_create(pthread_t * __restrict thread, __const pthread_attr_t * __r
 	i_return = pthread_create(thread, attr, &wrapper_routine, &wrapper_data);
 
 	/* If the thread was successfully spawned, wait for the data
-	   to be released */
+	 * to be released */
 	if (i_return == 0) {
 		pthread_cond_wait(&wrapper_data.wait, &wrapper_data.lock);
 	}
@@ -701,7 +701,7 @@ lng
 GDKusec(void)
 {
 	/* Return the time in microseconds since an epoch.  The epoch
-	   is roughly the time this program started. */
+	 * is roughly the time this program started. */
 #ifdef _MSC_VER
 	static LARGE_INTEGER freq, start;	/* automatically initialized to 0 */
 	LARGE_INTEGER ctr;

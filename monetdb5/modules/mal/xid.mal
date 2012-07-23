@@ -1,0 +1,15 @@
+module xid;
+
+pattern compress(b:bat[:oid,:oid]) (xid:bat[:oid,:oid])
+address XIDcompress
+comment "Compress the tail oid list";
+
+pattern decompress(b:bat[:oid,:oid]) :bat[:oid,:oid]
+address XIDdecompress
+comment "Decompress an oid list";
+
+command dump(b:bat[:oid,:oid])
+address XIDdump
+comment "Dump the encoding table";
+
+

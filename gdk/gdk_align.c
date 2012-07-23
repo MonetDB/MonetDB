@@ -18,66 +18,69 @@
  */
 
 /*
- * @f gdk_align
  * @a Peter Boncz, Niels Nes
  * @* BAT Alignment
  * For BATs that result from a n-ary relational scheme it may help to
  * align the BATs on their head value. In particular, it permits
- * replacing a hash-join by a merge-join, which is significantly faster
- * on large tables. Especially if the BATs involved cause page activity
- * or when you can not afford the large hash structures to speed-up processing.
- * @-
- * For orthogonality, we support alignment between arbitrary columns (head or tail).
- * @-
- * All standard GDK set-calls update the alignment info in their respective
- * ways. For example, the routine @emph{BUNclustercopy} shuffles the first argument,
- * such that the BUNs are in the same order as those in the second argument.
- * This operation will mark both columns of the first @emph{BAT} as synced with
- * the second (likewise, @emph{BATcopy()}, which makes a copy, instead of in-place
- * shuffling, has the same alignment effect, @emph{BATmark()} marks the tail column
- * as synced with the head of the original @emph{BAT}, and for
- * instance @emph{BATsemijoin()} marks both return columns as aligned with its left parameter).
+ * replacing a hash-join by a merge-join, which is significantly
+ * faster on large tables. Especially if the BATs involved cause page
+ * activity or when you can not afford the large hash structures to
+ * speed-up processing.
  *
- * Each alignment sequence is given a unique identifier, so as to easily
- * detect this situation. It is retained in the @emph{BAT descriptor}.
+ * For orthogonality, we support alignment between arbitrary columns
+ * (head or tail).
+ *
+ * All standard GDK set-calls update the alignment info in their
+ * respective ways. For example, the routine @emph{BUNclustercopy}
+ * shuffles the first argument, such that the BUNs are in the same
+ * order as those in the second argument.  This operation will mark
+ * both columns of the first @emph{BAT} as synced with the second
+ * (likewise, @emph{BATcopy()}, which makes a copy, instead of
+ * in-place shuffling, has the same alignment effect, @emph{BATmark()}
+ * marks the tail column as synced with the head of the original
+ * @emph{BAT}, and for instance @emph{BATsemijoin()} marks both return
+ * columns as aligned with its left parameter).
+ *
+ * Each alignment sequence is given a unique identifier, so as to
+ * easily detect this situation. It is retained in the @emph{BAT
+ * descriptor}.
  * @+ Alignment Design Considerations
  * Alignment primitives require the right hooks to be inserted in
  * several places in the GDK, apart form this file:
  * @itemize
  * @item @emph{ BUN update operations}.
- * The updated BATs have to be marked as
- * un-aligned.
+ * The updated BATs have to be marked as un-aligned.
  * @item @emph{ set operations}.
- * For most relational operations some
- * statements can be made about the size and order of the BATs
- * they produce. This information can be formalized by indicating alignment
- * information automatically.
+ * For most relational operations some statements can be made about
+ * the size and order of the BATs they produce. This information can
+ * be formalized by indicating alignment information automatically.
  * @item @emph{ transaction operations}.
- * Alignment statuses must be
- * kept consistent under database commits and aborts.
+ * Alignment statuses must be kept consistent under database commits
+ * and aborts.
  * @end itemize
  *
  * As for performance, the most important observation to make is that
  * operations that do not need alignment, will suffer most from
  * overheads introduced in the BUN update mechanism. For this reason,
- * the alignment-delete operation has to be very cheap. It is
- * captured by the @emph{ALIGNdel} macro, and just zaps one character
- * field in the @emph{BAT} record.
- * @
- * @+ Alignment Implementation
- * The @emph{BAT} record is equipped with an @emph{batAlign} field that keeps
- * both information about the head and tail column. The leftmost
- * 4 bits are for the head, the rightmost 4 for the tail. This
- * has been done to make the zap ultra-cheap.
+ * the alignment-delete operation has to be very cheap. It is captured
+ * by the @emph{ALIGNdel} macro, and just zaps one character field in
+ * the @emph{BAT} record.
  *
- * Both head and tail column contain an OID in the @emph{halign} and @emph{talign}
- * fields respectively to mark their alignment group. All BATs with the
- * same OID in this field (and the ALIGN_SYNCED bit on) are guaranteed
- * by the system to have equal head columns. As an exception, they
- * might also have TYPE_void head columns (a virtual column).
- * In such a case, the tail values correspond to the head values
- * that would have been there in a non-virtual column, continuing
- * the same head-sequence as the other BATs in the sync group.
+ * @+ Alignment Implementation
+ * The @emph{BAT} record is equipped with an @emph{batAlign} field
+ * that keeps both information about the head and tail column. The
+ * leftmost 4 bits are for the head, the rightmost 4 for the
+ * tail. This has been done to make the zap ultra-cheap.
+ *
+ * Both head and tail column contain an OID in the @emph{halign} and
+ * @emph{talign} fields respectively to mark their alignment
+ * group. All BATs with the same OID in this field (and the
+ * ALIGN_SYNCED bit on) are guaranteed by the system to have equal
+ * head columns. As an exception, they might also have TYPE_void head
+ * columns (a virtual column).  In such a case, the tail values
+ * correspond to the head values that would have been there in a
+ * non-virtual column, continuing the same head-sequence as the other
+ * BATs in the sync group.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -148,10 +151,9 @@ ALIGNsetH(BAT *b1, BAT *b2)
 }
 
 /*
- * @-
- * The routines @emph{ALIGN_synced} and @emph{ALIGN_ordered}
- * allow to simply query the alignment status of the two head columns
- * of two BATs.
+ * The routines @emph{ALIGN_synced} and @emph{ALIGN_ordered} allow to
+ * simply query the alignment status of the two head columns of two
+ * BATs.
  */
 int
 ALIGNsynced(BAT *b1, BAT *b2)
@@ -184,19 +186,19 @@ ALIGNsynced(BAT *b1, BAT *b2)
 
 /*
  * @+ View BATS
- * The general routine for getting a 'view' BAT upon another
- * BAT is @emph{VIEWcreate}. On this @emph{#read-only} BAT (there is kernel
- * support for this), you can then make vertical slices.
- * Use @emph{VIEWhead} for this.
+ * The general routine for getting a 'view' BAT upon another BAT is
+ * @emph{VIEWcreate}. On this @emph{#read-only} BAT (there is kernel
+ * support for this), you can then make vertical slices.  Use
+ * @emph{VIEWhead} for this.
  *
- * It is possible to create a view on a writable BAT. Updates
- * in the parent are then automatically reflected in the VIEW.
- * Note that the VIEW bat itself can never be modified.
+ * It is possible to create a view on a writable BAT. Updates in the
+ * parent are then automatically reflected in the VIEW.  Note that the
+ * VIEW bat itself can never be modified.
  *
- * Horizontal views should only be given out on a view BAT, but
- * only if it is dead sure the parent BAT is read-only.
- * This because they cannot physically share the batBuns heap
- * with the parent, as they need a modified version.
+ * Horizontal views should only be given out on a view BAT, but only
+ * if it is dead sure the parent BAT is read-only.  This because they
+ * cannot physically share the batBuns heap with the parent, as they
+ * need a modified version.
  */
 static BAT *
 VIEWhcreate(BAT *h)
@@ -235,10 +237,8 @@ VIEWhcreate(BAT *h)
 	if (hp && isVIEW(h))
 		bn->H->hash = NULL;
 	BATinit_idents(bn);
-	/*
-	 * @-
-	 * The b->P structure cannot be shared and must be copied individually.
-	 */
+	/* The b->P structure cannot be shared and must be copied
+	 * individually. */
 	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
@@ -271,12 +271,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		tp = -t->batCacheid;
 	assert(h->htype != TYPE_void || !hp);
 	assert(t->ttype != TYPE_void || !tp);
-	/*
-	 * @-
-	 * the H and T column descriptors are fully copied. We need copies
-	 * because in case of a mark, we are going to override a column with
-	 * a void. Take care to zero the accelerator data, though.
-	 */
+	/* the H and T column descriptors are fully copied. We need
+	 * copies because in case of a mark, we are going to override
+	 * a column with a void. Take care to zero the accelerator
+	 * data, though. */
 	*bn->U = *h->U;
 	*bn->H = *h->H;
 	/* we need aligned bats */
@@ -305,9 +303,9 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	}
 
 	/* note: H/T->heap's points into bs which was just overwritten
-	   with a copy from the parent(s). Clear the copied flag since our
-	   heap was not copied from our parent(s) even if our parent's heap
-	   was copied from its parent(s). */
+	 * with a copy from the parent(s). Clear the copied flag since
+	 * our heap was not copied from our parent(s) even if our
+	 * parent's heap was copied from its parent(s). */
 	bn->H->heap.copied = bn->T->heap.copied = 0;
 	bn->H->props = bn->T->props = NULL;
 
@@ -317,21 +315,16 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	if (tp)
 		bn->T->heap.parentid = tp;
 	BATinit_idents(bn);
-	/*
-	 * @-
-	 * The b->P structure cannot be shared and must be copied individually.
-	 */
+	/* The b->P structure cannot be shared and must be copied
+	 * individually. */
 	bn->batSet = h->batSet;
 	bn->batDirty = BATdirty(h);
 	bn->batRestricted = BAT_READ;
-	/*
-	 * @-
-	 * The U record may be shared with the parent; in that case, the
-	 * search accelerators of the parent can be used. If, however, we
-	 * want to take a horizontal fragment (stable=false), this cannot
-	 * be done, and we need to put different information in U (so we can't
-	 * use a copy.
-	 */
+	/* The U record may be shared with the parent; in that case,
+	 * the search accelerators of the parent can be used. If,
+	 * however, we want to take a horizontal fragment
+	 * (stable=false), this cannot be done, and we need to put
+	 * different information in U (so we can't use a copy. */
 	if (slice_view || !hp || isVIEW(h))
 		/* slices are unequal to their parents; cannot use accs */
 		bn->H->hash = NULL;
@@ -358,7 +351,6 @@ VIEWcreate(BAT *h, BAT *t)
 }
 
 /*
- * @-
  * The @#VIEWhead@ routine effortlessly projects out the tail column.
  */
 BAT *
@@ -397,7 +389,6 @@ VIEWhead_(BAT *b, int mode)
 }
 
 /*
- * @-
  * the @#VIEWcombine@ routine effortlessly produces a view with double
  * vision on the head column.
  */
@@ -430,10 +421,9 @@ VIEWcombine(BAT *b)
 }
 
 /*
- * @-
- * The @#BATmaterialize@ routine produces in-place materialized version of
- * a void bat (which should not be a VIEW) (later we should add the code
- * for VIEWs).
+ * The @#BATmaterialize@ routine produces in-place materialized
+ * version of a void bat (which should not be a VIEW) (later we should
+ * add the code for VIEWs).
  */
 
 BAT *
@@ -514,7 +504,6 @@ BATmaterialize(BAT *b)
 
 
 /*
- * @-
  * The @#VIEWunlink@ routine cuts a reference to the parent. Part of the view
  * destroy sequence.
  */
@@ -566,7 +555,6 @@ VIEWunlink(BAT *b)
 }
 
 /*
- * @-
  * Materialize a view into a normal BAT. If it is a slice, we really
  * want to reduce storage of the new BAT.
  */
@@ -744,11 +732,9 @@ VIEWreset(BAT *b)
 }
 
 /*
- * @-
- * The remainder are utilities to manipulate the BAT view and
- * not to forget some details in the process.
- * It expects a position range in the underlying BAT and
- * compensates for outliers.
+ * The remainder are utilities to manipulate the BAT view and not to
+ * forget some details in the process.  It expects a position range in
+ * the underlying BAT and compensates for outliers.
  */
 void
 VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
@@ -776,7 +762,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 }
 
 /*
- * @-
  * Destroy a view.
  */
 void
@@ -807,4 +792,3 @@ VIEWdestroy(BAT *b)
 	b->T->vheap = NULL;
 	BATfree(b);
 }
-

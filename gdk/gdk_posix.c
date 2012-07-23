@@ -18,16 +18,13 @@
  */
 
 /*
- * @f gdk_posix
  * @a Niels Nes, Peter Boncz
  * @* System Independent Layer
  *
- * GDK is built on Posix. Exceptions are made for memory mapped files and
- * anonymous virtual memory, for which somewhat higher-level functions are
- * defined here.
- * Most of this file concerns itself with emulation of Posix functionality on
- * the WIN32 native platform.
- * @-
+ * GDK is built on Posix. Exceptions are made for memory mapped files
+ * and anonymous virtual memory, for which somewhat higher-level
+ * functions are defined here.  Most of this file concerns itself with
+ * emulation of Posix functionality on the WIN32 native platform.
  */
 #include "monetdb_config.h"
 #include "gdk.h"        /* includes gdk_posix.h */
@@ -71,13 +68,14 @@ int GDK_mem_pagebits = 14;	/* on linux, 4KB pages can be addressed (but we use 1
 #endif
 
 #ifndef MAP_NORESERVE
-# define MAP_NORESERVE 		MAP_PRIVATE
+# define MAP_NORESERVE		MAP_PRIVATE
 #endif
 
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
-/* DDALERT: AIX4.X 64bits needs HAVE_SETENV==0 due to a AIX bug, but it probably isn't detected so by configure */
+/* DDALERT: AIX4.X 64bits needs HAVE_SETENV==0 due to a AIX bug, but
+ * it probably isn't detected so by configure */
 
 #ifndef HAVE_SETENV
 int
@@ -103,7 +101,8 @@ setenv(const char *name, const char *value, int overwrite)
 char *MT_heapbase = NULL;
 
 
-/* Crude VM buffer management that keep a list of all memory mapped regions.
+/* Crude VM buffer management that keep a list of all memory mapped
+ * regions.
  *
  * a.k.a. "helping stupid VM implementations that ignore VM advice"
  *
@@ -509,8 +508,8 @@ MT_heapcur(void)
 }
 
 /* Windows mmap keeps a global list of base addresses for complex
-   (remapped) memory maps the reason is that each remapped segment
-   needs to be unmapped separately in the end. */
+ * (remapped) memory maps the reason is that each remapped segment
+ * needs to be unmapped separately in the end. */
 
 void *
 MT_mmap(const char *path, int mode, off_t off, size_t len)
@@ -807,8 +806,9 @@ win_unlink(const char *pathname)
 {
 	int ret = _unlink(pathname);
 	if (ret < 0) {
-		/* Vista is paranoid: we cannot delete read-only files owned
-		 * by ourselves. Vista somehow also sets these files to read-only.
+		/* Vista is paranoid: we cannot delete read-only files
+		 * owned by ourselves. Vista somehow also sets these
+		 * files to read-only.
 		 */
 		(void) SetFileAttributes(pathname, FILE_ATTRIBUTE_NORMAL);
 		ret = _unlink(pathname);
@@ -959,7 +959,7 @@ int *
 win_errno(void)
 {
 	/* get address of thread-local Posix errno; refresh its value
-	   from WIN32 error code */
+	 * from WIN32 error code */
 	int i, err = GetLastError() & 0xff;
 	int *result = TlsGetValue(GDK_WIN_ERRNO_TLS);
 
@@ -1183,8 +1183,8 @@ MT_sleep_ms(unsigned int ms)
 
 
 /*
- * @-
- * cygnus1.1.X has a bug in the semaphore routines. we work around it by directly using the WIN32 primitives.
+ * cygnus1.1.X has a bug in the semaphore routines. we work around it
+ * by directly using the WIN32 primitives.
  */
 #ifndef NATIVE_WIN32
 

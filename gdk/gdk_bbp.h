@@ -25,7 +25,7 @@
 #define BBPTMP          4	/* set if non-persistent bat has image on disk */
 #define BBPDELETED	16	/* set if bat persistent at last commit is now transient */
 #define BBPEXISTING	32	/* set if bat was already persistent at end of last commit */
-#define BBPNEW 		64	/* set if bat has become persistent since last commit */
+#define BBPNEW		64	/* set if bat has become persistent since last commit */
 #define BBPPERSISTENT	(BBPEXISTING|BBPNEW)	/* mask for currently persistent bats */
 #define BBPSTATUS	127
 
@@ -88,7 +88,7 @@ gdk_export void BBPshare(bat b);
 		gdk_set_lock(GDKunloadLock, nme);	\
 		BBPunloadCnt++;				\
 		gdk_unset_lock(GDKunloadLock, nme);	\
- 	} while (0)
+	} while (0)
 
 #define BBP_unload_dec(bid, nme)					\
 	do {								\

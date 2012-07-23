@@ -74,6 +74,7 @@ All Rights Reserved.
 #include "opt_statistics.h"
 #include "opt_strengthReduction.h"
 #include "opt_trace.h"
+#include "opt_xid.h"
 
 struct{
 	str nme;
@@ -114,6 +115,7 @@ struct{
 	{"reorder", &OPTreorderImplementation},
 	{"strengthReduction", &OPTstrengthReductionImplementation},
 	{"trace", &OPTtraceImplementation},
+	{"xid", &OPTxidImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
