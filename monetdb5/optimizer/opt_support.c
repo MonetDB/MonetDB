@@ -183,6 +183,7 @@ struct OPTcatalog {
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
+{"xid",	0,	0,	0,	DEBUG_OPT_XID},
 { 0,	0,	0,	0,	0}
 };
 

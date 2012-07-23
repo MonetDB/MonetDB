@@ -54,6 +54,7 @@ include aggr;
 include array;
 include pqueue;
 include mkey;
+include xid;
 
 # @-
 # Atom extensions
