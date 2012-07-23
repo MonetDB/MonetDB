@@ -24,9 +24,6 @@ stderr of test 'xidlist` in directory 'modules/mal` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	mal_listing = 2
 # cmdline opt 	gdk_dbname = mTests_modules_mal
-mserver5: /export/scratch1/mk/current//package/gdk/gdk_bat.c:2910: BATassertHeadProps: Assertion `!b->H->revsorted || cmp >= 0' failed.
-
-Aborted
 
 # 00:20:41 >  
 # 00:20:41 >  "Done."
