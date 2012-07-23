@@ -80,6 +80,7 @@ stderr of test 'python_test_monetdb_sql` in directory 'test/mapi` itself:
 # 11:54:47 >  
 
 test_BLOB (__main__.Test_Capabilities) ... ok
+test_BOOL (__main__.Test_Capabilities) ... ok
 test_CHAR (__main__.Test_Capabilities) ... ok
 test_DATE (__main__.Test_Capabilities) ... ok
 test_DATETIME (__main__.Test_Capabilities) ... ok
@@ -100,7 +101,7 @@ test_transactions (__main__.Test_Capabilities) ... ok
 test_truncation (__main__.Test_Capabilities) ... ok
 
 ----------------------------------------------------------------------
-Ran 19 tests
+Ran 20 tests
 
 OK
 test_BINARY (__main__.Test_DBAPI20) ... ok
@@ -124,19 +125,18 @@ test_connect (__main__.Test_DBAPI20) ... ok
 test_cursor (__main__.Test_DBAPI20) ... ok
 test_cursor_isolation (__main__.Test_DBAPI20) ... ok
 test_description (__main__.Test_DBAPI20) ... ok
+test_escape (__main__.Test_DBAPI20) ... ok
 test_execute (__main__.Test_DBAPI20) ... ok
 test_executemany (__main__.Test_DBAPI20) ... ok
 test_fetchall (__main__.Test_DBAPI20) ... ok
 test_fetchmany (__main__.Test_DBAPI20) ... ok
 test_fetchone (__main__.Test_DBAPI20) ... ok
 test_mixedfetch (__main__.Test_DBAPI20) ... ok
-test_newline (__main__.Test_DBAPI20) ... ok
 test_nextset (__main__.Test_DBAPI20) ... ok
 test_paramstyle (__main__.Test_DBAPI20) ... ok
 test_rollback (__main__.Test_DBAPI20) ... ok
 test_rowcount (__main__.Test_DBAPI20) ... ok
 test_setinputsizes (__main__.Test_DBAPI20) ... ok
-test_setoutputsize (__main__.Test_DBAPI20) ... ok
 test_setoutputsize_basic (__main__.Test_DBAPI20) ... ok
 test_substring (__main__.Test_DBAPI20) ... ok
 test_threadsafety (__main__.Test_DBAPI20) ... ok
@@ -144,7 +144,7 @@ test_unicode (__main__.Test_DBAPI20) ... ok
 test_utf8 (__main__.Test_DBAPI20) ... ok
 
 ----------------------------------------------------------------------
-Ran 39 tests
+Ran 38 tests
 
 OK
 
