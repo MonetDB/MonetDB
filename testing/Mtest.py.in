@@ -1230,6 +1230,8 @@ def ApproveOutput (env, TST) :
 #       filter = re.compile( "^!WARNING: TCPlisten\([0-9]*\): stopped.$"        "|"
 #                            "^!WARNING: TCPepilogue: terminate [01] listeners$", re.MULTILINE)
 
+    TO = re.compile("(^\+(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:|ERROR = !Connection terminated|!Mtimeout: Timeout:)([ \t]|$)|aborted too deep recursion)", re.MULTILINE)
+
     for WHAT in EXTENSIONS:
         testOUTPUT = os.path.join(TSTTRGDIR, "%s.test.%s" % (TST, WHAT))
         TSTSRCDIRTST = os.path.join(TSTSRCDIR, TST)
@@ -1274,7 +1276,10 @@ def ApproveOutput (env, TST) :
 
                 f = open(patch + ".1", "w")
                 for l in open(patch + ".0"):
-                    if len(l) < 2  or  \
+                    if TO.search(l):
+                        f.write(l[:1] + '\n')
+                        Warn('Rejecting (error) message: "%s"' % l[1:].replace(os.linesep, ''))
+                    elif len(l) < 2  or  \
                        ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  \
                          l[:8] != '+ERROR: '  and  l[:10] != '+WARNING: ' ) :        # or  filter.match(ln):
                         f.write(l)
@@ -1285,7 +1290,7 @@ def ApproveOutput (env, TST) :
                         else:
                             f.write(l[:1] + '\n')
                             sa = 'Skipping'
-                        Warn('%s new (error) message: "%s"' % (sa,l.replace(os.linesep, '')))
+                        Warn('%s new (error) message: "%s"' % (sa,l[1:].replace(os.linesep, '')))
                         sem = 1
                 f.flush()
                 f.close()
@@ -2725,7 +2730,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
         return None
 
     # Try to detect segfaults and the like
-    TO = re.compile("((^|^[^#]*[\t ])(Memory [Ff]ault|Segmentation [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion failed:|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
+    TO = re.compile("(^(|[^#]*[\t ])((Memory|Segmentation) [Ff]ault|Bus [Ee]rror|Abort(|ed)|Assertion (|.* )failed[:\.]|!FATAL: BATSIGabort:)([ \t]|$))", re.MULTILINE)
     # FIXME: this begs for a much nicer solution (100% copy of below)
     for f in (TestErrFile, TestOutFile):
         if os.path.isfile(f):
