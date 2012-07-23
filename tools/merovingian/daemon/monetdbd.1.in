@@ -10,7 +10,7 @@ command [command_args] dbfarm
 .SH DESCRIPTION
 .B monetdbd
 is the MonetDB Database Server daemon.  The program is mainly meant to
-be used as deamon, but it also allows to setup and change the
+be used as daemon, but it also allows to setup and change the
 configuration of a dbfarm.
 The use of
 .B monetdbd
