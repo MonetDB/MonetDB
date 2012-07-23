@@ -1285,7 +1285,7 @@ def ApproveOutput (env, TST) :
                         else:
                             f.write(l[:1] + '\n')
                             sa = 'Skipping'
-                        Warn('%s new (error) message: "%s"' % (sa,l.replace(os.linesep, '')))
+                        Warn('%s new (error) message: "%s"' % (sa,l[1:].replace(os.linesep, '')))
                         sem = 1
                 f.flush()
                 f.close()
