@@ -106,7 +106,7 @@ class DatabaseAPI20Test(unittest.TestCase):
         The 'Optional Extensions' are not yet being tested.
 
         self.drivers should subclass this test, overriding setUp, tearDown,
-        self.driver, connect_args and connect_kw_args. Class specification
+        self.driver, connect_args and connect_kwargs. Class specification
         should be as follows:
 
         import dbapi20
@@ -121,7 +121,7 @@ class DatabaseAPI20Test(unittest.TestCase):
     # method is to be found
     driver = None
     connect_args = () # List of arguments to pass to connect
-    connect_kw_args = {} # Keyword arguments for connect
+    connect_kwargs = {} # Keyword arguments for connect
     table_prefix = 'dbapi20test_' # If you need to specify a prefix for tables
 
     ddl1 = 'create table %sbooze (name varchar(20))' % table_prefix
@@ -165,9 +165,7 @@ class DatabaseAPI20Test(unittest.TestCase):
 
     def _connect(self):
         try:
-            return self.driver.connect(
-                *self.connect_args,**self.connect_kw_args
-                )
+            return self.driver.connect(*self.connect_args, **self.connect_kwargs)
         except AttributeError:
             self.fail("No connect method found in self.driver module")
 

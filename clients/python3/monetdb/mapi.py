@@ -76,7 +76,7 @@ class Server:
             self.socket.connect((hostname, port))
         except socket.error as error:
             (error_code, error_str) = error
-            raise OperationalError(error_str)
+            raise OperationalError(error_str + "(%s:%s)" % (self.hostname, self.port))
 
         self.__login()
 
