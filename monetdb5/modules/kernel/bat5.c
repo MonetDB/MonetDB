@@ -332,8 +332,8 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 		return GDK_FAIL;
 	BATseqbase(bk,0);
 	BATseqbase(bv,0);
-	*ret1 = bv;
-	*ret2 = bk;
+	*ret1 = bk;
+	*ret2 = bv;
 
 	if (b->batPersistence == PERSISTENT) {
 		strcpy(mode, "persistent");
