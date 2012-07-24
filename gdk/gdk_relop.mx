@@ -237,7 +237,7 @@ All Rights Reserved.
 					/* use binary search after failed scan or if scanning is impossible (l not sorted) */
 					if (r_scan < 0 || r_start < r_last) {
 						/* if merge not ended (or if no merge at all) */
-						r_start = (BUN) SORTfndfirst(rr, v1);
+						r_start = SORTfndfirst(rr, v1);
 					}
 					if (r_start < r_last) {
 						v2 = BUNh@3(ri, r_start);
@@ -3258,7 +3258,7 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 				BUN last = BUNlast(b);
 
 				if (n->binsearch) {
-					n->cur = (BUN) SORTfndfirst(BATmirror(b), h);
+					n->cur = SORTfndfirst(BATmirror(b), h);
 					if (n->cur >= last)
 						break;	/* NOT FOUND */
 				} else {
