@@ -324,7 +324,7 @@ static int
 CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 {
 	BAT *bk, *bv;
-	char mode[1024], *accessmode;
+	const char *mode, *accessmode;
 
 	if (!(bk = BATnew(TYPE_oid, TYPE_str, 128)))
 		return GDK_FAIL;
@@ -336,13 +336,13 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	*ret2 = bv;
 
 	if (b->batPersistence == PERSISTENT) {
-		strcpy(mode, "persistent");
+		mode = "persistent";
 	} else if (b->batPersistence == SESSION) {
-		strcpy(mode, "session");
+		mode = "session";
 	} else if (b->batPersistence == TRANSIENT) {
-		strcpy(mode, "transient");
+		mode = "transient";
 	} else {
-		strcpy(mode, "unknown");
+		mode ="unknown";
 	}
 
 	switch (b->batRestricted) {
@@ -368,6 +368,7 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	BUNappend(bk, "tparentid", FALSE);
 	BUNappend(bv, local_itoa((ssize_t)(b->T->heap.parentid)),FALSE);
 	BUNappend(bk, "batSharecnt", FALSE);
+	BUNappend(bv, local_itoa((ssize_t)(b->batSharecnt)),FALSE);
 	BUNappend(bk, "batCount", FALSE);
 	BUNappend(bv, local_utoa((size_t)b->batCount),FALSE);
 	BUNappend(bk, "batCapacity", FALSE);
@@ -494,6 +495,7 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 	if (b->T->hash) {
 		HASHinfo(bk, bv, b->T->hash, "thash->");
 	}
+	assert(BATcount(bk) == BATcount(bv));
 	return GDK_SUCCEED;
 }
 
