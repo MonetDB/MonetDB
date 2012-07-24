@@ -20,10 +20,10 @@
 /*
  * @a M. L. Kersten, P. Boncz
  * @* Atomic types
- * The Binary Association Table library assumes efficient implementation of
- * the atoms making up the binary association.
- * This section describes the preliminaries for handling
- * both built-in and user-defined atomic types.
+ * The Binary Association Table library assumes efficient
+ * implementation of the atoms making up the binary association.  This
+ * section describes the preliminaries for handling both built-in and
+ * user-defined atomic types.
  * New types, such as point and polygons, can be readily added to this
  * collection.
  */
@@ -135,41 +135,40 @@ batUnfix(const bat *b)
 
 /*
  * @+ Atomic Type Interface
- * The collection of built-in types supported for BATs can be extended easily.
- * In essence, the user should specify conversion routines from values stored
- * anywhere in memory to its equivalent in the BAT, and vice verse.
- * Some routines are required for coercion and to support the BAT
- * administration.
+ * The collection of built-in types supported for BATs can be extended
+ * easily.  In essence, the user should specify conversion routines
+ * from values stored anywhere in memory to its equivalent in the BAT,
+ * and vice verse.  Some routines are required for coercion and to
+ * support the BAT administration.
  *
- * A new type is incrementally build using the
- * routine ATOMproperty(id, property, function, value).
- * The parameter id denotes the type name; an entry is created if the type
- * is so far unknown. The property argument is a string identifying the
- * type description property to be updated. Valid property
- * names are size, tostr, fromstr, put, get, cmp, eq, del, hash, null,
- * new, and heap.
+ * A new type is incrementally build using the routine
+ * ATOMproperty(id, property, function, value).  The parameter id
+ * denotes the type name; an entry is created if the type is so far
+ * unknown. The property argument is a string identifying the type
+ * description property to be updated. Valid property names are size,
+ * tostr, fromstr, put, get, cmp, eq, del, hash, null, new, and heap.
  *
  * The size describes the amount of space to be reserved in the BUN.
  *
- * The routine put takes a pointer to a memory resident copy and prepares
- * a persistent copy in the BAT passed.
- * The inverse operation is get.
- * A new value can be directly included into the BAT using new, which should
- * prepare a null-value representation.
- * A value is removed from the BAT
- * store using del, which can take care of garbage collection and
- * BAT administration.
+ * The routine put takes a pointer to a memory resident copy and
+ * prepares a persistent copy in the BAT passed.  The inverse
+ * operation is get.  A new value can be directly included into the
+ * BAT using new, which should prepare a null-value representation.  A
+ * value is removed from the BAT store using del, which can take care
+ * of garbage collection and BAT administration.
  *
- * The pair tostr and fromstr should convert a reference to a persistent
- * value to a memory resident string equivalent. FromStr takes a
- * string and applies a put to store it within a BAT.
- * They are used to prepare for readable output/input and to support coercion.
+ * The pair tostr and fromstr should convert a reference to a
+ * persistent value to a memory resident string equivalent. FromStr
+ * takes a string and applies a put to store it within a BAT.  They
+ * are used to prepare for readable output/input and to support
+ * coercion.
  *
- * The routines cmp and eq are comparison routines used to build access
- * structures. The null returns a reference to a null value representation.
+ * The routines cmp and eq are comparison routines used to build
+ * access structures. The null returns a reference to a null value
+ * representation.
  *
- * The incremental atom construction uses hardwired properties.
- * This should be improved later on.
+ * The incremental atom construction uses hardwired properties.  This
+ * should be improved later on.
  */
 static int
 align(int n)
@@ -205,12 +204,12 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 			GDKfatal("ATOMproperty: name too long");
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strncpy(BATatoms[t].name, id, IDLENGTH);
-		BATatoms[t].size = sizeof(int);	/* default */
+		BATatoms[t].size = sizeof(int);		/* default */
 		assert_shift_width(ATOMelmshift(BATatoms[t].size), BATatoms[t].size);
 		BATatoms[t].align = sizeof(int);	/* default */
-		BATatoms[t].linear = 1;	/* default */
-		BATatoms[t].storage = t;	/* default */
-		BATatoms[t].deleting = 1;	/* not yet usable */
+		BATatoms[t].linear = 1;			/* default */
+		BATatoms[t].storage = t;		/* default */
+		BATatoms[t].deleting = 1;		/* not yet usable */
 	}
 	if (strcmp("size", property) == 0) {
 		if (val) {
@@ -281,9 +280,9 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 			atomset(BATatoms[t].atomLen, (int (*)(const void *)) arg);
 		}
 		if (BATatoms[t].storage != t)
-			GDKerror("ATOMproperty: %s overload of %s violates inheritance from %s.\n", ATOMname(t), property, ATOMname(BATatoms[t].storage));
-/*
-*/
+			GDKerror("ATOMproperty: %s overload of %s violates "
+				 "inheritance from %s.\n", ATOMname(t),
+				 property, ATOMname(BATatoms[t].storage));
 		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
 	}
       out:
@@ -463,14 +462,15 @@ ATOMdup(int t, const void *p)
  *
  * @+ Atom-from-String Conversions
  * These routines convert from string to atom. They are used during
- * conversion and BAT import. In order to avoid unnecessary malloc()/free()
- * sequences, the conversion functions have a meta 'dst' pointer to a
- * destination region, and an integer* 'len' parameter, that denotes the
- * length of that region (a char region for ToStr functions, an atom region
- * from FromStr conversions). Only if necessary will the conversion
- * routine do a GDKfree()/GDKmalloc() sequence, and increment the 'len'.
- * Passing a pointer to a nil-ptr as 'dst' and/or a *len==0 is valid; the
- * conversion function will then alloc some region for you.
+ * conversion and BAT import. In order to avoid unnecessary
+ * malloc()/free() sequences, the conversion functions have a meta
+ * 'dst' pointer to a destination region, and an integer* 'len'
+ * parameter, that denotes the length of that region (a char region
+ * for ToStr functions, an atom region from FromStr conversions). Only
+ * if necessary will the conversion routine do a GDKfree()/GDKmalloc()
+ * sequence, and increment the 'len'.  Passing a pointer to a nil-ptr
+ * as 'dst' and/or a *len==0 is valid; the conversion function will
+ * then alloc some region for you.
  */
 #define atommem(TYPE, size)						\
 	do {								\
@@ -811,22 +811,6 @@ atomtostr(lng, LLFMT, )
 
 atom_io(lng, Lng, lng)
 
-/*
- * int
- * lngToStr(char **dst, int *len, lng *src)
- * {
- * 	char *p;
- * 	int l=0;
- *
- * 	atommem(char, lngStrlen);
- * 	if (*src == lng_nil) {
- * 		strncpy(*dst, "nil", *len);
- * 		return 3;
- * 	}
- * 	snprintf(*dst, *len, LLFMT, *src);
- * 	return strlen(*dst);
- * }
- */
 int
 ptrFromStr(const char *src, int *len, ptr **dst)
 {
@@ -973,54 +957,60 @@ atom_io(flt, Int, int)
  * @+ String Atom Implementation
  * The Built-in type string is partly handled in an atom extension
  * library. The main reason is to limit the number of built-in types
- * in the BAT library kernel. Moreover, an extra indirection for a string is less
- * harmful than for manipulation of, e.g. an int.
+ * in the BAT library kernel. Moreover, an extra indirection for a
+ * string is less harmful than for manipulation of, e.g. an int.
  *
  * The internal representation of strings is without escape sequences.
  * When the string is printed we should add the escapes back into it.
  *
- * The current escape policy is that single- and double-quote can be prepended by a
- * backslash. Furthermore, the backslash may be followed by three
- * octal digits to denote a character.
+ * The current escape policy is that single- and double-quote can be
+ * prepended by a backslash. Furthermore, the backslash may be
+ * followed by three octal digits to denote a character.
  *
  * @- Automatic Double Elimination
  *
- * Because in many typical situations lots of double string values occur
- * in tables, the string insertion provides automatic double elimination.
- * To do this, a GDK_STRHASHTABLE(=1024) bucket hashtable is hidden in the first
- * 4096 bytes of the string heap, consisting of an offset to the first string
- * hashing to that bucket in the heap.
- * These offsets are made small (stridx_t is an unsigned short) by exploiting
- * the fact that the double elimination chunks are (now) 64KB, hence a short
- * suffices.
+ * Because in many typical situations lots of double string values
+ * occur in tables, the string insertion provides automatic double
+ * elimination.  To do this, a GDK_STRHASHTABLE(=1024) bucket
+ * hashtable is hidden in the first 4096 bytes of the string heap,
+ * consisting of an offset to the first string hashing to that bucket
+ * in the heap.  These offsets are made small (stridx_t is an unsigned
+ * short) by exploiting the fact that the double elimination chunks
+ * are (now) 64KB, hence a short suffices.
  *
- * In many other situations the cardinality of string columns is large,
- * or the string values might even be unique. In those cases, our fixed-size hash
- * table will start to overflow quickly. Therefore, after the hash table is full
- * (this is measured very simplistically by looking whether the string heap exceeds a
- * heap size = GDK_ELIMLIMIT = 64KB) we flush the hash table. Even more, from that moment
- * on, we do not use a linked list, but a lossy hash table that just contains
- * the last position for each bucket. Basically, after exceeding GDK_ELIMLIMIT,
- * we get a probabilistic/opportunistic duplicate elimination mechanism,
- * that only looks at the last GDK_ELIMLIMIT chunk in the heap, in a lossy way.
+ * In many other situations the cardinality of string columns is
+ * large, or the string values might even be unique. In those cases,
+ * our fixed-size hash table will start to overflow
+ * quickly. Therefore, after the hash table is full (this is measured
+ * very simplistically by looking whether the string heap exceeds a
+ * heap size = GDK_ELIMLIMIT = 64KB) we flush the hash table. Even
+ * more, from that moment on, we do not use a linked list, but a lossy
+ * hash table that just contains the last position for each
+ * bucket. Basically, after exceeding GDK_ELIMLIMIT, we get a
+ * probabilistic/opportunistic duplicate elimination mechanism, that
+ * only looks at the last GDK_ELIMLIMIT chunk in the heap, in a lossy
+ * way.
  *
- * When comparing with the previous string implementation, the biggest difference
- * is that on 64-bits but with 32-bit oids, strings are always 8-byte aligned
- * and var_t numbers are multiplied by 8 to get the true offset. The goal to do
- * this is to allow 32-bits var_t on 64-bits systems to address 32GB (using string
- * alignment=8).  For large database, the cost of padding (4 bytes avg) is offset
- * by the savings in var_t (allowing to go from 64- to 32-bits). Nothing lost there,
- * and 32-bits var_t also pay in smaller OIDs and smaller hash tables, reducing memory
- * pressure. For small duplicate eliminated heaps, the short indices
- * used in the hash table have now allowed more buckets (2K instead of 1K)
- * and average 2 bytes overhead for the next pointers instead of 6-12. Therefore
- * small heaps are now more compact than before.
+ * When comparing with the previous string implementation, the biggest
+ * difference is that on 64-bits but with 32-bit oids, strings are
+ * always 8-byte aligned and var_t numbers are multiplied by 8 to get
+ * the true offset. The goal to do this is to allow 32-bits var_t on
+ * 64-bits systems to address 32GB (using string alignment=8).  For
+ * large database, the cost of padding (4 bytes avg) is offset by the
+ * savings in var_t (allowing to go from 64- to 32-bits). Nothing lost
+ * there, and 32-bits var_t also pay in smaller OIDs and smaller hash
+ * tables, reducing memory pressure. For small duplicate eliminated
+ * heaps, the short indices used in the hash table have now allowed
+ * more buckets (2K instead of 1K) and average 2 bytes overhead for
+ * the next pointers instead of 6-12. Therefore small heaps are now
+ * more compact than before.
  *
  * The routine strElimDoubles() can be used to check whether all
- * strings are still being double-eliminated in the original hash-table.
- * Only then we know that unequal offset-integers in the BUN array means
- * guaranteed different strings in the heap. This optimization is made at some
- * points in the GDK. Make sure you check GDK_ELIMDOUBLES before assuming this!
+ * strings are still being double-eliminated in the original
+ * hash-table.  Only then we know that unequal offset-integers in the
+ * BUN array means guaranteed different strings in the heap. This
+ * optimization is made at some points in the GDK. Make sure you check
+ * GDK_ELIMDOUBLES before assuming this!
  */
 int
 strElimDoubles(Heap *h)
@@ -1070,7 +1060,7 @@ strHeap(Heap *d, size_t cap)
 		memset(d->base, 0, d->free);
 		d->hashash = 1;	/* new string heaps get the hash value (and length) stored */
 #ifndef NDEBUG
-		/* fill should solve initialisation problems within valgrind */
+		/* fill should solve initialization problems within valgrind */
 		memset(d->base + d->free, 0, d->size - d->free);
 #endif
 	}
@@ -1099,10 +1089,11 @@ strCleanHash(Heap *h, int rebuild)
 
 /*
  * The strPut routine. The routine strLocate can be used to identify
- * the location of a string in the heap if it exists. Otherwise it returns
- * zero.
+ * the location of a string in the heap if it exists. Otherwise it
+ * returns zero.
  */
-/* if at least (2*SIZEOF_BUN), also store length (heaps are then incompatible) */
+/* if at least (2*SIZEOF_BUN), also store length (heaps are then
+ * incompatible) */
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
 var_t
@@ -1156,23 +1147,27 @@ strPut(Heap *h, var_t *dst, const char *v)
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;	/* if not, pad more */
 	} else if (*bucket) {
-		/* large string heap (>=64KB) -- opportunistic/probabilistic double elimination */
+		/* large string heap (>=64KB) --
+		 * opportunistic/probabilistic double elimination */
 		pos = elimbase + *bucket + extralen;
 		if (GDK_STRCMP(v, h->base + pos) == 0) {
 			return *dst = (var_t) (pos >> GDK_VARSHIFT);	/* already in heap; do not insert! */
 		}
-#if SIZEOF_VAR_T >= SIZEOF_VOID_P	/* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
+#if SIZEOF_VAR_T >= SIZEOF_VOID_P /* in fact SIZEOF_VAR_T == SIZEOF_VOID_P */
 		if (extralen == 0)
 			/* i.e., h->hashash == FALSE */
-			/* no VARSHIFT and no string hash value stored => no padding/alignment needed */
+			/* no VARSHIFT and no string hash value stored
+			 * => no padding/alignment needed */
 			pad = 0;
 		else
 #endif
-			/* pad to align on VARALIGN for VARSHIFT and/or string hash value */
+			/* pad to align on VARALIGN for VARSHIFT
+			 * and/or string hash value */
 			pad &= (GDK_VARALIGN - 1);
 	}
 
-	/* check heap for space (limited to a certain maximum after which nils are inserted) */
+	/* check heap for space (limited to a certain maximum after
+	 * which nils are inserted) */
 	if (h->free + pad + len + extralen >= h->size) {
 		size_t newsize = MAX(h->size, 4096);
 
@@ -1188,7 +1183,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		if (h->free + pad + len + extralen < h->maxsize) {
-			/* if there is reserved space, first use the reserved space */
+			/* if there is reserved space, first use the
+			 * reserved space */
 			newsize = MIN(newsize, h->maxsize);
 		}
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
@@ -1196,7 +1192,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 #ifndef NDEBUG
-		/* fill should solve initialisation problems within valgrind */
+		/* fill should solve initialization problems within
+		 * valgrind */
 		memset(h->base + h->free, 0, h->size - h->free);
 #endif
 
@@ -1220,8 +1217,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 	pos -= extralen;
 	if (elimbase == 0) {	/* small string heap: link the next pointer */
 		/* the stridx_t next pointer directly precedes the
-		   string and optional (depending on hashash) hash
-		   value */
+		 * string and optional (depending on hashash) hash
+		 * value */
 		pos -= sizeof(stridx_t);
 		*(stridx_t *) (h->base + pos) = *bucket;
 	}
@@ -1234,7 +1231,8 @@ strPut(Heap *h, var_t *dst, const char *v)
 }
 
 /*
- * Convert an "" separated string to a GDK string value, checking that the input is correct UTF-8.
+ * Convert an "" separated string to a GDK string value, checking that
+ * the input is correct UTF-8.
  */
 
 /*
@@ -1247,11 +1245,10 @@ U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
 U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
 */
 /* To be correctly coded UTF-8, the sequence should be the shortest
-   possible encoding of the value being encoded.  This means that for
-   an encoding of length n+1 (1 <= n <= 5), at least one of the bits in
-   utf8chkmsk[n] should be non-zero (else the encoding could be
-   shorter).
-*/
+ * possible encoding of the value being encoded.  This means that for
+ * an encoding of length n+1 (1 <= n <= 5), at least one of the bits
+ * in utf8chkmsk[n] should be non-zero (else the encoding could be
+ * shorter). */
 static int utf8chkmsk[] = {
 	0x0000007f,
 	0x00000780,
@@ -1270,7 +1267,7 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 
 	/* copy it in, while performing the correct escapes */
 	/* n is the number of follow-on bytes left in a multi-byte
-	   UTF-8 sequence */
+	 * UTF-8 sequence */
 	for (cur = src, n = 0; cur < end || escaped; cur++) {
 		/* first convert any \ escapes and store value in c */
 		if (escaped) {
@@ -1331,9 +1328,11 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 				break;
 			case '\'':
 			case '\\':
-				/* \' and \\ can be handled by the default case */
+				/* \' and \\ can be handled by the
+				 * default case */
 			default:
-				/* unrecognized \ escape, just copy the backslashed character */
+				/* unrecognized \ escape, just copy
+				 * the backslashed character */
 				c = *cur;
 				break;
 			}
@@ -1345,10 +1344,10 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 
 		if (n > 0) {
 			/* we're still expecting follow-up bytes in a
-			   UTF-8 sequence */
+			 * UTF-8 sequence */
 			if ((c & 0xC0) != 0x80) {
 				/* incorrect UTF-8 sequence: byte is
-				   not 10xxxxxx */
+				 * not 10xxxxxx */
 				return -1;
 			}
 			utf8char = (utf8char << 6) | (c & 0x3F);
@@ -1357,7 +1356,7 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 				/* this was the last byte in the sequence */
 				if ((utf8char & mask) == 0) {
 					/* incorrect UTF-8 sequence:
-					   not shortest possible */
+					 * not shortest possible */
 					return -1;
 				}
 			}
@@ -1367,7 +1366,8 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 			/* start of multi-byte UTF-8 character */
 			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
 				;
-			/* n now is number of 10xxxxxx bytes that should follow */
+			/* n now is number of 10xxxxxx bytes that
+			 * should follow */
 			if (n == 0 || n >= 6) {
 				/* incorrect UTF-8 sequence */
 				/* n==0: c == 10xxxxxx */
@@ -1407,7 +1407,8 @@ strFromStr(const char *src, int *len, char **dst)
 		return strncmp((char *) cur, "nil", 3) ? 0 : (int) (((char *) cur + 3) - src);
 	}
 
-	/* scout the string to find out its length and whether it was properly quoted */
+	/* scout the string to find out its length and whether it was
+	 * properly quoted */
 	for (start = ++cur; *cur != '"' || escaped; cur++) {
 		if (*cur == 0) {
 			goto error;
@@ -1473,15 +1474,13 @@ escapedStrlen(const char *src)
 		} else if (src[end] == (char) '\302' &&
 			   0200 <= ((int) src[end + 1] & 0377) &&
 			   ((int) src[end + 1] & 0377) <= 0237) {
-			/* Unicode control character (code
-			   point range U-00000080 through
-			   U-0000009F encoded in UTF-8 */
-			/* for the first one of the two UTF-8
-			   bytes we count a width of 7 and for
-			   the second one 1, together that's
-			   8, i.e. the width of two
-			   backslash-escaped octal coded
-			   characters */
+			/* Unicode control character (code point range
+			 * U-00000080 through U-0000009F encoded in
+			 * UTF-8 */
+			/* for the first one of the two UTF-8 bytes we
+			 * count a width of 7 and for the second one
+			 * 1, together that's 8, i.e. the width of two
+			 * backslash-escaped octal coded characters */
 			sz += 7;
 #endif
 		} else if (!printable_chr(src[end])) {
@@ -1589,9 +1588,10 @@ strWrite(const char *a, stream *s, size_t cnt)
  * The basic type OID represents unique values. Refinements should be
  * considered to link oids in time order.
  *
- * Values start from the "seqbase" (usually 0@@0). A nil seqbase makes the
- * entire column nil.  Monet's BUN accessmethods BUNhead(b,p)/BUNtail(b,p)
- * instantiate a value on-the-fly by looking at the position p in BAT b.
+ * Values start from the "seqbase" (usually 0@@0). A nil seqbase makes
+ * the entire column nil.  Monet's BUN access methods
+ * BUNhead(b,p)/BUNtail(b,p) instantiate a value on-the-fly by looking
+ * at the position p in BAT b.
  */
 oid	GDKoid, GDKflushed;
 /*
@@ -1605,7 +1605,8 @@ OIDinit(void)
 }
 
 /*
- * Make up some new OID for a specified database, based on the current time.
+ * Make up some new OID for a specified database, based on the current
+ * time.
  */
 static oid
 OIDrand(void)
@@ -1641,8 +1642,8 @@ OIDseed(oid o)
 }
 
 /*
- * Initialize a sequence of OID seeds (for a sequence of database)
- * as stored in a string.
+ * Initialize a sequence of OID seeds (for a sequence of database) as
+ * stored in a string.
  */
 oid
 OIDread(str s)
@@ -1918,15 +1919,16 @@ atomDesc BATatoms[MAXATOMS] = {
 int GDKatomcnt = TYPE_str + 1;
 
 /*
- * Sometimes a bat descriptor is loaded before the dynamic module defining
- * the atom is loaded. To support this an extra set of unknown atoms is kept.
- * These can be accessed via the ATOMunknown interface. Adding atoms to this
- * set is done via the ATOMunknown_add function. Finding an (negative) atom index
- * can be done via ATOMunknown_find, which simply adds the atom if its not in
- * the unknown set. The index van be used to find the name of an unknown
- * ATOM via ATOMunknown_name. Once an atom becomes known, ie the module
- * defining it is loaded, it should be removed from the unknown set using
- * ATOMunknown_del.
+ * Sometimes a bat descriptor is loaded before the dynamic module
+ * defining the atom is loaded. To support this an extra set of
+ * unknown atoms is kept.  These can be accessed via the ATOMunknown
+ * interface. Adding atoms to this set is done via the ATOMunknown_add
+ * function. Finding an (negative) atom index can be done via
+ * ATOMunknown_find, which simply adds the atom if its not in the
+ * unknown set. The index van be used to find the name of an unknown
+ * ATOM via ATOMunknown_name. Once an atom becomes known, ie the
+ * module defining it is loaded, it should be removed from the unknown
+ * set using ATOMunknown_del.
  */
 static str unknown[MAXATOMS] = { NULL };
 
@@ -1973,4 +1975,3 @@ ATOMunknown_name(int i)
 	assert(unknown[-i]);
 	return unknown[-i];
 }
-

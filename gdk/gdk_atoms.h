@@ -24,9 +24,10 @@
 
 /*
  * @- comparison macro's
- * In order to get maximum performance, we extensively use out-factoring
- * of typechecks using Mx macros. To catch diverging code in one Mx macro
- * we use the following #defines for comparing atoms:
+ * In order to get maximum performance, we extensively use
+ * out-factoring of type checks using CPP macros. To catch diverging
+ * code in one CPP macro we use the following #defines for comparing
+ * atoms:
  */
 #define simple_CMP(x,y,tpe)     (simple_LT(x,y,tpe)?-1:simple_GT(x,y,tpe))
 #define simple_EQ(x,y,tpe)      ((*(const tpe*) (x)) == (*(const tpe*) (y)))
@@ -72,10 +73,10 @@
 #define dblStrlen	96
 
 /*
- * The system comes with the traditional atomic types: int (4 bytes), bool(1
- * byte) and str (variable). In addition, we support the notion of an OID
- * type, which ensures uniqueness of its members.
- * This leads to the following type descriptor table.
+ * The system comes with the traditional atomic types: int (4 bytes),
+ * bool(1 byte) and str (variable). In addition, we support the notion
+ * of an OID type, which ensures uniqueness of its members.  This
+ * leads to the following type descriptor table.
  */
 
 gdk_export int lngFromStr(const char *src, int *len, lng **dst);
@@ -108,10 +109,11 @@ gdk_export int escapedStrlen(const char *src);
 gdk_export int escapedStr(char *dst, const char *src, int dstlen);
 /*
  * @- nil values
- * All types have a single value designated as a NIL value. It designates
- * a missing value and it is ignored (forbidden) in several primitives.
- * The current policy is to use the smallest value in any ordered domain.
- * The routine atomnil returns a pointer to the nil value representation.
+ * All types have a single value designated as a NIL value. It
+ * designates a missing value and it is ignored (forbidden) in several
+ * primitives.  The current policy is to use the smallest value in any
+ * ordered domain.  The routine atomnil returns a pointer to the nil
+ * value representation.
  */
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
@@ -160,34 +162,34 @@ gdk_export const ptr ptr_nil;
 #define void_nil	oid_nil
 /*
  * @- Derived types
- * In all algorithms across GDK, you will find switches on the types
- * ( bte, sht, int, wrd, flt, dbl, lng, str). They respectively represent
- * an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
- * a 64-bit int, and a pointer-sized location of a char-buffer (ended by
- * a zero char).
+ * In all algorithms across GDK, you will find switches on the types (
+ * bte, sht, int, wrd, flt, dbl, lng, str). They respectively
+ * represent an octet, a 16-bit int, a 32-bit int, a 32-bit float, a
+ * 64-bit double, a 64-bit int, and a pointer-sized location of a
+ * char-buffer (ended by a zero char).
  *
  * In contrast, the types (bit, ptr, bat, oid) are derived types. They
- * do not occur in the switches. The ATOMstorage macro maps them respectively
- * onto a @code{ bte}, @code{ int} (pointers are 32-bit), @code{ int}, and
- * @code{ int}. OIDs are 32-bit.
+ * do not occur in the switches. The ATOMstorage macro maps them
+ * respectively onto a @code{ bte}, @code{ int} (pointers are 32-bit),
+ * @code{ int}, and @code{ int}. OIDs are 32-bit.
  *
- * This approach makes it tractable to switch to 64-bits OIDs,
- * or to a fully 64-bits OS easily. One only has to map the @code{ oid}
- * and @code{ ptr} types to @code{ lng} instead of @code{ int}.
+ * This approach makes it tractable to switch to 64-bits OIDs, or to a
+ * fully 64-bits OS easily. One only has to map the @code{ oid} and
+ * @code{ ptr} types to @code{ lng} instead of @code{ int}.
  *
- * Derived types mimic their fathers in many ways. They inherit the @code{ size},
- * @code{ varsized}, @code{ linear}, @code{ null} and @code{ align} properties of their
- * father.  The same goes for the ADT functions HASH, CMP, PUT, NULL,
- * DEL, LEN, and HEAP. So, a derived type differs in only two ways
- * from its father:
+ * Derived types mimic their fathers in many ways. They inherit the
+ * @code{ size}, @code{ varsized}, @code{ linear}, @code{ null} and
+ * @code{ align} properties of their father.  The same goes for the
+ * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
+ * derived type differs in only two ways from its father:
  * @table @code
  * @item [string representation]
  * the only two ADT operations specific for a derived type are FROMSTR
  * and TOSTR.
  * @item [identity]
- * (a @code{ bit} is really of a different type than @code{ bte}). The set of
- * operations on derived type values or BATs of such types may differ
- * from the sets of operations on the father type.
+ * (a @code{ bit} is really of a different type than @code{ bte}). The
+ * set of operations on derived type values or BATs of such types may
+ * differ from the sets of operations on the father type.
  * @end table
  */
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
@@ -210,11 +212,11 @@ gdk_export const ptr ptr_nil;
 #define CONV_NTOH               0
 
 /*
- * In case that atoms are added to a bat, their logical reference count
- * should be incremented (and decremented if deleted). Notice that BATs
- * with atomic types that have logical references (e.g. BATs of BATs but
- * also BATs of ODMG odSet) can never be persistent, as this would make
- * the commit tremendously complicated.
+ * In case that atoms are added to a bat, their logical reference
+ * count should be incremented (and decremented if deleted). Notice
+ * that BATs with atomic types that have logical references (e.g. BATs
+ * of BATs but also BATs of ODMG odSet) can never be persistent, as
+ * this would make the commit tremendously complicated.
  */
 #define ATOMput(type, heap, dst, src)					\
 	do {								\
@@ -294,13 +296,15 @@ gdk_export const ptr ptr_nil;
  * - strings are 8 byte aligned
  * - start with a 1024 bucket hash table
  * - heaps < 64KB are fully duplicate eliminated with this hash tables
- * - heaps >= 64KB are opportunistically (imperfect) duplicate eliminated
- *   as only the last 128KB chunk is considered and there is no linked list
+ * - heaps >= 64KB are opportunistically (imperfect) duplicate
+ *   eliminated as only the last 128KB chunk is considered and there
+ *   is no linked list
  * - buckets and next pointers are unsigned short "indices"
- * - indices should be multiplied by 8 and takes from ELIMBASE to get an offset
- *
- * Note that a 64KB chunk of the heap contains at most 8K 8-byte aligned
- * strings. The 1K bucket list means that in worst load, the list length is 8 (OK).
+ * - indices should be multiplied by 8 and takes from ELIMBASE to get
+ *   an offset
+ * Note that a 64KB chunk of the heap contains at most 8K 8-byte
+ * aligned strings. The 1K bucket list means that in worst load, the
+ * list length is 8 (OK).
  */
 #define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
@@ -314,17 +318,18 @@ gdk_export const ptr ptr_nil;
 /*
  * @- String Comparison, NILs and UTF-8
  *
- * Using the char* type for strings is handy as this is the type of any
- * constant strings
- * in a C/C++ program. Therefore, MonetDB uses this definition for str.
- * However, different compilers and platforms use either signed or unsigned
- * characters for the char type.
- * It is required that string ordering in MonetDB is consistent over
- * platforms though.
+ * Using the char* type for strings is handy as this is the type of
+ * any constant strings in a C/C++ program. Therefore, MonetDB uses
+ * this definition for str.  However, different compilers and
+ * platforms use either signed or unsigned characters for the char
+ * type.  It is required that string ordering in MonetDB is consistent
+ * over platforms though.
  *
- * As for the choice how strings should be ordered, our support for UTF-8 actually imposes that it
- * should follow 'unsigned char' doctrine (like in the AIX native compiler). In this semantics, though
- * we have to take corrective action to ensure that str(nil) is the smallest value of the domain.
+ * As for the choice how strings should be ordered, our support for
+ * UTF-8 actually imposes that it should follow 'unsigned char'
+ * doctrine (like in the AIX native compiler). In this semantics,
+ * though we have to take corrective action to ensure that str(nil) is
+ * the smallest value of the domain.
  */
 #define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
@@ -334,9 +339,10 @@ gdk_export const ptr ptr_nil;
                           strCmpNoNil((const unsigned char*)(l),(const unsigned char*)(r)))
 /*
  * @- Hash Function
- * The string hash function is a very simple hash function that xors and
- * rotates all characters together. It is optimized to process 2 characters
- * at a time (adding 16-bits to the hash value each iteration).
+ * The string hash function is a very simple hash function that xors
+ * and rotates all characters together. It is optimized to process 2
+ * characters at a time (adding 16-bits to the hash value each
+ * iteration).
  */
 #define GDK_STRHASH(x,y)				\
 	do {						\

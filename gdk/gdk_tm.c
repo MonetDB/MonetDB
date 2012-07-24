@@ -18,14 +18,14 @@
  */
 
 /*
- * @f gdk_tm
  * @a M. L. Kersten, P. Boncz, N. J. Nes
  *
  * @* Transaction management
- * The Transaction Manager maintains the buffer of (permanent) BATS held resident.
- * Entries from the BAT buffer are always accessed by BAT id.
- * A BAT becomes permanent by assigning a name with @%BATrename@.
- * Access to the transaction table is regulated by a semaphore.
+ * The Transaction Manager maintains the buffer of (permanent) BATS
+ * held resident.  Entries from the BAT buffer are always accessed by
+ * BAT id.  A BAT becomes permanent by assigning a name with
+ * @%BATrename@.  Access to the transaction table is regulated by a
+ * semaphore.
  */
 #include "monetdb_config.h"
 #include "gdk.h"

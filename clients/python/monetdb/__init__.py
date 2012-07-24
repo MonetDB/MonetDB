@@ -14,7 +14,6 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
-
 """
 This is the MonetDB Python API.
 
@@ -27,7 +26,10 @@ To set up a connection use monetdb.sql.connect()
 """
 from monetdb import sql
 from monetdb import mapi
+from monetdb import exceptions
 
 __all__ = ["sql", "mapi"]
 
-connect = sql.connect
+# for backwards compatability
+monetdb_exceptions = exceptions
+

@@ -21,11 +21,10 @@
 #define _GDK_DELTA_H_
 
 /*
- * @-
- * We make sure here that the BUNs section of a BAT at least starts
- * 4 bytes from the BUN start.  This ensures that the first data
- * item of e.g. a BAT[void,bit] is (at least) integer aligned.
- * This optimizes processing on such BATs (DDBENCH).
+ * We make sure here that the BUNs section of a BAT at least starts 4
+ * bytes from the BUN start.  This ensures that the first data item of
+ * e.g. a BAT[void,bit] is (at least) integer aligned.  This optimizes
+ * processing on such BATs (DDBENCH).
  */
 #define DELTAinit(P1)							\
 	do {								\
@@ -49,18 +48,14 @@
 			PTRFMTCAST (P1)->T->heap.base);			\
 	} while (0)
 /*
- * @
+ * Upon saving a BAT, we should convert the delta marker BUN pointers
+ * into indexes and convert them back into pointers upon reload.
  *
- * Upon saving a BAT, we should convert the delta marker BUN pointers into indexes
- * and convert them back into pointers upon reload.
- *
- * @
- * @-
- * The b->batDirty field tells you whether a BATs main memory representation
- * differs from its saved image on stable storage. But *not* whether it has
- * changed since last transaction commit (it can be storage-clean, but
- * transaction-dirty). For this we have @%DELTAdirty(b)@.
- * @-
+ * The b->batDirty field tells you whether a BATs main memory
+ * representation differs from its saved image on stable storage. But
+ * *not* whether it has changed since last transaction commit (it can
+ * be storage-clean, but transaction-dirty). For this we have
+ * @%DELTAdirty(b)@.
  */
 #define DELTAdirty(b)	(((b)->batDeleted != BUNfirst(b)) ||\
 	((b)->batInserted < BUNlast(b)))

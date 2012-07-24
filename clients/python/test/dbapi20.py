@@ -891,7 +891,8 @@ class DatabaseAPI20Test(unittest.TestCase):
             cur.execute('select name from %sbooze' % self.table_prefix)
             res = cur.fetchall()
             beer = res[0][0]
-            self.assertEqual(beer,args['beer'],'incorrect data retrieved')
+            encoded = unicode(args['beer'], 'utf-8')
+            self.assertEqual(beer,encoded,'incorrect data retrieved')
         finally:
             con.close()
 
@@ -902,15 +903,8 @@ class DatabaseAPI20Test(unittest.TestCase):
             cur = con.cursor()
             self.executeDDL1(cur)
 
-            # in python 3 everything is unicode
-            import sys
-            major = sys.version_info[0]
-            if major == 3:
-                args = {'beer': '\N{latin small letter a with acute}'}
-                encoded = args['beer']
-            else:
-                args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
-                encoded = args['beer'].encode('utf-8')
+            args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
+            encoded = args['beer']
 
             cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
             cur.execute('select name from %sbooze' % self.table_prefix)

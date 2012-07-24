@@ -18,7 +18,6 @@
  */
 
 /*
- * @f gdk_sample
  * @a Lefteris Sidirourgos
  * @* Low level sample facilities
  *
@@ -33,17 +32,18 @@
 /*
  * @+ Uniform Sampling.
  *
- * The implementation of the uniform sampling is based on the algorithm A as
- * described in the paper "Faster Methods for Random Sampling" by Jeffrey Scott
- * Vitter. Algorithm A is not the fastest one, but it only makes s calls in
- * function random() and it is simpler than the other more complex and CPU
- * intensive algorithms in the literature.
+ * The implementation of the uniform sampling is based on the
+ * algorithm A as described in the paper "Faster Methods for Random
+ * Sampling" by Jeffrey Scott Vitter. Algorithm A is not the fastest
+ * one, but it only makes s calls in function random() and it is
+ * simpler than the other more complex and CPU intensive algorithms in
+ * the literature.
  *
- * Algorithm A instead of performing one random experiment for each row to
- * decide if it should be included in the sample or not, it skips S rows
- * and includes the S+1 row. The algorithm scans the input relation
- * sequentially and maintains the unique and sort properties. The sample is
- * without replacement.
+ * Algorithm A instead of performing one random experiment for each
+ * row to decide if it should be included in the sample or not, it
+ * skips S rows and includes the S+1 row. The algorithm scans the
+ * input relation sequentially and maintains the unique and sort
+ * properties. The sample is without replacement.
  */
 
 BAT *
