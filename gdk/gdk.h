@@ -1312,10 +1312,10 @@ gdk_export BUN BUNfnd(BAT *b, const void *left);
 	} while (0)
 #define BUNfndSTD(p,bi,v) ((p) = BUNfnd(bi.b,v))
 
-#define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase == oid_nil ?\
-				TYPE_void : ATOMtype((b)->htype))
-#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil ?\
-				TYPE_void : ATOMtype((b)->ttype))
+#define BAThtype(b)	((b)->htype == TYPE_void && (b)->hseqbase != oid_nil ? \
+			 TYPE_oid : (b)->htype)
+#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
+			 TYPE_oid : (b)->ttype)
 #define BAThstore(b)	(BAThdense(b) ? TYPE_void : (b)->htype)
 #define BATtstore(b)	(BATtdense(b) ? TYPE_void : (b)->ttype)
 #define Hbase(b)	((b)->H->vheap->base)
