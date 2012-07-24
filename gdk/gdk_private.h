@@ -101,31 +101,6 @@ oid OIDread(str buf);
 oid OIDseed(oid seed);
 int oidWrite(oid *a, stream *s, size_t cnt);
 int OIDwrite(stream *fp);
-/* type specific binary search implementations */
-BUN SORTfnd_bte(BAT *b, const void *v);
-BUN SORTfnd_dbl(BAT *b, const void *v);
-BUN SORTfnd_flt(BAT *b, const void *v);
-BUN SORTfnd_int(BAT *b, const void *v);
-BUN SORTfnd_lng(BAT *b, const void *v);
-BUN SORTfnd_loc(BAT *b, const void *v);
-BUN SORTfnd_sht(BAT *b, const void *v);
-BUN SORTfnd_var(BAT *b, const void *v);
-BUN SORTfndfirst_bte(BAT *b, const void *v);
-BUN SORTfndfirst_dbl(BAT *b, const void *v);
-BUN SORTfndfirst_flt(BAT *b, const void *v);
-BUN SORTfndfirst_int(BAT *b, const void *v);
-BUN SORTfndfirst_lng(BAT *b, const void *v);
-BUN SORTfndfirst_loc(BAT *b, const void *v);
-BUN SORTfndfirst_sht(BAT *b, const void *v);
-BUN SORTfndfirst_var(BAT *b, const void *v);
-BUN SORTfndlast_bte(BAT *b, const void *v);
-BUN SORTfndlast_dbl(BAT *b, const void *v);
-BUN SORTfndlast_flt(BAT *b, const void *v);
-BUN SORTfndlast_int(BAT *b, const void *v);
-BUN SORTfndlast_lng(BAT *b, const void *v);
-BUN SORTfndlast_loc(BAT *b, const void *v);
-BUN SORTfndlast_sht(BAT *b, const void *v);
-BUN SORTfndlast_var(BAT *b, const void *v);
 void strCleanHash(Heap *hp, int rebuild);
 int strCmpNoNil(const unsigned char *l, const unsigned char *r);
 int strElimDoubles(Heap *h);
@@ -175,8 +150,8 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_TYPE(b, p, q, tl, th, TYPE)				\
 	if (!BATtordered(b))						\
 		GDKerror("SORTloop_" #TYPE ": BAT not sorted.\n");	\
-	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst_##TYPE(b, tl), \
-		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast_##TYPE(b, th); \
+	else for (p = simple_EQ(tl, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndfirst(b, tl), \
+		  q = simple_EQ(th, &TYPE##_nil, TYPE) ? BUNfirst(b) : SORTfndlast(b, th); \
 		  p < q;						\
 		  p++)
 
@@ -192,36 +167,11 @@ extern MT_Lock MT_system_lock;
 #define SORTloop_loc(b,p,q,tl,th)					\
 	if (!BATtordered(b))						\
 		GDKerror("SORTloop_loc: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_loc(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_loc(b, th); \
+	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst(b, tl), \
+			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast(b, th); \
 		  p < q;						\
 		  p++)
 
-#define SORTloop_var(b,p,q,tl,th)					\
-	if (!BATtordered(b))						\
-		GDKerror("SORTloop_var: BAT not sorted.\n");		\
-	else for (p = atom_EQ(tl, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndfirst_var(b, tl), \
-			  q = atom_EQ(th, ATOMnilptr((b)->ttype), (b)->ttype) ? BUNfirst(b) : SORTfndlast_var(b, th); \
-		  p < q;						\
-		  p++)
+#define SORTloop_var(b,p,q,tl,th) SORTloop_loc(b,p,q,tl,th)
 
-/* OIDDEPEND */
-#if SIZEOF_OID == SIZEOF_INT
-#define SORTfnd_oid(b,v)	SORTfnd_int(b,v)
-#define SORTfndfirst_oid(b,v)	SORTfndfirst_int(b,v)
-#define SORTfndlast_oid(b,v)	SORTfndlast_int(b,v)
-#else
-#define SORTfnd_oid(b,v)	SORTfnd_lng(b,v)
-#define SORTfndfirst_oid(b,v)	SORTfndfirst_lng(b,v)
-#define SORTfndlast_oid(b,v)	SORTfndlast_lng(b,v)
-#endif
-#if SIZEOF_WRD == SIZEOF_INT
-#define SORTfnd_wrd(b,v)	SORTfnd_int(b,v)
-#define SORTfndfirst_wrd(b,v)	SORTfndfirst_int(b,v)
-#define SORTfndlast_wrd(b,v)	SORTfndlast_int(b,v)
-#else
-#define SORTfnd_wrd(b,v)	SORTfnd_lng(b,v)
-#define SORTfndfirst_wrd(b,v)	SORTfndfirst_lng(b,v)
-#define SORTfndlast_wrd(b,v)	SORTfndlast_lng(b,v)
-#endif
 #define SORTloop_bit(b,p,q,tl,th) SORTloop_bte(b,p,q,tl,th)

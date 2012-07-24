@@ -1763,8 +1763,8 @@ BUNfnd(BAT *b, const void *v)
 		return r;
 	}
 	if (!b->H->hash) {
-		if (BAThordered(b))
-			return (BUN) SORTfnd(b, v);
+		if (BAThordered(b) || BAThrevordered(b))
+			return SORTfnd(b, v);
 	}
 	switch (ATOMstorage(b->htype)) {
 	case TYPE_bte:
@@ -1861,11 +1861,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 	}
 
 	/* next, try to restrict the range using sorted columns */
-	if (BATtordered(b)) {
+	if (BATtordered(b) || BATtrevordered(b)) {
 		p = SORTfndfirst(b, y);
 		q = SORTfndlast(b, y);
 	}
-	if (BAThordered(b)) {
+	if (BAThordered(b) || BAThrevordered(b)) {
 		BUN mp = SORTfndfirst(BATmirror(b), x);
 		BUN mq = SORTfndlast(BATmirror(b), x);
 
