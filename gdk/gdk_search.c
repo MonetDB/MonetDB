@@ -456,23 +456,23 @@ SORTfndwhich(BAT *b, const void *v, int which)
 	BATiter bi = bat_iterator(b);
 	BUN diff, end;
 
-	if (b == NULL || !b->tsorted)
+	if (b == NULL || (!b->tsorted && !b->trevsorted))
 		return BUN_NONE;
 
 	if (which < 0) {
 		end = lo;
-		if (lo >= hi || atom_GE(BUNtail(bi, lo), v, b->ttype)) {
+		if (lo >= hi || (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype))) {
 			/* shortcut: if BAT is empty or first (and
-			 * hence all) tail value is >= v, we're
-			 * done */
+			 * hence all) tail value is >= v (if sorted)
+			 * or <= v (if revsorted), we're done */
 			return lo;
 		}
 	} else if (which > 0) {
 		end = hi;
-		if (lo >= hi || atom_LE(BUNtail(bi, hi - 1), v, b->ttype)) {
-			/* shortcut: if BAT is empty or last (and
-			 * hence all) tail value is <= v, we're
-			 * done */
+		if (lo >= hi || (b->tsorted ? atom_LE(BUNtail(bi, hi - 1), v, b->ttype) : atom_GE(BUNtail(bi, hi - 1), v, b->ttype))) {
+			/* shortcut: if BAT is empty or first (and
+			 * hence all) tail value is <= v (if sorted)
+			 * or >= v (if revsorted), we're done */
 			return hi;
 		}
 	} else {
@@ -483,31 +483,60 @@ SORTfndwhich(BAT *b, const void *v, int which)
 		}
 	}
 
-	switch (ATOMstorage(b->ttype)) {
-	case TYPE_bte:
-		SORTfndloop(bte, simple_CMP, BUNtloc);
-		break;
-	case TYPE_sht:
-		SORTfndloop(sht, simple_CMP, BUNtloc);
-		break;
-	case TYPE_int:
-		SORTfndloop(int, simple_CMP, BUNtloc);
-		break;
-	case TYPE_lng:
-		SORTfndloop(lng, simple_CMP, BUNtloc);
-		break;
-	case TYPE_flt:
-		SORTfndloop(flt, simple_CMP, BUNtloc);
-		break;
-	case TYPE_dbl:
-		SORTfndloop(dbl, simple_CMP, BUNtloc);
-		break;
-	default:
-		if (b->tvarsized)
-			SORTfndloop(b->ttype, atom_CMP, BUNtvar);
-		else
-			SORTfndloop(b->ttype, atom_CMP, BUNtloc);
-		break;
+	if (b->tsorted) {
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			SORTfndloop(bte, simple_CMP, BUNtloc);
+			break;
+		case TYPE_sht:
+			SORTfndloop(sht, simple_CMP, BUNtloc);
+			break;
+		case TYPE_int:
+			SORTfndloop(int, simple_CMP, BUNtloc);
+			break;
+		case TYPE_lng:
+			SORTfndloop(lng, simple_CMP, BUNtloc);
+			break;
+		case TYPE_flt:
+			SORTfndloop(flt, simple_CMP, BUNtloc);
+			break;
+		case TYPE_dbl:
+			SORTfndloop(dbl, simple_CMP, BUNtloc);
+			break;
+		default:
+			if (b->tvarsized)
+				SORTfndloop(b->ttype, atom_CMP, BUNtvar);
+			else
+				SORTfndloop(b->ttype, atom_CMP, BUNtloc);
+			break;
+		}
+	} else {
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			SORTfndloop(bte, -simple_CMP, BUNtloc);
+			break;
+		case TYPE_sht:
+			SORTfndloop(sht, -simple_CMP, BUNtloc);
+			break;
+		case TYPE_int:
+			SORTfndloop(int, -simple_CMP, BUNtloc);
+			break;
+		case TYPE_lng:
+			SORTfndloop(lng, -simple_CMP, BUNtloc);
+			break;
+		case TYPE_flt:
+			SORTfndloop(flt, -simple_CMP, BUNtloc);
+			break;
+		case TYPE_dbl:
+			SORTfndloop(dbl, -simple_CMP, BUNtloc);
+			break;
+		default:
+			if (b->tvarsized)
+				SORTfndloop(b->ttype, -atom_CMP, BUNtvar);
+			else
+				SORTfndloop(b->ttype, -atom_CMP, BUNtloc);
+			break;
+		}
 	}
 
 	if (which < 0) {
