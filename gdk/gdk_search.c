@@ -462,7 +462,7 @@ SORTfndwhich(BAT *b, const void *v, int which)
 	if (which < 0) {
 		end = lo;
 		if (lo >= hi || atom_GE(BUNtail(bi, lo), v, b->ttype)) {
-			/* shortcut: if BAT is empty of first (and
+			/* shortcut: if BAT is empty or first (and
 			 * hence all) tail value is >= v, we're
 			 * done */
 			return lo;
@@ -470,7 +470,7 @@ SORTfndwhich(BAT *b, const void *v, int which)
 	} else if (which > 0) {
 		end = hi;
 		if (lo >= hi || atom_LE(BUNtail(bi, hi - 1), v, b->ttype)) {
-			/* shortcut: if BAT is empty of last (and
+			/* shortcut: if BAT is empty or last (and
 			 * hence all) tail value is <= v, we're
 			 * done */
 			return hi;
@@ -542,6 +542,7 @@ SORTfndwhich(BAT *b, const void *v, int which)
 BUN
 SORTfnd(BAT *b, const void *v)
 {
+	/* works on HEAD column! */
 	return SORTfndwhich(BATmirror(b), v, 0);
 }
 
