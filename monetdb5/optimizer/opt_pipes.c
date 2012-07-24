@@ -59,7 +59,6 @@ struct PIPELINES {
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
  * access locality
- * In 2012 the groups optimizer was added
  */
 	{"default_pipe",
 	 "optimizer.inline();"
@@ -77,30 +76,6 @@ struct PIPELINES {
 	 "optimizer.joinPath();"
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
-	{"xid_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.xid();"
 	 "optimizer.reduce();"
 	 "optimizer.dataflow();"
 	 "optimizer.history();"

@@ -126,14 +126,6 @@ pattern optimizer.deadcode(mod:str, fcn:str):str
 address OPTwrapper
 comment "Dead code optimizer";
 
-#opt_xid.mal
-
-pattern optimizer.xid():str
-address OPTwrapper;
-pattern optimizer.xid(mod:str, fcn:str):str
-address OPTwrapper
-comment "XID optimizer";
-
 #opt_derivepath.mal
 
 pattern optimizer.derivePath():str

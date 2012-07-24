@@ -70,7 +70,6 @@ lib_optimizer = {
 		opt_support.c opt_support.h \
 		opt_centipede.c opt_centipede.h \
 		opt_trace.c opt_trace.h \
-		opt_xid.c opt_xid.h \
 		opt_wrapper.c
 }
 
