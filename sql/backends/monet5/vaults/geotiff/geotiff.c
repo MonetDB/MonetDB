@@ -128,10 +128,10 @@ GTIFFloadImage(bat *result, str *fname)
 {
 	TIFF *tif = (TIFF*)0;
 	int  wid = 0, len = 0;
-	BUN pixels = BUN_NONE, strsize = BUN_NONE, sz = BUN_NONE;
+	BUN pixels = BUN_NONE;
 	sht photoint, bps;
-	tsize_t strcnt, i;
-	void *data = NULL;
+	tsize_t i, j;
+	void *data = NULL, *linebuf = NULL;
 	BAT *res;
 
 
@@ -170,19 +170,12 @@ GTIFFloadImage(bat *result, str *fname)
 
 
 	/* read data */
-	strsize = TIFFStripSize(tif);
-	strcnt = TIFFNumberOfStrips(tif);
+	linebuf = GDKmalloc(wid); /* buffer for one line of image */
 	data = (void *) Tloc(res, BUNfirst(res));
-	for( i = 0; i < strcnt; i++){
-		sz = TIFFReadEncodedStrip(tif, i, data, strsize);
-		if ( sz == strsize )
-			data = (void *)((char *)data + strsize);
-		else if (( i < strcnt - 1 ) || 		/* interm. strip not full */ 
-			(( i == strcnt - 1 ) && (pixels * bps/8 != strsize * i + sz))){  /* last strip not full */
-			XTIFFClose(tif);
-			BBPreclaim(res);
-			res = NULL;
-			return createException(MAL, "geotiff.loadimage", "Stripsize mismatch");
+	for( i = 0; i < len; i++){
+		if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
+			for (j = 0; j < wid; j++)
+				((unsigned char*)data)[j*len+i] = ((unsigned char*)linebuf)[j];
 		}
 	}
 
@@ -196,6 +189,7 @@ GTIFFloadImage(bat *result, str *fname)
 
 	BBPkeepref(*result = res->batCacheid);
 	XTIFFClose(tif);
+	GDKfree(linebuf);
 	return MAL_SUCCEED;
 }
 
