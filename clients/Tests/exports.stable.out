@@ -2093,7 +2093,6 @@ int OPTtraceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTvectorOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-int OPTxidImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str PCREcompile_wrap(pcre **res, str *pattern);
 str PCREexec_wrap(bit *res, pcre *pattern, str *s);
 str PCREfromstr(str instr, int *l, pcre **val);
@@ -2606,9 +2605,6 @@ str URLnew3(str *url, str *protocol, str *server, str *file);
 str URLnew4(str *url, str *protocol, str *server, int *port, str *file);
 str URLnoop(str *url, str *val);
 int URLtoString(str *s, int *len, str src);
-str XIDcompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str XIDdecompress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str XIDdump(int *ret, int *bid);
 str XMLattribute(xml *ret, str *name, str *val);
 str XMLcomment(xml *x, str *s);
 str XMLconcat(xml *ret, xml *left, xml *right);
