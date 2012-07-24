@@ -157,7 +157,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 
 			/* If a slicing has been applied on this dimension, print the sliced range; otherwise the original range */
 			range = list_length(((list*)e->f)->h->next->data) ? ((list*)e->f)->h->next->data : ((list*)e->f)->h->data;
-			mnstr_printf(fout, "[");
+			mnstr_printf(fout, " DIM[");
 #define PRINT_DIM_CONSTRAINT(EXP, C) \
 			if (EXP->data) \
 			  exp_print(sql, fout, (sql_exp*)EXP->data, depth, 0, alias); \
@@ -167,7 +167,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 
 			PRINT_DIM_CONSTRAINT(range->h, ":"); /* start */
 			PRINT_DIM_CONSTRAINT(range->h->next, ":"); /* step */
-			PRINT_DIM_CONSTRAINT(range->h->next->next, "]"); /* stop */
+			PRINT_DIM_CONSTRAINT(range->h->next->next, ")"); /* stop */
 		}
 	 	break;
 	case e_cmp: 
