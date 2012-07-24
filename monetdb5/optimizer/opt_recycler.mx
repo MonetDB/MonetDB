@@ -115,7 +115,7 @@ comment "Recycler marking and code injection";
 #include "mal_instruction.h"
 
 static lng recycleSeq = 0;		/* should become part of MAL block basics */
-static bte baseTableMode = 1;	/* only recycle base tables */
+static bte baseTableMode = 0;	/* only recycle base tables */
 
 static int
 OPTrecycleImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
