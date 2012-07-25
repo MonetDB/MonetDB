@@ -18,12 +18,19 @@
 */
 #ifndef _OPT_GROUPS_
 #define _OPT_GROUPS_
-#include "opt_prelude.h"
-#include "opt_support.h"
+#include "monetdb_config.h"
 #include "mal_interpreter.h"
 
-opt_export int OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define groups_export extern __declspec(dllimport)
+#else
+#define groups_export extern __declspec(dllexport)
+#endif
+#else
+#define groups_export extern
+#endif
 
-#define OPTDEBUGgroups  if ( optDebug & ((lng)1 <<DEBUG_OPT_GROUPS) )
+groups_export str GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif

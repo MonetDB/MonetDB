@@ -16,14 +16,24 @@
  * Copyright August 2008-2012 MonetDB B.V.
  * All Rights Reserved.
 */
-#ifndef _OPT_GROUPS_
-#define _OPT_GROUPS_
-#include "opt_prelude.h"
-#include "opt_support.h"
+#ifndef _OPT_JOINPATH_
+#define _OPT_JOINPATH_
+
+#include "monetdb_config.h"
+#include "mal_client.h"
 #include "mal_interpreter.h"
 
-opt_export int OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#ifdef WIN32
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
+#define join_export extern __declspec(dllimport)
+#else
+#define join_export extern __declspec(dllexport)
+#endif
+#else
+#define join_export extern
+#endif
 
-#define OPTDEBUGgroups  if ( optDebug & ((lng)1 <<DEBUG_OPT_GROUPS) )
+join_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+join_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 
 #endif
