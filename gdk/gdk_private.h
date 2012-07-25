@@ -27,7 +27,6 @@ int ATOMunknown_add(str nme);
 int ATOMunknown_del(int a);
 int ATOMunknown_find(str nme);
 str ATOMunknown_name(int a);
-BAT *BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti, bit preserve_order);
 BUN BATbuncount(BAT *b);
 int BATcheckmodes(BAT *b, int persistent);
 BAT *BATclone(BAT *b, BUN capacity);

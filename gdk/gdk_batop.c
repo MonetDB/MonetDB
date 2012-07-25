@@ -1033,10 +1033,10 @@ BATsetprop_wrd(BAT *b, int idx, wrd val)
 	BATsetprop(b, idx, TYPE_wrd, &val);
 }
 
-BAT *
-BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti, bit preserve_order)
+static BAT *
+BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti)
 {
-	int hval, lval, equi, nequi = anti, t, ht, tt, lnil = 0;
+	int hval, lval, equi, t, ht, tt, lnil = 0;
 	BUN offset, batcnt, estimate = 0;
 	const void *nil;
 	BAT *bn;
@@ -1065,7 +1065,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 	} else {
 		hval = ATOMcmp(t, th, nil) != 0;
 	}
-	if (nequi) {
+	if (anti) {
 		if (!lval != !hval) {
 			/* one of the end points is nil and the other
 			 * isn't: swap sub-ranges */
@@ -1077,7 +1077,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 			tv = tl;
 			tl = th;
 			th = tv;
-			nequi = 0;
+			anti = 0;
 			equi = 0;
 		} else if (!lval && !hval) {
 			/* antiselect for nil-nil range: all non-nil
@@ -1090,7 +1090,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 			 * select for nil-nil range (i.e. everything
 			 * but nil) */
 			equi = 0;
-			nequi = 0;
+			anti = 0;
 			lval = 0;
 			hval = 0;
 		} else
@@ -1185,7 +1185,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 		}
 		ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BATslice(v=%s, low=" BUNFMT ", high=" BUNFMT ");\n", BATgetId(b), BATgetId(v), low, high);
 
-		if (nequi) {
+		if (anti) {
 			BUN first = SORTfndlast(b, nil);
 			bn = BATslice2(v, first, low, high, BUNlast(b));
 		} else {
@@ -1221,7 +1221,7 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 			BAT *tmp2;
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): sampling: tmp2 = BAT_select_(tmp1=%s, tl, th, tail);\n", BATgetId(b), BATgetId(tmp1));
 
-			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE, FALSE);
+			tmp2 = BAT_select_(tmp1, tl, th, li, hi, tail, FALSE);
 			if (tmp2) {
 				/* reserve 105% of what has been estimated */
 				estimate = (BUN) ((((lng) BATcount(tmp2)) * (lng) batcnt) / LL_CONSTANT(100));
@@ -1242,12 +1242,11 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 	if (bn) {
 		int nocheck = (estimate >= batcnt);
 
-		if (!preserve_order && equi && b->T->hash) {
+		if (equi && b->T->hash) {
 			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_hashselect(b=%s, bn=%s, tl); (using existing hash-table)\n", BATgetId(b), BATgetId(b), BATgetId(bn));
 
 			bn = BAT_hashselect(b, bn, tl);
-		} else if (!preserve_order
-				&& equi
+		} else if (equi
 				&& b->batPersistence == PERSISTENT
 				&& (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4
 				&& estimate < batcnt / 100
@@ -1260,9 +1259,9 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 
 			bn = BAT_hashselect(b, bn, tl);
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, nequi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, nequi, lval, hval, nocheck);
+			ALGODEBUG THRprintf(GDKout, "#BAT_select_(b=%s): BAT_scanselect(b=%s, bn=%s, tl, th, equi=%d, nequi=%d, lval=%d, hval=%d, nocheck=%d);\n", BATgetId(b), BATgetId(b), BATgetId(bn), equi, anti, lval, hval, nocheck);
 
-			bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, nequi, lval, hval, nocheck);
+			bn = BAT_scanselect(b, bn, tl, th, li, hi, equi, anti, lval, hval, nocheck);
 		}
 	}
 	if (bn == NULL) {
@@ -1325,31 +1324,31 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 BAT *
 BATselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, TRUE, FALSE, FALSE);
+	return BAT_select_(b, h, t, li, hi, TRUE, FALSE);
 }
 
 BAT *
 BATuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, FALSE, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, FALSE);
 }
 
 BAT *
 BATantiuselect_(BAT *b, const void *h, const void *t, bit li, bit hi)
 {
-	return BAT_select_(b, h, t, li, hi, FALSE, TRUE, FALSE);
+	return BAT_select_(b, h, t, li, hi, FALSE, TRUE);
 }
 
 BAT *
 BATselect(BAT *b, const void *h, const void *t)
 {
-	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, TRUE, FALSE);
 }
 
 BAT *
 BATuselect(BAT *b, const void *h, const void *t)
 {
-	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE, FALSE);
+	return BAT_select_(b, h, t, TRUE, TRUE, FALSE, FALSE);
 }
 
 /*
