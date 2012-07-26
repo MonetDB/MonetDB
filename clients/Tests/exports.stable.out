@@ -2087,8 +2087,6 @@ int OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 int OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTsetDebugStr(int *ret, str *nme);
 int OPTstrengthReductionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-str OPTtraceCall(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-int OPTtraceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTvector(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTvectorOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
