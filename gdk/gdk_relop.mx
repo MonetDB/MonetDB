@@ -969,13 +969,11 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		oid r_hi = *(oid *) BUNhead(ri, BUNlast(r) - 1);
 		oid l_lo = *(oid *) BUNtail(li, BUNfirst(l));
 		oid l_hi = *(oid *) BUNtail(li, BUNlast(l) - 1);
-		int empty = ATOMcmp(TYPE_oid, &r_lo, &l_hi) > 0 || ATOMcmp(TYPE_oid, &r_hi, &l_lo) < 0;
+		int empty = r_lo > l_hi || r_hi < l_lo;
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtordered(l)\n");
 		ALGODEBUG THRprintf(GDKout, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
-		if (!empty &&
-		    (ATOMcmp(TYPE_oid, &r_lo, &l_lo) > 0 ||
-		     ATOMcmp(TYPE_oid, &r_hi, &l_hi) < 0)) {
+		if (!empty && (r_lo > l_lo || r_hi < l_hi)) {
 			ALGODEBUG THRprintf(GDKout, "#shrinking!\n");
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
 
