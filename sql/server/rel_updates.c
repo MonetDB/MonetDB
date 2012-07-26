@@ -340,7 +340,7 @@ rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
 		sql_column *c = m->data; /* column from base array */
 		sql_exp *eOld = NULL, *eNew = NULL, *e = n->data; /* column exp in INSERT stmt */
 
-		if (!(e->type == e_atom && (e->l && ((atom*)e->l)->isnull))) {
+		if (e) {
 			exp_label(sql->sa, e, ++sql->label);
 			if (c->dim) {
 				list *rng_exps = new_exp_list(sql->sa), *drngs = sa_list(sql->sa);
@@ -361,12 +361,23 @@ rel_insert_array(mvc *sql, sql_table *t, sql_rel *ins)
 			if (c->dim) {
 				rel_join_add_exp(sql->sa, jn, exp_compare(sql->sa, eOld, eNew, cmp_equal));
 			} else {
-				/* tell rel_project to rename an L??? column to the corresponding
-				 * column name in the base ARRAY */
+				/* tell rel_project to rename an L_nnn column to the
+				 * corresponding column name in the base ARRAY */
 				exp_setname(sql->sa, eNew, c->t->base.name, c->base.name);
 				updates[c->colnr] = eNew;
 				append(exps, eOld);
 			}
+		} else {
+			/* Add a default NULL value for, both dimensional and
+			 * non-dimensional, columns not in the collist of INSERT INTO.
+			 *
+			 * Note that, for fixed arrays, we shall not use the DEFAULT value
+			 * of a non-dimensional columns to overwrite the values already in
+			 * that column.  However, for unbounded arrays, later on, we
+			 * probably should check if we can automatically fill in the
+			 * unspecified values of new cells using the column DEFAULT.
+			 */
+			n->data = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 		}
 	}
 	assert(!m && !n); /* the two list must be the same length */
@@ -524,47 +535,65 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		}
 	}
 
-	for (i = 0; i < len; i++) {
-		if (!inserts[i]) {
-			for (m = t->columns.set->h; m; m = m->next) {
-				sql_column *c = m->data;
+	/* In case of an ARRAY, delay replacing the value of a missing column
+	 * (i.e., not specified in the collist of INSERT INTO) with a default value
+	 * (c->def or NULL).  This is to prevent:
+	 *
+	 * i) a superfluous join between an unspecified dimensional column and the
+	 * 	  default NULL values, which always yields zero tuples in the join
+	 * 	  results, which in turn, causes zero tuples to be inserted; and
+	 *
+	 * ii) that we cannot distinguish an explicitly specified NULL value in the
+	 *     query for a non-dimensional column from an implicitly added NULL
+	 *     value for an unspecified non-dimensional column.
+	 *
+	 * The current solution for both problems is to delay the code below into
+	 * rel_insert_array(), after proper join conditions and projections have
+	 * respectively been added for the dimensional and non-dimensional columns
+	 * that have been specified in the collist.
+	 */
+	if(!isArray(t)) {
+		for (i = 0; i < len; i++) {
+			if (!inserts[i]) {
+				for (m = t->columns.set->h; m; m = m->next) {
+					sql_column *c = m->data;
 
-				if (c->colnr == i) {
-					size_t j = 0;
-					sql_exp *exps = NULL;
+					if (c->colnr == i) {
+						size_t j = 0;
+						sql_exp *exps = NULL;
 
-					for(j = 0; j < rowcount; j++) {
-						sql_exp *e = NULL;
+						for(j = 0; j < rowcount; j++) {
+							sql_exp *e = NULL;
 
-						/* In case of an ARRAY, don't use the (non-dimensional) column default to overwrite the existing cell value(s) */
-						if (c->def && !isArray(t)) {
-							char *q = sa_message(sql->sa, "select %s;", c->def);
-							e = rel_parse_val(sql, q, sql->emode);
-							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
-								return NULL;
-						} else {
-							atom *a = atom_general(sql->sa, &c->type, NULL);
-							e = exp_atom(sql->sa, a);
+							if (c->def) {
+								char *q = sa_message(sql->sa, "select %s;", c->def);
+								e = rel_parse_val(sql, q, sql->emode);
+								if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+									return NULL;
+							} else {
+								atom *a = atom_general(sql->sa, &c->type, NULL);
+								e = exp_atom(sql->sa, a);
+							}
+							if (!e) 
+								return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+							if (exps) {
+								list *vals_list = exps->f;
+
+								list_append(vals_list, e);
+							}
+							if (!exps && j+1 < rowcount) {
+								exps = exp_values(sql->sa, sa_list(sql->sa));
+								exps->tpe = c->type;
+								exp_label(sql->sa, exps, ++sql->label);
+							}
+							if (!exps)
+								exps = e;
 						}
-						if (!e) 
-							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
-						if (exps) {
-							list *vals_list = exps->f;
-			
-							list_append(vals_list, e);
-						}
-						if (!exps && j+1 < rowcount) {
-							exps = exp_values(sql->sa, sa_list(sql->sa));
-							exps->tpe = c->type;
-							exp_label(sql->sa, exps, ++sql->label);
-						}
-						if (!exps)
-							exps = e;
+						inserts[i] = exps;
 					}
-					inserts[i] = exps;
 				}
+				assert(inserts[i]);
 			}
-			assert(inserts[i]);
 		}
 	}
 	/* now rewrite project exps in proper table order */

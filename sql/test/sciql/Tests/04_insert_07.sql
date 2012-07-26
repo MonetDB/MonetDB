@@ -16,5 +16,9 @@ SELECT * FROM ary;
 INSERT INTO ary (y, v1, v2) VALUES (0, NULL, 11), (1, 11, NULL), (2, NULL, NULL);
 SELECT * FROM ary;
 
+-- Does it work correctly with explicit _and_ implicit NULL values
+INSERT INTO ary (y, v2) VALUES (3, NULL), (0, NULL);
+SELECT * FROM ary;
+
 DROP ARRAY ary;
 
