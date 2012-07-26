@@ -172,6 +172,7 @@ BAT *BATsort(BAT *b);
 BAT *BATsort_rev(BAT *b);
 BAT *BATssort(BAT *b);
 BAT *BATssort_rev(BAT *b);
+BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 BAT *BATsunion(BAT *b, BAT *c);
 BAT *BATsunique(BAT *b);
 BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);

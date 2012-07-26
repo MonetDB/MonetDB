@@ -19,22 +19,11 @@ MTSAFE
 
 INCLUDES = ../common/options ../common/stream ../common/utils $(valgrind_CFLAGS)
 
-EXTRA_DIST = gdk_scanselect_defs.mx
-
 lib_gdk = {
 	VERSION = $(GDK_VERSION)
 	NAME = bat
 	SOURCES = \
-		gdk_scanselect_defs_bte.mx \
-		gdk_scanselect_defs_sht.mx \
-		gdk_scanselect_defs_int.mx \
-		gdk_scanselect_defs_flt.mx \
-		gdk_scanselect_defs_dbl.mx \
-		gdk_scanselect_defs_lng.mx \
-		gdk_scanselect_defs_str.mx \
-		gdk_scanselect_defs_fix.mx \
-		gdk_scanselect_defs_var.mx \
-		gdk_scanselect.mx gdk.h gdk_batop.c \
+		gdk.h gdk_batop.c gdk_select.c \
 		gdk_search.c gdk_search.h gdk_tm.c \
 		gdk_align.c gdk_bbp.c gdk_bbp.h \
 		gdk_heap.c gdk_setop.mx gdk_utils.c gdk_utils.h \
