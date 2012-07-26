@@ -29,7 +29,7 @@ lib_mal = {
 	NOINST
 	SOURCES = \
 		attach.c attach.h \
-		batExtensions.c \
+		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
 		box.c box.h \
 		clients.c clients.h \
