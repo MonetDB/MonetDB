@@ -999,7 +999,6 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryExport(kunion)@
 @:ALGbinaryExport(tunion)@
 @:ALGbinaryExport(sintersect)@
-@:ALGbinaryExport(kintersect)@
 @:ALGbinaryExport(tintersect)@
 @:ALGbinaryExport(sdiff)@
 @:ALGbinaryExport(kdiff)@
@@ -2675,12 +2674,6 @@ str
 ALGsintersect(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATsintersect, "algebra.sintersect");
-}
-
-str
-ALGkintersect(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkintersect, "algebra.kintersect");
 }
 
 str

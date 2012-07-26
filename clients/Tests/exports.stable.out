@@ -624,7 +624,6 @@ str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 BAT *ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 str ALGjoinestimate(int *result, int *lid, int *rid, lng *estimate);
 str ALGkdiff(int *result, int *lid, int *rid);
-str ALGkintersect(int *result, int *lid, int *rid);
 str ALGkunion(int *result, int *lid, int *rid);
 str ALGkunique(int *result, int *bid);
 str ALGleftfetchjoin(int *result, int *lid, int *rid);
