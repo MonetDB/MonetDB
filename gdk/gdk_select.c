@@ -154,7 +154,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 /* scan select loop with candidates */
 #define candscanloop(TEST)						\
 	do {								\
-		ALGODEBUG THRprintf(GDKstdout,				\
+		ALGODEBUG fprintf(stderr,				\
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
@@ -176,7 +176,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 /* scan select loop without candidates */
 #define scanloop(TEST)							\
 	do {								\
-		ALGODEBUG THRprintf(GDKstdout,				\
+		ALGODEBUG fprintf(stderr,				\
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
@@ -323,7 +323,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 
 	if (b->U->count == 0 || (s && s->U->count == 0)) {
 		/* trivially empty result */
-		ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): trivially empty\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): trivially empty\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 
@@ -359,12 +359,12 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = 0;
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: switch ranges\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: switch ranges\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		} else if (!lval && !hval) {
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: nil-nil range, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: nil-nil range, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 			return newempty();
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
@@ -374,7 +374,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			anti = 0;
 			lval = 0;
 			hval = 0;
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti-nil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti-nil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		} else {
 			equi = 0;
 		}
@@ -384,12 +384,12 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 
 	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
-		ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): empty range\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): empty range\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 	if (equi && lnil && b->T->nonil) {
 		/* return all nils, but there aren't any */
-		ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): equi-nil, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): equi-nil, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 
@@ -408,7 +408,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	if (!equi && !lval && !hval && lnil && b->T->nonil) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): everything, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): everything, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		if (s) {
 			if (s == orig_s)
 				return BATcopy(s, TYPE_void, s->ttype, 0);
@@ -431,7 +431,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			 * nil equiselect (dealt with above) */
 			assert(b->T->nonil);
 			assert(b->tsorted);
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): dense\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): dense\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 			if (hval) {
 				oid h = * (oid *) th + hi;
 
@@ -453,7 +453,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 					low = (BUN) l;
 			}
 		} else if (b->tsorted) {
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -473,7 +473,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			}
 		} else {
 			assert(b->trevsorted);
-			ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): reverse sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): reverse sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -575,7 +575,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	      (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
 	      estimate < BATcount(b) / 100 &&
 	      BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2))) {
-		ALGODEBUG THRprintf(GDKstdout, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): hash select\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): hash select\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		bn = BAT_hashselect(b, s, bn, tl);
 	} else {
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval);
@@ -598,11 +598,11 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 	BATcheck(b, "BAT_select_");
 	/* b is a [any_1,any_2] BAT */
 	if (!BAThdense(b)) {
-		ALGODEBUG THRprintf(GDKstdout, "#BAT_select_(b=%s#"BUNFMT",tail=%d): make map\n", BATgetId(b), BATcount(b), tail);
+		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#"BUNFMT",tail=%d): make map\n", BATgetId(b), BATcount(b), tail);
 		map = BATmirror(BATmark(b, 0)); /* [dense,any_1] */
 		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense,any_2] */
 	} else {
-		ALGODEBUG THRprintf(GDKstdout, "#BAT_select_(b=%s#"BUNFMT",tail=%d): dense head\n", BATgetId(b), BATcount(b), tail);
+		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#"BUNFMT",tail=%d): dense head\n", BATgetId(b), BATcount(b), tail);
 		map = NULL;
 		b1 = b;		/* [dense,any_2] (any_1==dense) */
 	}
