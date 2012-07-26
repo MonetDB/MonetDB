@@ -63,7 +63,8 @@ All Rights Reserved.
 		BUN _rcount = BATcount(r);
 		BUN _slices = 0;
 
-		/* limit estimate with simple bounds first; only spend effort if the join result might be big */
+		/* limit estimate with simple bounds first; only spend
+		 * effort if the join result might be big */
 		if (@1 == JOIN_EQ) {
 			if (l->tkey)
 				@3 = r->hkey ? MIN(_rcount, _lcount) : _rcount;
@@ -168,7 +169,7 @@ All Rights Reserved.
 
 		@:joinestimate(@1, @2, _estimate)@
 		bn = BATnew(BAThtype(l), BATttype(r), _estimate);
-		if (bn == NULL) 
+		if (bn == NULL)
 			return bn;
 	}
 @
@@ -224,7 +225,8 @@ All Rights Reserved.
 			/* lookup value in r (if not nil, that is) */
 			if (!@1_EQ(v1, nil, @4)) {
 				if (r_scan > 0) {
-					/* first try scanning; but give up after a while */
+					/* first try scanning; but
+					 * give up after a while */
 					for (r_lim = MIN(r_last, r_end + r_scan); r_end < r_lim; r_end++) {
 						v2 = BUNh@3(ri, r_end);
 						neq = @1_CMP(v1, v2, @4);
@@ -234,16 +236,23 @@ All Rights Reserved.
 					r_start = r_end;
 				}
 				if (neq == 1) {
-					/* use binary search after failed scan or if scanning is impossible (l not sorted) */
+					/* use binary search after
+					 * failed scan or if scanning
+					 * is impossible (l not
+					 * sorted) */
 					if (r_scan < 0 || r_start < r_last) {
-						/* if merge not ended (or if no merge at all) */
+						/* if merge not ended
+						 * (or if no merge at
+						 * all) */
 						r_start = SORTfndfirst(rr, v1);
 					}
 					if (r_start < r_last) {
 						v2 = BUNh@3(ri, r_start);
 						neq = !@1_EQ(v1, v2, @4);
 					} else if (r_scan >= 0) {
-						/* r is already at end => break off merge join */
+						/* r is already at end
+						 * => break off merge
+						 * join */
 						break;
 					}
 				}
@@ -274,7 +283,8 @@ All Rights Reserved.
 	}
 @
 @c
-/* serves both normal equi-join (nil_on_miss==NULL) and outerjoin (nil_on_miss=nil) */
+/* serves both normal equi-join (nil_on_miss==NULL) and outerjoin
+ * (nil_on_miss=nil) */
 static BAT *
 mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 {
@@ -295,7 +305,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 		BUN i;
 		int logr = 4;
 
-		/* 4*log2(r.count) = estimation of the cost of binary search in units of scan comparisons */
+		/* 4*log2(r.count) = estimation of the cost of binary
+		 * search in units of scan comparisons */
 		for (i = BATcount(r); i > 0; logr++)
 			i >>= 1;
 		r_scan = logr;	/* opportunistic scan window in r */
@@ -354,7 +365,8 @@ mergejoin(BAT *l, BAT *r, BAT *bn, ptr nil_on_miss, BUN estimate, BUN *limit)
 				@:mergejoin(atom,var,loc,loc)@
 			}
 		} else {
-			/* we can't handle void r anyway, so don't worry about it here */
+			/* we can't handle void r anyway, so don't
+			 * worry about it here */
 			loc = ATOMstorage(l->ttype);
 			@:mergejoin(atom,loc,loc,loc)@
 		}
@@ -417,7 +429,8 @@ batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap, BUN *limit)
 {
 	@:joincheck(BATmergejoin,l->ttype,r->htype)@
 	if (BAThdense(r) || (swap && BATtdense(l))) {
-		/* batmergejoin can't handle void tail columns at all (fetchjoin is better anyway) */
+		/* batmergejoin can't handle void tail columns at all
+		 * (fetchjoin is better anyway) */
 		BAT *left = limit ? BATslice(l, 0, *limit) : l;
 		BAT *bn = batfetchjoin(left, r, estimate, swap, FALSE);
 		if (limit)
@@ -425,7 +438,8 @@ batmergejoin(BAT *l, BAT *r, BUN estimate, bit swap, BUN *limit)
 		return bn;
 	}
 	if (swap && (!BAThordered(r) || (BATtordered(l) && BATcount(l) > BATcount(r)))) {
-		/* reverse join if required (r not sorted) or if l is larger (quick jump through l with binary search) */
+		/* reverse join if required (r not sorted) or if l is
+		 * larger (quick jump through l with binary search) */
 		BAT *bn = mergejoin(BATmirror(r), BATmirror(l), NULL, NULL, estimate, limit);
 
 		return bn ? BATmirror(bn) : NULL;
@@ -443,8 +457,8 @@ BATmergejoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftmergejoin(BAT *l, BAT *r, BUN estimate)
 {
-	/* do not swap left and right input,
-	   and hence maintain order of left head in result */
+	/* do not swap left and right input, and hence maintain order
+	 * of left head in result */
 	return batmergejoin(l, r, estimate, FALSE, NULL);
 }
 
@@ -817,7 +831,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
 	/* use MMAP_WILLNEED only if random access is not too scattered, *
 	 * i.e., only if number of lookups is more than 10% of inner BAT */
-	if (BATcount(l) > BATcount(r)/10) 
+	if (BATcount(l) > BATcount(r)/10)
 		BATaccessBegin(r, USE_TAIL, MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {
 		BUN _yy = (BUN) (offset + * (oid *) BUNtloc(li, l_cur));
@@ -835,10 +849,10 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATaccessEnd(l, USE_TAIL, MMAP_SEQUENTIAL);
 	/* use MMAP_WILLNEED only if random access is not too scattered, *
 	 * i.e., only if number of lookups is more than 10% of inner BAT */
-	if (BATcount(l) > BATcount(r)/10) 
+	if (BATcount(l) > BATcount(r)/10)
 		BATaccessEnd(r, USE_TAIL, MMAP_WILLNEED);
 	if (nondense) {
-		BATiter bni; 
+		BATiter bni;
 		/* not (yet?) completely type-optimized ! */
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1): discovered non-density, resuming with non-void head\n");
 		bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
@@ -867,12 +881,14 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @c
 @= voidfetchjoin
 	if (BATtdense(l)) {
-		/* dense => ordered, i.e., we did check the bounderies already above */
-		/* and we can do a "synchronized walk" through l & r */
+		/* dense => ordered, i.e., we did check the bounderies
+		 * already above and we can do a "synchronized walk"
+		 * through l & r */
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
 		@:densevoidfetchjoin(@1)@
 	} else if (BATtordered(l) || hitalways) {
-		/* we did check the bounderies already above BATtordered(l) or simply "trust" hitalways */
+		/* we did check the bounderies already above
+		 * BATtordered(l) or simply "trust" hitalways */
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int)hitalways);
 		@:orderedvoidfetchjoin(@1)@
 	} else {
@@ -917,14 +933,16 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 	} else {
 		ERRORcheck(!BAThdense(r), "BATfetchjoin: head column of right input must be dense");
 	}
-	/* not checking boundaries is very dangerous; use regression tests with debugmask=8 first */
+	/* not checking boundaries is very dangerous; use regression
+	 * tests with debugmask=8 first */
 	PROPDEBUG {
 		hitalways_check = hitalways;
 		hitalways = FALSE;
 	}
 
 	if (lcount == 0 || rcount == 0) {
-		/* below range checking do not support empty bats. so treat them separately (easy) */
+		/* below range checking do not support empty bats. so
+		 * treat them separately (easy) */
 		@:return_empty_join_result(l_orig,r, BATfetchjoin: |l|==0 or |r|==0,1)@
 @= return_empty_join_result
 		ALGODEBUG THRprintf(GDKout, "#@3 => empty result\n");
@@ -951,7 +969,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 @
 @c
 	} else if (hitalways && BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase) {
-		/* always hit and tail of left is alligned with head of right */
+		/* always hit and tail of left is alligned with head
+		 * of right */
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtdense(l) && BAThdense(r)\n");
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l,r)\n");
 
@@ -963,7 +982,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		return VIEWcreate(l, l);
 	} else if (BATtordered(l)) {
-		/* optimization to be able to carry over more void head columns */
+		/* optimization to be able to carry over more void
+		 * head columns */
 		/* (only needed if neither operand is empty) */
 		oid r_lo = *(oid *) BUNhead(ri, BUNfirst(r));
 		oid r_hi = *(oid *) BUNhead(ri, BUNlast(r) - 1);
@@ -1035,12 +1055,15 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		/* TODO: apply the "string trick" (see below) here too */
 		if (BATtdense(l)) {
-			/* dense => ordered, i.e., we did check the bounderies already above */
-			/* and we can do a "synchronized walk" through l & r */
+			/* dense => ordered, i.e., we did check the
+			 * bounderies already above and we can do a
+			 * "synchronized walk" through l & r */
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
 			@:fetchjoin_switch_lht(dense)@
 		} else if (BATtordered(l) || hitalways) {
-			/* we did check the bounderies already above BATtordered(l) or simply "trust" hitalways */
+			/* we did check the bounderies already above
+			 * BATtordered(l) or simply "trust"
+			 * hitalways */
 			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int) hitalways);
 			@:fetchjoin_switch_lht(ordered)@
 		} else {
@@ -1092,7 +1115,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 
 		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
-		if (ATOMstorage(tpe) == TYPE_str && 
+		if (ATOMstorage(tpe) == TYPE_str &&
 		    /* GDK_ELIMDOUBLES(r->T->vheap) && */
 		    (!rcount || (lcount << 3) > rcount)) {
 			/* insert double-eliminated strings as ints */
@@ -1165,7 +1188,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			bn->T->shift = r->T->shift;
 		}
 		if (nondense) {
-			/* if join columns are ordered, head inherits ordering */
+			/* if join columns are ordered, head inherits
+			 * ordering */
 			bn->hsorted = BATtordered(l) & BAThordered(r) & BAThordered(l);
 			bn->hrevsorted = BATtordered(l) & BAThordered(r) & BAThrevordered(l);
 		} else {
@@ -1249,13 +1273,12 @@ BAT *
 BATleftfetchjoin(BAT *l, BAT *r, BUN estimate)
 {
 	/* fetchjoin now implies that you assure no fetch misses (hitalways) */
-	/* do not swap left and right input,
-	   and hence maintain order of left head in result */
+	/* do not swap left and right input, and hence maintain order
+	 * of left head in result */
 	return batfetchjoin(l, r, estimate, FALSE, TRUE);
 }
 
 /*
- * @-
  * This routine does the join optimization.
  */
 static BAT *
@@ -1280,7 +1303,6 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0 or tail(l)==NIL or head(r)==NIL,0)@
 	}
 	/*
-	 * @-
 	 * collect statistics that help us decide what to do
 	 */
 	lsize = lcount * (Hsize(l) + Tsize(l)) + (l->H->vheap ? l->H->vheap->size : 0) + (l->T->vheap ? l->T->vheap->size : 0) + 2 * lcount * sizeof(BUN);
@@ -1293,7 +1315,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	rfetch = BAThdense(r);
 	lfetch = BATtdense(l);
 	/* in case of fetchjoin, make sure we propagate a non-join
-	   void column */
+	 * void column */
 	if (lfetch && rfetch) {
 		if (BAThvoid(l) && !BATtvoid(r))
 			lfetch = 0;
@@ -1301,7 +1323,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			rfetch = 0;
 	}
 	/* in case of fetchjoin, make sure we exploit sortedness for
-	   sequential access */
+	 * sequential access */
 	if (lfetch && rfetch) {
 		if (BATtordered(l) && !BAThordered(r))
 			lfetch = 0;
@@ -1310,63 +1332,75 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	}
 	must_hash = swap && rsize > lsize ? l->T->hash == NULL : r->H->hash == NULL;
 	/*
-	 * @-
-	 * Inner input out of memory => sort-merge-join performs better than hash-join or even random-access fetch-join.
+	 * Inner input out of memory => sort-merge-join performs
+	 * better than hash-join or even random-access fetch-join.
 	 */
 	if (((swap && MIN(lsize, rsize) > mem_size) ||
 	     (!swap && rsize > mem_size)) &&
 	    !(BATtordered(l) & BAThordered(r))) {
 		/* inner input out of memory, but not both sorted
-		   (sequential-access fetch/merge handled by special
-		   cases below) */
+		 * (sequential-access fetch/merge handled by special
+		 * cases below) */
 		if (BATtordered(l) || swap) {
 			/* left tail already sorted (i.e., no re-order
-			   required) or left-order-preserving not
-			   required (i.e., re-order allowed) */
+			 * required) or left-order-preserving not
+			 * required (i.e., re-order allowed) */
 			BAT *ls, *rs, *j;
 
 			/* if not yet sorted on tail, sort left input on tail */
 			ls = BATtordered(l) ? l : BATmirror(BATsort(BATmirror(l)));
 			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BATsort(BATmirror(l))) failed");
-			/* if not yet sorted on head, sort right input on head */
+			/* if not yet sorted on head, sort right input
+			 * on head */
 			rs = BAThordered(r) ? r : BATsort(r);
 			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
 			if (swap && rsize > lsize) {
-				/* left-order-preserving not required: user smaller input as inner (right) */
-				/* (not sure, though, whether this makes a difference with merge-join ...) */
+				/* left-order-preserving not required:
+				 * user smaller input as inner
+				 * (right) */
+				/* (not sure, though, whether this
+				 * makes a difference with merge-join
+				 * ...) */
 				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATmergejoin(BATmirror(BATsort(r)), BATsort(BATmirror(l)), " BUNFMT "));\n", estimate);
 				j = BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL));
 				ERRORcheck(j == NULL, "BATjoin: BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL)) failed");
 			} else {
-				/* left-order-preserving required, or inner (right) input is smaller one */
+				/* left-order-preserving required, or
+				 * inner (right) input is smaller
+				 * one */
 				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(BATmirror(BATsort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
 				j = batmergejoin(ls, rs, estimate, swap, NULL);
 				ERRORcheck(j == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
 			}
 			if (ls != l) {
-				/* release temp. tail-ordered copy of left input */
+				/* release temp. tail-ordered copy of
+				 * left input */
 				BBPunfix(ls->batCacheid);
 			}
 			if (rs != r) {
-				/* release temp. head-ordered copy of right input */
+				/* release temp. head-ordered copy of
+				 * right input */
 				BBPunfix(rs->batCacheid);
 			}
 			return j;
 		} else
 			/* as of here, left order must be preserved /
-			   restored */
+			 * restored */
 		if (BAThordered(l) && l->htype < TYPE_str) {
 			/* left head sorted (i.e., left order can be
-			   restored with simple (stable) sort of join
-			   result), provided the sort is fast (i.e.,
-			   not on varsized types) */
+			 * restored with simple (stable) sort of join
+			 * result), provided the sort is fast (i.e.,
+			 * not on varsized types) */
 			BAT *ls, *rs, *jj, *j;
 
 			ALGODEBUG THRprintf(GDKout, "#BATjoin: BAT[s]sort(BATmergejoin(BATmirror(BAT[s]sort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
-			/* sort left input on tail, use stable sort to maintain original order of duplicate head values */
+			/* sort left input on tail, use stable sort to
+			 * maintain original order of duplicate head
+			 * values */
 			ls = BAThkey(l) ? BATmirror(BATsort(BATmirror(l))) : BATmirror(BATssort(BATmirror(l)));
 			ERRORcheck(ls == NULL, "BATjoin: BATmirror(BAT[s]sort(BATmirror(l))) failed");
-			/* if not yet sorted on head, sort right input on head */
+			/* if not yet sorted on head, sort right input
+			 * on head */
 			rs = BAThordered(r) ? r : BATsort(r);
 			ERRORcheck(rs == NULL, "BATjoin: BATsort(r) failed");
 			/* perform merge join */
@@ -1376,12 +1410,15 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			BBPunfix(ls->batCacheid);
 			ls = NULL;
 			if (rs != r) {
-				/* release temp. head-ordered copy of right input */
+				/* release temp. head-ordered copy of
+				 * right input */
 				BBPunfix(rs->batCacheid);
 				rs = NULL;
 			}
-			/* sort join result on head to restore physical left-input-order;
-			 * use stable sort to maintain original order of duplicate head values */
+			/* sort join result on head to restore
+			 * physical left-input-order; use stable sort
+			 * to maintain original order of duplicate
+			 * head values */
 			j = BAThkey(l) ? BATsort(jj) : BATssort(jj);
 			ERRORcheck(j == NULL, "BATjoin: BAT[s]sort(jj) failed");
 			/* release temp. unordered join result */
@@ -1393,7 +1430,8 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			 * - sort left tail
 			 * - sort right head
 			 * - merge-join left (tail) & right (head)
-			 * - sort join result on BATmark-generated left OIDs to restore left order
+			 * - sort join result on BATmark-generated
+			 *   left OIDs to restore left order
 			 * - re-add left head with seq. access fetchjoin
 			 */
 			BAT *lh, *lt, *ls, *rs, *jj, *js, *j;
@@ -1420,11 +1458,13 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			BBPunfix(ls->batCacheid);
 			ls = NULL;
 			if (rs != r) {
-				/* release temp. head-ordered copy of right input */
+				/* release temp. head-ordered copy of
+				 * right input */
 				BBPunfix(rs->batCacheid);
 				rs = NULL;
 			}
-			/* sort join result on head to restore physical left-input-order */
+			/* sort join result on head to restore
+			 * physical left-input-order */
 			js = BATsort(jj);
 			ERRORcheck(js == NULL, "BATjoin: BATsort(jj) failed");
 			/* release temp. unordered join result */
@@ -1433,7 +1473,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			/* restore original left head values */
 			j = BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE));
 			ERRORcheck(j == NULL, "BATjoin: BATmirror(batfetchjoin(BATmirror(js), BATmirror(lh), BATcount(js), swap, TRUE)) failed");
-			/* release temp.sorted join result */ 
+			/* release temp.sorted join result */
 			BBPunfix(js->batCacheid);
 			js = NULL;
 			/* release temp. copy of left head */
@@ -1443,9 +1483,8 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 		}
 	}
 	/*
-	 * @-
-	 * In special cases (equal join columns, void join columns, or ordered
-	 * join columns), we take special action.
+	 * In special cases (equal join columns, void join columns, or
+	 * ordered join columns), we take special action.
 	 */
 	if (swap && lfetch && !(rfetch && lcount <= rcount)) {
 		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " BUNFMT "));\n", estimate);
@@ -1457,10 +1496,10 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 		return batfetchjoin(l, r, estimate, swap, FALSE);
 	}
 	/*
-	 * @-
-	 * If both are ordered we do merge-join, or if hash-join is not possible right
-	 * away and one input is ordered and the other is much smaller, we do nested
-	 * loop binary search (both implemented by BATmergejoin).
+	 * If both are ordered we do merge-join, or if hash-join is
+	 * not possible right away and one input is ordered and the
+	 * other is much smaller, we do nested loop binary search
+	 * (both implemented by BATmergejoin).
 	 */
 	if ((BATtordered(l) & BAThordered(r)) ||
 	    (must_hash &&
@@ -1474,7 +1513,6 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 		return batmergejoin(l, r, estimate, swap, NULL);
 	}
 	/*
-	 * @-
 	 * hash join: the bread&butter join of monet
 	 */
 	/* Simple rule, always build hash on the smallest */
@@ -1494,9 +1532,10 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 	/* allows swapping of left and right input for faster processing */
 	BAT *b = batjoin(l, r, estimate, TRUE);
 
-	/* invest in property check, since we cannot easily derive the result properties,
-	 * but later operations might benefit from / depend on them
-	 * Disable via command line option  --debug=16777216
+	/* invest in property check, since we cannot easily derive the
+	 * result properties, but later operations might benefit from
+	 * / depend on them
+	 * Disable via command line option --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (b) {
@@ -1510,13 +1549,14 @@ BATjoin(BAT *l, BAT *r, BUN estimate)
 BAT *
 BATleftjoin(BAT *l, BAT *r, BUN estimate)
 {
-	/* do not swap left and right input,
-	   and hence maintain order of left head in result */
+	/* do not swap left and right input, and hence maintain order
+	 * of left head in result */
 	BAT *b = batjoin(l, r, estimate, FALSE);
 
-	/* invest in property check, since we cannot easily derive the result properties,
-	 * but later operations might benefit from / depend on them
-	 * Disable via command line option  --debug=16777216
+	/* invest in property check, since we cannot easily derive the
+	 * result properties, but later operations might benefit from
+	 * / depend on them
+	 * Disable via command line option --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (b) {
@@ -1565,7 +1605,6 @@ break;
 @
 @c
 /*
- * @-
  * The baseline join algorithm creates a hash on the smallest element and
  * probes it using the larger one. [TODO]
  */
@@ -1594,9 +1633,10 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate, NULL);
 		ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
-		/* invest in property check, since we cannot easily derive the result properties,
-		 * but later operations might benefit from / depend on them
-		 * Disable via command line option  --debug=16777216
+		/* invest in property check, since we cannot easily
+		 * derive the result properties, but later operations
+		 * might benefit from / depend on them
+		 * Disable via command line option --debug=16777216
 		 */
 		JOINPROPCHK {
 			if (bn)
@@ -1619,13 +1659,15 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 
 	BATaccessBegin(l, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (BAThdense(r)) {
-		/* positional algorithm: hash on void column would give error and is stupid */
+		/* positional algorithm: hash on void column would
+		 * give error and is stupid */
 		ptr nilt = ATOMnilptr(r->ttype);
 		bit nonil = TRUE;
 		BUN p, q, w, s = BUNfirst(bn);
 
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessBegin(r, USE_TAIL, BATtordered(l) ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 		BATloop(l, p, q) {
@@ -1641,8 +1683,9 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 			bunfastins_nocheck(bn, s, BUNhead(li, p), t, Hsize(bn), Tsize(bn));
 			s++;
 		}
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessEnd(r, USE_TAIL, BATtordered(l) ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 		bn->tsorted = BATtordered(l) && BATtordered(r) && nonil;
@@ -1697,9 +1740,10 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	bn->T->nonil = FALSE;
 	ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
 
-	/* invest in property check, since we cannot easily derive the result properties,
-	 * but later operations might benefit from / depend on them
-	 * Disable via command line option  --debug=16777216
+	/* invest in property check, since we cannot easily derive the
+	 * result properties, but later operations might benefit from
+	 * / depend on them
+	 * Disable via command line option --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (bn)
@@ -1769,7 +1813,8 @@ BATleftthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	return BATnlthetajoin(l, r, op, _estimate);
 }
 
-/* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
+/* nested loop join; finally MonetDB can enjoy the virtues of this
+ * algorithm as well! */
 @= nlthetajoin_unroll8
 	@:nlthetajoin_@2(@1)@
 	ri++;
@@ -1791,7 +1836,7 @@ BATleftthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 	{
 		tdst[cur] = off++;
 		cur += v @1 ra[ri];
-	} 
+	}
 @= nlthetajoin_oid
 	{
 		tdst[cur] = rt[ri];
@@ -1821,7 +1866,8 @@ nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r)
 		if (v == @1_nil)
 			continue;
 
-		/* unroll 8 times, factor out cur->l and memory re-allocation checking */
+		/* unroll 8 times, factor out cur->l and memory
+		 * re-allocation checking */
 		while (1) {
 			if (cur + 8 >= lim) {
 				BATsetcount(bn, cur);
@@ -1883,8 +1929,9 @@ BAT *
 BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 {
 	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r))
-	    /* the follwoing might be trivial cases,
-	     * but the "optimized" nlthetajoin implementation cannot handle them, yet ... */
+	    /* the follwoing might be trivial cases, but the
+	     * "optimized" nlthetajoin implementation cannot handle
+	     * them, yet ... */
 	    && l->ttype != TYPE_void && r->htype != TYPE_void;
 	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate >= BUN_MAX - 128 ? BUN_MAX : estimate + 128);
 	int lo = 0, hi = 0;
@@ -2023,8 +2070,9 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 
 	if (cpy == l) {
 		BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessBegin(r, USE_HEAD, MMAP_WILLNEED);
 		BATloop(l, lp, lq) {
@@ -2035,14 +2083,16 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 			}
 		}
 		BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessEnd(r, USE_HEAD, MMAP_WILLNEED);
 	} else {
 		BATaccessBegin(l, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessBegin(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 		BATloop(l, lp, lq) {
@@ -2056,8 +2106,9 @@ BATnlthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 			}
 		}
 		BATaccessEnd(l, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(l) > BATcount(r)/10)
 			BATaccessEnd(r, USE_HEAD|USE_TAIL, MMAP_WILLNEED);
 	}
@@ -2134,11 +2185,11 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 }
 
 /*
- * @-
  * The reverse semijoin is only better if the other side (r) is much
- * smaller than l, and iff you already have the hash table on l. It uses hash tables on
- * both relations: on r to check that no item is processed twice (not necessary to check
- * iff BAThkey(r) and one on l to find the matching tuples.
+ * smaller than l, and iff you already have the hash table on l. It
+ * uses hash tables on both relations: on r to check that no item is
+ * processed twice (not necessary to check iff BAThkey(r) and one on l
+ * to find the matching tuples.
  */
 @= revsemijoin
 {
@@ -2152,8 +2203,9 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	if (merge) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
@@ -2168,15 +2220,17 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	} else if (rdoubles) {
 		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
@@ -2192,14 +2246,16 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	} else {
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessBegin(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 		BATloop(r, rp, rq) {
@@ -2210,8 +2266,9 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 			}
 		}
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-		/* use MMAP_WILLNEED only if random access is not too scattered, *
-		 * i.e., only if number of lookups is more than 10% of inner BAT */
+		/* use MMAP_WILLNEED only if random access is not too
+		 * scattered, i.e., only if number of lookups is more
+		 * than 10% of inner BAT */
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	}
@@ -2296,7 +2353,8 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 		}
 	}
 	if (BATcount(l) && BAThvoid(l)) {
-		/* redirect semijoin on two dense regions to a select (and hence to BATslice) */
+		/* redirect semijoin on two dense regions to a select
+		 * (and hence to BATslice) */
 		oid min = l->hseqbase, max = min;
 
 		if (min != oid_nil)
@@ -2395,7 +2453,6 @@ BATfetch(BAT *l, BAT *r)
 }
 
 /*
- * @-
  * The BATsemijoin chooses between various alternatives.
  */
 
@@ -2413,9 +2470,11 @@ BATsemijoin(BAT *l, BAT *r)
 
 	/*
 	 * @- algorithm selection
-	 * We have 10 algorithms implementing semijoin. Their conditions are checked in order
-	 * of efficiency. Some algorithms reverse the semijoin (loop over r, lookup in l).
-	 * To do that r should be unique. To that end, doubles may sometimes be eliminated from r.
+	 * We have 10 algorithms implementing semijoin. Their
+	 * conditions are checked in order of efficiency. Some
+	 * algorithms reverse the semijoin (loop over r, lookup in l).
+	 * To do that r should be unique. To that end, doubles may
+	 * sometimes be eliminated from r.
 	 */
 	for (logr = 4, i = countr = BATcount(r); i > 0; logr++)
 		i >>= 1;
@@ -2475,9 +2534,10 @@ BATsemijoin(BAT *l, BAT *r)
 	if (tmp) {
 		BBPreclaim(tmp);
 	}
-	/* invest in property check, since we cannot easily derive the result properties,
-	 * but later operations might benefit from / depend on them
-	 * Disable via command line option  --debug=16777216
+	/* invest in property check, since we cannot easily derive the
+	 * result properties, but later operations might benefit from
+	 * / depend on them
+	 * Disable via command line option --debug=16777216
 	 */
 	JOINPROPCHK {
 		if (bn)
@@ -2703,7 +2763,7 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 	BATsetcount(bn, dst);
 
 	return bn;
- 	     
+
 bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
@@ -2967,7 +3027,6 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	table_t t;
 
 	/*
-	 * @-
 	 * Init the table descriptor.
 	 */
 	if (c == NULL || reorder == NULL) {
@@ -2982,7 +3041,6 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	t.argc = argc;
 	t.c = c;
 	/*
-	 * @-
 	 * order columns by their size (smallest first)
 	 */
 	for (i = 0; i < argc; i++) {
@@ -3013,15 +3071,17 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	}
 	/*
 	 * @- handle explicit ordering requests
-	 * An 'orderby' specification tells that the multijoin should match in the
-	 * order of one specific BAT parameter.
+	 * An 'orderby' specification tells that the multijoin should
+	 * match in the order of one specific BAT parameter.
 	 *
-	 * Notice that we *respect* the ordering of the orderby column rather than we
-	 * sort it explicitly (ie; you should order the most significant column beforehand).
-	 * This allows for both for join results ordered on some tail column as results
-	 * ordered on head column, or even 'reverse' or other specific orderings.
-	 * One such specific ordering is the SQL ORDER BY multi-column ordering that
-	 * can be obtained with the CTorderby command from the xtables module.
+	 * Notice that we *respect* the ordering of the orderby column
+	 * rather than we sort it explicitly (ie; you should order the
+	 * most significant column beforehand).  This allows for both
+	 * for join results ordered on some tail column as results
+	 * ordered on head column, or even 'reverse' or other specific
+	 * orderings.  One such specific ordering is the SQL ORDER BY
+	 * multi-column ordering that can be obtained with the
+	 * CTorderby command from the xtables module.
 	 */
 	if (orderby) {		/* order on tail of some column */
 		int lead = orderby - 1;
@@ -3037,16 +3097,18 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 	lead_col = reorder[0];
 	/*
 	 * @- lead column traversal mode
-	 * The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1 traversal of the lead_col,
-	 * and for each head value use the best possible matching algorithm.
-	 * A local optimization is to signal a sorted head column in the lead column,
-	 * so we can switch to LEAD_TRAVERSE_SRT; if double lead values occur we do them
-	 * in one match iteration.
+	 * The default action is to do LEAD_TRAVERSE_SEQ: 1-by-1
+	 * traversal of the lead_col, and for each head value use the
+	 * best possible matching algorithm.  A local optimization is
+	 * to signal a sorted head column in the lead column, so we
+	 * can switch to LEAD_TRAVERSE_SRT; if double lead values
+	 * occur we do them in one match iteration.
 	 *
-	 * We record in MULTIJOIN_SORTED(status) whether the chosen traversal method
-	 * visits the head values in the lead column in order. This is important
-	 * for the matching algorithms of the other columns (only if the head
-	 * values are visited in order, merge algorithms may be employed).
+	 * We record in MULTIJOIN_SORTED(status) whether the chosen
+	 * traversal method visits the head values in the lead column
+	 * in order. This is important for the matching algorithms of
+	 * the other columns (only if the head values are visited in
+	 * order, merge algorithms may be employed).
 	 */
 	if (BAThordered(lead_col->b)) {
 		if (!BAThkey(lead_col->b)) {
@@ -3065,14 +3127,17 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 
 	/*
 	 * @- matching algorithms for the other columns
-	 * Finally, the issue of choosing matching-algorithms for the other columns
-	 * is treated. There are a number of possibilities. If a column is
-	 * synced with a previous column, this is registered, so it can copy the
-	 * matching results of that previous column. If not, we use the fact that a
-	 * column is ordered and if not, has an binary index on it. Both cases
-	 * fall into two sub cases: merge-lookup or binary-search; depending on
-	 * whether we visit the head elements in order (MULTIJOIN_SORTED(status)).
-	 * If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
+	 * Finally, the issue of choosing matching-algorithms for the
+	 * other columns is treated. There are a number of
+	 * possibilities. If a column is synced with a previous
+	 * column, this is registered, so it can copy the matching
+	 * results of that previous column. If not, we use the fact
+	 * that a column is ordered and if not, has an binary index on
+	 * it. Both cases fall into two sub cases: merge-lookup or
+	 * binary-search; depending on whether we visit the head
+	 * elements in order (MULTIJOIN_SORTED(status)).  If none of
+	 * this is the case, we do hash-lookup using an on-the-fly
+	 * hash-table.
 	 */
 	for (k = 1; k < argc; k++) {
 		column_t *n = reorder[k];
@@ -3136,7 +3201,6 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 		@:multijoin(head,STD,_any)@
 	}
 	/*
-	 * @-
 	 * Cleanup & exit.
 	 */
 	for (i = 0; i < argc; i++) {
@@ -3168,34 +3232,39 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
  * exist; it is created on the fly.
  * @end itemize
  *
- * The algorithm goes one by one, for unique head values in the smallest-sized
- * BAT. The strategy is for each column to find a range of BUNs that match it.
+ * The algorithm goes one by one, for unique head values in the
+ * smallest-sized BAT. The strategy is for each column to find a range
+ * of BUNs that match it.
  *
- * The algorithm is intelligent in that it processes the columns in order
- * of cardinality. If a column has no matches, you can cut off the matching
- * process for the current ID (head value) and go to the next. Smallest BATs
- * first means highest miss probability first.
+ * The algorithm is intelligent in that it processes the columns in
+ * order of cardinality. If a column has no matches, you can cut off
+ * the matching process for the current ID (head value) and go to the
+ * next. Smallest BATs first means highest miss probability first.
  *
- * Another optimization is that when a column has a cardinality much larger
- * than the smallest column, you can expect sparse matching (e.g. you selected
- * 1% tuples out of a 1M tuple BAT, and re-joins both with this routine). In
- * those cases the merge algorithms use binary search instead of mergescan.
+ * Another optimization is that when a column has a cardinality much
+ * larger than the smallest column, you can expect sparse matching
+ * (e.g. you selected 1% tuples out of a 1M tuple BAT, and re-joins
+ * both with this routine). In those cases the merge algorithms use
+ * binary search instead of mergescan.
  *
- * In non-empty matching ranges are found in all head columns, a recursive
- * routine is used to go over all combinations of matching BUNs. This recursive
- * routine calls for every match (the Cartesian product) a special-purpose
- * routine that is passed all matching BUN pointers. This sequence of calls
- * represents the result of the multijoin.
+ * In non-empty matching ranges are found in all head columns, a
+ * recursive routine is used to go over all combinations of matching
+ * BUNs. This recursive routine calls for every match (the Cartesian
+ * product) a special-purpose routine that is passed all matching BUN
+ * pointers. This sequence of calls represents the result of the
+ * multijoin.
  *
- * Normally you want to perform an action on each value (like formatting or
- * copying), but many values reoccur in the same place when the Cartesian product
- * over all columns is formed.  For instance, when we have 5 attributes in which
- * each has 2 matches on the current id, we have 2*2*2*2*2=32 result tuples for
- * this one id. A simple-minded strategy would then do 32*5 value actions, when
- * processing these result tuples. This multijoin reduces that to just 32, by
- * calling whenever a value is 'changed' in the result-tuple-under-construction,
- * a value specific function, provided by the user. Since each column can have
- * a different value function, this also allows for factoring out type-checking
+ * Normally you want to perform an action on each value (like
+ * formatting or copying), but many values reoccur in the same place
+ * when the Cartesian product over all columns is formed.  For
+ * instance, when we have 5 attributes in which each has 2 matches on
+ * the current id, we have 2*2*2*2*2=32 result tuples for this one
+ * id. A simple-minded strategy would then do 32*5 value actions, when
+ * processing these result tuples. This multijoin reduces that to just
+ * 32, by calling whenever a value is 'changed' in the
+ * result-tuple-under-construction, a value specific function,
+ * provided by the user. Since each column can have a different value
+ * function, this also allows for factoring out type-checking
  * overhead.
  */
 @= multijoin
@@ -3233,8 +3302,9 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 				}
 			}
 			/* Synced lookup
-			 * If some BAT is synced with a BAT we already handled ('parent'),
-			 * we can simply copy and convert the BUNlists of the parent.
+			 * If some BAT is synced with a BAT we already
+			 * handled ('parent'), we can simply copy and
+			 * convert the BUNlists of the parent.
 			 */
 			if ((m = n->sync) != NULL) {
 				if (m->hit) {
@@ -3299,7 +3369,8 @@ BATmultijoin(int argc, BAT *argv[], RowFcn tuple_fcn, ptr tuple_data, ColFcn val
 					break;	/* NOT FOUND */
 			}
 		}
-		/* Recursively print the Cartesian product of all match collections of h.
+		/* Recursively print the Cartesian product of all
+		 * match collections of h.
 		 */
 		if (i >= argc) {
 			t.value_fcn[0] (t.value_data[0], h);
