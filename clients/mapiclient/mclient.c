@@ -114,8 +114,7 @@ enum formatters {
 	CSVformatter,
 	XMLformatter,
 	TESTformatter,
-	CLEANformatter,
-	TIMERformatter
+	CLEANformatter
 };
 static enum formatters formatter = NOformatter;
 char *output = NULL;		/* output format as string */
@@ -1019,15 +1018,6 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-TIMERrenderer(MapiHdl hdl)
-{
-	SQLqueryEcho(hdl);
-	while (fetch_line(hdl) != 0)
-		;
-	printf("%s\n", timerHuman());
-}
-
-static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
 	SQLqueryEcho(hdl);
@@ -1369,8 +1359,6 @@ setFormatter(char *s)
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-	} else if (strcmp(s, "timer") == 0) {
-		formatter = TIMERformatter;
 	} else {
 		mnstr_printf(toConsole, "unsupported formatter\n");
 	}
@@ -1585,9 +1573,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					SQLrenderer(hdl, singleinstr);
 					break;
 				}
-				break;
-			case TIMERformatter:
-				TIMERrenderer(hdl);
 				break;
 			default:
 				RAWrenderer(hdl);
