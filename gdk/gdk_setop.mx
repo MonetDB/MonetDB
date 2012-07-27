@@ -606,82 +606,6 @@ BATsunique(BAT *b)
 	}
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
-@= voidcheck
-	{
-		BATiter li = bat_iterator(l);
-		BATiter ri = bat_iterator(r);
-		BUN p1 = BUNfirst(r), q1 = BUNlast(r);
-		oid rl = * (oid *) BUNhead(ri, p1);
-		oid rh = rl + BATcount(r);
-		ptr h, t = NULL, t2 = NULL;
-
-		(void) t2;
-
-		ALGODEBUG fprintf(stderr, "#BATins_@1@2: voidcheck[@1, @2];\n");
-		if (BAThdense(l)) {
-			oid ll = * (oid *) BUNhead(li, (p1 = BUNfirst(l)));
-			oid lh = ll + BATcount(l);
-			BUN hit_start = (q1 = BUNlast(l)), hit_end = q1, w = BUNfirst(r);
-			BUN off = p1;
-
-			h = (ptr) &ll;
-
-			if (rl >= ll && rl < lh) {
-				hit_start = off + (rl - ll);
-			} else if (rl < ll && rh > ll) {
-				hit_start = p1;
-				w += (ll - rl);
-			}
-			if (rh >= ll && rh < lh) {
-				hit_end = off + (rh - ll);
-			}
-			while(p1 < hit_start) {
-				t = BUNtail(li, p1);
-				MISS@1(h, t);
-				ll++;
-				p1++;
-			}
-			while(p1 < hit_end) {
-				t = BUNtail(li, p1);
-				t2 = BUNtail(ri, w);
-				if (EQUAL@2(t, t2)) {
-					HIT@1(h, t);
-				} else {
-					MISS@1(h, t);
-				}
-				ll++;
-				p1++;
-				w++;
-			}
-			while (p1 < q1) {
-				t = BUNtail(li, p1);
-				MISS@1(h, t);
-				ll++;
-				p1++;
-			}
-		} else {
-			BUN off = p1;
-
-			BATloop(l, p1, q1) {
-				oid o = * (oid *) BUNhloc(li, p1);
-
-				h = (ptr) &o;
-				t = BUNtail(li, p1);
-
-				if (o >= rl && o < rh) {
-					BUN w = off + (o - rl);
-
-					t2 = BUNtail(ri, w);
-					if (EQUAL@2(t, t2)) {
-						HIT@1(h, t);
-						continue;
-					}
-				}
-				MISS@1(h, t);
-			}
-		}
-	}
-
 @= checkall
 	if (BAThdense(l)) {
 		@:hashcheck(@1,pos,@2,@3,@5,TRUE)@
@@ -743,7 +667,79 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 	(void) hnil;
 
 	if (BAThdense(r)) {
-		@:voidcheck(@2,@1)@
+		/* voidcheck */
+		BATiter li = bat_iterator(l);
+		BATiter ri = bat_iterator(r);
+		BUN p1 = BUNfirst(r), q1 = BUNlast(r);
+		oid rl = * (oid *) BUNhead(ri, p1);
+		oid rh = rl + BATcount(r);
+		ptr h, t = NULL, t2 = NULL;
+
+		(void) t2;
+
+		ALGODEBUG fprintf(stderr, "#BATins_@1@2: voidcheck[@1, @2];\n");
+		if (BAThdense(l)) {
+			oid ll = * (oid *) BUNhead(li, (p1 = BUNfirst(l)));
+			oid lh = ll + BATcount(l);
+			BUN hit_start = (q1 = BUNlast(l)), hit_end = q1, w = BUNfirst(r);
+			BUN off = p1;
+
+			h = (ptr) &ll;
+
+			if (rl >= ll && rl < lh) {
+				hit_start = off + (rl - ll);
+			} else if (rl < ll && rh > ll) {
+				hit_start = p1;
+				w += (ll - rl);
+			}
+			if (rh >= ll && rh < lh) {
+				hit_end = off + (rh - ll);
+			}
+			while(p1 < hit_start) {
+				t = BUNtail(li, p1);
+				MISS@2(h, t);
+				ll++;
+				p1++;
+			}
+			while(p1 < hit_end) {
+				t = BUNtail(li, p1);
+				t2 = BUNtail(ri, w);
+				if (EQUAL@1(t, t2)) {
+					HIT@2(h, t);
+				} else {
+					MISS@2(h, t);
+				}
+				ll++;
+				p1++;
+				w++;
+			}
+			while (p1 < q1) {
+				t = BUNtail(li, p1);
+				MISS@2(h, t);
+				ll++;
+				p1++;
+			}
+		} else {
+			BUN off = p1;
+
+			BATloop(l, p1, q1) {
+				oid o = * (oid *) BUNhloc(li, p1);
+
+				h = (ptr) &o;
+				t = BUNtail(li, p1);
+
+				if (o >= rl && o < rh) {
+					BUN w = off + (o - rl);
+
+					t2 = BUNtail(ri, w);
+					if (EQUAL@1(t, t2)) {
+						HIT@2(h, t);
+						continue;
+					}
+				}
+				MISS@2(h, t);
+			}
+		}
 	} else {
 		switch(ATOMstorage(r->htype)) {
 		case TYPE_bte:
@@ -846,12 +842,8 @@ BAT@1@2(BAT *l, BAT *r)
  * double elimination.
  */
 
-@:union(k)@
-@:union(s)@
-
-@= union
-BAT *
-BAT@1union(BAT *l, BAT *r)
+static BAT *
+BATunion(BAT *l, BAT *r, int set)
 {
 	int hdisjunct, tdisjunct;
 	BAT *bn, *b;
@@ -879,7 +871,7 @@ BAT@1union(BAT *l, BAT *r)
 
 	if (!hdisjunct) {
 		b = r;
-		ri.b = r = BAT@1diff(r, l);
+		ri.b = r = set ? BATsdiff(r, l) : BATkdiff(r, l);
 		if (r == NULL) {
 			return NULL;
 		}
@@ -933,10 +925,8 @@ BAT@1union(BAT *l, BAT *r)
 	bn->talign = bn->halign = 0;
 	if (!r->hkey)
 		BATkey(bn, FALSE);
-#if '@1' == 's'
-	if (bn->hkey && hdisjunct == FALSE)
+	if (set && bn->hkey && hdisjunct == FALSE)
 		BATkey(bn, FALSE);
-#endif
 	BATkey(BATmirror(bn), tdisjunct && BATtkey(l) && BATtkey(r));
 
 	return bn;
@@ -946,4 +936,15 @@ BAT@1union(BAT *l, BAT *r)
 		BBPreclaim(r);
 	return NULL;
 }
-@
+
+BAT *
+BATsunion(BAT *l, BAT *r)
+{
+	return BATunion(l, r, 1);
+}
+
+BAT *
+BATkunion(BAT *l, BAT *r)
+{
+	return BATunion(l, r, 0);
+}
