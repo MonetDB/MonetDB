@@ -1482,7 +1482,7 @@ BATgroup(BAT *b, int start, int incr, int grpsize)
 BAT *
 BATmark_grp(BAT *b, BAT *g, oid *s)
 {
-	BAT *bn, *gc = NULL;
+	BAT *bn = NULL, *gc = NULL;
 	bit trivprop = FALSE;
 
 	BATcheck(b, "BATmark_grp");
@@ -1602,7 +1602,8 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
       bunins_failed:
 	if (gc)
 		BBPreclaim(gc);
-	BBPreclaim(bn);
+	if (bn)
+		BBPreclaim(bn);
 	return NULL;
 }
 
