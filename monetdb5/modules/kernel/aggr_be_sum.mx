@@ -32,7 +32,6 @@ All Rights Reserved.
  */
 #include "monetdb_config.h"
 #include <gdk.h>
-#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggr.h"
 #include "aggr_be_sum.h"
 
@@ -69,7 +68,7 @@ All Rights Reserved.
 	@[10]:		r-off		(*(oid*)h)-min	index in hit array
 */
 @= aggrX3_sum
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_sum(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 #if @1
 	if (range > 0) {
 		/* create tmp. sums array */
@@ -211,7 +210,7 @@ CMDaggrX3_sum_@1_@3(BAT **ret, BAT *b, BAT *e)
 		GDKerror("CMDaggrX3_sum_@1_@3(): BATnew() failed");
 		return GDK_FAIL;
 	}
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_sum_@1_@3[@2](b=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_sum_@1_@3[@2](b=%s,e=%s);\n",
 		BATgetId(b), BATgetId(e));
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@3)@

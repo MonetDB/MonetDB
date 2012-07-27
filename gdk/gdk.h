@@ -3138,6 +3138,7 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
 #define JOIN_GE		2
 #define JOIN_BAND	3
 
+gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);

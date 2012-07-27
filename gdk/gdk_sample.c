@@ -54,7 +54,7 @@ BATsample(BAT *b, BUN n)
 
 	BATcheck(b, "BATsample");
 	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n");
-	ALGODEBUG THRprintf(GDKout, "#BATsample: sample " BUNFMT " elements.\n", n);
+	ALGODEBUG fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
 
 	cnt = BATcount(b);
 	if (cnt <= n) {

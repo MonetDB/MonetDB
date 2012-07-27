@@ -23,8 +23,6 @@
 #include "mal_interpreter.h"
 
 #define OPTDEBUGjoinPath  if ( optDebug & ((lng)1 <<DEBUG_OPT_JOINPATH) )
-opt_export str ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export int OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-opt_export BAT * ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag);
 
 #endif
