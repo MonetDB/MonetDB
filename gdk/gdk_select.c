@@ -108,26 +108,29 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 	BATiter bi;
 	BUN i;
 	oid o;
+	oid off;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
-	b = BATmirror(b);
-	if (s)
-		s = BATmirror(s);
+	assert(BAThdense(b));
+	off = b->hseqbase - b->U->first;
+	b = BATmirror(b);	/* BATprepareHash works on HEAD column */
 	if (BATprepareHash(b)) {
 		BBPreclaim(bn);
 		return NULL;
 	}
 	bi = bat_iterator(b);
 	if (s) {
+		assert(s->tsorted);
+		s = BATmirror(s); /* SORTfnd works on HEAD column */
 		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) i;
+			o = (oid) i + off;
 			if (SORTfnd(s, &o) != BUN_NONE)
 				bunfastins(bn, NULL, &o);
 		}
 	} else {
 		HASHloop(bi, b->H->hash, i, tl) {
-			o = (oid) i;
+			o = (oid) i + off;
 			bunfastins(bn, NULL, &o);
 		}
 	}
