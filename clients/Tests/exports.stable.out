@@ -715,6 +715,8 @@ str ALGstdev_int(dbl *res, int *bid);
 str ALGstdev_lng(dbl *res, int *bid);
 str ALGstdev_sht(dbl *res, int *bid);
 str ALGstdev_wrd(dbl *res, int *bid);
+str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 str ALGsum_bte_bte(bte *res, int *bid, bit *empty_is_nil);
 str ALGsum_bte_dbl(dbl *res, int *bid, bit *empty_is_nil);
 str ALGsum_bte_int(int *res, int *bid, bit *empty_is_nil);

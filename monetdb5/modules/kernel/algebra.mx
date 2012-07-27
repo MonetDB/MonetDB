@@ -102,6 +102,39 @@ comment "Returns a positional selection of b by the oid
 
 # @- Range selection
 # The range selections are targeted at the tail of the BAT.
+command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect1
+comment "Select all head values for which the tail value is in range.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the tail value
+	is between the values low and high (inclusive if li respectively
+	hi is set).  The output BAT is sorted on the tail value.  If low
+	or high is nil, the boundary is not considered (effectively - and
+	+ infinity).  If anti is set, the result is the complement.  Nil
+	values in the tail are never matched, unless low=nil, high=nil,
+	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,
+	high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for the other
+	version of this function.";
+
+command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	is in range and for which the head value occurs in the tail of the
+	second input BAT.
+	The first input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed BAT
+	with in the tail the head value of the input BAT for which the
+	tail value is between the values low and high (inclusive if li
+	respectively hi is set).  The output BAT is sorted on the tail
+	value.  If low or high is nil, the boundary is not considered
+	(effectively - and + infinity).  If anti is set, the result is the
+	complement.  Nil values in the tail are never matched, unless
+	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
+	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for this
+	function.";
+
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
 address ALGselect
@@ -110,7 +143,7 @@ comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 		+ low  == nil means: no lower bound
 		+ high == nil means: no upper bound.
 		NOTE 1: you should cast the nil to the appropriate type, 
-				e.g. int(nil) in order to cirumvent type clashes.
+				e.g. int(nil) in order to circumvent type clashes.
 		NOTE 2: as the 'nil' element has no clear place in the 
 				ordered domain of values, tuples with 'nil' values 
 				are NEVER returned by the range select.";
@@ -946,6 +979,8 @@ algebra_export str ALGgroupby(int *res, int *bid);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGBATminimum(ptr *result, int *bid);
 algebra_export str ALGBATmaximum(ptr *result, int *bid);
+algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
@@ -1887,6 +1922,50 @@ ALGBATmaximum(ptr *result, int *bid)
 	BATmax(b, result);
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
+}
+
+str
+ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+{
+	BAT *b, *s = NULL, *bn;
+	const void *nilptr;
+
+	if ((*li != 0 && *li != 1) ||
+		(*hi != 0 && *hi != 1) ||
+		(*anti != 0 && *anti != 1)) {
+		throw(MAL, "algebra.subselect", ILLEGAL_ARGUMENT);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
+	nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && *hi == 1 &&
+		ATOMcmp(b->ttype, low, nilptr) == 0 &&
+		ATOMcmp(b->ttype, high, nilptr) == 0) {
+		/* special case: equi-select for NIL */
+		high = NULL;
+	}
+	bn = BATsubselect(b, s, low, high, *li, *hi, *anti);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+{
+	return ALGsubselect2(result, bid, NULL, low, high, li, hi, anti);
 }
 
 str
