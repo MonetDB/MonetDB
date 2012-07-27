@@ -561,8 +561,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			}
 			BBPreclaim(tmp1);
 		}
-		if (estimate == 0)
-			estimate = BATguess(b);
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, estimate);
