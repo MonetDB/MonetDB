@@ -290,13 +290,34 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 /* generic range select
  *
  * Return a dense-headed BAT with the OID values of b in the tail for
- * qualifying tuples.
+ * qualifying tuples.  The return BAT is sorted on the tail value
+ * (i.e. in the same order as the input BAT).
  *
  * If s[dense,OID] is specified, its tail column is list of candidates.
+ * s should be sorted on the tail value.
  *
- * tl may not be NULL.
+ * tl may not be NULL, li, hi, and anti must be either 0 or 1.
  *
- * if tl==nil, th==NULL, anti==0
+ * If th is NULL, hi is ignored.
+ *
+ * If anti is 0, qualifying tuples are those whose tail value is
+ * between tl and th.  If li or hi is 1, the respective boundary is
+ * inclusive, otherwise exclusive.  If th is NULL it is taken to be
+ * equal to tl, turning this into an equi- or point-select.  Note that
+ * for a point select to return anything, li (and hi if th was not
+ * NULL) must be 1.  There is a special case if tl is nil and th is
+ * NULL.  This is the only way to select for nil values.
+ *
+ * If anti is 1, the result is the complement of what the result would
+ * be if anti were 0, except that nils are filtered out.
+ *
+ * In brief:
+ * - if tl==nil and th==NULL and anti==0, return all nils (only way to
+ *   get nils);
+ * - it tl==nil and th==nil, return all but nils;
+ * - if tl==nil and th!=NULL, no lower bound;
+ * - if th==NULL or tl==th, point (equi) select;
+ * - if th==nil, no upper bound
  */
 BAT *
 BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti)
@@ -310,19 +331,30 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	BATcheck(b, "BATsubselect");
 	BATcheck(tl, "BATsubselect: tl value required");
 
-	/* if tl==nil and th==NULL and anti==0, return all nils (only
-	 * way to get nils);
-	 * it tl==nil and th==nil, return all but nils;
-	 * if tl==nil and th!=NULL, no lower bound;
-	 * if th==NULL or tl==th, point (equi) select;
-	 * if th==nil, no upper bound
-	 */
 	assert(BAThdense(b));
 	assert(s == NULL || BAThdense(s));
 	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
 	assert(hi == 0 || hi == 1);
 	assert(li == 0 || li == 1);
 	assert(anti == 0 || anti == 1);
+
+	if ((li != 0 && li != 1) ||
+	    (hi != 0 && hi != 1) ||
+	    (anti != 0 && anti != 1)) {
+		GDKerror("BATsubselect: invalid arguments: "
+			 "li, hi, anti must be 0 or 1\n");
+		return NULL;
+	}
+	if (!BAThdense(b)) {
+		GDKerror("BATsubselect: invalid argument: "
+			 "b must have a dense head.\n");
+		return NULL;
+	}
+	if (s && !BATtordered(s)) {
+		GDKerror("BATsubselect: invalid argument: "
+			 "s must be sorted.\n");
+		return NULL;
+	}
 
 	if (b->U->count == 0 || (s && s->U->count == 0)) {
 		/* trivially empty result */
@@ -394,18 +426,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 		/* return all nils, but there aren't any */
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): equi-nil, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		return newempty();
-	}
-
-	if (s && !s->tsorted) {
-		/* make sure s is sorted */
-		s = BATcopy(s, TYPE_void, TYPE_oid, 1);
-		s->hseqbase = oid_nil;
-		s->hkey = 0;
-		s->hrevsorted = 1;
-		s = BATmirror(BATorder(BATmirror(s)));
-		s->hseqbase = 0;
-		s->hrevsorted = s->U->count <= 1;
-		s->hkey = 1;
 	}
 
 	if (!equi && !lval && !hval && lnil && b->T->nonil) {
