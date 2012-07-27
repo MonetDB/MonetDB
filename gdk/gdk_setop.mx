@@ -162,18 +162,18 @@ All Rights Reserved.
 		BUN p, q, r;
 
 		if (BAThordered(b)) {
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: BAThordered(b)\n");
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: mergeelim\n");
+			ALGODEBUG fprintf(stderr, "#BATins_@1unique: BAThordered(b)\n");
+			ALGODEBUG fprintf(stderr, "#BATins_@1unique: mergeelim\n");
 			if (b->tvarsized) {
 				@:mergeelim(@1,@2,var,@4,@3)@
 			} else {
 				@:mergeelim(@1,@2,loc,@4,@3)@
 			}
 		} else if (b->tvarsized) {
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: hashelim\n");
+			ALGODEBUG fprintf(stderr, "#BATins_@1unique: hashelim\n");
 			@:hashelim(@1,@2,var,@3)@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1unique: hashelim\n");
+			ALGODEBUG fprintf(stderr, "#BATins_@1unique: hashelim\n");
 			@:hashelim(@1,@2,loc,@3)@
 		}
 		(void) cmp;
@@ -261,7 +261,7 @@ BATins_sunique(BAT *bn, BAT *b)
 	     (ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bi, fst2)) == 0 &&
 	      BAThordered(bn) &&
 	      ATOMcmp(bn->htype, BUNhead(bni, fst1), BUNhead(bni, last1)) == 0))) {
-		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(BATmirror(bn), BATmirror(b))\n");
+		ALGODEBUG fprintf(stderr, "#BATins_sunique: BATins_kunique(BATmirror(bn), BATmirror(b))\n");
 		return BATins_kunique(BATmirror(bn), BATmirror(b));
 	}
 	if (BATcount(b) &&
@@ -271,7 +271,7 @@ BATins_sunique(BAT *bn, BAT *b)
 	     (ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bi, fst2)) == 0 &&
 	      BATtordered(bn) &&
 	      ATOMcmp(bn->ttype, BUNtail(bni, fst1), BUNtail(bni, last1)) == 0))) {
-		ALGODEBUG THRprintf(GDKout, "#BATins_sunique: BATins_kunique(bn, b)\n");
+		ALGODEBUG fprintf(stderr, "#BATins_sunique: BATins_kunique(bn, b)\n");
 		return BATins_kunique(bn, b);
 	}
 	if (BATtordered(b) && ATOMstorage(b->ttype) < TYPE_str) {
@@ -415,7 +415,7 @@ BATsunique(BAT *b)
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
+	ALGODEBUG fprintf(stderr, "#BATins_@1@2: mergecheck[@1, @2, @3, @4, @5];\n");
 	if (p2 < q2)
 		BATloop(l, p1, q1) {
 			ptr  h = BUNh@2(li, p1);
@@ -465,7 +465,7 @@ BATsunique(BAT *b)
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
-	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
+	ALGODEBUG fprintf(stderr, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
 	BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
 	if (BATprepareHash(r)) {
 		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
@@ -525,7 +525,7 @@ BATsunique(BAT *b)
 	H -> mask = DIRECT_MAX-1;
 	H -> type = BAThtype(l);
 
-	ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, @4, @5];\n");
+	ALGODEBUG fprintf(stderr, "#BATins_@1@2: directcheck[@1, @2, @3, @4, @5];\n");
 
 	assert(l->htype == r->htype && r->htype != TYPE_void);
 
@@ -551,7 +551,7 @@ BATsunique(BAT *b)
 			oid *bnt;
 			BUN o = BUNfirst(bn);
 
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5][void tail]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
+			ALGODEBUG fprintf(stderr, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5][void tail]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
 			p1 = 0;
 			q1 = BATcount(l);
 			while(p1 < q1) {
@@ -581,7 +581,7 @@ BATsunique(BAT *b)
 			@4 *h = (@4*)BUNhloc(li, 0);
 			@4 *rh = (@4*)BUNhloc(ri, 0);
 
-			ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
+			ALGODEBUG fprintf(stderr, "#BATins_@1@2: directcheck[@1, @2, @3, _@4, @5]; " BUNFMT " " BUNFMT "\n", BATcount(l), BATcount(r));
 			p1 = BUNfirst(l);
 			q1 = BUNlast(l);
 			while(p1 < q1) {
@@ -617,7 +617,7 @@ BATsunique(BAT *b)
 
 		(void) t2;
 
-		ALGODEBUG THRprintf(GDKout, "#BATins_@1@2: voidcheck[@1, @2];\n");
+		ALGODEBUG fprintf(stderr, "#BATins_@1@2: voidcheck[@1, @2];\n");
 		if (BAThdense(l)) {
 			oid ll = * (oid *) BUNhead(li, (p1 = BUNfirst(l)));
 			oid lh = ll + BATcount(l);
@@ -794,7 +794,7 @@ BAT@1@2(BAT *l, BAT *r)
 		return NULL;
 
 	/* fill result bat bn */
-	ALGODEBUG THRprintf(GDKout, "#BAT@1@2: BATins_@1@2(bn, l, r);\n");
+	ALGODEBUG fprintf(stderr, "#BAT@1@2: BATins_@1@2(bn, l, r);\n");
 	if (BATins_@1@2(bn, l, r) == NULL) {
 		return NULL;
 	}

@@ -67,7 +67,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_ptr
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax3_ptr(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -115,7 +115,7 @@ All Rights Reserved.
 		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_minmax3_ptr_body
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax3_ptr_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -179,7 +179,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax3_oid
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax3_oid(@1,@2,@3,@4,@5,@6,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -224,7 +224,7 @@ All Rights Reserved.
 		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_minmax3_oid_body
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			ptr t = BUNt@7(bi,p);
@@ -314,7 +314,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	*ret = NULL;
 
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,g=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13_@3_@4: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13_@3_@4_@5: head of BAT g must not be nil.\n");
@@ -422,7 +422,7 @@ int
 CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	int rtrn, tt = ATOMstorage(b->ttype);
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_@1[@2](b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "aggrX3_@13: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "aggrX3_@13: head of BAT g must not be nil.\n");

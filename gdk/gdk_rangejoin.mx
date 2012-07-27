@@ -206,7 +206,7 @@ BATbandjoin_nl(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi)
 	ERRORcheck(l == NULL, "BATbandjoin: invalid left operand");
 	ERRORcheck(r == NULL, "BATbandjoin: invalid right operand");
 	ERRORcheck(TYPEerror(l->ttype, r->htype), "BATbandjoin: type conflict\n");
-	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: nestedloop;\n");
+	ALGODEBUG fprintf(stderr, "#BATbandjoin: nestedloop;\n");
 	bn = BATnew(BAThtype(l), BATttype(r), MIN(BATcount(l), BATcount(r)));
 	if (bn == NULL)
 		return bn;
@@ -364,7 +364,7 @@ BATbandjoin_mj(BAT *l, BAT *r, ptr c1, ptr c2, bit li, bit hi, BUN *limit)
 	BAT *bn = NULL;
 	BUN lc = BATcount(l), rc = BATcount(r);
 
-	ALGODEBUG THRprintf(GDKout, "#BATbandjoin: mergejoin;\n");
+	ALGODEBUG fprintf(stderr, "#BATbandjoin: mergejoin;\n");
 	bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), limit ? *limit : MIN(lc, rc));
 	switch (l->ttype) {
 	case TYPE_bte:

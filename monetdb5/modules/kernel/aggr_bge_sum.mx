@@ -73,7 +73,7 @@ All Rights Reserved.
 	@[10]:		r-off		(*(oid*)h)-min	index in hit array
 */
 @= aggrX3_sum3
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_sum3(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10]);\n");
 #if @1
 	if (range > 0) {
 		/* create tmp. sums array */
@@ -171,7 +171,7 @@ All Rights Reserved.
 		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_sum3_body
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_sum3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNtloc(bi,p);
@@ -243,7 +243,7 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, 
 	int b_use = USE_TAIL;
 	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
+	ALGODEBUG fprintf(stderr, "#aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
 					BATgetId(bn),BATgetId(b),BATgetId(g),BATgetId(e),
 					range,min,max);
 	@:aggrX3_sum3(1,0,CHKrange,loc,&bhsb;bhsb++,@1,&sums[(*(oid*)h)-min],,@2,(*(oid*)h)-min)@
@@ -266,7 +266,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	ssize_t gh_offset, gt_offset;
 	int b_use = USE_TAIL;
 
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_sum3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_sum3_@1: head of BAT g must not be nil.\n");

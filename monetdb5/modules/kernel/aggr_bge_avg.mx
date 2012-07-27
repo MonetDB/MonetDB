@@ -69,7 +69,7 @@ All Rights Reserved.
 	@9:		r-off		(*(oid*)h)-min	index in cnt array
 */
 @= aggrX3_avg3
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_avg3(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @1
 	if (range > 0) {
 		/* create tmp. sums array */
@@ -172,7 +172,7 @@ All Rights Reserved.
 		oid *h = (oid*) Tloc(g, w)				g tail value lookup
 */
 @= aggrX3_avg3_body
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_avg3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_avg3_oid_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],@[11]);\n");
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNt@7(bi,p);
@@ -243,7 +243,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	ssize_t gh_offset, gt_offset;
 	int b_use = USE_TAIL;
 
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_avg3_@1[@2](b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
 /*	ERRORcheck((BATcount(b)!=BATcount(g)), "CMDaggrX3_avg3_@1: BATs b & g must be of equal size.\n");	*/
 	ERRORcheck((g->htype == TYPE_void) && (g->hseqbase == oid_nil) && (BATcount(g) > 0), "CMDaggrX3_avg3_@1: head of BAT g must not be nil.\n");

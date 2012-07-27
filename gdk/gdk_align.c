@@ -444,7 +444,7 @@ BATmaterializeh(BAT *b)
 	p = BUNfirst(b);
 	q = BUNlast(b);
 	assert(cnt >= q - p);
-	ALGODEBUG THRprintf(GDKout, "#BATmaterialize(%d);\n", (int) b->batCacheid);
+	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
 	if (!BAThdense(b) || ht != TYPE_void) {
 		/* no voids */

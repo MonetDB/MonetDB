@@ -616,7 +616,7 @@ densefetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	r_cur = (BUN) (offset + *(oid *) BUNtail(li, BUNfirst(l)));
 
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: densefetchjoin(@1,@2);\n");
 
 	BATaccessBegin(l, USE_HEAD, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_TAIL, MMAP_SEQUENTIAL);
@@ -653,7 +653,7 @@ orderedfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	base = BUNfirst(r);
 	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: orderedfetchjoin(@1,@2);\n");
 
 	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_TAIL, MMAP_SEQUENTIAL);
@@ -693,7 +693,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	offset = (ssize_t) base - (ssize_t) r->hseqbase; /* cast first, subtract second */
 	end = base + BATcount(r);
 
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: defaultfetchjoin(@1,@2);\n");
 
 	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	/* use MMAP_WILLNEED only if random access is not too scattered, *
@@ -796,7 +796,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @
 @c
 @= densevoidfetchjoin
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: densevoidfetchjoin(@1);\n");
 	r_cur = (BUN) (offset + * (oid *) BUNtloc(li, BUNfirst(l)));
 	BATaccessBegin(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessBegin(bn, MMAP_SEQUENTIAL);*/
@@ -810,7 +810,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @
 @c
 @= orderedvoidfetchjoin
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: orderedvoidfetchjoin(@1);\n");
 	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_TAIL, MMAP_SEQUENTIAL);
 	/*BATaccessBegin(bn, MMAP_SEQUENTIAL);*/
@@ -827,7 +827,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 @
 @c
 @= defaultvoidfetchjoin
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: defaultvoidfetchjoin(@1);\n");
 	BATaccessBegin(l, USE_TAIL, MMAP_SEQUENTIAL);
 	/* use MMAP_WILLNEED only if random access is not too scattered, *
 	 * i.e., only if number of lookups is more than 10% of inner BAT */
@@ -854,7 +854,7 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 	if (nondense) {
 		BATiter bni;
 		/* not (yet?) completely type-optimized ! */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: defaultvoidfetchjoin(@1): discovered non-density, resuming with non-void head\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: defaultvoidfetchjoin(@1): discovered non-density, resuming with non-void head\n");
 		bn = BATnew(BAThtype(l), ATOMtype(tpe), BATcount(l));
 		if (bn == NULL)
 			return bn;
@@ -884,15 +884,15 @@ defaultfetchjoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 		/* dense => ordered, i.e., we did check the bounderies
 		 * already above and we can do a "synchronized walk"
 		 * through l & r */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && BATtdense(l)\n");
 		@:densevoidfetchjoin(@1)@
 	} else if (BATtordered(l) || hitalways) {
 		/* we did check the bounderies already above
 		 * BATtordered(l) or simply "trust" hitalways */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int)hitalways);
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int)hitalways);
 		@:orderedvoidfetchjoin(@1)@
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l) && !hitalways\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l) && !BATtdense(l) && !BATtordered(l) && !hitalways\n");
 		@:defaultvoidfetchjoin(@1)@
 	}
 @
@@ -926,7 +926,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 	if (swap) {
 		if (!BAThdense(r)) {
 			ERRORcheck(!BATtdense(l), "BATfetchjoin: one join column must be dense");
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
+			ALGODEBUG fprintf(stderr, "#BATfetchjoin: BATmirror(BATfetchjoin(BATmirror(r),BATmirror(l)));\n");
 
 			return BATmirror(batfetchjoin(BATmirror(r), BATmirror(l), estimate, FALSE, FALSE));
 		}
@@ -945,7 +945,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		 * treat them separately (easy) */
 		@:return_empty_join_result(l_orig,r, BATfetchjoin: |l|==0 or |r|==0,1)@
 @= return_empty_join_result
-		ALGODEBUG THRprintf(GDKout, "#@3 => empty result\n");
+		ALGODEBUG fprintf(stderr, "#@3 => empty result\n");
 #if @4
 		if (hitalways|hitalways_check && lcount > 0) {
 			GDKerror("BATfetchjoin(%s,%s) does not hit always (|bn|=0 != "BUNFMT"=|l|) => can't use fetchjoin.\n", BATgetId(l), BATgetId(r), lcount);
@@ -971,14 +971,14 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 	} else if (hitalways && BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase) {
 		/* always hit and tail of left is alligned with head
 		 * of right */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtdense(l) && BAThdense(r)\n");
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l,r)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BATtdense(l) && BAThdense(r)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,r)\n");
 
 		return VIEWcreate(l, r);
 	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) {
 		/* idempotent join: always hit and substitute tail with the same value */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThdense(r) && BATtdense(r)\n");
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: VIEWcreate(l,l)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThdense(r) && BATtdense(r)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,l)\n");
 
 		return VIEWcreate(l, l);
 	} else if (BATtordered(l)) {
@@ -990,12 +990,12 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		oid l_lo = *(oid *) BUNtail(li, BUNfirst(l));
 		oid l_hi = *(oid *) BUNtail(li, BUNlast(l) - 1);
 		int empty = r_lo > l_hi || r_hi < l_lo;
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BATtordered(l)\n");
-		ALGODEBUG THRprintf(GDKout, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BATtordered(l)\n");
+		ALGODEBUG fprintf(stderr, "#r_lo=" OIDFMT ", r_hi=" OIDFMT ", l_lo=" OIDFMT ", l_hi=" OIDFMT ".\n", r_lo, r_hi, l_lo, l_hi);
 
 		if (!empty && (r_lo > l_lo || r_hi < l_hi)) {
-			ALGODEBUG THRprintf(GDKout, "#shrinking!\n");
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
+			ALGODEBUG fprintf(stderr, "#shrinking!\n");
+			ALGODEBUG fprintf(stderr, "#BATfetchjoin: l = BATselect(l, &r_lo, &r_hi);\n");
 
 			li.b = l = BATselect(l, &r_lo, &r_hi);	/* sorted, so it will be a slice */
 			if (l == NULL)
@@ -1015,7 +1015,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		}
 		lcount = BATcount(l);
 	}
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 1\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: 1\n");
 
 	base = BUNfirst(r);
 	offset = (ssize_t) base - (ssize_t) r->hseqbase;	/* cast first, subtract second */
@@ -1033,10 +1033,10 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		    oid_nil))) :
 		 oid_nil);
 
-	ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: 2\n");
+	ALGODEBUG fprintf(stderr, "#BATfetchjoin: 2\n");
 
 	if (!BAThvoid(l)) {
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: !BAThvoid(l)\n");
 
 		/* default case: no void column to propagate */
 		lht = l->htype;
@@ -1058,16 +1058,16 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			/* dense => ordered, i.e., we did check the
 			 * bounderies already above and we can do a
 			 * "synchronized walk" through l & r */
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
+			ALGODEBUG fprintf(stderr, "#BATfetchjoin: !BAThvoid(l) && BATtdense(l)\n");
 			@:fetchjoin_switch_lht(dense)@
 		} else if (BATtordered(l) || hitalways) {
 			/* we did check the bounderies already above
 			 * BATtordered(l) or simply "trust"
 			 * hitalways */
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int) hitalways);
+			ALGODEBUG fprintf(stderr, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && ( BATtordered(l) [== %d] || hitalways [== %d] )\n", BATtordered(l), (int) hitalways);
 			@:fetchjoin_switch_lht(ordered)@
 		} else {
-			ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l) && !hitalways\n");
+			ALGODEBUG fprintf(stderr, "#BATfetchjoin: !BAThvoid(l) && !BATtdense(l) && !BATtordered(l) && !hitalways\n");
 
 			@:fetchjoin_switch_lht(default)@
 		}
@@ -1113,7 +1113,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		int tpe = r->ttype;
 		BUN dst;
 
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
 		if (ATOMstorage(tpe) == TYPE_str &&
 		    /* GDK_ELIMDOUBLES(r->T->vheap) && */
@@ -1211,7 +1211,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 			hi_pos -= r->hseqbase;
 		else
 			hi_pos = 0;
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos=" BUNFMT ", hi_pos=" BUNFMT ");\n", lo_pos, hi_pos);
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase != oid_nil  =>  bn = BATslice(BATmirror(VIEWhead(BATmirror(r))), lo_pos=" BUNFMT ", hi_pos=" BUNFMT ");\n", lo_pos, hi_pos);
 
 		bn = BATslice(v, lo_pos, hi_pos);
 		if (seqbase != oid_nil)
@@ -1220,7 +1220,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		BBPunfix(v->batCacheid);
 	} else {
 		/* nil join column => empty result */
-		ALGODEBUG THRprintf(GDKout, "#BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase == oid_nil\n");
+		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase == oid_nil\n");
 
 		bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), 10);
 		if (bn == NULL)
@@ -1361,14 +1361,14 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 				/* (not sure, though, whether this
 				 * makes a difference with merge-join
 				 * ...) */
-				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATmergejoin(BATmirror(BATsort(r)), BATsort(BATmirror(l)), " BUNFMT "));\n", estimate);
+				ALGODEBUG fprintf(stderr, "#BATjoin: BATmirror(BATmergejoin(BATmirror(BATsort(r)), BATsort(BATmirror(l)), " BUNFMT "));\n", estimate);
 				j = BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL));
 				ERRORcheck(j == NULL, "BATjoin: BATmirror(batmergejoin(BATmirror(rs), BATmirror(ls), estimate, swap, NULL)) failed");
 			} else {
 				/* left-order-preserving required, or
 				 * inner (right) input is smaller
 				 * one */
-				ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(BATmirror(BATsort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
+				ALGODEBUG fprintf(stderr, "#BATjoin: BATmergejoin(BATmirror(BATsort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
 				j = batmergejoin(ls, rs, estimate, swap, NULL);
 				ERRORcheck(j == NULL, "BATjoin: batmergejoin(ls, rs, estimate, swap, NULL) failed");
 			}
@@ -1393,7 +1393,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			 * not on varsized types) */
 			BAT *ls, *rs, *jj, *j;
 
-			ALGODEBUG THRprintf(GDKout, "#BATjoin: BAT[s]sort(BATmergejoin(BATmirror(BAT[s]sort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
+			ALGODEBUG fprintf(stderr, "#BATjoin: BAT[s]sort(BATmergejoin(BATmirror(BAT[s]sort(BATmirror(l))), BATsort(r), " BUNFMT "));\n", estimate);
 			/* sort left input on tail, use stable sort to
 			 * maintain original order of duplicate head
 			 * values */
@@ -1436,7 +1436,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 			 */
 			BAT *lh, *lt, *ls, *rs, *jj, *js, *j;
 
-			ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(batfetchjoin(BATmirror(BATsort(BATmergejoin(BATmirror(BATsort(BATmark(BATmirror(l),0))), BATsort(r), " BUNFMT "))), BATmirror(BATmark(l,0))));\n", estimate);
+			ALGODEBUG fprintf(stderr, "#BATjoin: BATmirror(batfetchjoin(BATmirror(BATsort(BATmergejoin(BATmirror(BATsort(BATmark(BATmirror(l),0))), BATsort(r), " BUNFMT "))), BATmirror(BATmark(l,0))));\n", estimate);
 			/* separate left head & tail using BATmark */
 			lh = BATmark(l, 0);
 			ERRORcheck(lh == NULL, "BATjoin: BATmark(l,0) failed");
@@ -1487,11 +1487,11 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	 * ordered join columns), we take special action.
 	 */
 	if (swap && lfetch && !(rfetch && lcount <= rcount)) {
-		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " BUNFMT "));\n", estimate);
+		ALGODEBUG fprintf(stderr, "#BATjoin: BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), " BUNFMT "));\n", estimate);
 
 		return BATmirror(batfetchjoin(BATmirror(r), BATmirror(l), estimate, TRUE, FALSE));
 	} else if (rfetch) {
-		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATfetchjoin(l, r, " BUNFMT ");\n", estimate);
+		ALGODEBUG fprintf(stderr, "#BATjoin: BATfetchjoin(l, r, " BUNFMT ");\n", estimate);
 
 		return batfetchjoin(l, r, estimate, swap, FALSE);
 	}
@@ -1508,7 +1508,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	       swap) ||
 	      (BAThordered(r) &&
 	       ((lng) rcount > logr * (lng) lcount))))) {
-		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmergejoin(l,r," BUNFMT ");\n", estimate);
+		ALGODEBUG fprintf(stderr, "#BATjoin: BATmergejoin(l,r," BUNFMT ");\n", estimate);
 
 		return batmergejoin(l, r, estimate, swap, NULL);
 	}
@@ -1517,11 +1517,11 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 	 */
 	/* Simple rule, always build hash on the smallest */
 	if (swap && rsize > lsize) {
-		ALGODEBUG THRprintf(GDKout, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", estimate);
+		ALGODEBUG fprintf(stderr, "#BATjoin: BATmirror(BAThashjoin(BATmirror(r), BATmirror(l)," BUNFMT "));\n", estimate);
 
 		return BATmirror(BAThashjoin(BATmirror(r), BATmirror(l), estimate));
 	}
-	ALGODEBUG THRprintf(GDKout, "#BATjoin: BAThashjoin(l,r," BUNFMT ");\n", estimate);
+	ALGODEBUG fprintf(stderr, "#BATjoin: BAThashjoin(l,r," BUNFMT ");\n", estimate);
 
 	return BAThashjoin(l, r, estimate);
 }
@@ -1628,7 +1628,7 @@ BATouterjoin(BAT *l, BAT *r, BUN estimate)
 	}
 	if (BAThdense(r) == FALSE && BAThordered(r)) {
 		/* use the merge-join; it takes care of the rest */
-		ALGODEBUG THRprintf(GDKout, "#BATouterjoin: mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);\n");
+		ALGODEBUG fprintf(stderr, "#BATouterjoin: mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate);\n");
 
 		bn = mergejoin(l, r, bn, ATOMnilptr(r->ttype), estimate, NULL);
 		ESTIDEBUG THRprintf(GDKout, "#BATouterjoin: actual resultsize: " BUNFMT "\n", BATcount(bn));
@@ -1786,7 +1786,7 @@ BATthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		_estimate = estimate;
 	if (op == JOIN_EQ) {
 		/* exploit all equi-join optimizations */
-		ALGODEBUG THRprintf(GDKout, "#BATthetajoin(l,r,JOIN_EQ): BATjoin(l, r);\n");
+		ALGODEBUG fprintf(stderr, "#BATthetajoin(l,r,JOIN_EQ): BATjoin(l, r);\n");
 
 		return BATjoin(l, r, _estimate);
 	}
@@ -1806,7 +1806,7 @@ BATleftthetajoin(BAT *l, BAT *r, int op, BUN estimate)
 		_estimate = estimate;
 	if (op == JOIN_EQ) {
 		/* exploit all equi-join optimizations */
-		ALGODEBUG THRprintf(GDKout, "#BATleftthetajoin(l,r,JOIN_EQ): BATleftjoin(l, r);\n");
+		ALGODEBUG fprintf(stderr, "#BATleftthetajoin(l,r,JOIN_EQ): BATleftjoin(l, r);\n");
 
 		return BATleftjoin(l, r, _estimate);
 	}
@@ -2201,7 +2201,7 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 	ptr v;
 
 	if (merge) {
-		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: merge\n");
+		ALGODEBUG fprintf(stderr, "#BATrevsemijoin: merge\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
 		/* use MMAP_WILLNEED only if random access is not too
 		 * scattered, i.e., only if number of lookups is more
@@ -2226,7 +2226,7 @@ BATbinsemijoin(BAT *l, BAT *r, BAT *cpy)
 		if (BATcount(r) > BATcount(l)/10)
 			BATaccessEnd(l, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
 	} else if (rdoubles) {
-		ALGODEBUG THRprintf(GDKout, "#BATrevsemijoin: rdoubles\n");
+		ALGODEBUG fprintf(stderr, "#BATrevsemijoin: rdoubles\n");
 		BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
 		/* use MMAP_WILLNEED only if random access is not too
 		 * scattered, i.e., only if number of lookups is more
@@ -2485,17 +2485,17 @@ BATsemijoin(BAT *l, BAT *r)
 							 || (lng) countr * (logl + 8) < (lng) countl);
 
 	if (ALIGNsynced(l, r)) {
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATcopy(l);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATcopy(l);\n");
 
 		bn = BATcopy(l, l->htype, l->ttype, FALSE);
 	} else if (BAThordered(l) && BAThdense(r)) {
 		oid lo = r->hseqbase;
 		oid hi = r->hseqbase + countr - 1;
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATmirror(BATselect(BATmirror(l), &lo, &hi));\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATmirror(BATselect(BATmirror(l), &lo, &hi));\n");
 
 		bn = BATmirror(BATselect(BATmirror(l), &lo, &hi));
 	} else if (BAThdense(r)) {
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATfetchsemijoin(l, r, l);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATfetchsemijoin(l, r, l);\n");
 
 		bn = BATfetchsemijoin(l, r, l, TRUE);
 	} else if (BAThdense(l) && reverse1) {
@@ -2505,15 +2505,15 @@ BATsemijoin(BAT *l, BAT *r)
 			tmp = r = BATkunique(v);
 			BBPreclaim(v);
 		}
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATfetchsemijoin(r, l, l);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATfetchsemijoin(r, l, l);\n");
 
 		bn = BATfetchsemijoin(r, l, l, TRUE);
 	} else if (l->H->hash && reverse1) {
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATrevsemijoin(l,r);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATrevsemijoin(l,r);\n");
 
 		bn = BATrevsemijoin(l, r);
 	} else if (BAThordered(r) && countl * logr < countr) {
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATbinsemijoin(l, r, l);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATbinsemijoin(l, r, l);\n");
 
 		bn = BATbinsemijoin(l, r, l);
 	} else if (BAThordered(l) & reverse2) {
@@ -2523,11 +2523,11 @@ BATsemijoin(BAT *l, BAT *r)
 			tmp = r = BATkunique(v);
 			BBPreclaim(v);
 		}
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATbinsemijoin(r, l, l);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATbinsemijoin(r, l, l);\n");
 
 		bn = BATbinsemijoin(r, l, l);
 	} else {
-		ALGODEBUG THRprintf(GDKout, "#BATsemijoin: BATkintersect(l, r);\n");
+		ALGODEBUG fprintf(stderr, "#BATsemijoin: BATkintersect(l, r);\n");
 
 		bn = BATkintersect(l, r);	/* merge-semijoin or nested hashlookup in r */
 	}
@@ -2574,7 +2574,7 @@ antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
-	ALGODEBUG THRprintf(GDKout, "#BATantijoin: antijoin_@1_@2();\n");
+	ALGODEBUG fprintf(stderr, "#BATantijoin: antijoin_@1_@2();\n");
 	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_HEAD|USE_TAIL, BATcount(l) <= 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {
@@ -2749,7 +2749,7 @@ cross_@1_@2(BAT *bn, BAT *l, BAT *r)
 
 	bni = bat_iterator(bn);
 	dst = BUNfirst(bn);
-	ALGODEBUG THRprintf(GDKout, "#BATcross: cross_@1_@2();\n");
+	ALGODEBUG fprintf(stderr, "#BATcross: cross_@1_@2();\n");
 	BATaccessBegin(l, USE_HEAD, MMAP_SEQUENTIAL);
 	BATaccessBegin(r, USE_TAIL, BATcount(l) <= 1 ? MMAP_SEQUENTIAL : MMAP_WILLNEED);
 	BATloop(l, l_cur, l_end) {

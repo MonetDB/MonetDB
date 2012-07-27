@@ -62,7 +62,7 @@ All Rights Reserved.
 								*dst: count in-place or in cnt-array ?
 */
 @= aggrX3_count
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_count(@1,@2,@3,@4,@5,@6);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_count(@1,@2,@3,@4,@5,@6);\n");
 #if @1
 	if (range > 0) {
 		/* create tmp. cnt array */
@@ -151,7 +151,7 @@ All Rights Reserved.
 		if (!simple_EQ(BUNtloc(b,p),bt_nil,{bte,sht,int,flt,lng,dbl}))
 */
 @= aggrX3_count_loop
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
 #if @1
 	if (!cnt)
 #endif
@@ -195,7 +195,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_count(b=%s,e=%s);\n", 
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_count(b=%s,e=%s);\n", 
 		BATgetId(b),BATgetId(e));
 
 	if (BAThdense(e) && 

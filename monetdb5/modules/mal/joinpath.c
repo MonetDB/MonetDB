@@ -64,6 +64,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 #endif
 
 	(void) flag;
+	(void) cntxt;
 	lc = BATcount(l);
 	rc = BATcount(r);
 #if 0	
@@ -155,7 +156,7 @@ ALGjoinCost(Client cntxt, BAT *l, BAT *r, int flag)
 		cost /= 1;
 
 	ALGODEBUG
-		mnstr_printf(cntxt->fdout,"#batjoin cost ?"BUNFMT"\n",cost);
+		fprintf(stderr,"#batjoin cost ?"BUNFMT"\n",cost);
 	return cost;
 }
 
@@ -173,12 +174,12 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		j = 0;
 		estimate = ALGjoinCost(cntxt,joins[0],joins[1],flag);
 		ALGODEBUG
-			mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[0]->batCacheid, 
+			fprintf(stderr,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[0]->batCacheid, 
 				joins[1]->batCacheid,(int)estimate, BATcount(joins[0]), postpone[0]?"postpone":"");
 		for (i = 1; i < top - 1; i++) {
 			e = ALGjoinCost(cntxt,joins[i], joins[i + 1],flag);
 			ALGODEBUG
-				mnstr_printf(cntxt->fdout,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[i]->batCacheid, 
+				fprintf(stderr,"#joinPath estimate join(%d,%d) %d cnt="BUNFMT" %s\n", joins[i]->batCacheid, 
 					joins[i+1]->batCacheid,(int)e,BATcount(joins[i]),  postpone[i]?"postpone":"");
 			if (e < estimate &&  ( !(postpone[i] && postpone[i+1]) || postponed<top)) {
 				estimate = e;
@@ -239,7 +240,7 @@ ALGjoinPathBody(Client cntxt, int top, BAT **joins, int flag)
 		}
 		ALGODEBUG{
 			if (b ) {
-				mnstr_printf(GDKout, "#joinPath %d:= join(%d,%d)"
+				fprintf(stderr, "#joinPath %d:= join(%d,%d)"
 				" arguments %d (cnt= "BUNFMT") against (cnt "BUNFMT") cost "BUNFMT"\n", 
 					b->batCacheid, joins[j]->batCacheid, joins[j + 1]->batCacheid,
 					j, BATcount(joins[j]),  BATcount(joins[j+1]), e);
@@ -298,8 +299,10 @@ ALGjoinPath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		joins[top++] = b;
 	}
 	ALGODEBUG{
-		mnstr_printf(GDKout,"#joinpath ");
-		printInstruction( GDKout,mb,0,pci,0);
+		char *ps;
+		ps = instruction2str(mb, 0, pci, 0);
+		fprintf(stderr,"#joinpath %s\n", ps ? ps : "");
+		GDKfree(ps);
 	}
 	b= ALGjoinPathBody(cntxt,top,joins, (getFunctionId(pci)== joinPathRef?1: (getFunctionId(pci) == leftjoinPathRef? 0:2)));
 	GDKfree(joins);

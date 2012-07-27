@@ -50,7 +50,7 @@ ALGprejoin(int *rl, int *rr, int *l, int *r){
 		return MAL_SUCCEED;
 	}
 	ALGODEBUG{
-	mnstr_printf(GDKout,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
+	fprintf(stderr,"Prejoin tuples=" BUNFMT "pages" BUNFMT "," BUNFMT"\n",
 		BATcount(bl), lpages, rpages);
 	}
 	bn= BATmirror(BATsort(BATmirror(bl)));

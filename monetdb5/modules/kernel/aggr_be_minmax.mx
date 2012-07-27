@@ -66,7 +66,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -150,7 +150,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -259,7 +259,7 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	/* init: prepare the result bat;
 	 * trick: by using "tail-type" void, we only write the head column, here */
@@ -354,7 +354,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 {
 	int rtrn, tt = ATOMstorage(b->ttype);
 
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_@1[@2,@3](b=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_@1[@2,@3](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	if (b->ttype == TYPE_void) {
 		rtrn = aggrX3_@1_any_var_oid(ret, b, e);
