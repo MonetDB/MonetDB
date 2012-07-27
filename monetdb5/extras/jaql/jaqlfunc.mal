@@ -124,8 +124,11 @@ end avg;
 # perform count over the input array
 function count(v:bat[:oid,:any]):bat[:oid,:lng];
 	k := algebra.kunique(v);
-	v := algebra.antiuselect(v, nil);
-	x := aggr.count(v, k, false);
+	# the input bat v is :oid,:lng, this is guaranteed, but the function
+	# signature *must* be :oid,:any in order to indicate that the
+	# original contents (tail value) does not matter for this function
+	w := algebra.antiuselect(v, nil:lng);
+	x := aggr.count(w, k, false);
 	r := batcalc.lng(x);
 	return r;
 end count;

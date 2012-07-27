@@ -132,11 +132,9 @@ exit MALException:str ;
     io.print(0:int);
     io.printf("# io.print(-1.0:int);\n");
     io.print(-1:int);
-    io.printf("# io.print(2147483647.0:int);\n");
-    io.print(nil:int);
-    io.printf("# io.print(2147483648.0:int);\n");
-    io.print(nil:int);
-    io.printf("# io.print(2147483649.0:int);\n");
+# avoid being around the int edge, e.g PowerPC has different internal 
+# representation, leading to non-nil integer results 
+    io.printf("# io.print(2147483847.0:int);\n");
     io.print(nil:int);
     io.printf("# io.print(-2147483647.0:int);\n");
     io.print(nil:int);
@@ -648,11 +646,7 @@ exit MALException:str ;
     io.print(-2147483648:lng);
     io.printf("# io.print(-2147483649.0:lng);\n");
     io.print(-2147483648:lng);
-    io.printf("# io.print(9223372036854775807.0:lng);\n");
-    io.print(nil:lng);
-    io.printf("# io.print(9223372036854775808.0:lng);\n");
-    io.print(nil:lng);
-    io.printf("# io.print(9223372036854775809.0:lng);\n");
+    io.printf("# io.print(9223972036854775807.0:lng);\n");
     io.print(nil:lng);
     io.printf("# io.print(-9223372036854775807.0:lng);\n");
     io.print(nil:lng);
@@ -691,11 +685,7 @@ exit MALException:str ;
     io.print(-2147483648:lng);
     io.printf("# io.print(-2147483649.0LL:lng);\n");
     io.print(-2147483649:lng);
-    io.printf("# io.print(9223372036854775807.0LL:lng);\n");
-    io.print(nil:lng);
-    io.printf("# io.print(9223372036854775808.0LL:lng);\n");
-    io.print(nil:lng);
-    io.printf("# io.print(9223372036854775809.0LL:lng);\n");
+    io.printf("# io.print(9223372036854779807.0LL:lng);\n");
     io.print(nil:lng);
     io.printf("# io.print(-9223372036854775807.0LL:lng);\n");
     io.print(nil:lng);
@@ -2397,11 +2387,7 @@ Caught exception
 [ 0 ]
 # io.print(-1.0:int);
 [ -1 ]
-# io.print(2147483647.0:int);
-[ nil ]
-# io.print(2147483648.0:int);
-[ nil ]
-# io.print(2147483649.0:int);
+# io.print(2147483847.0:int);
 [ nil ]
 # io.print(-2147483647.0:int);
 [ nil ]
@@ -2795,11 +2781,7 @@ Caught exception
 [ -2147483648 ]
 # io.print(-2147483649.0:lng);
 [ -2147483648 ]
-# io.print(9223372036854775807.0:lng);
-[ nil ]
-# io.print(9223372036854775808.0:lng);
-[ nil ]
-# io.print(9223372036854775809.0:lng);
+# io.print(9223972036854775807.0:lng);
 [ nil ]
 # io.print(-9223372036854775807.0:lng);
 [ nil ]
@@ -2838,11 +2820,7 @@ Caught exception
 [ -2147483648 ]
 # io.print(-2147483649.0LL:lng);
 [ -2147483649 ]
-# io.print(9223372036854775807.0LL:lng);
-[ nil ]
-# io.print(9223372036854775808.0LL:lng);
-[ nil ]
-# io.print(9223372036854775809.0LL:lng);
+# io.print(9223372036854779807.0LL:lng);
 [ nil ]
 # io.print(-9223372036854775807.0LL:lng);
 [ nil ]
