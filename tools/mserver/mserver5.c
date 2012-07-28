@@ -207,6 +207,7 @@ main(int argc, char **av)
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
 	char *modpath = NULL;
+	char *binpath = NULL;
 
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },
@@ -264,6 +265,11 @@ main(int argc, char **av)
 		perror("pwd");
 		GDKfatal("monet_init: could not determine current directory\n");
 	}
+
+	/* retrieve binpath early (before monet_init) because some
+	 * implementations require the working directory when the binary was
+	 * called */
+	binpath = get_bin_path();
 
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog);
@@ -436,7 +442,6 @@ main(int argc, char **av)
 		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
 		size_t i;
 		struct stat sb;
-		char *binpath = get_bin_path();
 		if (binpath != NULL) {
 			char *p = strrchr(binpath, DIR_SEP);
 			if (p != NULL)
