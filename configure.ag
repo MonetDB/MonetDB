@@ -1641,28 +1641,30 @@ if test "x$have_pthread" != xno; then
 	esac
 	CPPFLAGS="$save_CPPFLAGS"
 
-	case $GCC in
-		yes)
+	save_LIBS="$LIBS"
+	save_CPPFLAGS="$CPPFLAGS"
+	case $GCC-$have_pthread in
+		yes-auto|yes-yes)
 			# use GCC's knowledge about the target platform, sets flags
 			# for both the preprocessor as well as the linker
-			PTHREAD_INCS="$PTHREAD_INCS -pthread"
-			PTHREAD_LIBS="$PTHREAD_LIBS -pthread"
-			CPPFLAGS="$CPPFLAGS -pthread"
-			LIBS="$LIBS -pthread"
+			PTHREAD_INCS="-pthread"
+			PTHREAD_LIBS="-pthread"
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS"
+			LIBS="$LIBS $PTHREAD_LIBS"
 		;;
 		*)
-			save_LIBS="$LIBS"
 			# ok, do old-fashioned stuff
-			LIBS="$LIBS $PTHREAD_LIBS" # in case user did --with-pthreads
+			CPPFLAGS="$CPPFLAGS $PTHREAD_INCS" # in case user did --with-pthreads
+			LIBS="$LIBS $PTHREAD_LIBS"
 			pthread_found=yes
 			AC_SEARCH_LIBS([sem_init], [pthreadGC2 pthreadGC1 pthreadGC pthread],
-				[PTHREAD_LIBS="$PTHREAD_LIBS $ac_cv_search_sem_init"],
+				[LIBS="$LIBS $ac_cv_search_sem_init"],
 				[pthread_found=no])
 			if test x"$pthread_found" = xno ; then
 				pthread_found=yes
 				dnl sun
 				AC_SEARCH_LIBS([sem_post], [pthread],
-					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4"],
+					[LIBS="$LIBS -lpthread -lposix4"],
 					[pthread_found=no],
 					"-lposix4")
 			fi
@@ -1670,7 +1672,7 @@ if test "x$have_pthread" != xno; then
 				pthread_found=yes
 				dnl hp-ux
 				AC_SEARCH_LIBS([sem_post], [pthread],
-					[PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lrt"],
+					[LIBS="$LIBS -lpthread -lrt"],
 					[pthread_found=no],
 					"-lrt")
 			fi
@@ -1680,7 +1682,7 @@ if test "x$have_pthread" != xno; then
 				fi
 				have_pthread=no
 			fi
-			LIBS="$save_LIBS"
+			PTHREAD_LIBS="$LIBS"
 		;;
 	esac
 
@@ -1699,11 +1701,9 @@ if test "x$have_pthread" != xno; then
 	dnl this function very ugly is overloaded with semaphore stuff
 	dnl so we DO need to check for it, for platforms which have it
 	dnl in a separate lib, like Solaris
-	oldLIBS="$LIBS"
-	LIBS="$PTHREAD_LIBS"
 	AC_SEARCH_LIBS(sem_wait, rt)
-	PTHREAD_LIBS="$LIBS"
-	LIBS="$oldLIBS"
+
+	LIBS="$save_LIBS"
 	CPPFLAGS="$save_CPPFLAGS"
 
 fi
