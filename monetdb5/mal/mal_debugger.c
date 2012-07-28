@@ -1455,19 +1455,24 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 void
 printBatDetails(stream *f, int bid)
 {
-	BAT *b;
-	int ret;
+	BAT *b[2];
+	int ret,ret2;
 	MALfcn fcn;
 
+	/* at this level we don't know bat kernel primitives */
 	mnstr_printf(f, "#Show info for %d\n", bid);
 	fcn = getAddress(f, "bat", "bat", "BKCinfo", 0);
 	if (fcn) {
-		(*fcn)(&ret, &bid);
-		b = BATdescriptor(ret);
-		if (b == NULL)
+		(*fcn)(&ret,&ret2, &bid);
+		b[0] = BATdescriptor(ret);
+		if (b[0] == NULL)
 			return;
-		BATmultiprintf(f, 2, &b, TRUE, 0, TRUE);
-		BBPunfix(b->batCacheid);
+		b[1] = BATdescriptor(ret2);
+		if (b[1] == NULL)
+			return;
+		BATmultiprintf(f, 3, b, TRUE, 0, TRUE);
+		BBPunfix(b[0]->batCacheid);
+		BBPunfix(b[1]->batCacheid);
 	}
 }
 void
@@ -1482,30 +1487,32 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 {
 	if (isaBatType(n->type) && v->val.ival) {
 		int bid;
-		int ret;
+		int ret,ret2;
 		MALfcn fcn;
 		BUN p;
 
+		/* at this level we don't know bat kernel primitives */
 		fcn = getAddress(f, "bat", "bat", "BKCinfo", 0);
 		if (fcn) {
-			BAT *b;
+			BAT *b[2];
 
 			bid = v->val.ival;
 			mnstr_printf(f, "BAT %d %s= ", bid, props);
-			(*fcn)(&ret, &bid);
-			b = BATdescriptor(ret);
-			if (b == NULL) {
+			(*fcn)(&ret, &ret2, &bid);
+			b[0] = BATdescriptor(ret);
+			if (b[0] == NULL) {
 				mnstr_printf(f, "Could not access descriptor\n");
 				return;
 			}
-			p = BUNfnd(b, props);
+			p = BUNfnd(b[0], props);
 			if (p != BUN_NONE) {
-				BATiter bi = bat_iterator(b);
+				BATiter bi = bat_iterator(b[1]);
 				mnstr_printf(f, " %s\n", (str) BUNtail(bi, p));
 			} else {
 				mnstr_printf(f, " not found\n");
 			}
-			BBPunfix(b->batCacheid);
+			BBPunfix(b[0]->batCacheid);
+			BBPunfix(b[1]->batCacheid);
 		}
 	}
 }
