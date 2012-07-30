@@ -135,6 +135,23 @@ comment "Select all head values of the first input BAT for which the tail value
 	Note that the output is suitable as second input for this
 	function.";
 
+command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect1
+comment "Select all head values for which the tail value obeys the relation
+	value OP VAL.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	obeys the relation value OP VAL and for which the head value occurs in
+	the tail of the second input BAT.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
 address ALGselect
@@ -981,6 +998,8 @@ algebra_export str ALGBATminimum(ptr *result, int *bid);
 algebra_export str ALGBATmaximum(ptr *result, int *bid);
 algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
 algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
+algebra_export str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
@@ -1966,6 +1985,36 @@ str
 ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
 {
 	return ALGsubselect2(result, bid, NULL, low, high, li, hi, anti);
+}
+
+str
+ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op)
+{
+	BAT *b, *s = NULL, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	@:derefStr(b,t,val)@
+	bn = BATthetasubselect(b, s, val, *op);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op)
+{
+	return ALGthetasubselect2(result, bid, NULL, val, op);
 }
 
 str

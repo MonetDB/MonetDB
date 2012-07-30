@@ -730,3 +730,41 @@ BATuselect(BAT *b, const void *h, const void *t)
 {
 	return BATuselect_(b, h, t, TRUE, TRUE);
 }
+
+BAT *
+BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
+{
+	const void *nil;
+
+	BATcheck(b, "BATthetasubselect");
+	BATcheck(val, "BATthetasubselect");
+	BATcheck(op, "BATthetasubselect");
+
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+		/* "=" or "==" */
+		return BATsubselect(b, s, val, NULL, 1, 1, 0);
+	}
+	nil = ATOMnilptr(b->ttype);
+	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+			return BATsubselect(b, s, nil, val, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			return BATsubselect(b, s, nil, val, 0, 1, 0);
+		}
+	}
+	if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			return BATsubselect(b, s, val, nil, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			return BATsubselect(b, s, val, nil, 1, 0, 0);
+		}
+	}
+	GDKerror("BATthetasubselect: unknown operator.\n");
+	return NULL;
+}
