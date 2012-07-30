@@ -324,7 +324,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 {
 	int hval, lval, equi, t, lnil;
 	const void *nil;
-	BAT *orig_s = s;
 	BAT *bn;
 	BUN estimate;
 
@@ -433,10 +432,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 		 * any: i.e. return everything */
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): everything, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		if (s) {
-			if (s == orig_s)
-				return BATcopy(s, TYPE_void, s->ttype, 0);
-			else
-				return s; /* already made a copy: return it */
+			return BATcopy(s, TYPE_void, s->ttype, 0);
 		} else {
 			return BATmirror(BATmark(b, 0));
 		}
@@ -526,8 +522,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 				o = (oid) high;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
-				if (s != orig_s)
-					BBPunfix(s->batCacheid);
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
 			}
@@ -540,8 +534,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 				o = (oid) high;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
-				if (s != orig_s)
-					BBPunfix(s->batCacheid);
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
 			}
@@ -584,11 +576,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, estimate);
-	if (bn == NULL) {
-		if (s && s != orig_s)
-			BBPreclaim(s);
+	if (bn == NULL)
 		return NULL;
-	}
 
 	if (equi &&
 	    (b->T->hash ||
@@ -601,9 +590,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	} else {
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval);
 	}
-
-	if (bn == NULL && s && s != orig_s)
-		BBPreclaim(s);
 
 	return bn;
 }
