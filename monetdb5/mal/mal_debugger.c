@@ -1495,12 +1495,19 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		fcn = getAddress(f, "bat", "bat", "BKCinfo", 0);
 		if (fcn) {
 			BAT *b[2];
+			str res;
 
 			bid = v->val.ival;
 			mnstr_printf(f, "BAT %d %s= ", bid, props);
-			(*fcn)(&ret, &ret2, &bid);
+			res = (*fcn)(&ret, &ret2, &bid);
+			if (res != MAL_SUCCEED) {
+				GDKfree(res);
+				mnstr_printf(f, "mal.info failed\n");
+				return;
+			}
 			b[0] = BATdescriptor(ret);
-			if (b[0] == NULL) {
+			b[1] = BATdescriptor(ret2);
+			if (b[0] == NULL || b[1] == NULL) {
 				mnstr_printf(f, "Could not access descriptor\n");
 				return;
 			}
