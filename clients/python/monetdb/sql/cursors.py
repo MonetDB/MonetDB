@@ -158,6 +158,9 @@ class Cursor(object):
         # clear message history
         self.messages = []
 
+        # convert to utf-8
+        operation = unicode(operation).encode('utf-8')
+
         # set the number of rows to fetch
         self.connection.command('Xreply_size %s' % self.arraysize)
 
@@ -172,12 +175,8 @@ class Cursor(object):
             if isinstance(parameters, dict):
                 query = operation % dict([(k, monetize.convert(v))
                     for (k,v) in parameters.items()])
-            elif type(parameters) == list:
-                query = operation % tuple([monetize.convert(item)
-                    for item in parameters])
-            elif type(parameters) == tuple:
-                query = operation % tuple([monetize.convert(item)
-                    for item in parameters])
+            elif type(parameters) == list or type(parameters) == tuple:
+                query = operation % tuple([monetize.convert(item) for item in parameters])
             elif isinstance(parameters, str):
                 query = operation % monetize.convert(parameters)
             else:
