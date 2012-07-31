@@ -166,3 +166,21 @@ address BATPCREnotilike;
 command batstr.not_ilike(s:bat[:oid,:str], pat:str):bat[:oid,:bit]
 address BATPCREnotilike2;
 
+module algebra;
+command algebra.likesubselect(b:bat[:oid,:str], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect1
+comment "Select all head values for which the tail value is \"like\"
+	the given (SQL-style) pattern.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+command algebra.likesubselect(b:bat[:oid,:str], s:bat[:oid,:oid], pat:str, esc:str, caseignore:bit, anti:bit) :bat[:oid,:oid]
+address PCRElikesubselect2
+comment "Select all head values of the first input BAT for which the
+	tail value is \"like\" the given (SQL-style) pattern and for
+	which the head value occurs in the tail of the second input
+	BAT.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";

@@ -2111,6 +2111,8 @@ str PCRElike3(bit *ret, str *s, str *pat, str *esc);
 str PCRElike_join_pcre(int *ret, int *b, int *pat, str *esc);
 str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
+str PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti);
+str PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti);
 str PCREmatch(bit *ret, str *val, str *pat);
 str PCREnotilike2(bit *ret, str *s, str *pat);
 str PCREnotilike3(bit *ret, str *s, str *pat, str *esc);
