@@ -22,6 +22,7 @@ functions for converting python objects to monetdb SQL format
 import datetime
 import decimal
 
+from monetdb.exceptions import ProgrammingError
 
 def monet_none(data):
     """
@@ -76,4 +77,9 @@ def convert(data):
     try:
         return mapping[type(data)](data)
     except KeyError:
-        raise ProgrammingError("type %s not supported as value" % type(data))
+        if hasattr(data, '__unicode__'):
+            return unicode(data).encode('utf-8')
+        elif hasattr(data, '__str__'):
+            return str(data)
+        else:
+            raise ProgrammingError("type %s not supported as value" % type(data))
