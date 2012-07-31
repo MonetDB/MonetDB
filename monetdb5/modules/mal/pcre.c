@@ -839,7 +839,7 @@ pcre_heap(Heap *heap, size_t capacity)
 }
 
 /* change SQL LIKE pattern into PCRE pattern */
-static int
+static str
 sql2pcre(str *r, str pat, str esc_str)
 {
 	int escaped = 0;
@@ -849,10 +849,10 @@ sql2pcre(str *r, str pat, str esc_str)
 	int specials = 0;
 
 	if (pat == NULL )
-		return GDK_FAIL;
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		return GDK_FAIL;
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
@@ -906,14 +906,15 @@ sql2pcre(str *r, str pat, str esc_str)
 	/* no wildcard or escape character at end of string */
 	if (!hasWildcard || escaped) {
 		GDKfree(*r);
-		*r = GDKstrdup(str_nil);
+		*r = NULL;
 		if (escaped)
-			return GDK_FAIL;
+			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
+		*r = GDKstrdup(str_nil);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* change SQL PATINDEX pattern into PCRE pattern */
@@ -1099,16 +1100,14 @@ PCREquote(str *ret, str *val)
 str
 PCREsql2pcre(str *ret, str *pat, str *esc)
 {
-	if (sql2pcre(ret, *pat, *esc) < 0)
-		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
-	return MAL_SUCCEED;
+	return sql2pcre(ret, *pat, *esc);
 }
 
 static str
 PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 {
 	char *ppat = NULL;
-	str r = PCREsql2pcre(&ppat, pat, esc);
+	str r = sql2pcre(&ppat, *pat, *esc);
 
 	if (!r) {
 		assert(ppat);
@@ -1214,7 +1213,7 @@ static str
 BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 {
 	char *ppat = NULL;
-	str res = PCREsql2pcre(&ppat, pat, esc);
+	str res = sql2pcre(&ppat, *pat, *esc);
 
 	if (!res) {
 		BAT *strs = BATdescriptor(*bid);
@@ -1421,7 +1420,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		return MAL_SUCCEED;
 	}
 
-	r = PCREsql2pcre(&ppat, pat, esc);
+	r = sql2pcre(&ppat, *pat, *esc);
 
 	if (!r && ppat) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {
