@@ -161,18 +161,13 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
-		BATloop(s, p, q) {					\
-			o = * (oid *) BUNtloc(si, p);			\
-			if (o == oid_nil ||				\
-			    o < seqbase ||				\
-			    o - seqbase >= b->U->count) {		\
-				/* XXX return an error? */		\
-				continue;				\
-			}						\
-			p = (BUN) (o - off);				\
-			v = BUNtail(bi, p);				\
+		while (p < q) {						\
+			o = *candlist++;				\
+			r = (BUN) (o - off);				\
+			v = BUNtail(bi, r);				\
 			if (TEST)					\
 				bunfastins(bn, NULL, &o);		\
+			p++;						\
 		}							\
 	} while (0)
 
@@ -199,7 +194,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(const void *, const void *);
 	BUN p, q;
-	oid o, seqbase, off;
+	oid o, off;
 	const void *nil, *v;
 	int c;
 
@@ -216,14 +211,22 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
 	nil = b->T->nonil ? NULL : ATOMnilptr(b->ttype);
-	seqbase = b->hseqbase;
-	off = seqbase - BUNfirst(b);
+	off = b->hseqbase - BUNfirst(b);
 
 	if (s) {
-		BATiter si = bat_iterator(s);
+		const oid *candlist;
+		BUN r;
 
 		assert(s->tsorted);
 		assert(s->tkey);
+		/* setup candscanloop loop vars to only iterate over
+		 * part of s that has values that are in range of b */
+		o = b->hseqbase + BATcount(b);
+		q = SORTfndfirst(s, &o);
+		p = SORTfndfirst(s, &b->hseqbase);
+		/* should we return an error if p > BUNfirst(s) || q <
+		 * BUNlast(s) (i.e. s not fully used)? */
+		candlist = (const oid *) Tloc(s, p);
 		if (equi) {
 			assert(li && hi);
 			assert(!anti);
@@ -324,7 +327,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 {
 	int hval, lval, equi, t, lnil;
 	const void *nil;
-	BAT *orig_s = s;
 	BAT *bn;
 	BUN estimate;
 
@@ -433,10 +435,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 		 * any: i.e. return everything */
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): everything, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
 		if (s) {
-			if (s == orig_s)
-				return BATcopy(s, TYPE_void, s->ttype, 0);
-			else
-				return s; /* already made a copy: return it */
+			return BATcopy(s, TYPE_void, s->ttype, 0);
 		} else {
 			return BATmirror(BATmark(b, 0));
 		}
@@ -526,8 +525,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 				o = (oid) high;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
-				if (s != orig_s)
-					BBPunfix(s->batCacheid);
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
 			}
@@ -540,8 +537,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 				o = (oid) high;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
-				if (s != orig_s)
-					BBPunfix(s->batCacheid);
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
 			}
@@ -584,11 +579,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	}
 
 	bn = BATnew(TYPE_void, TYPE_oid, estimate);
-	if (bn == NULL) {
-		if (s && s != orig_s)
-			BBPreclaim(s);
+	if (bn == NULL)
 		return NULL;
-	}
 
 	if (equi &&
 	    (b->T->hash ||
@@ -601,9 +593,6 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	} else {
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval);
 	}
-
-	if (bn == NULL && s && s != orig_s)
-		BBPreclaim(s);
 
 	return bn;
 }
