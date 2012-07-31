@@ -176,6 +176,7 @@ BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi
 BAT *BATsunion(BAT *b, BAT *c);
 BAT *BATsunique(BAT *b);
 BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
+BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 int BATtopN(BAT *b, BUN topN);
 BAT *BATundo(BAT *b);
 BAT *BATuselect(BAT *b, const void *tl, const void *th);
@@ -746,6 +747,8 @@ str ALGtdiff(int *result, int *lid, int *rid);
 str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 str ALGthetaselect(int *result, int *bid, ptr low, str *op);
+str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
+str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
 str ALGthetauselect(int *result, int *bid, ptr value, str *op);
 str ALGthsort(int *result, int *lid);
 str ALGtintersect(int *result, int *lid, int *rid);
