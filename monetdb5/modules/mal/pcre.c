@@ -1498,7 +1498,7 @@ BATPCREnotilike2(bat *ret, int *bid, str *pat)
 str
 PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti)
 {
-	BAT *b, *s = NULL, *bn;
+	BAT *b, *s = NULL, *bn = NULL;
 	str res;
 	char *ppat = NULL;
 
@@ -1521,6 +1521,7 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 	GDKfree(ppat);
 	if (res != MAL_SUCCEED)
 		return res;
+	assert(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
