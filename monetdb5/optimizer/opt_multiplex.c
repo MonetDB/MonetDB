@@ -76,6 +76,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 3; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
+			if (getHeadType(getVarType(mb,iter)) != TYPE_oid)
+				throw(MAL, "optimizer.multiplex", "Iterator BAT is not OID-headed");
 			break;
 		}
 	if( i == pci->argc)
