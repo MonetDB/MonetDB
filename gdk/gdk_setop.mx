@@ -43,23 +43,28 @@ All Rights Reserved.
  * @item [s,k]intersection
  * produce bat intersection.
  * @end itemize
- * Implementations typically take two forms: if the input relation(s) is/are
- * ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
- * on demand for the hash-based versions.
  *
- * The @emph{[k,s]intersect(l,r)} operations result in all BUNs of @emph{l} that
- * are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+ * Implementations typically take two forms: if the input relation(s)
+ * is/are ordered, a merge-algorithm is used. Otherwise, hash-indices
+ * are produced on demand for the hash-based versions.
  *
- * The @emph{[k,s]diff(l,r)} operations result in all BUNs of @emph{l} that are
- * not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.
+ * The @emph{[k,s]intersect(l,r)} operations result in all BUNs of
+ * @emph{l} that are also in @emph{r}. They do not do
+ * double-elimination over the @emph{l} BUNs.
  *
- * The @emph{[k,s]union(l,r)} operations result in all BUNs of @emph{l}, plus
- * all BUNs of @emph{r} that are not in @emph{l}. They do not do double-elimination
- * over the @emph{l} nor @emph{r} BUNs.
+ * The @emph{[k,s]diff(l,r)} operations result in all BUNs of @emph{l}
+ * that are not in @emph{r}. They do not do double-elimination over
+ * the @emph{l} BUNs.
  *
- * Operations with double-elimination can be formed by performing @emph{[k,s]unique(l)} on their operands.
+ * The @emph{[k,s]union(l,r)} operations result in all BUNs of
+ * @emph{l}, plus all BUNs of @emph{r} that are not in @emph{l}. They
+ * do not do double-elimination over the @emph{l} nor @emph{r} BUNs.
  *
- * The @emph{kintersect(l,r)} is used also as implementation for the @emph{semijoin()}.
+ * Operations with double-elimination can be formed by performing
+ * @emph{[k,s]unique(l)} on their operands.
+ *
+ * The @emph{kintersect(l,r)} is used also as implementation for the
+ * @emph{semijoin()}.
  */
 @h
 #ifndef _GDK_SETOP_H
@@ -404,10 +409,10 @@ BATsunique(BAT *b)
 /*
  * @+ Difference and Intersect
  * Difference and Intersection are handled together. For each routine
- * there are two versions: @`BATkdiff@5(l,r) and @`BATkintersect@5(l,r) (which
- * look at the head column only), versus @`BATsdiff@5(l,r) and
- * @`BATsintersect@5(l,r) (looking at both columns).
- * TODO synced/key case..
+ * there are two versions: @`BATkdiff@5(l,r) and
+ * @`BATkintersect@5(l,r) (which look at the head column only), versus
+ * @`BATsdiff@5(l,r) and @`BATsintersect@5(l,r) (looking at both
+ * columns).  TODO synced/key case..
  */
 @= mergecheck
 	BUN p1 = BUNfirst(l), p2 = BUNfirst(r);

@@ -1683,8 +1683,8 @@ gdk_export int BATordered_rev(BAT *b);
 gdk_export BAT *BATssort(BAT *b);
 gdk_export BAT *BATssort_rev(BAT *b);
 
-gdk_export void GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
-gdk_export void GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 
 #define BAThordered(b)	((b)->htype == TYPE_void || (b)->hsorted)
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
@@ -3139,6 +3139,7 @@ gdk_export int BATtopN(BAT *b, BUN topN);	/* used in monet5/src/modules/kernel/a
 #define JOIN_BAND	3
 
 gdk_export BAT *BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
+gdk_export BAT *BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op);
 gdk_export BAT *BATselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);
 gdk_export BAT *BATantiuselect_(BAT *b, const void *tl, const void *th, bit li, bit hi);

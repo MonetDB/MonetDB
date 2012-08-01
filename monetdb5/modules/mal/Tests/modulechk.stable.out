@@ -21,24 +21,97 @@ stdout of test 'modulechk` in directory 'modules/mal` itself:
 function user.test():void;
     c := mdb.modules();
     mods := algebra.kunique(c);
-    s := "\\nModules: ";
-    sep := "";
-barrier (h:oid ,t:str ) := iterator.new(mods);
-    s := calc.+(s,sep);
-    s := calc.+(s,"'");
-    s := calc.+(s,t);
-    s := calc.+(s,"'");
-    sep := ",";
-    redo (h:oid ,t:str ) := iterator.next(mods);
-exit h:oid ;
-    s := calc.+(s,"\\n");
-    io.printf(s);
+    io.print(mods);
 end test;
 function user.main():void;
     user.test();
 end main;
-\nModules: 'profiler','run_isolate','opt_constants','counters','recycle','opt_accessmode','aggr','tokenizer','constraints','lock','str','algebraExtensions','optimizer','batstr','opt_mergetable','opt_macro','opt_accumulators','language','run_octopus','opt_reduce','opt_prejoin','udf','srvpool','xml','opt_joinselect','opt_remoteQueries','alarm','txtsim','color','datacell','mtime','opt_datacell','sample','algebra','opt_deadcode','opt_cluster','mal_compiler','trader','opt_aliases','iterator','basket','opt_compression','mal_mapi','remote','opt_dataflow','factories','inet','batifthen','opt_origin','opt_support','unix','opt_reorder','opt_statistics','transaction','group','bat5','mat','opt_remap','blob','tablet','opt_factorize','mkey','urlbox','opt_mapreduce','cluster','sabaoth','vault','microbenchmark','run_memo','sql','status','array','chopper','pma','dcoperator','mmath','const','opt_centipede','opt_commonTerms','opt_evaluate','pcre','zorder','opt_recycler','opt_strengthReduction','opt_sql_append','opt_octopus','opt_datacyclotron','opt_coercion','sema','opt_qep','geom','clients','statistics','opt_history','attach','calc','petrinet','run_adder','opt_peephole','inspect','batExtensions','logger','bbp','batcalc','emitter','batmtime','opt_garbageCollector','receptor','opt_singleton','opt_joinpath','batmmath','mal_io','batcolor','manual','json','opt_costModel','fits','mdb','opt_groups','opt_emptySet','identifier','opt_inline','url','opt_pushranges','opt_dictionary','streams','mal_init','opt_trace','lsst','jaql','groupby','batxml','opt_mitosis','jaqlfunc','opt_multiplex','pqueue','box'\n
-# 04:02:09 >  
-# 04:02:09 >  "Done."
-# 04:02:09 >  
+#---------------------------------#
+# h	t			  # name
+# void	str			  # type
+#---------------------------------#
+[ 0@0,	  "bbp"			  ]
+[ 1@0,	  "blob"		  ]
+[ 2@0,	  "urlbox"		  ]
+[ 3@0,	  "sema"		  ]
+[ 4@0,	  "recycle"		  ]
+[ 5@0,	  "language"		  ]
+[ 6@0,	  "aggr"		  ]
+[ 7@0,	  "mmath"		  ]
+[ 8@0,	  "url"			  ]
+[ 9@0,	  "mkey"		  ]
+[ 10@0,	  "mal_init"		  ]
+[ 11@0,	  "counters"		  ]
+[ 12@0,	  "manual"		  ]
+[ 13@0,	  "mdb"			  ]
+[ 14@0,	  "mat"			  ]
+[ 15@0,	  "bat5"		  ]
+[ 16@0,	  "zorder"		  ]
+[ 17@0,	  "opt_sql_append"	  ]
+[ 18@0,	  "vault"		  ]
+[ 19@0,	  "inet"		  ]
+[ 20@0,	  "sabaoth"		  ]
+[ 21@0,	  "profiler"		  ]
+[ 22@0,	  "mal_io"		  ]
+[ 23@0,	  "iterator"		  ]
+[ 24@0,	  "sql"			  ]
+[ 25@0,	  "run_isolate"		  ]
+[ 26@0,	  "microbenchmark"	  ]
+[ 27@0,	  "groupby"		  ]
+[ 28@0,	  "tokenizer"		  ]
+[ 29@0,	  "pqueue"		  ]
+[ 30@0,	  "remote"		  ]
+[ 31@0,	  "algebra"		  ]
+[ 32@0,	  "batExtensions"	  ]
+[ 33@0,	  "xml"			  ]
+[ 34@0,	  "jaqlfunc"		  ]
+[ 35@0,	  "run_adder"		  ]
+[ 36@0,	  "lsst"		  ]
+[ 37@0,	  "jaql"		  ]
+[ 38@0,	  "batmtime"		  ]
+[ 39@0,	  "group"		  ]
+[ 40@0,	  "batmmath"		  ]
+[ 41@0,	  "json"		  ]
+[ 42@0,	  "udf"			  ]
+[ 43@0,	  "pcre"		  ]
+[ 44@0,	  "fits"		  ]
+[ 45@0,	  "streams"		  ]
+[ 46@0,	  "mtime"		  ]
+[ 47@0,	  "geom"		  ]
+[ 48@0,	  "mal_mapi"		  ]
+[ 49@0,	  "batstr"		  ]
+[ 50@0,	  "array"		  ]
+[ 51@0,	  "attach"		  ]
+[ 52@0,	  "identifier"		  ]
+[ 53@0,	  "const"		  ]
+[ 54@0,	  "clients"		  ]
+[ 55@0,	  "run_octopus"		  ]
+[ 56@0,	  "factories"		  ]
+[ 57@0,	  "box"			  ]
+[ 58@0,	  "txtsim"		  ]
+[ 59@0,	  "batxml"		  ]
+[ 60@0,	  "sample"		  ]
+[ 61@0,	  "srvpool"		  ]
+[ 62@0,	  "cluster"		  ]
+[ 63@0,	  "transaction"		  ]
+[ 64@0,	  "status"		  ]
+[ 65@0,	  "mal_compiler"	  ]
+[ 66@0,	  "run_memo"		  ]
+[ 67@0,	  "color"		  ]
+[ 68@0,	  "unix"		  ]
+[ 69@0,	  "calc"		  ]
+[ 70@0,	  "alarm"		  ]
+[ 71@0,	  "logger"		  ]
+[ 72@0,	  "inspect"		  ]
+[ 73@0,	  "batcalc"		  ]
+[ 74@0,	  "optimizer"		  ]
+[ 75@0,	  "lock"		  ]
+[ 76@0,	  "constraints"		  ]
+[ 77@0,	  "str"			  ]
+[ 78@0,	  "batcolor"		  ]
+[ 79@0,	  "trader"		  ]
+
+# 15:52:44 >  
+# 15:52:44 >  "Done."
+# 15:52:44 >  
 
