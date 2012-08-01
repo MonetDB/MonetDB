@@ -1,6 +1,8 @@
 function test();
-c := mdb.modules();
-mods := algebra.kunique(c);
-io.print(mods);
+m1 := mdb.modules();
+m2 := algebra.kunique(m1);
+m3 := algebra.markH(m2,nil:oid);
+m4 := algebra.sortTail(m3);
+io.print(m4);
 end test;
 test();
