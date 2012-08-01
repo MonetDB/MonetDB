@@ -965,7 +965,7 @@ alter_statement:
 	{ dlist *l = L();
 	  if ($2 == SQL_ARRAY) {
 			$$ = NULL;
-			yyerror("\"ADD TABLE\" to an array not allowed");
+			yyerror(m, "\"ADD TABLE\" to an array not allowed");
 			YYABORT;
 	  }
 	  append_list(l, $3);
