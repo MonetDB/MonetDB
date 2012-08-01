@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2012 MonetDB B.V.
@@ -143,9 +143,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q = pushArgument(mb, q, x);
 	q = pushArgument(mb, q, hvar);
 
-	/* insert(resB,h,cr);  
+	/* insert(resB,h,cr);
 	   not append(resB, cr); the head type (oid) may dynamically change */
-	
+
 	q = newFcnCall(mb, batRef, insertRef);
 	q= pushArgument(mb, q, resB);
 	q= pushArgument(mb, q, y);
@@ -215,12 +215,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED && 
-                    getModuleId(p) == malRef && 
+		if (msg == MAL_SUCCEED &&
+                    getModuleId(p) == malRef &&
 		    getFunctionId(p) == multiplexRef) {
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
-				freeInstruction(p); 
+				freeInstruction(p);
 				old[i]=0;
 			} else {
 				pushInstruction(mb, p);
