@@ -32,7 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define SA 	(((mvc*)parm)->sa)
+#define SA 	m->sa
 #define _symbol_create(t,d)         symbol_create( SA, t, d)
 #define _symbol_create_list(t,d)    symbol_create_list( SA, t, d)
 #define _symbol_create_int(t,d)     symbol_create_int( SA, t, d)
@@ -51,14 +51,6 @@
 #define append_type(l,d)     dlist_append_type( SA, l, d)
 
 #define _atom_string(t, v)   atom_string(SA, t, v)
- 
-#define YYPARSE_PARAM parm
-#define YYLEX_PARAM parm
-#ifdef yyerror
-#undef yyerror
-#endif
-#define yyerror(s) parse_error(YYLEX_PARAM, s)
-#define sqlerror(s) parse_error(YYLEX_PARAM, s)	/* needed for bison++ 1.21.11-3 */
 
 #define YYMALLOC malloc
 #define YYFREE free
@@ -76,6 +68,10 @@
  * REF/SCOPE
  * UDT
  */
+
+%define api.pure
+%parse-param { mvc *m }
+%lex-param { void *m }
 
 /* reentrant parser */
 %pure_parser
@@ -566,7 +562,6 @@ SQLCODE SQLERROR UNDER WHENEVER
 sqlstmt:
    sql SCOLON
 	{
-		mvc *m = (mvc*)parm;
 		if (m->sym) {
 			append_symbol(m->sym->data.lval, $$);
 			$$ = m->sym;
@@ -576,12 +571,12 @@ sqlstmt:
 		YYACCEPT;
 	}
 
- | PREPARE 		{ mvc *m = (mvc*)parm;
+ | PREPARE 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
+	sql SCOLON 	{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -590,12 +585,12 @@ sqlstmt:
 			  }
 			  YYACCEPT;
 			}
- | SQL_PLAN 		{ mvc *m = (mvc*)parm;
+ | SQL_PLAN 		{
 		  	  m->emode = m_plan;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
+	sql SCOLON 	{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -605,12 +600,12 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_EXPLAIN 		{ mvc *m = (mvc*)parm;
+ | SQL_EXPLAIN 		{
 		  	  m->emod |= mod_explain;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-   sql SCOLON 		{ mvc *m = (mvc*)parm;
+   sql SCOLON 		{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -620,12 +615,12 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_DOT 		{ mvc *m = (mvc*)parm;
+ | SQL_DOT 		{
 		  	  m->emod |= mod_dot;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
-	sql SCOLON 	{ mvc *m = (mvc*)parm;
+	sql SCOLON 	{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
 				$$ = m->sym;
@@ -635,9 +630,9 @@ sqlstmt:
 			  YYACCEPT;
 			}
 
- | SQL_DEBUG 		{ mvc *m = (mvc*)parm;
+ | SQL_DEBUG 		{
 			  if (m->scanner.mode == LINE_1) {
-				yyerror("SQL debugging only supported in interactive mode");
+				yyerror(m, "SQL debugging only supported in interactive mode");
 				YYABORT;
 			  }
 		  	  m->emod |= mod_debug;
@@ -645,22 +640,17 @@ sqlstmt:
 			  m->scanner.key = 0;
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
- | SQL_TRACE 		{ mvc *m = (mvc*)parm;
+ | SQL_TRACE 		{
 		  	  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
 			}
    sqlstmt		{ $$ = $3; YYACCEPT; }
- | exec SCOLON		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = $1; YYACCEPT; }
- | /*empty*/		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = NULL; YYACCEPT; }
- | SCOLON		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = NULL; YYACCEPT; }
- | error SCOLON		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = NULL; YYACCEPT; }
- | LEX_ERROR		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = NULL; YYABORT; }
+ | exec SCOLON		{ m->sym = $$ = $1; YYACCEPT; }
+ | /*empty*/		{ m->sym = $$ = NULL; YYACCEPT; }
+ | SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
+ | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
+ | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
 
 
@@ -1425,7 +1415,6 @@ column_def:
 			/* handle multi-statements by wrapping them in a list */
 			sql_subtype it;
 			dlist* stmts;
-			mvc *m = (mvc*)parm;
 			/* note: sql_next_seq_name uses sa_alloc */
 			str sn = sql_next_seq_name(m);
 			dlist *p; /* primary key */
@@ -1535,7 +1524,6 @@ generated_column:
 		/* handle multi-statements by wrapping them in a list */
 		sql_subtype it;
 		dlist* stmts;
-		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
 		str sn = sql_next_seq_name(m);
 		/* sequence generation code */
@@ -1563,7 +1551,6 @@ generated_column:
 		/* handle multi-statements by wrapping them in a list */
 		sql_subtype it;
 		dlist* stmts;
-		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
 		str sn = sql_next_seq_name(m);
 		/* sequence generation code */
@@ -2062,7 +2049,7 @@ while_statement:
 		  char *label = $1?$1:$8;
 		  if ($1 && $8 && strcmp($1, $8) != 0) {
 			$$ = NULL;
-			yyerror("WHILE: labels should match");
+			yyerror(m, "WHILE: labels should match");
 			YYABORT;
 		  }
  		  l = L();
@@ -2381,7 +2368,7 @@ update_statement:
 
 transaction_statement:
    _transaction_stmt
-	{ mvc *m = (mvc*)parm;
+	{
 	  $$ = $1;
 	  m->type = Q_TRANS;					}
  ;
@@ -2470,7 +2457,7 @@ copyfrom_stmt:
    | COPY opt_nr BINARY INTO qname FROM string_commalist /* binary copy from */
 	{ dlist *l = L();
 	  if ($2 != NULL) {
-	  	yyerror("COPY INTO: cannot pass number of records when using binary COPY INTO");
+	  	yyerror(m, "COPY INTO: cannot pass number of records when using binary COPY INTO");
 		YYABORT;
 	  }
 	  append_list(l, $5);
@@ -2648,8 +2635,6 @@ value_commalist:
 null:
    sqlNULL
 	 { 
-	   mvc *m = (mvc*)parm;
-
 	  if (m->emode == m_normal && m->caching) {
 		/* replace by argument */
 		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
@@ -2878,7 +2863,7 @@ select_no_parens_orderby:
 					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3, $4, $5);
 			}
 	  	} else {
-			yyerror("missing SELECT operator");
+			yyerror(m, "missing SELECT operator");
 			YYABORT;
 	  	}
 	 } 
@@ -2999,7 +2984,7 @@ table_ref:
 				}
  |  subquery
 				{ $$ = NULL;
-				  yyerror("subquery table reference needs alias, use AS xxx");
+				  yyerror(m, "subquery table reference needs alias, use AS xxx");
 				  YYABORT;
 				}
  |  joined_table 		{ $$ = $1;
@@ -3012,11 +2997,7 @@ table_ref:
 
 /* Basket expression, TODO window */
  |  '[' 
-	{
-		mvc *m = (mvc*)parm;
-		
-		m->caching = 0;
-	}
+	{ m->caching = 0; }
 	select_no_parens ']' table_name 	
 	{
 		dlist *op = L();
@@ -3246,7 +3227,7 @@ like_exp:
  	{ char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
 		char *msg = sql_message("\b22025!ESCAPE must be one character");
-		yyerror(msg);
+		yyerror(m, msg);
 		_DELETE(msg);
 		$$ = NULL;
 		YYABORT;
@@ -3403,7 +3384,7 @@ simple_scalar_exp:
  			  $$ = NULL;
 			  assert($2->token != SQL_COLUMN || $2->data.lval->h->type != type_lng);
 			  if ($2->token == SQL_COLUMN && $2->data.lval->h->type == type_int) {
-				atom *a = sql_bind_arg(parm, $2->data.lval->h->data.i_val);
+				atom *a = sql_bind_arg(m, $2->data.lval->h->data.i_val);
 				if (!atom_neg(a))
 					$$ = $2;
 			  } 
@@ -3446,7 +3427,6 @@ value_exp:
 param:  
    '?'			
 	{ 
-    	  mvc *m = (mvc*)parm;
 	  int nr = (m->params)?list_length(m->params):0;
 
 	  sql_add_param(m, NULL, NULL);
@@ -3773,8 +3753,6 @@ opt_alias_name:
 atom:
     literal
 	{ 
-	  mvc *m = (mvc*)parm;
-	
 	  if (m->emode == m_normal && m->caching && m->argc < 100) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
@@ -3939,12 +3917,11 @@ interval_qualifier:
 interval_type:
     INTERVAL interval_qualifier	{
 		int sk, ek, sp, ep;
-		mvc *m = (mvc*)parm;
 	  	int tpe;
 
 		$$.type = NULL;
 	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek, &sp, &ep )) < 0){
-			yyerror("\b22006!incorrect interval");
+			yyerror(m, "\b22006!incorrect interval");
 			YYABORT;
 	  	} else {
 			int d = inttype2digits(sk, ek);
@@ -4001,7 +3978,7 @@ literal:
 		  if (err) {
 			char *msg = sql_message("\b22003!invalid hexadecimal number or hexadecimal too large (%s)", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4036,7 +4013,7 @@ literal:
 		  if (err) {
 			char *msg = sql_message("\b22003!integer value too large or not a number (%s)", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4070,7 +4047,7 @@ literal:
 			if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$ = NULL;
 				YYABORT;
@@ -4089,7 +4066,7 @@ literal:
 		  if (p == $1 || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message("\b22003!double value too large or not a number (%s)", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4105,7 +4082,7 @@ literal:
 		  if (!r || (a = atom_general(SA, &t, $2)) == NULL) {
 			char *msg = sql_message("\b22007!incorrect date value (%s)", $2);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4121,7 +4098,7 @@ literal:
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			char *msg = sql_message("\b22007!incorrect time value (%s)", $4);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4137,7 +4114,7 @@ literal:
 		  if (!r || (a = atom_general(SA, &t, $4)) == NULL) {
 			char *msg = sql_message("\b22007!incorrect timestamp value (%s)", $4);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4157,7 +4134,7 @@ literal:
 		  if (!$$) {
 			char *msg = sql_message("\b22M28!incorrect blob %s", $2);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		  }
@@ -4174,7 +4151,7 @@ literal:
 		  if (!$$) {
 			char *msg = sql_message("\b22000!incorrect %s %s", $1, $2);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		  }
@@ -4191,13 +4168,13 @@ literal:
 		  if (!$$) {
 			char *msg = sql_message("\b22000!incorrect %s %s", $1, $2);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		  }
 		}
  | IDENT string
-		{ mvc *m = (mvc*)parm;
+		{
 		  sql_type *t = mvc_bind_type(m, $1);
 		  atom *a;
 
@@ -4212,7 +4189,7 @@ literal:
 		  if (!t || !$$) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			YYABORT;
 		  }
@@ -4231,13 +4208,12 @@ interval_expression:
    INTERVAL opt_sign string interval_qualifier { 
 		sql_subtype t;
 		int sk, ek, sp, ep, tpe;
-		mvc *m = (mvc*)parm;
 	  	lng i = 0;
 		int r = 0;
 
 		$$ = NULL;
 	  	if ( (tpe = parse_interval_qualifier( m, $4, &sk, &ek, &sp, &ep )) < 0){
-			yyerror("incorrect interval");
+			yyerror(m, "incorrect interval");
 			YYABORT;
 	  	} else {
 			int d = inttype2digits(sk, ek);
@@ -4248,7 +4224,7 @@ interval_expression:
 			}
 	  	}
 	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, sp, ep, &i)) < 0) { 
-			yyerror("incorrect interval");
+			yyerror(m, "incorrect interval");
 			$$ = NULL;
 			YYABORT;
 	  	} else {
@@ -4261,7 +4237,7 @@ interval_expression:
 				inlen++;
 		    	if (inlen > t.digits) {
 				char *msg = sql_message("\b22006!incorrect interval (" LLFMT " > %d)", inlen, t.digits);
-				yyerror(msg);
+				yyerror(m, msg);
 				$$ = NULL;
 				YYABORT;
 			}
@@ -4275,11 +4251,11 @@ interval_expression:
 
 qname:
     ident			{ $$ = append_string(L(), $1); }
- |  ident '.' ident		{ mvc *m = (mvc*)parm;
+ |  ident '.' ident		{
 				  m->scanner.schema = $1;
 				  $$ = append_string(
 					append_string(L(), $1), $3);}
- |  ident '.' ident '.' ident	{ mvc *m = (mvc*)parm;
+ |  ident '.' ident '.' ident	{
 				  m->scanner.schema = $1;
 				  $$ = append_string(
 					append_string(
@@ -4408,7 +4384,7 @@ nonzero:
 		{ $$ = $1;
 		  if ($$ <= 0) {
 			$$ = -1;
-			yyerror("Positive value greater than 0 expected");
+			yyerror(m, "Positive value greater than 0 expected");
 			YYABORT;
 		  }
 		}
@@ -4419,7 +4395,7 @@ nonzerolng:
 		{ $$ = $1;
 		  if ($$ <= 0) {
 			$$ = -1;
-			yyerror("Positive value greater than 0 expected");
+			yyerror(m, "Positive value greater than 0 expected");
 			YYABORT;
 		  }
 		}
@@ -4430,7 +4406,7 @@ nonzerowrd:
 		{ $$ = $1;
 		  if ($$ <= 0) {
 			$$ = -1;
-			yyerror("Positive value greater than 0 expected");
+			yyerror(m, "Positive value greater than 0 expected");
 			YYABORT;
 		  }
 		}
@@ -4440,7 +4416,7 @@ poslng:
 	lngval 	{ $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
-			yyerror("Positive value expected");
+			yyerror(m, "Positive value expected");
 			YYABORT;
 		  }
 		}
@@ -4450,7 +4426,7 @@ poswrd:
 	wrdval  { $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
-			yyerror("Positive value expected");
+			yyerror(m, "Positive value expected");
 			YYABORT;
 		  }
 		}
@@ -4460,7 +4436,7 @@ posint:
 	intval 	{ $$ = $1;
 		  if ($$ < 0) {
 			$$ = -1;
-			yyerror("Positive value expected");
+			yyerror(m, "Positive value expected");
 			YYABORT;
 		  }
 		}
@@ -4471,7 +4447,7 @@ data_type:
 			{ sql_find_subtype(&$$, "char", 1, 0); }
  |  varchar
 			{ $$.type = NULL;
-			  yyerror("CHARACTER VARYING needs a mandatory length specification");
+			  yyerror(m, "CHARACTER VARYING needs a mandatory length specification");
 			  YYABORT;
 			}
  |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
@@ -4509,7 +4485,7 @@ data_type:
 			  int d = $3;
 			  if (d > 18) {
 				char *msg = sql_message("\b22003!decimal of %d digits are not supported", d);
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4527,7 +4503,7 @@ data_type:
 					msg = sql_message("\b22003!scale (%d) should be less or equal to the precision (%d)", s, d);
 				else
 					msg = sql_message("\b22003!decimal(%d,%d) isn't supported because P=%d > 18", d, s, d);
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4544,7 +4520,7 @@ data_type:
 			  } else {
 				char *msg = sql_message("\b22003!number of digits for FLOAT values should be between 1 and 53");
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4554,7 +4530,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char *msg = sql_message("\b22003!precision(%d) should be less than number of digits(%d)", $5, $3);
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4564,7 +4540,7 @@ data_type:
 				sql_find_subtype(&$$, "double", $3, $5);
 			  } else {
 				char *msg = sql_message("\b22003!number of digits for FLOAT values should be between 1 and 53");
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4585,7 +4561,7 @@ data_type:
 			{ if ($5 >= $3) {
 				char *msg = sql_message("\b22003!precision(%d) should be less than number of digits(%d)", $5, $3);
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4593,12 +4569,12 @@ data_type:
 			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
- | IDENT		{ mvc *m = (mvc*)parm;
+ | IDENT		{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char *msg = sql_message("\b22000!type (%s) unknown", $1);
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4608,12 +4584,12 @@ data_type:
 			}
 
  | IDENT '(' nonzero ')'
-			{ mvc *m = (mvc*)parm;
+			{
 			  sql_type *t = mvc_bind_type(m, $1);
 			  if (!t) {
 				char *msg = sql_message("\b22000!type (%s) unknown", $1);
 
-				yyerror(msg);
+				yyerror(m, msg);
 				_DELETE(msg);
 				$$.type = NULL;
 				YYABORT;
@@ -4630,7 +4606,7 @@ type_alias:
 	  	if (!t) {
 			char *msg = sql_message("\b22000!type (%s) unknown", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = NULL;
 			YYABORT;
@@ -4759,14 +4735,14 @@ wrdval:
 
 intval:
 	sqlINT	{ $$ = strtol($1,NULL,10); }
- |	IDENT	{ mvc *m = (mvc*)parm;
+ |	IDENT	{
 		  char *name = $1;
 		  sql_subtype *tpe;
 
 		  if (!stack_find_var(m, name)) {
 			char *msg = sql_message("\b22000!constant (%s) unknown", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = 0;
 			YYABORT;
@@ -4782,7 +4758,7 @@ intval:
 		  } else {
 			char *msg = sql_message("\b22000!constant (%s) has wrong type (number expected)", $1);
 
-			yyerror(msg);
+			yyerror(m, msg);
 			_DELETE(msg);
 			$$ = 0;
 			YYABORT;
@@ -4802,7 +4778,7 @@ string:
 
 exec:
      EXECUTE exec_ref
-		{ mvc *m = (mvc*)parm;
+		{
 		  m->emode = m_execute;
 		  $$ = $2; }
  ;
@@ -5329,7 +5305,7 @@ XML_aggregate:
 	
 			s->orderby = $4;
 	  	} else {
-			yyerror("ORDER BY: missing select operator");
+			yyerror(m, "ORDER BY: missing select operator");
 			YYABORT;
 		}
 	  }
@@ -5497,7 +5473,7 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	return NULL;
 }
 
-int parse_error(mvc * c, const char *err)
+int sqlerror(mvc * c, const char *err)
 {
 	char *sqlstate = "42000!";
 	if (err && *err == '\b') {
