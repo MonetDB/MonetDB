@@ -22,7 +22,7 @@ function user.tst():void;
 # demonstrate an error 
     y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);
 end tst;
-!TypeException:user.tst[9]:'bat.new' undefined in: _18:any := bat.new()
+!TypeException:user.tst[10]:'bat.new' undefined in: _20:any := bat.new()
 function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
@@ -36,9 +36,10 @@ function user.tst():void;               #  0 tst:void := user.tst() {G}
     d := bat.new(:oid,:str);            #  6 d:bat[:oid,:str] := CMDBATnew(_2:oid, _13:str) {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDbatISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
-    bat.new();                          #  9 _18:any := bat.new() {U}
-    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);# 10 y:bat[:int,:int] := OPTremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
-end tst;                                # 11  
+    bat.reverse(b);                     #  9 _18:bat[:int,:oid] := BKCreverse(b:bat[:oid,:int]) {G}
+    bat.new();                          # 10 _20:any := bat.new() {U}
+    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);# 11 y:bat[:int,:int] := OPTremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
+end tst;                                # 12  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.
