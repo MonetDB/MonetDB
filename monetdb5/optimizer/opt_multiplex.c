@@ -21,20 +21,21 @@
 #include "mal_interpreter.h"
 
 /*
- * @-
  * The generic solution to the multiplex operators is to translate
  * them to a MAL loop.
  * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
  * structure:
  *
  * @verbatim
+ *  A1rev:=bat.reverse(A1);
  * 	resB:= bat.new(A1);
  * barrier (h,t):= iterator.new(A1);
  * 	$1:= algebra.fetch(A1,h);
  * 	$2:= A2;	# in case of constant?
  * 	...
  * 	cr:= MOD.FCN($1,...,$n);
- * 	bat.insert(resB,h,cr);
+ *  y:=algebra.fetch(A1rev,h);
+ * 	bat.insert(resB,y,cr);
  * 	redo (h,t):= iterator.next(A1);
  * end h;
  * @end verbatim
