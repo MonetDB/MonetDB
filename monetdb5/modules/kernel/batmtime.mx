@@ -119,7 +119,7 @@ batmtime_export str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l);
 
 @= baselineCode
 str MTIMEbat_@1_@2(int *ret, int *l, int *r)
-{	
+{
 	BAT *bn, *b, *right;
 	@1 *p, *q, *t;
 	bit *o;
@@ -139,7 +139,7 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
 	t = (@1*)Tloc(right,BUNfirst(right));
-		
+
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessBegin(right, USE_TAIL, MMAP_SEQUENTIAL);
 	if (b->T->nonil && right->T->nonil) {
@@ -158,20 +158,20 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 				*o = bit_nil;
 			else @1@2(o,p,t);
 	else
-		for (;p<q; p++, t++, o++) 
+		for (;p<q; p++, t++, o++)
 			if ( @1_isnil(*p) || @1_isnil(*t))
 				*o = bit_nil;
 			else @1@2(o,p,t);
 
 	BATaccessEnd(right, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
+	if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 
 	BATsetcount(bn, BATcount(b));
 
     	if (b->htype != bn->htype) {
         	BAT *r = VIEWcreate(b,bn);
-	
+
         	BBPreleaseref(bn->batCacheid);
         	bn = r;
     	}
@@ -186,7 +186,7 @@ str MTIMEbat_@1_@2(int *ret, int *l, int *r)
 }
 
 str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
-{	
+{
 	BAT *bn, *b;
 	@1 *p, *q;
 	bit *o;
@@ -200,10 +200,10 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
-		
+
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( @1_isnil(*cst))
-		for (;p<q; p++, o++) 
+		for (;p<q; p++, o++)
 				*o = bit_nil;
 	else
 	if (b->T->nonil )
@@ -235,7 +235,7 @@ str MTIMEbat_@1_@2_cst(int *ret, int *l, @1 *cst)
 }
 
 str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
-{	
+{
 	BAT *bn, *b;
 	@1 *p, *q;
 	bit *o;
@@ -248,10 +248,10 @@ str MTIMEbat_@1_cst_@2(int *ret, @1 *cst, int *l)
 	o = (bit*)Tloc(bn,BUNfirst(bn));
 	p = (@1*)Tloc(b,BUNfirst(b));
 	q = (@1*)Tloc(b,BUNlast(b));
-		
+
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (@1_isnil(*cst))
-		for (;p<q; p++, o++) 
+		for (;p<q; p++, o++)
 				*o = bit_nil;
 	else
 	if (b->T->nonil )
@@ -331,7 +331,7 @@ str MTIMEunaryISNIL(int *ret, int *bid)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( BATttype(b) == TYPE_date) {
 		date *p = (date*)Tloc(b,BUNfirst(b));
-		date *q = (date*)Tloc(b,BUNlast(b)); 
+		date *q = (date*)Tloc(b,BUNlast(b));
 		if (b->T->nonil){
 			for(; p<q; p++, o++ )
 				*o = FALSE;
@@ -341,7 +341,7 @@ str MTIMEunaryISNIL(int *ret, int *bid)
 	} else
 	if ( BATttype(b) == TYPE_daytime) {
 		daytime *p = (daytime*)Tloc(b,BUNfirst(b));
-		daytime *q = (daytime*)Tloc(b,BUNlast(b)); 
+		daytime *q = (daytime*)Tloc(b,BUNlast(b));
 		if (b->T->nonil){
 			for(; p<q; p++, o++ )
 				*o = FALSE;
@@ -351,14 +351,14 @@ str MTIMEunaryISNIL(int *ret, int *bid)
 	} else
 	if ( BATttype(b) == TYPE_timestamp) {
 		timestamp *p = (timestamp*)Tloc(b,BUNfirst(b));
-		timestamp *q = (timestamp*)Tloc(b,BUNlast(b)); 
+		timestamp *q = (timestamp*)Tloc(b,BUNlast(b));
 		if (b->T->nonil){
 			for(; p<q; p++, o++ )
 				*o = FALSE;
 		} else
 			for(; p<q; p++, o++ )
 				*o = timestamp_isnil(*p);
-	} 
+	}
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, BATcount(b));
