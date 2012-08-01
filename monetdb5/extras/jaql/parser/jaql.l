@@ -19,8 +19,8 @@
 
 %{
 #include <stdio.h>
-#include "jaql.tab.h"
 #include "jaqltree.h"
+#include "jaql.tab.h"
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #define fileno _fileno
