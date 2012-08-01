@@ -56,9 +56,16 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) stk;
-	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
-	if (alias == NULL)
-		return NULL;
+
+	ht = getHeadType(getArgType(mb, pci, 0));
+	if (ht != TYPE_oid)
+		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
+	tt = getTailType(getArgType(mb, pci, 0));
+	if (tt== TYPE_any)
+		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
+	if (isAnyExpression(getArgType(mb, pci, 0)))
+		return createException(MAL, "optimizer.multiplex", "Target type is missing");
+
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
@@ -84,9 +91,11 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * because in the end we issue a recursive function call that should
 	 * find the actual arguments at the proper place of the callee.
 	 */
-	/* resB := new(refBat) */
-	if (isAnyExpression(getArgType(mb, pci, 0)))
-		return createException(MAL, "optimizer.multiplex", "Target type is missing");
+
+	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
+	if (alias == NULL)
+		return NULL;
+
 	/* x := bat.reverse(A1); */
 	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
 									  getHeadType(getVarType(mb,iter))));
@@ -94,15 +103,10 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	getArg(q, 0) = x;
 	q = pushArgument(mb, q, iter);
 
+	/* resB := new(refBat) */
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
 
-	ht = getHeadType(getArgType(mb, pci, 0));
-	if (ht== TYPE_any || ht != TYPE_oid)
-		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getTailType(getArgType(mb, pci, 0));
-	if (tt== TYPE_any)
-		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushType(mb, q, ht);
 	q = pushType(mb, q, tt);
