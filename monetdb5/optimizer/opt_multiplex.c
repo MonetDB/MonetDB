@@ -60,12 +60,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ht = getHeadType(getArgType(mb, pci, 0));
 	if (ht != TYPE_oid)
-		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
+		throw(MAL, "optimizer.multiplex", "Target head type is missing");
 	tt = getTailType(getArgType(mb, pci, 0));
 	if (tt== TYPE_any)
-		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
+		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
 	if (isAnyExpression(getArgType(mb, pci, 0)))
-		return createException(MAL, "optimizer.multiplex", "Target type is missing");
+		throw(MAL, "optimizer.multiplex", "Target type is missing");
 
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
 	mod = putName(mod,strlen(mod));
@@ -79,7 +79,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 	if( i == pci->argc)
-		return createException(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
+		throw(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
 
 	OPTDEBUGmultiplex {
 		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
