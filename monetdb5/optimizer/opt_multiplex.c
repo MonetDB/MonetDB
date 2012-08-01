@@ -87,6 +87,13 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* resB := new(refBat) */
 	if (isAnyExpression(getArgType(mb, pci, 0)))
 		return createException(MAL, "optimizer.multiplex", "Target type is missing");
+	/* x := bat.reverse(A1); */
+	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
+									  getHeadType(getVarType(mb,iter))));
+	q = newFcnCall(mb, batRef, reverseRef);
+	getArg(q, 0) = x;
+	q = pushArgument(mb, q, iter);
+
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
 
@@ -131,12 +138,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
 
-	/* x := bat.reverse(A1); y := algebra.fetch(x,h); */
-	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
-									  getHeadType(getVarType(mb,iter))));
-	q = newFcnCall(mb, batRef, reverseRef);
-	getArg(q, 0) = x;
-	q = pushArgument(mb, q, iter);
+	/* y := algebra.fetch(x,h); */
 	y = newTmpVariable(mb, getHeadType(getVarType(mb,iter)));
 	q = newFcnCall(mb, algebraRef, "fetch");
 	getArg(q, 0) = y;
