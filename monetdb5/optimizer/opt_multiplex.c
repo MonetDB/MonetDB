@@ -30,7 +30,7 @@
  * @verbatim
  * 	resB:= bat.new(A1);
  * barrier (h,t):= iterator.new(A1);
- * 	$1:= algebra.find(A1,h);
+ * 	$1:= algebra.fetch(A1,h);
  * 	$2:= A2;	# in case of constant?
  * 	...
  * 	cr:= MOD.FCN($1,...,$n);
@@ -107,12 +107,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q= pushReturn(mb, q, tvar);
 	(void) pushArgument(mb,q,iter);
 
-	/* $1:= bat.find(Ai,h) or constant */
+	/* $1:= algebra.fetch(Ai,h) or constant */
 	alias[i] = tvar;
 
 	for (i++; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
-			q = newFcnCall(mb, algebraRef, "find");
+			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));

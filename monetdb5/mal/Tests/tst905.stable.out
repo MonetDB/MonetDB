@@ -30,7 +30,7 @@ exit i;
     c := algebra.copy(b);
     X_15 := bat.new(nil:oid,nil:lng);
 barrier (X_19,X_20) := iterator.new(b);
-    X_22 := algebra.find(c,X_19);
+    X_22 := algebra.fetch(c,X_19);
     X_24 := calc.+(X_20,X_22);
     bat.insert(X_15,X_19,X_24);
     redo (X_19,X_20) := iterator.next(b);

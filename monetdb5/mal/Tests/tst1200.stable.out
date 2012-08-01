@@ -1159,7 +1159,7 @@ exit (X_1275,X_1276);
 #      date_addyears.bat.setColumn("min100y"), 
     X_1283 := bat.new(nil:oid,nil:int);
 barrier (X_1287,X_1288) := iterator.new(date_addyears);
-    X_1290 := algebra.find(date_bat,X_1287);
+    X_1290 := algebra.fetch(date_bat,X_1287);
     X_1292 := mtime.diff(X_1288,X_1290);
     bat.insert(X_1283,X_1287,X_1292);
     redo (X_1287,X_1288) := iterator.next(date_addyears);
@@ -1175,7 +1175,7 @@ exit (X_1287,X_1288);
 #      date_addmonths.bat.setColumn("plus1m"), 
     X_1297 := bat.new(nil:oid,nil:int);
 barrier (X_1299,X_1300) := iterator.new(date_addmonths);
-    X_1302 := algebra.find(date_bat,X_1299);
+    X_1302 := algebra.fetch(date_bat,X_1299);
     X_1304 := mtime.diff(X_1300,X_1302);
     bat.insert(X_1297,X_1299,X_1304);
     redo (X_1299,X_1300) := iterator.next(date_addmonths);
@@ -1384,8 +1384,8 @@ exit (X_1418,X_1419);
 # Skipped due to coercion implication 
     X_1426 := bat.new(nil:oid,nil:timestamp);
 barrier (X_1429,X_1430) := iterator.new(date_bat);
-    X_1432 := algebra.find(daytime_bat,X_1429);
-    X_1434 := algebra.find(tzone_bat,X_1429);
+    X_1432 := algebra.fetch(daytime_bat,X_1429);
+    X_1434 := algebra.fetch(tzone_bat,X_1429);
     X_1436 := mtime.timestamp(X_1430,X_1432,X_1434);
     bat.insert(X_1426,X_1429,X_1436);
     redo (X_1429,X_1430) := iterator.next(date_bat);
@@ -1402,7 +1402,7 @@ exit (X_1429,X_1430);
 #io.print(timestamp_bat.bat.setColumn("timestamp"), 
     X_1441 := bat.new(nil:oid,nil:date);
 barrier (X_1445,X_1446) := iterator.new(timestamp_bat);
-    X_1448 := algebra.find(tzone_bat,X_1445);
+    X_1448 := algebra.fetch(tzone_bat,X_1445);
     X_1450 := mtime.date(X_1446,X_1448);
     bat.insert(X_1441,X_1445,X_1450);
     redo (X_1445,X_1446) := iterator.next(timestamp_bat);
@@ -1412,7 +1412,7 @@ exit (X_1445,X_1446);
 #      [date](timestamp_bat,tzone_bat).bat.setColumn("date"), 
     X_1455 := bat.new(nil:oid,nil:daytime);
 barrier (X_1458,X_1459) := iterator.new(timestamp_bat);
-    X_1461 := algebra.find(tzone_bat,X_1458);
+    X_1461 := algebra.fetch(tzone_bat,X_1458);
     X_1463 := mtime.daytime(X_1459,X_1461);
     bat.insert(X_1455,X_1458,X_1463);
     redo (X_1458,X_1459) := iterator.next(timestamp_bat);
@@ -1503,7 +1503,7 @@ exit (X_1525,X_1526);
 #	timestamp_minus.bat.setColumn("min1"), 
     X_1533 := bat.new(nil:oid,nil:lng);
 barrier (X_1536,X_1537) := iterator.new(timestamp_plus);
-    X_1539 := algebra.find(timestamp_minus,X_1536);
+    X_1539 := algebra.fetch(timestamp_minus,X_1536);
     X_1541 := mtime.diff(X_1537,X_1539);
     bat.insert(X_1533,X_1536,X_1541);
     redo (X_1536,X_1537) := iterator.next(timestamp_plus);

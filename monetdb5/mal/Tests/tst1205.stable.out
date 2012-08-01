@@ -732,8 +732,8 @@ exit (X_592,X_593);
 # Skipped due to coercion implication 
     X_600 := bat.new(nil:oid,nil:timestamp);
 barrier (X_604,X_605) := iterator.new(date_bat);
-    X_607 := algebra.find(daytime_bat,X_604);
-    X_609 := algebra.find(tzone_bat,X_604);
+    X_607 := algebra.fetch(daytime_bat,X_604);
+    X_609 := algebra.fetch(tzone_bat,X_604);
     X_611 := mtime.timestamp(X_605,X_607,X_609);
     bat.insert(X_600,X_604,X_611);
     redo (X_604,X_605) := iterator.next(date_bat);

@@ -513,7 +513,7 @@ exit (X_419,X_420);
 #      date_addyears.bat.setColumn("min100y"), 
     X_427 := bat.new(nil:oid,nil:int);
 barrier (X_430,X_431) := iterator.new(date_addyears);
-    X_433 := algebra.find(date_bat,X_430);
+    X_433 := algebra.fetch(date_bat,X_430);
     X_435 := mtime.diff(X_431,X_433);
     bat.insert(X_427,X_430,X_435);
     redo (X_430,X_431) := iterator.next(date_addyears);
@@ -529,7 +529,7 @@ exit (X_430,X_431);
 #      date_addmonths.bat.setColumn("plus1m"), 
     X_440 := bat.new(nil:oid,nil:int);
 barrier (X_442,X_443) := iterator.new(date_addmonths);
-    X_445 := algebra.find(date_bat,X_442);
+    X_445 := algebra.fetch(date_bat,X_442);
     X_447 := mtime.diff(X_443,X_445);
     bat.insert(X_440,X_442,X_447);
     redo (X_442,X_443) := iterator.next(date_addmonths);
