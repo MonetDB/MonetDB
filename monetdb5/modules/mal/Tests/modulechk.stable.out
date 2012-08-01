@@ -58,6 +58,7 @@ end main;
 [ nil,	  "factories"		  ]
 [ nil,	  "fits"		  ]
 [ nil,	  "geom"		  ]
+[ nil,	  "geotiff"		  ]
 [ nil,	  "group"		  ]
 [ nil,	  "groupby"		  ]
 [ nil,	  "identifier"		  ]
