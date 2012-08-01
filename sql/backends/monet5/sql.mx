@@ -6134,7 +6134,7 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int id = t[i]->batCacheid;
 
 		*(int *) getArgReference(stk, pci, i) = id;
-		BBPincref(id, TRUE);
+		BBPkeepref(id);
 	}
 	return MAL_SUCCEED;
 }
