@@ -26,7 +26,7 @@ comment "Global commit on all BATs";
 command abort():bit
 address TRNglobal_abort
 comment "Global abort on all BATs";
-command subcommit(b:bat[:any_1,:str]):bit
+command subcommit(b:bat[:oid,:str]):bit
 address TRNsubcommit
 comment "commit only a set of BATnames, passed in the tail
 (to which you must have exclusive access!)";
@@ -41,12 +41,12 @@ pattern clean(c:any...)
 address TRNtrans_clean
 comment "Declare a BAT clean without flushing to disk.";
 
-command prev(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
+command prev(b:bat[:oid,:any_1]):bat[:oid,:any_1]
 address TRNtrans_prev
 comment "The previous stae of this BAT";
-command alpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+command alpha(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address TRNtrans_alpha
 comment	"List insertions since last commit.";
-command delta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+command delta(b:bat[:oid,:any_1]) :bat[:oid,:any_1]
 address TRNtrans_delta
 comment	"List deletions since last commit.";

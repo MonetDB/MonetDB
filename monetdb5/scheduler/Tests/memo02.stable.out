@@ -14,17 +14,17 @@ stdout of test 'memo02` in directory 'scheduler` itself:
 function user.main():void;
 # The first memo driven execution 
 # use a generic cost function 
-    A := bat.new(:int,:int);
-    bat.insert(A,1,1);
+    A := bat.new(:oid,:oid);
+    bat.append(A,1@0);
     B := algebra.copy(A);
     bat.setWriteMode(B);
-    bat.insert(B,2,2);
+    bat.append(B,2@0);
     C := algebra.copy(B);
     bat.setWriteMode(C);
-    bat.insert(C,3,3);
+    bat.append(C,3@0);
     D := algebra.copy(C);
     bat.setWriteMode(D);
-    bat.insert(D,3,3);
+    bat.append(D,3@0);
     scheduler.choice();
     T1 := algebra.join(A,B);
     T2 := algebra.join(B,C);
@@ -49,7 +49,7 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
+[ 0@0,	  3@0	  ]
 
 # 22:34:44 >  
 # 22:34:44 >  Done.

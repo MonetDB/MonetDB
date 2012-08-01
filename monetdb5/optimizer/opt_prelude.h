@@ -93,6 +93,7 @@ opt_export  str inplaceRef;
 opt_export  str insertRef;
 opt_export  str intRef;
 opt_export  str ioRef;
+opt_export  str iteratorRef;
 opt_export  str joinRef;
 opt_export  str joinPathRef;
 opt_export  str bandjoinRef;
@@ -137,6 +138,7 @@ opt_export  str multicolumnsRef;
 opt_export  str mvcRef;
 opt_export  str newRef;
 opt_export  str notRef;
+opt_export  str nextRef;
 opt_export  str oidRef;
 opt_export  str octopusRef;
 opt_export  str openRef;
@@ -230,7 +232,6 @@ opt_export int notnilProp;		/* binary */
 opt_export int rowsProp;		/* long */
 opt_export int fileProp;			/* str */
 opt_export int runonceProp;		/* binary */
-opt_export int singletonProp;		/* binary */
 opt_export int unsafeProp;		/* binary */
 
 opt_export int stableProp;		/* binary */

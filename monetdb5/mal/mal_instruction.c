@@ -118,6 +118,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->alternative = NULL;
 	mb->history = NULL;
 	mb->keephistory = 0;
+	mb->dotfile = 0;
 	mb->marker = 0;
 	mb->maxarg = MAXARG;		/* the minimum for each instruction */
 	mb->typefixed = 0;
@@ -200,6 +201,7 @@ copyMalBlk(MalBlkPtr old)
 	mb->alternative = old->alternative;
 	mb->history = NULL;
 	mb->keephistory = old->keephistory;
+	mb->dotfile = old->dotfile;
 	mb->marker = 0;
 	mb->var = (VarPtr *) GDKzalloc(sizeof(VarPtr) * old->vsize);
 
@@ -532,6 +534,7 @@ removeInstruction(MalBlkPtr mb, InstrPtr p)
 		if (mb->profiler)
 			mb->profiler[i] = mb->profiler[i + 1];
 	}
+	mb->stmt[i] = 0;
 	mb->stop--;
 	assert(i == mb->stop);
 
@@ -600,6 +603,7 @@ insertInstruction(MalBlkPtr mb, InstrPtr p, int pc)
  * fly. Then the expensive search is started anyway. It also means
  * that input which does not comply with the intended location of a
  * temporary variable should be flagged as an error. */
+/* Unsafe routine when called in parallel to materialise temporary variables */
 inline str
 getVarName(MalBlkPtr mb, int i)
 {
@@ -613,6 +617,21 @@ getVarName(MalBlkPtr mb, int i)
 		nme = mb->var[i]->name = GDKstrdup(buf);
 	}
 	return nme;
+}
+
+inline void
+setVarName(MalBlkPtr mb, int i, str nme)
+{
+	char buf[PATHLENGTH];
+
+	if ( mb->var[i]->name)
+		GDKfree(mb->var[i]->name);
+
+	if (nme == 0) {
+		snprintf(buf, PATHLENGTH, "%c%d", TMPMARKER, mb->var[i]->tmpindex);
+		nme = buf;
+	}
+	mb->var[i]->name = GDKstrdup(nme);
 }
 
 inline void
@@ -1379,18 +1398,22 @@ convertConstant(int type, ValPtr vr)
 }
 
 int
-fndConstant(MalBlkPtr mb, ValPtr cst, int depth)
+fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth)
 {
 	int i, k;
-	ptr p = VALget(cst);
+	const void *p;
 
+	/* pointers never match */
+	if (ATOMstorage(cst->vtype) == TYPE_ptr)
+		return -1;
+
+	p = VALptr(cst);
 	k = mb->vtop - depth;
 	if (k < 0)
 		k = 0;
 	for (i = mb->vtop - 1; i >= k; i--) {
 		VarPtr v = getVar(mb, i);
-
-		if (v && isVarConstant(mb, i) && v->type == cst->vtype && p && ATOMcmp(cst->vtype, VALget(&v->value), p) == 0)
+		if (v && isVarConstant(mb, i) && v->type == cst->vtype && ATOMcmp(cst->vtype, VALptr(&v->value), p) == 0)
 			return i;
 	}
 	return -1;
@@ -1818,7 +1841,7 @@ varGetPropStr(MalBlkPtr mb, int var)
 			VarPtr v = getVar(mb, p->var);
 			char *op = PropertyOperatorString((prop_op_t) p->op);
 
-			ATOMformat(v->type, VALget(&v->value), &t);
+			ATOMformat(v->type, VALptr(&v->value), &t);
 			switch (v->type) {
 			case TYPE_oid:
 				sprintf(s, "%s%s%s:oid", nme, op, t);

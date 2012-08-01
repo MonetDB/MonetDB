@@ -39,14 +39,11 @@ no.157
 #no.158 type determination problem
 #no.160 to specific for 4.4
 no.161
-no.162
 no.163
 #no.164 uses cluster module
-no.165
 #no.166 hidden module call
 #no.168
 no.169
-no.171
 #no.172 non-supported feature
 
 gettype_in_function

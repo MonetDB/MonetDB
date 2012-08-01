@@ -197,6 +197,7 @@ MT_Lock     mal_contextLock;
 MT_Lock     mal_remoteLock;
 MT_Lock  	mal_profileLock ;
 MT_Lock     mal_copyLock;
+MT_Lock     mal_delayLock;
 /*
  * @-
  * Initialization of the MAL context
@@ -234,6 +235,7 @@ int mal_init(void){
 	MT_lock_init( &mal_remoteLock, "mal_remoteLock");
 	MT_lock_init( &mal_profileLock, "mal_profileLock");
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
+	MT_lock_init( &mal_delayLock, "mal_delayLock");
 
 	GDKprotect();
 	tstAligned();
@@ -257,25 +259,24 @@ int mal_init(void){
 int
 moreClients(int reruns)
 {
-	int freeclient=0, finishing=0, claimed=0, awaiting=0;
+	int freeclient=0, finishing=0, claimed=0;
 	Client cntxt = mal_clients;
 
-	freeclient=0; finishing=0; claimed=0; awaiting=0;
+	freeclient=0; finishing=0; claimed=0;
 	for(cntxt= mal_clients+1;  cntxt<mal_clients+MAL_MAXCLIENTS; cntxt++){
 		freeclient += (cntxt->mode == FREECLIENT);
 		finishing += (cntxt->mode == FINISHING);
 		claimed += (cntxt->mode == CLAIMED);
-		awaiting += (cntxt->mode == AWAITING);
 		if( cntxt->mode & FINISHING)
 			printf("#Client %d %d\n",(int)(cntxt - mal_clients), cntxt->idx);
 	}
 	if( reruns == 3){
 		mnstr_printf(mal_clients->fdout,"#MALexit: server forced exit"
-			" %d finishing %d claimed %d waiting\n",
-				finishing,claimed,awaiting);
+			" %d finishing %d claimed\n",
+				finishing,claimed);
 		return 0;
 	}
-	return finishing+claimed+awaiting;
+	return finishing+claimed;
 }
 void mal_exit(void){
  	int t = 0;

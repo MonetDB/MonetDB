@@ -102,7 +102,8 @@ st_type2string(st_type type)
 		ST(selectN);
 		ST(uselect2);
 		ST(uselectN);
-		ST(semijoin);
+		ST(tinter);
+		ST(tdiff);
 		ST(relselect);
 
 		ST(releqjoin);
@@ -110,6 +111,7 @@ st_type2string(st_type type)
 		ST(join2);
 		ST(joinN);
 		ST(outerjoin);
+		ST(inter);
 		ST(diff);
 		ST(union);
 
@@ -386,8 +388,9 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		/* simple case of statements of only statements */
 		case st_relselect:
 		case st_releqjoin: 
-		case st_diff:
 		case st_alias:
+		case st_inter:
+		case st_diff:
 		case st_union:
 		case st_join:
 		case st_join2:
@@ -429,7 +432,8 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_uselect:
 		case st_uselect2:
 		case st_uselectN:
-		case st_semijoin:
+		case st_tinter:
+		case st_tdiff:
 			if (s->op1)
 				push(s->op1);
 			if (s->op2)
@@ -992,7 +996,7 @@ stmt_unique(sql_allocator *sa, stmt *s, group *g)
 	if (g) 
 		ns->op2 = g->grp;
 	ns->nrcols = s->nrcols;
-	ns->key = 1;		/* ?? maybe change key to unique ? */
+	ns->key = 1;	
 	ns->aggr = s->aggr;
 	ns->t = s->t;
 	return ns;
@@ -1128,13 +1132,26 @@ stmt_uselectN(sql_allocator *sa, stmt *op1, stmt *op2, sql_subfunc *op)
 }
 
 stmt *
-stmt_semijoin(sql_allocator *sa, stmt *op1, stmt *op2)
+stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2)
 {
-	stmt *s = stmt_create(sa, st_semijoin);
+	stmt *s = stmt_create(sa, st_tinter);
 
 	s->op1 = op1;
 	s->op2 = op2;
-	/* assert( op1->h == op2->h ); */
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+	s->h = op1->h;
+	s->t = op1->t;
+	return s;
+}
+stmt *
+stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2)
+{
+	stmt *s = stmt_create(sa, st_tdiff);
+
+	s->op1 = op1;
+	s->op2 = op2;
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
@@ -1272,6 +1289,21 @@ stmt_outerjoin(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 	s->nrcols = 2;
 	s->h = op1->h;
 	s->t = op2->t;
+	return s;
+}
+
+stmt *
+stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2)
+{
+	stmt *s = stmt_create(sa, st_inter);
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+	s->h = op1->h;
+	s->t = op1->t;
 	return s;
 }
 
@@ -1638,7 +1670,6 @@ tail_type(stmt *st)
 		   ie should be 'oid' */
 		return head_type(st->op4.lval->h->data);
 
-	case st_diff:
 	case st_select:
 	case st_select2:
 	case st_selectN:
@@ -1648,9 +1679,12 @@ tail_type(stmt *st)
 	case st_limit:
 	case st_limit2:
 	case st_sample:
-	case st_semijoin:
-	case st_unique:
+	case st_tinter:
+	case st_tdiff:
+	case st_inter:
+	case st_diff:
 	case st_union:
+	case st_unique:
 	case st_append:
 	case st_alias:
 	case st_gen_group:
@@ -1714,20 +1748,22 @@ sql_subtype *
 head_type(stmt *st)
 {
 	switch (st->type) {
+	case st_alias:
 	case st_aggr:
 	case st_convert:
 	case st_unop:
 	case st_binop:
 	case st_Nop:
 	case st_unique:
-	case st_union:
-	case st_alias:
+	case st_inter:
 	case st_diff:
+	case st_union:
 	case st_join:
 	case st_join2:
 	case st_joinN:
 	case st_outerjoin:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
 	case st_mirror:
 	case st_select:
 	case st_select2:
@@ -1859,7 +1895,6 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_union:
 	case st_append:
 	case st_mark:
 	case st_gen_group:
@@ -1872,8 +1907,11 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_limit:
 	case st_limit2:
 	case st_sample:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
+	case st_inter:
 	case st_diff:
+	case st_union:
 	case st_unique:
 	case st_convert:
 		return column_name(sa, st->op1);
@@ -1945,7 +1983,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_union:
 	case st_mark:
 	case st_gen_group:
 	case st_select:
@@ -1957,8 +1994,11 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_limit:
 	case st_limit2:
 	case st_sample:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
+	case st_inter:
 	case st_diff:
+	case st_union:
 	case st_aggr:
 	case st_unique:
 		return table_name(sa, st->op1);
@@ -2012,7 +2052,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_mirror:
 	case st_group:
 	case st_group_ext:
-	case st_union:
 	case st_append:
 	case st_mark:
 	case st_gen_group:
@@ -2025,8 +2064,11 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_limit:
 	case st_limit2:
 	case st_sample:
-	case st_semijoin:
+	case st_tinter:
+	case st_tdiff:
+	case st_inter:
 	case st_diff:
+	case st_union:
 	case st_unique:
 	case st_convert:
 	case st_unop:

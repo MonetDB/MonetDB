@@ -17,24 +17,29 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+import os
 from distutils.core import setup
 
-setup(name='python-monetdb',
-      version='11.12.0',
-      description='Native MonetDB client Python API',
-      long_description='''\
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators and SQL frontend.
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-This package contains the files needed to use MonetDB from a Python
-program.
-''',
-      author='MonetDB BV',
-      author_email='info@monetdb.org',
-      url='http://www.monetdb.org/',
-      packages=['monetdb', 'monetdb.sql'],
-      download_url='<will be filled in before a release>/python-monetdb-11.12.0.tar.gz',
-     )
+setup(name='python-monetdb',
+    version='11.11.6',
+    description='Native MonetDB client Python API',
+    long_description=read('README.rst'),
+    author='MonetDB BV',
+    author_email='info@monetdb.org',
+    url='http://www.monetdb.org/',
+    packages=['monetdb', 'monetdb.sql'],
+    download_url='<will be filled in before a release>/python-monetdb-11.11.6.tar.gz',
+    classifiers=[
+        "Topic :: Database",
+        "Topic :: Database :: Database Engines/Servers",
+        "Development Status :: 5 - Production/Stable",
+        "Intended Audience :: Developers",
+        "License :: Other/Proprietary License",
+        "Programming Language :: Python :: 2",
+    ]
+)
+
 

@@ -101,6 +101,7 @@ tst1502
 tst1503
 tst1504
 tst1505
+tst1506
 tst161
 tst162
 tst163
@@ -112,15 +113,12 @@ tst201
 tst202
 tst210
 tst220
-tst225
 tst230
 tst231
 tst232
 tst233
 tst234
 tst235
-tst236
-tst240
 tst250
 tst2500
 tst2501
@@ -165,7 +163,6 @@ tst308
 #tst380
 tst400
 tst401
-#tst450	it served its purpose
 tst500
 tst501
 tst550
@@ -179,8 +176,6 @@ tst610
 tst611
 tst612
 tst620
-tst654
-tst655
 tst660
 tst661
 tst662
@@ -193,12 +188,9 @@ tst755
 tst760
 tst770
 tst780
-tst800
-tst801
 tst802
-tst803
 tst804
-tst805
+#tst805 invalid, no BAT columns
 tst810
 tst819
 tst820

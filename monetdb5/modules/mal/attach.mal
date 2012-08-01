@@ -17,14 +17,14 @@
 
 module attach;
 
-pattern bind(nme:str,low:oid,hgh:oid):bat[:any_1,:any_2]
+pattern bind(nme:str,low:oid,hgh:oid):bat[:oid,:any_2]
 address ATTbindPartition
 comment "Find a cheap way to make a BAT partition accessible locally";
 
-pattern bind(nme:str):bat[:any_1,:any_2]
+pattern bind(nme:str):bat[:oid,:any_2]
 address ATTbind
 comment "Find a cheap way to make the BAT nme accessible locally";
 
-command location(b:bat[:any_1,:any_2]):str
+command location(b:bat[:oid,:any_2]):str
 address ATTlocation
 comment "Locate the base of a particulat BAT in the dbfarm";

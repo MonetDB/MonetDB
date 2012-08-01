@@ -106,7 +106,7 @@ class DatabaseAPI20Test(unittest.TestCase):
         The 'Optional Extensions' are not yet being tested.
 
         self.drivers should subclass this test, overriding setUp, tearDown,
-        self.driver, connect_args and connect_kw_args. Class specification
+        self.driver, connect_args and connect_kwargs. Class specification
         should be as follows:
 
         import dbapi20
@@ -121,7 +121,7 @@ class DatabaseAPI20Test(unittest.TestCase):
     # method is to be found
     driver = None
     connect_args = () # List of arguments to pass to connect
-    connect_kw_args = {} # Keyword arguments for connect
+    connect_kwargs = {} # Keyword arguments for connect
     table_prefix = 'dbapi20test_' # If you need to specify a prefix for tables
 
     ddl1 = 'create table %sbooze (name varchar(20))' % table_prefix
@@ -156,7 +156,6 @@ class DatabaseAPI20Test(unittest.TestCase):
             for ddl in (self.xddl1,self.xddl2):
                 try:
                     cur.execute(ddl)
-                    con.commit()
                 except self.driver.Error:
                     # Assume table didn't exist. Other tests will check if
                     # execute is busted.
@@ -166,9 +165,7 @@ class DatabaseAPI20Test(unittest.TestCase):
 
     def _connect(self):
         try:
-            return self.driver.connect(
-                *self.connect_args,**self.connect_kw_args
-                )
+            return self.driver.connect(*self.connect_args, **self.connect_kwargs)
         except AttributeError:
             self.fail("No connect method found in self.driver module")
 
@@ -742,10 +739,10 @@ class DatabaseAPI20Test(unittest.TestCase):
         '''
         raise NotImplementedError('Helper not implemented')
         #sql="""
-        #    create procedure deleteme as
+        #    create procedure deleteme ()
         #    begin
-        #        select count(*) from booze
-        #        select name from booze
+        #        select count(*) from booze;
+        #        select name from booze;
         #    end
         #"""
         #cur.execute(sql)
@@ -756,6 +753,8 @@ class DatabaseAPI20Test(unittest.TestCase):
         #cur.execute("drop procedure deleteme")
 
     def test_nextset(self):
+        # for now disabled
+        return
         con = self._connect()
         try:
             cur = con.cursor()
@@ -783,9 +782,6 @@ class DatabaseAPI20Test(unittest.TestCase):
 
         finally:
             con.close()
-
-    def test_nextset(self):
-        raise NotImplementedError('Drivers need to override this test')
 
     def test_arraysize(self):
         # Not much here - rest of the tests for this are in test_fetchmany
@@ -818,9 +814,7 @@ class DatabaseAPI20Test(unittest.TestCase):
         finally:
             con.close()
 
-    def test_setoutputsize(self):
-        # Real test for setoutputsize is driver dependant
-        raise NotImplementedError('Driver need to override this test')
+
 
     def test_None(self):
         con = self._connect()
@@ -885,3 +879,86 @@ class DatabaseAPI20Test(unittest.TestCase):
             'module.ROWID must be defined.'
             )
 
+    def test_utf8(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            args = {'beer': '\xc4\xa5'}
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+            cur.execute('select name from %sbooze' % self.table_prefix)
+            res = cur.fetchall()
+            beer = res[0][0]
+            encoded = unicode(args['beer'], 'utf-8')
+            self.assertEqual(beer,encoded,'incorrect data retrieved')
+        finally:
+            con.close()
+
+
+    def test_unicode(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+
+            args = {'beer': unicode('\N{latin small letter a with acute}', 'unicode-escape')}
+            encoded = args['beer']
+
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+            cur.execute('select name from %sbooze' % self.table_prefix)
+            res = cur.fetchall()
+            beer = res[0][0]
+            self.assertEqual(beer,encoded,'incorrect data retrieved')
+        finally:
+            con.close()
+
+
+    def test_substring(self):
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            args = {'beer': '"" \"\'\",\\"\\"\"\'\"'}
+            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+            cur.execute('select name from %sbooze' % self.table_prefix)
+            res = cur.fetchall()
+            beer = res[0][0]
+            self.assertEqual(beer,args['beer'],'incorrect data retrieved, got %s, should be %s' % (beer, args['beer']))
+        finally:
+            con.close()
+
+
+    def test_escape(self):
+        teststrings = [
+            'abc\ndef',
+            'abc\\ndef',
+            'abc\\\ndef',
+            'abc\\\\ndef',
+            'abc\\\\\ndef',
+            'abc"def',
+            'abc""def',
+            'abc\'def',
+            'abc\'\'def',
+            "abc\"def",
+            "abc\"\"def",
+            "abc'def",
+            "abc''def",
+            "abc\tdef",
+            "abc\\tdef",
+            "abc\\\tdef",
+            "\\x"
+        ]
+
+        con = self._connect()
+        try:
+            cur = con.cursor()
+            self.executeDDL1(cur)
+            for i in teststrings:
+                args = {'beer': i}
+                cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
+                cur.execute('select * from %sbooze' % self.table_prefix)
+                row = cur.fetchone()
+                cur.execute('delete from %sbooze where name=%%s' % self.table_prefix, i)
+                self.assertEqual(i, row[0], 'newline not properly converted, got %s, should be %s' % (row[0], i))
+        finally:
+            con.close()

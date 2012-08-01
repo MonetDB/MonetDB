@@ -1,0 +1,45 @@
+module array;
+
+command grid(i:int,j:int,k:int,l:int) :bat[:oid,:int] 
+address ARRAYgrid_int
+comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
+
+command grid(i:int,j:int,k:int,l:int,s:int) :bat[:oid,:int] 
+address ARRAYgridShift_int
+comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elements with a factor s";
+
+command grid(b:bat[:oid,:int],i:int,j:int,k:int,l:int) :bat[:oid,:int] 
+address ARRAYgridBAT_int
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
+
+command grid(b:bat[:oid,:int],i:int,j:int,k:int,l:int,s:int) :bat[:oid,:int] 
+address ARRAYgridBATshift_int
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elemenets with a factor s";
+
+command grid(i:lng,j:lng,k:lng,l:lng) :bat[:oid,:lng] 
+address ARRAYgrid_lng
+comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
+
+command grid(i:lng,j:lng,k:lng,l:lng,s:lng) :bat[:oid,:lng] 
+address ARRAYgridShift_lng
+comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elements with a factor s";
+
+command grid(b:bat[:oid,:lng],i:lng,j:lng,k:lng,l:lng) :bat[:oid,:lng] 
+address ARRAYgridBAT_lng
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
+
+command grid(b:bat[:oid,:lng],i:lng,j:lng,k:lng,l:lng,s:lng) :bat[:oid,:lng] 
+address ARRAYgridBATshift_lng
+comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elemenets with a factor s";
+
+command product(b:bat[:any_3,:any_1],c:bat[:any_4,:any_2]):bat[:any_1,:any_2]
+address ARRAYproduct
+comment "Produce an array product";
+
+command project(b:bat[:oid,:any_1],i:int):bat[:oid,:int]
+address ARRAYproject
+comment "Fill an array representation with constants ";

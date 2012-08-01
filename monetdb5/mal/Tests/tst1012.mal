@@ -1,8 +1,8 @@
 # the first of a series of BBP test cases
 
 bbp.open();
-b:= bat.new(:int,:int);
-bat.insert(b,1,2);
+b:= bat.new(:oid,:int);
+bat.append(b,2);
 bbp.deposit("mysecondbat",b);
 c:= bbp.take("mysecondbat");
 io.print(c);

@@ -25,15 +25,15 @@ MTSAFE
 lib_atoms = {
 	NOINST
 	SOURCES = \
-		batxml.mx \
+		batxml.c batxml.h \
 		blob.c blob.h \
 		color.c color.h \
 		identifier.c identifier.h \
 		inet.c inet.h \
-		mtime.mx \
-		streams.mx \
-		str.mx \
-		url.mx \
+		mtime.c mtime.h \
+		streams.c streams.h \
+		str.c str.h \
+		url.c url.h \
 		xml.c xml.h
 }
 
@@ -41,17 +41,17 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = \
-		batxml.mx \
+		batxml.mal \
 		blob.mal \
 		color.mal \
 		identifier.mal \
 		inet.mal \
-		mtime.mx \
-		streams.mx \
-		str.mx \
-		url.mx \
-		xml.mal
+		streams.mal \
+		str.mal \
+		url.mal \
+		xml.mal \
+		mtime.mal
 }
 
 EXTRA_DIST_DIR = Tests
-EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql
+EXTRA_DIST = blob.mal color.mal identifier.mal inet.mal xml.mal xml.sql batxml.sql str.mal batxml.mal url.mal streams.mal mtime.mal

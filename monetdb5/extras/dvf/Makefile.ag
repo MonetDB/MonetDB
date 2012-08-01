@@ -28,7 +28,7 @@ lib_opt_dvf = {
 	MODULE
 	DIR = libdir/monetdb5
 	SEP = _
-	SOURCES = opt_dvf.mx
+	SOURCES = opt_dvf.c opt_dvf.h
 	LIBS = ../../tools/libmonetdb5 \
 		../../../gdk/libbat \
 		../../../common/stream/libstream \
@@ -48,7 +48,7 @@ lib__dvf = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = dvf.mal opt_dvf.mx
+	SOURCES = dvf.mal opt_dvf.mal
 }
 
 headers_opt_dvf_autoload = {

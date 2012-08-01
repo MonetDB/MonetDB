@@ -1,4 +1,4 @@
-x:=bat.new(:void,:int);
+x:=bat.new(:oid,:int);
 bat.append(x,1);
 bat.append(x,2);
 bat.append(x,1);

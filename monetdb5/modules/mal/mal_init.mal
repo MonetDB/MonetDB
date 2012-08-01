@@ -47,7 +47,6 @@ include streams;
 include bat5;
 include batExtensions;
 include algebra;
-include algebraExtensions;
 include calc;
 include status;
 include group;
@@ -72,7 +71,6 @@ include batxml;
 # The hardwired multiplex extensions
 include batmmath;
 include batcalc;
-include batifthen;
 include batmtime;
 include batstr;
 include batcolor;
@@ -82,12 +80,11 @@ include batcolor;
 include sabaoth;
 include pcre;
 include clients;
-include const;
 include attach;
 include bbp;
+include const;
 include box;
 include mal_io;
-include tablet;
 include factories;
 include recycle;
 include remote;
@@ -102,56 +99,12 @@ include constraints; # experimental
 include mal_mapi;
 
 include profiler;
-include statistics;	# experimental
 include sample;
 
 include optimizer;
-include opt_support;
-include opt_accumulators;
-include opt_aliases;
-include opt_centipede;
-include opt_coercion;
-include opt_constants;
-include opt_dataflow;
-include opt_dictionary;
-include opt_deadcode;
-include opt_datacyclotron;
-include opt_compression;
-include opt_commonTerms;
-include opt_costModel;
-include opt_emptySet;
-include opt_evaluate;
-include opt_factorize;
-include opt_garbageCollector;
-include opt_inline;
-include opt_groups;
-include opt_joinpath;
-include opt_macro;
-include opt_accessmode;
-include opt_multiplex;
-include opt_mergetable;
-include opt_mitosis;
-include opt_reorder;
-include opt_octopus;
-include opt_origin;
-include opt_peephole;
-include opt_prejoin;
-include opt_qep;
-include opt_history;
-include opt_pushranges;
-include opt_reduce;
-include opt_remap;
-include opt_recycler;
-include opt_singleton;
-include opt_strengthReduction;
-include opt_statistics;
-include opt_trace;
-include opt_mapreduce;
-include opt_remoteQueries;
 
-include chopper;
+include iterator;
 include cluster;
-include opt_cluster;
 include txtsim;
 include tokenizer;
 include zorder;
@@ -168,14 +121,6 @@ include run_memo;
 include run_octopus;
 include srvpool;
 
-# @-
-# library crackers;
-# include opt_crack;
-# include opt_selcrack;
-# include opt_sidcrack;
-# include opt_joinselect;
-# include crackers;
-#
 # @-
 # Any extensions (MAL scripts) that should be automatically loaded upon
 # startup can be placed in the autoload directory.  One typically finds

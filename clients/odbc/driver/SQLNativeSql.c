@@ -41,7 +41,7 @@
 #include "ODBCUtil.h"
 
 static SQLRETURN
-SQLNativeSql_(ODBCStmt *stmt,
+SQLNativeSql_(ODBCDbc *dbc,
 	      SQLCHAR *InStatementText,
 	      SQLINTEGER TextLength1,
 	      SQLCHAR *OutStatementText,
@@ -51,11 +51,11 @@ SQLNativeSql_(ODBCStmt *stmt,
 	char *query;
 
 	fixODBCstring(InStatementText, TextLength1, SQLINTEGER,
-		      addStmtError, stmt, return SQL_ERROR);
+		      addDbcError, dbc, return SQL_ERROR);
 
 	if (InStatementText == NULL) {
 		/* Invalid use of null pointer */
-		addStmtError(stmt, "HY009", NULL, 0);
+		addDbcError(dbc, "HY009", NULL, 0);
 		return SQL_ERROR;
 	}
 #ifdef ODBCDEBUG
@@ -63,35 +63,35 @@ SQLNativeSql_(ODBCStmt *stmt,
 #endif
 
 	query = ODBCTranslateSQL(InStatementText, (size_t) TextLength1,
-				 stmt->noScan);
+				 SQL_NOSCAN_OFF);
 	copyString(query, strlen(query), OutStatementText, BufferLength,
-		   TextLength2Ptr, SQLINTEGER, addStmtError, stmt,
+		   TextLength2Ptr, SQLINTEGER, addDbcError, dbc,
 		   free(query); return SQL_ERROR);
 	free(query);
 
-	return stmt->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
+	return dbc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 }
 
 SQLRETURN SQL_API
-SQLNativeSql(SQLHSTMT StatementHandle,
+SQLNativeSql(SQLHDBC ConnectionHandle,
 	     SQLCHAR *InStatementText,
 	     SQLINTEGER TextLength1,
 	     SQLCHAR *OutStatementText,
 	     SQLINTEGER BufferLength,
 	     SQLINTEGER *TextLength2Ptr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST ConnectionHandle);
 #endif
 
-	if (!isValidStmt(stmt))
+	if (!isValidDbc(dbc))
 		 return SQL_INVALID_HANDLE;
 
-	clearStmtErrors(stmt);
+	clearDbcErrors(dbc);
 
-	return SQLNativeSql_(stmt,
+	return SQLNativeSql_(dbc,
 			     InStatementText,
 			     TextLength1,
 			     OutStatementText,
@@ -101,14 +101,14 @@ SQLNativeSql(SQLHSTMT StatementHandle,
 
 #ifdef WITH_WCHAR
 SQLRETURN SQL_API
-SQLNativeSqlA(SQLHSTMT StatementHandle,
+SQLNativeSqlA(SQLHDBC ConnectionHandle,
 	      SQLCHAR *InStatementText,
 	      SQLINTEGER TextLength1,
 	      SQLCHAR *OutStatementText,
 	      SQLINTEGER BufferLength,
 	      SQLINTEGER *TextLength2Ptr)
 {
-	return SQLNativeSql(StatementHandle,
+	return SQLNativeSql(ConnectionHandle,
 			    InStatementText,
 			    TextLength1,
 			    OutStatementText,
@@ -117,42 +117,42 @@ SQLNativeSqlA(SQLHSTMT StatementHandle,
 }
 
 SQLRETURN SQL_API
-SQLNativeSqlW(SQLHSTMT StatementHandle,
+SQLNativeSqlW(SQLHDBC ConnectionHandle,
 	      SQLWCHAR *InStatementText,
 	      SQLINTEGER TextLength1,
 	      SQLWCHAR *OutStatementText,
 	      SQLINTEGER BufferLength,
 	      SQLINTEGER *TextLength2Ptr)
 {
-	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
+	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 	SQLRETURN rc;
 	SQLINTEGER n;
 	SQLSMALLINT nn;
 	SQLCHAR *sqlin, *sqlout;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST ConnectionHandle);
 #endif
 
-	if (!isValidStmt(stmt))
+	if (!isValidDbc(dbc))
 		 return SQL_INVALID_HANDLE;
 
-	clearStmtErrors(stmt);
+	clearDbcErrors(dbc);
 
 	fixWcharIn(InStatementText, TextLength1, SQLCHAR, sqlin,
-		   addStmtError, stmt, return SQL_ERROR);
+		   addDbcError, dbc, return SQL_ERROR);
 
-	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, NULL, 0, &n);
+	rc = SQLNativeSql_(dbc, sqlin, SQL_NTS, NULL, 0, &n);
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
-	clearStmtErrors(stmt);
+	clearDbcErrors(dbc);
 	n++;			/* account for NUL byte */
 	sqlout = malloc(n);
-	rc = SQLNativeSql_(stmt, sqlin, SQL_NTS, sqlout, n, &n);
+	rc = SQLNativeSql_(dbc, sqlin, SQL_NTS, sqlout, n, &n);
 	nn = (SQLSMALLINT) n;
 	if (SQL_SUCCEEDED(rc)) {
 		fixWcharOut(rc, sqlout, nn, OutStatementText, BufferLength,
-			    TextLength2Ptr, 1, addStmtError, stmt);
+			    TextLength2Ptr, 1, addDbcError, dbc);
 	}
 	free(sqlout);
 

@@ -13,19 +13,6 @@ stdout of test 'test_70` in directory 'tests/suite_01` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:30579/
 function user.main():void;
-# Monet Mil to Mal compiler 
-# Copyright (c) 2001-2004, CWI. All rights reserved. 
-#Predefined code segment 
-#The compiler can not guarantee an accurate compilation, 
-#because MIL unlike MAL is a dynamically typed language. 
-#A few guidelines to maximize usefullness. 
-#- make the type of variables explicit, in particular 'nil' 
-#- upon advice of M2m to remap identifiers, change it in your program directly 
-#use the "mil_schema" for additional support routines 
-#	io.print("setoid(oid(20000000));"); 
-    aa_a := calc.oid(20000000);
-    ba_a := calc.setoid(aa_a);
-#	io.print("# The Monet interpreter supports type casts\n"); 
     p := calc.int("21");
 #	io.print("p.io.print();"); 
     ca_a := io.print(p);

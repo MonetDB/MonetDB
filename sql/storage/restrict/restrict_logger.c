@@ -98,7 +98,7 @@ bl_get_sequence(int seq, lng *id)
 static int
 bl_log_isnew(void)
 {
-	if (BATcount(restrict_logger->catalog) > 10) {
+	if (BATcount(restrict_logger->catalog_bid) > 10) {
 		return 0;
 	}
 	return 1;

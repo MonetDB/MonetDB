@@ -74,36 +74,52 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		rows = mapi_fetch_all_rows(hdl);
+		if (mapi_error(dbh))
+			die(dbh, hdl);
+		printf("rows received " LLFMT "\n", rows);
+		while (mapi_fetch_row(hdl)) {
+			char *nme = mapi_fetch_field(hdl, 0);
+			char *age = mapi_fetch_field(hdl, 1);
+
+			printf("%s is %s\n", nme, age);
+		}
 	} else if (strcmp(argv[3], "mal") == 0) {
-		if ((hdl = mapi_query(dbh, "emp := bat.new(:str,:int);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "emp := bat.new(:oid,:str);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "age := bat.new(:oid,:int);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"John\",23);")) == NULL)
+		if ((hdl = mapi_query(dbh, "bat.append(emp, \"John\");")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.append(age, 23);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"Mary\",22);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "bat.append(emp, \"Mary\");")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.append(age, 22);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "io.print(emp,age);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		rows = mapi_fetch_all_rows(hdl);
+		if (mapi_error(dbh))
+			die(dbh, hdl);
+		printf("rows received " LLFMT "\n", rows);
+		while (mapi_fetch_row(hdl)) {
+			char *nme = mapi_fetch_field(hdl, 1);
+			char *age = mapi_fetch_field(hdl, 2);
+
+			printf("%s is %s\n", nme, age);
+		}
 	} else {
 		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);
 		exit(1);
 	}
 
-	rows = mapi_fetch_all_rows(hdl);
-	if (mapi_error(dbh))
-		die(dbh, hdl);
-	printf("rows received " LLFMT "\n", rows);
-	while (mapi_fetch_row(hdl)) {
-		char *nme = mapi_fetch_field(hdl, 0);
-		char *age = mapi_fetch_field(hdl, 1);
-
-		printf("%s is %s\n", nme, age);
-	}
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_stat(dbh);

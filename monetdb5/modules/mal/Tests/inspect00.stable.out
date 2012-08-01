@@ -15,51 +15,56 @@ stdout of test 'inspect00` in directory 'modules/mal` itself:
 function user.tst():void;
     i := mdb.getStackDepth();
     io.printf("stack depth %d\n",i);
-    t := mdb.getStackTrace();
-    io.print(t);
-    b0 := mdb.getStackFrame(0);
-    io.print(b0);
-    b1 := mdb.getStackFrame(1);
-    io.print(b1);
+    (h,t) := mdb.getStackTrace();
+    io.print(h,t);
+    (b0,b1) := mdb.getStackFrame(0);
+    io.print(b0,b1);
+    (c0,c1) := mdb.getStackFrame(1);
+    io.print(c0,c1);
 # next one is illegal 
-    b1 := mdb.getStackFrame(2);
+    (d0,d1) := mdb.getStackFrame(2);
 end tst;
 function user.main():void;
 # test analysis of stack frames 
     user.tst();
 end main;
 stack depth 2
-#---------------------------------------------------------#
-# view	stk						  # name
-# int	str						  # type
-#---------------------------------------------------------#
-[ 0,	  "    t := mdb.getStackTrace(); at user.tst[3]"  ]
-[ 1,	  "    user.tst(); at user.main[2]"		  ]
-#-----------------------------------------#
-# view	stk				  # name
-# str	str				  # type
-#-----------------------------------------#
-[ "tst",  "0@0"				  ]
-[ "i",	  "2"				  ]
-[ "_2",	  "0@0"				  ]
-[ "_3",	  "\"stack depth %d\\n\""	  ]
-[ "t",	  "<view_stk_trace>"		  ]
-[ "_5",	  "0@0"				  ]
-[ "b0",	  "<view_stk_frame>"		  ]
-[ "_7",	  "0"				  ]
-[ "_8",	  "0@0"				  ]
-[ "b1",	  "nil"				  ]
-[ "_10",  "1"				  ]
-[ "_11",  "0@0"				  ]
-[ "_12",  "nil"				  ]
-[ "_13",  "2"				  ]
-#-----------------#
-# view	stk	  # name
-# str	str	  # type
-#-----------------#
-[ "tst",  "0@0"	  ]
-[ "i",	  "nil"	  ]
-[ "_2",	  "0@0"	  ]
+#-------------------------------------------------------------------------#
+# view	stk	stk							  # name
+# void	int	str							  # type
+#-------------------------------------------------------------------------#
+[ 0@0,	  0,	  "    (h,t) := mdb.getStackTrace(); at user.tst[3]"	  ]
+[ 1@0,	  1,	  "    user.tst(); at user.main[2]"			  ]
+#-------------------------------------------------#
+# view	stk	stk				  # name
+# void	str	str				  # type
+#-------------------------------------------------#
+[ 0@0,	  "tst",  "0@0"				  ]
+[ 1@0,	  "i",	  "2"				  ]
+[ 2@0,	  "_2",	  "0@0"				  ]
+[ 3@0,	  "_3",	  "\"stack depth %d\\n\""	  ]
+[ 4@0,	  "h",	  "<view_stk_trace>"		  ]
+[ 5@0,	  "t",	  "<view_stk_traceB>"		  ]
+[ 6@0,	  "_6",	  "0@0"				  ]
+[ 7@0,	  "b0",	  "<view_stk_frame>"		  ]
+[ 8@0,	  "b1",	  "<view_stk_frameB>"		  ]
+[ 9@0,	  "_9",	  "0"				  ]
+[ 10@0,	  "_10",  "0@0"				  ]
+[ 11@0,	  "c0",	  "nil"				  ]
+[ 12@0,	  "c1",	  "nil"				  ]
+[ 13@0,	  "_13",  "1"				  ]
+[ 14@0,	  "_14",  "0@0"				  ]
+[ 15@0,	  "_15",  "nil"				  ]
+[ 16@0,	  "d0",	  "nil"				  ]
+[ 17@0,	  "d1",	  "nil"				  ]
+[ 18@0,	  "_18",  "2"				  ]
+#-------------------------#
+# view	stk	stk	  # name
+# void	str	str	  # type
+#-------------------------#
+[ 0@0,	  "tst",  "0@0"	  ]
+[ 1@0,	  "i",	  "nil"	  ]
+[ 2@0,	  "_2",	  "0@0"	  ]
 !MALException:mdb.getStackFrame:Illegal argument Illegal depth.
 
 

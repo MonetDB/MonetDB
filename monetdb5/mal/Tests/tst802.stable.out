@@ -29,7 +29,7 @@ end tst;
 #
 function user.main():void;
 #testing simple stuff around type BAT 
-    z := bat.new(:int,:int);
+    z := bat.new(:oid,:int);
     b := nil:BAT;
     b := z;
 #io.print(b); 

@@ -1,6 +1,6 @@
-chopper01
-chopper02
-chopper03
+iterator01
+iterator02
+iterator03
 clients01
 
 compress
@@ -14,14 +14,18 @@ register00
 
 mserver00
 
-statistics00
-statistics01
+modulechk.mal
+
+qgram
+
+# statistics00
+#statistics01
 
 call00
 
 #radix
 
-ascii_io2
+#ascii_io2 needs work
 
 mat
 

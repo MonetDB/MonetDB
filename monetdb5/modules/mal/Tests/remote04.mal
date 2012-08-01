@@ -3,23 +3,23 @@ uri := sabaoth.getLocalConnectionURI();
 conn:str := remote.connect(uri, "monetdb", "monetdb");
 io.print(conn);
 
-b := bat.new(:str, :int);
-bat.insert(b, "bla", 1);
-bat.insert(b, "boe", 2);
-bat.insert(b, "foo", 3);
-bat.insert(b, "bar", 4);
-bat.insert(b, "baz", 5);
+b := bat.new(:oid,:str);
+bat.append(b, "bla");
+bat.append(b, "boe");
+bat.append(b, "foo");
+bat.append(b, "bar");
+bat.append(b, "baz");
 
 k := remote.put(conn, b);
 io.print(k);
-l := remote.put(conn, 3);
+l := remote.put(conn, "bar");
 io.print(l);
-m := remote.put(conn, 10);
+m := remote.put(conn, "boe");
 io.print(m);
 
 # perform a selection remote, and get the result back
 k := remote.exec(conn, "algebra", "select", k, l, m);
-j:bat[:str,:int] := remote.get(conn, k);
+j:bat[:oid,:str] := remote.get(conn, k);
 io.print(j);
 
 # help testweb a bit, since currently no cleanup is done on server

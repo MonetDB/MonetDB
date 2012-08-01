@@ -471,6 +471,15 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 						mnstr_printf(toConsole, "%*s",
 							     (int) (len[i] - (ulen - utf8strlen(t, NULL))),
 							     "");
+
+					if (!numeric[i]) {
+						/* replace tabs with a single space to avoid
+						 * screwup the width calculations */
+						for (s = rest[i]; *s != *t; s++)
+							if (*s == '\t')
+								*s = ' ';
+					}
+
 					s = t;
 					if (trim == 1)
 						while (isascii((int) *s) &&
@@ -515,16 +524,26 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 				} else {
 					mnstr_printf(toConsole, "%c",
 							first ? '|' : i > 0 && cutafter[i - 1] == 0 ? '>' : ':');
-					if (numeric[i])
+					if (numeric[i]) {
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
-					mnstr_printf(toConsole, " %s ",
-						      rest[i]);
-					if (!numeric[i])
+						mnstr_printf(toConsole, " %s ",
+								  rest[i]);
+					}
+					if (!numeric[i]) {
+						char *p;
+						/* replace tabs with a single space to avoid
+						 * screwup the width calculations */
+						for (p = rest[i]; *p != '\0'; p++)
+							if (*p == '\t')
+								*p = ' ';
+						mnstr_printf(toConsole, " %s ",
+								  rest[i]);
 						mnstr_printf(toConsole, "%*s",
 							      (int) (len[i] - ulen),
 							      "");
+					}
 					rest[i] = 0;
 					/* avoid > as border marker if everything
 					 * actually just fits */
@@ -1429,10 +1448,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		if ((reply = mapi_result_error(hdl)) != NULL) {
 			mnstr_flush(toConsole);
 			if (formatter == TABLEformatter || formatter == CLEANformatter) {
-				fprintf(stderr, "%s", reply);
+				mapi_noexplain(mid, "");
 			} else {
-				mapi_explain_result(hdl, stderr);
+				mapi_noexplain(mid, NULL);
 			}
+			mapi_explain_result(hdl, stderr);
 			errseen = 1;
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
@@ -1581,6 +1601,11 @@ doRequest(Mapi mid, const char *buf)
 		SQLsetSpecial(buf);
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			mapi_noexplain(mid, "");
+		} else {
+			mapi_noexplain(mid, NULL);
+		}
 		mapi_explain(mid, stderr);
 		errseen = 1;
 		return 1;
@@ -1600,6 +1625,11 @@ doRequest(Mapi mid, const char *buf)
 			break;						\
 		case MERROR:						\
 			/* some error, but try to continue */		\
+			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
+				mapi_noexplain(mid, ""); \
+			} else { \
+				mapi_noexplain(mid, NULL); \
+			} \
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -1610,6 +1640,11 @@ doRequest(Mapi mid, const char *buf)
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
+			if (formatter == TABLEformatter || formatter == CLEANformatter) { \
+				mapi_noexplain(mid, ""); \
+			} else { \
+				mapi_noexplain(mid, NULL); \
+			} \
 			if (hdl) {					\
 				mapi_explain_query(hdl, stderr);	\
 				mapi_close_handle(hdl);			\
@@ -2533,6 +2568,11 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			mapi_noexplain(mid, "");
+		} else {
+			mapi_noexplain(mid, NULL);
+		}
 		mapi_explain(mid, stderr);
 		errseen = 1;
 		return;
@@ -3028,7 +3068,8 @@ main(int argc, char **argv)
 
 		mnstr_printf(toConsole, "Type \\q to quit, \\? for a list of available commands\n");
 		if (mode == SQL)
-			mnstr_printf(toConsole, "auto commit mode: on\n");
+			mnstr_printf(toConsole, "auto commit mode: %s\n",
+				     mapi_get_autocommit(mid) ? "on" : "off");
 	}
 
 	if (mode == SQL && settz)

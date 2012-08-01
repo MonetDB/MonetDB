@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "properties.h"
 #include "utils.h"
-#include "muuid.h"
 #include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 
@@ -40,8 +39,6 @@ static confkeyval _internal_prop_keys[] = {
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
 	{"optpipe",  NULL, 0, STR},
-	{"master",   NULL, 0, STR},
-	{"slave",    NULL, 0, MURI},
 	{"readonly", NULL, 0, BOOLEAN},
 	{"nclients", NULL, 0, INT},
 	{"mfunnel",  NULL, 0, STR},
@@ -180,12 +177,14 @@ setProp(char *path, char *key, char *val)
 	if (kv == NULL) {
 		snprintf(buf, sizeof(buf), "no such property: %s", key);
 		freeConfFile(props);
+		free(props);
 		return(strdup(buf));
 	}
 
 	/* first just attempt to set the value (type-check) in memory */
 	if ((err = setConfVal(kv, val)) != NULL) {
 		freeConfFile(props);
+		free(props);
 		return(err);
 	}
 
@@ -196,6 +195,7 @@ setProp(char *path, char *key, char *val)
 				snprintf(buf, sizeof(buf), "expected 'proxy' or 'redirect' "
 						"for property 'forward', got: %s", val);
 				freeConfFile(props);
+				free(props);
 				return(strdup(buf));
 			}
 		} else if (strcmp(key, "shared") == 0) {
@@ -203,6 +203,7 @@ setProp(char *path, char *key, char *val)
 			/* check if tag matches [A-Za-z0-9./]+ */
 			if (*value == '\0') {
 				freeConfFile(props);
+				free(props);
 				return(strdup("tag to share cannot be empty"));
 			}
 			while (*value != '\0') {
@@ -218,32 +219,10 @@ setProp(char *path, char *key, char *val)
 							"in tag name '%s'\n",
 							*value, (int)(value - val), val);
 					freeConfFile(props);
+					free(props);
 					return(strdup(buf));
 				}
 				value++;
-			}
-		} else if (strcmp(key, "master") == 0) {
-			/* basically this is either a boolean or a UUID (in practice
-			 * it is a freeform string, that sometimes happens to be a
-			 * UUID)
-			 * first perform a sneaky hack to do the boolean check */
-			kv->type = BOOLEAN;
-			if ((err = setConfVal(kv, val)) != NULL) {
-				free(err);
-				/* restore */
-				kv->type = STR;
-			} else {
-				/* restore */
-				kv->type = STR;
-				if (strcmp(kv->val, "yes") == 0) {
-					/* generate a unique ID for this database */
-					val = generateUUID();
-					if ((err = setConfVal(kv, val)) != NULL) {
-						/* can't fail */
-						assert(0);
-					}
-					free(val);
-				}
 			}
 		}
 	}
@@ -251,6 +230,7 @@ setProp(char *path, char *key, char *val)
 	/* ok, if we've reached this point we can write this stuff out! */
 	writeProps(props, path);
 	freeConfFile(props);
+	free(props);
 
 	return(NULL);
 }

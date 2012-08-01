@@ -3,8 +3,8 @@
 optimizer.setDebug();
 optimizer.commonTerms();
 optimizer.aliases();
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);       # identical until insert takes place
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);       # identical until insert takes place
 d:= algebra.select(b,0,100);
 e:= algebra.select(b,0,100);    # mapped onto one instruction
 k1:= 24;

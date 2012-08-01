@@ -55,3 +55,5 @@ headers_autoload = {
 	DIR = libdir/monetdb5/autoload
 	SOURCES = 80_udf.mal
 }
+
+EXTRA_DIST_DIR = Tests

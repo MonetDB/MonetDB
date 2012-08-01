@@ -87,9 +87,9 @@
 #include "mal_resolve.h"
 #include "mal_namespace.h"
 
-malType getPolyType(malType t, int *polytype);
-int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
-int typeKind(MalBlkPtr mb, InstrPtr p, int i);
+static malType getPolyType(malType t, int *polytype);
+static int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR]);
+static int typeKind(MalBlkPtr mb, InstrPtr p, int i);
 
 #define MAXMALARG 256
 
@@ -184,6 +184,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	int i, k, unmatched = 0, s1;
 	/* int foundbutwrong=0; */
 	int polytype[MAXTYPEVAR];
+	int returns[256];
 	int *returntype = NULL;
 	/*
 	 * Within a module find the subscope to locate the element in its list
@@ -206,7 +207,11 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 	if (s == 0)
 		return -1;
 
-	returntype = (int *) GDKzalloc(p->retc * sizeof(int));
+	if ( p->retc < 256){
+		for(i=0; i< p->retc; i++) returns[i] = 0;
+		returntype = returns;
+	} else 
+		returntype = (int *) GDKzalloc(p->retc * sizeof(int));
 	if (returntype == 0)
 		return -1;
 
@@ -527,7 +532,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 			mnstr_printf(out, "Finished matching\n");
 		}
 #endif
-		if (returntype)
+		if (returntype && returntype != returns)
 			GDKfree(returntype);
 		return s1;
 	} /* while */
@@ -543,7 +548,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 								"type conflict in assignment");
 		}
 	 */
-	if (returntype)
+	if (returntype && returntype != returns)
 		GDKfree(returntype);
 	return -3;
 }
@@ -883,7 +888,7 @@ chkProgram(stream *out, Module s, MalBlkPtr mb)
  * header leads to a dynamic typed statement. In principle we have
  * to type check the function upon each call.
  */
-int
+static int
 typeKind(MalBlkPtr mb, InstrPtr p, int i)
 {
 	malType t = getArgType(mb, p, i);
@@ -898,7 +903,7 @@ typeKind(MalBlkPtr mb, InstrPtr p, int i)
  * It suffices to determine the actual return value taking into
  * account the type variable constraints.
  */
-malType
+static malType
 getPolyType(malType t, int *polytype)
 {
 	int hi, ti;
@@ -926,7 +931,7 @@ getPolyType(malType t, int *polytype)
  * The routine returns the instanciated formal type for subsequent
  * type resolution.
  */
-int
+static int
 updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
 	int h, t, ret = 0;

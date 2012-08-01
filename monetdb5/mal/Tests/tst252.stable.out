@@ -28,29 +28,26 @@ stdout of test 'tst252` in directory 'mal` itself:
 #
 function user.main():void;
 #Testing a loop over string bats 
-    b := bat.new(:str,:str);
-    bat.insert(b,"one","red");
-    bat.insert(b,"two","green");
+    b := bat.new(:oid,:str);
+    bat.append(b,"one");
+    bat.append(b,"two");
     io.print(b);
-barrier (v,h,t) := bat.newIterator(b);
-    io.print(v);
+barrier (h,t) := iterator.new(b);
     io.print(h);
     io.print(t);
-    redo (v,h,t) := bat.hasMoreElements(b);
-exit v;
+    redo (h,t) := iterator.next(b);
+exit (h,t);
 end main;
-#-------------------------#
-# h	tmp_4		  # name
-# str	str		  # type
-#-------------------------#
-[ "one",  "red"		  ]
-[ "two",  "green"	  ]
-[ 0 ]
+#-----------------#
+# h	t	  # name
+# void	str	  # type
+#-----------------#
+[ 0@0,	  "one"	  ]
+[ 1@0,	  "two"	  ]
+[ 0@0 ]
 [ "one" ]
-[ "red" ]
-[ 1 ]
+[ 1@0 ]
 [ "two" ]
-[ "green" ]
 
 # 08:01:08 >  
 # 08:01:08 >  Done.

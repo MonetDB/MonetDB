@@ -1,7 +1,7 @@
 #testing exceptions raised in the kernel
 
-b:= bat.new(:int,:int);
-z:= algebra.find(b,0);
+b:= bat.new(:oid,:int);
+z:= algebra.find(b,0@0);
 io.print("should not come here anymore");
 catch MALException:str;
 	io.print("caught the exception");

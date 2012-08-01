@@ -1,18 +1,18 @@
 function help{inline}();
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);
 z:int:= 1;
-bat.insert(b,1,1);
+bat.append(b,1);
 
-barrier (x,y,z):= bat.newIterator(b);
+barrier (x,z):= iterator.new(b);
 	io.print(x);
 catch MALException:str;
 exit MALException;
-exit (x,y,z);
+exit (x,z);
 
-barrier (x,y,z):= bat.newIterator(c);
+barrier (x,z):= iterator.new(c);
 	io.print(x);
-	redo (x,y,z):= bat.hasMoreElements(c);
+	redo (x,z):= iterator.next(c);
 catch MALException:str;
 exit MALException;
 exit (x,y,z);

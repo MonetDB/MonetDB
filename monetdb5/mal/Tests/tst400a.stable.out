@@ -19,9 +19,9 @@ stdout of test 'tst400a` in directory 'mal` itself:
 #
 function user.main():void;
 # simple iterator loop test 
-barrier (b,v) := language.newRange(0:lng);
-    redo (b,v) := language.nextElement(1:lng,1000000:lng);
-exit (b,v);
+barrier v := 0:lng;
+    redo v := iterator.next(1:lng,1000000:lng);
+exit v;
     io.print("end of loop");
 end main;
 [ "end of loop" ]

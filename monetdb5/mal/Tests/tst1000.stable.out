@@ -24,17 +24,17 @@ stdout of test 'tst1000` in directory 'mal` itself:
 #
 function user.main():void;
 #Access BATs  
-    b := bat.new(:int,:int);
-    bat.insert(b,1,2);
+    b := bat.new(:oid,:int);
+    bat.append(b,2);
     bat.setName(b,"mybat");
-    c:bat[:int,:int]  := bbp.bind("mybat");
+    c:bat[:oid,:int]  := bbp.bind("mybat");
     io.print(c);
 end main;
 #-----------------#
 # h	mybat	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 
 # 07:58:52 >  
 # 07:58:52 >  Done.

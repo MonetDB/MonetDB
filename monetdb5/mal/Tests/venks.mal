@@ -13,12 +13,12 @@ dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
 r:= mmath.srand(0);
-barrier (go,i):= language.newRange(0:lng);
+barrier i:= 0:lng;
 	k:= mmath.rand();
 	l:= calc.int(k);
 	bat.append(large,l);
-	redo (go,i):= language.nextElement(1:lng,1000000:lng);
-exit (go,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
 
 mdb.setDebug(dbgmsk_restore);
 
@@ -40,7 +40,7 @@ largeR:= bat.reverse(large);
 smallR:= bat.reverse(small);
 
 t0:= alarm.usec();
-sj:= algebra.kintersect(largeR,smallR);
+sj:= algebra.kintersect(large,small);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#kintersect(largeRev,smallRev) %d\n",d0);
@@ -58,7 +58,7 @@ io.printf("#count %d\n",v);
 #io.print(j);
 
 t0:= alarm.usec();
-sj2:= algebra.kintersect(smallR,largeR);
+sj2:= algebra.kintersect(small,large);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#kintersect(smallRev,largeRev) %d\n",d0);

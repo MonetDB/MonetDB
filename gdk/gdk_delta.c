@@ -18,48 +18,42 @@
  */
 
 /*
- * @f gdk_delta
  * @a M. L. Kersten, P. Boncz, N. Nes
  * @* Delta management
- * The basis for transaction management is to keep track of
- * elements inserted, deleted, and replaced.
- * This information is stored within the BAT structure using three
- * delta markers.
- * Inserted denotes
- * the first added BUN since the last commit. Deleted points to the BUNs removed.
- * The deletion list is terminated at @%first@, where space is reserved for swapping
- * BUNs upon deletion. Initialization of the BAT is extended as follows:
- *
+ * The basis for transaction management is to keep track of elements
+ * inserted, deleted, and replaced.  This information is stored within
+ * the BAT structure using three delta markers.  Inserted denotes the
+ * first added BUN since the last commit. Deleted points to the BUNs
+ * removed.  The deletion list is terminated at @%first@, where space
+ * is reserved for swapping BUNs upon deletion. Initialization of the
+ * BAT is extended as follows:
  */
+
 /*
- * @
- *
- * @-
- * Impact on hashing and indexing.
- * The hash structure is maintained for all elements to be deleted ?.
- *
+ * Impact on hashing and indexing.  The hash structure is maintained
+ * for all elements to be deleted ?.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 
 /*
- * @-
- * batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
+ * batcommit really forgets the atoms guarded for an undo; we just
+ * need to free their heap space (only if necessary).
  */
 BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-		    BATgetId(b),
-		    b->H->heap.free,
-		    b->T->heap.free,
-		    b->batInserted,
-		    b->batDeleted,
-		    b->batFirst,
-		    PTRFMTCAST b->H->heap.base,
-		    PTRFMTCAST b->T->heap.base);
+	DELTADEBUG printf("#BATcommit1 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			  BATgetId(b),
+			  b->H->heap.free,
+			  b->T->heap.free,
+			  b->batInserted,
+			  b->batDeleted,
+			  b->batFirst,
+			  PTRFMTCAST b->H->heap.base,
+			  PTRFMTCAST b->T->heap.base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		BATiter bi = bat_iterator(b);
@@ -97,21 +91,21 @@ BATcommit(BAT *b)
 	}
 	b->batDeleted = b->batFirst;
 	b->batInserted = BUNlast(b);
-	DELTAprintf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
-		    BATgetId(b),
-		    b->H->heap.free,
-		    b->T->heap.free,
-		    b->batInserted,
-		    b->batDeleted,
-		    b->batFirst,
-		    PTRFMTCAST b->H->heap.base,
-		    PTRFMTCAST b->T->heap.base);
+	DELTADEBUG printf("#BATcommit2 %s free " SZFMT "," SZFMT " ins " BUNFMT " del " BUNFMT " first " BUNFMT " base " PTRFMT "," PTRFMT "\n",
+			  BATgetId(b),
+			  b->H->heap.free,
+			  b->T->heap.free,
+			  b->batInserted,
+			  b->batDeleted,
+			  b->batFirst,
+			  PTRFMTCAST b->H->heap.base,
+			  PTRFMTCAST b->T->heap.base);
 	return b;
 }
 
 /*
- * @-
- * BATfakeCommit() flushed the delta info, but leaves the BAT marked clean.
+ * BATfakeCommit() flushed the delta info, but leaves the BAT marked
+ * clean.
  */
 BAT *
 BATfakeCommit(BAT *b)
@@ -129,13 +123,10 @@ BATfakeCommit(BAT *b)
 }
 
 /*
- * @
- * @-
- * The routine @%BATundo@ restores the BAT to the previous commit point.
- * The inserted elements are removed from the accelerators, deleted from the
- * heap. The guarded elements from uncommitted deletes are
- * inserted into the accelerators.
- * @-
+ * The routine @%BATundo@ restores the BAT to the previous commit
+ * point.  The inserted elements are removed from the accelerators,
+ * deleted from the heap. The guarded elements from uncommitted
+ * deletes are inserted into the accelerators.
  */
 BAT *
 BATundo(BAT *b)
@@ -144,7 +135,7 @@ BATundo(BAT *b)
 	BUN p, bunlast, bunfirst;
 
 	BATcheck(b, "BATundo");
-	DELTAprintf("#BATundo %s \n", BATgetId(b));
+	DELTADEBUG printf("#BATundo %s \n", BATgetId(b));
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->H->heap.dirty = b->T->heap.dirty = 1;
@@ -228,10 +219,9 @@ BATundo(BAT *b)
 }
 
 /*
- * @-
  * The proposed modifications can be obtained through the @%BATalpha@
- * and @%BATdelta@ routines , which return the inserted and deleted BUNs,
- * respectively.
+ * and @%BATdelta@ routines , which return the inserted and deleted
+ * BUNs, respectively.
  */
 BAT *
 BATprev(BAT *b)

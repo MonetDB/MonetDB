@@ -1,9 +1,9 @@
 #test the capability to deal with unspecified bats.
-function tst2(b:bat[:any_1,:any_2]);
-	bat.insert(b,"hello",1);
+function tst2(b:bat[:oid,:any_1]);
+	bat.append(b,"hello");
 end tst2;
 
-b:= bat.new(:int,:str);
+b:= bat.new(:oid,:int);
 
 #The call to tst2 fails at runtime
 user.tst2(b);

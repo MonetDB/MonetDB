@@ -19,7 +19,17 @@
 
 /* This file is included multiple times.  We expect a bunch of tokens
  * to be redefined differently each time (see gdk_ssort.c).  If the
- * token GDKssortimpl is defined, the main interface is defined.  */
+ * token GDKssortimpl is defined, the main interface is defined.
+ */
+
+/*
+ * This file implements a stable sort algorithm known as "timsort".
+ * The algorithm is a straight copy of the listsort function in the
+ * Python 2.5 source code, heavily modified to fit into the MonetDB
+ * environment.
+ * The original author of the sort algorithm was Tim Peters, the
+ * adaptation was done by Sjoerd Mullender.
+ */
 
 /* binarysort is the best method for sorting small arrays: it does few
  * compares, but can do data movement quadratic in the number of
@@ -839,48 +849,34 @@ GDKssortimpl(void *h, void *t, void *heap, size_t nitems,
 	hi = lo + nremaining;
 	minrun = merge_compute_minrun(nremaining);
 	switch (tpe) {
-#ifndef NOEXPAND_BTE
 	case TYPE_bte:
 		if (do_ssort_bte(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_SHT
 	case TYPE_sht:
 		if (do_ssort_sht(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_INT
 	case TYPE_int:
 		if (do_ssort_int(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_LNG
 	case TYPE_lng:
 		if (do_ssort_lng(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_FLT
 	case TYPE_flt:
 		if (do_ssort_flt(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_DBL
 	case TYPE_dbl:
 		if (do_ssort_dbl(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
-#ifndef NOEXPAND_OID
 	case TYPE_oid:
 		if (do_ssort_oid(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;
 		break;
-#endif
 	default:
 		if (do_ssort_any(&ms, nremaining, lo, hi, minrun) < 0)
 			goto fail;

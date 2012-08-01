@@ -33,11 +33,11 @@ function user.main():void;
     i := 1;
     j := "kk";
     k := "whatever";
-    n := bat.new(:int,:int);
+    n := bat.new(:oid,:int);
     m := bbp.take("person_name");
     j := "ll";
 # second one overwrites first 
-    z := bat.new(:int,:int);
+    z := bat.new(:oid,:int);
 #q:= 1:int{frozen}; 
 #Alternative format using post-predicates 
 #default interpretation for i.prop is boolean value true 

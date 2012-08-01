@@ -52,6 +52,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_interpreter.h"
+#include "mal_dataflow.h"
 #include "mat.h"
 #include "srvpool.h"
 #include "optimizer.h"
@@ -448,7 +449,7 @@ SRVPOOLscheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( getPC(mb, pci) > pci->jump)
 			throw(MAL,"scheduler.srvpool","Illegal statement range");
 		msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
-		*res = -2;  /* continue at end of block */
+		*res = int_nil;  /* continue at end of block */
 	}
 	return msg;
 }

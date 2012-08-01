@@ -14,15 +14,15 @@ stdout of test 'tst105` in directory 'mal` itself:
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:33388/
 command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;
 !TypeException:user.main[3]:object code for command bat2.new missing
-!TypeException:user.main[3]:'bat2.new' undefined in: a:bat[:str,:int] := bat2.new(_4:str, _5:int)
+!TypeException:user.main[3]:'bat2.new' undefined in: a:bat[:oid,:int] := bat2.new(_4:oid, _5:int)
 !TypeException:user.main[4]:object code for command bat2.new missing
-!TypeException:user.main[4]:'bat2.new' undefined in: b:bat[:str,:int] := bat2.new(_7:str, _5:int)
+!TypeException:user.main[4]:'bat2.new' undefined in: b:bat[:oid,:int] := bat2.new(_4:oid, _5:int)
 function user.main():void;
 # check propagation of type variables over bats 
 # can be checked after bat module has been added 
-    a := bat2.new(:str,:int);
-    b := bat2.new(:str,:int);
-    c := bat.new(:str,:int);
+    a := bat2.new(:oid,:int);
+    b := bat2.new(:oid,:int);
+    c := bat.new(:oid,:int);
 end main;
 
 # 07:58:56 >  

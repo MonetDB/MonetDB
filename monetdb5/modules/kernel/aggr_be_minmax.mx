@@ -32,7 +32,6 @@ All Rights Reserved.
  */
 #include "monetdb_config.h"
 #include <gdk.h>
-#include <gdk_scanselect.h>	/* for type-specific HT_bunfastins_nocheck_noinc(), until they're moved to gdk.mx */
 #include "aggr.h"
 #include "aggr_be_minmax.h"
 
@@ -67,7 +66,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_ptr
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_ptr(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -151,7 +150,7 @@ All Rights Reserved.
 	@9:		max/min					initial result value
 */
 @= aggrX3_minmax_oid
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
+	ALGODEBUG fprintf(stderr, "#aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9);\n");
 #if @2
 	if (BATprepareHash(e)) {
 		GDKerror("aggrX3_minmax_oid(@1,@2,@3,@4,@5,@6,@7,@8,@9): BATprepareHash(e) failed");
@@ -260,7 +259,7 @@ aggrX3_@1_@3_@4_@5(BAT **ret, BAT *b, BAT *e)
 		return GDK_FAIL;
 	}
 
-	ALGODEBUG THRprintf(GDKout, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#aggrX3_@1_@3_@4_@5[@2,@6](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	/* init: prepare the result bat;
 	 * trick: by using "tail-type" void, we only write the head column, here */
@@ -355,7 +354,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 {
 	int rtrn, tt = ATOMstorage(b->ttype);
 
-	ALGODEBUG THRprintf(GDKout, "#CMDaggrX3_@1[@2,@3](b=%s,e=%s);\n",
+	ALGODEBUG fprintf(stderr, "#CMDaggrX3_@1[@2,@3](b=%s,e=%s);\n",
 		BATgetId(b),BATgetId(e));
 	if (b->ttype == TYPE_void) {
 		rtrn = aggrX3_@1_any_var_oid(ret, b, e);
@@ -363,8 +362,7 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 		rtrn = aggrX3_@1_bte_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_sht) {
 		rtrn = aggrX3_@1_sht_loc_ptr(ret, b, e);
-	} else if (b->ttype != TYPE_bat && (tt == TYPE_int || tt == TYPE_flt)) {
-		/* ensure use of ATOMput for TYPE_bat */
+	} else if (tt == TYPE_int || tt == TYPE_flt) {
 		rtrn = aggrX3_@1_int_loc_ptr(ret, b, e);
 	} else if (tt == TYPE_dbl || tt == TYPE_lng) {
 		rtrn = aggrX3_@1_lng_loc_ptr(ret, b, e);

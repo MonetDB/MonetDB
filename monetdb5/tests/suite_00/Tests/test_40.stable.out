@@ -25,47 +25,27 @@ function user.main():void;
 #	io.print("setoid(oid(20000000));"); 
     aa_a := calc.oid(20000000);
     ba_a := calc.setoid(aa_a);
-#	io.print("# Some applications may wish to directly access the buns\n"); 
-#	io.print("# i.e. they use a BAT like an array.\n"); 
-    b := bat.new(nil:int,nil:int);
-#	io.print("b.rename(\"b\");"); 
+    b := bat.new(nil:oid,nil:int);
     ca_a := bat.setName(b,"b");
-#	io.print("b.insert(1,15);"); 
-    da_a := bat.insert(b,1,15);
-#	io.print("b.insert(2,4);"); 
-    ea_a := bat.insert(b,2,4);
-#	io.print("b.insert(3,int(nil));"); 
+    da_a := bat.append(b,15);
+    ea_a := bat.append(b,4);
     fa_a := calc.int(nil);
-    ga_a := bat.insert(b,3,fa_a);
-#	io.print("b.insert(4,16);"); 
-    ha_a := bat.insert(b,4,16);
-#	io.print("b.insert(5,25);"); 
-    ia_a := bat.insert(b,5,25);
-#	io.print("b.insert(6,36);"); 
-    ja_a := bat.insert(b,6,36);
-#	io.print("b.insert(7,49);"); 
-    ka_a := bat.insert(b,7,49);
-#	io.print("b.insert(8,64);"); 
-    la_a := bat.insert(b,8,64);
-#	io.print("b.insert(9,int(nil));"); 
+    ga_a := bat.append(b,fa_a);
+    ha_a := bat.append(b,16);
+    ia_a := bat.append(b,25);
+    ja_a := bat.append(b,36);
+    ka_a := bat.append(b,49);
+    la_a := bat.append(b,64);
     ma_a := calc.int(nil);
-    na_a := bat.insert(b,9,ma_a);
-#	io.print("b.insert(int(nil),int(nil));"); 
+    na_a := bat.append(b,ma_a);
     oa_a := calc.int(nil);
     pa_a := calc.int(nil);
-    qa_a := bat.insert(b,oa_a,pa_a);
-#	io.print("b.insert(int(nil),81);"); 
+    qa_a := bat.append(b,pa_a);
     ra_a := calc.int(nil);
-    sa_a := bat.insert(b,ra_a,81);
-#	io.print("#b.rename(\"b\");\n"); 
-#	io.print("b.save();"); 
+    sa_a := bat.append(b,81);
     ta_a := bat.save(b);
 #	io.print("load(\"b\");"); 
     ua_a := bat.load("b");
-#	io.print("b.position(4).print();"); 
-    va_a := algebra.position(b,4);
-    wa_a := io.print(va_a);
-#	io.print("b.fetch(5).print();"); 
     xa_a := algebra.fetch(b,5);
     ya_a := io.print(xa_a);
 #	io.print("b.fetch(8).print();"); 
@@ -74,21 +54,12 @@ function user.main():void;
 #	io.print("b.slice(5,8).print();"); 
     cb_a := algebra.slice(b,5,8);
     db_a := io.print(cb_a);
-#	io.print("# errors\n"); 
-    eb_a := algebra.position(b,111);
-    fb_a := io.print(eb_a);
-#	io.print("b.fetch(-1).print();"); 
-    gb_a := algebra.fetch(b,-1);
-    hb_a := io.print(gb_a);
-#	io.print("b.slice(8,5).print();"); 
     ib_a := algebra.slice(b,8,5);
     jb_a := io.print(ib_a);
 #	io.print("quit();"); 
     kb_a := clients.quit();
 #Identifer 'rename' mapped to 'bat.setName' 
 end main;
-[ 3 ]
-#b.fetch(5).print();
 [ 36 ]
 #b.fetch(8).print();
 [ nil ]
@@ -97,11 +68,11 @@ end main;
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 6,	  36	  ]
-[ 7,	  49	  ]
-[ 8,	  64	  ]
-[ 9,	  nil	  ]
-!MALException:algebra.position:GDK reported error.Item not found
+[ 5@0,	  36	  ]
+[ 6@0,	  49	  ]
+[ 7@0,	  64	  ]
+[ 8@0,	  nil	  ]
+
 
 
 

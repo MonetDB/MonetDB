@@ -14,8 +14,8 @@
 #	io.print("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	ca_a := transaction.commit();
 	da_a := io.printf("#~BeginVariableOutput~#\n");
-	ea_a := status.ioStatistics();
-	fa_a := io.print(ea_a);
+	(ea_a,ea_b) := status.ioStatistics();
+	fa_a := io.print(ea_a, ea_b);
 	ga_a := io.printf("#~EndVariableOutput~#\n");
 #	io.print("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");
 	ha_a := transaction.commit();
@@ -42,8 +42,8 @@
 	bb_a := transaction.commit();
 #	io.print("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");
 	cb_a := io.printf("#~BeginVariableOutput~#\n");
-	db_a := status.ioStatistics();
-	eb_a := io.print(db_a);
+	(db_a,db_b) := status.ioStatistics();
+	eb_a := io.print(db_a, db_b);
 	fb_a := io.printf("#~EndVariableOutput~#\n");
 #	io.print("quit();");
 	gb_a := clients.quit();

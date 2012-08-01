@@ -124,8 +124,7 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
  * variable referenced in 'pp' exists. In addition, we should ensure
  * proper weaveing of the begin-end pairs. This can simply be checked by
  * counting the begin/end pairs. It should balance for every block.
- * Currently, the barrier control variables should be of type bit,
- * sht, int, or lng. A number zero is interpreted as end of the barrier
+ * A number NIL is interpreted as end of the barrier
  * block.
  *
  * To speed-up interpretation of the control statements, we could also
@@ -193,21 +192,6 @@ void chkFlow(stream *out, MalBlkPtr mb)
 			    return;
 			}
 
-			if( getVarType(mb,v) != TYPE_bit &&
-			    getVarType(mb,v) != TYPE_int &&
-			    getVarType(mb,v) != TYPE_str &&
-			    getVarType(mb,v) != TYPE_lng &&
-			    getVarType(mb,v) != TYPE_oid &&
-			    getVarType(mb,v) != TYPE_sht &&
-			    !isaBatType(getVarType(mb,v)) &&
-			    getVarType(mb,v) != TYPE_bte &&
-			    getVarType(mb,v) != TYPE_wrd
-				){
-			    showScriptException(out, mb,i,TYPE,
-					"barrier '%s' should be of type bit, str or number",
-					getVarName(mb, v));
-					mb->errors++;
-			}
 			btop++;
 			if( p->typechk != TYPE_RESOLVED) fixed =0;
 			break;
@@ -1055,18 +1039,36 @@ showInFlow(MalBlkPtr mb, int pc, int varid, stream *f)
 static void
 showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
 {
-	str s, msg;
-
+	(void) mb;     /* fool the compiler */
 	(void) stk;     /* fool the compiler */
-	msg = instruction2str(mb, stk, p, LIST_MAL_DEBUG);
-	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
-	for (s = msg; *s; s++)
-		if (*s == '"')
-			mnstr_printf(f, "\\\"");
-		else
-			mnstr_printf(f, "%c", *s);
-	GDKfree(msg);
-	mnstr_printf(f, "\"];\n");
+	mnstr_printf(f, "n%d [fontsize=8, shape=box, label=\"%s\"]\n", pc, getFunctionId(p));
+}
+
+/* the stethoscope needs dot files for its graphical interface.
+ * They are produced whenever a main() is called.
+ * In all cases a single dot file is produced.
+ */
+#define MAXFLOWGRAPHS 128
+
+int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top);
+int getFlowGraphs(MalBlkPtr mb, MalStkPtr stk, MalBlkPtr *mblist, MalStkPtr *stklist,int top){
+	int i;
+	InstrPtr p;
+
+	for ( i=0; i<top; i++)
+	if ( mblist[i] == mb)
+		return top;
+
+	if ( top == MAXFLOWGRAPHS)
+		return top; /* just bail out */
+	mblist[top] = mb;
+	stklist[top++] = stk;
+	for (i=1; i < mb->stop; i++){
+		p = getInstrPtr(mb,i);
+		if ( p->token == FCNcall || p->token == FACcall )
+			top =getFlowGraphs(p->blk, 0,mblist, stklist, top);
+	}
+	return top;
 }
 
 void
@@ -1074,9 +1076,12 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 {
 	stream *f;
 	InstrPtr p;
-	int i, k;
+	int i, j,k, stethoscope=0;
 	char mapimode = 0;
 	buffer *bufstr = NULL;
+	MalBlkPtr mblist[MAXFLOWGRAPHS];
+	MalStkPtr stklist[MAXFLOWGRAPHS];
+	int top =0;
 
 	(void) stk;     /* fool the compiler */
 
@@ -1088,40 +1093,52 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 		mapimode = 1;
 	} else if (idcmp(fname, "stethoscope") == 0) {
 		f = getProfilerStream();
+		stethoscope =1;
 	} else {
 		f = open_wastream(fname);
 	}
 	if ( f == NULL)
 		return;
-	p = getInstrPtr(mb, 0);
-	mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
-	p = getInstrPtr(mb, 0);
-	showFlowDetails(mb, stk, p, 0, f);
-	for (k = p->retc; k < p->argc; k++) {
-		showOutFlow(mb, 0, p->argv[k], f);
-	}
-	for (i = 1; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
 
-		showFlowDetails(mb, stk, p, i, f);
+	top = getFlowGraphs(mb,stk,mblist,stklist,0);
+	if ( stethoscope == 0)
+		top =1;
+	for( j=0; j< top; j++){
+		mb = mblist[j];
+		stk = stklist[j];
+		if ( (mb == 0 || mb->dotfile) && stethoscope)
+			continue; /* already sent */
+		p = getInstrPtr(mb, 0);
+		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
+		p = getInstrPtr(mb, 0);
+		showFlowDetails(mb, stk, p, 0, f);
+		for (k = p->retc; k < p->argc; k++) {
+			showOutFlow(mb, 0, p->argv[k], f);
+		}
+		for (i = 1; i < mb->stop; i++) {
+			p = getInstrPtr(mb, i);
 
-		for (k = 0; k < p->retc; k++)
-			showOutFlow(mb, i, p->argv[k], f);
+			showFlowDetails(mb, stk, p, i, f);
 
-		if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
-			for (k = p->retc; k < p->argc; k++)
-				if (getArgType(mb, p, k) != TYPE_void &&
-					!isVarConstant(mb, getArg(p, k)))
-					showOutFlow(mb, i, p->argv[k], f);
-
-		if (getFunctionId(p) == 0)
 			for (k = 0; k < p->retc; k++)
-				if (getArgType(mb, p, k) != TYPE_void)
-					showInFlow(mb, i, p->argv[k], f);
-		if (p->token == ENDsymbol)
-			break;
+				showOutFlow(mb, i, p->argv[k], f);
+
+			if (p->retc == 0 || getArgType(mb, p, 0) == TYPE_void) /* assume side effects */
+				for (k = p->retc; k < p->argc; k++)
+					if (getArgType(mb, p, k) != TYPE_void &&
+						!isVarConstant(mb, getArg(p, k)))
+						showOutFlow(mb, i, p->argv[k], f);
+
+			if (getFunctionId(p) == 0)
+				for (k = 0; k < p->retc; k++)
+					if (getArgType(mb, p, k) != TYPE_void)
+						showInFlow(mb, i, p->argv[k], f);
+			if (p->token == ENDsymbol)
+				break;
+		}
+		mnstr_printf(f, "}\n");
+		mb->dotfile++;
 	}
-	mnstr_printf(f, "}\n");
 
 	if (mapimode == 1) {
 		size_t maxlen = 0;

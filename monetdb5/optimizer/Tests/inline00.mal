@@ -1,20 +1,20 @@
 function help{inline}();
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);
-bat.insert(b,1,1);
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);
+bat.append(b,1);
 
-barrier (x,y,z):= bat.newIterator(b);
-	io.print(x);
+barrier (y,z):= iterator.new(b);
+	io.print(y);
 catch MALException:str;
 exit MALException;
-exit (x,y,z);
+exit (y,z);
 
-barrier (x,y,z):= bat.newIterator(c);
+barrier (x,z):= iterator.new(c);
 	io.print(x);
-	redo (x,y,z):= bat.hasMoreElements(c);
+	redo (x,z):= iterator.next(c);
 catch MALException:str;
 exit MALException;
-exit (x,y,z);
+exit (x,z);
 end help;
 
 function user.qry();

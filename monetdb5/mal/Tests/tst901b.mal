@@ -12,11 +12,11 @@ dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
 mdb.setDebug(dbgmsk_set);
 
 t0:= alarm.usec();
-barrier (v,i):= language.newRange(0:lng);
+barrier i:= 0:lng;
 	o:= calc.oid(i);
 	bat.insert(b,o,i);
-	redo (v,i):= language.nextElement(1:lng,1000000:lng);
-exit (v,i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
 t1:= alarm.usec();
 
 mdb.setDebug(dbgmsk_restore);
@@ -27,16 +27,16 @@ mdb.setDebug(dbgmsk_set);
 
 t2:= alarm.usec();
 d:= bat.new(:oid,:lng);
-barrier (mloop,h,t):= bat.newIterator(b);
+barrier (h,t):= iterator.new(b);
         zz:= algebra.find(b,h);
         z:= algebra.find(c,h);
 	cr:= zz+z;
 	bat.insert(d,h,cr);
 catch GDKerror:str;
-	leave mloop;
+	leave h;
 exit GDKerror;
-	redo (mloop,h,t):= bat.hasMoreElements(b);
-exit (mloop,h,t);
+	redo (h,t):= iterator.next(b);
+exit (h,t);
 t3:= alarm.usec();
 
 mdb.setDebug(dbgmsk_restore);

@@ -28,7 +28,7 @@ function user.remote_internal_serveget(type:str, o:any):void;
     exit ifpart;
 end user.remote_internal_serveget;
 
-remote_test_id_0 := bat.new(:int, :str, 33);
-bat.insert(remote_test_id_0, 0:int, "void":str);
-user.remote_internal_servegetbat("bat[:int,:str]",remote_test_id_0);
+remote_test_id_0 := bat.new(:oid, :str, 33);
+bat.append(remote_test_id_0, "oid":str);
+user.remote_internal_servegetbat("bat[:oid,:str]",remote_test_id_0);
 

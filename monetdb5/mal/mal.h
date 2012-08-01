@@ -46,6 +46,7 @@
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
+#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export int      monet_welcome;
@@ -66,16 +67,17 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of all debug options.
 */
-#define GRPthreads ( 1 | PARMASK)
+#define GRPthreads (THRDMASK | PARMASK)
 #define GRPmemory (MEMMASK | ALLOCMASK )
 #define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
 #define GRPio (IOMASK | PERFMASK )
-#define GRPtransactions ( TMMASK | DELTAMASK | TEMMASK)
-#define GRPmodules (DLMASK | LOADMASK)
+#define GRPheaps (HEAPMASK)
+#define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
+#define GRPmodules (LOADMASK)
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
-#define GRPxproperties (XPROPMASK )
+#define GRPxproperties 0 /* (XPROPMASK) */
 #define GRPperformance (JOINPROPMASK | DEADBEEFMASK)
-#define GRPoptimizers  (1<<27)	/* == OPTMASK; cf., gdk/gdk.mx */
+#define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK)
 /*
  * @-
@@ -124,6 +126,7 @@ mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
+mal_export MT_Lock  mal_delayLock ;
 
 
 mal_export int mal_init(void);

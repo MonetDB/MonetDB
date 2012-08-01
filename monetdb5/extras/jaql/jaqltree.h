@@ -57,6 +57,7 @@ enum treetype {
 	j_func,
 	j_pred,
 	j_operation,
+	j_null,
 	j_bool,
 	j_num,
 	j_dbl,
@@ -151,6 +152,7 @@ tree *make_number(long long int n);
 tree *make_double(double d);
 tree *make_string(char *s);
 tree *make_bool(char b);
+tree *make_null(void);
 tree *make_func_call(char *name, tree *args);
 tree *make_func_arg(tree *arg);
 tree *append_func_arg(tree *oarg, tree *narg);

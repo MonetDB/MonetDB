@@ -57,6 +57,7 @@
 #include "optimizer.h"
 #include "opt_statistics.h"
 #include "opt_prelude.h"
+#include "opt_pipes.h"
 #include <unistd.h>
 
 static int SQLinitialized = 0;
@@ -480,6 +481,23 @@ sql_update_jul2012(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2012(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+	/* new function sys.alpha */
+	pos += snprintf(buf+pos, bufsize-pos, "drop function sys.zorder_slice;\n");
+
+	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -624,6 +642,21 @@ SQLinitClient(Client c)
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
 			if ((err = sql_update_jul2012(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
+		}
+		/* if function sys.zorder_slice() does exist, we need
+		 * to update */
+		{
+			list *l = sa_list(m->sa);
+			sql_find_subtype(&tp, "int", 0, 0);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			list_append(l, &tp);
+			if (sql_bind_func_(m->sa, mvc_bind_schema(m,"sys"),
+					   "zorder_slice", l, F_FUNC )) {
+				if ((err = sql_update_oct2012(c)) != NULL)
+					fprintf(stderr, "!%s\n", err);
+			}
 		}
 	}
 	fflush(stdout);
@@ -1000,23 +1033,23 @@ SQLreader(Client c)
 	mvc *m = NULL;
 	int blocked = isa_block_stream(in->s);
 
-	if( SQLinitialized == FALSE){
+	if (SQLinitialized == FALSE) {
 		c->mode = FINISHING;
 		return NULL;
 	}
 	if (!be || c->mode <= FINISHING) {
 #ifdef _SQL_READER_DEBUG
-	mnstr_printf(GDKout, "#SQL client finished\n");
+		mnstr_printf(GDKout, "#SQL client finished\n");
 #endif
 		c->mode = FINISHING;
 		return NULL;
 	}
 #ifdef _SQL_READER_DEBUG
 	mnstr_printf(GDKout, "#SQLparser: start reading SQL %s %s\n",
-		(be->console?" from console":""),
-		(blocked? "Blocked read":""));
+			(be->console ? " from console" : ""),
+			(blocked ? "Blocked read" : ""));
 #endif
-	language = be->language;	/* 'S' for SQL, 'D' from debugger */
+	language = be->language;    /* 'S' for SQL, 'D' from debugger */
 	m = be->mvc;
 	m->errstr[0] = 0;
 	/*
@@ -1026,88 +1059,88 @@ SQLreader(Client c)
 
 #ifdef _SQL_READER_DEBUG
 	mnstr_printf(GDKout, "#pos %d len %d eof %d \n",
-		in->pos, in->len, in->eof);
+			in->pos, in->len, in->eof);
 #endif
 	/*
 	 * @-
 	 * Distinguish between console reading and mclient connections.
 	 * The former comes with readline functionality.
 	 */
-	while(more) {
+	while (more) {
 		more = FALSE;
 
 		/* Different kinds of supported statements sequences
-			A;	-- single line			s
-			A \n B;	-- multi line			S
-			A; B;   -- compound single block	s
-			A;	-- many multi line
-			B \n C; -- statements in one block	S
-		*/
+		    A;	-- single line			s
+		    A \n B;	-- multi line			S
+		    A; B;   -- compound single block	s
+		    A;	-- many multi line
+		    B \n C; -- statements in one block	S
+		 */
 		/* auto_commit on end of statement */
 		if (m->scanner.mode == LINE_N)
-			go = SQLautocommit(c,m);
+			go = SQLautocommit(c, m);
 
 		if (go && in->pos >= in->len) {
-		ssize_t rd;
+			ssize_t rd;
 
-		if (c->bak) {
+			if (c->bak) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "#Switch to backup stream\n");
+				mnstr_printf(GDKout, "#Switch to backup stream\n");
 #endif
-			in = c->fdin;
-			blocked = isa_block_stream(in->s);
-			m->scanner.rs = c->fdin;
-			c->fdin->pos += c->yycur;
-			c->yycur = 0;
-		}
-		if (in->eof || !blocked) {
-			language = (be->console) ? 'S' : 0;
+				in = c->fdin;
+				blocked = isa_block_stream(in->s);
+				m->scanner.rs = c->fdin;
+				c->fdin->pos += c->yycur;
+				c->yycur = 0;
+			}
+			if (in->eof || !blocked) {
+				language = (be->console) ? 'S' : 0;
 
-			/* The rules of auto_commit require us to finish
-			   and start a transaction on the start of a new statement (s A;B; case) */
-			if (!(m->emod & mod_debug))
-				go = SQLautocommit(c,m);
+				/* The rules of auto_commit require us to finish
+				   and start a transaction on the start of a new statement (s A;B; case) */
+				if (!(m->emod & mod_debug))
+					go = SQLautocommit(c, m);
 
-			if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout))) {
+					go = FALSE;
+					break;
+				}
+				in->eof = 0;
+			}
+			if (in->buf == NULL) {
+				more = FALSE;
+				go = FALSE;
+			} else if (go && (rd = bstream_next(in)) <= 0) {
+#ifdef _SQL_READER_DEBUG
+				mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+#endif
+				if (be->language == 'D' && in->eof == 0)
+					return 0;
+
+				if (rd == 0 && language != 0 && in->eof && !be->console) {
+					/* we hadn't seen the EOF before, so just try again
+					   (this time with prompt) */
+					more = TRUE;
+					continue;
+				}
 				go = FALSE;
 				break;
+			} else if (go && !be->console && language == 0) {
+				be->language = in->buf[in->pos++];
+				if (be->language == 's') {
+					be->language = 'S';
+					m->scanner.mode = LINE_1;
+				} else if (be->language == 'S') {
+					m->scanner.mode = LINE_N;
+				}
 			}
-			in->eof = 0;
-		}
-		if (in->buf == NULL) {
-			more = FALSE;
-			go = FALSE;
-		} else if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
-			mnstr_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
-#endif
-			if (be->language == 'D' && in->eof == 0)
-				return 0;
-
-			if (rd == 0 && language != 0 && in->eof && !be->console) {
-				/* we hadn't seen the EOF before, so just try again
-				   (this time with prompt) */
-				more = TRUE;
-				continue;
-			}
-			go = FALSE;
-			break;
-		} else if (go && !be->console && language == 0) {
-			be->language = in->buf[in->pos++];
-			if (be->language == 's') {
-				be->language = 'S';
-				m->scanner.mode = LINE_1;
-			} else if (be->language == 'S') {
-				m->scanner.mode = LINE_N;
-			}
-		}
-#ifdef _SQL_READER_DEBUG
-		mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
+			mnstr_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
 		}
 	}
 	if (!go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
-		in->pos = in->len;	/* skip rest of the input */
+		in->pos = in->len;  /* skip rest of the input */
 		c->mode = FINISHING;
 		return NULL;
 	}
@@ -1510,20 +1543,16 @@ SQLparser(Client c)
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (!cachable(m, s)) {
-			InstrPtr p;
-			MalBlkPtr curBlk;
+			MalBlkPtr mb;
 
 			scanner_query_processed(&(m->scanner));
 			backend_callinline(be, c, s);
-
-			curBlk = c->curprg->def;
-
-			p = newFcnCall(curBlk, "optimizer", "remap");
-			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
-			p = newFcnCall(curBlk, "optimizer", "multiplex");
-			typeChecker(c->fdout, c->nspace, curBlk, p, FALSE);
-			optimizeMALBlock(c, curBlk);
-			c->curprg->def = curBlk;
+			trimMalBlk(c->curprg->def);
+			mb = c->curprg->def;
+        		chkProgram(c->fdout, c->nspace, mb);
+        		addOptimizerPipe(c, mb, "minimal_pipe");
+			optimizeMALBlock(c, mb);
+			c->curprg->def = mb;
 		} else {
 			/* generate a factory instantiation */
 			be->q = qc_insert(m->qc,

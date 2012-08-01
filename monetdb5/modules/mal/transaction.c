@@ -60,12 +60,6 @@ transaction_export str TRNtrans_prev(int *ret, int *bid);
 transaction_export str TRNtrans_alpha(int *ret, int *bid);
 transaction_export str TRNtrans_delta(int *ret, int *bid);
 
-/*
- * @
- * @include prelude.mx
- * @- Wrappers
- * The remainder contains the Monet 5 wrapper code to make this all work
- */
 #include "mal_exception.h"
 str
 TRNglobal_sync(bit *ret)

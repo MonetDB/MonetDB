@@ -35,8 +35,7 @@
  */
 #ifdef HAVE_PTHREAD_H
 /* don't re-include config.h; on Windows, don't redefine pid_t in an
-   incompatible way
- */
+ * incompatible way */
 #undef HAVE_CONFIG_H
 #ifdef pid_t
 #undef pid_t
@@ -110,7 +109,7 @@ gdk_export unsigned long long MT_clock(void);
 #define MT_locktrace_set(s,n)
 #endif
 
-#define MT_log(_impl, _object, _action, _caller, _fp) do { if (GDKdebug & 1024) { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
+#define MT_log(_impl, _object, _action, _caller, _fp) do { TEMDEBUG { fprintf(_fp, "%s: " _action "(" PTRFMT ")\n", _caller, PTRFMTCAST(void*) _object); fflush(_fp); } _impl; } while (0)
 
 /* API */
 
@@ -233,4 +232,5 @@ gdk_export int MT_check_nr_cores(void);
  */
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
+
 #endif /*_GDK_SYSTEM_H_*/

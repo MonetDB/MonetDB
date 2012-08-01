@@ -40,6 +40,4 @@
 	io.print(xs);
 	io.print("hsort xrev"); 
 	xrev:=bat.reverse(x);
-	xsrev:= algebra.sort(xrev); 
-	io.print(xsrev);
 

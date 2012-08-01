@@ -2,10 +2,10 @@
 i{constant=true}:= 1;
 j{blah=2} := "kk";
 k{blah=4,freeze=1} := "whatever";
-n{cost=12}:= bat.new(:int,:int);
+n{cost=12}:= bat.new(:oid,:int);
 m{grp="person"}:= bbp.take("person_name");
 j{blah=3} :="ll";	# second one overwrites first
-z{sorted} := bat.new(:int,:int);
+z{sorted} := bat.new(:oid,:int);
 
 #q:= 1:int{frozen};
 

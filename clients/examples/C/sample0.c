@@ -35,15 +35,14 @@
 int
 main(int argc, char **argv)
 {
-	Mapi dbh= NULL;
-	MapiHdl hdl= NULL;
+	Mapi dbh;
+	MapiHdl hdl = NULL;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
 		exit(-1);
 	}
 
-	printf("# Start %s test on %s\n", argv[3], argv[1]);
 	dbh = mapi_connect(argv[1], atoi(argv[2]), "monetdb", "monetdb", argv[3], NULL);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
@@ -53,7 +52,7 @@ main(int argc, char **argv)
 		/* switch of autocommit */
 		if (mapi_setAutocommit(dbh, 0) != MOK || mapi_error(dbh))
 			die(dbh,NULL);
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh)) 
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
@@ -67,32 +66,43 @@ main(int argc, char **argv)
 			die(dbh, hdl);
 		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		while (mapi_fetch_row(hdl)) {
+			char *nme = mapi_fetch_field(hdl, 0);
+			char *age = mapi_fetch_field(hdl, 1);
+
+			printf("%s is %s\n", nme, age);
+		}
 	} else if (strcmp(argv[3], "mal") == 0) {
-		if ((hdl = mapi_query(dbh, "emp := bat.new(:str,:int);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "emp := bat.new(:oid,:str);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "age := bat.new(:oid,:int);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"John\",23);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "bat.append(emp, \"John\");")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.append(age, 23);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "bat.insert(emp,\"Mary\",22);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "bat.append(emp, \"Mary\");")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "bat.append(age, 22);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);
-		if ((hdl = mapi_query(dbh, "io.print(emp);")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "io.print(emp,age);")) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
+		while (mapi_fetch_row(hdl)) {
+			char *nme = mapi_fetch_field(hdl, 1);
+			char *age = mapi_fetch_field(hdl, 2);
+			printf("%s is %s\n", nme, age);
+		}
 	} else {
 		fprintf(stderr, "%s: unknown language, only mal and sql supported\n", argv[0]);
 		exit(1);
 	}
 
-	while (mapi_fetch_row(hdl)) {
-		char *nme = mapi_fetch_field(hdl, 0);
-		char *age = mapi_fetch_field(hdl, 1);
-
-		printf("%s is %s\n", nme, age);
-	}
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	/* mapi_stat(dbh);

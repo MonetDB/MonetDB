@@ -21,7 +21,7 @@ The trace options (default 'ISTest'):
   S = monitor start of instruction profiling
   a = aggregate clock ticks per instruction
   e = event counter
-  f = module.function name
+  f = enclosing module.function name
   i = instruction counter
   I = interpreter thread number
   T = wall clock time

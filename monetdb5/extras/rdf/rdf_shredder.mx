@@ -595,6 +595,9 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	}
 
 	/* prepare return bat of bats */
+/* XXX: BAT columns of TYPE_bat are no longer allowed: this function
+ * needs to be rewritten to return multiple BATs instead of a single
+ * BAT-of-batS */
 	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
 	if (retbat == NULL) {
 		@:clean@

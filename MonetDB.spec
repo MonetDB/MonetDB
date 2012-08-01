@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Apr2012-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2012/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -359,6 +359,28 @@ extensions for MonetDB-SQL-server5.
 %{_libdir}/monetdb5/lib_geom.so
 %endif
 
+%package jaql
+Summary: MonetDB5 JAQL
+Group: Applications/Databases
+Requires: MonetDB5-server = %{version}-%{release}
+
+%description jaql
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the JAQL extension for MonetDB5.  JAQL is a
+querly language for JavaScript Object Notation (JSON).
+
+%files jaql
+%defattr(-,root,root)
+%{_libdir}/monetdb5/autoload/*_jaql.mal
+%{_libdir}/monetdb5/jaql*.mal
+%{_libdir}/monetdb5/json*.mal
+%{_libdir}/monetdb5/lib_jaql.so
+%{_libdir}/monetdb5/lib_json.so
+
 %package -n MonetDB5-server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -411,9 +433,10 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/rdf.mal
 %exclude %{_libdir}/monetdb5/sql.mal
+%exclude %{_libdir}/monetdb5/jaql*.mal
+%exclude %{_libdir}/monetdb5/json*.mal
 %{_libdir}/monetdb5/*.mal
 # %{_libdir}/monetdb5/autoload/*_fits.mal
-%{_libdir}/monetdb5/autoload/*_jaql.mal
 %{_libdir}/monetdb5/autoload/*_lsst.mal
 %{_libdir}/monetdb5/autoload/*_opt_sql_append.mal
 %{_libdir}/monetdb5/autoload/*_udf.mal
@@ -423,6 +446,8 @@ fi
 %endif
 # %exclude %{_libdir}/monetdb5/lib_rdf.so
 %exclude %{_libdir}/monetdb5/lib_sql.so
+%exclude %{_libdir}/monetdb5/lib_jaql.so
+%exclude %{_libdir}/monetdb5/lib_json.so
 %{_libdir}/monetdb5/*.so
 %doc %{_mandir}/man1/mserver5.1.gz
 
@@ -583,7 +608,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-assert=no \
 	--enable-bits=%{bits} \
 	--enable-console=yes \
-	--enable-crackers=no \
 	--enable-datacell=no \
 	--enable-debug=no \
 	--enable-developer=no \
@@ -655,6 +679,76 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Jul 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.5-20120710
+- Rebuilt.
+
+* Mon Jul  9 2012 Niels Nes <niels@cwi.nl> - 11.11.5-20120710
+- gdk: Fixed intermittent problem that joins and selects return incorrect
+  results and possibly inconsistent databases. The problems only occurred
+  after a series of queries and updates, therefore it was hard to reproduce.
+
+* Mon Jul 09 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.3-20120709
+- Rebuilt.
+
+* Sat Jul  7 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.3-20120709
+- merovingian: Fixed misc memory leaks, which caused monetdbd to grow in memory size
+  over time.
+
+* Fri Jul 06 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.1-20120706
+- Rebuilt.
+
+* Mon Jul  2 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Created seperate RPM and DEB packages for MonetDB/JAQL.
+
+* Fri Jun 29 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- sql: COPY INTO now accepts optional parenthesis for file argument.
+  Binary COPY INTO now requires 'COPY BINARY INTO'.
+
+* Fri Jun 29 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- clients: ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
+  of a connection handle.
+
+* Thu Jun 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- monetdb5: Crackers code has been removed.  Development continues in the holindex
+  branch.
+
+* Wed Jun 13 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.1-20120706
+- merovingian: Removed erroneously (re-)added master and slave properties, this
+  functionality is currently not working.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Removed --enable-bits option from configure.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- buildtools: Split the MonetDB-client-ruby RPM package into two and named them in
+  accordance with the Fedora packaging guidelines as rubygem-<gem-name>.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- gdk: The sorted property, which was used to maintain whether a column in
+  a BAT was sorted or reverse sorted, has been replaced by a pair of
+  properties, sorted and revsorted.  These new properties can be set
+  independently (unlike the old sorted property), and so if both are set,
+  the column must be constant.  In addition, internal property checking
+  has been overhauled.  Now, when a property is set incorrectly, and
+  when assertions are enabled, an assertion will go off.  There is also
+  a function which can derive properties.
+
+* Thu Jun  7 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
+- gdk: Implemented proper overflow checking on all arithmetic operations.
+
+* Thu Jun 07 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.9.7-20120607
+- Rebuilt.
+
+* Wed May 23 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- clients: Resolved a cosmetical error where tab-characters would cause
+  misalignments in tabular result views.  For the time being, tabs are
+  now represented as a single space in tabular view.
+
+* Thu May 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.9.7-20120607
+- gdk: Limit number of detected CPU cores to 16 on 32-bits systems to avoid
+  running quickly out of addressable resources followed by a kill from
+  the OS.
+
 * Wed May 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.9.5-20120516
 - Rebuilt.
 

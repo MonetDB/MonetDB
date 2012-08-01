@@ -28,61 +28,61 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		algebraExtensions.c algebraExtensions.h \
 		attach.c attach.h \
-		batExtensions.c \
-		bbp.mx \
-		box.mx \
-		chopper.c \
-		clients.mx \
-		cluster.mx \
-		const.mx \
+		batExtensions.c batExtensions.h \
+		bbp.c bbp.h \
+		box.c box.h \
+		clients.c clients.h \
+		cluster.c cluster.h \
+		const.c  const.h \
 		constraints.c constraints.h \
-		factories.mx \
+		factories.c factories.h \
 		groupby.c groupby.h \
+		groups.c groups.h \
 		histogram.h \
-		inspect.mx \
-		language.mx \
-		mal_io.mx \
-		mal_mapi.mx \
+		inspect.c inspect.h \
+		iterator.c  iterator.h \
+		joinpath.c  joinpath.h \
+		language.c language.h \
+		mal_io.c mal_io.h \
+		mal_mapi.c mal_mapi.h \
 		manual.c manual.h \
-		mat.mx \
-		mdb.mx \
+		mat.c mat.h \
+		mdb.c mdb.h \
 		mkey.c mkey.h \
 		pcre.c \
-		pma.mx \
-		pqueue.mx \
+		pqueue.c pqueue.h \
 		profiler.c profiler.h \
 		recycle.c recycle.h \
 		remote.c remote.h \
 		sabaoth.c sabaoth.h \
-		statistics.mx \
 		tablet.c tablet.h \
-		tablet_sql.c \
-		tokenizer.mx \
+		tokenizer.c tokenizer.h \
 		trader.c trader.h \
 		transaction.c \
 		txtsim.c txtsim.h \
-		urlbox.mx \
-		zorder.mx \
-		sample.c sample.h
+		urlbox.c urlbox.h \
+		zorder.c zorder.h \
+		sample.c sample.h \
+		calc.c batcalc.c
 }
 
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = language.mx constraints.mal mal_init.mal box.mx bbp.mx \
-		profiler.mal const.mx attach.mal batExtensions.mal algebraExtensions.mal \
-		inspect.mx manual.mal mal_io.mx pqueue.mx mkey.mal \
-		chopper.mal clients.mx \
-		factories.mx groupby.mal mdb.mx pcre.mal tablet.mal mat.mx \
-		urlbox.mx statistics.mx transaction.mal \
-		mal_mapi.mx sabaoth.mal remote.mal  \
+	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
+		profiler.mal const.mal attach.mal batExtensions.mal \
+		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
+		iterator.mal clients.mal \
+		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
+		urlbox.mal transaction.mal \
+		mal_mapi.mal sabaoth.mal remote.mal  \
 		txtsim.mal recycle.mal \
-		cluster.mx trader.mal pma.mx \
-		tokenizer.mx zorder.mx sample.mal
+		cluster.mal trader.mal \
+		tokenizer.mal zorder.mal sample.mal \
+		calc.mal batcalc.mal
 }
 
-EXTRA_DIST = prelude.mx algebraExtensions.mal attach.mal batExtensions.mal chopper.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal
+EXTRA_DIST = attach.mal batExtensions.mal iterator.mal constraints.mal groupby.mal histogram.mal mal_init.mal manual.mal mkey.mal pcre.mal profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal transaction.mal txtsim.mal tablet.mal tablet.h sample.mal mal_mapi.mal mat.mal tokenizer.mal pqueue.mal calc.mal batcalc.mal
 
 EXTRA_DIST_DIR = Tests

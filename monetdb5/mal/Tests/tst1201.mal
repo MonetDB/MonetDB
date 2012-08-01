@@ -38,98 +38,114 @@ mtime.timezone_local(lzone);
 	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
 #var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
 # 
-	rule_bat:= bat.new(:str,:zrule,10);
+	rule_bat:= bat.new(:oid,:zrule,10);
+	rule_nme:= bat.new(:oid,:str,10);
 #var rule_bat := bat.new(str,rule,10);
-	bat.insert(rule_bat,"jan",rule_jan);
-	bat.insert(rule_bat,"feb",rule_feb);
-	bat.insert(rule_bat,"mar",rule_mar);
-	bat.insert(rule_bat,"apr",rule_apr);
+	bat.append(rule_bat,rule_jan);
+	bat.append(rule_bat,rule_feb);
+	bat.append(rule_bat,rule_mar);
+	bat.append(rule_bat,rule_apr);
+
+	bat.append(rule_nme,"jan");
+	bat.append(rule_nme,"feb");
+	bat.append(rule_nme,"mar");
+	bat.append(rule_nme,"apr");
 #rule_bat.bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
-	bat.insert(rule_bat,"may",rule_may);
-	bat.insert(rule_bat,"jun",rule_jun);
-	bat.insert(rule_bat,"jul",rule_jul);
-	bat.insert(rule_bat,"aug",rule_aug);
-#rule_bat.bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
-	bat.insert(rule_bat,"sep",rule_sep);
-	bat.insert(rule_bat,"oct",rule_oct);
-	bat.insert(rule_bat,"nov",rule_nov);
-	bat.insert(rule_bat,"dec",rule_dec);
+	bat.append(rule_bat,rule_may);
+	bat.append(rule_bat,rule_jun);
+	bat.append(rule_bat,rule_jul);
+	bat.append(rule_bat,rule_aug);
+
+	bat.append(rule_nme,"may");
+	bat.append(rule_nme,"jun");
+	bat.append(rule_nme,"jul");
+	bat.append(rule_nme,"aug");
+#rule_bat.bat.append("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
+	bat.append(rule_bat,rule_sep);
+	bat.append(rule_bat,rule_oct);
+	bat.append(rule_bat,rule_nov);
+	bat.append(rule_bat,rule_dec);
+
+	bat.append(rule_nme,"sep");
+	bat.append(rule_nme,"oct");
+	bat.append(rule_nme,"nov");
+	bat.append(rule_nme,"dec");
 #rule_bat.bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
 #
 ## test the operations on rules
 	ma_a := bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	na_a:bat[:str,:int] := mal.multiplex("mtime","month",rule_bat);
+	na_a:bat[:oid,:int] := mal.multiplex("mtime","month",rule_bat);
 	oa_a := bat.setColumn(na_a,"month");
 #      [month](rule_bat).bat.setColumn("month"),
-	pa_a:bat[:str,:int] := mal.multiplex("mtime","weekday",rule_bat);
+	pa_a:bat[:oid,:int] := mal.multiplex("mtime","weekday",rule_bat);
 	qa_a := bat.setColumn(pa_a,"weekday");
 #      [weekday](rule_bat).bat.setColumn("weekday"),
-	ra_a:bat[:str,:int] := mal.multiplex("mtime","day",rule_bat);
+	ra_a:bat[:oid,:int] := mal.multiplex("mtime","day",rule_bat);
 	sa_a := bat.setColumn(ra_a,"day");
 #      [day](rule_bat).bat.setColumn("day"),
-	ta_a:bat[:str,:int] := mal.multiplex("mtime","minutes",rule_bat);
+	ta_a:bat[:oid,:int] := mal.multiplex("mtime","minutes",rule_bat);
 	ua_a := bat.setColumn(ta_a,"minutes");
 io.print("rule_bat,na_a,pa_a,ra_a,ta_a");
-	va_a := io.print(rule_bat,na_a,pa_a,ra_a,ta_a);
+	va_a := io.print(rule_nme, rule_bat,na_a,pa_a,ra_a,ta_a);
 #      [minutes](rule_bat).bat.setColumn("minutes"));
 #
 	bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	xa_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,2001);
+	xa_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,2001);
 	ya_a := bat.setColumn(xa_a,"2001");
 #      [compute](rule_bat, 2001).bat.setColumn("2001"),
-	ab_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,2001);
-	bb_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",ab_a);
-	cb_a:bat[:str,:str] := mal.multiplex("mtime","dayname",bb_a);
+	ab_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,2001);
+	bb_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",ab_a);
+	cb_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",bb_a);
 	bat.setColumn(cb_a,"2001");
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).bat.setColumn("2001"),
-	eb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1999);
+	eb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1999);
 	bat.setColumn(eb_a,"1999");
 #      [compute](rule_bat, 1999).bat.setColumn("1999"),
-	gb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1999);
-	hb_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",gb_a);
-	ib_a:bat[:str,:str] := mal.multiplex("mtime","dayname",hb_a);
+	gb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1999);
+	hb_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",gb_a);
+	ib_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",hb_a);
 	bat.setColumn(ib_a,"1999");
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).bat.setColumn("1999"),
-	kb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1992);
+	kb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1992);
 	bat.setColumn(kb_a,"1992");
 #      [compute](rule_bat, 1992).bat.setColumn("1992"),
-	mb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1992);
-	nb_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",mb_a);
-	ob_a:bat[:str,:str] := mal.multiplex("mtime","dayname",nb_a);
+	mb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1992);
+	nb_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",mb_a);
+	ob_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",nb_a);
 	bat.setColumn(ob_a,"1992");
 io.print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");
-	qb_a := io.print(rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a);
+	qb_a := io.print(rule_nme,rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a);
 #      [dayname]([dayofweek]([compute](rule_bat, 1992))).bat.setColumn("1992"));
 #
 	rb_a := bat.setColumn(rule_bat,"rule");
 #io.print(rule_bat.bat.setColumn("rule"),
-	sb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1572);
+	sb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1572);
 	tb_a := bat.setColumn(sb_a,"1572");
 #      [compute](rule_bat, 1572).bat.setColumn("1572"),
-	ub_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1572);
-	vb_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",ub_a);
-	wb_a:bat[:str,:str] := mal.multiplex("mtime","dayname",vb_a);
+	ub_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1572);
+	vb_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",ub_a);
+	wb_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",vb_a);
 	xb_a := bat.setColumn(wb_a,"1572");
 #      [dayname]([dayofweek]([compute](rule_bat, 1572))).bat.setColumn("1572"),
-	yb_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1);
+	yb_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1);
 	ac_a := bat.setColumn(yb_a,"1");
 #      [compute](rule_bat, 1).bat.setColumn("1"),
-	bc_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,1);
-	cc_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",bc_a);
-	dc_a:bat[:str,:str] := mal.multiplex("mtime","dayname",cc_a);
+	bc_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,1);
+	cc_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",bc_a);
+	dc_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",cc_a);
 	ec_a := bat.setColumn(dc_a,"1");
 #      [dayname]([dayofweek]([compute](rule_bat, 1))).bat.setColumn("1"),
-	fc_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,-2000);
+	fc_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,-2000);
 	gc_a := bat.setColumn(fc_a,"-2000");
 #      [compute](rule_bat, -2000).bat.setColumn("-2000"),
-	hc_a:bat[:str,:date] := mal.multiplex("mtime","compute",rule_bat,-2000);
-	ic_a:bat[:str,:int] := mal.multiplex("mtime","dayofweek",hc_a);
-	jc_a:bat[:str,:str] := mal.multiplex("mtime","dayname",ic_a);
+	hc_a:bat[:oid,:date] := mal.multiplex("mtime","compute",rule_bat,-2000);
+	ic_a:bat[:oid,:int] := mal.multiplex("mtime","dayofweek",hc_a);
+	jc_a:bat[:oid,:str] := mal.multiplex("mtime","dayname",ic_a);
 	kc_a := bat.setColumn(jc_a,"-2000");
 io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
-	lc_a := io.print(rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);
+	lc_a := io.print(rule_nme,rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);
 #      [dayname]([dayofweek]([compute](rule_bat, -2000))).bat.setColumn("-2000"));
 #
 #

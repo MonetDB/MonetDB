@@ -1,0 +1,161 @@
+module str;
+
+command str(s:str):str
+address STRtostr
+comment "Noop routine.";
+command string(s:str,offset:int) :str
+address STRTail
+comment "Return the tail s[offset..n]
+	 of a string s[0..n].";
+command string(s:str,offset:int,count:int):str
+address STRSubString
+comment "Return substring s[offset..offset+count] of a string s[0..n]";
+command +( l:str, r:str) :str
+address STRConcat
+comment "Concatenate two strings.";
+
+command length( s:str ) :int
+address STRLength
+comment "Return the length of a string.";
+
+command stringlength( s:str ) :int
+address STRstringLength
+comment "Return the length of a right trimed string (SQL semantics).";
+
+command nbytes( s:str ) :int
+address STRBytes
+comment "Return the string length in bytes.";
+
+command unicodeAt(s:str, index:int) :int
+address STRWChrAt
+comment "get a unicode character
+	(as an int) from a string position.";
+command unicode(wchar:int) :str
+address STRFromWChr
+comment "convert a unicode to a character.";
+
+command codeset() :str
+address STRcodeset
+comment "Return the locale's codeset";
+command iconv(org:str,fromCs:str,toCs:str):str
+address STRIconv
+comment "String codeset conversion";
+
+command startsWith(s:str,prefix:str):bit
+address STRPrefix
+comment "Prefix check.";
+command endsWith( s:str, suffix:str ) :bit
+address STRSuffix
+comment "Suffix check.";
+
+command toLower( s:str ) :str
+address STRLower
+comment "Convert a string to lower case.";
+command toUpper( s:str ) :str
+address STRUpper
+comment "Convert a string to upper case.";
+
+command search( s:str, c:str ) :int
+address STRstrSearch
+comment "Search for a substring. Returns
+	 position, -1 if not found.";
+command r_search( s:str, c:str ) :int
+address STRReverseStrSearch
+comment "Reverse search for a substring. Returns
+	 position, -1 if not found.";
+
+command trim( s:str ) :str
+address STRStrip
+comment "Strip whitespaces around a string.";
+command ltrim( s:str ) :str
+address STRLtrim
+comment "Strip whitespaces from start of a string.";
+command rtrim( s:str ) :str
+address STRRtrim
+comment "Strip whitespaces from end of a string.";
+
+command calc.max(s:str, t:str):str
+address STRmax
+comment "Select the maximum string in lexicographic order";
+command calc.max_no_nil(s:str, t:str):str
+address STRmax_no_nil
+comment "Select the maximum string in lexicographic order, ignoring nils";
+command calc.min(s:str, t:str):str
+address STRmin
+comment "Select the minimum string in lexicographic order";
+command calc.min_no_nil(s:str, t:str):str
+address STRmin_no_nil
+comment "Select the minimum string in lexicographic order, ignoring nils";
+
+module str;
+
+command substitute(s:str,src:str,dst:str,rep:bit) :str
+address STRSubstitute
+comment "Substitute first occurrence of 'src' by
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst.";
+
+command like(s:str,pat:str):bit
+address STRlikewrap2
+comment "SQL pattern match function";
+command like(s:str,pat:str,esc:str):bit
+address STRlikewrap
+comment "SQL pattern match function";
+
+command ascii(s:str):int
+address STRascii
+comment "Return unicode of head of string";
+
+command substring(s:str, start:int):str
+address STRsubstringTail
+comment "Extract the tail of a string";
+
+command substring(s:str, start:int, len:int):str
+address STRsubstring
+comment "Extract a substring from str starting at start, for length len";
+
+command prefix(s:str,l:int):str
+address STRprefix
+comment "Extract the prefix of a given length";
+command suffix(s:str,l:int):str
+address STRsuffix
+comment "Extract the suffix of a given length";
+
+command stringleft(s:str,l:int):str
+address STRprefix;
+command stringright(s:str,l:int):str
+address STRsuffix;
+
+command locate(s1:str,s2:str):int
+address STRlocate
+comment "Locate the start position of a string";
+
+command locate(s1:str,s2:str,start:int):int
+address STRlocate2
+comment "Locate the start position of a string";
+
+command insert(s:str,start:int,l:int,s2:str):str
+address STRinsert
+comment "Insert a string into another";
+
+command replace(s:str,pat:str,s2:str):str
+address STRreplace
+comment "Insert a string into another";
+
+command repeat(s2:str,c:int):str
+address STRrepeat;
+
+command space(l:int):str
+address STRspace;
+
+command STRprelude() :void
+address strPrelude;
+
+command STRepilogue() :void
+address strEpilogue;
+
+str.STRprelude();	

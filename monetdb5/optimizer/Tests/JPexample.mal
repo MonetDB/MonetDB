@@ -1,5 +1,5 @@
 # test the joinpath expander
-    a:= bat.new(:void,:oid);
+    a:= bat.new(:oid,:oid);
     b:= bat.new(:oid,:oid);
     c:= bat.new(:oid,:str);
     j1:= algebra.join(a,b);

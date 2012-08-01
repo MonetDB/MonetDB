@@ -18,23 +18,21 @@
  */
 
 /*
- * @f gdk_storage
  * @a M. L. Kersten, P. Boncz, N. Nes
  *
  * @* Database Storage Management
- * Contains routines for writing and reading GDK data to and from disk.
- * This section contains the primitives to manage the disk-based images
- * of the BATs. It relies on the existence of a UNIX file system, including
- * memory mapped files. Solaris and IRIX have different implementations of
- * madvise().
+ * Contains routines for writing and reading GDK data to and from
+ * disk.  This section contains the primitives to manage the
+ * disk-based images of the BATs. It relies on the existence of a UNIX
+ * file system, including memory mapped files. Solaris and IRIX have
+ * different implementations of madvise().
  *
- * The current version assumes that all BATs are stored on a single disk
- * partition. This simplistic assumption should be replaced in the near
- * future by a multi-volume version. The intension is to use several
- * BAT home locations.
- * The files should be owned by the database server. Otherwise, IO
- * operations are likely to fail. This is accomplished by setting the
- * GID and UID upon system start.
+ * The current version assumes that all BATs are stored on a single
+ * disk partition. This simplistic assumption should be replaced in
+ * the near future by a multi-volume version. The intension is to use
+ * several BAT home locations.  The files should be owned by the
+ * database server. Otherwise, IO operations are likely to fail. This
+ * is accomplished by setting the GID and UID upon system start.
  */
 #include "monetdb_config.h"
 #include "gdk.h"
@@ -46,9 +44,6 @@
 #include <fcntl.h>
 #endif
 
-/*
- * @
- */
 void
 GDKfilepath(str path, const char *dir, const char *name, const char *ext)
 {
@@ -237,19 +232,19 @@ GDKmove(const char *dir1, const char *nme1, const char *ext1, const char *dir2, 
 /*
  * @+ Save and load.
  * The BAT is saved on disk in several files. The extension DESC
- * denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP
- * the other heaps. The storage mechanism off a file can be memory mapped
+ * denotes the descriptor, BUNs the bun heap, and HHEAP and THEAP the
+ * other heaps. The storage mechanism off a file can be memory mapped
  * (STORE_MMAP) or malloced (STORE_MEM).
  *
  * These modes indicates the disk-layout and the intended mapping.
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 int
-GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
+GDKsave(const char *nme, const char *ext, void *buf, size_t size, storage_t mode)
 {
 	int fd = -1, err = 0;
 
-	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+	IODEBUG THRprintf(GDKstdout, "#GDKsave: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MMAP) {
 		/*
@@ -268,7 +263,7 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		if (size)
 			err = MT_msync(buf, 0, size, MMAP_SYNC);
 		if (err)
-			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
+			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", (int) mode);
 		IODEBUG THRprintf(GDKstdout, "#MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
@@ -276,12 +271,13 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 			 * 32-bits signed result (= OS BUG)! write()
 			 * on Windows only takes int as size */
 			while (size > 0) {
-				/* circumvent problems by writing huge buffers in chunks <= 1GB */
+				/* circumvent problems by writing huge
+				 * buffers in chunks <= 1GB */
 				ssize_t ret = write(fd, buf, (unsigned) MIN(1 << 30, size));
 
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", mode);
+					GDKsyserror("GDKsave: error " SSZFMT " on: name=%s, ext=%s, mode=%d\n", ret, nme, ext ? ext : "", (int) mode);
 					break;
 				}
 				size -= ret;
@@ -297,10 +293,10 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
 		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images
 			 * (BBPrecover on restart will kill them) */
-			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 		}
 	} else if (mode != STORE_MMAP) {
-		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		GDKerror("GDKsave: failed name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
 	return err;
 }
@@ -311,12 +307,12 @@ GDKsave(const char *nme, const char *ext, void *buf, size_t size, int mode)
  * defined in their implementation.
  */
 char *
-GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
+GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t mode)
 {
 	char *ret = NULL;
 
 	IODEBUG {
-		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		THRprintf(GDKstdout, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(nme, "rb", ext);
@@ -394,17 +390,16 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
  *
  * Between sessions the BATs comprising the database are saved on
  * disk.  To simplify code, we assume a UNIX directory called its
- * physical @%home@ where they are to be located.
- * The subdirectories BAT and PRG contain what its name says.
+ * physical @%home@ where they are to be located.  The subdirectories
+ * BAT and PRG contain what its name says.
  *
  * A BAT created by @%BATnew@ is considered temporary until one calls
  * the routine @%BATsave@. This routine reserves disk space and checks
  * for name clashes.
  *
- * Saving and restoring BATs is left to the upper layers. The library merely
- * copies the data into place.
- * Failure to read or write the BAT results in a NULL, otherwise
- * it returns the BAT pointer.
+ * Saving and restoring BATs is left to the upper layers. The library
+ * merely copies the data into place.  Failure to read or write the
+ * BAT results in a NULL, otherwise it returns the BAT pointer.
  */
 static BATstore *
 DESCload(int i)
@@ -452,26 +447,27 @@ DESCsetmodes(BAT *b)
 	int existing = (BBPstatus(b->batCacheid) & BBPEXISTING);
 	int brestrict = (b->batRestricted == BAT_WRITE);
 	int ret = 0;
+	storage_t m;
 
 	if (b->batMaphead) {
-		int m = STORE_MODE(b->batMaphead, brestrict, existing);
+		m = STORE_MODE(b->batMaphead, brestrict, existing);
 		ret |= m != b->H->heap.newstorage || m != b->H->heap.storage;
 		b->H->heap.newstorage = b->H->heap.storage = m;
 	}
 	if (b->batMaptail) {
-		int m = STORE_MODE(b->batMaptail, brestrict, existing);
+		m = STORE_MODE(b->batMaptail, brestrict, existing);
 		ret |= b->T->heap.newstorage != m || b->T->heap.storage != m;
 		b->T->heap.newstorage = b->T->heap.storage = m;
 	}
 	if (b->H->vheap && b->batMaphheap) {
 		int hrestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->htype, b->H->vheap);
-		int m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
+		m = STORE_MODE(b->batMaphheap, brestrict || hrestrict, existing);
 		ret |= b->H->vheap->newstorage != m || b->H->vheap->storage != m;
 		b->H->vheap->newstorage = b->H->vheap->storage = m;
 	}
 	if (b->T->vheap && b->batMaptheap) {
 		int trestrict = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->T->vheap);
-		int m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
+		m = STORE_MODE(b->batMaptheap, brestrict || trestrict, existing);
 		ret |= b->T->vheap->newstorage != m || b->T->vheap->storage != m;
 		b->T->vheap->newstorage = b->T->vheap->storage = m;
 	}
@@ -627,11 +623,11 @@ BATload_intern(bat i, int lock)
 			BUN cap = b->batCapacity;
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
-				EXTENDDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
+				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
 				HEAPextend(&b->H->heap, headsize(b, cap));
 				b->batCapacity = cap;
 			} else {
-				EXTENDDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
+				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
 				HEAPextend(&b->T->heap, tailsize(b, cap));
 			}
 		}
@@ -681,214 +677,13 @@ BATload_intern(bat i, int lock)
 	}
 	b->batDirtydesc |= batmapdirty;	/* if some heap mode changed, make desc dirty */
 
-	if ((b->batRestricted == BAT_WRITE && (GDKdebug & 2)) || (GDKdebug & 8)) {
+	if ((b->batRestricted == BAT_WRITE && (GDKdebug & CHECKMASK)) ||
+	    (GDKdebug & PROPMASK)) {
 		++b->batSharecnt;
 		--b->batSharecnt;
 	}
 	return (i < 0) ? BATmirror(b) : b;
 }
-
-#if 0
-/*
- * @- BAT preload
- * To avoid random disk access to large (memory-mapped) BATs it may
- * help to issue a preload request.  Of course, it does not make sense
- * to touch more than we can physically accomodate (budget).
- */
-/* quick and probabilistic test for a sequentially correlated heap */
-static int
-heap_sequential(BAT *b)
-{
-	BUN n = BATcount(b), skip = n / 100, i = BUNfirst(b);
-	BATiter bi = bat_iterator(b);
-	str p, q = BUNhead(bi, i);
-
-	/* check if the pointers are ordered */
-	if (skip == 0)
-		return 1;
-	n = BUNlast(b);
-	for (i += skip; i < n; q = p, i += skip) {
-		p = BUNhead(bi, i);
-		if (p < q)
-			return 0;
-	}
-	return 1;
-}
-
-/* modern linux tends to use 128K readaround  = 64K readahead
- * changes have been going on in 2009, towards true readahead
- * http://tomoyo.sourceforge.jp/cgi-bin/lxr/source/mm/readahead.c
- *
- * Peter Feb2010: I tried to do prefetches further apart, to trigger
- * multiple readahead units in parallel, but it does improve
- * performance visibly
- */
-static size_t
-access_heap(str id, str hp, Heap *h, char *base, size_t sz, size_t touch, int preload, int adv)
-{
-	size_t v0 = 0, v1 = 0, v2 = 0, v3 = 0, v4 = 0, v5 = 0, v6 = 0, v7 = 0, page = MT_pagesize();
-	str advice = (adv == MMAP_WILLNEED) ? "WILLNEED" : (adv == MMAP_SEQUENTIAL) ? "SEQUENTIAL" : (adv == MMAP_RANDOM) ? "RANDOM" : (adv == MMAP_NORMAL) ? "NORMAL" : (adv == MMAP_DONTNEED)? "DONTNEED":NULL;
-	int t = GDKms();
-	assert(advice);
-	/* ignore claims of pages beyond 1/4 the physical memory */
-	if ( sz > page * MT_npages() / 4 ) {
-		 IODEBUG THRprintf(GDKstdout,"#Ignore access_heap " SZFMT ">" SZFMT"\n",h->size,page * MT_npages() / 4 );
-		return 0;
-	}
-	if (h->storage != STORE_MEM) {
-		MT_mmap_inform(h->base, h->size, preload, adv, 0);
-		if (preload > 0) {
-			size_t alignskip = (page - (((size_t) base) & (page - 1))) & (page - 1);
-			size_t alignedsz = (size_t) (((sz < alignskip) ? 0 : ((size_t) (sz - alignskip))) & ~(page - 1));
-			int ret;
-			
-			if (alignedsz > 0) {
-				if ((ret = posix_madvise(base + alignskip, alignedsz, adv)) != 0)
-					THRprintf(GDKstdout,
-						  "#MT_mmap_inform: posix_madvise(file=%s, base=" PTRFMT ", len=" SZFMT "MB, advice=%s) = %d, errno = %d (%s)\n",
-						  h->filename,
-						  PTRFMTCAST(base + alignskip),
-						  alignedsz >> 20, advice, ret,
-						  errno, strerror(errno));
-			}
-		}
-	}
-	if (touch && preload > 0 && adv != MMAP_DONTNEED) {
-		/* we need to ensure alignment, here, as b might be a
-		 * view and heap.base of views are not necessarily
-		 * aligned */
-		size_t *lo = (size_t *) (((size_t) base + sizeof(size_t) - 1) & (~(sizeof(size_t) - 1)));
-		size_t *hi = (size_t *) (base + touch), *hi8 = NULL, *hi1 = NULL;
-		/* page size: [bytes] -> [sizeof(size_t)]
-		 * to make sure we touch each page,
-		 * not only 1 in sizeof(size_t) pages */
-		page /= sizeof(size_t);
-		hi8 = hi - 8 * page;
-		hi1 = hi - page;
-		/* detect address underrun */
-		if (hi8 < hi)
-			for (; lo <= hi8; lo += 8 * page) {
-				/* try to trigger loading of multiple
-				 * pages without blocking */
-				v0 += lo[0 * page];
-				v1 += lo[1 * page];
-				v2 += lo[2 * page];
-				v3 += lo[3 * page];
-				v4 += lo[4 * page];
-				v5 += lo[5 * page];
-				v6 += lo[6 * page];
-				v7 += lo[7 * page];
-			}
-		/* detect address underrun */
-		if (hi1 < hi)
-			for (; lo <= hi1; lo += page)
-				v0 += *lo;
-	}
-	IODEBUG THRprintf(GDKstdout,
-			  "#BATpreload(%s->%s,preload=%d,sz=%dMB,touch=%dMB,%s) = %dms \n",
-			  id, hp, preload, (int) (sz >> 20),
-			  (int) (touch >> 20), advice, GDKms() - t);
-	return v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
-}
-#endif
-
-size_t
-BATaccess(BAT *b, int what, int advice, int preload)
-{
-#if 1
-	(void) b;
-	(void) what;
-	(void) advice;
-	(void) preload;
-	return 0;
-#else
-	size_t v = 0, sz, budget = (size_t) (0.8 * MT_npages()), seqbudget = budget / 8;
-	str id = BATgetId(b);
-	BATiter bi = bat_iterator(b);
-
-	assert(advice == MMAP_NORMAL || advice == MMAP_RANDOM || advice == MMAP_SEQUENTIAL || advice == MMAP_WILLNEED || advice == MMAP_DONTNEED);
-
-	if (BATcount(b) == 0)
-		return 0;
-
-	/* HASH indices (inherent random access). handle first as they
-	 * *will* be access randomly (one can always hope for locality
-	 * on the other heaps) */
-	if (what & USE_HHASH || what & USE_THASH) {
-		gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
-		if (what & USE_HHASH &&
-		    b->H->hash && b->H->hash->heap && b->H->hash->heap->base) {
-			budget -= sz = (b->H->hash->heap->size > budget) ? budget : b->H->hash->heap->size;
-			v += access_heap(id, "hhash", b->H->hash->heap, b->H->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
-		}
-		if (what & USE_THASH &&
-		    b->T->hash && b->T->hash->heap && b->T->hash->heap->base) {
-			budget -= sz = (b->T->hash->heap->size > budget) ? budget : b->T->hash->heap->size;
-			v += access_heap(id, "thash", b->T->hash->heap, b->T->hash->heap->base, sz, 1, preload, MMAP_WILLNEED);
-		}
-		gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BATaccess");
-	}
-
-	/* vheaps next, as shared vheaps are not seq-correlated
-	 * needing WILLNEED (use prefetch budget for this first) */
-	if (what & USE_HEAD) {
-		if (b->H->vheap && b->H->vheap->base && b->H->heap.base) {
-			char *lo = BUNhead(bi, BUNfirst(b)), *hi = BUNhead(bi, BUNlast(b) - 1);
-			int heap_advice = advice;
-			if (hi < lo || (preload > 0 && !heap_sequential(b))) {	/* not sequentially correlated! */
-				lo = b->H->vheap->base;
-				hi = lo + b->H->vheap->free;
-				heap_advice = MMAP_WILLNEED;
-			}
-			sz = (heap_advice == MMAP_SEQUENTIAL && budget > seqbudget) ? seqbudget : budget;
-			budget -= sz = (((size_t) (hi - lo)) > sz) ? sz : ((size_t) (hi - lo));
-			if (heap_advice == MMAP_SEQUENTIAL)
-				seqbudget -= sz;
-			v += access_heap(id, "hheap", b->H->vheap, lo, (size_t) (hi - lo), sz, preload, heap_advice);
-		}
-	}
-	if (what & USE_TAIL) {
-		if (b->T->vheap && b->T->vheap->base && b->T->heap.base) {
-			char *lo = BUNtail(bi, BUNfirst(b)), *hi = BUNtail(bi, BUNlast(b) - 1);
-			int heap_advice = advice;
-			if (hi < lo || (preload > 0 && !heap_sequential(BATmirror(b)))) {	/* not sequentially correlated! */
-				lo = b->T->vheap->base;
-				hi = lo + b->T->vheap->free;
-				heap_advice = MMAP_WILLNEED;
-			}
-			sz = (heap_advice == MMAP_SEQUENTIAL && budget > seqbudget) ? seqbudget : budget;
-			budget -= sz = (((size_t) (hi - lo)) > sz) ? sz : ((size_t) (hi - lo));
-			if (heap_advice == MMAP_SEQUENTIAL)
-				seqbudget -= sz;
-			v += access_heap(id, "theap", b->T->vheap, lo, (size_t) (hi - lo), sz, preload, heap_advice);
-		}
-	}
-
-	/* BUN heaps are last in line for prefetch budget */
-	if (what & USE_HEAD) {
-		if (b->H->heap.base) {
-			char *lo = BUNhloc(bi, BUNfirst(b)), *hi = BUNhloc(bi, BUNlast(b) - 1);
-			sz = (advice == MMAP_SEQUENTIAL && budget > seqbudget) ? seqbudget : budget;
-			budget -= sz = (((size_t) (hi - lo)) > sz) ? sz : ((size_t) (hi - lo));
-			if (advice == MMAP_SEQUENTIAL)
-				seqbudget -= sz;
-			v += access_heap(id, "hbuns", &b->H->heap, lo, (size_t) (hi - lo), sz, preload, advice);
-		}
-	}
-	if (what & USE_TAIL) {
-		if (b->T->heap.base) {
-			char *lo = BUNtloc(bi, BUNfirst(b)), *hi = BUNtloc(bi, BUNlast(b) - 1);
-			sz = (advice == MMAP_SEQUENTIAL && budget > seqbudget) ? seqbudget : budget;
-			budget -= sz = (((size_t) (hi - lo)) > sz) ? sz : ((size_t) (hi - lo));
-			if (advice == MMAP_SEQUENTIAL)
-				seqbudget -= sz;
-			v += access_heap(id, "tbuns", &b->T->heap, lo, (size_t) (hi - lo), sz, preload, advice);
-		}
-	}
-	return v;
-#endif
-}
-
 
 /*
  * @- BATdelete
@@ -956,57 +751,55 @@ BATdelete(BAT *b)
 }
 
 /*
- * @
- *
  * @+ Printing and debugging
  * Printing BATs is based on the multi-join on heads. The multijoin
- * exploits all possible Monet properties and accelerators. Due
- * to this property, the n-ary table printing is quite fast and
- * can be used for producing ASCII dumps of large tables.
+ * exploits all possible Monet properties and accelerators. Due to
+ * this property, the n-ary table printing is quite fast and can be
+ * used for producing ASCII dumps of large tables.
  *
- * It all works with hooks.  The multijoin routine finds matching ranges
- * of rows. For each found match in a column it first calls a value-routine
- * hook. This routine we use to format a substring.
- * For each found match-tuple (the Cartesian product of all matches
- * across columns) a match routine hook is called. We use this routine
- * to print a line.
- * Due to this setup, we only format each value once, though it
- * might participate in many lines (due to the Cartesian product).
+ * It all works with hooks.  The multijoin routine finds matching
+ * ranges of rows. For each found match in a column it first calls a
+ * value-routine hook. This routine we use to format a substring.  For
+ * each found match-tuple (the Cartesian product of all matches across
+ * columns) a match routine hook is called. We use this routine to
+ * print a line.  Due to this setup, we only format each value once,
+ * though it might participate in many lines (due to the Cartesian
+ * product).
  *
- * The multijoin is quite complex, and we use a @%col_format_t@
- * struct to keep track of column specific data.
- * The multiprint can indicate arbitrary orderings. This is done
- * by passing a pattern-string that matches the following regexp:
+ * The multijoin is quite complex, and we use a @%col_format_t@ struct
+ * to keep track of column specific data.  The multiprint can indicate
+ * arbitrary orderings. This is done by passing a pattern-string that
+ * matches the following regexp:
  *
  * @verbatim
- * 	"[X:] Y0 {,Yi}"
+ *	"[X:] Y0 {,Yi}"
  * @end verbatim
  *
- * where X and Yi are column numbers, @strong{starting at 1} for the first
- * BAT parameter.
+ * where X and Yi are column numbers, @strong{starting at 1} for the
+ * first BAT parameter.
  *
  * The table ordering has two aspects:
  * @enumerate
  * @item (1)
- *  	the order in which the matches appear (a.k.a. the major ordering).
- * 	This is equivalent to the order of the head values of the BATs
- * 	(as we match=multijoin on head value).
+ *	the order in which the matches appear (a.k.a. the major
+ *	ordering).  This is equivalent to the order of the head values
+ *	of the BATs (as we match=multijoin on head value).
  * @item (2)
- * 	within each match, the order in which the Cartesian
- *    	product is produced. This is used to sub-order on
- * 	the tail values of the BATs = the columns in the table.
+ *	within each match, the order in which the Cartesian product is
+ *	produced. This is used to sub-order on the tail values of the
+ *	BATs = the columns in the table.
  * @end enumerate
  *
- * Concerning (1), the multijoin limits itself to *respecting*
- * the order one one elected BAT, that can be identified with X.
- * Using this, a major ordering on tail value can be enforced,
- * by first passing "Bx.reverse.sort.reverse" (BAT ordered on tail).
- * As the multijoin will respect the order of X, its tail values
- * will be printed in sorted order.
+ * Concerning (1), the multijoin limits itself to *respecting* the
+ * order one one elected BAT, that can be identified with X.  Using
+ * this, a major ordering on tail value can be enforced, by first
+ * passing "Bx.reverse.sort.reverse" (BAT ordered on tail).  As the
+ * multijoin will respect the order of X, its tail values will be
+ * printed in sorted order.
  *
- * Concerning sub-ordering on other columns (2), the multijoin
- * itself employs qsort() to order the Cartesian product on
- * the matched tail values.
+ * Concerning sub-ordering on other columns (2), the multijoin itself
+ * employs qsort() to order the Cartesian product on the matched tail
+ * values.
  */
 #define LINE(s,	X)	do {						\
 				int n=X-1;				\

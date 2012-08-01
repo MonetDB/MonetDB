@@ -24,8 +24,9 @@ Usage: mserver5 [options] [scripts]
 The debug, testing & trace options:
      --threads
      --memory
-     --properties
      --io
+     --heaps
+     --properties
      --transactions
      --modules
      --algorithms

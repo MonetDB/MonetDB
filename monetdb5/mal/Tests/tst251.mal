@@ -2,18 +2,17 @@
 # The first and foremost BAT operations
 
 # String iterator stuff
-c:= bat.new(:int,:str);
-bat.insert(c,1,"hello");
-bat.insert(c,2,"brave");
-bat.insert(c,3,"world");
-bat.insert(c,4,"");
+c:= bat.new(:oid,:str);
+bat.append(c,"hello");
+bat.append(c,"brave");
+bat.append(c,"world");
+bat.append(c,"");
 x:= calc.str(nil);
-bat.insert(c,5,x);
-bat.insert(c,6,"!");
+bat.append(c,x);
+bat.append(c,"!");
 io.print(c);
-barrier (v,h,ts):= bat.newIterator(c);
-	io.print(v);
+barrier (h,ts):= iterator.new(c);
 	io.printf("[%d,",h);
 	io.printf("%s]\n",ts);
-	redo (v,h,ts):= bat.hasMoreElements(c);
-exit v;
+	redo (h,ts):= iterator.next(c);
+exit (h,ts);

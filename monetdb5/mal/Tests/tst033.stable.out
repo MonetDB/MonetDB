@@ -24,11 +24,11 @@ stdout of test 'tst033` in directory 'mal` itself:
 #z:= betweenOO(b,0,2); print(z);
 #
 function user.main():void;
-    b := bat.new(:int,:int);
-    bat.insert(b,0,0);
-    bat.insert(b,1,1);
-    bat.insert(b,2,2);
-    bat.insert(b,3,3);
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
     z := algebra.select(b,0,2);
     io.print(z);
     z := algebra.select(b,0,2,true,true);
@@ -44,33 +44,33 @@ end main;
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
-[ 2,	  2	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
 #-----------------#
 # h	tmp_7	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  1	  ]
+[ 1@0,	  1	  ]
 
 # 07:58:41 >  
 # 07:58:41 >  Done.

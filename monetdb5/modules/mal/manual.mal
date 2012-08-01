@@ -45,6 +45,6 @@ pattern summary():void
 address MANUALcreateSummary
 comment "Produces a manual with help lines grouped by module.";
 
-pattern completion(pat:str):bat[:int,:str]
+pattern completion(pat:str):void
 address MANUALcompletion
 comment "Produces the wordcompletion table.";

@@ -2,8 +2,8 @@
 # common subexpression evaluation
 optimizer.commonTerms();
 optimizer.aliases();
-b:= bat.new(:int,:int);
-c:= bat.new(:int,:int);       
+b:= bat.new(:oid,:int);
+c:= bat.new(:oid,:int);       
 d:= algebra.select(b,0,100);
 e:= algebra.select(b,0,100);    
 k1:= 24;

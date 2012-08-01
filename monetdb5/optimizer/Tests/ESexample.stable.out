@@ -13,9 +13,9 @@ stdout of test 'ESexample` in directory 'optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information
 # Listening for connection requests on mapi:monetdb://eir.ins.cwi.nl:32348/
 function user.tst():void;
-    V1 := bat.new(:oid,:int);
-    V7 := bat.new(:oid,:int);
-    V10 := bat.new(:int,:oid);
+    V1 := bat.new(:oid,:oid);
+    V7 := bat.new(:oid,:oid);
+    V10 := bat.new(:oid,:oid);
     V11 := bat.reverse(V10);
     V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markT(V12);
@@ -26,11 +26,11 @@ function user.main():void;
     mdb.List("user","tst");
 end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
-    V1 := bat.new(:oid,:int);           #  1 V1:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    V7 := bat.new(:oid,:int);           #  2 V7:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
-    V16 := algebra.markT(V7);           #  3 V16:bat[:oid,:oid] := ALGtmark_default(V7:bat[:oid,:int]) {G}
-    V17 := algebra.join(V16,V7);        #  4 V17:bat[:oid,:int] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:int]) {G}
-    bat.append(V1,V17);                 #  5 _11:bat[:oid,:int] := BKCappend_wrap(V1:bat[:oid,:int], V17:bat[:oid,:int]) {G}
+    V1 := bat.new(:oid,:oid);           #  1 V1:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    V7 := bat.new(:oid,:oid);           #  2 V7:bat[:oid,:oid] := CMDBATnew(_2:oid, _2:oid) {G}
+    V16 := algebra.markT(V7);           #  3 V16:bat[:oid,:oid] := ALGtmark_default(V7:bat[:oid,:oid]) {G}
+    V17 := algebra.join(V16,V7);        #  4 V17:bat[:oid,:oid] := ALGjoin(V16:bat[:oid,:oid], V7:bat[:oid,:oid]) {G}
+    bat.append(V1,V17);                 #  5 _10:bat[:oid,:oid] := BKCappend_wrap(V1:bat[:oid,:oid], V17:bat[:oid,:oid]) {G}
 end tst;                                #  6  
 
 # 22:08:09 >  

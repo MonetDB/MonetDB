@@ -35,8 +35,6 @@ Ready.
 % clob # type
 % 66 # length
 function user.s1_1{autoCommit=true}(A0:flt):void;
-    X_24 := nil:bat[:oid,:dbl];
-barrier X_57 := language.dataflow();
     X_3 := sql.mvc();
     X_4:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",0);
     X_9:bat[:oid,:dbl]  := sql.bind(X_3,"sys","tab_2826","d",2);
@@ -48,12 +46,11 @@ barrier X_57 := language.dataflow();
     X_17 := bat.reverse(X_16);
     X_18 := algebra.kdifference(X_15,X_17);
     X_19 := batcalc.flt(X_18);
-    X_44 := batmmath.log10(X_19);
-    X_20 := algebra.thetauselect(X_44,A0,">");
+    X_43 := batmmath.log10(X_19);
+    X_20 := algebra.thetauselect(X_43,A0,">");
     X_22 := algebra.markT(X_20,0@0:oid);
     X_23 := bat.reverse(X_22);
     X_24 := algebra.leftjoin(X_23,X_18);
-exit X_57;
     X_25 := sql.resultSet(1,1,X_24);
     sql.rsColumn(X_25,"sys.tab_2826","d","double",53,0,X_24);
     X_32 := io.stdout();

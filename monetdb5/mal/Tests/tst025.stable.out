@@ -27,11 +27,11 @@ stdout of test 'tst025` in directory 'mal` itself:
 #
 #
 function user.main():void;
-# Wrong behavior of self-deletion, it works on M4 
-    b := bat.new(:int,:int);
-    bat.insert(b,5140046,1804289383);
-    bat.insert(b,5442033,846930886);
-    bat.insert(b,5645862,1681692777);
+# Test bulk delete behavior  
+    b := bat.new(:oid,:int);
+    bat.append(b,5140046);
+    bat.append(b,5442033);
+    bat.append(b,5645862);
     io.print(b);
 # it left one behind 
     bat.delete(b,b);
@@ -41,11 +41,11 @@ function user.main():void;
 end main;
 #---------------------------------#
 # h		t		  # name
-# int		int		  # type
-#---------------------------------#
-[ 5140046,	  1804289383	  ]
-[ 5442033,	  846930886	  ]
-[ 5645862,	  1681692777	  ]
+# void	int		  # type
+#-------------------------#
+[ 0@0,	  5140046	  ]
+[ 1@0,	  5442033	  ]
+[ 2@0,	  5645862	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type

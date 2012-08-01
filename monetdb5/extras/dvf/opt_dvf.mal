@@ -1,0 +1,7 @@
+pattern optimizer.DVframework():str
+address OPTdvf
+comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";
+
+pattern optimizer.DVframework(mod:str, fcn:str):str
+address OPTdvf
+comment "Inject an execution-time MAL plan modifier call right after knowing about the files to be mounted.";

@@ -302,6 +302,8 @@ MseedLoadSQL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
+/* XXX: BATs of BATs are no longer allowed and this code hasn't worked
+ * for quite some time anyway */
 	table = BATnew(TYPE_str,TYPE_bat,0);
 	if ( table == NULL)
 		throw(MAL, "mseed.load", MAL_MALLOC_FAIL);

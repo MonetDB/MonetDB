@@ -18,13 +18,13 @@ k:= user.one(1);
 l:= user.three(1,2,3);
 p:= user.pow(1,2);
 
-b:= bat.new(:int,:int);
-bat.insert(b,1,1);
+b:= bat.new(:oid,:int);
+bat.append(b,1);
 
 io.print("do multiplex three test");
-z:bat[:int,:int]:=mal.multiplex("user","three",b,2,3);
+z:bat[:oid,:int]:=mal.multiplex("user","three",b,2,3);
 io.print("do multiplex one test");
-z:bat[:int,:int]:=mal.multiplex("user","one",b);
+z:bat[:oid,:int]:=mal.multiplex("user","one",b);
 io.print("do multiplex pow test");
-z:bat[:int,:int]:=mal.multiplex("user","pow",b,2);
+z:bat[:oid,:int]:=mal.multiplex("user","pow",b,2);
 io.print(z);

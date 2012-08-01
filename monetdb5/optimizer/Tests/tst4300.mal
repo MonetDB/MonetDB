@@ -1,11 +1,11 @@
 #some join operations
 
 #mdb.start();
-b:= bat.new(:lng,:lng);
-barrier (k,v):= language.newRange(0:lng);
-        bat.insert(b,v,v);
-        redo (k,v):= language.nextElement(1:lng,100:lng);
-exit (k,v);
+b:= bat.new(:oid,:lng);
+barrier v:= 0:lng;
+        bat.append(b,v);
+        redo v:= iterator.next(1:lng,100:lng);
+exit v;
 
 i:= aggr.count(b);
 io.print(i);
@@ -17,13 +17,7 @@ d:= algebra.select(b,0:lng,49:lng);
 i:= aggr.count(d);
 io.print(i);
 
-zz:= algebra.joinPath(b,c,d);
+cr:= bat.reverse(c);
+zz:= algebra.joinPath(b,cr,d);
 i:= aggr.count(zz);
 io.print(i);
-
-#to be detected by join inversion
-#z:= joinPath(b,c);
-#zz:= joinPath(zz,d);
-#i:= aggr.count(z);
-#io.print(i);
-

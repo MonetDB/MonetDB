@@ -12,24 +12,7 @@ Introduction
 
 This is the new native python client API.  This API is cross-platform,
 and doesn't depend on any monetdb libraries.  It has support for
-python 2.5, 2.6 and 3.0 and is Python DBAPI 2.0 compatible.
-
-
-Changes
-=======
-
-A number of things are different compared to the old version that uses
-the mapi library:
-
-* No dependecies on MonetDB libraries anymore
-* MAPI protocol is now implemented in pure python
-* Added unit tests for the SQL API
-* The MAPI module is now named monetdb.mapi
-* The SQL module is now named monetdb.sql
-* Small changes in argument names for functions
-* Type conversion is working (for example a monetdb int becomes a
-  python int)
-* Dropped support for the dictionary based cursor
+python 2.5+ and is Python DBAPI 2.0 compatible.
 
 
 Installation

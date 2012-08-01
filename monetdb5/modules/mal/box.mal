@@ -1,0 +1,36 @@
+module box;
+
+pattern open(nme:str):any_1
+address BOXopen
+comment "Locate the box and open it.";
+pattern close(bname:str):void	
+address BOXclose
+comment "Close the box.";
+pattern destroy(bname:str):void	
+address BOXdestroy
+comment "Destroy the box.";
+pattern take(bnme:str, vnme:str):any_1
+address BOXtake
+comment "Locate the typed value in the box.";
+pattern deposit(bname:str,name:str,v:any_1):void 			
+address BOXdeposit
+comment "Enter a new value into the box.";
+pattern releaseAll(bname:str) :void 			
+address BOXreleaseAll
+comment "Release all objects for this client.";
+pattern release(bname:str,nme:str,val:any_1):void 			
+address BOXrelease
+comment "Release the BAT from the client pool.";
+pattern toString(bname:str,name:str) :str 			
+address BOXtoString
+comment "Get the string representation of 
+	the i-th element in the box.";
+pattern discard(bname:str,name:str) :void 			
+address BOXdiscard
+comment "Release the BAT from the client pool.";
+pattern iterator(nme:str):lng 
+address BOXiterator
+comment "Locates the next element in the box.";
+command getBoxNames():bat[:int,:str]
+address BOXgetBoxNames
+comment "Retrieve the names of all boxes.";

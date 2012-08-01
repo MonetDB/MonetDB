@@ -19,7 +19,6 @@
 
 CP=cp
 MV=mv
-HIDE=1
 MX = $(top_builddir)/buildtools/Mx/Mx
 
 %.tab.c: %.y
@@ -69,41 +68,6 @@ MX = $(top_builddir)/buildtools/Mx/Mx
 %: %.mx 
 	$(MX) $(MXFLAGS) -l -x sh $<
 	chmod a+x $@
-
-%.tex: %.mx
-	$(MX) -1 -H$(HIDE) -t $< 
-
-%.bdy.tex: %.mx
-	$(MX) -1 -H$(HIDE) -t -B $<
-
-%.html: %.mx
-	$(MX) -1 -H$(HIDE) -w $<
-
-%.bdy.html: %.mx
-	$(MX) -1 -H$(HIDE) -w -B $<
-
-# if the .tex source file is found in srcdir (via VPATH), there might
-# be a '.'  in the path, which latex2html doesn't like; hence, we
-# temporarly link the .tex file to the local build dir.
-%.html: %.tex
-	if [ "$<" != "$(<F)" ] ; then $(LN_S) $< $(<F) ; fi
-	$(LATEX2HTML) -split 0 -no_images -info 0 -no_subdir  $(<F)
-	if [ "$<" != "$(<F)" ] ; then $(RM) $(<F) ; fi
-
-%.pdf: %.tex
-	$(PDFLATEX) $< 
-
-%.dvi: %.tex
-	$(LATEX) $< 
-
-%.ps: %.dvi
-	$(DVIPS) $< -o $@
-
-%.eps: %.fig
-	$(FIG2DEV) -L$(FIG2DEV_EPS) -e $< > $@
-
-%.eps: %.feps
-	$(CP) $< $@
 
 SUFFIXES-local: $(BUILT_SOURCES)
 

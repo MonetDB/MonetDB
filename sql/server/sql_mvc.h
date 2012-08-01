@@ -90,6 +90,7 @@ typedef struct mvc {
 	int topvars;
 	int sizevars;
 	int frame;
+	int use_views;
 	atom **args;
 	int argc;
 	int argmax;

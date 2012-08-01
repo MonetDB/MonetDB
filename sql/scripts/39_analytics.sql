@@ -12,6 +12,13 @@ create aggregate median(val REAL) returns REAL
 create aggregate median(val DOUBLE) returns DOUBLE
 	external name "aggr"."median";
 
+create aggregate median(val DATE) returns DATE
+	external name "aggr"."median";
+create aggregate median(val TIME) returns TIME
+	external name "aggr"."median";
+create aggregate median(val TIMESTAMP) returns TIMESTAMP
+	external name "aggr"."median";
+
 create aggregate corr(e1 TINYINT, e2 TINYINT) returns TINYINT
 	external name "aggr"."corr";
 create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns SMALLINT

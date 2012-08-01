@@ -134,7 +134,8 @@ typedef struct MALBLK {
 	int flowfixed;				/* all flow instructions are fixed */
 	ProfPtr profiler;
 	struct MALBLK *history;		/* of optimizer actions */
-	int keephistory;			/* do we need the history at all */
+	short keephistory;			/* do we need the history at all */
+	short dotfile;				/* sent dot file to stethoscope? */
 	str marker;					/* history points are marked for backtracking */
 	int maxarg;					/* keep track on the maximal arguments used */
 	ptr replica;				/* for the replicator tests */
@@ -255,6 +256,7 @@ mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
 mal_export malType getType(MalBlkPtr mb, str nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export str getVarName(MalBlkPtr mb, int i);
+mal_export void setVarName(MalBlkPtr mb, int i, str nme);
 mal_export str getRefName(MalBlkPtr mb, int i);
 mal_export int newVariable(MalBlkPtr mb, str name, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
@@ -271,7 +273,7 @@ mal_export void freeVariable(MalBlkPtr mb, int varid);
 mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
-mal_export int fndConstant(MalBlkPtr mb, ValPtr cst, int depth);
+mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
 mal_export str convertConstant(malType type, ValPtr vr);
 
 mal_export int newProperty(MalBlkPtr mb);

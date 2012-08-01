@@ -125,23 +125,12 @@ typedef struct Table_t {
 	Column columns[1];			/* at least one column, enlarged upon need */
 } Tablet;
 
-tablet_export str TABprelude(int *ret);
-
-tablet_export BAT *TABLETload(Tablet *as, char *datafile);
-tablet_export BUN TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
-tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, BUN nr);
-
-/* The low level routines are primarilly used by the SQL front-end.*/
-tablet_export int TABLETcreate_bats(Tablet *as, BUN est);
-tablet_export BUN TABLETassign_BATs(Tablet *as, BAT *bats);
-tablet_export BUN TABLETload_file(Tablet *as, bstream *b, stream *out);
 tablet_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char *rsep, char quote, lng skip, lng maxrow);
+tablet_export int TABLETcreate_bats(Tablet *as, BUN est);
 tablet_export BAT **TABLETcollect(Tablet *as);
-tablet_export BAT *TABLETcollect_bats(Tablet *as);
 tablet_export BAT **TABLETcollect_parts(Tablet *as, BUN offset);
 tablet_export void TABLETdestroy_format(Tablet *as);
 tablet_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s);
-
 tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(Column *c, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);

@@ -36,8 +36,8 @@ function user.test():void;
     x := bbp.getObjects();
     io.print(x);
     io.print("test");
-    b := bat.new(:int,:int);
-    bat.insert(b,1,2);
+    b := bat.new(:oid,:int);
+    bat.append(b,2);
     bbp.deposit("myfirstbat",b);
     c := bbp.take("myfirstbat");
     io.print(c);
@@ -79,7 +79,7 @@ end main;
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 [ "continue" ]
 #-------------------------#
 # bbp	objects		  # name
@@ -90,7 +90,7 @@ end main;
 # h	tmp_5	  # name
 # int	int	  # type
 #-----------------#
-[ 1,	  2	  ]
+[ 0@0,	  2	  ]
 
 # 07:58:55 >  
 # 07:58:55 >  Done.

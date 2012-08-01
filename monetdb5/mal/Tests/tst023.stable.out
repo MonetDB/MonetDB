@@ -30,13 +30,13 @@ end main;
 [ "added function to specific module" ]
 #-----------------------------------------------------------------------------------------#
 # view			fcn								  # name
-# str			str								  # type
-#-----------------------------------------------------------------------------------------#
-[ "transaction.help",	  "function transaction.help():void;"				  ]
-[ "transaction.help",	  "    io.print(\"added function to specific module\");"	  ]
-[ "transaction.help",	  "     := inspect.getDefinition(\"transaction\",\"help\");"	  ]
-[ "transaction.help",	  "    io.print(b);"						  ]
-[ "transaction.help",	  "end help;"							  ]
+# void	str								  # type
+#-------------------------------------------------------------------------#
+[ 0@0,	  "function transaction.help():void;"				  ]
+[ 1@0,	  "    io.print(\"added function to specific module\");"	  ]
+[ 2@0,	  "     := inspect.getDefinition(\"transaction\",\"help\");"	  ]
+[ 3@0,	  "    io.print(b);"						  ]
+[ 4@0,	  "end help;"							  ]
 
 # 07:58:39 >  
 # 07:58:39 >  Done.

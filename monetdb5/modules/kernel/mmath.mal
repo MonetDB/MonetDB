@@ -1,0 +1,195 @@
+module mmath;
+
+command acos(x:flt):flt 
+address MATHunary_ACOSflt;
+command acos(x:dbl):dbl 
+address MATHunary_ACOSdbl
+comment "The acos(x) function calculates the arc cosine of x, that is the 
+	value whose cosine is x. The value is returned in radians and is 
+	mathematically defined to be between 0 and PI (inclusive).";
+
+command asin(x:flt)  :flt 
+address MATHunary_ASINflt;
+command asin(x:dbl)  :dbl 
+address MATHunary_ASINdbl
+comment "The asin(x) function calculates the arc sine of x, that is the value 
+	whose sine is x. The value is returned in radians and is mathematically 
+	defined to be between -PI/20 and -PI/2 (inclusive).";
+
+command atan(x:flt)     :flt 
+address MATHunary_ATANflt;
+command atan(x:dbl)     :dbl 
+address MATHunary_ATANdbl
+comment "The atan(x) function calculates the arc tangent of x, that is the value 
+	whose tangent is x. The value is returned in radians and is mathematically 
+	defined to be between -PI/2 and PI/2 (inclusive).";
+
+command atan2(x:flt,y:flt):flt 
+address MATHbinary_ATAN2flt;
+command atan2(x:dbl,y:dbl):dbl 
+address MATHbinary_ATAN2dbl
+comment "The atan2(x,y) function calculates the arc tangent of the two 
+        variables x and y.  It is similar to calculating the arc
+	tangent of y / x, except that the signs of both arguments are 
+        used to determine the quadrant of the result.  The value is 
+	returned in radians and is mathematically defined to be between 
+        -PI/2 and PI/2 (inclusive).";
+
+
+command cos(x:flt)   	  :flt 
+address MATHunary_COSflt;
+command cos(x:dbl)   	  :dbl 
+address MATHunary_COSdbl
+comment "The cos(x) function returns the cosine of x, where x is given in 
+        radians. The return value is between -1 and 1.";
+
+command sin(x:flt)   	  :flt 
+address MATHunary_SINflt;
+command sin(x:dbl)   	  :dbl 
+address MATHunary_SINdbl
+comment "The sin(x) function returns the cosine of x, where x is given in 
+        radians. The return value is between -1 and 1.";
+
+command tan(x:flt)   	  :flt 
+address MATHunary_TANflt;
+command tan(x:dbl)   	  :dbl 
+address MATHunary_TANdbl
+comment "The tan(x) function returns the tangent of x,
+        where x is given in radians";
+
+command cot(x:flt)   	  :flt 
+address MATHunary_COTflt;
+command cot(x:dbl)   	  :dbl 
+address MATHunary_COTdbl
+comment "The cot(x) function returns the Cotangent of x,
+        where x is given in radians";
+
+command cosh(x:flt)     :flt 
+address MATHunary_COSHflt;
+command cosh(x:dbl)     :dbl 
+address MATHunary_COSHdbl
+comment "The cosh() function  returns the hyperbolic cosine of x, which is 
+	defined mathematically as (exp(x) + exp(-x)) / 2.";
+
+command sinh(x:flt)     :flt 
+address MATHunary_SINHflt;
+command sinh(x:dbl)     :dbl 
+address MATHunary_SINHdbl
+comment "The sinh() function  returns  the  hyperbolic sine of x, which 
+        is defined mathematically as (exp(x) - exp(-x)) / 2.";
+
+command tanh(x:flt)     :flt 
+address MATHunary_TANHflt;
+command tanh(x:dbl)     :dbl 
+address MATHunary_TANHdbl
+comment "The tanh() function returns the hyperbolic tangent of x, which is 
+	defined mathematically as sinh(x) / cosh(x).";
+
+command radians(x:flt)     :flt 
+address MATHunary_RADIANSflt;
+command radians(x:dbl)     :dbl 
+address MATHunary_RADIANSdbl
+comment "The radians() function converts degrees into radians"; 
+
+command degrees(x:flt)     :flt 
+address MATHunary_DEGREESflt;
+command degrees(x:dbl)     :dbl 
+address MATHunary_DEGREESdbl
+comment "The degrees() function converts radians into degrees"; 
+
+command exp(x:flt)   	  :flt 
+address MATHunary_EXPflt;
+command exp(x:dbl)   	  :dbl 
+address MATHunary_EXPdbl
+comment "The exp(x) function returns the value of e (the base of 
+        natural logarithms) raised to the power of x.";
+
+command log(x:flt)   	  :flt 
+address MATHunary_LOGflt;
+command log(x:dbl)   	  :dbl 
+address MATHunary_LOGdbl
+comment "The log(x) function returns the natural logarithm of x.";
+
+command log10(x:flt)    :flt 
+address MATHunary_LOG10flt;
+command log10(x:dbl)    :dbl 
+address MATHunary_LOG10dbl
+comment "The log10(x) function returns the base-10 logarithm of x.";
+
+
+command pow(x:flt,y:flt)  :flt 
+address MATHbinary_POWflt;
+command pow(x:dbl,y:dbl)  :dbl 
+address MATHbinary_POWdbl
+comment "The pow(x,y) function  returns the value of x raised to the power of y.";
+
+command sqrt(y:flt)  	  :flt 
+address MATHunary_SQRTflt;
+command sqrt(y:dbl)  	  :dbl 
+address MATHunary_SQRTdbl
+comment "The sqrt(x) function returns the non-negative square root of x.";
+
+
+command ceil(y:flt)     :flt 
+address MATHunary_CEILflt;
+command ceil(y:dbl)     :dbl 
+address MATHunary_CEILdbl
+comment "The ceil(x) function rounds x upwards to the nearest integer.";
+
+command fabs(y:dbl)     :dbl 
+address MATHunary_FABSdbl
+comment "The fabs(x) function  returns  the  absolute value of the 
+        floating-point number x.";
+
+command floor(y:flt)    :flt 
+address MATHunary_FLOORflt;
+command floor(y:dbl)    :dbl 
+address MATHunary_FLOORdbl
+comment "The floor(x) function rounds x downwards to the nearest integer.";
+
+pattern fmod(y:flt,x:flt) :flt 
+address CMDvarMODsignal;
+pattern fmod(y:dbl,x:dbl) :dbl 
+address CMDvarMODsignal
+comment "The fmod(x,y) function computes the remainder of dividing x by y.
+	The return value is x - n * y, where n is the quotient of x / y,
+	rounded towards zero to an integer.";
+
+command round(x:flt,y:int)     :flt 
+address MATHbinary_ROUNDflt;
+command round(x:dbl,y:int)     :dbl 
+address MATHbinary_ROUNDdbl
+comment "The round(n, m) returns n rounded to m places to the right 
+        of the decimal point; if m is omitted, to 0 places. m can be 
+	negative to round off digits left of the decimal point. 
+        m must be an integer.";
+
+command isnan(d:dbl) :bit 
+address MATHunary_ISNAN
+comment "The isnan(x) function returns true if x is 'not-a-number' 
+        (NaN), and false otherwise.";
+command isinf(d:dbl) :int 
+address MATHunary_ISINF
+comment "The isinf(x) function returns -1 if x represents negative 
+        infinity, 1 if x represents positive infinity, and 0 otherwise.";
+command finite(d:dbl) :bit 
+address MATHunary_FINITE
+comment "The finite(x) function returns true if x is neither infinite 
+        nor a 'not-a-number' (NaN) value, and false otherwise.";
+
+# @+ Random numbers
+command rand{unsafe} () :int 
+address MATHrandint
+comment "return a random number";
+
+command srand(seed:int) :void 
+address MATHsrandint
+comment "initialize the rand() function with a seed";
+
+command sqlrand(seed:int) :int 
+address MATHsqlrandint
+comment "initialize the rand() function with a seed and call rand()";
+
+command pi():dbl
+address MATHpi
+comment "return an important mathematical value";

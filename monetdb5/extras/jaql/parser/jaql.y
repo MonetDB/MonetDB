@@ -1,3 +1,22 @@
+/*
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 %{
 #define _CRT_SECURE_NO_WARNINGS 1
 
@@ -41,7 +60,7 @@ jaql_import void GDKfree(const char *);
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
 %token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG UNROLL PRESERVE
 
-%token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE
+%token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE NIL
 %token GREATER GEQUAL LESS LEQUAL NOT AND OR
 
 %token <j_ident>  IDENT
@@ -293,6 +312,7 @@ literal: NUMBER      {$$ = make_number($1);}
 	   | STRING      {$$ = make_string($1);}
 	   | TRUE        {$$ = make_bool(1);}
 	   | FALSE       {$$ = make_bool(0);}
+	   | NIL         {$$ = make_null();}
 	   ;
 
 arith_op: '+'        {$$ = make_op(j_plus);}

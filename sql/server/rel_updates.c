@@ -619,7 +619,7 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 
 	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
-	list *join_exps = new_exp_list(sql->sa);
+	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
@@ -668,9 +668,10 @@ rel_update_join_idx(mvc *sql, sql_idx *i, sql_rel *updates)
 		nnlls = ups;
 	}
 
+	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
 	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
 	nnlls->exps = join_exps;
-	nnlls = rel_project(sql->sa, nnlls, rel_projections(sql, nnlls->l, NULL, 1, 1));
+	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, i->t->base.name, iname);
@@ -1083,7 +1084,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 	   a lock and only on tables without idx */
 	if (locked && sql->user_id != USER_MONETDB) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-		    "COPY INTO from .. LOCKED requires administrator rights");
+		    "COPY INTO from .. LOCKED requires database administrator rights");
 	}
 	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
 		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
@@ -1112,7 +1113,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *files, dlist *seps, dlist *nr_offset, st
 
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-					"COPY INTO from file(s) requires administrator rights, "
+					"COPY INTO from file(s) requires database administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
 
@@ -1163,7 +1164,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *files)
 
 	if (sql->user_id != USER_MONETDB) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-				"binary COPY INTO requires administrator rights");
+				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
 
@@ -1261,7 +1262,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 		struct stat fs;
 		if (sql->user_id != USER_MONETDB)
 			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
-					"COPY INTO file requires administrator rights, "
+					"COPY INTO file requires database administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
 		if (filename && !MT_path_absolute(filename))
 			return sql_error(sql, 02, "COPY INTO: filename must "
@@ -1346,7 +1347,9 @@ sql_rel *
 rel_updates(mvc *sql, symbol *s)
 {
 	sql_rel *ret = NULL;
+	int old = sql->use_views;
 
+	sql->use_views = 1;
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{
@@ -1397,7 +1400,9 @@ rel_updates(mvc *sql, symbol *s)
 	}
 		break;
 	default:
+		sql->use_views = old;
 		return sql_error(sql, 01, "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
+	sql->use_views = old;
 	return ret;
 }

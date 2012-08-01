@@ -91,28 +91,21 @@ VALset(ValPtr v, int t, ptr p)
 	return v;
 }
 
+/* also see VALptr */
 void *
 VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
-	case TYPE_void:
-		return (void *) &v->val.oval;
-	case TYPE_bte:
-		return (void *) &v->val.btval;
-	case TYPE_sht:
-		return (void *) &v->val.shval;
-	case TYPE_int:
-		return (void *) &v->val.ival;
-	case TYPE_flt:
-		return (void *) &v->val.fval;
-	case TYPE_dbl:
-		return (void *) &v->val.dval;
-	case TYPE_lng:
-		return (void *) &v->val.lval;
-	case TYPE_str:
-		return (void *) v->val.pval;
+	case TYPE_void: return (void *) &v->val.oval;
+	case TYPE_bte: return (void *) &v->val.btval;
+	case TYPE_sht: return (void *) &v->val.shval;
+	case TYPE_int: return (void *) &v->val.ival;
+	case TYPE_flt: return (void *) &v->val.fval;
+	case TYPE_dbl: return (void *) &v->val.dval;
+	case TYPE_lng: return (void *) &v->val.lval;
+	case TYPE_str: return (void *) v->val.sval;
+	default:       return (void *) v->val.pval;
 	}
-	return NULL;
 }
 
 void
@@ -134,7 +127,7 @@ VALempty(ValPtr v)
 }
 
 ValPtr
-VALcopy(ValPtr d, ValPtr s)
+VALcopy(ValPtr d, const ValRecord *s)
 {
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
@@ -187,7 +180,7 @@ VALinit(ValPtr d, int tpe, const void *s)
  * expanding the BAT contents.
  */
 int
-VALprint(stream *s, ValPtr res)
+VALprint(stream *s, const ValRecord *res)
 {
 	int t = ATOMstorage(res->vtype);
 
@@ -196,7 +189,7 @@ VALprint(stream *s, ValPtr res)
 
 
 int
-VALformat(char **buf, ValPtr res)
+VALformat(char **buf, const ValRecord *res)
 {
 	int t = res->vtype;
 
@@ -240,16 +233,16 @@ VALconvert(int typ, ValPtr t)
 	*t = dst;
 	/* make sure we return the correct type (not the storage type) */
 	t->vtype = typ;
-	return VALptr(t);
+	return VALget(t);
 }
 
 int
-VALcmp(ValPtr p, ValPtr q)
+VALcmp(const ValRecord *p, const ValRecord *q)
 {
 
 	int (*cmp)(const void *, const void *);
 	int tpe;
-	ptr nilptr, pp, pq;
+	const void *nilptr, *pp, *pq;
 
 	if (p == 0 || q == 0)
 		return -1;
@@ -260,12 +253,37 @@ VALcmp(ValPtr p, ValPtr q)
 		return 0;	/* ignore comparing C pointers */
 	cmp = BATatoms[tpe].atomCmp;
 	nilptr = ATOMnilptr(tpe);
-	pp = VALget(p);
-	pq = VALget(q);
+	pp = VALptr(p);
+	pq = VALptr(q);
 	if ((*cmp)(pp, nilptr) == 0 && (*cmp)(pq, nilptr) == 0)
 		return 0;	/* eq nil val */
 	if ((*cmp)(pp, nilptr) == 0 || (*cmp)(pq, nilptr) == 0)
 		return -1;
 	return (*cmp)(pp, pq);
 
+}
+
+int
+VALisnil(const ValRecord *v)
+{
+	switch (ATOMstorage(v->vtype)) {
+	case TYPE_void:
+		return 1;
+	case TYPE_bte:
+		return v->val.btval == bte_nil;
+	case TYPE_sht:
+		return v->val.shval == sht_nil;
+	case TYPE_int:
+	case TYPE_bat:
+		return v->val.ival == int_nil;
+	case TYPE_lng:
+		return v->val.lval == lng_nil;
+	case TYPE_flt:
+		return v->val.fval == flt_nil;
+	case TYPE_dbl:
+		return v->val.dval == dbl_nil;
+	default:
+		break;
+	}
+	return (*BATatoms[v->vtype].atomCmp)(VALptr(v), ATOMnilptr(v->vtype)) == 0;
 }

@@ -6,3 +6,4 @@ HAVE_JAQL?join
 HAVE_JAQL?sort
 HAVE_JAQL?transform
 HAVE_JAQL?shred
+HAVE_JAQL?in

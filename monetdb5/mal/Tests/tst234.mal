@@ -17,7 +17,7 @@ function tmp1(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
 	return tmp1;
 end tmp1;
 
-b:= bat.new(:int,:int);
+b:= bat.new(:oid,:int);
 d:= user.tmp1(b);
 i:= bbp.getLRefCount(d);
 io.print(i);
