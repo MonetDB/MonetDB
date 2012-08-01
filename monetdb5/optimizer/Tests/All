@@ -18,10 +18,11 @@ tst4631
 tst4700
 tst4701
 tst4730
-tst4800
-tst4801
 tst4820
-tst4900
+# use obsolete array.grid()
+#tst4800
+#tst4801
+#tst4900
 
 qep00
 qep01
@@ -80,13 +81,15 @@ CXerror1
 #the remainder are snippets used in the reference manual
 CMexample
 CRexample
-AEexample
+# uses obsolete array.grid()
+#AEexample
 ARexample
 DCexample
 DCexample2
 ESexample
 FTexample
-GCexample
+# uses obsolete array.grid()
+#GCexample
 GCexample01
 CXexample
 JPexample
