@@ -49,7 +49,7 @@ struct slice {
 typedef struct {
 	/* The comparison function. */
 	int (*compare) (const void *, const void *);
-	char *heap;
+	const char *heap;
 	int hs;
 	int ts;
 	void *bh;
