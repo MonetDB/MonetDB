@@ -16,12 +16,15 @@
 # All Rights Reserved.
 
 """
-functions for converting python objects to monetdb SQL format
+functions for converting python objects to monetdb SQL format. If you want
+to add support for a specific type you should add a function as a value to
+the mapping dict and the datatype as key.
 """
 
 import datetime
 import logging
 import decimal
+from monetdb.exceptions import ProgrammingError
 
 logger = logging.getLogger("monetdb")
 

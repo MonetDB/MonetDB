@@ -24,10 +24,8 @@
 
 """
 from time import time
-import array
 import unittest
-import sys
-
+from monetdb.exceptions import ProgrammingError
 
 class DatabaseTest(unittest.TestCase):
 
@@ -325,7 +323,6 @@ class DatabaseTest(unittest.TestCase):
             ('col1 TINYINT',),
             generator)
 
-
     def test_small_CHAR(self):
         # Character data
         def generator(row,col):
@@ -336,7 +333,6 @@ class DatabaseTest(unittest.TestCase):
         self.check_data_integrity(
             ('col1 char(1)','col2 char(1)'),
             generator)
-
 
     def test_description(self):
         self.table = self.new_table_name()
@@ -353,8 +349,6 @@ class DatabaseTest(unittest.TestCase):
         finally:
             self.cursor.execute('drop table %s' % (self.table))
 
-
-
     def test_bigresult(self):
         self.cursor.execute('select count(*) from tables')
         r = self.cursor.fetchone()
@@ -364,3 +358,13 @@ class DatabaseTest(unittest.TestCase):
         r = self.cursor.fetchall()
         self.assertEqual(len(r), n**2)
 
+    def test_closecur(self):
+        self.cursor.close()
+        self.assertRaises(ProgrammingError, self.cursor.execute, "select * from tables")
+        self.cursor = self.connection.cursor()
+
+    def test_customtype(self):
+        t = ["list", "test"]
+        self.assertRaises(ProgrammingError, self.db_module.monetize.convert, t)
+        self.db_module.monetize.mapping[list] = str
+        self.assertEqual(self.db_module.monetize.convert(t), "['list', 'test']")
