@@ -28,7 +28,8 @@ typedef enum {
 	SABdbIllegal = 0,
 	SABdbRunning,
 	SABdbCrashed,
-	SABdbInactive
+	SABdbInactive,
+	SABdbStarting
 } SABdbState;
 
 typedef struct Ssabdb {
@@ -74,6 +75,8 @@ msab_export char *msab_retreatScenario(const char *lang);
 msab_export char *msab_marchConnection(const char *host, const int port);
 msab_export char *msab_wildRetreat(void);
 msab_export char *msab_registerStart(void);
+msab_export char *msab_registerStarting(void);
+msab_export char *msab_registerStarted(void);
 msab_export char *msab_registerStop(void);
 msab_export char *msab_getMyStatus(sabdb** ret);
 msab_export char *msab_getStatus(sabdb** ret, char *dbname);
