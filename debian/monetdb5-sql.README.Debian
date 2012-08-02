@@ -1,0 +1,23 @@
+
+Usage
+=====
+
+There are multiple ways to use MonetDB5-sql, but this is the most Debianic.
+
+ * Set STARTUP to "yes" in /etc/default/monetdb5-sql
+
+ * Start MonetDB::
+ 
+   $ sudo /etc/init.d/monetdb5-sql start
+
+ * Add yourself to the "monetdb" group::
+
+   $ sudo addgroup `whoami` monetdb
+
+ * Now you can create and destroy databases with the "monetdb" command::
+
+   $ monetdb create test
+   $ monetdb release test
+   $ monetdb start test
+   $ mclient test
+
