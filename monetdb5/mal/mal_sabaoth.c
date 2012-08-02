@@ -180,11 +180,8 @@ str SABAOTHgetLocalConnection(str *ret) {
  * Commodore Amiga age.
  */
 str SABAOTHwildRetreat(int *ret) {
-	str err = msab_wildRetreat();
-	if (err != NULL)
-		excFromMem(MAL, "sabaoth.wildretreat", err);
-	(void)ret;
-	return(MAL_SUCCEED);
+	*ret = 0;
+	throw(MAL, "sabaoth.wildRetreat", "function no longer supported");
 }
 
 /**
@@ -192,11 +189,8 @@ str SABAOTHwildRetreat(int *ret) {
  * the log at a later stage might reveal crashes of the server.
  */
 str SABAOTHregisterStart(int *ret) {
-	str err = msab_registerStart();
-	if (err != NULL)
-		excFromMem(MAL, "sabaoth.registerstart", err);
-	(void)ret;
-	return(MAL_SUCCEED);
+	*ret = 0;
+	throw(MAL, "sabaoth.registerStart", "function no longer supported");
 }
 
 /**
@@ -204,11 +198,8 @@ str SABAOTHregisterStart(int *ret) {
  * the log at a later stage might reveal crashes of the server.
  */
 str SABAOTHregisterStop(int *ret) {
-	str err = msab_registerStop();
-	if (err != NULL)
-		excFromMem(MAL, "sabaoth.registerstop", err);
-	(void)ret;
-	return(MAL_SUCCEED);
+	*ret = 0;
+	throw(MAL, "sabaoth.registerStop", "function no longer supported");
 }
 
 /**

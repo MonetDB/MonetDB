@@ -278,7 +278,6 @@ moreClients(int reruns)
 	return finishing+claimed+awaiting;
 }
 void mal_exit(void){
- 	int t = 0;
 	str err;
 
 	/*
@@ -324,16 +323,14 @@ void mal_exit(void){
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */
-	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
+	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);
-		if (err != M5OutOfMemory)
-			GDKfree(err);
+		free(err);
 	}
 	/* the server will now be shut down */
-	if ((err = SABAOTHregisterStop(&t)) != MAL_SUCCEED) {
+	if ((err = msab_registerStop()) != NULL) {
 		fprintf(stderr, "!%s", err);
-		if (err != M5OutOfMemory)
-			GDKfree(err);
+		free(err);
 	}
 	GDKexit(0); 	/* properly end GDK */
 }

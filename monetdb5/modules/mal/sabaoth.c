@@ -63,7 +63,7 @@ str SABprelude(int *ret) {
 str SABepilogue(int *ret) {
 	(void)ret;
 
-	return(SABAOTHwildRetreat(ret));
+	return(MAL_SUCCEED);
 }
 
 str SABmarchScenario(int *ret, str *lang){
@@ -176,5 +176,6 @@ str SABgetLocalConnectionPort(int *ret) {
 }
 
 str SABwildRetreat(int *ret) {
-	return SABAOTHwildRetreat(ret);
+	*ret = 0;
+	throw(MAL, "sabaoth.wildRetreat", "function no longer supported");
 }
