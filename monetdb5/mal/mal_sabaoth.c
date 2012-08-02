@@ -175,34 +175,6 @@ str SABAOTHgetLocalConnection(str *ret) {
 }
 
 /**
- * Removes all known publications of available services.  The function
- * name is a nostalgic phrase from "Defender of the Crown" from the
- * Commodore Amiga age.
- */
-str SABAOTHwildRetreat(int *ret) {
-	*ret = 0;
-	throw(MAL, "sabaoth.wildRetreat", "function no longer supported");
-}
-
-/**
- * Writes a start attempt to the sabaoth start/stop log.  Examination of
- * the log at a later stage might reveal crashes of the server.
- */
-str SABAOTHregisterStart(int *ret) {
-	*ret = 0;
-	throw(MAL, "sabaoth.registerStart", "function no longer supported");
-}
-
-/**
- * Writes a start attempt to the sabaoth start/stop log.  Examination of
- * the log at a later stage might reveal crashes of the server.
- */
-str SABAOTHregisterStop(int *ret) {
-	*ret = 0;
-	throw(MAL, "sabaoth.registerStop", "function no longer supported");
-}
-
-/**
  * Returns the status as NULL terminated sabdb struct list for the
  * current database.  Since the current database should always exist,
  * this function never returns NULL.

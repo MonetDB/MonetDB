@@ -42,11 +42,6 @@
  * is best coined under "cloud".  While this module does not perform any
  * actions itself, let alone remote onces, it is a local building block for
  * components that do facilitate the cloud, such as Merovingian.
- *
- */
-/*
- * @-
- *
  */
 #include "monetdb_config.h"
 #include <mal.h>
@@ -173,9 +168,4 @@ str SABgetLocalConnectionPort(int *ret) {
 	*ret = atoi(con + 1);
 	GDKfree(tmp);
 	return(MAL_SUCCEED);
-}
-
-str SABwildRetreat(int *ret) {
-	*ret = 0;
-	throw(MAL, "sabaoth.wildRetreat", "function no longer supported");
 }
