@@ -753,6 +753,9 @@ logger_readlog(logger *lg, char *filename)
 	trans *tr = NULL;
 	logformat l;
 	int err = 0;
+	time_t t0, t1;
+	struct stat sb;
+	lng fpos;
 
 	lg->log = open_rstream(filename);
 
@@ -763,9 +766,19 @@ logger_readlog(logger *lg, char *filename)
 		lg->log = NULL;
 		return 0;
 	}
+	stat(filename, &sb);
+	t0 = time(NULL);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
+		t1 = time(NULL);
+		if (t1 - t0 > 10) {
+			t0 = t1;
+			/* not more than once every 10 seconds */
+			mnstr_fgetpos(lg->log, &fpos);
+			printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
+			fflush(stdout);
+		}
 		if (l.flag != LOG_START && l.flag != LOG_END && l.flag != LOG_SEQ) {
 			name = log_read_string(lg);
 

@@ -243,7 +243,7 @@ segvhandler(int sig) {
 
 	if (_mero_topdp != NULL) {
 		char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
-				"\na fatal error has occurred which prevents monetdbd from operating."
+				"\nA fatal error has occurred which prevents monetdbd from operating."
 				"\nThis is likely a bug in monetdbd, please report it on http://bugs.monetdb.org/"
 				"\nand include the tail of this log in your bugreport with your explanation of "
 				"\nwhat you were doing, if possible.\n"

@@ -305,7 +305,6 @@ mnstr_fgetpos(stream *s, lng *p)
 #ifdef STREAM_DEBUG
 	printf("fgetpos %s\n", s->name ? s->name : "<unnamed>");
 #endif
-	assert(s->access == ST_WRITE);
 	if (s->errnr)
 		return s->errnr;
 	if (s->fgetpos)

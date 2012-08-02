@@ -430,6 +430,8 @@ void msab_init(char *dbfarm, char *dbname);
 char *msab_marchConnection(const char *host, const int port);
 char *msab_marchScenario(const char *lang);
 char *msab_registerStart(void);
+char *msab_registerStarted(void);
+char *msab_registerStarting(void);
 char *msab_registerStop(void);
 char *msab_retreatScenario(const char *lang);
 char *msab_serialise(char **ret, const sabdb *db);
