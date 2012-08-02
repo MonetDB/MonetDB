@@ -481,8 +481,8 @@ main(int argc, char **av)
 		free(err);
 	}
 	/* From this point, the server should exit cleanly.  Discussion:
-	 * even earlier?  Sabaoth here registers the server has started up. */
-	if ((err = msab_registerStart()) != NULL) {
+	 * even earlier?  Sabaoth here registers the server is starting up. */
+	if ((err = msab_registerStarting()) != NULL) {
 		/* throw the error at the user, but don't die */
 		fprintf(stderr, "!%s\n", err);
 		free(err);
@@ -596,6 +596,12 @@ main(int argc, char **av)
 			GDKfree(monet_script[i]);
 			monet_script[i] = 0;
 		}
+
+	if ((err = msab_registerStarted()) != NULL) {
+		/* throw the error at the user, but don't die */
+		fprintf(stderr, "!%s\n", err);
+		free(err);
+	}
 
 	if (monet_script)
 		GDKfree(monet_script);

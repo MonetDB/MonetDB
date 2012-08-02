@@ -2,6 +2,9 @@
 # This file is updated with mchangelog
 
 * Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl>
+- Starting a server now waits for as long as the server needs to possibly
+  recover, bug #3134.  In case of a long wait, the monetdbd logfile
+  gives extra information on what the server is doing to recover.
 - Fixed a crash of monetdbd when local databases were unshared, bug #3135
 
 * Wed Jul 18 2012 Fabian Groffen <fabian@cwi.nl>
