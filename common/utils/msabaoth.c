@@ -364,13 +364,6 @@ msab_wildRetreat(void)
 	return(NULL);
 }
 
-/* dummy for ABI compatability in Jul2012 branch */
-char *
-msab_registerStart(void)
-{
-	return(strdup("function no longer supported"));
-}
-
 #define UPLOGFILE ".uplog"
 #define STARTINGFILE ".starting"
 /**
