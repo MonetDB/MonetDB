@@ -25,7 +25,7 @@
 """
 from time import time
 import unittest
-
+from monetdb.exceptions import ProgrammingError
 
 class DatabaseTest(unittest.TestCase):
 
@@ -342,3 +342,14 @@ class DatabaseTest(unittest.TestCase):
         self.cursor.execute('select * from tables, tables')
         r = self.cursor.fetchall()
         self.assertEqual(len(r), n**2)
+
+    def test_closecur(self):
+        self.cursor.close()
+        self.assertRaises(ProgrammingError, self.cursor.execute, "select * from tables")
+        self.cursor = self.connection.cursor()
+
+    def test_customtype(self):
+        t = ["list", "test"]
+        self.assertRaises(ProgrammingError, self.db_module.monetize.convert, t)
+        self.db_module.monetize.mapping[list] = str
+        self.assertEqual(self.db_module.monetize.convert(t), "['list', 'test']")
