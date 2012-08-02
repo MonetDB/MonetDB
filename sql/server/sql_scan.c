@@ -23,9 +23,9 @@
 #include "sql_scan.h"
 #include "sql_types.h"
 #include "sql_symbol.h"
+#include "sql_mvc.h"
 #include "sql_parser.tab.h"
 #include "sql_statement.h"
-#include "sql_mvc.h"
 #include "sql_semantic.h"
 #include "sql_parser.h"		/* for sql_error() */
 

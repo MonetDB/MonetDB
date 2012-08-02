@@ -1,28 +1,38 @@
 stdout of test 'sample0` in directory 'tests/mapi` itself:
 
 
-# 15:36:46 >  
-# 15:36:46 >   mserver5 "--config=/ufs/mk/monet5/Linux/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=4 --set "monet_mod_path=/ufs/mk/monet5//Linux/lib/MonetDB5:/ufs/mk/monet5//Linux/lib/MonetDB5/lib:/ufs/mk/monet5//Linux/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/mk/monet5//Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5//Linux/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=34248 --set xrpc_port=46489 --set monet_prompt= --trace  "--dbname=mTests_tests_mapi" "--dbinit=" ; echo ; echo Over..
-# 15:36:46 >  
+# 10:21:41 >  
+# 10:21:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-virgin/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=33909" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_tests_mapi" "--set" "mal_listing=2"
+# 10:21:41 >  
+
+# MonetDB 5 server v11.12.0 (hg id: 2999165af85e)
+# This is an unreleased version
+# Serving database 'mTests_tests_mapi', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33909/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
 
 Ready.
 
+# 10:21:41 >  
+# 10:21:41 >  "./sample0.MAL.sh" "sample0"
+# 10:21:41 >  
 
-# MonetDB server v5.7.0, based on kernel v1.25.0
-# Serving database 'mTests_tests_mapi', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://koala.ins.cwi.nl:37237/
 
-# 12:57:58 >  
-# 12:57:58 >  sample0 vienna 30800 mal
-# 12:57:58 >  
+# 10:21:41 >  
+# 10:21:41 >  sample0 madrid 33909 mal
+# 10:21:41 >  
 
 John is 23
 Mary is 22
 
-# 12:57:58 >  
-# 12:57:58 >  "Done."
-# 12:57:58 >  
+# 10:21:41 >  
+# 10:21:41 >  "Done."
+# 10:21:41 >  
 

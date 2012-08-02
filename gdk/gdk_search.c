@@ -459,6 +459,18 @@ SORTfndwhich(BAT *b, const void *v, int which)
 	if (b == NULL || (!b->tsorted && !b->trevsorted))
 		return BUN_NONE;
 
+	if (BATtdense(b)) {
+		/* no need for binary search on dense column */
+		if (* (const oid *) v < b->tseqbase)
+			return which == 0 ? BUN_NONE : lo;
+		if (* (const oid *) v >= b->tseqbase + BATcount(b))
+			return which == 0 ? BUN_NONE : hi;
+		cur = (BUN) (* (const oid *) v - b->tseqbase) + lo;
+		if (which > 0)
+			cur++;
+		return cur;
+	}
+
 	if (which < 0) {
 		end = lo;
 		if (lo >= hi || (b->tsorted ? atom_GE(BUNtail(bi, lo), v, b->ttype) : atom_LE(BUNtail(bi, lo), v, b->ttype))) {
