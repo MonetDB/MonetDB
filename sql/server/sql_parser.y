@@ -69,7 +69,6 @@
  * UDT
  */
 
-%define api.pure
 %parse-param { mvc *m }
 %lex-param { void *m }
 
