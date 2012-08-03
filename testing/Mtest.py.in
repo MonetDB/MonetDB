@@ -2359,6 +2359,27 @@ def killProc(proc, outfile = None, cmd = None):
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except ValueError:
             print 'cannot write timeout message',cmd
+    if os.name == "nt":
+        if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
+            cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+        elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
+            cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
+        else:
+            cdb = None
+        if cdb:
+            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid)],
+                                 stdin = subprocess.PIPE, stdout = subprocess.PIPE)
+            out, err = p.communicate('~*k\nq\n')
+        else:
+            out = ''
+    else:
+        p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
+        out, err = p.communicate()
+    if outfile is not None and out:
+        try:
+            outfile.write('\n%s\n' % out)
+        except ValueError:
+            print 'cannot write stack trace'
     proc.killed = True
     try:
         os.kill(-proc.pid, signal.SIGKILL)
