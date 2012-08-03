@@ -178,12 +178,13 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
-		BATloop(b, p, q) {					\
+		while (p < q) {						\
 			v = BUNtail(bi, p);				\
 			if (TEST) {					\
 				o = (oid) p + off;			\
 				bunfastins(bn, NULL, &o);		\
 			}						\
+			p++;						\
 		}							\
 	} while (0)
 
@@ -213,7 +214,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	nil = b->T->nonil ? NULL : ATOMnilptr(b->ttype);
 	off = b->hseqbase - BUNfirst(b);
 
-	if (s) {
+	if (s && !BATtdense(s)) {
 		const oid *candlist;
 		BUN r;
 
@@ -249,6 +250,20 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				       (hi && c == 0))));
 		}
 	} else {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+			p += BUNfirst(b);
+			q += BUNfirst(b);
+		} else {
+			p = BUNfirst(b);
+			q = BUNlast(b);
+		}
 		if (equi) {
 			assert(li && hi);
 			assert(!anti);
