@@ -2851,6 +2851,7 @@ BATassertHeadProps(BAT *b)
 		assert(b->htype == TYPE_oid || b->htype == TYPE_void);
 	/* a column cannot both have and not have NILs */
 	assert(!b->H->nil || !b->H->nonil);
+	assert(b->hseqbase <= oid_nil);
 	if (b->htype == TYPE_void) {
 		assert(b->H->shift == 0);
 		assert(b->H->width == 0);

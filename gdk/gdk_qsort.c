@@ -25,7 +25,7 @@ struct qsort_t {
 	unsigned int hs;
 	unsigned int ts;
 	int (*cmp)(const void *, const void *);
-	char *base;
+	const char *base;
 };
 
 /* return index of middle value at indexes a, b, and c */
@@ -293,7 +293,7 @@ struct qsort_t {
 
 /* the interface functions */
 void
-GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 
@@ -340,7 +340,7 @@ GDKqsort(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe)
 }
 
 void
-GDKqsort_rev(void *h, void *t, void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 

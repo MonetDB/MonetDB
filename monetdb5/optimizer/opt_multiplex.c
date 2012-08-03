@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2012 MonetDB B.V.
@@ -21,20 +21,21 @@
 #include "mal_interpreter.h"
 
 /*
- * @-
  * The generic solution to the multiplex operators is to translate
  * them to a MAL loop.
  * The call optimizer.multiplex(MOD,FCN,A1,...An) introduces the following code
  * structure:
  *
  * @verbatim
+ *  A1rev:=bat.reverse(A1);
  * 	resB:= bat.new(A1);
  * barrier (h,t):= iterator.new(A1);
- * 	$1:= algebra.find(A1,h);
+ * 	$1:= algebra.fetch(A1,h);
  * 	$2:= A2;	# in case of constant?
  * 	...
  * 	cr:= MOD.FCN($1,...,$n);
- * 	bat.insert(resB,h,cr);
+ *  y:=algebra.fetch(A1rev,h);
+ * 	bat.insert(resB,y,cr);
  * 	redo (h,t):= iterator.next(A1);
  * end h;
  * @end verbatim
@@ -48,6 +49,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, resB, iter = 0, cr;
 	int hvar, tvar;
+	int x, y;
 	str mod, fcn;
 	int *alias;
 	InstrPtr q;
@@ -55,9 +57,16 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) stk;
-	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
-	if (alias == NULL)
-		return NULL;
+
+	ht = getHeadType(getArgType(mb, pci, 0));
+	if (ht != TYPE_oid)
+		throw(MAL, "optimizer.multiplex", "Target head type is missing");
+	tt = getTailType(getArgType(mb, pci, 0));
+	if (tt== TYPE_any)
+		throw(MAL, "optimizer.multiplex", "Target tail type is missing");
+	if (isAnyExpression(getArgType(mb, pci, 0)))
+		throw(MAL, "optimizer.multiplex", "Target type is missing");
+
 	mod = VALget(&getVar(mb, getArg(pci, 1))->value);
 	mod = putName(mod,strlen(mod));
 	fcn = VALget(&getVar(mb, getArg(pci, 2))->value);
@@ -67,10 +76,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 3; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			iter = getArg(pci, i);
+			if (getHeadType(getVarType(mb,iter)) != TYPE_oid)
+				throw(MAL, "optimizer.multiplex", "Iterator BAT is not OID-headed");
 			break;
 		}
 	if( i == pci->argc)
-		return createException(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
+		throw(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
 
 	OPTDEBUGmultiplex {
 		mnstr_printf(cntxt->fdout,"#calling the optimize multiplex script routine\n");
@@ -83,18 +94,22 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	 * because in the end we issue a recursive function call that should
 	 * find the actual arguments at the proper place of the callee.
 	 */
+
+	alias= (int*) GDKmalloc(sizeof(int) * pci->maxarg);
+	if (alias == NULL)
+		return NULL;
+
+	/* x := bat.reverse(A1); */
+	x = newTmpVariable(mb, newBatType(getTailType(getVarType(mb,iter)),
+									  getHeadType(getVarType(mb,iter))));
+	q = newFcnCall(mb, batRef, reverseRef);
+	getArg(q, 0) = x;
+	q = pushArgument(mb, q, iter);
+
 	/* resB := new(refBat) */
-	if (isAnyExpression(getArgType(mb, pci, 0)))
-		return createException(MAL, "optimizer.multiplex", "Target type is missing");
 	q = newFcnCall(mb, batRef, newRef);
 	resB = getArg(q, 0);
 
-	ht = getHeadType(getArgType(mb, pci, 0));
-	if (ht== TYPE_any || ht != TYPE_oid)
-		return createException(MAL, "optimizer.multiplex", "Target head type is missing");
-	tt = getTailType(getArgType(mb, pci, 0));
-	if (tt== TYPE_any)
-		return createException(MAL, "optimizer.multiplex", "Target tail type is missing");
 	setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 	q = pushType(mb, q, ht);
 	q = pushType(mb, q, tt);
@@ -107,12 +122,12 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	q= pushReturn(mb, q, tvar);
 	(void) pushArgument(mb,q,iter);
 
-	/* $1:= bat.find(Ai,h) or constant */
+	/* $1:= algebra.fetch(Ai,h) or constant */
 	alias[i] = tvar;
 
 	for (i++; i < pci->argc; i++)
 		if (isaBatType(getArgType(mb, pci, i))) {
-			q = newFcnCall(mb, algebraRef, "find");
+			q = newFcnCall(mb, algebraRef, "fetch");
 			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
 			getArg(q, 0) = alias[i];
 			q= pushArgument(mb, q, getArg(pci, i));
@@ -130,12 +145,19 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q = pushArgument(mb, q, getArg(pci, i));
 		}
 
-	/* insert(resB,h,cr);  
+	/* y := algebra.fetch(x,h); */
+	y = newTmpVariable(mb, getHeadType(getVarType(mb,iter)));
+	q = newFcnCall(mb, algebraRef, "fetch");
+	getArg(q, 0) = y;
+	q = pushArgument(mb, q, x);
+	q = pushArgument(mb, q, hvar);
+
+	/* insert(resB,h,cr);
 	   not append(resB, cr); the head type (oid) may dynamically change */
-	
+
 	q = newFcnCall(mb, batRef, insertRef);
 	q= pushArgument(mb, q, resB);
-	q= pushArgument(mb, q, hvar);
+	q= pushArgument(mb, q, y);
 	(void) pushArgument(mb, q, cr);
 
 /* redo (h,r):= iterator.next(refBat); */
@@ -202,12 +224,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (msg == MAL_SUCCEED && 
-                    getModuleId(p) == malRef && 
+		if (msg == MAL_SUCCEED &&
+                    getModuleId(p) == malRef &&
 		    getFunctionId(p) == multiplexRef) {
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if( msg== MAL_SUCCEED){
-				freeInstruction(p); 
+				freeInstruction(p);
 				old[i]=0;
 			} else {
 				pushInstruction(mb, p);

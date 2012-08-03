@@ -73,7 +73,6 @@ All Rights Reserved.
 #include "opt_reorder.h"
 #include "opt_statistics.h"
 #include "opt_strengthReduction.h"
-#include "opt_trace.h"
 
 struct{
 	str nme;
@@ -113,7 +112,6 @@ struct{
 	{"remoteQueries", &OPTremoteQueriesImplementation},
 	{"reorder", &OPTreorderImplementation},
 	{"strengthReduction", &OPTstrengthReductionImplementation},
-	{"trace", &OPTtraceImplementation},
 	{0,0}
 };
 opt_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

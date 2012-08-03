@@ -97,6 +97,8 @@ pcre_export str PCREilike_join_pcre(int *ret, int *b, int *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
+pcre_export str PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti);
+pcre_export str PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti);
 
 /* current implementation assumes simple %keyword% [keyw%]* */
 typedef struct RE {
@@ -366,6 +368,132 @@ pcre_index(int *res, pcre * pattern, str s)
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
+}
+
+/* these two defines are copies from gdk_select.c */
+
+/* scan select loop with candidates */
+#define candscanloop(TEST)										\
+	do {														\
+		ALGODEBUG fprintf(stderr,								\
+			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
+			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
+		while (p < q) {											\
+			o = *candlist++;									\
+			r = (BUN) (o - off);								\
+			v = BUNtail(bi, r);									\
+			if (TEST)											\
+				bunfastins(bn, NULL, &o);						\
+			p++;												\
+		}														\
+	} while (0)
+
+/* scan select loop without candidates */
+#define scanloop(TEST)											\
+	do {														\
+		ALGODEBUG fprintf(stderr,								\
+			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
+			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
+		BATloop(b, p, q) {										\
+			v = BUNtail(bi, p);									\
+			if (TEST) {											\
+				o = (oid) p + off;								\
+				bunfastins(bn, NULL, &o);						\
+			}													\
+		}														\
+	} while (0)
+
+static str
+pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
+{
+	int options = PCRE_UTF8 | PCRE_MULTILINE;
+	pcre *re;
+	pcre_extra *pe;
+	const char *error;
+	int errpos;
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	BUN p, q;
+	oid o, off;
+	const char *v;
+	int ovector[10];
+
+	assert(BAThdense(b));
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+	assert(anti == 0 || anti == 1);
+
+	if (caseignore)
+		options |= PCRE_CASELESS;
+	if ((re = pcre_compile(pat, options, &error, &errpos, NULL)) == NULL)
+		throw(MAL, "pcre.likesubselect",
+			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
+	pe = pcre_study(re, 0, &error);
+	if (error != NULL) {
+		my_pcre_free(re);
+		my_pcre_free(pe);
+		throw(MAL, "pcre.likesubselect",
+			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
+	}
+	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b));
+	if (bn == NULL) {
+		my_pcre_free(re);
+		my_pcre_free(pe);
+		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
+	}
+	off = b->hseqbase - BUNfirst(b);
+
+	if (s) {
+		const oid *candlist;
+		BUN r;
+
+		assert(BAThdense(s));
+		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
+		assert(s->tsorted);
+		assert(s->tkey);
+		/* setup candscanloop loop vars to only iterate over
+		 * part of s that has values that are in range of b */
+		o = b->hseqbase + BATcount(b);
+		q = SORTfndfirst(s, &o);
+		p = SORTfndfirst(s, &b->hseqbase);
+		candlist = (const oid *) Tloc(s, p);
+		if (anti)
+			candscanloop(v && *v != '\200' &&
+				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) == -1);
+		else
+			candscanloop(v && *v != '\200' &&
+				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
+	} else {
+		if (anti)
+			scanloop(v && *v != '\200' &&
+				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) == -1);
+		else
+			scanloop(v && *v != '\200' &&
+				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
+	}
+	my_pcre_free(re);
+	my_pcre_free(pe);
+	bn->tsorted = 1;
+	bn->trevsorted = bn->U->count <= 1;
+	bn->tkey = 1;
+	bn->tdense = bn->U->count <= 1;
+	if (bn->U->count == 1)
+		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
+	bn->hsorted = 1;
+	bn->hdense = 1;
+	bn->hseqbase = 0;
+	bn->hkey = 1;
+	bn->hrevsorted = bn->U->count <= 1;
+	*bnp = bn;
+	return MAL_SUCCEED;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	my_pcre_free(re);
+	my_pcre_free(pe);
+	*bnp = NULL;
+	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
 }
 
 static str
@@ -839,7 +967,7 @@ pcre_heap(Heap *heap, size_t capacity)
 }
 
 /* change SQL LIKE pattern into PCRE pattern */
-static int
+static str
 sql2pcre(str *r, str pat, str esc_str)
 {
 	int escaped = 0;
@@ -849,10 +977,10 @@ sql2pcre(str *r, str pat, str esc_str)
 	int specials = 0;
 
 	if (pat == NULL )
-		return GDK_FAIL;
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		return GDK_FAIL;
+		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
@@ -906,14 +1034,15 @@ sql2pcre(str *r, str pat, str esc_str)
 	/* no wildcard or escape character at end of string */
 	if (!hasWildcard || escaped) {
 		GDKfree(*r);
-		*r = GDKstrdup(str_nil);
+		*r = NULL;
 		if (escaped)
-			return GDK_FAIL;
+			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
+		*r = GDKstrdup(str_nil);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
 	}
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 /* change SQL PATINDEX pattern into PCRE pattern */
@@ -1099,16 +1228,14 @@ PCREquote(str *ret, str *val)
 str
 PCREsql2pcre(str *ret, str *pat, str *esc)
 {
-	if (sql2pcre(ret, *pat, *esc) < 0)
-		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
-	return MAL_SUCCEED;
+	return sql2pcre(ret, *pat, *esc);
 }
 
 static str
 PCRElike4(bit *ret, str *s, str *pat, str *esc, bit *isens)
 {
 	char *ppat = NULL;
-	str r = PCREsql2pcre(&ppat, pat, esc);
+	str r = sql2pcre(&ppat, *pat, *esc);
 
 	if (!r) {
 		assert(ppat);
@@ -1214,7 +1341,7 @@ static str
 BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 {
 	char *ppat = NULL;
-	str res = PCREsql2pcre(&ppat, pat, esc);
+	str res = sql2pcre(&ppat, *pat, *esc);
 
 	if (!res) {
 		BAT *strs = BATdescriptor(*bid);
@@ -1368,6 +1495,44 @@ BATPCREnotilike2(bat *ret, int *bid, str *pat)
 	return(BATPCREnotilike(ret, bid, pat, &esc));
 }
 
+str
+PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseignore, bit *anti)
+{
+	BAT *b, *s = NULL, *bn = NULL;
+	str res;
+	char *ppat = NULL;
+
+	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
+	if (res != MAL_SUCCEED)
+		return res;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		GDKfree(ppat);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+		GDKfree(ppat);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	res = pcre_likesubselect(&bn, b, s, ppat, *caseignore, *anti);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	GDKfree(ppat);
+	if (res != MAL_SUCCEED)
+		return res;
+	assert(bn);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti)
+{
+	return PCRElikesubselect2(ret, bid, NULL, pat, esc, caseignore, anti);
+}
+
 static int
 re_simple(char *pat)
 {
@@ -1421,7 +1586,7 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 		return MAL_SUCCEED;
 	}
 
-	r = PCREsql2pcre(&ppat, pat, esc);
+	r = sql2pcre(&ppat, *pat, *esc);
 
 	if (!r && ppat) {
 		if (strcmp(ppat, (char*)str_nil) == 0) {

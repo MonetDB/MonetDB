@@ -53,8 +53,8 @@ function user.main():void;
     i := bat.getSequenceBase(a1r);
     io.print(i);
 end main;
-[ 2@0 ]
-[ 2@0 ]
+[ 0@0 ]
+[ 0@0 ]
 [ 0@0 ]
 [ 0@0 ]
 [ 1@0 ]

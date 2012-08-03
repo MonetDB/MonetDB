@@ -181,7 +181,6 @@ struct OPTcatalog {
 {"selcrack",	0,	0,	0,	DEBUG_OPT_SELCRACK},
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
-{"trace",		0,	0,	0,	DEBUG_OPT_TRACE},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
 { 0,	0,	0,	0,	0}
 };

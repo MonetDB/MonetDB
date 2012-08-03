@@ -102,6 +102,56 @@ comment "Returns a positional selection of b by the oid
 
 # @- Range selection
 # The range selections are targeted at the tail of the BAT.
+command subselect(b:bat[:oid,:any_1], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect1
+comment "Select all head values for which the tail value is in range.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the tail value
+	is between the values low and high (inclusive if li respectively
+	hi is set).  The output BAT is sorted on the tail value.  If low
+	or high is nil, the boundary is not considered (effectively - and
+	+ infinity).  If anti is set, the result is the complement.  Nil
+	values in the tail are never matched, unless low=nil, high=nil,
+	li=1, hi=1, anti=0.  All non-nil values are returned if low=nil,
+	high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for the other
+	version of this function.";
+
+command subselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], low:any_1, high:any_1, li:bit, hi:bit, anti:bit) :bat[:oid,:oid]
+address ALGsubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	is in range and for which the head value occurs in the tail of the
+	second input BAT.
+	The first input is a dense-headed BAT, the second input is a
+	dense-headed BAT with sorted tail, output is a dense-headed BAT
+	with in the tail the head value of the input BAT for which the
+	tail value is between the values low and high (inclusive if li
+	respectively hi is set).  The output BAT is sorted on the tail
+	value.  If low or high is nil, the boundary is not considered
+	(effectively - and + infinity).  If anti is set, the result is the
+	complement.  Nil values in the tail are never matched, unless
+	low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are
+	returned if low=nil, high=nil, and li, hi are not both 1, or anti=1.
+	Note that the output is suitable as second input for this
+	function.";
+
+command thetasubselect(b:bat[:oid,:any_1], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect1
+comment "Select all head values for which the tail value obeys the relation
+	value OP VAL.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
+command thetasubselect(b:bat[:oid,:any_1], s:bat[:oid,:oid], val:any_1, op:str) :bat[:oid,:oid]
+address ALGthetasubselect2
+comment "Select all head values of the first input BAT for which the tail value
+	obeys the relation value OP VAL and for which the head value occurs in
+	the tail of the second input BAT.
+	Input is a dense-headed BAT, output is a dense-headed BAT with in
+	the tail the head value of the input BAT for which the
+	relationship holds.  The output BAT is sorted on the tail value.";
+
 command select(b:bat[:any_1,:any_2], low:any_2, high:any_2) 
 		:bat[:any_1,:any_2] 
 address ALGselect
@@ -110,7 +160,7 @@ comment "Select all BUNs that have tail values: {v| low <= v <= high}.
 		+ low  == nil means: no lower bound
 		+ high == nil means: no upper bound.
 		NOTE 1: you should cast the nil to the appropriate type, 
-				e.g. int(nil) in order to cirumvent type clashes.
+				e.g. int(nil) in order to circumvent type clashes.
 		NOTE 2: as the 'nil' element has no clear place in the 
 				ordered domain of values, tuples with 'nil' values 
 				are NEVER returned by the range select.";
@@ -946,6 +996,10 @@ algebra_export str ALGgroupby(int *res, int *bid);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGBATminimum(ptr *result, int *bid);
 algebra_export str ALGBATmaximum(ptr *result, int *bid);
+algebra_export str ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+algebra_export str ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti);
+algebra_export str ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op);
+algebra_export str ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op);
 algebra_export str ALGselect1(int *result, int *bid, ptr value);
 algebra_export str ALGselect1Head(int *result, int *bid, ptr value);
 algebra_export str ALGuselect1(int *result, int *bid, ptr value);
@@ -999,7 +1053,6 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryExport(kunion)@
 @:ALGbinaryExport(tunion)@
 @:ALGbinaryExport(sintersect)@
-@:ALGbinaryExport(kintersect)@
 @:ALGbinaryExport(tintersect)@
 @:ALGbinaryExport(sdiff)@
 @:ALGbinaryExport(kdiff)@
@@ -1353,36 +1406,6 @@ CMDmaxany(ptr result, BAT *b)
  * operations are part of the GDK kernel.
  */
 static int
-CMDselect1(BAT **result, BAT *b, ptr value)
-{
-	return (*result = BATselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDuselect1(BAT **result, BAT *b, ptr value)
-{
-	return (*result = BATuselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDantiuselect1(BAT **result, BAT *b, ptr value)
-{
-	return (*result = BATantiuselect_(b, value, NULL, TRUE, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDselect(BAT **result, BAT *b, ptr low, ptr high)
-{
-	return (*result = BATselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDuselect(BAT **result, BAT *b, ptr low, ptr high)
-{
-	return (*result = BATuselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
 CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
@@ -1434,18 +1457,6 @@ CMDantiuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 }
 
 static int
-CMDfragment(BAT **result, BAT *b, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
-{
-	return (*result = BATrestrict(b, hlow, hhigh, tlow, thigh)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDbandjoin(BAT **result, BAT *left, BAT *right, ptr minus, ptr plus, bit *li, bit *hi)
-{
-	return (*result = BATbandjoin(left, right, minus, plus, *li, *hi)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
 CMDgen_group(BAT **result, BAT *b )
 {
 	BATiter bi = bat_iterator(b);
@@ -1484,29 +1495,6 @@ CMDgen_group(BAT **result, BAT *b )
 	r -> T ->nonil = 0;
 	*result = r;
 	return GDK_SUCCEED;
-}
-
-
-static int
-CMDmark(BAT **res, BAT *b, oid *base)
-{
-	return (*res = BATmark(b, *base)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDtmark(BAT **res, BAT *b, oid *base)
-{
-	return (*res = BATmirror(BATmark(BATmirror(b), *base))) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int CMDmark_grp_1( BAT** res, BAT *b, BAT *g )
-{
-	return (*res=BATmark_grp(b, g, NULL))?GDK_SUCCEED:GDK_FAIL;
-}
-
-static int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
-{
-	return (*res=BATmark_grp(b, g, s))?GDK_SUCCEED:GDK_FAIL;
 }
 
 
@@ -1604,12 +1592,6 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 	}
 
 	return (*retval = BATslice(b, (BUN) start, (BUN) end + 1)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
-{
-	return slice(retval, b, *start, *end);
 }
 
 /*
@@ -1962,6 +1944,80 @@ ALGBATmaximum(ptr *result, int *bid)
 }
 
 str
+ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+{
+	BAT *b, *s = NULL, *bn;
+	const void *nilptr;
+
+	if ((*li != 0 && *li != 1) ||
+		(*hi != 0 && *hi != 1) ||
+		(*anti != 0 && *anti != 1)) {
+		throw(MAL, "algebra.subselect", ILLEGAL_ARGUMENT);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
+	nilptr = ATOMnilptr(b->ttype);
+	if (*li == 1 && *hi == 1 &&
+		ATOMcmp(b->ttype, low, nilptr) == 0 &&
+		ATOMcmp(b->ttype, high, nilptr) == 0) {
+		/* special case: equi-select for NIL */
+		high = NULL;
+	}
+	bn = BATsubselect(b, s, low, high, *li, *hi, *anti);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGsubselect1(bat *result, bat *bid, const void *low, const void *high, const bit *li, const bit *hi, const bit *anti)
+{
+	return ALGsubselect2(result, bid, NULL, low, high, li, hi, anti);
+}
+
+str
+ALGthetasubselect2(bat *result, bat *bid, bat *sid, const void *val, const char **op)
+{
+	BAT *b, *s = NULL, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid && (s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+	}
+	@:derefStr(b,t,val)@
+	bn = BATthetasubselect(b, s, val, *op);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "algebra.subselect", GDK_EXCEPTION);
+	*result = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGthetasubselect1(bat *result, bat *bid, const void *val, const char **op)
+{
+	return ALGthetasubselect2(result, bid, NULL, val, op);
+}
+
+str
 ALGselect1(int *result, int *bid, ptr value)
 {
 	BAT *b, *bn = NULL;
@@ -1970,7 +2026,7 @@ ALGselect1(int *result, int *bid, ptr value)
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,t,value)@
-	CMDselect1(&bn, b, value);
+	bn = BATselect(b, value, 0);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -1991,7 +2047,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	}
 	b = BATmirror(b);
 	@:derefStr(b,t,value)@
-	CMDselect1(&bn, b, value);
+	bn = BATselect(b, value, 0);
 	bn = BATmirror(bn);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
@@ -2012,10 +2068,11 @@ ALGuselect1(int *result, int *bid, ptr value)
 		throw(MAL, "algebra.uselect", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,t,value)@
-	CMDuselect1(&bn, b, value);
+	bn = BATuselect(b, value, NULL);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty&2))
+			bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
 		return MAL_SUCCEED;
@@ -2032,7 +2089,7 @@ ALGantiuselect1(int *result, int *bid, ptr value)
 		throw(MAL, "algebra.antiuselect", RUNTIME_OBJECT_MISSING);
 	}
 	@:derefStr(b,t,value)@
-	CMDantiuselect1(&bn, b, value);
+	bn = BATantiuselect_(b, value, NULL, TRUE, TRUE);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2053,7 +2110,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	}
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
-	CMDselect(&bn, b, low, high);
+	bn = BATselect(b, low, high);
 	BBPreleaseref(b->batCacheid);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2148,7 +2205,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	b = BATmirror(b);
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
-	CMDselect(&bn, b, low, high);
+	bn = BATselect(b, low, high);
 	bn = BATmirror(bn);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -2171,7 +2228,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	}
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
-	CMDuselect(&bn, b, low, high);
+	bn = BATuselect(b, low, high);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
@@ -2329,7 +2386,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	@:derefStr(b,h,hhigh);@
 	@:derefStr(b,t,tlow);@
 	@:derefStr(b,t,thigh);@
-	CMDfragment(&bn, b, hlow, hhigh, tlow, thigh);
+	bn = BATrestrict(b, hlow, hhigh, tlow, thigh);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
@@ -2391,7 +2448,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit
 		BBPreleaseref(left->batCacheid);
 		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
 	}
-	CMDbandjoin(&bn, left, right, minus, plus, li, hi);
+	bn = BATbandjoin(left, right, minus, plus, *li, *hi);
 	if (bn) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
@@ -2675,12 +2732,6 @@ str
 ALGsintersect(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATsintersect, "algebra.sintersect");
-}
-
-str
-ALGkintersect(bat *result, bat *lid, bat *rid)
-{
-	return ALGbinary(result, lid, rid, BATkintersect, "algebra.kintersect");
 }
 
 str
@@ -3044,7 +3095,8 @@ ALGtmark(int *result, int *bid, oid *base)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.markT", RUNTIME_OBJECT_MISSING);
 	}
-	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
+	bn = BATmark(b, *base);
+	if (bn != NULL) {
 		BBPreleaseref(b->batCacheid);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
@@ -3090,7 +3142,8 @@ ALGmarkHead(int *result, int *bid, oid *base)
 	}
 	/* M5's markH is semantically identical with M4/GDK's tmark */
 	/* (Don't ask me why; wasn't my decision. Stefan.) */
-	if (CMDtmark(&bn, b, base) == GDK_SUCCEED) {
+	bn = BATmirror(BATmark(BATmirror(b), *base));
+	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
@@ -3138,7 +3191,8 @@ ALGmark_grp_1(int *result, int *bid, int *gid)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
-	if (CMDmark_grp_1(&bn, b, g) == GDK_SUCCEED) {
+	bn = BATmark_grp(b, g, NULL);
+	if (bn != NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(g->batCacheid);
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
@@ -3163,7 +3217,8 @@ ALGmark_grp_2(int *result, int *bid, int *gid, oid *base)
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.mark_grp", RUNTIME_OBJECT_MISSING);
 	}
-	if (CMDmark_grp_2(&bn, b, g, base) == GDK_SUCCEED) {
+	bn = BATmark_grp(b, g, base);
+	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*result = bn->batCacheid;
 		BBPkeepref(*result);
@@ -3224,7 +3279,7 @@ ALGslice(int *ret, bat *bid, lng *start, lng *end)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
 	}
-	CMDslice(&bn, b, start, end);
+	slice(&bn, b, *start, *end);
 	if (bn != NULL) {
 		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
@@ -3362,7 +3417,7 @@ ALGfetch(ptr ret, int *bid, lng *pos)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fetch", RUNTIME_OBJECT_MISSING);
 	}
-	if ((*pos < 0) || (*pos >= (lng) BATcount(b)))
+	if ((*pos < (lng) BUNfirst(b)) || (*pos >= (lng) BUNlast(b)))
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
 	msg = doALGfetch(ret, b, (BUN) *pos);
 	BBPreleaseref(b->batCacheid);

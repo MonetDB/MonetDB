@@ -346,7 +346,7 @@ CMDgetTrace(int *res, str *ev)
 	checkProfiler("getTrace");
 	bn = getTrace(*ev);
 	if (bn) {
-		BBPincref(*res = bn->batCacheid, TRUE);
+		BBPkeepref(*res = bn->batCacheid);
 		return MAL_SUCCEED;
 	}
 	throw(MAL, "getTrace", RUNTIME_OBJECT_MISSING  "%s",*ev);

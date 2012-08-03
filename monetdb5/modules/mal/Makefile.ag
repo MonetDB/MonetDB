@@ -30,7 +30,7 @@ lib_mal = {
 	SOURCES = \
 		array.mx \
 		attach.c attach.h \
-		batExtensions.c \
+		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
 		box.c box.h \
 		clients.c clients.h \
@@ -39,9 +39,11 @@ lib_mal = {
 		constraints.c constraints.h \
 		factories.c factories.h \
 		groupby.c groupby.h \
+		groups.c groups.h \
 		histogram.h \
 		inspect.c inspect.h \
 		iterator.c  iterator.h \
+		joinpath.c  joinpath.h \
 		language.c language.h \
 		mal_io.c mal_io.h \
 		mal_mapi.c mal_mapi.h \

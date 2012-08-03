@@ -188,7 +188,7 @@ BAThash(BAT *b, BUN masksize)
 		str nme = BBP_physical(b->batCacheid);
 		BATiter bi = bat_iterator(b);
 
-		ALGODEBUG THRprintf(GDKout, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
+		ALGODEBUG fprintf(stderr, "#BAThash: create hash(" BUNFMT ");\n", BATcount(b));
 		/* cnt = 0, hopefully there is a proper capacity from
 		 * which we can derive enough information */
 		if (!cnt)
@@ -197,10 +197,10 @@ BAThash(BAT *b, BUN masksize)
 		if (b->htype == TYPE_void) {
 			if (b->hseqbase == oid_nil) {
 				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
-				ALGODEBUG THRprintf(GDKout, "#BAThash: cannot create hash-table on void-NIL column.\n");
+				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				return NULL;
 			}
-			ALGODEBUG THRprintf(GDKout, "#BAThash: creating hash-table on void column..\n");
+			ALGODEBUG fprintf(stderr, "#BAThash: creating hash-table on void column..\n");
 
 			tpe = TYPE_void;
 		}
@@ -458,6 +458,18 @@ SORTfndwhich(BAT *b, const void *v, int which)
 
 	if (b == NULL || (!b->tsorted && !b->trevsorted))
 		return BUN_NONE;
+
+	if (BATtdense(b)) {
+		/* no need for binary search on dense column */
+		if (* (const oid *) v < b->tseqbase)
+			return which == 0 ? BUN_NONE : lo;
+		if (* (const oid *) v >= b->tseqbase + BATcount(b))
+			return which == 0 ? BUN_NONE : hi;
+		cur = (BUN) (* (const oid *) v - b->tseqbase) + lo;
+		if (which > 0)
+			cur++;
+		return cur;
+	}
 
 	if (which < 0) {
 		end = lo;

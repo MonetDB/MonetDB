@@ -780,18 +780,18 @@ TRACEtable(BAT **r)
 	if (initTrace())
 		return ;
 	mal_set_lock(mal_profileLock, "profileLock");
-	r[0] = TRACE_id_event;
-	r[1] = TRACE_id_time;
-	r[2] = TRACE_id_pc;
-	r[3] = TRACE_id_thread;
-	r[4] = TRACE_id_user;
-	r[5] = TRACE_id_ticks;
-	r[6] = TRACE_id_reads;
-	r[7] = TRACE_id_writes;
-	r[8] = TRACE_id_rbytes;
-	r[9] = TRACE_id_wbytes;
-	r[10] = TRACE_id_type;
-	r[11] = TRACE_id_stmt;
+	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
+	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
+	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
+	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
+	r[4] = BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
+	r[5] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
+	r[6] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
+	r[7] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
+	r[8] = BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
+	r[9] = BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
+	r[10] = BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
+	r[11] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
 	mal_unset_lock(mal_profileLock, "profileLock");
 }
 
@@ -925,29 +925,29 @@ getTrace(str nme)
 	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
-		return TRACE_id_event;
+		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	if (strcmp(nme, "time") == 0)
-		return TRACE_id_time;
+		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
 	if (strcmp(nme, "ticks") == 0)
-		return TRACE_id_ticks;
+		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
 	if (strcmp(nme, "pc") == 0)
-		return TRACE_id_pc;
+		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
 	if (strcmp(nme, "thread") == 0)
-		return TRACE_id_thread;
+		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
 	if (strcmp(nme, "user") == 0)
-		return TRACE_id_user;
+		return BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
 	if (strcmp(nme, "stmt") == 0)
-		return TRACE_id_stmt;
+		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
 	if (strcmp(nme, "type") == 0)
-		return TRACE_id_type;
+		return BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
 	if (strcmp(nme, "rbytes") == 0)
-		return TRACE_id_rbytes;
+		return BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
 	if (strcmp(nme, "wbytes") == 0)
-		return TRACE_id_wbytes;
+		return BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
 	if (strcmp(nme, "reads") == 0)
-		return TRACE_id_reads;
+		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
 	if (strcmp(nme, "writes") == 0)
-		return TRACE_id_writes;
+		return BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
 	return NULL;
 }
 

@@ -128,7 +128,7 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if (stk->cmd ){
-		*ret = 0; /* ignore dataflow request */
+		*ret = 1; /* in debugging mode, ignore dataflow request, and run sequentially */
 		return MAL_SUCCEED;
 	}
 	if ( getPC(mb, pci) > pci->jump)
