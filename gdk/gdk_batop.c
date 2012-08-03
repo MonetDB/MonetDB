@@ -1089,6 +1089,9 @@ BATordered_rev(BAT* b)
 	return b->hrevsorted;
 }
 
+/* figure out which sort function is to be called
+ * stable sort can produce an error (not enough memory available),
+ * "quick" sort does not produce errors */
 static gdk_return
 do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 	int reverse, int stable)
@@ -1227,6 +1230,36 @@ BATssort_rev(BAT *b)
 	return BATorder_internal(b, 1, 1, 1, "BATssort_rev");
 }
 
+/* subsort the bat b according to both o and g.  The stable and
+ * reverse parameters indicate whether the sort should be stable or
+ * descending respectively.  The parameter b is required, o and g are
+ * optional (i.e., they may be NULL).
+ *
+ * A sorted copy is returned through the sorted parameter, the new
+ * ordering is returned through the order parameter, group information
+ * is returned through the groups parameter.  All three output
+ * parameters may be NULL.  If they're all NULL, this function does
+ * nothing.
+ *
+ * All BATs involved must be dense-headed.
+ *
+ * If o is specified, it is used to first rearrange b according to the
+ * order specified in o, after which b is sorted taking g into
+ * account.
+ *
+ * If g is specified, it indicates groups which should be individually
+ * ordered.  Each row of consecutive equal values in g indicates a
+ * group which is sorted according to stable and reverse.  g is used
+ * after the order in b was rearranged according to o.
+ *
+ * The outputs order and groups can be used in subsequent calls to
+ * this function.  This can be used if multiple BATs need to be sorted
+ * together.  The BATs should then be sorted in order of significance,
+ * and each following call should use the original unordered BAT plus
+ * the order and groups bat from the previous call.  In this case, the
+ * sorted BATs are not of much use, so the sorted output parameter
+ * does not need to be specified.
+ */
 gdk_return
 BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
