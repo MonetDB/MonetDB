@@ -131,7 +131,9 @@ GTIFFloadImage(bat *result, str *fname)
 	BUN pixels = BUN_NONE;
 	sht photoint, bps;
 	tsize_t i, j;
-	void *data = NULL, *linebuf = NULL;
+	void *linebuf = NULL;
+	sht *data_sht = NULL;
+	int *data_int = NULL;
 	BAT *res;
 
 
@@ -152,12 +154,30 @@ GTIFFloadImage(bat *result, str *fname)
 	pixels = (BUN)wid * (BUN)len;
 
 	/* allocate res BAT */
-	switch (bps/8){
+	switch (bps/8){ /* sacrifice some storage to avoid values become signed */
 	case sizeof(bte):
-		res = BATnew(TYPE_void, TYPE_bte, pixels);
+		res = BATnew(TYPE_void, TYPE_sht, pixels);
+		linebuf = GDKmalloc(wid); /* buffer for one line of image */
+		data_sht = (sht *) Tloc(res, BUNfirst(res));
+		/* read data */
+		for( i = 0; i < len; i++){
+			if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
+				for (j = 0; j < wid; j++)
+					data_sht[j*len+i] = ((unsigned char*)linebuf)[j];
+			}
+		}
 		break;
 	case sizeof(sht):
-		res = BATnew(TYPE_void, TYPE_sht, pixels);
+		res = BATnew(TYPE_void, TYPE_int, pixels);
+		linebuf = GDKmalloc(wid * 2); /* buffer for one line of image */
+		data_int = (int *) Tloc(res, BUNfirst(res));
+		/* read data */
+		for( i = 0; i < len; i++){
+			if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
+				for (j = 0; j < wid; j++)
+					data_int[j*len+i] = ((unsigned short *)linebuf)[j];
+			}
+		}
 		break;
 	default:
 		XTIFFClose(tif);
@@ -166,17 +186,6 @@ GTIFFloadImage(bat *result, str *fname)
 	if ( res == NULL ) {
 		XTIFFClose(tif);
 		return createException(MAL, "geotiff.loadimage", MAL_MALLOC_FAIL);
-	}
-
-
-	/* read data */
-	linebuf = GDKmalloc(wid); /* buffer for one line of image */
-	data = (void *) Tloc(res, BUNfirst(res));
-	for( i = 0; i < len; i++){
-		if (TIFFReadScanline(tif, linebuf, i, 0) != -1) {
-			for (j = 0; j < wid; j++)
-				((unsigned char*)data)[j*len+i] = ((unsigned char*)linebuf)[j];
-		}
 	}
 
 	/* set result BAT properties */
@@ -264,7 +273,7 @@ GTIFFimportImage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bps = *(sht*)table_funcs.column_find_value(m->session->tr, col, irid);
 
 	snprintf(aname, 20,"image%d",imageid);
-	snprintf(buf, BUFSIZ, CRTIMAGE, aname, wid, len, (bps == 8)? "TINYINT" : "SMALLINT");
+	snprintf(buf, BUFSIZ, CRTIMAGE, aname, wid, len, (bps == 8)? "SMALLINT" : "INT");
 	if (( msg = SQLstatementIntern(cntxt,&s,"geotiff.import",TRUE,FALSE)) != MAL_SUCCEED )
 		return msg;
 
