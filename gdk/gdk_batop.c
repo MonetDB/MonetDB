@@ -1089,6 +1089,30 @@ BATordered_rev(BAT* b)
 	return b->hrevsorted;
 }
 
+static gdk_return
+do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
+	int reverse, int stable)
+{
+	if (reverse) {
+		if (stable) {
+			if (GDKssort_rev(h, t, base, n, hs, ts, tpe) < 0) {
+				return GDK_FAIL;
+			}
+		} else {
+			GDKqsort_rev(h, t, base, n, hs, ts, tpe);
+		}
+	} else {
+		if (stable) {
+			if (GDKssort(h, t, base, n, hs, ts, tpe) < 0) {
+				return GDK_FAIL;
+			}
+		} else {
+			GDKqsort(h, t, base, n, hs, ts, tpe);
+		}
+	}
+	return GDK_SUCCEED;
+}
+
 /* Sort b according to stable and reverse, do it in-place if copy is
  * unset, otherwise do it on a copy */
 static BAT *
@@ -1130,40 +1154,18 @@ BATorder_internal(BAT *b, int stable, int reverse, int copy, const char *func)
 		 * column needs to be key) */
 		return BATrevert(b);
 	}
+	if (do_sort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
+		    b->H->vheap ? b->H->vheap->base : NULL,
+		    BATcount(b), Hsize(b), Tsize(b), b->htype,
+		    reverse, stable) == GDK_FAIL) {
+		if (copy)
+			BBPreclaim(b);
+		return NULL;
+	}
 	if (reverse) {
-		if (stable) {
-			if (GDKssort_rev(Hloc(b, BUNfirst(b)),
-					 Tloc(b, BUNfirst(b)),
-					 b->H->vheap ? b->H->vheap->base : NULL,
-					 BATcount(b), Hsize(b), Tsize(b),
-					 b->htype) < 0) {
-				if (copy)
-					BBPreclaim(b);
-				return NULL;
-			}
-		} else {
-			GDKqsort_rev(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
-				     b->H->vheap ? b->H->vheap->base : NULL,
-				     BATcount(b), Hsize(b), Tsize(b), b->htype);
-		}
 		b->hrevsorted = 1;
 		b->hsorted = b->U->count <= 1;
 	} else {
-		if (stable) {
-			if (GDKssort(Hloc(b, BUNfirst(b)),
-				     Tloc(b, BUNfirst(b)),
-				     b->H->vheap ? b->H->vheap->base : NULL,
-				     BATcount(b), Hsize(b), Tsize(b),
-				     b->htype) < 0) {
-				if (copy)
-					BBPreclaim(b);
-				return NULL;
-			}
-		} else {
-			GDKqsort(Hloc(b, BUNfirst(b)), Tloc(b, BUNfirst(b)),
-				 b->H->vheap ? b->H->vheap->base : NULL,
-				 BATcount(b), Hsize(b), Tsize(b), b->htype);
-		}
 		b->hsorted = 1;
 		b->hrevsorted = b->U->count <= 1;
 	}
@@ -1223,6 +1225,232 @@ BAT *
 BATssort_rev(BAT *b)
 {
 	return BATorder_internal(b, 1, 1, 1, "BATssort_rev");
+}
+
+gdk_return
+BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
+{
+	BAT *bn = NULL, *on = NULL, *gn = NULL;
+	oid *grps, prev;
+	BUN p, q, r;
+	BATiter bni;
+
+	if (b == NULL || !BAThdense(b)) {
+		GDKerror("BATsubsort: b must be dense-headed\n");
+		return GDK_FAIL;
+	}
+	if (o != NULL &&
+	    (!BAThdense(o) ||		       /* dense head */
+	     ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
+	     BATcount(o) != BATcount(b) ||     /* same size as b */
+	     (o->ttype == TYPE_void &&	       /* no nil tail */
+	      BATcount(o) != 0 &&
+	      o->tseqbase == oid_nil))) {
+		GDKerror("BATsubsort: o must be [dense,oid] and same size as b\n");
+		return GDK_FAIL;
+	}
+	if (g != NULL &&
+	    (!BAThdense(g) ||		       /* dense head */
+	     ATOMtype(g->ttype) != TYPE_oid || /* oid tail */
+	     !g->tsorted ||		       /* sorted */
+	     BATcount(o) != BATcount(b) ||     /* same size as b */
+	     (g->ttype == TYPE_void &&	       /* no nil tail */
+	      BATcount(g) != 0 &&
+	      g->tseqbase == oid_nil))) {
+		GDKerror("BATsubsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
+		return GDK_FAIL;
+	}
+	assert(reverse == 0 || reverse == 1);
+	assert(stable == 0 || stable == 1);
+	if (sorted == NULL && order == NULL && groups == NULL) {
+		/* no place to put result, so we're done quickly */
+		return GDK_SUCCEED;
+	}
+	if (BATcount(b) <= 1 || (BATtordered(b) && o == NULL && g == NULL && groups == NULL)) {
+		/* trivially (sub)sorted */
+		if (sorted) {
+			BBPfix(b->batCacheid);
+			bn = b;
+			*sorted = bn;
+		}
+		if (order) {
+			on = BATnew(TYPE_void, TYPE_void, BATcount(b));
+			if (on == NULL)
+				goto error;
+			BATsetcount(on, BATcount(b));
+			BATseqbase(on, 0);
+			BATseqbase(BATmirror(on), 0);
+			*order = on;
+		}
+		if (groups) {
+			gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
+			if (gn == NULL)
+				goto error;
+			BATsetcount(gn, BATcount(b));
+			BATseqbase(gn, 0);
+			BATseqbase(BATmirror(gn), 0);
+			*groups = gn;
+		}
+		return GDK_SUCCEED;
+	}
+	if (o) {
+		bn = BATleftfetchjoin(o, b, BATcount(b));
+		if (bn)
+			bn = BATmaterializeh(bn);
+	} else {
+		bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
+	}
+	if (bn == NULL)
+		goto error;
+	if (order) {
+		/* prepare order bat */
+		if (o) {
+			/* make copy of input so that we can refine it
+			 * copy can be read-only if we take the shortcut
+			 * below in the case g is "key" */
+			on = BATcopy(o, TYPE_void, TYPE_oid,
+				     g == NULL ||
+				     !(g->tkey || g->ttype == TYPE_void));
+			if (on == NULL)
+				goto error;
+		} else {
+			/* create new order */
+			on = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+			if (on == NULL)
+				goto error;
+			grps = (oid *) Tloc(on, BUNfirst(on));
+			for (p = 0, q = BATcount(b); p < q; p++)
+				     grps[p] = p;
+			BATsetcount(on, BATcount(b));
+			on->tkey = 1;
+		}
+		BATseqbase(on, 0);
+		on->tsorted = on->trevsorted = 0;
+		*order = on;
+	}
+	if (g) {
+		if (g->tkey || g->ttype == TYPE_void) {
+			/* if g is "key", all groups are size 1, so no
+			 * subsorting needed */
+			if (sorted) {
+				*sorted = bn;
+			} else {
+				BBPunfix(bn->batCacheid);
+			}
+			if (order)
+				*order = on;
+			if (groups) {
+				BBPfix(g->batCacheid);
+				gn = g;
+				*groups = bn;
+			}
+			return GDK_SUCCEED;
+		}
+		assert(g->ttype == TYPE_oid);
+		grps = (oid *) Tloc(g, BUNfirst(g));
+		prev = grps[0];
+		for (r = 0, p = 1, q = BATcount(g); p < q; p++) {
+			if (grps[p] != prev) {
+				/* sub sort [r,p) */
+				if (do_sort(Tloc(bn, BUNfirst(bn) + r),
+					    on ? Tloc(on, BUNfirst(on) + r) : NULL,
+					    bn->T->vheap ? bn->T->vheap->base : NULL,
+					    p - r, Tsize(bn), on ? Tsize(on) : 0,
+					    bn->ttype, reverse, stable) == GDK_FAIL)
+					goto error;
+				r = p;
+				prev = grps[p];
+			}
+		}
+		/* sub sort [r,q) */
+		if (do_sort(Tloc(bn, BUNfirst(bn) + r),
+			    on ? Tloc(on, BUNfirst(on) + r) : NULL,
+			    bn->T->vheap ? bn->T->vheap->base : NULL,
+			    p - r, Tsize(bn), on ? Tsize(on) : 0,
+			    bn->ttype, reverse, stable) == GDK_FAIL)
+			goto error;
+		/* if single group (r==0) the result is (rev)sorted,
+		 * otherwise not */
+		bn->tsorted = r == 0 && !reverse;
+		bn->trevsorted = r == 0 && reverse;
+	} else {
+		if (do_sort(Tloc(bn, BUNfirst(bn)),
+			    on ? Tloc(on, BUNfirst(on)) : NULL,
+			    bn->T->vheap ? bn->T->vheap->base : NULL,
+			    BATcount(bn), Tsize(bn), on ? Tsize(on) : 0,
+			    bn->ttype, reverse, stable) == GDK_FAIL)
+			goto error;
+		bn->tsorted = !reverse;
+		bn->trevsorted = reverse;
+	}
+	if (groups) {
+		oid *ngrps, ngrp;
+		int (*cmp)(const void *, const void *);
+		const void *pv, *v;
+
+		gn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+		if (gn == NULL)
+			goto error;
+		ngrps = (oid *) Tloc(gn, BUNfirst(gn));
+		ngrp = 0;
+		BATsetcount(gn, BATcount(b));
+		BATseqbase(gn, 0);
+		if (g) {
+			grps = (oid *) Tloc(g, BUNfirst(g));
+			prev = *grps++;
+		} else {
+			grps = NULL;
+			prev = 0;
+		}
+		bni = bat_iterator(bn);
+		pv = BUNtail(bni, BUNfirst(bn));
+		cmp = BATatoms[bn->ttype].atomCmp;
+		*ngrps++ = ngrp;
+		for (r = BUNfirst(bn), p = r + 1, q = r + BATcount(bn);
+		     p < q;
+		     p++) {
+			v = BUNtail(bni, p);
+			if (grps && *grps++ != prev) {
+				ngrp++;
+				prev = *grps;
+			} else if (cmp(pv, v) != 0)
+				ngrp++;
+			*ngrps++ = ngrp;
+			pv = v;
+		}
+		gn->tsorted = 1;
+		gn->tkey = ngrp == BATcount(gn);
+		gn->trevsorted = BATcount(gn) <= 1;
+		if (gn->tkey && (bn->tsorted || bn->trevsorted)) {
+			/* if new groups bat is key and the result bat
+			 * is (rev)sorted (single input group), we
+			 * know it is key */
+			bn->tkey = 1;
+		}
+		*groups = gn;
+	}
+
+	if (sorted)
+		*sorted = bn;
+	else
+		BBPunfix(bn->batCacheid);
+
+	return GDK_SUCCEED;
+
+  error:
+	if (bn)
+		BBPunfix(bn->batCacheid);
+	if (on)
+		BBPreclaim(on);
+	if (gn)
+		BBPreclaim(gn);
+	if (sorted)
+		*sorted = NULL;
+	if (order)
+		*order = NULL;
+	if (groups)
+		*groups = NULL;
+	return GDK_FAIL;
 }
 
 /*
