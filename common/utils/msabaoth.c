@@ -652,8 +652,15 @@ msab_getStatus(sabdb** ret, char *dbname)
 			 */
 			sdb->state = SABdbInactive;
 		} else if (fd == -1) {
-			/* lock denied, so Mserver is running */
-			sdb->state = SABdbRunning;
+			/* lock denied, so mserver is running, see if the database
+			 * has finished starting */
+			snprintf(buf, sizeof(buf), "%s/%s/%s",
+					path, e->d_name, STARTINGFILE);
+			if (stat(buf, &statbuf) == -1) {
+				sdb->state = SABdbRunning;
+			} else {
+				sdb->state = SABdbStarting;
+			}
 		} else {
 			/* locking succeed, check for a crash in the uplog */
 			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);
