@@ -1292,9 +1292,8 @@ BATrevert(BAT *b)
 }
 
 /*
- * @+ Introducing OID Columns
- * The BATmark operation is normally used to prepare a class of query
- * results. Likewise, BATnumber is heavily used in the SQL front-end.
+ * return a view on b consisting of the head of b and a new dense tail
+ * starting at oid_base.
  */
 BAT *
 BATmark(BAT *b, oid oid_base)
@@ -1324,6 +1323,8 @@ BATsetprop_wrd(BAT *b, int idx, wrd val)
 }
 
 #define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, Hsize(bx), Tsize(bx)); r++; i++;
+/* returns a new bat with the same head as b and consecutively
+ * numbered integers starting with 0 in the tail */
 BAT *
 BATnumber(BAT *b)
 {
