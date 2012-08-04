@@ -2373,8 +2373,11 @@ def killProc(proc, outfile = None, cmd = None):
         else:
             out = ''
     else:
-        p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
-        out, err = p.communicate()
+        try:
+            p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
+            out, err = p.communicate()
+        except:
+            pass
     if outfile is not None and out:
         try:
             outfile.write('\n%s\n' % out)
