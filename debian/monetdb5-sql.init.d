@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          mserver5-sql
 # Required-Start:    $remote_fs $syslog
@@ -18,23 +18,28 @@ test -x $DAEMON || exit 0
 
 umask 022
 
-LOGDIR=/var/log/monetdb
-PIDFILE=/var/run/monetdb/merovingian.pid
-
 # Include monetdb5-sql defaults if available
 if [ -f /etc/default/monetdb5-sql ] ; then
     . /etc/default/monetdb5-sql
 fi
 
+PIDFILE=${DBFARM}/merovingian.pid
+
 set -e
 
 init() {
-    if [ ! -d /var/run/monetdb ]; then
-        mkdir /var/run/monetdb
+    if [ ! -d ${DBFARM} ]; then
+        mkdir ${DBFARM}
+		echo "${DBDARM} doesn't exists, creating..."
     fi
-    chown -R monetdb.monetdb /var/run/monetdb
-    chmod 775 /var/run/monetdb
-    rm -f /var/run/monetdb/*
+
+	chown -R monetdb.monetdb ${DBFARM}
+	chmod 770 ${DBFARM}
+
+	if [ ! -f ${DBFARM}/.merovingian_properties ]; then
+		echo "${DBDARM} not initialized, initializing..."
+		sudo -u monetdb ${DAEMON} create ${DBFARM} || exit 1
+	fi
 }
 
 running_pid() {
@@ -79,20 +84,17 @@ case "$1" in
             echo " ERROR, $NAME didn't start"
         fi
 
-        # TODO: this can be removed when fabian fixes the socket permission bug
-        sleep 3
-        chmod g+rw /var/monetdb5/dbfarm/.merovingian_*
-        chmod g+rx /var/monetdb5/dbfarm
-
         if [ "$START_ALL_DBS" = "yes" ]; then
-             /bin/su -c "/usr/bin/monetdb start -a" -s /bin/bash monetdb
+             sudo -u monetdb "/usr/bin/monetdb start -a"
         fi
         ;;
   stop)
         if running ;  then
             echo -n "Stopping $DESC: "
-            start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON
+            start-stop-daemon --stop --pidfile $PIDFILE --exec $DAEMON -c monetdb:monetdb -- stop ${DBFARM}
             echo "$NAME."
+		else
+			echo "$NAME not running (${PIDFILE}."
         fi
         ;;
   restart)

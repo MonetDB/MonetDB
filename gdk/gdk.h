@@ -1682,6 +1682,8 @@ gdk_export int BATordered(BAT *b);
 gdk_export int BATordered_rev(BAT *b);
 gdk_export BAT *BATssort(BAT *b);
 gdk_export BAT *BATssort_rev(BAT *b);
+gdk_export gdk_return BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable);
+
 
 gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);

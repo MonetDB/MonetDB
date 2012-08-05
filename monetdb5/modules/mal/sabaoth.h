@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @- Implementation
- *
- */
-
 #ifndef _SABAOTH_DEF
 #define _SABAOTH_DEF
 
@@ -43,6 +38,5 @@ sabaoth_export str SABmarchConnection(int *ret, str *host, int *port) ;
 sabaoth_export str SABgetLocalConnectionURI(str *ret);
 sabaoth_export str SABgetLocalConnectionHost(str *ret);
 sabaoth_export str SABgetLocalConnectionPort(int *ret);
-sabaoth_export str SABwildRetreat(int *ret);
 
 #endif

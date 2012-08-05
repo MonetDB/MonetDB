@@ -1,2 +1,1 @@
-/var/log/monetdb
-/var/run/monetdb
+/var/lib/monetdb

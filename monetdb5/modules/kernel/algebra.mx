@@ -314,6 +314,67 @@ address ALGssort_rev
 comment "Returns copy of a BAT with the BUNs sorted on descending head values.
          This is a stable sort.";
 
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort11
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort12
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort13
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort21
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort22
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort23
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) :bat[:oid,:any_1]
+address ALGsubsort31
+comment "Returns a copy of the BAT sorted on tail values.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid])
+address ALGsubsort32
+comment "Returns a copy of the BAT sorted on tail values and a BAT that
+         specifies how the input was reordered.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+command subsort(b:bat[:oid,:any_1], o:bat[:oid,:oid], g:bat[:oid,:oid], reverse:bit, stable:bit) (:bat[:oid,:any_1], :bat[:oid,:oid], :bat[:oid,:oid])
+address ALGsubsort33
+comment "Returns a copy of the BAT sorted on tail values, a BAT that specifies
+         how the input was reordered, and a BAT with group information.
+         The input and output are (must be) dense headed.
+         The order is descending if the reverse bit is set.
+		 This is a stable sort of the stable bit is set.";
+
 command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGrevert
 comment "Returns a BAT copy with buns in reverse order";
@@ -1068,6 +1129,15 @@ algebra_export str ALGhtsort(int *result, int *lid);
 algebra_export str ALGthsort(int *result, int *lid);
 algebra_export str ALGssort(int *result, int *bid);
 algebra_export str ALGssort_rev(int *result, int *bid);
+algebra_export str ALGsubsort11(bat *result, bat *bid, bit *reverse, bit *stable);
+algebra_export str ALGsubsort12(bat *result, bat *norder, bat *bid, bit *reverse, bit *stable);
+algebra_export str ALGsubsort13(bat *result, bat *norder, bat *ngroup, bat *bid, bit *reverse, bit *stable);
+algebra_export str ALGsubsort21(bat *result, bat *bid, bat *order, bit *reverse, bit *stable);
+algebra_export str ALGsubsort22(bat *result, bat *norder, bat *bid, bat *order, bit *reverse, bit *stable);
+algebra_export str ALGsubsort23(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bit *reverse, bit *stable);
+algebra_export str ALGsubsort31(bat *result, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
+algebra_export str ALGsubsort32(bat *result, bat *norder, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
+algebra_export str ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *group, bit *reverse, bit *stable);
 algebra_export str ALGrevert(int *result, int *bid);
 algebra_export str ALGcount_bat(wrd *result, int *bid);
 algebra_export str ALGcount_nil(wrd *result, int *bid, bit *ignore_nils);
@@ -3030,6 +3100,92 @@ ALGssort_rev(int *result, int *bid)
 	}
 	BBPreleaseref(b->batCacheid);
 	throw(MAL, "algebra.ssort_rev", GDK_EXCEPTION);
+}
+
+str
+ALGsubsort33(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bat *group, bit *reverse, bit *stable)
+{
+	BAT *bn = NULL, *on = NULL, *gn = NULL;
+	BAT *b = NULL, *o = NULL, *g = NULL;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+	if (order && (o = BATdescriptor(*order)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+	}
+	if (group && (g = BATdescriptor(*group)) == NULL) {
+		if (o)
+			BBPreleaseref(o->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.subsort", RUNTIME_OBJECT_MISSING);
+	}
+	if (BATsubsort(result ? &bn : NULL,
+				   norder ? &on : NULL,
+				   ngroup ? &gn : NULL,
+				   b, o, g, *reverse, *stable) == GDK_FAIL) {
+		if (o)
+			BBPreleaseref(o->batCacheid);
+		if (g)
+			BBPreleaseref(g->batCacheid);
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "algebra.subsort", OPERATION_FAILED);
+	}
+	if (result)
+		BBPkeepref(*result = bn->batCacheid);
+	if (norder)
+		BBPkeepref(*norder = on->batCacheid);
+	if (ngroup)
+		BBPkeepref(*ngroup = gn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGsubsort32(bat *result, bat *norder, bat *bid, bat *order, bat *group, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, norder, NULL, bid, order, group, reverse, stable);
+}
+
+str
+ALGsubsort31(bat *result, bat *bid, bat *order, bat *group, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, NULL, NULL, bid, order, group, reverse, stable);
+}
+
+str
+ALGsubsort23(bat *result, bat *norder, bat *ngroup, bat *bid, bat *order, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, norder, ngroup, bid, order, NULL, reverse, stable);
+}
+
+str
+ALGsubsort22(bat *result, bat *norder, bat *bid, bat *order, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, norder, NULL, bid, order, NULL, reverse, stable);
+}
+
+str
+ALGsubsort21(bat *result, bat *bid, bat *order, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, NULL, NULL, bid, order, NULL, reverse, stable);
+}
+
+str
+ALGsubsort13(bat *result, bat *norder, bat *ngroup, bat *bid, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, norder, ngroup, bid, NULL, NULL, reverse, stable);
+}
+
+str
+ALGsubsort12(bat *result, bat *norder, bat *bid, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, norder, NULL, bid, NULL, NULL, reverse, stable);
+}
+
+str
+ALGsubsort11(bat *result, bat *bid, bit *reverse, bit *stable)
+{
+	return ALGsubsort33(result, NULL, NULL, bid, NULL, NULL, reverse, stable);
 }
 
 str

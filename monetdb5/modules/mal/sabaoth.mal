@@ -49,13 +49,3 @@ comment "Returns the hostname this server can be connected to, or nil if none";
 command getLocalConnectionPort():int
 address SABgetLocalConnectionPort
 comment "Returns the port this server can be connected to, or 0 if none";
-
-command wildRetreat()
-address SABwildRetreat
-comment "Unpublishes everything known for this server";
-
-# serialise and deserialise are not available from MAL, but can be made
-# available if there is reasonable need for it (haven't found one to date)
-
-#sabaoth.prelude();
-

@@ -9,7 +9,7 @@ debian/tmp/usr/lib/monetdb5/lib_vault.so usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/aggr.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/alarm.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/algebra.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/algebraExtensions.mal usr/lib/monetdb5
+#debian/tmp/usr/lib/monetdb5/algebraExtensions.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/array.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/attach.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/bat*.mal usr/lib/monetdb5
@@ -17,7 +17,7 @@ debian/tmp/usr/lib/monetdb5/bbp.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/blob.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/box.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/calc.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/chopper.mal usr/lib/monetdb5
+#debian/tmp/usr/lib/monetdb5/chopper.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/clients.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/cluster.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/color.mal usr/lib/monetdb5
@@ -54,7 +54,7 @@ debian/tmp/usr/lib/monetdb5/sabaoth.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sample.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sema.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/srvpool.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/statistics.mal usr/lib/monetdb5
+#debian/tmp/usr/lib/monetdb5/statistics.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/status.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/str.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/streams.mal usr/lib/monetdb5

@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl>
+- The server now distinguishes between starting and started states,
+  such that monetdbd can wait for it to finish starting.
+

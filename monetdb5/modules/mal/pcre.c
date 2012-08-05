@@ -396,12 +396,13 @@ pcre_index(int *res, pcre * pattern, str s)
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
 			    "scanselect %s\n", BATgetId(b), BATcount(b),	\
 			    s ? BATgetId(s) : "NULL", anti, #TEST);			\
-		BATloop(b, p, q) {										\
+		while (p < q) {											\
 			v = BUNtail(bi, p);									\
 			if (TEST) {											\
 				o = (oid) p + off;								\
 				bunfastins(bn, NULL, &o);						\
 			}													\
+			p++;												\
 		}														\
 	} while (0)
 
@@ -444,7 +445,7 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	}
 	off = b->hseqbase - BUNfirst(b);
 
-	if (s) {
+	if (s && !BATtdense(s)) {
 		const oid *candlist;
 		BUN r;
 
@@ -465,6 +466,20 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 			candscanloop(v && *v != '\200' &&
 				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) >= 0);
 	} else {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+			p += BUNfirst(b);
+			q += BUNfirst(b);
+		} else {
+			p = BUNfirst(b);
+			q = BUNlast(b);
+		}
 		if (anti)
 			scanloop(v && *v != '\200' &&
 				pcre_exec(re, pe, v, (int) strlen(v), 0, 0, ovector, 10) == -1);

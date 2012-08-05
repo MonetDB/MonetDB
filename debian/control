@@ -5,9 +5,14 @@ Maintainer: MonetDB BV <info@monetdb.org>
 Homepage: http://www.monetdb.org/
 Vcs-Browser: http://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
-Build-Depends: debhelper (>= 5), autotools-dev, cdbs, bison, flex, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev, libpcre3-dev, libreadline-gplv2-dev, libssl-dev, libxml2-dev, perl, python, ruby, rubygems, unixodbc-dev, uuid-dev, zlib1g-dev
+Build-Depends: debhelper (>= 5), autotools-dev, bison, flex, libbz2-dev,
+ libcurl4-gnutls-dev, libgeos-dev, libpcre3-dev,
+ libreadline-gplv2-dev|libreadline-dev, libssl-dev, libxml2-dev, perl,
+ python, ruby, rubygems, unixodbc-dev, uuid-dev, zlib1g-dev, python3
 # Build-Depends: libraptor1-dev
 Standards-Version: 3.8.0
+X-Python-Version: >= 2.6
+X-Python3-Version: >= 3.0
 
 Package: libmonetdb6
 Architecture: any
@@ -240,13 +245,23 @@ Description: MonetDB testing Python programs
 
 Package: python-monetdb
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python
+Depends: ${python:Depends}, ${misc:Depends}
 Description: Native MonetDB client Python API
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL frontend.
  .
- This package contains the files needed to use MonetDB from a Python
- program.
+ This package contains the files needed to use MonetDB with python.
+
+Package: python3-monetdb
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Native MonetDB client Python API
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL frontend.
+ .
+ This package contains the files needed to use MonetDB with Python3.
 

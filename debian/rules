@@ -1,9 +1,12 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
+DH_VERBOSE=1
 
-DEB_CONFIGURE_EXTRA_FLAGS := \
+%:
+	dh $@ --parallel --with python2,python3
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
 	--enable-assert=no \
 	--enable-console=yes \
 	--enable-datacell=no \
@@ -42,4 +45,16 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-unixodbc=yes \
 	--with-valgrind=no
 
-DEB_BUILD_PARALLEL=1
+# currently the test suite fails
+override_dh_auto_test:
+
+override_dh_auto_install:
+	dh_auto_install
+	cd clients/python && python setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+	cd clients/python3 && python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+
+override_dh_clean:
+	dh_clean
+	cd clients/python && python setup.py clean
+	cd clients/python3 && python3 setup.py clean
+
