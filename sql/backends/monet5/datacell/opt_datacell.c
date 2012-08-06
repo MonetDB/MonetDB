@@ -236,9 +236,9 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (actions)
 	{
 		addPipeDefinition(cntxt, "datacell_pipe",
-				"inline,remap,datacell,evaluate,costModel,coercions,emptySet,aliases,mitosis,"
-				"mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,dataflow,"
-				"history,multiplex,accumulators,garbageCollector");
+				"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();"
+				"optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();"
+				"optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
 		/* extend the plan with the new optimizer pipe required */
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
