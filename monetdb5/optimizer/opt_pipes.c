@@ -351,31 +351,6 @@ struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "experimental", "OPTcentipede", 0},
 #endif
-	{"datacell_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.datacell();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTdatacell", 0},
 /* The default + datacyclotron*/
 	{"datacyclotron_pipe",
 	 "optimizer.inline();"
