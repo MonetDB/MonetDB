@@ -60,21 +60,21 @@ socket_server_connect(SOCKET *sfd, int port)
 	if (sockfd == INVALID_SOCKET)
 		return GDKstrdup("Can not create the server socket");
 
-	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&on, sizeof(on));
+	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on));
 	setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF,
-		(char *)&sock_send_buf, sizeof(sock_send_buf));
+			(char *) &sock_send_buf, sizeof(sock_send_buf));
 	setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
-		(char *)&sock_rec_buf, sizeof(sock_rec_buf));
+			(char *) &sock_rec_buf, sizeof(sock_rec_buf));
 
 	optlen = sizeof(sock_send_buf);
-	getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&sock_send_buf, &optlen);
+	getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sock_send_buf, &optlen);
 	assert(optlen == sizeof(sock_send_buf));
 
 	optlen = sizeof(sock_rec_buf);
-	getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *)&sock_rec_buf, &optlen);
+	getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sock_rec_buf, &optlen);
 	assert(optlen == sizeof(sock_rec_buf));
 
-	memset((char *)&serv_addr, 0, sizeof(serv_addr));
+	memset((char *) &serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(port);
@@ -83,7 +83,7 @@ socket_server_connect(SOCKET *sfd, int port)
 	stream_printf(DCout, "Bind socket \n");
 #endif
 
-	if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
 		return GDKstrdup("Can not bind to socket");
 	return NULL;
 }
@@ -98,7 +98,7 @@ socket_server_listen(SOCKET sockfd, SOCKET *newsfd)
 	socklen_t clilen = sizeof(cli_addr);
 #endif
 	listen(sockfd, 5);
-	*newsfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+	*newsfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 	if (*newsfd == INVALID_SOCKET)
 		return GDKstrdup("Can not accept on the socket\n");
 	return NULL;
@@ -138,7 +138,7 @@ socket_client_connect(SOCKET *sfd, char * host, int port)
 	stream_printf(DCout, "connect client to host %s on port %d\n", host, port);
 #endif
 
-	if (connect(*sfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) < 0) {
+	if (connect(*sfd, (struct sockaddr *) &their_addr, sizeof(struct sockaddr)) < 0) {
 		return GDKstrdup("Can not connect to host");
 	}
 	return NULL;
