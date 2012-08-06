@@ -15,34 +15,6 @@
 # Copyright August 2008-2011 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
-		   ../../../clients/mapilib \
-		   ../../../common/options \
-		   ../../../common/stream \
-		   ../../../gdk \
-		   $(raptor_CFLAGS)
-
-MTSAFE
-
-lib__rdf = {
-	DIR = libdir/monetdb5
-	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../tools/libmonetdb5 \
-		../../../gdk/libbat \
-		$(MALLOC_LIBS) $(raptor_LIBS)
-}
-
-headers_mal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = rdf.mx
-}
-
-headers_autoload = {
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 10_rdf.mal
-}
-
-#EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 10_rdf.mal
+# This loads the MonetDB/RDF module
+include tokenizer;
+include rdf;

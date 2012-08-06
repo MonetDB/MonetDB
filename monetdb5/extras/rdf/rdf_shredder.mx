@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -13,18 +13,16 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
+Copyright August 2008-2011 MonetDB B.V.
 All Rights Reserved.
 @
 
 @f rdf_shredder
+@a L.Sidirourgos
+
+@+ Shredder for RDF Documents
 
 @c
-/*
- * @a L.Sidirourgos
- *
- * @+ Shredder for RDF Documents
- */
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "url.h"
@@ -96,11 +94,11 @@ typedef struct parserData {
 	                                 shredded RDF graph     */
 } parserData;
 
-/*
- * @-
- * The (fatal) errors and warnings produced by the raptor parser are handled
- * by the next three message handler functions.
- */
+@{
+@-
+The (fatal) errors and warnings produced by the raptor parser are handled
+by the next three message handler functions.
+
 @= raptor_exception
 @1->exception++;
 @1->exceptionMsg = @2;
@@ -124,17 +122,17 @@ static void
 	}
 }
 
-@
+@}
+
 @c
 @:rdf_parser_handler(fatal)@
 @:rdf_parser_handler(error)@
 @:rdf_parser_handler(warning)@
 
-/*
- * @-
- * The raptor parser needs to register a callback function that handles one triple
- * at a time. Function rdf_parser_triple_handler() does exactly this.
- */
+@-
+The raptor parser needs to register a callback function that handles one triple
+at a time. Function rdf_parser_triple_handler() does exactly this.
+
 @= rdf_insert
 #ifdef _TKNZR_H
  @:rdf_tknzr_insert(@2)@
@@ -185,7 +183,6 @@ if (@1 == NULL) {
 	@:raptor_exception(pdata, "could not append in@1")@
 }
 
-@
 @c
 static void
 tripleHandler(void* user_data, const raptor_statement* triple)
@@ -229,10 +226,9 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 	return;
 }
 
-/*
- * @-
- * Function RDFParser() is the entry point to parse an RDF document.
- */
+@-
+Function RDFParser() is the entry point to parse an RDF document.
+
 @= set_handlers
 /* set callback handler for triples */
 raptor_set_statement_handler   (@1, @2, tripleHandler);
@@ -241,7 +237,6 @@ raptor_set_fatal_error_handler (@1, @2, fatalHandler);
 raptor_set_error_handler       (@1, @2, errorHandler);
 raptor_set_warning_handler     (@1, @2, warningHandler);
 
-@
 @c
 /* creates a BAT for the triple table */
 static BAT*
@@ -255,7 +250,6 @@ create_BAT(int ht, int tt, int size)
 
 	/* disable all properties */
 	b->tsorted = FALSE;
-	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	b->tkey = FALSE;
 	b->hdense = TRUE;
@@ -314,22 +308,21 @@ parserData_create (str location)
 	return pdata;
 }
 
-/*
- * @-
- * After the RDF document has been shredded into 3 bats and a lexical value
- * dictionary, a post-shred processing step follows that orders the lexical
- * dictionary, re-maps oids to match the ordered dictionary and finaly creates
- * all 6 permutations of the (subject, predicate, object) order.
- *
- * However, it is still to be examined if it worth the time to refine the order
- * of the last column. In most cases, during query time, the last column will need
- * to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
- * so we can investigate both possibilities. In addition, the first column need to
- * be stored only once for each couple of orders with the same first column. For
- * example, it holds that S_SPO == S_SOP.
- */
+@-
+After the RDF document has been shredded into 3 bats and a lexical value
+dictionary, a post-shred processing step follows that orders the lexical
+dictionary, re-maps oids to match the ordered dictionary and finaly creates
+all 6 permutations of the (subject, predicate, object) order.
+
+However, it is still to be examined if it worth the time to refine the order
+of the last column. In most cases, during query time, the last column will need
+to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
+so we can investigate both possibilities. In addition, the first column need to
+be stored only once for each couple of orders with the same first column. For
+example, it holds that S_SPO == S_SOP.
+
 @= order
-@:order2(@1,@2,@3,@4)@
+@:order3(@1,@2,@3,@4)@
 
 @= order2
 if (!CTrefine(&ctref, @1, @2))         /* refine @2 given @1= sorted  */
@@ -347,6 +340,7 @@ BBPcold(graph[@3_@4]->batCacheid);
 /* free ctref */
 BBPreclaim(ctref);
 @
+
 @= order3
 if ( !(CTrefine(&map_oid, @1, @2)         /* refine @3 given @1= sorted  */
 		&& CTrefine(&ctref, map_oid, @3)))/* refine @4 given @3          */
@@ -366,6 +360,7 @@ BBPcold(graph[@3_@4]->batCacheid);
 /* free map_oid */
 BBPreclaim(map_oid);
 @
+
 @c
 int CTrefine(BAT **ret, BAT *b, BAT *a); /* from modules/kernel/group.mx */
 
@@ -484,6 +479,7 @@ raptor_free_parser(rparser);
 raptor_free_uri(uri);
 raptor_finish();
 @
+
 @= clean
 if (pdata != NULL) {
 	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
@@ -493,6 +489,7 @@ if (pdata != NULL) {
 	GDKfree(pdata);
 }
 @
+
 @c
 /* Main RDF parser function that drives raptor */
 str
@@ -595,9 +592,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	}
 
 	/* prepare return bat of bats */
-/* XXX: BAT columns of TYPE_bat are no longer allowed: this function
- * needs to be rewritten to return multiple BATs instead of a single
- * BAT-of-batS */
 	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
 	if (retbat == NULL) {
 		@:clean@
