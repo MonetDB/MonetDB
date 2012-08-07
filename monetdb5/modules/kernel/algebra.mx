@@ -716,11 +716,6 @@ comment "\"grouped mark\": Produces a new BAT with per group a locally unique de
  from b's tail. The third argument (s) gives the base value for the new
  OID sequence of each group.";
 
-command number( b:bat[:any_1,:any] ) :bat[:any_1,:int]  
-address ALGnumber
-comment "Produces a new BAT with identical head column, and consecutively 
-		increasing integers (start at 0) in the tail column.";
-
 command merge(b:bat[:oid,:oid]):bat[:lng,:oid]
 address ALGmerge
 comment "Merge head and tail into a single value";
@@ -1095,7 +1090,6 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @
 @h
 @:ALGunaryExport(histogram)@
-@:ALGunaryExport(number)@
 @:ALGunaryExport(merge)@
 @:ALGunaryExport(split)@
 @:ALGunaryExport(copy)@
@@ -2664,12 +2658,6 @@ str
 ALGhistogram(bat *result, bat *bid)
 {
 	return ALGunary(result, bid, BAThistogram, "algebra.histogram");
-}
-
-str
-ALGnumber(bat *result, bat *bid)
-{
-	return ALGunary(result, bid, BATnumber, "algebra.number");
 }
 
 str

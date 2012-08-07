@@ -1514,8 +1514,6 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATmark_grp (BAT *b, BAT *g, oid *s)
  * @item BAT *
- * @tab BATnumber (BAT *b)
- * @item BAT *
  * @tab BATmirror (BAT *b)
  * @item BAT *
  * @tab BATreset (BAT *b)
@@ -1527,10 +1525,7 @@ gdk_export int BATgetaccess(BAT *b);
  * name.  The routine BATmark creates a binary association that
  * introduces a new tail column of fresh densely ascending OIDs.  The
  * base OID can be given explicitly, or if oid_nil is passed, is
- * chosen as a new unique range by the system.  A similar routine is
- * BATnumber, which copies the heads and assigns an integer index to
- * the tail.  It plays a crucial role in administration of query
- * results.
+ * chosen as a new unique range by the system.
  *
  * The routine BATmirror returns the mirror image BAT (where tail is
  * head and head is tail) of that same BAT. This does not involve a
@@ -1541,7 +1536,6 @@ gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
-gdk_export BAT *BATnumber(BAT *b);
 gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 
 /*

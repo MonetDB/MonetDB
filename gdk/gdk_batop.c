@@ -1583,38 +1583,6 @@ BATsetprop_wrd(BAT *b, int idx, wrd val)
 	BATsetprop(b, idx, TYPE_wrd, &val);
 }
 
-#define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, Hsize(bx), Tsize(bx)); r++; i++;
-/* returns a new bat with the same head as b and consecutively
- * numbered integers starting with 0 in the tail */
-BAT *
-BATnumber(BAT *b)
-{
-/* 64bit: BATnumber should return a [any,wrd] bat instead of [any,int] */
-	int i = 0;
-	BAT *bn;
-	BUN r;
-
-	BATcheck(b, "BATnumber");
-	/* assert(BATcount(b) <= MAXINT); */
-	bn = BATnew(b->htype, TYPE_int, BATcount(b));
-	if (bn == NULL)
-		return NULL;
-	r = BUNfirst(bn);
-	updateloop(bn, b, BUNnumber);
-	ALIGNsetH(bn, b);
-	BATsetprop_wrd(bn, GDK_AGGR_CARD, i);	/* 64bit: no (wrd) cast to remind us */
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = 1;
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = 1;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
 BAT *
 BATgroup(BAT *b, int start, int incr, int grpsize)
 {
