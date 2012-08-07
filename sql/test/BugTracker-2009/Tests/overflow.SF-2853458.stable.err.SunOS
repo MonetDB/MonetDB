@@ -69,7 +69,7 @@ stderr of test 'overflow.SF-2853458` in directory 'test/BugTracker-2009` itself:
 
 MAPI  = monetdb@sofia:38256
 QUERY = select cast(power(2,64) as bigint);
-ERROR = !value (18446744073709551616.000000) exceeds limits of type lng
+ERROR = !overflow in calculation.
 
 # 22:26:13 >  
 # 22:26:13 >  Done.

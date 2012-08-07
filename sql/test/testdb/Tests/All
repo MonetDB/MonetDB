@@ -1,2 +1,2 @@
-testdb-load
-testdb-dump
+HAVE_GEOM?testdb-load
+HAVE_GEOM?testdb-dump

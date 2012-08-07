@@ -36,7 +36,7 @@
 /*
  * The scheduler works against a converted datacell schema.
  * It should be stopped before additions to the scheme will take effect
-*/
+ */
 
 #define DCNONINITIALIZED 1
 #define DCINITIALIZED 2
@@ -47,7 +47,7 @@
 /*
  * grab all tables in the datacell schema and turn them into baskets.
  * The same for all procedures, turn them into continuous queries.
-*/
+ */
 static str
 DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 {
@@ -59,7 +59,7 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 	sql_func *f;
 	/*sql_trans *tr;*/
 
-	if ( msg)
+	if (msg)
 		return msg;
 	s = mvc_bind_schema(m, schema);
 	if (s == NULL)
@@ -67,7 +67,7 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 	/*tr = m->session->tr;*/
 	for (o = s->funcs.set->h; o; o = o->next) {
 		f = o->data;
-		if ( strcmp(f->base.name, nme) == 0 ){
+		if (strcmp(f->base.name, nme) == 0) {
 			be = (void *) backend_create(m, cntxt);
 			backend_create_func(be, f);
 			break;
@@ -115,43 +115,43 @@ DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk,pci,0);
-	str *tbl = (str *) getArgReference(stk,pci,1);
-	str *host = (str *) getArgReference(stk,pci,2);
-	int *port  = (int *) getArgReference(stk,pci,3);
-	int  idx = BSKTlocate(*tbl);
-	if ( idx == 0)
-		BSKTregister(cntxt,mb,stk,pci);
-	return DCreceptorNew(ret,tbl,host,port);
+	int *ret = (int *) getArgReference(stk, pci, 0);
+	str *tbl = (str *) getArgReference(stk, pci, 1);
+	str *host = (str *) getArgReference(stk, pci, 2);
+	int *port = (int *) getArgReference(stk, pci, 3);
+	int idx = BSKTlocate(*tbl);
+	if (idx == 0)
+		BSKTregister(cntxt, mb, stk, pci);
+	return DCreceptorNew(ret, tbl, host, port);
 }
 
 str
 DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret = (int *) getArgReference(stk,pci,0);
-	str *tbl = (str *) getArgReference(stk,pci,1);
-	str *host = (str *) getArgReference(stk,pci,2);
-	int *port  = (int *) getArgReference(stk,pci,3);
-	int  idx = BSKTlocate(*tbl);
-	if ( idx == 0)
-		BSKTregister(cntxt,mb,stk,pci);
-	return DCemitterNew(ret,tbl,host,port);
+	int *ret = (int *) getArgReference(stk, pci, 0);
+	str *tbl = (str *) getArgReference(stk, pci, 1);
+	str *host = (str *) getArgReference(stk, pci, 2);
+	int *port = (int *) getArgReference(stk, pci, 3);
+	int idx = BSKTlocate(*tbl);
+	if (idx == 0)
+		BSKTregister(cntxt, mb, stk, pci);
+	return DCemitterNew(ret, tbl, host, port);
 }
 
 str
 DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return BSKTregister(cntxt,mb,stk,pci);
+	return BSKTregister(cntxt, mb, stk, pci);
 }
 
 str
 DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, ret=0;
-	str tbl= *(str*) getArgReference(stk, pci,1);
+	int idx, ret = 0;
+	str tbl = *(str *) getArgReference(stk, pci, 1);
 
 	idx = BSKTlocate(tbl);
-	if ( idx == 0)
+	if (idx == 0)
 		throw(SQL, "datacell.pause", "Basket not found");
 
 	DCreceptorPause(&ret, &tbl);
@@ -164,11 +164,11 @@ DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, ret= 0;
-	str tbl= *(str*) getArgReference(stk, pci,1);
+	int idx, ret = 0;
+	str tbl = *(str *) getArgReference(stk, pci, 1);
 
 	idx = BSKTlocate(tbl);
-	if ( idx == 0)
+	if (idx == 0)
 		throw(SQL, "datacell.resume", "Basket not found");
 
 	DCreceptorResume(&ret, &tbl);
@@ -184,20 +184,20 @@ DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int ret;
 	RCresume(&ret);
 	EMresume(&ret);
-	return DCresumeScheduler(cntxt,mb,stk,pci);
+	return DCresumeScheduler(cntxt, mb, stk, pci);
 }
 
 str
 DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx,ret;
-	str nme= *(str*) getArgReference(stk, pci,1);
+	int idx, ret;
+	str nme = *(str *) getArgReference(stk, pci, 1);
 
 	(void) cntxt;
 	(void) mb;
 	idx = BSKTlocate(nme);
-	if ( idx == 0)
-		throw(MAL,"datacell.remove","Basket not found");
+	if (idx == 0)
+		throw(MAL, "datacell.remove", "Basket not found");
 	/* first remove the dependent continous queries */
 
 	/* finally remove the basket itself, the underlying table is *not* dropped */
@@ -207,16 +207,16 @@ DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, ret=0;
-	str *tbl= (str*) getArgReference(stk, pci,1);
-	str *arg= (str*) getArgReference(stk, pci,2);
+	int idx, ret = 0;
+	str *tbl = (str *) getArgReference(stk, pci, 1);
+	str *arg = (str *) getArgReference(stk, pci, 2);
 
 	idx = BSKTlocate(*tbl);
-	if ( idx == 0)
+	if (idx == 0)
 		throw(SQL, "datacell.mode", "Basket not found");
 
-	RCmode(&ret, tbl,arg);
-	EMmode(&ret, tbl,arg);
+	RCmode(&ret, tbl, arg);
+	EMmode(&ret, tbl, arg);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -225,16 +225,16 @@ DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, ret=0;
-	str *tbl= (str*) getArgReference(stk, pci,1);
-	str *arg= (str*) getArgReference(stk, pci,2);
+	int idx, ret = 0;
+	str *tbl = (str *) getArgReference(stk, pci, 1);
+	str *arg = (str *) getArgReference(stk, pci, 2);
 
 	idx = BSKTlocate(*tbl);
-	if ( idx == 0)
+	if (idx == 0)
 		throw(SQL, "datacell.protocol", "Basket not found");
 
-	RCprotocol(&ret, tbl,arg);
-	EMprotocol(&ret, tbl,arg);
+	RCprotocol(&ret, tbl, arg);
+	EMprotocol(&ret, tbl, arg);
 	(void) cntxt;
 	(void) mb;
 	return MAL_SUCCEED;
@@ -247,7 +247,7 @@ DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str nme = *(str*) getArgReference(stk,pci,1);
+	str nme = *(str *) getArgReference(stk, pci, 1);
 	str def;
 	Symbol s = NULL;
 	MalBlkPtr qry;
@@ -257,7 +257,7 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 	char buf[BUFSIZ], *lsch, *lnme;
 
-	BSKTelements( nme, buf, &lsch, &lnme);
+	BSKTelements(nme, buf, &lsch, &lnme);
 	BSKTtolower(lsch);
 	BSKTtolower(lnme);
 
@@ -266,64 +266,64 @@ DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* if so, get its definition to be compiled */
 
 	/* check existing of the pre-compiled function */
-	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
-	if ( scope)
-		s = findSymbolInModule(scope,putName(lnme,strlen(lnme)));
+	scope = findModule(cntxt->nspace, putName(lsch, strlen(lsch)));
+	if (scope)
+		s = findSymbolInModule(scope, putName(lnme, strlen(lnme)));
 	/* is it defined in module user */
-	if ( s == NULL)
-		s = findSymbolInModule(cntxt->nspace,putName(lnme,strlen(lnme)));
+	if (s == NULL)
+		s = findSymbolInModule(cntxt->nspace, putName(lnme, strlen(lnme)));
 
-	if (s == NULL){
-		if ( pci->argc == 3 ) {
-			def = *(str*) getArgReference(stk,pci,2);
+	if (s == NULL) {
+		if (pci->argc == 3) {
+			def = *(str *) getArgReference(stk, pci, 2);
 			msg = SQLstatementIntern(cntxt, &def, lnme, 0, 0);
-			if ( msg )
+			if (msg)
 				return msg;
-			qry =cntxt->curprg->def;
+			qry = cntxt->curprg->def;
 		} else {
 			/* get definition from catalog */
-			msg =DCprocedureStmt(cntxt, mb, lsch, lnme);
-			if ( msg)
+			msg = DCprocedureStmt(cntxt, mb, lsch, lnme);
+			if (msg)
 				return msg;
-			s = findSymbolInModule(cntxt->nspace,putName(lnme,strlen(lnme)));
-			if ( s == NULL)
-				throw(SQL,"datacell.query","Definition missing");
-			qry= s->def;
+			s = findSymbolInModule(cntxt->nspace, putName(lnme, strlen(lnme)));
+			if (s == NULL)
+				throw(SQL, "datacell.query", "Definition missing");
+			qry = s->def;
 		}
-	} else
-		if ( pci->argc == 3)
-			throw(SQL,"datacell.query","Query already defined");
-		else qry = s->def;
+	} else if (pci->argc == 3)
+		throw(SQL, "datacell.query", "Query already defined");
+	else
+		qry = s->def;
 
-	scope = findModule(cntxt->nspace,putName(lsch,strlen(lsch)));
-	s = newFunction(putName(lsch,strlen(lsch)), putName(lnme, strlen(lnme)),FUNCTIONsymbol);
-	if ( s == NULL)
-		throw(SQL,"datacell.query","Procedure code does not exist");
-    freeMalBlk(s->def);
-    s->def = copyMalBlk(qry);
-	p= getInstrPtr(s->def,0);
-	setModuleId(p, putName(lsch,strlen(lsch)));
-	setFunctionId(p, putName(lnme,strlen(lnme)));
-    insertSymbol(scope,s);
+	scope = findModule(cntxt->nspace, putName(lsch, strlen(lsch)));
+	s = newFunction(putName(lsch, strlen(lsch)), putName(lnme, strlen(lnme)), FUNCTIONsymbol);
+	if (s == NULL)
+		throw(SQL, "datacell.query", "Procedure code does not exist");
+	freeMalBlk(s->def);
+	s->def = copyMalBlk(qry);
+	p = getInstrPtr(s->def, 0);
+	setModuleId(p, putName(lsch, strlen(lsch)));
+	setFunctionId(p, putName(lnme, strlen(lnme)));
+	insertSymbol(scope, s);
 	/* printFunction(cntxt->fdout, s->def, 0, LIST_MAL_STMT);*/
 	/* optimize the code and register at scheduler */
-	if ( msg == MAL_SUCCEED) {
-		OPTdatacellImplementation(cntxt,s->def,0,0);
-		addOptimizers(cntxt,s->def);
-		if ( msg == MAL_SUCCEED)
-			msg = optimizeMALBlock(cntxt,s->def);
-		if ( msg == MAL_SUCCEED)
+	if (msg == MAL_SUCCEED) {
+		OPTdatacellImplementation(cntxt, s->def, 0, 0);
+		addOptimizers(cntxt, s->def);
+		if (msg == MAL_SUCCEED)
+			msg = optimizeMALBlock(cntxt, s->def);
+		if (msg == MAL_SUCCEED)
 			msg = optimizerCheck(cntxt, s->def, "optimizer.datacell", 1, GDKusec() - clk, OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
 	}
-	PNregister(cntxt,mb,stk,pci);
+	PNregister(cntxt, mb, stk, pci);
 	return msg;
 }
 
 str
 DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ret=0;
+	int ret = 0;
 	PNresumeScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
@@ -335,7 +335,7 @@ DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ret=0;
+	int ret = 0;
 	PNpauseScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
@@ -347,7 +347,7 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int ret=0;
+	int ret = 0;
 	RCreset(&ret);
 	EMreset(&ret);
 	PNstopScheduler(&ret);
@@ -373,23 +373,23 @@ DCdump(int *ret)
 str
 DCthreshold(int *ret, str *bskt, int *mi)
 {
-	return BSKTthreshold(ret,bskt,mi);
+	return BSKTthreshold(ret, bskt, mi);
 }
 
 str
 DCwindow(int *ret, str *bskt, int *sz, int *slide)
 {
-	return BSKTwindow(ret,bskt,sz,slide);
+	return BSKTwindow(ret, bskt, sz, slide);
 }
 
 str
 DCtimewindow(int *ret, str *bskt, int *sz, int *slide)
 {
-	return BSKTtimewindow(ret,bskt, sz,slide);
+	return BSKTtimewindow(ret, bskt, sz, slide);
 }
 
 str
 DCbeat(int *ret, str *bskt, int *beat)
 {
-	return BSKTbeat(ret,bskt,beat);
+	return BSKTbeat(ret, bskt, beat);
 }
