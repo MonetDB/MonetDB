@@ -62,7 +62,11 @@ def findfiles(dirlist, skipfiles = [], skipdirs = []):
                 if d in dirs:
                     dirs.remove(d)
             for f in files:
-                if not done.has_key(f) and (f.endswith('.c') or f.endswith('.h')) and f not in skipfiles:
+                if not done.has_key(f) and \
+                        (f.endswith('.c') or f.endswith('.h')) and \
+                        not f.startswith('.') and \
+                        f not in skipfiles and \
+                        os.path.isfile(os.path.join(root, f)):
                     decls.extend(extract(os.path.join(root, f)))
                     done[f] = True
     decls.sort()
