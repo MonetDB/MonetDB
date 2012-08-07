@@ -2370,9 +2370,10 @@ def killProc(proc, outfile = None, cmd = None):
             cdb = None
             sym = None
         if cdb:
-            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid), '-y', r'%s;cache*;srv*http://msdl.microsoft.com/download/symbols' % sym],
-                                 stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-            out, err = p.communicate('~*kP\nq\n')
+            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid),
+                                  '-y', '%s;cache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
+                                 stdout = subprocess.PIPE)
+            out, err = p.communicate()
         else:
             out = ''
     else:
