@@ -97,6 +97,10 @@ pattern max(val:@1, any...):@1
 address ARRAYtilesMax_@1
 comment "Construct the maximum over all tiles";
 
+pattern cnt(val:@1, any...):lng
+address ARRAYtilesCnt_@1
+comment "Construct the count over all tiles";
+
 module batarray;
 
 # The BAT version of the AGGR functions over array tiles
@@ -119,6 +123,10 @@ comment "Construct the minimum over all tiles";
 pattern max(val:bat[:oid,:@1], any...):bat[:oid,:@1]
 address ARRAYtilesMax_@1
 comment "Construct the maximum over all tiles";
+
+pattern cnt(val:bat[:oid,:@1], any...):bat[:oid,:lng]
+address ARRAYtilesCnt_@1
+comment "Construct the count over all tiles";
 @
 @mal
 @:tilesAggrDecl(bte)@
@@ -160,6 +168,7 @@ array_export str ARRAYtilesSum_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 array_export str ARRAYtilesAvg_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesMin_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 array_export str ARRAYtilesMax_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+array_export str ARRAYtilesCnt_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @h
 @:array_defs(bte)@
 @:array_defs(sht)@
@@ -357,7 +366,7 @@ ARRAYfiller(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @= tilesAggr
 /* 
- * array.[sum|avg] inputs:
+ * array.[sum|avg|cnt] inputs:
  *  (cell_val:BAT,
  *   dim_1:BAT,tile_member_offset_dim_1:BAT,size_dim_1, ...,
  *   dim_n:BAT,tile_member_offset_dim_n:BAT,size_dim_n)
@@ -516,6 +525,12 @@ ARRAYtiles@4_@1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @:tilesAggr(lng,lng,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
 @:tilesAggr(flt,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
 @:tilesAggr(dbl,dbl,dbl,Avg,avg, (dbl)sum / (dbl)cnt )@
+@:tilesAggr(bte,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(sht,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(int,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(lng,lng,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(flt,dbl,lng,Cnt,cnt, (lng)cnt )@
+@:tilesAggr(dbl,dbl,lng,Cnt,cnt, (lng)cnt )@
 
 @= tilesMinMax
 /* 

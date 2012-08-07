@@ -36,27 +36,19 @@ create function array_series1("start" bigint,   step bigint,   stop bigint,   N 
 create function array_series1("start" real,     step real,     stop real,     N integer, M integer) returns table (dimval real)     external name "array".series;
 create function array_series1("start" double,   step double,   stop double,   N integer, M integer) returns table (dimval double)   external name "array".series;
 
-create function array_filler(cnt bigint, val tinyint)       returns table (id bigint, cellval tinyint)    external name "array".filler_;
-create function array_filler(cnt bigint, val smallint)      returns table (id bigint, cellval smallint)   external name "array".filler_;
-create function array_filler(cnt bigint, val integer)       returns table (id bigint, cellval integer)    external name "array".filler_;
-create function array_filler(cnt bigint, val bigint)        returns table (id bigint, cellval bigint)     external name "array".filler_;
-create function array_filler(cnt bigint, val real)          returns table (id bigint, cellval real)       external name "array".filler_;
-create function array_filler(cnt bigint, val double)        returns table (id bigint, cellval double)     external name "array".filler_;
-create function array_filler(cnt bigint, val date)          returns table (id bigint, vals date)          external name "array".filler_;
-create function array_filler(cnt bigint, val time)          returns table (id bigint, vals time)          external name "array".filler_;
-create function array_filler(cnt bigint, val timestamp)     returns table (id bigint, vals timestamp)     external name "array".filler_;
-create function array_filler(cnt bigint, val char(2048))    returns table (id bigint, vals char(2048))    external name "array".filler_;
-create function array_filler(cnt bigint, val varchar(2048)) returns table (id bigint, vals varchar(2048)) external name "array".filler_;
-create function array_filler(cnt bigint, val blob)          returns table (id bigint, vals blob)          external name "array".filler_;
-create function array_filler(cnt bigint, val clob)          returns table (id bigint, vals clob)          external name "array".filler_;
-
---create function array_avg(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
---create function array_avg(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a real)   external name "array".avg;
---create function array_avg(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (a double) external name "array".avg;
-
---create function array_sum(val int,    dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s bigint) external name "array".sum;
---create function array_sum(val real,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
---create function array_sum(val double, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns table (s double) external name "array".sum;
+create function array_filler(count bigint, val tinyint)       returns table (id bigint, cellval tinyint)    external name "array".filler_;
+create function array_filler(count bigint, val smallint)      returns table (id bigint, cellval smallint)   external name "array".filler_;
+create function array_filler(count bigint, val integer)       returns table (id bigint, cellval integer)    external name "array".filler_;
+create function array_filler(count bigint, val bigint)        returns table (id bigint, cellval bigint)     external name "array".filler_;
+create function array_filler(count bigint, val real)          returns table (id bigint, cellval real)       external name "array".filler_;
+create function array_filler(count bigint, val double)        returns table (id bigint, cellval double)     external name "array".filler_;
+create function array_filler(count bigint, val date)          returns table (id bigint, vals date)          external name "array".filler_;
+create function array_filler(count bigint, val time)          returns table (id bigint, vals time)          external name "array".filler_;
+create function array_filler(count bigint, val timestamp)     returns table (id bigint, vals timestamp)     external name "array".filler_;
+create function array_filler(count bigint, val char(2048))    returns table (id bigint, vals char(2048))    external name "array".filler_;
+create function array_filler(count bigint, val varchar(2048)) returns table (id bigint, vals varchar(2048)) external name "array".filler_;
+create function array_filler(count bigint, val blob)          returns table (id bigint, vals blob)          external name "array".filler_;
+create function array_filler(count bigint, val clob)          returns table (id bigint, vals clob)          external name "array".filler_;
 
 create function array_avg(val tinyint,  dim1 int, offsets1 int, size1 int) returns double external name "array".avg;
 create function array_avg(val smallint, dim1 int, offsets1 int, size1 int) returns double external name "array".avg;
@@ -86,6 +78,13 @@ create function array_max(val bigint,   dim1 int, offsets1 int, size1 int) retur
 create function array_max(val real,     dim1 int, offsets1 int, size1 int) returns real      external name "array".max;
 create function array_max(val double,   dim1 int, offsets1 int, size1 int) returns double    external name "array".max;
 
+create function array_count(val tinyint,  dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+create function array_count(val smallint, dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+create function array_count(val int,      dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+create function array_count(val bigint,   dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+create function array_count(val real,     dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+create function array_count(val double,   dim1 int, offsets1 int, size1 int) returns bigint external name "array".cnt;
+
 create function array_avg(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
 create function array_avg(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
 create function array_avg(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double external name "array".avg;
@@ -114,6 +113,13 @@ create function array_max(val bigint,   dim1 int, offsets1 int, size1 int, dim2 
 create function array_max(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns real      external name "array".max;
 create function array_max(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns double    external name "array".max;
 
+create function array_count(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+create function array_count(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+create function array_count(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+create function array_count(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+create function array_count(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+create function array_count(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int) returns bigint external name "array".cnt;
+
 create function array_avg(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
 create function array_avg(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
 create function array_avg(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double external name "array".avg;
@@ -141,4 +147,11 @@ create function array_max(val int,      dim1 int, offsets1 int, size1 int, dim2 
 create function array_max(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint    external name "array".max;
 create function array_max(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns real      external name "array".max;
 create function array_max(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns double    external name "array".max;
+
+create function array_count(val tinyint,  dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
+create function array_count(val smallint, dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
+create function array_count(val int,      dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
+create function array_count(val bigint,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
+create function array_count(val real,     dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
+create function array_count(val double,   dim1 int, offsets1 int, size1 int, dim2 int, offsets2 int, size2 int, dim3 int, offsets3 int, size3 int) returns bigint external name "array".cnt;
 
