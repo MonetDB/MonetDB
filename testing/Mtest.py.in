@@ -2362,14 +2362,17 @@ def killProc(proc, outfile = None, cmd = None):
     if os.name == "nt":
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+            sym = r'c:\Symbols'
         elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
+            sym = r'c:\WINDOWS\Symbols'
         else:
             cdb = None
+            sym = None
         if cdb:
-            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid)],
+            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid), '-y', r'%s;cache*;srv*http://msdl.microsoft.com/download/symbols' % sym],
                                  stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-            out, err = p.communicate('~*k\nq\n')
+            out, err = p.communicate('~*kP\nq\n')
         else:
             out = ''
     else:
