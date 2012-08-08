@@ -58,15 +58,11 @@
 #include "groupby.h"
 
 /*
- * @-
  * The implementation is based on a two-phase process. In phase 1, we estimate
  * the number of groups to deal with using column independence.
  * The grouping is performed in parallel over slices of the tables.
  * The final pieces are glued together.
  */
-static MT_Lock  grouplock;      /* lock to avoid interference */
-static int groupinitialized;
-
 typedef struct{
 	BAT *bn;	/* result */
 	BAT **cols;
@@ -75,14 +71,6 @@ typedef struct{
 	int last;
 	int maxcol;
 } AGGRtask;
-
-static void
-GROUPinit(void){
-	if( ! groupinitialized) {
-        MT_lock_init(&grouplock,"group lock");
-        groupinitialized= 1;
-    }
-}
 
 static AGGRtask*
 GROUPcollect( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -160,7 +148,6 @@ GROUPid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	BAT *bn;
 
-	GROUPinit();
 	a = GROUPcollect(cntxt,mb,stk,pci);
 	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
 	if ( bn == NULL) {
@@ -180,7 +167,6 @@ GROUPcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	BAT *bn;
 
-	GROUPinit();
 	a = GROUPcollect(cntxt,mb,stk,pci);
 	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
 	if ( bn == NULL) {
@@ -200,7 +186,6 @@ GROUPmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	BAT *bn;
 
-	GROUPinit();
 	a = GROUPcollect(cntxt,mb,stk,pci);
 	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
 	if ( bn == NULL) {
@@ -220,7 +205,6 @@ GROUPmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	BAT *bn;
 
-	GROUPinit();
 	a = GROUPcollect(cntxt,mb,stk,pci);
 	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
 	if ( bn == NULL) {
@@ -240,7 +224,6 @@ GROUPavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	AGGRtask *a;
 	BAT *bn;
 
-	GROUPinit();
 	a = GROUPcollect(cntxt,mb,stk,pci);
 	bn = a->bn = BATnew(TYPE_oid,TYPE_wrd,a->estimate[1]);
 	if ( bn == NULL) {
