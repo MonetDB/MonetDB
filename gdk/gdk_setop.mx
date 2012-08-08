@@ -66,9 +66,11 @@ All Rights Reserved.
  * The @emph{kintersect(l,r)} is used also as implementation for the
  * @emph{semijoin()}.
  */
-@h
-#ifndef _GDK_SETOP_H
-#define _GDK_SETOP_H
+@c
+#include "monetdb_config.h"
+#include "gdk.h"
+#include "gdk_private.h"
+#include "gdk_search.h"
 
 #define HITk(t1,t2)             TRUE
 #define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)
@@ -99,15 +101,6 @@ All Rights Reserved.
 #define RALIGNdiff(bn,l,r)      FALSE
 #define RALIGNintersect(bn,l,r) (BAThordered(l) & BAThordered(r) && (l)->hkey \
 				 && BATcount(bn)==BATcount(r))
-#endif /* _GDK_SETOP_H */
-
-@c
-#include "monetdb_config.h"
-#include "gdk.h"
-#include "gdk_private.h"
-#include "gdk_setop.h"
-#include "gdk_search.h"
-
 /*
  * @+ Double Elimination
  * Comes in two flavors: looking at one column, or at two at-a-time.
