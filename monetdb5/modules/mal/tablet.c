@@ -1200,7 +1200,7 @@ SQLworker(void *arg)
 	lng t0;
 	Thread thr;
 
-	thr = THRnew(MT_getpid(), "SQLworker");
+	thr = THRnew("SQLworker");
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKerrbuf[0] = 0;
 	task->errbuf = GDKerrbuf;

@@ -817,7 +817,7 @@ runDFLOWworker(void *t)
 	int i, local = 0, last = 0;
 	long usec = 0;
 
-	thr = THRnew(MT_getpid(), "DFLOWworker");
+	thr = THRnew("DFLOWworker");
 
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;

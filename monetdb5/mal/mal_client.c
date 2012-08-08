@@ -270,7 +270,7 @@ MCinitClientThread(Client c)
 
 	snprintf(cname, 11, OIDFMT, c->user);
 	cname[11] = '\0';
-	t = THRnew(MT_getpid(), cname);
+	t = THRnew(cname);
 	if (t == 0) {
 		showException(c->fdout, MAL, "initClientThread",
 				"Failed to initialize client");

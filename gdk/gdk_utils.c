@@ -1781,11 +1781,12 @@ GDK_find_thread(MT_Id pid)
 }
 
 Thread
-THRnew(MT_Id pid, str name)
+THRnew(str name)
 {
 	int tid = 0;
 	Thread t;
 	Thread s;
+	MT_Id pid = MT_getpid();
 
 	MT_lock_set(&GDKthreadLock, "THRnew");
 	s = GDK_find_thread(pid);
