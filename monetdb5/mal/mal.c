@@ -176,11 +176,7 @@
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };
-int monet_welcome = 1;
-str *monet_script;
-int monet_daemon=0;
 size_t monet_memory;
-int nrservers = 0;
 
 #include "mal_stack.h"
 #include "mal_linker.h"
