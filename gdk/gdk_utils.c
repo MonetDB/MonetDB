@@ -1319,6 +1319,7 @@ GDKexit(int status)
 			MT_join_thread(GDKvmtrim_id);
 		GDKnrofthreads = 0;
 		MT_lock_unset(&GDKthreadLock, "GDKexit");
+		MT_sleep_ms(50);
 
 		/* Kill all threads except myself */
 		if (status == 0) {

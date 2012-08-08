@@ -544,7 +544,7 @@ runScenarioBody(Client c)
 #ifdef HAVE_TIMES
 	times(&t0);
 #endif
-	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
+	while ((c->mode > FINISHING || msg != MAL_SUCCEED) && !GDKexiting()) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
 			mnstr_printf(c->fdout,"!%s\n",msg);

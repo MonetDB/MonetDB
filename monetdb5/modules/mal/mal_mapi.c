@@ -207,6 +207,8 @@ SERVERlistenThread(SOCKET *Sock)
 			msgsock = usock;
 #endif
 		retval = select((int)msgsock + 1, &fds, NULL, NULL, &tv);
+		if (GDKexiting())
+			break;
 		if (retval == 0) {
 			/* nothing interesting has happened */
 			continue;
@@ -315,8 +317,8 @@ SERVERlistenThread(SOCKET *Sock)
 		doChallenge(
 				socket_rastream(msgsock, "Server read"),
 				socket_wastream(msgsock, "Server write"));
-	} while (1);
-	/*return;*/ /* never reached as while loop only exits with "goto error" */
+	} while (!GDKexiting());
+	return;
 error:
 	fprintf(stderr, "!mal_mapi.listen: %s, terminating listener\n", msg);
 }

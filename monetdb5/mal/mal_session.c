@@ -431,8 +431,8 @@ MSserveClient(void *dummy)
 				if (c->mode == FINISHING)
 					break;
 				resetScenario(c);
-			} while (c->scenario);
-		} while (c->scenario && c->mode != FINISHING);
+			} while (c->scenario && !GDKexiting());
+		} while (c->scenario && c->mode != FINISHING && !GDKexiting());
 	}
 	/*
 	 * At this stage we should clean out the MAL block
