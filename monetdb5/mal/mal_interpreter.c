@@ -1256,66 +1256,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	return ret;
 }
 
-/* Independent threads
- * Distributed execution calls for asynchronous execution of MAL
- * instructions. To simplify the interpreter, we assume that all
- * the code to be executed is already grouped in a MAL function,
- * which is called independently. The result variables are initialized
- * to NIL before the code is started. When the process crashes,
- * an exception is raised.
- */
-typedef struct {
-	MT_Id tid;
-	Client cntxt;
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	int start,stop;
-} Ptask;
-
-/* runMALdetached is typically called as part of
- * starting a separate interpreter thread.
- */
-static void
-runMALdetached(void *t)
-{
-	Ptask *p = (Ptask *)t;
-	Client cntxt = p->cntxt;
-	MalBlkPtr mb = p->mb;
-	MalStkPtr stk = p->stk;
-	int sve;
-	str msg = MAL_SUCCEED;
-
-#ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout, "start thread in background\n");
-#endif
-	if (stk == NULL) {
-		GDKerror("mal.interpreter: " MAL_STACK_FAIL);
-		return;
-	}
-	sve = stk->keepAlive;
-	stk->keepAlive = TRUE;
-	msg = reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
-	stk->keepAlive = sve;
-	if (msg != MAL_SUCCEED)
-		GDKerror("%s", msg);      /* indirect way to pass an error */
-#ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout, "finished thread in background\n");
-#endif
-}
-str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop)
-{
-	Ptask p;
-
-	p.cntxt = cntxt;
-	p.mb = mb;
-	p.stk = stk;
-	p.start = start;
-	p.stop = stop;
-
-	MT_create_thread(&p.tid, runMALdetached, &p, MT_THR_DETACHED);
-	return MAL_SUCCEED;
-}
-
 /* Safeguarding
  * The physical stack for each thread is an operating system parameter.
  * We do not want recursive programs crashing the server, so once in

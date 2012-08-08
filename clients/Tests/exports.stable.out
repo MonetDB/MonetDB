@@ -3207,7 +3207,6 @@ str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, In
 str runMAL(Client c, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 str runMALDebugger(Client cntxt, Symbol s);
 str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
-str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop);
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 str runScenario(Client c);
 int runonceProp;
