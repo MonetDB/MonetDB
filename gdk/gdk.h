@@ -2397,24 +2397,6 @@ VALptr(const ValRecord *v)
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 
-gdk_export int GDKembedded;
-gdk_export int GDKprotected;
-gdk_export void GDKprotect(void);
-
-/*
- * The GDKembedded variable is a property set in the configuration
- * file to indicate that the kernel is only allowed to run as a single
- * process.  This can be used to remove all locking overhead.  The
- * actual state of affairs is maintained in GDKprotected, which is set
- * when locking is required, e.g. when multiple threads become active.
- */
-#define gdk_set_lock(X,Y)	do if (GDKprotected) MT_lock_set(&X,Y); while (0)
-#define gdk_unset_lock(X,Y)	do if (GDKprotected) MT_lock_unset(&X,Y); while (0)
-#define gdk_up_sema(X,Y)	do if (GDKprotected) MT_sema_up(&X,Y); while (0)
-#define gdk_down_sema(X,Y)	do if (GDKprotected) MT_sema_down(&X,Y); while (0)
-#define gdk_signal_cond(X,Y)	do if (GDKprotected) MT_cond_signal(&X,Y); while (0)
-#define gdk_wait_cond(X,Y,Z)	do if (GDKprotected) MT_cond_wait(&X,&Y,Z); while (0)
-
 /*
  * The kernel maintains a central table of all active threads.  They
  * are indexed by their tid. The structure contains information on the

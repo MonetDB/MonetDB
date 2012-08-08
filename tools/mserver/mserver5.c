@@ -174,7 +174,7 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 #ifdef HAVE_CONSOLE
-	monet_daemon = GDKembedded;
+	monet_daemon = 0;
 	if (GDKgetenv_isyes("monet_daemon")) {
 		monet_daemon = 1;
 #ifdef HAVE_SETSID

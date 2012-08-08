@@ -140,12 +140,6 @@ SQLprelude(void)
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
 	s->engine = "SQLengine";
-	if (GDKembedded) {
-		tmp = SQLinit();
-		if (tmp == MAL_SUCCEED)
-			s->name = "sql";
-		return tmp;
-	}
 
 	ms = getFreeScenario();
 	if (!ms)
@@ -191,9 +185,7 @@ SQLepilogue(void)
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKembedded)
-		return msab_retreatScenario(s);
-	return MAL_SUCCEED;
+	return msab_retreatScenario(s);
 }
 
 MT_Id sqllogthread, minmaxthread;
@@ -215,7 +207,7 @@ SQLinit(void)
 
 	MT_lock_init( &sql_contextLock, "sql_contextLock");
 
-	mal_set_lock(sql_contextLock,"SQL init");
+	MT_lock_set(&sql_contextLock, "SQL init");
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
@@ -238,14 +230,14 @@ SQLinit(void)
 			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
-	mal_unset_lock(sql_contextLock,"SQL init");
-	if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
-		mal_unset_lock(sql_contextLock,"SQL init");
+	MT_lock_unset(&sql_contextLock, "SQL init");
+	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
+		MT_lock_unset(&sql_contextLock, "SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 #if 0
-	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
-		mal_unset_lock(sql_contextLock,"SQL init");
+	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
+		MT_lock_unset(&sql_contextLock, "SQL init");
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
 #endif

@@ -237,7 +237,6 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 
-	GDKprotect();
 	tstAligned();
 	MCinit();
 	mdbInit();

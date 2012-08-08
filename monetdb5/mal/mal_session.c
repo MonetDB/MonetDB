@@ -211,7 +211,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			*s = 0;
 	}
 
-	if (!GDKembedded && database != NULL && database[0] != '\0' &&
+	if (database != NULL && database[0] != '\0' &&
 		strcmp(database, GDKgetenv("gdk_dbname")) != 0)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
@@ -239,35 +239,33 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			return;
 		}
 
-		if (!GDKembedded) {
-			err = SABAOTHgetMyStatus(&stats);
-			if (err != MAL_SUCCEED) {
-				/* this is kind of awful, but we need to get rid of this
-				 * message */
-				fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
-				if (err != M5OutOfMemory)
-					GDKfree(err);
-				mnstr_printf(fout, "!internal server error, "
-								   "please try again later\n");
+		err = SABAOTHgetMyStatus(&stats);
+		if (err != MAL_SUCCEED) {
+			/* this is kind of awful, but we need to get rid of this
+			 * message */
+			fprintf(stderr, "!SABAOTHgetMyStatus: %s\n", err);
+			if (err != M5OutOfMemory)
+				GDKfree(err);
+			mnstr_printf(fout, "!internal server error, "
+						 "please try again later\n");
+			mnstr_flush(fout);
+			GDKfree(command);
+			return;
+		}
+		if (stats->locked == 1) {
+			if (uid == 0) {
+				mnstr_printf(fout, "#server is running in "
+							 "maintenance mode\n");
+			} else {
+				mnstr_printf(fout, "!server is running in "
+							 "maintenance mode, please try again later\n");
 				mnstr_flush(fout);
+				SABAOTHfreeStatus(&stats);
 				GDKfree(command);
 				return;
 			}
-			if (stats->locked == 1) {
-				if (uid == 0) {
-					mnstr_printf(fout, "#server is running in "
-									   "maintenance mode\n");
-				} else {
-					mnstr_printf(fout, "!server is running in "
-									   "maintenance mode, please try again later\n");
-					mnstr_flush(fout);
-					SABAOTHfreeStatus(&stats);
-					GDKfree(command);
-					return;
-				}
-			}
-			SABAOTHfreeStatus(&stats);
 		}
+		SABAOTHfreeStatus(&stats);
 
 		c = MCinitClient(uid, fin, fout);
 		if (c == NULL) {

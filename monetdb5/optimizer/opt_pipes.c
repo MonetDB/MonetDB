@@ -539,14 +539,14 @@ validateOptimizerPipes(void)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	mal_set_lock(mal_contextLock, "optimizer validation");
+	MT_lock_set(&mal_contextLock, "optimizer validation");
 	for (i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
 		if (pipes[i].mb) {
 			msg = validatePipe(pipes[i].mb);
 			if (msg != MAL_SUCCEED)
 				break;
 		}
-	mal_unset_lock(mal_contextLock, "optimizer validation");
+	MT_lock_unset(&mal_contextLock, "optimizer validation");
 	return msg;
 }
 

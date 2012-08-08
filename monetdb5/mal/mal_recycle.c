@@ -228,11 +228,11 @@ QryPatPtr recycleQPat = NULL;
 void RECYCLEinitQPat(int sz)
 {
 	if (recycleQPat == NULL) {
-		mal_set_lock(recycleLock,"recycle");
+		MT_lock_set(&recycleLock, "recycle");
 		recycleQPat = (QryPatPtr) GDKzalloc(sizeof(QryPat));
 		recycleQPat->ptrn = (QryStatPtr *) GDKzalloc(sz * sizeof(QryStatPtr));
 		recycleQPat->sz = sz;
-		mal_unset_lock(recycleLock,"recycle");
+		MT_lock_unset(&recycleLock, "recycle");
 	}
 }
 
@@ -1957,7 +1957,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 	if (bindidxRef == 0)
         bindidxRef = putName("bind_idxbat",11);
 
-	mal_set_lock(recycleLock,"recycle");
+	MT_lock_set(&recycleLock, "recycle");
 	for (i = 0; i < recycleBlk->stop; i++){
     	q = getInstrPtr(recycleBlk,i);
 		if ( getModuleId(q) != octopusRef ||
@@ -2013,7 +2013,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
             updateQryStat(q->recycle,gluse,qidx);
             cntxt->rcc->recycled0++;
             cntxt->rcc->recent = i;
-            mal_unset_lock(recycleLock,"recycle");
+            MT_lock_unset(&recycleLock, "recycle");
             return i;
 
     	subsumption:
@@ -2053,7 +2053,7 @@ RECYCLEdataTransfer(Client cntxt, MalStkPtr s, InstrPtr p)
 		cntxt->rcc->recent = i;
 	}
 
-	mal_unset_lock(recycleLock,"recycle");
+	MT_lock_unset(&recycleLock, "recycle");
 	return pc;
 }
 
@@ -2090,7 +2090,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 		( getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef ))
 		return RECYCLEdataTransfer(cntxt, s, p);
 
-    mal_set_lock(recycleLock,"recycle");
+    MT_lock_set(&recycleLock, "recycle");
 
     for (i = 0; i < recycleBlk->stop; i++){
         q = getInstrPtr(recycleBlk,i);
@@ -2189,7 +2189,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
                 updateQryStat(q->recycle,gluse,qidx);
             }
             cntxt->rcc->recent = i;
-            mal_unset_lock(recycleLock,"recycle");
+            MT_lock_unset(&recycleLock, "recycle");
             return i;
             notfound:
                 continue;
@@ -2234,7 +2234,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         qidx = *(int*)getVarValue(recycleBlk,q->argv[q->argc-1]);
         updateQryStat(getInstrPtr(recycleBlk,pc)->recycle,gluse,qidx);
         recycleBlk->profiler[pc].clk = GDKusec();
-        mal_unset_lock(recycleLock,"recycle");
+        MT_lock_unset(&recycleLock, "recycle");
         RECYCLEexit(cntxt, mb, s, p, ticks);
         return pc;
     }
@@ -2254,7 +2254,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
     (void) evicted;
 #endif
 
-    mal_unset_lock(recycleLock,"recycle");
+    MT_lock_unset(&recycleLock, "recycle");
 	if ( pc >= 0 ) 		/* successful multi-subsumption */
 		RECYCLEexit(cntxt,mb,s,p,ticks);
     return pc;
@@ -2375,9 +2375,9 @@ RECYCLEexit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, lng clk0)
 	if ( cntxt->rcc->curQ < 0 ) /* don't use recycling before initialization
 				by prelude() */
 		return;
-	mal_set_lock(recycleLock,"recycle");
+	MT_lock_set(&recycleLock, "recycle");
 	RECYCLEexitImpl(cntxt,mb,stk,p, GDKusec()-clk0);
-	mal_unset_lock(recycleLock,"recycle");
+	MT_lock_unset(&recycleLock, "recycle");
 }
 
 /*
@@ -2404,7 +2404,7 @@ RECYCLEshutdown(Client cntxt){
 #endif
 
 	used = (bte*)GDKzalloc(recycleBlk->vtop);
-	mal_set_lock(recycleLock,"recycle");
+	MT_lock_set(&recycleLock, "recycle");
 	recycleBlk = NULL;
 	recycleSearchTime = 0;
 	recyclerUsedMemory = 0;
@@ -2415,7 +2415,7 @@ RECYCLEshutdown(Client cntxt){
     }
 	freeQPat(recycleQPat);
 	recycleQPat = NULL;
-	mal_unset_lock(recycleLock,"recycle");
+	MT_lock_unset(&recycleLock, "recycle");
 	for (i=mb->stop-1; i>=0; i--)
 		RECYCLEgarbagecollect(mb, getInstrPtr(mb,i),used);
 	freeMalBlk(mb);
@@ -2639,9 +2639,9 @@ void RECYCLEreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} /* loop on recycleBlk */
 	}
 	if (btop){
-		mal_set_lock(recycleLock,"recycle");
+		MT_lock_set(&recycleLock, "recycle");
 	        RECYCLEevict(cntxt,b,btop);
-		mal_unset_lock(recycleLock,"recycle");
+		MT_lock_unset(&recycleLock, "recycle");
 	}
 	GDKfree(b);
 	recycleTime = GDKusec() - t0;

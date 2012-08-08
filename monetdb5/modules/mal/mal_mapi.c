@@ -141,14 +141,8 @@ doChallenge(stream *in, stream *out) {
 	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
-	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0 ||
-			/* in embedded mode we allow just one client */
-			(GDKembedded && MCcountClients() > 1))
-	{
-		if (GDKembedded) {
-			mnstr_printf(fdout, "!only one client allowed in embedded mode\n");
-			mnstr_flush(fdout);
-		} /* else the client must have gone away, so no reason to write something */
+	if ((len = (int) mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
+		/* the client must have gone away, so no reason to write something */
 		mnstr_close(fdin);
 		mnstr_destroy(fdin);
 		mnstr_close(fdout);
@@ -542,19 +536,16 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 str
 SERVERlisten_default(int *ret)
 {
-	if (!GDKembedded) {
-		int port = SERVERPORT;
-		str p;
-		int maxusers = SERVERMAXUSERS;
+	int port = SERVERPORT;
+	str p;
+	int maxusers = SERVERMAXUSERS;
 
-		(void) ret;
-		p = GDKgetenv("mapi_port");
-		if (p)
-			port = (int) strtol(p, NULL, 10);
-		p = GDKgetenv("mapi_usock");
-		return SERVERlisten(&port, &p, &maxusers);
-	}
-	return MAL_SUCCEED;
+	(void) ret;
+	p = GDKgetenv("mapi_port");
+	if (p)
+		port = (int) strtol(p, NULL, 10);
+	p = GDKgetenv("mapi_usock");
+	return SERVERlisten(&port, &p, &maxusers);
 }
 
 str
@@ -717,17 +708,17 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	Mapi mid;
 	int i;
 
-	mal_set_lock(mal_contextLock,"SERVERconnect");
+	MT_lock_set(&mal_contextLock, "SERVERconnect");
 	for(i=1; i< MAXSESSIONS; i++)
 	if( SERVERsessions[i].c ==0 ) break;
 
 	if( i==MAXSESSIONS){
-		mal_unset_lock(mal_contextLock,"SERVERconnect");
+		MT_lock_unset(&mal_contextLock, "SERVERconnect");
 		throw(IO, "mapi.connect", OPERATION_FAILED ": too many sessions");
 	}
 	SERVERsessions[i].c= cntxt;
 	SERVERsessions[i].key= ++sessionkey;
-	mal_unset_lock(mal_contextLock,"SERVERconnect");
+	MT_lock_unset(&mal_contextLock, "SERVERconnect");
 
 	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
 
@@ -756,7 +747,7 @@ str
 SERVERdisconnectALL(int *key){
 	int i;
 
-	mal_set_lock(mal_contextLock,"SERVERdisconnect");
+	MT_lock_set(&mal_contextLock, "SERVERdisconnect");
 
 	for(i=1; i< MAXSESSIONS; i++)
 		if( SERVERsessions[i].c != 0 ) {
@@ -771,7 +762,7 @@ SERVERdisconnectALL(int *key){
 			mapi_disconnect(SERVERsessions[i].mid);
 		}
 
-	mal_unset_lock(mal_contextLock,"SERVERdisconnect");
+	MT_lock_unset(&mal_contextLock, "SERVERdisconnect");
 
 	return MAL_SUCCEED;
 }
@@ -780,7 +771,7 @@ str
 SERVERdisconnectWithAlias(int *key, str *dbalias){
 	int i;
 
-	mal_set_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+	MT_lock_set(&mal_contextLock, "SERVERdisconnectWithAlias");
 
 	for(i=0; i<MAXSESSIONS; i++)
 		 if( SERVERsessions[i].dbalias &&
@@ -795,11 +786,11 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 		}
 
 	if( i==MAXSESSIONS){
-		mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+		MT_lock_unset(&mal_contextLock, "SERVERdisconnectWithAlias");
 		throw(IO, "mapi.disconnect", "Impossible to close session for db_alias: '%s'", *dbalias);
 	}
 
-	mal_unset_lock(mal_contextLock,"SERVERdisconnectWithAlias");
+	MT_lock_unset(&mal_contextLock, "SERVERdisconnectWithAlias");
 	return MAL_SUCCEED;
 }
 

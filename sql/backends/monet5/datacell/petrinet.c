@@ -242,9 +242,9 @@ str PNstopScheduler(int *ret)
 {
 	int i = 0, j = pnettop;
 	pnettop = 0;    /* don't look at it anymore */
-	mal_set_lock(petriLock, "pncontroller");
+	MT_lock_set(&petriLock, "pncontroller");
 	status = PNstopped;
-	mal_unset_lock(petriLock, "pncontroller");
+	MT_lock_unset(&petriLock, "pncontroller");
 	i = 0;
 	do {
 		MT_sleep_ms(cycleDelay + 1);  /* delay to make it more tractable */
@@ -475,14 +475,14 @@ PNcontroller(void *dummy)
 			MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
 		while (status == PNpause)
 			;
-		mal_set_lock(petriLock, "pncontroller");
+		MT_lock_set(&petriLock, "pncontroller");
 		if (status != PNstopped)
 			/* collect latest statistics, note that we don't need a lock here,
 			   because the count need not be accurate to the usec. It will simply
 			   come back. We also only have to check the sources that are marked
 			   empty. */
 			status = PNrunning;
-		mal_unset_lock(petriLock, "pncontroller");
+		MT_lock_unset(&petriLock, "pncontroller");
 		now = GDKusec();
 		for (k = i = 0; status == PNrunning && i < pnettop; i++) {
 			pnet[i].available = 0;
@@ -593,10 +593,10 @@ static str PNstart(int *ret)
 #ifdef _DEBUG_PETRINET_
 	PNdump(&s);
 #endif
-	mal_set_lock(petriLock, "pncontroller");
+	MT_lock_set(&petriLock, "pncontroller");
 	if (status != PNstopped)
 		status = PNrunning;
-	mal_unset_lock(petriLock, "pncontroller");
+	MT_lock_unset(&petriLock, "pncontroller");
 	/*controlRounds = PNcontrolEnd;*/
 
 	PNcontroller(&s);

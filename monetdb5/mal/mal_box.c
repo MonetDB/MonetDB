@@ -230,13 +230,13 @@ newBox(str name)
 	Box obj = 0;
 	int i;
 
-	mal_set_lock(mal_contextLock, "newBox");
+	MT_lock_set(&mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
 	mnstr_printf(GDKout, "create new box '%s'\n", name);
 #endif
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] != NULL && idcmp(name, malbox[i]->name) == 0) {
-			mal_unset_lock(mal_contextLock, "newBox");
+			MT_lock_unset(&mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
 			mnstr_printf(GDKout,"newBox:duplicate box definition\n");
 #endif
@@ -254,7 +254,7 @@ newBox(str name)
 			malbox[i] = obj;
 			break;
 		}
-	mal_unset_lock(mal_contextLock, "newBox");
+	MT_lock_unset(&mal_contextLock, "newBox");
 	if (i == topbox) {
 		if ( topbox < MAXSPACES){
 			obj= (Box) GDKzalloc(sizeof(BoxRecord));
@@ -302,17 +302,17 @@ findBox(str name)
 {
 	int i;
 
-	mal_set_lock(mal_contextLock, "findBox");
+	MT_lock_set(&mal_contextLock, "findBox");
 
 	for (i = 0; i < topbox; i++)
 		if (malbox[i] != NULL && name && idcmp(name, malbox[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
 			mnstr_printf(GDKout, "found the box '%s' %d\n", name, i);
 #endif
-			mal_unset_lock(mal_contextLock, "findBox");
+			MT_lock_unset(&mal_contextLock, "findBox");
 			return malbox[i];
 		}
-	mal_unset_lock(mal_contextLock, "findBox");
+	MT_lock_unset(&mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
 	mnstr_printf(GDKout, "could not find the box '%s' \n", name);
 #endif
@@ -354,7 +354,7 @@ destroyBox(str name)
 	int i, j;
 	str boxfile;
 
-	mal_set_lock(mal_contextLock, "destroyBox");
+	MT_lock_set(&mal_contextLock, "destroyBox");
 	for (i = j = 0; i < topbox; i++) {
 		if (idcmp(malbox[j]->name, name) == 0) {
 			free(malbox[i]->name);
@@ -368,7 +368,7 @@ destroyBox(str name)
 		} else
 			malbox[i] = malbox[j++];
 	}
-	mal_unset_lock(mal_contextLock, "destroyBox");
+	MT_lock_unset(&mal_contextLock, "destroyBox");
 }
 
 /*

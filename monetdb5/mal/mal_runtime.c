@@ -56,7 +56,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 	if (stk && mb->profiler != NULL) {
 		prof->newclk = stk->clk = GDKusec();
 		if (mb->profiler[stkpc].trace) {
-			mal_set_lock(mal_contextLock, "DFLOWdelay");
+			MT_lock_set(&mal_contextLock, "DFLOWdelay");
 			gettimeofday(&stk->clock, NULL);
 			prof->ppc = stkpc;
 			mb->profiler[stkpc].clk = 0;
@@ -70,7 +70,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 			mb->profiler[stkpc].timer = stk->timer;
 #endif
 			mb->profiler[stkpc].clk = stk->clk;
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
+			MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 		}
 	}
 }

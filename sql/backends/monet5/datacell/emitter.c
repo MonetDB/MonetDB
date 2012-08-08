@@ -463,8 +463,6 @@ bodyRestart:
 str
 EMstartThread(Emitter em)
 {
-	GDKprotect();
-
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Emitter body %s started at %s:%d, servermode=%d\n",
 			em->name, em->host, em->port, em->mode);

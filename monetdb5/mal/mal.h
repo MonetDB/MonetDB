@@ -57,11 +57,6 @@ mal_export int		nrservers;
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 
-#define mal_set_lock(X,Y) if(GDKprotected) MT_lock_set(&X,Y)
-#define mal_unset_lock(X,Y) if(GDKprotected) MT_lock_unset(&X,Y)
-#define mal_up_sema(X,Y) if(GDKprotected) MT_sema_up(&X,Y)
-#define mal_down_sema(X,Y) if(GDKprotected) MT_sema_down(&X,Y)
-
 /*
    See gdk/gdk.mx for the definition of all debug masks.
    See `man mserver5` or tools/mserver/mserver5.1

@@ -953,7 +953,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* assure correct variable type */
 				if (getVarType(mb, exceptionVar) == TYPE_str) {
 					/* watch out for concurrent access */
-					mal_set_lock(mal_contextLock, "exception handler");
+					MT_lock_set(&mal_contextLock, "exception handler");
 					v = &stk->stk[exceptionVar];
 					if (v->val.sval)
 						FREE_EXCEPTION(v->val.sval);    /* old exception*/
@@ -961,7 +961,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					v->val.sval = ret;
 					v->len = (int)strlen(v->val.sval);
 					ret = 0;
-					mal_unset_lock(mal_contextLock, "exception handler");
+					MT_lock_unset(&mal_contextLock, "exception handler");
 				} else {
 					mnstr_printf(cntxt->fdout, "%s", ret);
 					FREE_EXCEPTION(ret);
