@@ -232,12 +232,10 @@ SQLinit(void)
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock, "SQL init");
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
-		MT_lock_unset(&sql_contextLock, "SQL init");
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 #if 0
 	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
-		MT_lock_unset(&sql_contextLock, "SQL init");
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
 #endif
