@@ -1917,11 +1917,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				v = BATmirror(v);
 			}
 			if (v->H->hash) {
-				MT_lock_set(&GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
+				MT_lock_set(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
 				if (b->H->hash == NULL) {	/* give it to the parent */
 					b->H->hash = v->H->hash;
 				}
-				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
+				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
 			}
 			BBPreclaim(v);
 			v = NULL;
@@ -2777,7 +2777,7 @@ BATmode(BAT *b, int mode)
 		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
-		MT_lock_set(&GDKswapLock(bid & BBP_BATMASK), "BATmode");
+		MT_lock_set(&GDKswapLock(bid), "BATmode");
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
@@ -2799,7 +2799,7 @@ BATmode(BAT *b, int mode)
 			}
 		}
 		b->batPersistence = mode;
-		MT_lock_unset(&GDKswapLock(bid & BBP_BATMASK), "BATmode");
+		MT_lock_unset(&GDKswapLock(bid), "BATmode");
 	}
 	return b;
 }

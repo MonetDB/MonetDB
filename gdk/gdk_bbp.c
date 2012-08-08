@@ -299,8 +299,8 @@ BBPinithash(void)
 				BBP_insert(-i);
 			}
 		} else {
-			BBP_next(i) = BBP_free(i & BBP_THREADMASK);
-			BBP_free(i & BBP_THREADMASK) = i;
+			BBP_next(i) = BBP_free(i);
+			BBP_free(i) = i;
 		}
 	}
 }
@@ -3126,7 +3126,7 @@ BBPcold(bat i)
 		MT_Id pid = BBP_getpid();
 		int lock = locked_by ? pid != locked_by : 1;
 
-		MT_lock_set(&GDKtrimLock(pid & BBP_THREADMASK), "BBPcold");
+		MT_lock_set(&GDKtrimLock(pid), "BBPcold");
 		if (lock)
 			MT_lock_set(&GDKswapLock(i), "BBPcold");
 		/* make very cold and insert on top of trim list */
@@ -3139,7 +3139,7 @@ BBPcold(bat i)
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i), "BBPcold");
-		MT_lock_unset(&GDKtrimLock(pid & BBP_THREADMASK), "BBPcold");
+		MT_lock_unset(&GDKtrimLock(pid), "BBPcold");
 	}
 }
 
