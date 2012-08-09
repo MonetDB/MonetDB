@@ -117,6 +117,7 @@ static int BBPprepare(bit subcommit);
 static BAT *getBBPdescriptor(bat i, int lock);
 static int BBPbackup(BAT *b, bit subcommit);
 
+#define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
 
 static int stamp = 0;
 static inline int

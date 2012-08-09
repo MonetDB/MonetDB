@@ -50,9 +50,6 @@ gdk_export int BBPdir(int cnt, bat *subcommit);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);
-#ifdef LIBGDK			/* only used within GDK */
-extern bat BBPinsert(BATstore *bs);
-#endif
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, const char *nme);
@@ -69,8 +66,9 @@ gdk_export void BBPreleaseref(bat i);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 
-#define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && ((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))	/* (strncmp((s), "tmp_", 4) == 0) */
-#define BBPnamecheck(s) (BBPtmpcheck(s) ? ((s)[3] == '_' ? strtol((s) + 4, NULL, 8) : -strtol((s) + 5, NULL, 8)) : 0)
+/* (strncmp(s, "tmp_", 4) == 0 || strncmp(s, "tmpr_", 5) == 0) */
+#define BBPtmpcheck(s) ((s)[0] == 't' && (s)[1] == 'm' && (s)[2] == 'p' && \
+			((s)[3] == '_' || ((s)[3] == 'r' && (s)[4] == '_')))
 
 #define BBP_status_set(bid, mode, nme)		\
 	do {					\
@@ -100,9 +98,5 @@ gdk_export void BBPshare(bat b);
 	} while (0)
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
-/*
- * The BBP_ref contains the amount of live references to a BAT.  These
- * might be in recursive BATs, C or MAL variables.  The count is
- * incremented with BBPfix and decremented with BBPunfix.
- */
+
 #endif /* _GDK_BBP_H_ */

@@ -2283,7 +2283,11 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #include "gdk_atoms.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
-#include "gdk_bat.h"
+
+/* functions defined in gdk_bat.c */
+gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
+gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
+gdk_export BAT *BATattach(int tt, const char *heapfile);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
