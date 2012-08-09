@@ -2112,22 +2112,26 @@ have_geotiff="auto"
 AC_ARG_WITH(geotiff,
     AS_HELP_STRING([--with-geotiff=DIR],[geotiff library is installed in DIR]),
     [have_geotiff="$withval"], [have_geotiff="auto"])
+# first autoconf for distributions that added a .pc file themselves (Fedora)
 if test "x$have_geotiff" != xno; then
 
 	case "$have_geotiff" in
 	auto|yes)
+		PKG_CHECK_MODULES([GEOTIFF], [libgeotiff], [have_geotiff="pkgconf"], [have_geotiff="$have_geotiff"])
 	    ;;
 	*)
 	    GEOTIFF_CFLAGS="-I$have_geotiff/include"
-	    GEOTIFF_LDFLAGS="-L$have_geotiff/lib"
+	    GEOTIFF_LIBS="-L$have_geotiff/lib"
 	    ;;
 	esac
-
+fi
+# try to detect it manually like upstream provides it
+if test "x$have_geotiff" != xno && test "x$have_geotiff" != xpkgconf; then
 	save_CPPFLAGS="$CPPFLAGS"
 	save_LDFLAGS="$LDFLAGS"
     save_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $GEOTIFF_CFLAGS"
-	LDFLAGS="$LDFLAGS $GEOTIFF_LDFLAGS"
+	LDFLAGS="$LDFLAGS $GEOTIFF_LIBS"
     LIBS=""
     AC_CHECK_HEADER(tiffio.h, AC_CHECK_LIB(tiff, TIFFOpen))
 	AC_CHECK_HEADER(xtiffio.h,
@@ -2137,17 +2141,17 @@ if test "x$have_geotiff" != xno; then
             LIBS="$LIBS -lgeotiff"],
 			[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([-lgeotiff library not found]); fi; have_geotiff=no ], [$MATH_LIBS]),
 		[ if test "x$have_geotiff" != xauto; then AC_MSG_ERROR([xtiffio.h header not found]); fi; have_geotiff=no ])
-    GEOTIFF_LDFLAGS="$GEOTIFF_LDFLAGS $LIBS"
+    GEOTIFF_LIBS="$GEOTIFF_LIBS $LIBS"
 	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"
     LIBS="$save_LIBS"
-  if test "x$have_geotiff" != "xyes"; then
-	    GEOTIFF_CFLAGS=
-	    GEOTIFF_LIBS=""
-  fi
+	if test "x$have_geotiff" != "xyes"; then
+		GEOTIFF_CFLAGS=""
+		GEOTIFF_LIBS=""
+	fi
 fi
 AC_SUBST(geotiff_CFLAGS, $GEOTIFF_CFLAGS)
-AC_SUBST(geotiff_LIBS, $GEOTIFF_LDFLAGS)
+AC_SUBST(geotiff_LIBS, $GEOTIFF_LIBS)
 AM_CONDITIONAL(HAVE_GEOTIFF, test x"$have_geotiff" != xno)
 
 # geos, only used in geom module
