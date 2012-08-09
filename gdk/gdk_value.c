@@ -266,7 +266,7 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 int
 VALisnil(const ValRecord *v)
 {
-	switch (ATOMstorage(v->vtype)) {
+	switch (v->vtype) {
 	case TYPE_void:
 		return 1;
 	case TYPE_bte:
