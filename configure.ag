@@ -2146,8 +2146,8 @@ if test "x$have_geotiff" != xno; then
 	    GEOTIFF_LIBS=""
   fi
 fi
-AC_SUBST(GEOTIFF_CFLAGS, $geotiff_CFLAGS)
-AC_SUBST(GEOTIFF_LIBS, $geotiff_LIBS)
+AC_SUBST(geotiff_CFLAGS, $GEOTIFF_CFLAGS)
+AC_SUBST(geotiff_LIBS, $GEOTIFF_LDFLAGS)
 AM_CONDITIONAL(HAVE_GEOTIFF, test x"$have_geotiff" != xno)
 
 # geos, only used in geom module
