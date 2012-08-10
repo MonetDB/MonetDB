@@ -50,6 +50,45 @@ static char *parse_json_value(jsonbat *jb, oid *v, char *p);
 static char *parse_json_object(jsonbat *jb, oid *id, char *p);
 static char *parse_json_array(jsonbat *jb, oid *id, char *p);
 
+static void json_error(jsonbat *, char *,
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+static void
+json_error(jsonbat *jb, char *p, const char *format, ...)
+{
+	va_list ap;
+	char message[8096];
+	size_t len;
+	char around[32];
+	size_t off = p - jb->streambuf;
+	char hadend = 0;
+
+	va_start(ap, format);
+	len = vsnprintf(message, sizeof(message), format, ap);
+	va_end(ap);
+
+	if (off < 13)
+		off = 13;
+	off -= 13;
+	if (snprintf(around, sizeof(around), "%s", jb->streambuf + off)
+			<= (int)(sizeof(around)))
+		hadend = 1;
+	/* wrap at newline */
+	for (p = around; *p != '\0'; p++)
+		if (*p == '\n' || *p == '\r')
+			*p = ' ';
+	/* trim */
+	for (--p; p > around && isspace(*p); p--)
+		*p = '\0';
+	for (p = around; *p != '\0' && isspace(*p); p++);
+	snprintf(message + len, sizeof(message) - len, " at or around '%s%s%s'",
+			off == 0 ? "" : "...", p, hadend == 0 ? "..." : "");
+
+	if (jb->error != NULL)
+		GDKfree(jb->error);
+	jb->error = GDKstrdup(message);
+}
+
 static size_t
 read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 {
@@ -171,7 +210,7 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 			break;
 	}
 	if (*w != *p && *p == '\0') {
-		jb->error = GDKstrdup("unexpected end of stream while reading string");
+		json_error(jb, p, "unexpected end of stream while reading string");
 		return NULL;
 	}
 	if (pair == 0) {
@@ -228,7 +267,7 @@ parse_json_boolean(jsonbat *jb, oid *v, char *p)
 {
 	if (*p == 't') {
 		if (strncmp(p, "true", strlen("true")) != 0) {
-			jb->error = GDKstrdup("expected 'true'");
+			json_error(jb, p, "expected 'true'");
 			return NULL;
 		}
 		p += strlen("true");
@@ -236,7 +275,7 @@ parse_json_boolean(jsonbat *jb, oid *v, char *p)
 		*v = BUNlast(jb->kind) - 1;
 	} else if (*p == 'f') {
 		if (strncmp(p, "false", strlen("false")) != 0) {
-			jb->error = GDKstrdup("expected 'false'");
+			json_error(jb, p, "expected 'false'");
 			return NULL;
 		}
 		p += strlen("false");
@@ -251,7 +290,7 @@ parse_json_null(jsonbat *jb, oid *v, char *p)
 {
 	if (*p == 'n') {
 		if (strncmp(p, "null", strlen("null")) != 0) {
-			jb->error = GDKstrdup("expected 'null'");
+			json_error(jb, p, "expected 'null'");
 			return NULL;
 		}
 		p += strlen("null");
@@ -295,8 +334,7 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 			p = parse_json_null(jb, v, p);
 			break;
 		default:
-			jb->error = GDKstrdup("unexpected character 'X' for value");
-			jb->error[22] = *p;
+			json_error(jb, p, "unexpected character '%c' for value", *p);
 			return NULL;
 	}
 	return p;
@@ -309,7 +347,7 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	char *x;
 
 	if (*p != '"') {
-		jb->error = GDKstrdup("expected string for pair");
+		json_error(jb, p, "expected string for pair");
 		return NULL;
 	}
 
@@ -324,7 +362,7 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 			break;
 	}
 	if (*p != ':') {
-		jb->error = GDKstrdup("exected ':' for pair");
+		json_error(jb, p, "exected ':' for pair");
 		return NULL;
 	}
 	p++;
