@@ -60,12 +60,12 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = bat5.mal algebra.mx status.mal unix.mal \
-		mmath.mal lock.mal sema.mal alarm.mal batstr.mal batmtime.mal \
+		mmath.mal lock.mal sema.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
 		group.mx aggr.mx array.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = aggr_ri.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal batmtime.mal
+EXTRA_DIST = aggr_ri.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
 
 EXTRA_DIST_DIR = Tests
