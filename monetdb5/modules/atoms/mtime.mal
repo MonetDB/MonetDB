@@ -284,7 +284,7 @@ pattern calc.>=(v:timestamp,w:timestamp):bit
 address CMDvarGE
 comment "Equality of two timestamps";
 pattern calc.isnil(v:timestamp):bit
-address CNDvarISNIL
+address CMDvarISNIL
 comment "Nil test for timestamp value";
 pattern calc.min(v:timestamp,w:timestamp):timestamp
 address CALCmin
