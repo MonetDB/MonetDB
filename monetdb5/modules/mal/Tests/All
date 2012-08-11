@@ -31,7 +31,7 @@ remoteInit
 
 remote01
 remote02
-remote03
+HAVE_GEOM?remote03
 remote04
 remote06
 remote08

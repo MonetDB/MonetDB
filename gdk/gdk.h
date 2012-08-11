@@ -1514,8 +1514,6 @@ gdk_export int BATgetaccess(BAT *b);
  * @item BAT *
  * @tab BATmark_grp (BAT *b, BAT *g, oid *s)
  * @item BAT *
- * @tab BATnumber (BAT *b)
- * @item BAT *
  * @tab BATmirror (BAT *b)
  * @item BAT *
  * @tab BATreset (BAT *b)
@@ -1527,10 +1525,7 @@ gdk_export int BATgetaccess(BAT *b);
  * name.  The routine BATmark creates a binary association that
  * introduces a new tail column of fresh densely ascending OIDs.  The
  * base OID can be given explicitly, or if oid_nil is passed, is
- * chosen as a new unique range by the system.  A similar routine is
- * BATnumber, which copies the heads and assigns an integer index to
- * the tail.  It plays a crucial role in administration of query
- * results.
+ * chosen as a new unique range by the system.
  *
  * The routine BATmirror returns the mirror image BAT (where tail is
  * head and head is tail) of that same BAT. This does not involve a
@@ -1541,7 +1536,6 @@ gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
-gdk_export BAT *BATnumber(BAT *b);
 gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
 
 /*
@@ -2289,7 +2283,11 @@ gdk_export int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 #include "gdk_atoms.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
-#include "gdk_bat.h"
+
+/* functions defined in gdk_bat.c */
+gdk_export BUN void_replace_bat(BAT *b, BAT *u, bit force);
+gdk_export int void_inplace(BAT *b, oid id, const void *val, bit force);
+gdk_export BAT *BATattach(int tt, const char *heapfile);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
@@ -2403,24 +2401,6 @@ VALptr(const ValRecord *v)
 		((((lng)normal_int_SWAP(l))<<32) |\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 
-gdk_export int GDKembedded;
-gdk_export int GDKprotected;
-gdk_export void GDKprotect(void);
-
-/*
- * The GDKembedded variable is a property set in the configuration
- * file to indicate that the kernel is only allowed to run as a single
- * process.  This can be used to remove all locking overhead.  The
- * actual state of affairs is maintained in GDKprotected, which is set
- * when locking is required, e.g. when multiple threads become active.
- */
-#define gdk_set_lock(X,Y)	do if (GDKprotected) MT_lock_set(&X,Y); while (0)
-#define gdk_unset_lock(X,Y)	do if (GDKprotected) MT_lock_unset(&X,Y); while (0)
-#define gdk_up_sema(X,Y)	do if (GDKprotected) MT_sema_up(&X,Y); while (0)
-#define gdk_down_sema(X,Y)	do if (GDKprotected) MT_sema_down(&X,Y); while (0)
-#define gdk_signal_cond(X,Y)	do if (GDKprotected) MT_cond_signal(&X,Y); while (0)
-#define gdk_wait_cond(X,Y,Z)	do if (GDKprotected) MT_cond_wait(&X,&Y,Z); while (0)
-
 /*
  * The kernel maintains a central table of all active threads.  They
  * are indexed by their tid. The structure contains information on the
@@ -2447,7 +2427,7 @@ gdk_export ThreadRec GDKthreads[THREADS];
 
 gdk_export int THRgettid(void);
 gdk_export Thread THRget(int tid);
-gdk_export Thread THRnew(MT_Id pid, str name);
+gdk_export Thread THRnew(str name);
 gdk_export void THRdel(Thread t);
 gdk_export void THRsetdata(int, ptr);
 gdk_export void *THRgetdata(int);

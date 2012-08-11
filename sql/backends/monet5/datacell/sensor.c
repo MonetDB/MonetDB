@@ -19,38 +19,38 @@
 
 /*
  * @a M. Kersten, F.Groffen, E. Liarou, R. Goncalves
-The Sensor Simulation program
+   The Sensor Simulation program
 
-The sensor tool can be used to simulate a simple sensor, such as an on/off sensor or
-a heat sensor. It is an independent tool, which runs on any platform where a C-compiler
-is available for compilation, and where the fire-wall settings permit connection to 
-specific host:port channels. 
+   The sensor tool can be used to simulate a simple sensor, such as an on/off sensor or
+   a heat sensor. It is an independent tool, which runs on any platform where a C-compiler
+   is available for compilation, and where the fire-wall settings permit connection to
+   specific host:port channels.
 
-The sensor generator runs in two modes, active or passive. In the former case, the tool
-contacts the server and establishes an UDF channel to pass CSV encoded event strings.
-In the latter case, it is the datacell server that periodically contacts the sensor to
-deliver an event.
-Optionally, the event can be tagged with a serial key and a time-stamp.
+   The sensor generator runs in two modes, active or passive. In the former case, the tool
+   contacts the server and establishes an UDF channel to pass CSV encoded event strings.
+   In the latter case, it is the datacell server that periodically contacts the sensor to
+   deliver an event.
+   Optionally, the event can be tagged with a serial key and a time-stamp.
 
-Events are generated using a built-in random number generator or a file.
-The latter can be used to re-play a scenario, precisely mimicking the time
-an event was raised.
-The events are sent over the channel with an optional delay, expressed in number of microseconds.
+   Events are generated using a built-in random number generator or a file.
+   The latter can be used to re-play a scenario, precisely mimicking the time
+   an event was raised.
+   The events are sent over the channel with an optional delay, expressed in number of microseconds.
 
-To stress the system under various situations, the events can be sent in batches,
-where between each batch an optional delay is obeyed. The delay is specified in 
-number of milliseconds. Setting the delay to zero results in an event stream burst.
+   To stress the system under various situations, the events can be sent in batches,
+   where between each batch an optional delay is obeyed. The delay is specified in
+   number of milliseconds. Setting the delay to zero results in an event stream burst.
 
-The sensor program provides a template to experiment with your own sensors.
-The structure has been set up to generate MonetDB tuple formatted events,
-comma-separated-input (CSV) and tab-separated-input (TSV). The protocol
-can readily be extended with SOAP and JSON based schemes.
+   The sensor program provides a template to experiment with your own sensors.
+   The structure has been set up to generate MonetDB tuple formatted events,
+   comma-separated-input (CSV) and tab-separated-input (TSV). The protocol
+   can readily be extended with SOAP and JSON based schemes.
 
-More esotheric solutions, e.g. to mimick real sensor systems, calls for
-development of a simple event constructor and serialization scheme.
-Moreover, in those cases a receptor should be constructed, which understands
-the event message protocol.
-*/
+   More esotheric solutions, e.g. to mimick real sensor systems, calls for
+   development of a simple event constructor and serialization scheme.
+   Moreover, in those cases a receptor should be constructed, which understands
+   the event message protocol.
+ */
 #ifndef SENSOR
 #define SENSOR
 #include "monetdb_config.h"
@@ -92,7 +92,7 @@ static Sensor
 SEnew(str nme)
 {
 	Sensor se;
-	se = (Sensor)GDKzalloc(sizeof(SErecord));
+	se = (Sensor) GDKzalloc(sizeof(SErecord));
 	se->name = GDKstrdup(nme);
 	se->nxt = seAnchor;
 	seAnchor = se;
@@ -100,16 +100,16 @@ SEnew(str nme)
 }
 
 /*
-Defaults:
-The default settings for the sensor simulator are single millisecond delay, 
-sending each event in isolatio, e.g. no batching, using a single payload columns.
-The datacell is presumed to life on the same host and listens to the port 50500.
-*/
-static int delay = 1;	/* intra batch delay in ms, use 1 to avoid loosing too many */
+   Defaults:
+   The default settings for the sensor simulator are single millisecond delay,
+   sending each event in isolatio, e.g. no batching, using a single payload columns.
+   The datacell is presumed to life on the same host and listens to the port 50500.
+ */
+static int delay = 1;   /* intra batch delay in ms, use 1 to avoid loosing too many */
 static int batchsize = 1;
 static int events = -1;
 static int columns = 1;
-static int autoincrement = 1;	/* if id != 0 then we increment and send it along */
+static int autoincrement = 1;   /* if id != 0 then we increment and send it along */
 static int timestamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
 static char *host = "localhost";
 static int port = 50500;
@@ -148,12 +148,12 @@ usage(void)
 #define CSV 3
 #define TSV 4
 #define DEB 5
-static int protocol= TCP;
-static char *protocolname[6] = {"<unknown>","tcp","udp","csv","tsv","debug"};
-static char *separator[6] = {"",",",",",",","\t",","};
+static int protocol = TCP;
+static char *protocolname[6] = { "<unknown>", "tcp", "udp", "csv", "tsv", "debug" };
+static char *separator[6] = { "", ",", ",", ",", "\t", "," };
 
 /*static Mapi dbh;
-static MapiHdl hdl = NULL;*/
+   static MapiHdl hdl = NULL;*/
 
 #define die(dbh, hdl) (hdl ? mapi_explain_query(hdl, stderr) :		 \
 					   dbh ? mapi_explain(dbh, stderr) :			\
@@ -162,12 +162,12 @@ static MapiHdl hdl = NULL;*/
 
 #define doQ(X) \
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-			 die(dbh, hdl);
+		die(dbh, hdl);
 
 static void
 stopSend(int i)
 {
-	(void)i;
+	(void) i;
 	signal(i, SIG_IGN);
 	exit(0);
 }
@@ -203,21 +203,21 @@ int main(int argc, char **argv)
 		{ "help", 1, 0, '?' },
 		{ 0, 0, 0, 0 }
 	};
-	THRdata[0] = (void *)file_wastream(stdout, "stdout");
-	THRdata[1] = (void *)file_rastream(stdin, "stdin");
+	THRdata[0] = (void *) file_wastream(stdout, "stdout");
+	THRdata[1] = (void *) file_rastream(stdin, "stdin");
 	for (i = 0; i < THREADS; i++) {
 		GDKthreads[i].tid = i + 1;
 	}
-	for (;; ) {
+	for (;;) {
 		int option_index = 0;
 		int c = getopt_long(argc, argv, "b:i:e:c:p:s:d:f:h:t:?:0",
-			long_options, &option_index);
+				long_options, &option_index);
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'b':
-			batchsize = optarg? atol(optarg): -1;
+			batchsize = optarg ? atol(optarg) : -1;
 			if (batchsize <= 0) {
 				mnstr_printf(SEout, "Illegal batch %d\n", batchsize);
 				exit(0);
@@ -228,21 +228,21 @@ int main(int argc, char **argv)
 				server = 0;
 				break;
 			}
-			columns = optarg? atol(optarg): -1;
+			columns = optarg ? atol(optarg) : -1;
 			if (columns <= 0) {
 				mnstr_printf(SEout, "Illegal columns %d\n", columns);
 				exit(0);
 			}
 			break;
 		case 'd':
-			delay = optarg? atol(optarg): -1;
+			delay = optarg ? atol(optarg) : -1;
 			if (delay < 0) {
 				mnstr_printf(SEout, "Illegal delay %d\n", delay);
 				exit(0);
 			}
 			break;
 		case 'i':
-			autoincrement = optarg? atol(optarg): 0;
+			autoincrement = optarg ? atol(optarg) : 0;
 			if (autoincrement < 0) {
 				mnstr_printf(SEout, "Illegal increment %d\n", autoincrement);
 				exit(0);
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
-				trace = optarg? atol(optarg): 1;
+				trace = optarg ? atol(optarg) : 1;
 			} else {
 				usage();
 				exit(0);
@@ -265,11 +265,11 @@ int main(int argc, char **argv)
 			break;
 		case 'e':
 			if (strcmp(long_options[option_index].name, "events") == 0) {
-				events = optarg? atol(optarg): -1;
+				events = optarg ? atol(optarg) : -1;
 				if (events < -1) {
 					mnstr_printf(SEout, "illegal events value, reset to -1\n");
 					events = -1;
-				}else if (events == 0) {
+				} else if (events == 0) {
 					mnstr_printf(SEout, "Illegal events value %d\n", events);
 					exit(0);
 				}
@@ -312,7 +312,7 @@ int main(int argc, char **argv)
 				}
 			}
 			if (strcmp(long_options[option_index].name, "port") == 0) {
-				port = optarg? atol(optarg): -1;
+				port = optarg ? atol(optarg) : -1;
 #ifdef SENSOR_DEBUG
 				mnstr_printf(SEout, "#PORT : %d\n", port);
 #endif
@@ -362,24 +362,24 @@ int main(int argc, char **argv)
 			mnstr_printf(SEout, "--input=%s\n", datafile);
 	}
 	estimateOverhead();
-	strncpy(hostname,host,1024);
-	if ( strcmp(host,"localhost")== 0 )
-		gethostname(hostname,1024);
-	host= hostname;
+	strncpy(hostname, host, 1024);
+	if (strcmp(host, "localhost") == 0)
+		gethostname(hostname, 1024);
+	host = hostname;
 
 	/*
 	 * @-
 	 * We limit the protocols for the time being to what can be
 	 * considered a safe method.
 	 */
-	if (protocol == DEB ) {
+	if (protocol == DEB) {
 		/* save event stream in a file */
 		Sensor se = SEnew(sensor);
-		if ( events == -1  || batchsize != 1){
+		if (events == -1 || batchsize != 1) {
 			printf("Provide an event limit using --events=<nr> and --batch=1\n");
 			return 0;
 		}
-		if ( datafile)
+		if (datafile)
 			se->toServer = open_wastream(datafile);
 		else
 			se->toServer = file_wastream(stdout, "stdout");
@@ -409,7 +409,7 @@ int main(int argc, char **argv)
 			err = NULL;
 			if (server) {
 #ifdef SENSOR_DEBUG
-				mnstr_printf(SEout, "#listen %s as server is %d \n",se->name, server);
+				mnstr_printf(SEout, "#listen %s as server is %d \n", se->name, server);
 #endif
 				err = socket_server_listen(sockfd, &(se->newsockfd));
 				if (err) {
@@ -418,7 +418,7 @@ int main(int argc, char **argv)
 				}
 			} else {
 #ifdef SENSOR_DEBUG
-				mnstr_printf(SEout, "#%s is client \n",se->name);
+				mnstr_printf(SEout, "#%s is client \n", se->name);
 #endif
 				err = socket_client_connect(&(se->newsockfd), host, port);
 				if (err) {
@@ -439,7 +439,7 @@ int main(int argc, char **argv)
 				if (createThread)
 					mnstr_printf(SEout, "#Create thread is : %d \n", createThread);
 #else
-				(void)createThread;
+				(void) createThread;
 #endif
 			} else { /* client part */
 				produceServerStream(se);
@@ -464,7 +464,7 @@ estimateOverhead(void)
 	lng t0 = GDKusec();
 	for (i = 0; i < 10000; i++)
 		l = GDKusec();
-	t0 = (GDKusec() - t0)/10000;
+	t0 = (GDKusec() - t0) / 10000;
 #ifdef SENSOR_DEBUG
 	mnstr_printf(SEout, "#Timing overhead " LLFMT " GDKusec\n", t0);
 #endif
@@ -506,9 +506,9 @@ produceStream(Sensor se)
 		buf[0] = 0;
 		slen = 0;
 		tlen = 0;
-		if ( batchsize > 1 ) {
+		if (batchsize > 1) {
 			snprintf(tuple, maxtuple, "#%d\n", batchsize);
-			tlen += (int)strlen(tuple + tlen);
+			tlen += (int) strlen(tuple + tlen);
 			strncpy(buf, tuple, tlen);
 			slen += tlen;
 		}
@@ -518,7 +518,7 @@ produceStream(Sensor se)
 			tlen = 0;
 			if (autoincrement) {
 				snprintf(tuple + tlen, maxtuple - tlen, "%d", autoincrement);
-				tlen += (int)strlen(tuple + tlen);
+				tlen += (int) strlen(tuple + tlen);
 				autoincrement++;
 			}
 			/* if timestamp is set then the next colum will contain
@@ -527,8 +527,8 @@ produceStream(Sensor se)
 			if (timestamp) {
 				currenttsmp = GDKusec();
 
-				snprintf(tuple + tlen, maxtuple - tlen, "%s" LLFMT "", (autoincrement?separator[protocol]:""), currenttsmp);
-				tlen += (int)strlen(tuple + tlen);
+				snprintf(tuple + tlen, maxtuple - tlen, "%s" LLFMT "", (autoincrement ? separator[protocol] : ""), currenttsmp);
+				tlen += (int) strlen(tuple + tlen);
 				if (tlen >= maxtuple) {
 					mnstr_printf(SEout, "Buffer not large enough to handle request.\n");
 					mnstr_printf(SEout, "recompile with larger constant \n");
@@ -537,15 +537,15 @@ produceStream(Sensor se)
 			}
 
 			/* we only generate integer based events for now */
-			for (i = (timestamp ? 1 : 0) + (autoincrement?1:0); i < columns; i++) {
+			for (i = (timestamp ? 1 : 0) + (autoincrement ? 1 : 0); i < columns; i++) {
 				if (i)
-					snprintf(tuple + tlen, maxtuple - tlen, "%s%d", separator[protocol],rand());
+					snprintf(tuple + tlen, maxtuple - tlen, "%s%d", separator[protocol], rand());
 				else
 					snprintf(tuple + tlen, maxtuple - tlen, "%d", rand());
-				tlen += (int)strlen(tuple + tlen);
+				tlen += (int) strlen(tuple + tlen);
 			}
 			snprintf(tuple + tlen, maxtuple - tlen, "\n");
-			tlen += (int)strlen(tuple + tlen);
+			tlen += (int) strlen(tuple + tlen);
 			/* now add the tuple to the buffer if there is room left*/
 			if (MYBUFSIZ - buflen <= tlen) {
 				mnstr_printf(SEout, "Buffer not large enough to handle request.\n");
@@ -574,13 +574,13 @@ produceStream(Sensor se)
 	/* you should not close the stream to quickly
 	   because then you may loose part of the input */
 
-	if ( protocol != DEB) {
+	if (protocol != DEB) {
 		mnstr_printf(SEout, "Columns: %d\n", columns);
 		mnstr_printf(SEout, "Batch size: %d\n", batchsize);
 		mnstr_printf(SEout, "total Number of batches: %d\n", events);
 		mnstr_printf(SEout, "Delay: %d\n", delay);
 	}
-	mnstr_printf(SEout,"ready to close connection?");
+	mnstr_printf(SEout, "ready to close connection?");
 	(void) getchar();
 	close_stream(se->toServer);
 	se->toServer = NULL;
@@ -610,7 +610,7 @@ produceDataStream(Sensor se)
 		/* read the event requests and sent when the becomes */
 		while (fgets(buf, MYBUFSIZ, fd) != 0) {
 			int newdelay = 0;
-			newdelay = (int)atol(buf);
+			newdelay = (int) atol(buf);
 			tuple = buf;
 
 			if (newdelay > 0) {

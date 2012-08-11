@@ -126,6 +126,9 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		}							\
 	} while (0)
 
+/* ---------------------------------------------------------------------- */
+/* logical (for type bit) or bitwise (for integral types) NOT */
+
 #define NOT(x)		(~(x))
 #define NOTBIT(x)	(!(x))
 
@@ -253,6 +256,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 	}
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* negate value (any numeric type) */
 
 #define NEGATE(x)	(-(x))
 
@@ -387,6 +393,9 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 	}
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* absolute value (any numeric type) */
 
 #ifdef ABSOLUTE
 /* Windows seems to define this somewhere */
@@ -529,6 +538,9 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* is the value equal to zero (any numeric type) */
+
 #define ISZERO(x)		((bit) ((x) == 0))
 
 BAT *
@@ -651,6 +663,10 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 	}
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* sign of value (-1 for negative, 0 for 0, +1 for positive; any
+ * numeric type) */
 
 #define SIGN(x)		((bte) ((x) < 0 ? -1 : (x) > 0))
 
@@ -778,6 +794,9 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* is the value nil (any type) */
+
 #define ISNIL_TYPE(TYPE)						\
 	do {								\
 		const TYPE *src = (const TYPE *) Tloc(b, b->U->first);	\
@@ -791,6 +810,9 @@ BATcalcisnil(BAT *b)
 	BAT *bn;
 	BUN i;
 	bit *dst;
+	int t;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
 	BATcheck(b, "BATcalcisnil");
 
@@ -811,9 +833,17 @@ BATcalcisnil(BAT *b)
 
 	dst = (bit *) Tloc(bn, bn->U->first);
 
+
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
-	switch (ATOMstorage(b->T->type)) {
+	t = b->T->type;
+	nil = ATOMnilptr(t);
+	atomcmp = BATatoms[t].atomCmp;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
+		t = ATOMstorage(t);
+	switch (t) {
 	case TYPE_bte:
 		ISNIL_TYPE(bte);
 		break;
@@ -836,9 +866,7 @@ BATcalcisnil(BAT *b)
 	{
 		BATiter bi = bat_iterator(b);
 		BUN j;
-		ptr v;
-		ptr nil = ATOMnilptr(b->T->type);
-		int (*atomcmp)(const void *, const void *) = BATatoms[b->T->type].atomCmp;
+		const void *v;
 
 		BATloop(b, i, j) {
 			v = BUNtail(bi, i);
@@ -886,6 +914,9 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 	ret->val.btval = (bit) !VALisnil(v);
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* addition (any numeric type) */
 
 #define ADD_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
@@ -2072,6 +2103,9 @@ VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* subtraction (any numeric type) */
+
 #define SUB_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
 	sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1, const TYPE2 *rgt, int incr2, TYPE3 *dst, BUN cnt, int abort_on_error) \
@@ -3257,6 +3291,9 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* multiplication (any numeric type) */
 
 /* TYPE4 must be a type larger than both TYPE1 and TYPE2 so that
  * multiplying into it doesn't cause overflow */
@@ -4457,6 +4494,9 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* division (any numeric type) */
 
 #define DIV_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
@@ -5662,6 +5702,9 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* modulo (any numeric type) */
+
 #define MOD_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
 	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
@@ -6674,6 +6717,9 @@ VARcalcmod(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* logical (for type bit) or bitwise (for integral types) exclusive OR */
+
 #define XOR(a, b)	((a) ^ (b))
 #define XORBIT(a, b)	(((a) == 0) != ((b) == 0))
 
@@ -6951,6 +6997,9 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* logical (for type bit) or bitwise (for integral types) OR */
 
 #define OR(a, b)	((a) | (b))
 
@@ -7244,6 +7293,9 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* logical (for type bit) or bitwise (for integral types) exclusive AND */
+
 #define AND(a, b)	((a) & (b))
 
 static BUN
@@ -7532,6 +7584,9 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* left shift (any integral type) */
+
 #define LSH(a, b)		((a) << (b))
 
 #define SHIFT_CHECK(a, b)	((b) < 0 || (b) >= 8 * (int) sizeof(a))
@@ -7815,6 +7870,9 @@ VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* right shift (any integral type) */
+
 #define RSH(a, b)	((a) >> (b))
 
 static BUN
@@ -8096,6 +8154,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* less than (any "linear" type) */
+
 #define LT(a, b)	((bit) ((a) < (b)))
 
 static BUN
@@ -8105,15 +8166,10 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid || tp1 == TYPE_void) != (tp2 == TYPE_oid || tp2 == TYPE_void))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -8141,8 +8197,16 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, LT);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, LT);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, LT);
@@ -8156,9 +8220,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, LT);
@@ -8166,9 +8229,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, LT);
@@ -8192,7 +8254,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, LT);
@@ -8206,9 +8268,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, LT);
@@ -8216,9 +8277,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, LT);
@@ -8242,29 +8302,10 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = LT(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, LT);
@@ -8278,9 +8319,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, LT);
@@ -8288,9 +8328,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, LT);
@@ -8314,29 +8353,10 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = LT(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, LT);
@@ -8350,9 +8370,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, LT);
@@ -8360,9 +8379,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, LT);
@@ -8386,7 +8404,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, LT);
@@ -8400,9 +8418,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, LT);
@@ -8410,9 +8427,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, LT);
@@ -8436,7 +8452,7 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, LT);
@@ -8450,9 +8466,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, LT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, LT);
@@ -8460,9 +8475,8 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, LT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, LT);
@@ -8485,10 +8499,39 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = LT(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, LT);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, LT);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -8501,7 +8544,29 @@ lt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    !BATatoms[tp1].linear ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) < 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -8670,6 +8735,9 @@ VARcalclt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* greater than (any "linear" type) */
+
 #define GT(a, b)	((bit) ((a) > (b)))
 
 static BUN
@@ -8679,15 +8747,10 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -8715,8 +8778,16 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, GT);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, GT);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, GT);
@@ -8730,9 +8801,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, GT);
@@ -8740,9 +8810,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, GT);
@@ -8766,7 +8835,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, GT);
@@ -8780,9 +8849,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, GT);
@@ -8790,9 +8858,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, GT);
@@ -8816,29 +8883,10 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = GT(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, GT);
@@ -8852,9 +8900,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, GT);
@@ -8862,9 +8909,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, GT);
@@ -8888,29 +8934,10 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = GT(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, GT);
@@ -8924,9 +8951,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, GT);
@@ -8934,9 +8960,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, GT);
@@ -8960,7 +8985,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, GT);
@@ -8974,9 +8999,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, GT);
@@ -8984,9 +9008,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, GT);
@@ -9010,7 +9033,7 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, GT);
@@ -9024,9 +9047,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, GT);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, GT);
@@ -9034,9 +9056,8 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, GT);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, GT);
@@ -9059,10 +9080,39 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = GT(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, GT);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, GT);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -9075,7 +9125,29 @@ gt_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    !BATatoms[tp1].linear ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) > 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -9244,6 +9316,9 @@ VARcalcgt(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* less than or equal (any "linear" type) */
+
 #define LE(a, b)	((bit) ((a) <= (b)))
 
 static BUN
@@ -9253,15 +9328,10 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -9289,8 +9359,16 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, LE);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, LE);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, LE);
@@ -9304,9 +9382,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, LE);
@@ -9314,9 +9391,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, LE);
@@ -9340,7 +9416,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, LE);
@@ -9354,9 +9430,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, LE);
@@ -9364,9 +9439,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, LE);
@@ -9390,29 +9464,10 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = LE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, LE);
@@ -9426,9 +9481,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, LE);
@@ -9436,9 +9490,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, LE);
@@ -9462,29 +9515,10 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = LE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, LE);
@@ -9498,9 +9532,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, LE);
@@ -9508,9 +9541,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, LE);
@@ -9534,7 +9566,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, LE);
@@ -9548,9 +9580,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, LE);
@@ -9558,9 +9589,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, LE);
@@ -9584,7 +9614,7 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, LE);
@@ -9598,9 +9628,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, LE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, LE);
@@ -9608,9 +9637,8 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, LE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, LE);
@@ -9633,10 +9661,39 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = LE(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, LE);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, LE);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -9649,7 +9706,29 @@ le_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    !BATatoms[tp1].linear ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) <= 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -9818,6 +9897,9 @@ VARcalcle(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* greater than or equal (any "linear" type) */
+
 #define GE(a, b)	((bit) ((a) >= (b)))
 
 static BUN
@@ -9827,15 +9909,10 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -9863,8 +9940,16 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, GE);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, GE);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, GE);
@@ -9878,9 +9963,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, GE);
@@ -9888,9 +9972,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, GE);
@@ -9914,7 +9997,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, GE);
@@ -9928,9 +10011,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, GE);
@@ -9938,9 +10020,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, GE);
@@ -9964,29 +10045,10 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = GE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, GE);
@@ -10000,9 +10062,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, GE);
@@ -10010,9 +10071,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, GE);
@@ -10036,29 +10096,10 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = GE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, GE);
@@ -10072,9 +10113,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, GE);
@@ -10082,9 +10122,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, GE);
@@ -10108,7 +10147,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, GE);
@@ -10122,9 +10161,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, GE);
@@ -10132,9 +10170,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, GE);
@@ -10158,7 +10195,7 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, GE);
@@ -10172,9 +10209,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, GE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, GE);
@@ -10182,9 +10218,8 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, GE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, GE);
@@ -10207,10 +10242,39 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = GE(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, GE);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, GE);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -10223,7 +10287,29 @@ ge_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    !BATatoms[tp1].linear ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) >= 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -10392,6 +10478,9 @@ VARcalcge(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* equal (any type) */
+
 #define EQ(a, b)	((bit) ((a) == (b)))
 
 static BUN
@@ -10401,15 +10490,10 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -10437,8 +10521,16 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, EQ);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, EQ);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, EQ);
@@ -10452,9 +10544,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, EQ);
@@ -10462,9 +10553,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, EQ);
@@ -10488,7 +10578,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, EQ);
@@ -10502,9 +10592,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, EQ);
@@ -10512,9 +10601,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, EQ);
@@ -10538,29 +10626,10 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = EQ(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, EQ);
@@ -10574,9 +10643,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, EQ);
@@ -10584,9 +10652,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, EQ);
@@ -10610,29 +10677,10 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = EQ(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, EQ);
@@ -10646,9 +10694,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, EQ);
@@ -10656,9 +10703,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, EQ);
@@ -10682,7 +10728,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, EQ);
@@ -10696,9 +10742,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, EQ);
@@ -10706,9 +10751,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, EQ);
@@ -10732,7 +10776,7 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, EQ);
@@ -10746,9 +10790,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, EQ);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, EQ);
@@ -10756,9 +10799,8 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, EQ);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, EQ);
@@ -10781,10 +10823,39 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = EQ(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, EQ);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, EQ);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -10797,7 +10868,28 @@ eq_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) == 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -10964,6 +11056,9 @@ VARcalceq(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* not equal (any type) */
+
 #define NE(a, b)	((bit) ((a) != (b)))
 
 static BUN
@@ -10973,15 +11068,10 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -11009,8 +11099,16 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bit, NE);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bit, NE);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bit, NE);
@@ -11024,9 +11122,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bit, NE);
@@ -11034,9 +11131,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(bte, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bit, NE);
@@ -11060,7 +11156,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bit, NE);
@@ -11074,9 +11170,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bit, NE);
@@ -11084,9 +11179,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(sht, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bit, NE);
@@ -11110,29 +11204,10 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = NE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bit, NE);
@@ -11146,9 +11221,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bit, NE);
@@ -11156,9 +11230,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(int, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bit, NE);
@@ -11182,29 +11255,10 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = NE(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bit, NE);
@@ -11218,9 +11272,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bit, NE);
@@ -11228,9 +11281,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(lng, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bit, NE);
@@ -11254,7 +11306,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bit, NE);
@@ -11268,9 +11320,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bit, NE);
@@ -11278,9 +11329,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(flt, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bit, NE);
@@ -11304,7 +11354,7 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bit, NE);
@@ -11318,9 +11368,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, sht, bit, NE);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bit, NE);
@@ -11328,9 +11377,8 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				BINARY_3TYPE_FUNC(dbl, int, bit, NE);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bit, NE);
@@ -11353,10 +11401,39 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bit_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bit_nil;
+					} else {
+						dst[k] = NE(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bit, NE);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bit, NE);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -11369,7 +11446,28 @@ ne_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bit_nil;
+			} else {
+				dst[k] = (bit) ((*atomcmp)(p1, p2) != 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -11538,6 +11636,9 @@ VARcalcne(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* generic comparison (any "linear" type) */
+
 #define CMP(a, b)	((bte) ((a) < (b) ? -1 : (a) > (b)))
 
 static BUN
@@ -11547,15 +11648,10 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 {
 	BUN nils = 0;
 	BUN i, j, k;
-	const char *s1, *s2;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
-	/* bit and oid can only be compared with each other */
-	if ((tp1 == TYPE_bit) != (tp2 == TYPE_bit))
-		goto unsupported;
-	if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-		goto unsupported;
-
-	switch (ATOMstorage(tp1)) {
+	switch (tp1) {
 	case TYPE_void: {
 		oid v;
 
@@ -11583,8 +11679,16 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	}
+	case TYPE_bit:
+		if (tp2 != TYPE_bit)
+			goto unsupported;
+		if (nonil)
+			BINARY_3TYPE_FUNC_nonil(bit, bit, bte, CMP);
+		else
+			BINARY_3TYPE_FUNC(bit, bit, bte, CMP);
+		break;
 	case TYPE_bte:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, CMP);
@@ -11598,9 +11702,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(bte, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, int, bte, CMP);
@@ -11608,9 +11711,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(bte, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(bte, lng, bte, CMP);
@@ -11634,7 +11736,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, bte, bte, CMP);
@@ -11648,9 +11750,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(sht, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, int, bte, CMP);
@@ -11658,9 +11759,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(sht, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(sht, lng, bte, CMP);
@@ -11684,29 +11784,10 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = CMP(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, bte, bte, CMP);
@@ -11720,9 +11801,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(int, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, int, bte, CMP);
@@ -11730,9 +11810,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(int, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(int, lng, bte, CMP);
@@ -11756,29 +11835,10 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-		if (tp1 == TYPE_oid && tp2 == TYPE_void) {
-			oid v;
-
-			v = * (const oid *) rgt;
-			if (v == oid_nil) {
-				for (k = 0; k < cnt; k++)
-					dst[k] = bit_nil;
-				nils = cnt;
-			} else {
-				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
-					if (((const oid *) lft)[i] == oid_nil) {
-						nils++;
-						dst[k] = bit_nil;
-					} else {
-						dst[k] = CMP(((const oid *) lft)[i], v);
-					}
-				}
-			}
-			break;
-		}
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
 #endif
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, bte, bte, CMP);
@@ -11792,9 +11852,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(lng, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, int, bte, CMP);
@@ -11802,9 +11861,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(lng, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if ((tp1 == TYPE_oid) != (tp2 == TYPE_oid))
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(lng, lng, bte, CMP);
@@ -11828,7 +11886,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_flt:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, bte, bte, CMP);
@@ -11842,9 +11900,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(flt, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, int, bte, CMP);
@@ -11852,9 +11909,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(flt, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(flt, lng, bte, CMP);
@@ -11878,7 +11934,7 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMstorage(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, bte, bte, CMP);
@@ -11892,9 +11948,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(dbl, sht, bte, CMP);
 			break;
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_INT
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, int, bte, CMP);
@@ -11902,9 +11957,8 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 				BINARY_3TYPE_FUNC(dbl, int, bte, CMP);
 			break;
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (tp2 == TYPE_oid)
-				goto unsupported;
+#if SIZEOF_WRD == SIZEOF_LNG
+		case TYPE_wrd:
 #endif
 			if (nonil)
 				BINARY_3TYPE_FUNC_nonil(dbl, lng, bte, CMP);
@@ -11927,10 +11981,39 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 			goto unsupported;
 		}
 		break;
+	case TYPE_oid:
+		if (tp2 == TYPE_void) {
+			oid v;
+
+			v = * (const oid *) rgt;
+			if (v == oid_nil) {
+				for (k = 0; k < cnt; k++)
+					dst[k] = bte_nil;
+				nils = cnt;
+			} else {
+				for (i = k = 0; k < cnt; i += incr1, v++, k++) {
+					if (((const oid *) lft)[i] == oid_nil) {
+						nils++;
+						dst[k] = bte_nil;
+					} else {
+						dst[k] = CMP(((const oid *) lft)[i], v);
+					}
+				}
+			}
+		} else if (tp2 == TYPE_oid) {
+			if (nonil)
+				BINARY_3TYPE_FUNC_nonil(oid, oid, bte, CMP);
+			else
+				BINARY_3TYPE_FUNC(oid, oid, bte, CMP);
+		} else {
+			goto unsupported;
+		}
+		break;
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const char *s1, *s2;
 			s1 = hp1 ? hp1 + VarHeapVal(lft, i, wd1) : (const char *) lft;
 			s2 = hp2 ? hp2 + VarHeapVal(rgt, j, wd2) : (const char *) rgt;
 			if (s1 == NULL || strcmp(s1, str_nil) == 0 ||
@@ -11944,7 +12027,30 @@ cmp_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1
 		}
 		break;
 	default:
-		goto unsupported;
+		if (tp1 != tp2 ||
+		    !BATatoms[tp1].linear ||
+		    (atomcmp = BATatoms[tp1].atomCmp) == NULL)
+			goto unsupported;
+		nil = ATOMnilptr(tp1);
+		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) {
+			const void *p1, *p2;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(lft, i, wd1)) : lft;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(rgt, i, wd2)) : rgt;
+			if (p1 == NULL || p2 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0) {
+				nils++;
+				dst[k] = bte_nil;
+			} else {
+				int x = (*atomcmp)(p1, p2);
+				dst[k] = (bte) (x < 0 ? -1 : x > 0);
+			}
+			if (hp1 == NULL && incr1)
+				lft = (const void *) ((const char *) lft + wd1);
+			if (hp2 == NULL && incr2)
+				rgt = (const void *) ((const char *) rgt + wd2);
+		}
+		break;
 	}
 
 	return nils;
@@ -12113,6 +12219,9 @@ VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* between (any "linear" type) */
+
 #define BETWEEN(v, lo, hi, TYPE)					\
 	((v) == TYPE##_nil || ((lo) == TYPE##_nil && (hi) == TYPE##_nil) ? \
 	 (nils++, bit_nil) :						\
@@ -12130,9 +12239,9 @@ VARcalccmp(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	} while (0)
 
 static BAT *
-BATcalcbetween_intern(const void *src, int incr1,
-		      const void *lo, int incr2,
-		      const void *hi, int incr3,
+BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
+		      const void *lo, int incr2, const char *hp2, int wd2,
+		      const void *hi, int incr3, const char *hp3, int wd3,
 		      int tp, BUN cnt,
 		      oid seqbase, const char *func)
 {
@@ -12140,6 +12249,8 @@ BATcalcbetween_intern(const void *src, int incr1,
 	BUN nils = 0;
 	BUN i, j, k, l;
 	bit *dst;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
 
 	bn = BATnew(TYPE_void, TYPE_bit, cnt);
 	if (bn == NULL)
@@ -12147,7 +12258,7 @@ BATcalcbetween_intern(const void *src, int incr1,
 
 	dst = (bit *) Tloc(bn, bn->U->first);
 
-	switch (ATOMstorage(tp)) {
+	switch (tp) {
 	case TYPE_bte:
 		BETWEEN_LOOP_TYPE(bte);
 		break;
@@ -12155,9 +12266,15 @@ BATcalcbetween_intern(const void *src, int incr1,
 		BETWEEN_LOOP_TYPE(sht);
 		break;
 	case TYPE_int:
+#if SIZEOF_WRD == SIZEOF_INT
+	case TYPE_wrd:
+#endif
 		BETWEEN_LOOP_TYPE(int);
 		break;
 	case TYPE_lng:
+#if SIZEOF_WRD == SIZEOF_LNG
+	case TYPE_wrd:
+#endif
 		BETWEEN_LOOP_TYPE(lng);
 		break;
 	case TYPE_flt:
@@ -12167,9 +12284,36 @@ BATcalcbetween_intern(const void *src, int incr1,
 		BETWEEN_LOOP_TYPE(dbl);
 		break;
 	default:
-		BBPunfix(bn->batCacheid);
-		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
-		return NULL;
+		if (!BATatoms[tp].linear ||
+		    (atomcmp = BATatoms[tp].atomCmp) == NULL) {
+			BBPunfix(bn->batCacheid);
+			GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
+			return NULL;
+		}
+		nil = ATOMnilptr(tp);
+		for (i = j = k = l = 0; l < cnt; i += incr1, j += incr2, k += incr3, l++) {
+			const void *p1, *p2, *p3;
+			p1 = hp1 ? (const void *) (hp1 + VarHeapVal(src, i, wd1)) : src;
+			p2 = hp2 ? (const void *) (hp2 + VarHeapVal(lo, j, wd2)) : lo;
+			p3 = hp3 ? (const void *) (hp3 + VarHeapVal(hi, k, wd3)) : hi;
+			if (p1 == NULL || p2 == NULL || p3 == NULL ||
+			    (*atomcmp)(p1, nil) == 0 ||
+			    (*atomcmp)(p2, nil) == 0 ||
+			    (*atomcmp)(p3, nil) == 0) {
+				nils++;
+				dst[l] = bit_nil;
+			} else {
+				dst[l] = (bit) ((*atomcmp)(p1, p2) >= 0 &&
+						(*atomcmp)(p1, p3) <= 0);
+			}
+			if (hp1 == NULL && incr1)
+				src = (const void *) ((const char *) src + wd1);
+			if (hp2 == NULL && incr2)
+				lo = (const void *) ((const char *) lo + wd2);
+			if (hp3 == NULL && incr3)
+				hi = (const void *) ((const char *) hi + wd3);
+		}
+		break;
 	}
 
 	BATsetcount(bn, cnt);
@@ -12220,10 +12364,16 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-			       Tloc(lo, lo->U->first), 1,
-			       Tloc(hi, hi->U->first), 1,
-			       b->T->type, b->U->count,
-			       b->H->seq, "BATcalcbetween");
+				   b->T->vheap ? b->T->vheap->base : NULL,
+				   b->T->width,
+				   Tloc(lo, lo->U->first), 1,
+				   lo->T->vheap ? lo->T->vheap->base : NULL,
+				   lo->T->width,
+				   Tloc(hi, hi->U->first), 1,
+				   hi->T->vheap ? hi->T->vheap->base : NULL,
+				   hi->T->width,
+				   b->T->type, b->U->count,
+				   b->H->seq, "BATcalcbetween");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
@@ -12257,10 +12407,12 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-			       VALptr(lo), 0,
-			       VALptr(hi), 0,
-			       b->T->type, b->U->count,
-			       b->H->seq, "BATcalcbetweencstcst");
+				   b->T->vheap ? b->T->vheap->base : NULL,
+				   b->T->width,
+				   VALptr(lo), 0, NULL, 0,
+				   VALptr(hi), 0, NULL, 0,
+				   b->T->type, b->U->count,
+				   b->H->seq, "BATcalcbetweencstcst");
 
 	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
@@ -12292,8 +12444,12 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
+				   b->T->vheap ? b->T->vheap->base : NULL,
+				   b->T->width,
 				   Tloc(lo, lo->U->first), 1,
-				   VALptr(hi), 0,
+				   lo->T->vheap ? lo->T->vheap->base : NULL,
+				   lo->T->width,
+				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweenbatcst");
 
@@ -12328,8 +12484,12 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
 
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
-				   VALptr(lo), 0,
+				   b->T->vheap ? b->T->vheap->base : NULL,
+				   b->T->width,
+				   VALptr(lo), 0, NULL, 0,
 				   Tloc(hi, hi->U->first), 1,
+				   hi->T->vheap ? hi->T->vheap->base : NULL,
+				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstbat");
 
@@ -12384,6 +12544,9 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRec
 	(void) nils;
 	return GDK_SUCCEED;
 }
+
+/* ---------------------------------------------------------------------- */
+/* if-then-else (any type) */
 
 #define IFTHENELSELOOP(TYPE)						\
 	do {								\
@@ -12620,6 +12783,9 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *c1, const ValRecord *c2)
 					VALptr(c2), 0, NULL, 0, !VALisnil(c2),
 					c1->vtype);
 }
+
+/* ---------------------------------------------------------------------- */
+/* type conversion (cast) */
 
 #define convertimpl_copy(TYPE)					\
 static BUN							\
@@ -12867,9 +13033,9 @@ convert_str_any(BAT *b, int tp, void *dst, int abort_on_error)
 {
 	BUN i, j;
 	BUN nils = 0;
-	void *nil = ATOMnilptr(tp);
+	const void *nil = ATOMnilptr(tp);
 	char *s;
-	ptr d;
+	void *d;
 	int len = ATOMsize(tp);
 	int (*atomfromstr)(const char *, int *, ptr *) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
@@ -12954,7 +13120,7 @@ convert_void_any(oid seq, BUN cnt, BAT *bn, int abort_on_error)
 		case TYPE_str:
 			for (i = 0; i < cnt1; i++) {
 				(*atomtostr)(&s, &len, &seq);
-				tfastins_nocheck(bn, i, dst, bn->T->width);
+				tfastins_nocheck(bn, i, s, bn->T->width);
 				seq++;
 			}
 			break;
@@ -12990,17 +13156,16 @@ convert_void_any(oid seq, BUN cnt, BAT *bn, int abort_on_error)
 		break;
 	case TYPE_str:
 		seq = oid_nil;
+		(*atomtostr)(&s, &len, &seq);
 		for (; i < cnt; i++) {
-			(*atomtostr)(&s, &len, &seq);
-			tfastins_nocheck(bn, i, dst, bn->T->width);
-			seq++;
+			tfastins_nocheck(bn, i, s, bn->T->width);
 		}
-		if (s)
-			GDKfree(s);
 		break;
 	default:
 		return BUN_NONE + 1;
 	}
+	if (s)
+		GDKfree(s);
 	return cnt - cnt1;
 
   bunins_failed:
@@ -13335,6 +13500,9 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 	return GDK_SUCCEED;
 }
 
+/* ---------------------------------------------------------------------- */
+/* average (any numeric type) */
+
 /* signed version of BUN */
 #if SIZEOF_BUN == SIZEOF_INT
 #define SBUN	int
@@ -13425,7 +13593,7 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 	cnt = b->U->count;
 
 	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	switch (ATOMstorage(b->T->type)) {
+	switch (b->T->type) {
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
 		break;

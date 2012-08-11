@@ -63,7 +63,7 @@ static void QOTstatisticsInit(void){
 	if (qotStat[QOTnames]) return;
 	MT_lock_init(&qotlock,"QOT statistics");
 
-	mal_set_lock(qotlock,"QOT statistics");
+	MT_lock_set(&qotlock, "QOT statistics");
 	qotStat[QOTnames]= QOT_create("opt","names",TYPE_void,TYPE_str);
 	BATseqbase(qotStat[QOTnames],o);
 	qotStat[QOTcalls]= QOT_create("opt","calls",TYPE_void,TYPE_int);
@@ -81,10 +81,10 @@ static void QOTstatisticsInit(void){
 				BBPclear(qotStat[i]->batCacheid);
 				qotStat[i] = NULL;
 		}
-		mal_unset_lock(qotlock,"QOT statistics");
+		MT_lock_unset(&qotlock, "QOT statistics");
 		return;
 	}
-	mal_unset_lock(qotlock,"QOT statistics");
+	MT_lock_unset(&qotlock, "QOT statistics");
 	/* save them at least once */
 	QOTstatisticsExit();
 }
@@ -99,7 +99,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	lng lval=0, *lp= &lval;
 
 	QOTstatisticsInit();
-	mal_set_lock(qotlock,"QOT statistics");
+	MT_lock_set(&qotlock, "QOT statistics");
 	p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 	if (p == BUN_NONE) {
 		BUNappend(qotStat[QOTnames], nme, FALSE);
@@ -108,7 +108,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 		BUNappend(qotStat[QOTtimings], &lval, FALSE);
 		p = BUNfnd(BATmirror(qotStat[QOTnames]),(ptr)nme);
 		if (p == BUN_NONE){
-			mal_unset_lock(qotlock,"QOT statistics");
+			MT_lock_unset(&qotlock, "QOT statistics");
 			return;
 		}
 	}
@@ -120,7 +120,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout,"#Could not access 'calls'\n");
 #endif
-		mal_unset_lock(qotlock,"QOT statistics");
+		MT_lock_unset(&qotlock, "QOT statistics");
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTcalls]);
@@ -134,7 +134,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout,"#Could not access 'actions'\n");
 #endif
-		mal_unset_lock(qotlock,"QOT statistics");
+		MT_lock_unset(&qotlock, "QOT statistics");
 		return;
 	}
 	bi = bat_iterator(qotStat[QOTactions]);
@@ -148,7 +148,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 #ifdef _Q_STATISTICS_DEBUG
 		mnstr_printf(GDKout, "#Could not access 'timings'\n");
 #endif
-		mal_unset_lock(qotlock,"QOT statistics");
+		MT_lock_unset(&qotlock, "QOT statistics");
 		return ;
 	}
 	bi = bat_iterator(qotStat[QOTtimings]);
@@ -156,7 +156,7 @@ QOTupdateStatistics(str nme, int actions, lng val)
 	*lp = *lp+ val;
 	bi.b->tsorted = bi.b->trevsorted = 0;
 	bi.b->tkey = 0;
-	mal_unset_lock(qotlock,"QOT statistics");
+	MT_lock_unset(&qotlock, "QOT statistics");
 }
 
 void
@@ -166,7 +166,7 @@ QOTstatisticsExit(void)
 
 	if( qotStat[QOTnames] == NULL)
 		return;
-	mal_set_lock(qotlock,"QOT statistics");
+	MT_lock_set(&qotlock, "QOT statistics");
 	names[0] = 0;
 	names[1] = ABS(qotStat[QOTnames]->batCacheid);
 	names[2] = ABS(qotStat[QOTcalls]->batCacheid);
@@ -174,7 +174,7 @@ QOTstatisticsExit(void)
 	names[4] = ABS(qotStat[QOTtimings]->batCacheid);
 
 	TMsubcommit_list(names, 5);
-	mal_unset_lock(qotlock,"QOT statistics");
+	MT_lock_unset(&qotlock, "QOT statistics");
 }
 
 static int

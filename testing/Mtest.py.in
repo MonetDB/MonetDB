@@ -2361,16 +2361,22 @@ def killProc(proc, outfile = None, cmd = None):
         except ValueError:
             print 'cannot write timeout message',cmd
     if os.name == "nt":
+        sym = ''
         if os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x64)\cdb.exe'
+            if os.path.exists(r'c:\Symbols'):
+                sym = r'c:\Symbols;'
         elif os.path.exists(r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'):
             cdb = r'c:\Program Files\Debugging Tools for Windows (x86)\cdb.exe'
+            if os.path.exists('c:\WINDOWS\Symbols'):
+                sym = r'c:\WINDOWS\Symbols;'
         else:
             cdb = None
         if cdb:
-            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid)],
-                                 stdin = subprocess.PIPE, stdout = subprocess.PIPE)
-            out, err = p.communicate('~*k\nq\n')
+            p = subprocess.Popen([cdb, '-pv', '-p', str(proc.pid),
+                                  '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
+                                 stdout = subprocess.PIPE)
+            out, err = p.communicate()
         else:
             out = ''
     else:
@@ -2378,7 +2384,7 @@ def killProc(proc, outfile = None, cmd = None):
             p = subprocess.Popen(['pstack', str(proc.pid)], stdout = subprocess.PIPE)
             out, err = p.communicate()
         except:
-            pass
+            out = ''
     if outfile is not None and out:
         try:
             outfile.write('\n%s\n' % out)

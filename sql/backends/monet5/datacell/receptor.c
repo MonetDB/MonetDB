@@ -55,18 +55,18 @@
 #define UDP 2
 #define CSV 3
 
-static str protocolname[4] = {"<unknown>","TCP","UDP","CSV"};
+static str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
 
 #define RCPAUSE 1       /* not active now */
 #define RCLISTEN 2      /* reading the channel */
 #define RCSTOP 3        /* stop reading the channel */
 #define RCDROP 4        /* stop reading the channel */
 #define RCERROR 5       /* failed to establish the stream */
-static str statusname[6]= {"<unknown>", "pause", "listen", "stop", "drop","error"};
+static str statusname[6] = { "<unknown>", "pause", "listen", "stop", "drop", "error" };
 
-#define RCACTIVE 1		/* ask for events */
-#define RCPASSIVE 2		/* wait for events */
-static str modename[3]= {"<unknown>","active","passive"};
+#define RCACTIVE 1      /* ask for events */
+#define RCPASSIVE 2     /* wait for events */
+static str modename[3] = { "<unknown>", "active", "passive" };
 
 /* default settings */
 #define RCHOST "localhost"
@@ -76,9 +76,9 @@ typedef struct RECEPTOR {
 	str name;
 	str host;
 	int port;
-	int mode;	/* active/passive */
-	int protocol;	/* event protocol UDP,TCP,CSV */
-	int bskt;	/* connected to a basket */
+	int mode;   /* active/passive */
+	int protocol;   /* event protocol UDP,TCP,CSV */
+	int bskt;   /* connected to a basket */
 	int status;
 	int delay;  /* control the delay between attempts to connect */
 	int lck;
@@ -108,8 +108,8 @@ RCnew(str nme)
 {
 	Receptor rc;
 
-	rc = (Receptor)GDKzalloc(sizeof(RCrecord));
-	if ( rc == 0)
+	rc = (Receptor) GDKzalloc(sizeof(RCrecord));
+	if (rc == 0)
 		return rc;
 	rc->name = GDKstrdup(nme);
 	if (rcAnchor)
@@ -137,7 +137,7 @@ RCfind(str nme)
  * The standard tuple layout for MonetDB interaction is used.
  */
 str
-DCreceptorNew(int *ret, str *tbl, str *host, int *port )
+DCreceptorNew(int *ret, str *tbl, str *host, int *port)
 {
 	Receptor rc;
 	int idx, i, j, len;
@@ -146,12 +146,12 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 
 	if (RCfind(*tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
-	for ( i = 1; i < bsktTop; i++)
-	if ( baskets[i].port == *port)
-		throw(MAL,"receptor.new","Port already in use");
+	for (i = 1; i < bsktTop; i++)
+		if (baskets[i].port == *port)
+			throw(MAL, "receptor.new", "Port already in use");
 
 	rc = RCnew(*tbl);
-	if ( rc == 0)
+	if (rc == 0)
 		throw(MAL, "receptor.new", MAL_MALLOC_FAIL);
 	rc->host = GDKstrdup(*host);
 	rc->port = *port;
@@ -200,7 +200,7 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port )
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
-	(void)ret;
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
@@ -218,7 +218,7 @@ str DCreceptorPause(int *ret, str *nme)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Pause a receptor\n");
 #endif
-	(void)ret;
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
@@ -229,19 +229,18 @@ str DCreceptorResume(int *ret, str *nme)
 	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
-	if ( rc->status == RCSTOP) {
+	if (rc->status == RCSTOP) {
 		if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) {
 			throw(MAL, "receptor.start", "Receptor initiation failed");
 		}
-	} else
-	if (rc->status != RCPAUSE)
+	} else if (rc->status != RCPAUSE)
 		throw(MAL, "receptor.resume", "Receptor not paused");
 	rc->status = RCLISTEN;
 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Resume a receptor\n");
 #endif
-	(void)ret;
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
@@ -249,9 +248,9 @@ str
 RCresume(int *ret)
 {
 	Receptor rc;
-	for( rc = rcAnchor; rc ; rc= rc->nxt)
-	if (rc ->status == RCSTOP)
-		DCreceptorResume(ret, &rc->name);
+	for (rc = rcAnchor; rc; rc = rc->nxt)
+		if (rc->status == RCSTOP)
+			DCreceptorResume(ret, &rc->name);
 	return MAL_SUCCEED;
 }
 
@@ -265,7 +264,7 @@ str RCdrop(int *ret, str *nme)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Drop a receptor\n");
 #endif
-	(void)ret;
+	(void) ret;
 	if (rcAnchor == rc)
 		rcAnchor = rc->nxt;
 	rb = rc->prv;
@@ -282,9 +281,9 @@ str RCdrop(int *ret, str *nme)
 
 str RCreset(int *ret)
 {
-	Receptor r,o;
-	for( r= rcAnchor; r; r = o){
-		o= r->nxt;
+	Receptor r, o;
+	for (r = rcAnchor; r; r = o) {
+		o = r->nxt;
 		RCdrop(ret, &r->name);
 	}
 	return MAL_SUCCEED;
@@ -299,7 +298,7 @@ str DCscenario(int *ret, str *nme, str *fname, int *seq)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor scenario\n");
 #endif
-	(void)ret;
+	(void) ret;
 	rc->scenario = GDKstrdup(*fname);
 	rc->sequence = *seq;
 	return MAL_SUCCEED;
@@ -314,14 +313,13 @@ str RCmode(int *ret, str *nme, str *arg)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor mode\n");
 #endif
-	(void)ret;
-	if ( strcmp(*arg,"passive") == 0 )
+	(void) ret;
+	if (strcmp(*arg, "passive") == 0)
 		rc->mode = RCPASSIVE;
-	else
-	if ( strcmp(*arg,"active") == 0 )
+	else if (strcmp(*arg, "active") == 0)
 		rc->mode = RCACTIVE;
 	else
-		throw(MAL,"receptor.mode","Must be either passive/active");
+		throw(MAL, "receptor.mode", "Must be either passive/active");
 	return MAL_SUCCEED;
 }
 
@@ -334,17 +332,15 @@ str RCprotocol(int *ret, str *nme, str *mode)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor protocol\n");
 #endif
-	(void)ret;
-	if ( strcmp(*mode,"udp") == 0 )
+	(void) ret;
+	if (strcmp(*mode, "udp") == 0)
 		rc->protocol = UDP;
-	else
-	if ( strcmp(*mode,"tcp") == 0)
+	else if (strcmp(*mode, "tcp") == 0)
 		rc->protocol = TCP;
-	else
-	if ( strcmp(*mode,"csv") == 0)
+	else if (strcmp(*mode, "csv") == 0)
 		rc->protocol = CSV;
 	else
-		throw(MAL,"receptor.protocol","Must be either udp/tcp/csv");
+		throw(MAL, "receptor.protocol", "Must be either udp/tcp/csv");
 	return MAL_SUCCEED;
 }
 
@@ -357,7 +353,7 @@ str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor generator\n");
 #endif
-	(void)ret;
+	(void) ret;
 	rc->modnme = GDKstrdup(*modnme);
 	rc->modnme = GDKstrdup(*fcnnme);
 	return MAL_SUCCEED;
@@ -414,9 +410,10 @@ RCbody(Receptor rc)
 
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
-	if ( rc->mode == RCACTIVE && rc->protocol == UDP)
+	if (rc->mode == RCACTIVE && rc->protocol == UDP)
 		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
-	else rc->receptor = socket_rastream(rc->newsockfd, rc->name);
+	else
+		rc->receptor = socket_rastream(rc->newsockfd, rc->name);
 	if (rc->receptor == NULL) {
 		perror("Receptor: Could not open stream");
 		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
@@ -434,8 +431,7 @@ bodyRestart:
 	 * In case of a locked basket we sleep for a millisecond.
 	 */
 
-	for (n = 1; n > 0; )
-	{
+	for (n = 1; n > 0;) {
 		while (rc->status == RCPAUSE && rc->delay) {
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#pause receptor\n");
@@ -443,7 +439,8 @@ bodyRestart:
 			MT_sleep_ms(rc->delay);
 		}
 
-		if (rc->status == RCSTOP) break;
+		if (rc->status == RCSTOP)
+			break;
 		if (rc->status == RCDROP) {
 			mnstr_close(rc->receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
@@ -474,7 +471,7 @@ bodyRestart:
    and keeps the lock until the end of the reading/writting procedure
    When the receptor reads all the tuples UNLOCKS the bats, and then the Factories/Queries that are waiting for these data are able to read it*/
 
-		if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+		if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -501,7 +498,7 @@ bodyRestart:
 
 /* this code should be optimized for block-based reads */
 			while (cnt < counter) {
-				if ((n = (int)mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+				if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -514,11 +511,11 @@ parse:
 						e = strchr(line, '\n');
 						if (e == 0) {
 							/* only keep the last errorenous event for analysis */
-							if ( rcError )
+							if (rcError)
 								GDKfree(rcError);
-							rcError= (char*) GDKmalloc( k =strlen(line)+100 );
-							if ( rcError)
-								snprintf(rcError,k,"newline missing:%s",line);
+							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							if (rcError)
+								snprintf(rcError, k, "newline missing:%s", line);
 							rcErrorEvent = cnt;
 							cnt--;
 							break;
@@ -528,14 +525,14 @@ parse:
 						mnstr_printf(RCout, "#insert line :%s \n", line);
 #endif
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
-							if ( baskets[rc->bskt].errors)
+							if (baskets[rc->bskt].errors)
 								BUNappend(baskets[rc->bskt].errors, line, TRUE);
 							/* only keep the last errorenous event for analysis */
-							if ( rcError )
+							if (rcError)
 								GDKfree(rcError);
-							rcError= (char*) GDKmalloc( k =strlen(line)+100 );
-							if ( rcError)
-								snprintf(rcError,k,"parsing error:%s",line);
+							rcError = (char *) GDKmalloc(k = strlen(line) + 100);
+							if (rcError)
+								snprintf(rcError, k, "parsing error:%s", line);
 							rcErrorEvent = cnt;
 							break;
 						}
@@ -599,7 +596,7 @@ RCscenario(Receptor rc)
 
 		/* read the event requests and sent when the becomes */
 		while (fgets(buf, MYBUFSIZ, fd) != 0) {
-			newdelay = (int)atol(buf);
+			newdelay = (int) atol(buf);
 			tuple = buf;
 
 			if (newdelay > 0) {
@@ -673,14 +670,14 @@ RCgenerator(Receptor rc)
 	}
 
 	newStack(glb, mb->vtop);
-	memset((char *)glb, 0, stackSize(mb->vtop));
+	memset((char *) glb, 0, stackSize(mb->vtop));
 	glb->stktop = mb->vtop;
 	glb->blk = mb;
 
 #ifdef _DEBUG_RECEPTOR_
 	printFunction(RCout, mb, 0, LIST_MAL_ALL);
 #endif
-	for (;; )
+	for (;;)
 		switch (rc->status) {
 		case RCPAUSE:
 			MT_sleep_ms(1);
@@ -691,6 +688,7 @@ RCgenerator(Receptor rc)
 		default:
 			reenterMAL(cntxt, mb, pc, pc + 1, glb, 0, 0);
 		}
+
 }
 
 
@@ -739,8 +737,7 @@ RCstartThread(Receptor rc)
 				mnstr_close(rc->receptor);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
-		} else
-		if ( rc->mode == RCACTIVE) {
+		} else if (rc->mode == RCACTIVE) {
 			/* take the initiative to connect to sensor */
 			RCreconnect(rc);
 			RCbody(rc);
@@ -753,17 +750,17 @@ RCstartThread(Receptor rc)
 static void
 dumpReceptor(Receptor rc)
 {
-	mnstr_printf(GDKout,"#receptor %s at %s:%d protocol=%s mode=%s status=%s delay=%d \n",
-		rc->name, rc->host, rc->port, protocolname[rc->protocol], modename[rc->mode], statusname[rc->status], rc->delay);
+	mnstr_printf(GDKout, "#receptor %s at %s:%d protocol=%s mode=%s status=%s delay=%d \n",
+			rc->name, rc->host, rc->port, protocolname[rc->protocol], modename[rc->mode], statusname[rc->status], rc->delay);
 }
 
 str
 RCdump(void)
 {
 	Receptor rc = rcAnchor;
-	for ( ; rc; rc= rc->nxt)
+	for (; rc; rc = rc->nxt)
 		dumpReceptor(rc);
-	if ( rcError)
-		mnstr_printf(GDKout,"#last error event %d:%s\n", rcErrorEvent, rcError);
+	if (rcError)
+		mnstr_printf(GDKout, "#last error event %d:%s\n", rcErrorEvent, rcError);
 	return MAL_SUCCEED;
 }

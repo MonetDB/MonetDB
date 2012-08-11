@@ -249,12 +249,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4E6BC23AA3384728BBB4AFB694B0C8B1"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_50CAF511744C470CB7C15F5DB190C6FB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -652,12 +646,6 @@
         "Entry"
         {
         "MsmKey" = "8:_C2A91A3C056746D3B773E03AC47333B9"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C347971CC99F4B0DBB048C93E0C0E6AC"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1687,26 +1675,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\txtsim.mal"
             "TargetName" = "8:txtsim.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4E6BC23AA3384728BBB4AFB694B0C8B1"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\lib_mal_compiler.dll"
-            "TargetName" = "8:lib_mal_compiler.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3027,26 +2995,6 @@
             {
             "SourcePath" = "8:lib\\monetdb5\\sema.mal"
             "TargetName" = "8:sema.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C347971CC99F4B0DBB048C93E0C0E6AC"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\mal_compiler.mal"
-            "TargetName" = "8:mal_compiler.mal"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"

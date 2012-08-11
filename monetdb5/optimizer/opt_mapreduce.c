@@ -53,7 +53,7 @@ MRcleanCloud(void)
 {
 	int i;
 
-	mal_set_lock(mal_contextLock, "mapreduce");
+	MT_lock_set(&mal_contextLock, "mapreduce");
 	for (i = 0; mapnodes[i].uri; i++) {
 		if (mapnodes[i].uri != NULL)
 			GDKfree(mapnodes[i].uri);
@@ -63,7 +63,7 @@ MRcleanCloud(void)
 			GDKfree(mapnodes[i].pass);
 		mapnodes[i].uri = mapnodes[i].user = mapnodes[i].pass = 0;
 	}
-	mal_unset_lock(mal_contextLock, "mapreduce");
+	MT_lock_unset(&mal_contextLock, "mapreduce");
 }
 
 str
@@ -82,7 +82,7 @@ MRgetCloud(int *ret, str *mrcluster)
 	if ((msg = RMTresolve(ret, &n)) != MAL_SUCCEED)
 		return msg;
 
-	mal_set_lock(mal_contextLock, "mapreduce");
+	MT_lock_set(&mal_contextLock, "mapreduce");
 	cloud = BATdescriptor(*ret); /* should succeed */
 
 	mapnodes = (mapnode*)GDKzalloc(sizeof(mapnode) * (BATcount(cloud) + 1));
@@ -102,7 +102,7 @@ MRgetCloud(int *ret, str *mrcluster)
 
 	BBPkeepref(*ret); /* we're done, keep for caller */
 	cloud = NULL;
-	mal_unset_lock(mal_contextLock, "mapreduce");
+	MT_lock_unset(&mal_contextLock, "mapreduce");
 
 	return MAL_SUCCEED;
 }
