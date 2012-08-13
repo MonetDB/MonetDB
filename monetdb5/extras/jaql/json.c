@@ -263,40 +263,35 @@ parse_json_number(jsonbat *jb, oid *v, char *p)
 }
 
 static char *
-parse_json_boolean(jsonbat *jb, oid *v, char *p)
+parse_json_truefalsenull(jsonbat *jb, oid *v, char *p)
 {
-	if (*p == 't') {
-		if (strncmp(p, "true", strlen("true")) != 0) {
-			json_error(jb, p, "expected 'true'");
-			return NULL;
-		}
-		p += strlen("true");
+	char *n = p;
+	char *which = *p == 't' ? "true" : *p == 'f' ? "false" : "null";
+	char *whichp = which;
+
+	for (; *whichp != '\0'; p++, whichp++) {
+		if (*p == '\0' &&
+				(jb->is == NULL || read_from_stream(jb, &p, &n, NULL) == 0))
+			break;
+		if (*p != *whichp)
+			break;
+	}
+	if (*whichp != '\0') {
+		json_error(jb, p, "expected '%s'", which);
+		return NULL;
+	}
+
+	if (*n == 't') {
 		BUNappend(jb->kind, "t", FALSE);
 		*v = BUNlast(jb->kind) - 1;
-	} else if (*p == 'f') {
-		if (strncmp(p, "false", strlen("false")) != 0) {
-			json_error(jb, p, "expected 'false'");
-			return NULL;
-		}
-		p += strlen("false");
+	} else if (*n == 'f') {
 		BUNappend(jb->kind, "f", FALSE);
 		*v = BUNlast(jb->kind) - 1;
+	} else {
+		BUNappend(jb->kind, "n", FALSE);
+		*v = BUNlast(jb->kind) - 1;
 	}
-	return p;
-}
 
-static char *
-parse_json_null(jsonbat *jb, oid *v, char *p)
-{
-	if (*p == 'n') {
-		if (strncmp(p, "null", strlen("null")) != 0) {
-			json_error(jb, p, "expected 'null'");
-			return NULL;
-		}
-		p += strlen("null");
-	}
-	BUNappend(jb->kind, "n", FALSE);
-	*v = BUNlast(jb->kind) - 1;
 	return p;
 }
 
@@ -328,10 +323,8 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 			break;
 		case 't':
 		case 'f':
-			p = parse_json_boolean(jb, v, p);
-			break;
 		case 'n':
-			p = parse_json_null(jb, v, p);
+			p = parse_json_truefalsenull(jb, v, p);
 			break;
 		default:
 			json_error(jb, p, "unexpected character '%c' for value", *p);
