@@ -84,29 +84,6 @@ struct PIPELINES {
 	 "optimizer.accumulators();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
-	{"groups_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.joinPath();"
-	 "optimizer.groups();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
