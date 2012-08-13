@@ -360,6 +360,9 @@ address not_unique_oids ;
 command optimizers()(:bat[:oid,:str],:bat[:oid,:str],:bat[:oid,:str])
 address getPipeCatalog;
 
+pattern optimizer_updates()
+address SQLoptimizersUpdate;
+
 function times(elaps:int,inblock:lng, oublock:lng):void;
 	io.printf("#times %d ms",elaps);
 	io.printf(" %d reads",inblock);
@@ -1335,6 +1338,7 @@ sql5_export str SQLoctopusBind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 sql5_export str SQLoctopusBinddbat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str month_interval_str( int *ret, str *s, int *ek, int *sk );
 sql5_export str second_interval_str( lng *res, str *s, int *ek, int *sk );
 sql5_export str dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -7113,6 +7117,23 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt; (void) mb; (void) stk; (void) pci;
 	throw(SQL, "sql.rdfShred", "RDF support is missing from MonetDB5");
 #endif /* RDF */
+}
+
+/* after an update on the optimizer catalog, we have to change
+ * the internal optimizer pipe line administration
+ * The minimal and default pipelines may not be changed.
+*/
+str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = getSQLContext(cntxt, mb, &m, NULL);
+
+	if ( msg)
+		return msg;
+	/* find the optimizer pipeline */
+	(void) stk;
+	(void) pci;
+	throw(SQL,"updateOptimizer",PROGRAM_NYI);
 }
 
 /*

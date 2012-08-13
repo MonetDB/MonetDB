@@ -69,10 +69,6 @@ command reset():void
 address BSKTreset
 comment "Remove all baskets";
 
-command baskets():bat[:str,:bat]
-address BSKTtable
-comment "Inspect the datacell baskets";
-
 command errors():bat[:str,:bat]
 address BSKTtableerrors
 comment "Return the table with all errors";

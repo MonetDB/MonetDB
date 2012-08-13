@@ -42,7 +42,7 @@ address DCremove
 comment "Remove a basket, receptor or emitter";
 
 pattern pause(obj:str):void
-address DCpause
+address DCpauseObject
 comment "Pause a receptor or emitter";
 
 pattern resume(obj:str):void
@@ -59,6 +59,10 @@ comment "Add a new continuous query procedure.";
 
 pattern prelude()
 address DCprelude
+comment "Prepare datacell runtime system";
+
+pattern initialize()
+address DCinitialize
 comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
@@ -66,7 +70,7 @@ address DCpauseScheduler
 comment "(Re)start the petrinet scheduler.";
 
 pattern resume()
-address DCresume
+address DCresumeScheduler
 comment "Resume the petrinet scheduler.";
 
 pattern postlude()
@@ -93,8 +97,9 @@ command beat(bskt:str, t:int):bit
 address DCbeat
 comment "Schedule query with T milliseconds interval";
 
-command baskets()(nme:bat[:oid,:str], threshold:bat[:oid,:int], winsize:bat[:oid,:int], winstride:bat[:oid,:int], timeslice:bat[:oid,:int], 
-timestride:bat[:oid,:int], beat:bat[:oid,:int], seen:bat[:oid,:timestamp], grabs:bat[:oid,:int], events:bat[:oid,:int])
+command baskets()(nme:bat[:oid,:str], kind:bat[:oid,:str], host:bat[:oid,:str], port:bat[:oid,:int], 
+status:bat[:oid,:str], threshold:bat[:oid,:int], winsize:bat[:oid,:int], winstride:bat[:oid,:int], timeslice:bat[:oid,:int], 
+timestride:bat[:oid,:int], beat:bat[:oid,:int], seen:bat[:oid,:timestamp], cycles:bat[:oid,:int], events:bat[:oid,:int])
 address BSKTtable
 comment "Inspect the datacell baskets";
 

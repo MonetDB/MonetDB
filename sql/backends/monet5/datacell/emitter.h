@@ -45,6 +45,7 @@
 adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
 adapters_export str DCemitterPause(int *ret, str *nme);
 adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str EMpause(int *ret);
 adapters_export str EMresume(int *ret);
 adapters_export str EMstop(int *ret, str *nme);
 adapters_export str EMreset(int *ret);

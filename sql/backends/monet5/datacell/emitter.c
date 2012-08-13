@@ -46,24 +46,6 @@
 
 /* #define _DEBUG_EMITTER_*/
 
-#define EMPAUSE 1       /* connected but not reading the channel */
-#define EMLISTEN 2      /* connected and reading the channel */
-#define EMSTOP 3        /* not connected */
-#define EMRESHUFFLE 4   /* reorganization of the BATs */
-#define EMDROP 5
-#define EMERROR 8               /* failed to establish the stream */
-static str statusname[6] = { "<unknown>", "pause", "listen", "stop", "drop", "error" };
-
-#define EMPASSIVE 2
-#define EMACTIVE 1
-static str modename[3] = { "<unknown>", "active", "passive" };
-
-#define TCP 1
-#define UDP 2
-#define CSV 3
-
-static str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
-
 #define PAUSEDEFAULT 1000
 
 typedef struct EMITTER {
@@ -109,10 +91,16 @@ static Emitter
 EMfind(str nme)
 {
 	Emitter r;
+	char buf[BUFSIZ];
+
 	for (r = emAnchor; r; r = r->nxt)
 		if (strcmp(nme, r->name) == 0)
-			break;
-	return r;
+			return r;
+	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	for (r = emAnchor; r; r = r->nxt)
+		if (strcmp(buf, r->name) == 0)
+			return r;
+	return NULL;
 }
 /*
  * @-
@@ -144,7 +132,7 @@ str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 	em->delay = PAUSEDEFAULT;
 	em->lck = 0;
 	em->error = NULL;
-	em->mode = EMACTIVE;
+	em->mode = BSKTACTIVE;
 	em->protocol = UDP;
 	em->bskt = idx;
 	em->delay = 10;
@@ -162,8 +150,11 @@ str DCemitterNew(int *ret, str *tbl, str *host, int *port)
 	em->table.format[0].name = NULL;
 	em->table.format[0].sep = GDKstrdup("[ ");
 	em->table.format[0].seplen = (int) strlen(em->table.format[0].sep);
-	em->status = EMSTOP;
+	em->status = BSKTSTOP;
 
+	baskets[idx].kind = "emitter";
+	baskets[idx].status = BSKTSTOP;
+	baskets[idx].host = GDKstrdup(*host);
 	baskets[idx].port = *port;
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
@@ -208,10 +199,11 @@ str DCemitterPause(int *ret, str *nme)
 	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.pause", "Emitter not defined");
-	if (em->status == EMLISTEN)
-		throw(MAL, "emitter.pause", "Emitter not started");
+	if (em->status != BSKTLISTEN)
+		throw(MAL, "emitter.pause", "Emitter not running");
 
-	em->status = EMPAUSE;
+	em->status = BSKTPAUSE;
+	baskets[em->bskt].status = BSKTPAUSE;
 
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Pause a emitter\n");
@@ -228,15 +220,30 @@ str DCemitterResume(int *ret, str *nme)
 	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.resume", "Emitter not defined");
-	if (em->status == EMLISTEN)
+	if (em->status == BSKTLISTEN)
 		throw(MAL, "emitter.resume", "Emitter running, stop it first");
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Resume an emitter\n");
 #endif
-	em->status = EMLISTEN;
+	em->status = BSKTLISTEN;
+	baskets[em->bskt].status = BSKTLISTEN;
 	(void) ret;
 	if (MT_create_thread(&em->pid, (void (*)(void *))EMstartThread, em, MT_THR_DETACHED) != 0)
 		throw(MAL, "emitter.start", "Emitter initiation failed");
+	return MAL_SUCCEED;
+}
+
+str
+EMpause(int *ret)
+{
+	Emitter em;
+	str msg;
+	for (em = emAnchor; em; em = em->nxt)
+		if (em->status != BSKTSTOP){
+			msg = DCemitterPause(ret, &em->name);
+			if ( msg) 
+				return msg;
+		}
 	return MAL_SUCCEED;
 }
 
@@ -245,7 +252,7 @@ EMresume(int *ret)
 {
 	Emitter em;
 	for (em = emAnchor; em; em = em->nxt)
-		if (em->status == EMSTOP)
+		if (em->status == BSKTSTOP)
 			DCemitterResume(ret, &em->name);
 	return MAL_SUCCEED;
 }
@@ -268,7 +275,7 @@ str EMstop(int *ret, str *nme)
 		em->nxt->prv = em->prv;
 	if (rb)
 		rb->nxt = em->nxt;
-	em->status = EMDROP;
+	em->status = BSKTDROP;
 	if (em->lck)
 		BSKTunlock(&em->lck, &em->name);
 	MT_join_thread(em->pid);
@@ -296,9 +303,9 @@ str EMmode(int *ret, str *nme, str *arg)
 #endif
 	(void) ret;
 	if (strcmp(*arg, "passive") == 0)
-		em->mode = EMPASSIVE;
+		em->mode = BSKTPASSIVE;
 	else if (strcmp(*arg, "active") == 0)
-		em->mode = EMACTIVE;
+		em->mode = BSKTACTIVE;
 	else
 		throw(MAL, "emitter.mode", "Must be either passive/active");
 	return MAL_SUCCEED;
@@ -358,13 +365,13 @@ EMbody(Emitter em)
 	BAT *b;
 
 bodyRestart:
-	if (em->status == EMDROP)
+	if (em->status == BSKTDROP)
 		return;
 	/* create the actual channel */
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#create emitter %s channel %s %d mode %d protocol=%d\n", em->name, em->host, em->port, em->mode, em->protocol);
 #endif
-	if (em->mode == EMACTIVE && em->protocol == UDP)
+	if (em->mode == BSKTACTIVE && em->protocol == UDP)
 		em->emitter = udp_wastream(em->host, em->port, em->name);
 	else
 		em->emitter = socket_wastream(em->newsockfd, em->name);
@@ -378,20 +385,19 @@ bodyRestart:
 		return;
 	}
 	/*
-	 * @-
 	 * Consume each event and store the result.
 	 * If the thread is suspended, we sleep for at least one second.
 	 */
 	for (ret = 1; ret >= 0;) {
-		while (em->status == EMPAUSE) {
+		while (em->status == BSKTPAUSE) {
 #ifdef _DEBUG_EMITTER_
 			mnstr_printf(EMout, "#Pause emitter\n");
 #endif
 			MT_sleep_ms(em->delay);
 		}
-		if (em->status == EMSTOP)
+		if (em->status == BSKTSTOP)
 			break;
-		if (em->status == EMDROP) {
+		if (em->status == BSKTDROP) {
 			mnstr_close(em->emitter);
 			for (j = 0; j < em->table.nr_attrs; j++) {
 				GDKfree(em->table.format[j].sep);
@@ -420,8 +426,8 @@ bodyRestart:
 		if ((cnt = BATcount(em->table.format[0].c[0]))) {
 			MTIMEcurrent_timestamp(&baskets[em->bskt].seen);
 			baskets[em->bskt].events += cnt;
-			baskets[em->bskt].grabs++;
-			if (em->status != EMLISTEN)
+			baskets[em->bskt].cycles++;
+			if (em->status != BSKTLISTEN)
 				break;
 
 			cnt = BATcount(em->table.format[1].c[0]);
@@ -446,11 +452,11 @@ bodyRestart:
 			MT_sleep_ms(em->delay);
 	}
 	/* writing failed, lets restart */
-	if (em->mode == EMPASSIVE) {
+	if (em->mode == BSKTPASSIVE) {
 #ifdef _DEBUG_EMITTER_
 		mnstr_printf(EMout, "#Restart the connection\n");
 #endif
-		if (em->status != EMSTOP)
+		if (em->status != BSKTSTOP)
 			EMreconnect(em);
 		goto bodyRestart;
 	}
@@ -467,7 +473,7 @@ EMstartThread(Emitter em)
 	mnstr_printf(EMout, "#Emitter body %s started at %s:%d, servermode=%d\n",
 			em->name, em->host, em->port, em->mode);
 #endif
-	if (em->mode == EMACTIVE) {
+	if (em->mode == BSKTACTIVE) {
 		EMbody(em);
 #ifdef _DEBUG_EMITTER_
 		mnstr_printf(EMout, "#End of emitter thread\n");
@@ -476,21 +482,21 @@ EMstartThread(Emitter em)
 	}
 
 	/* Handling the TCP connection */
-	if (em->mode == EMPASSIVE &&
+	if (em->mode == BSKTPASSIVE &&
 		(em->error = socket_server_connect(&em->sockfd, em->port))) {
-		em->status = EMERROR;
+		em->status = BSKTERROR;
 		mnstr_printf(EMout, "#EMSTART THREAD: failed to start server:%s\n", em->error);
 		return MAL_SUCCEED;
 	}
-	while (em->status != EMSTOP) {
-		if (em->mode == EMPASSIVE) {
+	while (em->status != BSKTSTOP) {
+		if (em->mode == BSKTPASSIVE) {
 			/* in server mode you should expect new connections */
 #ifdef _DEBUG_EMITTER_
 			mnstr_printf(EMout, "#Emitter listens\n");
 #endif
 			em->error = socket_server_listen(em->sockfd, &em->newsockfd);
 			if (em->error) {
-				em->status = EMERROR;
+				em->status = BSKTERROR;
 				mnstr_printf(EMout, "#Emitter listen fails: %s\n", em->error);
 			}
 
@@ -498,7 +504,7 @@ EMstartThread(Emitter em)
 				close_stream(em->emitter);
 				throw(MAL, "emitter.start", "Process creation failed");
 			}
-		} else if (em->mode == EMACTIVE) {
+		} else if (em->mode == BSKTACTIVE) {
 			/* connect the actuator */
 			EMreconnect(em);
 			EMbody(em);

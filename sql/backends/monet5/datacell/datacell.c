@@ -18,9 +18,7 @@
  */
 
 /*
- * @f datacell
  * The interface from SQL passes through here.
- *
  */
 
 #include "monetdb_config.h"
@@ -78,6 +76,22 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 
 str
 DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	addPipeDefinition(cntxt, "datacell_pipe",
+		"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();"
+		"optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();"
+		"optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();"
+		"optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();"
+		"optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();"
+		"optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
+	return MAL_SUCCEED;
+}
+
+str
+DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
@@ -145,20 +159,25 @@ DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
 
+	if ( strcmp(tbl,"*")== 0){
+		str msg = RCpause(&ret);
+		if ( msg) 
+			return msg;
+		msg = EMpause(&ret);
+		return msg;
+	}
 	idx = BSKTlocate(tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.pause", "Basket not found");
-
-	DCreceptorPause(&ret, &tbl);
-	DCemitterPause(&ret, &tbl);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
+	if (idx ) {
+		DCreceptorPause(&ret, &tbl);
+		DCemitterPause(&ret, &tbl);
+		return MAL_SUCCEED;
+	}
+	return PNpauseQuery(cntxt,mb,stk,pci);
 }
 
 str
@@ -167,24 +186,18 @@ DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
 
+	if ( strcmp(tbl,"*")== 0){
+		RCresume(&ret);
+		EMresume(&ret);
+		return DCresumeScheduler(cntxt, mb, stk, pci);
+	}
 	idx = BSKTlocate(tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.resume", "Basket not found");
-
-	DCreceptorResume(&ret, &tbl);
-	DCemitterResume(&ret, &tbl);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
-str
-DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int ret;
-	RCresume(&ret);
-	EMresume(&ret);
-	return DCresumeScheduler(cntxt, mb, stk, pci);
+	if (idx ) {
+		DCreceptorResume(&ret, &tbl);
+		DCemitterResume(&ret, &tbl);
+		return MAL_SUCCEED;
+	}
+	return PNresumeQuery(cntxt,mb,stk,pci);
 }
 
 str
@@ -324,6 +337,8 @@ str
 DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
+    RCresume(&ret);
+    EMresume(&ret);
 	PNresumeScheduler(&ret);
 	(void) cntxt;
 	(void) mb;

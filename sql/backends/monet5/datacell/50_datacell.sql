@@ -84,8 +84,8 @@ returns boolean
 -- Inspection tables
 
 create function datacell.baskets()
-returns table( nme string, threshold int, winsize int, winstride int,  timeslice int, timestride int, beat int,
-	seen timestamp, grabs int, events int)
+returns table( nme string, kind string, host string, portid int, status string, threshold int, winsize int, winstride int,  timeslice int, timestride int, beat int,
+	seen timestamp, cycles int, events int)
 external name datacell.baskets;
 
 create function datacell.queries()

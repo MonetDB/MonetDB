@@ -77,7 +77,7 @@ ACnew(str nme)
 
 #define TCP 1
 #define UDP 2
-static int protocol = TCP;
+static int protocol = TCP; /* default protocol to use is TCP */
 
 #define ACTIVE 1
 #define PASSIVE 2

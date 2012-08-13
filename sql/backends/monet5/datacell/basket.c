@@ -18,8 +18,7 @@
  */
 
 /*
- * @f basket
- * @- Event baskets
+ * Event baskets
  * Continuous query processing relies on event baskets
  * passed through a processing pipeline. The baskets
  * are derived from ordinary SQL tables where the delta
@@ -34,6 +33,9 @@
 #endif
 
 str schema_default = "datacell";
+str statusname[6] = { "<unknown>", "paused", "listen", "stopped", "dropped", "error" };
+str modename[3] = { "<unknown>", "active", "passive" };
+str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
 
 BSKTbasketRec *baskets;   /* the datacell catalog */
 int bsktTop = 0, bsktLimit = 0;
@@ -114,6 +116,11 @@ BSKTlocate(str tbl)
 
 	for (i = 1; i < bsktTop; i++)
 		if (tbl && baskets[i].name && strcmp(tbl, baskets[i].name) == 0)
+			return i;
+	/* try prefixing it with datacell */
+	snprintf(buf,BUFSIZ,"datacell.%s",tbl);
+	for (i = 1; i < bsktTop; i++)
+		if (baskets[i].name && strcmp(buf, baskets[i].name) == 0)
 			return i;
 	return 0;
 }
@@ -358,6 +365,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b = BATsetaccess(b, BAT_WRITE);
 			BATclear(b, FALSE);
 			BATins(b, bn, FALSE);
+			cnt = (int) BATcount(bn);
 			BBPreleaseref(bn->batCacheid);
 		}
 		BBPreleaseref(bo->batCacheid);
@@ -396,13 +404,14 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ret = (int *) getArgReference(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			bn = BATcopy(b, b->htype, b->ttype, TRUE);
+			cnt = (int) BATcount(bn);
 			BATclear(b, FALSE);
 			*ret = bn->batCacheid;
 			BBPkeepref(*ret);
 		}
 		MT_lock_unset(&baskets[bskt].lock, "unlock basket");
 	}
-	baskets[bskt].grabs++;
+	baskets[bskt].cycles++;
 	baskets[bskt].events += cnt;
 	return MAL_SUCCEED;
 }
@@ -568,11 +577,12 @@ BSKTbeat(int *ret, str *tbl, int *sz)
 
 /* provide a tabular view for inspection */
 str
-BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *grabsId, int *eventsId)
+BSKTtable(int *nameId, int *kindId, int *hostId, int *portId, int *statusId, int *thresholdId, int * winsizeId, int *winstrideId, int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *cyclesId, int *eventsId)
 {
-	BAT *name = NULL, *seen = NULL, *events = NULL, *grabs = NULL;
+	BAT *name = NULL, *seen = NULL, *events = NULL, *cycles = NULL;
 	BAT *threshold = NULL, *winsize = NULL, *winstride = NULL, *beat = NULL;
 	BAT *timeslice = NULL, *timestride = NULL;
+	BAT *kind, *status, *port, *host;
 	int i;
 
 	name = BATnew(TYPE_oid, TYPE_str, BATTINY);
@@ -599,10 +609,10 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 	if (seen == 0)
 		goto wrapup;
 	BATseqbase(seen, 0);
-	grabs = BATnew(TYPE_oid, TYPE_int, BATTINY);
-	if (grabs == 0)
+	cycles = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	if (cycles == 0)
 		goto wrapup;
-	BATseqbase(grabs, 0);
+	BATseqbase(cycles, 0);
 	events = BATnew(TYPE_oid, TYPE_int, BATTINY);
 	if (events == 0)
 		goto wrapup;
@@ -616,22 +626,47 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 	if (timestride == 0)
 		goto wrapup;
 	BATseqbase(timestride, 0);
+	kind = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	if (kind == 0)
+		goto wrapup;
+	BATseqbase(kind, 0);
+	status = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	if (status == 0)
+		goto wrapup;
+	BATseqbase(status, 0);
+	host = BATnew(TYPE_oid, TYPE_str, BATTINY);
+	if (host == 0)
+		goto wrapup;
+	BATseqbase(host, 0);
+	port = BATnew(TYPE_oid, TYPE_int, BATTINY);
+	if (port == 0)
+		goto wrapup;
+	BATseqbase(port, 0);
+
 
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].name) {
 			BUNappend(name, baskets[i].name, FALSE);
+			BUNappend(kind, baskets[i].kind, FALSE);
+			BUNappend(host, baskets[i].host, FALSE);
+			BUNappend(port, &baskets[i].port, FALSE);
+			BUNappend(status, statusname[baskets[i].status], FALSE);
 			BUNappend(threshold, &baskets[i].threshold, FALSE);
 			BUNappend(winsize, &baskets[i].winsize, FALSE);
 			BUNappend(winstride, &baskets[i].winstride, FALSE);
 			BUNappend(beat, &baskets[i].beat, FALSE);
 			BUNappend(seen, &baskets[i].seen, FALSE);
-			BUNappend(grabs, &baskets[i].grabs, FALSE);
+			BUNappend(cycles, &baskets[i].cycles, FALSE);
 			BUNappend(events, &baskets[i].events, FALSE);
 			BUNappend(timeslice, &baskets[i].timeslice, FALSE);
 			BUNappend(timestride, &baskets[i].timestride, FALSE);
 		}
 
 	BBPkeepref(*nameId = name->batCacheid);
+	BBPkeepref(*kindId = kind->batCacheid);
+	BBPkeepref(*hostId = host->batCacheid);
+	BBPkeepref(*portId = port->batCacheid);
+	BBPkeepref(*statusId = status->batCacheid);
 	BBPkeepref(*thresholdId = threshold->batCacheid);
 	BBPkeepref(*winsizeId = winsize->batCacheid);
 	BBPkeepref(*winstrideId = winstride->batCacheid);
@@ -639,7 +674,7 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 	BBPkeepref(*timestrideId = timestride->batCacheid);
 	BBPkeepref(*beatId = beat->batCacheid);
 	BBPkeepref(*seenId = seen->batCacheid);
-	BBPkeepref(*grabsId = grabs->batCacheid);
+	BBPkeepref(*cyclesId = cycles->batCacheid);
 	BBPkeepref(*eventsId = events->batCacheid);
 	return MAL_SUCCEED;
 wrapup:
@@ -659,10 +694,18 @@ wrapup:
 		BBPreleaseref(beat->batCacheid);
 	if (seen)
 		BBPreleaseref(seen->batCacheid);
-	if (grabs)
-		BBPreleaseref(grabs->batCacheid);
+	if (cycles)
+		BBPreleaseref(cycles->batCacheid);
 	if (events)
 		BBPreleaseref(events->batCacheid);
+	if (kind)
+		BBPreleaseref(kind->batCacheid);
+	if (status)
+		BBPreleaseref(status->batCacheid);
+	if (host)
+		BBPreleaseref(host->batCacheid);
+	if (port)
+		BBPreleaseref(port->batCacheid);
 	throw(MAL, "datacell.baskets", MAL_MALLOC_FAIL);
 }
 

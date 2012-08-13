@@ -128,7 +128,7 @@ int *enabled;     /*array that contains the id's of all queries that are enable 
 #define PNwaiting 4
 #define PNscheduled 5
 #define PNexecute 6
-static char *statusnames[7] = { "stopped", "pause", "running", "initialize", "waiting", "scheduled", "execute" };
+static char *statusnames[7] = { "stopped", "paused", "running", "initialize", "waiting", "scheduled", "execute" };
 
 static int status = PNinitialize;
 static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
@@ -202,6 +202,56 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) ret;
 	pnettop++;
 	return PNanalysis(cntxt, s->def);
+}
+
+str
+PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str qry= *(str*) getArgReference(stk,pci,1);
+	int i;
+	char buf[BUFSIZ];
+
+	(void) cntxt;
+	(void) mb;
+	for ( i = 0; i < pnettop; i++)
+	if ( strcmp(qry, pnet[i].name) == 0){
+		/* stop the query first */
+		pnet[i].status = PNpause;
+		return MAL_SUCCEED;
+	}
+	snprintf(buf,BUFSIZ,"datacell.%s", qry);
+	for ( i = 0; i < pnettop; i++)
+	if ( strcmp(buf, pnet[i].name) == 0){
+		/* stop the query first */
+		pnet[i].status = PNpause;
+		return MAL_SUCCEED;
+	}
+	if (pnettop)
+		throw(SQL,"datacell.pause","Basket or query not found");
+	return MAL_SUCCEED;
+}
+
+str
+PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	str qry= *(str*) getArgReference(stk,pci,1);
+	int i;
+	char buf[BUFSIZ];
+
+	(void) cntxt;
+	(void) mb;
+	for ( i = 0; i < pnettop; i++)
+	if ( strcmp(qry, pnet[i].name) == 0){
+		/* stop the query first */
+		pnet[i].status = PNwaiting;
+		return MAL_SUCCEED;
+	}
+	snprintf(buf,BUFSIZ,"datacell.%s", qry);
+	for ( i = 0; i < pnettop; i++)
+	if ( strcmp(buf, pnet[i].name) == 0){
+		/* stop the query first */
+		pnet[i].status = PNwaiting;
+		return MAL_SUCCEED;
+	}
+	throw(SQL,"datacell.pause","Basket or query not found");
 }
 
 #if 0
@@ -401,10 +451,9 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * The PetriNet controller lives in an separate thread.
  * It cycles through the nodes, hunting for non-empty baskets
- * and transformations that can fire.
+ * and non-paused queries that can fire.
  * The current policy is a simple round-robin. Later we will
  * experiment with more advanced schemes, e.g., priority queues.
  *
@@ -484,7 +533,8 @@ PNcontroller(void *dummy)
 			status = PNrunning;
 		MT_lock_unset(&petriLock, "pncontroller");
 		now = GDKusec();
-		for (k = i = 0; status == PNrunning && i < pnettop; i++) {
+		for (k = i = 0; status == PNrunning && i < pnettop; i++) 
+		if ( pnet[i].status != PNpause ){
 			pnet[i].available = 0;
 			pnet[i].enabled = 0;
 			for (j = 0; j < pnet[i].srctop; j++) {

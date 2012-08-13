@@ -42,12 +42,12 @@
 /* #define _DEBUG_DATACELL     debug this module */
 
 datacell_export str DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+datacell_export str DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-datacell_export str DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

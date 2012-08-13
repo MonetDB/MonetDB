@@ -51,23 +51,6 @@
 
 /* #define _DEBUG_RECEPTOR_ */
 
-#define TCP 1
-#define UDP 2
-#define CSV 3
-
-static str protocolname[4] = { "<unknown>", "TCP", "UDP", "CSV" };
-
-#define RCPAUSE 1       /* not active now */
-#define RCLISTEN 2      /* reading the channel */
-#define RCSTOP 3        /* stop reading the channel */
-#define RCDROP 4        /* stop reading the channel */
-#define RCERROR 5       /* failed to establish the stream */
-static str statusname[6] = { "<unknown>", "pause", "listen", "stop", "drop", "error" };
-
-#define RCACTIVE 1      /* ask for events */
-#define RCPASSIVE 2     /* wait for events */
-static str modename[3] = { "<unknown>", "active", "passive" };
-
 /* default settings */
 #define RCHOST "localhost"
 #define RCPORT 55000
@@ -124,10 +107,15 @@ static Receptor
 RCfind(str nme)
 {
 	Receptor r;
+	char buf[BUFSIZ];
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(nme, r->name) == 0)
-			break;
-	return r;
+			return r;
+	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	for (r = rcAnchor; r; r = r->nxt)
+		if (strcmp(buf, r->name) == 0)
+			return r;
+	return NULL;
 }
 /*
  * @-
@@ -158,13 +146,13 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port)
 	rc->error = NULL;
 	rc->delay = PAUSEDEFAULT;
 	rc->lck = 0;
-	rc->status = RCSTOP;
+	rc->status = BSKTSTOP;
 	rc->scenario = 0;
 	rc->sequence = 0;
 	rc->modnme = 0;
 	rc->fcnnme = 0;
-	rc->mode = RCPASSIVE;
-	rc->protocol = UDP;
+	rc->mode = BSKTPASSIVE;
+	rc->protocol = TCP;
 
 	rc->bskt = idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
@@ -172,6 +160,9 @@ DCreceptorNew(int *ret, str *tbl, str *host, int *port)
 	len = BSKTmemberCount(*tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
+	baskets[idx].kind = "receptor";
+	baskets[idx].status = BSKTSTOP;
+	baskets[idx].host = GDKstrdup(*host);
 	baskets[idx].port = *port;
 	for (j = 0, i = 0; i < baskets[idx].colcount; i++) {
 		b = baskets[idx].primary[j];
@@ -211,9 +202,10 @@ str DCreceptorPause(int *ret, str *nme)
 	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
-	if (rc->status != RCLISTEN)
+	if (rc->status != BSKTLISTEN)
 		throw(MAL, "receptor.resume", "Receptor not started");
-	rc->status = RCPAUSE;
+	rc->status = BSKTPAUSE;
+	baskets[rc->bskt].status=BSKTPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Pause a receptor\n");
@@ -229,13 +221,15 @@ str DCreceptorResume(int *ret, str *nme)
 	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
-	if (rc->status == RCSTOP) {
+	if (rc->status == BSKTSTOP) {
 		if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) {
 			throw(MAL, "receptor.start", "Receptor initiation failed");
 		}
-	} else if (rc->status != RCPAUSE)
+	} else if (rc->status != BSKTPAUSE)
 		throw(MAL, "receptor.resume", "Receptor not paused");
-	rc->status = RCLISTEN;
+
+	rc->status = BSKTLISTEN;
+	baskets[rc->bskt].status=BSKTLISTEN;
 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Resume a receptor\n");
@@ -245,11 +239,21 @@ str DCreceptorResume(int *ret, str *nme)
 }
 
 str
+RCpause(int *ret)
+{
+	Receptor rc;
+	for (rc = rcAnchor; rc; rc = rc->nxt)
+		if (rc->status != BSKTSTOP)
+			DCreceptorPause(ret, &rc->name);
+	return MAL_SUCCEED;
+}
+
+str
 RCresume(int *ret)
 {
 	Receptor rc;
 	for (rc = rcAnchor; rc; rc = rc->nxt)
-		if (rc->status == RCSTOP)
+		if (rc->status == BSKTSTOP)
 			DCreceptorResume(ret, &rc->name);
 	return MAL_SUCCEED;
 }
@@ -272,7 +276,7 @@ str RCdrop(int *ret, str *nme)
 		rc->nxt->prv = rc->prv;
 	if (rb)
 		rb->nxt = rc->nxt;
-	rc->status = RCDROP;
+	rc->status = BSKTDROP;
 	if (rc->lck)
 		BSKTunlock(&rc->lck, &rc->name);
 	MT_join_thread(rc->pid);
@@ -315,9 +319,9 @@ str RCmode(int *ret, str *nme, str *arg)
 #endif
 	(void) ret;
 	if (strcmp(*arg, "passive") == 0)
-		rc->mode = RCPASSIVE;
+		rc->mode = BSKTPASSIVE;
 	else if (strcmp(*arg, "active") == 0)
-		rc->mode = RCACTIVE;
+		rc->mode = BSKTACTIVE;
 	else
 		throw(MAL, "receptor.mode", "Must be either passive/active");
 	return MAL_SUCCEED;
@@ -372,12 +376,12 @@ RCreconnect(Receptor rc)
 {
 	do {
 		rc->error = NULL;
-		if (rc->mode == RCACTIVE)
+		if (rc->mode == BSKTACTIVE)
 			rc->error = socket_client_connect(&rc->newsockfd, rc->host, rc->port);
 		if (rc->error) {
 			mnstr_printf(RCout, "#Receptor connect fails: %s\n", rc->error);
 			MT_sleep_ms(rc->delay);
-		}
+		} 
 	} while (rc->error);
 }
 
@@ -410,7 +414,7 @@ RCbody(Receptor rc)
 
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
-	if (rc->mode == RCACTIVE && rc->protocol == UDP)
+	if (rc->mode == BSKTACTIVE && rc->protocol == UDP)
 		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
 	else
 		rc->receptor = socket_rastream(rc->newsockfd, rc->name);
@@ -432,16 +436,16 @@ bodyRestart:
 	 */
 
 	for (n = 1; n > 0;) {
-		while (rc->status == RCPAUSE && rc->delay) {
+		while (rc->status == BSKTPAUSE && rc->delay) {
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#pause receptor\n");
 #endif
 			MT_sleep_ms(rc->delay);
 		}
 
-		if (rc->status == RCSTOP)
+		if (rc->status == BSKTSTOP)
 			break;
-		if (rc->status == RCDROP) {
+		if (rc->status == BSKTDROP) {
 			mnstr_close(rc->receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
 				GDKfree(rc->table.format[j].sep);
@@ -504,7 +508,7 @@ bodyRestart:
 					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
 #endif
 parse:
-					if (rc->status != RCLISTEN)
+					if (rc->status != BSKTLISTEN)
 						break;
 					do {
 						line = buf;
@@ -552,7 +556,7 @@ parse:
 	}
 	/* only when reading fails we attempt to reconnect */
 	mnstr_close(rc->receptor);
-	if (rc->mode == RCACTIVE) {
+	if (rc->mode == BSKTACTIVE) {
 		/* try to reconnect */
 		RCreconnect(rc);
 		goto bodyRestart;
@@ -619,7 +623,7 @@ RCscenario(Receptor rc)
 			previoustsmp = tick;
 
 			BSKTlock(&rc->lck, &rc->name, &rc->delay);
-			if (rc->status != RCLISTEN) {
+			if (rc->status != BSKTLISTEN) {
 				snr = rc->sequence;
 				break;
 			}
@@ -679,11 +683,11 @@ RCgenerator(Receptor rc)
 #endif
 	for (;;)
 		switch (rc->status) {
-		case RCPAUSE:
+		case BSKTPAUSE:
 			MT_sleep_ms(1);
 			break;
-		case RCSTOP:
-		case RCERROR:
+		case BSKTSTOP:
+		case BSKTERROR:
 			return;
 		default:
 			reenterMAL(cntxt, mb, pc, pc + 1, glb, 0, 0);
@@ -708,9 +712,9 @@ RCstartThread(Receptor rc)
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Start the receptor thread, protocol=%d\n", rc->protocol);
 #endif
-	if (rc->mode == RCPASSIVE &&
+	if (rc->mode == BSKTPASSIVE &&
 		(rc->error = socket_server_connect(&rc->sockfd, rc->port))) {
-		rc->status = RCERROR;
+		rc->status = BSKTERROR;
 		mnstr_printf(RCout, "Failed to start receptor server:%s\n", rc->error);
 		/* in this case there is nothing more we can do but terminate */
 		return NULL;
@@ -718,9 +722,9 @@ RCstartThread(Receptor rc)
 	/* the receptor should continously attempt to either connect the
 	   remote site for new events or listing for the next request */
 	do {
-		if (rc->status == RCSTOP)
+		if (rc->status == BSKTSTOP)
 			break;
-		if (rc->mode == RCPASSIVE) {
+		if (rc->mode == BSKTPASSIVE) {
 			/* in server mode you should expect new connections */
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor listens\n");
@@ -728,7 +732,7 @@ RCstartThread(Receptor rc)
 			rc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
 			if (rc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
-				rc->status = RCERROR;
+				rc->status = BSKTERROR;
 			}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
@@ -737,12 +741,12 @@ RCstartThread(Receptor rc)
 				mnstr_close(rc->receptor);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
-		} else if (rc->mode == RCACTIVE) {
+		} else if (rc->mode == BSKTACTIVE) {
 			/* take the initiative to connect to sensor */
 			RCreconnect(rc);
 			RCbody(rc);
 		}
-	} while (rc->status != RCSTOP);
+	} while (rc->status != BSKTSTOP);
 	shutdown(rc->newsockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }

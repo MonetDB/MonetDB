@@ -56,6 +56,7 @@
 adapters_export str DCreceptorNew(int *ret, str *tbl, str *host, int *port);
 adapters_export str DCreceptorPause(int *ret, str *nme);
 adapters_export str DCreceptorResume(int *ret, str *nme);
+adapters_export str RCpause(int *ret);
 adapters_export str RCresume(int *ret);
 adapters_export str RCdrop(int *ret, str *nme);
 adapters_export str RCreset(int *ret);
