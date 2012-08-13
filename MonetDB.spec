@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP1/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -679,6 +679,31 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Mon Aug 13 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.7-20120813
+- Rebuilt.
+
+* Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- merovingian: Starting a server now waits for as long as the server needs to possibly
+  recover, bug #3134.  In case of a long wait, the monetdbd logfile
+  gives extra information on what the server is doing to recover.
+- merovingian: Fixed a crash of monetdbd when local databases were unshared, bug #3135
+
+* Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- monetdb5: The server now distinguishes between starting and started states,
+  such that monetdbd can wait for it to finish starting.
+
+* Fri Jul 20 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- java: Fixed adaptive cache size used when retrieving results, not to cause
+  divide by zero errors when memory gets short, bug #3119.
+
+* Wed Jul 18 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- merovingian: Resolved a problem where automatic starting of a database initiated by
+  multiple clients at the same time could cause failed starts.  Bug #3107
+
+* Tue Jul 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- clients: mclient no longer prints the SQLSTATE at the start of each error
+  returned by the SQL-server.
+
 * Tue Jul 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.5-20120710
 - Rebuilt.
 
