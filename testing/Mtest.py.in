@@ -56,6 +56,8 @@ procdebug = False
 verbose = False
 quiet = False
 
+releaserun = False
+
 # Python 2.3 doesn't know about os.devnull...
 try:
     os.devnull
@@ -1711,12 +1713,28 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         if i > 0:
             return RunTest(env, TST[:i], BusyPorts, COND, oktests, length)
         EXT = CALL = SERVER = ""
-        if   COND and not CONDITIONALS.has_key(COND):
-            reason = "as conditional '%s' is unknown." % COND
-            elem = SkipTest(env, TST, EXT, reason, length)
-        elif COND and not CONDITIONALS[COND]:
-            reason = "as conditional '%s' does not hold." % COND
-            elem = SkipTest(env, TST, EXT, reason, length)
+        if COND:
+            for cond in COND.split('&'):
+                if cond == 'PREVREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
+                        reason = "as previous release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif cond == 'PREVCHAINREL':
+                    if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
+                        reason = "as previous release database is not available"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                        break
+                elif not CONDITIONALS.has_key(cond):
+                    reason = "as conditional '%s' is unknown." % cond
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                elif not CONDITIONALS[cond]:
+                    reason = "as conditional '%s' does not hold." % cond
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+        if reason:
+            pass
         elif os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|malC|sql|jaql)`")
             #TODO:
@@ -1733,12 +1751,28 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     os.chdir(TSTTRGDIR)
 
-    if   COND and not CONDITIONALS.has_key(COND):
-        reason = "as conditional '%s' is unknown." % COND
-        elem = SkipTest(env, TST, EXT, reason, length)
-    elif COND and not CONDITIONALS[COND]:
-        reason = "as conditional '%s' does not hold." % COND
-        elem = SkipTest(env, TST, EXT, reason, length)
+    if COND:
+        for cond in COND.split('&'):
+            if cond == 'PREVREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
+                    reason = "as previous release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond == 'PREVCHAINREL':
+                if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevchainrel.zip')):
+                    reason = "as previous release database is not available"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif not CONDITIONALS.has_key(cond):
+                reason = "as conditional '%s' is unknown." % cond
+                elem = SkipTest(env, TST, EXT, reason, length)
+                break
+            elif not CONDITIONALS[cond]:
+                reason = "as conditional '%s' does not hold." % cond
+                elem = SkipTest(env, TST, EXT, reason, length)
+                break
+    if reason:
+        pass
     elif MissingTests:
         reason = "as required test%s '%s' failed." % (len(MissingTests) != 1 and 's' or '', "', '".join(MissingTests))
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -3225,6 +3259,8 @@ def main(argv) :
              "This passes a single set to the server"),
             ('no-clean', None, 'no_clean', None, 'Do not clean up before test'),
             ('testweb', None, 'testweb', None, 'Optimize testing for testweb'),
+            ('releaserun', None, 'releaserun', None,
+             'run tests as if for a release test'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3310,6 +3346,9 @@ def main(argv) :
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
     procdebug = opts.get('procdebug', False)
+    global releaserun
+    releaserun = opts.get('releaserun', False)
+    CONDITIONALS['RELEASERUN'] = releaserun
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
         par['IGNORE'] = opts.get('ignore', _IGNORE)
@@ -3571,6 +3610,7 @@ def main(argv) :
     # fix up URLPREFIX
     if REV:
         URLPREFIX += '%s/%s/' % (REV.split()[0].rstrip('+'), par['PACKAGE'])
+        os.environ['REVISION'] = REV
     else:
         # if no revision known, can't refer to repository
         URLPREFIX = None
