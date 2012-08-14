@@ -1,0 +1,12 @@
+stderr of test 'testdb-package` in directory 'test/testdb` itself:
+
+
+# 12:32:38 >  
+# 12:32:38 >  "/usr/bin/python" "testdb-package.py" "testdb-package"
+# 12:32:38 >  
+
+
+# 12:32:38 >  
+# 12:32:38 >  "Done."
+# 12:32:38 >  
+
