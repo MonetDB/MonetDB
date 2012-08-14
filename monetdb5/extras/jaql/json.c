@@ -109,11 +109,16 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 
 	shift = *pos - jb->streambuf;
 	if (*pos == jb->streambuf + jb->streambuflen) {
+		size_t rshift = *recall - jb->streambuf;
 		char *newbuf = realloc(jb->streambuf, jb->streambuflen += 8096);
 		if (newbuf == NULL)
 			return 0;
 		jb->streambuf = newbuf;
 		*pos = jb->streambuf + shift;
+		if (pos != start)
+			*start = jb->streambuf;
+		if (recall != NULL)
+			*recall = jb->streambuf + rshift;
 	}
 
 	sret = mnstr_read(jb->is, *pos, 1, jb->streambuflen - shift - 1);
