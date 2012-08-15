@@ -2718,6 +2718,10 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( strcmp("optimizer",  varname)== 0) {
 		str newopt = *(str *) getArgReference(stk,pci,3);
 		if ( newopt) {
+			if ( ! isOptimizerPipe(newopt)  && strchr(newopt,(int)';') == 0){
+				snprintf(buf, BUFSIZ, "optimizer '%s' unknown", newopt);
+				throw(SQL, "sql.setVariable", "%s", buf);
+			}
 			snprintf(buf,BUFSIZ,"user_%d",cntxt->idx);
 			if ( ! isOptimizerPipe(newopt) || strcmp(buf,newopt) == 0){
 				msg = addPipeDefinition(cntxt, buf, newopt);
