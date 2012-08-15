@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @-
- * @+ Implementation
- * The implementation is derived from the emitter module.
- */
 #ifndef _EMITTER_
 #define _EMITTER_
 #include "mal_interpreter.h"
@@ -42,16 +37,15 @@
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
-adapters_export str DCemitterPause(int *ret, str *nme);
-adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str EMemitterStart(int *ret, str *tbl, str *host, int *port);
+adapters_export str EMemitterPause(int *ret, str *nme);
+adapters_export str EMemitterResume(int *ret, str *nme);
+adapters_export str EMemitterStop(int *ret, str *nme);
 adapters_export str EMpause(int *ret);
 adapters_export str EMresume(int *ret);
-adapters_export str EMstop(int *ret, str *nme);
-adapters_export str EMreset(int *ret);
+adapters_export str EMstop(int *ret);
 adapters_export str EMdump(void);
-adapters_export str EMmode(int *ret, str *nme, str *arg);
-adapters_export str EMprotocol(int *ret, str *nme, str *arg);
+adapters_export str EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *mode, int *statusId, int *seenId, int *cyclesId, int *sentId, int *pendingId);
 
 #endif
 

@@ -20,9 +20,10 @@ call datacell.query('datacell.pass', 'insert into datacell.bsktout select * from
 
 call datacell.resume();
 call datacell.dump();
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 
 -- externally, activate the sensor 
---sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1 --trace
+-- sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1 --trace
 -- externally, activate the actuator server to listen
 -- nc -l -u 50600 
 

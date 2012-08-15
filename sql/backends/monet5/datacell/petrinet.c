@@ -18,9 +18,7 @@
  */
 
 /*
- * @f petrinet
- * @a Martin Kersten
- * @v 1
+ * Martin Kersten
  * @+ Petri-net engine
    The Datacell scheduler is based on the long-standing and mature Petri-net technology. For completeness, we
    recap its salient points taken from Wikipedia. For more detailed information look at the science library.
@@ -120,17 +118,15 @@ int pnettop = 0;
 
 int *enabled;     /*array that contains the id's of all queries that are enable to fire*/
 
-#define PNinitialize 3
-#define PNrunning 2
-#define PNpause 1
-#define PNstopped 0
+#define PNINIT 3
+#define PNRUNNING 2
+#define PNPAUSE 1
+#define PNSTOPPED 0
 
-#define PNwaiting 4
-#define PNscheduled 5
-#define PNexecute 6
-static char *statusnames[7] = { "stopped", "paused", "running", "initialize", "waiting", "scheduled", "execute" };
+#define PNWAITING 4
+static char *statusnames[7] = { "stopped", "paused", "running", "initialize", "waiting"};
 
-static int status = PNinitialize;
+static int status = PNINIT;
 static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
 
 str PNstartThread(int *ret);
@@ -164,6 +160,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *ret = (int *) getArgReference(stk, pci, 0);
 	str nme = *(str *) getArgReference(stk, pci, 1);
 	int i;
+	str msg= MAL_SUCCEED;
 	char buf[BUFSIZ], *modnme, *fcnnme;
 
 	BSKTelements(nme, buf, &modnme, &fcnnme);
@@ -195,13 +192,18 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		pnet[pnettop].def = GDKstrdup("");
 
-	pnet[pnettop].status = PNwaiting;
+	pnet[pnettop].status = PNWAITING;
 	pnet[pnettop].cycles = 0;
+	pnet[pnettop].seen = *timestamp_nil;
 	/* all the rest is zero */
 
 	(void) ret;
 	pnettop++;
-	return PNanalysis(cntxt, s->def);
+	msg = PNanalysis(cntxt, s->def);
+	/* start the scheduler if analysis does not show errors */
+	if ( msg == MAL_SUCCEED && status == PNINIT)
+		return PNstartThread(ret);
+	return msg;
 }
 
 str
@@ -215,14 +217,14 @@ PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(qry, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNpause;
+		pnet[i].status = PNPAUSE;
 		return MAL_SUCCEED;
 	}
 	snprintf(buf,BUFSIZ,"datacell.%s", qry);
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(buf, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNpause;
+		pnet[i].status = PNPAUSE;
 		return MAL_SUCCEED;
 	}
 	if (pnettop)
@@ -241,14 +243,14 @@ PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(qry, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNwaiting;
+		pnet[i].status = PNWAITING;
 		return MAL_SUCCEED;
 	}
 	snprintf(buf,BUFSIZ,"datacell.%s", qry);
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(buf, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNwaiting;
+		pnet[i].status = PNWAITING;
 		return MAL_SUCCEED;
 	}
 	throw(SQL,"datacell.pause","Basket or query not found");
@@ -269,7 +271,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BSKTtolower(modnme);
 	BSKTtolower(fcnnme);
 
-	if (status != PNpause)
+	if (status != PNPAUSE)
 		throw(MAL, "datacell.remove", "Scheduler should be paused first");
 	(void) mb;
 	/* check for a continous query */
@@ -278,7 +280,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = findSymbolInModule(scope, putName(fcnnme, (int) strlen(fcnnme)));
 	if (s == NULL)
 		throw(SQL, "datacell.remove", "Continuous query found");
-	PNpauseScheduler(&ret);
+	PNPAUSEScheduler(&ret);
 	for (i = j = 0; i < pnettop; i++)
 		if (strcmp(nme, pnet[i].name) == 0) {} else
 			pnet[j++] = pnet[i];
@@ -293,13 +295,13 @@ str PNstopScheduler(int *ret)
 	int i = 0, j = pnettop;
 	pnettop = 0;    /* don't look at it anymore */
 	MT_lock_set(&petriLock, "pncontroller");
-	status = PNstopped;
+	status = PNSTOPPED;
 	MT_lock_unset(&petriLock, "pncontroller");
 	i = 0;
 	do {
 		MT_sleep_ms(cycleDelay + 1);  /* delay to make it more tractable */
 		i++;
-	} while (i < 100 && status != PNinitialize);
+	} while (i < 100 && status != PNINIT);
 	if (i == 100)
 		throw(MAL, "datacell.stop", "reset scheduler time out");
 	for (j--; j >= 0; j--) {
@@ -311,23 +313,23 @@ str PNstopScheduler(int *ret)
 
 str PNresumeScheduler(int *ret)
 {
-	if (status == PNrunning)
+	if (status == PNRUNNING)
 		return MAL_SUCCEED;
-	if (status == PNpause)
-		status = PNrunning;
-	if (status == PNinitialize)
+	if (status == PNPAUSE)
+		status = PNRUNNING;
+	if (status == PNINIT)
 		return PNstartThread(ret);
 	return MAL_SUCCEED;
 }
 
 str PNpauseScheduler(int *ret)
 {
-	if (status == PNpause)
+	if (status == PNPAUSE)
 		return MAL_SUCCEED;
-	status = PNpause;
+	status = PNPAUSE;
 	do
 		MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
-	while (status == PNrunning);
+	while (status == PNRUNNING);
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -358,7 +360,6 @@ str PNdump(int *ret)
 	return MAL_SUCCEED;
 }
 /*
- * @-
  * Make the basket group accessible to the transition function
  * The code currently relies on a physical adjacent ordering of all member
  * in the group.
@@ -518,23 +519,23 @@ PNcontroller(void *dummy)
 #ifdef _DEBUG_PETRINET_
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
-	status = PNrunning;
+	status = PNRUNNING;
 	do {
 		if (cycleDelay)
 			MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
-		while (status == PNpause)
+		while (status == PNPAUSE)
 			;
 		MT_lock_set(&petriLock, "pncontroller");
-		if (status != PNstopped)
+		if (status != PNSTOPPED)
 			/* collect latest statistics, note that we don't need a lock here,
 			   because the count need not be accurate to the usec. It will simply
 			   come back. We also only have to check the sources that are marked
 			   empty. */
-			status = PNrunning;
+			status = PNRUNNING;
 		MT_lock_unset(&petriLock, "pncontroller");
 		now = GDKusec();
-		for (k = i = 0; status == PNrunning && i < pnettop; i++) 
-		if ( pnet[i].status != PNpause ){
+		for (k = i = 0; status == PNRUNNING && i < pnettop; i++) 
+		if ( pnet[i].status != PNPAUSE ){
 			pnet[i].available = 0;
 			pnet[i].enabled = 0;
 			for (j = 0; j < pnet[i].srctop; j++) {
@@ -593,7 +594,9 @@ PNcontroller(void *dummy)
 				mnstr_printf(cntxt->fdout, "Function: %s basket size %d\n", pnet[i].name, pnet[i].source[0].available);
 #endif
 
+				(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 				t = GDKusec();
+				pnet[i].cycles++;
 				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
 				pnet[i].time += GDKusec() - t + analysis;   /* keep around in microseconds */
 				if (msg != MAL_SUCCEED && !strstr(msg, "too early")) {
@@ -605,7 +608,6 @@ PNcontroller(void *dummy)
 						GDKfree(msg);
 					pnet[i].enabled = -1;
 				} else {
-					pnet[i].cycles++;
 					(void) MTIMEcurrent_timestamp(&pnet[i].seen);
 					for (j = 0; j < pnet[i].srctop; j++) {
 						idx = pnet[i].source[j].bskt;
@@ -616,8 +618,8 @@ PNcontroller(void *dummy)
 				}
 			}
 		}
-	} while (status != PNstopped);
-	status = PNinitialize;
+	} while (status != PNSTOPPED);
+	status = PNINIT;
 	(void) dummy;
 }
 
@@ -644,8 +646,8 @@ static str PNstart(int *ret)
 	PNdump(&s);
 #endif
 	MT_lock_set(&petriLock, "pncontroller");
-	if (status != PNstopped)
-		status = PNrunning;
+	if (status != PNSTOPPED)
+		status = PNRUNNING;
 	MT_lock_unset(&petriLock, "pncontroller");
 	/*controlRounds = PNcontrolEnd;*/
 

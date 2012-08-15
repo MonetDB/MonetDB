@@ -136,7 +136,7 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = BSKTlocate(*tbl);
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
-	return DCreceptorNew(ret, tbl, host, port);
+	return RCreceptorStart(ret, tbl, host, port);
 }
 
 str
@@ -149,7 +149,7 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = BSKTlocate(*tbl);
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
-	return DCemitterNew(ret, tbl, host, port);
+	return EMemitterStart(ret, tbl, host, port);
 }
 
 str
@@ -173,8 +173,8 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	idx = BSKTlocate(tbl);
 	if (idx ) {
-		DCreceptorPause(&ret, &tbl);
-		DCemitterPause(&ret, &tbl);
+		RCreceptorPause(&ret, &tbl);
+		EMemitterPause(&ret, &tbl);
 		return MAL_SUCCEED;
 	}
 	return PNpauseQuery(cntxt,mb,stk,pci);
@@ -193,15 +193,15 @@ DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	idx = BSKTlocate(tbl);
 	if (idx ) {
-		DCreceptorResume(&ret, &tbl);
-		DCemitterResume(&ret, &tbl);
+		RCreceptorResume(&ret, &tbl);
+		EMemitterResume(&ret, &tbl);
 		return MAL_SUCCEED;
 	}
 	return PNresumeQuery(cntxt,mb,stk,pci);
 }
 
 str
-DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCstopObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret;
 	str nme = *(str *) getArgReference(stk, pci, 1);
@@ -216,43 +216,6 @@ DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* finally remove the basket itself, the underlying table is *not* dropped */
 	return BSKTdrop(&ret, &nme);
 }
-
-str
-DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int idx, ret = 0;
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *arg = (str *) getArgReference(stk, pci, 2);
-
-	idx = BSKTlocate(*tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.mode", "Basket not found");
-
-	RCmode(&ret, tbl, arg);
-	EMmode(&ret, tbl, arg);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
-str
-DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int idx, ret = 0;
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *arg = (str *) getArgReference(stk, pci, 2);
-
-	idx = BSKTlocate(*tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.protocol", "Basket not found");
-
-	RCprotocol(&ret, tbl, arg);
-	EMprotocol(&ret, tbl, arg);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
 
 /* locate the MAL representation of this operation and extract the flow */
 /* If the operation is not available yet, it should be compiled from its
@@ -337,34 +300,38 @@ str
 DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-    RCresume(&ret);
-    EMresume(&ret);
-	PNresumeScheduler(&ret);
+	str msg;
+
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return MAL_SUCCEED;
+    msg = RCresume(&ret);
+	if ( msg )
+		return msg;
+    msg = EMresume(&ret);
+	if ( msg )
+		return msg;
+	return PNresumeScheduler(&ret);
 }
 
 str
 DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-	PNpauseScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return MAL_SUCCEED;
+	return PNpauseScheduler(&ret);
 }
 
 str
 DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-	RCreset(&ret);
-	EMreset(&ret);
+	RCstop(&ret);
+	EMstop(&ret);
 	PNstopScheduler(&ret);
 	BSKTreset(&ret);
 	(void) cntxt;

@@ -42,18 +42,15 @@
 typedef struct{
 	MT_Lock lock;
 	str name;	/* table that represents the basket */
-	str kind;	/* receptor/emitter basket */
-	int status;
 	int threshold ; /* bound to determine scheduling eligibility */
 	int winsize, winstride; /* sliding window operations */
 	lng timeslice, timestride; /* temporal sliding window, determined by first temporal component */
 	lng beat;	/* milliseconds delay */
 	int colcount;
-	str host;
-	int port;	/* port claimed */
 	str *cols;
 	BAT **primary;
 	/* statistics */
+	int status;
 	timestamp seen;
 	int events; /* total number of events grabbed */
 	int cycles; 
@@ -62,11 +59,13 @@ typedef struct{
 } *BSKTbasket, BSKTbasketRec;
 
 
-#define BSKTPAUSE 1       /* not active now */
-#define BSKTLISTEN 2      /* awaiting */
-#define BSKTSTOP 3        /* stop reading the channel */
-#define BSKTDROP 4        /* stop reading the channel */
+#define BSKTINIT 1        
+#define BSKTPAUSE 2       /* not active now */
+#define BSKTRUNNING 3      
+#define BSKTSTOP 4		  /* stop the thread */
 #define BSKTERROR 5       /* failed to establish the stream */
+
+#define PAUSEDEFAULT 1000
 
 datacell_export str statusname[6];
 
@@ -96,7 +95,7 @@ datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
 datacell_export str BSKTbeat(int *ret, str *tbl, int *sz);
 datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
 datacell_export str BSKTtimewindow(int *ret, str *tbl, int *sz, int *slide);
-datacell_export str BSKTtable(int *nameId, int *kindId, int *hostId, int *portId, int *statusId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *cyclesId, int *eventsId);
+datacell_export str BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *eventsId);
 datacell_export str BSKTtableerrors(int *nmeId, int *errorId);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);

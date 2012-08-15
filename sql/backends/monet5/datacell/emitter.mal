@@ -18,36 +18,32 @@
 module emitter;
 
 command start{unsafe}(tbl:str, host:str, port:int)
-address DCemitterNew
+address EMemitterStart
 comment "Define a emitter based on a basket table.
 The emitter protocol is active. Return its handle";
 
 command pause(tbl:str)
-address DCemitterPause
-comment "Pause listening";
+address EMemitterPause
+comment "Pause an emitter";
+
+command pause()
+address EMpause
+comment "Pause all emitters";
 
 command resume(tbl:str)
-address DCemitterResume
-comment "Resume a emitter thread";
+address EMemitterResume
+comment "Resume an emitter thread";
 
 command resume()
 address EMresume
 comment "Resume all emitter threads";
 
-command mode(tbl:str, arg:str)
-address EMmode
-comment "Set the mode of the emitter to either active/passive");
-
-command protocol(tbl:str, arg:str)
-address EMprotocol
-comment "Set the protocol of the emitter to udp/tcp/csv");
-
-command drop(tb:str)
-address EMstop
+command stop(tb:str)
+address EMemitterStop
 comment "Drop a emitter";
 
-command reset()
-address EMreset
+command stop()
+address EMstop
 comment "Remove all emitters";
 
 command dump()

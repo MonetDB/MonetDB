@@ -18,16 +18,19 @@
 module receptor;
 
 command start{unsafe}(tbl:str, host:str, port:int)
-address DCreceptorNew
-comment "Define a receptor based on a basket table.
-The receptor protocol is either active or passive. Return its handle";
+address RCreceptorStart
+comment "Define a receptor based on a basket table and start it";
 
 command pause(tbl:str)
-address DCreceptorPause
-comment "Pause listening";
+address RCreceptorPause
+comment "Pause a receptor";
+
+command pause()
+address RCpause
+comment "Pause all receptors";
 
 command resume(tbl:str)
-address DCreceptorResume
+address RCreceptorResume
 comment "Resume a receptor thread";
 
 command resume()
@@ -35,29 +38,21 @@ address RCresume
 comment "Resume all receptor threads";
 
 command scenario(tbl:str, fnme:str, sequence:int)
-address DCscenario
+address RCscenario
 comment "Use a file scenario to be run a number of times.
 The receptor should be paused to make this change to take effect";
 
 command generator(tbl:str, modnme:str, fnme:str)
-address DCgenerator
+address RCgenerator
 comment "Use a function/factory to generate the events";
 
-command mode(tbl:str, arg:str)
-address RCmode
-comment "Set the mode of the receptor to either active/passive");
+command stop(tbl:str)
+address RCstopReceptor
+comment "Stop a receptor";
 
-command protocol(tbl:str, arg:str)
-address RCprotocol
-comment "Set the protocol of the receptor to udp/tcp/csv");
-
-command drop(tbl:str)
-address RCdrop
-comment "Drop a receptor";
-
-command reset()
-address RCreset
-comment "Remove all receptors";
+command stop()
+address RCstop
+comment "Stop all receptors";
 
 command dump()
 address RCdump
