@@ -17,6 +17,10 @@
 
 module datacell;
 
+pattern basket(tbl:str)
+address DCbasket
+comment "Define a basket table.";
+
 pattern emitter(tbl:str, host:str, port:int)
 address DCemitter
 comment "Define a emitter based on a basket table.";

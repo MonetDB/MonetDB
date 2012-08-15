@@ -12,40 +12,10 @@ create table datacell.bsktin(
 );
 create table datacell.bsktout( like datacell.bsktin);
 
--- initialize the baskets
--- call datacell.prelude(); performs the next two statements
-call datacell.basket('datacell.bsktin');
-call datacell.basket('datacell.bsktout');
+call datacell.receptor('datacell.bsktin','localhost',50501,'udp','passive');
 
--- initialize receptor
-call datacell.receptor('datacell.bsktin','localhost',50501);
-call datacell.mode('datacell.bsktin','passive');
-call datacell.protocol('datacell.bsktin','udp');
-call datacell.resume('datacell.bsktin');
-
--- externally, activate the sensor leaving some in the basket
---sensor --host=localhost --port=50501 --events=100 --columns=3 --delay=1
-
--- initialize emitter
-call datacell.emitter('datacell.bsktout','localhost',50601);
-call datacell.mode('datacell.bsktout','active');
-call datacell.protocol('datacell.bsktout','udp');
-call datacell.resume('datacell.bsktout');
-
--- externally, activate the actuator server to listen
--- nc -l -u 50601 
-
--- compile the continous query
-call datacell.query('datacell.pass', 'insert into datacell.bsktout select * from datacell.bsktin;');
-call datacell.register('datacell.pass');
-
--- start the datacell scheduler
-call datacell.resume();
-call datacell.dump();
-
--- wrapup
--- stop the datacell scheduler
-call datacell.postlude();
+call datacell.emitter('datacell.bsktout','localhost',50601,'tcp','active');
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.baskets();
 
 -- remove everything
 drop table datacell.bsktin;

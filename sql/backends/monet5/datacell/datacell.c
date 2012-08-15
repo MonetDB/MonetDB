@@ -172,6 +172,12 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+DCbasket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BSKTregister(cntxt, mb, stk, pci);
+	return MAL_SUCCEED;
+}
+
+str
 DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *ret = (int *) getArgReference(stk, pci, 0);
