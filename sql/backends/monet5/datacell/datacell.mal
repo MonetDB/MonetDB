@@ -17,11 +17,11 @@
 
 module datacell;
 
-pattern basket(tab:str):void
-address DCregister
-comment "Initialize a new basket based on a specific table definition in the datacell schema");
-
 pattern emitter(tbl:str, host:str, port:int)
+address DCemitter
+comment "Define a emitter based on a basket table.";
+
+pattern emitter(tbl:str, host:str, port:int, proto:str, mode:str)
 address DCemitter
 comment "Define a emitter based on a basket table.";
 
@@ -29,13 +29,9 @@ pattern receptor(tbl:str, host:str, port:int)
 address DCreceptor
 comment "Define a receptor based on a basket table..";
 
-pattern mode(tbl:str, arg:str)
-address DCmode
-comment "Change the mode of the adaptor to active/passive";
-
-pattern protocol(tbl:str, arg:str)
-address DCprotocol
-comment "Change the protocol of the adaptor UDP/TCP/CSV";
+pattern receptor(tbl:str, host:str, port:int, proto:str, mode:str)
+address DCreceptor
+comment "Define a receptor based on a basket table..";
 
 pattern pause(obj:str):void
 address DCpauseObject
@@ -67,11 +63,15 @@ comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
 address DCpauseScheduler
-comment "(Re)start the petrinet scheduler.";
+comment "Pause all queries";
 
 pattern resume()
 address DCresumeScheduler
-comment "Resume the petrinet scheduler.";
+comment "Resume all queries.";
+
+pattern stop():void
+address DCstopScheduler
+comment "Stop all receptors, emitters and queries";
 
 pattern postlude()
 address DCpostlude

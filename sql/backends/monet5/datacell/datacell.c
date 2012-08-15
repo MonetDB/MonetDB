@@ -23,6 +23,8 @@
 
 #include "monetdb_config.h"
 #include "datacell.h"
+#include "receptor.h"
+#include "emitter.h"
 #include "opt_datacell.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -134,8 +136,38 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *host = (str *) getArgReference(stk, pci, 2);
 	int *port = (int *) getArgReference(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
+	str *protocol;
+	str *mode;
+	Receptor rc;
+	
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
+	rc = RCfind(*tbl);
+	if ( pci->argc == 6 && rc != NULL ){
+		protocol = (str *) getArgReference(stk, pci, 4);
+		if ( strcmp("tcp", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("TCP", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("udp", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("UDP", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+			throw(SQL,"datacell.register","Illegal protocol");
+
+		mode = (str *) getArgReference(stk, pci, 5);
+		if ( strcmp("active", *mode) == 0)
+			rc->mode = BSKTACTIVE;
+		else
+		if ( strcmp("passive", *mode) == 0)
+			rc->mode = BSKTPASSIVE;
+		else
+			throw(SQL,"datacell.register","Illegal mode");
+	}
 	return RCreceptorStart(ret, tbl, host, port);
 }
 
@@ -147,15 +179,38 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *host = (str *) getArgReference(stk, pci, 2);
 	int *port = (int *) getArgReference(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
+	Emitter em;
+	str *protocol, *mode;
+
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
-	return EMemitterStart(ret, tbl, host, port);
-}
+	em = EMfind(*tbl);
+	if ( pci->argc == 6 && em != NULL ){
+		protocol = (str *) getArgReference(stk, pci, 4);
+		if ( strcmp("tcp", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("TCP", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("udp", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("UDP", *protocol) == 0)
+			em->protocol = TCP;
+		else
+			throw(SQL,"datacell.register","Illegal protocol");
 
-str
-DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return BSKTregister(cntxt, mb, stk, pci);
+		mode = (str *) getArgReference(stk, pci, 5);
+		if ( strcmp("active", *mode) == 0)
+			em->mode = BSKTACTIVE;
+		else
+		if ( strcmp("passive", *mode) == 0)
+			em->mode = BSKTPASSIVE;
+		else
+			throw(SQL,"datacell.register","Illegal mode");
+	}
+	return EMemitterStart(ret, tbl, host, port);
 }
 
 str
@@ -326,6 +381,19 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	RCpause(&ret);
 	EMpause(&ret);
 	return PNpauseScheduler(&ret);
+}
+
+str
+DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret = 0;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	RCstop(&ret);
+	EMstop(&ret);
+	return PNstopScheduler(&ret);
 }
 
 str

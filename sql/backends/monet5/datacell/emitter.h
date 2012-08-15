@@ -27,6 +27,30 @@
 /* #define _DEBUG_EMITTER_ */
 #define EMout GDKout
 
+typedef struct EMITTER {
+	str name;
+	str host;
+	int port;
+	int mode;   	/* active/passive */
+	int protocol;   /* event protocol UDP,TCP,CSV */
+	int bskt;   	/* connected to a basket */
+	int status;
+	int delay; 		/* control the delay between attempts to connect */
+	int lck;
+	SOCKET sockfd;
+	SOCKET newsockfd;
+	stream *emitter;
+	str error;
+	MT_Id pid;
+	/* statistics */
+	timestamp lastseen;
+	int cycles;		/* how often emptied */
+	int pending;		/* pending events */
+	int sent;
+	Tablet table;
+	struct EMITTER *nxt, *prv;
+} EMrecord, *Emitter;
+
 #ifdef WIN32
 #ifndef LIBDATACELL
 #define adapters_export extern __declspec(dllimport)
@@ -41,6 +65,7 @@ adapters_export str EMemitterStart(int *ret, str *tbl, str *host, int *port);
 adapters_export str EMemitterPause(int *ret, str *nme);
 adapters_export str EMemitterResume(int *ret, str *nme);
 adapters_export str EMemitterStop(int *ret, str *nme);
+adapters_export Emitter EMfind(str nme);
 adapters_export str EMpause(int *ret);
 adapters_export str EMresume(int *ret);
 adapters_export str EMstop(int *ret);

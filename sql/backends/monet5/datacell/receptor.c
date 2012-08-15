@@ -47,32 +47,6 @@
 #define RCHOST "localhost"
 #define RCPORT 55000
 
-typedef struct RECEPTOR {
-	str name;
-	str host;
-	int port;
-	int mode;   	/* active/passive */
-	int protocol;   /* event protocol UDP,TCP,CSV */
-	int bskt;   	/* connected to a basket */
-	int status;
-	int delay;  	/* control the delay between attempts to connect */
-	int lck;
-	str scenario;   /* use a scenario file */
-	int sequence;   /* repetition count */
-	str modnme, fcnnme; /* generic receptor generators */
-	stream * receptor;
-	SOCKET sockfd;
-	SOCKET newsockfd;
-	str error;  /* what went wrong */
-	MT_Id pid;
-	/* statistics */
-	timestamp lastseen;
-	int cycles;		/* how often emptied */
-	int pending;		/* pending events */
-	int received;
-	Tablet table;   /* tuple input structure */
-	struct RECEPTOR *nxt, *prv;
-} RCrecord, *Receptor;
 
 static Receptor rcAnchor = NULL;
 static str rcError = NULL;
@@ -99,7 +73,7 @@ RCnew(str nme)
 	return rc;
 }
 
-static Receptor
+Receptor
 RCfind(str nme)
 {
 	Receptor r;

@@ -37,30 +37,6 @@
 
 #define _DEBUG_EMITTER_
 
-typedef struct EMITTER {
-	str name;
-	str host;
-	int port;
-	int mode;   	/* active/passive */
-	int protocol;   /* event protocol UDP,TCP,CSV */
-	int bskt;   	/* connected to a basket */
-	int status;
-	int delay; 		/* control the delay between attempts to connect */
-	int lck;
-	SOCKET sockfd;
-	SOCKET newsockfd;
-	stream *emitter;
-	str error;
-	MT_Id pid;
-	/* statistics */
-	timestamp lastseen;
-	int cycles;		/* how often emptied */
-	int pending;		/* pending events */
-	int sent;
-	Tablet table;
-	struct EMITTER *nxt, *prv;
-} EMrecord, *Emitter;
-
 static Emitter emAnchor = NULL;
 
 static str EMstartThread(Emitter em);
@@ -80,7 +56,7 @@ EMnew(str nme)
 	return em;
 }
 
-static Emitter
+Emitter
 EMfind(str nme)
 {
 	Emitter r;
