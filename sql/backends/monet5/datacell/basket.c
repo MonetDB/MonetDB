@@ -406,7 +406,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ret = (int *) getArgReference(stk, pci, i);
 			b = baskets[bskt].primary[i];
 			bn = BATcopy(b, b->htype, b->ttype, TRUE);
-			cnt = (int) BATcount(bn);
+			cnt = (int) BATcount(b);
 			BATclear(b, FALSE);
 			*ret = bn->batCacheid;
 			BBPkeepref(*ret);
@@ -632,6 +632,7 @@ BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId, int 
 			BUNappend(winstride, &baskets[i].winstride, FALSE);
 			BUNappend(beat, &baskets[i].beat, FALSE);
 			BUNappend(seen, &baskets[i].seen, FALSE);
+			baskets[i].events = (int) BATcount( baskets[i].primary[0]);
 			BUNappend(events, &baskets[i].events, FALSE);
 			BUNappend(timeslice, &baskets[i].timeslice, FALSE);
 			BUNappend(timestride, &baskets[i].timestride, FALSE);

@@ -170,7 +170,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	em->table.format[j - 1].sep = GDKstrdup("\n");
 	em->table.format[j - 1].seplen = (int) strlen(em->table.format[j - 1].sep);
 	em->table.nr_attrs = j;
-	em->status = BSKTINIT;
+	em->status = BSKTPAUSE;
 
 	(void) ret;
 #ifdef _DEBUG_EMITTER_
@@ -193,8 +193,6 @@ str EMemitterPause(int *ret, str *nme)
 	em = EMfind(*nme);
 	if (em == NULL)
 		throw(MAL, "emitter.pause", "Emitter not defined");
-	if (em->status != BSKTRUNNING)
-		throw(MAL, "emitter.pause", "Emitter not running");
 
 	em->status = BSKTPAUSE;
 
@@ -226,7 +224,8 @@ EMpause(int *ret)
 	Emitter em;
 	str msg= MAL_SUCCEED;
 	for (em = emAnchor; em && msg == MAL_SUCCEED; em = em->nxt)
-		if (em->status != BSKTINIT) msg = EMemitterPause(ret, &em->name);
+		if (em->status == BSKTRUNNING) 
+			msg = EMemitterPause(ret, &em->name);
 	return msg;
 }
 
@@ -236,7 +235,7 @@ EMresume(int *ret)
 	Emitter em;
 	str msg= MAL_SUCCEED;
 	for (em = emAnchor; em && msg == MAL_SUCCEED; em = em->nxt)
-		if (em->status == BSKTINIT)
+		if (em->status == BSKTPAUSE)
 			msg= EMemitterResume(ret, &em->name);
 	return msg;
 }
@@ -325,13 +324,16 @@ bodyRestart:
 	 * Consume each event and store the result.
 	 * If the thread is suspended, we sleep for at least one second.
 	 */
-	em->status = BSKTRUNNING;
 	for (ret = 1; ret >= 0;) {
-		while (em->status == BSKTPAUSE) {
+		if ( em->status == BSKTPAUSE){
 #ifdef _DEBUG_EMITTER_
-			mnstr_printf(EMout, "#Pause emitter\n");
+			mnstr_printf(EMout, "#Pause emitter %s\n",em->name);
 #endif
-			MT_sleep_ms(em->delay);
+			while (em->status == BSKTPAUSE)
+				MT_sleep_ms(em->delay);
+#ifdef _DEBUG_EMITTER_
+			mnstr_printf(EMout, "#Pause emitter %s ended\n",em->name);
+#endif
 		}
 		if (em->status == BSKTSTOP) {
 			/* request to finalize the emitter*/
@@ -363,8 +365,6 @@ bodyRestart:
 		if ((cnt = BATcount(em->table.format[0].c[0]))) {
 			MTIMEcurrent_timestamp(&baskets[em->bskt].seen);
 			em->cycles++;
-			if (em->status != BSKTRUNNING)
-				break;
 
 			cnt = BATcount(em->table.format[1].c[0]);
 #ifdef _DEBUG_EMITTER_

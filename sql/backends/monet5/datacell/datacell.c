@@ -323,6 +323,8 @@ DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
+	RCpause(&ret);
+	EMpause(&ret);
 	return PNpauseScheduler(&ret);
 }
 

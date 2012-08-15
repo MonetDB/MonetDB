@@ -18,9 +18,10 @@ call datacell.emitter('datacell.bsktout','localhost',50600);
 
 call datacell.query('datacell.pass', 'insert into datacell.bsktout select * from datacell.bsktin;');
 
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
+
 call datacell.resume();
 call datacell.dump();
-select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 
 -- externally, activate the sensor 
 -- sensor --host=localhost --port=50500 --events=100 --columns=3 --delay=1 --trace

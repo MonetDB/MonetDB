@@ -118,15 +118,7 @@ int pnettop = 0;
 
 int *enabled;     /*array that contains the id's of all queries that are enable to fire*/
 
-#define PNINIT 3
-#define PNRUNNING 2
-#define PNPAUSE 1
-#define PNSTOPPED 0
-
-#define PNWAITING 4
-static char *statusnames[7] = { "stopped", "paused", "running", "initialize", "waiting"};
-
-static int status = PNINIT;
+static int status = BSKTINIT;
 static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
 
 str PNstartThread(int *ret);
@@ -192,7 +184,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		pnet[pnettop].def = GDKstrdup("");
 
-	pnet[pnettop].status = PNWAITING;
+	pnet[pnettop].status = BSKTPAUSE;
 	pnet[pnettop].cycles = 0;
 	pnet[pnettop].seen = *timestamp_nil;
 	/* all the rest is zero */
@@ -201,7 +193,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pnettop++;
 	msg = PNanalysis(cntxt, s->def);
 	/* start the scheduler if analysis does not show errors */
-	if ( msg == MAL_SUCCEED && status == PNINIT)
+	if ( msg == MAL_SUCCEED && status == BSKTINIT)
 		return PNstartThread(ret);
 	return msg;
 }
@@ -217,14 +209,14 @@ PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(qry, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNPAUSE;
+		pnet[i].status = BSKTPAUSE;
 		return MAL_SUCCEED;
 	}
 	snprintf(buf,BUFSIZ,"datacell.%s", qry);
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(buf, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNPAUSE;
+		pnet[i].status = BSKTPAUSE;
 		return MAL_SUCCEED;
 	}
 	if (pnettop)
@@ -243,14 +235,14 @@ PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(qry, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNWAITING;
+		pnet[i].status = BSKTRUNNING;
 		return MAL_SUCCEED;
 	}
 	snprintf(buf,BUFSIZ,"datacell.%s", qry);
 	for ( i = 0; i < pnettop; i++)
 	if ( strcmp(buf, pnet[i].name) == 0){
 		/* stop the query first */
-		pnet[i].status = PNWAITING;
+		pnet[i].status = BSKTRUNNING;
 		return MAL_SUCCEED;
 	}
 	throw(SQL,"datacell.pause","Basket or query not found");
@@ -271,7 +263,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BSKTtolower(modnme);
 	BSKTtolower(fcnnme);
 
-	if (status != PNPAUSE)
+	if (status != BSKTPAUSE)
 		throw(MAL, "datacell.remove", "Scheduler should be paused first");
 	(void) mb;
 	/* check for a continous query */
@@ -280,7 +272,7 @@ PNremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = findSymbolInModule(scope, putName(fcnnme, (int) strlen(fcnnme)));
 	if (s == NULL)
 		throw(SQL, "datacell.remove", "Continuous query found");
-	PNPAUSEScheduler(&ret);
+	BSKTPAUSEScheduler(&ret);
 	for (i = j = 0; i < pnettop; i++)
 		if (strcmp(nme, pnet[i].name) == 0) {} else
 			pnet[j++] = pnet[i];
@@ -295,13 +287,13 @@ str PNstopScheduler(int *ret)
 	int i = 0, j = pnettop;
 	pnettop = 0;    /* don't look at it anymore */
 	MT_lock_set(&petriLock, "pncontroller");
-	status = PNSTOPPED;
+	status = BSKTSTOP;
 	MT_lock_unset(&petriLock, "pncontroller");
 	i = 0;
 	do {
 		MT_sleep_ms(cycleDelay + 1);  /* delay to make it more tractable */
 		i++;
-	} while (i < 100 && status != PNINIT);
+	} while (i < 100 && status != BSKTINIT);
 	if (i == 100)
 		throw(MAL, "datacell.stop", "reset scheduler time out");
 	for (j--; j >= 0; j--) {
@@ -313,23 +305,22 @@ str PNstopScheduler(int *ret)
 
 str PNresumeScheduler(int *ret)
 {
-	if (status == PNRUNNING)
-		return MAL_SUCCEED;
-	if (status == PNPAUSE)
-		status = PNRUNNING;
-	if (status == PNINIT)
-		return PNstartThread(ret);
+	int i;
+
+	for( i =0; i< pnettop; i++)
+		pnet[i].status = BSKTRUNNING;
+	status = BSKTRUNNING;
+	(void) ret;
 	return MAL_SUCCEED;
 }
 
 str PNpauseScheduler(int *ret)
 {
-	if (status == PNPAUSE)
-		return MAL_SUCCEED;
-	status = PNPAUSE;
-	do
-		MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
-	while (status == PNRUNNING);
+	int i;
+
+	for( i =0; i< pnettop; i++)
+		pnet[i].status = BSKTPAUSE;
+	status = BSKTPAUSE;
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -337,10 +328,10 @@ str PNpauseScheduler(int *ret)
 str PNdump(int *ret)
 {
 	int i, k;
-	mnstr_printf(PNout, "#scheduler status %s\n", statusnames[status]);
+	mnstr_printf(PNout, "#scheduler status %s\n", statusname[status]);
 	for (i = 0; i < pnettop; i++) {
 		mnstr_printf(PNout, "#[%d]\t%s %s delay %d cycles %d events %d time " LLFMT " ms\n",
-				i, pnet[i].name, statusnames[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time / 1000);
+				i, pnet[i].name, statusname[pnet[i].status], pnet[i].delay, pnet[i].cycles, pnet[i].events, pnet[i].time / 1000);
 		if (pnet[i].error)
 			mnstr_printf(PNout, "#%s\n", pnet[i].error);
 		for (k = 0; k < pnet[i].srctop; k++)
@@ -519,23 +510,22 @@ PNcontroller(void *dummy)
 #ifdef _DEBUG_PETRINET_
 	printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 #endif
-	status = PNRUNNING;
 	do {
 		if (cycleDelay)
 			MT_sleep_ms(cycleDelay);  /* delay to make it more tractable */
-		while (status == PNPAUSE)
+		while (status == BSKTPAUSE)
 			;
 		MT_lock_set(&petriLock, "pncontroller");
-		if (status != PNSTOPPED)
+		if (status != BSKTSTOP)
 			/* collect latest statistics, note that we don't need a lock here,
 			   because the count need not be accurate to the usec. It will simply
 			   come back. We also only have to check the sources that are marked
 			   empty. */
-			status = PNRUNNING;
+			status = BSKTRUNNING;
 		MT_lock_unset(&petriLock, "pncontroller");
 		now = GDKusec();
-		for (k = i = 0; status == PNRUNNING && i < pnettop; i++) 
-		if ( pnet[i].status != PNPAUSE ){
+		for (k = i = 0; status == BSKTRUNNING && i < pnettop; i++) 
+		if ( pnet[i].status != BSKTPAUSE ){
 			pnet[i].available = 0;
 			pnet[i].enabled = 0;
 			for (j = 0; j < pnet[i].srctop; j++) {
@@ -618,8 +608,8 @@ PNcontroller(void *dummy)
 				}
 			}
 		}
-	} while (status != PNSTOPPED);
-	status = PNINIT;
+	} while (status != BSKTSTOP);
+	status = BSKTINIT;
 	(void) dummy;
 }
 
@@ -646,8 +636,8 @@ static str PNstart(int *ret)
 	PNdump(&s);
 #endif
 	MT_lock_set(&petriLock, "pncontroller");
-	if (status != PNSTOPPED)
-		status = PNRUNNING;
+	if (status != BSKTSTOP)
+		status = BSKTRUNNING;
 	MT_lock_unset(&petriLock, "pncontroller");
 	/*controlRounds = PNcontrolEnd;*/
 
@@ -701,7 +691,7 @@ PNtable(int *nameId, int *statusId, int *seenId, int *cyclesId, int *eventsId, i
 	for (i = 0; i < pnettop; i++) {
 		BUNappend(name, pnet[i].name, FALSE);
 		BUNappend(def, pnet[i].def, FALSE);
-		BUNappend(status, statusnames[pnet[i].status], FALSE);
+		BUNappend(status, statusname[pnet[i].status], FALSE);
 		BUNappend(seen, &pnet[i].seen, FALSE);
 		BUNappend(cycles, &pnet[i].cycles, FALSE);
 		BUNappend(events, &pnet[i].events, FALSE);

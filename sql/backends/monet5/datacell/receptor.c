@@ -141,7 +141,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	rc->error = NULL;
 	rc->delay = delay;
 	rc->lck = 0;
-	rc->status = BSKTINIT;
+	rc->status = BSKTPAUSE;
 	rc->scenario = 0;
 	rc->sequence = 0;
 	rc->modnme = 0;
@@ -201,8 +201,6 @@ RCreceptorPause(int *ret, str *nme)
 	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
-	if (rc->status != BSKTRUNNING)
-		throw(MAL, "receptor.resume", "Receptor not started");
 	rc->status = BSKTPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
@@ -220,13 +218,6 @@ RCreceptorResume(int *ret, str *nme)
 	rc = RCfind(*nme);
 	if (rc == NULL)
 		throw(MAL, "receptor.resume", "Receptor not defined");
-	if (rc->status == BSKTINIT) {
-		if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) {
-			throw(MAL, "receptor.start", "Receptor initiation failed");
-		}
-	} else if (rc->status != BSKTPAUSE)
-		throw(MAL, "receptor.resume", "Receptor not paused");
-
 	rc->status = BSKTRUNNING;
 
 #ifdef _DEBUG_RECEPTOR_
@@ -242,7 +233,7 @@ RCpause(int *ret)
 	Receptor rc;
 	str msg = MAL_SUCCEED;
 	for (rc = rcAnchor; rc && msg == MAL_SUCCEED; rc = rc->nxt)
-		if (rc->status != BSKTINIT)
+		if (rc->status == BSKTRUNNING)
 			msg = RCreceptorPause(ret, &rc->name);
 	return msg;
 }
@@ -253,7 +244,7 @@ RCresume(int *ret)
 	Receptor rc;
 	str msg = MAL_SUCCEED;
 	for (rc = rcAnchor; rc && msg == MAL_SUCCEED; rc = rc->nxt)
-		if (rc->status == BSKTINIT)
+		if (rc->status == BSKTPAUSE)
 			msg = RCreceptorResume(ret, &rc->name);
 	return msg;
 }
@@ -398,11 +389,15 @@ bodyRestart:
 
 	rc->cycles ++;
 	for (n = 1; n > 0;) {
-		while (rc->status == BSKTPAUSE && rc->delay) {
+		if ( rc->status == BSKTPAUSE){
 #ifdef _DEBUG_RECEPTOR_
-			mnstr_printf(RCout, "#pause receptor\n");
+			mnstr_printf(RCout, "#pause receptor %s\n", rc->name);
 #endif
-			MT_sleep_ms(rc->delay);
+			while (rc->status == BSKTPAUSE && rc->delay)
+				MT_sleep_ms(rc->delay);
+#ifdef _DEBUG_RECEPTOR_
+			mnstr_printf(RCout, "#pause receptor %s ended\n", rc->name);
+#endif
 		}
 
 		if (rc->status == BSKTSTOP) {
@@ -469,8 +464,6 @@ bodyRestart:
 					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
 #endif
 parse:
-					if (rc->status != BSKTRUNNING)
-						break;
 					do {
 						line = buf;
 						e = strchr(line, '\n');
@@ -683,7 +676,6 @@ RCstartThread(Receptor rc)
 	}
 	/* the receptor should continously attempt to either connect the
 	   remote site for new events or listing for the next request */
-	rc->status= baskets[rc->bskt].status = BSKTRUNNING;
 	while(rc->status != BSKTSTOP){
 		if (rc->mode == BSKTPASSIVE) {
 			/* in server mode you should expect new connections */
