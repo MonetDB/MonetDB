@@ -54,35 +54,53 @@ static void json_error(jsonbat *, char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 static void
-json_error(jsonbat *jb, char *p, const char *format, ...)
+json_error(jsonbat *jb, char *n, const char *format, ...)
 {
 	va_list ap;
 	char message[8096];
 	size_t len;
 	char around[32];
-	size_t off = p - jb->streambuf;
+	char *p, *q, *start = around;
 	char hadend = 0;
 
 	va_start(ap, format);
 	len = vsnprintf(message, sizeof(message), format, ap);
 	va_end(ap);
 
-	if (off < 13)
-		off = 13;
-	off -= 13;
-	if (snprintf(around, sizeof(around), "%s", jb->streambuf + off)
-			<= (int)(sizeof(around)))
+	p = n;
+	q = around + 13 + 1;
+	*q = '\0';
+	for (; p >= jb->streambuf && q > around; p--) {
+		if (isspace(*p)) {
+			if (*q != ' ')
+				*--q = ' ';
+		} else if (*p == '\0') {
+			/* artifact from parse_json_string */
+			*--q = '"';
+		} else {
+			*--q = *p;
+		}
+	}
+	start = q;
+	p = n + 1;
+	q = around + 13;
+	for (; *p != '\0' && q - around < (ssize_t)sizeof(around) - 1; p++) {
+		if (isspace(*p)) {
+			if (*q != ' ')
+				*++q = ' ';
+		} else if (*p == '\0') {
+			/* artifact from parse_json_string */
+			*++q = '"';
+		} else {
+			*++q = *p;
+		}
+	}
+	*++q = '\0';
+	if (q - around < (ssize_t)sizeof(around))
 		hadend = 1;
-	/* wrap at newline */
-	for (p = around; *p != '\0'; p++)
-		if (*p == '\n' || *p == '\r')
-			*p = ' ';
-	/* trim */
-	for (--p; p > around && isspace(*p); p--)
-		*p = '\0';
-	for (p = around; *p != '\0' && isspace(*p); p++);
+
 	snprintf(message + len, sizeof(message) - len, " at or around '%s%s%s'",
-			off == 0 ? "" : "...", p, hadend == 0 ? "..." : "");
+			start == around ? "..." : "", start, hadend == 0 ? "..." : "");
 
 	if (jb->error != NULL)
 		GDKfree(jb->error);
