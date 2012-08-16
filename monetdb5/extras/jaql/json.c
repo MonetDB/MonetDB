@@ -126,7 +126,7 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 	}
 
 	shift = *pos - jb->streambuf;
-	if (*pos == jb->streambuf + jb->streambuflen) {
+	if (*pos == jb->streambuf + jb->streambuflen - 1) {
 		size_t rshift = *recall - jb->streambuf;
 		char *newbuf = realloc(jb->streambuf, jb->streambuflen += 8096);
 		if (newbuf == NULL)
@@ -142,7 +142,8 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 	sret = mnstr_read(jb->is, *pos, 1, jb->streambuflen - shift - 1);
 	if (sret <= 0)
 		return 0;
-	jb->streambuf[sret] = '\0';
+	jb->streambuf[shift + sret] = '\0';
+	assert(**pos != '\0');
 
 	return sret;
 }
@@ -600,7 +601,7 @@ JSONshredstream(int *kind, int *string, int *integer, int *doble, int *array, in
 	}
 
 	jb.streambuflen = 8096;
-	jb.streambuf = malloc(8096);
+	jb.streambuf = malloc(jb.streambuflen);
 	jb.streambuf[0] = '\0';
 
 	ret = shred_json(&jb, kind, string, integer, doble, array, object, name, NULL);
