@@ -41,7 +41,7 @@
 #include "stream_socket.h"
 #include "mal_builder.h"
 
-#define _DEBUG_RECEPTOR_ 
+/* #define _DEBUG_RECEPTOR_  */
 
 /* default settings */
 #define RCHOST "localhost"
@@ -495,7 +495,6 @@ parse:
 #endif
 }
 /*
- * @-
  * A short cut is to generate the events based upon the interpretation
  * of a scenario file. Much like the one used in the sensor.
  * It is processed multiple times. The header is the delay imposed.

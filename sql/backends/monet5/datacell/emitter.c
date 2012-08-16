@@ -35,7 +35,7 @@
 #include "dcsocket.h"
 #include "stream_socket.h"
 
-#define _DEBUG_EMITTER_
+/* #define _DEBUG_EMITTER_ */
 
 static Emitter emAnchor = NULL;
 
@@ -105,7 +105,6 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	em->delay = delay;
 	em->lastseen = *timestamp_nil;
 	/*
-	 * @-
 	 * All tables are prepended with a default tick bat.
 	 * It becomes the synchronization handle.
 	 */
