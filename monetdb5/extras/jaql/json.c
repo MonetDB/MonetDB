@@ -301,7 +301,7 @@ parse_json_truefalsenull(jsonbat *jb, oid *v, char *p)
 			break;
 	}
 	if (*whichp != '\0') {
-		json_error(jb, p, "expected '%s'", which);
+		json_error(jb, n, "expected '%s'", which);
 		return NULL;
 	}
 
