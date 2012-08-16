@@ -149,24 +149,27 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 }
 
 static char *
-parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
+parse_json_string(jsonbat *jb, oid *v, char pair, char *p, char **recall)
 {
 	char escape = 0;
+	char *r = p;
 	char *n = p;
 	char *w = p;
 
-	for (; ; p++) {
+	for (; ; p++, w++) {
 		if (*p == '\0' &&
 				(jb->is == NULL || read_from_stream(jb, &p, &n, &w) == 0))
-			break;
+		{
+			json_error(jb, p, "unexpected end of stream while reading string");
+			return NULL;
+		}
 		switch (*p) {
 			case '\\':
 				if (escape) {
 					*w = '\\';
 				} else if (w != p) {
-					*w = *p;
+					w--;
 				}
-				w++;
 				escape = !escape;
 				break;
 			case 'b':
@@ -175,7 +178,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'f':
@@ -184,7 +186,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'n':
@@ -193,7 +194,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'r':
@@ -202,7 +202,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 't':
@@ -211,37 +210,33 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case '"':
 				if (escape) {
-					*w++ = '"';
-					escape = 0;
+					*w = '"';
 				} else {
 					*w = '\0';
-					break;
 				}
+				escape = 0;
+				break;
 			/* TODO: unicode escapes \u0xxxx */
 			default:
 				if (w != p)
 					*w = *p;
-				w++;
 				escape = 0;
 				break;
 		}
 		if (*w == '\0')
 			break;
 	}
-	if (*w != *p && *p == '\0') {
-		json_error(jb, p, "unexpected end of stream while reading string");
-		return NULL;
-	}
 	if (pair == 0) {
 		BUNappend(jb->kind, "s", FALSE);
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->string, v, n, FALSE);
 	}
+	if (recall != NULL)
+		*recall = *recall + (n - r);
 	return p + 1;
 }
 
@@ -324,7 +319,7 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 {
 	switch (*p) {
 		case '"':
-			p = parse_json_string(jb, v, 0, p + 1);
+			p = parse_json_string(jb, v, 0, p + 1, NULL);
 			break;
 		case '-':
 		case '0':
@@ -360,7 +355,7 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 static char *
 parse_json_pair(jsonbat *jb, oid *v, char *p)
 {
-	oid n = (oid)0;
+	oid n;
 	char *x;
 
 	if (*p != '"') {
@@ -369,11 +364,18 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	}
 
 	x = p + 1;
-	if ((p = parse_json_string(jb, &n, 1, x)) == NULL)
+	if ((p = parse_json_string(jb, NULL, 1, x, &x)) == NULL)
 		return NULL;
+	/* the pair name string is not kept/retained, because it can
+	 * potentially be the key for the rest of the entire document
+	 * to avoid that we have to copy it here, we insert it with a
+	 * slight hack, anticipating on what parse_json_value will do */
+	n = BUNlast(jb->kind);
+	BUNins(jb->name, &n, x, FALSE);
+
 	for (; ; p++) {
 		if (*p == '\0' &&
-				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
 			break;
 		if (!isspace(*p))
 			break;
@@ -385,15 +387,14 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	p++;
 	for (; ; p++) {
 		if (*p == '\0' &&
-				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
 			break;
 		if (!isspace(*p))
 			break;
 	}
+
 	if ((p = parse_json_value(jb, v, p)) == NULL)
 		return NULL;
-
-	BUNins(jb->name, v, x, FALSE);
 
 	return p;
 }
