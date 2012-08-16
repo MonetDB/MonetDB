@@ -216,6 +216,8 @@ offlineProfilerHeader(void)
 	}
 
 	if (profileCounter[PROFmemory].status) {
+		log("rss,\t");
+/*
 		log("maxrss,\t");
 		log("arena,\t");
 		log("ordblks,\t");
@@ -224,6 +226,7 @@ offlineProfilerHeader(void)
 		log("hblks,\t");
 		log("fsmblks,\t");
 		log("uordblks,\t");
+*/
 	}
 	if (profileCounter[PROFreads].status)
 		log("blk reads,\t");
@@ -256,7 +259,7 @@ offlineProfilerHeader(void)
 void
 offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
-	static struct Mallinfo prevMalloc;
+	/*static struct Mallinfo prevMalloc;*/
 	InstrPtr pci = getInstrPtr(mb, pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
@@ -267,7 +270,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
+/*
 	struct Mallinfo infoMalloc;
+*/
 	str stmt, c;
 
 	if (delayswitch > 0) {
@@ -290,7 +295,9 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #ifdef HAVE_TIMES
 	times(&newTms);
 #endif
+/*
 	infoMalloc = MT_mallinfo();
+*/
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
@@ -355,6 +362,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
+		log(SZFMT ",\t", MT_getrss());
+/*
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%ld,\t", infoUsage.ru_maxrss);
 #endif
@@ -366,6 +375,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
 		log(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
+*/
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
