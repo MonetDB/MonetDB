@@ -65,30 +65,6 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		}							\
 	} while (0)
 
-#define UNARY_2TYPE_FUNC_CHECK(TYPE1, TYPE2, FUNC, CHECK)		\
-	do {								\
-		const TYPE1 *src = (const TYPE1 *) Tloc(b, b->U->first); \
-		TYPE2 *dst = (TYPE2 *) Tloc(bn, bn->U->first);		\
-		if (b->T->nonil) {					\
-			for (i = 0; i < b->U->count; i++)		\
-				dst[i] = FUNC(src[i]);			\
-		} else {						\
-			for (i = 0; i < b->U->count; i++) {		\
-				if (src[i] == TYPE1##_nil) {		\
-					nils++;				\
-					dst[i] = TYPE2##_nil;		\
-				} else if (CHECK(src[i], TYPE1)) {	\
-					if (abort_on_error)		\
-						goto checkfail;		\
-					dst[i] = TYPE2##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[i] = FUNC(src[i]);		\
-				}					\
-			}						\
-		}							\
-	} while (0)
-
 #define BINARY_3TYPE_FUNC(TYPE1, TYPE2, TYPE3, FUNC)			\
 	do {								\
 		for (i = j = k = 0; k < cnt; i += incr1, j += incr2, k++) { \
