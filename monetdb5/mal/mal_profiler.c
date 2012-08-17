@@ -362,7 +362,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
-		log(SZFMT ",\t", MT_getrss());
+		log(SZFMT ",\t", MT_getrss()/1024/1024);
 /*
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%ld,\t", infoUsage.ru_maxrss);
