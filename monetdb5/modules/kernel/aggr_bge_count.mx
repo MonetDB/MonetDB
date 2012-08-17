@@ -242,7 +242,12 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	    (!ignore_nils || b->T->nonil)) {
 		/* simply return counts with one */
 		wrd one = 1;
-		bn = BATconst(b, TYPE_wrd, &one);
+		bn = BATconstant(TYPE_wrd, &one, BATcount(b));
+		if (bn == NULL) {
+			GDKerror("CMDaggrX3_count3(): BATnew() failed");
+			return GDK_FAIL;
+		}
+		BATseqbase(bn, b->hseqbase);
 		*ret = bn;
 		return GDK_SUCCEED;
 	}

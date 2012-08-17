@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes
+ * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes, K.S. Mullender
  * @* Common BAT Operations
  * This module contains the following BAT algebra operations:
  * @itemize
@@ -1837,18 +1837,17 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	return NULL;
 }
 
-
+/* return a new BAT of length n with a dense head and the constant v
+ * in the tail */
 BAT *
-BATconst(BAT *b, int tailtype, const void *v)
+BATconstant(int tailtype, const void *v, BUN n)
 {
 	BAT *bn;
 	void *p;
-	BUN i, n;
+	BUN i;
 
-	BATcheck(b, "BATconst");
 	if (v == NULL)
 		return NULL;
-	n = BATcount(b);
 	bn = BATnew(TYPE_void, tailtype, n);
 	if (bn == NULL)
 		return NULL;
@@ -1887,13 +1886,33 @@ BATconst(BAT *b, int tailtype, const void *v)
 		bn->T->nil = n >= 1 && ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) == 0;
 		for (i = BUNfirst(bn), n += i; i < n; i++)
 			tfastins_nocheck(bn, i, v, Tsize(bn));
+		n -= BUNfirst(bn);
 		break;
 	}
-	BATsetcount(bn, BATcount(b));
+	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
 	bn->T->nonil = !bn->T->nil;
 	bn->T->key = BATcount(bn) <= 1;
+	BATseqbase(bn, 0);
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+/* return a new bat which is aligned with b and with the constant v in
+ * the tail */
+BAT *
+BATconst(BAT *b, int tailtype, const void *v)
+{
+	BAT *bn;
+
+	BATcheck(b, "BATconst");
+	bn = BATconstant(tailtype, v, BATcount(b));
+	if (bn == NULL)
+		return NULL;
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
@@ -1903,10 +1922,6 @@ BATconst(BAT *b, int tailtype, const void *v)
 	}
 
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /*
