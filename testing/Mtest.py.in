@@ -3317,7 +3317,7 @@ def main(argv) :
     global procdebug
     procdebug = opts.get('procdebug', False)
     global releaserun
-    releaserun = opts.get('releaserun', False)
+    releaserun = opts.get('releaserun', releaserun)
     CONDITIONALS['RELEASERUN'] = releaserun
     if THISFILE == "Mtest.py":
         _IGNORE = dftIGNORE
