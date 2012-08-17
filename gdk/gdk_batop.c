@@ -1096,6 +1096,8 @@ static gdk_return
 do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 	int reverse, int stable)
 {
+	if (n <= 1)		/* trivially sorted */
+		return GDK_SUCCEED;
 	if (reverse) {
 		if (stable) {
 			if (GDKssort_rev(h, t, base, n, hs, ts, tpe) < 0) {
@@ -1261,12 +1263,12 @@ BATssort_rev(BAT *b)
  * does not need to be specified.
  */
 gdk_return
-BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
+BATsubsort(BAT **sorted, BAT **order, BAT **groups,
+	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	oid *grps, prev;
 	BUN p, q, r;
-	BATiter bni;
 
 	if (b == NULL || !BAThdense(b)) {
 		GDKerror("BATsubsort: b must be dense-headed\n");
@@ -1417,50 +1419,14 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int 
 		bn->trevsorted = reverse;
 	}
 	if (groups) {
-		oid *ngrps, ngrp;
-		int (*cmp)(const void *, const void *);
-		const void *pv, *v;
-
-		gn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-		if (gn == NULL)
+		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) == GDK_FAIL)
 			goto error;
-		ngrps = (oid *) Tloc(gn, BUNfirst(gn));
-		ngrp = 0;
-		BATsetcount(gn, BATcount(b));
-		BATseqbase(gn, 0);
-		if (g) {
-			grps = (oid *) Tloc(g, BUNfirst(g));
-			prev = *grps++;
-		} else {
-			grps = NULL;
-			prev = 0;
-		}
-		bni = bat_iterator(bn);
-		pv = BUNtail(bni, BUNfirst(bn));
-		cmp = BATatoms[bn->ttype].atomCmp;
-		*ngrps++ = ngrp;
-		for (r = BUNfirst(bn), p = r + 1, q = r + BATcount(bn);
-		     p < q;
-		     p++) {
-			v = BUNtail(bni, p);
-			if (grps && *grps++ != prev) {
-				ngrp++;
-				prev = *grps;
-			} else if (cmp(pv, v) != 0)
-				ngrp++;
-			*ngrps++ = ngrp;
-			pv = v;
-		}
-		gn->tsorted = 1;
-		gn->tkey = ngrp == BATcount(gn);
-		gn->trevsorted = BATcount(gn) <= 1;
-		if (gn->tkey && (bn->tsorted || bn->trevsorted)) {
+		if ((*groups)->tkey && (bn->tsorted || bn->trevsorted)) {
 			/* if new groups bat is key and the result bat
 			 * is (rev)sorted (single input group), we
 			 * know it is key */
 			bn->tkey = 1;
 		}
-		*groups = gn;
 	}
 
 	if (sorted)
