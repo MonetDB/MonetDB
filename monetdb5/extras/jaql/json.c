@@ -54,35 +54,53 @@ static void json_error(jsonbat *, char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 static void
-json_error(jsonbat *jb, char *p, const char *format, ...)
+json_error(jsonbat *jb, char *n, const char *format, ...)
 {
 	va_list ap;
 	char message[8096];
 	size_t len;
 	char around[32];
-	size_t off = p - jb->streambuf;
+	char *p, *q, *start = around;
 	char hadend = 0;
 
 	va_start(ap, format);
 	len = vsnprintf(message, sizeof(message), format, ap);
 	va_end(ap);
 
-	if (off < 13)
-		off = 13;
-	off -= 13;
-	if (snprintf(around, sizeof(around), "%s", jb->streambuf + off)
-			<= (int)(sizeof(around)))
+	p = n;
+	q = around + 13 + 1;
+	*q = '\0';
+	for (; p >= jb->streambuf && q > around; p--) {
+		if (isspace(*p)) {
+			if (*q != ' ')
+				*--q = ' ';
+		} else if (*p == '\0') {
+			/* artifact from parse_json_string */
+			*--q = '"';
+		} else {
+			*--q = *p;
+		}
+	}
+	start = q;
+	p = n + 1;
+	q = around + 13;
+	for (; *p != '\0' && q - around < (ssize_t)sizeof(around) - 1; p++) {
+		if (isspace(*p)) {
+			if (*q != ' ')
+				*++q = ' ';
+		} else if (*p == '\0') {
+			/* artifact from parse_json_string */
+			*++q = '"';
+		} else {
+			*++q = *p;
+		}
+	}
+	*++q = '\0';
+	if (q - around < (ssize_t)sizeof(around))
 		hadend = 1;
-	/* wrap at newline */
-	for (p = around; *p != '\0'; p++)
-		if (*p == '\n' || *p == '\r')
-			*p = ' ';
-	/* trim */
-	for (--p; p > around && isspace(*p); p--)
-		*p = '\0';
-	for (p = around; *p != '\0' && isspace(*p); p++);
+
 	snprintf(message + len, sizeof(message) - len, " at or around '%s%s%s'",
-			off == 0 ? "" : "...", p, hadend == 0 ? "..." : "");
+			start == around ? "..." : "", start, hadend == 0 ? "..." : "");
 
 	if (jb->error != NULL)
 		GDKfree(jb->error);
@@ -108,7 +126,7 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 	}
 
 	shift = *pos - jb->streambuf;
-	if (*pos == jb->streambuf + jb->streambuflen) {
+	if (*pos == jb->streambuf + jb->streambuflen - 1) {
 		size_t rshift = *recall - jb->streambuf;
 		char *newbuf = realloc(jb->streambuf, jb->streambuflen += 8096);
 		if (newbuf == NULL)
@@ -124,30 +142,34 @@ read_from_stream(jsonbat *jb, char **pos, char **start, char **recall)
 	sret = mnstr_read(jb->is, *pos, 1, jb->streambuflen - shift - 1);
 	if (sret <= 0)
 		return 0;
-	jb->streambuf[sret] = '\0';
+	jb->streambuf[shift + sret] = '\0';
+	assert(**pos != '\0');
 
 	return sret;
 }
 
 static char *
-parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
+parse_json_string(jsonbat *jb, oid *v, char pair, char *p, char **recall)
 {
 	char escape = 0;
+	char *r = p;
 	char *n = p;
 	char *w = p;
 
-	for (; ; p++) {
+	for (; ; p++, w++) {
 		if (*p == '\0' &&
 				(jb->is == NULL || read_from_stream(jb, &p, &n, &w) == 0))
-			break;
+		{
+			json_error(jb, p, "unexpected end of stream while reading string");
+			return NULL;
+		}
 		switch (*p) {
 			case '\\':
 				if (escape) {
 					*w = '\\';
 				} else if (w != p) {
-					*w = *p;
+					w--;
 				}
-				w++;
 				escape = !escape;
 				break;
 			case 'b':
@@ -156,7 +178,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'f':
@@ -165,7 +186,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'n':
@@ -174,7 +194,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 'r':
@@ -183,7 +202,6 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case 't':
@@ -192,37 +210,33 @@ parse_json_string(jsonbat *jb, oid *v, char pair, char *p)
 				} else if (w != p) {
 					*w = *p;
 				}
-				w++;
 				escape = 0;
 				break;
 			case '"':
 				if (escape) {
-					*w++ = '"';
-					escape = 0;
+					*w = '"';
 				} else {
 					*w = '\0';
-					break;
 				}
+				escape = 0;
+				break;
 			/* TODO: unicode escapes \u0xxxx */
 			default:
 				if (w != p)
 					*w = *p;
-				w++;
 				escape = 0;
 				break;
 		}
 		if (*w == '\0')
 			break;
 	}
-	if (*w != *p && *p == '\0') {
-		json_error(jb, p, "unexpected end of stream while reading string");
-		return NULL;
-	}
 	if (pair == 0) {
 		BUNappend(jb->kind, "s", FALSE);
 		*v = BUNlast(jb->kind) - 1;
 		BUNins(jb->string, v, n, FALSE);
 	}
+	if (recall != NULL)
+		*recall = *recall + (n - r);
 	return p + 1;
 }
 
@@ -282,7 +296,7 @@ parse_json_truefalsenull(jsonbat *jb, oid *v, char *p)
 			break;
 	}
 	if (*whichp != '\0') {
-		json_error(jb, p, "expected '%s'", which);
+		json_error(jb, n, "expected '%s'", which);
 		return NULL;
 	}
 
@@ -305,7 +319,7 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 {
 	switch (*p) {
 		case '"':
-			p = parse_json_string(jb, v, 0, p + 1);
+			p = parse_json_string(jb, v, 0, p + 1, NULL);
 			break;
 		case '-':
 		case '0':
@@ -341,7 +355,7 @@ parse_json_value(jsonbat *jb, oid *v, char *p)
 static char *
 parse_json_pair(jsonbat *jb, oid *v, char *p)
 {
-	oid n = (oid)0;
+	oid n;
 	char *x;
 
 	if (*p != '"') {
@@ -350,11 +364,18 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	}
 
 	x = p + 1;
-	if ((p = parse_json_string(jb, &n, 1, x)) == NULL)
+	if ((p = parse_json_string(jb, NULL, 1, x, &x)) == NULL)
 		return NULL;
+	/* the pair name string is not kept/retained, because it can
+	 * potentially be the key for the rest of the entire document
+	 * to avoid that we have to copy it here, we insert it with a
+	 * slight hack, anticipating on what parse_json_value will do */
+	n = BUNlast(jb->kind);
+	BUNins(jb->name, &n, x, FALSE);
+
 	for (; ; p++) {
 		if (*p == '\0' &&
-				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
 			break;
 		if (!isspace(*p))
 			break;
@@ -366,15 +387,14 @@ parse_json_pair(jsonbat *jb, oid *v, char *p)
 	p++;
 	for (; ; p++) {
 		if (*p == '\0' &&
-				(jb->is == NULL || read_from_stream(jb, &p, &x, NULL) == 0))
+				(jb->is == NULL || read_from_stream(jb, &p, &p, NULL) == 0))
 			break;
 		if (!isspace(*p))
 			break;
 	}
+
 	if ((p = parse_json_value(jb, v, p)) == NULL)
 		return NULL;
-
-	BUNins(jb->name, v, x, FALSE);
 
 	return p;
 }
@@ -582,7 +602,7 @@ JSONshredstream(int *kind, int *string, int *integer, int *doble, int *array, in
 	}
 
 	jb.streambuflen = 8096;
-	jb.streambuf = malloc(8096);
+	jb.streambuf = malloc(jb.streambuflen);
 	jb.streambuf[0] = '\0';
 
 	ret = shred_json(&jb, kind, string, integer, doble, array, object, name, NULL);
