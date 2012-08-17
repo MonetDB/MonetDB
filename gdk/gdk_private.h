@@ -34,6 +34,7 @@ BAT *BATcol_name(BAT *b, const char *tnme);
 BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 void BATdestroy(BATstore *bs);
 int BATfree(BAT *b);
+gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted);
 BUN BATguess(BAT *b);
 void BATinit_idents(BAT *bn);
 BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);

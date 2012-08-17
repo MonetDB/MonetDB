@@ -1583,49 +1583,6 @@ BATsetprop_wrd(BAT *b, int idx, wrd val)
 	BATsetprop(b, idx, TYPE_wrd, &val);
 }
 
-BAT *
-BATgroup(BAT *b, int start, int incr, int grpsize)
-{
-/* 64bit: this should probably use wrd instead of int */
-	BUN p, q, r;
-	int ngroups = 1, i = 0;
-	BAT *bn;
-	BATiter bi = bat_iterator(b);
-
-	BATcheck(b, "BATgroup");
-	bn = BATnew(b->htype, TYPE_int, BATcount(b));
-	if (bn == NULL)
-		return NULL;
-	r = BUNfirst(bn);
-
-	ALIGNsetH(bn, b);
-
-	BATloop(b, p, q) {
-		bunfastins_nocheck(bn, r, BUNhead(bi, p), (ptr) &start, Hsize(bn), Tsize(bn));
-		r++;
-		if (i == grpsize - 1) {
-			start += incr;
-			i = 0;
-			ngroups++;
-		} else {
-			i++;
-		}
-	}
-	if (i == 0)
-		ngroups--;
-	BATsetprop_wrd(bn, GDK_AGGR_CARD, ngroups);
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = 1;
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = 1;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
 #define mark_grp_init(BUNfnd)				\
 	do {						\
 		BUN w;					\
