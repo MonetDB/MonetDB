@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. Kersten, F.Groffen, E. Liarou, R. Goncalves
+ * Author M. Kersten, F.Groffen, E. Liarou, R. Goncalves
    The Sensor Simulation program
 
    The sensor tool can be used to simulate a simple sensor, such as an on/off sensor or
@@ -368,7 +368,6 @@ int main(int argc, char **argv)
 	host = hostname;
 
 	/*
-	 * @-
 	 * We limit the protocols for the time being to what can be
 	 * considered a safe method.
 	 */
