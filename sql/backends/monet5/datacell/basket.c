@@ -365,7 +365,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* clean out basket */
 			bn = BATjoin(BATmirror(bs), b, BUN_NONE);
 			b = BATsetaccess(b, BAT_WRITE);
-			BATclear(b, FALSE);
+			BATclear(b, TRUE);
 			BATins(b, bn, FALSE);
 			cnt = (int) BATcount(bn);
 			BBPreleaseref(bn->batCacheid);
@@ -390,7 +390,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn = BATcopy(b, b->htype, b->ttype, TRUE);
 			v = BATslice(bn, baskets[bskt].winstride, BATcount(bn));
 			b = BATsetaccess(b, BAT_WRITE);
-			BATclear(b, FALSE);
+			BATclear(b, TRUE);
 			BATins(b, v, FALSE);
 			BATsetcount(bn, baskets[bskt].winsize);
 			cnt = (int) BATcount(bn);
@@ -407,7 +407,7 @@ BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b = baskets[bskt].primary[i];
 			bn = BATcopy(b, b->htype, b->ttype, TRUE);
 			cnt = (int) BATcount(b);
-			BATclear(b, FALSE);
+			BATclear(b, TRUE);
 			*ret = bn->batCacheid;
 			BBPkeepref(*ret);
 		}
@@ -512,7 +512,7 @@ BSKTthreshold(int *ret, str *tbl, int *sz)
 }
 
 str
-BSKTwindow(int *ret, str *tbl, int *sz, int *stride)
+BSKTwindow(int *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -536,7 +536,7 @@ BSKTwindow(int *ret, str *tbl, int *sz, int *stride)
 }
 
 str
-BSKTtimewindow(int *ret, str *tbl, int *sz, int *stride)
+BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *stride)
 {
 	int idx;
 
@@ -558,7 +558,7 @@ BSKTtimewindow(int *ret, str *tbl, int *sz, int *stride)
 }
 
 str
-BSKTbeat(int *ret, str *tbl, int *sz)
+BSKTbeat(int *ret, str *tbl, lng *sz)
 {
 	int bskt, tst;
 	timestamp ts, tn;

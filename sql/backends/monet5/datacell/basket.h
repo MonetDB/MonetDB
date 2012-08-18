@@ -78,6 +78,9 @@ datacell_export str modename[3];
 #define UDP 2
 #define CSV 3
 
+
+mal_export MT_Lock  dcLock ;
+
 datacell_export str protocolname[4];
 
 datacell_export str schema_default;
@@ -92,9 +95,9 @@ datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
-datacell_export str BSKTbeat(int *ret, str *tbl, int *sz);
-datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
-datacell_export str BSKTtimewindow(int *ret, str *tbl, int *sz, int *slide);
+datacell_export str BSKTbeat(int *ret, str *tbl, lng *sz);
+datacell_export str BSKTwindow(int *ret, str *tbl, lng *sz, lng *slide);
+datacell_export str BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *slide);
 datacell_export str BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *eventsId);
 datacell_export str BSKTtableerrors(int *nmeId, int *errorId);
 
