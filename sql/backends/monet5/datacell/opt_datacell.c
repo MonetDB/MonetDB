@@ -41,7 +41,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int actions = 0, fnd, mvc = 0;
 	int bskt, i, j, k, limit, /*vlimit,*/ slimit;
-	InstrPtr r, p, *old;
+	InstrPtr r, p, qq, *old;
 	str col;
 	int maxbasket = 128, m = 0, a = 0;
 	char *tables[128] = { NULL };
@@ -71,12 +71,11 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 	removeDataflow(old, limit);
 
-	for (i = 0; i < limit; i++)
+	pushInstruction(mb, old[0]);
+	newFcnCall(mb, sqlRef, putName("transaction", 11));
+	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];
-			if (i == 1)
-				/* inject transaction start */
-				newFcnCall(mb, sqlRef, putName("transaction", 11));
 
 			if (getModuleId(p) == datacellRef && getFunctionId(p) == putName("window", 6) &&
 				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2)) && isVarConstant(mb, getArg(p, 3))) {
@@ -153,16 +152,20 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					for (j = 0; fnd == 0 && j < baskets[bskt].colcount; j++)
 						if (strcmp(baskets[bskt].cols[j], col) == 0) {
 							for (k = 0; k < m; k++)
-								if (strcmp(buf, tables[k]) == 0)
+								if (strcmp(buf, tables[k]) == 0) {
+									alias[getArg(p, 0)] = getArg(q[k], j);
+									fnd = 1;
 									break;
-							alias[getArg(p, 0)] = getArg(q[k], j);
-							fnd = 1;
+								}
 							break;
 						}
 
-					if (fnd == 0)
+					if (fnd == 0){
+						for (j = 0; j < p->argc; j++)
+							if (alias[getArg(p, j)])
+								getArg(p, j) = alias[getArg(p, j)];
 						pushInstruction(mb, p);
-					else
+					} else
 						freeInstruction(p);
 					continue;
 				}
@@ -216,12 +219,16 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							getModuleId(p) = sqlRef;
 							getFunctionId(p) = singleRef;
 						}
-						getArg(p, 0) = getArg(qa[j], k + 2);
-						getArg(p, 1) = getArg(p, 5);
+						qq= newAssignment(mb);
+						getArg(qq, 0) = getArg(qa[j], k + 2);
+						getArg(qq, 1) = getArg(p, 5);
+						qq->argc = 2;
 						p->argc = 2;
+						mvc = getArg(p, 0);
 					}
 				} else {
-					getArg(p, 1) = mvc;
+					if ( alias[mvc] )
+						getArg(p, 1) = alias[mvc];
 					mvc = getArg(p, 0);
 				}
 			}
@@ -235,6 +242,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	{
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
+		mnstr_printf(cntxt->fdout, "=FINISHED datacell %d\n", actions);
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 		addtoMalBlkHistory(mb, "datacell");
 	}
 	GDKfree(alias);
@@ -299,7 +308,7 @@ str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-	mnstr_printf(cntxt->fdout, "#opt_reduce: " LLFMT " ms\n", t);
+		mnstr_printf(cntxt->fdout, "#opt_reduce: " LLFMT " ms\n", t);
 	QOTupdateStatistics("datacell", actions, t);
 	addtoMalBlkHistory(mb, "datacell");
 	return msg;
