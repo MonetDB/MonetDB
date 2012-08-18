@@ -3242,6 +3242,7 @@ BATderiveHeadProps(BAT *b, int expensive)
 					key = 0;
 					b->H->nokey[0] = hb;
 					b->H->nokey[1] = p;
+					break;
 				}
 			}
 			hs->link[p] = hs->hash[prb];

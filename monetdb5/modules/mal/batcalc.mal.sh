@@ -69,9 +69,6 @@ for tp in bit $integer; do
 command not(b:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbatNOT
 comment "$com";
-command not(b:bat[:oid,:$tp],accum:int) :bat[:oid,:$tp]
-address CMDbatNOTaccum
-comment "$com, reuse B if ACCUM is set";
 
 EOF
     com="Unary bitwise not over the tail of the bat"
@@ -101,9 +98,6 @@ for func in 'abs:ABS:Unary abs over the tail of the bat' \
 command $op(b:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbat${func}
 comment "$com";
-command $op(b:bat[:oid,:$tp],accum:int) :bat[:oid,:$tp]
-address CMDbat${func}accum
-comment "$com, reuse B if ACCUM is set";
 
 EOF
     done
@@ -157,39 +151,18 @@ for func in +:ADD -:SUB \*:MUL; do
 command $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2, signal error on overflow";
-command $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbat${name}signalaccum
-comment "Return B1 $op B2, signal error on overflow, reuse B1 or B2 depending on ACCUM";
 command ${name,,}_noerror(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbat${name}
 comment "Return B1 $op B2, overflow causes NIL value";
 pattern $op(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbat${name}cstsignal
 comment "Return B $op V, signal error on overflow";
-EOF
-	    if [ $tp1 = $tp3 ]; then
-cat <<EOF
-pattern $op(b:bat[:oid,:$tp1],v:$tp2,accum:int) :bat[:oid,:$tp3]
-address CMDbat${name}cstsignal
-comment "Return B $op V, signal error on overflow, reuse B if ACCUM is set";
-EOF
-	    fi
-cat <<EOF
 pattern ${name,,}_noerror(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbat${name}cst
 comment "Return B $op V, overflow causes NIL value";
 pattern $op(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbat${name}cstsignal
 comment "Return V $op B, signal error on overflow";
-EOF
-	    if [ $tp2 = $tp3 ]; then
-cat <<EOF
-pattern $op(v:$tp1,b:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbat${name}cstsignal
-comment "Return V $op B, signal error on overflow, reuse B if ACCUM is set";
-EOF
-	    fi
-cat <<EOF
 pattern ${name,,}_noerror(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbat${name}cst
 comment "Return V $op B, overflow causes NIL value";
@@ -215,39 +188,18 @@ for tp1 in $numeric; do
 command /(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";
-command /(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbatDIVsignalaccum
-comment "Return B1 / B2, signal error on overflow, reuse B1 or B2 depending on ACCUM";
 command div_noerror(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatDIV
 comment "Return B1 / B2, overflow causes NIL value";
 pattern /(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbatDIVcstsignal
 comment "Return B / V, signal error on overflow";
-EOF
-	    if [ $tp1 = $tp3 ]; then
-cat <<EOF
-pattern /(b:bat[:oid,:$tp1],v:$tp2,accum:int) :bat[:oid,:$tp3]
-address CMDbatDIVcstsignal
-comment "Return B / V, signal error on overflow, reuse B if ACCUM is set";
-EOF
-	    fi
-	    cat <<EOF
 pattern div_noerror(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbatDIVcst
 comment "Return B / V, overflow causes NIL value";
 pattern /(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatDIVcstsignal
 comment "Return V / B, signal error on overflow";
-EOF
-	    if [ $tp2 = $tp3 ]; then
-cat <<EOF
-pattern /(v:$tp1,b:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbatDIVcstsignal
-comment "Return V / B, signal error on overflow, reuse B if ACCUM is set";
-EOF
-	    fi
-	    cat <<EOF
 pattern div_noerror(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatDIVcst
 comment "Return V / B, overflow causes NIL value";
@@ -272,39 +224,18 @@ for tp1 in $numeric; do
 command %(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
-command %(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbatMODsignalaccum
-comment "Return B1 % B2, signal error on divide by zero, reuse B1 or B2 depending on ACCUM";
 command mod_noerror(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatMOD
 comment "Return B1 % B2, divide by zero causes NIL value";
 pattern %(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbatMODcstsignal
 comment "Return B % V, signal error on divide by zero";
-EOF
-	if [ $tp1 = $tp3 ]; then
-	    cat <<EOF
-pattern %(b:bat[:oid,:$tp1],v:$tp2,accum:int) :bat[:oid,:$tp3]
-address CMDbatMODcstsignal
-comment "Return B % V, signal error on divide by zero, reuse B if ACCUM is set";
-EOF
-	fi
-	cat <<EOF
 pattern mod_noerror(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp3]
 address CMDbatMODcst
 comment "Return B % V, divide by zero causes NIL value";
 pattern %(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatMODcstsignal
 comment "Return V % B, signal error on divide by zero";
-EOF
-	if [ $tp2 = $tp3 ]; then
-	    cat <<EOF
-pattern %(v:$tp1,b:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp3]
-address CMDbatMODcstsignal
-comment "Return V % B, signal error on divide by zero, reuse B if ACCUM is set";
-EOF
-	fi
-	cat <<EOF
 pattern mod_noerror(v:$tp1,b:bat[:oid,:$tp2]) :bat[:oid,:$tp3]
 address CMDbatMODcst
 comment "Return V % B, divide by zero causes NIL value";
@@ -320,19 +251,10 @@ for op in and or xor; do
 command ${op}(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:$tp]
 address CMDbat${op^^}
 comment "Return B1 ${op^^} B2";
-command $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp], accum:int) :bat[:oid,:$tp]
-address CMDbat${op^^}accum
-comment "Return B1 ${op^^} B2";
 pattern $op(b:bat[:oid,:$tp],v:$tp) :bat[:oid,:$tp]
 address CMDbat${op^^}cst
 comment "Return B ${op^^} V";
-pattern $op(b:bat[:oid,:$tp],v:$tp,accum:int) :bat[:oid,:$tp]
-address CMDbat${op^^}cst
-comment "Return B ${op^^} V";
 pattern $op(v:$tp,b:bat[:oid,:$tp]) :bat[:oid,:$tp]
-address CMDbat${op^^}cst
-comment "Return V ${op^^} B";
-pattern $op(v:$tp,b:bat[:oid,:$tp],accum:int) :bat[:oid,:$tp]
 address CMDbat${op^^}cst
 comment "Return V ${op^^} B";
 
@@ -350,18 +272,12 @@ for func in '<<:lsh' '>>:rsh'; do
 command $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDbat${func^^}signal
 comment "Return B1 $op B2, raise error on out of range second operand";
-command $op(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2],accum:int) :bat[:oid,:$tp1]
-address CMDbat${func^^}signalaccum
-comment "Return B1 $op B2, raise error on out of range second operand, reuse B if ACCUM is set";
 command ${func}_noerror(b1:bat[:oid,:$tp1],b2:bat[:oid,:$tp2]) :bat[:oid,:$tp1]
 address CMDbat${func^^}
 comment "Return B1 $op B2, out of range second operand causes NIL value";
 pattern $op(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp1]
 address CMDbat${func^^}cstsignal
 comment "Return B $op V, raise error on out of range second operand";
-pattern $op(b:bat[:oid,:$tp1],v:$tp2,accum:int) :bat[:oid,:$tp1]
-address CMDbat${func^^}cstsignal
-comment "Return B $op V, raise error on out of range second operand, reuse B if ACCUM is set";
 pattern ${func}_noerror(b:bat[:oid,:$tp1],v:$tp2) :bat[:oid,:$tp1]
 address CMDbat${func^^}cst
 comment "Return B $op V, out of range second operand causes NIL value";

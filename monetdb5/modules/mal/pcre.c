@@ -983,13 +983,14 @@ pcre_heap(Heap *heap, size_t capacity)
 
 /* change SQL LIKE pattern into PCRE pattern */
 static str
-sql2pcre(str *r, str pat, str esc_str)
+sql2pcre(str *r, const char *pat, const char *esc_str)
 {
 	int escaped = 0;
 	int hasWildcard = 0;
 	char *ppat;
 	int esc = esc_str[0]; /* should change to utf8_convert() */
-	int specials = 0;
+	int specials;
+	int c;
 
 	if (pat == NULL )
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
@@ -1002,13 +1003,10 @@ sql2pcre(str *r, str pat, str esc_str)
 	 * expression.  If the user used the "+" char as escape and has "++"
 	 * in its pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
-	if (*esc_str && strchr( ".+*()[]", esc) != NULL)
-		specials = 1;
+	specials = (*esc_str && strchr( ".+*()[]", esc) != NULL);
 
 	*ppat++ = '^';
-	while (*pat) {
-		int c = *pat++;
-
+	while ((c = *pat++) != 0) {
 		if (c == esc) {
 			if (escaped) {
 				if (specials) { /* change ++ into \+ */
@@ -1517,19 +1515,42 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 	str res;
 	char *ppat = NULL;
 
-	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
-	if (res != MAL_SUCCEED)
-		return res;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(ppat);
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && (s = BATdescriptor(*sid)) == NULL) {
-		GDKfree(ppat);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
-	res = pcre_likesubselect(&bn, b, s, ppat, *caseignore, *anti);
+	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
+	if (res != MAL_SUCCEED) {
+		BBPreleaseref(b->batCacheid);
+		if (s)
+			BBPreleaseref(s->batCacheid);
+		return res;
+	}
+	if (strcmp(ppat, str_nil) == 0) {
+		GDKfree(ppat);
+		ppat = NULL;
+		if (*caseignore) {
+			ppat = GDKmalloc(strlen(*pat) + 3);
+			if (ppat == NULL)
+				throw(MAL, "algebra.likesubselect", MAL_MALLOC_FAIL);
+			ppat[0] = '^';
+			strcpy(ppat + 1, *pat);
+			strcat(ppat, "$");
+		}
+	}
+	if (ppat == NULL) {
+		/* no pattern and no special characters: can use normal select */
+		bn = BATsubselect(b, s, *pat, NULL, 1, 1, *anti);
+		if (bn == NULL)
+			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
+		else
+			res = MAL_SUCCEED;
+	} else {
+		res = pcre_likesubselect(&bn, b, s, ppat, *caseignore, *anti);
+	}
 	BBPreleaseref(b->batCacheid);
 	if (s)
 		BBPreleaseref(s->batCacheid);
