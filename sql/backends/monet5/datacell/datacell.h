@@ -53,9 +53,9 @@ datacell_export str DCstopObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 datacell_export str DCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCdump(int *ret);
 datacell_export str DCthreshold(int *ret, str *bskt, int *mi);
-datacell_export str DCwindow(int *ret, str *bskt, int *sz, int *slide);
-datacell_export str DCtimewindow(int *ret, str *bskt, int *sz, int *slide);
-datacell_export str DCbeat(int *ret, str *bskt, int *t);
+datacell_export str DCwindow(int *ret, str *bskt, lng *sz, lng *slide);
+datacell_export str DCtimewindow(int *ret, str *bskt, lng *sz, lng *slide);
+datacell_export str DCbeat(int *ret, str *bskt, lng *t);
 
 datacell_export str DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
