@@ -448,7 +448,7 @@ str
 EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int *statusId, int *seenId, int *cyclesId, int *sentId, int *pendingId)
 {
 	BAT *name = NULL, *seen = NULL, *pending = NULL, *sent = NULL, *cycles = NULL;
-	BAT *protocol, *mode, *status, *port, *host;
+	BAT *protocol = NULL, *mode = NULL, *status = NULL, *port = NULL, *host = NULL;
 	Emitter em = emAnchor;
 
 	name = BATnew(TYPE_oid, TYPE_str, BATTINY);

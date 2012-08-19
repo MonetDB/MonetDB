@@ -459,7 +459,7 @@ PNanalysis(Client cntxt, MalBlkPtr mb)
 static void
 PNcontroller(void *dummy)
 {
-	int idx, i, j, cnt = 0;
+	int idx = -1, i, j, cnt = 0;
 	Symbol s;
 	InstrPtr p;
 	MalStkPtr glb;
