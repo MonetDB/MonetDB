@@ -180,7 +180,7 @@ str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc == 3)
 		pnet[pnettop].def = GDKstrdup(*(str *) getArgReference(stk, pci, 2));
 	else
-		pnet[pnettop].def = GDKstrdup("");
+		pnet[pnettop].def = GDKstrdup("see procedure definition");
 
 	pnet[pnettop].status = BSKTPAUSE;
 	pnet[pnettop].cycles = 0;
