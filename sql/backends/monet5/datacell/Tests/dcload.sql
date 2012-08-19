@@ -36,7 +36,7 @@ BEGIN
 	INSERT INTO datacell.alarm_warm 
 	SELECT ip, emit_time, location, value 
 		FROM datacell.warm 
-		WHERE "type" LIKE 'temperature' AND value BETWEEN 21 AND 27;
+		WHERE "type" LIKE 'temperature' AND value BETWEEN 21 AND 24;
 END;
 CALL datacell.query('datacell.warm');
 
@@ -45,7 +45,7 @@ BEGIN
 	INSERT INTO datacell.alarm_hot 
 	SELECT ip, emit_time, location, value 
 	FROM datacell.hot 
-	WHERE type LIKE 'temperature' AND value > 27;
+	WHERE type LIKE 'temperature' AND value > 24;
 END;
 CALL datacell.query('datacell.hot');
 
