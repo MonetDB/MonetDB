@@ -72,7 +72,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	removeDataflow(old, limit);
 
 	pushInstruction(mb, old[0]);
-	newFcnCall(mb, sqlRef, putName("transaction", 11));
+	//newFcnCall(mb, sqlRef, putName("transaction", 11));
 	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];
@@ -116,7 +116,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getArg(r, 0) = j;
 				r->barrier = EXITsymbol;
 
-				(void) newFcnCall(mb, sqlRef, commitRef);
+				//(void) newFcnCall(mb, sqlRef, commitRef);
+				break;
 			}
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == putName("affectedRows", 12)) {
 				freeInstruction(p);
@@ -125,6 +126,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef)
 				mvc = getArg(p, 0);
+
 			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == binddbatRef)) {
 				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
 				col = getVarConstant(mb, getArg(p, 4)).val.sval;
@@ -168,16 +170,17 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					} else
 						freeInstruction(p);
 					continue;
-				}
+				} else
 				if (bskt) {
 					wrd rows = 0;
 					ValRecord vr;
 					/* zap all expression arguments */
-					clrFunction(p);
-					p->argc = p->retc;
-					for (j = 0; j < p->retc; j++)
-						p = pushNil(mb, p, getArgType(mb, p, j));
-					varSetProp(mb, p->argv[p->argc - 1], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
+					getModuleId(p) = batRef;
+					getFunctionId(p) = newRef;
+					p->argc = p->retc= 1;
+					p = pushType(mb, p, TYPE_oid);
+					p = pushType(mb, p, getTailType(getVarType(mb,getArg(p,0))));
+					varSetProp(mb, p->argv[0], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				}
 			}
 
@@ -223,6 +226,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						getArg(qq, 0) = getArg(qa[j], k + 2);
 						getArg(qq, 1) = getArg(p, 5);
 						qq->argc = 2;
+						alias[getArg(p,0)] = getArg(p,1);
 						p->argc = 2;
 						mvc = getArg(p, 0);
 					}
@@ -235,6 +239,10 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			pushInstruction(mb, p);
 		}
 
+    /* take the remainder as is */
+    for (; i<limit; i++)
+        if (old[i])
+            pushInstruction(mb,old[i]);
 	(void) stk;
 	(void) pci;
 
