@@ -63,6 +63,17 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else
@@ -111,6 +122,7 @@ static int events = -1;
 static int columns = 1;
 static int autoincrement = 1;   /* if id != 0 then we increment and send it along */
 static int timestamp = 1; /*if (timestamp!=0) sensor sends also the tsmp */
+static int timecolumn = -1;		/* use first column for derivation of delay */
 static char *host = "localhost";
 static int port = 50500;
 static int trace = 0;
@@ -135,6 +147,7 @@ usage(void)
 	mnstr_printf(SEout, "--columns=<number>, default=1\n");
 	mnstr_printf(SEout, "--events=<events length>, (-1=forever,>0), default=1\n");
 	mnstr_printf(SEout, "--file=<data file>\n");
+	mnstr_printf(SEout, "--time=<column> where to find the exact time\n");
 	mnstr_printf(SEout, "--batch=<batchsize> , default=1\n");
 	mnstr_printf(SEout, "--delay=<ticks> interbatch delay in ms, default=1\n");
 	mnstr_printf(SEout, "--trace=<trace> interaction\n");
@@ -185,13 +198,14 @@ int main(int argc, char **argv)
 	char hostname[1024];
 	Sensor se = NULL;
 	static SOCKET sockfd;
-	static struct option long_options[16] = {
+	static struct option long_options[17] = {
 		{ "increment", 0, 0, 'i' },
 		{ "batch", 1, 0, 'b' },
 		{ "columns", 1, 0, 'c' },
 		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
 		{ "timestamp", 0, 0, 't' },
+		{ "time", 0, 0, 't' },
 		{ "events", 1, 0, 'e' },
 		{ "sensor", 1, 0, 's' },
 		{ "server", 0, 0, 's' },
@@ -251,6 +265,10 @@ int main(int argc, char **argv)
 		case 't':
 			if (strcmp(long_options[option_index].name, "timestamp") == 0) {
 				timestamp = 1;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "time") == 0) {
+				timecolumn = optarg ? atol(optarg) : 0;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "trace") == 0) {
@@ -351,6 +369,7 @@ int main(int argc, char **argv)
 		mnstr_printf(SEout, "--columns=%d\n", columns);
 		mnstr_printf(SEout, "--autoincrement=%d\n", autoincrement);
 		mnstr_printf(SEout, "--timestamp=%d\n", timestamp);
+		mnstr_printf(SEout, "--time=%d\n", timecolumn);
 		mnstr_printf(SEout, "--events=%d\n", events);
 		mnstr_printf(SEout, "--batch=%d\n", batchsize);
 		mnstr_printf(SEout, "--delay=%d\n", delay);
@@ -588,9 +607,10 @@ produceStream(Sensor se)
 static void
 produceDataStream(Sensor se)
 {
-	char buf[MYBUFSIZ + 1], *tuple;
+	char buf[MYBUFSIZ + 1], *tuple, *c, *d;
 	FILE *fd;
-	int snr;
+	int i, snr;
+	time_t lasttime;
 
 	/* read a events of messages from a file.
 	   It is processed multiple times.
@@ -612,6 +632,24 @@ produceDataStream(Sensor se)
 			newdelay = (int) atol(buf);
 			tuple = buf;
 
+			if ( timecolumn >= 0 ) {
+				/* calculate the difference with previous event */
+				/* use a simplistic csv file format */
+				c= buf;
+				for ( i = timecolumn; i>= 0; i--){
+					if ( (d=strchr(c,(int)','))){
+						c= d+1;
+					}
+				}
+				/* convert time to epoch in microseconds*/
+				/* calculate time differential */
+				if ( lasttime == 0){
+					newdelay =delay;
+					lasttime = 0;
+				} else {
+				}
+				MT_sleep_ms(newdelay);
+			} else
 			if (newdelay > 0) {
 				/* wait */
 				tuple = strchr(buf, '[');
