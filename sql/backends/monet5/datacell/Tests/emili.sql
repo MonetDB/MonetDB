@@ -91,7 +91,8 @@ BEGIN
 	INSERT into datacell.states
 	SELECT S.location, H.time, 'confirmed' 
 	FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
-	WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location;
+	WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location
+	AND (H.time - S.time) > '3' as minutes;
 END;
 CALL datacell.query('datacell.firespotted');
 
