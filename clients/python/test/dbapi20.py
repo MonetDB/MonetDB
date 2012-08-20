@@ -204,7 +204,7 @@ class DatabaseAPI20Test(unittest.TestCase):
 
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
-        # defined heirarchy.
+        # defined hierarchy.
         self.assertTrue(issubclass(self.driver.Warning,StandardError))
         self.assertTrue(issubclass(self.driver.Error,StandardError))
         self.assertTrue(
