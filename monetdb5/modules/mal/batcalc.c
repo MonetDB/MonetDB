@@ -58,14 +58,31 @@ mythrow(enum malexception type, const char *fcn, const char *msg)
 static str
 CMDbatUNARY(bat *ret, bat *bid, BAT *(*batfunc)(BAT *), const char *malfunc)
 {
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+	if (!BAThdense(b)) {
+		map = BATmark(b, 0);
+		t = BATmirror(BATmark(BATmirror(b), 0));
+		BBPreleaseref(b->batCacheid);
+		b = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b);
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -74,14 +91,31 @@ static str
 CMDbatUNARY1(bat *ret, bat *bid, int abort_on_error,
 			 BAT *(*batfunc)(BAT *, int), const char *malfunc)
 {
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+	if (!BAThdense(b)) {
+		map = BATmark(b, 0);
+		t = BATmirror(BATmark(BATmirror(b), 0));
+		BBPreleaseref(b->batCacheid);
+		b = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b, abort_on_error);
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -245,7 +279,7 @@ CMDbatBINARY3(bat *ret, bat *bid1, bat *bid2,
 			  int abort_on_error,
 			  const char *malfunc)
 {
-	BAT *bn, *b1, *b2;
+	BAT *bn, *b1, *b2, *t, *map;
 
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
@@ -256,12 +290,32 @@ CMDbatBINARY3(bat *ret, bat *bid1, bat *bid2,
 			BBPreleaseref(b2->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (!BAThdense(b1) || !BAThdense(b2)) {
+		map = BATmark(b1, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b1), 0)); /* [dense,tail] */
+		BBPreleaseref(b1->batCacheid);
+		b1 = t;
+		t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+		BBPreleaseref(b2->batCacheid);
+		b2 = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b1, b2, (*typefunc)(b1->T->type, b2->T->type),
 					abort_on_error);
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -274,7 +328,7 @@ CMDbatBINARY3cst(MalStkPtr stk, InstrPtr pci,
 				 int abort_on_error, const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 	int tp1, tp2;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -286,6 +340,14 @@ CMDbatBINARY3cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)],
 						 (*typefunc)(b->T->type, tp2), abort_on_error);
 	} else {
@@ -295,12 +357,29 @@ CMDbatBINARY3cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b,
 						 (*typefunc)(tp1, b->T->type), abort_on_error);
 	}
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -312,7 +391,7 @@ CMDbatBINARY2(bat *ret, bat *bid1, bat *bid2,
 			  int abort_on_error,
 			  const char *malfunc)
 {
-	BAT *bn, *b1, *b2;
+	BAT *bn, *b1, *b2, *t, *map;
 
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
@@ -323,11 +402,31 @@ CMDbatBINARY2(bat *ret, bat *bid1, bat *bid2,
 			BBPreleaseref(b2->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (!BAThdense(b1) || !BAThdense(b2)) {
+		map = BATmark(b1, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b1), 0)); /* [dense,tail] */
+		BBPreleaseref(b1->batCacheid);
+		b1 = t;
+		t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+		BBPreleaseref(b2->batCacheid);
+		b2 = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b1, b2, abort_on_error);
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -340,7 +439,7 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 				 const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 	int tp1;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -352,6 +451,14 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)], abort_on_error);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
@@ -361,11 +468,28 @@ CMDbatBINARY2cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, abort_on_error);
 	}
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -376,7 +500,7 @@ CMDbatBINARY1(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *),
 			  const char *malfunc)
 {
-	BAT *bn, *b1, *b2;
+	BAT *bn, *b1, *b2, *t, *map;
 
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
@@ -387,11 +511,31 @@ CMDbatBINARY1(bat *ret, bat *bid1, bat *bid2,
 			BBPreleaseref(b2->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (!BAThdense(b1) || !BAThdense(b2)) {
+		map = BATmark(b1, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b1), 0)); /* [dense,tail] */
+		BBPreleaseref(b1->batCacheid);
+		b1 = t;
+		t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+		BBPreleaseref(b2->batCacheid);
+		b2 = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b1, b2);
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -403,7 +547,7 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 				 const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 	int tp1;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -415,6 +559,14 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)]);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
@@ -424,11 +576,28 @@ CMDbatBINARY1cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b);
 	}
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -439,7 +608,7 @@ CMDbatBINARY0(bat *ret, bat *bid1, bat *bid2,
 			  BAT *(*batfunc)(BAT *, BAT *),
 			  const char *malfunc)
 {
-	BAT *bn, *b1, *b2;
+	BAT *bn, *b1, *b2, *t, *map;
 
 	b1 = BATdescriptor(*bid1);
 	b2 = BATdescriptor(*bid2);
@@ -450,11 +619,31 @@ CMDbatBINARY0(bat *ret, bat *bid1, bat *bid2,
 			BBPreleaseref(b2->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (!BAThdense(b1) || !BAThdense(b2)) {
+		map = BATmark(b1, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b1), 0)); /* [dense,tail] */
+		BBPreleaseref(b1->batCacheid);
+		b1 = t;
+		t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+		BBPreleaseref(b2->batCacheid);
+		b2 = t;
+	} else {
+		map = NULL;
+	}
 	bn = (*batfunc)(b1, b2);
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -466,7 +655,7 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 				 const char *malfunc)
 {
 	bat *bid;
-	BAT *bn, *b;
+	BAT *bn, *b, *t, *map;
 	int tp1;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -478,6 +667,14 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc1)(b, &stk->stk[getArg(pci, 2)]);
 	} else {
 		assert(tp1 != TYPE_bat && !isaBatType(tp1));
@@ -487,11 +684,28 @@ CMDbatBINARY0cst(MalStkPtr stk, InstrPtr pci,
 		b = BATdescriptor(*bid);
 		if (b == NULL)
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		if (!BAThdense(b)) {
+			map = BATmark(b, 0); /* [head,dense] */
+			t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+			BBPreleaseref(b->batCacheid);
+			b = t;
+		} else {
+			map = NULL;
+		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b);
 	}
 	BBPreleaseref(b->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, malfunc, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1094,7 +1308,7 @@ str
 CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *bid;
-	BAT *bn, *b, *lo = NULL, *hi = NULL;
+	BAT *bn, *b, *lo = NULL, *hi = NULL, *t, *map;
 	int tp1, tp2, tp3;
 
 	(void) cntxt;
@@ -1123,6 +1337,24 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hi == NULL)
 			throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
 	}
+	if (!BAThdense(b) || (lo != NULL && !BAThdense(lo)) || (hi != NULL && !BAThdense(hi))) {
+		map = BATmark(b, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
+		if (lo) {
+			t = BATmirror(BATmark(BATmirror(lo), 0)); /* [dense,tail] */
+			BBPreleaseref(lo->batCacheid);
+			lo = t;
+		}
+		if (hi) {
+			t = BATmirror(BATmark(BATmirror(hi), 0)); /* [dense,tail] */
+			BBPreleaseref(hi->batCacheid);
+			hi = t;
+		}
+	} else {
+		map = NULL;
+	}
 	if (lo == NULL) {
 		if (hi == NULL) {
 			bn = BATcalcbetweencstcst(b, &stk->stk[getArg(pci, 2)], &stk->stk[getArg(pci, 3)]);
@@ -1141,8 +1373,17 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreleaseref(lo->batCacheid);
 	if (hi)
 		BBPreleaseref(hi->batCacheid);
-	if (bn == NULL)
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, "batcalc.between", OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	bid = (bat *) getArgReference(stk, pci, 0);
 	BBPkeepref(*bid = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1153,12 +1394,17 @@ batcalc_export str CMDcalcavg2(dbl *avg, lng *vals, bat *bid);
 str
 CMDcalcavg2(dbl *avg, lng *vals, bat *bid)
 {
-	BAT *b;
+	BAT *b, *t;
 	int ret;
 	BUN v;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+	if (!BAThdense(b)) {
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
+	}
 	ret = BATcalcavg(b, avg, &v);
 	BBPreleaseref(b->batCacheid);
 	if (ret == GDK_FAIL)
@@ -1179,16 +1425,32 @@ CMDcalcavg(dbl *avg, bat *bid)
 static str
 CMDconvertbat(bat *ret, bat *bid, int tp, int abort_on_error)
 {
-	BAT *b, *bn;
+	BAT *b, *bn, *t, *map;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+	if (!BAThdense(b)) {
+		map = BATmark(b, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
+	} else {
+		map = NULL;
+	}
 	bn = BATconvert(b, tp, abort_on_error);
 	BBPreleaseref(b->batCacheid);
 	if (bn == NULL) {
 		char buf[20];
 		snprintf(buf, sizeof(buf), "batcalc.%s", ATOMname(tp));
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		return mythrow(MAL, buf, OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftfetchjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
 	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
@@ -1243,7 +1505,7 @@ batcalc_export str CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 str
 CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b, *b1, *b2, *bn;
+	BAT *b, *b1, *b2, *bn, *t, *map;
 	int tp1, tp2;
 	bat *ret;
 
@@ -1253,14 +1515,30 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret = (bat *) getArgReference(stk, pci, 0);
 	b = BATdescriptor(* (bat *) getArgReference(stk, pci, 1));
 	if (b == NULL)
-		throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+	if (!BAThdense(b)) {
+		map = BATmark(b, 0); /* [head,dense] */
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
+	} else {
+		map = NULL;
+	}
 
 	tp1 = stk->stk[getArg(pci, 2)].vtype;
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
 		b1 = BATdescriptor(* (bat *) getArgReference(stk, pci, 2));
 		if (b1 == NULL) {
 			BBPreleaseref(b->batCacheid);
-			throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+			if (map)
+				BBPreleaseref(map->batCacheid);
+			throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+		}
+		if (!BAThdense(b1)) {
+			/* we ignore the head column of b1 */
+			t = BATmirror(BATmark(BATmirror(b1), 0)); /* [dense,tail] */
+			BBPreleaseref(b1->batCacheid);
+			b1 = t;
 		}
 		if (pci->argc == 4) {
 			tp2 = stk->stk[getArg(pci, 3)].vtype;
@@ -1269,7 +1547,15 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (b2 == NULL) {
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(b1->batCacheid);
-					throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+					if (map)
+						BBPreleaseref(map->batCacheid);
+					throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+				}
+				if (!BAThdense(b2)) {
+					/* we ignore the head column of b2 */
+					t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+					BBPreleaseref(b2->batCacheid);
+					b2 = t;
 				}
 				bn = BATcalcifthenelse(b, b1, b2);
 				BBPreleaseref(b2->batCacheid);
@@ -1287,7 +1573,15 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				b2 = BATdescriptor(* (bat *) getArgReference(stk, pci, 3));
 				if (b2 == NULL) {
 					BBPreleaseref(b->batCacheid);
-					throw(MAL, "CMDifthen", RUNTIME_OBJECT_MISSING);
+					if (map)
+						BBPreleaseref(map->batCacheid);
+					throw(MAL, "batcalc.ifthen(else)", RUNTIME_OBJECT_MISSING);
+				}
+				if (!BAThdense(b2)) {
+					/* we ignore the head column of b2 */
+					t = BATmirror(BATmark(BATmirror(b2), 0)); /* [dense,tail] */
+					BBPreleaseref(b2->batCacheid);
+					b2 = t;
 				}
 				bn = BATcalcifthencstelse(b, &stk->stk[getArg(pci, 2)], b2);
 				BBPreleaseref(b2->batCacheid);
@@ -1299,6 +1593,17 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	BBPreleaseref(b->batCacheid);
+	if (bn == NULL) {
+		if (map)
+			BBPreleaseref(map->batCacheid);
+		return mythrow(MAL, "batcalc.ifthen(else)", OPERATION_FAILED);
+	}
+	if (map) {
+		t = BATleftjoin(map, bn, BATcount(bn));
+		BBPreleaseref(bn->batCacheid);
+		bn = t;
+		BBPreleaseref(map->batCacheid);
+	}
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }

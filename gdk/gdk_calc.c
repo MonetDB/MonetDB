@@ -32,9 +32,8 @@
 static int
 checkbats(BAT *b1, BAT *b2, const char *func)
 {
-	if ((b1->H->type != TYPE_void && b1->H->type != TYPE_oid) ||
-	    (b2 != NULL && b2->H->type != TYPE_void && b2->H->type != TYPE_oid)) {
-		GDKerror("%s: inputs must have (V)OID head.\n", func);
+	if (!BAThdense(b1) || (b2 != NULL && !BAThdense(b2))) {
+		GDKerror("%s: inputs must have dense head.\n", func);
 		return GDK_FAIL;
 	}
 	if (b2 != NULL) {
@@ -165,12 +164,6 @@ BATcalcnot(BAT *b)
 		b->P->descdirty = 1;
 	}
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -280,12 +273,6 @@ BATcalcnegate(BAT *b)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -411,12 +398,6 @@ BATcalcabsolute(BAT *b)
 		b->P->descdirty = 1;
 	}
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -531,12 +512,6 @@ BATcalciszero(BAT *b)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -657,12 +632,6 @@ BATcalcsign(BAT *b)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -808,12 +777,6 @@ BATcalcisnil(BAT *b)
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
 	bn->T->key = bn->U->count <= 1;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -1760,12 +1723,6 @@ BATcalcadd(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -1808,12 +1765,6 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -1855,12 +1806,6 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -1922,12 +1867,6 @@ BATcalcincr(BAT *b, int abort_on_error)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -2867,12 +2806,6 @@ BATcalcsub(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -2914,12 +2847,6 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -2963,12 +2890,6 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -3030,12 +2951,6 @@ BATcalcdecr(BAT *b, int abort_on_error)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -4056,12 +3971,6 @@ BATcalcmul(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -4114,12 +4023,6 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -4171,12 +4074,6 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -5212,12 +5109,6 @@ BATcalcdiv(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -5273,12 +5164,6 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -5315,12 +5200,6 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6184,12 +6063,6 @@ BATcalcmod(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6227,12 +6100,6 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6269,12 +6136,6 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6387,12 +6248,6 @@ BATcalcxor(BAT *b1, BAT *b2)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6437,12 +6292,6 @@ BATcalcxorcst(BAT *b, const ValRecord *v)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6486,12 +6335,6 @@ BATcalccstxor(const ValRecord *v, BAT *b)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6623,12 +6466,6 @@ BATcalcor(BAT *b1, BAT *b2)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6673,12 +6510,6 @@ BATcalcorcst(BAT *b, const ValRecord *v)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6722,12 +6553,6 @@ BATcalccstor(const ValRecord *v, BAT *b)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6855,12 +6680,6 @@ BATcalcand(BAT *b1, BAT *b2)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6905,12 +6724,6 @@ BATcalcandcst(BAT *b, const ValRecord *v)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -6954,12 +6767,6 @@ BATcalccstand(const ValRecord *v, BAT *b)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7120,12 +6927,6 @@ BATcalclsh(BAT *b1, BAT *b2, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -7164,12 +6965,6 @@ BATcalclshcst(BAT *b, const ValRecord *v, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -7207,12 +7002,6 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7367,12 +7156,6 @@ BATcalcrsh(BAT *b1, BAT *b2, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -7411,12 +7194,6 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -7454,12 +7231,6 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7967,12 +7738,6 @@ BATcalclt(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalclt");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -7995,12 +7760,6 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcltcst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -8022,12 +7781,6 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstlt");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -8534,12 +8287,6 @@ BATcalcgt(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcgt");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -8562,12 +8309,6 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgtcst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -8589,12 +8330,6 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstgt");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9101,12 +8836,6 @@ BATcalcle(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcle");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -9129,12 +8858,6 @@ BATcalclecst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalclecst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -9156,12 +8879,6 @@ BATcalccstle(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstle");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9668,12 +9385,6 @@ BATcalcge(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcge");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -9696,12 +9407,6 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgecst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -9723,12 +9428,6 @@ BATcalccstge(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstge");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10234,12 +9933,6 @@ BATcalceq(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalceq");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -10261,12 +9954,6 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalceqcst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -10287,12 +9974,6 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccsteq");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10798,12 +10479,6 @@ BATcalcne(BAT *b1, BAT *b2)
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcne");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -10826,12 +10501,6 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcnecst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -10853,12 +10522,6 @@ BATcalccstne(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstne");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11367,12 +11030,6 @@ BATcalccmp(BAT *b1, BAT *b2)
 			       b1->T->nonil && b2->T->nonil,
 			       b1->H->seq, "BATcalccmp");
 
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -11395,12 +11052,6 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccmpcst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -11422,12 +11073,6 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 			       b->U->count,
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccstcmp");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11595,12 +11240,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetween");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -11627,12 +11266,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstcst");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11662,12 +11295,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweenbatcst");
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -11695,12 +11322,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstbat");
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11882,20 +11503,6 @@ BATcalcifthenelse_intern(BAT *b,
 		bn->H->key = 1;
 		bn->H->nil = 0;
 		bn->H->nonil = 1;
-	}
-
-	if (b->H->type != bn->H->type && bn->U->count == b->U->count) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	} else if (bn->U->count < b->U->count && !BAThdense(b)) {
-		const oid *oids = (const oid *) Hloc(b, b->U->first);
-		cnt = bn->U->count;
-		hd = (oid *) Hloc(bn, bn->U->first);
-		for (i = 0; i < cnt; i++) {
-			*hd = oids[*hd];
-			hd++;
-		}
 	}
 
 	return bn;
@@ -12624,12 +12231,6 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 	bn->T->sorted = nils == 0 && b->T->sorted;
 	bn->T->revsorted = nils == 0 && b->T->revsorted;
 	bn->T->key = (b->T->key & 1) && nils <= 1;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
