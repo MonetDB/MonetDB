@@ -1230,7 +1230,7 @@ batjoin(BAT *l, BAT *r, BUN estimate, bit swap)
 		@:return_empty_join_result(l,r, BATjoin: |l|==0 or |r|==0 or tail(l)==NIL or head(r)==NIL,0)@
 	}
 	if (BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase &&
-	    lcount == rcount && BUNfirst(l) == BUNfirst(r) &&
+	    lcount == rcount &&
 	    l->batRestricted == BAT_READ && r->batRestricted == BAT_READ)
 		return VIEWcreate(l, r);
 	/*
