@@ -219,16 +219,22 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						/* upgrade single values to a BAT */
 						clrFunction(p);
 						if (!isaBatType(getVarType(mb, getArg(p, 5)))) {
-							getModuleId(p) = sqlRef;
-							getFunctionId(p) = singleRef;
+							qq= newInstruction(mb, ASSIGNsymbol);
+							getModuleId(qq) = sqlRef;
+							getFunctionId(qq) = singleRef;
+							getArg(qq, 0) = getArg(qa[j], k + 2);
+							getArg(qq, 1) = getArg(p, 5);
+							qq->argc = 2;
+							p = qq;
+						} else {
+							qq= newAssignment(mb);
+							getArg(qq, 0) = getArg(qa[j], k + 2);
+							getArg(qq, 1) = getArg(p, 5);
+							qq->argc = 2;
+							alias[getArg(p,0)] = getArg(p,1);
+							p->argc = 2;
+							mvc = getArg(p, 0);
 						}
-						qq= newAssignment(mb);
-						getArg(qq, 0) = getArg(qa[j], k + 2);
-						getArg(qq, 1) = getArg(p, 5);
-						qq->argc = 2;
-						alias[getArg(p,0)] = getArg(p,1);
-						p->argc = 2;
-						mvc = getArg(p, 0);
 					}
 				} else {
 					if ( alias[mvc] )
@@ -250,8 +256,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	{
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
-		mnstr_printf(cntxt->fdout, "=FINISHED datacell %d\n", actions);
-		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 		addtoMalBlkHistory(mb, "datacell");
 	}
 	GDKfree(alias);

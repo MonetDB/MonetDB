@@ -78,7 +78,7 @@
 #define PNcontrolInfinit 1  /* infinit loop of PNController  */
 #define PNcontrolEnd 2      /* when all factories are disable PNController exits */
 
-#define _DEBUG_PETRINET_ 
+/* #define _DEBUG_PETRINET_ */
 
 /*static int controlRounds = PNcontrolInfinit;*/
 

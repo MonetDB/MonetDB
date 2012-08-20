@@ -5,19 +5,19 @@
 
 sql.init();
 
-basket.register("datacell","x");
-receptor.start("datacell","x","localhost",50501,"passive");
+basket.register("x");
+receptor.start("x","localhost",50501);
 io.print("receptor working");
 alarm.sleep(5);
-receptor.pause("datacell","x");
+receptor.pause("x");
 io.print("receptor paused");
 alarm.sleep(5);
-receptor.resume("datacell","x");
+receptor.resume("x");
 io.print("receptor restarted");
 alarm.sleep(5);
-receptor.pause("datacell","x");
+receptor.pause("x");
 io.print("receptor stopped");
-receptor.drop("datacell","x");
+receptor.stop("x");
 
 # The SQL equivalents
 # call datacell.basket('datacell','x);

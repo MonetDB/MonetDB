@@ -2,6 +2,9 @@
 # (Must be first as otherwise creation of schema datacell via
 #  50_datacell.sql is not triggered, as first SQL-clients does not connect
 #  on "virgin" database!???)
+#
+#  beware, the scenario testing calls for manual interaction to start/stop
+#  sensors and actuators. The test web merely shows basic functionality.
 ENABLE_DATACELL?scenario00
 ENABLE_DATACELL?scenario01
 ENABLE_DATACELL?scenario02
@@ -11,6 +14,7 @@ ENABLE_DATACELL?scenario05
 ENABLE_DATACELL?scenario06
 ENABLE_DATACELL?datacell00
 ENABLE_DATACELL?dctemper00
+ENABLE_DATACELL?dcload
 ENABLE_DATACELL?linearroad
 # MAL
 ENABLE_DATACELL?basket00
