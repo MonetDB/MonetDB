@@ -560,8 +560,7 @@ GRPsubgroup1(bat *ngid, bat *next, bat *nhis, bat *bid)
 str
 GRPgroup(bat *rethisto, bat *retbid, bat *bid)
 {
-	BAT *b, *gn, *hn, *en, *t;
-	BAT *b1, *map;
+	BAT *b, *gn, *hn, *en, *t, *map;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "group.new", RUNTIME_OBJECT_MISSING);
@@ -572,17 +571,19 @@ GRPgroup(bat *rethisto, bat *retbid, bat *bid)
 	}
 	if (!BAThdense(b)) {
 		map = BATmark(b, 0); /* [head,dense] */
-		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
 	} else {
 		map = NULL;
-		b1 = b;
 	}
-	if (BATgroup(&gn, &en, &hn, b1, NULL, NULL, NULL) == GDK_FAIL) {
+	if (BATgroup(&gn, &en, &hn, b, NULL, NULL, NULL) == GDK_FAIL) {
 		BBPreleaseref(b->batCacheid);
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		throw(MAL, "group.new", GDK_EXCEPTION);
 	}
 	if (map) {
-		BBPreleaseref(b1->batCacheid);
 		t = BATleftfetchjoin(map, gn, BATcount(gn));
 		BBPreleaseref(gn->batCacheid);
 		gn = t;
@@ -609,8 +610,7 @@ GRPgroup(bat *rethisto, bat *retbid, bat *bid)
 str
 GRPderive(bat *hid, bat *mid, bat *ct_histoid, bat *ct_mapid, bat *bid)
 {
-	BAT *h, *g, *b, *gn, *t, *en, *hn;
-	BAT *b1, *g1, *map;
+	BAT *h, *g, *b, *gn, *en, *hn, *t, *map;
 
 	h = BATdescriptor(*ct_histoid);
 	g = BATdescriptor(*ct_mapid);
@@ -634,22 +634,24 @@ GRPderive(bat *hid, bat *mid, bat *ct_histoid, bat *ct_mapid, bat *bid)
 	}
 	if (!BAThdense(b) || !BAThdense(g)) {
 		map = BATmark(b, 0); /* [head,dense] */
-		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
-		g1 = BATmirror(BATmark(BATmirror(g), 0)); /* [dense,tail] */
+		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
+		BBPreleaseref(b->batCacheid);
+		b = t;
+		t = BATmirror(BATmark(BATmirror(g), 0)); /* [dense,tail] */
+		BBPreleaseref(g->batCacheid);
+		g = t;
 	} else {
 		map = NULL;
-		b1 = b;
-		g1 = g;
 	}
-	if (BATgroup(&gn, &en, &hn, b1, g1, NULL, NULL) == GDK_FAIL) {
+	if (BATgroup(&gn, &en, &hn, b, g, NULL, NULL) == GDK_FAIL) {
 		BBPreleaseref(h->batCacheid);
 		BBPreleaseref(g->batCacheid);
 		BBPreleaseref(b->batCacheid);
+		if (map)
+			BBPreleaseref(map->batCacheid);
 		throw(MAL, "group.new", GDK_EXCEPTION);
 	}
 	if (map) {
-		BBPreleaseref(b1->batCacheid);
-		BBPreleaseref(g1->batCacheid);
 		t = BATleftfetchjoin(map, gn, BATcount(gn));
 		BBPreleaseref(gn->batCacheid);
 		gn = t;
