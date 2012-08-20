@@ -238,7 +238,6 @@ DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (idx ) {
 		RCreceptorPause(&ret, &tbl);
 		EMemitterPause(&ret, &tbl);
-		return MAL_SUCCEED;
 	}
 	return PNpauseQuery(cntxt,mb,stk,pci);
 }
@@ -258,7 +257,6 @@ DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (idx ) {
 		RCreceptorResume(&ret, &tbl);
 		EMemitterResume(&ret, &tbl);
-		return MAL_SUCCEED;
 	}
 	return PNresumeQuery(cntxt,mb,stk,pci);
 }
