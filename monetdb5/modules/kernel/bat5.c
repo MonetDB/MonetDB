@@ -43,22 +43,6 @@
 #include "mal_exception.h"
 
 static int
-CMDnew(BAT **ret, int *ht, int *tt, BUN *cap)
-{
-	*ret = BATnew(*ht, *tt, *cap);
-	if (*ret)
-		(*ret)->batDirty |= 2;
-	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
-CMDattach(BAT **ret, int *tt, str heapfile)
-{
-	*ret = BATattach(*tt, heapfile);
-	return *ret ? GDK_SUCCEED : GDK_FAIL;
-}
-
-static int
 CMDdensebat(BAT **ret, wrd *size)
 {
 	BAT *b;
@@ -77,26 +61,6 @@ CMDdensebat(BAT **ret, wrd *size)
 	BATkey(BBP_cache(-b->batCacheid), TRUE);
 	BATsetcount(b, (BUN) *size);
 	return GDK_SUCCEED;
-}
-
-static int
-CMDreverse(BAT **ret, BAT *b)
-{
-	*ret = BATmirror(b);
-	BBPfix(b->batCacheid);
-	return GDK_SUCCEED;
-}
-
-static int
-CMDmirror(BAT **ret, BAT *b)
-{
-	BAT *v = *ret = VIEWcombine(b);
-
-	if (b->batRestricted == BAT_WRITE) {
-		*ret = BATcopy(v, v->htype, v->ttype, FALSE);
-		BBPreclaim(v);
-	}
-	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 /*
@@ -567,16 +531,6 @@ CMDbatsize(lng *tot, BAT *b, int force)
 }
 
 /*
- * Synced BATs
- */
-static int
-CMDsynced(bit *ret, BAT *b1, BAT *b2)
-{
-	*ret = ALIGNsynced(b1, b2) ? 1 : 0;
-	return GDK_SUCCEED;
-}
-
-/*
  * BBP Management, IO
  */
 static int
@@ -651,26 +605,6 @@ CMDsave(bit *res, str input)
 }
 
 
-static int
-CMDmmap(BAT **r, BAT *b, int *hbns, int *tbns, int *hhp, int *thp)
-{
-	/* == int_nil means no change */
-	if (*hbns == int_nil) 
-		*hbns = b->batMaphead;
-	if (*tbns == int_nil) 
-		*tbns = b->batMaptail;
-	if (b->H->vheap && *hhp == int_nil) 
-		*hhp = b->batMaphheap;
-	if (b->T->vheap && *thp == int_nil) 
-		*thp = b->batMaptheap;
-	if (BATmmap(*r = b, *hbns, *tbns, *hhp, *thp, 0) == 0) {
-		BBPfix(b->batCacheid);
-		return GDK_SUCCEED;
-	}
-	return GDK_FAIL;
-}
-
-
 /*
  * Wrapping
  * The remainder contains the wrapper code over the version 4
@@ -688,22 +622,14 @@ BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
 {
 	BAT *b;
 
-	if( *ht == TYPE_oid){
-		int tpe= TYPE_void;
-		if (CMDnew(&b, &tpe, tt, cap) == GDK_SUCCEED) {
-			oid o= 0;
-			BATseqbase(b, o);
-			*res = b->batCacheid;
-			BBPkeepref(*res);
-			return MAL_SUCCEED;
-		}
-	} else
-	if (CMDnew(&b, ht, tt, cap) == GDK_SUCCEED) {
-		*res = b->batCacheid;
-		BBPkeepref(*res);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "bat.new", GDK_EXCEPTION);
+	b = BATnew(*ht == TYPE_oid ? TYPE_void : *ht, *tt, *cap);
+	if (b == NULL)
+		throw(MAL, "bat.new", GDK_EXCEPTION);
+	if (*ht == TYPE_oid)
+		BATseqbase(b, 0);
+	*res = b->batCacheid;
+	BBPkeepref(*res);
+	return MAL_SUCCEED;
 }
 
 str
@@ -711,7 +637,8 @@ BKCattach(int *ret, int *tt, str *heapfile)
 {
 	BAT *b;
 
-	if (CMDattach(&b, tt, *heapfile) == GDK_SUCCEED) {
+	b = BATattach(*tt, *heapfile);
+	if (b != NULL) {
 		*ret = b->batCacheid;
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;
@@ -741,29 +668,38 @@ BKCreverse(int *ret, int *bid)
 		throw(MAL, "bat.reverse", RUNTIME_OBJECT_MISSING);
 	}
 
-	CMDreverse(&bn, b);
-	BBPreleaseref(b->batCacheid);
+	bn = BATmirror(b);			/* bn inherits ref from b */
 	if (bn) {
 		*ret = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPreleaseref(b->batCacheid);
 	throw(MAL, "bat.reverse", GDK_EXCEPTION);
 }
 
 str
 BKCmirror(int *ret, int *bid)
 {
-	BAT *b, *bn = NULL;
+	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mirror", RUNTIME_OBJECT_MISSING);
 	}
-	if (CMDmirror(&bn, b) == GDK_SUCCEED) {
-		*ret = bn->batCacheid;
-		BBPkeepref(*ret);
-		BBPreleaseref(b->batCacheid);
-		return MAL_SUCCEED;
+	bn = VIEWcombine(b);
+	if (bn != NULL) {
+		if (b->batRestricted == BAT_WRITE) {
+			BAT *bn1;
+			bn1 = BATcopy(bn, bn->htype, bn->ttype, FALSE);
+			BBPreclaim(bn);
+			bn = bn1;
+		}
+		if (bn != NULL) {
+			*ret = bn->batCacheid;
+			BBPkeepref(*ret);
+			BBPreleaseref(b->batCacheid);
+			return MAL_SUCCEED;
+		}
 	}
 	*ret = 0;
 	BBPreleaseref(b->batCacheid);
@@ -1851,7 +1787,7 @@ BKCisSynced(bit *ret, int *bid1, int *bid2)
 		BBPreleaseref(b1->batCacheid);
 		throw(MAL, "bat.isSynced", RUNTIME_OBJECT_MISSING);
 	}
-	CMDsynced(ret, b1, b2);
+	*ret = ALIGNsynced(b1, b2) ? 1 : 0;
 	BBPreleaseref(b1->batCacheid);
 	BBPreleaseref(b2->batCacheid);
 	return MAL_SUCCEED;
@@ -2071,14 +2007,22 @@ BKCsave2(int *r, int *bid)
 str
 BKCmmap(bit *res, int *bid, int *hbns, int *tbns, int *hhp, int *thp)
 {
-	BAT *b, *bn = NULL;
+	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.mmap", RUNTIME_OBJECT_MISSING);
 	}
-	if (CMDmmap(&bn, b, hbns, tbns, hhp, thp) == GDK_SUCCEED) {
+	/* == int_nil means no change */
+	if (*hbns == int_nil)
+		*hbns = b->batMaphead;
+	if (*tbns == int_nil)
+		*tbns = b->batMaptail;
+	if (b->H->vheap && *hhp == int_nil)
+		*hhp = b->batMaphheap;
+	if (b->T->vheap && *thp == int_nil)
+		*thp = b->batMaptheap;
+	if (BATmmap(b, *hbns, *tbns, *hhp, *thp, 0) == 0) {
 		*res = TRUE;
-		BBPreleaseref(bn->batCacheid);
 		BBPreleaseref(b->batCacheid);
 		return MAL_SUCCEED;
 	}
