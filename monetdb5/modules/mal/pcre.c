@@ -232,7 +232,6 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (ignore) {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
@@ -248,7 +247,6 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 				BUNfastins(r, BUNhead(strsi, p), NULL);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -273,7 +271,6 @@ re_select(RE *pattern, BAT *strs, int ignore)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (ignore) {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
@@ -289,7 +286,6 @@ re_select(RE *pattern, BAT *strs, int ignore)
 				BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -532,7 +528,6 @@ pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
@@ -540,7 +535,6 @@ pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 			BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	my_pcre_free(re);
 	*res = r;
@@ -574,7 +568,6 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 	if (err_p)
 		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 		int l = (int) strlen(s);
@@ -583,7 +576,6 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 			BUNfastins(r, BUNhead(strsi, p), NULL);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -758,7 +750,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	}
 
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
-	BATaccessBegin(origin_strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
 		len_origin_str = (int) strlen(origin_str);
@@ -816,7 +807,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			BUNins(tmpbat, BUNhead(origin_strsi, p), origin_str, FALSE);
 		}
 	}
-	BATaccessEnd(origin_strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
@@ -1370,7 +1360,6 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
-		BATaccessBegin(strs,USE_TAIL,MMAP_SEQUENTIAL);
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BATloop(strs, p, q) {
 				str s = (str)BUNtail(strsi, p);
@@ -1419,7 +1408,6 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			}
 			my_pcre_free(re);
 		}
-		BATaccessEnd(strs,USE_TAIL,MMAP_SEQUENTIAL);
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;

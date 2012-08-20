@@ -103,12 +103,6 @@ All Rights Reserved.
 	}
 	/* scan b, adding sums, and incrementing counts */
 	bhsb = b->hseqbase - 1;
-#if @1
-	if (!sums)
-#endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (b_use)
-		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			@6 *t = (@6*) BUNt@7(bi,p);
@@ -140,17 +134,10 @@ All Rights Reserved.
 			}
 		}
 	}
-	if (b_use)
-		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-#if @1
-	if (!sums)
-#endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	/* postprocess by dividing sums by counts */
 #if @1
 	if (sums) {
 		/* sums in sums-array */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			dbl *dst = (dbl*) BUNt@7(bni, p);
@@ -160,14 +147,12 @@ All Rights Reserved.
 				*dst = (dbl) (sums[h]/cnt[h]);
 			}
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(sums);
 	}
 #else
 	{
 		/* sums in-place */
 		BUN yy = 0;
-		BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			dbl *dst = (dbl*) BUNt@7(bni, p);
 			if (cnt[yy] == 0) {
@@ -177,7 +162,6 @@ All Rights Reserved.
 			}
 			yy++;
 		}
-		BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 #endif
 	if (cnt)
@@ -207,7 +191,6 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	dbl zero = (dbl) 0, *sums = NULL;
 	BUN p, q, r;
 	oid bhsb;
-	int b_use = USE_TAIL;
 
 	if( bn == NULL) {
 		GDKerror("CMDaggrX3_avg_@1(): BATnew() failed");
@@ -229,8 +212,6 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
-	if (!BAThdense(b))
-		b_use |= USE_HEAD;
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {

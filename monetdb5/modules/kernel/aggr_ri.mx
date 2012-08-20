@@ -46,7 +46,6 @@ All Rights Reserved.
 			BUN _i = 0;
 			oid *eh = (oid*)Hloc(e,BUNfirst(e));
 			min = max = eh[0];
-			BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 			for (_i = 0; _i < _cnt; _i++) {
 				if (eh[_i] < min)
 					min = eh[_i];
@@ -54,7 +53,6 @@ All Rights Reserved.
 				if (eh[_i] > max)
 					max = eh[_i];
 			}
-			BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		}
 	}
 #if TYPE_@1 != TYPE_void
@@ -62,10 +60,8 @@ All Rights Reserved.
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
 	BUN _i = 0;
 	@1 *bnt = (@1*)Tloc(bn,BUNfirst(bn));
-	BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
 	for (_i = 0; _i < _cnt; _i++)
 		bnt[_i] = zero;
-	BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
 }
 #endif
 	BATsetcount(bn, _cnt);

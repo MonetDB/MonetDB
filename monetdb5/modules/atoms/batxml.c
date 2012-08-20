@@ -80,7 +80,6 @@ BATXMLxml2str(int *ret, int *bid)
 	prepareOperand(b, bid, "str");
 	prepareResult(bn, b, TYPE_str, "str");
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
@@ -93,11 +92,9 @@ BATXMLxml2str(int *ret, int *bid)
 			bunfastins(bn, h, t + 1);
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.str", OPERATION_FAILED " During bulk coercion");
@@ -118,7 +115,6 @@ BATXMLxmltext(int *ret, int *bid)
 	prepareOperand(b, bid, "text");
 	prepareResult(bn, b, TYPE_str, "text");
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
@@ -181,7 +177,6 @@ BATXMLxmltext(int *ret, int *bid)
 			GDKfree(content);
 		content = NULL;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -189,7 +184,6 @@ BATXMLxmltext(int *ret, int *bid)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -1113,7 +1107,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	first = 1;
 	gid = 0;
 	ri = bat_iterator(r);
-	BATaccessBegin(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(r, p, q) {
 		int n;
 
@@ -1156,7 +1149,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 		}
 		offset += n;
 	}
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	/* end the leftover element */
 	if (!first) {
 		bunfastins(bn, &gid, buf);
@@ -1174,7 +1166,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPunfix(r->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
@@ -1221,7 +1212,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	first = 1;
 	gid = 0;
 	ri = bat_iterator(r);
-	BATaccessBegin(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(r, p, q) {
 		int n;
 
@@ -1267,7 +1257,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 		}
 		offset += n;
 	}
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	/* end the leftover element */
 	if (!first) {
 		bunfastins(bn, &gid, buf);
@@ -1286,7 +1275,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPunfix(bn->batCacheid);
 	BBPunfix(r->batCacheid);
 	if ( buf != NULL)
@@ -1312,7 +1300,6 @@ BATXMLgroup(xml *ret, int *bid)
 	strcpy(buf, str_nil);
 	offset = 0;
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		int n;
 
@@ -1344,12 +1331,10 @@ BATXMLgroup(xml *ret, int *bid)
 		}
 		offset += n;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
   failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);

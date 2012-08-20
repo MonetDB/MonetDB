@@ -2239,8 +2239,6 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
     	o = (oid*)Tloc(bs, BUNfirst(bs));
     	ol= (oid*)Tloc(bs, BUNlast(bs));
 
-	BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
 	case TYPE_bte: shrinkloop(bte) break;
 	case TYPE_sht: shrinkloop(sht) break;
@@ -2275,8 +2273,6 @@ BKCshrinkBAT(int *ret, int *bid, int *did)
 			}
 		}
 	}
-	BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, cnt);
 	BATseqbase(bn, 0);
@@ -2338,7 +2334,6 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 
 	lim = BATcount(b);
 
-    BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	for (;oidx<lim; oidx++) {
 		if ( o < ol && *o == oidx ){
 			o++;
@@ -2346,7 +2341,6 @@ BKCshrinkBATmap(int *ret, int *bid, int *did)
 			*r++ = oidx;
 		}
 	}
-    BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b)-BATcount(d));
 	BATseqbase(bn, b->hseqbase);
@@ -2416,8 +2410,6 @@ BKCreuseBAT(int *ret, int *bid, int *did)
     	o = (oid*)Tloc(bs, BUNfirst(bs));
     	ol= (oid*)Tloc(bs, BUNlast(bs))-1;
 
-    BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch(ATOMstorage(b->ttype) ){
 	case TYPE_bte: reuseloop(bte) break;
 	case TYPE_sht: reuseloop(sht) break;
@@ -2456,8 +2448,6 @@ BKCreuseBAT(int *ret, int *bid, int *did)
 			}
 		}
 	}
-    BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b) - BATcount(d));
 	BATseqbase(bn, b->hseqbase);
@@ -2510,7 +2500,6 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
     ol= (oid*)Tloc(d, BUNlast(d));
     r = (oid*)Tloc(bn, BUNfirst(bn));
 
-    BATaccessBegin(d, USE_TAIL, MMAP_SEQUENTIAL);
 	for (;oidx<bidx; oidx++) {
 		if ( *o == oidx ){
 			while ( ol > o && *--ol == bidx) {
@@ -2522,7 +2511,6 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 		} else
 			*r++ = oidx; 
 	}
-    BATaccessEnd(d, USE_TAIL, MMAP_SEQUENTIAL);
 
     BATsetcount(bn, BATcount(b)-BATcount(d));
 	BATseqbase(bn, b->hseqbase);

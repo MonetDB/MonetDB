@@ -1728,7 +1728,6 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 	BUN r, s;
 	BATiter ui = bat_iterator(u);
 
-	BATaccessBegin(u, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
 		const void *val = BUNtail(ui, r);
@@ -1737,7 +1736,6 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 			return BUN_NONE;
 		nr++;
 	}
-	BATaccessEnd(u, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return nr;
 }
 
@@ -2905,7 +2903,6 @@ BATassertHeadProps(BAT *b)
 			int cmpprv = b->hsorted | b->hrevsorted | b->hkey;
 			int cmpnil = b->H->nonil | b->H->nil;
 
-			BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 			BATloop(b, p, q) {
 				valp = BUNhead(bi, p);
 				if (prev && cmpprv) {
@@ -2938,7 +2935,6 @@ BATassertHeadProps(BAT *b)
 				}
 				prev = valp;
 			}
-			BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 		} else {	/* b->hkey && !b->hsorted && !b->hrevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
@@ -3119,7 +3115,6 @@ BATderiveHeadProps(BAT *b, int expensive)
 	key = 1;
 	sorted = revsorted = (BATatoms[b->htype].linear != 0);
 	dense = (b->htype == TYPE_oid);
-	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
 	 * them later */
@@ -3249,7 +3244,6 @@ BATderiveHeadProps(BAT *b, int expensive)
 			hs->hash[prb] = p;
 		}
 	}
-	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 	if (hs) {
 		if (hp->storage == STORE_MEM)
 			HEAPfree(hp);

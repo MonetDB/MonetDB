@@ -123,8 +123,6 @@ BATcalcnot(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		if (b->T->type == TYPE_bit) {
@@ -147,8 +145,6 @@ BATcalcnot(BAT *b)
 		GDKerror("BATcalcnot: type %s not supported.\n", ATOMname(b->T->type));
 		return NULL;
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -242,8 +238,6 @@ BATcalcnegate(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, NEGATE);
@@ -268,8 +262,6 @@ BATcalcnegate(BAT *b)
 		GDKerror("BATcalcnegate: type %s not supported.\n", ATOMname(b->T->type));
 		return NULL;
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -372,8 +364,6 @@ BATcalcabsolute(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, ABSOLUTE);
@@ -399,8 +389,6 @@ BATcalcabsolute(BAT *b)
 			 ATOMname(b->T->type));
 		return NULL;
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -501,8 +489,6 @@ BATcalciszero(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
@@ -528,8 +514,6 @@ BATcalciszero(BAT *b)
 			 ATOMname(b->T->type));
 		return NULL;
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -628,8 +612,6 @@ BATcalcsign(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
@@ -655,8 +637,6 @@ BATcalcsign(BAT *b)
 			 ATOMname(b->T->type));
 		return NULL;
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -777,8 +757,6 @@ BATcalcisnil(BAT *b)
 	dst = (bit *) Tloc(bn, bn->U->first);
 
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	t = b->T->type;
 	nil = ATOMnilptr(t);
 	atomcmp = BATatoms[t].atomCmp;
@@ -818,8 +796,6 @@ BATcalcisnil(BAT *b)
 		break;
 	}
 	}
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
@@ -1760,16 +1736,10 @@ BATcalcadd(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = add_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcadd");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1814,14 +1784,10 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcaddcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1866,14 +1832,10 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstadd");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1929,14 +1891,10 @@ BATcalcincr(BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  &one, TYPE_bte, 0,
 				  Tloc(bn, bn->U->first), bn->T->type,
 				  b->U->count, abort_on_error, "BATcalcincr");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -2890,16 +2848,10 @@ BATcalcsub(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = sub_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcsub");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -2939,14 +2891,10 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcsubcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -2991,14 +2939,10 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstsub");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -3055,14 +2999,10 @@ BATcalcdecr(BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  &one, TYPE_bte, 0,
 				  Tloc(bn, bn->U->first), bn->T->type,
 				  b->U->count, abort_on_error, "BATcalcdecr");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4097,16 +4037,10 @@ BATcalcmul(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mul_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcmul");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4146,14 +4080,10 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mul_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmulcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4208,14 +4138,10 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmul");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5267,16 +5193,10 @@ BATcalcdiv(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = div_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcdiv");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5316,14 +5236,10 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = div_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcdivcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5381,14 +5297,10 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstdiv");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6253,16 +6165,10 @@ BATcalcmod(BAT *b1, BAT *b2, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mod_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcmod");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6302,14 +6208,10 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mod_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmodcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6349,14 +6251,10 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmod");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6468,18 +6366,12 @@ BATcalcxor(BAT *b1, BAT *b2)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = xor_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				  Tloc(b2, b2->U->first), 1,
 				  Tloc(bn, bn->U->first),
 				  b1->T->type, b1->U->count,
 				  b1->T->nonil && b2->T->nonil,
 				  "BATcalcxor");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6524,16 +6416,12 @@ BATcalcxorcst(BAT *b, const ValRecord *v)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = xor_typeswitchloop(Tloc(b, b->U->first), 1,
 				  VALptr(v), 0,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcxorcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6578,16 +6466,12 @@ BATcalccstxor(const ValRecord *v, BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = xor_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstxor");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6718,18 +6602,12 @@ BATcalcor(BAT *b1, BAT *b2)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = or_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				 Tloc(b2, b2->U->first), 1,
 				 Tloc(bn, bn->U->first),
 				 b1->T->type, b1->U->count,
 				 b1->T->nonil && b2->T->nonil,
 				 "BATcalcor");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6774,16 +6652,12 @@ BATcalcorcst(BAT *b, const ValRecord *v)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = or_typeswitchloop(Tloc(b, b->U->first), 1,
 				 VALptr(v), 0,
 				 Tloc(bn, bn->U->first), b->T->type,
 				 b->U->count,
 				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalcorcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6828,16 +6702,12 @@ BATcalccstor(const ValRecord *v, BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = or_typeswitchloop(VALptr(v), 0,
 				 Tloc(b, b->U->first), 1,
 				 Tloc(bn, bn->U->first), b->T->type,
 				 b->U->count,
 				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalccstor");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6964,18 +6834,12 @@ BATcalcand(BAT *b1, BAT *b2)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = and_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				  Tloc(b2, b2->U->first), 1,
 				  Tloc(bn, bn->U->first),
 				  b1->T->type, b1->U->count,
 				  b1->T->nonil && b2->T->nonil,
 				  "BATcalcand");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7020,16 +6884,12 @@ BATcalcandcst(BAT *b, const ValRecord *v)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = and_typeswitchloop(Tloc(b, b->U->first), 1,
 				  VALptr(v), 0,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcandcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7074,16 +6934,12 @@ BATcalccstand(const ValRecord *v, BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = and_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
 				  Tloc(bn, bn->U->first), b->T->type,
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstand");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7244,17 +7100,11 @@ BATcalclsh(BAT *b1, BAT *b2, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = lsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b1->U->count, abort_on_error,
 				  "BATcalclsh");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7294,15 +7144,11 @@ BATcalclshcst(BAT *b, const ValRecord *v, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = lsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalclshcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7342,15 +7188,11 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalccstlsh");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7505,17 +7347,11 @@ BATcalcrsh(BAT *b1, BAT *b2, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = rsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b1->U->count, abort_on_error,
 				  "BATcalcrsh");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7555,15 +7391,11 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = rsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalcrshcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7603,15 +7435,11 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalccstrsh");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -8129,9 +7957,6 @@ BATcalclt(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -8141,9 +7966,6 @@ BATcalclt(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalclt");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -8164,8 +7986,6 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcltcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -8174,8 +7994,6 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcltcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -8196,8 +8014,6 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstlt") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -8206,8 +8022,6 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstlt");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -8710,9 +8524,6 @@ BATcalcgt(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -8722,9 +8533,6 @@ BATcalcgt(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcgt");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -8745,8 +8553,6 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcgtcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -8755,8 +8561,6 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgtcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -8777,8 +8581,6 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstgt") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -8787,8 +8589,6 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstgt");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -9291,9 +9091,6 @@ BATcalcle(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -9303,9 +9100,6 @@ BATcalcle(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcle");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -9326,8 +9120,6 @@ BATcalclecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalclecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -9336,8 +9128,6 @@ BATcalclecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalclecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -9358,8 +9148,6 @@ BATcalccstle(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstle") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -9368,8 +9156,6 @@ BATcalccstle(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstle");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -9872,9 +9658,6 @@ BATcalcge(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -9884,9 +9667,6 @@ BATcalcge(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcge");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -9907,8 +9687,6 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcgecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -9917,8 +9695,6 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -9939,8 +9715,6 @@ BATcalccstge(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstge") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -9949,8 +9723,6 @@ BATcalccstge(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstge");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -10452,9 +10224,6 @@ BATcalceq(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -10464,9 +10233,6 @@ BATcalceq(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalceq");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -10487,8 +10253,6 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalceqcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -10496,8 +10260,6 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalceqcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -10518,8 +10280,6 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccsteq") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(VALptr(v), v->vtype, 0, NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
@@ -10527,8 +10287,6 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccsteq");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11030,9 +10788,6 @@ BATcalcne(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -11042,9 +10797,6 @@ BATcalcne(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcne");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -11065,8 +10817,6 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcnecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -11075,8 +10825,6 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcnecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11097,8 +10845,6 @@ BATcalccstne(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstne") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -11107,8 +10853,6 @@ BATcalccstne(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstne");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11613,9 +11357,6 @@ BATcalccmp(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bte, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			       b1->T->vheap ? b1->T->vheap->base : NULL,
 			       b1->T->width,
@@ -11625,9 +11366,6 @@ BATcalccmp(BAT *b1, BAT *b2)
 			       b1->U->count,
 			       b1->T->nonil && b2->T->nonil,
 			       b1->H->seq, "BATcalccmp");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b1->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b1, bn);
@@ -11648,8 +11386,6 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalccmpcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(Tloc(b, b->U->first), b->T->type, 1,
 			       b->T->vheap ? b->T->vheap->base : NULL,
 			       b->T->width,
@@ -11658,8 +11394,6 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 			       b->U->count,
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccmpcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11680,8 +11414,6 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstcmp") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(VALptr(v), v->vtype, 0,
 			       NULL, 0,
 			       Tloc(b, b->U->first), b->T->type, 1,
@@ -11690,8 +11422,6 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 			       b->U->count,
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccstcmp");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11853,10 +11583,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 		return BATconst(b, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -11868,10 +11594,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetween");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(hi, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11898,8 +11620,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -11907,8 +11627,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11934,9 +11652,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -11946,9 +11661,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweenbatcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -11974,9 +11686,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -11986,9 +11695,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstbat");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(hi, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
@@ -13086,7 +12792,6 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 	src = Tloc(b, b->U->first);
 	cnt = b->U->count;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch (b->T->type) {
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
@@ -13111,7 +12816,6 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 			 ATOMname(b->T->type));
 		return GDK_FAIL;
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;

@@ -477,8 +477,6 @@ LSSTxmatch(int *ret, int *lid, int *rid, int *delta)
 	bn->H->nonil = 1;
 
 
-    BATaccessBegin(bl, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessBegin(br, USE_TAIL, MMAP_SEQUENTIAL);
 	for(; l < lend; lo++, l++) 
 	if ( *l != lng_nil) {
 		lhtm = *l >> shift;
@@ -502,8 +500,6 @@ LSSTxmatch(int *ret, int *lid, int *rid, int *delta)
 				}
 			}
 	}
-    BATaccessEnd(bl, USE_TAIL, MMAP_SEQUENTIAL);
-    BATaccessEnd(br, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;

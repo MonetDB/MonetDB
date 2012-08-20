@@ -295,7 +295,6 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 		return " Illegal number of rotate bits";
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	br = BATnew(TYPE_void, TYPE_wrd, BATcount(b));
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
@@ -390,7 +389,6 @@ CMDconstbulk_rotate_xor_hash(BAT **res, wrd *hsh, int *rotate, BAT *b)
 			dst++;
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(br, BATcount(b));
 	br->hrevsorted = br->batCount <= 1;
@@ -508,7 +506,6 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 		return " Illegal number of rotate bits";
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	br = BATnew(TYPE_void, TYPE_wrd, BATcount(bn));
 	if (br == NULL) {
 #ifdef _DEBUG_MKEY_
@@ -611,7 +608,6 @@ CMDbulk_rotate_xor_hash(BAT **res, BAT *bn, int *rotate, BAT *b)
 			src++;
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	BATsetcount(br, BATcount(bn));
 	br->hrevsorted = br->batCount <= 1;

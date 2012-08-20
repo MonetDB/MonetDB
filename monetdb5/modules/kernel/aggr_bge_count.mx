@@ -94,7 +94,6 @@ All Rights Reserved.
 	bhsb = b->hseqbase;
 	btt = b->ttype;
 	if (*ignore_nils && !b->T->nonil) {
-		b_use |= USE_TAIL;
 		switch(ATOMstorage(btt)) {
 		case TYPE_bte:
 			@:aggrX3_count3_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,bte)))@
@@ -140,12 +139,10 @@ All Rights Reserved.
 #if @1
 	if (cnt) {
 		/* copy cnt array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			*(wrd*)BUNtloc(bni, p) = cnt[h];
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(cnt);
 	}
 #endif
@@ -159,9 +156,7 @@ All Rights Reserved.
 	if (BATtdense(g)) {
 		@:aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
-		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 		@:aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,oid *h = (oid*) Tloc(g, w))@
-		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	break;
 @
@@ -172,12 +167,6 @@ All Rights Reserved.
 */
 @= aggrX3_count3_loop_body
 	ALGODEBUG fprintf(stderr, "#aggrX3_count3_loop_body(@1,@2,@3,@4,@5,@6,@7,@8);\n");
-#if @1
-	if (!cnt)
-#endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (b_use)
-		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid v = *(oid*) @5;
 
@@ -194,12 +183,6 @@ All Rights Reserved.
 			}
 		}
 	}
-	if (b_use)
-		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-#if @1
-	if (!cnt)
-#endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 @
 @h
 int
@@ -217,7 +200,6 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t gh_offset, gt_offset;
-	int b_use = 0;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
@@ -263,8 +245,6 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	bn->T->nonil = 1;
 	range = max - min + 1;
 
-	if (!BAThdense(b))
-		b_use |= USE_HEAD;
 	/* scan b & g, and calculate counts */
 	if (e->htype == TYPE_void) {
 		/* void lookup */

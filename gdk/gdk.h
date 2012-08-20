@@ -1165,9 +1165,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL); \
 				GDKupgradevarheap((b)->HT, _d, (copyall)); \
-				BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->HT->width) {			\
@@ -1597,8 +1595,6 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-#define BATaccessBegin(b,what,advice) ((void) 0)
-#define BATaccessEnd(b,what,advice) ((void) 0)
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);

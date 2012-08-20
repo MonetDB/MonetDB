@@ -3222,8 +3222,6 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
 		throw(SQL,"sql.append","Table missing");
-	if (tpe == TYPE_bat)
-		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.append_col(m->session->tr, c, ins, tpe);
 	} else if (cname[0] == '%') {
@@ -3232,7 +3230,6 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			store_funcs.append_idx(m->session->tr, i, ins, tpe);
 	}
 	if (tpe == TYPE_bat) {
-		BATaccessEnd((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 		BBPunfix(((BAT*)ins)->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -3269,8 +3266,6 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if ( t == NULL)
 		throw(SQL,"sql.update","Table missing");
-	if (tpe == TYPE_bat)
-		BATaccessBegin((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
 	} else if (cname[0] == '%') {
@@ -3279,7 +3274,6 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			store_funcs.update_idx(m->session->tr, i, ins, tpe);
 	}
 	if (tpe == TYPE_bat) {
-		BATaccessEnd((BAT*)ins, USE_ALL, MMAP_SEQUENTIAL);	
 		BBPunfix(((BAT*)ins)->batCacheid);
 	}
 	return MAL_SUCCEED;
@@ -4383,12 +4377,10 @@ batnil_2dec_@1( int *res, int *bid, int *d, int *sc )
 		throw(SQL, "sql.dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@1 r = @1_nil;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -4412,7 +4404,6 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 		throw(SQL, "sql.dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@1 r;
@@ -4421,7 +4412,6 @@ batstr_2dec_@1( int *res, int *bid, int *d, int *sc )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4452,7 +4442,6 @@ batstr_2num_@1( int *res, int *bid, int *len )
 		throw(SQL, "sql.num_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@1 r;
@@ -4461,7 +4450,6 @@ batstr_2num_@1( int *res, int *bid, int *len )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4627,7 +4615,6 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 		throw(SQL, "sql.@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@3 *v = (@3*)BUNtail(bi,p);
 		union {
@@ -4639,7 +4626,6 @@ bat@2_2time_@1( int *res, int *bid, int *digits )
 			break;
 		BUNins(dst, BUNhead(bi,p), &u.r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4753,8 +4739,7 @@ SQLbat_alpha(bat *res, bat *decl, dbl *theta)
         throw(SQL, "sql.alpha", MAL_MALLOC_FAIL);
     }
     BATseqbase(bn, b->hseqbase);
-    BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	s = sin(radians(*theta));
+    s = sin(radians(*theta));
     BATloop(b,p,q) {
         dbl d = *(dbl*)BUNtail(bi,p);
 	    if (d == dbl_nil)
@@ -4768,7 +4753,6 @@ SQLbat_alpha(bat *res, bat *decl, dbl *theta)
         }
         BUNins(bn, BUNhead(bi,p), &r, FALSE);
     }
-    BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
     BBPkeepref( *res = bn->batCacheid);
     BBPunfix(b->batCacheid);
     return msg;
@@ -4842,12 +4826,10 @@ batnil_2_@1( int *res, int *bid )
 		throw(SQL, "sql.2_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@3 r = @6;
 		BUNins(dst, BUNhead(bi,p), @5 r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -4871,7 +4853,6 @@ batstr_2_@1( int *res, int *bid )
 		throw(SQL, "sql.2_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		str v = (str)BUNtail(bi,p);
 		@3 r;
@@ -4880,7 +4861,6 @@ batstr_2_@1( int *res, int *bid )
 			break;
 		BUNins(dst, BUNhead(bi,p), @5 r, FALSE);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -4973,7 +4953,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_cast", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		ptr v = (ptr)BUNtail(bi,p);
 		msg = SQLstr_cast_( &r, m, *eclass, *d1, *s1, *has_tz, v, b->ttype, *digits);
@@ -4982,7 +4961,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(dst, BUNhead(bi,p), r, FALSE);
 		GDKfree(r);
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5025,7 +5003,6 @@ str bat@2_2_@1( int *res, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil) {
 		for (; p<q; p++, o++)
 			*o = (@1)*p;
@@ -5037,7 +5014,6 @@ str bat@2_2_@1( int *res, int *bid )
 			} else
 				*o = (@1)*p;
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
@@ -5105,7 +5081,6 @@ str bat@2_2_@1( int *res, int *bid )
 	o = (@1*) Tloc(bn,BUNfirst(bn));
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++){
 			val = *p;
@@ -5134,7 +5109,6 @@ str bat@2_2_@1( int *res, int *bid )
 			}
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
@@ -5248,7 +5222,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		if (scale)
 			for (; p<q; p++, o++)
@@ -5268,7 +5241,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
@@ -5307,7 +5279,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5316,7 +5287,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5338,7 +5308,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5347,7 +5316,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5426,7 +5394,6 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5435,7 +5402,6 @@ bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5543,7 +5509,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) 
 			*o = (((@1)*p)/scales[scale]);
@@ -5556,7 +5521,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				*o = (((@1)*p)/scales[scale]);
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
@@ -5595,7 +5559,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5604,7 +5567,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5627,7 +5589,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5636,7 +5597,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5752,7 +5712,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 	p = (@2*) Tloc(b, BUNfirst(b));
 	q = (@2*) Tloc(b, BUNlast(b));
 	bn->T->nonil = 1;
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( b->T->nonil){
 		for (; p<q; p++, o++) {
 			if (scale) 
@@ -5763,7 +5722,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			if (val > GDK_@1_min && val <= GDK_@1_max)
 				*o = (@1)val;
 			else {
-				BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 				BBPreleaseref(b->batCacheid);
 				BBPreleaseref(bn->batCacheid);
 				throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
@@ -5783,7 +5741,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 				if (val > GDK_@1_min && val <= GDK_@1_max)
 					*o = (@1)val;
 				else {
-					BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 					BBPreleaseref(b->batCacheid);
 					BBPreleaseref(bn->batCacheid);
 					throw(SQL, "convert", "22003!value (" LLFMT ") exceeds limits of type @1", (lng) val);
@@ -5791,7 +5748,6 @@ str bat@2_dec2_@1( int *res, int *s1, int *bid )
 			}
 		}
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATsetcount(bn, BATcount(b));
 	bn->hrevsorted = bn->batCount <= 1;
 	bn->tsorted = 0;
@@ -5830,7 +5786,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 		throw(SQL, "sql.dec2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5839,7 +5794,6 @@ str bat@2_dec2dec_@1( int *res, int *S1, int *bid, int *d2, int *S2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -5862,7 +5816,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 		throw(SQL, "sql.num2dec_@1", MAL_MALLOC_FAIL);
 	}
 	BATseqbase(dst, b->hseqbase);
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(b,p,q) {
 		@2 *v = (@2*)BUNtail(bi,p);
 		@1 r;
@@ -5871,7 +5824,6 @@ str bat@2_num2dec_@1( int *res, int *bid, int *d2, int *s2 )
 			break;
 		BUNins(dst, BUNhead(bi,p), &r, FALSE);
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPkeepref( *res = dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;

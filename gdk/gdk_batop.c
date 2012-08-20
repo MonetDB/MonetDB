@@ -308,8 +308,6 @@ BATins(BAT *b, BAT *n, bit force)
 	     (BATcount(n) && n->ttype != TYPE_void && !n->tdense))) {
 		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
@@ -418,8 +416,6 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	res = b;
       bunins_failed:
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (tmp)
 		BBPreclaim(tmp);
 	return res;
@@ -447,8 +443,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
 		/* if needed space exceeds a normal growth extend just
@@ -669,12 +663,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	b->H->nonil &= n->H->nonil;
 	b->T->nonil &= n->T->nonil;
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return b;
       bunins_failed:
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return NULL;
 }
 

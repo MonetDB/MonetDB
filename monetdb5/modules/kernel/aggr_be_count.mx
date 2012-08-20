@@ -89,7 +89,6 @@ All Rights Reserved.
 	bhsb = b->hseqbase-1;
 	btt = b->ttype;
 	if (*ignore_nils && !b->T->nonil) {
-		b_use |= USE_TAIL;
 		switch(ATOMstorage(btt)) {
 		case TYPE_bte:
 			@:aggrX3_count_loop(@1,@2,@3,@4,@5,@6,if (!simple_EQ(BUNtloc(bi,p),bt_nil,bte)))@
@@ -135,12 +134,10 @@ All Rights Reserved.
 #if @1
 	if (cnt) {
 		/* copy cnt array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			*(wrd*)BUNtloc(bni, p) = cnt[h];
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(cnt);
 	}
 #endif
@@ -152,12 +149,6 @@ All Rights Reserved.
 */
 @= aggrX3_count_loop
 	ALGODEBUG fprintf(stderr, "#aggrX3_count_loop(@1,@2,@3,@4,@5,@6,@7);\n");
-#if @1
-	if (!cnt)
-#endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (b_use)
-		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		@7 {
 			oid *h = (oid*) @5;
@@ -169,12 +160,6 @@ All Rights Reserved.
 			}
 		}
 	}
-	if (b_use)
-		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-#if @1
-	if (!cnt)
-#endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BAThordered(b)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 	break;
 @
 @h
@@ -191,7 +176,6 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	oid range;
 	oid min, max;
 	oid bhsb;
-	int b_use = 0;
 	int btt;
 	ptr bt_nil = ATOMnilptr(b->ttype);
 
@@ -226,8 +210,6 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	bni = bat_iterator(bn);
 	range = max - min + 1;
 
-	if (!BAThdense(b))
-		b_use |= USE_HEAD;
 	/* scan b, and calculate counts */
 	if (e->htype == TYPE_void) {
 		/* void lookup */
@@ -296,21 +278,18 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 	bn->tsorted = bn->trevsorted = 0;
 	bn->hsorted = bn->hrevsorted = 0;
 	ALIGNsetH(bn, e);
-	BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
 	BATloop(e, p, q) {
 		if (BUNfastins(bn, BUNhead(ei, p), &zero) == NULL) {
 			BBPreclaim(bn);
 			return GDK_FAIL;
 		}
 	}
-	BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 	/* scan b, and add increment totals for true values */
 	if (BATprepareHash(bn)) {
 		GDKerror("CMDaggrX3_size(): BATprepareHash(bn) failed");
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		if (*(bit *) BUNtloc(bi, p) == TRUE) {
 			oid *h = (oid *) BUNhead(bi, p);
@@ -323,7 +302,6 @@ CMDaggrX3_size(BAT **ret, BAT *b, BAT *e)
 			}
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	*ret = bn;
 	return GDK_SUCCEED;
 }
