@@ -24,7 +24,7 @@ CALL datacell.basket('datacell.sensors');
 -- administer the fire state in locations
 CREATE TABLE datacell.states(
 	location varchar(5),
-	time timestamp,
+	time timestamp default now(),
 	status varchar(20) default 'normal'
 );
 
@@ -52,6 +52,11 @@ BEGIN
 	IF cnt = 0
 	THEN
 		INSERT INTO datacell.area SELECT ip, substring(location,0,3) FROM datacell.istream;
+	END IF;
+	SET cnt = (SELECT count(*) FROM datacell.states A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
+	IF cnt = 0
+	THEN
+		INSERT INTO datacell.states SELECT substring(location,0,3), now(), 'normal' FROM datacell.istream;
 	END IF;
 END;
 CALL datacell.query('datacell.enrich');
@@ -92,20 +97,46 @@ call datacell.query('datacell.splitter');
 -- unconfirmed fire detection based 
 CREATE PROCEDURE datacell.firewarning()
 BEGIN
-	INSERT into datacell.states
-	SELECT A.location, H.time, 'unconfirmed' 
-	FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-	WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location;
+	DECLARE cnt INTEGER;
+	DECLARE loc varchar(5);
+
+	SET cnt = ( SELECT count(*)
+		FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+		WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
+
+	SET loc = ( SELECT A.location
+		FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+		WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
+
+	IF cnt =1 
+	THEN
+		UPDATE datacell.states
+		SET status = 'unconfirmed', time = now()
+		WHERE location = loc;
+	END IF;
 END;
 CALL datacell.query('datacell.firewarning');
 
 -- autoconfirm the fire warning 
 CREATE PROCEDURE datacell.firespotted()
 BEGIN
-	INSERT into datacell.states
-	SELECT S.location, H.time, 'confirmed' 
-	FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
-	WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location;
+	DECLARE cnt INTEGER;
+	DECLARE loc varchar(5);
+
+	SET cnt = ( SELECT count(*)
+		FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
+		WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location);
+
+	SET loc = ( SELECT A.location
+		FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
+		WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location);
+
+	IF cnt =1 
+	THEN
+		UPDATE datacell.states
+		SET status = 'confirmed', time = now()
+		WHERE location = loc;
+	END IF;
 END;
 CALL datacell.query('datacell.firespotted');
 
