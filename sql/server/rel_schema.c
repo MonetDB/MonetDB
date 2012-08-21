@@ -605,12 +605,16 @@ get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, in
 	return SQL_OK;
 }
 
+
+/* checks if 'tpe' is one of the SQL int types, i.e., TINYINT, SMALLINT, INT or BIGINT */
+#define isAnIntType(tpe, len) (tpe[len-3] == 'i' && tpe[len-2] == 'n' && tpe[len-1] == 't')
+
 static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
 	dlist *dim = NULL;
-	char *cname = l->h->data.sval;
+	char *cname = l->h->data.sval, *tname = NULL;
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
@@ -652,8 +656,6 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				cs->dim = ZNEW(sql_dimspec);
 				switch (dim->cnt) {
 					case 1: {/* [size], [-size], [seqname] */
-						size_t len = 0;
-						char *tname = NULL;
 						if(dim->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
 							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim->h->data.sval);
 							return SQL_ERR;
@@ -661,9 +663,8 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 						/* In cases [size] or [-size], the column's data type MUST be INT */
 						tname = ctype->type->sqlname;
-						len = strlen(tname);
-						if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
-							sql_error(sql, 02, "%s ARRAY: syntax short cut '[size]' only allowed for int typed dimensions, dimension column \"%s\" has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
+						if(!isAnIntType(tname, strlen(tname))) {
+							sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension column \"%s\" has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 							return SQL_ERR;
 						}
 
@@ -671,8 +672,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 						if (dim->h->data.lval->h->type == type_symbol){
 							if (dim->h->data.lval->h->data.sym) { 		/* the case: [size] */
 								tname = ((AtomNode*)dim->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
-								len = strlen(tname);
-								if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
+								if(!isAnIntType(tname, strlen(tname))) {
 									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 									return SQL_ERR;
 								}
@@ -689,8 +689,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
 
 							tname = ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
-							len = strlen(tname);
-							if(tname[len-3] != 'i' || tname[len-2] != 'n' || tname[len-1] != 't') {
+							if(!isAnIntType(tname, strlen(tname))) {
 								sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
 								return SQL_ERR;
 							}
@@ -706,7 +705,9 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							return res;
 						if((res = get_dim_constraints(sql, ctype, dim->h->next->data.lval, &cs->dim->stop, 0)) != SQL_OK)
 							return res;
-						cs->dim->step = GDKstrdup("");
+						tname = ctype->type->sqlname;
+						/* For int-typed dimensions, we allow [start:stop] to be the shortcut of [start:1:stop] */
+						cs->dim->step = isAnIntType(tname, strlen(tname)) ? GDKstrdup("1") : GDKstrdup("");
 						break;
 					case 3: /* [start:step:stop] */
 						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
@@ -720,7 +721,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", (alter)?"ALTER":"CREATE", cname, dim->cnt);
 						return SQL_ERR;
 				}
-			} else if (dim && dim->h->next) {
+			} else if (dim && dim->h->next) { /* TODO: the case "ARRAY dim_range_list" is not dealt with */
 				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
 				return SQL_ERR;
 			} else { /* "DIMENSION" case: only allocate space for empty [start:step:stop] */
@@ -731,8 +732,6 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			}
 			if (!(isFixedDim(cs->dim)))
 				t->fixed = 0;
-
-			/* TODO: the case "ARRAY dim_range_list" is not dealt with */
 		}
 		if (column_options(sql, opt_list, ss, t, cs) == SQL_ERR)
 			return SQL_ERR;
