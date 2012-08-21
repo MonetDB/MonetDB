@@ -126,8 +126,9 @@ static int timecolumn = -1;		/* use first column for derivation of delay */
 static char *host = "localhost";
 static int port = 50500;
 static int trace = 0;
+static int replay = 0;
 static char *sensor = "X";
-static char *datafile;
+static char *datafile= 0;
 static int server = 0;
 
 
@@ -146,7 +147,8 @@ usage(void)
 	mnstr_printf(SEout, "--timestamp, default=on\n");
 	mnstr_printf(SEout, "--columns=<number>, default=1\n");
 	mnstr_printf(SEout, "--events=<events length>, (-1=forever,>0), default=1\n");
-	mnstr_printf(SEout, "--file=<data file>\n");
+	mnstr_printf(SEout, "--file=<data file> \n");
+	mnstr_printf(SEout, "--replay use file or standard input\n");
 	mnstr_printf(SEout, "--time=<column> where to find the exact time\n");
 	mnstr_printf(SEout, "--batch=<batchsize> , default=1\n");
 	mnstr_printf(SEout, "--delay=<ticks> interbatch delay in ms, default=1\n");
@@ -198,7 +200,7 @@ int main(int argc, char **argv)
 	char hostname[1024];
 	Sensor se = NULL;
 	static SOCKET sockfd;
-	static struct option long_options[17] = {
+	static struct option long_options[18] = {
 		{ "increment", 0, 0, 'i' },
 		{ "batch", 1, 0, 'b' },
 		{ "columns", 1, 0, 'c' },
@@ -209,6 +211,7 @@ int main(int argc, char **argv)
 		{ "events", 1, 0, 'e' },
 		{ "sensor", 1, 0, 's' },
 		{ "server", 0, 0, 's' },
+		{ "replay", 0, 0, 'r' },
 		{ "delay", 1, 0, 'd' },
 		{ "file", 1, 0, 'f' },
 		{ "host", 1, 0, 'h' },
@@ -279,7 +282,7 @@ int main(int argc, char **argv)
 			}
 			break;
 		case 'f':
-			datafile = optarg;
+			datafile = optarg && *optarg? optarg:0;
 			break;
 		case 'e':
 			if (strcmp(long_options[option_index].name, "events") == 0) {
@@ -296,6 +299,9 @@ int main(int argc, char **argv)
 				usage();
 				exit(0);
 			}
+			break;
+		case 'r':
+			replay= 1;
 			break;
 		case 's':
 			if (strcmp(long_options[option_index].name, "sensor") == 0) {
@@ -372,6 +378,7 @@ int main(int argc, char **argv)
 		mnstr_printf(SEout, "--time=%d\n", timecolumn);
 		mnstr_printf(SEout, "--events=%d\n", events);
 		mnstr_printf(SEout, "--batch=%d\n", batchsize);
+		mnstr_printf(SEout, "--replay=%d\n", replay);
 		mnstr_printf(SEout, "--delay=%d\n", delay);
 		mnstr_printf(SEout, "--protocol %s\n", protocolname[protocol]);
 		mnstr_printf(SEout, "--trace=%d\n", trace);
@@ -612,18 +619,22 @@ produceDataStream(Sensor se)
 	int i, snr;
 	time_t lasttime;
 
-	/* read a events of messages from a file.
+	/* read a events of messages from a file or standard input.
 	   It is processed multiple times.
 	   The header is the delay imposed */
 
 	snr = 0;
 	do {
-		fd = fopen(datafile, "r");
-		if (fd == NULL) {
-			mnstr_printf(SEout, "Could not open file '%s'\n", datafile);
-			close_stream(se->toServer);
-			se->toServer = NULL;
-			return;
+		if ( datafile == 0){
+			fd = stdin;
+		} else {
+			fd = fopen(datafile, "r");
+			if (fd == NULL) {
+				mnstr_printf(SEout, "Could not open file '%s'\n", datafile);
+				close_stream(se->toServer);
+				se->toServer = NULL;
+				return;
+			}
 		}
 
 		/* read the event requests and sent when the becomes */
@@ -680,7 +691,7 @@ produceDataStream(Sensor se)
 static void
 produceServerStream(Sensor se)
 {
-	if (datafile)
+	if (replay)
 		produceDataStream(se);
 	else
 		produceStream(se);

@@ -66,6 +66,7 @@ EMfind(str nme)
 		if (strcmp(nme, r->name) == 0)
 			return r;
 	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	BSKTtolower(buf);
 	for (r = emAnchor; r; r = r->nxt)
 		if (strcmp(buf, r->name) == 0)
 			return r;
@@ -493,7 +494,8 @@ EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 		goto wrapup;
 	BATseqbase(status, 0);
 
-	for (; em; em = em->nxt){
+	for (; em; em = em->nxt)
+	if ( em->table.format[1].c[0]){
 		BUNappend(name, em->name, FALSE);
 		BUNappend(host, em->host, FALSE);
 		BUNappend(port, &em->port, FALSE);

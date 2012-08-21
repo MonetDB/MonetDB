@@ -119,6 +119,7 @@ BSKTlocate(str tbl)
 			return i;
 	/* try prefixing it with datacell */
 	snprintf(buf,BUFSIZ,"datacell.%s",tbl);
+	BSKTtolower(buf);
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].name && strcmp(buf, baskets[i].name) == 0)
 			return i;
