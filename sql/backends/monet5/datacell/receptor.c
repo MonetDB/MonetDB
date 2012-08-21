@@ -82,6 +82,7 @@ RCfind(str nme)
 		if (strcmp(nme, r->name) == 0)
 			return r;
 	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	BSKTtolower(buf);
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(buf, r->name) == 0)
 			return r;
@@ -103,6 +104,9 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 
 	if (RCfind(*tbl))
 		throw(MAL, "receptor.new", "Duplicate receptor");
+	idx = BSKTlocate(*tbl);
+	if (idx == 0) /* should not happen */
+		throw(MAL, "receptor.new", "Basket '%s' not found",*tbl);
 	for (rc = rcAnchor; rc; rc = rc->nxt)
 		if (rc->port == *port)
 			throw(MAL, "receptor.new", "Port already in use");
@@ -124,9 +128,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	rc->protocol = protocol;
 	rc->lastseen = *timestamp_nil;
 
-	rc->bskt = idx = BSKTlocate(*tbl);
-	if (idx == 0) /* should not happen */
-		throw(MAL, "receptor.new", "Basket not found");
+	rc->bskt = idx;
 	len = BSKTmemberCount(*tbl);
 	fmt = rc->table.format = GDKzalloc(sizeof(Column) * len);
 
@@ -744,7 +746,8 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 		goto wrapup;
 	BATseqbase(status, 0);
 
-	for (; rc; rc = rc->nxt){
+	for (; rc; rc = rc->nxt)
+	if ( rc->table.format[1].c[0]){
 		BUNappend(name, rc->name, FALSE);
 		BUNappend(host, rc->host, FALSE);
 		BUNappend(port, &rc->port, FALSE);
