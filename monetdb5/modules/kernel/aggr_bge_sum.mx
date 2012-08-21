@@ -113,29 +113,14 @@ All Rights Reserved.
 	end = base + BATcount(g);
 	(void) end;		/* keep compilers happy */
 	bhsb = b->hseqbase;
-#if @1
-	if (!sums)
-#endif
-		BATaccessBegin(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
-	if (b_use)
-		BATaccessBegin(b,b_use,MMAP_SEQUENTIAL);
 	if (BATtdense(g)) {
 		@:aggrX3_sum3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid hh = (oid) (gt_offset + v); oid *h = &hh)@
 	} else {
-		BATaccessBegin(g,USE_TAIL,MMAP_SEQUENTIAL);
 		@:aggrX3_sum3_body(@1,@2,@3,@4,@5,@6,@7,@8,@9,@[10],oid *h = (oid*) Tloc(g, w))@
-		BATaccessEnd(g,USE_TAIL,MMAP_SEQUENTIAL);
 	}
-	if (b_use)
-		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
-#if @1
-	if (!sums)
-#endif
-		BATaccessEnd(bn,USE_HEAD|USE_HHASH|USE_TAIL,BATtordered(g)&BAThordered(e)?MMAP_SEQUENTIAL:MMAP_WILLNEED);
 #if @1
 	if (sums) {
 		/* copy sums array to final result */
-		BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			oid h = (*(oid*) BUNh@4(bni,p)) - min;
 			@9 *dst = (@9*)BUNtloc(bni, p);
@@ -145,13 +130,11 @@ All Rights Reserved.
 				*dst = sums[h];
 			}
 		}
-		BATaccessEnd(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 		GDKfree(sums);
 	}
 #else
 	{
 		BUN yy = 0;
-		BATaccessBegin(bn,USE_TAIL,MMAP_SEQUENTIAL);
 		BATloop(bn, p, q) {
 			@9 *dst = (@9*)BUNtloc(bni, p);
 			if (hit[yy] == 0) {
@@ -159,7 +142,6 @@ All Rights Reserved.
 			}
 			yy++;
 		}
-		BATaccessEnd(bn,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 #endif
 	if (hit)
@@ -240,7 +222,6 @@ aggrX3_sum3_@1_@2_EarrayBvoidGvoid (BAT *bn, BAT *b, BAT *g, BAT *e, oid range, 
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t gh_offset, gt_offset;
-	int b_use = USE_TAIL;
 	BATiter bni = bat_iterator(bn), bi = bat_iterator(b);
 
 	ALGODEBUG fprintf(stderr, "#aggrX3_sum3_@1_@2_EarrayBvoidGvoid(bn=%s,b=%s,g=%s,e=%s,range=" OIDFMT ",min=" OIDFMT ",max=" OIDFMT ");\n",
@@ -264,7 +245,6 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 	oid bhsb;
 	BUN base, end, w;
 	ssize_t gh_offset, gt_offset;
-	int b_use = USE_TAIL;
 
 	ALGODEBUG fprintf(stderr, "#CMDaggrX3_sum3_@1_@2(b=%s,g=%s,e=%s);\n",
 		BATgetId(b),BATgetId(g),BATgetId(e));
@@ -298,8 +278,6 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
-	if (!BAThdense(b))
-		b_use |= USE_HEAD;
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (BAThdense(b)) {

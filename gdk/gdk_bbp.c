@@ -2364,13 +2364,6 @@ decref(bat i, int logical, int releaseShare, int lock)
 		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 
 		if (b && destroy) {
-			int flag = 0;
-			if (b->H->heap.parentid == 0)
-				flag |= USE_HEAD;
-			if (b->T->heap.parentid == 0)
-				flag |= USE_TAIL;
-			if (flag)
-				BATaccessBegin(b, flag, MMAP_DONTNEED);
 			BBPdestroy(b);	/* free memory (if loaded) and delete from disk (if transient but saved) */
 		} else if (b) {
 			BATDEBUG {

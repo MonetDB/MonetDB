@@ -1249,10 +1249,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * @return a String representing this Object
 	 */
 	public String toString() {
-		String language = "";
-		if (lang == LANG_MAL) language = "?language=mal";
-		return "MonetDB Connection (jdbc:monetdb://" + hostname +
-				":" + port + "/" + database + language + ") " + 
+		return "MonetDB Connection (" + getJDBCURL() + ") " + 
 				(closed ? "connected" : "disconnected");
 	}
 
@@ -1378,6 +1375,14 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	}
 
 	//== end methods of interface Connection
+
+	public String getJDBCURL() {
+		String language = "";
+		if (lang == LANG_MAL)
+			language = "?language=mal";
+		return "jdbc:monetdb://" + hostname + ":" + port + "/" +
+			database + language;
+	}
 
 	/**
 	 * Returns whether the BLOB type should be mapped to BINARY type.

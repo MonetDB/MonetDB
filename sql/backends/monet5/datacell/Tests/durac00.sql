@@ -36,10 +36,10 @@ create procedure datacell.monitor()
 begin
 	declare avgtemp float;
 	set avgtemp = 
-		(select average(value) 
-		from datacell.temperature , datacell.alarm
-		where datacell.temperature.tag > now() - interval '2' minute
-		and datacell.temperature.area = datacell.alarm.area );
+		(select avg(A.value) 
+		from datacell.temperature  as A, datacell.alarm as B
+		where A.tag > now() - interval '2' minute
+		and A.area = B.area );
 
 	-- notify the emergency room
 	insert into datacell.emergency select now(), avgtemp,  value from datacell.alarm;

@@ -1,6 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Mon Jul 16 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Removed --enable-noexpand configure option.
-

@@ -16,9 +16,10 @@ call datacell.receptor('datacell.potin','localhost',50502);
 call datacell.emitter('datacell.potout','localhost',50602);
 
 call datacell.query('datacell.putter', 'insert into datacell.potout select now(), count(*) from datacell.potin;');
+call datacell.pause('potout'); -- hold the events
 
 call datacell.resume();
-call datacell.dump();
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 
 -- externally, activate the sensor 
 --sensor --host=localhost --port=50502 --events=100 --columns=3 --delay=1

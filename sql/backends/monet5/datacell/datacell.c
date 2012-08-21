@@ -18,13 +18,13 @@
  */
 
 /*
- * @f datacell
  * The interface from SQL passes through here.
- *
  */
 
 #include "monetdb_config.h"
 #include "datacell.h"
+#include "receptor.h"
+#include "emitter.h"
 #include "opt_datacell.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -33,6 +33,7 @@
 #include "winsock2.h"
 #endif
 
+MT_Lock dcLock;
 /*
  * The scheduler works against a converted datacell schema.
  * It should be stopped before additions to the scheme will take effect
@@ -79,6 +80,23 @@ DCprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 str
 DCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	MT_lock_init( &dcLock, "datacellLock");
+	addPipeDefinition(cntxt, "datacell_pipe",
+		"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();"
+		"optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();"
+		"optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();"
+		"optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();"
+		"optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();"
+		"optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
+	return MAL_SUCCEED;
+}
+
+str
+DCinitialize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_schema  *s;
@@ -120,9 +138,45 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *host = (str *) getArgReference(stk, pci, 2);
 	int *port = (int *) getArgReference(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
+	str *protocol;
+	str *mode;
+	Receptor rc;
+	
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
-	return DCreceptorNew(ret, tbl, host, port);
+	rc = RCfind(*tbl);
+	if ( pci->argc == 6 && rc != NULL ){
+		protocol = (str *) getArgReference(stk, pci, 4);
+		if ( strcmp("tcp", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("TCP", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("udp", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+		if ( strcmp("UDP", *protocol) == 0)
+			rc->protocol = TCP;
+		else
+			throw(SQL,"datacell.register","Illegal protocol");
+
+		mode = (str *) getArgReference(stk, pci, 5);
+		if ( strcmp("active", *mode) == 0)
+			rc->mode = BSKTACTIVE;
+		else
+		if ( strcmp("passive", *mode) == 0)
+			rc->mode = BSKTPASSIVE;
+		else
+			throw(SQL,"datacell.register","Illegal mode");
+	}
+	return RCreceptorStart(ret, tbl, host, port);
+}
+
+str
+DCbasket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BSKTregister(cntxt, mb, stk, pci);
+	return MAL_SUCCEED;
 }
 
 str
@@ -133,32 +187,59 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *host = (str *) getArgReference(stk, pci, 2);
 	int *port = (int *) getArgReference(stk, pci, 3);
 	int idx = BSKTlocate(*tbl);
+	Emitter em;
+	str *protocol, *mode;
+
 	if (idx == 0)
 		BSKTregister(cntxt, mb, stk, pci);
-	return DCemitterNew(ret, tbl, host, port);
+	em = EMfind(*tbl);
+	if ( pci->argc == 6 && em != NULL ){
+		protocol = (str *) getArgReference(stk, pci, 4);
+		if ( strcmp("tcp", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("TCP", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("udp", *protocol) == 0)
+			em->protocol = TCP;
+		else
+		if ( strcmp("UDP", *protocol) == 0)
+			em->protocol = TCP;
+		else
+			throw(SQL,"datacell.register","Illegal protocol");
+
+		mode = (str *) getArgReference(stk, pci, 5);
+		if ( strcmp("active", *mode) == 0)
+			em->mode = BSKTACTIVE;
+		else
+		if ( strcmp("passive", *mode) == 0)
+			em->mode = BSKTPASSIVE;
+		else
+			throw(SQL,"datacell.register","Illegal mode");
+	}
+	return EMemitterStart(ret, tbl, host, port);
 }
 
 str
-DCregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return BSKTregister(cntxt, mb, stk, pci);
-}
-
-str
-DCpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCpauseObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
 
+	if ( strcmp(tbl,"*")== 0){
+		str msg = RCpause(&ret);
+		if ( msg) 
+			return msg;
+		msg = EMpause(&ret);
+		return msg;
+	}
 	idx = BSKTlocate(tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.pause", "Basket not found");
-
-	DCreceptorPause(&ret, &tbl);
-	DCemitterPause(&ret, &tbl);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
+	if (idx ) {
+		RCreceptorPause(&ret, &tbl);
+		EMemitterPause(&ret, &tbl);
+	}
+	return PNpauseQuery(cntxt,mb,stk,pci);
 }
 
 str
@@ -167,28 +248,21 @@ DCresumeObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx, ret = 0;
 	str tbl = *(str *) getArgReference(stk, pci, 1);
 
+	if ( strcmp(tbl,"*")== 0){
+		RCresume(&ret);
+		EMresume(&ret);
+		return DCresumeScheduler(cntxt, mb, stk, pci);
+	}
 	idx = BSKTlocate(tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.resume", "Basket not found");
-
-	DCreceptorResume(&ret, &tbl);
-	DCemitterResume(&ret, &tbl);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
+	if (idx ) {
+		RCreceptorResume(&ret, &tbl);
+		EMemitterResume(&ret, &tbl);
+	}
+	return PNresumeQuery(cntxt,mb,stk,pci);
 }
 
 str
-DCresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int ret;
-	RCresume(&ret);
-	EMresume(&ret);
-	return DCresumeScheduler(cntxt, mb, stk, pci);
-}
-
-str
-DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+DCstopObject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx, ret;
 	str nme = *(str *) getArgReference(stk, pci, 1);
@@ -203,43 +277,6 @@ DCremove(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* finally remove the basket itself, the underlying table is *not* dropped */
 	return BSKTdrop(&ret, &nme);
 }
-
-str
-DCmode(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int idx, ret = 0;
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *arg = (str *) getArgReference(stk, pci, 2);
-
-	idx = BSKTlocate(*tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.mode", "Basket not found");
-
-	RCmode(&ret, tbl, arg);
-	EMmode(&ret, tbl, arg);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
-str
-DCprotocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int idx, ret = 0;
-	str *tbl = (str *) getArgReference(stk, pci, 1);
-	str *arg = (str *) getArgReference(stk, pci, 2);
-
-	idx = BSKTlocate(*tbl);
-	if (idx == 0)
-		throw(SQL, "datacell.protocol", "Basket not found");
-
-	RCprotocol(&ret, tbl, arg);
-	EMprotocol(&ret, tbl, arg);
-	(void) cntxt;
-	(void) mb;
-	return MAL_SUCCEED;
-}
-
 
 /* locate the MAL representation of this operation and extract the flow */
 /* If the operation is not available yet, it should be compiled from its
@@ -324,32 +361,53 @@ str
 DCresumeScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-	PNresumeScheduler(&ret);
+	str msg;
+
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return MAL_SUCCEED;
+    msg = RCresume(&ret);
+	if ( msg )
+		return msg;
+    msg = EMresume(&ret);
+	if ( msg )
+		return msg;
+	return PNresumeScheduler(&ret);
 }
 
 str
 DCpauseScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-	PNpauseScheduler(&ret);
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return MAL_SUCCEED;
+	RCpause(&ret);
+	EMpause(&ret);
+	return PNpauseScheduler(&ret);
+}
+
+str
+DCstopScheduler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int ret = 0;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	RCstop(&ret);
+	EMstop(&ret);
+	return PNstopScheduler(&ret);
 }
 
 str
 DCpostlude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int ret = 0;
-	RCreset(&ret);
-	EMreset(&ret);
+	RCstop(&ret);
+	EMstop(&ret);
 	PNstopScheduler(&ret);
 	BSKTreset(&ret);
 	(void) cntxt;
@@ -377,19 +435,19 @@ DCthreshold(int *ret, str *bskt, int *mi)
 }
 
 str
-DCwindow(int *ret, str *bskt, int *sz, int *slide)
+DCwindow(int *ret, str *bskt, lng *sz, lng *slide)
 {
 	return BSKTwindow(ret, bskt, sz, slide);
 }
 
 str
-DCtimewindow(int *ret, str *bskt, int *sz, int *slide)
+DCtimewindow(int *ret, str *bskt, lng *sz, lng *slide)
 {
 	return BSKTtimewindow(ret, bskt, sz, slide);
 }
 
 str
-DCbeat(int *ret, str *bskt, int *beat)
+DCbeat(int *ret, str *bskt, lng *beat)
 {
 	return BSKTbeat(ret, bskt, beat);
 }

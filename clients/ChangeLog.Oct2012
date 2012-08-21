@@ -1,0 +1,9 @@
+# ChangeLog file for clients
+# This file is updated with Maddlog
+
+* Thu Jul 19 2012 Gijs Molenaar <g.j.molenaar@uva.nl>
+- all strings returned by python2 are unicode, removed use_unicode option
+- python2 and 3 type convertion speed improvements
+- python2 uses new styl objects now (bug #3104)
+- split python2 and python3
+

@@ -107,9 +107,6 @@ UDFBATreverse_(BAT **ret, BAT *left)
 	/* create BAT iterator */
 	li = bat_iterator(left);
 
-	/* advice on sequential scan */
-	BATaccessBegin(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
-
 	/* the core of the algorithm, expensive due to malloc/frees */
 	BATloop(left, p, q) {
 		str tr = NULL, err = NULL;
@@ -122,8 +119,6 @@ UDFBATreverse_(BAT **ret, BAT *left)
 		err = UDFreverse_(&tr, t);
 		if (err != MAL_SUCCEED) {
 			/* error -> bail out */
-			BATaccessEnd(left, USE_HEAD | USE_TAIL,
-				     MMAP_SEQUENTIAL);
 			BBPreleaseref(bn->batCacheid);
 			return err;
 		}
@@ -138,8 +133,6 @@ UDFBATreverse_(BAT **ret, BAT *left)
 		/* free memory allocated in UDFreverse_() */
 		GDKfree(tr);
 	}
-
-	BATaccessEnd(left, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	*ret = bn;
 
@@ -257,10 +250,6 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 	if (bres == NULL)
 		throw(MAL, "batudf.fuse", MAL_MALLOC_FAIL);
 
-	/* advice on sequential scan */
-	BATaccessBegin(bone, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(btwo, USE_TAIL, MMAP_SEQUENTIAL);
-
 	/* call type-specific core algorithm */
 	switch (bone->ttype) {
 	case TYPE_bte:
@@ -280,9 +269,6 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 		throw(MAL, "batudf.fuse",
 		      "tails of input BATs must be one of {bte, sht, int}");
 	}
-
-	BATaccessEnd(bone, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(btwo, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (msg != MAL_SUCCEED) {
 		BBPreleaseref(bres->batCacheid);

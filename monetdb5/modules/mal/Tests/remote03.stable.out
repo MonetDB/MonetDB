@@ -107,7 +107,6 @@ SyntaxException:parseError:                    ^'(' expected
 [ 29@0,	  "pcre"	  ]
 [ 30@0,	  "mbr"		  ]
 [ 31@0,	  "wkb"		  ]
-[ 32@0,	  "mapentry"	  ]
 [ "rmt2__8_void" ]
 [ nil ]
 

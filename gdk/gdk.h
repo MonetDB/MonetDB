@@ -1165,9 +1165,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->HT->width < SIZEOF_VAR_T &&		\
 			    ((b)->HT->width <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->HT->width))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL); \
 				GDKupgradevarheap((b)->HT, _d, (copyall)); \
-				BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL); \
 			}						\
 			_ptr = (p);					\
 			switch ((b)->HT->width) {			\
@@ -1536,7 +1534,8 @@ gdk_export BAT *BATclear(BAT *b, int force);
 gdk_export BAT *BATcopy(BAT *b, int ht, int tt, int writeable);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATmark_grp(BAT *b, BAT *g, oid *base);
-gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
+
+gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h);
 
 /*
  * @- BAT Input/Output
@@ -1596,8 +1595,6 @@ gdk_export int GDK_mem_pagebits;	/* page size for non-linear mmaps */
 #define USE_THASH	8	/* hash index */
 #define USE_ALL	(USE_HEAD|USE_TAIL|USE_HHASH|USE_THASH)
 
-#define BATaccessBegin(b,what,advice) ((void) 0)
-#define BATaccessEnd(b,what,advice) ((void) 0)
 gdk_export BAT *BATsave(BAT *b);
 gdk_export int BATmmap(BAT *b, int hb, int tb, int hh, int th, int force);
 gdk_export int BATmadvise(BAT *b, int hb, int tb, int hh, int th);
@@ -3129,6 +3126,7 @@ gdk_export BAT *BATselect(BAT *b, const void *tl, const void *th);
 gdk_export BAT *BATuselect(BAT *b, const void *tl, const void *th);
 gdk_export BAT *BATrestrict(BAT *b, const void *hl, const void *hh, const void *tl, const void *th);
 
+gdk_export BAT *BATconstant(int tt, const void *val, BUN cnt);
 gdk_export BAT *BATconst(BAT *l, int tt, const void *val);
 gdk_export BAT *BATthetajoin(BAT *l, BAT *r, int mode, BUN estimate);
 gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
@@ -3153,43 +3151,43 @@ gdk_export BAT *BATkunion(BAT *b, BAT *c);
 gdk_export BAT *BATsdiff(BAT *b, BAT *c);
 gdk_export BAT *BATkdiff(BAT *b, BAT *c);
 
-gdk_export BAT *BATcalcnegate(BAT *b, int accum);
-gdk_export BAT *BATcalcabsolute(BAT *b, int accum);
-gdk_export BAT *BATcalcincr(BAT *b, int accum, int abort_on_error);
-gdk_export BAT *BATcalcdecr(BAT *b, int accum, int abort_on_error);
+gdk_export BAT *BATcalcnegate(BAT *b);
+gdk_export BAT *BATcalcabsolute(BAT *b);
+gdk_export BAT *BATcalcincr(BAT *b, int abort_on_error);
+gdk_export BAT *BATcalcdecr(BAT *b, int abort_on_error);
 gdk_export BAT *BATcalciszero(BAT *b);
 gdk_export BAT *BATcalcsign(BAT *b);
 gdk_export BAT *BATcalcisnil(BAT *b);
-gdk_export BAT *BATcalcnot(BAT *b, int accum);
-gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error);
-gdk_export BAT *BATcalcxor(BAT *b1, BAT *b2, int accum);
-gdk_export BAT *BATcalcxorcst(BAT *b, const ValRecord *v, int accum);
-gdk_export BAT *BATcalccstxor(const ValRecord *v, BAT *b, int accum);
-gdk_export BAT *BATcalcor(BAT *b1, BAT *b2, int accum);
-gdk_export BAT *BATcalcorcst(BAT *b, const ValRecord *v, int accum);
-gdk_export BAT *BATcalccstor(const ValRecord *v, BAT *b, int accum);
-gdk_export BAT *BATcalcand(BAT *b1, BAT *b2, int accum);
-gdk_export BAT *BATcalcandcst(BAT *b, const ValRecord *v, int accum);
-gdk_export BAT *BATcalccstand(const ValRecord *v, BAT *b, int accum);
-gdk_export BAT *BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
-gdk_export BAT *BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalcnot(BAT *b);
+gdk_export BAT *BATcalcadd(BAT *b1, BAT *b2, int tp, int abort_on_error);
+gdk_export BAT *BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int abort_on_error);
+gdk_export BAT *BATcalccstadd(const ValRecord *v, BAT *b, int tp, int abort_on_error);
+gdk_export BAT *BATcalcsub(BAT *b1, BAT *b2, int tp, int abort_on_error);
+gdk_export BAT *BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int abort_on_error);
+gdk_export BAT *BATcalccstsub(const ValRecord *v, BAT *b, int tp, int abort_on_error);
+gdk_export BAT *BATcalcmul(BAT *b1, BAT *b2, int tp, int abort_on_error);
+gdk_export BAT *BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int abort_on_error);
+gdk_export BAT *BATcalccstmul(const ValRecord *v, BAT *b, int tp, int abort_on_error);
+gdk_export BAT *BATcalcdiv(BAT *b1, BAT *b2, int tp, int abort_on_error);
+gdk_export BAT *BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int abort_on_error);
+gdk_export BAT *BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int abort_on_error);
+gdk_export BAT *BATcalcmod(BAT *b1, BAT *b2, int tp, int abort_on_error);
+gdk_export BAT *BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int abort_on_error);
+gdk_export BAT *BATcalccstmod(const ValRecord *v, BAT *b, int tp, int abort_on_error);
+gdk_export BAT *BATcalcxor(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcxorcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstxor(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcor(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcorcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstor(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalcand(BAT *b1, BAT *b2);
+gdk_export BAT *BATcalcandcst(BAT *b, const ValRecord *v);
+gdk_export BAT *BATcalccstand(const ValRecord *v, BAT *b);
+gdk_export BAT *BATcalclsh(BAT *b1, BAT *b2, int abort_on_error);
+gdk_export BAT *BATcalclshcst(BAT *b, const ValRecord *v, int abort_on_error);
 gdk_export BAT *BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error);
-gdk_export BAT *BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error);
-gdk_export BAT *BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error);
+gdk_export BAT *BATcalcrsh(BAT *b1, BAT *b2, int abort_on_error);
+gdk_export BAT *BATcalcrshcst(BAT *b, const ValRecord *v, int abort_on_error);
 gdk_export BAT *BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error);
 gdk_export BAT *BATcalclt(BAT *b1, BAT *b2);
 gdk_export BAT *BATcalcltcst(BAT *b, const ValRecord *v);

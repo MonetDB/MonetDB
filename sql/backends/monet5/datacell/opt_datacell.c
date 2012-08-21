@@ -18,14 +18,12 @@
  */
 
 /*
- * @f opt_datacell
  * @a M. Kersten
  * @- Datacell optimizer
  * Assume simple queries . Clear out all non-datacell schema related sql statements, except
  * for the bare minimum.
  */
 /*
- * @-
  * We keep a flow dependency table to detect.
  */
 #include "monetdb_config.h"
@@ -43,7 +41,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 {
 	int actions = 0, fnd, mvc = 0;
 	int bskt, i, j, k, limit, /*vlimit,*/ slimit;
-	InstrPtr r, p, *old;
+	InstrPtr r, p, qq, *old;
 	str col;
 	int maxbasket = 128, m = 0, a = 0;
 	char *tables[128] = { NULL };
@@ -73,12 +71,11 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return 0;
 	removeDataflow(old, limit);
 
-	for (i = 0; i < limit; i++)
+	pushInstruction(mb, old[0]);
+	//newFcnCall(mb, sqlRef, putName("transaction", 11));
+	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];
-			if (i == 1)
-				/* inject transaction start */
-				newFcnCall(mb, sqlRef, putName("transaction", 11));
 
 			if (getModuleId(p) == datacellRef && getFunctionId(p) == putName("window", 6) &&
 				isVarConstant(mb, getArg(p, 1)) && isVarConstant(mb, getArg(p, 2)) && isVarConstant(mb, getArg(p, 3))) {
@@ -119,7 +116,8 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getArg(r, 0) = j;
 				r->barrier = EXITsymbol;
 
-				(void) newFcnCall(mb, sqlRef, commitRef);
+				//(void) newFcnCall(mb, sqlRef, commitRef);
+				break;
 			}
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == putName("affectedRows", 12)) {
 				freeInstruction(p);
@@ -128,6 +126,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef)
 				mvc = getArg(p, 0);
+
 			if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindRef || getFunctionId(p) == binddbatRef)) {
 				snprintf(buf, BUFSIZ, "%s.%s", getVarConstant(mb, getArg(p, 2)).val.sval, getVarConstant(mb, getArg(p, 3)).val.sval);
 				col = getVarConstant(mb, getArg(p, 4)).val.sval;
@@ -155,28 +154,33 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 					for (j = 0; fnd == 0 && j < baskets[bskt].colcount; j++)
 						if (strcmp(baskets[bskt].cols[j], col) == 0) {
 							for (k = 0; k < m; k++)
-								if (strcmp(buf, tables[k]) == 0)
+								if (strcmp(buf, tables[k]) == 0) {
+									alias[getArg(p, 0)] = getArg(q[k], j);
+									fnd = 1;
 									break;
-							alias[getArg(p, 0)] = getArg(q[k], j);
-							fnd = 1;
+								}
 							break;
 						}
 
-					if (fnd == 0)
+					if (fnd == 0){
+						for (j = 0; j < p->argc; j++)
+							if (alias[getArg(p, j)])
+								getArg(p, j) = alias[getArg(p, j)];
 						pushInstruction(mb, p);
-					else
+					} else
 						freeInstruction(p);
 					continue;
-				}
+				} else
 				if (bskt) {
 					wrd rows = 0;
 					ValRecord vr;
 					/* zap all expression arguments */
-					clrFunction(p);
-					p->argc = p->retc;
-					for (j = 0; j < p->retc; j++)
-						p = pushNil(mb, p, getArgType(mb, p, j));
-					varSetProp(mb, p->argv[p->argc - 1], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
+					getModuleId(p) = batRef;
+					getFunctionId(p) = newRef;
+					p->argc = p->retc= 1;
+					p = pushType(mb, p, TYPE_oid);
+					p = pushType(mb, p, getTailType(getVarType(mb,getArg(p,0))));
+					varSetProp(mb, p->argv[0], rowsProp, op_eq, VALset(&vr, TYPE_wrd, &rows));
 				}
 			}
 
@@ -215,31 +219,41 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 						/* upgrade single values to a BAT */
 						clrFunction(p);
 						if (!isaBatType(getVarType(mb, getArg(p, 5)))) {
-							getModuleId(p) = sqlRef;
-							getFunctionId(p) = singleRef;
+							qq= newInstruction(mb, ASSIGNsymbol);
+							getModuleId(qq) = sqlRef;
+							getFunctionId(qq) = singleRef;
+							getArg(qq, 0) = getArg(qa[j], k + 2);
+							getArg(qq, 1) = getArg(p, 5);
+							qq->argc = 2;
+							p = qq;
+						} else {
+							qq= newAssignment(mb);
+							getArg(qq, 0) = getArg(qa[j], k + 2);
+							getArg(qq, 1) = getArg(p, 5);
+							qq->argc = 2;
+							alias[getArg(p,0)] = getArg(p,1);
+							p->argc = 2;
+							mvc = getArg(p, 0);
 						}
-						getArg(p, 0) = getArg(qa[j], k + 2);
-						getArg(p, 1) = getArg(p, 5);
-						p->argc = 2;
 					}
 				} else {
-					getArg(p, 1) = mvc;
+					if ( alias[mvc] )
+						getArg(p, 1) = alias[mvc];
 					mvc = getArg(p, 0);
 				}
 			}
 			pushInstruction(mb, p);
 		}
 
+    /* take the remainder as is */
+    for (; i<limit; i++)
+        if (old[i])
+            pushInstruction(mb,old[i]);
 	(void) stk;
 	(void) pci;
 
 	if (actions)
 	{
-		addPipeDefinition(cntxt, "datacell_pipe",
-				"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();"
-				"optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();"
-				"optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
-		/* extend the plan with the new optimizer pipe required */
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");
@@ -306,7 +320,7 @@ str OPTdatacell(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		printFunction(cntxt->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-	mnstr_printf(cntxt->fdout, "#opt_reduce: " LLFMT " ms\n", t);
+		mnstr_printf(cntxt->fdout, "#opt_reduce: " LLFMT " ms\n", t);
 	QOTupdateStatistics("datacell", actions, t);
 	addtoMalBlkHistory(mb, "datacell");
 	return msg;

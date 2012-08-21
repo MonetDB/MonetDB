@@ -44,7 +44,3 @@ io.print("ifthen group");
 	xif2:= batcalc.ifthenelse(x,x,xn);io.print(x,x,xn,xif2);
 	xif3:= batcalc.ifthenelse(x,x,true);io.print(x,x,xif3);
 	xif4:= batcalc.ifthenelse(x,1,2);io.print(x,xif4);
-io.print("accumulators");
-	x2:= batcalc.not(x,1); io.print(x,x2);
-	x3:= batcalc.and(x,A); io.print(x,A,x3);
-	x4:= batcalc.or(x,A); io.print(x,A,x4);

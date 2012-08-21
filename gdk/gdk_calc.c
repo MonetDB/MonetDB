@@ -32,9 +32,8 @@
 static int
 checkbats(BAT *b1, BAT *b2, const char *func)
 {
-	if ((b1->H->type != TYPE_void && b1->H->type != TYPE_oid) ||
-	    (b2 != NULL && b2->H->type != TYPE_void && b2->H->type != TYPE_oid)) {
-		GDKerror("%s: inputs must have (V)OID head.\n", func);
+	if (!BAThdense(b1) || (b2 != NULL && !BAThdense(b2))) {
+		GDKerror("%s: inputs must have dense head.\n", func);
 		return GDK_FAIL;
 	}
 	if (b2 != NULL) {
@@ -58,30 +57,6 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				if (src[i] == TYPE1##_nil) {		\
 					nils++;				\
 					dst[i] = TYPE2##_nil;		\
-				} else {				\
-					dst[i] = FUNC(src[i]);		\
-				}					\
-			}						\
-		}							\
-	} while (0)
-
-#define UNARY_2TYPE_FUNC_CHECK(TYPE1, TYPE2, FUNC, CHECK)		\
-	do {								\
-		const TYPE1 *src = (const TYPE1 *) Tloc(b, b->U->first); \
-		TYPE2 *dst = (TYPE2 *) Tloc(bn, bn->U->first);		\
-		if (b->T->nonil) {					\
-			for (i = 0; i < b->U->count; i++)		\
-				dst[i] = FUNC(src[i]);			\
-		} else {						\
-			for (i = 0; i < b->U->count; i++) {		\
-				if (src[i] == TYPE1##_nil) {		\
-					nils++;				\
-					dst[i] = TYPE2##_nil;		\
-				} else if (CHECK(src[i], TYPE1)) {	\
-					if (abort_on_error)		\
-						goto checkfail;		\
-					dst[i] = TYPE2##_nil;		\
-					nils++;				\
 				} else {				\
 					dst[i] = FUNC(src[i]);		\
 				}					\
@@ -133,7 +108,7 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 #define NOTBIT(x)	(!(x))
 
 BAT *
-BATcalcnot(BAT *b, int accum)
+BATcalcnot(BAT *b)
 {
 	BAT *bn;
 	BUN nils = 0;
@@ -143,22 +118,9 @@ BATcalcnot(BAT *b, int accum)
 	if (checkbats(b, NULL, "BATcalcnot") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
@@ -183,8 +145,6 @@ BATcalcnot(BAT *b, int accum)
 		return NULL;
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -202,12 +162,6 @@ BATcalcnot(BAT *b, int accum)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -263,7 +217,7 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 #define NEGATE(x)	(-(x))
 
 BAT *
-BATcalcnegate(BAT *b, int accum)
+BATcalcnegate(BAT *b)
 {
 	BAT *bn;
 	BUN nils = 0;
@@ -273,22 +227,9 @@ BATcalcnegate(BAT *b, int accum)
 	if (checkbats(b, NULL, "BATcalcnegate") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
@@ -315,8 +256,6 @@ BATcalcnegate(BAT *b, int accum)
 		return NULL;
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -334,12 +273,6 @@ BATcalcnegate(BAT *b, int accum)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -404,7 +337,7 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
 
 BAT *
-BATcalcabsolute(BAT *b, int accum)
+BATcalcabsolute(BAT *b)
 {
 	BAT *bn;
 	BUN nils= 0;
@@ -414,22 +347,9 @@ BATcalcabsolute(BAT *b, int accum)
 	if (checkbats(b, NULL, "BATcalcabsolute") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
@@ -457,8 +377,6 @@ BATcalcabsolute(BAT *b, int accum)
 		return NULL;
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -478,12 +396,6 @@ BATcalcabsolute(BAT *b, int accum)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -558,8 +470,6 @@ BATcalciszero(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
@@ -586,8 +496,6 @@ BATcalciszero(BAT *b)
 		return NULL;
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -604,12 +512,6 @@ BATcalciszero(BAT *b)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -685,8 +587,6 @@ BATcalcsign(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	switch (ATOMstorage(b->T->type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
@@ -713,8 +613,6 @@ BATcalcsign(BAT *b)
 		return NULL;
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -734,12 +632,6 @@ BATcalcsign(BAT *b)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -834,8 +726,6 @@ BATcalcisnil(BAT *b)
 	dst = (bit *) Tloc(bn, bn->U->first);
 
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	t = b->T->type;
 	nil = ATOMnilptr(t);
 	atomcmp = BATatoms[t].atomCmp;
@@ -876,8 +766,6 @@ BATcalcisnil(BAT *b)
 	}
 	}
 
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	BATsetcount(bn, b->U->count);
 	bn = BATseqbase(bn, b->H->seq);
 
@@ -889,12 +777,6 @@ BATcalcisnil(BAT *b)
 	bn->T->nil = 0;
 	bn->T->nonil = 1;
 	bn->T->key = bn->U->count <= 1;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -1802,7 +1684,7 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
+BATcalcadd(BAT *b1, BAT *b2, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -1813,43 +1695,14 @@ BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcadd") == GDK_FAIL)
 		return NULL;
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		assert(b1->T->type == tp);
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		assert(b2->T->type == tp);
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, tp, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = add_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcadd");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1870,17 +1723,11 @@ BATcalcadd(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
+BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -1890,30 +1737,14 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcaddcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcaddcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1934,17 +1765,11 @@ BATcalcaddcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
+BATcalccstadd(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -1954,30 +1779,14 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstadd") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = add_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstadd");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -1997,12 +1806,6 @@ BATcalccstadd(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -2019,7 +1822,7 @@ VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 }
 
 BAT *
-BATcalcincr(BAT *b, int accum, int abort_on_error)
+BATcalcincr(BAT *b, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils= 0;
@@ -2029,29 +1832,14 @@ BATcalcincr(BAT *b, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcincr") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = add_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  &one, TYPE_bte, 0,
 				  Tloc(bn, bn->U->first), bn->T->type,
 				  b->U->count, abort_on_error, "BATcalcincr");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -2079,12 +1867,6 @@ BATcalcincr(BAT *b, int accum, int abort_on_error)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -2990,7 +2772,7 @@ sub_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
+BATcalcsub(BAT *b1, BAT *b2, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -3001,43 +2783,14 @@ BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcsub") == GDK_FAIL)
 		return NULL;
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		assert(b1->T->type == tp);
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		assert(b2->T->type == tp);
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, tp, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = sub_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcsub");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -3053,17 +2806,11 @@ BATcalcsub(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
+BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -3073,30 +2820,14 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcsubcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcsubcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -3117,51 +2848,28 @@ BATcalcsubcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
+BATcalccstsub(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
-	int savesorted;
 
 	BATcheck(b, "BATcalccstsub");
 
 	if (checkbats(b, NULL, "BATcalccstsub") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstsub");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -3175,23 +2883,13 @@ BATcalccstsub(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	 * know for sure if abort_on_error is set), the result is
 	 * sorted in the opposite direction (except that NILs mess
 	 * things up */
-	/* note that if b == bn (accum is set), the first assignment
-	 * changes a value that we need on the right-hand side of the
-	 * second assignment, so we need to save the value */
-	savesorted = b->T->sorted;
 	bn->T->sorted = (abort_on_error && nils == 0 && b->T->revsorted) ||
 		bn->U->count <= 1 || nils == bn->U->count;
-	bn->T->revsorted = (abort_on_error && nils == 0 && savesorted) ||
+	bn->T->revsorted = (abort_on_error && nils == 0 && b->T->sorted) ||
 		bn->U->count <= 1 || nils == bn->U->count;
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -3208,7 +2906,7 @@ VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 }
 
 BAT *
-BATcalcdecr(BAT *b, int accum, int abort_on_error)
+BATcalcdecr(BAT *b, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils= 0;
@@ -3218,29 +2916,14 @@ BATcalcdecr(BAT *b, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcdecr") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = sub_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  &one, TYPE_bte, 0,
 				  Tloc(bn, bn->U->first), bn->T->type,
 				  b->U->count, abort_on_error, "BATcalcdecr");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -3268,12 +2951,6 @@ BATcalcdecr(BAT *b, int accum, int abort_on_error)
 	if (nils == 0 && !b->T->nonil) {
 		b->T->nonil = 1;
 		b->P->descdirty = 1;
-	}
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
 	}
 
 	return bn;
@@ -4260,7 +3937,7 @@ mul_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
+BATcalcmul(BAT *b1, BAT *b2, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -4271,43 +3948,14 @@ BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcmul") == GDK_FAIL)
 		return NULL;
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		assert(b1->T->type == tp);
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		assert(b2->T->type == tp);
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, tp, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mul_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcmul");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4323,17 +3971,11 @@ BATcalcmul(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
+BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -4343,30 +3985,14 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcmulcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mul_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmulcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4381,15 +4007,13 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	 * sorted, or reverse sorted if the constant is negative */
 	if (abort_on_error) {
 		ValRecord sign;
-		int savesorted;
 
-		savesorted = b->T->sorted; /* in case b == bn (accum set) */
 		VARcalcsign(&sign, v);
 		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
 			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
-			(sign.val.btval <= 0 && savesorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->T->sorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 	} else {
 		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
@@ -4399,17 +4023,11 @@ BATcalcmulcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
+BATcalccstmul(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -4419,30 +4037,14 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstmul") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmul");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -4457,15 +4059,13 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	 * sorted, or reverse sorted if the constant is negative */
 	if (abort_on_error) {
 		ValRecord sign;
-		int savesorted;
 
-		savesorted = b->T->sorted; /* in case b == bn (accum set) */
 		VARcalcsign(&sign, v);
 		bn->T->sorted = (sign.val.btval >= 0 && b->T->sorted) ||
 			(sign.val.btval <= 0 && b->T->revsorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 		bn->T->revsorted = (sign.val.btval >= 0 && b->T->revsorted) ||
-			(sign.val.btval <= 0 && savesorted && nils == 0) ||
+			(sign.val.btval <= 0 && b->T->sorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 	} else {
 		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
@@ -4474,12 +4074,6 @@ BATcalccstmul(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -5481,7 +5075,7 @@ div_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
+BATcalcdiv(BAT *b1, BAT *b2, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5492,43 +5086,14 @@ BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcdiv") == GDK_FAIL)
 		return NULL;
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		assert(b1->T->type == tp);
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		assert(b2->T->type == tp);
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, tp, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = div_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcdiv");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5544,17 +5109,11 @@ BATcalcdiv(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
+BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5564,30 +5123,14 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcdivcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = div_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcdivcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5603,15 +5146,13 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	 * negative */
 	if (abort_on_error) {
 		ValRecord sign;
-		int savesorted;
 
-		savesorted = b->T->sorted; /* in case b == bn (accum set) */
 		VARcalcsign(&sign, v);
 		bn->T->sorted = (sign.val.btval > 0 && b->T->sorted) ||
 			(sign.val.btval < 0 && b->T->revsorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 		bn->T->revsorted = (sign.val.btval > 0 && b->T->revsorted) ||
-			(sign.val.btval < 0 && savesorted && nils == 0) ||
+			(sign.val.btval < 0 && b->T->sorted && nils == 0) ||
 			bn->U->count <= 1 || nils == bn->U->count;
 	} else {
 		bn->T->sorted = bn->U->count <= 1 || nils == bn->U->count;
@@ -5623,17 +5164,11 @@ BATcalcdivcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
+BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -5643,30 +5178,14 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstdiv") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = div_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstdiv");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -5681,12 +5200,6 @@ BATcalccstdiv(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6516,7 +6029,7 @@ mod_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
+BATcalcmod(BAT *b1, BAT *b2, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -6527,43 +6040,14 @@ BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcmod") == GDK_FAIL)
 		return NULL;
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		assert(b1->T->type == tp);
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		assert(b2->T->type == tp);
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, tp, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mod_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b1->U->count, abort_on_error, "BATcalcmod");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6579,17 +6063,11 @@ BATcalcmod(BAT *b1, BAT *b2, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
+BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -6599,30 +6077,14 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcmodcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mod_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalcmodcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6638,17 +6100,11 @@ BATcalcmodcst(BAT *b, const ValRecord *v, int tp, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
+BATcalccstmod(const ValRecord *v, BAT *b, int tp, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -6658,30 +6114,14 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalccstmod") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		assert(b->T->type == tp);
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, tp, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, tp, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = mod_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first), tp,
 				  b->U->count, abort_on_error, "BATcalccstmod");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6696,12 +6136,6 @@ BATcalccstmod(const ValRecord *v, BAT *b, int tp, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -6773,7 +6207,7 @@ xor_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcxor(BAT *b1, BAT *b2, int accum)
+BATcalcxor(BAT *b1, BAT *b2)
 {
 	BAT *bn;
 	BUN nils;
@@ -6789,33 +6223,9 @@ BATcalcxor(BAT *b1, BAT *b2, int accum)
 		return NULL;
 	}
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = xor_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				  Tloc(b2, b2->U->first), 1,
@@ -6823,9 +6233,6 @@ BATcalcxor(BAT *b1, BAT *b2, int accum)
 				  b1->T->type, b1->U->count,
 				  b1->T->nonil && b2->T->nonil,
 				  "BATcalcxor");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6841,17 +6248,11 @@ BATcalcxor(BAT *b1, BAT *b2, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
+BATcalcxorcst(BAT *b, const ValRecord *v)
 {
 	BAT *bn;
 	BUN nils;
@@ -6866,23 +6267,9 @@ BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = xor_typeswitchloop(Tloc(b, b->U->first), 1,
 				  VALptr(v), 0,
@@ -6890,8 +6277,6 @@ BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcxorcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6907,17 +6292,11 @@ BATcalcxorcst(BAT *b, const ValRecord *v, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstxor(const ValRecord *v, BAT *b, int accum)
+BATcalccstxor(const ValRecord *v, BAT *b)
 {
 	BAT *bn;
 	BUN nils;
@@ -6932,23 +6311,9 @@ BATcalccstxor(const ValRecord *v, BAT *b, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = xor_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
@@ -6956,8 +6321,6 @@ BATcalccstxor(const ValRecord *v, BAT *b, int accum)
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstxor");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -6972,12 +6335,6 @@ BATcalccstxor(const ValRecord *v, BAT *b, int accum)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7068,7 +6425,7 @@ or_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcor(BAT *b1, BAT *b2, int accum)
+BATcalcor(BAT *b1, BAT *b2)
 {
 	BAT *bn;
 	BUN nils;
@@ -7084,33 +6441,9 @@ BATcalcor(BAT *b1, BAT *b2, int accum)
 		return NULL;
 	}
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = or_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				 Tloc(b2, b2->U->first), 1,
@@ -7118,9 +6451,6 @@ BATcalcor(BAT *b1, BAT *b2, int accum)
 				 b1->T->type, b1->U->count,
 				 b1->T->nonil && b2->T->nonil,
 				 "BATcalcor");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7136,17 +6466,11 @@ BATcalcor(BAT *b1, BAT *b2, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcorcst(BAT *b, const ValRecord *v, int accum)
+BATcalcorcst(BAT *b, const ValRecord *v)
 {
 	BAT *bn;
 	BUN nils;
@@ -7161,23 +6485,9 @@ BATcalcorcst(BAT *b, const ValRecord *v, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = or_typeswitchloop(Tloc(b, b->U->first), 1,
 				 VALptr(v), 0,
@@ -7185,8 +6495,6 @@ BATcalcorcst(BAT *b, const ValRecord *v, int accum)
 				 b->U->count,
 				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalcorcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7202,17 +6510,11 @@ BATcalcorcst(BAT *b, const ValRecord *v, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstor(const ValRecord *v, BAT *b, int accum)
+BATcalccstor(const ValRecord *v, BAT *b)
 {
 	BAT *bn;
 	BUN nils;
@@ -7227,23 +6529,9 @@ BATcalccstor(const ValRecord *v, BAT *b, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = or_typeswitchloop(VALptr(v), 0,
 				 Tloc(b, b->U->first), 1,
@@ -7251,8 +6539,6 @@ BATcalccstor(const ValRecord *v, BAT *b, int accum)
 				 b->U->count,
 				 b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				 "BATcalccstor");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7267,12 +6553,6 @@ BATcalccstor(const ValRecord *v, BAT *b, int accum)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7359,7 +6639,7 @@ and_typeswitchloop(const void *lft, int incr1,
 }
 
 BAT *
-BATcalcand(BAT *b1, BAT *b2, int accum)
+BATcalcand(BAT *b1, BAT *b2)
 {
 	BAT *bn;
 	BUN nils;
@@ -7375,33 +6655,9 @@ BATcalcand(BAT *b1, BAT *b2, int accum)
 		return NULL;
 	}
 
-	if (accum == 1) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else if (accum == 2) {
-		assert(BBP_refs(b2->batCacheid) == 1);
-		if (BBP_lrefs(b2->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b2));
-		bn = b2;
-		BBPfix(b2->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = and_typeswitchloop(Tloc(b1, b1->U->first), 1,
 				  Tloc(b2, b2->U->first), 1,
@@ -7409,9 +6665,6 @@ BATcalcand(BAT *b1, BAT *b2, int accum)
 				  b1->T->type, b1->U->count,
 				  b1->T->nonil && b2->T->nonil,
 				  "BATcalcand");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7427,17 +6680,11 @@ BATcalcand(BAT *b1, BAT *b2, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcandcst(BAT *b, const ValRecord *v, int accum)
+BATcalcandcst(BAT *b, const ValRecord *v)
 {
 	BAT *bn;
 	BUN nils;
@@ -7452,23 +6699,9 @@ BATcalcandcst(BAT *b, const ValRecord *v, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = and_typeswitchloop(Tloc(b, b->U->first), 1,
 				  VALptr(v), 0,
@@ -7476,8 +6709,6 @@ BATcalcandcst(BAT *b, const ValRecord *v, int accum)
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalcandcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7493,17 +6724,11 @@ BATcalcandcst(BAT *b, const ValRecord *v, int accum)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalccstand(const ValRecord *v, BAT *b, int accum)
+BATcalccstand(const ValRecord *v, BAT *b)
 {
 	BAT *bn;
 	BUN nils;
@@ -7518,23 +6743,9 @@ BATcalccstand(const ValRecord *v, BAT *b, int accum)
 		return NULL;
 	}
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = and_typeswitchloop(VALptr(v), 0,
 				  Tloc(b, b->U->first), 1,
@@ -7542,8 +6753,6 @@ BATcalccstand(const ValRecord *v, BAT *b, int accum)
 				  b->U->count,
 				  b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 				  "BATcalccstand");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7558,12 +6767,6 @@ BATcalccstand(const ValRecord *v, BAT *b, int accum)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7689,7 +6892,7 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
+BATcalclsh(BAT *b1, BAT *b2, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -7700,33 +6903,15 @@ BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalclsh") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = lsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b1->U->count, abort_on_error,
 				  "BATcalclsh");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7742,17 +6927,11 @@ BATcalclsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
+BATcalclshcst(BAT *b, const ValRecord *v, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -7762,30 +6941,15 @@ BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalclshcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = lsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalclshcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7800,12 +6964,6 @@ BATcalclshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7825,15 +6983,11 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = lsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalccstlsh");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -7848,12 +7002,6 @@ BATcalccstlsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -7973,7 +7121,7 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 }
 
 BAT *
-BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
+BATcalcrsh(BAT *b1, BAT *b2, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -7984,33 +7132,15 @@ BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	if (checkbats(b1, b2, "BATcalcrsh") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b1->batCacheid) == 1);
-		if (BBP_lrefs(b1->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b1));
-		bn = b1;
-		BBPfix(b1->batCacheid);
-	} else {
-		assert(accum == 0);
-		bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b1->T->type, b1->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = rsh_typeswitchloop(Tloc(b1, b1->U->first), b1->T->type, 1,
 				  Tloc(b2, b2->U->first), b2->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b1->U->count, abort_on_error,
 				  "BATcalcrsh");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -8026,17 +7156,11 @@ BATcalcrsh(BAT *b1, BAT *b2, int accum, int abort_on_error)
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
 
-	if (!accum && b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
 BAT *
-BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
+BATcalcrshcst(BAT *b, const ValRecord *v, int abort_on_error)
 {
 	BAT *bn;
 	BUN nils;
@@ -8046,30 +7170,15 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	if (checkbats(b, NULL, "BATcalcrshcst") == GDK_FAIL)
 		return NULL;
 
-	if (accum) {
-		assert(BBP_refs(b->batCacheid) == 1);
-		if (BBP_lrefs(b->batCacheid) > 1) {
-			GDKerror("logical reference too high to be used as accumulator\n");
-			return NULL;
-		}
-		assert(!isVIEW(b));
-		bn = b;
-		BBPfix(b->batCacheid);
-	} else {
-		bn = BATnew(TYPE_void, b->T->type, b->U->count);
-		if (bn == NULL)
-			return NULL;
-	}
-
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
+	bn = BATnew(TYPE_void, b->T->type, b->U->count);
+	if (bn == NULL)
+		return NULL;
 
 	nils = rsh_typeswitchloop(Tloc(b, b->U->first), b->T->type, 1,
 				  VALptr(v), v->vtype, 0,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalcrshcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -8084,12 +7193,6 @@ BATcalcrshcst(BAT *b, const ValRecord *v, int accum, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (!accum && b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -8109,15 +7212,11 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 	if (bn == NULL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	nils = rsh_typeswitchloop(VALptr(v), v->vtype, 0,
 				  Tloc(b, b->U->first), b->T->type, 1,
 				  Tloc(bn, bn->U->first),
 				  b->U->count, abort_on_error,
 				  "BATcalccstrsh");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (nils == BUN_NONE) {
 		BBPunfix(bn->batCacheid);
@@ -8132,12 +7231,6 @@ BATcalccstrsh(const ValRecord *v, BAT *b, int abort_on_error)
 	bn->T->key = bn->U->count <= 1;
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -8635,9 +7728,6 @@ BATcalclt(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(b1->T->type == TYPE_void ? (void *) &b1->T->seq : (void *) Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -8647,15 +7737,6 @@ BATcalclt(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalclt");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -8670,8 +7751,6 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcltcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -8680,14 +7759,6 @@ BATcalcltcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcltcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -8702,8 +7773,6 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstlt") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalclt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -8712,14 +7781,6 @@ BATcalccstlt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstlt");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9216,9 +8277,6 @@ BATcalcgt(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -9228,15 +8286,6 @@ BATcalcgt(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcgt");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9251,8 +8300,6 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcgtcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -9261,14 +8308,6 @@ BATcalcgtcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgtcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9283,8 +8322,6 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstgt") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcgt_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -9293,14 +8330,6 @@ BATcalccstgt(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstgt");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9797,9 +8826,6 @@ BATcalcle(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -9809,15 +8835,6 @@ BATcalcle(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcle");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9832,8 +8849,6 @@ BATcalclecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalclecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -9842,14 +8857,6 @@ BATcalclecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalclecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -9864,8 +8871,6 @@ BATcalccstle(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstle") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcle_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -9874,14 +8879,6 @@ BATcalccstle(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstle");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10378,9 +9375,6 @@ BATcalcge(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -10390,15 +9384,6 @@ BATcalcge(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcge");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10413,8 +9398,6 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcgecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -10423,14 +9406,6 @@ BATcalcgecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcgecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10445,8 +9420,6 @@ BATcalccstge(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstge") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcge_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -10455,14 +9428,6 @@ BATcalccstge(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstge");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10958,9 +9923,6 @@ BATcalceq(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -10970,15 +9932,6 @@ BATcalceq(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalceq");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -10993,8 +9946,6 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalceqcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -11002,14 +9953,6 @@ BATcalceqcst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalceqcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11024,8 +9967,6 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccsteq") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalceq_intern(VALptr(v), v->vtype, 0, NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
@@ -11033,14 +9974,6 @@ BATcalccsteq(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccsteq");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11536,9 +10469,6 @@ BATcalcne(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			      b1->T->vheap ? b1->T->vheap->base : NULL,
 			      b1->T->width,
@@ -11548,15 +10478,6 @@ BATcalcne(BAT *b1, BAT *b2)
 			      b1->U->count,
 			      b1->T->nonil && b2->T->nonil,
 			      b1->H->seq, "BATcalcne");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11571,8 +10492,6 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalcnecst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(Tloc(b, b->U->first), b->T->type, 1,
 			      b->T->vheap ? b->T->vheap->base : NULL,
 			      b->T->width,
@@ -11581,14 +10500,6 @@ BATcalcnecst(BAT *b, const ValRecord *v)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalcnecst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -11603,8 +10514,6 @@ BATcalccstne(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstne") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcne_intern(VALptr(v), v->vtype, 0,
 			      NULL, 0,
 			      Tloc(b, b->U->first), b->T->type, 1,
@@ -11613,14 +10522,6 @@ BATcalccstne(const ValRecord *v, BAT *b)
 			      b->U->count,
 			      b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			      b->H->seq, "BATcalccstne");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12119,9 +11020,6 @@ BATcalccmp(BAT *b1, BAT *b2)
 		return BATconst(b1, TYPE_bte, &res);
 	}
 
-	BATaccessBegin(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(Tloc(b1, b1->U->first), b1->T->type, 1,
 			       b1->T->vheap ? b1->T->vheap->base : NULL,
 			       b1->T->width,
@@ -12131,15 +11029,6 @@ BATcalccmp(BAT *b1, BAT *b2)
 			       b1->U->count,
 			       b1->T->nonil && b2->T->nonil,
 			       b1->H->seq, "BATcalccmp");
-
-	BATaccessEnd(b1, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(b2, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b1->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b1, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12154,8 +11043,6 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 	if (checkbats(b, NULL, "BATcalccmpcst") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(Tloc(b, b->U->first), b->T->type, 1,
 			       b->T->vheap ? b->T->vheap->base : NULL,
 			       b->T->width,
@@ -12164,14 +11051,6 @@ BATcalccmpcst(BAT *b, const ValRecord *v)
 			       b->U->count,
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccmpcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12186,8 +11065,6 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 	if (checkbats(b, NULL, "BATcalccstcmp") == GDK_FAIL)
 		return NULL;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalccmp_intern(VALptr(v), v->vtype, 0,
 			       NULL, 0,
 			       Tloc(b, b->U->first), b->T->type, 1,
@@ -12196,14 +11073,6 @@ BATcalccstcmp(const ValRecord *v, BAT *b)
 			       b->U->count,
 			       b->T->nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
 			       b->H->seq, "BATcalccstcmp");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12359,10 +11228,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 		return BATconst(b, TYPE_bit, &res);
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -12374,16 +11239,6 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi)
 				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetween");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12404,8 +11259,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -12413,14 +11266,6 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12440,9 +11285,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(lo, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -12452,15 +11294,6 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi)
 				   VALptr(hi), 0, NULL, 0,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweenbatcst");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(lo, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12480,9 +11313,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 		return NULL;
 	}
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
 	bn = BATcalcbetween_intern(Tloc(b, b->U->first), 1,
 				   b->T->vheap ? b->T->vheap->base : NULL,
 				   b->T->width,
@@ -12492,15 +11322,6 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi)
 				   hi->T->width,
 				   b->T->type, b->U->count,
 				   b->H->seq, "BATcalcbetweencstbat");
-
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(hi, USE_TAIL, MMAP_SEQUENTIAL);
-
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
 
 	return bn;
 }
@@ -12682,20 +11503,6 @@ BATcalcifthenelse_intern(BAT *b,
 		bn->H->key = 1;
 		bn->H->nil = 0;
 		bn->H->nonil = 1;
-	}
-
-	if (b->H->type != bn->H->type && bn->U->count == b->U->count) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	} else if (bn->U->count < b->U->count && !BAThdense(b)) {
-		const oid *oids = (const oid *) Hloc(b, b->U->first);
-		cnt = bn->U->count;
-		hd = (oid *) Hloc(bn, bn->U->first);
-		for (i = 0; i < cnt; i++) {
-			*hd = oids[*hd];
-			hd++;
-		}
 	}
 
 	return bn;
@@ -13425,12 +12232,6 @@ BATconvert(BAT *b, int tp, int abort_on_error)
 	bn->T->revsorted = nils == 0 && b->T->revsorted;
 	bn->T->key = (b->T->key & 1) && nils <= 1;
 
-	if (b->H->type != bn->H->type) {
-		BAT *bnn = VIEWcreate(b, bn);
-		BBPunfix(bn->batCacheid);
-		bn = bnn;
-	}
-
 	return bn;
 }
 
@@ -13592,7 +12393,6 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 	src = Tloc(b, b->U->first);
 	cnt = b->U->count;
 
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);
 	switch (b->T->type) {
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
@@ -13617,7 +12417,6 @@ BATcalcavg(BAT *b, dbl *avg, BUN *vals)
 			 ATOMname(b->T->type));
 		return GDK_FAIL;
 	}
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;

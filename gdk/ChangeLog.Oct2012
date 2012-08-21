@@ -1,0 +1,12 @@
+# ChangeLog file for MonetDB
+# This file is updated with Maddlog
+
+* Wed Aug  8 2012 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the gdk_embedded (and embedded) option.  The code wasn't tested
+  and most likely non-functional.
+
+* Tue Jul 17 2012 Sjoerd Mullender <sjoerd@acm.org>
+- BAT-of-BATs is no longer allowed.  It was already not allowed to
+  make these types of BATs persistent, but now they can't be created at
+  all anymore.
+

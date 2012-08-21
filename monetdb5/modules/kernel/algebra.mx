@@ -1199,7 +1199,6 @@ CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	BATcheck(b,"BATsum_@1_@2");
 	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
-	BATaccessBegin(b,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			result += *(@1*) BUNtloc(bi, p);
@@ -1215,7 +1214,6 @@ CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 			}
 		}
 	}
-	BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
 	*res = result;
 	return GDK_SUCCEED;
 }
@@ -1236,7 +1234,6 @@ CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 	BATcheck(b,"BATprodInt");
 	if (!BATcount(b) && *empty_is_nil)
 		result = @2_nil;
-	BATaccessBegin(b,USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->T->nonil) {
 		BATloop(b, p, q) {
 			result *= *(@1*) BUNtloc(bi, p);
@@ -1252,7 +1249,6 @@ CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
 			}
 		}
 	}
-	BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
 	*res = result;
 	return GDK_SUCCEED;
 }
@@ -1280,7 +1276,6 @@ CMDmax_@1(@1* result, BAT *b)
 		char* nil = BATatoms[t].atomNull;
 		BUN p,q;
 
-		BATaccessBegin(b,USE_TAIL,MMAP_SEQUENTIAL);
 		if (b->T->nonil) {
 			BATloop(b, p, q) {
 				x = (ptr) BUNt@2(bi, p);
@@ -1300,7 +1295,6 @@ CMDmax_@1(@1* result, BAT *b)
 				}
 			}
 		}
-		BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
 	}
 	if (aggr) {
 		memcpy(aggr, x=v, ATOMsize(t));
@@ -1528,7 +1522,6 @@ CMDgen_group(BAT **result, BAT *b )
 	int htpe = (b->htype == TYPE_void)?TYPE_oid:b->htype;
 	BAT *r = BATnew(htpe, TYPE_void, BATcount(b)*2);
 
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->hvarsized) {
 		BATloop(b, u, v) {
 			wrd i, sz = *(wrd*)BUNtloc(bi, u);
@@ -1550,7 +1543,6 @@ CMDgen_group(BAT **result, BAT *b )
 			}
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r -> hsorted = BAThordered(b);
 	r -> hrevsorted = BAThrevordered(b);
 	r -> tsorted = BATtordered(b);
@@ -1607,7 +1599,6 @@ CMDlike(BAT **ret, BAT *b, str s)
 	for (s = t; *s; s++, yy++)
 		*s = tolower(*s);
 
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (b->hvarsized) {
 		BATloop(b, u, v)
 			if (like(BUNtvar(bi, u), t, yy) &&
@@ -1625,7 +1616,6 @@ CMDlike(BAT **ret, BAT *b, str s)
 				return GDK_FAIL;
 			}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	c->hsorted = BAThordered(b);
 	c->hrevsorted = BAThrevordered(b);
 	c->tsorted = BATtordered(b);
@@ -1709,14 +1699,12 @@ BATmerge(BAT *b)
 	BUN p, q;
 	lng *r = (lng *) BUNhead(bni, BUNfirst(bn));
 
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		oid hp = *(oid *) BUNhead(bi, p);
 		oid tp = *(oid *) BUNtail(bi, p);
 
 		*r++ = (((lng) hp) << 32) + tp;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATsetcount(bn, p);
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
@@ -1741,14 +1729,12 @@ BATsplit(BAT *b)
 	BUN i;
 	lng *r = (lng *) BUNhead(bi, BUNfirst(b));
 
-	BATaccessBegin(b,USE_HEAD,MMAP_SEQUENTIAL);
 	for (i = 0; i < n; i++, r++) {
 		oid hp = (int) (*r >> 32);
 		oid tp = (int) *r;
 
 		bunfastins(bn, &hp, &tp);
 	}
-	BATaccessEnd(b,USE_HEAD,MMAP_SEQUENTIAL);
 
 	bn->hsorted = BAThordered(b) ;
 	bn->hrevsorted = BAThrevordered(b) ;
@@ -1763,7 +1749,6 @@ BATsplit(BAT *b)
 
 	return bn;
 bunins_failed:
-	BATaccessEnd(b,USE_HEAD,MMAP_SEQUENTIAL);
 	BBPreclaim(bn);
 	return NULL;
 }
