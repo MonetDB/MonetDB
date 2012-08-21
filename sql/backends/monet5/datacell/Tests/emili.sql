@@ -46,7 +46,7 @@ CALL datacell.receptor('datacell.observations','localhost',50501);
 CREATE PROCEDURE datacell.enrich()
 BEGIN
 	DECLARE cnt INTEGER;
-	SET cnt = (SELECT count(*) FROM datacell.area A, datacell.istream I WHERE A.location = I.location ) ;
+	SET cnt = (SELECT count(*) FROM datacell.area A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
 	INSERT INTO datacell.sensors(ip, location, kind,value) 
 		SELECT ip, substring(location,0,3), kind, value FROM datacell.istream;
 	IF cnt = 0
