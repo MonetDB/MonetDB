@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 		{ "client", 0, 0, 'c' },
 		{ "port", 1, 0, 'p' },
 		{ "timestamp", 0, 0, 't' },
-		{ "time", 0, 0, 't' },
+		{ "time", 1, 0, 't' },
 		{ "events", 1, 0, 'e' },
 		{ "sensor", 1, 0, 's' },
 		{ "server", 0, 0, 's' },
@@ -617,7 +617,9 @@ produceDataStream(Sensor se)
 	char buf[MYBUFSIZ + 1], *tuple, *c, *d;
 	FILE *fd;
 	int i, snr;
-	time_t lasttime;
+	int multiply=1000, usec = 0; 
+	time_t lasttime, tm;
+	struct tm stm;
 
 	/* read a events of messages from a file or standard input.
 	   It is processed multiple times.
@@ -639,35 +641,39 @@ produceDataStream(Sensor se)
 
 		/* read the event requests and sent when the becomes */
 		while (fgets(buf, MYBUFSIZ, fd) != 0) {
-			int newdelay = 0;
-			newdelay = (int) atol(buf);
+			int newdelay = delay;
 			tuple = buf;
 
 			if ( timecolumn >= 0 ) {
 				/* calculate the difference with previous event */
 				/* use a simplistic csv file format */
 				c= buf;
-				for ( i = timecolumn; i>= 0; i--){
+				for ( i = timecolumn; i> 0; i--){
 					if ( (d=strchr(c,(int)','))){
 						c= d+1;
 					}
 				}
-				/* convert time to epoch in microseconds*/
-				/* calculate time differential */
-				if ( lasttime == 0){
-					newdelay =delay;
-					lasttime = 0;
-				} else {
-				}
+				/* convert time to epoch in seconds*/
+				memset(&stm, 0, sizeof(struct tm));
+				if ( c ){
+					c = strptime(c,"%Y-%m-%d %H:%M:%S", &stm);
+					tm = mktime(&stm);
+					if ( *c == '.') {
+						/* microseconds */
+						usec = atoi(c+1);
+						if ( usec)
+							multiply = 1;
+					}
+				} 
+				/* calculate time differential in seconds */
+				if ( lasttime )
+					newdelay = (int) difftime(tm,lasttime) * multiply + usec;
+				lasttime = tm;
+				if (trace && newdelay)
+					mnstr_printf(SEout, "delayed %d\n", newdelay);
 				MT_sleep_ms(newdelay);
 			} else
-			if (newdelay > 0) {
-				/* wait */
-				tuple = strchr(buf, '[');
-				if (tuple == 0)
-					tuple = buf;
-				MT_sleep_ms(newdelay);
-			} else if (delay > 0) {
+			if (delay > 0) {
 				/* wait */
 				MT_sleep_ms(delay);
 			}
