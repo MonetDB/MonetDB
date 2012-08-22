@@ -618,7 +618,7 @@ produceDataStream(Sensor se)
 	FILE *fd;
 	int i, snr;
 	int multiply=1000, usec = 0; 
-	time_t lasttime, tm = 0;
+	time_t lasttime = 0, tm = 0;
 	struct tm stm;
 
 	/* read a events of messages from a file or standard input.
