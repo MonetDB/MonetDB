@@ -25,7 +25,7 @@
 #include "monetdb_config.h"
 #include "opt_prelude.h"
 
-str abortReft;
+str abortRef;
 str affectedRowsRef;
 str aggrRef;
 str alarmRef;
