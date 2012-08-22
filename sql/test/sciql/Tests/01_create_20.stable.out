@@ -23,13 +23,6 @@ Ready.
 # 16:32:44 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=jarl" "--port=31347"
 # 16:32:44 >  
 
-#CREATE ARRAY timeseries (tick TIMESTAMP DIMENSION, payload FLOAT DEFAULT 0.0 );
-#SELECT * FROM timeseries;
-% sys.timeseries,	sys.timeseries # table_name
-% tick,	payload # name
-% timestamp,	double # type
-% 26,	24 # length
-#DROP ARRAY timeseries;
 
 # 17:53:50 >  
 # 17:53:50 >  Done.

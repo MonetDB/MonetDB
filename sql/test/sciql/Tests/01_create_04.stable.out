@@ -65,16 +65,6 @@ Ready.
 [ 2,	3.7	]
 [ 3,	3.7	]
 [ 4,	3.7	]
-#SELECT * FROM test01_04_real;
-% sys.test01_04_real,	sys.test01_04_real # table_name
-% x,	v # name
-% real,	double # type
-% 15,	24 # length
-#SELECT * FROM test01_04_double;
-% sys.test01_04_double,	sys.test01_04_double # table_name
-% x,	v # name
-% double,	double # type
-% 24,	24 # length
 #DROP ARRAY test01_04_tinyint;
 #DROP ARRAY test01_04_smallint;
 #DROP ARRAY test01_04_int;

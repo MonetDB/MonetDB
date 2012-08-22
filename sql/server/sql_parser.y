@@ -1698,7 +1698,7 @@ dim_range:
 	{
 		$$= append_list(L(), $2);
 	}
-	| '[' ident ']'  /* sequence name */
+	| '[' ident ']'  /* sequence name or variable name */
 	{
 		$$= append_string(L(), $2);
 	}

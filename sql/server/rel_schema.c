@@ -606,8 +606,10 @@ get_dim_constraints(mvc *sql, sql_subtype *ctype, dlist *lst, char **dimcstr, in
 }
 
 
+/* checks if 'tpe' is one of the MonetDB int types */
+#define isAnInternIntType(tpe) (tpe == TYPE_bit || tpe == TYPE_bte || tpe == TYPE_sht || tpe == TYPE_int || tpe == TYPE_wrd || tpe == TYPE_lng)
 /* checks if 'tpe' is one of the SQL int types, i.e., TINYINT, SMALLINT, INT or BIGINT */
-#define isAnIntType(tpe, len) (tpe[len-3] == 'i' && tpe[len-2] == 'n' && tpe[len-1] == 't')
+#define isAnSQLIntType(tpe, len) (tpe[len-3] == 'i' && tpe[len-2] == 'n' && tpe[len-1] == 't')
 
 static int
 create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
@@ -615,11 +617,13 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	dlist *l = s->data.lval;
 	dlist *dim = NULL;
 	char *cname = l->h->data.sval, *tname = NULL;
+	char *action = alter ? "ALTER":"CREATE";
 	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
 	int res = SQL_OK;
 
-(void)ss;
+	(void)ss;
+
 	if (alter && !isTableOrArray(t)) {
 		sql_error(sql, 02, "42000!ALTER %s: cannot add column to VIEW '%s'\n", isTable(t)?"TABLE":(isArray(t)?"ARRAY":"TABLE/ARRAY"), t->base.name);
 		return SQL_ERR;
@@ -632,7 +636,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		cs = find_sql_column(t, cname);
 		if (cs) {
-			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", action, cname);
 			return SQL_ERR;
 		}
 
@@ -641,63 +645,97 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			/* this is a dimension, see its structure in parser.y/column_def */
 			assert(l->h->next->next->next->type == type_symbol && l->h->next->next->next->data.sym->token == SQL_DIMENSION);
 			if (!isArray(t)){
-				sql_error(sql, 02, "%s %s: dimension column '%s' used in non-ARRAY\n", (alter)?"ALTER":"CREATE", (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
+				sql_error(sql, 02, "%s %s: dimensions ('%s') not allowed in non-ARRAY\n", action, (t->type==tt_table)?"TABLE":"OTHER_TT", cname);
+				return SQL_ERR;
+			}
+
+			tname = ctype->type->sqlname;
+			if(!isAnSQLIntType(tname, strlen(tname))) { /* TODO: update this check if more dimension types are supported. */
+				sql_error(sql, 02, "%s ARRAY: dimension type '%s' not supported yet\n", action, tname);
 				return SQL_ERR;
 			}
 
 			t->ndims++;
 
-			/* TODO: check if this is the correct place where the NULL
-			 * dim_range list of the "DIMENSION" case is denoted */
 			dim = l->h->next->next->next->data.sym->data.lval;
 			if (dim && !dim->h->next) { /* "DIMENSION dim_range" case */
 				dim = dim->h->data.lval; /* here starts the actual dimension constraints */
 
 				cs->dim = ZNEW(sql_dimspec);
 				switch (dim->cnt) {
-					case 1: {/* [size], [-size], [seqname] */
-						if(dim->h->type == type_string) { /* TODO: implementation: look up the constraints of the [seq] */
-							sql_error(sql, 02, "%s ARRAY: dimension column '%s' uses sequence \"%s\" as constraint, not implemented yet\n", (alter)?"ALTER":"CREATE", cname, dim->h->data.sval);
-							return SQL_ERR;
-						}
+					case 1: {/* [*], [size], [-size], [seqname], [varname (represent size)] */
+						if(dim->h->type == type_string) {
+							void *ptr = NULL;
+							if ((ptr = stack_get_var(sql, dim->h->data.sval))) { /* [varname] */
+								ValRecord var;
+								VALcopy((ValPtr)&var, ptr); /* to prevent VALconvert overwriting the variable on the stack */
 
-						/* In cases [size] or [-size], the column's data type MUST be INT */
-						tname = ctype->type->sqlname;
-						if(!isAnIntType(tname, strlen(tname))) {
-							sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension column \"%s\" has type \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
-							return SQL_ERR;
-						}
+								/* In case that the [size] shortcut is given as a variable, the column's data type MUST be INT */
+								tname = ctype->type->sqlname;
+								if(!isAnSQLIntType(tname, strlen(tname))) {
+									sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension '%s' has type '%s'\n", action, cname, tname);
+									return SQL_ERR;
+								}
+								if(!isAnInternIntType(var.vtype)) {
+									sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type '%d'\n", action, dim->h->data.sval, var.vtype);
+									return SQL_ERR;	
+								}
 
-						assert(dim->h->type == type_list);
-						if (dim->h->data.lval->h->type == type_symbol){
-							if (dim->h->data.lval->h->data.sym) { 		/* the case: [size] */
-								tname = ((AtomNode*)dim->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
-								if(!isAnIntType(tname, strlen(tname))) {
-									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
+								if (var.vtype > ctype->type->localtype) { /* TODO: ideally, even if (var.vtype > ctype->type->localtype), we should check if the value of 'var' fits into the type 'ctype.type->localtype' */
+									sql_error(sql, 02, "%s ARRAY: type '%d' of variable '%s' does not match type '%d' of dimension '%s'\n", action, var.vtype, dim->h->data.sval, ctype->type->localtype, cname);
+									return SQL_ERR;
+								}
+								cs->dim->start = GDKstrdup("0");
+								cs->dim->step = GDKstrdup("1");
+								cs->dim->stop = VALconvert(TYPE_str, &var);
+							} else if ((ptr = find_sql_sequence(cur_schema(sql), dim->h->data.sval))) { /* [seqname] */
+								/* TODO 1: extend the parser to accept a [qname] as [seqname] */
+								/* TODO 2: implementation: look up the constraints of the [seqname] */
+								sql_error(sql, 02, "%s ARRAY: SQL SEQUENCE (\'%s\') as dimension ('%s') constraint not implemented yet\n", action, dim->h->data.sval, cname);
+								return SQL_ERR;
+							} else {
+								sql_error(sql, 02, "%s ARRAY: identifier '%s' unknown\n", action, dim->h->data.sval);
+								return SQL_ERR;
+							}
+						} else {
+							/* In cases [size] or [-size], the column's data type MUST be INT */
+							tname = ctype->type->sqlname;
+							if(!isAnSQLIntType(tname, strlen(tname))) {
+								sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' only allowed for int typed dimensions, dimension column '%s' has type '%s'\n", action, cname, tname);
+								return SQL_ERR;
+							}
+
+							assert(dim->h->type == type_list);
+							if (dim->h->data.lval->h->type == type_symbol){
+								if (dim->h->data.lval->h->data.sym) { 		/* the case: [size] */
+									tname = ((AtomNode*)dim->h->data.lval->h->data.sym)->a->tpe.type->sqlname;
+									if(!isAnSQLIntType(tname, strlen(tname))) {
+										sql_error(sql, 02, "%s ARRAY: constraints of dimension '%s' has invalid data type: expect int type, got '%s'\n", action, cname, tname);
+										return SQL_ERR;
+									}
+
+									cs->dim->start = GDKstrdup("0");
+									cs->dim->step = GDKstrdup("1");
+									cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a);
+								} else {									/* the case: [*] */
+									cs->dim->start = GDKstrdup("");
+									cs->dim->step = GDKstrdup("");
+									cs->dim->stop = GDKstrdup("");
+								}
+							} else { 										/* the case: [-size] */
+								assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
+
+								tname = ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
+								if(!isAnSQLIntType(tname, strlen(tname))) {
+									sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got '%s'\n", action, cname, tname);
 									return SQL_ERR;
 								}
 
 								cs->dim->start = GDKstrdup("0");
-								cs->dim->step = GDKstrdup("1");
-								cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->data.sym)->a);
-							} else {									/* the case: [*] */
-								cs->dim->start = GDKstrdup("");
-								cs->dim->step = GDKstrdup("");
-								cs->dim->stop = GDKstrdup("");
+								cs->dim->step = GDKstrdup("-1");
+								atom_neg( ((AtomNode *) dim->h->data.lval->h->next->data.sym)->a );
+								cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a);
 							}
-						} else { 										/* the case: [-size] */
-							assert(dim->h->data.lval->h->type == type_string && strcmp(dim->h->data.lval->h->data.sval, "sql_neg")==0);
-
-							tname = ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a->tpe.type->sqlname;
-							if(!isAnIntType(tname, strlen(tname))) {
-								sql_error(sql, 02, "%s ARRAY: constraints of dimension column '%s' has invalid data type: expect int type, got \"%s\"\n", (alter)?"ALTER":"CREATE", cname, tname);
-								return SQL_ERR;
-							}
-
-							cs->dim->start = GDKstrdup("0");
-							cs->dim->step = GDKstrdup("-1");
-							atom_neg( ((AtomNode *) dim->h->data.lval->h->next->data.sym)->a );
-							cs->dim->stop = atom2string(sql->sa, ((AtomNode*)dim->h->data.lval->h->next->data.sym)->a);
 						}
 					} break;
 					case 2: /* [start:stop] */
@@ -707,7 +745,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							return res;
 						tname = ctype->type->sqlname;
 						/* For int-typed dimensions, we allow [start:stop] to be the shortcut of [start:1:stop] */
-						cs->dim->step = isAnIntType(tname, strlen(tname)) ? GDKstrdup("1") : GDKstrdup("");
+						cs->dim->step = isAnSQLIntType(tname, strlen(tname)) ? GDKstrdup("1") : GDKstrdup("");
 						break;
 					case 3: /* [start:step:stop] */
 						if((res = get_dim_constraints(sql, ctype, dim->h->data.lval, &cs->dim->start, 0)) != SQL_OK)
@@ -718,11 +756,11 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 							return res;
 						break;
 					default:
-						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", (alter)?"ALTER":"CREATE", cname, dim->cnt);
+						sql_error(sql, 02, "%s ARRAY: dimension '%s' has wrong number of range constraints %d\n", action, cname, dim->cnt);
 						return SQL_ERR;
 				}
 			} else if (dim && dim->h->next) { /* TODO: the case "ARRAY dim_range_list" is not dealt with */
-				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", (alter)?"ALTER":"CREATE", cname);
+				sql_error(sql, 02, "%s ARRAY: dimension '%s' constraint with syntax 'ARRAY dim_range_list' not implemented yet\n", action, cname);
 				return SQL_ERR;
 			} else { /* "DIMENSION" case: only allocate space for empty [start:step:stop] */
 				cs->dim = ZNEW(sql_dimspec);

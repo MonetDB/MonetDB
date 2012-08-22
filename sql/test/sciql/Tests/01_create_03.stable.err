@@ -30,6 +30,60 @@ stderr of test '01_create_03` in directory 'test/sciql` itself:
 # 23:27:27 >  mclient -lsql -ftest -i -e --host=jarl --port=31410 
 # 23:27:27 >  
 
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_tinyint_smallint  (x TINYINT  DIMENSION[vSmallint], v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '3' of variable 'vsmallint' does not match type '2' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_tinyint_int       (x TINYINT  DIMENSION[vInt],      v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '5' of variable 'vint' does not match type '2' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_smallint_int      (x SMALLINT DIMENSION[vInt],      v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '5' of variable 'vint' does not match type '3' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_tinyint_bigint    (x TINYINT  DIMENSION[vBigint],   v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '11' of variable 'vbigint' does not match type '2' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_smallint_bigint   (x SMALLINT DIMENSION[vBigint],   v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '11' of variable 'vbigint' does not match type '3' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = CREATE ARRAY test_01_03_int_bigint        (x INTEGER  DIMENSION[vBigint],   v FLOAT DEFAULT 3.7);
+ERROR = !CREATE ARRAY: type '11' of variable 'vbigint' does not match type '5' of dimension 'x'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_tinyint_smallint;
+ERROR = !SELECT: no such table 'test_01_03_tinyint_smallint'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_tinyint_int;
+ERROR = !SELECT: no such table 'test_01_03_tinyint_int'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_smallint_int;
+ERROR = !SELECT: no such table 'test_01_03_smallint_int'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_tinyint_bigint;
+ERROR = !SELECT: no such table 'test_01_03_tinyint_bigint'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_smallint_bigint;
+ERROR = !SELECT: no such table 'test_01_03_smallint_bigint'
+MAPI  = monetdb@riga:30367
+QUERY = SELECT * FROM test_01_03_int_bigint;
+ERROR = !SELECT: no such table 'test_01_03_int_bigint'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_tinyint_smallint;
+ERROR = !DROP ARRAY: no such array 'test_01_03_tinyint_smallint'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_tinyint_int;
+ERROR = !DROP ARRAY: no such array 'test_01_03_tinyint_int'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_smallint_int;
+ERROR = !DROP ARRAY: no such array 'test_01_03_smallint_int'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_tinyint_bigint;
+ERROR = !DROP ARRAY: no such array 'test_01_03_tinyint_bigint'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_smallint_bigint;
+ERROR = !DROP ARRAY: no such array 'test_01_03_smallint_bigint'
+MAPI  = monetdb@riga:30367
+QUERY = DROP ARRAY test_01_03_int_bigint;
+ERROR = !DROP ARRAY: no such array 'test_01_03_int_bigint'
 
 # 23:27:27 >  
 # 23:27:27 >  Done.

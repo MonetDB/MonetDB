@@ -30,9 +30,9 @@ stderr of test '00_syntax_error_03` in directory 'test/sciql` itself:
 # 13:45:43 >  mclient -lsql -ftest -i -e --host=jarl --port=30420 
 # 13:45:43 >  
 
-MAPI  = monetdb@riga:39460
+MAPI  = monetdb@riga:36718
 QUERY = create array err( x char dimension[128]);
-ERROR = !CREATE ARRAY: syntax short cut '[size]' only allowed for int typed dimensions, dimension column "x" has type "char"
+ERROR = !CREATE ARRAY: dimension type 'char' not supported yet
 
 # 13:45:43 >  
 # 13:45:43 >  Done.
