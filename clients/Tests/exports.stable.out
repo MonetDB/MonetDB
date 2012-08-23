@@ -2470,6 +2470,7 @@ str ZORDencode_int_oid(oid *z, int *x, int *y);
 str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt);
 str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt){ BAT *bn;
 void _initTrace(void);
+str abortRef;
 str activateCounter(str name);
 str addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name);
 str addPipeDefinition(Client cntxt, str name, str pipe);
