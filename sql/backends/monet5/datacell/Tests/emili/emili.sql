@@ -45,8 +45,6 @@ CALL datacell.receptor('datacell.observations','localhost',50501);
 -- enrich at the arrival time of each stream event
 CREATE PROCEDURE datacell.enrich()
 BEGIN
-	DECLARE cnt INTEGER;
-
 	INSERT INTO datacell.sensors(ip, location, kind,value) 
 		SELECT ip, substring(location,0,3), kind, value FROM datacell.istream;
 
