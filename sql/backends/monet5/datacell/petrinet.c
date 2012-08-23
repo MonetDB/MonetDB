@@ -117,7 +117,7 @@ int pnettop = 0;
 int *enabled;     /*array that contains the id's of all queries that are enable to fire*/
 
 static int status = BSKTINIT;
-static int cycleDelay = 10; /* be careful, it affects response/throughput timings */
+static int cycleDelay = 1; /* be careful, it affects response/throughput timings */
 
 str PNstartThread(int *ret);
 

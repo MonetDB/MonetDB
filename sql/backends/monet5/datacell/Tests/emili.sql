@@ -102,7 +102,7 @@ BEGIN
 	SET status = 'unconfirmed', time = now()
 	WHERE location IN (SELECT A.location
 			FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-			WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location));
+			WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
 END;
 CALL datacell.query('datacell.firewarning');
 
@@ -111,13 +111,13 @@ CREATE PROCEDURE datacell.firespotted()
 BEGIN
 	UPDATE datacell.states
 	SET status = 'confirmed', time = now()
-	WHERE location IN (SELECT A.location
-			FROM datacell.states S, datacell.area A, datacell.area B, datacell.hotsensors1 H
+	WHERE location IN (SELECT S.location
+			FROM datacell.states S, datacell.area A, datacell.area B, datacell.hotsensors2 H
 			WHERE S.status ='unconfirmed' 
 			AND A.ip = H.ip 
 			AND A.ip <> B.ip 
 			AND S.location = A.location
-			AND S.location = B.location));
+			AND S.location = B.location);
 END;
 CALL datacell.query('datacell.firespotted');
 
