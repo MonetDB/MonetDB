@@ -401,7 +401,8 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		oid *hdst, *tdst, o, *op = &o, id = 0;
 		BATiter ai = bat_iterator(a), bi = bat_iterator(b);
 
-		/* create tmp BAT that holds one cluster; estimate required size using sampling */
+		/* create tmp BAT that holds one cluster; estimate required
+		 * size using sampling */
 		if (BATcount(b) > DEFAULT_SIZE) {
 			BAT *histo = NULL, *sample = BATsample(b, DEFAULT_SIZE);
 
@@ -418,7 +419,8 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 			if (histo == NULL)
 				return GDK_FAIL;
 		}
-		/* create a temporary BAT of the estimated size holding pointers to the a tail atoms */
+		/* create a temporary BAT of the estimated size holding
+		 * pointers to the a tail atoms */
 		cur = 0;
 		end = size;
 		offp = (var_t*) GDKmalloc(size * sizeof(var_t));
@@ -451,20 +453,8 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		hdst = (oid *) Hloc(bn,BUNfirst(bn));
 		tdst = (oid *) Tloc(bn,BUNfirst(bn));
 
-		if (a_void) {
-			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
-		} else {
-			@:refine_loop()@
-		}
-@= refine_void_2
-	off = (BUN) (this - base);
-	base = (char*) GDKrealloc(base, size * sizeof(oid));
-	this = base + off;
-@= refine_void_1
-	*(oid*)this = a->tseqbase+r;
-	r = (BUN) (this - base);
-@= refine_loop
-		/* merge-scan tail of b, finding chunks with equal values; then sort each chunk on a */
+		/* merge-scan tail of b, finding chunks with equal values;
+		 * then sort each chunk on a */
 		BATloop(b, p, q) {
 			if ((*cmp) (BUNtail(bi, last), BUNtail(bi, p))) {
 				cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->T->vheap->base, hdst, tdst, &id, rv);
@@ -473,7 +463,9 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 
 				last = p;
 				cur = 0;
-				@4
+				if (a_void) {
+					this = base;
+				}
 			}
 			o = *(oid *) BUNhead(bi, p);
 			BUNfndOID(r, ai, op);
@@ -483,23 +475,30 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 				BBPreclaim(bn);
 				GDKfree(offp);
 				GDKfree(ids);
-				@3
+				if (a_void) {
+					GDKfree(base);
+				}
 				return GDK_FAIL;
 			}
 			if (cur >= end) {
 				offp = (var_t*) GDKrealloc(offp, (size *= 2) * sizeof(var_t));
 				ids = (oid*) GDKrealloc(ids, size * sizeof(oid));
 				end = size;
-				@2
+				if (a_void) {
+					off = (BUN) (this - base);
+					base = GDKrealloc(base, size * sizeof(oid));
+					this = base + off;
+				}
 			}
-			@1
+			if (a_void) {
+				*(oid*)this = a->tseqbase+r;
+				r = (BUN) (this - base);
+				this += sizeof(oid);
+			}
 			offp[cur] = (base) ? r<<a->T->shift : VarHeapValRaw(a->T->heap.base, r, a->T->width);
 			ids[cur] = o;
 			cur++;
-			this += sizeof(oid);
 		}
-@
-@c
 		cnt = sort_flush(offp, ids, cur, tpe, base ? base : a->T->vheap->base, hdst, tdst, &id, rv);
 		hdst += cnt;
 		tdst += cnt;
