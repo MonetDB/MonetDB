@@ -1126,6 +1126,8 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(b->batCacheid);
 			throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
 		}
+	} else {
+		s = NULL;
 	}
 	if (!BAThdense(b)) {
 		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,tail] */
