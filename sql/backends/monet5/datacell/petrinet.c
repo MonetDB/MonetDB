@@ -466,7 +466,7 @@ PNcontroller(void *dummy)
 	MalBlkPtr mb;
 	Client cntxt;
 	int k = -1;
-	int m = 0;
+	int m = 0, abortpc=0;
 	str msg;
 	lng t, analysis, now;
 	char buf[BUFSIZ], *modnme, *fcnnme;
@@ -499,14 +499,17 @@ reinit:
 		p = newFcnCall(mb, modnme, fcnnme);
 		pnet[i].pc = getPC(mb, p);
 	}
+	p= newFcnCall(mb, sqlRef, abortRef);
+	abortpc = getPC(mb,p);
 	pushEndInstruction(mb);
 	/*printf("\n1 mb->vtop:%d\n",mb->vtop);*/
 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	MT_lock_unset(&dcLock, "pncontroller");
 	if (mb->errors) {
+		printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
 		mnstr_printf(cntxt->fdout, "#Petrinet Controller found errors\n");
 		return;
 	}
-	MT_lock_unset(&dcLock, "pncontroller");
 	newStack(glb, mb->vtop);
 	memset((char *) glb, 0, stackSize(mb->vtop));
 	glb->stktop = mb->vtop;
@@ -599,6 +602,9 @@ reinit:
 					} else
 						GDKfree(msg);
 					pnet[i].enabled = -1;
+					/* abort current transaction  */
+					if ( abortpc )
+						msg = reenterMAL(cntxt, mb, abortpc, abortpc + 1, glb, 0, 0);
 				} else {
 					(void) MTIMEcurrent_timestamp(&pnet[i].seen);
 					for (j = 0; j < pnet[i].srctop; j++) {
