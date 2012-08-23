@@ -75,7 +75,7 @@ BEGIN
 	INSERT INTO datacell.hotsensors
 	SELECT ip, time, value
 	FROM datacell.sensors
-	WHERE kind LIKE 'temperature' AND value > 25;
+	WHERE kind LIKE 'temperature' AND value > 24;
 END;
 CALL datacell.query('datacell.hot');
 
