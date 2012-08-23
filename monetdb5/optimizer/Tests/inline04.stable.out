@@ -45,7 +45,7 @@ barrier X_16 := true;                   #  5 _16:bit := _17:bit {J9}
     redo X_16 := calc.<(X_15,3);        #  8 _16:bit := CMDvarLT(_15:int, _18:int) {J6}
 exit X_16;                              #  9 _16:bit 
     z:bat[:oid,:int] {inline} := X_14;  # 10 z:bat[:oid,:int] := _14:bat[:oid,:int] {G}
-    X_22 := batcalc.+(b,2);             # 11 _22:bat[:oid,:int] := CMDbatADDcstsignal(b:bat[:oid,:int], _10:int) {G}
+    X_22 := batcalc.+(b,2);             # 11 _22:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _10:int) {G}
     X_23 := 1;                          # 12 _23:int := _6:int 
 barrier X_24 := true;                   # 13 _24:bit := _17:bit {J17}
     X_22 := batcalc.*(X_22,X_22);       # 14 _22:bat[:oid,:int] := CMDbatMULsignal(_22:bat[:oid,:int], _22:bat[:oid,:int]) {G}

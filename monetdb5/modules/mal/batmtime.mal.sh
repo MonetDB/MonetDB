@@ -44,15 +44,24 @@ for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     func=${func#*:}
     for tp in date daytime timestamp; do
 	cat <<EOF
-command $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:bit]
+pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:bit]
 address CMDbat${func^^}
 comment "Return B1 $op B2";
+pattern $op(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbat${func^^}
+comment "Return B1 $op B2 with candidates list";
 pattern $op(b:bat[:oid,:$tp],v:$tp) :bat[:oid,:bit]
-address CMDbat${func^^}cst
+address CMDbat${func^^}
 comment "Return B $op V";
+pattern $op(b:bat[:oid,:$tp],v:$tp,s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbat${func^^}
+comment "Return B $op V with candidates list";
 pattern $op(v:$tp,b:bat[:oid,:$tp]) :bat[:oid,:bit]
-address CMDbat${func^^}cst
+address CMDbat${func^^}
 comment "Return V $op B";
+pattern $op(v:$tp,b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbat${func^^}
+comment "Return V $op B with candidates list";
 
 EOF
     done
@@ -60,9 +69,12 @@ done
 
 for tp in date daytime timestamp; do
     cat <<EOF
-command isnil(b:bat[:oid,:$tp]) :bat[:oid,:bit]
+pattern isnil(b:bat[:oid,:$tp]) :bat[:oid,:bit]
 address CMDbatISNIL
 comment "Unary check for nil over the tail of the bat";
+pattern isnil(b:bat[:oid,:$tp],s:bat[:oid,:oid]) :bat[:oid,:bit]
+address CMDbatISNIL
+comment "Unary check for nil over the tail of the bat with candidates list";
 
 EOF
 done
