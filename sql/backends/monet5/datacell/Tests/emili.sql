@@ -46,14 +46,14 @@ CALL datacell.receptor('datacell.observations','localhost',50501);
 CREATE PROCEDURE datacell.enrich()
 BEGIN
 	DECLARE cnt INTEGER;
-	SET cnt = (SELECT count(*) FROM datacell.area A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
+	SET cnt = (SELECT count(distinct I.ip) FROM datacell.area A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
 	INSERT INTO datacell.sensors(ip, location, kind,value) 
 		SELECT ip, substring(location,0,3), kind, value FROM datacell.istream;
 	IF cnt = 0
 	THEN
 		INSERT INTO datacell.area SELECT ip, substring(location,0,3) FROM datacell.istream;
 	END IF;
-	SET cnt = (SELECT count(*) FROM datacell.states A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
+	SET cnt = (SELECT count(distinct I.ip) FROM datacell.states A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
 	IF cnt = 0
 	THEN
 		INSERT INTO datacell.states SELECT substring(location,0,3), now(), 'normal' FROM datacell.istream;
@@ -98,13 +98,8 @@ call datacell.query('datacell.splitter');
 CREATE PROCEDURE datacell.firewarning()
 BEGIN
 	DECLARE cnt INTEGER;
-	DECLARE loc varchar(5);
 
 	SET cnt = ( SELECT count(*)
-		FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-		WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
-
-	SET loc = ( SELECT A.location
 		FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
 		WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
 
@@ -112,7 +107,9 @@ BEGIN
 	THEN
 		UPDATE datacell.states
 		SET status = 'unconfirmed', time = now()
-		WHERE location = loc;
+		WHERE location IN (SELECT A.location
+				FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+				WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location));
 	END IF;
 END;
 CALL datacell.query('datacell.firewarning');
@@ -121,13 +118,8 @@ CALL datacell.query('datacell.firewarning');
 CREATE PROCEDURE datacell.firespotted()
 BEGIN
 	DECLARE cnt INTEGER;
-	DECLARE loc varchar(5);
 
 	SET cnt = ( SELECT count(*)
-		FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
-		WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location);
-
-	SET loc = ( SELECT A.location
 		FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
 		WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location);
 
@@ -135,7 +127,9 @@ BEGIN
 	THEN
 		UPDATE datacell.states
 		SET status = 'confirmed', time = now()
-		WHERE location = loc;
+		WHERE location IN (SELECT A.location
+				FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+				WHERE S.status ='unconfirmed' AND A.ip = H.ip and S.location = A.location));
 	END IF;
 END;
 CALL datacell.query('datacell.firespotted');
