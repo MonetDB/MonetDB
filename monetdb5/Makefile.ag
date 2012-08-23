@@ -20,25 +20,4 @@
 # extras: builds optional/separate libraries that require libmonetdb5
 SUBDIRS = mal modules optimizer scheduler tools extras NATIVE_WIN32?NT
 
-EXTRA_DIST = RunMtest.in \
-		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
-		RunMserver.in RunMserver.bat.in
-
 EXTRA_DIST_DIR = tests
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
-
-scripts_sh = {
-	EXT = ""
-	COND = NOT_WIN32
-	NOINST
-	SOURCES = RunMapprove.in RunMserver.in RunMtest.in
-}
-
-scripts_bat = {
-	EXT = bat
-	COND = NATIVE_WIN32
-	NOINST
-	SOURCES = RunMapprove.bat.in RunMserver.bat.in RunMtest.bat.in
-}
