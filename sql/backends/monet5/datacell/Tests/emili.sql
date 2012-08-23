@@ -46,18 +46,19 @@ CALL datacell.receptor('datacell.observations','localhost',50501);
 CREATE PROCEDURE datacell.enrich()
 BEGIN
 	DECLARE cnt INTEGER;
-	SET cnt = (SELECT count(distinct I.ip) FROM datacell.area A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
+
 	INSERT INTO datacell.sensors(ip, location, kind,value) 
 		SELECT ip, substring(location,0,3), kind, value FROM datacell.istream;
-	IF cnt = 0
-	THEN
-		INSERT INTO datacell.area SELECT ip, substring(location,0,3) FROM datacell.istream;
-	END IF;
-	SET cnt = (SELECT count(distinct I.ip) FROM datacell.states A, datacell.istream I WHERE A.location = substring(I.location,0,3) ) ;
-	IF cnt = 0
-	THEN
-		INSERT INTO datacell.states SELECT substring(location,0,3), now(), 'normal' FROM datacell.istream;
-	END IF;
+
+	INSERT INTO datacell.area 
+		SELECT DISTINCT I.ip, substring(I.location,0,3) 
+		FROM datacell.istream I 
+		WHERE I.ip NOT IN (SELECT ip FROM datacell.area);
+
+	INSERT INTO datacell.states 
+		SELECT DISTINCT substring(location,0,3), now(), 'normal' 
+		FROM datacell.istream
+		WHERE substring(location,0,3) NOT IN (SELECT location FROM datacell.states);
 END;
 CALL datacell.query('datacell.enrich');
 
@@ -97,40 +98,26 @@ call datacell.query('datacell.splitter');
 -- unconfirmed fire detection based 
 CREATE PROCEDURE datacell.firewarning()
 BEGIN
-	DECLARE cnt INTEGER;
-
-	SET cnt = ( SELECT count(*)
-		FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-		WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location);
-
-	IF cnt =1 
-	THEN
-		UPDATE datacell.states
-		SET status = 'unconfirmed', time = now()
-		WHERE location IN (SELECT A.location
-				FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-				WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location));
-	END IF;
+	UPDATE datacell.states
+	SET status = 'unconfirmed', time = now()
+	WHERE location IN (SELECT A.location
+			FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
+			WHERE S.status ='normal' AND A.ip = H.ip and S.location = A.location));
 END;
 CALL datacell.query('datacell.firewarning');
 
 -- autoconfirm the fire warning 
 CREATE PROCEDURE datacell.firespotted()
 BEGIN
-	DECLARE cnt INTEGER;
-
-	SET cnt = ( SELECT count(*)
-		FROM datacell.area A, datacell.states S,  datacell.area B, datacell.hotsensors2 H
-		WHERE S.status ='unconfirmed' AND A.ip <> H.ip AND B.ip = H.ip AND A.ip <> B.ip AND S.location = A.location);
-
-	IF cnt =1 
-	THEN
-		UPDATE datacell.states
-		SET status = 'confirmed', time = now()
-		WHERE location IN (SELECT A.location
-				FROM datacell.states S, datacell.area A, datacell.hotsensors1 H
-				WHERE S.status ='unconfirmed' AND A.ip = H.ip and S.location = A.location));
-	END IF;
+	UPDATE datacell.states
+	SET status = 'confirmed', time = now()
+	WHERE location IN (SELECT A.location
+			FROM datacell.states S, datacell.area A, datacell.area B, datacell.hotsensors1 H
+			WHERE S.status ='unconfirmed' 
+			AND A.ip = H.ip 
+			AND A.ip <> B.ip 
+			AND S.location = A.location
+			AND S.location = B.location));
 END;
 CALL datacell.query('datacell.firespotted');
 
