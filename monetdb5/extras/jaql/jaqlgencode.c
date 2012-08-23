@@ -547,6 +547,14 @@ dumpin(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 				a = -1;
 				assert(0);
 			}
+			/* we perform a join against jX lateron, so reverse */
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, batRef);
+			setFunctionId(q, reverseRef);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, a);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
 
 			/* we will create 4 BATs, one for kind matches (t, f, n),
 			 * and one for num, dbl and str each */
