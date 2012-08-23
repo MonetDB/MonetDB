@@ -1404,6 +1404,7 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), NULL);
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
+	assert(BATcount(b) != 0);
 
 	/* special case for when the argument is a single array */
 	c = BATantiuselect_(b, "a", NULL, TRUE, TRUE);
