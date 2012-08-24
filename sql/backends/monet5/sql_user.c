@@ -213,6 +213,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, NULL, s, "db_users", l, &tpe, F_FUNC, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;");
+	if (m->sa == NULL)
+		_DELETE(l);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST,
 			"SELECT u.\"name\" AS \"name\", "
