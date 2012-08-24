@@ -281,6 +281,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
+	str opt;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -292,7 +293,9 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
 	/* inherit the optimizer from the server */
-	SQLglobal("optimizer", initSQLoptimizer());
+	opt = initSQLoptimizer();
+	SQLglobal("optimizer", opt);
+	GDKfree(opt);
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
