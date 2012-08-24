@@ -28,12 +28,8 @@ class TestManage(unittest.TestCase):
     def testCreate(self):
         create_name = database_prefix + "create"
         do_without_fail(lambda: self.control.destroy(create_name))
-
         self.control.create(create_name)
-        # can't create it again
         self.assertRaises(OperationalError, self.control.create, create_name)
-
-        # cleanup
         do_without_fail(lambda: self.control.destroy(create_name))
 
     def testDestroy(self):
@@ -54,7 +50,22 @@ class TestManage(unittest.TestCase):
         self.assertRaises(OperationalError, self.control.release, database_name)
 
     def testStatus(self):
-        self.control.status(database_name)
+        status1 = database_prefix + "status1"
+        do_without_fail(lambda: self.control.destroy(status1))
+        self.control.create(status1)
+        status = self.control.status(status1)
+        self.assertEquals(status["name"], status1)
+
+    def testStatuses(self):
+        status1 = database_prefix + "status1"
+        status2 = database_prefix + "status2"
+        do_without_fail(lambda: self.control.destroy(status1))
+        do_without_fail(lambda: self.control.destroy(status2))
+        self.control.create(status1)
+        self.control.create(status2)
+        statuses = self.control.status()
+        self.assertTrue(status1 in [status["name"] for status in statuses])
+        self.assertTrue(status2 in [status["name"] for status in statuses])
 
     def testStart(self):
         do_without_fail(lambda: self.control.stop(database_name))
@@ -83,8 +94,23 @@ class TestManage(unittest.TestCase):
         self.assertTrue(self.control.inherit(database_name, "readonly"))
         self.assertFalse(self.control.get(database_name).has_key("readonly"))
 
-    def testVersion(self):
-        self.control.version(database_name)
+    def testRename(self):
+        #return # this doesn't seem to work
+        old = database_prefix + "old"
+        new = database_prefix + "new"
+        do_without_fail(lambda: self.control.destroy(old))
+        self.control.create(old)
+        self.control.rename(old, new)
+        statuses = self.control.status()
+        self.assertTrue(new in [status["name"] for status in statuses])
+
+    def testDefaults(self):
+        defaults = self.control.defaults()
+        self.assertTrue(defaults.has_key("readonly"))
+
+    def testNeighbours(self):
+        neighbours = self.control.neighbours()
+        neighbours
 
 if __name__ == '__main__':
     unittest.main()
