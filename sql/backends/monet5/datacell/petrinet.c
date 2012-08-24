@@ -483,7 +483,7 @@ PNcontroller(void *dummy)
 	}
 
 	/* create a fake procedure to highlight the continuous queries */
-	s = newFunction(userRef, "pnController", FUNCTIONsymbol);
+	s = newFunction(userRef, GDKstrdup("pnController"), FUNCTIONsymbol);
 	mb= s->def;
 	p = getSignature(s);
 	getArg(p, 0) = newTmpVariable(mb, TYPE_void);
