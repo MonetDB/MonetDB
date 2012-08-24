@@ -57,6 +57,7 @@ typedef struct RECEPTOR {
 	int received;
 	Tablet table;   /* tuple input structure */
 	struct RECEPTOR *nxt, *prv;
+	struct RECEPTOR *parent;   /* used for multiple streams connected to the same receptor */
 } RCrecord, *Receptor;
 
 #ifdef WIN32

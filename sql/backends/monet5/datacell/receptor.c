@@ -480,6 +480,10 @@ parse:
 				}
 				cnt++;
 			}
+			/* update global struct */
+			rc->parent->cycles = rc->cycles;
+			rc->parent->received = rc->received;
+			rc->parent->pending = rc->pending;
 			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, "%s", rc->table.error);
@@ -662,6 +666,7 @@ RCstartThread(Receptor rc)
 #endif
 			trc = GDKmalloc(sizeof(RCrecord));
 			memcpy(trc, rc, sizeof(RCrecord));
+			trc->parent = rc;
 			trc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
 			if (trc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
