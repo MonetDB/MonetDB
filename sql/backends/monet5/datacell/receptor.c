@@ -481,9 +481,9 @@ parse:
 				cnt++;
 			}
 			/* update global struct */
-			rc->parent->cycles = rc->cycles;
-			rc->parent->received = rc->received;
-			rc->parent->pending = rc->pending;
+			rc->parent->cycles += rc->cycles;
+			rc->parent->received += rc->received;
+			rc->parent->pending += rc->pending;
 			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, "%s", rc->table.error);
