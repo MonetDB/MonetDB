@@ -232,7 +232,7 @@ mo_builtin_settings(opt **Set)
 	if (Set == NULL)
 		return 0;
 
-#define N_OPTIONS	12	/*MUST MATCH # OPTIONS BELOW */
+#define N_OPTIONS	11	/*MUST MATCH # OPTIONS BELOW */
 	set = malloc(sizeof(opt) * N_OPTIONS);
 	if (set == NULL)
 		return 0;
@@ -250,10 +250,6 @@ mo_builtin_settings(opt **Set)
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_debug");
 	set[i].value = strdup("0");
-	i++;
-	set[i].kind = opt_builtin;
-	set[i].name = strdup("gdk_alloc_map");
-	set[i].value = strdup("no");
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("gdk_vmtrim");
