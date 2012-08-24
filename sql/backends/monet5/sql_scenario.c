@@ -810,13 +810,16 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		}
 
 		/*
-		 * @-
 		 * We have dealt with the first parsing step and advanced the input reader
 		 * to the next statement (if any).
 		 * Now is the time to also perform the semantic analysis,
 		 * optimize and produce code.
 		 * We don;t search the cache for a previous incarnation yet.
 		 */
+		if (c->glb) {
+			/* MSinitClientPrg clears c->glb, so free it here */
+			_DELETE(c->glb);
+		}
 		MSinitClientPrg(c,"user",nme);
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
