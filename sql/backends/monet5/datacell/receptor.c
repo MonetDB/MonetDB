@@ -384,6 +384,7 @@ bodyRestart:
 				GDKfree(rc->table.format[j].data);
 				GDKfree(rc->table.format[j].nullstr);
 				BBPdecref(rc->table.format[j].c[0]->batCacheid, TRUE);
+				GDKfree(rc); /* this is a local copy, above will be double freed */
 			}
 			shutdown(rc->newsockfd, SHUT_RDWR);
 			GDKfree(rc);
@@ -634,6 +635,7 @@ RCgeneratorInternal(Receptor rc)
 str
 RCstartThread(Receptor rc)
 {
+	Receptor trc = NULL;
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Receptor body %s starts at %s:%d\n", rc->name, rc->host, rc->port);
 #endif
@@ -657,16 +659,19 @@ RCstartThread(Receptor rc)
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor listens\n");
 #endif
-			rc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
-			if (rc->error) {
+			trc = GDKmalloc(sizeof(RCrecord));
+			memcpy(trc, rc, sizeof(RCrecord));
+			trc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
+			if (trc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
-				rc->status = BSKTERROR;
+				trc->status = BSKTERROR;
 			}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
-			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
-				mnstr_close(rc->receptor);
+			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, trc, MT_THR_DETACHED) != 0) {
+				mnstr_close(trc->receptor);
+				GDKfree(trc);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
 		} else if (rc->mode == BSKTACTIVE) {
