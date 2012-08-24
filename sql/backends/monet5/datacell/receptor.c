@@ -327,6 +327,8 @@ RCbody(Receptor rc)
 	str e, he;
 	str line = "\0";
 	int i, k, n;
+	SOCKET newsockfd = rc->newsockfd;
+	stream *receptor;
 #ifdef _DEBUG_RECEPTOR_
 	int m = 0;
 #endif
@@ -345,10 +347,10 @@ RCbody(Receptor rc)
 bodyRestart:
 	/* create the channel the first time or when connection was lost. */
 	if (rc->mode == BSKTACTIVE && rc->protocol == UDP)
-		rc->receptor = udp_rastream(rc->host, rc->port, rc->name);
+		receptor = udp_rastream(rc->host, rc->port, rc->name);
 	else
-		rc->receptor = socket_rastream(rc->newsockfd, rc->name);
-	if (rc->receptor == NULL) {
+		receptor = socket_rastream(newsockfd, rc->name);
+	if (receptor == NULL) {
 		perror("Receptor: Could not open stream");
 		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
 		socket_close(rc->newsockfd);
@@ -378,14 +380,15 @@ bodyRestart:
 		}
 
 		if (rc->status == BSKTSTOP) {
-			mnstr_close(rc->receptor);
+			mnstr_close(receptor);
 			for (j = 0; j < rc->table.nr_attrs; j++) {
 				GDKfree(rc->table.format[j].sep);
 				GDKfree(rc->table.format[j].name);
 				GDKfree(rc->table.format[j].data);
 				GDKfree(rc->table.format[j].nullstr);
 				BBPdecref(rc->table.format[j].c[0]->batCacheid, TRUE);
-				GDKfree(rc); /* this is a local copy, above will be double freed */
+				/* above will be double freed with multiple
+				 * streams/threads */
 			}
 			shutdown(rc->newsockfd, SHUT_RDWR);
 			GDKfree(rc);
@@ -414,7 +417,7 @@ bodyRestart:
 		  Factories/Queries that are waiting for these data are able to
 		  read it*/
 
-		if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+		if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 			buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -423,10 +426,11 @@ bodyRestart:
 			/* use trivial concurrency measure */
 			line = buf;
 
-			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			/* BATs may be replaced in the meantime */
+			BSKTlock(&rc->lck, &rc->name, &rc->delay);
 			for (i = 0; i < baskets[rc->bskt].colcount; i++)
 				rc->table.format[i].c[0] = baskets[rc->bskt].primary[i];
+			BSKTunlock(&rc->lck, &rc->name);
 
 			cnt = 0;
 			he = strchr(line, '#');
@@ -441,7 +445,7 @@ bodyRestart:
 
 			/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
-				if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
+				if ((n = (int) mnstr_readline(receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
 #ifdef _DEBUG_RECEPTOR_
 					mnstr_printf(RCout, "#Receptor buf [%d]:%s \n", n, buf);
@@ -465,6 +469,7 @@ parse:
 #ifdef _DEBUG_RECEPTOR_
 						mnstr_printf(RCout, "#insert line :%s \n", line);
 #endif
+						BSKTlock(&rc->lck, &rc->name, &rc->delay);
 						if (insert_line(&rc->table, line, NULL, 0, rc->table.nr_attrs) < 0) {
 							if (baskets[rc->bskt].errors)
 								BUNappend(baskets[rc->bskt].errors, line, TRUE);
@@ -475,22 +480,18 @@ parse:
 							if (rcError)
 								snprintf(rcError, k, "parsing error:%s", line);
 							rcErrorEvent = cnt;
+							BSKTunlock(&rc->lck, &rc->name);
 							break;
 						}
 						rc->received++;
 						rc->pending++;
+						BSKTunlock(&rc->lck, &rc->name);
 						e++;
 						line = e;
 					} while (*e);
 				}
 				cnt++;
 			}
-			/* update global struct */
-			rc->parent->cycles += rc->cycles;
-			rc->parent->received += rc->received;
-			rc->parent->pending += rc->pending;
-			rc->cycles = rc->received = rc->pending = 0;
-			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, "%s", rc->table.error);
 				rc->table.error = 0;
@@ -498,7 +499,7 @@ parse:
 		}
 	}
 	/* only when reading fails we attempt to reconnect */
-	mnstr_close(rc->receptor);
+	mnstr_close(receptor);
 	if (rc->mode == BSKTACTIVE) {
 		/* try to reconnect */
 		RCreconnect(rc);
@@ -646,7 +647,6 @@ RCgeneratorInternal(Receptor rc)
 str
 RCstartThread(Receptor rc)
 {
-	Receptor trc = NULL;
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Receptor body %s starts at %s:%d\n", rc->name, rc->host, rc->port);
 #endif
@@ -670,20 +670,18 @@ RCstartThread(Receptor rc)
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor listens\n");
 #endif
-			trc = GDKmalloc(sizeof(RCrecord));
-			memcpy(trc, rc, sizeof(RCrecord));
-			trc->parent = rc;
-			trc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
-			if (trc->error) {
+			rc->error = socket_server_listen(rc->sockfd, &rc->newsockfd);
+			if (rc->error) {
 				mnstr_printf(RCout, "Receptor listen fails: %s\n", rc->error);
-				trc->status = BSKTERROR;
+				rc->status = BSKTERROR;
 			}
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#Receptor connection request received \n");
 #endif
-			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, trc, MT_THR_DETACHED) != 0) {
-				mnstr_close(trc->receptor);
-				GDKfree(trc);
+			if (MT_create_thread(&rc->pid, (void (*)(void *))RCbody, rc, MT_THR_DETACHED) != 0) {
+				shutdown(rc->newsockfd, SHUT_RDWR);
+				close(rc->newsockfd);
+				GDKfree(rc);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
 		} else if (rc->mode == BSKTACTIVE) {
