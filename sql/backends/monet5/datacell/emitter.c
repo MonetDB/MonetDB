@@ -84,14 +84,14 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	BAT *b;
 
 	if (EMfind(*tbl))
-		throw(MAL, "emitter.new", "Duplicate emitter");
+		throw(MAL, "emitter.new", "Duplicate emitter '%s'",*tbl);
 	for (em = emAnchor; em; em = em->nxt)
 		if (em->port == *port)
-			throw(MAL, "emitter.new", "Port already in use");
+			throw(MAL, "emitter.new", "Port '%d' already in use", em->port);
 
 	idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
-		throw(MAL, "emitter.new", "Basket not found");
+		throw(MAL, "emitter.new", "Basket '%s' not found",*tbl);
 
 	em = EMnew(*tbl);
 	if (em == NULL)
@@ -111,7 +111,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	 */
 	len = BSKTmemberCount(*tbl);
 	if (len == 0)
-		throw(MAL, "emitter.new", "Group has no members");
+		throw(MAL, "emitter.new", "Group '%s' has no members", *tbl);
 
 	em->table.format = GDKzalloc(sizeof(Column) * (len + 1));
 	em->table.format[0].c[0] = NULL;
@@ -153,7 +153,7 @@ EMemitterStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int p
 	mnstr_printf(EMout, "#Instantiate a new emitter %d fields\n", i);
 #endif
 	if (MT_create_thread(&em->pid, (void (*)(void *))EMstartThread, em, MT_THR_DETACHED) != 0)
-		throw(MAL, "emitter.start", "Emitter initiation failed");
+		throw(MAL, "emitter.start", "Emitter '%s' initiation failed",em->name);
 	return MAL_SUCCEED;
 }
 
@@ -168,7 +168,7 @@ str EMemitterPause(int *ret, str *nme)
 
 	em = EMfind(*nme);
 	if (em == NULL)
-		throw(MAL, "emitter.pause", "Emitter not defined");
+		throw(MAL, "emitter.pause", "Emitter '%s' not defined",*nme);
 
 	em->status = BSKTPAUSE;
 
@@ -186,7 +186,7 @@ str EMemitterResume(int *ret, str *nme)
 	(void) ret;
 	em = EMfind(*nme);
 	if (em == NULL)
-		throw(MAL, "emitter.resume", "Emitter not defined");
+		throw(MAL, "emitter.pause", "Emitter '%s' not defined",*nme);
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Resume emitter '%s'\n",*nme);
 #endif
@@ -222,7 +222,7 @@ str EMemitterStop(int *ret, str *nme)
 
 	em = EMfind(*nme);
 	if (em == NULL)
-		throw(MAL, "emitter.drop", "Emitter not defined");
+		throw(MAL, "emitter.pause", "Emitter '%s' not defined",*nme);
 #ifdef _DEBUG_EMITTER_
 	mnstr_printf(EMout, "#Drop a emitter\n");
 #endif
@@ -417,7 +417,7 @@ EMstartThread(Emitter em)
 
 			if (MT_create_thread(&em->pid, (void (*)(void *))EMbody, em, MT_THR_DETACHED) != 0) {
 				close_stream(em->emitter);
-				throw(MAL, "emitter.start", "Process creation failed");
+				throw(MAL, "emitter.start", "Process '%s' creation failed",em->name);
 			}
 		} else if (em->mode == BSKTACTIVE) {
 			/* connect the actuator */

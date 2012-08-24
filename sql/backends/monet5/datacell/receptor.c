@@ -103,13 +103,13 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	BAT *b;
 
 	if (RCfind(*tbl))
-		throw(MAL, "receptor.new", "Duplicate receptor");
+		throw(MAL, "receptor.new", "Duplicate receptor '%s'", *tbl);
 	idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
 		throw(MAL, "receptor.new", "Basket '%s' not found", *tbl);
 	for (rc = rcAnchor; rc; rc = rc->nxt)
 		if (rc->port == *port)
-			throw(MAL, "receptor.new", "Port already in use");
+			throw(MAL, "receptor.new", "Port '%d' already in use",rc->port);
 
 	rc = RCnew(*tbl);
 	if (rc == 0)
@@ -160,7 +160,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
 	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0)
-		throw(MAL, "receptor.start", "Receptor initiation failed");
+		throw(MAL, "receptor.start", "Receptor '%s' initiation failed", rc->name);
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -177,7 +177,7 @@ RCreceptorPause(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.resume", "Receptor not defined");
+		throw(MAL, "receptor.resume", "Receptor '%s' not defined",*nme);
 	rc->status = BSKTPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
@@ -194,7 +194,7 @@ RCreceptorResume(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.resume", "Receptor not defined");
+		throw(MAL, "receptor.resume", "Receptor '%s' not defined",*nme);
 	rc->status = BSKTRUNNING;
 
 #ifdef _DEBUG_RECEPTOR_
@@ -232,7 +232,7 @@ str RCreceptorStop(int *ret, str *nme)
 
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.drop", "Receptor not defined");
+		throw(MAL, "receptor.drop", "Receptor '%s' not defined", *nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Drop a receptor\n");
 #endif
@@ -268,14 +268,14 @@ RCscenario(int *ret, str *nme, str *fname, int *seq)
 	Receptor rc;
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.scenario", "Receptor not defined");
+		throw(MAL, "receptor.scenario", "Receptor '%s' not defined",*nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor scenario\n");
 #endif
 	(void) ret;
 	rc->scenario = GDKstrdup(*fname);
 	rc->sequence = *seq;
-	throw(MAL, "receptor.scenario", "Scenario not yet implemented");
+	throw(MAL, "receptor.scenario", "Scenario '%s' not yet implemented", *nme);
 }
 
 str
@@ -284,14 +284,14 @@ RCgenerator(int *ret, str *nme, str *modnme, str *fcnnme)
 	Receptor rc;
 	rc = RCfind(*nme);
 	if (rc == NULL)
-		throw(MAL, "receptor.generator", "Receptor not defined");
+		throw(MAL, "receptor.generator", "Receptor '%s' not defined",*nme);
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Define receptor generator\n");
 #endif
 	(void) ret;
 	rc->modnme = GDKstrdup(*modnme);
 	rc->modnme = GDKstrdup(*fcnnme);
-	throw(MAL, "receptor.generator", "Receptor not yet implemented");
+	throw(MAL, "receptor.generator", "Receptor '%s' not yet implemented",*nme);
 }
 
 /*
@@ -683,7 +683,7 @@ RCstartThread(Receptor rc)
 				shutdown(rc->newsockfd, SHUT_RDWR);
 				close(rc->newsockfd);
 				GDKfree(rc);
-				throw(MAL, "receptor.start", "Process creation failed");
+				throw(MAL, "receptor.start", "Process '%s' creation failed",rc->name);
 			}
 			/* ensure the thread took rc->newsockfd */
 			while (rc->newsockfd > 0)
