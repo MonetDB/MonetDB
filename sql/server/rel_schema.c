@@ -677,7 +677,10 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 									return SQL_ERR;
 								}
 								if(!isAnInternIntType(var.vtype)) {
-									sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type '%d'\n", action, dim->h->data.sval, var.vtype);
+									if (var.vtype == TYPE_void)
+										sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type 'TYPE_void', most probably because it is declared inside a PSM\n", action, dim->h->data.sval);
+									else
+										sql_error(sql, 02, "%s ARRAY: syntax shortcut '[size]' expects an int typed value, but variable '%s' is of type '%d'\n", action, dim->h->data.sval, var.vtype);
 									return SQL_ERR;	
 								}
 
