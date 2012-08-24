@@ -170,7 +170,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 		return NULL;
 
 	if (rel->op == op_ddl) {
-		if (rel->flag != DDL_CREATE_TABLE)
+		if (rel->flag != DDL_CREATE_TABLE && rel->flag != DDL_CREATE_ARRAY)
 			return NULL;
 
 		ctype.comp_type = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
