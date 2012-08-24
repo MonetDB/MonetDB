@@ -1110,7 +1110,7 @@ if test "x$have_perl" != xno; then
 	esac
 else
 	# no Perl implies no interpreter
-	PERL=`type -P false`
+	PERL=false
 fi
 
 AC_SUBST(PERL)
@@ -1178,7 +1178,7 @@ else
 	have_python_libdir=no
 	PYTHON_LIBDIR=""
 	# and no interpreter
-	PYTHON=`type -P false`
+	PYTHON=false
 fi
 
 AC_SUBST(PYTHON)
@@ -1246,7 +1246,7 @@ else
 	have_python3_libdir=no
 	PYTHON3_LIBDIR=""
 	# and no interpreter
-	PYTHON3=`type -P false`
+	PYTHON3=false
 fi
 
 AC_SUBST(PYTHON3)
