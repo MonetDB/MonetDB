@@ -167,7 +167,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 
 			PRINT_DIM_CONSTRAINT(range->h, ":"); /* start */
 			PRINT_DIM_CONSTRAINT(range->h->next, ":"); /* step */
-			PRINT_DIM_CONSTRAINT(range->h->next->next, ")"); /* stop */
+			PRINT_DIM_CONSTRAINT(range->h->next->next, "]"); /* stop */
 		}
 	 	break;
 	case e_cmp: 
