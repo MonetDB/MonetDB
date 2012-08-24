@@ -192,7 +192,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	t = mvc_bind_table(m, s, ltbl);
 	if (t == NULL)
-		throw(SQL, "datacell.register", "Table missing");
+		throw(SQL, "datacell.register", "Table missing '%s'", ltbl);
 
 	/* check double registration */
 	if (BSKTlocate(tbl))
