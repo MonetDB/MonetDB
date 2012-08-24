@@ -102,7 +102,7 @@ void
 runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid , MT_Lock *lock, RuntimeProfile prof)
 {
 	str line;
-	if( cntxt->flags && stk->cmd != 't' && stk->cmd != 'C'){
+	if( cntxt->flags && stk->cmd != '\0' && stk->cmd != 't' && stk->cmd != 'C'){
 		if (lock)
 			MT_lock_set(&*lock, "timing");
 		mnstr_printf(cntxt->fdout,"= ");	/* single column rendering */
