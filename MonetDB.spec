@@ -43,7 +43,8 @@ BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
-BuildRequires: python
+BuildRequires: python-devel
+BuildRequires: python3-devel
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
@@ -540,6 +541,28 @@ program.
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python/README.rst
 
+%package -n python3-monetdb
+Summary: Native MonetDB client Python3 API
+Group: Applications/Databases
+Requires: python3
+BuildArch: noarch
+
+%description -n python3-monetdb
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the files needed to use MonetDB from a Python3
+program.
+
+%files -n python3-monetdb
+%defattr(-,root,root)
+%dir %{python3_sitelib}/monetdb
+%{python3_sitelib}/monetdb/*
+%{python3_sitelib}/python_monetdb-*.egg-info
+%doc clients/python3/README.rst
+
 %package testing
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
@@ -629,6 +652,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \

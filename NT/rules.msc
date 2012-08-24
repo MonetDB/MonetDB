@@ -82,6 +82,14 @@ PYTHONLIB=python27.lib
 !ENDIF
 PYTHON_LIBDIR=share\MonetDB\python
 
+!IFNDEF PYTHON3BASE
+PYTHON3BASE=C:\Python32
+!ENDIF
+!IFNDEF PYTHON3LIB
+PYTHON3LIB=python32.lib
+!ENDIF
+PYTHON3_LIBDIR=share\MonetDB\python3
+
 !IFDEF HAVE_PERL
 !IFNDEF LIBPERL
 !IF $(bits) == 32
@@ -362,6 +370,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_PYTHON3
+	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_RAPTOR
 	$(ECHO) HAVE_RAPTOR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -424,6 +437,8 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PERL_LIBDIR=$(PERL_LIBDIR)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
+	"PYTHON3=$(PYTHON3)" \
+	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
 	"RUBY_DIR=$(RUBY_DIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \

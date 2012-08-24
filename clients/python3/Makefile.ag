@@ -15,7 +15,7 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-python_setup = {
+python3_setup = {
 	FILES = setup.py
 }
 
