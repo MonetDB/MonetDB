@@ -78,15 +78,9 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	InstrPtr q;
 	InstrPtr *old;
 	int limit,slimit;
-    Lifespan span;
-
-
 
 	(void) cntxt;
 	(void) stk;
-    span= setLifespan(mb);
-    if( span == NULL)
-        return 0;
 	if (varGetProp(mb, getArg(mb->stmt[0], 0), inlineProp) != NULL)
 		return 0;
 
