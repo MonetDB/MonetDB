@@ -398,16 +398,21 @@ bodyRestart:
 		mnstr_printf(RCout, "#wait for data read m: %d\n", m);
 #endif
 
-/* actually we should switch here based on the event syntax protocol */
+		/* actually we should switch here based on the event syntax protocol */
 
-/*Batch Processing
-   The Datadriver (see linear road benchmark) or the Sensor tools, are connected through TCP/IP
-   connection to the receptor module and	feed the DataCell with tuples,
-   Both tools are able to send batches of tuples to the stream engine
-   The first line of each batch always contains the number of tuples that the receptor is going to read (i.e.,#number)
-   When the receptor reads the first line of the incoming message, it immediately LOCKS the bats (that constitute the basket)
-   and keeps the lock until the end of the reading/writting procedure
-   When the receptor reads all the tuples UNLOCKS the bats, and then the Factories/Queries that are waiting for these data are able to read it*/
+		/*Batch Processing
+		  The Datadriver (see linear road benchmark) or the Sensor
+		  tools, are connected through TCP/IP connection to the receptor
+		  module and	feed the DataCell with tuples, Both tools are
+		  able to send batches of tuples to the stream engine The first
+		  line of each batch always contains the number of tuples that
+		  the receptor is going to read (i.e.,#number) When the receptor
+		  reads the first line of the incoming message, it immediately
+		  LOCKS the bats (that constitute the basket) and keeps the lock
+		  until the end of the reading/writting procedure When the
+		  receptor reads all the tuples UNLOCKS the bats, and then the
+		  Factories/Queries that are waiting for these data are able to
+		  read it*/
 
 		if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 			buf[n + 1] = 0;
@@ -434,7 +439,7 @@ bodyRestart:
 				goto parse;
 			}
 
-/* this code should be optimized for block-based reads */
+			/* this code should be optimized for block-based reads */
 			while (cnt < counter) {
 				if ((n = (int) mnstr_readline(rc->receptor, buf, MYBUFSIZ)) > 0) {
 					buf[n + 1] = 0;
