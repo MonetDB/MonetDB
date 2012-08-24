@@ -1185,6 +1185,74 @@ AC_SUBST(PYTHON)
 AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
 AC_SUBST(PYTHON_LIBDIR)
 
+have_python3=auto
+PYTHON3=python3
+
+AC_ARG_WITH(python3,
+	AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE]),
+	have_python3="$withval")
+
+case "$have_python3" in
+	yes|no|auto) ;;
+	*)
+		PYTHON3="$have_python3"
+		have_python3=yes
+		;;
+esac
+
+if test "x$have_python3" != xno; then
+	if test x$cross_compiling != xyes; then
+		AC_PATH_PROG(PYTHON3,$PYTHON3,no,$PATH)
+		if test "x$PYTHON3" = xno; then
+			if test "x$have_python3" != xauto; then
+				AC_MSG_ERROR([No Python3 executable found])
+			fi
+			have_python3=no
+		fi
+	fi
+fi
+
+if test "x$have_python3" != xno; then
+	have_python3_libdir=auto
+
+	AC_ARG_WITH(python3-libdir,
+		AS_HELP_STRING([--with-python3-libdir=DIR],
+			[relative path for Python3 library directory (where Python3 modules should be installed)]),
+		have_python3_libdir="$withval")
+
+	case "$have_python3_libdir" in
+		yes|auto)
+			if test x$cross_compiling = xyes; then
+				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
+			fi
+			case "$host_os-`"$PYTHON3" -V 2>&1`" in
+				darwin9*-*2.5.1)
+					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,1,"")' 2>/dev/null`/site-packages";;
+				*)
+					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,0,"")' 2>/dev/null`";;
+			esac
+			;;
+		no)	;;
+		$Qprefix/*) dnl dubious
+			PYTHON3_LIBDIR=`echo "$have_python3_libdir" | sed "s|^$Qprefix/||"`
+			have_python3_libdir=yes
+			;;
+		*)	PYTHON3_LIBDIR="$have_python3_libdir"
+			have_python3_libdir=yes
+			;;
+	esac
+else
+	# no Python3 implies no Python3 libraries
+	have_python3_libdir=no
+	PYTHON3_LIBDIR=""
+	# and no interpreter
+	PYTHON3=`type -P false`
+fi
+
+AC_SUBST(PYTHON3)
+AM_CONDITIONAL(HAVE_PYTHON3, test x"$have_python3" != xno)
+AC_SUBST(PYTHON3_LIBDIR)
+
 RUBY=ruby
 have_rubygem_dir=auto
 AC_ARG_WITH(rubygem-dir,

@@ -43,7 +43,8 @@ BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
-BuildRequires: python
+BuildRequires: python-devel
+BuildRequires: python3-devel
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
@@ -57,7 +58,9 @@ BuildRequires: zlib-devel
 Obsoletes: %{name}-devel
 
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
+# need to define python_sitelib on RHEL 5 and older
+# no need to define python3_sitelib: it's defined by python3-devel
+%if 0%{?rhel} && 0%{?rhel} <= 5
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
 %{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
@@ -475,10 +478,8 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
-%if (0%{?fedora} > 14)
 # for systemd-tmpfiles
 Requires: systemd-units
-%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -491,24 +492,16 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if (0%{?fedora} > 14)
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
-%if (0%{?fedora} > 14)
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%else
-# Fedora 14 and older
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
-%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
@@ -547,6 +540,28 @@ program.
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python/README.rst
+
+%package -n python3-monetdb
+Summary: Native MonetDB client Python3 API
+Group: Applications/Databases
+Requires: python3
+BuildArch: noarch
+
+%description -n python3-monetdb
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the files needed to use MonetDB from a Python3
+program.
+
+%files -n python3-monetdb
+%defattr(-,root,root)
+%dir %{python3_sitelib}/monetdb
+%{python3_sitelib}/monetdb/*
+%{python3_sitelib}/python_monetdb-*.egg-info
+%doc clients/python3/README.rst
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -637,6 +652,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
