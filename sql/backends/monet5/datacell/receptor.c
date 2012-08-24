@@ -81,7 +81,7 @@ RCfind(str nme)
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(nme, r->name) == 0)
 			return r;
-	snprintf(buf,BUFSIZ,"datacell.%s",nme);
+	snprintf(buf, BUFSIZ, "datacell.%s", nme);
 	BSKTtolower(buf);
 	for (r = rcAnchor; r; r = r->nxt)
 		if (strcmp(buf, r->name) == 0)
@@ -106,7 +106,7 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 		throw(MAL, "receptor.new", "Duplicate receptor");
 	idx = BSKTlocate(*tbl);
 	if (idx == 0) /* should not happen */
-		throw(MAL, "receptor.new", "Basket '%s' not found",*tbl);
+		throw(MAL, "receptor.new", "Basket '%s' not found", *tbl);
 	for (rc = rcAnchor; rc; rc = rc->nxt)
 		if (rc->port == *port)
 			throw(MAL, "receptor.new", "Port already in use");
@@ -159,14 +159,15 @@ RCreceptorStartInternal(int *ret, str *tbl, str *host, int *port, int mode, int 
 #ifdef _DEBUG_RECEPTOR_
 	mnstr_printf(RCout, "#Instantiate a new receptor %d fields\n", j);
 #endif
-	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0) 
+	if (MT_create_thread(&rc->pid, (void (*)(void *))RCstartThread, rc, MT_THR_DETACHED) != 0)
 		throw(MAL, "receptor.start", "Receptor initiation failed");
 	(void) ret;
 	return MAL_SUCCEED;
 }
 str
-RCreceptorStart(int *ret, str *tbl, str *host, int *port) {
-	return RCreceptorStartInternal(ret,tbl,host,port,BSKTPASSIVE,TCP,PAUSEDEFAULT);
+RCreceptorStart(int *ret, str *tbl, str *host, int *port)
+{
+	return RCreceptorStartInternal(ret, tbl, host, port, BSKTPASSIVE, TCP, PAUSEDEFAULT);
 }
 
 str
@@ -180,7 +181,7 @@ RCreceptorPause(int *ret, str *nme)
 	rc->status = BSKTPAUSE;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "#Pause receptor %s\n",*nme);
+	mnstr_printf(RCout, "#Pause receptor %s\n", *nme);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
@@ -197,7 +198,7 @@ RCreceptorResume(int *ret, str *nme)
 	rc->status = BSKTRUNNING;
 
 #ifdef _DEBUG_RECEPTOR_
-	mnstr_printf(RCout, "#Resume receptor %s\n",*nme);
+	mnstr_printf(RCout, "#Resume receptor %s\n", *nme);
 #endif
 	(void) ret;
 	return MAL_SUCCEED;
@@ -310,7 +311,7 @@ RCreconnect(Receptor rc)
 		if (rc->error) {
 			mnstr_printf(RCout, "#Receptor connect fails: %s\n", rc->error);
 			MT_sleep_ms(rc->delay);
-		} 
+		}
 	} while (rc->error);
 }
 
@@ -363,9 +364,9 @@ bodyRestart:
 	 * In case of a locked basket we sleep for a millisecond.
 	 */
 
-	rc->cycles ++;
+	rc->cycles++;
 	for (n = 1; n > 0;) {
-		if ( rc->status == BSKTPAUSE){
+		if (rc->status == BSKTPAUSE) {
 #ifdef _DEBUG_RECEPTOR_
 			mnstr_printf(RCout, "#pause receptor %s\n", rc->name);
 #endif
@@ -653,7 +654,7 @@ RCstartThread(Receptor rc)
 	}
 	/* the receptor should continously attempt to either connect the
 	   remote site for new events or listing for the next request */
-	while(rc->status != BSKTSTOP){
+	while (rc->status != BSKTSTOP) {
 		if (rc->mode == BSKTPASSIVE) {
 			/* in server mode you should expect new connections */
 #ifdef _DEBUG_RECEPTOR_
@@ -752,19 +753,20 @@ RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *modeId, int
 	BATseqbase(status, 0);
 
 	for (; rc; rc = rc->nxt)
-	if ( rc->table.format[1].c[0]){
-		BUNappend(name, rc->name, FALSE);
-		BUNappend(host, rc->host, FALSE);
-		BUNappend(port, &rc->port, FALSE);
-		BUNappend(protocol, protocolname[rc->protocol], FALSE);
-		BUNappend(mode, modename[rc->mode], FALSE);
-		BUNappend(status, statusname[rc->status], FALSE);
-		BUNappend(seen, &rc->lastseen, FALSE);
-		BUNappend(cycles, &rc->cycles, FALSE);
-		rc->pending = (int) BATcount(rc->table.format[1].c[0]);
-		BUNappend(pending, &rc->pending, FALSE);
-		BUNappend(received, &rc->received, FALSE);
-	}
+		if (rc->table.format[1].c[0]) {
+			BUNappend(name, rc->name, FALSE);
+			BUNappend(host, rc->host, FALSE);
+			BUNappend(port, &rc->port, FALSE);
+			BUNappend(protocol, protocolname[rc->protocol], FALSE);
+			BUNappend(mode, modename[rc->mode], FALSE);
+			BUNappend(status, statusname[rc->status], FALSE);
+			BUNappend(seen, &rc->lastseen, FALSE);
+			BUNappend(cycles, &rc->cycles, FALSE);
+			rc->pending = (int) BATcount(rc->table.format[1].c[0]);
+			BUNappend(pending, &rc->pending, FALSE);
+			BUNappend(received, &rc->received, FALSE);
+		}
+
 
 	BBPkeepref(*nameId = name->batCacheid);
 	BBPkeepref(*hostId = host->batCacheid);
