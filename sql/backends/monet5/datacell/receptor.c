@@ -484,6 +484,7 @@ parse:
 			rc->parent->cycles += rc->cycles;
 			rc->parent->received += rc->received;
 			rc->parent->pending += rc->pending;
+			rc->cycles = rc->received = rc->pending = 0;
 			BSKTunlock(&rc->lck, &rc->name);
 			if (rc->table.error) {
 				mnstr_printf(GDKerr, "%s", rc->table.error);
