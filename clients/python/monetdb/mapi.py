@@ -106,7 +106,6 @@ class Server(object):
             # Empty response, server is happy
             pass
         elif prompt == MSG_OK:
-            # New behaviour, I think it is something good
             pass
         elif prompt.startswith(MSG_INFO):
             logger.info("II %s" % prompt[1:])
@@ -166,8 +165,7 @@ class Server(object):
         if not len(response):
             return True
         elif response.startswith(MSG_OK):
-            # New behaviour, I think it is something good
-            return response.strip()
+            return response[3:].strip() or True
         if response == MSG_MORE:
             # tell server it isn't going to get more
             return self.cmd("")
