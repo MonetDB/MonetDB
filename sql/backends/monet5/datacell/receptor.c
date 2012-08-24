@@ -333,6 +333,7 @@ RCbody(Receptor rc)
 	int m = 0;
 #endif
 	buf[MYBUFSIZ] = 0; /* ensure null terminated string */
+	rc->newsockfd = 0;
 
 	if (rc->scenario) {
 		RCscenarioInternal(rc);
@@ -353,7 +354,7 @@ bodyRestart:
 	if (receptor == NULL) {
 		perror("Receptor: Could not open stream");
 		mnstr_printf(RCout, "#stream %s.%d.%s\n", rc->host, rc->port, rc->name);
-		socket_close(rc->newsockfd);
+		socket_close(newsockfd);
 #ifdef _DEBUG_RECEPTOR_
 		mnstr_printf(RCout, "#Terminate RCbody loop\n");
 #endif
@@ -390,7 +391,7 @@ bodyRestart:
 				/* above will be double freed with multiple
 				 * streams/threads */
 			}
-			shutdown(rc->newsockfd, SHUT_RDWR);
+			shutdown(newsockfd, SHUT_RDWR);
 			GDKfree(rc);
 			rc = NULL;
 			break;
@@ -684,13 +685,16 @@ RCstartThread(Receptor rc)
 				GDKfree(rc);
 				throw(MAL, "receptor.start", "Process creation failed");
 			}
+			/* ensure the thread took rc->newsockfd */
+			while (rc->newsockfd > 0)
+				MT_sleep_ms(100);
 		} else if (rc->mode == BSKTACTIVE) {
 			/* take the initiative to connect to sensor */
 			RCreconnect(rc);
 			RCbody(rc);
 		}
 	}
-	shutdown(rc->newsockfd, SHUT_RDWR);
+	shutdown(rc->sockfd, SHUT_RDWR);
 	return MAL_SUCCEED;
 }
 
