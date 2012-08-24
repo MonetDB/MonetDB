@@ -51,18 +51,14 @@ lib__datacell = {
 bin_actuator = {
 	SOURCES = actuator.c dcsocket.c
 	LIBS = ../../../../common/stream/libstream \
-		   ../../../../common/options/libmoptions \
-		   ../../../../gdk/libbat \
-		   ../../../../monetdb5/tools/libmonetdb5
+		../../../../gdk/libbat 
 		
 }
 
 bin_sensor = {
 	SOURCES = sensor.c dcsocket.c
 	LIBS = ../../../../common/stream/libstream \
-		   ../../../../common/options/libmoptions \
-		   ../../../../gdk/libbat \
-		   ../../../../monetdb5/tools/libmonetdb5
+		../../../../gdk/libbat 
 }
 
 scripts_mal = {
