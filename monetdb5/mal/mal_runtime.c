@@ -53,6 +53,9 @@ runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
+	if (malProfileMode == 0)
+		/* mostly true */;
+	else
 	if (stk && mb->profiler != NULL) {
 		prof->newclk = stk->clk = GDKusec();
 		if (mb->profiler[stkpc].trace) {
