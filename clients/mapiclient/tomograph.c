@@ -40,6 +40,17 @@
 # endif
 #endif
 
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #define COUNTERSDEFAULT "ISTest"
 
 /* #define _DEBUG_TOMOGRAPH_*/
@@ -184,6 +195,7 @@ long starttime=0;
  * receiving 'done' events without matching 'start'
  */
 static void analyse(char *row){
+#ifdef HAVE_STRPTIME
 	char *c;
     struct tm stm;
 	long clkticks=0;
@@ -255,7 +267,7 @@ static void analyse(char *row){
 	if (state == 1 && strncmp(fcn,"end",3) == 0){
 		if (debug) printf("end %ld %ld\n",totalclkticks,(clkticks- starttime));
 		if ( totalclkticks > threshold)
-			printf("paruse %s %6.2f\n", currentfunction, ((double)totalclkticks) /( cores * (clkticks-starttime)));
+			printf("paruse %s %6.2f elapsed  %ld\n", currentfunction, ((double)totalclkticks) /( cores * (clkticks-starttime)), clkticks);
 		/* reset thread admin */
 		for ( i = 0; i < MAXTHREADS; i++){
 			threads[i].clkticks = 0;
@@ -298,6 +310,9 @@ static void analyse(char *row){
 			threads[thread].ticks = ticks;
 			threads[thread].state = state;
 	}
+#else
+	(void) row;
+#endif
 }
 
 #define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
