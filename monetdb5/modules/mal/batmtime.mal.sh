@@ -66,3 +66,19 @@ comment "Unary check for nil over the tail of the bat";
 
 EOF
 done
+
+cat <<EOF
+module batmtime;
+
+EOF
+
+for tp in date:int timestamp:lng; do
+    rtp=${tp#*:}
+    tp=${tp%:*}
+    cat <<EOF
+command diff(b1:bat[:oid,:$tp],b2:bat[:oid,:$tp]) :bat[:oid,:$rtp]
+address MTIME${tp}_diff_bulk
+comment "Difference of two sets of $tp.";
+
+EOF
+done
