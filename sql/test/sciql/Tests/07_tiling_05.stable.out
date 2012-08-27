@@ -112,68 +112,68 @@ Ready.
 % sys.a_tinyint,	sys.a_tinyint,	sys.a_tinyint,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	tinyint,	bigint,	double,	tinyint,	tinyint,	bigint # type
-% 1,	1,	2,	2,	24,	2,	2,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+% 1,	1,	2,	2,	24,	1,	2,	1 # length
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_smallint group by a_smallint[x-1:x+2][y:y+1] having v between 5 and 10;
 % sys.a_smallint,	sys.a_smallint,	sys.a_smallint,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	smallint,	bigint,	double,	smallint,	smallint,	bigint # type
-% 1,	1,	2,	2,	24,	2,	2,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+% 1,	1,	2,	2,	24,	1,	2,	1 # length
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_int      group by a_int     [x-1:x+2][y:y+1] having v between 5 and 10;
 % sys.a_int,	sys.a_int,	sys.a_int,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	int,	bigint,	double,	int,	int,	bigint # type
-% 1,	1,	2,	2,	24,	2,	2,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+% 1,	1,	2,	2,	24,	1,	2,	1 # length
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_bigint   group by a_bigint  [x-1:x+2][y:y+1] having v between 5 and 10;
 % sys.a_bigint,	sys.a_bigint,	sys.a_bigint,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	bigint,	bigint,	double,	bigint,	bigint,	bigint # type
-% 1,	1,	2,	2,	24,	2,	2,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+% 1,	1,	2,	2,	24,	1,	2,	1 # length
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_real     group by a_real    [x-1:x+2][y:y+1] having v between 5 and 10;
 % sys.a_real,	sys.a_real,	sys.a_real,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	real,	double,	double,	real,	real,	bigint # type
 % 1,	1,	15,	24,	24,	15,	15,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_double   group by a_double  [x-1:x+2][y:y+1] having v between 5 and 10;
 % sys.a_double,	sys.a_double,	sys.a_double,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name
 % int,	int,	double,	double,	double,	double,	double,	bigint # type
 % 1,	1,	24,	24,	24,	24,	24,	1 # length
-[ 1,	1,	5,	15,	5,	5,	9,	3	]
-[ 1,	2,	6,	18,	6,	6,	10,	3	]
-[ 1,	3,	7,	21,	7,	7,	11,	3	]
-[ 2,	0,	8,	24,	8,	8,	12,	3	]
-[ 2,	1,	9,	27,	9,	9,	13,	3	]
-[ 2,	2,	10,	30,	10,	10,	14,	3	]
+[ 1,	1,	5,	15,	5,	1,	9,	3	]
+[ 1,	2,	6,	18,	6,	2,	10,	3	]
+[ 1,	3,	7,	21,	7,	3,	11,	3	]
+[ 2,	0,	8,	24,	8,	4,	12,	3	]
+[ 2,	1,	9,	27,	9,	5,	13,	3	]
+[ 2,	2,	10,	30,	10,	6,	14,	3	]
 #select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_tinyint  group by a_tinyint [x-1:x+2][y:y+1] having min(v) between 5 and 10;
 % sys.a_tinyint,	sys.a_tinyint,	sys.a_tinyint,	sys.,	sys.,	sys.,	sys.,	sys. # table_name
 % x,	y,	v,	sum,	avg,	min,	max,	cnt # name

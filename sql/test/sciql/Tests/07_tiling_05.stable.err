@@ -30,43 +30,6 @@ stderr of test '07_tiling_05` in directory 'test/sciql` itself:
 # 13:15:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=riga" "--port=37409"
 # 13:15:53 >  
 
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_tinyint  group by a_tinyint [x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_smallint group by a_smallint[x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_int      group by a_int     [x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_bigint   group by a_bigint  [x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_real     group by a_real    [x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-MAPI  = monetdb@riga:37409
-QUERY = select x, y, v, sum(v) as sum, avg(v) as avg, min(v) as min, max(v) as max, count(v) as cnt from a_double   group by a_double  [x-1:x+2][y:y+1] having v between 5 and 10;
-
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-        !head of value BAT must be dense
-
 # 13:15:53 >  
 # 13:15:53 >  "Done."
 # 13:15:53 >  

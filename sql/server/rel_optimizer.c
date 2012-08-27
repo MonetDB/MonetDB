@@ -1232,7 +1232,7 @@ exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	return _exp_push_down(sql, e, f, t);
 }
 
-
+#define IS_TILING_AGGR(fname) (strcmp(fname, "array_min") == 0 || strcmp(fname, "array_max") == 0 || strcmp(fname, "array_avg") == 0 || strcmp(fname, "array_sum") == 0 || strcmp(fname, "array_cnt") == 0)
 /* some projections results are order dependend (row_number etc) */
 static int 
 project_unsafe(sql_rel *rel)
@@ -1250,8 +1250,8 @@ project_unsafe(sql_rel *rel)
 	for(n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		/* aggr func in project ! */
-		if (e->type == e_func && e->card == CARD_AGGR)
+		/* (tiling) aggr func in project ! */
+		if (e->type == e_func && (e->card == CARD_AGGR || IS_TILING_AGGR(((sql_subfunc *)e->f)->func->base.name)))
 			return 1;
 	}
 	return 0;
