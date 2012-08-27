@@ -1230,7 +1230,7 @@ rel_with_query(mvc *sql, symbol *q )
 		sql_rel *nrel;
 
 		if (frame_find_var(sql, name)) {
-			return sql_error(sql, 01, "Variable '%s' allready declared", name);
+			return sql_error(sql, 01, "Variable '%s' already declared", name);
 		}
 		nrel = rel_semantic(sql, sym);
 		if (!nrel) {  

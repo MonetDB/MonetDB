@@ -303,7 +303,7 @@ PropertyIndex(str name)
 			return i;
 	}
 	mal_set_lock(mal_contextLock,"propertyIndex");
-	/* small change its allready added */
+	/* small change its already added */
 	for (i=0; i<nr_properties; i++) {
 		if (strcmp(properties[i], name) == 0) {
 			mal_unset_lock(mal_contextLock,"propertyIndex");

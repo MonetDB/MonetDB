@@ -133,7 +133,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, name)) {
 				return sql_error(sql, 01, 
-					"Variable '%s' allready declared", name);
+					"Variable '%s' already declared", name);
 			}
 			/* variables are put on stack, 
  			 * TODO make sure on plan/explain etc they only 
@@ -160,7 +160,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 	if (sname)  /* not allowed here */
 		return sql_error(sql, 02, "DECLARE TABLE: qualified name not allowed");
 	if (frame_find_var(sql, name)) 
-		return sql_error(sql, 01, "Variable '%s' allready declared", name);
+		return sql_error(sql, 01, "Variable '%s' already declared", name);
 	
 	assert(n->next->next->next->type == type_int);
 	
