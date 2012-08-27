@@ -4452,11 +4452,12 @@ _rel_tiling_aggr(mvc *sql, sql_rel **rel, sql_rel *groupby, int distinct, char *
 		nme = number2name(name, 16, ++sql->label);
 		exp_setname(sql->sa, exp, NULL, nme);
 	}
-	append(groupby->exps, exp);
 	/* tiling GROUP BY doesn't reduce the cardinality */
 	groupby->card = CARD_MULTI;
 	(*rel)->card = CARD_MULTI;
-	return exp;
+	/* turn the e_func into an e_column when adding it to the list of AGGR exps */
+	return rel_groupby_add_aggr(sql, groupby, exp);
+	/* FIXME: do we need to fix_scale like the normal AGGR? */
 }
 
 static sql_exp *
@@ -5808,7 +5809,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 
 		if (!inner)
 			return NULL;
-		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR)
+		if (inner -> exps && exps_card(inner->exps) > CARD_AGGR && aggr < 2)
 			return sql_error(sql, 02, "SELECT: cannot compare sets with values, probably an aggregate function missing");
 		rel -> l = inner;
 	}
@@ -5828,8 +5829,10 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 			if (is_groupby(l->op) && aggr > 1) {
 				if(prnt->op == op_basetable || is_join(prnt->op) || is_semi(prnt->op) || is_set(prnt->op))
 					return sql_error(sql, 02, "SELECT: unexpected relation type %d as parent relation of a tiling GROUP BY", prnt->op);
-				/* overwrite the groupby relation with its child relation */
-				prnt->l = l->l;
+				/* change the groupby relation into a project relation which
+				 * projects all groupby and aggregation expression (i.e.,
+				 * l->exps) from the relation of the groupby (i.e., l->l) */
+				prnt->l = rel_project(sql->sa, l->l, l->exps);
 			}
 		}
 	}
