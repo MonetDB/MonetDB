@@ -95,7 +95,7 @@ update_bat( sql_bat *bat, BAT *upd, int isnew)
 			u = bat_new(TYPE_oid, b->ttype, 1);
 			bat->ubid = temp_create(u);
 		}
-		r = BATkdiff(old, u); /* don't keep allready updated values */ 
+		r = BATkdiff(old, u); /* don't keep already updated values */ 
 		bat_destroy(old);
 		BATins(u, r, FALSE);
 		bat_destroy(u);
