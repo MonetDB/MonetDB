@@ -51,7 +51,7 @@
 # endif
 #endif
 
-#define COUNTERSDEFAULT "ISTest"
+#define COUNTERSDEFAULT "ISTestm"
 
 /* #define _DEBUG_TOMOGRAPH_*/
 
@@ -117,9 +117,10 @@ typedef struct _wthread {
 static wthread *thds = NULL;
 static char hostname[128];
 static char *filename="tomograph";
-static char *title ="";
+static char *title =0;
 static int cores = 8;
 static int debug = 0;
+static int colormap = 0;
 
 static FILE *gnudata;
 
@@ -135,7 +136,8 @@ usage(void)
 	fprintf(stderr, "  -t | --threshold=<microseconds> default 1000\n");
 	fprintf(stderr, "  -T | --title=<plit title>\n");
 	fprintf(stderr, "  -o | --output=<file name prefix >\n");
-	fprintf(stderr, "  -c | --cores=<number>\n");
+	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
+	fprintf(stderr, "  -m | --colormap produces colormap on tomograph.gpl\n");
 	fprintf(stderr, "  -D | --debug\n");
 }
 
@@ -168,41 +170,241 @@ setCounter(char *nme)
 	return k;
 }
 #define MAXTHREADS 2048
+#define MAXBOX 8192
 
-typedef struct BOX {
-	long clkticks;
+typedef struct BOX{
+	int xleft,xright;	/* box coordinates */
+	int row;
+	int color;
+	char *label;
+	int thread;
+	long clkstart, clkend;
 	long ticks;
+	long memstart, memend;
 	char *stmt;
+	char *fcn;
 	int state;
-	struct BOX *next;
 } Box;
 
 
-Box threads[MAXTHREADS];
+int threads[MAXTHREADS];
+Box box[MAXBOX];
+int topbox=0;
 
 long totalclkticks= 0; /* number of clock ticks reported */
 long totalexecticks= 0; /* number of ticks reported for processing */
 long lastclktick=0;
-char *currentfunction =0;
 
 long threshold=1000;	/* default threshold is 1 ms */
 
 long starttime=0;
+
+static void dumpbox(int i){
+	printf("[%d] %d,%d row %d color %d ", i, box[i].xleft, box[i].xright, box[i].row, box[i].color);
+	if ( box[i].fcn)
+		printf("%s ", box[i].fcn);
+	printf("thread %d ", box[i].thread);
+	printf("clk %ld - %ld ", box[i].clkstart, box[i].clkend);
+	printf("mem %ld - %ld ", box[i].memstart, box[i].memend);
+	printf("ticks %ld ", box[i].ticks);
+	if ( box[i].stmt)
+		printf("%s ", box[i].stmt);
+	printf("\n");
+}
+
+/* color map management, fixed */
+struct COLOR{
+	int freq;
+	char *mod, *fcn, *col;
+} colors[] =
+{
+	{0,"idle","*","#FFE4C4"}, //bisque
+	{0,"aggr","*","green"},
+	{0,"algebra","*","yellow"},
+	{0,"bat","*","orange"},
+	{0,"batcalc","*","#E9967A"}, //darksalmon
+	{0,"calc","*","#90EE90"}, //lightgreen
+	{0,"group","*","green"},
+	{0,"language","*","#FF00FF"}, //fuchsia
+	{0,"mat","*","green"},
+	{0,"mtime","*","greenyellow"},
+	{0,"pcre","*","#DEB887"}, //burlywood
+	{0,"pqueue","*","#5F9EA0"},//cadetblue
+	{0,"io","*","#00FFFF"},	//aqua
+	{0,"sql","*","blue"},
+	{0,"*","*","#D3D3D3"}, //lightgrey
+	{0,0,0,0}
+};
+
+/* produce a legenda image for the color map */
+static void showmap(char *filename, int all)
+{
+	FILE *f;
+	char buf[BUFSIZ];
+	int i, k = 0;
+	int w = 600;
+	int h = 500;
+	int object =1;
+
+	snprintf(buf,BUFSIZ,"%s_map.gpl",filename);
+	f = fopen(buf,"w");
+	assert(f);
+
+	fprintf(f,"set terminal pdfcairo enhanced color solid\n");
+	fprintf(f,"set output \"%s_map.pdf\"\n",filename);
+	fprintf(f,"set xrange [0:1800]\n");
+	fprintf(f,"set yrange [0:520]\n");
+	fprintf(f,"unset xtics\n");
+	fprintf(f,"unset ytics\n");
+	fprintf(f,"unset colorbox\n");
+	for ( i= 0; colors[i].col; i++)
+	if ( colors[i].freq || all){
+		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+			object++, (k % 3) * w, h-40, (k % 3) * w+w, h, colors[i].col);
+		fprintf(f,"set label %d \"%s.%s\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, 
+			(int) ((k % 3) *  w  + 0.2 *w) , h-25);
+		if ( k % 3 == 2)
+			h-= 40;
+		k++;
+	}
+	fprintf(f,"plot -1 title \"\"\n");
+}
+
+static void updmap(int idx)
+{
+	char *mod, *fcn, buf[BUFSIZ], *call = buf;
+	int i, fnd = 0;
+	strcpy(buf,box[idx].fcn);
+	mod = call;
+	fcn = strchr(call,(int) '.');
+	if ( fcn ){
+		*fcn = 0; 
+		fcn++;
+	} else fcn = "*";
+	for ( i =0; colors[i].col; i++)
+	if ( mod && strcmp(mod,colors[i].mod)== 0) {
+		if (strcmp(fcn,colors[i].fcn) == 0 || colors[i].fcn[0] == '*'){
+			fnd = i;
+			break;
+		}
+	} else
+	if ( colors[i].mod[0] == '*'){
+		fnd = i;
+		break;
+	}
+	colors[fnd].freq++;
+	box[idx].color = fnd;
+}
+		
+/* gnuplot defaults */
+static int width = 1000;	/* max pixelwidth of image */
+static int height = 160;
+
+static void gnuplotheader(char *filename){
+	char *scale ="micro";
+	int height = cores * 20;	
+	fprintf(gnudata,"set terminal pdfcairo enhanced color solid\n");
+	fprintf(gnudata,"set output \"%s.pdf\"\n",filename);
+	fprintf(gnudata,"set xrange [0:%ld]\n", lastclktick-starttime);
+	fprintf(gnudata,"set yrange [0:%d]\n", height);
+
+/* todo
+	if ( lastclktick > 1000000){
+		scale = "";
+		fprintf(gnudata,"set xtics 100000\n");
+	} else
+	if ( lastclktick > 1000){
+		scale = "milli";
+		fprintf(gnudata,"set xtics 1000\n");
+	} else 
+*/
+	{
+		scale = "micro";
+		fprintf(gnudata,"set autoscale x\n");
+	}
+
+	fprintf(gnudata,"set ylabel \"threads\"\n");
+	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scale,
+		((double)totalclkticks) /( cores * (lastclktick-starttime))* 100, cores);
+	fprintf(gnudata,"set title \"%s\"\n", title? title:"tomogram");
+	fprintf(gnudata,"set key right \n");
+	fprintf(gnudata,"set grid xtics\n");
+	fprintf(gnudata,"set palette model RGB defined ( 0 1.0 0.8 0.8, 1 1.0 0.8 1.0, 2 0.8 0.8 1.0, 3 0.8 1.0 1.0, 4 0.8 1.0 0.8, 5 1.0 1.0 0.8 )\n");
+	fprintf(gnudata,"unset colorbox\n");
+}
+
+static int figure = 0;
+static void createTomogram(void)
+{
+	char buf[BUFSIZ];
+	int rows[MAXTHREADS];
+	int top= 0;
+	int object=1, i,j;
+	int h = height /(2 * cores);
+
+	if ( figure  )
+		snprintf(buf,BUFSIZ,"%s_%d.gpl", filename, figure);
+	else
+		snprintf(buf,BUFSIZ,"%s.gpl", filename);
+	figure++;
+	gnudata= fopen(buf,"w");
+	if ( gnudata == 0){
+		printf("ERROR in creation of %s\n",buf);
+		exit(-1);
+	}
+	printf("created tomogram file '%s' \n",buf);
+	printf("Run: 'gnuplot %s' to create the '%s.pdf' file\n",buf,filename);
+	printf("The colormap is stored in '%s_map.gpl'\n",filename);
+	*strchr(buf,(int) '.') = 0;
+	gnuplotheader(buf);
+
+	if ( debug)
+		printf("width %d height %d \n", width, height);
+	/* detect all different threads and assign them a row */
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend ){
+		for ( j = 0; j < top ;j++)
+			if (rows[j] == box[i].thread)
+				break;
+		box[i].row = j;
+		if ( j == top )
+			rows[top++] = box[i].thread;
+		updmap(i);
+	}
+	fprintf(gnudata,"set ytics (");
+	for( i =0; i< top; i++)
+		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
+	fprintf(gnudata,")\n");
+
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend ){
+		box[i].xleft = box[i].clkstart;
+		box[i].xright = box[i].clkend;
+		if ( debug)
+			dumpbox(i);
+		fprintf(gnudata,"set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+			object++, box[i].clkstart, box[i].row * 2 *h, box[i].clkend, box[i].row* 2 * h + h, colors[box[i].color].col);
+	}
+	fprintf(gnudata,"plot -1 title \"\"\n");
+	showmap(filename, 0);
+	fclose(gnudata);
+}
 
 /* the main issue to deal with in the analyse is 
  * that the tomograph start can appear while the
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
  */
-static void analyse(char *row){
+static void parser(char *row){
 #ifdef HAVE_STRPTIME
 	char *c;
     struct tm stm;
-	long clkticks=0;
-	int thread=0;
-	long ticks=0;
-	char *fcn=0;
-	int i, state = 0;
+	long clkticks = 0;
+	int thread = 0;
+	long ticks = 0;
+	long memory = 0; /* in MB*/
+	char *fcn = 0, *stmt= 0;
+	int idx, state;
 
 
 	if (row[0] != '[')
@@ -235,16 +437,20 @@ static void analyse(char *row){
 		}
 		c = strchr(c+1, (int)'"');
 	}
+	lastclktick= clkticks;
 	c = strchr(c+1, (int)',');
 	thread = atoi(c+1);
 	c = strchr(c+1, (int)',');
 	ticks = atol(c+1);
+	c = strchr(c+1, (int)',');
+	memory = atol(c+1);
 	fcn = c;
 	c = strstr(c+1, ":=");
 	if ( c ){
 		fcn = c+2;
 		/* find genuine function calls */
 		while ( isspace((int) *fcn) && *fcn) fcn++;
+		stmt = strdup(fcn);
 		if ( strchr(fcn, (int) '.') == 0)
 			return;
 	} else {
@@ -258,23 +464,6 @@ static void analyse(char *row){
 	if ( fcn && strchr(fcn,(int)'('))
 		*strchr(fcn,(int)'(') = 0;
 
-	if (strncmp(fcn,"function",8) == 0){
-		totalclkticks= 0; /* number of clock ticks reported */
-		totalexecticks= 0; /* number of ticks reported for processing */
-		lastclktick=0;
-		currentfunction = fcn;
-	}
-	if (state == 1 && strncmp(fcn,"end",3) == 0){
-		if (debug) printf("end %ld %ld\n",totalclkticks,(clkticks- starttime));
-		if ( totalclkticks > threshold)
-			printf("paruse %s %6.2f elapsed  %ld\n", currentfunction, ((double)totalclkticks) /( cores * (clkticks-starttime)), clkticks);
-		/* reset thread admin */
-		for ( i = 0; i < MAXTHREADS; i++){
-			threads[i].clkticks = 0;
-			threads[i].ticks = 0;
-			threads[i].state = 0;
-		}
-	}
 
 	if ( starttime == 0) {
 		/* ignore all instructions up to the first function call */
@@ -284,32 +473,40 @@ static void analyse(char *row){
 	}
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
-		
-	if ( thread < MAXTHREADS && state == 0){
-		if ( clkticks - threads[thread].clkticks > threshold)
-			fprintf(gnudata,"%5d %8ld %8ld %s\n", thread, threads[thread].clkticks, clkticks, "idle");
-		threads[thread].clkticks = clkticks;
-		threads[thread].ticks = ticks;
-		threads[thread].state = state;
-		threads[thread].stmt = strdup(fcn);
-	}
 	
-	if (debug) printf("resource %d clkticks %ld state %d ticks %ld stmt %s\n", thread, clkticks, state, ticks, fcn);
-	if ( state == 1 && threads[thread].state == 0) {
-			/* count for all time spent */
-			totalclkticks += clkticks - threads[thread].clkticks;
-			totalexecticks += ticks - threads[thread].ticks;
+	if ( strncmp(fcn,"end ",4) == 0)
+		return;
+
+	if (state == 1 && strncmp(fcn,"function",8) == 0){
+		createTomogram();
+		totalclkticks= 0; /* number of clock ticks reported */
+		totalexecticks= 0; /* number of ticks reported for processing */
+		if ( title == 0)
+			title = strdup(fcn+9);
 	}
-	if ( state == 1 &&  thread < MAXTHREADS &&
-		 threads[thread].state == 0 && 
-		 clkticks - threads[thread].clkticks > threshold && 
-		 *fcn &&  threads[thread].stmt  && strcmp(fcn, threads[thread].stmt) ==0){
-			fprintf(gnudata,"%5d %8ld %8ld %s\n", thread, threads[thread].clkticks, clkticks, fcn);
-			lastclktick = clkticks;
-			threads[thread].clkticks = clkticks;
-			threads[thread].ticks = ticks;
-			threads[thread].state = state;
+
+	/* start of instruction box */
+	if ( state == 0 && thread < MAXTHREADS ){
+		idx = threads[thread];
+		box[idx].thread = thread;
+		box[idx].clkstart = clkticks;
+		box[idx].memstart = memory;
+		box[idx].stmt = stmt;
+		box[idx].fcn = strdup(fcn);
 	}
+	/* end the instruction box */
+	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
+		 clkticks - box[threads[thread]].clkstart > threshold  &&
+		box[threads[thread]].fcn  && strcmp(fcn, box[threads[thread]].fcn) ==0){
+		idx = threads[thread];
+		box[idx].clkend = clkticks;
+		box[idx].memend = memory;
+		box[idx].ticks = ticks;
+		totalclkticks += clkticks - box[threads[thread]].clkstart;
+		totalexecticks += ticks - box[threads[thread]].ticks;
+		threads[thread]= topbox++;
+	}
+	assert(topbox < MAXBOX);
 #else
 	(void) row;
 #endif
@@ -441,15 +638,16 @@ doProfile(void *d)
 	doQ("profiler.start();");
 	fflush(NULL);
 
+	for ( i = 0; i < MAXTHREADS; i++)
+		threads[i] = topbox++;
 	i = 0;
 	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ)) > 0) {
 		buf[n] = 0;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			if (debug ) printf("%s%s\n", id, response);
 			/* TOMOGRAPH EXTENSIONS */
-			analyse(response);
+			parser(response);
 			response = e + 1;
 		}
 		/* handle last line in buffer */
@@ -485,7 +683,6 @@ main(int argc, char **argv)
 	char *dbname = NULL;
 	char *user = NULL;
 	char *password = NULL;
-	char buf[BUFSIZ];
 
 	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
 	struct stat statb;
@@ -494,7 +691,7 @@ main(int argc, char **argv)
 	wthread *walk;
 	stream * config = NULL;
 
-	static struct option long_options[12] = {
+	static struct option long_options[13] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "password", 1, 0, 'P' },
@@ -506,6 +703,7 @@ main(int argc, char **argv)
 		{ "cores", 1, 0, 'c' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
+		{ "colormap", 0, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -562,7 +760,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c",
+		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -575,6 +773,10 @@ main(int argc, char **argv)
 			break;
 		case 'u':
 			user = optarg;
+			break;
+		case 'm':
+			colormap=1;
+			showmap("tomograph", 1);
 			break;
 		case 'P':
 			password = optarg;
@@ -638,13 +840,6 @@ main(int argc, char **argv)
 
 	close(0); /* get rid of stdin */
 
-	if ( gnudata ) fclose(gnudata);
-	snprintf(buf,BUFSIZ,"%s.dat", filename);
-	gnudata= fopen(buf,"w");
-	if ( gnudata == 0){
-		printf("ERROR in creation of %s\n",buf);
-		exit(-1);
-	}
 
 	/* our hostname, how remote servers have to contact us */
 	gethostname(hostname, sizeof(hostname));
