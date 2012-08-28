@@ -1246,7 +1246,7 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 	if (store_nr_active > 0)
 		return LOG_ERR;
 
-	/* allready set */
+	/* already set */
 	if (!cbat || c->type.type->localtype >= TYPE_str || c->t->system)
 		return ok;
 

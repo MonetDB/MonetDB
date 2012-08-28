@@ -555,9 +555,11 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		mnstr_printf(toConsole, "\t\"%s\"%*s ",
 			     c_name, CAP(slen - strlen(c_name)), "");
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale);
-		if (strcmp(c_null, "false") == 0)
+		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
 					CAP(13 - space), "");
+			space = 13;
+		}
 		if (c_default != NULL)
 			mnstr_printf(toConsole, "%*s DEFAULT %s",
 					CAP(13 - space), "", c_default);

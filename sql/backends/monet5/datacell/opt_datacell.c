@@ -72,7 +72,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	removeDataflow(old, limit);
 
 	pushInstruction(mb, old[0]);
-	//newFcnCall(mb, sqlRef, putName("transaction", 11));
+	newFcnCall(mb, sqlRef, putName("transaction", 11));
 	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];
@@ -116,7 +116,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				getArg(r, 0) = j;
 				r->barrier = EXITsymbol;
 
-				//(void) newFcnCall(mb, sqlRef, commitRef);
+				(void) newFcnCall(mb, sqlRef, commitRef);
 				break;
 			}
 			if (getModuleId(p) == sqlRef && getFunctionId(p) == putName("affectedRows", 12)) {

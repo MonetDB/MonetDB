@@ -44,10 +44,13 @@
  * is always created.  In other words, the groups argument may not be
  * NULL, but the extents and histo arguments may be NULL.
  *
- * There are five different implementations of the grouping code.
+ * There are six different implementations of the grouping code.
  *
  * If it can be trivially determined that all groups are singletons,
  * we can produce the outputs trivially.
+ *
+ * If all values in b are known to be equal (both sorted and reverse
+ * sorted), we produce a single group or copy the input group.
  *
  * If the input bats b and g are sorted, or if the subsorted flag is
  * set (only used by BATsubsort), we only need to compare consecutive
@@ -102,6 +105,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	if (b->tkey || BATcount(b) <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
+		ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: 1 element per group\n");
 		if (BATcount(b) == 1 && b->htype == TYPE_oid)
 			ngrp = * (oid *) Hloc(b, BUNfirst(b));
 		else
@@ -131,6 +135,62 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			*histo = hn;
 		}
 		return GDK_SUCCEED;
+	}
+	if (b->tsorted && b->trevsorted) {
+		/* all values are equal */
+		if (g == NULL) {
+			/* there's only a single group: 0 */
+			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: single output group\n");
+			ngrp = 0;
+			gn = BATconstant(TYPE_oid, &ngrp, BATcount(b));
+			if (gn == NULL)
+				goto error;
+			BATseqbase(gn, b->hseqbase);
+			*groups = gn;
+			if (extents) {
+				ngrp = gn->hseqbase;
+				en = BATconstant(TYPE_void, &ngrp, 1);
+				if (en == NULL)
+					goto error;
+				BATseqbase(BATmirror(en), ngrp);
+				*extents = en;
+			}
+			if (histo) {
+				wrd cnt = (wrd) BATcount(b);
+
+				hn = BATconstant(TYPE_wrd, &cnt, 1);
+				if (hn == NULL)
+					goto error;
+				*histo = hn;
+			}
+			return GDK_SUCCEED;
+		}
+		if ((extents == NULL) == (e == NULL) &&
+		    (histo == NULL) == (h == NULL)) {
+			/* inherit given grouping; note that if
+			 * extents/histo is to be returned, we need
+			 * e/h available in order to copy them,
+			 * otherwise we will need to calculate them
+			 * which we will do using the "normal" case */
+			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: copy input groups\n");
+			gn = BATcopy(g, g->htype, g->ttype, 0);
+			if (gn == NULL)
+				goto error;
+			*groups = gn;
+			if (extents) {
+				en = BATcopy(e, e->htype, e->ttype, 0);
+				if (en == NULL)
+					goto error;
+				*extents = en;
+			}
+			if (histo) {
+				hn = BATcopy(h, h->htype, h->ttype, 0);
+				if (hn == NULL)
+					goto error;
+				*histo = hn;
+			}
+			return GDK_SUCCEED;
+		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
 	bi = bat_iterator(b);
@@ -167,6 +227,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	     (g == NULL || g->tsorted || g->trevsorted)) ||
 	    subsorted) {
 		/* we only need to compare each entry with the previous */
+		ALGODEBUG fprintf(stderr, "#BATgroup: compare consecutive values\n");
 		if (grps)
 			prev = *grps++;
 		pv = BUNtail(bi, BUNfirst(b));
@@ -220,6 +281,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* for each value, we need to scan all previous equal
 		 * values (a consecutive, possibly empty, range) to
 		 * see if we can find one in the same old group */
+		ALGODEBUG fprintf(stderr, "#BATgroup: subscan old groups\n");
 		pv = BUNtail(bi, BUNfirst(b));
 		ngrps[0] = ngrp;
 		if (extents)
@@ -284,6 +346,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 	} else if (b->T->hash) {
 		/* we already have a hash table on b */
+		ALGODEBUG fprintf(stderr, "#BATgroup: use existing hash table\n");
 		hs = b->T->hash;
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
 			v = BUNtail(bi, p);
@@ -343,6 +406,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertHeadProps and BATderiveHeadProps for
 		 * similar code */
+		ALGODEBUG fprintf(stderr, "#BATgroup: create partial hash table\n");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||

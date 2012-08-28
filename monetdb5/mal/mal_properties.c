@@ -303,7 +303,7 @@ PropertyIndex(str name)
 			return i;
 	}
 	MT_lock_set(&mal_contextLock, "propertyIndex");
-	/* small change its allready added */
+	/* small change its already added */
 	for (i=0; i<nr_properties; i++) {
 		if (strcmp(properties[i], name) == 0) {
 			MT_lock_unset(&mal_contextLock, "propertyIndex");

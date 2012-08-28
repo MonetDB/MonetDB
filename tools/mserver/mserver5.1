@@ -78,13 +78,6 @@ anonymously.  Default: 1<<20 == 1024576 == 1 MiB
 .IP "gdk_vmtrim"
 Enable or disable the vmtrim thread which tries to unload memory that is
 not in use.  Default: yes
-.IP "gdk_alloc_map"
-This parameter is mainly for debugging with valgrind.
-.\" For 32-bit systems, GDK tries claim 3G of (virtual) memory.
-.\" set the alloc map to "no" to run mserver with valgrind;
-Also, you need to tell valgrind to use 8-byte alignment, hence:
-\(dq\&valgrind --alignment=8 mserver5 --set gdk_alloc_map=no ...\(dq\&
-This feature should better be disabled for normal use.  Default: no
 .IP "gdk_debug"
 You can enable debug output for specific kernel operations.  By default
 debug is switched off for obvious reasons.  The value of gdk_debug is an

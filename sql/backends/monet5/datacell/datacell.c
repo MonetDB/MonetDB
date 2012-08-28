@@ -141,9 +141,12 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *protocol;
 	str *mode;
 	Receptor rc;
+	str msg= MAL_SUCCEED;
 	
 	if (idx == 0)
-		BSKTregister(cntxt, mb, stk, pci);
+		msg = BSKTregister(cntxt, mb, stk, pci);
+	if ( msg) 
+		return msg;
 	rc = RCfind(*tbl);
 	if ( pci->argc == 6 && rc != NULL ){
 		protocol = (str *) getArgReference(stk, pci, 4);
@@ -175,8 +178,7 @@ DCreceptor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 DCbasket(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BSKTregister(cntxt, mb, stk, pci);
-	return MAL_SUCCEED;
+	return BSKTregister(cntxt, mb, stk, pci);
 }
 
 str
@@ -189,9 +191,12 @@ DCemitter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int idx = BSKTlocate(*tbl);
 	Emitter em;
 	str *protocol, *mode;
+	str msg= MAL_SUCCEED;
 
 	if (idx == 0)
-		BSKTregister(cntxt, mb, stk, pci);
+		msg = BSKTregister(cntxt, mb, stk, pci);
+	if ( msg) 
+		return msg;
 	em = EMfind(*tbl);
 	if ( pci->argc == 6 && em != NULL ){
 		protocol = (str *) getArgReference(stk, pci, 4);

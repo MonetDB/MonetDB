@@ -3889,13 +3889,13 @@ ALGavg(dbl *res, int *bid)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
-	ret = BATcalcavg(b, res, &cnt);
-	/* backward compatibility: return nil if there are nils in the input */
-	if (cnt < BATcount(b))
-		*res = dbl_nil;
+	ret = BATcalcavg(b, NULL, res, &cnt);
 	BBPreleaseref(b->batCacheid);
 	if (ret == GDK_FAIL)
 		throw(MAL, "algebra.avg", SEMANTIC_TYPE_MISMATCH);
+	/* backward compatibility: return nil if there are nils in the input */
+	if (cnt < BATcount(b))
+		*res = dbl_nil;
 	return MAL_SUCCEED;
 }
 

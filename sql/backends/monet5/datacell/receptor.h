@@ -45,7 +45,6 @@ typedef struct RECEPTOR {
 	str scenario;   /* use a scenario file */
 	int sequence;   /* repetition count */
 	str modnme, fcnnme; /* generic receptor generators */
-	stream * receptor;
 	SOCKET sockfd;
 	SOCKET newsockfd;
 	str error;  /* what went wrong */
