@@ -382,3 +382,13 @@ pattern isnil(b:bat[:oid,:timestamp],s:bat[:oid,:oid]) :bat[:oid,:bit]
 address CMDbatISNIL
 comment "Unary check for nil over the tail of the bat with candidates list";
 
+module batmtime;
+
+command diff(b1:bat[:oid,:date],b2:bat[:oid,:date]) :bat[:oid,:int]
+address MTIMEdate_diff_bulk
+comment "Difference of two sets of date.";
+
+command diff(b1:bat[:oid,:timestamp],b2:bat[:oid,:timestamp]) :bat[:oid,:lng]
+address MTIMEtimestamp_diff_bulk
+comment "Difference of two sets of timestamp.";
+

@@ -1533,18 +1533,6 @@ MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 	return MAL_SUCCEED;
 }
 
-/* returns the number of milliseconds between 'val1' and 'val2'. */
-static str
-timestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
-{
-	if (ts_isnil(*v1) || ts_isnil(*v2)) {
-		*ret = lng_nil;
-	} else {
-		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
-	}
-	return MAL_SUCCEED;
-}
-
 /* create a DST start/end date rule. */
 static str
 rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
@@ -2076,9 +2064,125 @@ MTIMEdate_diff(int *ret, date *v1, date *v2)
 }
 
 str
+MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2)
+{
+	BAT *b1, *b2, *bn;
+	date *t1, *t2;
+	int *tn;
+	BUN i, n;
+
+	b1 = BATdescriptor(*bid1);
+	b2 = BATdescriptor(*bid2);
+	if (b1 == NULL || b2 == NULL) {
+		if (b1)
+			BBPreleaseref(b1->batCacheid);
+		if (b2)
+			BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+	}
+	n = BATcount(b1);
+	if (n != BATcount(b2)) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", "inputs not the same size");
+	}
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b1));
+	if (bn == NULL) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
+	}
+	t1 = (date *) Tloc(b1, BUNfirst(b1));
+	t2 = (date *) Tloc(b2, BUNfirst(b2));
+	tn = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t1 == date_nil || *t2 == date_nil) {
+			*tn = int_nil;
+		} else {
+			*tn = (int) (*t1 - *t2);
+		}
+		t1++;
+		t2++;
+		tn++;
+	}
+	BBPreleaseref(b2->batCacheid);
+	if (b1->htype != bn->htype) {
+		/* temporarily reuse b2 */
+		b2 = VIEWcreate(b1, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	}
+	BBPreleaseref(b1->batCacheid);
+	BBPkeepref(bn->batCacheid);
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+/* returns the number of milliseconds between 'val1' and 'val2'. */
+str
 MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 {
-	return timestamp_diff(ret, v1, v2);
+	if (ts_isnil(*v1) || ts_isnil(*v2)) {
+		*ret = lng_nil;
+	} else {
+		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2)
+{
+	BAT *b1, *b2, *bn;
+	timestamp *t1, *t2;
+	lng *tn;
+	BUN i, n;
+
+	b1 = BATdescriptor(*bid1);
+	b2 = BATdescriptor(*bid2);
+	if (b1 == NULL || b2 == NULL) {
+		if (b1)
+			BBPreleaseref(b1->batCacheid);
+		if (b2)
+			BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+	}
+	n = BATcount(b1);
+	if (n != BATcount(b2)) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", "inputs not the same size");
+	}
+	bn = BATnew(TYPE_void, TYPE_lng, BATcount(b1));
+	if (bn == NULL) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
+	}
+	t1 = (timestamp *) Tloc(b1, BUNfirst(b1));
+	t2 = (timestamp *) Tloc(b2, BUNfirst(b2));
+	tn = (lng *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (ts_isnil(*t1) || ts_isnil(*t2)) {
+			*tn = lng_nil;
+		} else {
+			*tn = ((lng) (t1->days - t2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t1->msecs - t2->msecs));
+		}
+		t1++;
+		t2++;
+		tn++;
+	}
+	BBPreleaseref(b2->batCacheid);
+	if (b1->htype != bn->htype) {
+		/* temporarily reuse b2 */
+		b2 = VIEWcreate(b1, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	}
+	BBPreleaseref(b1->batCacheid);
+	BBPkeepref(bn->batCacheid);
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
 }
 
 /* return whether DST holds in the tzone at a certain point of time. */
@@ -2454,7 +2558,7 @@ MTIMEepoch2int(int *ret, timestamp *t)
 
 	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return err;
-	if ((err = timestamp_diff(&v, t, &e)) != MAL_SUCCEED)
+	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
 		return err;
 	if (v == lng_nil)
 		*ret = int_nil;
