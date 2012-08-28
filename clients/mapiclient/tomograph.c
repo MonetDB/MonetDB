@@ -202,7 +202,7 @@ static void analyse(char *row){
 	int thread=0;
 	long ticks=0;
 	char *fcn=0;
-	int i, state;
+	int i, state = 0;
 
 
 	if (row[0] != '[')
