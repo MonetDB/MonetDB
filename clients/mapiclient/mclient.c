@@ -1781,7 +1781,7 @@ showCommands(void)
 #endif
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
-		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
+		mnstr_printf(toConsole, "\\d[Stvasfn]+ [obj] - list database objects, or describe if obj given\n");
 		mnstr_printf(toConsole, "\\A      - enable auto commit\n");
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
@@ -1799,6 +1799,7 @@ showCommands(void)
 #define MD_SEQ      4
 #define MD_FUNC     8
 #define MD_SCHEMA  16
+#define MD_ARRAY   32
 
 enum hmyesno { UNKNOWN, YES, NO };
 
@@ -2082,6 +2083,9 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							case 'v':
 								x |= MD_VIEW;
 							break;
+							case 'a':
+								x |= MD_ARRAY;
+							break;
 							case 's':
 								x |= MD_SEQ;
 							break;
@@ -2104,7 +2108,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 					if (length == 0)
 						continue;
 					if (x == 0) /* default to tables and views */
-						x = MD_TABLE | MD_VIEW;
+						x = MD_TABLE | MD_VIEW | MD_ARRAY;
 					for ( ; *line && isascii((int) *line) && isspace((int) *line); line++)
 						;
 
@@ -2155,7 +2159,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 
 						start_pager(&saveFD, &saveFD_raw);
 #endif
-						if (x & MD_TABLE || x & MD_VIEW)
+						if (x & MD_TABLE || x & MD_VIEW || x & MD_ARRAY)
 							describe_table(mid, NULL, line, toConsole, 1);
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
@@ -2243,6 +2247,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 							           "CASE \"o\".\"type\" "
 									     "WHEN 0 THEN 'TABLE' "
 										 "WHEN 1 THEN 'VIEW' "
+										 "WHEN 7 THEN 'ARRAY' "
 										 "ELSE '' "
 									   "END) AS \"type\", "
 								       "\"o\".\"system\", "
@@ -2250,13 +2255,14 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 									   "CASE \"o\".\"type\" "
 									     "WHEN 0 THEN %d "
 										 "WHEN 1 THEN %d "
+										 "WHEN 7 THEN %d "
 										 "ELSE 0 "
 									   "END AS \"ntype\" "
 								"FROM \"sys\".\"_tables\" \"o\", "
 								     "\"sys\".\"schemas\" \"s\" "
 								"WHERE \"o\".\"schema_id\" = \"s\".\"id\" "
 								  "%s "
-								  "AND \"o\".\"type\" IN (0, 1) "
+								  "AND \"o\".\"type\" IN (0, 1, 7) "
 								"UNION "
 								"SELECT \"o\".\"name\", "
 								       "'SEQUENCE' AS \"type\", "
@@ -2286,7 +2292,7 @@ doFile(Mapi mid, const char *file, int useinserts, int interactive, int save_his
 								"WHERE \"ntype\" & %u > 0 "
 								  "%s "
 								"ORDER BY \"system\", \"name\"",
-								MD_TABLE, MD_VIEW,
+								MD_TABLE, MD_VIEW, MD_ARRAY,
 								nameq,
 								MD_SEQ,
 								nameq,
