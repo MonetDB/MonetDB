@@ -5246,7 +5246,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 	/* this function is not used recursively, so this is the first thing
 	 * in the resulting MAL plan */
-	if (j->explain & 5) {
+	if (j->trace) {
 		newStmt(mb, profilerRef, "reset");
 		q = newStmt(mb, profilerRef, "setFilter");
 		q = pushStr(mb, q, "*");
@@ -5288,7 +5288,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
-				if (j->explain & 64) {
+				if (j->mapimode) {
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, putName("json", 4));
 					setFunctionId(q, putName("exportResult", 12));
@@ -7051,16 +7051,16 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		t = t->next;
 	}
 
-	if (j->explain & 5) {
+	if (j->trace) {
 		newStmt(mb, profilerRef, "stop");
 		/* call gettrace function, and print it */
 		t = append_jaql_pipe(
 				make_func_call(GDKstrdup("gettrace"), NULL),
 				trout
 			);
-		j->explain = j->explain & ~5;
+		j->trace = 0;
 		dumptree(j, cntxt, mb, t);
-		j->explain = j->explain | 5;
+		j->trace = 1;
 		freetree(t);
 	}
 
