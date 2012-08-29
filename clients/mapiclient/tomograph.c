@@ -571,11 +571,11 @@ static void scandata(char *filename)
 	starttime = 0;
 
 	while(!feof(f)){
-		fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks);
-		fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend);
-		fgets(buf,BUFSIZ,f);
+		(void) fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks);
+		(void) fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend);
+		(void) fgets(buf,BUFSIZ,f);
 		box[i].stmt= strdup(buf);
-		fgets(buf,BUFSIZ,f);
+		(void) fgets(buf,BUFSIZ,f);
 		*(strchr(buf,(int)'\n'))=0;
 		box[i].fcn= strdup(buf);
 		if ( box[i].clkend - box[i].clkstart < threshold)
@@ -660,8 +660,9 @@ static void createTomogram(void)
 		scalename = "micro";
 	}
 	fprintf(gnudata,"set xtics (");
-	for( i =0; i<= 10; i++)
-		fprintf(gnudata,"\"%d\" %d%c",i * w /scale, i * w, (i< 10? ',':' '));
+	for( i =0; i< 10; i++)
+		fprintf(gnudata,"\"%d\" %d,",i * w /scale, i * w);
+	fprintf(gnudata,"\"%6.3f\" %d",((double)lastclktick)/scale, i * w);
 	fprintf(gnudata,")\n");
 	fprintf(gnudata,"set grid xtics\n");
 	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scalename,
