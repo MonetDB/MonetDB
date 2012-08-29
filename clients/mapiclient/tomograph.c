@@ -417,8 +417,10 @@ static void parser(char *row){
 	if ( strncmp(c+1,"done",4) == 0){
 		state = 1;
 		c += 5;
-	} else
+	} else {
+		state = 0;
 		c= strchr(c+1,(int)'"');
+	}
 
 	c= strchr(c+1,(int)'"');
 	if ( c ){
