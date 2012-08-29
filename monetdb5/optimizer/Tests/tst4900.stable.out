@@ -180,14 +180,14 @@ barrier always := true;                 # 69 always:bit := _118:bit {J87}
     t59 := batcalc.-(t48,t58);          # 72 t59:bat[:oid,:dbl] := CMDbatSUBsignal(t48:bat[:oid,:dbl], t58:bat[:oid,:dbl]) {G}
     t61 := batcalc.*(t59,t59);          # 73 t61:bat[:oid,:dbl] := CMDbatMULsignal(t59:bat[:oid,:dbl], t59:bat[:oid,:dbl]) {G}
     t72 := batcalc./(t61,t71);          # 74 t72:bat[:oid,:dbl] := CMDbatDIVsignal(t61:bat[:oid,:dbl], t71:bat[:oid,:dbl]) {G}
-    t82 := aggr.sum(t72,t80,t81);       # 75 t82:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
+    t82 := aggr.sum(t72,t80,t81);       # 75 t82:bat[:oid,:dbl] := AGGRsum3_dbl(t72:bat[:oid,:dbl], t80:bat[:oid,:oid], t81:bat[:oid,:int]) {G}
     t83 := batcalc.*(t41,t82);          # 76 t83:bat[:oid,:dbl] := CMDbatMULsignal(t41:dbl, t82:bat[:oid,:dbl]) {G}
     t84 := batmmath.exp(t83);           # 77 t84:bat[:oid,:dbl] := CMDscience_bat_dbl_exp(t83:bat[:oid,:dbl]) {G}
     t85 := batcalc.*(t40,t84);          # 78 t85:bat[:oid,:dbl] := CMDbatMULsignal(t40:bat[:oid,:dbl], t84:bat[:oid,:dbl]) {G}
     t86 := batcalc.*(t7,t85);           # 79 t86:bat[:oid,:dbl] := CMDbatMULsignal(t7:bat[:oid,:dbl], t85:bat[:oid,:dbl]) {G}
-    t93 := aggr.sum(t86,t91,t92);       # 80 t93:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
+    t93 := aggr.sum(t86,t91,t92);       # 80 t93:bat[:oid,:dbl] := AGGRsum3_dbl(t86:bat[:oid,:dbl], t91:bat[:oid,:oid], t92:bat[:oid,:int]) {G}
     t94 := batmmath.log(t93);           # 81 t94:bat[:oid,:dbl] := CMDscience_bat_dbl_log(t93:bat[:oid,:dbl]) {G}
-    t98 := aggr.sum(t94,t96,t97);       # 82 t98:bat[:oid,:dbl] := AX3aggrX3_sum3_dbl_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
+    t98 := aggr.sum(t94,t96,t97);       # 82 t98:bat[:oid,:dbl] := AGGRsum3_dbl(t94:bat[:oid,:dbl], t96:bat[:oid,:oid], t97:bat[:oid,:int]) {G}
     top := t98;                         # 83 top:bat[:oid,:dbl] := t98:bat[:oid,:dbl] {G}
     io.table(t97,top);                  # 84 _117:void := IOttable(t97:bat[:oid,:int], top:bat[:oid,:dbl]) {G}
     yield f1;                           # 85 f1:void 

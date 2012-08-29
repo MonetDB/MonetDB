@@ -886,6 +886,30 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 /* ---------------------------------------------------------------------- */
 /* addition (any numeric type) */
 
+/* dst = lft + rgt with overflow check */
+#define ADD_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, on_overflow)	\
+	do {								\
+		if ((rgt) < 1) {					\
+			if (GDK_##TYPE3##_min - (rgt) >= (lft)) {	\
+				if (abort_on_error)			\
+					on_overflow;			\
+				(dst) = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				(dst) = (TYPE3) (lft) + (rgt);		\
+			}						\
+		} else {						\
+			if (GDK_##TYPE3##_max - (rgt) < (lft)) {	\
+				if (abort_on_error)			\
+					on_overflow;			\
+				(dst) = TYPE3##_nil;			\
+				nils++;					\
+			} else {					\
+				(dst) = (TYPE3) (lft) + (rgt);		\
+			}						\
+		}							\
+	} while (0)
+
 #define ADD_3TYPE(TYPE1, TYPE2, TYPE3)					\
 	static BUN							\
 	add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
@@ -905,24 +929,11 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
-			} else if (rgt[j] < 1) {			\
-				if (GDK_##TYPE3##_min - rgt[j] >= lft[i]) { \
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) lft[i] + rgt[j]; \
-				}					\
 			} else {					\
-				if (GDK_##TYPE3##_max - rgt[j] < lft[i]) { \
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) lft[i] + rgt[j]; \
-				}					\
+				ADD_WITH_CHECK(TYPE1, lft[i],		\
+					       TYPE2, rgt[j],		\
+					       TYPE3, dst[k],		\
+					       return BUN_NONE);	\
 			}						\
 		}							\
 		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
@@ -9960,4 +9971,313 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;
+}
+
+#define AGGR_SUM(TYPE1, TYPE2)						\
+	do {								\
+		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {	\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					sums[gid] = 0;			\
+				}					\
+				if (*vals == TYPE1##_nil) {		\
+					if (!skip_nils) {		\
+						sums[gid] = TYPE2##_nil; \
+						nils++;			\
+					}				\
+				} else if (sums[gid] != TYPE2##_nil) {	\
+					ADD_WITH_CHECK(TYPE1, *vals,	\
+						       TYPE2, sums[gid], \
+						       TYPE2, sums[gid], \
+						       goto overflow);	\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+	} while (0)
+
+/* Calculate group sums with optional candidates list.
+ *
+ * The result is a bat with a dense list of group ids in the head
+ * (aligned with e, if it was specified), and the sum for each group
+ * in the tail (nil if the group does not occur).  Groups are
+ * specified in the tail of g.  b and g must be aligned on the head,
+ * and those heads must be dense.  If specified, e gives the list of
+ * groups in the head.  e can be the extent or histo result from
+ * BATgroup.  If e is not specified, we do an extra scan over g to
+ * find out the range of group ids.
+ *
+ * If a group id (value in g) is nil, the values are not summed.
+ *
+ * The type of the result bat is specified in tp.  This type should be
+ * at least as large as the input type, and if the input type is an
+ * integral type, then so should tp.  If the input type is a floating
+ * point type, then so should tp.
+ *
+ * If skip_nils is true (non-zero), nils in b are skipped, otherwise
+ * the sum of the group will be nil.
+ *
+ * If abort_on_error is true (non-zero), overflow will cause an error,
+ * otherwise overflow will cause the sum for the group to be nil.
+ * Note that overflow can occur even if theoretically the sum does fit
+ * in the type.  Sums are calculated in the order of b and so if b
+ * contains large positive values at the start that cause overflow,
+ * and then negative values that compensate for the overflow, overflow
+ * will still happen.
+ */
+BAT *
+BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	const oid *gids;
+	oid gid;
+	oid min, max;
+	BUN i, n;
+	BUN nils = 0;
+	BAT *bn;
+	unsigned int *seen;	/* bitmask for groups that we've seen */
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+
+	if (b == NULL || !BAThdense(b)) {
+		GDKerror("BATgroupsum: b must be dense-headed\n");
+		return NULL;
+	}
+	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
+		GDKerror("BATgroupsum: b and g must be aligned\n");
+		return NULL;
+	}
+	assert(BATttype(g) == TYPE_oid);
+	if (e != NULL && !BAThdense(e)) {
+		GDKerror("BATgroupsum: e must be dense-headed\n");
+		return NULL;
+	}
+
+	if (e == NULL) {
+		/* we need to find out the min and max of g */
+		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
+		max = 0;
+		if (BATtdense(g)) {
+			min = g->tseqbase;
+			max = g->tseqbase + BATcount(g) - 1;
+		} else if (g->tsorted) {
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			/* find first non-nil */
+			for (i = 0, n = BATcount(g); i < n; i++, gids++) {
+				if (*gids != oid_nil) {
+					min = *gids;
+					break;
+				}
+			}
+			if (min != oid_nil) {
+				/* found a non-nil, max must be last
+				 * value (and there is one!) */
+				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
+			}
+		} else {
+			/* we'll do a complete scan */
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			for (i = 0, n = BATcount(g); i < n; i++) {
+				if (*gids != oid_nil) {
+					if (*gids < min)
+						min = *gids;
+					if (*gids > max)
+						max = *gids;
+				}
+				gids++;
+			}
+			/* note: max < min is possible if all groups
+			 * are nil (or BATcount(g)==0) */
+		}
+	} else {
+		min = e->hseqbase;
+		max = e->hseqbase + BATcount(e) - 1;
+	}
+
+	if (BATcount(b) == 0 || (e != NULL && BATcount(e) == 0) || max < min) {
+		/* trivial: no sums, so return bat aligned with g with
+		 * nil in the tail */
+		bn = BATconstant(tp, ATOMnilptr(tp),
+				 max < min ? 0 : max - min + 1);
+		BATseqbase(bn, max < min ? 0 : min);
+		return bn;
+	}
+
+	CANDINIT(b, s);
+
+	if ((e == NULL ||
+	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+		/* trivial: singleton groups, so all results are equal
+		 * to the inputs (but possibly a different type) */
+		return BATconvert(b, s, tp, abort_on_error);
+	}
+
+	/* allocate bitmap for seen group ids */
+	seen = GDKzalloc(((max - min + 1 + 32 - 1) / 32) * sizeof(int));
+	if (seen == NULL) {
+		GDKerror("BATgroupsum: cannot allocate enough memory\n");
+		return NULL;
+	}
+
+	bn = BATnew(TYPE_void, tp, (BUN) (max - min + 1));
+	if (bn == NULL)
+		return NULL;
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte: {
+		bte *sums = (bte *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = bte_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, bte);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_sht: {
+		sht *sums = (sht *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = sht_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, sht);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, sht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_int: {
+		int *sums = (int *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = int_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, int);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, int);
+			break;
+		case TYPE_int:
+			AGGR_SUM(int, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_lng: {
+		lng *sums = (lng *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = lng_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, lng);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, lng);
+			break;
+		case TYPE_int:
+			AGGR_SUM(int, lng);
+			break;
+		case TYPE_lng:
+			AGGR_SUM(lng, lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_flt: {
+		flt *sums = (flt *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = flt_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_flt:
+			AGGR_SUM(flt, flt);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_dbl: {
+		dbl *sums = (dbl *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			sums[i] = dbl_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_flt:
+			AGGR_SUM(flt, dbl);
+			break;
+		case TYPE_dbl:
+			AGGR_SUM(dbl, dbl);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	default:
+		goto unsupported;
+	}
+	if (nils == 0) {
+		/* figure out whether there were any empty groups
+		 * (that result in a nil value) */
+		i = max - min + 1;
+		seen[i >> 5] |= ~0U << (i & 0x1F); /* fill last slot */
+		for (i = 0, n = (max - min + 1 + 32 - 1) / 32; i < n; i++) {
+			if (seen[i] != 0xFFFFFFFFU) {
+				nils = 1;
+				break;
+			}
+		}
+	}
+	GDKfree(seen);
+	BATsetcount(bn, (BUN) (max - min + 1));
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+
+  unsupported:
+	GDKfree(seen);
+	BBPunfix(bn->batCacheid);
+	GDKerror("BATgroupsum: type combination (sum(%s)->%s) not supported.\n",
+		 ATOMname(b->ttype), ATOMname(tp));
+	return NULL;
+
+  overflow:
+	GDKfree(seen);
+	BBPunfix(bn->batCacheid);
+	GDKerror("22003!overflow in calculation.\n");
+	return NULL;
 }
