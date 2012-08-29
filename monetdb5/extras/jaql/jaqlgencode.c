@@ -5075,6 +5075,7 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 	if (funcretc == 0) {
 		char argbuf[256];
 		int pos = 0;
+		argbuf[0] = '\0';
 		for (i = 0; i < *coltpos; i++) {
 			if (i > 0)
 				pos += snprintf(argbuf + pos,
