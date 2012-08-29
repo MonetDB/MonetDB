@@ -83,7 +83,54 @@ function shred(uri:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:o
 	(r1,r2,r3,r4,r5,r6,r7) := json.shreduri(uri);
 
 	return (r1,r2,r3,r4,r5,r6,r7);
-end shred
+end shred;
+
+# produce a JSON document with trace information
+function gettrace()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	r1 := bat.new(:oid,:bte);
+	#r2 := bat.new(:oid,:str);
+	#r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	#r5 := bat.new(:oid,:oid);
+	#r6 := bat.new(:oid,:oid);
+	#r7 := bat.new(:oid,:str);
+
+	r1 := bat.insert(r1, 0@0, 97:bte); # a
+
+	# hardcode info for now, in the future could be argument
+	t := profiler.getTrace("ticks");
+	s := profiler.getTrace("stmt");
+
+	# build objects
+	t5 := algebra.markT(t, 1@0);
+	r5 := algebra.project(0@0, t5);
+	t6 := bat.reverse(r5);
+	t7 := algebra.project(t6, 111:bte); # o
+
+	r1 := bat.insert(r1, t7);
+
+	# ticks are lng
+	n := json.nextid(r1);
+	r3 := algebra.markH(t, n);
+	r7 := algebra.project(r3, "ticks");
+	t4 := bat.reverse(r3);
+	r6 := algebra.markH(t4, 1@0);
+	t1 := algebra.project(r3, 105:bte); # i
+	r1 := bat.insert(r1, t1);
+
+	# stmt are str
+	n := json.nextid(r1);
+	r2 := algebra.markH(s, n);
+	t8 := algebra.project(r2, "stmt");
+	r7 := bat.insert(r7, t8);
+	t9 := bat.reverse(r2);
+	r10 := algebra.markH(t9, 1@0);
+	r6 := bat.insert(r6, r10);
+	t11 := algebra.project(r2, 115:bte); # s
+	r1 := bat.insert(r1, t11);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end gettrace;
 
 
 # these are groupable functions, they receive their input as :oid,:any_1

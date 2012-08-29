@@ -115,6 +115,7 @@ explain    return EXPLAIN;
 plan       return PLAN;
 planf      return PLANF;
 debug      return DEBUG;
+trace      return TRACE;
 
  /* language constructs */
 "->"       return ARROW;

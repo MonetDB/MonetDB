@@ -1915,7 +1915,8 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		switch (j->explain) {
 			case 0: /* normal (execution) mode */
-			case 1: /* explain: show MAL-plan */ {
+			case 1: /* explain: show MAL-plan */
+			case 5: /* trace: append timed MAL instructions */ {
 				str err;
 				Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
 						FUNCTIONsymbol);

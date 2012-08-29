@@ -5243,6 +5243,16 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = 0;
 	j->ro1 = j->ro2 = j->ro3 = j->ro4 = j->ro5 = j->ro6 = j->ro7 = 0;
 
+	/* this function is not used recursively, so this is the first thing
+	 * in the resulting MAL plan */
+	if (j->explain & 5) {
+		newStmt(mb, profilerRef, "reset");
+		q = newStmt(mb, profilerRef, "setFilter");
+		q = pushStr(mb, q, "*");
+		q = pushStr(mb, q, "*");
+		newStmt(mb, "profiler", "start");
+	}
+
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
 	while (t != NULL) {
@@ -7032,5 +7042,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		}
 		t = t->next;
 	}
+
+	if (j->explain & 5) {
+		newStmt(mb, profilerRef, "stop");
+		/* call gettrace function, and print it */
+		t = append_jaql_pipe(
+				make_func_call(GDKstrdup("gettrace"), NULL),
+				make_json_output(NULL)
+			);
+		j->explain = j->explain & ~5;
+		dumptree(j, cntxt, mb, t);
+		j->explain = j->explain | 5;
+		freetree(t);
+	}
+
 	return -1;
 }

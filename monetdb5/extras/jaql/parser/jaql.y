@@ -58,7 +58,7 @@ jaql_import void GDKfree(const char *);
 %start stmt
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG UNROLL PRESERVE
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG TRACE UNROLL PRESERVE
 
 %token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE NIL
 %token GREATER GEQUAL LESS LEQUAL NOT AND OR
@@ -143,6 +143,12 @@ stmt: jaql ';'
 	{
 		j->p = $2;
 		j->explain = 4;
+		YYACCEPT;
+	}
+	| TRACE jaql ';'
+	{
+		j->p = $2;
+		j->explain = 5;
 		YYACCEPT;
 	}
 	| error ';'

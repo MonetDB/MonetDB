@@ -215,7 +215,7 @@ JAQLparser(Client c)
 		return MAL_SUCCEED;
 	}
 
-	if (j->explain < 2 || j->explain == 4) {
+	if (j->explain < 2 || j->explain >= 4) {
 		Symbol prg = c->curprg;
 		j->explain |= 64;  /* request dumping in MAPI mode */
 		(void)dumptree(j, c, prg->def, j->p);
