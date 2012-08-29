@@ -117,8 +117,11 @@ typedef struct _wthread {
 static wthread *thds = NULL;
 static char hostname[128];
 static char *filename="tomograph";
+static char *inputfile=0;
+static long startrange=0, endrange= 0;
 static char *title =0;
 static int cores = 8;
+static int listing = 0;
 static int debug = 0;
 static int colormap = 0;
 
@@ -135,6 +138,8 @@ usage(void)
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -t | --threshold=<microseconds> default 1000\n");
 	fprintf(stderr, "  -T | --title=<plit title>\n");
+	fprintf(stderr, "  -i | --input=<file name of previous run >\n");
+	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file name prefix >\n");
 	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
 	fprintf(stderr, "  -m | --colormap produces colormap on tomograph.gpl\n");
@@ -176,7 +181,6 @@ typedef struct BOX{
 	int xleft,xright;	/* box coordinates */
 	int row;
 	int color;
-	char *label;
 	int thread;
 	long clkstart, clkend;
 	long ticks;
@@ -213,28 +217,253 @@ static void dumpbox(int i){
 }
 
 /* color map management, fixed */
+/* see http://www.uni-hamburg.de/Wiss/FB/15/Sustainability/schneider/gnuplot/colors.htm */
+struct {
+	char *name;
+	char *hsv;
+	int red,green,blue;
+} dictionary[] ={
+	{"aliceblue","#F0F8FF",240,248,255},
+	{"antiquewhite","#FAEBD7",250,235,215},
+	{"aqua","#00FFFF",0,255,255},
+	{"aquamarine","#7FFFD4",127,255,212},
+	{"azure","#F0FFFF",240,255,255},
+	{"beige","#F5F5DC",245,245,220},
+	{"bisque","#FFE4C4",255,228,196},
+	{"black","#000000",0,0,0},
+	{"blanchedalmond","#FFEBCD",255,235,205},
+	{"blue","#0000FF",0, 0,255},
+	{"blueviolet","#8A2BE2",138, 43,226},
+	{"brown","#A52A2A",165, 42, 42},
+	{"burlywood","#DEB887",222,184,135},
+	{"cadetblue","#5F9EA0",95,158,160},
+	{"chartreuse","#7FFF00",127,255, 0},
+	{"chocolate","#D2691E",210,105, 30},
+	{"coral","#FF7F50",255,127, 80},
+	{"cornflowerblue","#6495ED",100,149,237},
+	{"cornsilk","#FFF8DC",255,248,220},
+	{"crimson","#DC143C",220,20,60},
+	{"cyan","#00FFFF",0,255,255},
+	{"darkblue","#00008B",0,0,139},
+	{"darkcyan","#008B8B",0,139,139},
+	{"darkgoldenrod","#B8860B",184,134, 11},
+	{"darkgray","#A9A9A9",169,169,169},
+	{"darkgreen","#006400",0,100, 0},
+	{"darkkhaki","#BDB76B",189,183,107},
+	{"darkmagenta","#8B008B",139, 0,139},
+	{"darkolivegreen","#556B2F",85,107, 47},
+	{"darkorange","#FF8C00",255,140, 0},
+	{"darkorchid","#9932CC",153, 50,204},
+	{"darkred","#8B0000",139, 0, 0},
+	{"darksalmon","#E9967A",233,150,122},
+	{"darkseagreen","#8FBC8F",143,188,143},
+	{"darkslateblue","#483D8B",72, 61,139},
+	{"darkslategray","#2F4F4F",47, 79, 79},
+	{"darkturquoise","#00CED1",0,206,209},
+	{"darkviolet","#9400D3",148, 0,211},
+	{"deeppink","#FF1493",255, 20,147},
+	{"deepskyblue","#00BFFF",0,191,255},
+	{"dimgray","#696969",105,105,105},
+	{"dodgerblue","#1E90FF",30,144,255},
+	{"firebrick","#B22222",178, 34, 34},
+	{"floralwhite","#FFFAF0",255,250,240},
+	{"forestgreen","#228B22",34,139, 34},
+	{"fuchsia","#FF00FF",255,0,255},
+	{"gainsboro","#DCDCDC",220,220,220},
+	{"ghostwhite","#F8F8FF",248,248,255},
+	{"gold","#FFD700",255,215, 0},
+	{"goldenrod","#DAA520",218,165, 32},
+	{"gray","#7F7F7F",127,127,127},
+	{"green","#008000",0,128,0},
+	{"greenyellow","#ADFF2F",173,255, 47},
+	{"honeydew","#F0FFF0",240,255,240},
+	{"hotpink","#FF69B4",255,105,180},
+	{"indianred","#CD5C5C",205, 92, 92},
+	{"indigo","#4B0082",75,0,130},
+	{"ivory","#FFFFF0",255,255,240},
+	{"khaki","#F0E68C",240,230,140},
+	{"lavender","#E6E6FA",230,230,250},
+	{"lavenderblush","#FFF0F5",255,240,245},
+	{"lawngreen","#7CFC00",124,252, 0},
+	{"lemonchiffon","#FFFACD",255,250,205},
+	{"lightblue","#ADD8E6",173,216,230},
+	{"lightcoral","#F08080",240,128,128},
+	{"lightcyan","#E0FFFF",224,255,255},
+	{"lightgoldenrodyellow","#FAFAD2",250,250,210},
+	{"lightgreen","#90EE90",144,238,144},
+	{"lightgrey","#D3D3D3",211,211,211},
+	{"lightpink","#FFB6C1",255,182,193},
+	{"lightsalmon","#FFA07A",255,160,122},
+	{"lightseagreen","#20B2AA",32,178,170},
+	{"lightskyblue","#87CEFA",135,206,250},
+	{"lightslategray","#778899",119,136,153},
+	{"lightsteelblue","#B0C4DE",176,196,222},
+	{"lightyellow","#FFFFE0",255,255,224},
+	{"lime","#00FF00",0,255,0},
+	{"limegreen","#32CD32",50,205, 50},
+	{"linen","#FAF0E6",250,240,230},
+	{"magenta","#FF00FF",255, 0,255},
+	{"maroon","#800000",128,0,0},
+	{"mediumaquamarine","#66CDAA",102,205,170},
+	{"mediumblue","#0000CD",0,0,205},
+	{"mediumorchid","#BA55D3",186, 85,211},
+	{"mediumpurple","#9370DB",147,112,219},
+	{"mediumseagreen","#3CB371",60,179,113},
+	{"mediumslateblue","#7B68EE",123,104,238},
+	{"mediumspringgreen","#00FA9A",0,250,154},
+	{"mediumturquoise","#48D1CC",72,209,204},
+	{"mediumvioletred","#C71585",199, 21,133},
+	{"midnightblue","#191970",25, 25,112},
+	{"mintcream","#F5FFFA",245,255,250},
+	{"mistyrose","#FFE4E1",255,228,225},
+	{"moccasin","#FFE4B5",255,228,181},
+	{"navajowhite","#FFDEAD",255,222,173},
+	{"navy","#000080",0, 0,128},
+	{"navyblue","#9FAFDF",159,175,223},
+	{"oldlace","#FDF5E6",253,245,230},
+	{"olive","#808000",128,128,0},
+	{"olivedrab","#6B8E23",107,142, 35},
+	{"orange","#FFA500",255,165, 0},
+	{"orangered","#FF4500",255, 69, 0},
+	{"orchid","#DA70D6",218,112,214},
+	{"palegoldenrod","#EEE8AA",238,232,170},
+	{"palegreen","#98FB98",152,251,152},
+	{"paleturquoise","#AFEEEE",175,238,238},
+	{"palevioletred","#DB7093",219,112,147},
+	{"papayawhip","#FFEFD5",255,239,213},
+	{"peachpuff","#FFDAB9",255,218,185},
+	{"peru","#CD853F",205,133, 63},
+	{"pink","#FFC0CB",255,192,203},
+	{"plum","#DDA0DD",221,160,221},
+	{"powderblue","#B0E0E6",176,224,230},
+	{"purple","#800080",128,0,128},
+	{"red","#FF0000",255, 0, 0},
+	{"rosybrown","#BC8F8F",188,143,143},
+	{"royalblue","#4169E1",65,105,225},
+	{"saddlebrown","#8B4513",139,69,19},
+	{"salmon ‡","#FA8072",250,128,114},
+	{"sandybrown","#F4A460",244,164, 96},
+	{"seagreen","#2E8B57",46,139, 87},
+	{"seashell","#FFF5EE",255,245,238},
+	{"sienna","#A0522D",160, 82, 45},
+	{"silver","#C0C0C0",192,192,192},
+	{"skyblue","#87CEEB",135,206,235},
+	{"slateblue","#6A5ACD",106, 90,205},
+	{"slategray","#708090",112,128,144},
+	{"snow","#FFFAFA",255,250,250},
+	{"springgreen","#00FF7F",0,255,127},
+	{"steelblue","#4682B4",70,130,180},
+	{"tan","#D2B48C",210,180,140},
+	{"teal","#008080",0,128,128},
+	{"thistle","#D8BFD8",216,191,216},
+	{"tomato","#FF6347",255, 99, 71},
+	{"turquoise","#40E0D0",64,224,208},
+	{"violet","#EE82EE",238,130,238},
+	{"wheat","#F5DEB3",245,222,179},
+	{"white","#FFFFFF",255,255,255},
+	{"whitesmoke","#F5F5F5",245,245,245},
+	{"yellow","#FFFF00",255,255, 0},
+	{"yellowgreen","#9ACD32",139,205,50},
+	{ 0,0,0,0,0}
+};
+
+static char *getHSV(char *name)
+{
+	int i;
+	for (i=0; dictionary[i].name; i++)
+	if ( strcmp(dictionary[i].name, name) == 0)
+		return dictionary[i].hsv;
+	return 0;
+}
+
+
+/* The initial dictionary is geared towars TPCH-use */
 struct COLOR{
 	int freq;
 	char *mod, *fcn, *col;
 } colors[] =
 {
-	{0,"idle","*","#FFE4C4"}, //bisque
+	{0,"mal","idle","white"},
+	{0,"mal","*","white"},
+
+	{0,"aggr","count","yellowgreen"},
+	{0,"aggr","sum","springgreen"},
 	{0,"aggr","*","green"},
-	{0,"algebra","*","yellow"},
+
+	{0,"algebra","leftjoin","powderblue"},
+	{0,"algebra","join","skyblue"},
+	{0,"algebra","semijoin","lightskyblue"},
+	{0,"algebra","kdifference","gray"},
+	{0,"algebra","kunion","navy"},
+	{0,"algebra","slice","darkblue"},
+	{0,"algebra","sortTail","cyan"},
+	{0,"algebra","markT","blue"},
+	{0,"algebra","selectNotNil","mediumblue"},
+	{0,"algebra","thetauselect","aqua"},
+	{0,"algebra","uselect","cornflowerblue"},
+	{0,"algebra","*","azure"},
+
+	{0,"bat","mirror","sandybrown"},
+	{0,"bat","reverse","sandybrown"},
 	{0,"bat","*","orange"},
-	{0,"batcalc","*","#E9967A"}, //darksalmon
-	{0,"calc","*","#90EE90"}, //lightgreen
-	{0,"group","*","green"},
-	{0,"language","*","#FF00FF"}, //fuchsia
+
+	{0,"batcalc","-","moccasin"},
+	{0,"batcalc","*","moccasin"},
+	{0,"batcalc","+","moccasin"},
+	{0,"batcalc","dbl","papayawhip"},
+	{0,"batcalc","str","papayawhip"},
+	{0,"batcalc","*","lightyellow"},
+
+	{0,"calc","lng","lightgreen"},
+	{0,"calc","str","lightgreen"},
+	{0,"calc","*","palegreen"},
+
+	{0,"group","multicolumns","orchid"},
+	{0,"group","refine","darkorchid"},
+	{0,"group","*","mediumorchid"},
+
+	{0,"language","dataflow","lightslategray"},
+	{0,"language","*","darkgray"},
+
+	{0,"mat","pack","greenyellow"},
 	{0,"mat","*","green"},
-	{0,"mtime","*","greenyellow"},
-	{0,"pcre","*","#DEB887"}, //burlywood
-	{0,"pqueue","*","#5F9EA0"},//cadetblue
-	{0,"io","*","#00FFFF"},	//aqua
-	{0,"sql","*","blue"},
-	{0,"*","*","#D3D3D3"}, //lightgrey
+
+	{0,"mtime","*","lightgreen"},
+
+	{0,"pcre","like_filter","gray"},
+	{0,"pcre","*","burlywood"},
+
+	//{0,"pqueue","topn_max","lightcoral"},
+	//{0,"pqueue","utopn_max","lightcoral"},
+	//{0,"pqueue","utopn_min","lightcoral"},
+	{0,"pqueue","*","lightcoral"},
+
+	{0,"io","stdout","gray"},
+	{0,"io","*","gray"},
+
+	//{0,"sql","bind","thistle"},
+	//{0,"sql","bind_dbat","thistle"},
+	//{0,"sql","mvc","thistle"},
+	//{0,"sql","resultSet ","thistle"},
+	{0,"sql","*","thistle"},
+
+	{0,"*","*","lavender"},
 	{0,0,0,0}
 };
+
+
+static void initcolors(void)
+{
+	int i;
+	char *c;
+	for ( i =0; colors[i].col; i++){
+		c = getHSV(colors[i].col);
+		if ( c )
+			colors[i].col = c;
+		else
+			printf("color '%s' not found\n",colors[i].col);
+	}
+}
 
 /* produce a legenda image for the color map */
 static void showmap(char *filename, int all)
@@ -258,11 +487,11 @@ static void showmap(char *filename, int all)
 	fprintf(f,"unset ytics\n");
 	fprintf(f,"unset colorbox\n");
 	for ( i= 0; colors[i].col; i++)
-	if ( colors[i].freq || all){
+	if ( colors[i].freq > 0 || all){
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-			object++, (k % 3) * w, h-40, (k % 3) * w+w, h, colors[i].col);
+			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.15 * w), h-5, colors[i].col);
 		fprintf(f,"set label %d \"%s.%s\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, 
-			(int) ((k % 3) *  w  + 0.2 *w) , h-25);
+			(int) ((k % 3) *  w  + 0.2 *w) , h-20);
 		if ( k % 3 == 2)
 			h-= 40;
 		k++;
@@ -296,40 +525,90 @@ static void updmap(int idx)
 	box[idx].color = fnd;
 }
 		
+/* keep the data around for re-painting with different thresholds and filters*/
+static void keepdata(char *filename)
+{
+	int i;
+	FILE *f;
+	char buf[BUFSIZ];
+
+	if (inputfile) /* don't overwrite source */
+		return;
+	snprintf(buf,BUFSIZ,"%s.dat",filename);
+	f = fopen(buf,"w");
+	assert(f);
+
+	if ( listing)
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend)
+		printf("%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend){
+		fprintf(f,"%d\t%ld\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend,box[i].ticks);
+		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
+		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:"");
+		fprintf(f,"%s\n",box[i].fcn? box[i].fcn:"");
+	}
+	fclose(f);
+	
+}
+
+static void scandata(char *filename)
+{
+	FILE *f;
+	char buf[BUFSIZ];
+	int i= 0;
+
+	f = fopen(filename,"r");
+	if ( f == 0){
+		snprintf(buf,BUFSIZ,"%s.dat",filename);
+		f = fopen(buf,"r");
+		if ( f == NULL){
+			printf("Could not open file '%s'\n",buf);
+			exit(-1);
+		}
+	}
+	starttime = 0;
+
+	while(!feof(f)){
+		fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks);
+		fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend);
+		fgets(buf,BUFSIZ,f);
+		box[i].stmt= strdup(buf);
+		fgets(buf,BUFSIZ,f);
+		*(strchr(buf,(int)'\n'))=0;
+		box[i].fcn= strdup(buf);
+		if ( box[i].clkend - box[i].clkstart < threshold)
+			continue;
+		/* focus on part of the time frame */
+		if ( endrange ){
+			if (box[i].clkend < startrange || box[i].clkstart >endrange)
+				continue;
+			if ( box[i].clkstart < startrange)
+				box[i].clkstart = startrange;
+			if ( box[i].clkend > endrange)
+				box[i].clkend = endrange;
+		} 
+		lastclktick= box[i].clkend;
+		totalclkticks += box[i].clkend - box[i].clkstart;
+		totalexecticks += box[i].ticks - box[i].ticks;
+		i++;
+		assert(i < MAXBOX);
+	}
+	topbox = i;
+}
 /* gnuplot defaults */
-static int width = 1000;	/* max pixelwidth of image */
 static int height = 160;
 
 static void gnuplotheader(char *filename){
-	char *scale ="micro";
 	int height = cores * 20;	
 	fprintf(gnudata,"set terminal pdfcairo enhanced color solid\n");
 	fprintf(gnudata,"set output \"%s.pdf\"\n",filename);
-	fprintf(gnudata,"set xrange [0:%ld]\n", lastclktick-starttime);
+	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 	fprintf(gnudata,"set yrange [0:%d]\n", height);
-
-/* todo
-	if ( lastclktick > 1000000){
-		scale = "";
-		fprintf(gnudata,"set xtics 100000\n");
-	} else
-	if ( lastclktick > 1000){
-		scale = "milli";
-		fprintf(gnudata,"set xtics 1000\n");
-	} else 
-*/
-	{
-		scale = "micro";
-		fprintf(gnudata,"set autoscale x\n");
-	}
-
 	fprintf(gnudata,"set ylabel \"threads\"\n");
-	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scale,
-		((double)totalclkticks) /( cores * (lastclktick-starttime))* 100, cores);
 	fprintf(gnudata,"set title \"%s\"\n", title? title:"tomogram");
 	fprintf(gnudata,"set key right \n");
-	fprintf(gnudata,"set grid xtics\n");
-	fprintf(gnudata,"set palette model RGB defined ( 0 1.0 0.8 0.8, 1 1.0 0.8 1.0, 2 0.8 0.8 1.0, 3 0.8 1.0 1.0, 4 0.8 1.0 0.8, 5 1.0 1.0 0.8 )\n");
 	fprintf(gnudata,"unset colorbox\n");
 }
 
@@ -341,6 +620,9 @@ static void createTomogram(void)
 	int top= 0;
 	int object=1, i,j;
 	int h = height /(2 * cores);
+	int w = (lastclktick-starttime)/10;
+	int scale;
+	char *scalename;
 
 	if ( figure  )
 		snprintf(buf,BUFSIZ,"%s_%d.gpl", filename, figure);
@@ -352,14 +634,9 @@ static void createTomogram(void)
 		printf("ERROR in creation of %s\n",buf);
 		exit(-1);
 	}
-	printf("created tomogram file '%s' \n",buf);
-	printf("Run: 'gnuplot %s' to create the '%s.pdf' file\n",buf,filename);
-	printf("The colormap is stored in '%s_map.gpl'\n",filename);
 	*strchr(buf,(int) '.') = 0;
 	gnuplotheader(buf);
 
-	if ( debug)
-		printf("width %d height %d \n", width, height);
 	/* detect all different threads and assign them a row */
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend ){
@@ -371,6 +648,26 @@ static void createTomogram(void)
 			rows[top++] = box[i].thread;
 		updmap(i);
 	}
+	if ( w > 1000000){
+		scale = 1000000;
+		scalename = "";
+	} else
+	if ( w > 1000){
+		scale= 1000;
+		scalename = "milli";
+	} else {
+		scale =1;
+		scalename = "micro";
+	}
+	fprintf(gnudata,"set xtics (");
+	for( i =0; i<= 10; i++)
+		fprintf(gnudata,"\"%d\" %d%c",i * w /scale, i * w, (i< 10? ',':' '));
+	fprintf(gnudata,")\n");
+	fprintf(gnudata,"set grid xtics\n");
+	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scalename,
+		(((double)totalclkticks) / (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)), cores);
+	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
+
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
 		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
@@ -387,7 +684,14 @@ static void createTomogram(void)
 	}
 	fprintf(gnudata,"plot -1 title \"\"\n");
 	showmap(filename, 0);
+	keepdata(filename);
+	/* show a listing */
 	fclose(gnudata);
+
+	printf("Created tomogram '%s' \n",buf);
+	printf("Run: 'gnuplot %s' to create the '%s.pdf' file\n",buf,filename);
+	printf("The colormap is stored in '%s_map.gpl'\n",filename);
+	printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
 }
 
 /* the main issue to deal with in the analyse is 
@@ -395,6 +699,73 @@ static void createTomogram(void)
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
  */
+static void update(int state, int thread, long clkticks, long ticks, long memory, char *fcn, char *stmt) {
+	int idx;
+	
+	if ( starttime == 0) {
+		/* ignore all instructions up to the first function call */
+		if (strncmp(fcn,"function",8) != 0)
+			return;
+		starttime = clkticks;
+	}
+	assert(clkticks-starttime >= 0);
+	clkticks -=starttime;
+
+	/* start of instruction box */
+	if ( state == 0 && thread < MAXTHREADS ){
+		/* capture long waits as idle */
+		idx = threads[thread];
+		/* check for long wait since last use */
+		if ( idx >= 0 &&  box[idx-1].clkend && clkticks - box[idx-1].clkend >= threshold ){
+			box[idx].fcn = strdup("mal.idle");
+			box[idx].stmt= strdup("");
+			box[idx].thread = box[idx-1].thread;
+			box[idx].clkstart= box[idx-1].clkend;
+			box[idx].memstart= box[idx-1].memend;
+			box[idx].clkend = clkticks;
+			box[idx].memend = memory;
+			threads[thread]= ++topbox;
+		}
+		idx = threads[thread];
+		box[idx].thread = thread;
+		box[idx].clkstart = clkticks;
+		box[idx].memstart = memory;
+		box[idx].stmt = stmt;
+		box[idx].fcn = strdup(fcn);
+	}
+	/* end the instruction box */
+	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
+		 clkticks - box[threads[thread]].clkstart > threshold  &&
+		box[threads[thread]].fcn  && strcmp(fcn, box[threads[thread]].fcn) ==0){
+		idx = threads[thread];
+		box[idx].clkend = clkticks;
+		box[idx].memend = memory;
+		box[idx].ticks = ticks;
+		/* focus on part of the time frame */
+		if ( endrange ){
+			if (box[idx].clkend < startrange || box[idx].clkstart >endrange)
+				return;
+			if ( box[idx].clkstart < startrange)
+				box[idx].clkstart = startrange;
+			if ( box[idx].clkend > endrange)
+				box[idx].clkend = endrange;
+			threads[thread]= ++topbox;
+		} else
+			threads[thread]= ++topbox;
+		lastclktick= box[idx].clkend + starttime;
+		totalclkticks += box[idx].clkend - box[idx].clkstart;
+		totalexecticks += box[idx].ticks - box[idx].ticks;
+	}
+	assert(topbox < MAXBOX);
+	if (state == 1 && strncmp(fcn,"function",8) == 0){
+		createTomogram();
+		totalclkticks= 0; /* number of clock ticks reported */
+		totalexecticks= 0; /* number of ticks reported for processing */
+		if ( title == 0)
+			title = strdup(fcn+9);
+	}
+
+}
 static void parser(char *row){
 #ifdef HAVE_STRPTIME
 	char *c;
@@ -404,7 +775,7 @@ static void parser(char *row){
 	long ticks = 0;
 	long memory = 0; /* in MB*/
 	char *fcn = 0, *stmt= 0;
-	int idx, state;
+	int state= 0;
 
 
 	if (row[0] != '[')
@@ -439,7 +810,6 @@ static void parser(char *row){
 		}
 		c = strchr(c+1, (int)'"');
 	}
-	lastclktick= clkticks;
 	c = strchr(c+1, (int)',');
 	thread = atoi(c+1);
 	c = strchr(c+1, (int)',');
@@ -466,49 +836,7 @@ static void parser(char *row){
 	if ( fcn && strchr(fcn,(int)'('))
 		*strchr(fcn,(int)'(') = 0;
 
-
-	if ( starttime == 0) {
-		/* ignore all instructions up to the first function call */
-		if (strncmp(fcn,"function",8) != 0)
-			return;
-		starttime = clkticks;
-	}
-	assert(clkticks-starttime >= 0);
-	clkticks -=starttime;
-	
-	if ( strncmp(fcn,"end ",4) == 0)
-		return;
-
-	if (state == 1 && strncmp(fcn,"function",8) == 0){
-		createTomogram();
-		totalclkticks= 0; /* number of clock ticks reported */
-		totalexecticks= 0; /* number of ticks reported for processing */
-		if ( title == 0)
-			title = strdup(fcn+9);
-	}
-
-	/* start of instruction box */
-	if ( state == 0 && thread < MAXTHREADS ){
-		idx = threads[thread];
-		box[idx].thread = thread;
-		box[idx].clkstart = clkticks;
-		box[idx].memstart = memory;
-		box[idx].stmt = stmt;
-		box[idx].fcn = strdup(fcn);
-	}
-	/* end the instruction box */
-	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
-		 clkticks - box[threads[thread]].clkstart > threshold  &&
-		box[threads[thread]].fcn  && strcmp(fcn, box[threads[thread]].fcn) ==0){
-		idx = threads[thread];
-		box[idx].clkend = clkticks;
-		box[idx].memend = memory;
-		box[idx].ticks = ticks;
-		totalclkticks += clkticks - box[threads[thread]].clkstart;
-		totalexecticks += ticks - box[threads[thread]].ticks;
-		threads[thread]= topbox++;
-	}
-	assert(topbox < MAXBOX);
+	update(state, thread, clkticks, ticks, memory, fcn, stmt);
 #else
 	(void) row;
 #endif
@@ -693,7 +1021,7 @@ main(int argc, char **argv)
 	wthread *walk;
 	stream * config = NULL;
 
-	static struct option long_options[13] = {
+	static struct option long_options[16] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "password", 1, 0, 'P' },
@@ -703,8 +1031,11 @@ main(int argc, char **argv)
 		{ "title", 1, 0, 'T' },
 		{ "threshold", 1, 0, 't' },
 		{ "cores", 1, 0, 'c' },
+		{ "input", 1, 0, 'i' },
+		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
+		{ "list", 0, 0, 'l' },
 		{ "colormap", 0, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
@@ -733,6 +1064,7 @@ main(int argc, char **argv)
 		}
 	}
 
+	initcolors();
 	if (config != NULL) {
 		char buf[1024];
 		char *q;
@@ -762,7 +1094,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m",
+		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -772,6 +1104,9 @@ main(int argc, char **argv)
 			break;
 		case 'd':
 			dbname = optarg;
+			break;
+		case 'l':
+			listing = 1;
 			break;
 		case 'u':
 			user = optarg;
@@ -793,12 +1128,38 @@ main(int argc, char **argv)
 		case 'T':
 			title = optarg;
 			break;
+		case 'i':
+			if ( optarg == 0)
+				inputfile = strdup(filename);
+			else
+				inputfile= optarg;
+			break;
 		case 'o':
 			filename = optarg;
 			break;
 		case 'c':
 			cores = optarg?atoi(optarg):1;
 			break;
+		case 'r':
+		{ char *s;
+			if ( optarg == 0)
+				break;
+			startrange = atol(optarg);
+			if ( strchr(optarg,(int)'-') )
+				endrange = atol(strchr(optarg,(int)'-')+1);
+			else
+				endrange = startrange + 1000;
+			s = strchr(optarg,(int) 'm');
+			if ( s && *(s+1)=='s'){
+				startrange *= 1000;
+				endrange *=1000;
+			} else { /* seconds */
+				s = strchr(optarg,(int) 's');
+				startrange *= 1000000;
+				endrange *=1000000;
+			}
+			break;
+		}
 		case 't':
 			if ( optarg)
 				threshold = atol(optarg);
@@ -809,6 +1170,12 @@ main(int argc, char **argv)
 		}
 	}
 
+	if ( inputfile){
+		/* reload existing tomogram */
+		scandata(inputfile);
+		createTomogram();
+		exit(0);
+	}
 	a = optind;
 	if (argc > 1 && a < argc && argv[a][0] == '+') {
 		k= setCounter(argv[a] + 1);
