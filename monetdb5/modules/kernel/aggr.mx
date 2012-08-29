@@ -65,10 +65,23 @@ command subsum(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:o
 address AGGRsubsumcand_@2
 comment "Grouped sum aggregate with candidates list";
 
-command product(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_1])
-		:bat[:oid,:@2] 
-address AX3aggrX3_prod3_@1_@2
-comment "Product over grouped tail on @1";
+command product(b:bat[:oid,:@1], e:bat[:oid,:any_1]) :bat[:oid,:@2] 
+address AGGRprod2_@2
+comment "Product over grouped tail product on @1";
+
+command product(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:@2]
+address AGGRprod3_@2
+comment "Grouped tail product on @1";
+
+command subprod(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
+address AGGRsubprod_@2
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
+address AGGRsubprodcand_@2
+comment "Grouped product aggregate with candidates list";
+
 @
 @mal
 @:sumprod_signatures(bte,bte)@
@@ -271,11 +284,9 @@ address AX3count_no_nil3;
 
 #include "mal.h"
 #include "mal_exception.h"
-#include "aggr_be_prod.h"
 #include "aggr_be_avg.h"
 #include "aggr_be_minmax.h"
 #include "aggr_be_count.h"
-#include "aggr_bge_prod.h"
 #include "aggr_bge_avg.h"
 #include "aggr_bge_minmax.h"
 #include "aggr_bge_count.h"
@@ -289,53 +300,6 @@ address AX3count_no_nil3;
 #else
 #define aggr_export extern
 #endif
-
-@= AX3prod
-aggr_export str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid);
-str AX3aggrX3_prod_@1_@2(int *retid, int *bid, int *eid){
-	BAT *b, *e, *bn;
-
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
-	}
-	if( (e= BATdescriptor(*eid)) == NULL ){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.prod", RUNTIME_OBJECT_MISSING);
-	}
-	if( CMDaggrX3_prod_@1_@2(&bn,b,e) == GDK_SUCCEED){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-		*retid = bn->batCacheid;
-		BBPkeepref(*retid);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(e->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(e->batCacheid);
-	throw(MAL, "aggrX3_prod.@4",GDK_EXCEPTION);
-}
-@
-@c
-
-@:AX3prod(bte,bte)@
-@:AX3prod(bte,sht)@
-@:AX3prod(bte,int)@
-@:AX3prod(bte,wrd)@
-@:AX3prod(bte,lng)@
-@:AX3prod(sht,sht)@
-@:AX3prod(sht,int)@
-@:AX3prod(sht,wrd)@
-@:AX3prod(sht,lng)@
-@:AX3prod(int,int)@
-@:AX3prod(int,wrd)@
-@:AX3prod(int,lng)@
-@:AX3prod(wrd,wrd)@
-@:AX3prod(wrd,lng)@
-@:AX3prod(lng,wrd)@
-@:AX3prod(lng,lng)@
-@:AX3prod(flt,flt)@
-@:AX3prod(flt,dbl)@
-@:AX3prod(dbl,dbl)@
 
 @= AX3arithavg
 aggr_export str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid);
@@ -467,62 +431,10 @@ AX3aggrX3_size(int *retid, int *bid, int *eid)
 /*
  * @- Sum & Average & Prod
  */
-@= AX3prod3
-aggr_export str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid);
-str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
-	BAT *b,*g, *e;
-	BAT *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
-	if( (e= BATdescriptor(*eid)) == NULL ){
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
-	}
-	if( (g= BATdescriptor(*gid)) == NULL ){
-		BBPreleaseref(e->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		throw(MAL, "aggr.prod3", RUNTIME_OBJECT_MISSING);
-	}
-	if( CMDaggrX3_prod3_@1_@2(&bn,b,g,e) == GDK_SUCCEED){
-		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, BAT_READ); 
-		*retid = bn->batCacheid;
-		BBPkeepref(*retid);
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(e->batCacheid);
-		BBPreleaseref(g->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(e->batCacheid);
-	BBPreleaseref(g->batCacheid);
-	throw(MAL, "aggrX3_prod3",GDK_EXCEPTION);
-}
-@
-@c
-
-@:AX3prod3(bte,bte)@
-@:AX3prod3(bte,sht)@
-@:AX3prod3(bte,int)@
-@:AX3prod3(bte,wrd)@
-@:AX3prod3(bte,lng)@
-@:AX3prod3(sht,sht)@
-@:AX3prod3(sht,int)@
-@:AX3prod3(sht,wrd)@
-@:AX3prod3(sht,lng)@
-@:AX3prod3(int,int)@
-@:AX3prod3(int,wrd)@
-@:AX3prod3(int,lng)@
-@:AX3prod3(wrd,wrd)@
-@:AX3prod3(wrd,lng)@
-@:AX3prod3(lng,wrd)@
-@:AX3prod3(lng,lng)@
-@:AX3prod3(flt,flt)@
-@:AX3prod3(flt,dbl)@
-@:AX3prod3(dbl,dbl)@
-
 static str
-AGGRsum(bat *retval, BAT *b, BAT *g, BAT *e, int tp)
+AGGRsumprod(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
+			BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			const char *malfunc)
 {
 	BAT *bn, *t, *map;
 
@@ -533,7 +445,7 @@ AGGRsum(bat *retval, BAT *b, BAT *g, BAT *e, int tp)
 			BBPreleaseref(g->batCacheid);
 		if (e)
 			BBPreleaseref(e->batCacheid);
-		throw(MAL, "aggr.sum", RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
 	if (!BAThdense(b) || !BAThdense(g)) {
 		/* if b or g don't have a dense head, replace the head with a
@@ -578,7 +490,7 @@ AGGRsum(bat *retval, BAT *b, BAT *g, BAT *e, int tp)
 	} else {
 		map = NULL;
 	}
-	bn = BATgroupsum(b, g, e, NULL, tp, 1, 1);
+	bn = (*grpfunc)(b, g, e, NULL, tp, 1, 1);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(g->batCacheid);
 	if (map == NULL)			/* if map!=NULL, e is mirror of map */
@@ -594,16 +506,16 @@ AGGRsum(bat *retval, BAT *b, BAT *g, BAT *e, int tp)
 			if (strncmp(errbuf, "!ERROR: ", 8) == 0)
 				errbuf += 8;
 			if (strchr(errbuf, '!') == errbuf + 5) {
-				s = createException(MAL, "aggr.sum", "%s", errbuf);
+				s = createException(MAL, malfunc, "%s", errbuf);
 			} else if ((s = strchr(errbuf, ':')) != NULL && s[1] == ' ') {
-				s = createException(MAL, "aggr.sum", "%s", s + 2);
+				s = createException(MAL, malfunc, "%s", s + 2);
 			} else {
-				s = createException(MAL, "aggr.sum", "%s", errbuf);
+				s = createException(MAL, malfunc, "%s", errbuf);
 			}
 			*GDKerrbuf = 0;
 			return s;
 		}
-		throw(MAL, "aggr.sum", OPERATION_FAILED);
+		throw(MAL, malfunc, OPERATION_FAILED);
 	}
 	if (map) {
 		t = BATleftjoin(map, bn, BATcount(bn));
@@ -617,18 +529,22 @@ AGGRsum(bat *retval, BAT *b, BAT *g, BAT *e, int tp)
 }
 
 static str
-AGGRsum3(bat *retval, bat *bid, bat *gid, bat *eid, int tp)
+AGGRsumprod3(bat *retval, bat *bid, bat *gid, bat *eid, int tp,
+			 BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			 const char *malfunc)
 {
 	BAT *b, *g, *e;
 
 	b = BATdescriptor(*bid);	/* [head,value] */
 	g = BATdescriptor(*gid);	/* [head,gid] */
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRsum(retval, b, g, e, tp);
+	return AGGRsumprod(retval, b, g, e, tp, grpfunc, malfunc);
 }
 
 static str
-AGGRsum2(bat *retval, bat *bid, bat *eid, int tp)
+AGGRsumprod2(bat *retval, bat *bid, bat *eid, int tp,
+			 BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			 const char *malfunc)
 {
 	BAT *b, *g, *e;
 
@@ -640,109 +556,224 @@ AGGRsum2(bat *retval, bat *bid, bat *eid, int tp)
 	BBPreleaseref(b->batCacheid);
 	b = e;
 	e = BATdescriptor(*eid);	/* [gid,any] */
-	return AGGRsum(retval, b, g, e, tp);
+	return AGGRsumprod(retval, b, g, e, tp, grpfunc, malfunc);
 }
 
 aggr_export str AGGRsum3_bte(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_bte(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_bte);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_bte,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_sht(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_sht(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_sht);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_sht,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_int(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_int(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_int);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_int,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_wrd(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_wrd(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_wrd);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_wrd,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_lng(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_lng);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_lng,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_flt);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_flt,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
 str
 AGGRsum3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
 {
-	return AGGRsum3(retval, bid, gid, eid, TYPE_dbl);
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_bte(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_bte(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_bte);
+	return AGGRsumprod2(retval, bid, eid, TYPE_bte, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_sht(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_sht(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_sht);
+	return AGGRsumprod2(retval, bid, eid, TYPE_sht, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_int(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_int(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_int);
+	return AGGRsumprod2(retval, bid, eid, TYPE_int, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_wrd(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_wrd(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_wrd);
+	return AGGRsumprod2(retval, bid, eid, TYPE_wrd, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_lng(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_lng(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_lng);
+	return AGGRsumprod2(retval, bid, eid, TYPE_lng, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_flt(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_flt(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_flt);
+	return AGGRsumprod2(retval, bid, eid, TYPE_flt, BATgroupsum, "aggr.sum");
 }
 
 aggr_export str AGGRsum2_dbl(bat *retval, bat *bid, bat *eid);
 str
 AGGRsum2_dbl(bat *retval, bat *bid, bat *eid)
 {
-	return AGGRsum2(retval, bid, eid, TYPE_dbl);
+	return AGGRsumprod2(retval, bid, eid, TYPE_dbl, BATgroupsum, "aggr.sum");
+}
+
+aggr_export str AGGRprod3_bte(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_bte(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_bte,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_sht(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_sht(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_sht,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_int(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_int(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_int,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_wrd(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_wrd(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_wrd,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_lng(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_lng,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_flt(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_flt,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRprod3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRsumprod3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_bte(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_bte(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_bte, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_sht(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_sht(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_sht, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_int(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_int(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_int, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_wrd(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_wrd(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_wrd, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_lng(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_lng(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_lng, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_flt(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_flt(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_flt, BATgroupprod, "aggr.prod");
+}
+
+aggr_export str AGGRprod2_dbl(bat *retval, bat *bid, bat *eid);
+str
+AGGRprod2_dbl(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRsumprod2(retval, bid, eid, TYPE_dbl, BATgroupprod, "aggr.prod");
 }
 
 static str
-AGGRsubsum(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error, int tp)
+AGGRsubsumprod(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
+			   int *skip_nils, int *abort_on_error, int tp,
+			   BAT *(*grpfunc)(BAT *, BAT *, BAT *, BAT *, int, int, int),
+			   const char *malfunc)
 {
 	BAT *b, *g, *e, *s, *bn;
 
@@ -756,7 +787,7 @@ AGGRsubsum(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, 
 			BBPreleaseref(g->batCacheid);
 		if (e)
 			BBPreleaseref(e->batCacheid);
-		throw(MAL, "aggr.subsum", RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
 	if (sid) {
 		s = BATdescriptor(*sid);
@@ -764,12 +795,12 @@ AGGRsubsum(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, 
 			BBPreleaseref(b->batCacheid);
 			BBPreleaseref(g->batCacheid);
 			BBPreleaseref(e->batCacheid);
-			throw(MAL, "aggr.subsum", RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
 	} else {
 		s = NULL;
 	}
-	bn = BATgroupsum(b, g, e, s, tp, *skip_nils, *abort_on_error);
+	bn = (grpfunc)(b, g, e, s, tp, *skip_nils, *abort_on_error);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(g->batCacheid);
 	BBPreleaseref(e->batCacheid);
@@ -783,16 +814,16 @@ AGGRsubsum(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, 
 			if (strncmp(errbuf, "!ERROR: ", 8) == 0)
 				errbuf += 8;
 			if (strchr(errbuf, '!') == errbuf + 5) {
-				s = createException(MAL, "aggr.subsum", "%s", errbuf);
+				s = createException(MAL, malfunc, "%s", errbuf);
 			} else if ((s = strchr(errbuf, ':')) != NULL && s[1] == ' ') {
-				s = createException(MAL, "aggr.subsum", "%s", s + 2);
+				s = createException(MAL, malfunc, "%s", s + 2);
 			} else {
-				s = createException(MAL, "aggr.subsum", "%s", errbuf);
+				s = createException(MAL, malfunc, "%s", errbuf);
 			}
 			*GDKerrbuf = 0;
 			return s;
 		}
-		throw(MAL, "aggr.subsum", OPERATION_FAILED);
+		throw(MAL, malfunc, OPERATION_FAILED);
 	}
 	*retval = bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -803,98 +834,224 @@ aggr_export str AGGRsubsum_bte(bat *retval, bat *bid, bat *gid, bat *eid, int *s
 str
 AGGRsubsum_bte(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_bte);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_bte, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_sht(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_sht(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_sht);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_sht, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_int(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_int(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_int);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_int, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_wrd(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_wrd(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_wrd);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_wrd, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_lng(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_lng(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_lng);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_lng, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_flt(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_flt);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_flt, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsum_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsum_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, NULL, skip_nils, abort_on_error, TYPE_dbl);
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_dbl, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_bte);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_bte, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_sht);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_sht, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_int);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_int, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_wrd);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_wrd, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_lng);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_lng, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_flt);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_flt, BATgroupsum, "aggr.subsum");
 }
 
 aggr_export str AGGRsubsumcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
 str
 AGGRsubsumcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
 {
-	return AGGRsubsum(retval, bid, gid, eid, sid, skip_nils, abort_on_error, TYPE_dbl);
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_dbl, BATgroupsum, "aggr.subsum");
+}
+
+aggr_export str AGGRsubprod_bte(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_bte(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_bte, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_sht(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_sht(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_sht, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_int(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_int(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_int, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_wrd(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_wrd(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_wrd, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_lng(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_lng(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_lng, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_flt(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_flt, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprod_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprod_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, NULL, skip_nils,
+						  abort_on_error, TYPE_dbl, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_bte(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_bte, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_sht(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_sht, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_int(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_int, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_wrd(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_wrd, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_lng(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_lng, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_flt(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_flt, BATgroupprod, "aggr.subprod");
+}
+
+aggr_export str AGGRsubprodcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubprodcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubsumprod(retval, bid, gid, eid, sid, skip_nils,
+						  abort_on_error, TYPE_dbl, BATgroupprod, "aggr.subprod");
 }
 
 @= AX3arithavg3

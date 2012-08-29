@@ -30,11 +30,9 @@ lib_kernel = {
 		aggr_be_avg.mx \
 		aggr_be_count.mx \
 		aggr_be_minmax.mx \
-		aggr_be_prod.mx \
 		aggr_bge_avg.mx \
 		aggr_bge_count.mx \
 		aggr_bge_minmax.mx \
-		aggr_bge_prod.mx \
 		aggr.mx \
 		alarm.c alarm.h \
 		algebra.mx \

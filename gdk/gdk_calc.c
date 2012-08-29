@@ -3342,6 +3342,20 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 /* ---------------------------------------------------------------------- */
 /* multiplication (any numeric type) */
 
+#define MUL4_WITH_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, TYPE4, on_overflow) \
+	do {								\
+		TYPE4 c = (TYPE4) (lft) * (rgt);			\
+		if (c <= (TYPE4) GDK_##TYPE3##_min ||			\
+		    c > (TYPE4) GDK_##TYPE3##_max) {			\
+			if (abort_on_error)				\
+				on_overflow;				\
+			(dst) = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			(dst) = (TYPE3) c;				\
+		}							\
+	} while (0)
+
 /* TYPE4 must be a type larger than both TYPE1 and TYPE2 so that
  * multiplying into it doesn't cause overflow */
 #define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4)				\
@@ -3355,7 +3369,6 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 	{								\
 		BUN i, j, k;						\
 		BUN nils = 0;						\
-		TYPE4 c;						\
 									\
 		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
 		for (i = start * incr1, j = start * incr2, k = start;	\
@@ -3365,16 +3378,11 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				c = (TYPE4) lft[i] * rgt[j];		\
-				if (c <= (TYPE4) GDK_##TYPE3##_min ||	\
-				    c > (TYPE4) GDK_##TYPE3##_max) {	\
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) c;		\
-				}					\
+				MUL4_WITH_CHECK(TYPE1, lft[i],		\
+					       TYPE2, rgt[j],		\
+					       TYPE3, dst[k],		\
+					       TYPE4,			\
+					       return BUN_NONE);	\
 			}						\
 		}							\
 		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
@@ -3413,6 +3421,38 @@ typedef unsigned long long ulng;
 typedef unsigned __int64 ulng;
 #endif
 
+#define LNGMUL_CHECK(TYPE1, lft, TYPE2, rgt, dst, on_overflow)		\
+	do {								\
+		lng a = (lft), b = (rgt);				\
+		unsigned int a1, a2, b1, b2;				\
+		ulng c;							\
+		int sign = 1;						\
+									\
+		if (a < 0) {						\
+			sign = -sign;					\
+			a = -a;						\
+		}							\
+		if (b < 0) {						\
+			sign = -sign;					\
+			b = -b;						\
+		}							\
+		a1 = (unsigned int) (a >> 32);				\
+		a2 = (unsigned int) a;					\
+		b1 = (unsigned int) (b >> 32);				\
+		b2 = (unsigned int) b;					\
+		/* result = (a1*b1<<64) + ((a1*b2+a2*b1)<<32) + a2*b2 */ \
+		if ((a1 == 0 || b1 == 0) &&				\
+		    ((c = (ulng) a1 * b2 + (ulng) a2 * b1) & (~(ulng)0 << 31)) == 0 && \
+		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0)) { \
+			(dst) = sign * (lng) c;				\
+		} else {						\
+			if (abort_on_error)				\
+				on_overflow;				\
+			(dst) = lng_nil;				\
+			nils++;						\
+		}							\
+	} while (0)
+
 #define MUL_2TYPE_lng(TYPE1, TYPE2)					\
 	static BUN							\
 	mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,	\
@@ -3424,10 +3464,6 @@ typedef unsigned __int64 ulng;
 	{								\
 		BUN i, j, k;						\
 		BUN nils = 0;						\
-		lng a, b;						\
-		unsigned int a1, a2, b1, b2;				\
-		ulng c;							\
-		int sign;						\
 									\
 		CANDLOOP(dst, k, lng_nil, 0, start);			\
 		for (i = start * incr1, j = start * incr2, k = start;	\
@@ -3437,36 +3473,9 @@ typedef unsigned __int64 ulng;
 				dst[k] = lng_nil;			\
 				nils++;					\
 			} else {					\
-				sign = 1;				\
-				if ((a = lft[i]) < 0) {			\
-					sign = -sign;			\
-					a = -a;				\
-				}					\
-				if ((b = rgt[j]) < 0) {			\
-					sign = -sign;			\
-					b = -b;				\
-				}					\
-				a1 = (unsigned int) (a >> 32);		\
-				a2 = (unsigned int) a;			\
-				b1 = (unsigned int) (b >> 32);		\
-				b2 = (unsigned int) b;			\
-				/* result = (a1*b1<<64) + ((a1*b2+a2*b1)<<32) + a2*b2 */ \
-				if (a1 && b1)	/* a1*b1 != 0 ==> overflow */ \
-					goto overflow;			\
-				c = (ulng) a1 * b2 + (ulng) a2 * b1;	\
-				if (c >> 31)	/* use 32 for unsigned */ \
-					goto overflow;			\
-				c <<= 32;				\
-				c += (ulng) a2 * b2;			\
-				if ((c >> 63) == 0)			\
-					dst[k] = sign * (lng) c;	\
-				else {					\
-				  overflow:				\
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = lng_nil;		\
-					nils++;				\
-				}					\
+				LNGMUL_CHECK(TYPE1, lft[i],		\
+					     TYPE2, rgt[j],		\
+					     dst[k], return BUN_NONE);	\
 			}						\
 		}							\
 		CANDLOOP(dst, k, lng_nil, end, cnt);			\
@@ -10252,7 +10261,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		i = max - min + 1;
 		seen[i >> 5] |= ~0U << (i & 0x1F); /* fill last slot */
 		for (i = 0, n = (max - min + 1 + 32 - 1) / 32; i < n; i++) {
-			if (seen[i] != 0xFFFFFFFFU) {
+			if (seen[i] != ~0U) {
 				nils = 1;
 				break;
 			}
@@ -10272,6 +10281,368 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	GDKfree(seen);
 	BBPunfix(bn->batCacheid);
 	GDKerror("BATgroupsum: type combination (sum(%s)->%s) not supported.\n",
+		 ATOMname(b->ttype), ATOMname(tp));
+	return NULL;
+
+  overflow:
+	GDKfree(seen);
+	BBPunfix(bn->batCacheid);
+	GDKerror("22003!overflow in calculation.\n");
+	return NULL;
+}
+
+#define AGGR_PROD(TYPE1, TYPE2, TYPE3)					\
+	do {								\
+		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {	\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					prods[gid] = 1;			\
+				}					\
+				if (*vals == TYPE1##_nil) {		\
+					if (!skip_nils) {		\
+						prods[gid] = TYPE2##_nil; \
+						nils++;			\
+					}				\
+				} else if (prods[gid] != TYPE2##_nil) {	\
+					MUL4_WITH_CHECK(TYPE1, *vals,	\
+							TYPE2, prods[gid], \
+							TYPE2, prods[gid], \
+							TYPE3,		\
+							goto overflow);	\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+	} while (0)
+
+#define AGGR_PROD_LNG(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {	\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					prods[gid] = 1;			\
+				}					\
+				if (*vals == TYPE##_nil) {		\
+					if (!skip_nils) {		\
+						prods[gid] = lng_nil;	\
+						nils++;			\
+					}				\
+				} else if (prods[gid] != lng_nil) {	\
+					LNGMUL_CHECK(TYPE, *vals,	\
+						     lng, prods[gid],	\
+						     prods[gid],	\
+						     goto overflow);	\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+	} while (0)
+
+#define AGGR_PROD_FLOAT(TYPE1, TYPE2)					\
+	do {								\
+		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {	\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+					seen[gid >> 5] |= 1 << (gid & 0x1F); \
+					prods[gid] = 1;			\
+				}					\
+				if (*vals == TYPE1##_nil) {		\
+					if (!skip_nils) {		\
+						prods[gid] = TYPE2##_nil; \
+						nils++;			\
+					}				\
+				} else if (prods[gid] != TYPE2##_nil) {	\
+					if (ABSOLUTE(*vals) > 1 &&	\
+					    GDK_##TYPE2##_max / ABSOLUTE(*vals) < ABSOLUTE(prods[gid])) { \
+						if (abort_on_error)	\
+							goto overflow;	\
+						prods[gid] = TYPE2##_nil; \
+						nils++;			\
+					} else {			\
+						prods[gid] *= *vals;	\
+					}				\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+	} while (0)
+
+BAT *
+BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	const oid *gids;
+	oid gid;
+	oid min, max;
+	BUN i, n;
+	BUN nils = 0;
+	BAT *bn;
+	unsigned int *seen;	/* bitmask for groups that we've seen */
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+
+	if (b == NULL || !BAThdense(b)) {
+		GDKerror("BATgroupprod: b must be dense-headed\n");
+		return NULL;
+	}
+	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
+		GDKerror("BATgroupprod: b and g must be aligned\n");
+		return NULL;
+	}
+	assert(BATttype(g) == TYPE_oid);
+	if (e != NULL && !BAThdense(e)) {
+		GDKerror("BATgroupprod: e must be dense-headed\n");
+		return NULL;
+	}
+
+	if (e == NULL) {
+		/* we need to find out the min and max of g */
+		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
+		max = 0;
+		if (BATtdense(g)) {
+			min = g->tseqbase;
+			max = g->tseqbase + BATcount(g) - 1;
+		} else if (g->tsorted) {
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			/* find first non-nil */
+			for (i = 0, n = BATcount(g); i < n; i++, gids++) {
+				if (*gids != oid_nil) {
+					min = *gids;
+					break;
+				}
+			}
+			if (min != oid_nil) {
+				/* found a non-nil, max must be last
+				 * value (and there is one!) */
+				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
+			}
+		} else {
+			/* we'll do a complete scan */
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			for (i = 0, n = BATcount(g); i < n; i++) {
+				if (*gids != oid_nil) {
+					if (*gids < min)
+						min = *gids;
+					if (*gids > max)
+						max = *gids;
+				}
+				gids++;
+			}
+			/* note: max < min is possible if all groups
+			 * are nil (or BATcount(g)==0) */
+		}
+	} else {
+		min = e->hseqbase;
+		max = e->hseqbase + BATcount(e) - 1;
+	}
+
+	if (BATcount(b) == 0 || (e != NULL && BATcount(e) == 0) || max < min) {
+		/* trivial: no products, so return bat aligned with g
+		 * with nil in the tail */
+		bn = BATconstant(tp, ATOMnilptr(tp),
+				 max < min ? 0 : max - min + 1);
+		BATseqbase(bn, max < min ? 0 : min);
+		return bn;
+	}
+
+	CANDINIT(b, s);
+
+	if ((e == NULL ||
+	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+		/* trivial: singleton groups, so all results are equal
+		 * to the inputs (but possibly a different type) */
+		return BATconvert(b, s, tp, abort_on_error);
+	}
+
+	/* allocate bitmap for seen group ids */
+	seen = GDKzalloc(((max - min + 1 + 32 - 1) / 32) * sizeof(int));
+	if (seen == NULL) {
+		GDKerror("BATgroupprod: cannot allocate enough memory\n");
+		return NULL;
+	}
+
+	bn = BATnew(TYPE_void, tp, (BUN) (max - min + 1));
+	if (bn == NULL)
+		return NULL;
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte: {
+		bte *prods = (bte *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = bte_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, bte, sht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_sht: {
+		sht *prods = (sht *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = sht_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, sht, int);
+			break;
+		case TYPE_sht:
+			AGGR_PROD(sht, sht, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_int: {
+		int *prods = (int *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = int_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, int, lng);
+			break;
+		case TYPE_sht:
+			AGGR_PROD(sht, int, lng);
+			break;
+		case TYPE_int:
+			AGGR_PROD(int, int, lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_lng: {
+		lng *prods = (lng *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = lng_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			AGGR_PROD_LNG(bte);
+			break;
+		case TYPE_sht:
+			AGGR_PROD_LNG(sht);
+			break;
+		case TYPE_int:
+			AGGR_PROD_LNG(int);
+			break;
+		case TYPE_lng:
+			AGGR_PROD_LNG(lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_flt: {
+		flt *prods = (flt *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = flt_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_flt:
+			AGGR_PROD_FLOAT(flt, flt);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_dbl: {
+		dbl *prods = (dbl *) Tloc(bn, BUNfirst(bn));
+		for (i = 0, n = max - min + 1; i < n; i++)
+			prods[i] = dbl_nil;
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_flt:
+			AGGR_PROD_FLOAT(flt, dbl);
+			break;
+		case TYPE_dbl:
+			AGGR_PROD_FLOAT(dbl, dbl);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	default:
+		goto unsupported;
+	}
+	if (nils == 0) {
+		/* figure out whether there were any empty groups
+		 * (that result in a nil value) */
+		i = max - min + 1;
+		seen[i >> 5] |= ~0U << (i & 0x1F); /* fill last slot */
+		for (i = 0, n = (max - min + 1 + 32 - 1) / 32; i < n; i++) {
+			if (seen[i] != ~0U) {
+				nils = 1;
+				break;
+			}
+		}
+	}
+	GDKfree(seen);
+	BATsetcount(bn, (BUN) (max - min + 1));
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+
+  unsupported:
+	GDKfree(seen);
+	BBPunfix(bn->batCacheid);
+	GDKerror("BATgroupprod: type combination (mul(%s)->%s) not supported.\n",
 		 ATOMname(b->ttype), ATOMname(tp));
 	return NULL;
 
