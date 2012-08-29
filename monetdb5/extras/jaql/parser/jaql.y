@@ -145,9 +145,17 @@ stmt: jaql ';'
 		j->explain = 4;
 		YYACCEPT;
 	}
+	| TRACE INTO IDENT jaql ';'
+	{
+		j->p = make_json_output($3);
+		j->p->next = $4;
+		j->explain = 5;
+		YYACCEPT;
+	}
 	| TRACE jaql ';'
 	{
-		j->p = $2;
+		j->p = make_json_output(NULL);
+		j->p->next = $2;
 		j->explain = 5;
 		YYACCEPT;
 	}

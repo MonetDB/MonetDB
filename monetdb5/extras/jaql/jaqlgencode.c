@@ -5238,6 +5238,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+	tree *trout = NULL;
 
 	/* start with a clean sheet */
 	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = 0;
@@ -5251,6 +5252,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		q = pushStr(mb, q, "*");
 		q = pushStr(mb, q, "*");
 		newStmt(mb, "profiler", "start");
+		/* the first jaql tree is the output for the trace, save it for
+		 * later and remove it for plan generation (and the pointer
+		 * given by the caller that it will freetree lateron) */
+		trout = t;
+		t = t->next;
+		trout->next = NULL;
+		j->p = t;
 	}
 
 	/* each iteration in this loop is a pipe (a JSON document)
@@ -7048,7 +7056,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		/* call gettrace function, and print it */
 		t = append_jaql_pipe(
 				make_func_call(GDKstrdup("gettrace"), NULL),
-				make_json_output(NULL)
+				trout
 			);
 		j->explain = j->explain & ~5;
 		dumptree(j, cntxt, mb, t);
