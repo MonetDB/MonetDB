@@ -4963,6 +4963,8 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 			 * while looking for their uniqueness (like in
 			 * Java). */
 			f = getSignature(s);
+			if (f->argc - f->retc == 0 && *coltpos == 0)
+				match = 1;
 			for (i = 0; i < *coltpos; i++) {
 				match = 0;
 				orgoff = argoff;
