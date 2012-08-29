@@ -32,7 +32,7 @@ All Rights Reserved.
  * The implementation code is derived from the original 'aggr' module.
  * It uses a complete type-specific code expansion to avoid any type-checking
  * in the inner-most loops.
- * Where feasible, it replaced (expansive) hash-lookup by significantly cheaper positional
+ * Where feasible, it replaced (expensive) hash-lookup by significantly cheaper positional
  * void-lookups (if the head-column of the group-extend BAT ("e") is "void") or at least by
  * (also positional) array lookups (in case the group-ids span a reasonably small range);
  *
