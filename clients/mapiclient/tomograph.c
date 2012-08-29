@@ -142,7 +142,7 @@ usage(void)
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file name prefix >\n");
 	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
-	fprintf(stderr, "  -m | --colormap produces colormap on tomograph.gpl\n");
+	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -D | --debug\n");
 }
 
@@ -391,10 +391,10 @@ struct COLOR{
 	{0,"aggr","*","green"},
 
 	{0,"algebra","leftjoin","powderblue"},
-	{0,"algebra","join","skyblue"},
+	{0,"algebra","join","navy"},
 	{0,"algebra","semijoin","lightskyblue"},
 	{0,"algebra","kdifference","gray"},
-	{0,"algebra","kunion","navy"},
+	{0,"algebra","kunion","skyblue"},
 	{0,"algebra","slice","darkblue"},
 	{0,"algebra","sortTail","cyan"},
 	{0,"algebra","markT","blue"},
@@ -463,6 +463,41 @@ static void initcolors(void)
 		else
 			printf("color '%s' not found\n",colors[i].col);
 	}
+}
+
+/* produce memory thread trace */
+static void showmemory(char *filename)
+{
+	FILE *f;
+	char buf[BUFSIZ],buf2[BUFSIZ];
+	int i;
+	long max = 0;
+	double w = 1800.0/(lastclktick - starttime -startrange);
+
+	snprintf(buf,BUFSIZ,"%s_memory.dat",filename);
+	f = fopen(buf,"w");
+	assert(f);
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend ){
+		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkstart * w), (box[i].memstart/1024.0));
+		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkend * w), (box[i].memend/1024.0));
+		if ( box[i].memstart > max )
+			max = box[i].memstart;
+		if ( box[i].memend > max )
+			max = box[i].memend;
+	}
+	(void)fclose(f);
+
+	snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
+	f = fopen(buf2,"w");
+	assert(f);
+	fprintf(f,"set terminal pdfcairo enhanced color solid\n");
+	fprintf(f,"set output \"%s_memory.pdf\"\n",filename);
+	fprintf(f,"set size 1, 0.4\n");
+	fprintf(f,"set xrange [0:1800]\n");
+	fprintf(f,"unset xtics\n");
+	fprintf(f,"plot \"%s\" using 1:2 notitle ,\\\n",buf);
+	fprintf(f,"  %3.2f notitle with lines\n", 0.8*max/1024.0);
 }
 
 /* produce a legenda image for the color map */
@@ -549,7 +584,7 @@ static void keepdata(char *filename)
 		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:"");
 		fprintf(f,"%s\n",box[i].fcn? box[i].fcn:"");
 	}
-	fclose(f);
+	(void)fclose(f);
 	
 }
 
@@ -620,7 +655,7 @@ static void createTomogram(void)
 	int top= 0;
 	int object=1, i,j;
 	int h = height /(2 * cores);
-	int w = (lastclktick-starttime)/10;
+	double w = (lastclktick-starttime)/10.0;
 	int scale;
 	char *scalename;
 
@@ -661,8 +696,8 @@ static void createTomogram(void)
 	}
 	fprintf(gnudata,"set xtics (");
 	for( i =0; i< 10; i++)
-		fprintf(gnudata,"\"%d\" %d,",i * w /scale, i * w);
-	fprintf(gnudata,"\"%6.3f\" %d",((double)lastclktick)/scale, i * w);
+		fprintf(gnudata,"\"%d\" %d,", (int)(i * w /scale), (int)(i * w));
+	fprintf(gnudata,"\"%6.3f\" %d", ((double)i*w/scale), (int)(i * w));
 	fprintf(gnudata,")\n");
 	fprintf(gnudata,"set grid xtics\n");
 	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scalename,
@@ -684,14 +719,16 @@ static void createTomogram(void)
 			object++, box[i].clkstart, box[i].row * 2 *h, box[i].clkend, box[i].row* 2 * h + h, colors[box[i].color].col);
 	}
 	fprintf(gnudata,"plot -1 title \"\"\n");
-	showmap(filename, 0);
+	showmap(filename, colormap);
+	showmemory(filename);
 	keepdata(filename);
 	/* show a listing */
-	fclose(gnudata);
+	(void)fclose(gnudata);
 
 	printf("Created tomogram '%s' \n",buf);
 	printf("Run: 'gnuplot %s' to create the '%s.pdf' file\n",buf,filename);
 	printf("The colormap is stored in '%s_map.gpl'\n",filename);
+	printf("The memory map is stored in '%s_memory.gpl' and '%s_memory.dat'\n",filename,filename);
 	printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
 }
 
@@ -1114,7 +1151,6 @@ main(int argc, char **argv)
 			break;
 		case 'm':
 			colormap=1;
-			showmap("tomograph", 1);
 			break;
 		case 'P':
 			password = optarg;
