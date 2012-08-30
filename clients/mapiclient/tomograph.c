@@ -653,11 +653,14 @@ static void scandata(char *filename)
 	starttime = 0;
 
 	while(!feof(f)){
-		(void) fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks);
-		(void) fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend);
-		(void) fgets(buf,BUFSIZ,f);
-		box[i].stmt= strdup(buf);
-		(void) fgets(buf,BUFSIZ,f);
+		if (fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks) != 4 ||
+		    fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend) != 3 ||
+		    fgets(buf,BUFSIZ,f) == NULL ||
+		    (box[i].stmt= strdup(buf)) == NULL ||
+		    fgets(buf,BUFSIZ,f) == NULL) {
+			fprintf(stderr, "scandata failure\n");
+			exit(-1);
+		}
 		*(strchr(buf,(int)'\n'))=0;
 		box[i].fcn= strdup(buf);
 		if ( box[i].clkend - box[i].clkstart < threshold)
@@ -677,6 +680,7 @@ static void scandata(char *filename)
 		i++;
 		assert(i < MAXBOX);
 	}
+	fclose(f);
 	topbox = i;
 }
 /* gnuplot defaults */
