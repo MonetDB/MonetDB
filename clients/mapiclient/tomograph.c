@@ -451,6 +451,7 @@ struct COLOR{
 	{0,0,0,0}
 };
 
+int object =1;
 
 static void initcolors(void)
 {
@@ -474,9 +475,16 @@ static void showmemory(char *filename)
 	long max = 0;
 	double w = 1800.0/(lastclktick - starttime -startrange);
 
-	snprintf(buf,BUFSIZ,"%s_memory.dat",filename);
-	f = fopen(buf,"w");
+	if ( filename) {
+		snprintf(buf,BUFSIZ,"%s_memory.dat",filename);
+		f = fopen(buf,"w");
+	} else {
+		snprintf(buf,BUFSIZ,"tomograph_memory.dat");
+		f = fopen(buf,"w");
+	}
 	assert(f);
+
+
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend ){
 		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkstart * w), (box[i].memstart/1024.0));
@@ -488,16 +496,30 @@ static void showmemory(char *filename)
 	}
 	(void)fclose(f);
 
-	snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
-	f = fopen(buf2,"w");
-	assert(f);
-	fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-	fprintf(f,"set output \"%s_memory.pdf\"\n",filename);
-	fprintf(f,"set size 1, 0.4\n");
-	fprintf(f,"set xrange [0:1800]\n");
-	fprintf(f,"unset xtics\n");
-	fprintf(f,"plot \"%s\" using 1:2 notitle ,\\\n",buf);
-	fprintf(f,"  %3.2f notitle with lines\n", 0.8*max/1024.0);
+	if ( filename) {
+		snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
+		f = fopen(buf2,"w");
+		assert(f);
+		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
+		fprintf(f,"set output \"%s_memory.pdf\"\n",filename);
+		fprintf(f,"set size 1, 0.4\n");
+		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(f,"set title \"%s\"\n", title? title: ":tomogram");
+		fprintf(f,"unset xtics\n");
+	} else {
+		f = gnudata;
+		fprintf(f,"\nset tmarg 0\n");
+		fprintf(f,"set bmarg 0\n");
+		fprintf(f,"set lmarg 7\n");
+		fprintf(f,"set rmarg 3\n");
+		fprintf(f,"set size 1,0.1\n");
+		fprintf(f,"set origin 0.0,0.8\n");
+		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(f,"set ylabel \"memory\"\n");
+		fprintf(f,"unset xtics\n");
+	}
+	fprintf(f,"set ytics (\"%2d\" %3.2f, \"0\" 0)\n", (int)(max /1024), max/1024.0);
+	fprintf(f,"plot \"%s\" using 1:2 notitle with dots\n",buf);
 }
 
 /* produce a legenda image for the color map */
@@ -508,19 +530,43 @@ static void showmap(char *filename, int all)
 	int i, k = 0;
 	int w = 600;
 	int h = 500;
-	int object =1;
 
-	snprintf(buf,BUFSIZ,"%s_map.gpl",filename);
-	f = fopen(buf,"w");
+	if( filename) {
+		snprintf(buf,BUFSIZ,"%s_map.gpl",filename);
+		f = fopen(buf,"w");
+	} else f = gnudata;
 	assert(f);
 
-	fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-	fprintf(f,"set output \"%s_map.pdf\"\n",filename);
-	fprintf(f,"set xrange [0:1800]\n");
-	fprintf(f,"set yrange [0:520]\n");
-	fprintf(f,"unset xtics\n");
-	fprintf(f,"unset ytics\n");
-	fprintf(f,"unset colorbox\n");
+	if ( filename) {
+		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
+		fprintf(f,"set output \"%s_map.pdf\"\n",filename);
+		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(f,"set yrange [0:600]\n");
+		fprintf(f,"unset xtics\n");
+		fprintf(f,"unset ytics\n");
+		fprintf(f,"unset colorbox\n");
+		fprintf(f,"unset border\n");
+		fprintf(f,"unset title\n");
+		fprintf(f,"unset ylabel\n");
+		fprintf(f,"unset xlabel\n");
+	} else {
+		f = gnudata;
+		fprintf(f,"\nset tmarg 0\n");
+		fprintf(f,"set bmarg 0\n");
+		fprintf(f,"set lmarg 7\n");
+		fprintf(f,"set rmarg 3\n");
+		fprintf(f,"set size 1,0.3\n");
+		fprintf(f,"set origin 0.0,0.0\n");
+		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(f,"set yrange [0:600]\n");
+		fprintf(f,"unset xtics\n");
+		fprintf(f,"unset ytics\n");
+		fprintf(f,"unset colorbox\n");
+		fprintf(f,"unset border\n");
+		fprintf(f,"unset title\n");
+		fprintf(f,"unset ylabel\n");
+		fprintf(f,"unset xlabel\n");
+	}
 	for ( i= 0; colors[i].col; i++)
 	if ( colors[i].freq > 0 || all){
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
@@ -531,7 +577,8 @@ static void showmap(char *filename, int all)
 			h-= 40;
 		k++;
 	}
-	fprintf(f,"plot -1 title \"\"\n");
+	fprintf(f,"plot 0 notitle with lines\n");
+	fprintf(f,"unset multiplot\n");
 }
 
 static void updmap(int idx)
@@ -636,15 +683,11 @@ static void scandata(char *filename)
 static int height = 160;
 
 static void gnuplotheader(char *filename){
-	int height = cores * 20;	
-	fprintf(gnudata,"set terminal pdfcairo enhanced color solid\n");
+	fprintf(gnudata,"set terminal pdfcairo enhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata,"set output \"%s.pdf\"\n",filename);
-	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-	fprintf(gnudata,"set yrange [0:%d]\n", height);
-	fprintf(gnudata,"set ylabel \"threads\"\n");
-	fprintf(gnudata,"set title \"%s\"\n", title? title:"tomogram");
-	fprintf(gnudata,"set key right \n");
-	fprintf(gnudata,"unset colorbox\n");
+	fprintf(gnudata,"set size 1,1\n");
+	fprintf(gnudata,"set title \"%s\"\n", title? title: ":tomogram");
+	fprintf(gnudata,"set multiplot\n");
 }
 
 static int figure = 0;
@@ -653,7 +696,7 @@ static void createTomogram(void)
 	char buf[BUFSIZ];
 	int rows[MAXTHREADS];
 	int top= 0;
-	int object=1, i,j;
+	int i,j;
 	int h = height /(2 * cores);
 	double w = (lastclktick-starttime)/10.0;
 	int scale;
@@ -671,6 +714,20 @@ static void createTomogram(void)
 	}
 	*strchr(buf,(int) '.') = 0;
 	gnuplotheader(buf);
+	showmemory(0);
+
+	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"set bmarg 3\n");
+	fprintf(gnudata,"set lmarg 7\n");
+	fprintf(gnudata,"set rmarg 3\n");
+	fprintf(gnudata,"set size 1,0.5\n");
+	fprintf(gnudata,"set origin 0.0,0.3\n");
+	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
+	fprintf(gnudata,"set yrange [0:%d]\n", height);
+	fprintf(gnudata,"set ylabel \"threads\"\n");
+	fprintf(gnudata,"set key right \n");
+	fprintf(gnudata,"unset colorbox\n");
+	fprintf(gnudata,"unset title\n");
 
 	/* detect all different threads and assign them a row */
 	for ( i = 0; i < topbox; i++)
@@ -694,6 +751,7 @@ static void createTomogram(void)
 		scale =1;
 		scalename = "micro";
 	}
+
 	fprintf(gnudata,"set xtics (");
 	for( i =0; i< 10; i++)
 		fprintf(gnudata,"\"%d\" %d,", (int)(i * w /scale), (int)(i * w));
@@ -718,9 +776,8 @@ static void createTomogram(void)
 		fprintf(gnudata,"set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 			object++, box[i].clkstart, box[i].row * 2 *h, box[i].clkend, box[i].row* 2 * h + h, colors[box[i].color].col);
 	}
-	fprintf(gnudata,"plot -1 title \"\"\n");
-	showmap(filename, colormap);
-	showmemory(filename);
+	fprintf(gnudata,"plot 0 notitle with lines\n");
+	showmap(0, 0);
 	keepdata(filename);
 	/* show a listing */
 	(void)fclose(gnudata);
@@ -728,7 +785,7 @@ static void createTomogram(void)
 	printf("Created tomogram '%s' \n",buf);
 	printf("Run: 'gnuplot %s' to create the '%s.pdf' file\n",buf,filename);
 	printf("The colormap is stored in '%s_map.gpl'\n",filename);
-	printf("The memory map is stored in '%s_memory.gpl' and '%s_memory.dat'\n",filename,filename);
+	printf("The memory map is stored in '%s_memory.dat'\n",filename);
 	printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
 }
 
