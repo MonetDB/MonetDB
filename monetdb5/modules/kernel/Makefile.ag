@@ -27,10 +27,8 @@ MTSAFE
 lib_kernel = {
 	NOINST
 	SOURCES = \
-		aggr_be_avg.mx \
 		aggr_be_count.mx \
 		aggr_be_minmax.mx \
-		aggr_bge_avg.mx \
 		aggr_bge_count.mx \
 		aggr_bge_minmax.mx \
 		aggr.mx \

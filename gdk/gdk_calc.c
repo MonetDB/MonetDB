@@ -3502,8 +3502,8 @@ typedef unsigned __int64 ulng;
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
-				/* only check for overflow, not for	\
-				 * underflow */				\
+				/* only check for overflow, not for */	\
+				/* underflow */				\
 				if (ABSOLUTE(lft[i]) > 1 &&		\
 				    GDK_##TYPE3##_max / ABSOLUTE(lft[i]) < ABSOLUTE(rgt[j])) { \
 					if (abort_on_error)		\
@@ -4674,8 +4674,8 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 			} else if (rgt[j] == 0 ||			\
 				   (ABSOLUTE(rgt[j]) < 1 &&		\
 				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
-				/* only check for overflow, not for	\
-				 * underflow */				\
+				/* only check for overflow, not for */	\
+				/* underflow */				\
 				if (abort_on_error)			\
 					return BUN_NONE + (rgt[j] != 0); \
 				dst[k] = TYPE3##_nil;			\
@@ -9854,9 +9854,55 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 #define SBUN	lng
 #endif
 
+#define AVERAGE_ITER(TYPE, x, a, r, n)					\
+	do {								\
+		TYPE an, xn, z1;					\
+		BUN z2;							\
+		(n)++;							\
+		/* calculate z1 = (x - a) / n, rounded down (towards */	\
+		/* negative infinity), and calculate z2 = remainder */	\
+		/* of the division (i.e. 0 <= z2 < n); do this */	\
+		/* without causing overflow */				\
+		an = (TYPE) ((a) / (SBUN) (n));				\
+		xn = (TYPE) ((x) / (SBUN) (n));				\
+		/* z1 will be (x - a) / n rounded towards -INF */	\
+		z1 = xn - an;						\
+		xn = (x) - (TYPE) (xn * (SBUN) (n));			\
+		an = (a) - (TYPE) (an * (SBUN) (n));			\
+		/* z2 will be remainder of above division */		\
+		if (xn >= an) {						\
+			z2 = (BUN) (xn - an);				\
+			/* loop invariant: */				\
+			/* (x - a) - z1 * n == z2 */			\
+			while (z2 >= (n)) {				\
+				z2 -= (n);				\
+				z1++;					\
+			}						\
+		} else {						\
+			z2 = (BUN) (an - xn);				\
+			/* loop invariant (until we break): */		\
+			/* (x - a) - z1 * n == -z2 */			\
+			for (;;) {					\
+				z1--;					\
+				if (z2 < (n)) {				\
+					/* proper remainder */		\
+					z2 = (n) - z2;			\
+					break;				\
+				}					\
+				z2 -= (n);				\
+			}						\
+		}							\
+		(a) += z1;						\
+		(r) += z2;						\
+		if ((r) >= (n)) {					\
+			(r) -= (n);					\
+			(a)++;						\
+		}							\
+	} while (0)
+
 #define AVERAGE_TYPE(TYPE)						\
 	do {								\
-		TYPE a = 0, x, an, xn, z1;				\
+		TYPE a = 0, x;						\
 		for (i = start; i < end; i++) {				\
 			if (cand) {					\
 				if (i < *cand - b->H->seq)		\
@@ -9868,49 +9914,23 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			x = ((const TYPE *) src)[i];			\
 			if (x == TYPE##_nil)				\
 				continue;				\
-			n++;						\
-			/* calculate z1 = (x - a) / n, rounded down	\
-			 * (towards negative infinity), and		\
-			 * calculate z2 = remainder of the division	\
-			 * (i.e. 0 <= z2 < n); do this without		\
-			 * causing overflow */				\
-			an = (TYPE) (a / (SBUN) n);			\
-			xn = (TYPE) (x / (SBUN) n);			\
-			/* z1 will be (x - a) / n rounded towards -INF */ \
-			z1 = xn - an;					\
-			xn = x - (TYPE) (xn * (SBUN) n);		\
-			an = a - (TYPE) (an * (SBUN) n);		\
-			/* z2 will be remainder of above division */	\
-			if (xn >= an) {					\
-				z2 = (BUN) (xn - an);			\
-				/* loop invariant:			\
-				 * (x - a) - z1 * n == z2 */		\
-				while (z2 >= n) {			\
-					z2 -= n;			\
-					z1++;				\
-				}					\
-			} else {					\
-				z2 = (BUN) (an - xn);			\
-				/* loop invariant (until we break):	\
-				 * (x - a) - z1 * n == -z2 */		\
-				for (;;) {				\
-					z1--;				\
-					if (z2 < n) {			\
-						/* proper remainder */	\
-						z2 = n - z2;		\
-						break;			\
-					}				\
-					z2 -= n;			\
-				}					\
-			}						\
-			a += z1;					\
-			r += z2;					\
-			if (r >= n) {					\
-				r -= n;					\
-				a++;					\
-			}						\
+			AVERAGE_ITER(TYPE, x, a, r, n);			\
 		}							\
 		*avg = n > 0 ? a + (dbl) r / n : dbl_nil;		\
+	} while (0)
+
+#define AVERAGE_ITER_FLOAT(TYPE, x, a, n)				\
+	do {								\
+		(n)++;							\
+		if (((a) > 0) == ((x) > 0)) {				\
+			/* same sign */					\
+			(a) += ((x) - (a)) / (SBUN) (n);		\
+		} else {						\
+			/* no overflow at the cost of an */		\
+			/* extra division and slight loss of */		\
+			/* precision */					\
+			(a) = (a) - (a) / (SBUN) (n) + (x) / (SBUN) (n); \
+		}							\
 	} while (0)
 
 #define AVERAGE_FLOATTYPE(TYPE)						\
@@ -9928,15 +9948,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			x = ((const TYPE *) src)[i];			\
 			if (x == TYPE##_nil)				\
 				continue;				\
-			n++;						\
-			if ((a > 0) == (x > 0)) {			\
-				a += (x - a) / (SBUN) n;		\
-			} else {					\
-				/* no overflow at the cost of an extra	\
-				 * division and slight loss of		\
-				 * precision */				\
-				a = a - a / (SBUN) n + x / (SBUN) n;	\
-			}						\
+			AVERAGE_ITER_FLOAT(TYPE, x, a, n);		\
 		}							\
 		*avg = n > 0 ? a : dbl_nil;				\
 	} while (0)
@@ -9944,7 +9956,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 int
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 {
-	BUN n = 0, r = 0, i = 0, z2;
+	BUN n = 0, r = 0, i = 0;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const void *src;
@@ -9980,6 +9992,65 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 	if (vals)
 		*vals = n;
 	return GDK_SUCCEED;
+}
+
+/* ---------------------------------------------------------------------- */
+/* grouped aggregates */
+
+/* helper function to find the minimum and maximum group id and the
+ * number of group ids */
+static void
+findminmax(oid *minp, oid *maxp, BUN *np, BAT *e, BAT *g)
+{
+	oid min, max;
+	BUN i, n;
+	const oid *gids;
+
+	if (e == NULL) {
+		/* we need to find out the min and max of g */
+		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
+		max = 0;
+		if (BATtdense(g)) {
+			min = g->tseqbase;
+			max = g->tseqbase + BATcount(g) - 1;
+		} else if (g->tsorted) {
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			/* find first non-nil */
+			for (i = 0, n = BATcount(g); i < n; i++, gids++) {
+				if (*gids != oid_nil) {
+					min = *gids;
+					break;
+				}
+			}
+			if (min != oid_nil) {
+				/* found a non-nil, max must be last
+				 * value (and there is one!) */
+				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
+			}
+		} else {
+			/* we'll do a complete scan */
+			gids = (const oid *) Tloc(g, BUNfirst(g));
+			for (i = 0, n = BATcount(g); i < n; i++) {
+				if (*gids != oid_nil) {
+					if (*gids < min)
+						min = *gids;
+					if (*gids > max)
+						max = *gids;
+				}
+				gids++;
+			}
+			/* note: max < min is possible if all groups
+			 * are nil (or BATcount(g)==0) */
+		}
+		n = max < min ? 0 : max - min + 1;
+	} else {
+		n = BATcount(e);
+		min = e->hseqbase;
+		max = e->hseqbase + n - 1;
+	}
+	*minp = min;
+	*maxp = max;
+	*np = n;
 }
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
@@ -10055,7 +10126,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	const oid *gids;
 	oid gid;
 	oid min, max;
-	BUN i, n;
+	BUN i, ngrp;
 	BUN nils = 0;
 	BAT *bn;
 	unsigned int *seen;	/* bitmask for groups that we've seen */
@@ -10076,53 +10147,13 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return NULL;
 	}
 
-	if (e == NULL) {
-		/* we need to find out the min and max of g */
-		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
-		max = 0;
-		if (BATtdense(g)) {
-			min = g->tseqbase;
-			max = g->tseqbase + BATcount(g) - 1;
-		} else if (g->tsorted) {
-			gids = (const oid *) Tloc(g, BUNfirst(g));
-			/* find first non-nil */
-			for (i = 0, n = BATcount(g); i < n; i++, gids++) {
-				if (*gids != oid_nil) {
-					min = *gids;
-					break;
-				}
-			}
-			if (min != oid_nil) {
-				/* found a non-nil, max must be last
-				 * value (and there is one!) */
-				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
-			}
-		} else {
-			/* we'll do a complete scan */
-			gids = (const oid *) Tloc(g, BUNfirst(g));
-			for (i = 0, n = BATcount(g); i < n; i++) {
-				if (*gids != oid_nil) {
-					if (*gids < min)
-						min = *gids;
-					if (*gids > max)
-						max = *gids;
-				}
-				gids++;
-			}
-			/* note: max < min is possible if all groups
-			 * are nil (or BATcount(g)==0) */
-		}
-	} else {
-		min = e->hseqbase;
-		max = e->hseqbase + BATcount(e) - 1;
-	}
+	findminmax(&min, &max, &ngrp, e, g);
 
-	if (BATcount(b) == 0 || (e != NULL && BATcount(e) == 0) || max < min) {
+	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no sums, so return bat aligned with g with
 		 * nil in the tail */
-		bn = BATconstant(tp, ATOMnilptr(tp),
-				 max < min ? 0 : max - min + 1);
-		BATseqbase(bn, max < min ? 0 : min);
+		bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
 	}
 
@@ -10137,15 +10168,17 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 
 	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((max - min + 1 + 32 - 1) / 32) * sizeof(int));
+	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
 		GDKerror("BATgroupsum: cannot allocate enough memory\n");
 		return NULL;
 	}
 
-	bn = BATnew(TYPE_void, tp, (BUN) (max - min + 1));
-	if (bn == NULL)
+	bn = BATnew(TYPE_void, tp, ngrp);
+	if (bn == NULL) {
+		GDKfree(seen);
 		return NULL;
+	}
 
 	if (BATtdense(g))
 		gids = NULL;
@@ -10155,7 +10188,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	switch (ATOMstorage(tp)) {
 	case TYPE_bte: {
 		bte *sums = (bte *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = bte_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10168,7 +10201,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 	case TYPE_sht: {
 		sht *sums = (sht *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = sht_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10184,7 +10217,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 	case TYPE_int: {
 		int *sums = (int *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = int_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10203,7 +10236,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 	case TYPE_lng: {
 		lng *sums = (lng *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = lng_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10225,7 +10258,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 	case TYPE_flt: {
 		flt *sums = (flt *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = flt_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_flt:
@@ -10238,7 +10271,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	}
 	case TYPE_dbl: {
 		dbl *sums = (dbl *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			sums[i] = dbl_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_flt:
@@ -10255,12 +10288,13 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		goto unsupported;
 	}
+	BATsetcount(bn, ngrp);
+
 	if (nils == 0) {
 		/* figure out whether there were any empty groups
 		 * (that result in a nil value) */
-		i = max - min + 1;
-		seen[i >> 5] |= ~0U << (i & 0x1F); /* fill last slot */
-		for (i = 0, n = (max - min + 1 + 32 - 1) / 32; i < n; i++) {
+		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
 			if (seen[i] != ~0U) {
 				nils = 1;
 				break;
@@ -10268,7 +10302,6 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		}
 	}
 	GDKfree(seen);
-	BATsetcount(bn, (BUN) (max - min + 1));
 	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -10417,7 +10450,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	const oid *gids;
 	oid gid;
 	oid min, max;
-	BUN i, n;
+	BUN i, ngrp;
 	BUN nils = 0;
 	BAT *bn;
 	unsigned int *seen;	/* bitmask for groups that we've seen */
@@ -10438,53 +10471,13 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return NULL;
 	}
 
-	if (e == NULL) {
-		/* we need to find out the min and max of g */
-		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
-		max = 0;
-		if (BATtdense(g)) {
-			min = g->tseqbase;
-			max = g->tseqbase + BATcount(g) - 1;
-		} else if (g->tsorted) {
-			gids = (const oid *) Tloc(g, BUNfirst(g));
-			/* find first non-nil */
-			for (i = 0, n = BATcount(g); i < n; i++, gids++) {
-				if (*gids != oid_nil) {
-					min = *gids;
-					break;
-				}
-			}
-			if (min != oid_nil) {
-				/* found a non-nil, max must be last
-				 * value (and there is one!) */
-				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
-			}
-		} else {
-			/* we'll do a complete scan */
-			gids = (const oid *) Tloc(g, BUNfirst(g));
-			for (i = 0, n = BATcount(g); i < n; i++) {
-				if (*gids != oid_nil) {
-					if (*gids < min)
-						min = *gids;
-					if (*gids > max)
-						max = *gids;
-				}
-				gids++;
-			}
-			/* note: max < min is possible if all groups
-			 * are nil (or BATcount(g)==0) */
-		}
-	} else {
-		min = e->hseqbase;
-		max = e->hseqbase + BATcount(e) - 1;
-	}
+	findminmax(&min, &max, &ngrp, e, g);
 
-	if (BATcount(b) == 0 || (e != NULL && BATcount(e) == 0) || max < min) {
+	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
 		 * with nil in the tail */
-		bn = BATconstant(tp, ATOMnilptr(tp),
-				 max < min ? 0 : max - min + 1);
-		BATseqbase(bn, max < min ? 0 : min);
+		bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
 	}
 
@@ -10499,15 +10492,17 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 
 	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((max - min + 1 + 32 - 1) / 32) * sizeof(int));
+	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
 	if (seen == NULL) {
 		GDKerror("BATgroupprod: cannot allocate enough memory\n");
 		return NULL;
 	}
 
-	bn = BATnew(TYPE_void, tp, (BUN) (max - min + 1));
-	if (bn == NULL)
+	bn = BATnew(TYPE_void, tp, ngrp);
+	if (bn == NULL) {
+		GDKfree(seen);
 		return NULL;
+	}
 
 	if (BATtdense(g))
 		gids = NULL;
@@ -10517,7 +10512,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	switch (ATOMstorage(tp)) {
 	case TYPE_bte: {
 		bte *prods = (bte *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = bte_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10530,7 +10525,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 	case TYPE_sht: {
 		sht *prods = (sht *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = sht_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10546,7 +10541,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 	case TYPE_int: {
 		int *prods = (int *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = int_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10565,7 +10560,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 	case TYPE_lng: {
 		lng *prods = (lng *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = lng_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_bte:
@@ -10587,7 +10582,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 	case TYPE_flt: {
 		flt *prods = (flt *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = flt_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_flt:
@@ -10600,7 +10595,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	}
 	case TYPE_dbl: {
 		dbl *prods = (dbl *) Tloc(bn, BUNfirst(bn));
-		for (i = 0, n = max - min + 1; i < n; i++)
+		for (i = 0; i < ngrp; i++)
 			prods[i] = dbl_nil;
 		switch (ATOMstorage(b->ttype)) {
 		case TYPE_flt:
@@ -10617,12 +10612,13 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	default:
 		goto unsupported;
 	}
+	BATsetcount(bn, ngrp);
+
 	if (nils == 0) {
 		/* figure out whether there were any empty groups
 		 * (that result in a nil value) */
-		i = max - min + 1;
-		seen[i >> 5] |= ~0U << (i & 0x1F); /* fill last slot */
-		for (i = 0, n = (max - min + 1 + 32 - 1) / 32; i < n; i++) {
+		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
 			if (seen[i] != ~0U) {
 				nils = 1;
 				break;
@@ -10630,7 +10626,6 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		}
 	}
 	GDKfree(seen);
-	BATsetcount(bn, (BUN) (max - min + 1));
 	BATseqbase(bn, min);
 	bn->tkey = BATcount(bn) <= 1;
 	bn->tsorted = BATcount(bn) <= 1;
@@ -10650,5 +10645,214 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	GDKfree(seen);
 	BBPunfix(bn->batCacheid);
 	GDKerror("22003!overflow in calculation.\n");
+	return NULL;
+}
+
+#define AGGR_AVG(TYPE)							\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		TYPE *avgs = GDKzalloc(ngrp * sizeof(TYPE));		\
+		if (avgs == NULL)					\
+			goto alloc_fail;				\
+		for (i = start; i < end; i++, vals++) {			\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (*vals == TYPE##_nil) {		\
+					if (!skip_nils)			\
+						cnts[gid] = BUN_NONE;	\
+				} else if (cnts[gid] != BUN_NONE) {	\
+					AVERAGE_ITER(TYPE, *vals,	\
+						     avgs[gid],		\
+						     rems[gid],		\
+						     cnts[gid]);	\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+		for (i = 0; i < ngrp; i++) {				\
+			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+				dbls[i] = dbl_nil;			\
+				nils++;					\
+			} else {					\
+				dbls[i] = avgs[i] + (dbl) rems[i] / cnts[i]; \
+			}						\
+		}							\
+		GDKfree(avgs);						\
+	} while (0)
+
+#define AGGR_AVG_FLOAT(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		for (i = 0; i < ngrp; i++)					\
+			dbls[i] = 0;					\
+		for (i = start; i < end; i++, vals++) {			\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (*vals == TYPE##_nil) {		\
+					if (!skip_nils)			\
+						cnts[gid] = BUN_NONE;	\
+				} else if (cnts[gid] != BUN_NONE) {	\
+					AVERAGE_ITER_FLOAT(TYPE, *vals, \
+							   dbls[gid],	\
+							   cnts[gid]);	\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+		for (i = 0; i < ngrp; i++) {				\
+			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+				dbls[i] = dbl_nil;			\
+				nils++;					\
+			}						\
+		}							\
+	} while (0)
+
+BAT *
+BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	const oid *gids;
+	oid gid;
+	oid min, max;
+	BUN i, ngrp;
+	BUN nils = 0;
+	BUN *rems = NULL, *cnts = NULL;
+	dbl *dbls;
+	BAT *bn = NULL;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+
+	assert(tp == TYPE_dbl);
+	(void) tp;		/* compatibility (with other BATgroup*
+				 * functions) argument */
+
+	if (b == NULL || !BAThdense(b)) {
+		GDKerror("BATgroupavg: b must be dense-headed\n");
+		return NULL;
+	}
+	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
+		GDKerror("BATgroupavg: b and g must be aligned\n");
+		return NULL;
+	}
+	assert(BATttype(g) == TYPE_oid);
+	if (e != NULL && !BAThdense(e)) {
+		GDKerror("BATgroupavg: e must be dense-headed\n");
+		return NULL;
+	}
+
+	findminmax(&min, &max, &ngrp, e, g);
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no products, so return bat aligned with g
+		 * with nil in the tail */
+		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	CANDINIT(b, s);
+
+	if ((e == NULL ||
+	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+		/* trivial: singleton groups, so all results are equal
+		 * to the inputs (but possibly a different type) */
+		return BATconvert(b, s, TYPE_dbl, abort_on_error);
+	}
+
+	/* allocate temporary space to do calculations per group */
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+		rems = GDKzalloc(ngrp * sizeof(BUN));
+		if (rems == NULL)
+			goto alloc_fail;
+		break;
+	default:
+		break;
+	}
+	cnts = GDKzalloc(ngrp * sizeof(BUN));
+	if (cnts == NULL)
+		goto alloc_fail;
+
+	bn = BATnew(TYPE_void, TYPE_dbl, ngrp);
+	if (bn == NULL)
+		goto alloc_fail;
+	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+		AGGR_AVG(bte);
+		break;
+	case TYPE_sht:
+		AGGR_AVG(sht);
+		break;
+	case TYPE_int:
+		AGGR_AVG(int);
+		break;
+	case TYPE_lng:
+		AGGR_AVG(lng);
+		break;
+	case TYPE_flt:
+		AGGR_AVG_FLOAT(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_AVG_FLOAT(dbl);
+		break;
+	default:
+		GDKfree(rems);
+		GDKfree(cnts);
+		BBPunfix(bn->batCacheid);
+		GDKerror("BATgroupavg: type (%s) not supported.\n",
+			 ATOMname(b->ttype));
+		return NULL;
+	}
+	GDKfree(rems);
+	GDKfree(cnts);
+	BATsetcount(bn, ngrp);
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+
+  alloc_fail:
+	if (bn)
+		BBPunfix(bn->batCacheid);
+	GDKfree(rems);
+	GDKfree(cnts);
+	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
 	return NULL;
 }
