@@ -4963,6 +4963,8 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 			 * while looking for their uniqueness (like in
 			 * Java). */
 			f = getSignature(s);
+			if (f->argc - f->retc == 0 && *coltpos == 0)
+				match = 1;
 			for (i = 0; i < *coltpos; i++) {
 				match = 0;
 				orgoff = argoff;
@@ -5075,6 +5077,7 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 	if (funcretc == 0) {
 		char argbuf[256];
 		int pos = 0;
+		argbuf[0] = '\0';
 		for (i = 0; i < *coltpos; i++) {
 			if (i > 0)
 				pos += snprintf(argbuf + pos,
@@ -5235,10 +5238,28 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+	tree *trout = NULL;
 
 	/* start with a clean sheet */
 	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = 0;
 	j->ro1 = j->ro2 = j->ro3 = j->ro4 = j->ro5 = j->ro6 = j->ro7 = 0;
+
+	/* this function is not used recursively, so this is the first thing
+	 * in the resulting MAL plan */
+	if (j->trace) {
+		newStmt(mb, profilerRef, "reset");
+		q = newStmt(mb, profilerRef, "setFilter");
+		q = pushStr(mb, q, "*");
+		q = pushStr(mb, q, "*");
+		newStmt(mb, "profiler", "start");
+		/* the first jaql tree is the output for the trace, save it for
+		 * later and remove it for plan generation (and the pointer
+		 * given by the caller that it will freetree lateron) */
+		trout = t;
+		t = t->next;
+		trout->next = NULL;
+		j->p = t;
+	}
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
@@ -5267,7 +5288,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
-				if (j->explain & 64) {
+				if (j->mapimode) {
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, putName("json", 4));
 					setFunctionId(q, putName("exportResult", 12));
@@ -7043,5 +7064,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		}
 		t = t->next;
 	}
+
+	if (j->trace) {
+		newStmt(mb, profilerRef, "stop");
+		/* call gettrace function, and print it */
+		t = append_jaql_pipe(
+				make_func_call(GDKstrdup("gettrace"), NULL),
+				trout
+			);
+		j->trace = 0;
+		dumptree(j, cntxt, mb, t);
+		j->trace = 1;
+		freetree(t);
+	}
+
 	return -1;
 }
