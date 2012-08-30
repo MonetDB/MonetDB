@@ -390,10 +390,10 @@ struct COLOR{
 	{0,"aggr","sum","springgreen"},
 	{0,"aggr","*","green"},
 
-	{0,"algebra","leftjoin","powderblue"},
+	{0,"algebra","leftjoin","yellow"},
 	{0,"algebra","join","navy"},
-	{0,"algebra","semijoin","lightskyblue"},
-	{0,"algebra","kdifference","gray"},
+	{0,"algebra","semijoin","lightblue"},
+	{0,"algebra","kdifference","skyblue"},
 	{0,"algebra","kunion","skyblue"},
 	{0,"algebra","slice","darkblue"},
 	{0,"algebra","sortTail","cyan"},
@@ -401,7 +401,7 @@ struct COLOR{
 	{0,"algebra","selectNotNil","mediumblue"},
 	{0,"algebra","thetauselect","aqua"},
 	{0,"algebra","uselect","cornflowerblue"},
-	{0,"algebra","*","azure"},
+	{0,"algebra","*","navy"},
 
 	{0,"bat","mirror","sandybrown"},
 	{0,"bat","reverse","sandybrown"},
@@ -469,12 +469,16 @@ static void initcolors(void)
 /* produce memory thread trace */
 static void showmemory(char *filename)
 {
-	FILE *f;
+	FILE *f= 0;
 	char buf[BUFSIZ],buf2[BUFSIZ];
 	int i;
 	long max = 0;
 	double w = 1800.0/(lastclktick - starttime -startrange);
 
+	if ( inputfile ){
+		snprintf(buf,BUFSIZ,"scratch_memory.dat");
+		f = fopen(buf,"w");
+	} else
 	if ( filename) {
 		snprintf(buf,BUFSIZ,"%s_memory.dat",filename);
 		f = fopen(buf,"w");
@@ -486,7 +490,7 @@ static void showmemory(char *filename)
 
 
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend ){
+	if ( box[i].clkend && !(box[i].clkend < lastclktick - startrange || box[i].clkstart >lastclktick - endrange)){
 		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkstart * w), (box[i].memstart/1024.0));
 		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkend * w), (box[i].memend/1024.0));
 		if ( box[i].memstart > max )
@@ -497,14 +501,23 @@ static void showmemory(char *filename)
 	(void)fclose(f);
 
 	if ( filename) {
-		snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
+		time_t tm;
+		char *date;
+		if ( inputfile )
+			snprintf(buf2,BUFSIZ,"scratch_memory.gpl");
+		else
+			snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
 		f = fopen(buf2,"w");
 		assert(f);
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-		fprintf(f,"set output \"%s_memory.pdf\"\n",filename);
+		fprintf(f,"set output \"scratch_memory.pdf\"\n");
 		fprintf(f,"set size 1, 0.4\n");
 		fprintf(f,"set xrange [0:1800]\n");
-		fprintf(f,"set title \"%s\"\n", title? title: ":tomogram");
+		tm = time(0);
+		date = ctime(&tm);
+		if (strchr(date,(int)'\n'))
+			*strchr(date,(int)'\n') = 0;
+		fprintf(f,"set title \"%s\t\t%s\"\n", (title? title: "Tomogram"), date);
 		fprintf(f,"unset xtics\n");
 	} else {
 		f = gnudata;
@@ -515,7 +528,7 @@ static void showmemory(char *filename)
 		fprintf(f,"set size 1,0.1\n");
 		fprintf(f,"set origin 0.0,0.8\n");
 		fprintf(f,"set xrange [0:1800]\n");
-		fprintf(f,"set ylabel \"memory\"\n");
+		fprintf(f,"set ylabel \"memory in GB\"\n");
 		fprintf(f,"unset xtics\n");
 	}
 	fprintf(f,"set ytics (\"%2d\" %3.2f, \"0\" 0)\n", (int)(max /1024), max/1024.0);
@@ -627,11 +640,11 @@ static void keepdata(char *filename)
 	if ( box[i].clkend)
 		printf("%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend){
+	if ( box[i].clkend && box[i].fcn){
 		fprintf(f,"%d\t%ld\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend,box[i].ticks);
 		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
-		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:"");
-		fprintf(f,"%s\n",box[i].fcn? box[i].fcn:"");
+		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:box[i].fcn);
+		fprintf(f,"%s\n",box[i].fcn);
 	}
 	(void)fclose(f);
 	
@@ -660,10 +673,13 @@ static void scandata(char *filename)
 		    fgets(buf,BUFSIZ,f) == NULL ||
 		    (box[i].stmt= strdup(buf)) == NULL ||
 		    fgets(buf,BUFSIZ,f) == NULL) {
-			fprintf(stderr, "scandata failure\n");
-			exit(-1);
+			fprintf(stderr, "scandata error '%s'\n",buf);
+			dumpbox(i);
+			topbox = i;
+			return;
 		}
-		*(strchr(buf,(int)'\n'))=0;
+		if(strchr(buf,(int)'\n'))
+			*(strchr(buf,(int)'\n'))=0;
 		box[i].fcn= strdup(buf);
 		if ( box[i].clkend - box[i].clkstart < threshold)
 			continue;
@@ -689,10 +705,16 @@ static void scandata(char *filename)
 static int height = 160;
 
 static void gnuplotheader(char *filename){
+	time_t tm;
+	char *date;
 	fprintf(gnudata,"set terminal pdfcairo enhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata,"set output \"%s.pdf\"\n",filename);
 	fprintf(gnudata,"set size 1,1\n");
-	fprintf(gnudata,"set title \"%s\"\n", title? title: "Tomogram");
+	tm = time(0);
+	date = ctime(&tm);
+	if (strchr(date,(int)'\n'))
+		*strchr(date,(int)'\n') = 0;
+	fprintf(gnudata,"set title \"%s\t\t%s\"\n", (title? title: "Tomogram"), date);
 	fprintf(gnudata,"set multiplot\n");
 }
 
@@ -764,6 +786,9 @@ static void createTomogram(void)
 	fprintf(gnudata,"\"%6.3f\" %d", ((double)i*w/scale), (int)(i * w));
 	fprintf(gnudata,")\n");
 	fprintf(gnudata,"set grid xtics\n");
+
+	if (endrange > lastclktick)
+		endrange = lastclktick;
 	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scalename,
 		(((double)totalclkticks) / (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)), cores);
 	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
@@ -790,9 +815,11 @@ static void createTomogram(void)
 
 	printf("Created tomogram '%s' \n",buf);
 	printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
-	printf("The colormap is stored in '%s_map.gpl'\n",filename);
-	printf("The memory map is stored in '%s_memory.dat'\n",filename);
-	printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
+		printf("The colormap is stored in '%s_map.gpl'\n",filename);
+	if ( inputfile == 0){
+		printf("The memory map is stored in '%s_memory.dat'\n",filename);
+		printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
+	}
 }
 
 /* the main issue to deal with in the analyse is 
@@ -811,23 +838,33 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	}
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
+	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
+		 clkticks - box[threads[thread]].clkstart <= threshold )
+	{
+		if (state == 1 && strncmp(fcn,"function",8) == 0)
+			createTomogram();
+		box[threads[thread]].state =1;
+		return;
+	}
 
 	/* start of instruction box */
 	if ( state == 0 && thread < MAXTHREADS ){
 		/* capture long waits as idle */
 		idx = threads[thread];
 		/* check for long wait since last use */
-		if ( idx >= 0 &&  box[idx-1].clkend && clkticks - box[idx-1].clkend >= threshold ){
+		if ( idx >= 0 &&  box[idx-1].clkend && clkticks - box[idx-1].clkend >= threshold  && strcmp("mal.idle",box[idx-1].fcn)){
 			box[idx].fcn = strdup("mal.idle");
-			box[idx].stmt= strdup("");
+			box[idx].stmt = strdup("mal.idle");
 			box[idx].thread = box[idx-1].thread;
 			box[idx].clkstart= box[idx-1].clkend;
 			box[idx].memstart= box[idx-1].memend;
 			box[idx].clkend = clkticks;
+			box[idx].ticks = clkticks - box[idx-1].clkend;
 			box[idx].memend = memory;
 			threads[thread]= ++topbox;
 		}
 		idx = threads[thread];
+		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
 		box[idx].memstart = memory;
@@ -842,6 +879,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
 		box[idx].ticks = ticks;
+		box[idx].state = state;
 		/* focus on part of the time frame */
 		if ( endrange ){
 			if (box[idx].clkend < startrange || box[idx].clkstart >endrange)
@@ -882,11 +920,13 @@ static void parser(char *row){
 	if (row[0] != '[')
 		return;
 	c= strchr(row,(int)'"');
-	if ( c &&  strncmp(c+1,"start",5) == 0) {
+	if ( c == 0)
+		return;
+	if (strncmp(c+1,"start",5) == 0) {
 		state = 0;
 		c += 6;
 	} else
-	if ( strncmp(c+1,"done",4) == 0){
+	if (strncmp(c+1,"done",4) == 0){
 		state = 1;
 		c += 5;
 	} else {
