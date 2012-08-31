@@ -900,7 +900,7 @@ runDFLOWworker(void *t)
 		 * re-enable worker */
 		/* It may happen that all threads enter the wait state. So, keep
 		 * one running at all time */
-		if (nxtfs == 0 || MT_getrss() > MEMORY_THRESHOLD * monet_memory) {
+		if ( MT_getrss() > MEMORY_THRESHOLD * monet_memory) {
 			long delay, clk = (GDKusec() - usec) / 1000;
 			int rss = 0;
 			double factor = 1.0;
