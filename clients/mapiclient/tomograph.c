@@ -761,6 +761,7 @@ static void createTomogram(void)
 	double w = (lastclktick-starttime)/10.0;
 	int scale;
 	char *scalename;
+	long totalticks;
 
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
@@ -817,8 +818,12 @@ static void createTomogram(void)
 
 	if (endrange > lastclktick)
 		endrange = lastclktick;
-	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename,
-		(((double)totalclkticks) / (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)));
+
+	/* calculate the effective use of parallelism */
+	totalticks =0;
+	for( i =0; i< top; i++)
+		totalticks += lastclk[rows[i]];
+	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks/100.0));
 	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
 
 	h = height /(2 * top);
