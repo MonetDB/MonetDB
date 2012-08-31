@@ -2703,11 +2703,18 @@ BATantijoin(BAT *l, BAT *r)
 		BATiter li = bat_iterator(l);
 		BATiter ri = bat_iterator(r);
 
-		/* try to keep void columns where possible */
-		if (rc == 1)
-			return BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
-		if (lc == 1)
-			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(li, BUNfirst(l))));
+		if (rc == 1) {
+			l = BATantiuselect_(l, BUNhead(ri, BUNfirst(r)), NULL, 1, 1);
+			bn = BATconst(l, BATttype(r), BUNtail(ri, BUNfirst(r)));
+			BBPunfix(l->batCacheid);
+			return bn;
+		}
+		if (lc == 1) {
+			r = BATantiuselect_(BATmirror(r), BUNtail(li, BUNfirst(l)), NULL, 1, 1);
+			bn = BATmirror(BATconst(r, BAThtype(l), BUNhead(li, BUNfirst(l))));
+			BBPunfix(r->batCacheid);
+			return bn;
+		}
 	}
 
 	bn = BATnew(BAThtype(l), BATttype(r), sz);
