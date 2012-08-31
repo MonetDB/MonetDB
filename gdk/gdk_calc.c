@@ -9995,17 +9995,77 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 }
 
 /* ---------------------------------------------------------------------- */
-/* grouped aggregates */
+/* grouped aggregates
+ *
+ * The following functions take two to four input BATs and produce a
+ * single output BAT.
+ *
+ * The input BATs are
+ * - b, a dense-headed BAT with the values to work on in the tail;
+ * - g, a dense-headed BAT, aligned with b, with group ids (OID) in
+ *   the tail;
+ * - e, optional but recommended, a dense-headed BAT with the list of
+ *   group ids in the head(!) (the tail is completely ignored);
+ * - s, optional, a dense-headed bat with a list of candidate ids in
+ *   the tail.
+ *
+ * The tail values of s refer to the head of b and g.  Only entries at
+ * the specified ids are taken into account for the grouped
+ * aggregates.  All other values are ignored.  s is compatible with
+ * the result of BATsubselect().
+ *
+ * If e is not specified, we need to do an extra scan over g to find
+ * out the range of the group ids that are used.  e is defined in such
+ * a way that it can be either the extents or the histo result from
+ * BATgroups().
+ *
+ * All functions calculate grouped aggregates.  There are as many
+ * groups as there are entries in e.  If e is not specified, the
+ * number of groups is equal to the difference between the maximum and
+ * minimum values in g.
+ *
+ * If a group is empty, the result for that group is nil.
+ *
+ * If there is overflow during the calculation of an aggregate, the
+ * whole operation fails if abort_on_error is set to non-zero,
+ * otherwise the result of the group in which the overflow occurred is
+ * nil.
+ *
+ * If skip_nils is non-zero, a nil value in b is ignored, otherwise a
+ * nil in b results in a nil result for the group.
+ */
 
-/* helper function to find the minimum and maximum group id and the
- * number of group ids */
-static void
-findminmax(oid *minp, oid *maxp, BUN *np, BAT *e, BAT *g)
+/* helper function
+ *
+ * This function finds the minimum and maximum group id (and the
+ * number of groups) and initializes the variables for candidates
+ * selection.
+ */
+static gdk_return
+initgroupaggr(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
+	      /* outputs: */
+	      oid *minp, oid *maxp, BUN *np, BUN *startp, BUN *endp, BUN *cntp,
+	      const oid **candp, const oid **candendp)
 {
 	oid min, max;
 	BUN i, n;
 	const oid *gids;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
 
+	if (b == NULL || !BAThdense(b)) {
+		GDKerror("BATgroupsum: b must be dense-headed\n");
+		return GDK_FAIL;
+	}
+	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
+		GDKerror("BATgroupsum: b and g must be aligned\n");
+		return GDK_FAIL;
+	}
+	assert(BATttype(g) == TYPE_oid);
+	if (e != NULL && !BAThdense(e)) {
+		GDKerror("BATgroupsum: e must be dense-headed\n");
+		return GDK_FAIL;
+	}
 	if (e == NULL) {
 		/* we need to find out the min and max of g */
 		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
@@ -10051,6 +10111,15 @@ findminmax(oid *minp, oid *maxp, BUN *np, BAT *e, BAT *g)
 	*minp = min;
 	*maxp = max;
 	*np = n;
+
+	CANDINIT(b, s);
+	*startp = start;
+	*endp = end;
+	*cntp = cnt;
+	*candp = cand;
+	*candendp = candend;
+
+	return GDK_SUCCEED;
 }
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
@@ -10091,35 +10160,7 @@ findminmax(oid *minp, oid *maxp, BUN *np, BAT *e, BAT *g)
 		}							\
 	} while (0)
 
-/* Calculate group sums with optional candidates list.
- *
- * The result is a bat with a dense list of group ids in the head
- * (aligned with e, if it was specified), and the sum for each group
- * in the tail (nil if the group does not occur).  Groups are
- * specified in the tail of g.  b and g must be aligned on the head,
- * and those heads must be dense.  If specified, e gives the list of
- * groups in the head.  e can be the extent or histo result from
- * BATgroup.  If e is not specified, we do an extra scan over g to
- * find out the range of group ids.
- *
- * If a group id (value in g) is nil, the values are not summed.
- *
- * The type of the result bat is specified in tp.  This type should be
- * at least as large as the input type, and if the input type is an
- * integral type, then so should tp.  If the input type is a floating
- * point type, then so should tp.
- *
- * If skip_nils is true (non-zero), nils in b are skipped, otherwise
- * the sum of the group will be nil.
- *
- * If abort_on_error is true (non-zero), overflow will cause an error,
- * otherwise overflow will cause the sum for the group to be nil.
- * Note that overflow can occur even if theoretically the sum does fit
- * in the type.  Sums are calculated in the order of b and so if b
- * contains large positive values at the start that cause overflow,
- * and then negative values that compensate for the overflow, overflow
- * will still happen.
- */
+/* calculate group sums with optional candidates list */
 BAT *
 BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
@@ -10133,21 +10174,9 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroupsum: b must be dense-headed\n");
+	if (initgroupaggr(b, g, e, s, &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
 		return NULL;
-	}
-	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
-		GDKerror("BATgroupsum: b and g must be aligned\n");
-		return NULL;
-	}
-	assert(BATttype(g) == TYPE_oid);
-	if (e != NULL && !BAThdense(e)) {
-		GDKerror("BATgroupsum: e must be dense-headed\n");
-		return NULL;
-	}
-
-	findminmax(&min, &max, &ngrp, e, g);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no sums, so return bat aligned with g with
@@ -10156,8 +10185,6 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
 	}
-
-	CANDINIT(b, s);
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
@@ -10444,6 +10471,7 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		}							\
 	} while (0)
 
+/* calculate group products with optional candidates list */
 BAT *
 BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
@@ -10457,21 +10485,9 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroupprod: b must be dense-headed\n");
+	if (initgroupaggr(b, g, e, s, &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
 		return NULL;
-	}
-	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
-		GDKerror("BATgroupprod: b and g must be aligned\n");
-		return NULL;
-	}
-	assert(BATttype(g) == TYPE_oid);
-	if (e != NULL && !BAThdense(e)) {
-		GDKerror("BATgroupprod: e must be dense-headed\n");
-		return NULL;
-	}
-
-	findminmax(&min, &max, &ngrp, e, g);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
@@ -10480,8 +10496,6 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		BATseqbase(bn, ngrp == 0 ? 0 : min);
 		return bn;
 	}
-
-	CANDINIT(b, s);
 
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
@@ -10731,6 +10745,7 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		}							\
 	} while (0)
 
+/* calculate group averages with optional candidates list */
 BAT *
 BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
@@ -10749,21 +10764,9 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("BATgroupavg: b must be dense-headed\n");
+	if (initgroupaggr(b, g, e, s, &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
 		return NULL;
-	}
-	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
-		GDKerror("BATgroupavg: b and g must be aligned\n");
-		return NULL;
-	}
-	assert(BATttype(g) == TYPE_oid);
-	if (e != NULL && !BAThdense(e)) {
-		GDKerror("BATgroupavg: e must be dense-headed\n");
-		return NULL;
-	}
-
-	findminmax(&min, &max, &ngrp, e, g);
 
 	if (BATcount(b) == 0 || ngrp == 0) {
 		/* trivial: no products, so return bat aligned with g
@@ -10773,8 +10776,6 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return bn;
 	}
 
-	CANDINIT(b, s);
-
 	if ((e == NULL ||
 	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
 	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
@@ -10783,7 +10784,7 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return BATconvert(b, s, TYPE_dbl, abort_on_error);
 	}
 
-	/* allocate temporary space to do calculations per group */
+	/* allocate temporary space to do per group calculations */
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
