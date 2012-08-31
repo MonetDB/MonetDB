@@ -51,7 +51,7 @@
 # endif
 #endif
 
-#define COUNTERSDEFAULT "ISTestm"
+#define COUNTERSDEFAULT "ISTestmrw"
 
 /* #define _DEBUG_TOMOGRAPH_*/
 
@@ -95,7 +95,8 @@ static struct {
 	/*  1  */ { 'y', "type", "type", 0 },
 	/*  2  */ { 'D', "dot", "dot", 0 },
 	/*  3  */ { 'F', "flow", "flow", 0 },
-	/*  3  */ { 0, 0, 0, 0 }
+	/*  4  */ { 'x', "ping50", "ping", 0 },
+	/*  5  */ { 0, 0, 0, 0 }
 };
 
 typedef struct _wthread {
@@ -124,6 +125,9 @@ static int cores = 8;
 static int listing = 0;
 static int debug = 0;
 static int colormap = 0;
+static int beat= 50;
+static Mapi dbh = NULL;
+static MapiHdl hdl = NULL;
 
 static FILE *gnudata;
 
@@ -136,12 +140,13 @@ usage(void)
 	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -T | --title=<plit title>\n");
-	fprintf(stderr, "  -i | --input=<file name of previous run >\n");
+	fprintf(stderr, "  -T | --title=<plot title>\n");
+	fprintf(stderr, "  -i | --input=<file name prefix >\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file name prefix >\n");
 	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
+	fprintf(stderr, "  -b | --beat= <delay> in milliseconds\n");
 	fprintf(stderr, "  -D | --debug\n");
 }
 
@@ -173,6 +178,34 @@ setCounter(char *nme)
 				profileCounter[i].status = k++;
 	return k;
 }
+
+#define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
+					   dbh ? mapi_explain(dbh, stderr) :        \
+					   fprintf(stderr, "!! %scommand failed\n", id)); \
+					   goto stop_disconnect;}
+#define doQ(X) \
+	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
+			 die(dbh, hdl);
+
+static void activateBeat(void){
+	char buf[BUFSIZ];
+	char *id ="activateBeat";
+	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n",beat);
+	doQ(buf);
+	return;
+stop_disconnect:
+	mapi_disconnect(dbh);
+	mapi_destroy(dbh);
+}
+static void deactivateBeat(void){
+	char *id ="deactivateBeat";
+	doQ("profiler.deactivate(\"ping\");\n");
+	return;
+stop_disconnect:
+	mapi_disconnect(dbh);
+	mapi_destroy(dbh);
+}
+
 #define MAXTHREADS 2048
 #define MAXBOX 8192
 
@@ -184,6 +217,7 @@ typedef struct BOX{
 	long clkstart, clkend;
 	long ticks;
 	long memstart, memend;
+	long reads, writes;
 	char *stmt;
 	char *fcn;
 	int state;
@@ -475,23 +509,20 @@ static void showmemory(char *filename)
 	long max = 0;
 
 	if ( inputfile ){
-		snprintf(buf,BUFSIZ,"scratch_memory.dat");
-		f = fopen(buf,"w");
-	} else
-	if ( filename) {
-		snprintf(buf,BUFSIZ,"%s_memory.dat",filename);
+		snprintf(buf,BUFSIZ,"scratch.dat");
 		f = fopen(buf,"w");
 	} else {
-		snprintf(buf,BUFSIZ,"tomograph_memory.dat");
+		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
 		f = fopen(buf,"w");
-	}
+	} 
 	assert(f);
 
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend ){
 		fprintf(f,"%ld %3.2f\n", box[i].clkstart, (box[i].memstart/1024.0));
-		fprintf(f,"%ld %3.2f\n", box[i].clkend, (box[i].memend/1024.0));
+		if ( box[i].state != 4)
+			fprintf(f,"%ld %3.2f\n", box[i].clkend, (box[i].memend/1024.0));
 		if ( box[i].memstart > max )
 			max = box[i].memstart;
 		if ( box[i].memend > max )
@@ -500,16 +531,17 @@ static void showmemory(char *filename)
 	(void)fclose(f);
 
 	if ( filename) {
+		/* generate isolated image */
 		time_t tm;
 		char *date;
 		if ( inputfile )
-			snprintf(buf2,BUFSIZ,"scratch_memory.gpl");
+			snprintf(buf2,BUFSIZ,"scratch.gpl");
 		else
-			snprintf(buf2,BUFSIZ,"%s_memory.gpl",filename);
+			snprintf(buf2,BUFSIZ,"%s.gpl",filename);
 		f = fopen(buf2,"w");
 		assert(f);
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-		fprintf(f,"set output \"scratch_memory.pdf\"\n");
+		fprintf(f,"set output \"%s.pdf\"\n",filename);
 		fprintf(f,"set size 1, 0.4\n");
 		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		tm = time(0);
@@ -537,21 +569,18 @@ static void showmemory(char *filename)
 /* produce a legenda image for the color map */
 static void showcolormap(char *filename, int all)
 {
-	FILE *f;
+	FILE *f= 0;
 	char buf[BUFSIZ];
 	int i, k = 0;
 	int w = 600;
 	int h = 500;
 
-	if( filename) {
-		snprintf(buf,BUFSIZ,"%s_map.gpl",filename);
+	if ( all ) {
+		snprintf(buf,BUFSIZ,"%s.gpl",filename);
 		f = fopen(buf,"w");
-	} else f = gnudata;
-	assert(f);
-
-	if ( filename) {
+		assert(f);
 		fprintf(f,"set terminal pdfcairo enhanced color solid size 8.3, 11.7\n");
-		fprintf(f,"set output \"%s_map.pdf\"\n",filename);
+		fprintf(f,"set output \"%s.pdf\"\n",filename);
 		fprintf(f,"set size 1,1\n");
 		fprintf(f,"set xrange [0:1800]\n");
 		fprintf(f,"set yrange [0:600]\n");
@@ -592,7 +621,6 @@ static void showcolormap(char *filename, int all)
 		k++;
 	}
 	fprintf(f,"plot 0 notitle with lines\n");
-	fprintf(f,"unset multiplot\n");
 }
 
 static void updmap(int idx)
@@ -628,9 +656,9 @@ static void keepdata(char *filename)
 	FILE *f;
 	char buf[BUFSIZ];
 
-	if (inputfile) /* don't overwrite source */
+	if ( inputfile)
 		return;
-	snprintf(buf,BUFSIZ,"%s.dat",filename);
+	snprintf(buf,BUFSIZ,"%s_trace.dat",filename);
 	f = fopen(buf,"w");
 	assert(f);
 
@@ -642,6 +670,7 @@ static void keepdata(char *filename)
 	if ( box[i].clkend && box[i].fcn){
 		fprintf(f,"%d\t%ld\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend,box[i].ticks);
 		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
+		fprintf(f,"%d\t%ld\t%ld\n", box[i].state, box[i].reads, box[i].writes);
 		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:box[i].fcn);
 		fprintf(f,"%s\n",box[i].fcn);
 	}
@@ -669,6 +698,7 @@ static void scandata(char *filename)
 	while(!feof(f)){
 		if (fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks) != 4 ||
 		    fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend) != 3 ||
+		    fscanf(f,"%d\t%ld\t%ld\n", &box[i].state, &box[i].reads, &box[i].writes) != 3 ||
 		    fgets(buf,BUFSIZ,f) == NULL ||
 		    (box[i].stmt= strdup(buf)) == NULL ||
 		    fgets(buf,BUFSIZ,f) == NULL) {
@@ -718,7 +748,6 @@ static void gnuplotheader(char *filename){
 	fprintf(gnudata,"set multiplot\n");
 }
 
-static int figure = 0;
 static void createTomogram(void)
 {
 	char buf[BUFSIZ];
@@ -730,11 +759,7 @@ static void createTomogram(void)
 	int scale;
 	char *scalename;
 
-	if ( figure  )
-		snprintf(buf,BUFSIZ,"%s_%d.gpl", filename, figure);
-	else
-		snprintf(buf,BUFSIZ,"%s.gpl", filename);
-	figure++;
+	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
 	if ( gnudata == 0){
 		printf("ERROR in creation of %s\n",buf);
@@ -759,7 +784,7 @@ static void createTomogram(void)
 
 	/* detect all different threads and assign them a row */
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend ){
+	if ( box[i].clkend && box[i].state != 4 ){
 		for ( j = 0; j < top ;j++)
 			if (rows[j] == box[i].thread)
 				break;
@@ -805,7 +830,7 @@ static void createTomogram(void)
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend ){
+	if ( box[i].clkend && box[i].state != 4 ){
 		box[i].xleft = box[i].clkstart;
 		box[i].xright = box[i].clkend;
 		if ( debug)
@@ -815,16 +840,16 @@ static void createTomogram(void)
 	}
 	fprintf(gnudata,"plot 0 notitle with lines\n");
 	showcolormap(0, 0);
+	fprintf(gnudata,"unset multiplot\n");
 	keepdata(filename);
 	/* show a listing */
 	(void)fclose(gnudata);
 
 	printf("Created tomogram '%s' \n",buf);
 	printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
-		printf("The colormap is stored in '%s_map.gpl'\n",filename);
 	if ( inputfile == 0){
-		printf("The memory map is stored in '%s_memory.dat'\n",filename);
-		printf("The trace is saved in '%s.dat' for use with --input option\n",filename);
+		printf("The memory map is stored in '%s.dat'\n",filename);
+		printf("The trace is saved in '%s_trace.dat' for use with --input option\n",filename);
 	}
 }
 
@@ -833,7 +858,7 @@ static void createTomogram(void)
  * system is already processing. This leads to
  * receiving 'done' events without matching 'start'
  */
-static void update(int state, int thread, long clkticks, long ticks, long memory, char *fcn, char *stmt) {
+static void update(int state, int thread, long clkticks, long ticks, long memory, long reads, long writes, char *fcn, char *stmt) {
 	int idx;
 	
 	if ( starttime == 0) {
@@ -841,10 +866,26 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		if (strncmp(fcn,"function",8) != 0)
 			return;
 		starttime = clkticks;
+		activateBeat();
 	}
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
 
+	/* handle a ping event */
+	if ( state == 4){
+		idx = threads[thread];
+		box[idx].state = 4;
+		box[idx].thread = thread;
+		lastclk[thread]= clkticks;
+		box[idx].clkend = box[idx].clkstart = clkticks;
+		box[idx].memend = box[idx].memstart = memory;
+		box[idx].reads = reads;
+		box[idx].writes = writes;
+		box[idx].stmt = stmt;
+		box[idx].fcn = strdup(fcn);
+		threads[thread]= ++topbox;
+		return;
+	}
 	/* start of instruction box */
 	if ( state == 0 && thread < MAXTHREADS ){
 		idx = threads[thread];
@@ -863,6 +904,8 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].memend = memory;
 		box[idx].ticks = ticks;
 		box[idx].state = state;
+		box[idx].reads = reads;
+		box[idx].writes = writes;
 		/* focus on part of the time frame */
 		if ( endrange ){
 			if (box[idx].clkend < startrange || box[idx].clkstart >endrange)
@@ -878,16 +921,21 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		totalclkticks += box[idx].clkend - box[idx].clkstart;
 		totalexecticks += box[idx].ticks - box[idx].ticks;
 	}
-	assert(topbox < MAXBOX);
+	if ( topbox == MAXBOX){
+		printf("Out of space for trace");
+		createTomogram();
+		exit(0);
+	}
 	if (state == 1 && strncmp(fcn,"function",8) == 0){
+		deactivateBeat();
 		createTomogram();
 		totalclkticks= 0; /* number of clock ticks reported */
 		totalexecticks= 0; /* number of ticks reported for processing */
 		if ( title == 0)
 			title = strdup(fcn+9);
 	}
-
 }
+
 static void parser(char *row){
 #ifdef HAVE_STRPTIME
 	char *c;
@@ -898,6 +946,7 @@ static void parser(char *row){
 	long memory = 0; /* in MB*/
 	char *fcn = 0, *stmt= 0;
 	int state= 0;
+	long reads, writes;
 
 
 	if (row[0] != '[')
@@ -911,6 +960,10 @@ static void parser(char *row){
 	} else
 	if (strncmp(c+1,"done",4) == 0){
 		state = 1;
+		c += 5;
+	} else
+	if (strncmp(c+1,"ping",4) == 0){
+		state = 4;
 		c += 5;
 	} else {
 		state = 0;
@@ -940,6 +993,11 @@ static void parser(char *row){
 	ticks = atol(c+1);
 	c = strchr(c+1, (int)',');
 	memory = atol(c+1);
+	c = strchr(c+1, (int)',');
+	reads = atol(c+1);
+	c = strchr(c+1, (int)',');
+	writes = atol(c+1);
+
 	fcn = c;
 	c = strstr(c+1, ":=");
 	if ( c ){
@@ -960,19 +1018,11 @@ static void parser(char *row){
 	if ( fcn && strchr(fcn,(int)'('))
 		*strchr(fcn,(int)'(') = 0;
 
-	update(state, thread, clkticks, ticks, memory, fcn, stmt);
+	update(state, thread, clkticks, ticks, memory, reads, writes, fcn, stmt);
 #else
 	(void) row;
 #endif
 }
-
-#define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
-					   dbh ? mapi_explain(dbh, stderr) :        \
-					   fprintf(stderr, "!! %scommand failed\n", id)); \
-					   goto stop_disconnect;}
-#define doQ(X) \
-	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-			 die(dbh, hdl);
 
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 static DWORD WINAPI
@@ -992,8 +1042,6 @@ doProfile(void *d)
 	char *host;
 	int portnr;
 	char id[10];
-	Mapi dbh;
-	MapiHdl hdl = NULL;
 
 	/* set up the profiler */
 	id[0] = '\0';
@@ -1015,6 +1063,7 @@ doProfile(void *d)
 	}
 
 	/* set counters */
+	deactivateBeat();
 	x = NULL;
 	for (i = 0; profileCounter[i].tag; i++) {
 		/* skip duplicates */
@@ -1159,6 +1208,7 @@ main(int argc, char **argv)
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "list", 0, 0, 'l' },
+		{ "beat", 1, 0, 'b' },
 		{ "colormap", 0, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
@@ -1217,11 +1267,14 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r",
+		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r:b",
 			long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'b':
+			beat = atoi(optarg);
+			break;
 		case 'D':
 			debug = 1;
 			break;
@@ -1296,7 +1349,7 @@ main(int argc, char **argv)
 	}
 	if ( colormap ){
 		showcolormap(filename,1);
-		printf("Color map file '%s_map.gpl' generated\n",filename);
+		printf("Color map file '%s.gpl' generated\n",filename);
 		exit(0);
 	}
 	a = optind;
