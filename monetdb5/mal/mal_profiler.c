@@ -57,10 +57,13 @@ profilerAvailable(void)
 static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
+static void startHeartbeat(int delay);
+static void stopHeartbeat(void);
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
+static int eventcounter;
 
 #define PROFevent   0
 #define PROFtime    1
@@ -82,6 +85,7 @@ static int delayswitch = 0; /* to wait before sending the profile info */
 #define PROFtype    17
 #define PROFdot     18
 #define PROFflow   19
+#define PROFping   20	/* heartbeat ping messages */
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -107,7 +111,8 @@ static struct {
 	/*  17 */  { "type", 0},
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
-	/*  20 */  { 0, 0}
+	/*  20 */  { "ping", 0},
+	/*  21 */  { 0, 0}
 };
 
 /*
@@ -121,6 +126,10 @@ activateCounter(str name)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
 			return 0;
+		} else
+		if ( strncmp("ping",name,4) == 0){
+			startHeartbeat(atoi(name+4));
+			return 0;
 		}
 	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
@@ -132,6 +141,10 @@ deactivateCounter(str name)
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 0;
+			return 0;
+		} else
+		if ( strncmp("ping",name,4) == 0){
+			stopHeartbeat();
 			return 0;
 		}
 	throw(MAL, "deactivateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
@@ -266,7 +279,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
 #endif
-	static int eventcounter;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
@@ -989,7 +1001,6 @@ void
 cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
-	static int eventcounter = 0;
 	char buf[1024];
 	int tid = (int)THRgettid();
 	lng v = 0;
@@ -1224,4 +1235,142 @@ getDiskSpace(void)
 			}
 		}
 	return size;
+}
+
+/* the heartbeat process produces a ping event once every X milliseconds */
+static int hbdelay = 0;
+
+static void profilerHeartbeat(void *dummy){
+#ifdef HAVE_SYS_RESOURCE_H
+	static struct rusage prevUsage;
+	struct rusage infoUsage;
+#endif
+	static int eventcounter;
+#ifdef HAVE_TIMES
+	struct tms newTms;
+#endif
+	struct tms timer;
+
+	(void) dummy;
+	times(&timer);
+	while (hbdelay){
+		MT_sleep_ms(hbdelay);
+
+		if (delayswitch > 0) {
+			/* first call to profiled */
+			offlineProfilerHeader();
+			delayswitch--;
+		}
+		if (eventstream == NULL)
+			continue;
+
+		MT_lock_set(&mal_profileLock, "profileLock");
+#ifdef HAVE_TIMES
+		times(&newTms);
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+		getrusage(RUSAGE_SELF, &infoUsage);
+#endif
+
+		/* make ping profile event tuple  */
+		log("[ ");
+		if (profileCounter[PROFevent].status) {
+			log("%d,\t", eventcounter);
+		}
+		if (profileCounter[PROFstart].status) 
+			log("\"ping\",\t");
+		if (profileCounter[PROFtime].status) {
+			char *tbuf, *c;
+
+			/* without this cast, compilation on Windows fails with
+			 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+			 */
+			struct timeval tv;
+			time_t clock = (time_t) time(0);
+
+			gettimeofday(&tv,NULL);
+			tbuf = ctime(&clock);
+			if (tbuf) {
+				c = strchr(tbuf, '\n');
+				if (c) {
+					c[-5] = 0;
+				}
+				tbuf[10] = '"';
+				log("%s", tbuf + 10);
+				log(".%06d\",\t", (int)tv.tv_usec);
+			} else
+				log("%s,\t", "nil");
+		}
+		if (profileCounter[PROFthread].status)
+			log(" %d,\t", THRgettid());
+		if (profileCounter[PROFflow].status) {
+			log("%d,\t", memoryclaims);
+			log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+		}
+		if (profileCounter[PROFfunc].status) 
+				log("\"ping\",\t");
+		if (profileCounter[PROFpc].status) 
+			log("0,\t");
+		if (profileCounter[PROFticks].status) 
+			log("0,\t");
+#ifdef HAVE_TIMES
+		if (profileCounter[PROFcpu].status && delayswitch < 0) {
+			log("%ld,\t", (long) (newTms.tms_utime - timer.tms_utime));
+			log("%ld,\t", (long) (newTms.tms_cutime -timer.tms_cutime));
+			log("%ld,\t", (long) (newTms.tms_stime - timer.tms_stime));
+			log("%ld,\t", (long) (newTms.tms_cstime -timer.tms_cstime));
+			timer = newTms;
+		}
+#endif
+		if (profileCounter[PROFmemory].status && delayswitch < 0)
+			log(SZFMT ",\t", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+		if ((profileCounter[PROFreads].status ||
+			 profileCounter[PROFwrites].status) && delayswitch < 0) {
+			log("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+			log("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+			prevUsage = infoUsage;
+		}
+		if (profileCounter[PROFprocess].status && delayswitch < 0) {
+			log("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+			log("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+			log("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+			log("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+			log("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+			prevUsage = infoUsage;
+		}
+#endif
+		if (profileCounter[PROFrbytes].status)
+			log("0,\t");
+		if (profileCounter[PROFwbytes].status)
+			log("0,\t");
+
+		if (profileCounter[PROFaggr].status)
+			log("0,\t0,\t");
+
+		if (profileCounter[PROFstmt].status)
+				log(" \"ping\",\t");
+		if (profileCounter[PROFtype].status)
+			log("\"\",\t");
+		if (profileCounter[PROFuser].status) {
+			log(" 0");
+		}
+		log(" ]\n");
+		eventcounter++;
+		flushLog();
+		MT_lock_unset(&mal_profileLock, "profileLock");
+	}
+}
+
+void startHeartbeat(int delay){
+	MT_Id p;
+
+	if ( delay < 0 )
+		return;
+	hbdelay = delay;
+	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_DETACHED);
+}
+
+void stopHeartbeat(void){
+	hbdelay = 0;
 }
