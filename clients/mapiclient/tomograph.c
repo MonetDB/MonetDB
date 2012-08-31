@@ -754,7 +754,7 @@ static void createTomogram(void)
 	int rows[MAXTHREADS];
 	int top= 0;
 	int i,j;
-	int h = height /(2 * cores);
+	int h;
 	double w = (lastclktick-starttime)/10.0;
 	int scale;
 	char *scalename;
@@ -818,6 +818,7 @@ static void createTomogram(void)
 		(((double)totalclkticks) / (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)), cores);
 	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
 
+	h = height /(2 * top);
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
 		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
@@ -861,13 +862,25 @@ static void createTomogram(void)
 static void update(int state, int thread, long clkticks, long ticks, long memory, long reads, long writes, char *fcn, char *stmt) {
 	int idx;
 	
-	if ( starttime == 0) {
+	if ( starttime == 0 && state == 0) {
 		/* ignore all instructions up to the first function call */
 		if (strncmp(fcn,"function",8) != 0)
 			return;
 		starttime = clkticks;
 		activateBeat();
+		return;
 	}
+
+	if (state == 1 && strncmp(fcn,"function",8) == 0){
+		deactivateBeat();
+		createTomogram();
+		totalclkticks= 0; /* number of clock ticks reported */
+		totalexecticks= 0; /* number of ticks reported for processing */
+		if ( title == 0)
+			title = strdup(fcn+9);
+		return;
+	}
+
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
 
@@ -886,9 +899,9 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		threads[thread]= ++topbox;
 		return;
 	}
+	idx = threads[thread];
 	/* start of instruction box */
 	if ( state == 0 && thread < MAXTHREADS ){
-		idx = threads[thread];
 		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
@@ -897,7 +910,6 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].fcn = strdup(fcn);
 	}
 	/* end the instruction box */
-	idx = threads[thread];
 	if ( state == 1 &&  thread < MAXTHREADS && fcn && box[idx].fcn  && strcmp(fcn, box[idx].fcn) ==0){
 		lastclk[thread]= clkticks;
 		box[idx].clkend = clkticks;
@@ -914,10 +926,9 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 				box[idx].clkstart = startrange;
 			if ( box[idx].clkend > endrange)
 				box[idx].clkend = endrange;
-			threads[thread]= ++topbox;
-		} else
-			threads[thread]= ++topbox;
-		lastclktick= box[idx].clkend + starttime;
+		} 
+		threads[thread]= ++topbox;
+		lastclktick= box[idx].clkend +starttime;
 		totalclkticks += box[idx].clkend - box[idx].clkstart;
 		totalexecticks += box[idx].ticks - box[idx].ticks;
 	}
@@ -925,14 +936,6 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		printf("Out of space for trace");
 		createTomogram();
 		exit(0);
-	}
-	if (state == 1 && strncmp(fcn,"function",8) == 0){
-		deactivateBeat();
-		createTomogram();
-		totalclkticks= 0; /* number of clock ticks reported */
-		totalexecticks= 0; /* number of ticks reported for processing */
-		if ( title == 0)
-			title = strdup(fcn+9);
 	}
 }
 
@@ -948,6 +951,8 @@ static void parser(char *row){
 	int state= 0;
 	long reads, writes;
 
+	if ( debug)
+		printf("%s\n",row);
 
 	if (row[0] != '[')
 		return;
