@@ -136,7 +136,6 @@ usage(void)
 	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
-	fprintf(stderr, "  -t | --threshold=<microseconds> default 1000\n");
 	fprintf(stderr, "  -T | --title=<plit title>\n");
 	fprintf(stderr, "  -i | --input=<file name of previous run >\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
@@ -192,6 +191,8 @@ typedef struct BOX{
 
 
 int threads[MAXTHREADS];
+long lastclk[MAXTHREADS];
+int prevthreads[MAXTHREADS];
 Box box[MAXBOX];
 int topbox=0;
 
@@ -199,7 +200,6 @@ long totalclkticks= 0; /* number of clock ticks reported */
 long totalexecticks= 0; /* number of ticks reported for processing */
 long lastclktick=0;
 
-long threshold=1000;	/* default threshold is 1 ms */
 
 long starttime=0;
 
@@ -473,7 +473,6 @@ static void showmemory(char *filename)
 	char buf[BUFSIZ],buf2[BUFSIZ];
 	int i;
 	long max = 0;
-	double w = 1800.0/(lastclktick - starttime -startrange);
 
 	if ( inputfile ){
 		snprintf(buf,BUFSIZ,"scratch_memory.dat");
@@ -490,9 +489,9 @@ static void showmemory(char *filename)
 
 
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend && !(box[i].clkend < lastclktick - startrange || box[i].clkstart >lastclktick - endrange)){
-		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkstart * w), (box[i].memstart/1024.0));
-		fprintf(f,"%ld %3.2f\n", (long)(box[i].clkend * w), (box[i].memend/1024.0));
+	if ( box[i].clkend ){
+		fprintf(f,"%ld %3.2f\n", box[i].clkstart, (box[i].memstart/1024.0));
+		fprintf(f,"%ld %3.2f\n", box[i].clkend, (box[i].memend/1024.0));
 		if ( box[i].memstart > max )
 			max = box[i].memstart;
 		if ( box[i].memend > max )
@@ -512,7 +511,7 @@ static void showmemory(char *filename)
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
 		fprintf(f,"set output \"scratch_memory.pdf\"\n");
 		fprintf(f,"set size 1, 0.4\n");
-		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		tm = time(0);
 		date = ctime(&tm);
 		if (strchr(date,(int)'\n'))
@@ -527,7 +526,7 @@ static void showmemory(char *filename)
 		fprintf(f,"set rmarg 3\n");
 		fprintf(f,"set size 1,0.1\n");
 		fprintf(f,"set origin 0.0,0.8\n");
-		fprintf(f,"set xrange [0:1800]\n");
+		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		fprintf(f,"set ylabel \"memory in GB\"\n");
 		fprintf(f,"unset xtics\n");
 	}
@@ -583,7 +582,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"unset xlabel\n");
 	}
 	for ( i= 0; colors[i].col; i++)
-	if ( colors[i].freq > 0 || all){
+	if ( colors[i].mod && (colors[i].freq > 0 || all)){
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.15 * w), h-5, colors[i].col);
 		fprintf(f,"set label %d \"%s.%s\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, 
@@ -622,7 +621,7 @@ static void updmap(int idx)
 	box[idx].color = fnd;
 }
 		
-/* keep the data around for re-painting with different thresholds and filters*/
+/* keep the data around for re-painting with range filters*/
 static void keepdata(char *filename)
 {
 	int i;
@@ -681,8 +680,6 @@ static void scandata(char *filename)
 		if(strchr(buf,(int)'\n'))
 			*(strchr(buf,(int)'\n'))=0;
 		box[i].fcn= strdup(buf);
-		if ( box[i].clkend - box[i].clkstart < threshold)
-			continue;
 		/* focus on part of the time frame */
 		if ( endrange ){
 			if (box[i].clkend < startrange || box[i].clkstart >endrange)
@@ -692,7 +689,10 @@ static void scandata(char *filename)
 			if ( box[i].clkend > endrange)
 				box[i].clkend = endrange;
 		} 
-		lastclktick= box[i].clkend;
+		if ( box[i].clkend > lastclktick)
+			lastclktick= box[i].clkend;
+		if ( lastclk[box[i].thread] <box[i].clkend)
+			lastclk[box[i].thread]= box[i].clkend;
 		totalclkticks += box[i].clkend - box[i].clkstart;
 		totalexecticks += box[i].ticks - box[i].ticks;
 		i++;
@@ -798,6 +798,12 @@ static void createTomogram(void)
 		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
 	fprintf(gnudata,")\n");
 
+	/* mark duration of each thread */
+	for ( i = 0; i < top; i++)
+		fprintf(gnudata,"set object %d rectangle from %d, %d to %ld, %d\n",
+			object++, 0, i * 2 *h, lastclk[rows[i]], i* 2 * h + h);
+
+	/* fill the duration of each instruction encountered that fit our range constraint */
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend ){
 		box[i].xleft = box[i].clkstart;
@@ -838,31 +844,9 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	}
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
-	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
-		 clkticks - box[threads[thread]].clkstart <= threshold )
-	{
-		if (state == 1 && strncmp(fcn,"function",8) == 0)
-			createTomogram();
-		box[threads[thread]].state =1;
-		return;
-	}
 
 	/* start of instruction box */
 	if ( state == 0 && thread < MAXTHREADS ){
-		/* capture long waits as idle */
-		idx = threads[thread];
-		/* check for long wait since last use */
-		if ( idx >= 0 &&  box[idx-1].clkend && clkticks - box[idx-1].clkend >= threshold  && strcmp("mal.idle",box[idx-1].fcn)){
-			box[idx].fcn = strdup("mal.idle");
-			box[idx].stmt = strdup("mal.idle");
-			box[idx].thread = box[idx-1].thread;
-			box[idx].clkstart= box[idx-1].clkend;
-			box[idx].memstart= box[idx-1].memend;
-			box[idx].clkend = clkticks;
-			box[idx].ticks = clkticks - box[idx-1].clkend;
-			box[idx].memend = memory;
-			threads[thread]= ++topbox;
-		}
 		idx = threads[thread];
 		box[idx].state = state;
 		box[idx].thread = thread;
@@ -872,10 +856,9 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].fcn = strdup(fcn);
 	}
 	/* end the instruction box */
-	if ( state == 1 &&  thread < MAXTHREADS && fcn &&
-		 clkticks - box[threads[thread]].clkstart > threshold  &&
-		box[threads[thread]].fcn  && strcmp(fcn, box[threads[thread]].fcn) ==0){
-		idx = threads[thread];
+	idx = threads[thread];
+	if ( state == 1 &&  thread < MAXTHREADS && fcn && box[idx].fcn  && strcmp(fcn, box[idx].fcn) ==0){
+		lastclk[thread]= clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
 		box[idx].ticks = ticks;
@@ -1170,7 +1153,6 @@ main(int argc, char **argv)
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
-		{ "threshold", 1, 0, 't' },
 		{ "cores", 1, 0, 'c' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
@@ -1300,10 +1282,6 @@ main(int argc, char **argv)
 			}
 			break;
 		}
-		case 't':
-			if ( optarg)
-				threshold = atol(optarg);
-			break;
 		default:
 			usage();
 			exit(0);
