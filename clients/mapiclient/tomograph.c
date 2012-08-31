@@ -429,7 +429,7 @@ struct COLOR{
 	{0,"algebra","semijoin","lightblue"},
 	{0,"algebra","kdifference","skyblue"},
 	{0,"algebra","kunion","skyblue"},
-	{0,"algebra","slice","darkblue"},
+	{0,"algebra","slice","royalblue"},
 	{0,"algebra","sortTail","cyan"},
 	{0,"algebra","markT","blue"},
 	{0,"algebra","selectNotNil","mediumblue"},
@@ -520,9 +520,12 @@ static void showmemory(char *filename)
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend ){
-		fprintf(f,"%ld %3.2f\n", box[i].clkstart, (box[i].memstart/1024.0));
+		fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 		if ( box[i].state != 4)
-			fprintf(f,"%ld %3.2f\n", box[i].clkend, (box[i].memend/1024.0));
+			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
+		else
+			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
+
 		if ( box[i].memstart > max )
 			max = box[i].memstart;
 		if ( box[i].memend > max )
@@ -814,9 +817,9 @@ static void createTomogram(void)
 
 	if (endrange > lastclktick)
 		endrange = lastclktick;
-	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %% (%d cores)\"\n", scalename,
-		(((double)totalclkticks) / (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)), cores);
-	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (cores * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
+	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename,
+		(((double)totalclkticks) / (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100)));
+	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
 
 	h = height /(2 * top);
 	fprintf(gnudata,"set ytics (");
