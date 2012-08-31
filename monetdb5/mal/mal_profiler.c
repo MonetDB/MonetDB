@@ -1248,8 +1248,8 @@ static void profilerHeartbeat(void *dummy){
 	static int eventcounter;
 #ifdef HAVE_TIMES
 	struct tms newTms;
-#endif
 	struct tms timer;
+#endif
 
 	(void) dummy;
 #ifdef HAVE_TIMES
