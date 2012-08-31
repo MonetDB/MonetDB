@@ -1252,7 +1252,9 @@ static void profilerHeartbeat(void *dummy){
 	struct tms timer;
 
 	(void) dummy;
+#ifdef HAVE_TIMES
 	times(&timer);
+#endif
 	while (hbdelay){
 		MT_sleep_ms(hbdelay);
 
