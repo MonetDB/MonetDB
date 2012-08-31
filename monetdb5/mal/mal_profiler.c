@@ -1241,6 +1241,7 @@ getDiskSpace(void)
 static int hbdelay = 0;
 
 static void profilerHeartbeat(void *dummy){
+	Thread thr = THRnew("profilerHeartbeat");
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
@@ -1248,13 +1249,13 @@ static void profilerHeartbeat(void *dummy){
 	static int eventcounter;
 #ifdef HAVE_TIMES
 	struct tms newTms;
-	struct tms timer;
+	struct tms prevtimer;
+	times(&prevtimer);
 #endif
-
+#ifdef HAVE_SYS_RESOURCE_H
+		getrusage(RUSAGE_SELF, &prevUsage);
+#endif
 	(void) dummy;
-#ifdef HAVE_TIMES
-	times(&timer);
-#endif
 	while (hbdelay){
 		MT_sleep_ms(hbdelay);
 
@@ -1317,11 +1318,11 @@ static void profilerHeartbeat(void *dummy){
 			log("0,\t");
 #ifdef HAVE_TIMES
 		if (profileCounter[PROFcpu].status && delayswitch < 0) {
-			log("%ld,\t", (long) (newTms.tms_utime - timer.tms_utime));
-			log("%ld,\t", (long) (newTms.tms_cutime -timer.tms_cutime));
-			log("%ld,\t", (long) (newTms.tms_stime - timer.tms_stime));
-			log("%ld,\t", (long) (newTms.tms_cstime -timer.tms_cstime));
-			timer = newTms;
+			log("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
+			log("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
+			log("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
+			log("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
+			prevtimer = newTms;
 		}
 #endif
 		if (profileCounter[PROFmemory].status && delayswitch < 0)
@@ -1362,6 +1363,7 @@ static void profilerHeartbeat(void *dummy){
 		flushLog();
 		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
+	THRdel(thr);
 }
 
 void startHeartbeat(int delay){
@@ -1370,7 +1372,7 @@ void startHeartbeat(int delay){
 	if ( delay < 0 )
 		return;
 	hbdelay = delay;
-	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_DETACHED);
+	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
 }
 
 void stopHeartbeat(void){
