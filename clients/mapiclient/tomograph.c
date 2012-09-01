@@ -121,7 +121,6 @@ static char *filename="tomograph";
 static char *inputfile=0;
 static long startrange=0, endrange= 0;
 static char *title =0;
-static int cores = 8;
 static int listing = 0;
 static int debug = 0;
 static int colormap = 0;
@@ -146,7 +145,6 @@ usage(void)
 	fprintf(stderr, "  -i | --input=<file name prefix >\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file name prefix >\n");
-	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -b | --beat= <delay> in milliseconds\n");
 	fprintf(stderr, "  -B | --batch= <number> of combined queries\n");
@@ -1321,7 +1319,6 @@ main(int argc, char **argv)
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
-		{ "cores", 1, 0, 'c' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
@@ -1434,9 +1431,6 @@ main(int argc, char **argv)
 			break;
 		case 'o':
 			filename = optarg;
-			break;
-		case 'c':
-			cores = optarg?atoi(optarg):1;
 			break;
 		case 'r':
 		{ char *s;
