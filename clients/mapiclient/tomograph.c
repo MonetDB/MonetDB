@@ -144,10 +144,10 @@ usage(void)
 	fprintf(stderr, "  -T | --title=<plot title>\n");
 	fprintf(stderr, "  -i | --input=<file name prefix >\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
-	fprintf(stderr, "  -o | --output=<file name prefix >\n");
+	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
-	fprintf(stderr, "  -b | --beat= <delay> in milliseconds\n");
-	fprintf(stderr, "  -B | --batch= <number> of combined queries\n");
+	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
 	fprintf(stderr, "  -D | --debug\n");
 }
 
@@ -643,10 +643,10 @@ static void showio(char *filename)
 	fprintf(f,"unset xtics\n");
 	fprintf(f,"unset ytics\n");
 	fprintf(f,"unset ylabel\n");
-	fprintf(f,"set y2tics in (\"%ld\" %ld)\n",max/1024, max);
+	fprintf(f,"set y2tics in (\"%3.2f\" %ld)\n",max/1024.0, max);
 	fprintf(f,"set y2label \"IO log (K)\"\n");
 	fprintf(f,"set logscale y\n");
-	fprintf(f,"plot \"%s\" using 1:3 title \"reads\" with boxes fs solid linecolor rgb \"green\" ,\\\n",buf);
+	fprintf(f,"plot \"%s\" using 1:3 title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",buf);
 	fprintf(f,"\"%s\" using 1:4 title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",buf);
 	fprintf(f,"unset y2label\n");
 	fprintf(f,"unset y2tics\n");
