@@ -129,6 +129,7 @@ static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
 static int batch = 9999; /* number of queries to combine in one run */
+static long maxio=0;
 
 static FILE *gnudata;
 
@@ -154,6 +155,7 @@ usage(void)
 
 /* Any signal should be captured and turned into a graceful
  * termination of the profiling session. */
+static void createTomogram(void);
 static void
 stopListening(int i)
 {
@@ -164,6 +166,8 @@ stopListening(int i)
 		if (walk->s != NULL)
 			mnstr_close(walk->s);
 	}
+	batch = 1;
+	createTomogram();
 }
 
 static int
@@ -508,7 +512,7 @@ static void showmemory(char *filename)
 	FILE *f= 0;
 	char buf[BUFSIZ],buf2[BUFSIZ];
 	int i;
-	long max = 0;
+	long max = 0, min= 99999999999;
 
 	if ( inputfile ){
 		snprintf(buf,BUFSIZ,"scratch.dat");
@@ -532,6 +536,10 @@ static void showmemory(char *filename)
 			max = box[i].memstart;
 		if ( box[i].memend > max )
 			max = box[i].memend;
+		if ( box[i].memstart < min )
+			min = box[i].memstart;
+		if ( box[i].memend < min )
+			min = box[i].memend;
 	}
 	(void)fclose(f);
 
@@ -548,7 +556,7 @@ static void showmemory(char *filename)
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
 		fprintf(f,"set output \"%s.pdf\"\n",filename);
 		fprintf(f,"set size 1, 0.4\n");
-		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
+		fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		tm = time(0);
 		date = ctime(&tm);
 		if (strchr(date,(int)'\n'))
@@ -559,16 +567,93 @@ static void showmemory(char *filename)
 		f = gnudata;
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 7\n");
-		fprintf(f,"set rmarg 3\n");
+		fprintf(f,"set lmarg 8\n");
+		fprintf(f,"set rmarg 6\n");
 		fprintf(f,"set size 1,0.1\n");
 		fprintf(f,"set origin 0.0,0.8\n");
 		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		fprintf(f,"set ylabel \"memory in GB\"\n");
 		fprintf(f,"unset xtics\n");
 	}
-	fprintf(f,"set ytics (\"%2d\" %3.2f, \"0\" 0)\n", (int)(max /1024), max/1024.0);
-	fprintf(f,"plot \"%s\" using 1:2 notitle with points\n",buf);
+	//fprintf(f,"set yrange [%ld:%ld]\n", (long) min/1024, (long)(1.2 * max/1024));
+	fprintf(f,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
+	fprintf(f,"plot \"%s\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",buf);
+	fprintf(f,"unset yrange\n");
+}
+/* produce memory thread trace */
+static void showio(char *filename)
+{
+	FILE *f= 0;
+	char buf[BUFSIZ],buf2[BUFSIZ];
+	int i;
+	long max = 0;
+
+	if ( inputfile ){
+		snprintf(buf,BUFSIZ,"scratch.dat");
+		f = fopen(buf,"w");
+	} else {
+		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
+		f = fopen(buf,"w");
+	} 
+	assert(f);
+
+
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend  ){
+		fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
+		if ( box[i].state != 4)
+			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
+		else
+			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
+
+		if ( box[i].reads > max )
+			max = box[i].reads;
+		if ( box[i].writes > max )
+			max = box[i].writes;
+	}
+	(void)fclose(f);
+
+	if ( filename) {
+		/* generate isolated image */
+		time_t tm;
+		char *date;
+		if ( inputfile )
+			snprintf(buf2,BUFSIZ,"scratch.gpl");
+		else
+			snprintf(buf2,BUFSIZ,"%s.gpl",filename);
+		f = fopen(buf2,"w");
+		assert(f);
+		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
+		fprintf(f,"set output \"%s.pdf\"\n",filename);
+		fprintf(f,"set size 1, 0.4\n");
+		fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
+		tm = time(0);
+		date = ctime(&tm);
+		if (strchr(date,(int)'\n'))
+			*strchr(date,(int)'\n') = 0;
+	} else {
+		f = gnudata;
+		fprintf(f,"\nset tmarg 0\n");
+		fprintf(f,"set bmarg 0\n");
+		fprintf(f,"set lmarg 8\n");
+		fprintf(f,"set rmarg 6\n");
+		fprintf(f,"set size 1,0.1\n");
+		fprintf(f,"set origin 0.0,0.8\n");
+	}
+	fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
+	fprintf(f,"set yrange [1:%ld]\n", (max< 2? 2:(long)(1.1 * max)));
+	fprintf(f,"unset xtics\n");
+	fprintf(f,"unset ytics\n");
+	fprintf(f,"unset ylabel\n");
+	fprintf(f,"set y2tics in (\"%ld\" %ld)\n",max/1024, max);
+	fprintf(f,"set y2label \"IO log (K)\"\n");
+	fprintf(f,"set logscale y\n");
+	fprintf(f,"plot \"%s\" using 1:3 title \"reads\" with boxes fs solid linecolor rgb \"green\" ,\\\n",buf);
+	fprintf(f,"\"%s\" using 1:4 title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",buf);
+	fprintf(f,"unset y2label\n");
+	fprintf(f,"unset y2tics\n");
+	fprintf(f,"unset y2range\n");
+	fprintf(f,"unset logscale y\n");
 }
 
 /* produce a legenda image for the color map */
@@ -601,8 +686,8 @@ static void showcolormap(char *filename, int all)
 		f = gnudata;
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 7\n");
-		fprintf(f,"set rmarg 3\n");
+		fprintf(f,"set lmarg 8\n");
+		fprintf(f,"set rmarg 6\n");
 		fprintf(f,"set size 1,0.4\n");
 		fprintf(f,"set origin 0.0,0.0\n");
 		fprintf(f,"set xrange [0:1800]\n");
@@ -663,7 +748,7 @@ static void keepdata(char *filename)
 
 	if ( inputfile)
 		return;
-	snprintf(buf,BUFSIZ,"%s_trace.dat",filename);
+	snprintf(buf,BUFSIZ,"%s.trace",filename);
 	f = fopen(buf,"w");
 	assert(f);
 
@@ -691,7 +776,7 @@ static void scandata(char *filename)
 
 	f = fopen(filename,"r");
 	if ( f == 0){
-		snprintf(buf,BUFSIZ,"%s.dat",filename);
+		snprintf(buf,BUFSIZ,"%s.trace",filename);
 		f = fopen(buf,"r");
 		if ( f == NULL){
 			printf("Could not open file '%s'\n",buf);
@@ -741,14 +826,16 @@ static int height = 160;
 
 static void gnuplotheader(char *filename){
 	time_t tm;
-	char *date;
+	char *date, *c;
 	fprintf(gnudata,"set terminal pdfcairo enhanced color solid size 8.3,11.7\n");
 	fprintf(gnudata,"set output \"%s.pdf\"\n",filename);
 	fprintf(gnudata,"set size 1,1\n");
+	fprintf(gnudata,"set tics front\n");
 	tm = time(0);
 	date = ctime(&tm);
 	if (strchr(date,(int)'\n'))
 		*strchr(date,(int)'\n') = 0;
+	for( c= title; c && *c ; c++) if ( *c =='_') *c = '-';
 	fprintf(gnudata,"set title \"%s\t\t%s\"\n", (title? title: "Tomogram"), date);
 	fprintf(gnudata,"set multiplot\n");
 }
@@ -759,13 +846,15 @@ static void createTomogram(void)
 	int rows[MAXTHREADS];
 	int top= 0;
 	int i,j;
-	int h;
+	int h, prevobject=1;
 	double w = (lastclktick-starttime)/10.0;
 	int scale;
 	char *scalename;
 	long totalticks;
 	static int figures=0;
 
+	if ( batch-- != 1 )
+		return;
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
 	if ( gnudata == 0){
@@ -775,11 +864,12 @@ static void createTomogram(void)
 	*strchr(buf,(int) '.') = 0;
 	gnuplotheader(buf);
 	showmemory(0);
+	showio(0);
 
 	fprintf(gnudata,"\nset tmarg 0\n");
 	fprintf(gnudata,"set bmarg 3\n");
-	fprintf(gnudata,"set lmarg 7\n");
-	fprintf(gnudata,"set rmarg 3\n");
+	fprintf(gnudata,"set lmarg 8\n");
+	fprintf(gnudata,"set rmarg 6\n");
 	fprintf(gnudata,"set size 1,0.4\n");
 	fprintf(gnudata,"set origin 0.0,0.4\n");
 	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
@@ -818,7 +908,7 @@ static void createTomogram(void)
 	fprintf(gnudata,"set xtics (");
 	for( i =0; i< 10; i++)
 		fprintf(gnudata,"\"%d\" %d,", (int)(i * w /scale), (int)(i * w));
-	fprintf(gnudata,"\"%6.3f\" %d", ((double)i*w/scale), (int)(i * w));
+	fprintf(gnudata,"\"%6.2f\" %d", ((double)i*w/scale), (int)(i * w));
 	fprintf(gnudata,")\n");
 	fprintf(gnudata,"set grid xtics\n");
 
@@ -830,9 +920,8 @@ static void createTomogram(void)
 	for( i =0; i< top; i++)
 		totalticks += lastclk[rows[i]];
 	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks/100.0));
-	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
 
-	h = 20; /* unit height of bars */
+	h = 10; /* unit height of bars */
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
 		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
@@ -854,12 +943,11 @@ static void createTomogram(void)
 			object++, box[i].clkstart, box[i].row * 2 *h, box[i].clkend, box[i].row* 2 * h + h, colors[box[i].color].col);
 	}
 	fprintf(gnudata,"plot 0 notitle with lines\n");
-	fprintf(gnudata,"unset for[i=1:%d] object i\n", object-1);
-	object = 1;
+	fprintf(gnudata,"unset for[i=%d:%d] object i\n", prevobject, object-1);
+	prevobject = object-1;
 	showcolormap(0, 0);
 	fprintf(gnudata,"unset multiplot\n");
 	keepdata(filename);
-	/* show a listing */
 	(void)fclose(gnudata);
 
 	if ( figures++ == 0){
@@ -867,11 +955,10 @@ static void createTomogram(void)
 		printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
 		if ( inputfile == 0){
 			printf("The memory map is stored in '%s.dat'\n",filename);
-			printf("The trace is saved in '%s_trace.dat' for use with --input option\n",filename);
+			printf("The trace is saved in '%s.trace' for use with --input option\n",filename);
 		}
 	}
-	if ( --batch == 0)
-		exit(0);
+	exit(0);
 }
 
 /* the main issue to deal with in the analyse is 
@@ -920,6 +1007,10 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].stmt = stmt;
 		box[idx].fcn = strdup(fcn);
 		threads[thread]= ++topbox;
+		if ( reads > maxio )
+			maxio = reads;
+		if ( writes > maxio )
+			maxio = writes;
 		return;
 	}
 	idx = threads[thread];
@@ -1027,12 +1118,12 @@ static void parser(char *row){
 	writes = atol(c+1);
 
 	fcn = c;
+	stmt = strdup(fcn);
 	c = strstr(c+1, ":=");
 	if ( c ){
 		fcn = c+2;
 		/* find genuine function calls */
 		while ( isspace((int) *fcn) && *fcn) fcn++;
-		stmt = strdup(fcn);
 		if ( strchr(fcn, (int) '.') == 0)
 			return;
 	} else {
