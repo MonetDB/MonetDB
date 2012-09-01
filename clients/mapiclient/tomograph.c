@@ -128,6 +128,7 @@ static int colormap = 0;
 static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
+static int batch = 9999; /* number of queries to combine in one run */
 
 static FILE *gnudata;
 
@@ -147,6 +148,7 @@ usage(void)
 	fprintf(stderr, "  -c | --cores=<number> of the target machine\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -b | --beat= <delay> in milliseconds\n");
+	fprintf(stderr, "  -B | --batch= <number> of combined queries\n");
 	fprintf(stderr, "  -D | --debug\n");
 }
 
@@ -762,6 +764,7 @@ static void createTomogram(void)
 	int scale;
 	char *scalename;
 	long totalticks;
+	static int figures=0;
 
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
@@ -780,11 +783,6 @@ static void createTomogram(void)
 	fprintf(gnudata,"set size 1,0.4\n");
 	fprintf(gnudata,"set origin 0.0,0.4\n");
 	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-	fprintf(gnudata,"set yrange [0:%d]\n", height);
-	fprintf(gnudata,"set ylabel \"threads\"\n");
-	fprintf(gnudata,"set key right \n");
-	fprintf(gnudata,"unset colorbox\n");
-	fprintf(gnudata,"unset title\n");
 
 	/* detect all different threads and assign them a row */
 	for ( i = 0; i < topbox; i++)
@@ -797,6 +795,14 @@ static void createTomogram(void)
 			rows[top++] = box[i].thread;
 		updmap(i);
 	}
+
+	height = top * 20;
+	fprintf(gnudata,"set yrange [0:%d]\n", height);
+	fprintf(gnudata,"set ylabel \"threads\"\n");
+	fprintf(gnudata,"set key right \n");
+	fprintf(gnudata,"unset colorbox\n");
+	fprintf(gnudata,"unset title\n");
+
 	if ( w > 1000000){
 		scale = 1000000;
 		scalename = "";
@@ -826,7 +832,7 @@ static void createTomogram(void)
 	fprintf(gnudata,"set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks/100.0));
 	printf("total %ld range %ld tic %ld\n", totalclkticks, endrange-startrange, (top * (endrange? endrange-startrange:lastclktick-starttime-startrange)/100));
 
-	h = height /(2 * top);
+	h = 20; /* unit height of bars */
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
 		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
@@ -848,18 +854,24 @@ static void createTomogram(void)
 			object++, box[i].clkstart, box[i].row * 2 *h, box[i].clkend, box[i].row* 2 * h + h, colors[box[i].color].col);
 	}
 	fprintf(gnudata,"plot 0 notitle with lines\n");
+	fprintf(gnudata,"unset for[i=1:%d] object i\n", object-1);
+	object = 1;
 	showcolormap(0, 0);
 	fprintf(gnudata,"unset multiplot\n");
 	keepdata(filename);
 	/* show a listing */
 	(void)fclose(gnudata);
 
-	printf("Created tomogram '%s' \n",buf);
-	printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
-	if ( inputfile == 0){
-		printf("The memory map is stored in '%s.dat'\n",filename);
-		printf("The trace is saved in '%s_trace.dat' for use with --input option\n",filename);
+	if ( figures++ == 0){
+		printf("Created tomogram '%s' \n",buf);
+		printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
+		if ( inputfile == 0){
+			printf("The memory map is stored in '%s.dat'\n",filename);
+			printf("The trace is saved in '%s_trace.dat' for use with --input option\n",filename);
+		}
 	}
+	if ( --batch == 0)
+		exit(0);
 }
 
 /* the main issue to deal with in the analyse is 
@@ -870,6 +882,9 @@ static void createTomogram(void)
 static void update(int state, int thread, long clkticks, long ticks, long memory, long reads, long writes, char *fcn, char *stmt) {
 	int idx;
 	
+	/* ignore the flow of control statements 'function' and 'end' */
+	if ( strncmp(fcn,"end ",4)== 0)
+		return;
 	if ( starttime == 0 && state == 0) {
 		/* ignore all instructions up to the first function call */
 		if (strncmp(fcn,"function",8) != 0)
@@ -1207,7 +1222,7 @@ main(int argc, char **argv)
 	wthread *walk;
 	stream * config = NULL;
 
-	static struct option long_options[16] = {
+	static struct option long_options[17] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "password", 1, 0, 'P' },
@@ -1222,6 +1237,7 @@ main(int argc, char **argv)
 		{ "debug", 0, 0, 'D' },
 		{ "list", 0, 0, 'l' },
 		{ "beat", 1, 0, 'b' },
+		{ "batch", 1, 0, 'B' },
 		{ "colormap", 0, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
@@ -1280,13 +1296,16 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r:b",
+		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r:b:B",
 			long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'B':
+			batch = atoi(optarg ? optarg :"1");
+			break;
 		case 'b':
-			beat = atoi(optarg);
+			beat = atoi(optarg ? optarg:"50");
 			break;
 		case 'D':
 			debug = 1;
