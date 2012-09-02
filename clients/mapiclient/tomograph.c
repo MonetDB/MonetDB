@@ -405,7 +405,7 @@ struct {
 	{ 0,0,0,0,0}
 };
 
-static char *getHSV(char *name)
+static char *getRGB(char *name)
 {
 	int i;
 	for (i=0; dictionary[i].name; i++)
@@ -439,7 +439,7 @@ struct COLOR{
 	{0,"algebra","selectNotNil","mediumblue"},
 	{0,"algebra","thetauselect","aqua"},
 	{0,"algebra","uselect","cornflowerblue"},
-	{0,"algebra","*","navy"},
+	{0,"algebra","*","powderblue"},
 
 	{0,"bat","mirror","sandybrown"},
 	{0,"bat","reverse","sandybrown"},
@@ -496,7 +496,7 @@ static void initcolors(void)
 	int i;
 	char *c;
 	for ( i =0; colors[i].col; i++){
-		c = getHSV(colors[i].col);
+		c = getRGB(colors[i].col);
 		if ( c )
 			colors[i].col = c;
 		else
@@ -504,9 +504,19 @@ static void initcolors(void)
 	}
 }
 
-static void dumpboxes(FILE *f)
+static void dumpboxes(void)
 {
+	FILE *f= 0;
+	char buf[BUFSIZ];
 	int i;
+	if ( inputfile ){
+		snprintf(buf,BUFSIZ,"scratch.dat");
+		f = fopen(buf,"w");
+	} else {
+		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
+		f = fopen(buf,"w");
+	} 
+
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn ){
 		if ( box[i].state != 4){
@@ -517,15 +527,14 @@ static void dumpboxes(FILE *f)
 			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
 		}
 	}
+	(void) fclose(f);
 }
+
 /* produce memory thread trace */
-static void showmemory(char *filename, int isolated)
+static void showmemory(void)
 {
-	FILE *f= 0;
-	char buf[BUFSIZ];
 	int i;
 	long max = 0, min= 99999999999;
-
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn ){
@@ -539,66 +548,27 @@ static void showmemory(char *filename, int isolated)
 			min = box[i].memend;
 	}
 
-	if ( isolated) {
-		/* generate isolated image */
-		time_t tm;
-		char *date;
-		if ( inputfile )
-			snprintf(buf,BUFSIZ,"scratch.gpl");
-		else
-			snprintf(buf,BUFSIZ,"%s.gpl",filename);
-		f = fopen(buf,"w");
-		assert(f);
-		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-		fprintf(f,"set output \"%s.pdf\"\n",filename);
-		fprintf(f,"set size 1, 0.4\n");
-		fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-		tm = time(0);
-		date = ctime(&tm);
-		if (strchr(date,(int)'\n'))
-			*strchr(date,(int)'\n') = 0;
-		fprintf(f,"set title \"%s\t\t%s\"\n", (title? title: "Tomogram"), date);
-		fprintf(f,"unset xtics\n");
-	} else {
-		f = gnudata;
-		fprintf(f,"\nset tmarg 0\n");
-		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 8\n");
-		fprintf(f,"set size 1,0.1\n");
-		fprintf(f,"set origin 0.0,0.8\n");
-		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-		fprintf(f,"set ylabel \"memory in GB\"\n");
-		fprintf(f,"unset xtics\n");
-	}
-	fprintf(f,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
-	fprintf(f,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
-	if ( inputfile )
-		snprintf(buf,BUFSIZ,"scratch.dat");
-	else
-		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
-	fprintf(f,"plot \"%s\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",buf);
-	fprintf(f,"unset yrange\n");
+	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"set bmarg 0\n");
+	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set rmarg 10\n");
+	fprintf(gnudata,"set size 1,0.1\n");
+	fprintf(gnudata,"set origin 0.0,0.8\n");
+
+	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
+	fprintf(gnudata,"set ylabel \"memory in GB\"\n");
+	fprintf(gnudata,"unset xtics\n");
+	fprintf(gnudata,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
+	fprintf(gnudata,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
+	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
+	fprintf(gnudata,"unset yrange\n");
 }
 
 /* produce memory thread trace */
-static void showio(char *filename, int isolated)
+static void showio(void)
 {
-	FILE *f= 0;
-	char buf[BUFSIZ];
 	int i;
 	long max = 0;
-
-	if ( inputfile ){
-		snprintf(buf,BUFSIZ,"scratch.dat");
-		f = fopen(buf,"w");
-	} else {
-		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
-		f = fopen(buf,"w");
-	} 
-	assert(f);
-
-	dumpboxes(f);
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend  &&box[i].state == 4){
@@ -608,51 +578,24 @@ static void showio(char *filename, int isolated)
 			max = box[i].writes;
 	}
 
-	if ( isolated) {
-		/* generate isolated image */
-		time_t tm;
-		char *date;
-		if ( inputfile )
-			snprintf(buf,BUFSIZ,"scratch.gpl");
-		else
-			snprintf(buf,BUFSIZ,"%s.gpl",filename);
-		f = fopen(buf,"w");
-		assert(f);
-		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
-		fprintf(f,"set output \"%s.pdf\"\n",filename);
-		fprintf(f,"set size 1, 0.4\n");
-		fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-		tm = time(0);
-		date = ctime(&tm);
-		if (strchr(date,(int)'\n'))
-			*strchr(date,(int)'\n') = 0;
-	} else {
-		f = gnudata;
-		fprintf(f,"\nset tmarg 0\n");
-		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 8\n");
-		fprintf(f,"set size 1,0.1\n");
-		fprintf(f,"set origin 0.0,0.8\n");
-	}
-	fprintf(f,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
-	fprintf(f,"set yrange [1:%ld]\n", (max< 2? 2:(long)(1.1 * max)));
-	fprintf(f,"unset xtics\n");
-	fprintf(f,"unset ytics\n");
-	fprintf(f,"unset ylabel\n");
-	fprintf(f,"set y2tics in (\"%3.2f\" %ld)\n",max/1024.0, max);
-	fprintf(f,"set y2label \"IO log (K)\"\n");
-	fprintf(f,"set logscale y\n");
-	if ( inputfile )
-		snprintf(buf,BUFSIZ,"scratch.dat");
-	else 
-		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
-	fprintf(f,"plot \"%s\" using 1:($3+$4) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",buf);
-	fprintf(f,"\"%s\" using 1:($4) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",buf);
-	fprintf(f,"unset y2label\n");
-	fprintf(f,"unset y2tics\n");
-	fprintf(f,"unset y2range\n");
-	fprintf(f,"unset logscale y\n");
+	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"set bmarg 0\n");
+	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set rmarg 10\n");
+	fprintf(gnudata,"set size 1,0.1\n");
+	fprintf(gnudata,"set origin 0.0,0.8\n");
+	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, (double)(lastclktick-starttime));
+	fprintf(gnudata,"set yrange [1:%ld]\n", ((1.1* max/beat) <= 2? 2:(long)(1.1 * max/beat)));
+	fprintf(gnudata,"unset xtics\n");
+	fprintf(gnudata,"unset ytics\n");
+	fprintf(gnudata,"unset ylabel\n");
+	fprintf(gnudata,"set y2tics in (\"%d\" %ld)\n", (int)(max/beat), max/beat);
+	fprintf(gnudata,"set y2label \"IO per ms\"\n");
+	fprintf(gnudata,"plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",(inputfile?"scratch":filename),beat);
+	fprintf(gnudata,"\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",(inputfile?"scratch":filename),beat);
+	fprintf(gnudata,"unset y2label\n");
+	fprintf(gnudata,"unset y2tics\n");
+	fprintf(gnudata,"unset y2range\n");
 }
 
 /* produce a legenda image for the color map */
@@ -685,8 +628,8 @@ static void showcolormap(char *filename, int all)
 		f = gnudata;
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 8\n");
+		fprintf(f,"set lmarg 9\n");
+		fprintf(f,"set rmarg 10\n");
 		fprintf(f,"set size 1,0.4\n");
 		fprintf(f,"set origin 0.0,0.0\n");
 		fprintf(f,"set xrange [0:1800]\n");
@@ -862,13 +805,14 @@ static void createTomogram(void)
 	}
 	*strchr(buf,(int) '.') = 0;
 	gnuplotheader(buf);
-	showio(filename,0);
-	showmemory(filename,0);
+	dumpboxes();
+	showio();
+	showmemory();
 
 	fprintf(gnudata,"\nset tmarg 0\n");
 	fprintf(gnudata,"set bmarg 3\n");
-	fprintf(gnudata,"set lmarg 8\n");
-	fprintf(gnudata,"set rmarg 8\n");
+	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set rmarg 10\n");
 	fprintf(gnudata,"set size 1,0.4\n");
 	fprintf(gnudata,"set origin 0.0,0.4\n");
 	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
