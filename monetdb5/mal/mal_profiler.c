@@ -1289,9 +1289,10 @@ static void profilerHeartbeat(void *dummy){
 			 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
 			 */
 			struct timeval tv;
-			time_t clock = (time_t) time(0);
+			time_t clock;
 
 			gettimeofday(&tv,NULL);
+			clock = (time_t) tv.tv_sec;
 			tbuf = ctime(&clock);
 			if (tbuf) {
 				c = strchr(tbuf, '\n');
