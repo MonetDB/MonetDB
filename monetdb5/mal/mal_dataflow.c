@@ -902,7 +902,7 @@ runDFLOWworker(void *t)
 		 * one running at all time */
 		if ( MT_getrss() > MEMORY_THRESHOLD * monet_memory) {
 			long delay, clk = (GDKusec() - usec) / 1000;
-			int rss = 0;
+			long rss = 0;
 			double factor = 1.0;
 			if (clk > DELAYUNIT && task->todo->last) {
 				MT_lock_set(&mal_delayLock, "runMALdataflow");
@@ -915,11 +915,11 @@ runDFLOWworker(void *t)
 					 * a chain context switch */
 					if (asleep >= GDKnr_threads - 1)
 						break;
-					/* speed up wake up when we have memory or too many
-					 * sleepers */
-					/* don't call getrss too often */
-					if (rss++ % 10 == 0)
-						factor = MT_getrss() / (MEMORY_THRESHOLD * monet_memory);
+					/* speed up wake up when we have memory or too many sleepers */
+					rss = MT_getrss();
+					if ( rss > MEMORY_THRESHOLD * monet_memory)
+						break;
+					factor = ((double)rss) / (MEMORY_THRESHOLD * monet_memory);
 					delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
 					delay = (long) (delay * (1.0 - (asleep - 1) / GDKnr_threads));
 					if (delay)
