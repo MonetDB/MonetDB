@@ -142,7 +142,7 @@ usage(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -T | --title=<plot title>\n");
-	fprintf(stderr, "  -i | --input=<file name prefix >\n");
+	fprintf(stderr, "  -i | --input=<filename>\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
@@ -211,7 +211,7 @@ stop_disconnect:
 }
 
 #define MAXTHREADS 2048
-#define MAXBOX 8192
+#define MAXBOX 32678
 
 typedef struct BOX{
 	int xleft,xright;	/* box coordinates */
@@ -504,32 +504,31 @@ static void initcolors(void)
 	}
 }
 
+static void dumpboxes(FILE *f)
+{
+	int i;
+	for ( i = 0; i < topbox; i++)
+	if ( box[i].clkend && box[i].fcn ){
+		if ( box[i].state != 4){
+			//io counters are zero at start of instruction !
+			//fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
+			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
+		} else {
+			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
+		}
+	}
+}
 /* produce memory thread trace */
-static void showmemory(char *filename)
+static void showmemory(char *filename, int isolated)
 {
 	FILE *f= 0;
-	char buf[BUFSIZ],buf2[BUFSIZ];
+	char buf[BUFSIZ];
 	int i;
 	long max = 0, min= 99999999999;
 
-	if ( inputfile ){
-		snprintf(buf,BUFSIZ,"scratch.dat");
-		f = fopen(buf,"w");
-	} else {
-		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
-		f = fopen(buf,"w");
-	} 
-	assert(f);
-
 
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend ){
-		fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-		if ( box[i].state != 4)
-			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
-		else
-			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
-
+	if ( box[i].clkend && box[i].fcn ){
 		if ( box[i].memstart > max )
 			max = box[i].memstart;
 		if ( box[i].memend > max )
@@ -539,17 +538,16 @@ static void showmemory(char *filename)
 		if ( box[i].memend < min )
 			min = box[i].memend;
 	}
-	(void)fclose(f);
 
-	if ( filename) {
+	if ( isolated) {
 		/* generate isolated image */
 		time_t tm;
 		char *date;
 		if ( inputfile )
-			snprintf(buf2,BUFSIZ,"scratch.gpl");
+			snprintf(buf,BUFSIZ,"scratch.gpl");
 		else
-			snprintf(buf2,BUFSIZ,"%s.gpl",filename);
-		f = fopen(buf2,"w");
+			snprintf(buf,BUFSIZ,"%s.gpl",filename);
+		f = fopen(buf,"w");
 		assert(f);
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
 		fprintf(f,"set output \"%s.pdf\"\n",filename);
@@ -566,23 +564,28 @@ static void showmemory(char *filename)
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
 		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 6\n");
+		fprintf(f,"set rmarg 8\n");
 		fprintf(f,"set size 1,0.1\n");
 		fprintf(f,"set origin 0.0,0.8\n");
 		fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
 		fprintf(f,"set ylabel \"memory in GB\"\n");
 		fprintf(f,"unset xtics\n");
 	}
-	//fprintf(f,"set yrange [%ld:%ld]\n", (long) min/1024, (long)(1.2 * max/1024));
+	fprintf(f,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
 	fprintf(f,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
+	if ( inputfile )
+		snprintf(buf,BUFSIZ,"scratch.dat");
+	else
+		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
 	fprintf(f,"plot \"%s\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",buf);
 	fprintf(f,"unset yrange\n");
 }
+
 /* produce memory thread trace */
-static void showio(char *filename)
+static void showio(char *filename, int isolated)
 {
 	FILE *f= 0;
-	char buf[BUFSIZ],buf2[BUFSIZ];
+	char buf[BUFSIZ];
 	int i;
 	long max = 0;
 
@@ -595,31 +598,25 @@ static void showio(char *filename)
 	} 
 	assert(f);
 
+	dumpboxes(f);
 
 	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend  ){
-		fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
-		if ( box[i].state != 4)
-			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
-		else
-			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
-
+	if ( box[i].clkend  &&box[i].state == 4){
 		if ( box[i].reads > max )
 			max = box[i].reads;
 		if ( box[i].writes > max )
 			max = box[i].writes;
 	}
-	(void)fclose(f);
 
-	if ( filename) {
+	if ( isolated) {
 		/* generate isolated image */
 		time_t tm;
 		char *date;
 		if ( inputfile )
-			snprintf(buf2,BUFSIZ,"scratch.gpl");
+			snprintf(buf,BUFSIZ,"scratch.gpl");
 		else
-			snprintf(buf2,BUFSIZ,"%s.gpl",filename);
-		f = fopen(buf2,"w");
+			snprintf(buf,BUFSIZ,"%s.gpl",filename);
+		f = fopen(buf,"w");
 		assert(f);
 		fprintf(f,"set terminal pdfcairo enhanced color solid\n");
 		fprintf(f,"set output \"%s.pdf\"\n",filename);
@@ -634,7 +631,7 @@ static void showio(char *filename)
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
 		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 6\n");
+		fprintf(f,"set rmarg 8\n");
 		fprintf(f,"set size 1,0.1\n");
 		fprintf(f,"set origin 0.0,0.8\n");
 	}
@@ -646,8 +643,12 @@ static void showio(char *filename)
 	fprintf(f,"set y2tics in (\"%3.2f\" %ld)\n",max/1024.0, max);
 	fprintf(f,"set y2label \"IO log (K)\"\n");
 	fprintf(f,"set logscale y\n");
-	fprintf(f,"plot \"%s\" using 1:3 title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",buf);
-	fprintf(f,"\"%s\" using 1:4 title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",buf);
+	if ( inputfile )
+		snprintf(buf,BUFSIZ,"scratch.dat");
+	else 
+		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
+	fprintf(f,"plot \"%s\" using 1:($3+$4) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",buf);
+	fprintf(f,"\"%s\" using 1:($4) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",buf);
 	fprintf(f,"unset y2label\n");
 	fprintf(f,"unset y2tics\n");
 	fprintf(f,"unset y2range\n");
@@ -685,7 +686,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
 		fprintf(f,"set lmarg 8\n");
-		fprintf(f,"set rmarg 6\n");
+		fprintf(f,"set rmarg 8\n");
 		fprintf(f,"set size 1,0.4\n");
 		fprintf(f,"set origin 0.0,0.0\n");
 		fprintf(f,"set xrange [0:1800]\n");
@@ -861,13 +862,13 @@ static void createTomogram(void)
 	}
 	*strchr(buf,(int) '.') = 0;
 	gnuplotheader(buf);
-	showmemory(0);
-	showio(0);
+	showio(filename,0);
+	showmemory(filename,0);
 
 	fprintf(gnudata,"\nset tmarg 0\n");
 	fprintf(gnudata,"set bmarg 3\n");
 	fprintf(gnudata,"set lmarg 8\n");
-	fprintf(gnudata,"set rmarg 6\n");
+	fprintf(gnudata,"set rmarg 8\n");
 	fprintf(gnudata,"set size 1,0.4\n");
 	fprintf(gnudata,"set origin 0.0,0.4\n");
 	fprintf(gnudata,"set xrange [%ld:%ld]\n", startrange, lastclktick-starttime);
@@ -966,6 +967,7 @@ static void createTomogram(void)
  */
 static void update(int state, int thread, long clkticks, long ticks, long memory, long reads, long writes, char *fcn, char *stmt) {
 	int idx;
+	Box b;
 	
 	/* ignore the flow of control statements 'function' and 'end' */
 	if ( strncmp(fcn,"end ",4)== 0)
@@ -992,9 +994,10 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	assert(clkticks-starttime >= 0);
 	clkticks -=starttime;
 
-	/* handle a ping event */
+	/* handle a ping event, keep the current instruction in focus */
 	if ( state == 4){
 		idx = threads[thread];
+		b = box[idx];
 		box[idx].state = 4;
 		box[idx].thread = thread;
 		lastclk[thread]= clkticks;
@@ -1005,6 +1008,8 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].stmt = stmt;
 		box[idx].fcn = strdup(fcn);
 		threads[thread]= ++topbox;
+		idx = threads[thread];
+		box[idx] = b;
 		if ( reads > maxio )
 			maxio = reads;
 		if ( writes > maxio )
