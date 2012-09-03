@@ -421,75 +421,76 @@ static char *getRGB(char *name)
 /* The initial dictionary is geared towars TPCH-use */
 struct COLOR{
 	int freq;
+	long timeused;
 	char *mod, *fcn, *col;
 } colors[] =
 {
-	{0,"mal","idle","white"},
-	{0,"mal","*","white"},
+	{0,0,"mal","idle","white"},
+	{0,0,"mal","*","white"},
 
-	{0,"aggr","count","springgreen"},
-	{0,"aggr","sum","springgreen"},
-	{0,"aggr","*","springgreen"},
+	{0,0,"aggr","count","darkgreen"},
+	{0,0,"aggr","sum","lawngreen"},
+	{0,0,"aggr","*","green"},
 
-	{0,"algebra","leftjoin","yellow"},
-	{0,"algebra","join","navy"},
-	{0,"algebra","semijoin","lightblue"},
-	{0,"algebra","kdifference","cyan"},
-	{0,"algebra","kunion","cyan"},
-	{0,"algebra","slice","royalblue"},
-	//{0,"algebra","sortTail","cyan"},
-	{0,"algebra","markT","blue"},
-	{0,"algebra","selectNotNil","lightgreen"},
-	{0,"algebra","thetauselect","mediumseagreen"},
-	{0,"algebra","uselect","green"},
-	{0,"algebra","*","forestgreen"},
+	{0,0,"algebra","leftjoin","yellow"},
+	{0,0,"algebra","join","navy"},
+	{0,0,"algebra","semijoin","lightblue"},
+	{0,0,"algebra","kdifference","cyan"},
+	{0,0,"algebra","kunion","cyan"},
+	{0,0,"algebra","slice","royalblue"},
+	//{0,0,"algebra","sortTail","cyan"},
+	{0,0,"algebra","markT","blue"},
+	{0,0,"algebra","selectNotNil","forestgreen"},
+	{0,0,"algebra","thetauselect","mediumseagreen"},
+	{0,0,"algebra","uselect","green"},
+	{0,0,"algebra","*","lightgreen"},
 
-	{0,"bat","mirror","orange"},
-	{0,"bat","reverse","orange"},
-	{0,"bat","*","orange"},
+	{0,0,"bat","mirror","orange"},
+	{0,0,"bat","reverse","orange"},
+	{0,0,"bat","*","orange"},
 
-	{0,"batcalc","-","moccasin"},
-	{0,"batcalc","*","moccasin"},
-	{0,"batcalc","+","moccasin"},
-	{0,"batcalc","dbl","papayawhip"},
-	{0,"batcalc","str","papayawhip"},
-	{0,"batcalc","*","lightyellow"},
+	{0,0,"batcalc","-","moccasin"},
+	{0,0,"batcalc","*","moccasin"},
+	{0,0,"batcalc","+","moccasin"},
+	{0,0,"batcalc","dbl","papayawhip"},
+	{0,0,"batcalc","str","papayawhip"},
+	{0,0,"batcalc","*","lightyellow"},
 
-	{0,"calc","lng","lightpink"},
-	{0,"calc","str","lightpink"},
-	{0,"calc","*","lightpink"},
-	{0,"mtime","*","lightpink"},
+	{0,0,"calc","lng","lightpink"},
+	{0,0,"calc","str","lightpink"},
+	{0,0,"calc","*","lightpink"},
+	{0,0,"mtime","*","lightpink"},
 
-	{0,"group","multicolumns","mediumorchid"},
-	{0,"group","refine","darkorchid"},
-	{0,"group","*","orchid"},
+	{0,0,"group","multicolumns","mediumorchid"},
+	{0,0,"group","refine","darkorchid"},
+	{0,0,"group","*","orchid"},
 
-	{0,"language","dataflow","lightslategray"},
-	{0,"language","*","darkgray"},
+	{0,0,"language","dataflow","lightslategray"},
+	{0,0,"language","*","darkgray"},
 
-	{0,"mat","pack","red"},
-	{0,"mat","*","red"},
+	{0,0,"mat","pack","red"},
+	{0,0,"mat","*","red"},
 
 
-	{0,"pcre","like_filter","burlywood"},
-	{0,"pcre","*","burlywood"},
+	{0,0,"pcre","like_filter","burlywood"},
+	{0,0,"pcre","*","burlywood"},
 
-	//{0,"pqueue","topn_max","lightcoral"},
-	//{0,"pqueue","utopn_max","lightcoral"},
-	//{0,"pqueue","utopn_min","lightcoral"},
-	{0,"pqueue","*","lightcoral"},
+	//{0,0,"pqueue","topn_max","lightcoral"},
+	//{0,0,"pqueue","utopn_max","lightcoral"},
+	//{0,0,"pqueue","utopn_min","lightcoral"},
+	{0,0,"pqueue","*","lightcoral"},
 
-	{0,"io","stdout","gray"},
-	{0,"io","*","gray"},
+	{0,0,"io","stdout","gray"},
+	{0,0,"io","*","gray"},
 
-	//{0,"sql","bind","thistle"},
-	//{0,"sql","bind_dbat","thistle"},
-	//{0,"sql","mvc","thistle"},
-	//{0,"sql","resultSet ","thistle"},
-	{0,"sql","*","thistle"},
+	//{0,0,"sql","bind","thistle"},
+	//{0,0,"sql","bind_dbat","thistle"},
+	//{0,0,"sql","mvc","thistle"},
+	//{0,0,"sql","resultSet ","thistle"},
+	{0,0,"sql","*","thistle"},
 
-	{0,"*","*","lavender"},
-	{0,0,0,0}
+	{0,0,"*","*","lavender"},
+	{0,0,0,0,0}
 };
 
 int object =1;
@@ -499,6 +500,8 @@ static void initcolors(void)
 	int i;
 	char *c;
 	for ( i =0; colors[i].col; i++){
+		colors[i].freq = 0;
+		colors[i].timeused = 0;
 		c = getRGB(colors[i].col);
 		if ( c )
 			colors[i].col = c;
@@ -647,9 +650,16 @@ static void showcolormap(char *filename, int all)
 	}
 	for ( i= 0; colors[i].col; i++)
 	if ( colors[i].mod && (colors[i].freq > 0 || all)){
+		double tu= colors[i].timeused/1000.0;
+		char *scale = "ms";
+		if (tu > 1000){
+			tu /= 1000.0;
+			scale = "sec";
+		}
+
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.15 * w), h-5, colors[i].col);
-		fprintf(f,"set label %d \"%s.%s\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, 
+		fprintf(f,"set label %d \"%s.%s (%3.2f %s)\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, tu,scale,
 			(int) ((k % 3) *  w  + 0.2 *w) , h-20);
 		if ( k % 3 == 2)
 			h-= 40;
@@ -681,6 +691,7 @@ static void updmap(int idx)
 		break;
 	}
 	colors[fnd].freq++;
+	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
 }
 		
