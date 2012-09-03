@@ -19,7 +19,14 @@ z = zipfile.ZipFile(archive)
 comment = z.comment
 z.close()
 
-z = zipfile.ZipFile(os.path.join(dbfarm, 'newchainrel.zip'), 'w')
+try:
+    # try to create compressed zip file
+    z = zipfile.ZipFile(os.path.join(dbfarm, 'newchainrel.zip'), 'w',
+                        zipfile.ZIP_DEFLATED)
+except RuntimeError:
+    # if that fails, create uncompressed zip file
+    z = zipfile.ZipFile(os.path.join(dbfarm, 'newchainrel.zip'), 'w')
+
 if rev:
     revcomment = ' (hg id %s)' % rev
 else:
