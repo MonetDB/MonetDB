@@ -178,7 +178,7 @@ function user.qry1():void;              #  0 qry1:void := user.qry1() {G}
     V124:bat[:oid,:int]  := mal.multiplex("calc","round",V122,100);# 49 V124:bat[:oid,:int] := OPTremapMultiplex(_122:str, _123:str, V122:bat[:oid,:dbl], _124:int) {G}
     V130 := aggr.avg(V80,V32,V34);      # 50 V130:bat[:oid,:dbl] := AGGRavg3_dbl(V80:bat[:oid,:flt], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
     V131 := mal.multiplex("calc","round",V130,100);# 51 V131:any := OPTremapMultiplex(_122:str, _123:str, V130:bat[:oid,:dbl], _124:int) {G}
-    V132 := aggr.count(V32,V32,V34);    # 52 V132:bat[:oid,:wrd] := AX3aggrX3_count3Nils(V32:bat[:oid,:oid], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
+    V132 := aggr.count(V32,V32,V34);    # 52 V132:bat[:oid,:wrd] := AGGRcount3nils(V32:bat[:oid,:oid], V32:bat[:oid,:oid], V34:bat[:oid,:oid]) {G}
 end qry1;                               # 53  
 #optimizer.aliases    actions= 0 time=18 usec 
 #optimizer.constants  actions= 0 time=35 usec 

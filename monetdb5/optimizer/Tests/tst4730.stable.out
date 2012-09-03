@@ -159,7 +159,7 @@ barrier always := true;                 #  9 always:bit := _26:bit {J72}
     V129 := mal.multiplex("calc.round",V127{rows=1},100);# 55 V129:any := OPTremapMultiplex(_80:str, V127:bat[:oid,:dbl], _58:int) {G}
     V135{rows=1} := aggr.avg(V83{rows=1},V35,V37);# 56 V135:bat[:oid,:dbl] := AGGRavg3_dbl(V83:bat[:oid,:flt], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
     V136 := mal.multiplex("calc.round",V135{rows=1},100);# 57 V136:any := OPTremapMultiplex(_80:str, V135:bat[:oid,:dbl], _58:int) {G}
-    V137 := aggr.count(V35,V35,V37);    # 58 V137:bat[:oid,:wrd] := AX3aggrX3_count3Nils(V35:bat[:oid,:oid], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
+    V137 := aggr.count(V35,V35,V37);    # 58 V137:bat[:oid,:wrd] := AGGRcount3nils(V35:bat[:oid,:oid], V35:bat[:oid,:oid], V37:bat[:oid,:oid]) {G}
 #sql.column(V42,"l_returnflag","varchar",1,0); 
 #sql.column(V51,"l_linestatus","varchar",1,0); 
 #sql.column(V59,"sum_qty","bigint",0,0); 

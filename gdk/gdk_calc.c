@@ -10858,3 +10858,213 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
 	return NULL;
 }
+
+#define AGGR_COUNT(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {			\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (!skip_nils || *vals != TYPE##_nil) { \
+					cnts[gid]++;			\
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+	} while (0)
+
+/* calculate group counts with optional candidates list */
+BAT *
+BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	const oid *gids;
+	oid gid;
+	oid min, max;
+	BUN i, ngrp;
+	wrd *cnts;
+	BAT *bn = NULL;
+	int t;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
+	BATiter bi;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+
+	assert(tp == TYPE_wrd);
+	(void) tp;		/* compatibility (with other BATgroup* */
+	(void) abort_on_error;	/* functions) argument */
+
+	if (initgroupaggr(b, g, e, s, &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+		return NULL;
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no products, so return bat aligned with g
+		 * with zero in the tail */
+		wrd zero = 0;
+		bn = BATconstant(TYPE_wrd, &zero, ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	bn = BATnew(TYPE_void, TYPE_wrd, ngrp);
+	if (bn == NULL)
+		return NULL;
+	cnts = (wrd *) Tloc(bn, BUNfirst(bn));
+	memset(cnts, 0, ngrp * sizeof(wrd));
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	t = b->T->type;
+	nil = ATOMnilptr(t);
+	atomcmp = BATatoms[t].atomCmp;
+	if (t != ATOMstorage(t) &&
+	    ATOMnilptr(ATOMstorage(t)) == nil &&
+	    BATatoms[ATOMstorage(t)].atomCmp == atomcmp)
+		t = ATOMstorage(t);
+	switch (t) {
+	case TYPE_bte:
+		AGGR_COUNT(bte);
+		break;
+	case TYPE_sht:
+		AGGR_COUNT(sht);
+		break;
+	case TYPE_int:
+		AGGR_COUNT(int);
+		break;
+	case TYPE_lng:
+		AGGR_COUNT(lng);
+		break;
+	case TYPE_flt:
+		AGGR_COUNT(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_COUNT(dbl);
+		break;
+	default:
+		bi = bat_iterator(b);
+
+		for (i = start; i < end; i++) {
+			if (cand) {
+				if (i < *cand - b->hseqbase) {
+					if (gids)
+						gids++;
+					continue;
+				}
+				assert(i == *cand - b->hseqbase);
+				if (++cand == candend)
+					end = i + 1;
+			}
+			if (gids == NULL ||
+			    (*gids >= min && *gids <= max)) {
+				gid = gids ? *gids - min : (oid) i;
+				if (!skip_nils ||
+				    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)),
+					       nil) != 0) {
+					cnts[gid]++;
+				}
+			}
+			if (gids)
+				gids++;
+		}
+		break;
+	}
+	BATsetcount(bn, ngrp);
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	return bn;
+}
+
+/* calculate group sizes (number of TRUE values) with optional
+ * candidates list */
+BAT *
+BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	const oid *gids;
+	oid min, max;
+	BUN i, ngrp;
+	const bit *bits;
+	wrd *cnts;
+	BAT *bn = NULL;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+
+	assert(tp == TYPE_wrd);
+	assert(b->ttype == TYPE_bit);
+	/* compatibility arguments */
+	(void) tp;
+	(void) abort_on_error;
+	(void) skip_nils;
+
+	if (initgroupaggr(b, g, e, s, &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+		return NULL;
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no products, so return bat aligned with g
+		 * with zero in the tail */
+		wrd zero = 0;
+		bn = BATconstant(TYPE_wrd, &zero, ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	bn = BATnew(TYPE_void, TYPE_wrd, ngrp);
+	if (bn == NULL)
+		return NULL;
+	cnts = (wrd *) Tloc(bn, BUNfirst(bn));
+	memset(cnts, 0, ngrp * sizeof(wrd));
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	bits = (const bit *) Tloc(b, BUNfirst(b));
+
+	for (i = start; i < end; i++, bits++) {
+		if (cand) {
+			if (i < *cand - b->hseqbase) {
+				if (gids)
+					gids++;
+				continue;
+			}
+			assert(i == *cand - b->hseqbase);
+			if (++cand == candend)
+				end = i + 1;
+		}
+		if ((gids == NULL || (*gids >= min && *gids <= max)) &&
+		    *bits == 1) {
+			cnts[gids ? *gids - min : (oid) i]++;
+		}
+		if (gids)
+			gids++;
+	}
+	BATsetcount(bn, ngrp);
+	BATseqbase(bn, min);
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = 0;
+	bn->T->nonil = 1;
+	return bn;
+}
