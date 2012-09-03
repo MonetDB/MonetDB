@@ -421,29 +421,36 @@ AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
 	if (!BAThdense(b) || !BAThdense(g)) {
 		/* if b or g don't have a dense head, replace the head with a
 		 * dense sequence */
-		t = BATmirror(BATmark(BATmirror(b), 0)); /* [dense,value] */
+		t = BATjoin(BATmirror(b), g, MIN(BATcount(b), BATcount(g)));
 		BBPreleaseref(b->batCacheid);
-		b = t;
-		t = BATmirror(BATmark(BATmirror(g), 0)); /* [dense,gid] */
 		BBPreleaseref(g->batCacheid);
-		g = t;
+		b = BATmirror(BATmark(t, 0));
+		g = BATmirror(BATmark(BATmirror(t), 0));
+		BBPreleaseref(t->batCacheid);
 	}
 	if (b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
 		/* b and g are not aligned: align them by creating a view on
 		 * one or the other */
-		oid max = b->hseqbase + BATcount(b);
+		oid min;				/* lowest common oid */
+		oid max;				/* highest common oid */
+		min = b->hseqbase;
+		if (min < g->hseqbase)
+			min = g->hseqbase;
+		max = b->hseqbase + BATcount(b);
 		if (g->hseqbase + BATcount(g) < max)
 			max = g->hseqbase + BATcount(g);
-		if (b->hseqbase < g->hseqbase ||
-			(b->hseqbase == g->hseqbase && BATcount(b) > BATcount(g))) {
-			t = BATslice(b, BUNfirst(b) + (BUN) (g->hseqbase - b->hseqbase),
+		if (b->hseqbase != min || b->hseqbase + BATcount(b) != max) {
+			if (min >= max)
+				min = max = b->hseqbase;
+			t = BATslice(b, BUNfirst(b) + (BUN) (min - b->hseqbase),
 						 BUNfirst(b) + (BUN) (max - b->hseqbase));
 			BBPreleaseref(b->batCacheid);
 			b = t;
-		} else {
-			/* b->hseqbase > g->hseqbase ||
-			 * (b->hseqbase == g->hseqbase && BATcount(b) < BATcount(g)) */
-			t = BATslice(g, BUNfirst(g) + (BUN) (b->hseqbase - g->hseqbase),
+		}
+		if (g->hseqbase != min || g->hseqbase + BATcount(g) != max) {
+			if (min >= max)
+				min = max = g->hseqbase;
+			t = BATslice(g, BUNfirst(g) + (BUN) (min - g->hseqbase),
 						 BUNfirst(g) + (BUN) (max - g->hseqbase));
 			BBPreleaseref(g->batCacheid);
 			g = t;

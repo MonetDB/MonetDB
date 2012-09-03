@@ -10057,7 +10057,8 @@ initgroupaggr(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 		GDKerror("BATgroupsum: b must be dense-headed\n");
 		return GDK_FAIL;
 	}
-	if (g == NULL || !BAThdense(g) || b->hseqbase != g->hseqbase || BATcount(b) != BATcount(g)) {
+	if (g == NULL || !BAThdense(g) || BATcount(b) != BATcount(g) ||
+	    (BATcount(b) != 0 && b->hseqbase != g->hseqbase)) {
 		GDKerror("BATgroupsum: b and g must be aligned\n");
 		return GDK_FAIL;
 	}
