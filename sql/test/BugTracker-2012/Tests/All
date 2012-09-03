@@ -48,3 +48,4 @@ with_and_exists.Bug-3099
 index_column_crash.Bug-3113
 foreign_key.Bug-3114
 cast-tinyint-Bug-3137
+not-equal-Bug.3139
