@@ -31,6 +31,9 @@
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 # include "monet_getopt.h"
@@ -534,7 +537,7 @@ static void dumpboxes(void)
 static void showmemory(void)
 {
 	int i;
-	long max = 0, min= 99999999999;
+	long max = 0, min= LONG_MAX;
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn ){
