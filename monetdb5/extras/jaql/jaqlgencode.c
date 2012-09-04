@@ -159,7 +159,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 
 	/* array indirection, entries must be arrays */
 	q = newInstruction(mb, ASSIGNsymbol);
-	setModuleId(q, putName("jaql", 4));
+	setModuleId(q, algebraRef);
 	setFunctionId(q, uselectRef);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, elems);
@@ -270,7 +270,7 @@ dumparrrefvar(MalBlkPtr mb, tree *t, int elems, int j5)
 		pushInstruction(mb, q);
 
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, putName("jaql", 4));
+		setModuleId(q, algebraRef);
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, b);
@@ -370,7 +370,7 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 		} else {
 			MALCOMMENT(mb, "| dereferencing %s", t->sval);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, putName("jaql", 4));
+			setModuleId(q, algebraRef);
 			setFunctionId(q, uselectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
@@ -416,7 +416,7 @@ dumprefvar(jc *j, MalBlkPtr mb, tree *t, int elems)
 			a = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, putName("jaql", 4));
+			setModuleId(q, algebraRef);
 			setFunctionId(q, uselectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, a);
@@ -1082,7 +1082,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 			b = getArg(q, 0);
 			pushInstruction(mb, q);
 			q = newInstruction(mb, ASSIGNsymbol);
-			setModuleId(q, putName("jaql", 4));
+			setModuleId(q, algebraRef);
 			setFunctionId(q, uselectRef);
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, b);
@@ -1102,7 +1102,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		switch (t->tval2->cval) {
 			case j_equals:
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, uselectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
@@ -1112,7 +1112,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 				break;
 			case j_nequal:
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, uselectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
@@ -1257,7 +1257,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		/* booleans can only be compared with j_equals and
 		 * j_nequal */
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, putName("jaql", 4));
+		setModuleId(q, algebraRef);
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, c);
@@ -1265,7 +1265,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		e = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, putName("jaql", 4));
+		setModuleId(q, algebraRef);
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, c);
@@ -1282,7 +1282,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		pushInstruction(mb, q);
 
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, putName("jaql", 4));
+		setModuleId(q, algebraRef);
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, d);
@@ -1290,7 +1290,7 @@ dumpcomp(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems)
 		e = getArg(q, 0);
 		pushInstruction(mb, q);
 		q = newInstruction(mb, ASSIGNsymbol);
-		setModuleId(q, putName("jaql", 4));
+		setModuleId(q, algebraRef);
 		setFunctionId(q, selectRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, d);
@@ -2385,7 +2385,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 				l = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, selectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
@@ -3489,7 +3489,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				c = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, uselectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, c);
@@ -4184,7 +4184,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								b = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, putName("jaql", 4));
+								setModuleId(q, algebraRef);
 								setFunctionId(q, selectRef);
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, b);
@@ -4192,7 +4192,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 								c = getArg(q, 0);
 								pushInstruction(mb, q);
 								q = newInstruction(mb, ASSIGNsymbol);
-								setModuleId(q, putName("jaql", 4));
+								setModuleId(q, algebraRef);
 								setFunctionId(q, selectRef);
 								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 								q = pushArgument(mb, q, b);
@@ -4790,7 +4790,7 @@ dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
 	a = dumpwalkvar(mb, j1, j5);
 
 	q = newInstruction(mb, ASSIGNsymbol);
-	setModuleId(q, putName("jaql", 4));
+	setModuleId(q, algebraRef);
 	setFunctionId(q, selectRef);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, a);
@@ -5472,7 +5472,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, uselectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, a);
@@ -5562,7 +5562,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, putName("jaql", 4));
+				setModuleId(q, algebraRef);
 				setFunctionId(q, selectRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, b);
@@ -6294,7 +6294,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					f = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, putName("jaql", 4));
+					setModuleId(q, algebraRef);
 					setFunctionId(q, uselectRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, e);
