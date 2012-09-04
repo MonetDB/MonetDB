@@ -655,6 +655,9 @@ static void showcolormap(char *filename, int all)
 	int i, k = 0;
 	int w = 600;
 	int h = 500;
+	char *scale;
+	double tu;
+	long total = 0, totfreq = 0;
 
 	if ( all ) {
 		snprintf(buf,BUFSIZ,"%s.gpl",filename);
@@ -675,7 +678,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"set origin 0.0,0.0\n");
 	} else {
 		f = gnudata;
-		fprintf(f,"\nset tmarg 1\n");
+		fprintf(f,"\nset tmarg 0\n");
 		fprintf(f,"set bmarg 0\n");
 		fprintf(f,"set lmarg 10\n");
 		fprintf(f,"set rmarg 10\n");
@@ -689,25 +692,38 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"unset border\n");
 		fprintf(f,"unset title\n");
 		fprintf(f,"unset ylabel\n");
-		fprintf(f,"unset xlabel\n");
 	}
 	for ( i= 0; colors[i].col; i++)
 	if ( colors[i].mod && (colors[i].freq > 0 || all)){
-		double tu= colors[i].timeused/1000.0;
-		char *scale = "ms";
+		scale = "ms";
+		tu= colors[i].timeused/1000.0;
+		total += tu;
+		totfreq += colors[i].freq;
 		if (tu > 1000){
 			tu /= 1000.0;
 			scale = "sec";
 		}
 
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.2 * w), h-5, colors[i].col);
-		fprintf(f,"set label %d \"%s.%s (%3.2f %s)\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, tu,scale,
-			(int) ((k % 3) *  w  + 3 + 0.2 *w) , h-20);
+			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.15 * w), h-5, colors[i].col);
+		fprintf(f,"set label %d \"%s.%s \" at %d,%d\n", 
+			object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) *  w  + 0.2 *w) , h-15);
+		fprintf(f,"set label %d \"%d calls %3.2f %s\" at %d,%d\n", 
+			object++, colors[i].freq, tu, scale, (int) ((k % 3) *  w  + 0.2 *w) , h-35);
 		if ( k % 3 == 2)
-			h-= 40;
+			h-= 45;
 		k++;
 	}
+	scale ="milliseconds";
+	if (tu > 1000){
+		tu /= 1000.0;
+		scale = "seconds";
+	} 
+	if (tu > 60 ){
+		tu /= 60.0;
+		scale= "minutes";
+	}
+	fprintf(f,"set xlabel \"total run %3.2f %s over %ld MAL instructions\"\n", tu, scale, totfreq);
 	fprintf(f,"plot 0 notitle with lines\n");
 }
 
