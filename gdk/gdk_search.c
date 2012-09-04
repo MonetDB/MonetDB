@@ -177,7 +177,7 @@ BAThash(BAT *b, BUN masksize)
 			o = NULL;
 		}
 	}
-	gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
+	MT_lock_set(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 	if (b->H->hash == NULL) {
 		unsigned int tpe = ATOMstorage(b->htype);
 		BUN cnt = BATcount(b);
@@ -196,7 +196,7 @@ BAThash(BAT *b, BUN masksize)
 
 		if (b->htype == TYPE_void) {
 			if (b->hseqbase == oid_nil) {
-				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
+				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				return NULL;
 			}
@@ -246,7 +246,7 @@ BAThash(BAT *b, BUN masksize)
 			if (hp == NULL ||
 			    hp->filename == NULL ||
 			    (h = HASHnew(hp, ATOMtype(b->htype), BATcapacity(b), mask)) == NULL) {
-				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
+				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 				if (hp != NULL) {
 					GDKfree(hp->filename);
 					GDKfree(hp);
@@ -313,7 +313,7 @@ BAThash(BAT *b, BUN masksize)
 		}
 		b->H->hash = h;
 	}
-	gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BAThash");
+	MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BAThash");
 	if (o != NULL) {
 		o->H->hash = b->H->hash;
 		BBPunfix(b->batCacheid);
@@ -458,6 +458,18 @@ SORTfndwhich(BAT *b, const void *v, int which)
 
 	if (b == NULL || (!b->tsorted && !b->trevsorted))
 		return BUN_NONE;
+
+	if (BATtdense(b)) {
+		/* no need for binary search on dense column */
+		if (* (const oid *) v < b->tseqbase)
+			return which == 0 ? BUN_NONE : lo;
+		if (* (const oid *) v >= b->tseqbase + BATcount(b))
+			return which == 0 ? BUN_NONE : hi;
+		cur = (BUN) (* (const oid *) v - b->tseqbase) + lo;
+		if (which > 0)
+			cur++;
+		return cur;
+	}
 
 	if (which < 0) {
 		end = lo;

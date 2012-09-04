@@ -540,6 +540,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		stk->cmd = debug;
 		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
 		ret = runMALsequence(cntxt, mb, 1, 0, stk, 0, 0);
+		runtimeProfile.ppc = 0; /* also finalize function call event */
 		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 		break;
 	case FACTORYsymbol:
@@ -595,10 +596,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 )  {
+	if ( startpc == 1 ) 
 		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
-		runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfileFunction, 1);
-	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -953,7 +952,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* assure correct variable type */
 				if (getVarType(mb, exceptionVar) == TYPE_str) {
 					/* watch out for concurrent access */
-					mal_set_lock(mal_contextLock, "exception handler");
+					MT_lock_set(&mal_contextLock, "exception handler");
 					v = &stk->stk[exceptionVar];
 					if (v->val.sval)
 						FREE_EXCEPTION(v->val.sval);    /* old exception*/
@@ -961,7 +960,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					v->val.sval = ret;
 					v->len = (int)strlen(v->val.sval);
 					ret = 0;
-					mal_unset_lock(mal_contextLock, "exception handler");
+					MT_lock_unset(&mal_contextLock, "exception handler");
 				} else {
 					mnstr_printf(cntxt->fdout, "%s", ret);
 					FREE_EXCEPTION(ret);
@@ -1254,66 +1253,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if ( backup != backups) GDKfree(backup);
 	if ( garbage != garbages) GDKfree(garbage);
 	return ret;
-}
-
-/* Independent threads
- * Distributed execution calls for asynchronous execution of MAL
- * instructions. To simplify the interpreter, we assume that all
- * the code to be executed is already grouped in a MAL function,
- * which is called independently. The result variables are initialized
- * to NIL before the code is started. When the process crashes,
- * an exception is raised.
- */
-typedef struct {
-	MT_Id tid;
-	Client cntxt;
-	MalBlkPtr mb;
-	MalStkPtr stk;
-	int start,stop;
-} Ptask;
-
-/* runMALdetached is typically called as part of
- * starting a separate interpreter thread.
- */
-static void
-runMALdetached(void *t)
-{
-	Ptask *p = (Ptask *)t;
-	Client cntxt = p->cntxt;
-	MalBlkPtr mb = p->mb;
-	MalStkPtr stk = p->stk;
-	int sve;
-	str msg = MAL_SUCCEED;
-
-#ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout, "start thread in background\n");
-#endif
-	if (stk == NULL) {
-		GDKerror("mal.interpreter: " MAL_STACK_FAIL);
-		return;
-	}
-	sve = stk->keepAlive;
-	stk->keepAlive = TRUE;
-	msg = reenterMAL(cntxt, mb, p->start, p->stop, stk, 0, 0);
-	stk->keepAlive = sve;
-	if (msg != MAL_SUCCEED)
-		GDKerror("%s", msg);      /* indirect way to pass an error */
-#ifdef DEBUG_DETACHED
-	mnstr_printf(cntxt->fdout, "finished thread in background\n");
-#endif
-}
-str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop)
-{
-	Ptask p;
-
-	p.cntxt = cntxt;
-	p.mb = mb;
-	p.stk = stk;
-	p.start = start;
-	p.stop = stop;
-
-	MT_create_thread(&p.tid, runMALdetached, &p, MT_THR_DETACHED);
-	return MAL_SUCCEED;
 }
 
 /* Safeguarding

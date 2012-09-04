@@ -22,7 +22,6 @@ function user.tst():void;
 # demonstrate an error 
     y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);
 end tst;
-!TypeException:user.tst[9]:'bat.new' undefined in: _18:any := bat.new()
 function user.main():void;
 # it will be ignored by the optimizer 
     mdb.List("user","tst");
@@ -30,15 +29,14 @@ end main;
 function user.tst():void;               #  0 tst:void := user.tst() {G}
     b := bat.new(:oid,:int);            #  1 b:bat[:oid,:int] := CMDBATnew(_2:oid, _3:int) {G}
 # a correct call 
-    z:bat[:oid,:int]  := batcalc.+(b,1);#  3 z:bat[:oid,:int] := CMDbatADDcstsignal(b:bat[:oid,:int], _8:int) {G}
-    f:bat[:oid,:bit]  := batcalc.<(b,3);#  4 f:bat[:oid,:bit] := CMDbatLTcst(b:bat[:oid,:int], _11:int) {G}
-    f:bat[:oid,:bit]  := batcalc.<(3,b);#  5 f:bat[:oid,:bit] := CMDbatLTcst(_11:int, b:bat[:oid,:int]) {G}
+    z:bat[:oid,:int]  := batcalc.+(b,1);#  3 z:bat[:oid,:int] := CMDbatADDsignal(b:bat[:oid,:int], _8:int) {G}
+    f:bat[:oid,:bit]  := batcalc.<(b,3);#  4 f:bat[:oid,:bit] := CMDbatLT(b:bat[:oid,:int], _11:int) {G}
+    f:bat[:oid,:bit]  := batcalc.<(3,b);#  5 f:bat[:oid,:bit] := CMDbatLT(_11:int, b:bat[:oid,:int]) {G}
     d := bat.new(:oid,:str);            #  6 d:bat[:oid,:str] := CMDBATnew(_2:oid, _13:str) {G}
     a:bat[:oid,:bit]  := batcalc.isnil(d);#  7 a:bat[:oid,:bit] := CMDbatISNIL(d:bat[:oid,:str]) {G}
 # demonstrate an error 
-    bat.new();                          #  9 _18:any := bat.new() {U}
-    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);# 10 y:bat[:int,:int] := OPTremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
-end tst;                                # 11  
+    y:bat[:int,:int]  := mal.multiplex("calc","+",b,1);#  9 y:bat[:int,:int] := OPTremapMultiplex(_6:str, _7:str, b:bat[:oid,:int], _8:int) {G}
+end tst;                                # 10  
 
 # 22:31:17 >  
 # 22:31:17 >  Done.

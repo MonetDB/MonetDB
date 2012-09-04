@@ -3,14 +3,14 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2012 MonetDB B.V.
@@ -51,7 +51,8 @@
  *
  * i.e., handing a BAT view v2 of BAT v0 as argument to the sql.append()
  * statement, rather than the original BAT v0.
- * My advice, always use new variable names, it may capture some easy to make errors.
+ * My advice, always use new variable names, it may capture some easy
+ * to make errors.
  *
  * As a refinement, patterns like
  *
@@ -77,7 +78,7 @@
 /*
  * It is mandatory to make optimizers part of the 'optimizer' module.
  * This allows the optimizer implementation to find them and react on them.
-*/
+ */
 #include "monetdb_config.h"
 #include "opt_sql_append.h"
 #include "mal_interpreter.h"
@@ -164,9 +165,11 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			/* look for
 			 *  v5 := ... v0 ...;
 			 */
-			/* an expensive loop, better would be to remember that v0 has a different role.
-			 * A typical method is to keep a map from variable -> instruction where it was
-			 * detected. Then you can check each assignment for use of v0
+			/* an expensive loop, better would be to remember that v0
+			 * has a different role.  A typical method is to keep a
+			 * map from variable -> instruction where it was
+			 * detected. Then you can check each assignment for use of
+			 * v0
 			*/
 			for (j = i+1; !found  && j < limit; j++)
 				for (k = old[j]->retc; !found && k < old[j]->argc; k++)
@@ -182,8 +185,11 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				/* push new v1 := aggr.count( v0 ); unless already available */
 				if (q1 == NULL) {
-					/* use mal_builder.h primitives q1 = newStmt(mb, aggrRef,countRef); setArgType(mb,q1,TYPE_wrd) */
-					/* it will be added to the block and even my re-use MAL instructions */
+					/* use mal_builder.h primitives
+					 * q1 = newStmt(mb, aggrRef,countRef);
+					 * setArgType(mb,q1,TYPE_wrd) */
+					/* it will be added to the block and even my
+					 * re-use MAL instructions */
 					q1 = newInstruction(mb,ASSIGNsymbol);
 					getArg(q1,0) = newTmpVariable(mb, TYPE_wrd);
 					setModuleId(q1, aggrRef);
@@ -193,7 +199,8 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 
 				/* push new v2 := algebra.slice( v0, 0, v1 ); */
-				/* use mal_builder.h primitives q1 = newStmt(mb, algebraRef,sliceRef); */
+				/* use mal_builder.h primitives
+				 * q1 = newStmt(mb, algebraRef,sliceRef); */
 				q2 = newInstruction(mb,ASSIGNsymbol);
 				getArg(q2,0) = newTmpVariable(mb, TYPE_any);
 				setModuleId(q2, algebraRef);
@@ -242,17 +249,17 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
  */
 
 /* Optimizer code wrapper
-The optimizer wrapper code is the interface to the MAL optimizer calls.
-It prepares the environment for the optimizers to do their work and removes
-the call itself to avoid endless recursions.
-
-Before an optimizer is finished, it should leave a clean state behind.
-Moreover, the information of the optimization step is saved for
-debugging and analysis.
-
-The wrapper expects the optimizers to return the number of
-actions taken, i.e. number of succesful changes to the code.
-*/
+ * The optimizer wrapper code is the interface to the MAL optimizer calls.
+ * It prepares the environment for the optimizers to do their work and removes
+ * the call itself to avoid endless recursions.
+ *
+ * Before an optimizer is finished, it should leave a clean state behind.
+ * Moreover, the information of the optimization step is saved for
+ * debugging and analysis.
+ *
+ * The wrapper expects the optimizers to return the number of
+ * actions taken, i.e. number of successful changes to the code.
+ */
 
 str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme;
@@ -290,7 +297,7 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		}
 		mb = s->def;
 		stk= 0;
-	} 
+	}
 	if( mb->errors ){
 		/* when we have errors, we still want to see them */
 		addtoMalBlkHistory(mb,"sql_append");

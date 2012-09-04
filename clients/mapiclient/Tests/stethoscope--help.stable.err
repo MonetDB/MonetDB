@@ -27,7 +27,7 @@ The trace options (default 'ISTest'):
   T = wall clock time
   t = ticks in microseconds
   c = cpu statistics (utime,ctime,stime,cstime)
-  m = memory resources as provided by OS
+  m = rss memory as provided by OS (in MB)
   r = block reads
   w = block writes
   b = bytes read/written

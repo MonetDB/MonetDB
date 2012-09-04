@@ -26,26 +26,20 @@ create procedure datacell.receptor(tbl string, host string, portid integer)
 create procedure datacell.emitter(tbl string, host string, portid integer)
     external name datacell.emitter;
 
-create procedure datacell.mode(tbl string, mode string)
-	external name datacell.mode;
-
-create procedure datacell.protocol(tbl string, protocol string)
-	external name datacell.protocol;
-
 create procedure datacell.pause (tbl string)
     external name datacell.pause;
 
 create procedure datacell.resume (tbl string)
     external name datacell.resume;
 
+create procedure datacell.stop (tbl string)
+    external name datacell.stop;
+
 create procedure datacell.query(proc string, def string)
 	external name datacell.query;
 
 create procedure datacell.query(proc string)
 	external name datacell.query;
-
-create procedure datacell.remove (obj string)
-    external name datacell.remove;
 
 -- scheduler activation
 create procedure datacell.prelude()
@@ -85,11 +79,21 @@ returns boolean
 
 create function datacell.baskets()
 returns table( nme string, threshold int, winsize int, winstride int,  timeslice int, timestride int, beat int,
-	seen timestamp, grabs int, events int)
+	seen timestamp, events int)
 external name datacell.baskets;
 
+create function datacell.receptors()
+returns table( nme string, host string, port int, protocol string, mode string, status string, 
+	lastseen timestamp, cycles int, received int, pending int)
+external name datacell.receptors;
+
+create function datacell.emitters()
+returns table( nme string, host string, port int, protocol string, mode string, status string, 
+	lastsent timestamp, cycles int, sent int, pending int)
+external name datacell.emitters;
+
 create function datacell.queries()
-returns table( nme string, status string, seen timestamp, cycles int, events int, time bigint, error string, def string)
+returns table( nme string, status string, lastrun timestamp, cycles int, events int, time bigint, error string, def string)
 external name datacell.queries;
 
 create function datacell.errors()

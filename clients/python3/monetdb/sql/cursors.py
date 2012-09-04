@@ -157,6 +157,9 @@ class Cursor:
         will be bound to variables in the operation.
         """
 
+        if not self.connection:
+            self.__exception_handler(ProgrammingError, "cursor is closed")
+
         # clear message history
         self.messages = []
 

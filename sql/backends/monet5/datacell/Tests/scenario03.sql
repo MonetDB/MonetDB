@@ -20,7 +20,7 @@ call datacell.emitter('datacell.bakout','localhost',50603);
 call datacell.query('datacell.schep', 'insert into datacell.bakout select now(), count(*) from datacell.bakin where datacell.threshold(\'datacell.bakin\',15);');
 
 call datacell.resume();
-call datacell.dump();
+select * from datacell.receptors(); select * from datacell.emitters(); select * from datacell.queries(); select * from datacell.baskets();
 
 -- externally, activate the sensor 
 --sensor --host=localhost --port=50503 --events=100 --columns=3 --delay=1

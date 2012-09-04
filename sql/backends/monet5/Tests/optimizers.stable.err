@@ -32,17 +32,13 @@ stderr of test 'optimizers` in directory 'backends/monet5` itself:
 
 MAPI  = monetdb@madrid:32172
 QUERY = set optimizer='off';
-ERROR = !SyntaxException:parseError:
-        !';' expected
-        !Syntax error detected.See documentation for details
+ERROR = !optimizer 'off' unknown
 MAPI  = monetdb@madrid:32172
 QUERY = set optimizer='on';
-ERROR = !SyntaxException:parseError:
-        !';' expected
-        !Syntax error detected.See documentation for details
+ERROR = !optimizer 'on' unknown
 MAPI  = monetdb@madrid:32172
 QUERY = set optimizer='';
-ERROR = !improper optimizer mal block
+ERROR = !optimizer '' unknown
 MAPI  = monetdb@madrid:32172
 QUERY = set optimizer='optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.commonTerms();optimizer.accumulators();optimizer.joinPath();optimizer.deadcode();optimizer.reduce();optimizer.garbageCollector();';
 ERROR = !'inline' should be the first

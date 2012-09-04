@@ -9,4 +9,4 @@ STARTUP="no"
 START_ALL_DBS="no"
 
 # the database farm where databases are kept
-DBFARM=/var/monetdb5/dbfarm
+DBFARM=/var/lib/monetdb

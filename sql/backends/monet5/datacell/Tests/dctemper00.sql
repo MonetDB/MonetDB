@@ -12,7 +12,7 @@ create table datacell.temperature(
     tmp decimal(4,2)
 );
 
-create table datacell.warnings (msg string, ts time with time zone, location string);
+create table datacell.warnings (msg string, ts time with time zone, loc string);
 create table datacell.templog( ts timestamp with time zone, cnt integer);
 
 call datacell.receptor('datacell.temperature','localhost',50550);

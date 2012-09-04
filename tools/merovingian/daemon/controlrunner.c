@@ -731,6 +731,10 @@ static void ctl_handle_client(
 				}
 
 				for (topdb = stats; stats != NULL; stats = stats->next) {
+					/* Jul2012 HACK: don't change the remote interface,
+					 * never return SABdbStarting */
+					if (stats->state == SABdbStarting)
+						stats->state = SABdbInactive;
 					/* currently never fails (just crashes) */
 					msab_serialise(&sdb, stats);
 					len = snprintf(buf2, sizeof(buf2),

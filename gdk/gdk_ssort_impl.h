@@ -806,7 +806,7 @@ do_ssort(MergeState *ms, ssize_t nremaining, size_t lo, size_t hi, ssize_t minru
  * the actual key is found at that offset (MonetDB var-sized
  * atoms). */
 int
-GDKssortimpl(void *h, void *t, void *heap, size_t nitems,
+GDKssortimpl(void *h, void *t, const void *heap, size_t nitems,
 	     int hs, int ts, int tpe)
 {
 	char temp;

@@ -44,7 +44,9 @@
 
 datacell_export str PNregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNpauseScheduler(int *ret);
+datacell_export str PNpauseQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNresumeScheduler(int *ret);
+datacell_export str PNresumeQuery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str PNstopScheduler(int *ret);
 datacell_export str PNdump(int *ret);
 datacell_export str PNsource(int *ret, str *fcn, str *tbl);

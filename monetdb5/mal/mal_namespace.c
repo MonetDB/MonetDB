@@ -220,9 +220,9 @@ void delName(str nme, size_t len){
 	n= getName(nme,len);
 	if( nme[0]==0 || n == 0) return ;
 
-	mal_set_lock(mal_contextLock,"putName");
+	MT_lock_set(&mal_contextLock, "putName");
 	/*Namespace garbage collection not available yet */
-	mal_unset_lock(mal_contextLock,"putName");
+	MT_lock_unset(&mal_contextLock, "putName");
 }
 str putName(str nme, size_t len)
 {
@@ -269,7 +269,7 @@ str putName(str nme, size_t len)
 	}
 
 	/* protect this, as it will be updated by multiple threads */
-	mal_set_lock(mal_contextLock,"putName");
+	MT_lock_set(&mal_contextLock, "putName");
 	if(len>=MAXIDENTLEN)
 		len = MAXIDENTLEN - 1;
 	memcpy(buf, nme, len);
@@ -295,7 +295,7 @@ str putName(str nme, size_t len)
 		backup.link[l]= top;
 	backup.nmetop++;
 #endif
-	mal_unset_lock(mal_contextLock,"putName");
+	MT_lock_unset(&mal_contextLock, "putName");
 	if ( len)
 		return putName(nme, len);	/* just to be sure */
 	return NULL;

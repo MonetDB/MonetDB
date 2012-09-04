@@ -442,8 +442,21 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 	 * purpose of this moment, see also extern declaration before this
 	 * function */
 	_sabaoth_internal_dbname = name;
-	msab_registerStart();
-	msab_marchScenario("mfunnel");
+	if ((p = msab_registerStarting()) != NULL ||
+			(p = msab_registerStarted()) != NULL ||
+			(p = msab_marchScenario("mfunnel")) != NULL)
+	{
+		err em;
+
+		_sabaoth_internal_dbname = NULL;
+
+		Mfprintf(serr, "mfunnel: unable to startup %s: %s\n",
+				name, p);
+		em = newErr("cannot create funnel %s due to sabaoth: %s", name, p);
+		free(p);
+
+		return(em);
+	}
 	_sabaoth_internal_dbname = NULL;
 
 	return(NO_ERR);

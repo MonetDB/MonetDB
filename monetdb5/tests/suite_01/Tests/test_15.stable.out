@@ -66,14 +66,15 @@ end main;
 #-----------------------------------------#
 # h	t		t		  # name
 # void	str		int		  # type
-#-----------------------------------------#
-[ 0@0,	  "maxrss",	  23856		  ]
-[ 1@0,	  "majflt",	  1718511981	  ]
-[ 2@0,	  "nswap",	  6421		  ]
-[ 3@0,	  "inblock",	  0		  ]
-[ 4@0,	  "oublock",	  0		  ]
-[ 5@0,	  "nvcsw",	  0		  ]
-[ 6@0,	  "ninvcsw",	  136		  ]
+#---------------------------------#
+[ 0@0,	  "maxrss",	  23060	  ]
+[ 1@0,	  "minflt",	  6205	  ]
+[ 2@0,	  "majflt",	  0	  ]
+[ 3@0,	  "nswap",	  0	  ]
+[ 4@0,	  "inblock",	  0	  ]
+[ 5@0,	  "oublock",	  152	  ]
+[ 6@0,	  "nvcsw",	  4	  ]
+[ 7@0,	  "ninvcsw",	  10	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -83,14 +84,15 @@ end main;
 #-----------------------------------------#
 # h	t		t		  # name
 # void	str		int		  # type
-#-----------------------------------------#
-[ 0@0,	  "maxrss",	  23904		  ]
-[ 1@0,	  "majflt",	  1718511981	  ]
-[ 2@0,	  "nswap",	  6433		  ]
-[ 3@0,	  "inblock",	  0		  ]
-[ 4@0,	  "oublock",	  0		  ]
-[ 5@0,	  "nvcsw",	  0		  ]
-[ 6@0,	  "ninvcsw",	  176		  ]
+#---------------------------------#
+[ 0@0,	  "maxrss",	  23116	  ]
+[ 1@0,	  "minflt",	  6216	  ]
+[ 2@0,	  "majflt",	  0	  ]
+[ 3@0,	  "nswap",	  0	  ]
+[ 4@0,	  "inblock",	  0	  ]
+[ 5@0,	  "oublock",	  192	  ]
+[ 6@0,	  "nvcsw",	  4	  ]
+[ 7@0,	  "ninvcsw",	  10	  ]
 #~EndVariableOutput~#
 #quit();
 

@@ -985,7 +985,7 @@ def am_gem(fd, var, gem, am):
         fd.write('uninstall-local-%s:\n' % sf)
     fd.write('endif\n')
 
-def am_python(fd, var, python, am):
+def am_python_generic(fd, var, python, am, PYTHON):
     pyre = re.compile(r'packages *= *\[ *(.*[^ ]) *\]')
     pynmre = re.compile('name *= *([\'"])([^\'"]+)\\1')
     fd.write('all-local-%s:\n' % var)
@@ -1005,20 +1005,26 @@ def am_python(fd, var, python, am):
             fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
         fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/README.rst' .\n")
-        fd.write("\t$(PYTHON) '%s' build\n" % f)
+        fd.write("\t$(%s) '%s' build\n" % (PYTHON, f))
     fd.write('install-exec-local-%s:\n' % var)
     for f in python['FILES']:
         # see buildtools/conf/rules.mk for PY_INSTALL_LAYOUT
         # it is needed to install into dist-packages on Debian/Ubuntu
-        fd.write("\t$(PYTHON) '%s' install $(PY_INSTALL_LAYOUT) --prefix='$(DESTDIR)$(prefix)'\n" % f)
+        fd.write("\t$(%s) '%s' install $(PY_INSTALL_LAYOUT) --prefix='$(DESTDIR)$(prefix)'\n" % (PYTHON, f))
     fd.write('uninstall-local-%s:\n' % var)
     for pkgdir in sorted(pkgdirs, reverse = True):
-        fd.write("\trm -r '$(DESTDIR)$(prefix)/$(PYTHON_LIBDIR)/%s'\n" % pkgdir)
+        fd.write("\trm -r '$(DESTDIR)$(prefix)/$(%s_LIBDIR)/%s'\n" % (PYTHON, pkgdir))
     for name in pkgnams:
-        fd.write("\trm '$(DESTDIR)$(prefix)/$(PYTHON_LIBDIR)'/%s-*.egg-info\n" % name.replace('-', '_'))
+        fd.write("\trm '$(DESTDIR)$(prefix)/$(%s_LIBDIR)'/%s-*.egg-info\n" % (PYTHON, name.replace('-', '_')))
     fd.write('mostlyclean-local:\n')
     for pkgdir in sorted(pkgdirs, reverse = True):
         fd.write("\t[ '$(srcdir)' -ef . ] || rm -r '%s'\n" % pkgdir)
+
+def am_python(fd, var, python, am):
+    am_python_generic(fd, var, python, am, 'PYTHON')
+
+def am_python3(fd, var, python3, am):
+    am_python_generic(fd, var, python3, am, 'PYTHON3')
 
 def am_ant(fd, var, ant, am):
 
@@ -1149,6 +1155,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'ANT': am_ant,
                 'GEM': am_gem,
                 'PYTHON': am_python,
+                'PYTHON3': am_python3,
                 }
 
 def output(tree, cwd, topdir, automake, conditional):

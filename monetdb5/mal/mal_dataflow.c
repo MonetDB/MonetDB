@@ -192,7 +192,7 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	if (argclaim == 0)
 		return 0;
 
-	mal_set_lock(mal_contextLock, "DFLOWdelay");
+	MT_lock_set(&mal_contextLock, "DFLOWdelay");
 	if (memoryclaims < 0)
 		memoryclaims = 0;
 	if (memorypool <= 0 && memoryclaims == 0)
@@ -205,12 +205,12 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 			PARDEBUG
 			mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT "claims " LLFMT "," LLFMT "\n",
 						 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
+			MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 			return 0;
 		}
 		PARDEBUG
 		mnstr_printf(GDKstdout, "#Delayed due to lack of memory " LLFMT " requested " LLFMT " memoryclaims %d\n", memorypool, argclaim + hotclaim, memoryclaims);
-		mal_unset_lock(mal_contextLock, "DFLOWdelay");
+		MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 		return -1;
 	}
 	/* release memory claimed before */
@@ -219,7 +219,7 @@ DFLOWadmission(lng argclaim, lng hotclaim)
 	PARDEBUG
 	mnstr_printf(GDKstdout, "#DFLOWadmit %3d thread %d pool " LLFMT " claims " LLFMT "," LLFMT "\n",
 				 memoryclaims, THRgettid(), memorypool, argclaim, hotclaim);
-	mal_unset_lock(mal_contextLock, "DFLOWdelay");
+	MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 	return 0;
 }
 #endif
@@ -716,7 +716,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			/* assure correct variable type */
 			if (getVarType(mb, exceptionVar) == TYPE_str) {
 				/* watch out for concurrent access */
-				mal_set_lock(mal_contextLock, "exception handler");
+				MT_lock_set(&mal_contextLock, "exception handler");
 				v = &stk->stk[exceptionVar];
 				if (v->val.sval)
 					FREE_EXCEPTION(v->val.sval);    /* old exception*/
@@ -724,7 +724,7 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 				v->val.sval = ret;
 				v->len = (int) strlen(v->val.sval);
 				ret = MAL_SUCCEED;
-				mal_unset_lock(mal_contextLock, "exception handler");
+				MT_lock_unset(&mal_contextLock, "exception handler");
 			} else {
 				fs->pc = -fs->pc;
 				goto finalize;
@@ -817,7 +817,7 @@ runDFLOWworker(void *t)
 	int i, local = 0, last = 0;
 	long usec = 0;
 
-	thr = THRnew(MT_getpid(), "DFLOWworker");
+	thr = THRnew("DFLOWworker");
 
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN)); /* where to leave errors */
 	GDKerrbuf[0] = 0;
@@ -900,14 +900,14 @@ runDFLOWworker(void *t)
 		 * re-enable worker */
 		/* It may happen that all threads enter the wait state. So, keep
 		 * one running at all time */
-		if (nxtfs == 0 || MT_getrss() > MEMORY_THRESHOLD * monet_memory) {
+		if ( MT_getrss() > MEMORY_THRESHOLD * monet_memory) {
 			long delay, clk = (GDKusec() - usec) / 1000;
-			int rss = 0;
+			long rss = 0;
 			double factor = 1.0;
 			if (clk > DELAYUNIT && task->todo->last) {
-				mal_set_lock(mal_delayLock, "runMALdataflow");
+				MT_lock_set(&mal_delayLock, "runMALdataflow");
 				asleep++;
-				mal_unset_lock(mal_delayLock, "runMALdataflow");
+				MT_lock_unset(&mal_delayLock, "runMALdataflow");
 
 				PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial %ld\n", task->id, clk);
 				while (clk > 0) {
@@ -915,20 +915,20 @@ runDFLOWworker(void *t)
 					 * a chain context switch */
 					if (asleep >= GDKnr_threads - 1)
 						break;
-					/* speed up wake up when we have memory or too many
-					 * sleepers */
-					/* don't call getrss too often */
-					if (rss++ % 10 == 0)
-						factor = MT_getrss() / (MEMORY_THRESHOLD * monet_memory);
+					/* speed up wake up when we have memory or too many sleepers */
+					rss = MT_getrss();
+					if ( rss > MEMORY_THRESHOLD * monet_memory)
+						break;
+					factor = ((double)rss) / (MEMORY_THRESHOLD * monet_memory);
 					delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
 					delay = (long) (delay * (1.0 - (asleep - 1) / GDKnr_threads));
 					if (delay)
 						MT_sleep_ms(delay);
 					clk -= DELAYUNIT;
 				}
-				mal_set_lock(mal_delayLock, "runMALdataflow");
+				MT_lock_set(&mal_delayLock, "runMALdataflow");
 				asleep--;
-				mal_unset_lock(mal_delayLock, "runMALdataflow");
+				MT_lock_unset(&mal_delayLock, "runMALdataflow");
 				PARDEBUG mnstr_printf(GDKstdout, "#delayed finished thread %d asleep %d\n", task->id, asleep);
 			}
 		}

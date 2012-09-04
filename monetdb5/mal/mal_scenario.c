@@ -155,7 +155,7 @@ getFreeScenario(void)
 	int i;
 	Scenario scen = NULL;
 
-	mal_set_lock(mal_contextLock, "Scenario");
+	MT_lock_set(&mal_contextLock, "Scenario");
 	for (i = 0; i < MAXSCEN && scenarioRec[i].name; i++)
 		;
 
@@ -164,7 +164,7 @@ getFreeScenario(void)
 	} else {
 		scen = scenarioRec + i;
 	}
-	mal_unset_lock(mal_contextLock, "Scenario");
+	MT_lock_unset(&mal_contextLock, "Scenario");
 
 	return scen;
 }
@@ -188,7 +188,7 @@ initScenario(Client c, Scenario s)
 	if (s->initSystemCmd)
 		return(fillScenario(c, s));
 	/* prepare for conclicts */
-	mal_set_lock(mal_contextLock, "Scenario");
+	MT_lock_set(&mal_contextLock, "Scenario");
 	if (s->initSystem && s->initSystemCmd == 0) {
 		s->initSystemCmd = (MALfcn) getAddress(c->fdout, l, l, s->initSystem,1);
 		if (s->initSystemCmd) {
@@ -200,7 +200,7 @@ initScenario(Client c, Scenario s)
 		}
 	}
 	if (msg) {
-		mal_unset_lock(mal_contextLock, "Scenario");
+		MT_lock_unset(&mal_contextLock, "Scenario");
 		return msg;
 	}
 
@@ -220,7 +220,7 @@ initScenario(Client c, Scenario s)
 		s->tacticsCmd = (MALfcn) getAddress(c->fdout, l, l, s->tactics,1);
 	if (s->engine && s->engineCmd == 0)
 		s->engineCmd = (MALfcn) getAddress(c->fdout, l, l, s->engine,1);
-	mal_unset_lock(mal_contextLock, "Scenario");
+	MT_lock_unset(&mal_contextLock, "Scenario");
 	return(fillScenario(c, s));
 }
 
@@ -544,7 +544,7 @@ runScenarioBody(Client c)
 #ifdef HAVE_TIMES
 	times(&t0);
 #endif
-	while (c->mode > FINISHING || msg != MAL_SUCCEED) {
+	while ((c->mode > FINISHING || msg != MAL_SUCCEED) && !GDKexiting()) {
 		if (msg != MAL_SUCCEED){
 /* we should actually show it [postponed]
 			mnstr_printf(c->fdout,"!%s\n",msg);

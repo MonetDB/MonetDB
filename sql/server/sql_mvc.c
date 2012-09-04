@@ -148,13 +148,17 @@ mvc_exit(void)
 void
 mvc_logmanager(void)
 {
+	Thread thr = THRnew("logmanager");
 	store_manager();
+	THRdel(thr);
 }
 
 void
 mvc_minmaxmanager(void)
 {
+	Thread thr = THRnew("minmaxmanager");
 	minmax_manager();
+	THRdel(thr);
 }
 
 int
@@ -224,7 +228,7 @@ mvc_commit(mvc *m, int chain, char *name)
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
 		store_unlock();
 		m->type = Q_TRANS;
-		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions allready exists, concurrent mal will
+		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copyied in the trans dup)) */ 
 			qc_clean(m->qc);
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);

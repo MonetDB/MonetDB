@@ -176,16 +176,11 @@ mtime_export str MTIMEdate_addyears(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_adddays(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_addmonths(date *ret, date *v, int *delta);
 mtime_export str MTIMEdate_diff(int *ret, date *v1, date *v2);
+mtime_export str MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2);
 mtime_export str MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 mtime_export str MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
+mtime_export str MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2);
 mtime_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
-mtime_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
-mtime_export str MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w);
-mtime_export str MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w);
-mtime_export str MTIMEtimestamp_min_no_nil(timestamp *ret, timestamp *v, timestamp *w);
-mtime_export str MTIMEtimestamp_max_no_nil(timestamp *ret, timestamp *v, timestamp *w);
-mtime_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
-mtime_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
 
 mtime_export str MTIMEtimestamp_year(int *ret, timestamp *t);
 mtime_export str MTIMEtimestamp_month(int *ret, timestamp *t);
@@ -284,62 +279,5 @@ mtime_export int TYPE_daytime;
 mtime_export int TYPE_timestamp;
 mtime_export int TYPE_tzone;
 mtime_export int TYPE_rule;
-
-#define dateEQ(X,Y,Z) *X = *Y == *Z
-#define dateNEQ(X,Y,Z) *X = *Y != *Z
-#define dateLT(X,Y,Z) *X = *Y < *Z
-#define dateLE(X,Y,Z) *X = *Y <= *Z
-#define dateGT(X,Y,Z) *X = *Y > *Z
-#define dateGE(X,Y,Z) *X = *Y >= *Z
-
-#define daytimeEQ(X,Y,Z) *X = *Y == *Z
-#define daytimeNEQ(X,Y,Z) *X = *Y != *Z
-#define daytimeLT(X,Y,Z) *X = *Y < *Z
-#define daytimeLE(X,Y,Z) *X = *Y <= *Z
-#define daytimeGT(X,Y,Z) *X = *Y > *Z
-#define daytimeGE(X,Y,Z) *X = *Y >= *Z
-
-mtime_export str MTIMEdate_isnil(bit *ret, date *v);
-mtime_export str MTIMEdate_min(date *ret, date *v, date *w);
-mtime_export str MTIMEdate_max(date *ret, date *v, date *w);
-mtime_export str MTIMEdate_min_no_nil(date *ret, date *v, date *w);
-mtime_export str MTIMEdate_max_no_nil(date *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_EQ(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_NEQ(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_LT(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_LE(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_GT(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdate_GE(bit *ret, date *v, date *w);
-
-mtime_export str MTIMEdaytime_isnil(bit *ret, daytime *v);
-mtime_export str MTIMEdaytime_min(daytime *ret, daytime *v, daytime *w);
-mtime_export str MTIMEdaytime_max(daytime *ret, daytime *v, daytime *w);
-mtime_export str MTIMEdaytime_min_no_nil(daytime *ret, daytime *v, daytime *w);
-mtime_export str MTIMEdaytime_max_no_nil(daytime *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_EQ(bit *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_NEQ(bit *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_LT(bit *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_LE(bit *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_GT(bit *ret, daytime *v, daytime *w);
-
-mtime_export str MTIMEdaytime_GE(bit *ret, daytime *v, daytime *w);
-
-#define timestampEQ(X,Y,Z) *X = Y->days == Z->days && Y->msecs == Z->msecs
-#define timestampNEQ(X,Y,Z) *X = Y->days != Z->days || Y->msecs != Z->msecs
-#define timestampLT(X,Y,Z) *X = Y->days < Z->days || (Y->days == Z->days && Y->msecs < Z->msecs)
-#define timestampLE(X,Y,Z) *X = Y->days < Z->days || (Y->days == Z->days && Y->msecs <= Z->msecs)
-#define timestampGT(X,Y,Z) *X = Y->days > Z->days || (Y->days == Z->days && Y->msecs > Z->msecs)
-#define timestampGE(X,Y,Z) *X = Y->days > Z->days || (Y->days == Z->days && Y->msecs >= Z->msecs)
 
 #endif /* _MONETTIME_H_ */

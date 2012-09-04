@@ -337,6 +337,7 @@ msab_marchConnection(const char *host, const int port)
 	}
 }
 
+#define STARTEDFILE ".started"
 /**
  * Removes all known publications of available services.  The function
  * name is a nostalgic phrase from "Defender of the Crown" from the
@@ -357,6 +358,10 @@ msab_wildRetreat(void)
 		return(tmp);
 	unlink(path);
 
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
+		return(tmp);
+	unlink(path);
+
 	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
 	unlink(path);
@@ -372,7 +377,7 @@ msab_wildRetreat(void)
  * the current process behind.
  */
 char *
-msab_registerStart(void)
+msab_registerStarting(void)
 {
 	/* The sabaoth uplog is in fact a simple two column table that
 	 * contains a start time and a stop time.  Start times are followed
@@ -407,6 +412,32 @@ msab_registerStart(void)
 		free(tmp);
 		return(NULL);
 	}
+	fclose(fopen(path, "w"));
+	
+	/* remove any stray file that would suggest we've finished starting up */
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
+		return(tmp);
+	unlink(path);
+
+
+	return(NULL);
+}
+
+/**
+ * Removes the starting state, and turns this into a fully started
+ * engine.  The caller is responsible for calling registerStarting()
+ * first.
+ */
+char *
+msab_registerStarted(void)
+{
+	char pathbuf[PATHLENGTH];
+	char *path = pathbuf;
+	char *tmp;
+
+	/* flag this database as started up */
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
+		return(tmp);
 	fclose(fopen(path, "w"));
 
 	return(NULL);
@@ -597,7 +628,14 @@ msab_getStatus(sabdb** ret, char *dbname)
 					/* the log is empty, assume no crash */
 					sdb->state = SABdbInactive;
 				} else if (data[0] == '\t') {
-					sdb->state = SABdbRunning;
+					/* see if the database has finished starting */
+					snprintf(buf, sizeof(buf), "%s/%s/%s",
+							path, e->d_name, STARTEDFILE);
+					if (stat(buf, &statbuf) == -1) {
+						sdb->state = SABdbStarting;
+					} else {
+						sdb->state = SABdbRunning;
+					}
 				} else { /* should be \n */
 					sdb->state = SABdbInactive;
 				}
@@ -612,8 +650,15 @@ msab_getStatus(sabdb** ret, char *dbname)
 			 */
 			sdb->state = SABdbInactive;
 		} else if (fd == -1) {
-			/* lock denied, so Mserver is running */
-			sdb->state = SABdbRunning;
+			/* lock denied, so mserver is running, see if the database
+			 * has finished starting */
+			snprintf(buf, sizeof(buf), "%s/%s/%s",
+					path, e->d_name, STARTEDFILE);
+			if (stat(buf, &statbuf) == -1) {
+				sdb->state = SABdbStarting;
+			} else {
+				sdb->state = SABdbRunning;
+			}
 		} else {
 			/* locking succeed, check for a crash in the uplog */
 			snprintf(log, sizeof(log), "%s/%s/%s", path, e->d_name, UPLOGFILE);

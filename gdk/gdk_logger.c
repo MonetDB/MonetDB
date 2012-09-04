@@ -753,6 +753,9 @@ logger_readlog(logger *lg, char *filename)
 	trans *tr = NULL;
 	logformat l;
 	int err = 0;
+	time_t t0, t1;
+	struct stat sb;
+	lng fpos;
 
 	lg->log = open_rstream(filename);
 
@@ -763,9 +766,19 @@ logger_readlog(logger *lg, char *filename)
 		lg->log = NULL;
 		return 0;
 	}
+	stat(filename, &sb);
+	t0 = time(NULL);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
 
+		t1 = time(NULL);
+		if (t1 - t0 > 10) {
+			t0 = t1;
+			/* not more than once every 10 seconds */
+			mnstr_fgetpos(lg->log, &fpos);
+			printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) (((off_t) fpos * 100 + 50) / sb.st_size));
+			fflush(stdout);
+		}
 		if (l.flag != LOG_START && l.flag != LOG_END && l.flag != LOG_SEQ) {
 			name = log_read_string(lg);
 
@@ -1074,12 +1087,17 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 	if (bid) {
 		/* split catalog -> catalog_bid, catalog_nme */
 		BAT *b = BATdescriptor(bid);
+		BAT *v;
 
 		lg->catalog_bid = logbat_new(TYPE_void, TYPE_int, BATSIZE);
 		lg->catalog_nme = logbat_new(TYPE_void, TYPE_str, BATSIZE);
 
-		BATappend(lg->catalog_bid, BATmirror(b), FALSE);
-		BATappend(lg->catalog_nme, b, FALSE);
+		v = BATmark(b, 0);
+		BATappend(lg->catalog_bid, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
+		v = BATmark(BATmirror(b), 0);
+		BATappend(lg->catalog_nme, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
 
 		/* Make persistent */
 		bid = lg->catalog_bid->batCacheid;
@@ -1129,7 +1147,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		logger_add_bat(lg, lg->seqs_id, "seqs_id");
 
 		lg->seqs_val = logbat_new(TYPE_void, TYPE_lng, 1);
-		BATappend(lg->seqs_val, b, FALSE);
+		v = BATmark(BATmirror(b), 0);
+		BATappend(lg->seqs_val, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
 		BATmode(lg->seqs_val, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_val", fn);
 		BBPrename(lg->seqs_val->batCacheid, bak);

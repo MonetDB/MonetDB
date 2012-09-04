@@ -47,18 +47,44 @@ typedef struct{
 	lng timeslice, timestride; /* temporal sliding window, determined by first temporal component */
 	lng beat;	/* milliseconds delay */
 	int colcount;
-	int port;	/* port claimed */
 	str *cols;
 	BAT **primary;
 	/* statistics */
+	int status;
 	timestamp seen;
 	int events; /* total number of events grabbed */
-	int grabs; /* number of grabs */
+	int cycles; 
 	/* collected errors */
 	BAT *errors;
 } *BSKTbasket, BSKTbasketRec;
 
+
+#define BSKTINIT 1        
+#define BSKTPAUSE 2       /* not active now */
+#define BSKTRUNNING 3      
+#define BSKTSTOP 4		  /* stop the thread */
+#define BSKTERROR 5       /* failed to establish the stream */
+
+#define PAUSEDEFAULT 1000
+
+datacell_export str statusname[6];
+
+#define BSKTACTIVE 1      /* ask for events */
+#define BSKTPASSIVE 2     /* wait for events */
+
+datacell_export str modename[3];
+
+#define TCP 1
+#define UDP 2
+#define CSV 3
+
+
+mal_export MT_Lock  dcLock ;
+
+datacell_export str protocolname[4];
+
 datacell_export str schema_default;
+
 datacell_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTdrop(int *ret, str *tbl);
 datacell_export str BSKTreset(int *ret);
@@ -69,10 +95,10 @@ datacell_export str BSKTdump(int *ret);
 datacell_export str BSKTgrab(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 datacell_export str BSKTthreshold(int *ret, str *tbl, int *sz);
-datacell_export str BSKTbeat(int *ret, str *tbl, int *sz);
-datacell_export str BSKTwindow(int *ret, str *tbl, int *sz, int *slide);
-datacell_export str BSKTtimewindow(int *ret, str *tbl, int *sz, int *slide);
-datacell_export str BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *grabsId, int *eventsId);
+datacell_export str BSKTbeat(int *ret, str *tbl, lng *sz);
+datacell_export str BSKTwindow(int *ret, str *tbl, lng *sz, lng *slide);
+datacell_export str BSKTtimewindow(int *ret, str *tbl, lng *sz, lng *slide);
+datacell_export str BSKTtable(int *nameId, int *thresholdId, int * winsizeId, int *winstrideId,int *timesliceId, int *timestrideId, int *beatId, int *seenId, int *eventsId);
 datacell_export str BSKTtableerrors(int *nmeId, int *errorId);
 
 datacell_export str BSKTlock(int *ret, str *tbl, int *delay);

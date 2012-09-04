@@ -548,7 +548,7 @@ SYSioStatistics(int *ret, int *ret2)
 	BUNappend(bn, "maxrss", FALSE);
 	BUNappend(b, &i, FALSE);
 	i = ru.ru_minflt;
-	BUNappend(b, "minflt", FALSE);
+	BUNappend(bn, "minflt", FALSE);
 	BUNappend(b, &i, FALSE);
 	i = ru.ru_majflt;
 	BUNappend(bn, "majflt", FALSE);

@@ -57,10 +57,13 @@ profilerAvailable(void)
 static void offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
 static void cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc);
 static int initTrace(void);
+static void startHeartbeat(int delay);
+static void stopHeartbeat(void);
 
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
+static int eventcounter;
 
 #define PROFevent   0
 #define PROFtime    1
@@ -82,6 +85,7 @@ static int delayswitch = 0; /* to wait before sending the profile info */
 #define PROFtype    17
 #define PROFdot     18
 #define PROFflow   19
+#define PROFping   20	/* heartbeat ping messages */
 
 static struct {
 	str name;		/* which logical counter is needed */
@@ -107,7 +111,8 @@ static struct {
 	/*  17 */  { "type", 0},
 	/*  18 */  { "dot", 0},
 	/*  19 */  { "flow", 0},
-	/*  20 */  { 0, 0}
+	/*  20 */  { "ping", 0},
+	/*  21 */  { 0, 0}
 };
 
 /*
@@ -121,6 +126,10 @@ activateCounter(str name)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
 			return 0;
+		} else
+		if ( strncmp("ping",name,4) == 0){
+			startHeartbeat(atoi(name+4));
+			return 0;
 		}
 	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
@@ -132,6 +141,10 @@ deactivateCounter(str name)
 	for (i = 0; profileCounter[i].name; i++)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 0;
+			return 0;
+		} else
+		if ( strncmp("ping",name,4) == 0){
+			stopHeartbeat();
 			return 0;
 		}
 	throw(MAL, "deactivateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
@@ -162,9 +175,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (mb->profiler == NULL) return;
 	if (profileCounter[PROFdot].status == 1 && start && pc == 0){
 		if (mb->dotfile == 0){
-			mal_set_lock(mal_profileLock, "profileLock");
+			MT_lock_set(&mal_profileLock, "profileLock");
 			showFlowGraph(mb,stk,"stethoscope");
-			mal_unset_lock(mal_profileLock, "profileLock");
+			MT_lock_unset(&mal_profileLock, "profileLock");
 		}
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
@@ -182,9 +195,9 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 static void
 offlineProfilerHeader(void)
 {
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return ;
 	}
 	log("# ");
@@ -216,6 +229,8 @@ offlineProfilerHeader(void)
 	}
 
 	if (profileCounter[PROFmemory].status) {
+		log("rss,\t");
+/*
 		log("maxrss,\t");
 		log("arena,\t");
 		log("ordblks,\t");
@@ -224,6 +239,7 @@ offlineProfilerHeader(void)
 		log("hblks,\t");
 		log("fsmblks,\t");
 		log("uordblks,\t");
+*/
 	}
 	if (profileCounter[PROFreads].status)
 		log("blk reads,\t");
@@ -250,24 +266,25 @@ offlineProfilerHeader(void)
 		log("user,\t");
 	log("# name\n");
 	flushLog();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 void
 offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 {
-	static struct Mallinfo prevMalloc;
+	/*static struct Mallinfo prevMalloc;*/
 	InstrPtr pci = getInstrPtr(mb, pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
 #endif
-	static int eventcounter;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 #endif
+/*
 	struct Mallinfo infoMalloc;
+*/
 	str stmt, c;
 
 	if (delayswitch > 0) {
@@ -275,22 +292,24 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		offlineProfilerHeader();
 		delayswitch--;
 	}
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return ;
 	}
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
 	if (!profileAll && mb->profiler[pc].trace == FALSE) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return;
 	}
 #ifdef HAVE_TIMES
 	times(&newTms);
 #endif
+/*
 	infoMalloc = MT_mallinfo();
+*/
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
@@ -355,6 +374,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 #endif
 
 	if (profileCounter[PROFmemory].status && delayswitch < 0) {
+		log(SZFMT ",\t", MT_getrss()/1024/1024);
+/*
 #ifdef HAVE_SYS_RESOURCE_H
 		log("%ld,\t", infoUsage.ru_maxrss);
 #endif
@@ -366,6 +387,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		log(SZFMT ",\t", (size_t)(infoMalloc.fsmblks - prevMalloc.fsmblks));
 		log(SZFMT ",\t", (size_t)(infoMalloc.uordblks - prevMalloc.uordblks));
 		prevMalloc = infoMalloc;
+*/
 	}
 #ifdef HAVE_SYS_RESOURCE_H
 	if ((profileCounter[PROFreads].status ||
@@ -425,7 +447,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	log(" ]\n");
 	eventcounter++;
 	flushLog();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 /*
  * Postprocessing events
@@ -436,9 +458,9 @@ str
 setLogFile(stream *fd, Module mod, str fname)
 {
 	(void)mod;      /* still unused */
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream ) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", "Log file already set");
 	}
 	if (strcmp(fname, "console") == 0)
@@ -448,10 +470,10 @@ setLogFile(stream *fd, Module mod, str fname)
 	else
 		eventstream = open_wastream(fname);
 	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -459,13 +481,13 @@ str
 setLogStream(Module cntxt, str host, int port)
 {
 	(void)cntxt;        /* still unused */
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if ((eventstream = udp_wastream(host, port, "profileStream")) == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		throw(IO, "mal.profiler", RUNTIME_STREAM_FAILED);
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -473,13 +495,13 @@ str
 setLogStreamStream(Module cntxt, stream *s)
 {
 	(void)cntxt;        /* still unused */
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if ((eventstream = s) == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		throw(ILLARG, "mal.profiler", "stream must not be NULL");
 	}
 	eventstream = wbstream(eventstream, BUFSIZ);
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -510,14 +532,14 @@ setStartPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return MAL_SUCCEED ;
 	}
 	mnstr_printf(GDKout, "# start point not set\n");
 	flushLog();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -527,14 +549,14 @@ setEndPoint(Module cntxt, str mod, str fcn)
 	(void)cntxt;
 	(void)mod;
 	(void)fcn;      /* still unused */
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream == NULL) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return MAL_SUCCEED ;
 	}
 	mnstr_printf(GDKout, "# end point not set\n");
 	flushLog();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -547,7 +569,7 @@ static int TRACE_init = 0;
 str
 startProfiling(void)
 {
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (eventstream != NULL) {
 		offlineProfiling = TRUE;
 		delayswitch = 1;
@@ -556,7 +578,7 @@ startProfiling(void)
 	if (TRACE_init == 0)
 		_initTrace();
 	malProfileMode = TRUE;
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
 
@@ -579,9 +601,9 @@ MPresetProfiler(stream *fdout)
 {
 	if (fdout != eventstream)
 		return;
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	eventstream = 0;
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 /*
@@ -654,7 +676,7 @@ setFilter(Module cntxt, str mod, str fcn)
 		fcn = matchall;
 	profileAll = strcmp(mod, "*") == 0 && strcmp(fcn, "*") == 0;
 
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (mod && fcn && topFilter < 32) {
 		modFilter[topFilter] = putName(mod, strlen(mod));
 		fcnFilter[topFilter++] = putName(fcn, strlen(fcn));
@@ -670,7 +692,7 @@ setFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 /*
@@ -689,7 +711,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 	(void)mod;
 	(void)fcn;      /* still unused */
 
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	for (j = 0; j < topFilter; j++) {
 		modFilter[j] = NULL;
 		fcnFilter[j] = NULL;
@@ -710,7 +732,7 @@ clrFilter(Module cntxt, str mod, str fcn)
 				}
 		s = s->outer;
 	}
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 /*
  * The instructions to be monitored can also be identified
@@ -779,20 +801,20 @@ TRACEtable(BAT **r)
 {
 	if (initTrace())
 		return ;
-	mal_set_lock(mal_profileLock, "profileLock");
-	r[0] = TRACE_id_event;
-	r[1] = TRACE_id_time;
-	r[2] = TRACE_id_pc;
-	r[3] = TRACE_id_thread;
-	r[4] = TRACE_id_user;
-	r[5] = TRACE_id_ticks;
-	r[6] = TRACE_id_reads;
-	r[7] = TRACE_id_writes;
-	r[8] = TRACE_id_rbytes;
-	r[9] = TRACE_id_wbytes;
-	r[10] = TRACE_id_type;
-	r[11] = TRACE_id_stmt;
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
+	r[0] = BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
+	r[1] = BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
+	r[2] = BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
+	r[3] = BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
+	r[4] = BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
+	r[5] = BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
+	r[6] = BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
+	r[7] = BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
+	r[8] = BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
+	r[9] = BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
+	r[10] = BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
+	r[11] = BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 
 static BAT *
@@ -882,18 +904,18 @@ initTrace(void)
 {
 	if (TRACE_init)
 		return 0;       /* already initialized */
-	mal_set_lock(mal_contextLock, "profileLock");
+	MT_lock_set(&mal_contextLock, "profileLock");
 	_initTrace();
-	mal_unset_lock(mal_contextLock, "profileLock");
+	MT_lock_unset(&mal_contextLock, "profileLock");
 	return TRACE_init ? 0 : -1;
 }
 
 str
 cleanupProfiler(void)
 {
-	mal_set_lock(mal_contextLock, "cleanup");
+	MT_lock_set(&mal_contextLock, "cleanup");
 	_cleanupProfiler();
-	mal_unset_lock(mal_contextLock, "cleanup");
+	MT_lock_unset(&mal_contextLock, "cleanup");
 	return MAL_SUCCEED;
 }
 
@@ -902,7 +924,7 @@ clearTrace(void)
 {
 	if (TRACE_init == 0)
 		return;     /* not initialized */
-	mal_set_lock(mal_contextLock, "cleanup");
+	MT_lock_set(&mal_contextLock, "cleanup");
 	/* drop all trace tables */
 	BBPclear(TRACE_id_event->batCacheid);
 	BBPclear(TRACE_id_time->batCacheid);
@@ -916,7 +938,7 @@ clearTrace(void)
 	BBPclear(TRACE_id_writes->batCacheid);
 	TRACE_init = 0;
 	_initTrace();
-	mal_unset_lock(mal_contextLock, "cleanup");
+	MT_lock_unset(&mal_contextLock, "cleanup");
 }
 
 BAT *
@@ -925,29 +947,29 @@ getTrace(str nme)
 	if (TRACE_init == 0)
 		return NULL;
 	if (strcmp(nme, "event") == 0)
-		return TRACE_id_event;
+		return BATcopy(TRACE_id_event, TRACE_id_event->htype, TRACE_id_event->ttype, 0);
 	if (strcmp(nme, "time") == 0)
-		return TRACE_id_time;
+		return BATcopy(TRACE_id_time, TRACE_id_time->htype, TRACE_id_time->ttype, 0);
 	if (strcmp(nme, "ticks") == 0)
-		return TRACE_id_ticks;
+		return BATcopy(TRACE_id_ticks, TRACE_id_ticks->htype, TRACE_id_ticks->ttype, 0);
 	if (strcmp(nme, "pc") == 0)
-		return TRACE_id_pc;
+		return BATcopy(TRACE_id_pc, TRACE_id_pc->htype, TRACE_id_pc->ttype, 0);
 	if (strcmp(nme, "thread") == 0)
-		return TRACE_id_thread;
+		return BATcopy(TRACE_id_thread, TRACE_id_thread->htype, TRACE_id_thread->ttype, 0);
 	if (strcmp(nme, "user") == 0)
-		return TRACE_id_user;
+		return BATcopy(TRACE_id_user, TRACE_id_user->htype, TRACE_id_user->ttype, 0);
 	if (strcmp(nme, "stmt") == 0)
-		return TRACE_id_stmt;
+		return BATcopy(TRACE_id_stmt, TRACE_id_stmt->htype, TRACE_id_stmt->ttype, 0);
 	if (strcmp(nme, "type") == 0)
-		return TRACE_id_type;
+		return BATcopy(TRACE_id_type, TRACE_id_type->htype, TRACE_id_type->ttype, 0);
 	if (strcmp(nme, "rbytes") == 0)
-		return TRACE_id_rbytes;
+		return BATcopy(TRACE_id_rbytes, TRACE_id_rbytes->htype, TRACE_id_rbytes->ttype, 0);
 	if (strcmp(nme, "wbytes") == 0)
-		return TRACE_id_wbytes;
+		return BATcopy(TRACE_id_wbytes, TRACE_id_wbytes->htype, TRACE_id_wbytes->ttype, 0);
 	if (strcmp(nme, "reads") == 0)
-		return TRACE_id_reads;
+		return BATcopy(TRACE_id_reads, TRACE_id_reads->htype, TRACE_id_reads->ttype, 0);
 	if (strcmp(nme, "writes") == 0)
-		return TRACE_id_writes;
+		return BATcopy(TRACE_id_writes, TRACE_id_writes->htype, TRACE_id_writes->ttype, 0);
 	return NULL;
 }
 
@@ -979,7 +1001,6 @@ void
 cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct Mallinfo prevMalloc; */
-	static int eventcounter = 0;
 	char buf[1024];
 	int tid = (int)THRgettid();
 	lng v = 0;
@@ -1013,9 +1034,9 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	mal_set_lock(mal_profileLock, "profileLock");
+	MT_lock_set(&mal_profileLock, "profileLock");
 	if (initTrace() || TRACE_init == 0) {
-		mal_unset_lock(mal_profileLock, "profileLock");
+		MT_lock_unset(&mal_profileLock, "profileLock");
 		return;
 	}
 
@@ -1122,7 +1143,7 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 	eventcounter++;
 	flushLog();
-	mal_unset_lock(mal_profileLock, "profileLock");
+	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 /*
  * The profile vector is added to the MAL block the first time we
@@ -1214,4 +1235,147 @@ getDiskSpace(void)
 			}
 		}
 	return size;
+}
+
+/* the heartbeat process produces a ping event once every X milliseconds */
+static int hbdelay = 0;
+
+static void profilerHeartbeat(void *dummy){
+	Thread thr = THRnew("profilerHeartbeat");
+#ifdef HAVE_SYS_RESOURCE_H
+	static struct rusage prevUsage;
+	struct rusage infoUsage;
+#endif
+	static int eventcounter;
+#ifdef HAVE_TIMES
+	struct tms newTms;
+	struct tms prevtimer;
+	times(&prevtimer);
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+		getrusage(RUSAGE_SELF, &prevUsage);
+#endif
+	(void) dummy;
+	while (hbdelay){
+		MT_sleep_ms(hbdelay);
+
+		if (delayswitch > 0) {
+			/* first call to profiled */
+			offlineProfilerHeader();
+			delayswitch--;
+		}
+		if (eventstream == NULL)
+			continue;
+
+		MT_lock_set(&mal_profileLock, "profileLock");
+#ifdef HAVE_TIMES
+		times(&newTms);
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+		getrusage(RUSAGE_SELF, &infoUsage);
+#endif
+
+		/* make ping profile event tuple  */
+		log("[ ");
+		if (profileCounter[PROFevent].status) {
+			log("%d,\t", eventcounter);
+		}
+		if (profileCounter[PROFstart].status) 
+			log("\"ping\",\t");
+		if (profileCounter[PROFtime].status) {
+			char *tbuf, *c;
+
+			/* without this cast, compilation on Windows fails with
+			 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+			 */
+			struct timeval tv;
+			time_t clock;
+
+			gettimeofday(&tv,NULL);
+			clock = (time_t) tv.tv_sec;
+			tbuf = ctime(&clock);
+			if (tbuf) {
+				c = strchr(tbuf, '\n');
+				if (c) {
+					c[-5] = 0;
+				}
+				tbuf[10] = '"';
+				log("%s", tbuf + 10);
+				log(".%06d\",\t", (int)tv.tv_usec);
+			} else
+				log("%s,\t", "nil");
+		}
+		if (profileCounter[PROFthread].status)
+			log(" %d,\t", THRgettid());
+		if (profileCounter[PROFflow].status) {
+			log("%d,\t", memoryclaims);
+			log(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+		}
+		if (profileCounter[PROFfunc].status) 
+				log("\"ping\",\t");
+		if (profileCounter[PROFpc].status) 
+			log("0,\t");
+		if (profileCounter[PROFticks].status) 
+			log("0,\t");
+#ifdef HAVE_TIMES
+		if (profileCounter[PROFcpu].status && delayswitch < 0) {
+			log("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
+			log("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
+			log("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
+			log("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
+			prevtimer = newTms;
+		}
+#endif
+		if (profileCounter[PROFmemory].status && delayswitch < 0)
+			log(SZFMT ",\t", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+		if ((profileCounter[PROFreads].status ||
+			 profileCounter[PROFwrites].status) && delayswitch < 0) {
+			log("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+			log("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+			prevUsage = infoUsage;
+		}
+		if (profileCounter[PROFprocess].status && delayswitch < 0) {
+			log("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+			log("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+			log("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+			log("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+			log("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+			prevUsage = infoUsage;
+		}
+#endif
+		if (profileCounter[PROFrbytes].status)
+			log("0,\t");
+		if (profileCounter[PROFwbytes].status)
+			log("0,\t");
+
+		if (profileCounter[PROFaggr].status)
+			log("0,\t0,\t");
+
+		if (profileCounter[PROFstmt].status)
+				log(" \"ping\",\t");
+		if (profileCounter[PROFtype].status)
+			log("\"\",\t");
+		if (profileCounter[PROFuser].status) {
+			log(" 0");
+		}
+		log(" ]\n");
+		eventcounter++;
+		flushLog();
+		MT_lock_unset(&mal_profileLock, "profileLock");
+	}
+	THRdel(thr);
+}
+
+void startHeartbeat(int delay){
+	MT_Id p;
+
+	if ( delay < 0 )
+		return;
+	hbdelay = delay;
+	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
+}
+
+void stopHeartbeat(void){
+	hbdelay = 0;
 }

@@ -82,9 +82,7 @@ stderr of test 'setoptimizer` in directory 'test` itself:
 
 MAPI  = monetdb@madrid:30616
 QUERY = set optimizer='myfamous_pipe';
-ERROR = !SyntaxException:parseError:
-        !';' expected
-        !Syntax error detected.See documentation for details
+ERROR = !optimizer 'myfamous_pipe' unknown
 
 # 19:12:49 >  
 # 19:12:49 >  Done.

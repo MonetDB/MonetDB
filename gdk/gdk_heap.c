@@ -88,7 +88,7 @@ HEAPcacheInit(void)
 		int i;
 
 		MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		hc = (heap_cache*)GDKmalloc(sizeof(heap_cache));
 		hc->used = 0;
 		hc->sz = HEAP_CACHE_SIZE;
@@ -101,7 +101,7 @@ HEAPcacheInit(void)
 			snprintf(fn, PATHLENGTH, "%d", i);
 			GDKunlink(HCDIR, fn, NULL);
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 }
 
@@ -112,7 +112,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 
 
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		if (hc->used < hc->sz) {
 			heap_cache_e *e = hc->hc+hc->used;
 
@@ -124,7 +124,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 			hc->used++;
 			added = 1;
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 	if (!added)
 		return GDKmunmap(base, maxsz);
@@ -140,7 +140,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
 	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
 		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc->used);
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 
 		if (hc->used) {
 			int i;
@@ -200,7 +200,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 				GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
 			}
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 	if (!base) {
 		FILE *fp = GDKfilelocate(fn, "wb", NULL);

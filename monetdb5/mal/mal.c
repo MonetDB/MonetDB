@@ -176,11 +176,7 @@
 #include <mal.h>
 
 char monet_cwd[PATHLENGTH] = { 0 };
-int monet_welcome = 1;
-str *monet_script;
-int monet_daemon=0;
 size_t monet_memory;
-int nrservers = 0;
 
 #include "mal_stack.h"
 #include "mal_linker.h"
@@ -237,7 +233,6 @@ int mal_init(void){
 	MT_lock_init( &mal_copyLock, "mal_copyLock");
 	MT_lock_init( &mal_delayLock, "mal_delayLock");
 
-	GDKprotect();
 	tstAligned();
 	MCinit();
 	mdbInit();
@@ -279,7 +274,6 @@ moreClients(int reruns)
 	return finishing+claimed;
 }
 void mal_exit(void){
- 	int t = 0;
 	str err;
 
 	/*
@@ -325,16 +319,14 @@ void mal_exit(void){
 	}
 #endif
 	/* deregister everything that was registered, ignore errors */
-	if ((err = SABAOTHwildRetreat(&t)) != MAL_SUCCEED) {
+	if ((err = msab_wildRetreat()) != NULL) {
 		fprintf(stderr, "!%s", err);
-		if (err != M5OutOfMemory)
-			GDKfree(err);
+		free(err);
 	}
 	/* the server will now be shut down */
-	if ((err = SABAOTHregisterStop(&t)) != MAL_SUCCEED) {
+	if ((err = msab_registerStop()) != NULL) {
 		fprintf(stderr, "!%s", err);
-		if (err != M5OutOfMemory)
-			GDKfree(err);
+		free(err);
 	}
 	GDKexit(0); 	/* properly end GDK */
 }

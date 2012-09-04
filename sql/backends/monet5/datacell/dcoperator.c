@@ -54,7 +54,7 @@ str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh)
 
 	BUN size, i;
 
-	(void)ret;
+	(void) ret;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "dc.selectInsert", "Cannot access input BAT");
@@ -76,11 +76,11 @@ str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh)
 			throw(MAL, "dc.selectInsert", "Failed to make room for the new values");
 	}
 /*printf("in dc.selectInsert size is "OIDFMT,size);*/
-	writerH = (lng*)Hloc(r, BUNfirst(r));
-	writerT = (lng*)Tloc(r, BUNfirst(r));
+	writerH = (lng *) Hloc(r, BUNfirst(r));
+	writerT = (lng *) Tloc(r, BUNfirst(r));
 
-	readerH = (lng*)Hloc(b, BUNfirst(b));
-	readerT = (lng*)Tloc(b, BUNfirst(b));
+	readerH = (lng *) Hloc(b, BUNfirst(b));
+	readerT = (lng *) Tloc(b, BUNfirst(b));
 
 	for (i = 0; i < size; i++) {
 		if (*readerT >= *low && *readerT <= *hgh) {
@@ -93,7 +93,7 @@ str DCselectInsert(int *ret, int *res, int *bid, lng *low, lng *hgh)
 		readerH++;
 		readerT++;
 	}
-	BATsetcount(r, (BUN)(writerT - (lng*)Tloc(r, BUNfirst(r))));
+	BATsetcount(r, (BUN) (writerT - (lng *) Tloc(r, BUNfirst(r))));
 
 	BBPunfix(*bid);
 	BBPunfix(*res);
@@ -113,7 +113,7 @@ str DCdeleteUpperSlice(int *ret, int *bid, int *pos)
 	int *readerT, *writerT;
 	BUN size, i;
 
-	(void)ret;
+	(void) ret;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "dc.deleteUpperSlice", "Cannot access input BAT");
@@ -127,14 +127,14 @@ str DCdeleteUpperSlice(int *ret, int *bid, int *pos)
 		HASHremove(BATmirror(b));
 
 	size = BATcount(b);
-	writerT = (int*)Tloc(b, BUNfirst(b));
-	readerT = (int*)Tloc(b, BUNfirst(b)) + *pos;
+	writerT = (int *) Tloc(b, BUNfirst(b));
+	readerT = (int *) Tloc(b, BUNfirst(b)) + *pos;
 
 	for (i = *pos; i < size; i++)
 		*writerT++ = *readerT++;
 	b->batInserted -= *pos;
 
-	BATsetcount(b, (BUN)(writerT - (int*)Tloc(b, BUNfirst(b))));
+	BATsetcount(b, (BUN) (writerT - (int *) Tloc(b, BUNfirst(b))));
 	BBPunfix(*bid);
 	b->batDirty = TRUE;
 	return MAL_SUCCEED;
@@ -152,7 +152,7 @@ str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid)
 	int *writerT_r, *readerT_b;
 	BUN size_b, size_r, i;
 
-	(void)ret;
+	(void) ret;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "dc.replaceTailBasedOnHead", "Cannot access input BAT");
@@ -176,18 +176,18 @@ str DCreplaceTailBasedOnHead(int *ret, int *res, int *bid)
 
 
 	if ((b->htype == TYPE_void) && (size_b == size_r)) {
-		writerT_r = (int*)Tloc(r, BUNfirst(r));
-		readerT_b = (int*)Tloc(b, BUNfirst(b));
+		writerT_r = (int *) Tloc(r, BUNfirst(r));
+		readerT_b = (int *) Tloc(b, BUNfirst(b));
 		for (i = 0; i < size_r; i++) {
 			*writerT_r = *readerT_b;
 			writerT_r++;
 			readerT_b++;
 		}
 	} else if ((b->htype != TYPE_void) && (size_b < size_r)) {
-		readerH_b = (oid*)Hloc(b, BUNfirst(b));
-		readerT_b = (int*)Tloc(b, BUNfirst(b));
+		readerH_b = (oid *) Hloc(b, BUNfirst(b));
+		readerT_b = (int *) Tloc(b, BUNfirst(b));
 		for (i = 0; i < size_b; i++) {
-			writerT_r = (int*)Tloc(r, BUNfirst(r)) + *readerH_b;
+			writerT_r = (int *) Tloc(r, BUNfirst(r)) + *readerH_b;
 			*writerT_r = *readerT_b;
 			readerH_b++;
 			readerT_b++;
@@ -210,7 +210,7 @@ str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh)
 
 	BUN size, i;
 
-	(void)ret;
+	(void) ret;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "dc.selectInsertDelete", "Cannot access input BAT");
@@ -232,14 +232,14 @@ str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh)
 			throw(MAL, "dcoperator.DCselectInsertDelete", "Failed to make room for the new values");
 	}
 
-	writerHr = (lng*)Hloc(r, BUNfirst(r));
-	writerTr = (lng*)Tloc(r, BUNfirst(r));
+	writerHr = (lng *) Hloc(r, BUNfirst(r));
+	writerTr = (lng *) Tloc(r, BUNfirst(r));
 
-	writerH = (lng*)Hloc(b, BUNfirst(b));
-	writerT = (lng*)Tloc(b, BUNfirst(b));
+	writerH = (lng *) Hloc(b, BUNfirst(b));
+	writerT = (lng *) Tloc(b, BUNfirst(b));
 
-	readerH = (lng*)Hloc(b, BUNfirst(b));
-	readerT = (lng*)Tloc(b, BUNfirst(b));
+	readerH = (lng *) Hloc(b, BUNfirst(b));
+	readerT = (lng *) Tloc(b, BUNfirst(b));
 
 	for (i = 0; i < size; i++) {
 		if (*readerT < *low || *readerT > *hgh) {
@@ -270,8 +270,8 @@ str DCselectInsertDelete(int *ret, int *res, int *bid, lng *low, lng *hgh)
 	}
 
 
-	BATsetcount(b, (BUN)(writerT - (lng*)Tloc(b, BUNfirst(b))));
-	BATsetcount(r, (BUN)(writerTr - (lng*)Tloc(r, BUNfirst(r))));
+	BATsetcount(b, (BUN) (writerT - (lng *) Tloc(b, BUNfirst(b))));
+	BATsetcount(r, (BUN) (writerTr - (lng *) Tloc(r, BUNfirst(r))));
 
 	BBPunfix(*bid);
 	BBPunfix(*res);
@@ -291,11 +291,11 @@ DCsliceStrict(int *ret, bat *bid, lng *start, lng *end)
 
 	assert(*start >= 0);
 	assert(*end >= 0);
-	assert(*start <= (lng)BUN_MAX);
-	assert(*end < (lng)BUN_MAX);
+	assert(*start <= (lng) BUN_MAX);
+	assert(*end < (lng) BUN_MAX);
 	assert(*start <= *end);
 
-	if ((BUN)((*end - *start) + 1) > BATcount(b)) {
+	if ((BUN) ((*end - *start) + 1) > BATcount(b)) {
 		bn = BATnew(b->htype, b->ttype, 0);
 		BATsetcount(bn, 0);
 		*ret = bn->batCacheid;
@@ -303,11 +303,12 @@ DCsliceStrict(int *ret, bat *bid, lng *start, lng *end)
 		return MAL_SUCCEED;
 	}
 
-	bn = BATslice(b, (BUN)*start, (BUN)*end + 1);
+	bn = BATslice(b, (BUN) *start, (BUN) *end + 1);
 
 	BBPreleaseref(b->batCacheid);
 	if (bn != NULL) {
-		if (!(bn->batDirty & 2)) bn = BATsetaccess(bn, BAT_READ);
+		if (!(bn->batDirty & 2))
+			bn = BATsetaccess(bn, BAT_READ);
 		*ret = bn->batCacheid;
 		BBPkeepref(*ret);
 		return MAL_SUCCEED;

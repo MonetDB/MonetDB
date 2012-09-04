@@ -15,27 +15,6 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = mapilib mapiclient HAVE_ODBC?odbc HAVE_PERL?perl php HAVE_RUBYGEM?ruby examples HAVE_PYTHON?python HAVE_PYTHON?python3 NATIVE_WIN32?NT
-
-EXTRA_DIST = RunMtest.in RunMtest.bat.in \
-		RunMapprove.in \
-		Runmclient.bat.in
+SUBDIRS = mapilib mapiclient HAVE_ODBC?odbc HAVE_PERL?perl php HAVE_RUBYGEM?ruby examples HAVE_PYTHON?python HAVE_PYTHON3?python3 NATIVE_WIN32?NT
 
 EXTRA_DIST_DIR = Tests
-
-TESTS = RunMtest
-TESTS_ENVIRONMENT = $(SHELL)
-
-scripts_sh = {
-	EXT = ""
-	COND = NOT_WIN32
-	NOINST
-	SOURCES = RunMapprove.in RunMtest.in
-}
-
-scripts_bat = {
-	EXT = bat
-	COND = NATIVE_WIN32
-	NOINST
-	SOURCES = RunMapprove.bat.in Runmclient.bat.in RunMtest.bat.in
-}

@@ -19,8 +19,8 @@
 
 %{
 #include <stdio.h>
-#include "jaql.tab.h"
 #include "jaqltree.h"
+#include "jaql.tab.h"
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #define fileno _fileno
@@ -115,6 +115,7 @@ explain    return EXPLAIN;
 plan       return PLAN;
 planf      return PLANF;
 debug      return DEBUG;
+trace      return TRACE;
 
  /* language constructs */
 "->"       return ARROW;

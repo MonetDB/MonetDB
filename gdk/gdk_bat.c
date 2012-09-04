@@ -64,7 +64,7 @@
 char *BATstring_h = "h";
 char *BATstring_t = "t";
 
-int
+static int
 default_ident(char *s)
 {
 	return ((s) == BATstring_h || (s) == BATstring_t);
@@ -1009,16 +1009,16 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 				*_dst++ = *_src++;			\
 		}							\
 	} while (0)
-#define hacc_update(del, get, p, idx)					\
+#define hacc_update(func, get, p, idx)					\
 	do {								\
 		if (b->H->hash) {					\
-			hash##del(b->H->hash, idx, BUN##get(bi, p), p < last); \
+			func(b->H->hash, idx, get(bi, p), p < last);	\
 		}							\
 	} while (0)
-#define tacc_update(del, get, p, idx)					\
+#define tacc_update(func, get, p, idx)					\
 	do {								\
 		if (b->T->hash) {					\
-			hash##del(b->T->hash, idx, BUN##get(bi, p), p < last); \
+			func(b->T->hash, idx, get(bi, p), p < last);	\
 		}							\
 	} while (0)
 #define acc_move(l, p, idx2, idx1)					\
@@ -1360,6 +1360,9 @@ BUNappend(BAT *b, const void *t, bit force)
  * one now must do:
  *	BATloopDEL(b,p) p = BUNdelete(b,p,FALSE)
  */
+#define hashins(h,i,v,n) HASHins_any(h,i,v)
+#define hashdel(h,i,v,n) HASHdel(h,i,v,n)
+
 static inline BUN
 BUNdelete_(BAT *b, BUN p, bit force)
 {
@@ -1377,8 +1380,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 	if (p < b->batInserted && !force) {
 		idx1 = p;
 		if (p == b->batFirst) {	/* first can simply be discarded */
-			hacc_update(del,head,p,idx1);
-			tacc_update(del,tail,p,idx1);
+			hacc_update(hashdel,BUNhead,p,idx1);
+			tacc_update(hashdel,BUNtail,p,idx1);
 
 			if (BAThdense(b)) {
 				bm->tseqbase = ++b->hseqbase;
@@ -1389,8 +1392,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 		} else {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
 
-			hacc_update(del,head,p,idx1);
-			tacc_update(del,tail,p,idx1);
+			hacc_update(hashdel,BUNhead,p,idx1);
+			tacc_update(hashdel,BUNtail,p,idx1);
 
 			l = BUNfirst(b);
 			idx2 = l;
@@ -1448,8 +1451,8 @@ BUNdelete_(BAT *b, BUN p, bit force)
 			(*tatmdel) (b->T->vheap, (var_t *) BUNtloc(bi, p));
 		}
 		idx1 = p;
-		hacc_update(del,head,p,idx1);
-		tacc_update(del,tail,p,idx1);
+		hacc_update(hashdel,BUNhead,p,idx1);
+		tacc_update(hashdel,BUNtail,p,idx1);
 		idx2 = last;
 		if (p != last) {
 			unsigned short hs = Hsize(b), ts = Tsize(b);
@@ -1605,9 +1608,9 @@ BUNinplace(BAT *b, BUN p, const void *h, const void *t, bit force)
 			 * property, so we must clear it */
 			b->T->nil = 0;
 		}
-		tacc_update(del,tail,p,pit);
+		tacc_update(hashdel,BUNtail,p,pit);
 		Treplacevalue(b, BUNtloc(bi, p), t);
-		tacc_update(ins,tail,p,pit);
+		tacc_update(hashins,BUNtail,p,pit);
 
 		tt = b->ttype;
 		prv = p > b->batFirst ? p - 1 : BUN_NONE;
@@ -1725,7 +1728,6 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 	BUN r, s;
 	BATiter ui = bat_iterator(u);
 
-	BATaccessBegin(u, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(u, r, s) {
 		oid updid = *(oid *) BUNhead(ui, r);
 		const void *val = BUNtail(ui, r);
@@ -1734,7 +1736,6 @@ void_replace_bat(BAT *b, BAT *u, bit force)
 			return BUN_NONE;
 		nr++;
 	}
-	BATaccessEnd(u, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return nr;
 }
 
@@ -1917,11 +1918,11 @@ BUNlocate(BAT *b, const void *x, const void *y)
 				v = BATmirror(v);
 			}
 			if (v->H->hash) {
-				gdk_set_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
+				MT_lock_set(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
 				if (b->H->hash == NULL) {	/* give it to the parent */
 					b->H->hash = v->H->hash;
 				}
-				gdk_unset_lock(GDKhashLock(ABS(b->batCacheid) & BBP_BATMASK), "BUNlocate");
+				MT_lock_unset(&GDKhashLock(ABS(b->batCacheid)), "BUNlocate");
 			}
 			BBPreclaim(v);
 			v = NULL;
@@ -2200,9 +2201,9 @@ BATseqbase(BAT *b, oid o)
 				if (!b->hkey) {
 					b->hkey = TRUE;
 					b->H->nokey[0] = b->H->nokey[1] = 0;
-					b->H->nonil = 1;
-					b->H->nil = 0;
 				}
+				b->H->nonil = 1;
+				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->U->count <= 1;
 			}
@@ -2498,7 +2499,7 @@ backup_new(Heap *hp, int lockbat)
 
 	/* file actions here interact with the global commits */
 	for (xx = 0; xx <= lockbat; xx++)
-		gdk_set_lock(GDKtrimLock(xx), "TMsubcommit");
+		MT_lock_set(&GDKtrimLock(xx), "TMsubcommit");
 
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
 	GDKfilepath(batpath, BATDIR, hp->filename, ".new");
@@ -2517,7 +2518,7 @@ backup_new(Heap *hp, int lockbat)
 		IODEBUG THRprintf(GDKstdout, "#unlink(%s) = %d\n", batpath, ret);
 	}
 	for (xx = lockbat; xx >= 0; xx--)
-		gdk_unset_lock(GDKtrimLock(xx), "TMsubcommit");
+		MT_lock_unset(&GDKtrimLock(xx), "TMsubcommit");
 	return ret;
 }
 
@@ -2777,7 +2778,7 @@ BATmode(BAT *b, int mode)
 		} else if (b->batPersistence == PERSISTENT) {
 			BBPdecref(bid, TRUE);
 		}
-		gdk_set_lock(GDKswapLock(bid & BBP_BATMASK), "BATmode");
+		MT_lock_set(&GDKswapLock(bid), "BATmode");
 		if (mode == PERSISTENT) {
 			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
@@ -2799,7 +2800,7 @@ BATmode(BAT *b, int mode)
 			}
 		}
 		b->batPersistence = mode;
-		gdk_unset_lock(GDKswapLock(bid & BBP_BATMASK), "BATmode");
+		MT_lock_unset(&GDKswapLock(bid), "BATmode");
 	}
 	return b;
 }
@@ -2902,7 +2903,6 @@ BATassertHeadProps(BAT *b)
 			int cmpprv = b->hsorted | b->hrevsorted | b->hkey;
 			int cmpnil = b->H->nonil | b->H->nil;
 
-			BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 			BATloop(b, p, q) {
 				valp = BUNhead(bi, p);
 				if (prev && cmpprv) {
@@ -2935,7 +2935,6 @@ BATassertHeadProps(BAT *b)
 				}
 				prev = valp;
 			}
-			BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 		} else {	/* b->hkey && !b->hsorted && !b->hrevsorted */
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
@@ -3116,7 +3115,6 @@ BATderiveHeadProps(BAT *b, int expensive)
 	key = 1;
 	sorted = revsorted = (BATatoms[b->htype].linear != 0);
 	dense = (b->htype == TYPE_oid);
-	BATaccessBegin(b, USE_HEAD, MMAP_SEQUENTIAL);
 	/* if no* props already set correctly, we can maybe speed
 	 * things up, if not set correctly, reset them now and set
 	 * them later */
@@ -3239,13 +3237,13 @@ BATderiveHeadProps(BAT *b, int expensive)
 					key = 0;
 					b->H->nokey[0] = hb;
 					b->H->nokey[1] = p;
+					break;
 				}
 			}
 			hs->link[p] = hs->hash[prb];
 			hs->hash[prb] = p;
 		}
 	}
-	BATaccessEnd(b, USE_HEAD, MMAP_SEQUENTIAL);
 	if (hs) {
 		if (hp->storage == STORE_MEM)
 			HEAPfree(hp);
