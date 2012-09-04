@@ -132,6 +132,7 @@ static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
 static int batch = 9999; /* number of queries to combine in one run */
 static long maxio=0;
+static int cpus = 0;
 
 static FILE *gnudata;
 
@@ -513,24 +514,41 @@ static void initcolors(void)
 static void dumpboxes(void)
 {
 	FILE *f= 0;
+	FILE *fcpu=0;
 	char buf[BUFSIZ];
 	int i;
+	
 	if ( inputfile ){
 		snprintf(buf,BUFSIZ,"scratch.dat");
 		f = fopen(buf,"w");
+		snprintf(buf,BUFSIZ,"scratch_cpu.dat");
+		fcpu = fopen(buf,"w");
 	} else {
 		snprintf(buf,BUFSIZ,"%s.dat",(filename?filename:"tomograph"));
 		f = fopen(buf,"w");
+		snprintf(buf,BUFSIZ,"%s_cpu.dat",(filename?filename:"tomograph"));
+		fcpu = fopen(buf,"w");
 	} 
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn ){
-		if ( box[i].state != 4){
+		if ( box[i].state != 4 ){
 			//io counters are zero at start of instruction !
 			//fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
 		} else {
 			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
+			fprintf(fcpu,"%ld %s\n",box[i].clkend,box[i].stmt);
+			if ( cpus == 0){
+				char *s = box[i].stmt;
+				while(s && isspace((int)*s)) s++;
+				while (s){
+					s= strchr(s+1,(int)' ');
+					while(s && isspace((int)*s)) s++;
+					if ( s)
+						cpus++;
+				}
+			}
 		}
 	}
 	(void) fclose(f);
@@ -554,12 +572,12 @@ static void showmemory(void)
 			min = box[i].memend;
 	}
 
-	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 0\n");
 	fprintf(gnudata,"set lmarg 9\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.1\n");
-	fprintf(gnudata,"set origin 0.0,0.8\n");
+	fprintf(gnudata,"set size 1,0.13\n");
+	fprintf(gnudata,"set origin 0.0,0.85\n");
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set ylabel \"memory in GB\"\n");
@@ -567,6 +585,30 @@ static void showmemory(void)
 	fprintf(gnudata,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
 	fprintf(gnudata,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
 	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
+	fprintf(gnudata,"unset yrange\n");
+}
+
+/* produce memory thread trace */
+static void showcpu(void)
+{
+	int i;
+
+	fprintf(gnudata,"\nset tmarg 1\n");
+	fprintf(gnudata,"set bmarg 0\n");
+	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set rmarg 10\n");
+	fprintf(gnudata,"set size 1,0.05\n");
+	fprintf(gnudata,"set origin 0.0,0.8\n");
+	fprintf(gnudata,"set ylabel \"CPU\"\n");
+
+	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
+	fprintf(gnudata,"unset xtics\n");
+	fprintf(gnudata,"unset ytics\n");
+	fprintf(gnudata,"set ytics (\"100\" 100, \"0\" 0)\n");
+	fprintf(gnudata,"set yrange [-0.1:1.1]\n");
+	fprintf(gnudata,"plot ");
+	for(i=0; i< cpus; i++)
+		fprintf(gnudata,"\"%s_cpu.dat\" using 1:%d notitle with lines %s",(inputfile?"scratch":filename),i+2, (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -584,12 +626,12 @@ static void showio(void)
 			max = box[i].writes;
 	}
 
-	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 0\n");
 	fprintf(gnudata,"set lmarg 9\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.1\n");
-	fprintf(gnudata,"set origin 0.0,0.8\n");
+	fprintf(gnudata,"set size 1,0.13\n");
+	fprintf(gnudata,"set origin 0.0,0.85\n");
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, (double)(lastclktick-starttime));
 	fprintf(gnudata,"set yrange [1:%ld]\n", ((1.1* max/beat) <= 2? 2:(long)(1.1 * max/beat)));
 	fprintf(gnudata,"unset xtics\n");
@@ -602,6 +644,7 @@ static void showio(void)
 	fprintf(gnudata,"unset y2label\n");
 	fprintf(gnudata,"unset y2tics\n");
 	fprintf(gnudata,"unset y2range\n");
+	fprintf(gnudata,"unset title\n");
 }
 
 /* produce a legenda image for the color map */
@@ -632,7 +675,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"set origin 0.0,0.0\n");
 	} else {
 		f = gnudata;
-		fprintf(f,"\nset tmarg 0\n");
+		fprintf(f,"\nset tmarg 1\n");
 		fprintf(f,"set bmarg 0\n");
 		fprintf(f,"set lmarg 9\n");
 		fprintf(f,"set rmarg 10\n");
@@ -822,8 +865,9 @@ static void createTomogram(void)
 	dumpboxes();
 	showio();
 	showmemory();
+	showcpu();
 
-	fprintf(gnudata,"\nset tmarg 0\n");
+	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 3\n");
 	fprintf(gnudata,"set lmarg 9\n");
 	fprintf(gnudata,"set rmarg 10\n");
@@ -926,25 +970,26 @@ static void createTomogram(void)
 static void update(int state, int thread, long clkticks, long ticks, long memory, long reads, long writes, char *fcn, char *stmt) {
 	int idx;
 	Box b;
+	char *s;
 	
 	/* ignore the flow of control statements 'function' and 'end' */
-	if ( strncmp(fcn,"end ",4)== 0)
+	if ( fcn  &&  strncmp(fcn,"end ",4)== 0)
 		return;
 	if ( starttime == 0 && state == 0) {
 		/* ignore all instructions up to the first function call */
-		if (strncmp(fcn,"function",8) != 0)
+		if ( fcn && strncmp(fcn,"function",8) != 0)
 			return;
 		starttime = clkticks;
 		activateBeat();
 		return;
 	}
 
-	if (state == 1 && strncmp(fcn,"function",8) == 0){
+	if (state == 1 && fcn && strncmp(fcn,"function",8) == 0){
 		deactivateBeat();
 		createTomogram();
 		totalclkticks= 0; /* number of clock ticks reported */
 		totalexecticks= 0; /* number of ticks reported for processing */
-		if ( title == 0)
+		if ( fcn && title == 0)
 			title = strdup(fcn+9);
 		return;
 	}
@@ -963,8 +1008,10 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].memend = box[idx].memstart = memory;
 		box[idx].reads = reads;
 		box[idx].writes = writes;
+		s = strchr(stmt,(int)']');
+		if (s ) *s = 0;
 		box[idx].stmt = stmt;
-		box[idx].fcn = strdup(fcn);
+		box[idx].fcn = fcn?strdup(fcn):"";
 		threads[thread]= ++topbox;
 		idx = threads[thread];
 		box[idx] = b;
@@ -982,7 +1029,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].clkstart = clkticks;
 		box[idx].memstart = memory;
 		box[idx].stmt = stmt;
-		box[idx].fcn = strdup(fcn);
+		box[idx].fcn = fcn ? strdup(fcn): "";
 	}
 	/* end the instruction box */
 	if ( state == 1 &&  thread < MAXTHREADS && fcn && box[idx].fcn  && strcmp(fcn, box[idx].fcn) ==0){
@@ -1078,6 +1125,8 @@ static void parser(char *row){
 	c = strchr(c+1, (int)',');
 	writes = atol(c+1);
 
+	c = strchr(c+1, (int)',');
+	c++;
 	fcn = c;
 	stmt = strdup(fcn);
 	c = strstr(c+1, ":=");
