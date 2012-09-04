@@ -574,16 +574,16 @@ static void showmemory(void)
 
 	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 0\n");
-	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.13\n");
+	fprintf(gnudata,"set size 1,0.08\n");
 	fprintf(gnudata,"set origin 0.0,0.85\n");
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set ylabel \"memory in GB\"\n");
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
-	fprintf(gnudata,"set ytics (\"%3.2f\" %3.2f, \"%3.2f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
+	fprintf(gnudata,"set ytics (\"%.1f\" %3.2f, \"%.1f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
 	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
 	fprintf(gnudata,"unset yrange\n");
 }
@@ -595,7 +595,7 @@ static void showcpu(void)
 
 	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 0\n");
-	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
 	fprintf(gnudata,"set size 1,0.05\n");
 	fprintf(gnudata,"set origin 0.0,0.8\n");
@@ -604,7 +604,7 @@ static void showcpu(void)
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"unset ytics\n");
-	fprintf(gnudata,"set ytics (\"100\" 100, \"0\" 0)\n");
+	fprintf(gnudata,"set ytics (\"1\" 100, \"0\" 0)\n");
 	fprintf(gnudata,"set yrange [-0.1:1.1]\n");
 	fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
@@ -628,9 +628,9 @@ static void showio(void)
 
 	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 0\n");
-	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.13\n");
+	fprintf(gnudata,"set size 1,0.08\n");
 	fprintf(gnudata,"set origin 0.0,0.85\n");
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, (double)(lastclktick-starttime));
 	fprintf(gnudata,"set yrange [1:%ld]\n", ((1.1* max/beat) <= 2? 2:(long)(1.1 * max/beat)));
@@ -677,7 +677,7 @@ static void showcolormap(char *filename, int all)
 		f = gnudata;
 		fprintf(f,"\nset tmarg 1\n");
 		fprintf(f,"set bmarg 0\n");
-		fprintf(f,"set lmarg 9\n");
+		fprintf(f,"set lmarg 10\n");
 		fprintf(f,"set rmarg 10\n");
 		fprintf(f,"set size 1,0.4\n");
 		fprintf(f,"set origin 0.0,0.0\n");
@@ -701,9 +701,9 @@ static void showcolormap(char *filename, int all)
 		}
 
 		fprintf(f,"set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.15 * w), h-5, colors[i].col);
+			object++, (k % 3) * w, h-40, (int)((k % 3) * w+ 0.2 * w), h-5, colors[i].col);
 		fprintf(f,"set label %d \"%s.%s (%3.2f %s)\" at %d,%d\n", object++, colors[i].mod, colors[i].fcn, tu,scale,
-			(int) ((k % 3) *  w  + 0.2 *w) , h-20);
+			(int) ((k % 3) *  w  + 3 + 0.2 *w) , h-20);
 		if ( k % 3 == 2)
 			h-= 40;
 		k++;
@@ -869,7 +869,7 @@ static void createTomogram(void)
 
 	fprintf(gnudata,"\nset tmarg 1\n");
 	fprintf(gnudata,"set bmarg 3\n");
-	fprintf(gnudata,"set lmarg 9\n");
+	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
 	fprintf(gnudata,"set size 1,0.4\n");
 	fprintf(gnudata,"set origin 0.0,0.4\n");
@@ -925,7 +925,7 @@ static void createTomogram(void)
 	h = 10; /* unit height of bars */
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
-		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
+		fprintf(gnudata,"\"%d\" %3.2f%c",rows[i],i * 1.5 *h + h/2, (i< top-1? ',':' '));
 	fprintf(gnudata,")\n");
 
 	/* mark duration of each thread */
