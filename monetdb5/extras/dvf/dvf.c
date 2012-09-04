@@ -165,8 +165,7 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				/* create BAT iterator */
 				fli = bat_iterator(BAT_fl);
 
-				/* advice on sequential scan */
-				BATaccessBegin(BAT_fl, USE_TAIL, MMAP_SEQUENTIAL);
+				/* loop over the file_locations */
 
 				BATloop(BAT_fl, b1, b2)
 				{
@@ -199,8 +198,6 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					pushInstruction(mb, q);
 					actions++;
 				}
-
-				BATaccessEnd(BAT_fl, USE_TAIL, MMAP_SEQUENTIAL);
 
 				/* check for logical error */
 				assert(which_fl == num_fl);
