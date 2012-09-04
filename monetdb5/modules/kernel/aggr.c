@@ -1,196 +1,23 @@
-@/
-The contents of this file are subject to the MonetDB Public License
-Version 1.1 (the "License"); you may not use this file except in
-compliance with the License. You may obtain a copy of the License at
-http://www.monetdb.org/Legal/MonetDBLicense
-
-Software distributed under the License is distributed on an "AS IS"
-basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-License for the specific language governing rights and limitations
-under the License.
-
-The Original Code is the MonetDB Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2012 MonetDB B.V.
-All Rights Reserved.
-@
-
-@f aggr
-
-@c
 /*
- * @a K.S. Mullender
- * @v 2.0
- * @+ Aggregates Module
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is the MonetDB Database System.
+ *
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
  */
-@mal
-module aggr;
-@= sumprod_signatures
-command sum(b:bat[:oid,:@1], e:bat[:oid,:any_1]) :bat[:oid,:@2] 
-address AGGRsum2_@2
-comment "Sum over grouped tail sum on @1";
 
-command sum(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:@2]
-address AGGRsum3_@2
-comment "Grouped tail sum on @1";
-
-command subsum(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
-address AGGRsubsum_@2
-comment "Grouped sum aggregate";
-
-command subsum(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
-address AGGRsubsumcand_@2
-comment "Grouped sum aggregate with candidates list";
-
-command product(b:bat[:oid,:@1], e:bat[:oid,:any_1]) :bat[:oid,:@2] 
-address AGGRprod2_@2
-comment "Product over grouped tail product on @1";
-
-command product(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1])
-		:bat[:oid,:@2]
-address AGGRprod3_@2
-comment "Grouped tail product on @1";
-
-command subprod(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
-address AGGRsubprod_@2
-comment "Grouped product aggregate";
-
-command subprod(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:@2]
-address AGGRsubprodcand_@2
-comment "Grouped product aggregate with candidates list";
-
-@
-@mal
-@:sumprod_signatures(bte,bte)@
-@:sumprod_signatures(bte,sht)@
-@:sumprod_signatures(bte,int)@
-@:sumprod_signatures(bte,wrd)@
-@:sumprod_signatures(bte,lng)@
-@:sumprod_signatures(sht,sht)@
-@:sumprod_signatures(sht,int)@
-@:sumprod_signatures(sht,wrd)@
-@:sumprod_signatures(sht,lng)@
-@:sumprod_signatures(int,int)@
-@:sumprod_signatures(int,wrd)@
-@:sumprod_signatures(int,lng)@
-@:sumprod_signatures(wrd,wrd)@
-@:sumprod_signatures(wrd,lng)@
-@:sumprod_signatures(lng,wrd)@
-@:sumprod_signatures(lng,lng)@
-@:sumprod_signatures(flt,flt)@
-@:sumprod_signatures(flt,dbl)@
-@:sumprod_signatures(dbl,dbl)@
-
-@= sum_avg_signatures
-command avg(b:bat[:oid,:@1], e:bat[:oid,:any_1]) :bat[:oid,:dbl] 
-address AGGRavg2_dbl
-comment "Grouped tail average on @1";
-
-command avg(b:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl] 
-address AGGRavg3_dbl
-comment "Grouped tail average on @1";
-
-command subavg(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubavg_dbl
-comment "Grouped avg aggregate";
-
-command subavg(b:bat[:oid,:@1],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubavgcand_dbl
-comment "Grouped avg aggregate with candidates list";
-
-@
-@mal
-# We may have to extend the signatures to all possible {void,oid} combos
-@:sum_avg_signatures(bte)@
-@:sum_avg_signatures(sht)@
-@:sum_avg_signatures(int)@
-@:sum_avg_signatures(wrd)@
-@:sum_avg_signatures(lng)@
-@:sum_avg_signatures(flt)@
-@:sum_avg_signatures(dbl)@
-
-command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1] 
-address AGGRmin2;
-
-command max(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1] 
-address AGGRmax2;
-
-command min(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1]
-address AGGRmin3;
-
-command max(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2]) 
-		:bat[:oid,:any_1] 
-address AGGRmax3;
-
-command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:oid]
-address AGGRsubmin
-comment "Grouped minimum aggregate";
-
-command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:oid]
-address AGGRsubmincand
-comment "Grouped minimum aggregate with candidates list";
-
-command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:oid]
-address AGGRsubmax
-comment "Grouped maximum aggregate";
-
-command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:oid]
-address AGGRsubmaxcand
-comment "Grouped maximum aggregate with candidates list";
-
-command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
-	:bat[:oid,:wrd] 
-address AGGRcount2
-comment "Grouped count";
-
-command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2], 
-		ignorenils:bit) :bat[:void,:wrd] 
-address AGGRcount3;
-
-command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:wrd] 
-address AGGRsize2nils
-comment "Grouped count of true values";
-
-command count(b:bat[:void,:any_1], e:bat[:oid,:any_2]) :bat[:void,:wrd] 
-address AGGRcount2nils
-comment "Grouped count";
-
-command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:wrd] 
-address AGGRcount2nils;
-
-command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd]
-address AGGRcount2nonils;
-
-command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
-	:bat[:oid,:wrd] 
-address AGGRcount3nils
-comment "Grouped count";
-
-command count_no_nil(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2])
-	:bat[:oid,:wrd]
-address AGGRcount3nonils;
-
-command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:wrd]
-address AGGRsubcount
-comment "Grouped count aggregate";
-
-command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:wrd]
-address AGGRsubcountcand
-comment "Grouped count aggregate with candidates list";
-
-@c
-/*
- * @- Wrapper
- * The remainder is a wrapper around the V4 code base.
- */
 #include "monetdb_config.h"
-@(
-#include <gdk.h>
-@)
-
 #include "mal.h"
 #include "mal_exception.h"
 

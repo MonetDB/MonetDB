@@ -27,7 +27,7 @@ MTSAFE
 lib_kernel = {
 	NOINST
 	SOURCES = \
-		aggr.mx \
+		aggr.c \
 		alarm.c alarm.h \
 		algebra.mx \
 		array.c array.h \
@@ -52,10 +52,10 @@ headers_mal = {
 	SOURCES = bat5.mal algebra.mx status.mal unix.mal \
 		mmath.mal lock.mal sema.mal alarm.mal batstr.mal \
 		batcolor.mal batmmath.mal \
-		group.mx aggr.mx array.mal \
+		group.mx aggr.mal array.mal \
 		counters.mal logger.mal microbenchmark.mal
 }
 
-EXTRA_DIST = aggr_ri.mx alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal
+EXTRA_DIST = alarm.mal counters.mal lock.mal logger.mal microbenchmark.mal sema.mal unix.mal aggr.mal
 
 EXTRA_DIST_DIR = Tests
