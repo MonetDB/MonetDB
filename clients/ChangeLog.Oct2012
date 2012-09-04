@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Sep  4 2012 Fabian Groffen <fabian@cwi.nl>
+- mclient now accepts URIs as database to connect to.
+
 * Thu Jul 19 2012 Gijs Molenaar <g.j.molenaar@uva.nl>
 - all strings returned by python2 are unicode, removed use_unicode option
 - python2 and 3 type convertion speed improvements
