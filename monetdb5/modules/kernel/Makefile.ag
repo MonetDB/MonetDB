@@ -27,8 +27,6 @@ MTSAFE
 lib_kernel = {
 	NOINST
 	SOURCES = \
-		aggr_be_minmax.mx \
-		aggr_bge_minmax.mx \
 		aggr.mx \
 		alarm.c alarm.h \
 		algebra.mx \
