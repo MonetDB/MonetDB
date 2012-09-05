@@ -607,8 +607,6 @@ static void showcpu(void)
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set yrange [0:%d.1]\n",cpus);
-	fprintf(gnudata,"unset xtics\n");
-	fprintf(gnudata,"unset ytics\n");
 	fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
 		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
@@ -639,7 +637,6 @@ static void showio(void)
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, (double)(lastclktick-starttime));
 	fprintf(gnudata,"set yrange [1:%ld]\n", ((1.1* max/beat) <= 2? 2:(long)(1.1 * max/beat)));
 	fprintf(gnudata,"unset xtics\n");
-	fprintf(gnudata,"unset ytics\n");
 	fprintf(gnudata,"unset ylabel\n");
 	fprintf(gnudata,"set y2tics in (\"%d\" %ld)\n", (int)(max/beat), max/beat);
 	fprintf(gnudata,"set y2label \"IO per ms\"\n");
@@ -673,7 +670,6 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"set xrange [0:1800]\n");
 		fprintf(f,"set yrange [0:600]\n");
 		fprintf(f,"unset xtics\n");
-		fprintf(f,"unset ytics\n");
 		fprintf(f,"unset colorbox\n");
 		fprintf(f,"unset border\n");
 		fprintf(f,"unset title\n");
@@ -691,7 +687,6 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"set xrange [0:1800]\n");
 		fprintf(f,"set yrange [0:600]\n");
 		fprintf(f,"unset xtics\n");
-		fprintf(f,"unset ytics\n");
 		fprintf(f,"unset colorbox\n");
 		fprintf(f,"unset border\n");
 		fprintf(f,"unset title\n");
@@ -948,7 +943,7 @@ static void createTomogram(void)
 	h = 10; /* unit height of bars */
 	fprintf(gnudata,"set ytics (");
 	for( i =0; i< top; i++)
-		fprintf(gnudata,"\"%d\" %3.2f%c",rows[i],i * 1.5 *h + h/2, (i< top-1? ',':' '));
+		fprintf(gnudata,"\"%d\" %d%c",rows[i],i * 2 *h + h/2, (i< top-1? ',':' '));
 	fprintf(gnudata,")\n");
 
 	/* mark duration of each thread */
