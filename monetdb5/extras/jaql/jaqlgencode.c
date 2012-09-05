@@ -5244,7 +5244,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 	tree *trout = NULL;
 
 	/* start with a clean sheet */
-	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = 0;
+	j->j1 = j->j2 = j->j3 = j->j4 = j->j5 = j->j6 = j->j7 = j->startoid = 0;
 	j->ro1 = j->ro2 = j->ro3 = j->ro4 = j->ro5 = j->ro6 = j->ro7 = 0;
 
 	/* this function is not used recursively, so this is the first thing
@@ -5344,7 +5344,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 			} break;
 			case j_filter:
+<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
 				a = dumpwalkvar(mb, j->j1, j->j5, 0);
+=======
+				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
+>>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumppred(j, cntxt, mb, t->tval2, a);
 				/* b = matching ids from dumpwalkvar (first array) */
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5380,7 +5384,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_transform:
+<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
 				a = dumpwalkvar(mb, j->j1, j->j5, 0);
+=======
+				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
+>>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumpvariabletransformation(j, cntxt, mb, t->tval2, a);
 
 				/* remove old array entries */
@@ -5437,7 +5445,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_expand:
+<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
 				a = dumpwalkvar(mb, j->j1, j->j5, 0);
+=======
+				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
+>>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				c = dumprefvar(j, mb, t->tval2, a);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5551,7 +5563,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_unroll:
+<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
 				a = dumpwalkvar(mb, j->j1, j->j5, 0);
+=======
+				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
+>>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumprefvar(j, mb, t->tval2, a);
 				e = dumpnextid(mb, j->j1);
 
@@ -5983,7 +5999,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					 *   tval2 = var from source to group on
 					 *   tval3 = name of result (default $) (only into)
 					 */
-					a = dumpwalkvar(mb, j->j1, j->j5, 0);
+					a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
 					b = dumprefvar(j, mb, w->tval2, a);
 					/* b should point to all "groups" now */
 
@@ -6213,7 +6229,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 				t->tval2 = rpreds;
 
-				a = dumpwalkvar(mb, j->j1, j->j5, 0);
+				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
 				
 				for (w = rpreds; w != NULL; w = w->tval3) {
 					/* avoid double free upon cleanup */
@@ -6719,7 +6735,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 							break;
 						case j_func_arg:
-							a = dumpwalkvar(mb, j->j1, j->j5, 0);
+							a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
 							q = newInstruction(mb, ASSIGNsymbol);
 							setModuleId(q, algebraRef);
 							setFunctionId(q, projectRef);
