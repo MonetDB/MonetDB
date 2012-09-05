@@ -93,23 +93,21 @@ dumpbatwritable(jc *j, MalBlkPtr mb, char X)
 }
 
 /* returns a bat with subset from kind bat (:oid,:bte) which are
- * referenced by the first array of the JSON structure (oid 0@0 of kind
- * bat, pointing to array, so all oids from array bat that have head oid
- * value 0@0) */
+ * referenced by the array of the JSON structure with oid start */
 static int
-dumpwalkvar(MalBlkPtr mb, int j1, int j5)
+dumpwalkvar(MalBlkPtr mb, int j1, int j5, oid start)
 {
 	InstrPtr q;
 	int a, b;
 
-	MALCOMMENT(mb, "dumpwalkvar(X_%d,X_%d) {", j1, j5);
+	MALCOMMENT(mb, "dumpwalkvar(X_%d,X_%d," OIDFMT "@0) {", j1, j5, start);
 
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
 	setFunctionId(q, putName("selectH", 7));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, j1);
-	q = pushOid(mb, q, 0);
+	q = pushOid(mb, q, start);
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -143,7 +141,7 @@ dumpwalkvar(MalBlkPtr mb, int j1, int j5)
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
 
-	MALCOMMENT(mb, "} dumpwalkvar(X_%d,X_%d)", j1, j5);
+	MALCOMMENT(mb, "} dumpwalkvar(X_%d,X_%d," OIDFMT "@0)", j1, j5, start);
 	return a;
 }
 
@@ -1620,7 +1618,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		MALCOMMENT(mb, "| located %s = (X_%d,X_%d,X_%d,X_%d,X_%d,X_%d,X_%d)",
 				ljv->name,
 				ljv->j1, ljv->j2, ljv->j3, ljv->j4, ljv->j5, ljv->j6, ljv->j7);
-		a = dumpwalkvar(mb, ljv->j1, ljv->j5);
+		a = dumpwalkvar(mb, ljv->j1, ljv->j5, 0);
 		tj.j1 = ljv->j1;
 		tj.j5 = ljv->j5;
 		tj.j6 = ljv->j6;
@@ -1639,7 +1637,7 @@ dumppredjoin(jc *j, MalBlkPtr mb, json_var *js, tree *t)
 		MALCOMMENT(mb, "| located %s = (X_%d,X_%d,X_%d,X_%d,X_%d,X_%d,X_%d)",
 				rjv->name,
 				rjv->j1, rjv->j2, rjv->j3, rjv->j4, rjv->j5, rjv->j6, rjv->j7);
-		a = dumpwalkvar(mb, rjv->j1, rjv->j5);
+		a = dumpwalkvar(mb, rjv->j1, rjv->j5, 0);
 		tj.j1 = rjv->j1;
 		tj.j5 = rjv->j5;
 		tj.j6 = rjv->j6;
@@ -4325,7 +4323,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				a7 = getArg(q, 6);
 				pushInstruction(mb, q);
 
-				a = dumpwalkvar(mb, a1, a5);
+				a = dumpwalkvar(mb, a1, a5, 0);
 				b = dumpnextid(mb, j->j1);
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
@@ -4787,7 +4785,7 @@ dumpvalsfromarr(MalBlkPtr mb, enum treetype tpe,
 	MALCOMMENT(mb, "dumpvalsfromarr(X_%d,X_%d,X_%d,X_%d,X_%d) {",
 			j1, j2, j3, j4, j5);
 
-	a = dumpwalkvar(mb, j1, j5);
+	a = dumpwalkvar(mb, j1, j5, 0);
 
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
@@ -5341,7 +5339,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 			} break;
 			case j_filter:
-				a = dumpwalkvar(mb, j->j1, j->j5);
+				a = dumpwalkvar(mb, j->j1, j->j5, 0);
 				b = dumppred(j, cntxt, mb, t->tval2, a);
 				/* b = matching ids from dumpwalkvar (first array) */
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5377,7 +5375,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_transform:
-				a = dumpwalkvar(mb, j->j1, j->j5);
+				a = dumpwalkvar(mb, j->j1, j->j5, 0);
 				b = dumpvariabletransformation(j, cntxt, mb, t->tval2, a);
 
 				/* remove old array entries */
@@ -5434,7 +5432,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_expand:
-				a = dumpwalkvar(mb, j->j1, j->j5);
+				a = dumpwalkvar(mb, j->j1, j->j5, 0);
 				c = dumprefvar(j, mb, t->tval2, a);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5548,7 +5546,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_unroll:
-				a = dumpwalkvar(mb, j->j1, j->j5);
+				a = dumpwalkvar(mb, j->j1, j->j5, 0);
 				b = dumprefvar(j, mb, t->tval2, a);
 				e = dumpnextid(mb, j->j1);
 
@@ -5980,7 +5978,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					 *   tval2 = var from source to group on
 					 *   tval3 = name of result (default $) (only into)
 					 */
-					a = dumpwalkvar(mb, j->j1, j->j5);
+					a = dumpwalkvar(mb, j->j1, j->j5, 0);
 					b = dumprefvar(j, mb, w->tval2, a);
 					/* b should point to all "groups" now */
 
@@ -6210,7 +6208,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 				t->tval2 = rpreds;
 
-				a = dumpwalkvar(mb, j->j1, j->j5);
+				a = dumpwalkvar(mb, j->j1, j->j5, 0);
 				
 				for (w = rpreds; w != NULL; w = w->tval3) {
 					/* avoid double free upon cleanup */
@@ -6716,7 +6714,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 							break;
 						case j_func_arg:
-							a = dumpwalkvar(mb, j->j1, j->j5);
+							a = dumpwalkvar(mb, j->j1, j->j5, 0);
 							q = newInstruction(mb, ASSIGNsymbol);
 							setModuleId(q, algebraRef);
 							setFunctionId(q, projectRef);
@@ -6898,7 +6896,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 									}
 									break;
 								case j_func_arg:
-									a = dumpwalkvar(mb, a1, a5);
+									a = dumpwalkvar(mb, a1, a5, 0);
 									q = newInstruction(mb, ASSIGNsymbol);
 									setModuleId(q, algebraRef);
 									setFunctionId(q, projectRef);
