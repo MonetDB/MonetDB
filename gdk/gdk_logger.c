@@ -1120,14 +1120,18 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		b = BATdescriptor(bid);
 
 		lg->snapshots_bid = logbat_new(TYPE_void, TYPE_int, 1);
-		BATappend(lg->snapshots_bid, BATmirror(b), FALSE);
+		v = BATmark(b, 0);
+		BATappend(lg->snapshots_bid, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
 		BATmode(lg->snapshots_bid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_bid", fn);
 		BBPrename(lg->snapshots_bid->batCacheid, bak);
 		logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid");
 
 		lg->snapshots_tid = logbat_new(TYPE_void, TYPE_int, 1);
-		BATappend(lg->snapshots_tid, b, FALSE);
+		v = BATmark(BATmirror(b), 0);
+		BATappend(lg->snapshots_tid, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
 		BATmode(lg->snapshots_tid, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_snapshots_tid", fn);
 		BBPrename(lg->snapshots_tid->batCacheid, bak);
@@ -1140,7 +1144,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		b = BATdescriptor(bid);
 
 		lg->seqs_id = logbat_new(TYPE_void, TYPE_int, 1);
-		BATappend(lg->seqs_id, BATmirror(b), FALSE);
+		v = BATmark(b, 0);
+		BATappend(lg->seqs_id, BATmirror(v), FALSE);
+		BBPunfix(v->batCacheid);
 		BATmode(lg->seqs_id, PERSISTENT);
 		snprintf(bak, BUFSIZ, "%s_seqs_id", fn);
 		BBPrename(lg->seqs_id->batCacheid, bak);
