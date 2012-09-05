@@ -690,6 +690,7 @@ static void showcolormap(char *filename, int all)
 		fprintf(f,"set xrange [0:1800]\n");
 		fprintf(f,"set yrange [0:600]\n");
 		fprintf(f,"unset xtics\n");
+		fprintf(f,"unset ytics\n");
 		fprintf(f,"unset colorbox\n");
 		fprintf(f,"unset border\n");
 		fprintf(f,"unset title\n");
