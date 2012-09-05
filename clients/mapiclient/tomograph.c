@@ -656,7 +656,7 @@ static void showcolormap(char *filename, int all)
 	int w = 600;
 	int h = 500;
 	char *scale;
-	double tu;
+	double tu = 0;
 	long total = 0, totfreq = 0;
 
 	if ( all ) {
