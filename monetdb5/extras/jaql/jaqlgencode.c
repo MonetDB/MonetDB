@@ -95,19 +95,24 @@ dumpbatwritable(jc *j, MalBlkPtr mb, char X)
 /* returns a bat with subset from kind bat (:oid,:bte) which are
  * referenced by the array of the JSON structure with oid start */
 static int
-dumpwalkvar(MalBlkPtr mb, int j1, int j5, oid start)
+dumpwalkvar(MalBlkPtr mb, int j1, int j5, int start)
 {
 	InstrPtr q;
 	int a, b;
 
-	MALCOMMENT(mb, "dumpwalkvar(X_%d,X_%d," OIDFMT "@0) {", j1, j5, start);
+	MALCOMMENT(mb, "dumpwalkvar(X_%d,X_%d,X_%d) {", j1, j5, start);
 
 	q = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(q, algebraRef);
 	setFunctionId(q, putName("selectH", 7));
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, j1);
-	q = pushOid(mb, q, start);
+	if (start == 0) {
+		/* if no var is set as start, just use 0@0 */
+		q = pushOid(mb, q, 0);
+	} else {
+		q = pushArgument(mb, q, start);
+	}
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
 	q = newInstruction(mb, ASSIGNsymbol);
@@ -141,7 +146,7 @@ dumpwalkvar(MalBlkPtr mb, int j1, int j5, oid start)
 	a = getArg(q, 0);
 	pushInstruction(mb, q);
 
-	MALCOMMENT(mb, "} dumpwalkvar(X_%d,X_%d," OIDFMT "@0)", j1, j5, start);
+	MALCOMMENT(mb, "} dumpwalkvar(X_%d,X_%d,X_%d)", j1, j5, start);
 	return a;
 }
 
