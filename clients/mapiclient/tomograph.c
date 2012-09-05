@@ -538,17 +538,20 @@ static void dumpboxes(void)
 			fprintf(f,"%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend/1024.0));
 		} else {
 			fprintf(f,"%ld %3.2f %ld %ld\n", box[i].clkend, (box[i].memend/1024.0), box[i].reads,box[i].writes);
-			fprintf(fcpu,"%ld %s\n",box[i].clkend,box[i].stmt);
 			if ( cpus == 0){
 				char *s = box[i].stmt;
 				while(s && isspace((int)*s)) s++;
+				fprintf(fcpu,"0 ");
 				while (s){
 					s= strchr(s+1,(int)' ');
 					while(s && isspace((int)*s)) s++;
 					if ( s)
 						cpus++;
+					fprintf(fcpu,"0 ");
 				}
+				fprintf(fcpu,"\n");
 			}
+			fprintf(fcpu,"%ld %s\n",box[i].clkend,box[i].stmt);
 		}
 	}
 	(void) fclose(f);
@@ -573,11 +576,11 @@ static void showmemory(void)
 	}
 
 	fprintf(gnudata,"\nset tmarg 1\n");
-	fprintf(gnudata,"set bmarg 0\n");
+	fprintf(gnudata,"set bmarg 1\n");
 	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.08\n");
-	fprintf(gnudata,"set origin 0.0,0.85\n");
+	fprintf(gnudata,"set size 1,0.07\n");
+	fprintf(gnudata,"set origin 0.0,0.87\n");
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set ylabel \"memory in GB\"\n");
@@ -597,18 +600,19 @@ static void showcpu(void)
 	fprintf(gnudata,"set bmarg 0\n");
 	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.05\n");
+	fprintf(gnudata,"set size 1,0.08\n");
 	fprintf(gnudata,"set origin 0.0,0.8\n");
 	fprintf(gnudata,"set ylabel \"CPU\"\n");
+	fprintf(gnudata,"unset border\n");
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
+	fprintf(gnudata,"set yrange [0:%d.1]\n",cpus);
 	fprintf(gnudata,"unset xtics\n");
 	fprintf(gnudata,"unset ytics\n");
-	fprintf(gnudata,"set ytics (\"1\" 100, \"0\" 0)\n");
-	fprintf(gnudata,"set yrange [-0.1:1.1]\n");
 	fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
-		fprintf(gnudata,"\"%s_cpu.dat\" using 1:%d notitle with lines %s",(inputfile?"scratch":filename),i+2, (i<cpus-1?",\\\n":"\n"));
+		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
+			(inputfile?"scratch":filename),i+2, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -627,11 +631,11 @@ static void showio(void)
 	}
 
 	fprintf(gnudata,"\nset tmarg 1\n");
-	fprintf(gnudata,"set bmarg 0\n");
+	fprintf(gnudata,"set bmarg 1\n");
 	fprintf(gnudata,"set lmarg 10\n");
 	fprintf(gnudata,"set rmarg 10\n");
-	fprintf(gnudata,"set size 1,0.08\n");
-	fprintf(gnudata,"set origin 0.0,0.85\n");
+	fprintf(gnudata,"set size 1,0.07\n");
+	fprintf(gnudata,"set origin 0.0,0.87\n");
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, (double)(lastclktick-starttime));
 	fprintf(gnudata,"set yrange [1:%ld]\n", ((1.1* max/beat) <= 2? 2:(long)(1.1 * max/beat)));
 	fprintf(gnudata,"unset xtics\n");
@@ -714,6 +718,8 @@ static void showcolormap(char *filename, int all)
 			h-= 45;
 		k++;
 	}
+	h -= 45;
+	tu = total;
 	scale ="milliseconds";
 	if (tu > 1000){
 		tu /= 1000.0;
@@ -723,8 +729,9 @@ static void showcolormap(char *filename, int all)
 		tu /= 60.0;
 		scale= "minutes";
 	}
-	fprintf(f,"set xlabel \"total run %3.2f %s over %ld MAL instructions\"\n", tu, scale, totfreq);
-	fprintf(f,"plot 0 notitle with lines\n");
+	fprintf(f,"set label %d \"total run %3.2f %s over %ld MAL instructions\" at %d,%d\n", 
+		object++, tu, scale, totfreq,(int)(0.2 *w), h-35);
+	fprintf(f,"plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
 static void updmap(int idx)
