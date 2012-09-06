@@ -207,7 +207,8 @@ stop_disconnect:
 }
 static void deactivateBeat(void){
 	char *id ="deactivateBeat";
-	doQ("profiler.deactivate(\"ping\");\n");
+	if ( batch == 1)
+		doQ("profiler.deactivate(\"ping\");\n");
 	return;
 stop_disconnect:
 	mapi_disconnect(dbh);
