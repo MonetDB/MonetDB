@@ -611,7 +611,7 @@ static void showcpu(void)
 	fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
 		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
-			(inputfile?"scratch":filename),i+2, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
+			(inputfile?"scratch":filename),i+1, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -779,7 +779,7 @@ static void keepdata(char *filename)
 		printf("%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn){
-		fprintf(f,"%d\t%ld\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend,box[i].ticks);
+		fprintf(f,"%d\t%ld\t%ld\\n", box[i].thread, box[i].clkstart, box[i].clkend);
 		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
 		fprintf(f,"%d\t%ld\t%ld\n", box[i].state, box[i].reads, box[i].writes);
 		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:box[i].fcn);
@@ -807,7 +807,7 @@ static void scandata(char *filename)
 	starttime = 0;
 
 	while(!feof(f)){
-		if (fscanf(f,"%d\t%ld\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend, &box[i].ticks) != 4 ||
+		if (fscanf(f,"%d\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend) != 3 ||
 		    fscanf(f,"%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend) != 3 ||
 		    fscanf(f,"%d\t%ld\t%ld\n", &box[i].state, &box[i].reads, &box[i].writes) != 3 ||
 		    fgets(buf,BUFSIZ,f) == NULL ||
