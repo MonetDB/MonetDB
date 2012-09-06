@@ -3133,7 +3133,7 @@ BATassertHeadProps(BAT *b)
  * Note also that the "set" property is somewhat confused.  On the one
  * hand, some comments suggest it is merely an indication of the
  * current state of affairs, i.e. all head/tail combinations are
- * distinct.  The code in BUNins suggests that is means that the
+ * distinct.  The code in BUNins suggests that it means that the
  * combinations must be distinct.
  *
  * Note that the functions BATseqbase and BATkey also set more
