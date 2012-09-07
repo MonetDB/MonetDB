@@ -114,8 +114,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd)) != MAL_SUCCEED)
+	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd)) != MAL_SUCCEED) {
+		if (!enc)
+			free(pwd);
 		return ret;
+	}
 	if (!enc)
 		free(pwd);
 
