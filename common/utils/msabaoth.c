@@ -230,7 +230,7 @@ char *
 msab_retreatScenario(const char *lang)
 {
 	FILE *f;
-	char buf[256];	/* should be enough for now */
+	char buf[256];	/* should be enough to hold the entire file */
 	size_t len;
 	char pathbuf[PATHLENGTH];
 	char *path = pathbuf;
@@ -242,30 +242,25 @@ msab_retreatScenario(const char *lang)
 	if ((f = fopen(path, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
-			FILE *tmpf = tmpfile();
-			int written = 0;
+			char written = 0;
 
 			buf[len] = '\0';
 			tmp = buf;
 			/* find newlines and evaluate string */
 			while ((p = strchr(tmp, '\n')) != NULL) {
 				*p = '\0';
-				if (strcmp(tmp, lang) != 0) {
-					fprintf(tmpf, "%s\n", buf);
+				if (strcmp(tmp, lang) == 0) {
+					memmove(tmp, p + 1, strlen(p + 1) + 1);
 					written = 1;
+				} else {
+					*p = '\n';
+					tmp = p;
 				}
-				tmp = p;
 			}
 			if (written != 0) {
-				/* no idea how to "move" a file by it's fd (sounds
-				 * impossible anyway) and tmpnam is so much "DO NOT USE"
-				 * that I decided to just copy over the file again... */
 				rewind(f);
-				fflush(tmpf);
-				rewind(tmpf);
-				len = fread(tmp, 1, 256, tmpf);
-				if (fwrite(tmp, 1, len, f) < len) {
-					(void)fclose(tmpf);
+				len = strlen(buf) + 1;
+				if (fwrite(buf, 1, len, f) < len) {
 					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), path);
@@ -273,7 +268,6 @@ msab_retreatScenario(const char *lang)
 				}
 				fflush(f);
 				fclose(f);
-				fclose(tmpf); /* this should remove it automagically */
 				return(NULL);
 			} else {
 				(void)fclose(f);
@@ -282,7 +276,7 @@ msab_retreatScenario(const char *lang)
 			}
 		} else if (len == 0) {
 			(void)fclose(f);
-			unlink(path);
+			unlink(path);  /* empty file? try to remove */
 			return(NULL);
 		} else { /* some error */
 			(void)fclose(f);
