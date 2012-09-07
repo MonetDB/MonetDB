@@ -166,13 +166,16 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 	switch (type) {
 	case SQL_INTERVAL_DAY:	/* SQL_C_INTERVAL_DAY */
 		nval->val *= 24;
+		/* fall through */
 	case SQL_INTERVAL_HOUR: /* SQL_C_INTERVAL_HOUR */
 	case SQL_INTERVAL_DAY_TO_HOUR: /* SQL_C_INTERVAL_DAY_TO_HOUR */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_MINUTE: /* SQL_C_INTERVAL_MINUTE */
 	case SQL_INTERVAL_HOUR_TO_MINUTE: /* SQL_C_INTERVAL_HOUR_TO_MINUTE */
 	case SQL_INTERVAL_DAY_TO_MINUTE: /* SQL_C_INTERVAL_DAY_TO_MINUTE */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_SECOND: /* SQL_C_INTERVAL_SECOND */
 	case SQL_INTERVAL_MINUTE_TO_SECOND: /* SQL_C_INTERVAL_MINUTE_TO_SECOND */
 	case SQL_INTERVAL_HOUR_TO_SECOND: /* SQL_C_INTERVAL_HOUR_TO_SECOND */
