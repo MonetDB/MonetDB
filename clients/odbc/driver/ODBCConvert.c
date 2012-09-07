@@ -2683,12 +2683,14 @@ ODBCFetch(ODBCStmt *stmt,
 #define assign(buf,bufpos,buflen,value,stmt)				\
 		do {							\
 			if (bufpos >= buflen) {				\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			buf[bufpos++] = (value);			\
 		} while (0)
@@ -2697,12 +2699,14 @@ ODBCFetch(ODBCStmt *stmt,
 			size_t _len = strlen(value);			\
 			size_t _i;					\
 			while (bufpos + _len >= buflen) {		\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			for (_i = 0; _i < _len; _i++)			\
 				buf[bufpos++] = (value)[_i];		\
@@ -3016,6 +3020,7 @@ ODBCStore(ODBCStmt *stmt,
 	}
 
 	assigns(buf, bufpos, buflen, sep, stmt);
+	*bufp = buf;
 	/* just the types supported by the server */
 	switch (sqltype) {
 	case SQL_CHAR:
