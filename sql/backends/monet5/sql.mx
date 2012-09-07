@@ -2400,7 +2400,7 @@ create_trigger( mvc *sql, char *sname, char *tname, char *triggername, int time,
 		s = cur_schema(sql);
 	if (!schema_privs(sql->role_id, s)) 
 		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	if ((tri = mvc_bind_trigger(sql, s, triggername )) != NULL) 
+	if (mvc_bind_trigger(sql, s, triggername ) != NULL) 
 		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
 	
 	if (!(t = mvc_bind_table(sql, s, tname)))
