@@ -294,7 +294,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 	BATsetcount(nb, BATcount(b));
 	BATderiveProps(nb, 0);
 	if (!(nb->batDirty&2)) 
-		nb = BATsetaccess(nb, BAT_READ);
+		BATsetaccess(nb, BAT_READ);
 	return MAL_SUCCEED;
 }
 /*
