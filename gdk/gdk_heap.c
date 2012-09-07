@@ -178,6 +178,11 @@ HEAPcacheFind( size_t *maxsz, char *fn, int mode )
 					GDKmunmap(e->base, e->maxsz);
 					e->base = base;
 					e->maxsz = *maxsz;
+					fp = NULL;
+				}
+				if (fp) {
+					/* if set, extending the file failed */
+					fclose(fp);
 				}
 			}
 			base = e->base;
