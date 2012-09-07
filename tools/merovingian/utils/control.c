@@ -280,6 +280,7 @@ char* control_send(
 						break;
 					}
 				}
+				free(phash);
 				if (p == NULL) {
 					/* the server doesn't support what we can */
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
