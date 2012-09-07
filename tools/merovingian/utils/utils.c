@@ -335,6 +335,7 @@ generatePassphraseFile(char *path)
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				path, strerror(errno));
+		return(strdup(err));
 	}
 
 	generateSalt(buf, len);
