@@ -157,8 +157,12 @@ char* control_send(
 				p = control_hash(pass, buf);
 				len = snprintf(sbuf, sizeof(sbuf), "%s%s\n",
 						p, ver == 2 ? ":control" : "");
-				send(sock, sbuf, len, 0);
+				len = send(sock, sbuf, len, 0);
 				free(p);
+				if (len < 0) {
+					close(sock);
+					return(strdup("cannot send challenge response to server"));
+				}
 				break;
 			case 9:
 			{
@@ -323,7 +327,10 @@ char* control_send(
 		mnstr_flush(fdout);
 	} else {
 		len = snprintf(sbuf, sizeof(sbuf), "%s %s\n", database, command);
-		send(sock, sbuf, len, 0);
+		if (send(sock, sbuf, len, 0) < 0) {
+			close(sock);
+			return(strdup("failed to send control command to server"));
+		}
 	}
 	if (wait != 0) {
 		size_t buflen = sizeof(sbuf);
