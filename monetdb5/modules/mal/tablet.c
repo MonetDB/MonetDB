@@ -1372,7 +1372,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
 	rseplen = strlen(rsep);
-	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char *));
+	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	task->base = GDKzalloc(b->size + 2);
