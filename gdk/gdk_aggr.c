@@ -1428,3 +1428,149 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	bn->T->nonil = nils == 0;
 	return bn;
 }
+
+BAT *
+BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
+{
+	int freeb = 0, freeg = 0;
+	oid min, max;
+	BUN ngrp;
+	BUN nils = 0;
+	BAT *bn = NULL;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	BAT *t1, *t2;
+	BATiter bi;
+	const void *v;
+	const void *nil;
+	int (*atomcmp)(const void *, const void *);
+
+	(void) abort_on_error;
+
+	if (initgroupaggr(b, g, e, s, "BATgroupmedian", &min, &max, &ngrp,
+			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+		return NULL;
+	assert(tp == b->ttype);
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATgroupmedian: cannot determine median on "
+			 "non-linear type %s\n", ATOMname(b->ttype));
+		return NULL;
+	}
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no medians, so return bat aligned with e with
+		 * nil in the tail */
+		bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	if (s) {
+		b = BATleftjoin(s, b, BATcount(s));
+		if (b->htype != TYPE_void) {
+			t1 = BATmirror(BATmark(BATmirror(b), 0));
+			BBPunfix(b->batCacheid);
+			b = t1;
+		}
+		freeb = 1;
+		if (g) {
+			g = BATleftjoin(s, g, BATcount(s));
+			if (g->htype != TYPE_void) {
+				t1 = BATmirror(BATmark(BATmirror(g), 0));
+				BBPunfix(g->batCacheid);
+				g = t1;
+			}
+			freeg = 1;
+		}
+	}
+
+	if (g) {
+		BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 0);
+		if (freeg)
+			BBPunfix(g->batCacheid);
+		g = t1;
+		freeg = 1;
+	} else {
+		t2 = NULL;
+	}
+	BATsubsort(&t1, NULL, NULL, b, t2, g, 0, 0);
+	if (freeb)
+		BBPunfix(b->batCacheid);
+	b = t1;
+	freeb = 1;
+	if (t2)
+		BBPunfix(t2->batCacheid);
+
+	bn = BATnew(TYPE_void, b->ttype, ngrp);
+	if (bn == NULL)
+		return NULL;
+
+	bi = bat_iterator(b);
+	nil = ATOMnilptr(b->ttype);
+	atomcmp = BATatoms[b->ttype].atomCmp;
+
+	if (g) {
+		const oid *grps;
+		oid prev;
+		BUN p, q, r;
+
+		grps = (const oid *) Tloc(g, BUNfirst(g));
+		prev = grps[0];
+		for (r = 0, p = 1, q = BATcount(g); p <= q; p++) {
+			if (p == q || grps[p] != prev) {
+				if (skip_nils) {
+					while (r < p && (*atomcmp)(BUNtail(bi, BUNfirst(b) + r), nil) == 0)
+						r++;
+				}
+				while (BATcount(bn) < prev - min) {
+					bunfastins_nocheck(bn, BUNlast(bn), 0,
+							   nil, 0, Tsize(bn));
+					nils++;
+				}
+				if (r == p) {
+					bunfastins_nocheck(bn, BUNlast(bn), 0,
+							   nil, 0, Tsize(bn));
+					nils++;
+				} else {
+					v = BUNtail(bi, BUNfirst(b) + (r + p - 1) / 2);
+					bunfastins_nocheck(bn, BUNlast(bn), 0,
+							   v, 0, Tsize(bn));
+					nils += (*atomcmp)(v, nil) == 0;
+				}
+				r = p;
+				if (p < q)
+					prev = grps[p];
+			}
+		}
+		while (BATcount(bn) < ngrp) {
+			bunfastins_nocheck(bn, BUNlast(bn), 0,
+					   nil, 0, Tsize(bn));
+		}
+		BATseqbase(bn, min);
+	} else {
+		v = BUNtail(bi, BUNfirst(b) + (BATcount(b) - 1) / 2);
+		BUNappend(bn, v, FALSE);
+		BATseqbase(bn, 0);
+		nils += (*atomcmp)(v, nil) == 0;
+	}
+
+	if (freeb)
+		BBPunfix(b->batCacheid);
+	if (freeg)
+		BBPunfix(g->batCacheid);
+
+	bn->tkey = BATcount(bn) <= 1;
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+
+  bunins_failed:
+	if (freeb)
+		BBPunfix(b->batCacheid);
+	if (freeg)
+		BBPunfix(g->batCacheid);
+	BBPunfix(bn->batCacheid);
+	return NULL;
+}

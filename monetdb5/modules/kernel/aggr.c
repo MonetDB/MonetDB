@@ -497,9 +497,9 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 	BAT *b, *g, *e, *s, *bn;
 
 	b = BATdescriptor(*bid);
-	g = BATdescriptor(*gid);
-	e = BATdescriptor(*eid);
-	if (b == NULL || g == NULL || e == NULL) {
+	g = gid ? BATdescriptor(*gid) : NULL;
+	e = eid ? BATdescriptor(*eid) : NULL;
+	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
 		if (b)
 			BBPreleaseref(b->batCacheid);
 		if (g)
@@ -508,12 +508,17 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (tp == TYPE_any && grpfunc == BATgroupmedian)
+		tp = b->ttype;
+
 	if (sid) {
 		s = BATdescriptor(*sid);
 		if (s == NULL) {
 			BBPreleaseref(b->batCacheid);
-			BBPreleaseref(g->batCacheid);
-			BBPreleaseref(e->batCacheid);
+			if (g)
+				BBPreleaseref(g->batCacheid);
+			if (e)
+				BBPreleaseref(e->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
 	} else {
@@ -521,8 +526,10 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 	}
 	bn = (*grpfunc)(b, g, e, s, tp, skip_nils, abort_on_error);
 	BBPreleaseref(b->batCacheid);
-	BBPreleaseref(g->batCacheid);
-	BBPreleaseref(e->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
+	if (e)
+		BBPreleaseref(e->batCacheid);
 	if (s)
 		BBPreleaseref(s->batCacheid);
 	if (bn == NULL) {
@@ -835,4 +842,28 @@ AGGRsubmaxcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_ni
 {
 	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
 						  0, TYPE_oid, BATgroupmax, "aggr.submax");
+}
+
+aggr_export str AGGRmedian(bat *retval, bat *bid, int *skip_nils);
+str
+AGGRmedian(bat *retval, bat *bid, int *skip_nils)
+{
+	return AGGRsubgrouped(retval, bid, NULL, NULL, NULL, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
+}
+
+aggr_export str AGGRsubmedian(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);
+str
+AGGRsubmedian(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
+}
+
+aggr_export str AGGRsubmediancand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils);
+str
+AGGRsubmediancand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_any, BATgroupmedian, "aggr.submedian");
 }
