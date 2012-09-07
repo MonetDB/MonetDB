@@ -291,6 +291,8 @@ loadLibrary(str filename, int flag)
 
 	mal_set_lock(mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
+		if (handle)
+			dlclose(handle);
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
