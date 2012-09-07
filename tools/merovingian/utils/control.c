@@ -75,6 +75,7 @@ char* control_send(
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_un))) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+			close(sock);
 			return(strdup(sbuf));
 		}
 	} else {
@@ -93,6 +94,7 @@ char* control_send(
 		if (hp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",
 					hstrerror(h_errno));
+			close(sock);
 			return(strdup(sbuf));
 		}
 		memset(&server, 0, sizeof(struct sockaddr_in));
@@ -101,6 +103,7 @@ char* control_send(
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
 		if (connect(sock, (SOCKPTR) &server, sizeof(struct sockaddr_in)) < 0) {
 			snprintf(sbuf, sizeof(sbuf), "cannot connect: %s", strerror(errno));
+			close(sock);
 			return(strdup(sbuf));
 		}
 
@@ -111,6 +114,7 @@ char* control_send(
 		/* perform login ritual */
 		if (len <= 0) {
 			snprintf(sbuf, sizeof(sbuf), "no response from monetdbd");
+			close(sock);
 			return(strdup(sbuf));
 		}
 		/* we only understand merovingian:1 and :2 (backwards compat
@@ -140,6 +144,7 @@ char* control_send(
 				snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 						"unsupported monetdbd server");
 			}
+			close(sock);
 			return(strdup(sbuf));
 		}
 
@@ -177,6 +182,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* servertype */
@@ -184,6 +191,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* protover */
@@ -191,6 +200,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* algos */
@@ -199,6 +210,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* endian */
@@ -206,6 +219,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p++ = '\0'; /* hash */
@@ -214,6 +229,8 @@ char* control_send(
 				if (p == NULL) {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"invalid challenge from monetdbd server");
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 				*p = '\0';
@@ -237,6 +254,8 @@ char* control_send(
 				} else {
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"monetdbd server requires unknown hash: %s", shash);
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 
@@ -261,6 +280,8 @@ char* control_send(
 					/* the server doesn't support what we can */
 					snprintf(sbuf, sizeof(sbuf), "cannot connect: "
 							"unsupported hash algoritms: %s", algos);
+					close_stream(fdout);
+					close_stream(fdin);
 					return(strdup(sbuf));
 				}
 			}
@@ -276,8 +297,10 @@ char* control_send(
 			}
 			sbuf[strlen(sbuf) - 1] = '\0';
 		} else {
-			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+				close(sock);
 				return(strdup("no response from monetdbd after login"));
+			}
 			sbuf[len - 1] = '\0';
 		}
 
@@ -285,6 +308,12 @@ char* control_send(
 			buf = sbuf;
 			if (*buf == '!')
 				buf++;
+			if (fdin != NULL) {
+				close_stream(fdout);
+				close_stream(fdin);
+			} else {
+				close(sock);
+			}
 			return(strdup(buf));
 		}
 	}
@@ -301,8 +330,15 @@ char* control_send(
 		size_t bufpos = 0;
 		char *bufp;
 		bufp = buf = malloc(sizeof(char) * buflen);
-		if (buf == NULL)
+		if (buf == NULL) {
+			if (fdin != NULL) {
+				close_stream(fdin);
+				close_stream(fdout);
+			} else {
+				close(sock);
+			}
 			return(strdup("failed to allocate memory"));
+		}
 		while (1) {
 			if (fdin != NULL) {
 				/* stream.h is sooo broken :( */
@@ -320,14 +356,27 @@ char* control_send(
 				bufp = realloc(buf, sizeof(char) * buflen);
 				if (bufp == NULL) {
 					free(buf);
+					if (fdin != NULL) {
+						close_stream(fdin);
+						close_stream(fdout);
+					} else {
+						close(sock);
+					}
 					return(strdup("failed to allocate more memory"));
 				}
 				buf = bufp;
 			}
 			bufpos += (size_t)len;
 		}
-		if (bufpos == 0)
+		if (bufpos == 0) {
+			if (fdin != NULL) {
+				close_stream(fdin);
+				close_stream(fdout);
+			} else {
+				close(sock);
+			}
 			return(strdup("incomplete response from monetdbd"));
+		}
 		buf[bufpos - 1] = '\0';
 
 		if (fdin) {
@@ -339,23 +388,29 @@ char* control_send(
 		*ret = buf;
 	} else {
 		if (fdin != NULL) {
-			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0)
+			if (mnstr_read_block(fdin, sbuf, sizeof(sbuf) - 1, 1) < 0) {
+				close_stream(fdin);
+				close_stream(fdout);
 				return(strdup("incomplete response from monetdbd"));
+			}
 			sbuf[strlen(sbuf) - 1] = '\0';
 			*ret = strdup(sbuf + 1);
 		} else {
-			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0)
+			if ((len = recv(sock, sbuf, sizeof(sbuf), 0)) <= 0) {
+				close(sock);
 				return(strdup("incomplete response from monetdbd"));
+			}
 			sbuf[len - 1] = '\0';
 			*ret = strdup(sbuf);
 		}
 	}
 
-	if (fdout != NULL)
-		close_stream(fdout);
-	if (fdin != NULL)
+	if (fdin != NULL) {
 		close_stream(fdin);
-	close(sock);
+		close_stream(fdout);
+	} else {
+		close(sock);
+	}
 
 	return(NULL);
 }
