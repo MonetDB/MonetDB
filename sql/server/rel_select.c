@@ -4661,7 +4661,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 				cond = rel_unop_(sql, le, NULL, "isnull", card_value);
 				le = rel_nop_(sql, cond, re, le, NULL, NULL, "ifthenelse", card_value);
 			}
-			exp_setname(sql->sa, le, nme, nm = sa_strdup(sql->sa, nm));
+			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
 			append(outexps, le);
 			list_remove_data(r_exps, re);
 		} else {
