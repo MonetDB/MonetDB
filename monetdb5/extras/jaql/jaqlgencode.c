@@ -5344,11 +5344,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				}
 			} break;
 			case j_filter:
-<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
-				a = dumpwalkvar(mb, j->j1, j->j5, 0);
-=======
 				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
->>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumppred(j, cntxt, mb, t->tval2, a);
 				/* b = matching ids from dumpwalkvar (first array) */
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5384,11 +5380,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_transform:
-<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
-				a = dumpwalkvar(mb, j->j1, j->j5, 0);
-=======
 				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
->>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumpvariabletransformation(j, cntxt, mb, t->tval2, a);
 
 				/* remove old array entries */
@@ -5445,11 +5437,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_expand:
-<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
-				a = dumpwalkvar(mb, j->j1, j->j5, 0);
-=======
 				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
->>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				c = dumprefvar(j, mb, t->tval2, a);
 
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -5563,11 +5551,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_unroll:
-<<<<<<< /net/sofia.ins.cwi.nl/export/scratch1/fabian/monetdb/Oct2012/hgrepo/monetdb5/extras/jaql/jaqlgencode.c
-				a = dumpwalkvar(mb, j->j1, j->j5, 0);
-=======
 				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
->>>>>>> /tmp/jaqlgencode.c~other.0kq7pv
 				b = dumprefvar(j, mb, t->tval2, a);
 				e = dumpnextid(mb, j->j1);
 
