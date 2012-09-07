@@ -1018,7 +1018,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		bn->H->nonil = b->H->nonil;
 	} else {
 		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hdense = bn->T->nonil = 0;
+		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
