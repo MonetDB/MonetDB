@@ -1199,8 +1199,10 @@ BBPimportEntry(char *nme)
 		}
 	}
 
-	if ((bbpversion = BBPheader(fd, &limit, &BBPoid, NULL, TRUE)) < 0)
+	if ((bbpversion = BBPheader(fd, &limit, &BBPoid, NULL, TRUE)) < 0) {
+		fclose(fd);
 		return 0;
+	}
 	bs = BBPreadEntries(fd, nme, &min_stamp, &max_stamp, 0, bbpversion);
 	fclose(fd);
 	if (bs == 0)
