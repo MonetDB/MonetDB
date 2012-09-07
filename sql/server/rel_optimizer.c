@@ -5278,7 +5278,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	(void)changes;
 	if (is_semi(rel->op) && rel->exps) {
 		list *exps = rel->exps;
-		list *rels = rels = new_rel_list(sql->sa);
+		list *rels = new_rel_list(sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);
