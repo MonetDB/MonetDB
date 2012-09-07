@@ -719,18 +719,8 @@ static void showcolormap(char *filename, int all)
 		k++;
 	}
 	h -= 45;
-	tu = total;
-	scale ="milliseconds";
-	if (tu > 1000){
-		tu /= 1000.0;
-		scale = "seconds";
-	} 
-	if (tu > 60 ){
-		tu /= 60.0;
-		scale= "minutes";
-	}
-	fprintf(f,"set label %d \"total run %3.2f %s over %ld MAL instructions\" at %d,%d\n", 
-		object++, tu, scale, totfreq,(int)(0.2 *w), h-35);
+	fprintf(f,"set label %d \" %ld MAL instructions executed\" at %d,%d\n", 
+		object++, totfreq, (int)(0.2 *w), h-35);
 	fprintf(f,"plot 0 notitle with lines linecolor rgb \"white\"\n");
 }
 
@@ -780,7 +770,7 @@ static void keepdata(char *filename)
 		printf("%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn){
-		fprintf(f,"%d\t%ld\t%ld\\n", box[i].thread, box[i].clkstart, box[i].clkend);
+		fprintf(f,"%d\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend);
 		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
 		fprintf(f,"%d\t%ld\t%ld\n", box[i].state, box[i].reads, box[i].writes);
 		fprintf(f,"%s\n",box[i].stmt? box[i].stmt:box[i].fcn);
