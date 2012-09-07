@@ -3374,6 +3374,8 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsemonthintervalstring(&sval, &slen, &ival) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -3434,6 +3436,8 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsesecondintervalstring(&sval, &slen, &ival, &ivalprec) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
