@@ -1109,7 +1109,7 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 	for( j=0; j< top; j++){
 		mb = mblist[j];
 		stk = stklist[j];
-		if ( (mb == 0 || mb->dotfile) && stethoscope)
+		if (mb == 0 || (mb->dotfile && stethoscope))
 			continue; /* already sent */
 		p = getInstrPtr(mb, 0);
 		mnstr_printf(f, "digraph %s {\n", getFunctionId(p));
