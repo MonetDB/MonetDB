@@ -4807,7 +4807,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					if (!is_project(outer->op))
 						rel->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
 					/* find or create identity column */
-					if ((e = find_identity(outer->exps, outer)) == NULL) {
+					if (find_identity(outer->exps, outer) == NULL) {
 						e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
 						set_intern(e);
 						rel_project_add_exp(sql, outer, e);
