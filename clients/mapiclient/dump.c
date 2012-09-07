@@ -313,7 +313,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 					     actions[on_delete]);
 			if (0 < on_update &&
 			    on_update < NR_ACTIONS &&
-			    on_delete != 2	   /* RESTRICT -- default */)
+			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
 		}
