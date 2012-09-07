@@ -4950,8 +4950,8 @@ matchfuncsig(jc *j, Client cntxt, tree *t, int *coltpos, enum treetype (*coltype
 		if (idcmp(s->name, t->sval) == 0) {
 			char match = 0;
 			int itype;
-			int argoff = 0;
-			int orgoff, odyn1 = -1, odyn2 = -1, odyn3 = -1;
+			int argoff = 0, orgoff = 0;
+			int odyn1 = -1, odyn2 = -1, odyn3 = -1;
 			enum treetype ocoltype = j_invalid;
 
 			/* Function resolution is done based on the
