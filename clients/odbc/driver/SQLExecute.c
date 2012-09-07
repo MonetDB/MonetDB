@@ -425,7 +425,7 @@ SQLExecute_(ODBCStmt *stmt)
 			return SQL_ERROR;
 		sep = ",";
 	}
-	if (querypos >= querylen) {
+	if (querypos + 1 >= querylen) {
 		query = realloc(query, querylen += 10);
 		if (query == NULL) {
 			addStmtError(stmt, "HY001", NULL, 0);
