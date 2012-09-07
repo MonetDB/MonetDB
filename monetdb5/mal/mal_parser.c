@@ -1703,9 +1703,7 @@ parseAssign(Client cntxt, int cntrl)
 		default:
 		case 3: goto part3;
 		}
-		skipToEnd(cntxt);
-		pushInstruction(curBlk, curInstr);
-		return;
+		/* unreachable */
 	}
 /*
  * We have so far the LHS part of an assignment. The remainder is
@@ -1749,10 +1747,7 @@ FCNcallparse2:
 		default:
 		case 3: goto part3;
 		}
-		skipSpace(cntxt);
-		if (currChar(cntxt) != ';')
-			parseError(cntxt, "';' expected\n");
-		goto part3;
+		/* unreachable */
 	}
 	/* Handle the ordinary assignments and expressions */
 	switch (term(cntxt, curBlk, &curInstr, 2)) {

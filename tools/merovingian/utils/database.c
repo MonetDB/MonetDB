@@ -139,6 +139,7 @@ char* db_create(char* dbname) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
 				strerror(errno));
 		free(dbfarm);
+		fclose(f);
 		return(strdup(buf));
 	}
 	fclose(f);

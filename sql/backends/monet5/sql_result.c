@@ -649,9 +649,11 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
 
 				if (sz < 0 || sz > (lng)REMAP_PAGE_MAXSIZE)
-       					BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
+					BATmmap(b, STORE_MMAP, STORE_MMAP, STORE_MMAP, STORE_MMAP, 1);
 				if (sz > (lng)BATTINY)
-                			b = BATextend(b, (BUN) sz);
+					b = BATextend(b, (BUN) sz);
+
+				assert(b != NULL);
 
 				HASHremove(b);
 				HASHremove(BATmirror(b));
