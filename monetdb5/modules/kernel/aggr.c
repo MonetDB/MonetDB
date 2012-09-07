@@ -519,7 +519,7 @@ AGGRsubgrouped(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid,
 	} else {
 		s = NULL;
 	}
-	bn = (grpfunc)(b, g, e, s, tp, skip_nils, abort_on_error);
+	bn = (*grpfunc)(b, g, e, s, tp, skip_nils, abort_on_error);
 	BBPreleaseref(b->batCacheid);
 	BBPreleaseref(g->batCacheid);
 	BBPreleaseref(e->batCacheid);

@@ -1320,8 +1320,9 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (o) {
 		bn = BATleftfetchjoin(o, b, BATcount(b));
-		if (bn)
-			bn = BATmaterializeh(bn);
+		if (bn == NULL)
+			goto error;
+		bn = BATmaterializeh(bn);
 	} else {
 		bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
 	}
