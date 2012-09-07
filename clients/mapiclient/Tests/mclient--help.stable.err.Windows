@@ -16,7 +16,7 @@ Options are:
  -h hostname | --host=hostname    host to connect to
  -p portnr   | --port=portnr      port to connect to
  -u user     | --user=user        user id
- -d database | --database=database  database to connect to
+ -d database | --database=database  database to connect to (may be URI)
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
  -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}

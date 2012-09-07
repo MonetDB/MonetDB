@@ -321,7 +321,7 @@ int malAtomSize(int size, int align, char *name)
 void showAtoms(stream *fd)
 {
 	int i;
-	for (i = 0; BATatoms[i].name[0] && i < TYPE_any; i++) {
+	for (i = 0; BATatoms[i].name[0] && i < MAXATOMS; i++) {
 		mnstr_printf(fd, "%s", BATatoms[i].name);
 		if (BATatoms[i + 1].name[0]) mnstr_printf(fd, ",");
 	}

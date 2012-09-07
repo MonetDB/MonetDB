@@ -973,7 +973,7 @@ BATcopy(BAT *b, int ht, int tt, int writable)
 		bn->H->nonil = b->H->nonil;
 	} else {
 		bn->hsorted = bn->hrevsorted = (cnt <= 1 && BATatoms[b->htype].linear);
-		bn->hdense = bn->T->nonil = 0;
+		bn->hdense = bn->H->nonil = 0;
 	}
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		ALIGNsetT(bn, b);
@@ -3027,7 +3027,7 @@ BATassertHeadProps(BAT *b)
  * Note also that the "set" property is somewhat confused.  On the one
  * hand, some comments suggest it is merely an indication of the
  * current state of affairs, i.e. all head/tail combinations are
- * distinct.  The code in BUNins suggests that is means that the
+ * distinct.  The code in BUNins suggests that it means that the
  * combinations must be distinct.
  *
  * Note that the functions BATseqbase and BATkey also set more

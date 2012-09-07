@@ -816,6 +816,10 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
 			snprintf(stmt, BUFSIZ, FITS_INS_COL, (int)cid, cname, tform, tunit, j, (int)tid);
 			msg = SQLstatementIntern(cntxt, &s, "fits.attach", TRUE, FALSE);
+			if (msg != MAL_SUCCEED) {
+				fits_close_file(fptr, &status);
+				return msg;
+			}
 		}
 		tid++;
 	}
