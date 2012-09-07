@@ -2886,7 +2886,7 @@ ODBCStore(ODBCStmt *stmt,
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)
-			nval.val |= ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
+			nval.val |= (SQLUBIGINT) ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
 		break;
 	case SQL_C_FLOAT:
 		fval = * (SQLREAL *) ptr;
