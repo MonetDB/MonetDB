@@ -2286,6 +2286,7 @@ connect_to_server(Mapi mid)
 		s = socket(PF_UNIX, SOCK_STREAM, 0);
 
 		if (connect(s, serv, sizeof(struct sockaddr_un)) < 0) {
+			closesocket(s);
 			snprintf(errbuf, sizeof(errbuf),
 				 "initiating connection on socket failed: %s",
 				 strerror(errno));
