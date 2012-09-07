@@ -663,14 +663,13 @@ atom_cast(atom *a, sql_subtype *tp)
 		    at->type->localtype >= tp->type->localtype &&
 		    at->digits >= tp->digits && 
 			(at->digits - tp->digits) == (at->scale - tp->scale)) {
-			lng mul = 1, div = 0, rnd = 0, val = 0;
+			lng mul = 1, rnd = 0, val = 0;
 
 			/* fix scale */
 
 			/* only round when going to a lower scale */
 			mul = scales[at->scale-tp->scale];
 			rnd = mul>>1;
-			div = 1;
 
 			if (a->data.vtype == TYPE_lng) {
 				val = a->data.val.lval;
@@ -683,10 +682,7 @@ atom_cast(atom *a, sql_subtype *tp)
 			}
 
 			val += rnd;
-			if (div)
-				val /= mul;
-			else
-				val *= mul;
+			val /= mul;
 
 			a->tpe = *tp;
 			a->data.vtype = tp->type->localtype;
