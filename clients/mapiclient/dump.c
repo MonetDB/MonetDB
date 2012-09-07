@@ -244,8 +244,13 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			"ORDER BY \"fs\".\"name\",\"fkt\".\"name\","
 			      "\"fkk\".\"name\", \"nr\"";
 	}
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+	hdl = mapi_query(mid, query);
+	if (query != NULL && maxquerylen != 0)
+		free(query);
+	maxquerylen = 0;
+	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
+
 	cnt = mapi_fetch_row(hdl);
 	while (cnt != 0) {
 		char *c_psname = mapi_fetch_field(hdl, 0);
