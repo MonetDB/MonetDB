@@ -4541,7 +4541,7 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 
 	mapi_hdl_check(hdl, "mapi_quick_response");
 	do {
-		if ((line = mapi_result_error(hdl)) != NULL)
+		if (mapi_result_error(hdl) != NULL)
 			mapi_explain_result(hdl, fd);
 		while ((line = mapi_fetch_line(hdl)) != NULL)
 			fprintf(fd, "%s\n", line);
