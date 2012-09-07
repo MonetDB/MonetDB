@@ -244,8 +244,13 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			"ORDER BY \"fs\".\"name\",\"fkt\".\"name\","
 			      "\"fkk\".\"name\", \"nr\"";
 	}
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+	hdl = mapi_query(mid, query);
+	if (query != NULL && maxquerylen != 0)
+		free(query);
+	maxquerylen = 0;
+	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
+
 	cnt = mapi_fetch_row(hdl);
 	while (cnt != 0) {
 		char *c_psname = mapi_fetch_field(hdl, 0);
@@ -1289,13 +1294,19 @@ dump_external_functions(Mapi mid, const char *schema, const char *fname, stream 
 			     " EXTERNAL NAME \"%s\".\"%s\";\n",
 			     prev_f_mod, prev_f_func);
 		free(prev_f_id);
-		free(prev_f_mod);
-		free(prev_f_func);
-		free(prev_a_name);
-		free(prev_a_type);
-		free(prev_a_type_digits);
-		free(prev_a_type_scale);
 	}
+	if (prev_f_mod)
+		free(prev_f_mod);
+	if (prev_f_func)
+		free(prev_f_func);
+	if (prev_a_name)
+		free(prev_a_name);
+	if (prev_a_type)
+		free(prev_a_type);
+	if (prev_a_type_digits)
+		free(prev_a_type_digits);
+	if (prev_a_type_scale)
+		free(prev_a_type_scale);
 
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) ? 1 : 0;
