@@ -100,8 +100,8 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "sql");
 	*ret = 0;
 	return msg;
@@ -114,8 +114,8 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "msql");
 	*ret = 0;
 	return msg;
@@ -498,8 +498,8 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
