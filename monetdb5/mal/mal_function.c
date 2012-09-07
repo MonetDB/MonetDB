@@ -1085,6 +1085,9 @@ showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
 
 	(void) stk;     /* fool the compiler */
 
+	memset(mblist, 0, sizeof(mblist));
+	memset(stklist, 0, sizeof(stklist));
+
 	if (idcmp(fname, "stdout") == 0) {
 		f = GDKout;
 	} else if (idcmp(fname, "stdout-mapi") == 0) {
