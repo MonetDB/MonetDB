@@ -1294,13 +1294,19 @@ dump_external_functions(Mapi mid, const char *schema, const char *fname, stream 
 			     " EXTERNAL NAME \"%s\".\"%s\";\n",
 			     prev_f_mod, prev_f_func);
 		free(prev_f_id);
-		free(prev_f_mod);
-		free(prev_f_func);
-		free(prev_a_name);
-		free(prev_a_type);
-		free(prev_a_type_digits);
-		free(prev_a_type_scale);
 	}
+	if (prev_f_mod)
+		free(prev_f_mod);
+	if (prev_f_func)
+		free(prev_f_func);
+	if (prev_a_name)
+		free(prev_a_name);
+	if (prev_a_type)
+		free(prev_a_type);
+	if (prev_a_type_digits)
+		free(prev_a_type_digits);
+	if (prev_a_type_scale)
+		free(prev_a_type_scale);
 
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) ? 1 : 0;
