@@ -166,13 +166,16 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 	switch (type) {
 	case SQL_INTERVAL_DAY:	/* SQL_C_INTERVAL_DAY */
 		nval->val *= 24;
+		/* fall through */
 	case SQL_INTERVAL_HOUR: /* SQL_C_INTERVAL_HOUR */
 	case SQL_INTERVAL_DAY_TO_HOUR: /* SQL_C_INTERVAL_DAY_TO_HOUR */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_MINUTE: /* SQL_C_INTERVAL_MINUTE */
 	case SQL_INTERVAL_HOUR_TO_MINUTE: /* SQL_C_INTERVAL_HOUR_TO_MINUTE */
 	case SQL_INTERVAL_DAY_TO_MINUTE: /* SQL_C_INTERVAL_DAY_TO_MINUTE */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_SECOND: /* SQL_C_INTERVAL_SECOND */
 	case SQL_INTERVAL_MINUTE_TO_SECOND: /* SQL_C_INTERVAL_MINUTE_TO_SECOND */
 	case SQL_INTERVAL_HOUR_TO_SECOND: /* SQL_C_INTERVAL_HOUR_TO_SECOND */
@@ -2680,12 +2683,14 @@ ODBCFetch(ODBCStmt *stmt,
 #define assign(buf,bufpos,buflen,value,stmt)				\
 		do {							\
 			if (bufpos >= buflen) {				\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			buf[bufpos++] = (value);			\
 		} while (0)
@@ -2694,12 +2699,14 @@ ODBCFetch(ODBCStmt *stmt,
 			size_t _len = strlen(value);			\
 			size_t _i;					\
 			while (bufpos + _len >= buflen) {		\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			for (_i = 0; _i < _len; _i++)			\
 				buf[bufpos++] = (value)[_i];		\
@@ -2879,7 +2886,7 @@ ODBCStore(ODBCStmt *stmt,
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)
-			nval.val |= ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
+			nval.val |= (SQLUBIGINT) ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
 		break;
 	case SQL_C_FLOAT:
 		fval = * (SQLREAL *) ptr;
@@ -3013,6 +3020,7 @@ ODBCStore(ODBCStmt *stmt,
 	}
 
 	assigns(buf, bufpos, buflen, sep, stmt);
+	*bufp = buf;
 	/* just the types supported by the server */
 	switch (sqltype) {
 	case SQL_CHAR:
@@ -3366,6 +3374,8 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsemonthintervalstring(&sval, &slen, &ival) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}
@@ -3426,6 +3436,8 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsesecondintervalstring(&sval, &slen, &ival, &ivalprec) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
 				return SQL_ERROR;
 			}

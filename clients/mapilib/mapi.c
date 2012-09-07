@@ -2282,7 +2282,8 @@ connect_to_server(Mapi mid)
 		}
 		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
-		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path));
+		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
+		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 		s = socket(PF_UNIX, SOCK_STREAM, 0);
 
 		if (connect(s, serv, sizeof(struct sockaddr_un)) < 0) {
@@ -4540,7 +4541,7 @@ mapi_quick_response(MapiHdl hdl, FILE *fd)
 
 	mapi_hdl_check(hdl, "mapi_quick_response");
 	do {
-		if ((line = mapi_result_error(hdl)) != NULL)
+		if (mapi_result_error(hdl) != NULL)
 			mapi_explain_result(hdl, fd);
 		while ((line = mapi_fetch_line(hdl)) != NULL)
 			fprintf(fd, "%s\n", line);
