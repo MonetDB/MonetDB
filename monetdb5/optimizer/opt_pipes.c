@@ -679,6 +679,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 		if (strcmp(pipes[i].name, name) == 0)
 			break;
 
+	if (i == MAXOPTPIPES)
+		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");;
+
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);
 
