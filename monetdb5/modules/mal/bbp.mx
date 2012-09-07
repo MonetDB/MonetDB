@@ -1444,8 +1444,8 @@ str CMDbbp( int *NS, int *HT, int *TT, int *CNT, int *REFCNT, int *LREFCNT, int 
 			BUNins(dirty, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean", FALSE);
 			BUNins(status, &i, loc, FALSE);
 			BUNins(kind, &i, mode, FALSE);
+			BBPunfix(bn->batCacheid);
 		}
-		BBPunfix(bn->batCacheid);
 	}
 	BBPkeepref(*NS = ns->batCacheid);
 	BBPkeepref(*HT = ht->batCacheid);
