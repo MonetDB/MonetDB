@@ -453,6 +453,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					port++;
 					continue;
 				}
+				closesocket(sock);
 				throw(IO, "mal_mapi.listen",
 						OPERATION_FAILED ": bind to stream socket port %d "
 						"failed: %s", port, strerror(errno));
@@ -461,10 +462,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			}
 		} while (1);
 
-		if (getsockname(sock, (SOCKPTR) &server, &length) < 0)
+		if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
+			closesocket(sock);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": failed getting socket name: %s",
 					strerror(errno));
+		}
 		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -478,10 +481,12 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		/* prevent silent truncation, sun_path is typically around 108
 		 * chars long :/ */
-		if (strlen(usockfile) >= sizeof(userver.sun_path))
+		if (strlen(usockfile) >= sizeof(userver.sun_path)) {
+			closesocket(usock);
 			throw(MAL, "mal_mapi.listen",
 					OPERATION_FAILED ": UNIX socket path too long: %s",
 					usockfile);
+		}
 
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -489,6 +494,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
 		if (bind(usock, (SOCKPTR) &userver, length) < 0) {
+			closesocket(usock);
 			unlink(usockfile);
 			throw(IO, "mal_mapi.listen",
 					OPERATION_FAILED ": binding to UNIX socket file %s failed: %s",
