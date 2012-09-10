@@ -490,6 +490,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
+		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
 		length = (SOCKLEN) sizeof(userver);
 		unlink(usockfile);
