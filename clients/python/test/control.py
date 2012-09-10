@@ -1,8 +1,8 @@
 import unittest
 from monetdb.control import Control
 from monetdb.exceptions import OperationalError
-import logging
-logging.basicConfig(level=logging.DEBUG)
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 
 database_prefix = 'controltest_'
 database_name = database_prefix + 'other'
@@ -66,6 +66,8 @@ class TestManage(unittest.TestCase):
         statuses = self.control.status()
         self.assertTrue(status1 in [status["name"] for status in statuses])
         self.assertTrue(status2 in [status["name"] for status in statuses])
+        do_without_fail(lambda: self.control.destroy(status1))
+        do_without_fail(lambda: self.control.destroy(status2))
 
     def testStart(self):
         do_without_fail(lambda: self.control.stop(database_name))
@@ -95,14 +97,15 @@ class TestManage(unittest.TestCase):
         self.assertFalse(self.control.get(database_name).has_key("readonly"))
 
     def testRename(self):
-        #return # this doesn't seem to work
         old = database_prefix + "old"
         new = database_prefix + "new"
         do_without_fail(lambda: self.control.destroy(old))
+        do_without_fail(lambda: self.control.destroy(new))
         self.control.create(old)
         self.control.rename(old, new)
         statuses = self.control.status()
         self.assertTrue(new in [status["name"] for status in statuses])
+        do_without_fail(lambda: self.control.destroy(new))
 
     def testDefaults(self):
         defaults = self.control.defaults()
