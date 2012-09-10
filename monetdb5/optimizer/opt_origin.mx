@@ -110,7 +110,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varSetProp(mb, getArg(p,0), horiginProp, op_eq, &val);
 				}
 				if ( t ){
-					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));
+					VALset(&val, TYPE_str, GDKstrdup(t->value.val.sval));
 					varSetProp(mb, getArg(p,0), toriginProp, op_eq, &val);
 				}
 			}
