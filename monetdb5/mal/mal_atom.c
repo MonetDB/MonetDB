@@ -300,6 +300,7 @@ int malAtomFixed(int size, int align, char *name)
 	i = ATOMindex(name);
 	BATatoms[i] = BATatoms[TYPE_bte];
 	strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
+	BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0;
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
 	assert_shift_width(ATOMelmshift(BATatoms[i].size), BATatoms[i].size);
