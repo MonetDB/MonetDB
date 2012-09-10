@@ -895,14 +895,14 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		return bn;
 @
 @c
-	} else if (hitalways && BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase) {
+	} else if (BATtdense(l) && BAThdense(r) && l->tseqbase == r->hseqbase && BATcount(l) <= BATcount(r)) {
 		/* always hit and tail of left is alligned with head
 		 * of right */
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BATtdense(l) && BAThdense(r)\n");
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,r)\n");
 
 		return VIEWcreate(l, r);
-	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase) {
+	} else if (hitalways && BAThdense(r) && BATtdense(r) && r->hseqbase == r->tseqbase && BATcount(l) <= BATcount(r)) {
 		/* idempotent join: always hit and substitute tail with the same value */
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThdense(r) && BATtdense(r)\n");
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: VIEWcreate(l,l)\n");
