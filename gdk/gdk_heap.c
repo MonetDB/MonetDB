@@ -613,7 +613,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
-	char *p;
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
@@ -654,9 +653,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	   This file, if present, takes precedence. */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
-	for (p = srcpath; *p; p++)
-		;
-	strcpy(p, suffix);
+	assert(strlen(srcpath) + strlen(suffix) < sizeof(srcpath));
+	strcat(srcpath, suffix);
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
 		int t0;
