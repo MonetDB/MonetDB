@@ -71,7 +71,9 @@ GDKcreatedir(const char *dir)
 	char *r;
 	int ret = FALSE;
 
-	strcpy(path, dir);
+	assert(strlen(dir) < sizeof(path));
+	strncpy(path, dir, sizeof(path)-1);
+	path[sizeof(path)-1] = 0;
 	r = strrchr(path, DIR_SEP);
 	IODEBUG THRprintf(GDKstdout, "#GDKcreatedir(%s)\n", path);
 
