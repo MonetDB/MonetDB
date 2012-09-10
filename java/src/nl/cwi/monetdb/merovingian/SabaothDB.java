@@ -141,7 +141,7 @@ public class SabaothDB {
 		}
 		t = Long.parseLong(parts[12]);
 		if (t == -1) {
-			this.lastCrash = null;
+			this.lastStart = null;
 		} else {
 			this.lastStart = new Date(t * 1000);
 		}
