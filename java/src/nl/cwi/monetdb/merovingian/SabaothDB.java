@@ -145,7 +145,7 @@ public class SabaothDB {
 		} else {
 			this.lastStart = new Date(t * 1000);
 		}
-		this.crashAvg1 = parts[1].equals("1") ? true : false;
+		this.crashAvg1 = parts[13].equals("1") ? true : false;
 		this.crashAvg10 = Double.parseDouble(parts[14]);
 		this.crashAvg30 = Double.parseDouble(parts[15]);
 	}
