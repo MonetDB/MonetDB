@@ -821,7 +821,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if (m->errstr && *m->errstr)
+			if (*m->errstr)
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);

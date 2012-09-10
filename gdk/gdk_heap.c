@@ -308,7 +308,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		} else {
 			char *ext;
 
-			strcpy(nme, of);
+			strncpy(nme, of, sizeof(nme));
+			nme[sizeof(nme) - 1] = 0;
 			ext = decompose_filename(nme);
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
@@ -352,7 +353,8 @@ HEAPextend(Heap *h, size_t size)
 	char nme[PATHLENGTH], *ext = NULL;
 
 	if (h->filename) {
-		strcpy(nme, h->filename);
+		strncpy(nme, h->filename, sizeof(nme));
+		nme[sizeof(nme) - 1] = 0;
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
@@ -624,7 +626,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
-	char *p;
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
@@ -665,9 +666,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	 * takes precedence. */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
-	for (p = srcpath; *p; p++)
-		;
-	strcpy(p, suffix);
+	assert(strlen(srcpath) + strlen(suffix) < sizeof(srcpath));
+	strcat(srcpath, suffix);
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
 		int t0;
@@ -725,8 +725,8 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
-		strcpy(extension, ext);
-		strcat(extension, suffix);
+		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
+		snprintf(extension, sizeof(extension), "%s%s", ext, suffix);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -762,8 +762,8 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 	if (h->copied) {
 		return 0;
 	}
-	strcpy(ext2, ext);
-	strcat(ext2, ".new");
+	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
+	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
 	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0) ? 0 : -1;
 }
 

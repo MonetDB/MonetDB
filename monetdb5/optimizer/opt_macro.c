@@ -99,7 +99,7 @@ malFcnMatch(MalBlkPtr mc, MalBlkPtr mb, int pc)
 		for (j = 0; j < p->argc; j++)
 			cvar[ctop++] = getArg(p, j);
 
-		for (j = 0; j < p->argc; j++)
+		for (j = 0; j < q->argc; j++)
 			mvar[mtop++] = getArg(q, j);
 	}
 	assert(mtop == ctop);	/*shouldn't happen */
