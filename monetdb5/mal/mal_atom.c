@@ -278,6 +278,7 @@ void malAtomDefinition(stream *out, str name, int tpe)
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];
 		strncpy(BATatoms[i].name, name, sizeof(BATatoms[i].name));
+		BATatoms[i].name[sizeof(BATatoms[i].name) - 1] = 0; /* make coverity happy */
 		BATatoms[i].storage = BATatoms[tpe].storage;
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
