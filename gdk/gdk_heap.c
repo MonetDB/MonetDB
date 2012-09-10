@@ -343,7 +343,8 @@ HEAPextend(Heap *h, size_t size)
 	char nme[PATHLENGTH], *ext = NULL;
 
 	if (h->filename) {
-		strcpy(nme, h->filename);
+		strncpy(nme, h->filename, sizeof(nme));
+		nme[sizeof(nme) - 1] = 0;
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
