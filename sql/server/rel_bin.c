@@ -1617,7 +1617,7 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 			stmt *s = NULL;
 
 			/* only handle simple joins here */		
-			if (list_length(jns) && (idx || !e->type == e_cmp || e->flag != cmp_equal))
+			if (list_length(jns) && (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
 
 			s = exp_bin(sql, en->data, left, right, NULL, NULL);

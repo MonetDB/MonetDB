@@ -4842,7 +4842,8 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 						rewrite = 0;
 				}
 				if (rewrite) { 	/* rewrite to cmp_equal ! */
-					sql_exp *ne = exp_compare(sql->sa, e->l, e->r, cmp_equal);
+					list *r = e->r;
+					sql_exp *ne = exp_compare(sql->sa, e->l, r->h->data, cmp_equal);
 					/* if rewriten don't cache this query */
 					list_append(exps, ne);
 					sql->caching = 0;
@@ -5552,7 +5553,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
-	if (gp.cnt[op_select] && !sql->emode == m_prepare) 
+	if (gp.cnt[op_select] && sql->emode != m_prepare) 
 		rel = rewrite(sql, rel, &rel_simplify_like_select, &changes); 
 
 	if (gp.cnt[op_select]) 
