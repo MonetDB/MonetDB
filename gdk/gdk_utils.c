@@ -112,6 +112,9 @@ GDKenvironment(str dbname, str dbfarm)
 	assert(strlen(dbfarm) < PATHLENGTH);
 	strncpy(GDKdbnameStr, dbname, PATHLENGTH);
 	strncpy(GDKdbfarmStr, dbfarm, PATHLENGTH);
+	/* make coverity happy: */
+	GDKdbnameStr[PATHLENGTH - 1] = 0;
+	GDKdbfarmStr[PATHLENGTH - 1] = 0;
 	return 1;
 }
 

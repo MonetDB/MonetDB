@@ -114,10 +114,12 @@ option is omitted, the default of
 is assumed.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
-Specify the name of the database to connect to.  The \fB-d\fP can be
+Specify the name or URI of the database to connect to.  The \fB-d\fP can be
 omitted if an equally named file does not exist in the current
 directory.  As such, the first non-option argument will be interpreted
 as database to connect to if the argument does not exist as file.
+Valid URIs are as returned by
+.RB "`monetdb discover`, see " monetdb "(1), and look like " "mapi:monetdb://hostname:port/database" .
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:

@@ -1240,6 +1240,57 @@ getDiskSpace(void)
 /* the heartbeat process produces a ping event once every X milliseconds */
 static int hbdelay = 0;
 
+/* the processor statistics are gathered in Linux settings from the proc files.
+ * Given the parsing involved, it should be used sparingly */
+
+static struct{
+	long user, nice, system, idle, iowait;
+	double load;
+} corestat[256];
+
+static char cpuload[BUFSIZ];
+static FILE *proc;
+
+static void gatherCPULoad(void){
+    int cpu, len;
+	long user, nice, system, idle, iowait;
+    char buf[BUFSIZ],*s;
+
+    if ( proc == 0)
+        return;
+	rewind(proc);
+	while (fgets(buf, BUFSIZ,proc) != NULL)
+	if ( strncmp(buf,"cpu",3)== 0){
+		s= buf+3;
+		if ( *s == ' ') {
+			s++;
+			cpu = 0;
+		} else{
+			cpu = atoi(s);
+			s= strchr(buf,' ');
+			if ( s== 0) break;
+		}
+		while( *s && isspace((int)*s)) s++;
+		(void) sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
+		corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+		if ( corestat[cpu].load )
+			corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
+		corestat[cpu].user = user;
+		corestat[cpu].nice = nice;
+		corestat[cpu].system = system;
+		corestat[cpu].idle = idle;
+		corestat[cpu].iowait = iowait;
+	} else break;
+
+	s= cpuload;
+	len = BUFSIZ;
+	for ( cpu = 0; cpu < 256 && corestat[cpu].user; cpu++) {
+		snprintf(s, len, " %.2f ",corestat[cpu].load);
+		len -= (int)strlen(s);
+		s += (int) strlen(s);
+	}
+}
+
 static void profilerHeartbeat(void *dummy){
 	Thread thr = THRnew("profilerHeartbeat");
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1247,6 +1298,8 @@ static void profilerHeartbeat(void *dummy){
 	struct rusage infoUsage;
 #endif
 	static int eventcounter;
+	struct timeval tv;
+	time_t clock, prevclock=0;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
@@ -1256,6 +1309,11 @@ static void profilerHeartbeat(void *dummy){
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
 	(void) dummy;
+    proc = fopen("/proc/stat","r");
+	gatherCPULoad();
+	gettimeofday(&tv,NULL);
+	prevclock = (time_t) tv.tv_sec;
+
 	while (hbdelay){
 		MT_sleep_ms(hbdelay);
 
@@ -1267,6 +1325,18 @@ static void profilerHeartbeat(void *dummy){
 		if (eventstream == NULL)
 			continue;
 
+		/* without this cast, compilation on Windows fails with
+		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+		 */
+
+		gettimeofday(&tv,NULL);
+		clock = (time_t) tv.tv_sec;
+
+		/* get CPU load on second boundaries only */
+		if ( clock - prevclock >= 0 ) {
+			gatherCPULoad();
+			prevclock = clock;
+		}
 		MT_lock_set(&mal_profileLock, "profileLock");
 #ifdef HAVE_TIMES
 		times(&newTms);
@@ -1284,15 +1354,6 @@ static void profilerHeartbeat(void *dummy){
 			log("\"ping\",\t");
 		if (profileCounter[PROFtime].status) {
 			char *tbuf, *c;
-
-			/* without this cast, compilation on Windows fails with
-			 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-			 */
-			struct timeval tv;
-			time_t clock;
-
-			gettimeofday(&tv,NULL);
-			clock = (time_t) tv.tv_sec;
 			tbuf = ctime(&clock);
 			if (tbuf) {
 				c = strchr(tbuf, '\n');
@@ -1353,17 +1414,18 @@ static void profilerHeartbeat(void *dummy){
 			log("0,\t0,\t");
 
 		if (profileCounter[PROFstmt].status)
-				log(" \"ping\",\t");
-		if (profileCounter[PROFtype].status)
-			log("\"\",\t");
-		if (profileCounter[PROFuser].status) {
-			log(" 0");
-		}
+				log(" %s", cpuload);
+		//if (profileCounter[PROFtype].status)
+			//log("\"\",\t");
+		//if (profileCounter[PROFuser].status)
+			//log(" 0");
 		log(" ]\n");
 		eventcounter++;
 		flushLog();
 		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
+	if ( proc)
+		(void) fclose(proc);
 	THRdel(thr);
 }
 

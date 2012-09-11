@@ -244,8 +244,13 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			"ORDER BY \"fs\".\"name\",\"fkt\".\"name\","
 			      "\"fkk\".\"name\", \"nr\"";
 	}
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+	hdl = mapi_query(mid, query);
+	if (query != NULL && maxquerylen != 0)
+		free(query);
+	maxquerylen = 0;
+	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
+
 	cnt = mapi_fetch_row(hdl);
 	while (cnt != 0) {
 		char *c_psname = mapi_fetch_field(hdl, 0);
@@ -313,7 +318,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 					     actions[on_delete]);
 			if (0 < on_update &&
 			    on_update < NR_ACTIONS &&
-			    on_delete != 2	   /* RESTRICT -- default */)
+			    on_update != 2	   /* RESTRICT -- default */)
 				mnstr_printf(toConsole, " ON UPDATE %s",
 					     actions[on_update]);
 		}
@@ -947,6 +952,10 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 	}
 	if (mapi_error(mid))
 		goto bailout;
+	if (sname != NULL)
+		free(sname);
+	if (query != NULL)
+		free(query);
 	mapi_close_handle(hdl);
 	hdl = NULL;
 	return 0;
@@ -1018,7 +1027,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 	MapiHdl hdl = NULL;
 	char *query;
 	size_t maxquerylen;
-	int *string;
+	int *string = NULL;
 	char *sname = NULL;
 
 	if (schema == NULL) {
@@ -1136,9 +1145,9 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		if (mnstr_errnr(toConsole))
 			goto bailout;
 	}
-	free(string);
 	if (mapi_error(mid))
 		goto bailout;
+	free(string);
 
   doreturn:
 	if (hdl)
@@ -1162,6 +1171,8 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		free(sname);
 	if (query != NULL)
 		free(query);
+	if (string != NULL)
+		free(string);
 	return 1;
 }
 
@@ -1283,13 +1294,19 @@ dump_external_functions(Mapi mid, const char *schema, const char *fname, stream 
 			     " EXTERNAL NAME \"%s\".\"%s\";\n",
 			     prev_f_mod, prev_f_func);
 		free(prev_f_id);
-		free(prev_f_mod);
-		free(prev_f_func);
-		free(prev_a_name);
-		free(prev_a_type);
-		free(prev_a_type_digits);
-		free(prev_a_type_scale);
 	}
+	if (prev_f_mod)
+		free(prev_f_mod);
+	if (prev_f_func)
+		free(prev_f_func);
+	if (prev_a_name)
+		free(prev_a_name);
+	if (prev_a_type)
+		free(prev_a_type);
+	if (prev_a_type_digits)
+		free(prev_a_type_digits);
+	if (prev_a_type_scale)
+		free(prev_a_type_scale);
 
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) ? 1 : 0;
@@ -1322,9 +1339,9 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	char *q;
 	size_t l;
 	char dumpSystem;
+	char *schema = NULL;
 
 	if (sname == NULL) {
-		char *schema;
 		if (fname == NULL) {
 			schema = NULL;
 		} else if ((schema = strchr(fname, '.')) != NULL) {
@@ -1342,8 +1359,11 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 
 	dumpSystem = sname && fname;
 
-	if (dump_external_functions(mid, sname, fname, toConsole, dumpSystem))
+	if (dump_external_functions(mid, sname, fname, toConsole, dumpSystem)) {
+		if (schema)
+			free(schema);
 		return 1;
+	}
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
 	snprintf(q, l, functions,
@@ -1370,10 +1390,14 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	}
 	if (mapi_error(mid))
 		goto bailout;
+	if (schema)
+		free(schema);
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) ? 1 : 0;
 
   bailout:
+	if (schema)
+		free(schema);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -1728,6 +1752,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 
 		if (mapi_error(mid))
 			goto bailout;
+		if (schema == NULL) {
+			/* cannot happen, but make analysis tools happy */
+			continue;
+		}
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
 		if (curschema == NULL || strcmp(schema, curschema) != 0) {
@@ -1738,12 +1766,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 				     curschema);
 		}
 		if (func == NULL) {
-			if (schema)
-				schema = strdup(schema);
+			schema = strdup(schema);
 			tname = strdup(tname);
 			rc = dump_table(mid, schema, tname, toConsole, describe, describe, useInserts);
-			if (schema)
-				free(schema);
+			free(schema);
 			free(tname);
 		} else
 			mnstr_printf(toConsole, "%s\n", func);
@@ -1925,14 +1951,19 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 			goto cleanup;
 
 		if (name != NULL && val != NULL) {
-			if (strcmp(name, "gdk_dbname") == 0)
+			if (strcmp(name, "gdk_dbname") == 0) {
+				assert(dbname == NULL);
 				dbname = *val == '\0' ? NULL : strdup(val);
-			else if (strcmp(name, "monet_version") == 0)
+			} else if (strcmp(name, "monet_version") == 0) {
+				assert(dbver == NULL);
 				dbver = *val == '\0' ? NULL : strdup(val);
-			else if (strcmp(name, "monet_release") == 0)
+			} else if (strcmp(name, "monet_release") == 0) {
+				assert(dbrel == NULL);
 				dbrel = *val == '\0' ? NULL : strdup(val);
-			else if (strcmp(name, "merovingian_uri") == 0)
+			} else if (strcmp(name, "merovingian_uri") == 0) {
+				assert(uri == NULL);
 				uri = strdup(val);
+			}
 		}
 	}
 	if (uri != NULL) {

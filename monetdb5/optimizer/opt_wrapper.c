@@ -106,7 +106,7 @@ struct{
 	{"prejoin", &OPTprejoinImplementation},
 	{"pushranges", &OPTpushrangesImplementation},
 	{"dumpQEP", &OPTdumpQEPImplementation},
-	{"recycler", &OPTrecyclerImplementation},
+	{"recycle", &OPTrecyclerImplementation},
 	{"reduce", &OPTreduceImplementation},
 	{"remap", &OPTremapImplementation},
 	{"remoteQueries", &OPTremoteQueriesImplementation},
