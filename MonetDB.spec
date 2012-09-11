@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -679,6 +679,26 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Sep 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- Rebuilt.
+
+* Fri Sep  7 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- monetdb5: Changed the way nclients maximum was calculated to avoid 'out of client
+  slots' errors way before the maximum was reached.
+
+* Fri Aug 31 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- merovingian: Resolved a problem where monetdb could fail to start a database with
+  the message "database 'X' started up, but failed to open up a
+  communication channel".  Bug #3134, comment #7.
+
+* Fri Aug 31 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- gdk: Fixed a bug in BATantijoin when either side is a singleton BAT.
+  This fixes bug 3139.
+
+* Tue Aug 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- java: Fixed a bug where DatabaseMetaData.getURL() did return null:0 for
+  hostname:port.
+
 * Mon Aug 13 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.7-20120813
 - Rebuilt.
 
