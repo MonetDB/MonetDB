@@ -15,6 +15,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	wrd num_rows = 0;
 
 	MSRecord *msr = NULL;
+	MSFileParam *msfp = NULL;
 	int retcode;
 	int verbose = 1;
 	int r;
@@ -71,9 +72,8 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* loop through all records in the target mseed file. */
-	while ((retcode = ms_readmsr (&msr, *targetfile, 0, NULL, NULL, 1, 1, verbose)) == MS_NOERROR)
+	while ((retcode = ms_readmsr_r (&msfp, &msr, *targetfile, 0, NULL, NULL, 1, 1, verbose)) == MS_NOERROR)
 	{
-
 		int seq_no = seq_no_fake;
 		double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
 		long sampling_time = msr->starttime;
@@ -105,7 +105,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ms_log (2, "Cannot read %s: %s\n", *targetfile, ms_errorstr(retcode));
 
 	/* cleanup memory and close file */
-	ms_readmsr (&msr, NULL, 0, NULL, NULL, 0, 0, 0);
+	ms_readmsr_r (&msfp, &msr, NULL, 0, NULL, NULL, 0, 0, 0);
 
 	printf("num_rows: %ld\n", num_rows);
 	high.value.val.oval= (BUN) num_rows;

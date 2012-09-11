@@ -1,5 +1,5 @@
 module miniseed;
 
-pattern mount{unsafe}(entry:str):bat[:oid,:any]...
+pattern mount(entry:str):bat[:oid,:any]...
 address MiniseedMount
 comment "Mount the content of a mseed file into BATs in table form";
