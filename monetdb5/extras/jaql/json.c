@@ -1112,7 +1112,7 @@ JSONdrop(int *ret, str *name)
 static oid
 json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia, BATiter bio, BATiter bin, oid start, oid v, jsonbat *jb, jsonbat *jbr)
 {
-	oid w, x;
+	BUN w, x;
 	bte k;
 
 	BUNfndOID(w, bik, &v);
@@ -1139,8 +1139,8 @@ json_copy_entry(BATiter bik, BATiter bis, BATiter bii, BATiter bid, BATiter bia,
 			/* nothing to do here */
 			break;
 		case 'o': {
-			BUN p, q;
-			oid y, z;
+			BUN p, q, y;
+			oid z;
 			BATloop (jb->object, p, q) {
 				if (*(oid *)BUNhead(bio, p) != v)
 					continue;
@@ -1369,8 +1369,8 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	jsonbat jb;
 	BATiter bi, bis, bii, bid, ci;
 	BAT *b, *c, *r = NULL;
-	BUN p, q, t, u;
-	oid v = 0, x;
+	BUN p, q, t, u, x;
+	oid v = 0;
 	lng l;
 	dbl d;
 	str s;
