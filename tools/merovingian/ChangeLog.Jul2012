@@ -1,9 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Fri Aug 31 2012 Fabian Groffen <fabian@cwi.nl>
-- Resolved a problem where monetdb could fail to start a database with
-  the message "database 'X' started up, but failed to open up a
-  communication channel".  Bug #3134, comment #7.
-
-

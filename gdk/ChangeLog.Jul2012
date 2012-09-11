@@ -1,7 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Fri Aug 31 2012 Sjoerd Mullender <sjoerd@acm.org>
-- Fixed a bug in BATantijoin when either side is a singleton BAT.
-  This fixes bug 3139.
-
