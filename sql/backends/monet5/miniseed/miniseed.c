@@ -19,6 +19,8 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int verbose = 1;
 	int r;
 
+	int seq_no_fake = 1;
+	
 	ret = (bat**) GDKmalloc(pci->retc*sizeof(bat*));
 	if(ret == NULL)
 	{
@@ -72,7 +74,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	while ((retcode = ms_readmsr (&msr, *targetfile, 0, NULL, NULL, 1, 1, verbose)) == MS_NOERROR)
 	{
 
-		int seq_no = msr->sequence_number;
+		int seq_no = seq_no_fake;
 		double sample_interval = HPTMODULUS / msr->samprate; /* calculate sampling interval from frequency */
 		long sampling_time = msr->starttime;
 
@@ -95,6 +97,7 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		num_rows += i;
+		seq_no_fake++;
 
 	}
 
