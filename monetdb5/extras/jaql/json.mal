@@ -25,15 +25,15 @@ command shreduri(uri:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[
 address JSONshredstream
 comment "Parse the JSON object from URI into internal shredded representation";
 
-command print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str], pretty:bit):void
+command print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str], start:oid, pretty:bit):void
 address JSONprint
 comment "Serialise the given JSON pointer into JSON format";
 
 function print(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void;
-	json.print(o, kind, string, integer, double, array, object, name, false:bit);
+	json.print(o, kind, string, integer, double, array, object, name, 0@0, false:bit);
 end print;
 
-command exportResult(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]):void
+command exportResult(o:streams, kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str], start:oid):void
 address JSONexportResult
 comment "Serialise the given JSON pointer into JSON format, respecting the MAPI protocol";
 

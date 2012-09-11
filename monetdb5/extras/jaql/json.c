@@ -799,22 +799,26 @@ print_json_value(jsonbat *jb, stream *s, oid id, int indent)
 }
 
 str
-JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, bit *pretty)
+JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start, bit *pretty)
 {
 	jsonbat jb;
 	BATiter bi;
+	BUN startoid;
 
 	loadbats();
 
 	bi = bat_iterator(jb.kind);
+	BUNfndOID(startoid, bi, start);
+	if (startoid == BUN_NONE)
+		throw(ILLARG, "json.print", "start must be a valid oid from kind");
 
-	if (*pretty == TRUE && *(char *)BUNtail(bi, BUNfirst(jb.kind)) == 'a') {
+	if (*pretty == TRUE && *(char *)BUNtail(bi, startoid) == 'a') {
 		BAT *elems;
 		BUN p, q;
 		size_t esize = 0, fsize = 0;
 		int indent;
 		char first = 1;
-		oid id = *(oid *)BUNhead(bi, BUNfirst(jb.kind));
+		oid id = *(oid *)BUNhead(bi, startoid);
 
 		/* look into the first array's members to see if breaking up is
 		 * going to be necessary */
@@ -858,7 +862,7 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 		}
 		mnstr_printf(*s, "%c]\n", indent >= 0 ? '\n' : ' ');
 	} else {
-		print_json_value(&jb, *s, *(oid *)BUNhead(bi, BUNfirst(jb.kind)), -1);
+		print_json_value(&jb, *s, *(oid *)BUNhead(bi, startoid), -1);
 		mnstr_printf(*s, "\n");
 	}
 
@@ -869,7 +873,7 @@ JSONprint(int *ret, stream **s, int *kind, int *string, int *integer, int *doble
 }
 
 str
-JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name)
+JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int *doble, int *array, int *object, int *name, oid *start)
 {
 	stream *f;
 	buffer *bufstr = NULL;
@@ -881,7 +885,7 @@ JSONexportResult(int *ret, stream **s, int *kind, int *string, int *integer, int
 
 	bufstr = buffer_create(8096);
 	f = buffer_wastream(bufstr, "bufstr_write");
-	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, &pretty);
+	JSONprint(ret, &f, kind, string, integer, doble, array, object, name, start, &pretty);
 
 	/* calculate width of column, and the number of tuples */
 	buf = buffer_get_buf(bufstr);
