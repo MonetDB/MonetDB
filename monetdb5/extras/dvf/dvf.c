@@ -79,6 +79,8 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int bat_fl = *(int*) getArgReference(stk,pci,2); /* arg 2: bat of file_locations */
 
 	BATiter fli;
+	
+	int run_dataflow_opt = 1;
 
 	VarRecord low, high;
 
@@ -275,6 +277,12 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	o = newFcnCall(mb, "optimizer", "mergetable");
 	typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
+	
+	if(run_dataflow_opt)
+	{
+		o = newFcnCall(mb, "optimizer", "dataflow");
+		typeChecker(cntxt->fdout, cntxt->nspace, mb, o, FALSE);
+	}
 
 	optimizeMALBlock(cntxt, mb);
 
@@ -326,9 +334,24 @@ str plan_modifier(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* adjust variable lifetimes */
 	malGarbageCollector(mb);
 
-/* 	chkProgram(cntxt->fdout, cntxt->nspace, mb); */
-/* 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN); */
+/* 	chkProgram(cntxt->fdout, cntxt->nspace, mb);
+	printFunction(cntxt->fdout,mb, 0, LIST_MAL_EXPLAIN); */
 
+	/* relocate the startpc, the instruction to proceed with the execution. Because it might be changed by the optimizers. */
+	for (i = 0; i < limit; i++)
+	{
+		InstrPtr ip = mb->stmt[i];
+		
+		/* check for
+		 * dvf.plan_modifier(...);
+		 */
+		if(getModuleId(ip) == dvfRef &&
+			getFunctionId(ip) == planmodifierRef)
+		{
+			startpc = i;
+		}
+	}
+	
 	msg = msg;
 	/* run rest of the plan */
 	msg = runMALsequence(cntxt, mb, startpc+1, mb->stop, stk_new, stk_new, mb->stmt[startpc]);
