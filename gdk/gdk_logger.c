@@ -749,7 +749,11 @@ logger_readlog(logger *lg, char *filename)
 		lg->log = NULL;
 		return 0;
 	}
-	stat(filename, &sb);
+	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
+		mnstr_destroy(lg->log);
+		lg->log = NULL;
+		return 0;
+	}
 	t0 = time(NULL);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
