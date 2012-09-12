@@ -928,8 +928,9 @@ check_version(logger *lg, FILE *fp)
 		}
 	} else
 		lg->postfuncp = NULL;	 /* don't call */
-	fgetc(fp);		/* skip \n */
-	fgetc(fp);		/* skip \n */
+	if (fgetc(fp) != '\n' ||	 /* skip \n */
+	    fgetc(fp) != '\n')		 /* skip \n */
+		return -1;
 	return 0;
 }
 
