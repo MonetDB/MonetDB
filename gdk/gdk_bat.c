@@ -365,7 +365,11 @@ BATattach(int tt, const char *heapfile)
 	bn->batRestricted = BAT_READ;
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE);
+	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
+		HEAPfree(&bn->T->heap);
+		GDKfree(bs);
+		return NULL;
+	}
 	BBPcacheit(bs, 1);
 	return bn;
 }

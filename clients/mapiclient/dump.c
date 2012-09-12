@@ -344,9 +344,6 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
 
-	if (query != NULL && maxquerylen != 0)
-		free(query);
-
 	return 1;
 }
 

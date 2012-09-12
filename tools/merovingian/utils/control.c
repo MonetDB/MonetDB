@@ -383,6 +383,7 @@ char* control_send(
 			} else {
 				close(sock);
 			}
+			free(buf);
 			return(strdup("incomplete response from monetdbd"));
 		}
 		buf[bufpos - 1] = '\0';
