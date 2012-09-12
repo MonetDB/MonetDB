@@ -392,7 +392,7 @@ wkbFROMSTR(char *src, int *len, wkb **atom)
 		wkbSer = GEOSGeomToWKB_buf(geosGeometry, &wkbLen);
 		GEOSGeom_destroy(geosGeometry);
 	}
-	if (*len < (int) wkb_size(wkbLen)) {
+	if (*atom == NULL || *len < (int) wkb_size(wkbLen)) {
 		if (*atom)
 			GDKfree(*atom);
 		*atom = GDKmalloc(*len = (int) wkb_size(wkbLen));

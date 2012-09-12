@@ -1367,8 +1367,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				*order = on;
 			if (groups) {
 				BBPfix(g->batCacheid);
-				gn = g;
-				*groups = bn;
+				*groups = g;
 			}
 			return GDK_SUCCEED;
 		}

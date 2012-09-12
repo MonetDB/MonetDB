@@ -367,16 +367,15 @@ MT_mmap(const char *path, int mode, off_t off, size_t len)
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
 
-	if (fd > 1) {
+	if (fd >= 0) {
 		ret = mmap(NULL,
 			   len,
 			   ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
 			   (mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED,
 			   fd,
 			   off);
-	}
-	if (fd > 0)
 		close(fd);
+	}
 	return ret;
 }
 
