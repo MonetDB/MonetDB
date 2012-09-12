@@ -163,21 +163,25 @@ HEAPcacheFind( size_t *maxsz, char *fn, int mode )
 
 		     		if ((fp = fopen(fn, "rb+")) != NULL &&
 #ifdef _WIN64
-		      		   _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-		      		   fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
-		      		   fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
 #endif
 #endif
-		      		   fputc('\n', fp) >= 0 &&
-		      		   fflush(fp) >= 0 &&
-		      		   fclose(fp) >= 0) {
-					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-					GDKmunmap(e->base, e->maxsz);
-					e->base = base;
-					e->maxsz = *maxsz;
+				    fputc('\n', fp) >= 0 &&
+				    fflush(fp) >= 0) {
+					if (fclose(fp) >= 0) {
+						void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
+						GDKmunmap(e->base, e->maxsz);
+						e->base = base;
+						e->maxsz = *maxsz;
+					}
+					/* after fclose, successful or
+					 * not, we can't call fclose
+					 * again */
 					fp = NULL;
 				}
 				if (fp) {
