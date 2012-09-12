@@ -880,7 +880,7 @@ msab_serialise(char **ret, const sabdb *db)
 	avail = sizeof(conns) - 1;
 	for (l = db->conns; l != NULL; l = l->next) {
 		len = strlen(l->val);
-		if (len > avail)
+		if (len >= avail)
 			break;
 		memcpy(p, l->val, len);
 		p += len + 1;
