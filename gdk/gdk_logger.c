@@ -794,7 +794,9 @@ logger_readlog(logger *lg, char *filename)
 				fprintf(stderr, "logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
-			if (l.tid != l.nr)	/* abort record */
+			if (tr == NULL)
+				err = 1;
+			else if (l.tid != l.nr)	/* abort record */
 				tr = tr_abort(lg, tr);
 			else
 				tr = tr_commit(lg, tr);
@@ -805,31 +807,31 @@ logger_readlog(logger *lg, char *filename)
 		case LOG_INSERT:
 		case LOG_DELETE:
 		case LOG_UPDATE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				err = (log_read_updates(lg, tr, &l, name) != LOG_OK);
 			break;
 		case LOG_CREATE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				err = (log_read_create(lg, tr, name) != LOG_OK);
 			break;
 		case LOG_USE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_use(lg, tr, &l, name);
 			break;
 		case LOG_DESTROY:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_destroy(lg, tr, name);
 			break;
 		case LOG_CLEAR:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_clear(lg, tr, name);
