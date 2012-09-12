@@ -358,7 +358,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 	} else {
 		char path[PATHLENGTH];
 		struct stat st;
-		FILE *fp;
+		FILE *fp = NULL;
 
 		GDKfilepath(path, BATDIR, nme, ext);
 		if (stat(path, &st) >= 0 &&
@@ -375,18 +375,24 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 #endif
 #endif
 		      fputc('\n', fp) >= 0 &&
-		      fflush(fp) >= 0 &&
-		      fclose(fp) >= 0))) {
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
+		      fflush(fp) >= 0))) {
+			if (fclose(fp) >= 0) {
+				int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
-			if (mode == STORE_PRIV)
-				mod |= MMAP_COPY;
-			ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
-			if (ret == (char *) -1L) {
-				ret = NULL;
+				if (mode == STORE_PRIV)
+					mod |= MMAP_COPY;
+				ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
+				if (ret == (char *) -1L) {
+					ret = NULL;
+				}
+				IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
 			}
-			IODEBUG THRprintf(GDKstdout, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", maxsize, mod, path, PTRFMTCAST(void *)ret);
+			/* after fclose, successful or not, the file
+			 * is done with */
+			fp = NULL;
 		}
+		if (fp != NULL)
+			fclose(fp);
 	}
 	return ret;
 }
