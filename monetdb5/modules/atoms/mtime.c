@@ -2850,7 +2850,10 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_year(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.year", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -2885,7 +2888,10 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_month(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.month", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -2920,7 +2926,10 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_day(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.day", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -2955,7 +2964,10 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_hours(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.hours", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -2990,7 +3002,10 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_minutes(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.minutes", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3025,7 +3040,10 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_seconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.seconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3060,7 +3078,10 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_sql_seconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.sql_seconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3095,7 +3116,10 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_milliseconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.milliseconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;

@@ -231,20 +231,28 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	if (r == NULL)
+		return NULL;
 
 	if (ignore) {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
 
-			if (re_match_ignore(s, pattern))
-				BUNfastins(r, BUNhead(strsi, p), NULL);
+			if (re_match_ignore(s, pattern) &&
+				BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+				BBPreclaim(r);
+				return NULL;
+			}
 		}
 	} else {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
 
-			if (re_match_no_ignore(s, pattern))
-				BUNfastins(r, BUNhead(strsi, p), NULL);
+			if (re_match_no_ignore(s, pattern) &&
+				BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+				BBPreclaim(r);
+				return NULL;
+			}
 		}
 	}
 	r->H->nonil = strs->H->nonil;
@@ -270,6 +278,8 @@ re_select(RE *pattern, BAT *strs, int ignore)
 		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
+	if (r == NULL)
+		return NULL;
 
 	if (ignore) {
 		BATloop(strs, p, q) {
@@ -559,6 +569,8 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	if (r == NULL)
+		throw(MAL, "pcre_uselect", MAL_MALLOC_FAIL);
 	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
@@ -572,8 +584,10 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 		str s = BUNtail(strsi, p);
 		int l = (int) strlen(s);
 
-		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0) {
-			BUNfastins(r, BUNhead(strsi, p), NULL);
+		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0 &&
+			BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+			BBPreclaim(r);
+			throw(MAL, "pcre_uselect", OPERATION_FAILED);
 		}
 	}
 	r->H->nonil = strs->H->nonil;
@@ -1604,6 +1618,10 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			res = re_select(re, bp, ignore);
 
 		re_destroy(re);
+		if (res == NULL) {
+			BBPreleaseref(bp->batCacheid);
+			throw(MAL, "pcre.like", OPERATION_FAILED);
+		}
 		*ret = res->batCacheid;
 		BBPkeepref(res->batCacheid);
 		BBPreleaseref(bp->batCacheid);
