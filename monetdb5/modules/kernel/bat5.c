@@ -3,19 +3,20 @@
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
  * http://www.monetdb.org/Legal/MonetDBLicense
- * 
+ *
  * Software distributed under the License is distributed on an "AS IS"
  * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
  * License for the specific language governing rights and limitations
  * under the License.
- * 
+ *
  * The Original Code is the MonetDB Database System.
- * 
+ *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
  * Copyright August 2008-2012 MonetDB B.V.
  * All Rights Reserved.
-*/
+ */
+
 /*
  * Peter Boncz, M.L. Kersten
  * Binary Association Tables
@@ -42,27 +43,6 @@
 #include "bat5.h"
 #include "mal_exception.h"
 
-static int
-CMDdensebat(BAT **ret, wrd *size)
-{
-	BAT *b;
-
-	if (*size < 0)
-		*size = 0;
-	if (*size > (wrd) BUN_MAX)
-		*size = (wrd) BUN_MAX;
-	*ret = b = BATnew(TYPE_void, TYPE_void, (BUN) *size);
-	if (b == NULL)
-		return GDK_FAIL;
-	b->batDirty = 1;
-	b->hseqbase = 0;
-	b->tseqbase = 0;
-	BATkey(b, TRUE);
-	BATkey(BBP_cache(-b->batCacheid), TRUE);
-	BATsetcount(b, (BUN) *size);
-	return GDK_SUCCEED;
-}
-
 /*
  * The next collection of operators fill a hole in the MonetDB kernel libraries.
  * It provide handy operations on void-BATs.
@@ -71,7 +51,7 @@ static BAT *
 lock_desc(bat bid)
 {
 	BBPfix(bid);
-	return (BAT *) BBPgetdesc(bid);
+	return &BBPgetdesc(bid)->B;
 }
 
 static void
@@ -80,105 +60,16 @@ unlock_desc(bat bid)
 	BBPunfix(bid);
 }
 
-static int
-CMDcapacity(lng *res, int *bid)
+/* set access mode to bat, replacing input with output */
+static BAT *
+setaccess(BAT *b, int mode)
 {
-	if (BBPcheck((bat) *bid, "CMDcapacity")) {
-		BAT *b = lock_desc((bat) *bid);
+	BAT *bn;
 
-		if (b == NULL) {
-			*res = lng_nil;
-		} else {
-			*res = (lng) BATcapacity(b);
-		}
-		unlock_desc(*bid);
-	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDhead(str *res, int *bid)
-{
-	if (BBPcheck((bat) *bid, "CMDhead")) {
-		str ret = (str)str_nil;
-		BAT *b = lock_desc((bat) *bid);
-
-		if (b) {
-			ret = *bid > 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
-		}
-		*res = GDKstrdup(ret);
-		unlock_desc(*bid);
-	} else {
-		*res = GDKstrdup(str_nil);
-	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDtail(str *res, int *bid)
-{
-	if (BBPcheck((bat) *bid, "CMDtail")) {
-		str ret = (str)str_nil;
-		BAT *b = lock_desc((bat) *bid);
-
-		if (b) {
-			ret = *bid > 0 ? ATOMname(b->ttype) : ATOMname(b->htype);
-		}
-		*res = GDKstrdup(ret);
-		unlock_desc(*bid);
-	} else {
-		*res = GDKstrdup(str_nil);
-	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDgetkey(bit *ret, BAT *b)
-{
-	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil)
-	 * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
-	 * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
-	 */
-	if (BATcount(b) <= 1) {
-		*ret = TRUE;
-	} else {
-		if (!b->hkey) {
-			BATderiveHeadProps(b, 1);
-		}
-		*ret = b->hkey ? TRUE : FALSE;
-	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDdestroy(bit *res, str input )
-{
-	int bid = BBPindex(input);
-
-	*res = FALSE;
-	if (bid) {
-		BBPfix(bid);
-		if (BBPindex(input) == bid) {
-			BAT *b = (BAT*)BBPgetdesc(ABS(bid));
-
-			BATmode(b, TRANSIENT);
-			*res = TRUE;
-		}
-		BBPunfix(bid);
-	}
-	return GDK_SUCCEED;
-}
-
-static int
-CMDsetaccess(BAT **r, BAT *input, int *param)
-{
-	bat oldCacheid = input->batCacheid;
-
-	*r = BATsetaccess(input, *param);
-	if ((*r)->batCacheid == oldCacheid) {
-		BBPfix(oldCacheid);
-	}
-	return GDK_SUCCEED;
+	bn = BATsetaccess(b, mode);	/* can return NULL */
+	if (b != bn)
+		BBPunfix(b->batCacheid);
+	return bn;
 }
 
 static char *
@@ -620,14 +511,14 @@ CMDsave(bit *res, str input)
 str
 BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
 {
-	BAT *b;
+	BAT *bn;
 
-	b = BATnew(*ht == TYPE_oid ? TYPE_void : *ht, *tt, *cap);
-	if (b == NULL)
+	bn = BATnew(*ht == TYPE_oid ? TYPE_void : *ht, *tt, *cap);
+	if (bn == NULL)
 		throw(MAL, "bat.new", GDK_EXCEPTION);
 	if (*ht == TYPE_oid)
-		BATseqbase(b, 0);
-	*res = b->batCacheid;
+		BATseqbase(bn, 0);
+	*res = bn->batCacheid;
 	BBPkeepref(*res);
 	return MAL_SUCCEED;
 }
@@ -635,28 +526,34 @@ BKCnewBAT(int *res, int *ht, int *tt, BUN *cap)
 str
 BKCattach(int *ret, int *tt, str *heapfile)
 {
-	BAT *b;
+	BAT *bn;
 
-	b = BATattach(*tt, *heapfile);
-	if (b != NULL) {
-		*ret = b->batCacheid;
-		BBPkeepref(*ret);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "bat.attach", GDK_EXCEPTION);
+	bn = BATattach(*tt, *heapfile);
+	if (bn == NULL)
+		throw(MAL, "bat.attach", GDK_EXCEPTION);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
 }
 
 str
 BKCdensebat(int *ret, wrd *size)
 {
-	BAT *b;
+	BAT *bn;
 
-	if (CMDdensebat(&b, size) == GDK_SUCCEED) {
-		*ret = b->batCacheid;
-		BBPkeepref(*ret);
-		return MAL_SUCCEED;
-	}
-	throw(MAL, "bat.densebat", GDK_EXCEPTION);
+	if (*size < 0)
+		*size = 0;
+	if (*size > (wrd) BUN_MAX)
+		*size = (wrd) BUN_MAX;
+	bn = BATnew(TYPE_void, TYPE_void, (BUN) *size);
+	if (bn == NULL)
+		throw(MAL, "bat.densebat", GDK_EXCEPTION);
+	BATsetcount(bn, (BUN) *size);
+	BATseqbase(bn, 0);
+	BATseqbase(BATmirror(bn), 0);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
 }
 
 str
@@ -669,13 +566,10 @@ BKCreverse(int *ret, int *bid)
 	}
 
 	bn = BATmirror(b);			/* bn inherits ref from b */
-	if (bn) {
-		*ret = bn->batCacheid;
-		BBPkeepref(bn->batCacheid);
-		return MAL_SUCCEED;
-	}
-	BBPreleaseref(b->batCacheid);
-	throw(MAL, "bat.reverse", GDK_EXCEPTION);
+	assert(bn != NULL);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
@@ -707,160 +601,162 @@ BKCmirror(int *ret, int *bid)
 }
 
 str
-BKCrevert(int *ret, int *bid)
+BKCrevert(int *r, int *bid)
 {
-	BAT *b, *bn;
+	BAT *bn, *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.revert", RUNTIME_OBJECT_MISSING);
-	}
-	bn= BATrevert(b);
-	if(bn==NULL ){
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.revert", OPERATION_FAILED);
+	bn = BATrevert(b);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
 		throw(MAL, "bat.revert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*ret= bn->batCacheid);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCorder(int *ret, int *bid)
+BKCorder(int *r, int *bid)
 {
-	BAT *b,*bn;
+	BAT *bn, *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.order", RUNTIME_OBJECT_MISSING);
-	}
-	bn= BATorder(b);
-	if (bn != b)
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.order", OPERATION_FAILED);
+	bn = BATorder(b);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-	if(bn==NULL ){
+	if (bn == NULL)
 		throw(MAL, "bat.order", GDK_EXCEPTION);
-	}
-	BBPkeepref(*ret= bn->batCacheid);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCorder_rev(int *ret, int *bid)
+BKCorder_rev(int *r, int *bid)
 {
-	BAT *b,*bn;
+	BAT *bn, *b;
 
-	(void) ret;
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.order_rev", RUNTIME_OBJECT_MISSING);
-	}
-	bn= BATorder_rev(b);
-	if (bn != b)
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.order_rev", OPERATION_FAILED);
+	bn = BATorder_rev(b);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-	if(bn==NULL ){
+	if (bn == NULL)
 		throw(MAL, "bat.order_rev", GDK_EXCEPTION);
-	}
-	BBPkeepref(*ret= bn->batCacheid);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
 BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 {
-	BAT *i,*b;
-	int param=BAT_WRITE;
-	(void) r;
+	BAT *bn, *b;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.insert", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = (ptr) str_nil;
+		else
+			h = (ptr) *(str *)h;
 	}
-	CMDsetaccess(&b,i,&param);
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str){
-		if(h== 0 || *(str*)h==0) h = (str)str_nil;
-		else h = *(str *)h; 
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (t == 0 || *(str*)t == 0)
+			t = (ptr) str_nil;
+		else
+			t = (ptr) *(str *)t;
 	}
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	{	if(t== 0 || *(str*)t==0) t = (str)str_nil;
-		else t = *(str *)t; 
-	}
-	BUNins(b, h, t, FALSE);
-	BBPkeepref(*r=b->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	bn = BUNins(b, h, t, FALSE);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
 BKCinsert_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 {
-	BAT *i,*b;
-	int param=BAT_WRITE;
-	(void) r;
+	BAT *bn, *b;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.insert", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = (ptr) str_nil;
+		else
+			h = (ptr) *(str *)h;
 	}
-	CMDsetaccess(&b,i,&param);
-	
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
-	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
-	   else h = *(str *)h; 
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (t == 0 || *(str*)t == 0)
+			t = (ptr) str_nil;
+		else
+			t = (ptr) *(str *)t;
 	}
-	
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	 { if(t== 0 || *(str*)t==0) t = (str)str_nil;
-	   else t = *(str *)t; 
-	}
-	BUNins(b, h, t, *force);
-	BBPkeepref(*r=b->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	bn = BUNins(b, h, t, *force);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCinsert_bat(int *r, int *bid, int *sid)
 {
-	BAT *i,*b, *s;
-	int param=BAT_WRITE;
+	BAT *bn, *b, *s;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.insert", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
-	CMDsetaccess(&b,i,&param);
-	if (BATins(b, s, FALSE) == NULL) {
+	bn = BATins(b, s, FALSE);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(s->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 {
-	BAT *i,*b, *s;
-	int param=BAT_WRITE;
+	BAT *bn, *b, *s;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.insert", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.insert", RUNTIME_OBJECT_MISSING);
 	}
-	CMDsetaccess(&b,i,&param);
-	if (BATins(b, s, *force) == NULL) {
+	bn = BATins(b, s, *force);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.insert", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r=b->batCacheid);
 	BBPreleaseref(s->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.insert", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -868,59 +764,53 @@ BKCinsert_bat_force(int *r, int *bid, int *sid, bit *force)
 str
 BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 {
-	BAT *i,*b;
-	int param=BAT_WRITE;
+	BAT *bn, *b;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.replace", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = (ptr) str_nil;
+		else
+			h = (ptr) *(str *)h;
 	}
-	CMDsetaccess(&b,i,&param);
-	
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
-	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
-	   else h = *(str *)h; 
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (t == 0 || *(str*)t == 0)
+			t = (ptr) str_nil;
+		else
+			t = (ptr) *(str *)t;
 	}
-
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
-	   else t = *(str *)t; 
-	}
-	if (BUNreplace(b, h, t, 0) == NULL) {
+	bn = BUNreplace(b, h, t, 0);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(i->batCacheid);
+	if (bn == NULL)
 		throw(MAL, "bat.replace", GDK_EXCEPTION);
-	}
-	BBPkeepref(*r=b->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCreplace_bat(int *r, int *bid, int *sid)
 {
-	BAT *i, *b, *bn, *s;
-	int param=BAT_WRITE;
+	BAT *b, *bn, *s;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
-	CMDsetaccess(&b,i,&param);
-	bn=BATreplace(b, s, 0);
-	if (bn == NULL || bn->batCacheid != b->batCacheid){
-		BBPreleaseref(i->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		BBPreleaseref(b->batCacheid);
-		if( bn)
-			BBPreleaseref(bn->batCacheid);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
+	if ((s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
-	BBPkeepref(*r=bn->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	bn = BATreplace(b, s, 0);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.replace", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -929,30 +819,28 @@ BKCreplace_bun_force(int *r, int *bid, ptr h, ptr t, bit *force)
 {
 	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
-	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
-	   else h = *(str *)h; 
-	}
-	
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
-	   else t = *(str *)t; 
-	}
-	bn= BUNreplace(b, h, t, *force);
-	if (bn == NULL){
-		BBPreleaseref(b->batCacheid);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.replace", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = (ptr) str_nil;
+		else
+			h = (ptr) *(str *)h;
 	}
-	if(bn->batCacheid != b->batCacheid) {
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (t == 0 || *(str*)t == 0)
+			t = (ptr) str_nil;
+		else
+			t = (ptr) *(str *)t;
+	}
+	bn = BUNreplace(b, h, t, *force);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.replace", OPERATION_FAILED "Different BAT returned");
-	}
-	BBPkeepref(*r=bn->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.replace", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -961,23 +849,21 @@ BKCreplace_bat_force(int *r, int *bid, int *sid, bit *force)
 {
 	BAT *b, *bn, *s;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.replace", OPERATION_FAILED);
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.replace", RUNTIME_OBJECT_MISSING);
 	}
-	bn= BATreplace(b, s, *force);
-	if (bn == NULL || bn->batCacheid != b->batCacheid){
-		BBPreleaseref(s->batCacheid);
+	bn = BATreplace(b, s, *force);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		if (bn)
-			BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.replace_bat", OPERATION_FAILED);
-	}
-	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.replace", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -986,57 +872,52 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 {
 	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
-	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
-	   else h = *(str *)h; 
-	}
-	
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	{ if(t== 0 || *(str*)t==0) t = (str)str_nil;
-	   else t = *(str *)t; 
-	}
-	bn= BUNdel(b, h, t, FALSE);
-	if (bn == NULL){
-		BBPreleaseref(b->batCacheid);
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "bat.delete_bun", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete_bun", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = (ptr) str_nil;
+		else
+			h = (ptr) *(str *)h;
 	}
-	if(bn->batCacheid != b->batCacheid) {
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (t == 0 || *(str*)t == 0)
+			t = (ptr) str_nil;
+		else
+			t = (ptr) *(str *)t;
+	}
+	bn = BUNdel(b, h, t, FALSE);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.delete_bun", OPERATION_FAILED "Different BAT returned");
-	}
-	BBPkeepref(*r=bn->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.delete_bun", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
-BKCdelete(int *r, int *bid, ptr h)
+BKCdelete(int *r, int *bid, const void *h)
 {
 	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	
-	if( b->htype >= TYPE_str  && ATOMstorage(b->htype) >= TYPE_str)
-	{ if(h== 0 || *(str*)h==0) h = (str)str_nil;
-	   else h = *(str *)h; 
-	}
-	bn= BUNdelHead(b, h, FALSE);
-	if (bn == NULL) {
-		BBPreleaseref(b->batCacheid);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (h == 0 || *(str*)h == 0)
+			h = str_nil;
+		else
+			h = *(str *)h;
 	}
-	if (bn->batCacheid != b->batCacheid) {
+	bn = BUNdelHead(b, h, FALSE);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.delete", OPERATION_FAILED "Different BAT returned");
-	}
-	BBPkeepref(*r=bn->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.delete", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1045,20 +926,14 @@ BKCdelete_all(int *r, int *bid)
 {
 	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	bn=BATclear(b, FALSE);
-	if (bn == NULL){
+	bn = BATclear(b, FALSE);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "bat.delete_all", OPERATION_FAILED);
-	}
-	if(bn->batCacheid != b->batCacheid){
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.delete_all", OPERATION_FAILED "Different BAT returned");
-	}
-	BBPkeepref(*r=b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.delete_all", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1067,85 +942,93 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 {
 	BAT *b, *bn, *s;
 
-	if( *bid == *sid)
-		return BKCdelete_all(r,bid);
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if (*bid == *sid)
+		return BKCdelete_all(r, bid);
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
 	if ((s = BATdescriptor(*sid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
-
-	bn=BATdel(b, s, FALSE);
-	if (bn == NULL || bn->batCacheid != b->batCacheid){
-		BBPreleaseref(s->batCacheid);
+	bn = BATdel(b, s, FALSE);
+	if (b != bn)
 		BBPreleaseref(b->batCacheid);
-		if(bn)
-			BBPreleaseref(bn->batCacheid);
-		throw(MAL, "bat.delete_bat_bun", OPERATION_FAILED);
-	}
-	BBPkeepref(*r=bn->batCacheid);
 	BBPreleaseref(s->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.delete_bat_bun", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCdelete_bat(int *r, int *bid, int *sid)
 {
-	BAT *i,*b, *s;
-	int param=BAT_WRITE;
+	BAT *bn, *b, *s;
 
-	if ((i = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	if ((s = BATdescriptor(*sid)) == NULL) {
-		BBPreleaseref(i->batCacheid);
-		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
-	}
-	CMDsetaccess(&b,i,&param);
-	if (BATdelHead(b, s, FALSE) == NULL) {
-		BBPreleaseref(b->batCacheid);
-		BBPreleaseref(s->batCacheid);
-		BBPreleaseref(i->batCacheid);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
 		throw(MAL, "bat.delete", OPERATION_FAILED);
+	if ((s = BATdescriptor(*sid)) == NULL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.delete", RUNTIME_OBJECT_MISSING);
 	}
-	BBPkeepref(*r=b->batCacheid);
+	bn = BATdelHead(b, s, FALSE);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(s->batCacheid);
-	BBPreleaseref(i->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.delete", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDdestroy(bit *res, const char *input)
+{
+	int bid = BBPindex(input);
+
+	*res = FALSE;
+	if (bid) {
+		BBPfix(bid);
+		if (BBPindex(input) == bid) {
+			BAT *b = &BBPgetdesc(ABS(bid))->B;
+
+			BATmode(b, TRANSIENT);
+			*res = TRUE;
+		}
+		BBPunfix(bid);
+	}
 	return MAL_SUCCEED;
 }
 
 str
 BKCdestroy_bat(bit *r, str *input)
 {
-	CMDdestroy(r, *input);
-	return MAL_SUCCEED;
+	return CMDdestroy(r, *input);
 }
 
-char *
-BKCdestroyImmediate(signed char*r, int *bid)
+str
+BKCdestroyImmediate(bit *r, int *bid)
 {
 	BAT *b;
 	char buf[512];
 
-	if ((b = BATdescriptor(*bid)) == NULL) 
+	if ((b = BATdescriptor(*bid)) == NULL)
 		return MAL_SUCCEED;
 	BBPlogical(b->batCacheid, buf);
 	BBPreleaseref(b->batCacheid);
-	CMDdestroy(r, buf);
-	return MAL_SUCCEED;
+	return CMDdestroy(r, buf);
 }
 
 char *
-BKCdestroy(signed char *r, int *bid)
+BKCdestroy(bit *r, int *bid)
 {
 	BAT *b;
 
 	(void) r;
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.destroy", RUNTIME_OBJECT_MISSING);
-	}
 	*bid = 0;
 	BATmode(b, TRANSIENT);
 	BBPreleaseref(b->batCacheid);
@@ -1155,150 +1038,172 @@ BKCdestroy(signed char *r, int *bid)
 char *
 BKCappend_wrap(int *r, int *bid, int *uid)
 {
-	BAT *b, *i, *u;
-	int param=BAT_WRITE;
+	BAT *bn, *b, *u;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
-	CMDsetaccess(&i,b,&param);
-	BATappend(i, u, FALSE);
-	BBPkeepref(*r=i->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	bn = BATappend(b, u, FALSE);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(u->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.append", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCappend_val_wrap(int *r, int *bid, ptr u)
 {
-	BAT *i,*b;
-	int param=BAT_WRITE;
+	BAT *bn, *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (u == 0 || *(str*)u == 0)
+			u = (ptr) str_nil;
+		else
+			u = (ptr) *(str *)u;
 	}
-
-	if( b->ttype >= TYPE_str  && ATOMstorage(b->ttype) >= TYPE_str)
-	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
-	   else u = *(str *)u; 
-	}
-	CMDsetaccess(&i,b,&param);
-	BUNappend(i, u, FALSE);
-	BBPkeepref(*r=i->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	bn = BUNappend(b, u, FALSE);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.append", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
 BKCappend_reverse_val_wrap(int *r, int *bid, ptr u)
 {
-	BAT *i,*b;
-	int param=BAT_WRITE;
+	BAT *bn, *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (b->htype >= TYPE_str && ATOMstorage(b->htype) >= TYPE_str) {
+		if (u == 0 || *(str*)u == 0)
+			u = (ptr) str_nil;
+		else
+			u = (ptr) *(str *)u;
 	}
-
-	CMDsetaccess(&i,b,&param);
-	if( i->ttype >= TYPE_str  && ATOMstorage(i->ttype) >= TYPE_str)
-	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
-	   else u = *(str *)u; 
-	}
-	BUNappend(BATmirror(i), u, FALSE);
-	BBPkeepref(*r=i->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	b = BATmirror(b);
+	bn = BUNappend(b, u, FALSE);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.append", GDK_EXCEPTION);
+	bn = BATmirror(bn);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
 BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 {
-	BAT *b,*i, *u;
-	int param=BAT_WRITE;
+	BAT *bn, *b, *u;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
-	}
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
-	CMDsetaccess(&i,b,&param);
-	BATappend(i, u, *force);
-	BBPkeepref(*r=i->batCacheid);
+	bn = BATappend(b, u, *force);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(u->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.append", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCappend_val_force_wrap(int *r, int *bid, ptr u, bit *force)
 {
-	BAT *b,*i;
-	int param=BAT_WRITE;
+	BAT *bn, *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.append", OPERATION_FAILED);
+	if (b->ttype >= TYPE_str && ATOMstorage(b->ttype) >= TYPE_str) {
+		if (u == 0 || *(str*)u == 0)
+			u = (ptr) str_nil;
+		else
+			u = (ptr) *(str *)u;
 	}
-
-	CMDsetaccess(&i,b,&param);
-	if( i->ttype >= TYPE_str  && ATOMstorage(i->ttype) >= TYPE_str)
-	{ if(u== 0 || *(str*)u==0) u = (str)str_nil;
-	   else u = *(str *)u; 
-	}
-	BUNappend(i, u, *force);
-	BBPkeepref(*r=i->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	bn = BUNappend(b, u, *force);
+	if (b != bn)
+		BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.append", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str 
+str
 BKCbun_inplace(int *r, int *bid, oid *id, ptr t)
 {
-	BAT *o;
+	BAT *b;
 
 	(void) r;
-	if ((o = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
+	if (void_inplace(b, *id, t, FALSE) == GDK_FAIL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
-	void_inplace(o, *id, t, FALSE);
-	BBPkeepref(*r = o->batCacheid);
+	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str 
+str
 BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force)
 {
-	BAT *o;
+	BAT *b;
 
 	(void) r;
-	if ((o = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
+	if (void_inplace(b, *id, t, *force) == GDK_FAIL) {
+		BBPreleaseref(b->batCacheid);
+		throw(MAL, "bat.inplace", GDK_EXCEPTION);
 	}
-	void_inplace(o, *id, t, *force);
-	BBPkeepref(*r = o->batCacheid);
+	BBPkeepref(*r = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
 BKCbat_inplace(int *r, int *bid, int *rid)
 {
-	BAT *o, *d;
+	BAT *b, *d;
 
-	(void) r;
-	if ((o = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
-	}
 	if ((d = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(o->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
-	void_replace_bat(o, d, FALSE);
-	BBPkeepref(*r = o->batCacheid);
+	if (void_replace_bat(b, d, FALSE) == BUN_NONE) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(d->batCacheid);
+		throw(MAL, "bat.inplace", GDK_EXCEPTION);
+	}
+	BBPkeepref(*r = b->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1306,18 +1211,21 @@ BKCbat_inplace(int *r, int *bid, int *rid)
 str
 BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 {
-	BAT *o, *d;
+	BAT *b, *d;
 
-	(void) r;
-	if ((o = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
 	if ((d = BATdescriptor(*rid)) == NULL) {
-		BBPreleaseref(o->batCacheid);
+		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.inplace", RUNTIME_OBJECT_MISSING);
 	}
-	void_replace_bat(o, d, *force);
-	BBPkeepref(*r = o->batCacheid);
+	if (void_replace_bat(b, d, *force) == BUN_NONE) {
+		BBPreleaseref(b->batCacheid);
+		BBPreleaseref(d->batCacheid);
+		throw(MAL, "bat.inplace", GDK_EXCEPTION);
+	}
+	BBPkeepref(*r = b->batCacheid);
 	BBPreleaseref(d->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1327,51 +1235,78 @@ BKCbat_inplace_force(int *r, int *bid, int *rid, bit *force)
 char *
 BKCgetAlpha(int *r, int *bid)
 {
-	BAT *b, *c;
+	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getInserted", RUNTIME_OBJECT_MISSING);
-	}
-	c = BATalpha(b);
-	*r = c->batCacheid;
-	BBPkeepref(c->batCacheid);
+	bn = BATalpha(b);
 	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.getInserted", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 char *
 BKCgetDelta(int *r, int *bid)
 {
-	BAT *b, *c;
+	BAT *b, *bn;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getDeleted", RUNTIME_OBJECT_MISSING);
-	}
-	c = BATdelta(b);
-	*r = c->batCacheid;
-	BBPkeepref(c->batCacheid);
+	bn = BATdelta(b);
 	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.getDeleted", GDK_EXCEPTION);
+	BBPkeepref(*r = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BKCgetCapacity(lng *res, int *bid)
+BKCgetCapacity(lng *res, bat *bid)
 {
-	CMDcapacity(res, bid);
+	*res = lng_nil;
+	if (BBPcheck(*bid, "bat.getCapacity")) {
+		BAT *b = lock_desc(*bid);
+
+		if (b != NULL)
+			*res = (lng) BATcapacity(b);
+		unlock_desc(*bid);
+	}
 	return MAL_SUCCEED;
 }
 
 str
-BKCgetHeadType(str *res, int *bid)
+BKCgetHeadType(str *res, bat *bid)
 {
-	CMDhead(res, bid);
+	const char *ret = str_nil;
+
+	if (BBPcheck(*bid, "bat.getHeadType")) {
+		BAT *b = lock_desc(*bid);
+
+		if (b) {
+			ret = *bid > 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
+		}
+		unlock_desc(*bid);
+	}
+	*res = GDKstrdup(ret);
 	return MAL_SUCCEED;
 }
 
 str
 BKCgetTailType(str *res, int *bid)
 {
-	CMDtail(res, bid);
+	const char *ret = str_nil;
+
+	if (BBPcheck(*bid, "bat.getTailType")) {
+		BAT *b = lock_desc(*bid);
+
+		if (b) {
+			ret = *bid < 0 ? ATOMname(b->htype) : ATOMname(b->ttype);
+		}
+		unlock_desc(*bid);
+	}
+	*res = GDKstrdup(ret);
 	return MAL_SUCCEED;
 }
 
@@ -1469,7 +1404,19 @@ BKCgetKey(bit *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
-	CMDgetkey(ret, b);
+	/* we must take care of the special case of a nil column
+	 * (TYPE_void,seqbase=nil): such nil columns never set hkey (and
+	 * BUNins will never invalidate it if set) yet a nil column of a
+	 * BAT with <= 1 entries does not contain doubles => return TRUE.
+	 */
+	if (BATcount(b) <= 1) {
+		*ret = TRUE;
+	} else {
+		if (!b->hkey) {
+			BATderiveHeadProps(b, 1);
+		}
+		*ret = b->hkey ? TRUE : FALSE;
+	}
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1535,68 +1482,77 @@ BKCisTransient(bit *res, int *bid)
 	return MAL_SUCCEED;
 }
 
-str BKCsetWriteMode(int *res, int *bid) {
-	BAT *b, *bn = NULL;
-	int param=0;
-    if( (b= BATdescriptor(*bid)) == NULL ){
+str
+BKCsetWriteMode(int *res, int *bid)
+{
+	BAT *b;
+
+    if ((b = BATdescriptor(*bid)) == NULL)
         throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-    }
-	CMDsetaccess(&bn,b,&param);
-	BBPkeepref(*res=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
+	if ((b = setaccess(b, BAT_WRITE)) == NULL)
+		throw(MAL, "bat.setWriteMode", OPERATION_FAILED);
+	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str BKChasWriteMode(bit *res, int *bid) {
+str
+BKChasWriteMode(bit *res, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
+
+    if ((b = BATdescriptor(*bid)) == NULL)
         throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
-    }
-	*res = BATgetaccess(b)=='w';
+	*res = BATgetaccess(b) == BAT_WRITE;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str BKCsetReadMode(int *res, int *bid) {
-	BAT *b, *bn = NULL;
-	int param=1;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-    }
-	CMDsetaccess(&bn,b,&param);
-	BBPkeepref(*res=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str BKChasReadMode(bit *res, int *bid) {
+str
+BKCsetReadMode(int *res, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
+
+    if ((b = BATdescriptor(*bid)) == NULL)
         throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
-    }
-	*res = BATgetaccess(b)=='r';
-	BBPreleaseref(b->batCacheid);
+	if ((b = setaccess(b, BAT_READ)) == NULL)
+		throw(MAL, "bat.setReadMode", OPERATION_FAILED);
+	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str BKCsetAppendMode(int *res, int *bid) {
-	BAT *b, *bn = NULL;
-	int param=2;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-    }
-	CMDsetaccess(&bn,b,&param);
-	BBPkeepref(*res=bn->batCacheid);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str BKChasAppendMode(bit *res, int *bid) {
+str
+BKChasReadMode(bit *res, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
+
+    if ((b = BATdescriptor(*bid)) == NULL)
+        throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
+	*res = BATgetaccess(b) == BAT_READ;
+	BBPreleaseref(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKCsetAppendMode(int *res, int *bid)
+{
+	BAT *b;
+
+    if ((b = BATdescriptor(*bid)) == NULL)
         throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
-    }
-	*res = BATgetaccess(b)=='a';
+	if ((b = setaccess(b, BAT_APPEND)) == NULL)
+		throw(MAL, "bat.setAppendMode", OPERATION_FAILED);
+	BBPkeepref(*res = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+BKChasAppendMode(bit *res, int *bid)
+{
+	BAT *b;
+
+    if ((b = BATdescriptor(*bid)) == NULL)
+        throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
+	*res = BATgetaccess(b) == BAT_APPEND;
 	BBPreleaseref(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1604,39 +1560,28 @@ str BKChasAppendMode(bit *res, int *bid) {
 str
 BKCsetAccess(int *res, int *bid, str *param)
 {
-	BAT *b, *bn = NULL;
+	BAT *b;
 	int m;
-	int oldid;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.setAccess", RUNTIME_OBJECT_MISSING);
-	}
 	switch (*param[0]) {
 	case 'r':
-		m = 1;
+		m = BAT_READ;
 		break;
 	case 'a':
-		m = 2;
+		m = BAT_APPEND;
 		break;
 	case 'w':
-		m = 0;
+		m = BAT_WRITE;
 		break;
 	default:
 		*res = 0;
-		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT" Got %c" " expected 'r','a', or 'w'", *param[0]);
+		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
-	/* CMDsetaccess(&bn, b, &m);*/
-
-	oldid= b->batCacheid;
-	bn = BATsetaccess(b, m);
-	if ((bn)->batCacheid == b->batCacheid) {
-		BBPkeepref(bn->batCacheid);
-	} else {
-		BBPreleaseref(oldid);
-		BBPfix(bn->batCacheid);
-		BBPkeepref(bn->batCacheid);
-	}
-	*res = bn->batCacheid;
+	if ((b = setaccess(b, m)) == NULL)
+		throw(MAL, "bat.setAccess", OPERATION_FAILED);
+	BBPkeepref(*res = b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1645,18 +1590,21 @@ BKCgetAccess(str *res, int *bid)
 {
 	BAT *b;
 
-	if ((b = BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getAccess", RUNTIME_OBJECT_MISSING);
-	}
 	switch (BATgetaccess(b)) {
-	case 1:
+	case BAT_READ:
 		*res = GDKstrdup("read");
 		break;
-	case 2:
+	case BAT_APPEND:
 		*res = GDKstrdup("append");
 		break;
-	case 0:
+	case BAT_WRITE:
 		*res = GDKstrdup("write");
+		break;
+	default:
+		/* cannot happen, just here to help analysis tools */
+		*res = GDKstrdup(str_nil);
 		break;
 	}
 	BBPreleaseref(b->batCacheid);
