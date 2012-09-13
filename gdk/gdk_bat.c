@@ -2226,6 +2226,7 @@ BAT *
 BATseqbase(BAT *b, oid o)
 {
 	BATcheck(b, "BATseqbase");
+	assert(o <= oid_nil);
 	if (ATOMtype(b->htype) == TYPE_oid) {
 		if (b->hseqbase != o) {
 			b->batDirtydesc = TRUE;
@@ -2239,18 +2240,17 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				if (b->hkey)
-					b->hkey = FALSE;
-				b->H->nonil = 0;
-				b->H->nil = 1;
+				b->hkey = b->U->count <= 1;
+				b->H->nonil = b->U->count == 0;
+				b->H->nil = b->U->count > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
 					b->hkey = TRUE;
 					b->H->nokey[0] = b->H->nokey[1] = 0;
-					b->H->nonil = 1;
-					b->H->nil = 0;
 				}
+				b->H->nonil = 1;
+				b->H->nil = 0;
 				b->hsorted = 1;
 				b->hrevsorted = b->U->count <= 1;
 			}
