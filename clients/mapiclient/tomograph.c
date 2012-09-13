@@ -155,12 +155,23 @@ usage(void)
 	fprintf(stderr, "  -D | --debug\n");
 }
 
+
+#define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
+					   dbh ? mapi_explain(dbh, stderr) :        \
+					   fprintf(stderr, "!! %scommand failed\n", id)); \
+					   goto stop_disconnect;}
+#define doQ(X) \
+	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
+			 die(dbh, hdl);
+
 /* Any signal should be captured and turned into a graceful
  * termination of the profiling session. */
 static void createTomogram(void);
+
 static void
 stopListening(int i)
 {
+	char *id ="deactivateBeat";
 	wthread *walk;
 	(void)i;
 	/* kill all connections */
@@ -168,6 +179,10 @@ stopListening(int i)
 		if (walk->s != NULL)
 			mnstr_close(walk->s);
 	}
+	doQ("profiler.deactivate(\"ping\");\n");
+stop_disconnect:
+	mapi_disconnect(dbh);
+	mapi_destroy(dbh);
 	batch = 1;
 	createTomogram();
 }
@@ -186,14 +201,6 @@ setCounter(char *nme)
 				profileCounter[i].status = k++;
 	return k;
 }
-
-#define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
-					   dbh ? mapi_explain(dbh, stderr) :        \
-					   fprintf(stderr, "!! %scommand failed\n", id)); \
-					   goto stop_disconnect;}
-#define doQ(X) \
-	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-			 die(dbh, hdl);
 
 static void activateBeat(void){
 	char buf[BUFSIZ];
@@ -219,7 +226,6 @@ stop_disconnect:
 #define MAXBOX 32678
 
 typedef struct BOX{
-	int xleft,xright;	/* box coordinates */
 	int row;
 	int color;
 	int thread;
@@ -247,7 +253,7 @@ long lastclktick=0;
 long starttime=0;
 
 static void dumpbox(int i){
-	printf("[%d] %d,%d row %d color %d ", i, box[i].xleft, box[i].xright, box[i].row, box[i].color);
+	printf("[%d] row %d color %d ", i, box[i].row, box[i].color);
 	if ( box[i].fcn)
 		printf("%s ", box[i].fcn);
 	printf("thread %d ", box[i].thread);
@@ -949,8 +955,6 @@ static void createTomogram(void)
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].state != 4 ){
-		box[i].xleft = box[i].clkstart;
-		box[i].xright = box[i].clkend;
 		if ( debug)
 			dumpbox(i);
 		fprintf(gnudata,"set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
