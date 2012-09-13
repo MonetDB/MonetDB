@@ -7,3 +7,4 @@ export TSTPASSWORD="monetdb"
 export TSTDEBUG="no"
 
 nosetests ./runtests.py
+nosetests ./test_control.py

@@ -1,7 +1,19 @@
 import unittest
+import logging
+
+try:
+    import monetdb
+except ImportError:
+    logging.warning("monetdb python API not found, using local monetdb python API")
+    import sys, os
+    here = os.path.dirname(__file__)
+    parent = os.path.join(here, os.pardir)
+    sys.path.append(parent)
+    import monetdb
+
 from monetdb.control import Control
 from monetdb.exceptions import OperationalError
-#import logging
+
 #logging.basicConfig(level=logging.DEBUG)
 
 database_prefix = 'controltest_'
@@ -54,7 +66,7 @@ class TestManage(unittest.TestCase):
         do_without_fail(lambda: self.control.destroy(status1))
         self.control.create(status1)
         status = self.control.status(status1)
-        self.assertEquals(status["name"], status1)
+        self.assertEqual(status["name"], status1)
 
     def testStatuses(self):
         status1 = database_prefix + "status1"
@@ -94,7 +106,7 @@ class TestManage(unittest.TestCase):
     def testInherit(self):
         self.control.set(database_name, "readonly", "yes")
         self.assertTrue(self.control.inherit(database_name, "readonly"))
-        self.assertFalse(self.control.get(database_name).has_key("readonly"))
+        self.assertFalse("readonly" in self.control.get(database_name))
 
     def testRename(self):
         old = database_prefix + "old"
@@ -109,7 +121,7 @@ class TestManage(unittest.TestCase):
 
     def testDefaults(self):
         defaults = self.control.defaults()
-        self.assertTrue(defaults.has_key("readonly"))
+        self.assertTrue("readonly" in defaults)
 
     def testNeighbours(self):
         neighbours = self.control.neighbours()
