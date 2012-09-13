@@ -23,6 +23,17 @@ import sys
 import os
 import logging
 
+try:
+    import monetdb.sql
+except ImportError:
+    logging.warning("monetdb python API not found, using local monetdb python API")
+    import sys
+    import os
+    here = os.path.dirname(__file__)
+    parent = os.path.join(here, os.pardir)
+    sys.path.append(parent)
+    import monetdb.sql
+
 import capabilities
 import dbapi20
 
@@ -37,18 +48,6 @@ TSTPASSWORD = os.environ.get('TSTPASSWORD', 'monetdb')
 if os.environ.get("TSTDEBUG", "no") == "yes":
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('monetdb')
-
-try:
-    import monetdb.sql
-except ImportError:
-    logging.warning("monetdb python API not found, using local monetdb python API")
-    import sys
-    import os
-    here = os.path.dirname(__file__)
-    parent = os.path.join(here, os.pardir)
-    sys.path.append(parent)
-    import monetdb.sql
-
 
 class TextTestRunnerNoTime(unittest.TextTestRunner):
     """A test runner class that displays results in textual form, but without time """
