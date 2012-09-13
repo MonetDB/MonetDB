@@ -1314,7 +1314,7 @@ static void profilerHeartbeat(void *dummy){
 	gettimeofday(&tv,NULL);
 	prevclock = (time_t) tv.tv_sec;
 
-	while (hbdelay){
+	while (hbdelay && eventstream){
 		MT_sleep_ms(hbdelay);
 
 		if (delayswitch > 0) {
