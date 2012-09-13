@@ -846,6 +846,15 @@ command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:o
 address AGGRsubcountcand
 comment "Grouped count aggregate with candidates list";
 
+command median(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]) :bat[:oid,:any_1]
+address AGGRmedian3
+comment "Grouped median aggregate";
+
+function median(b:bat[:oid,:any_1]) :any_1;
+	bn := submedian(b, 0);
+	return algebra.fetch(bn, 0);
+end aggr.median;
+
 command submedian(b:bat[:oid,:any_1],skip_nils:int) :bat[:oid,:any_1]
 address AGGRmedian
 comment "Median aggregate";
