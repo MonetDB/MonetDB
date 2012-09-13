@@ -753,11 +753,13 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 	BATcheck(val, "BATthetasubselect");
 	BATcheck(op, "BATthetasubselect");
 
+	nil = ATOMnilptr(b->ttype);
+	if (ATOMcmp(b->ttype, val, nil) == 0)
+		return newempty();
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
 		/* "=" or "==" */
 		return BATsubselect(b, s, val, NULL, 1, 1, 0);
 	}
-	nil = ATOMnilptr(b->ttype);
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
