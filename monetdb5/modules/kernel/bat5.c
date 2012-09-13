@@ -1537,7 +1537,7 @@ BKCisTransient(bit *res, int *bid)
 
 str BKCsetWriteMode(int *res, int *bid) {
 	BAT *b, *bn = NULL;
-	int param=0;
+	int param=BAT_WRITE;
     if( (b= BATdescriptor(*bid)) == NULL ){
         throw(MAL, "bat.setWriteMode", RUNTIME_OBJECT_MISSING);
     }
@@ -1559,7 +1559,7 @@ str BKChasWriteMode(bit *res, int *bid) {
 
 str BKCsetReadMode(int *res, int *bid) {
 	BAT *b, *bn = NULL;
-	int param=1;
+	int param=BAT_READ;
     if( (b= BATdescriptor(*bid)) == NULL ){
         throw(MAL, "bat.setReadMode", RUNTIME_OBJECT_MISSING);
     }
@@ -1581,7 +1581,7 @@ str BKChasReadMode(bit *res, int *bid) {
 
 str BKCsetAppendMode(int *res, int *bid) {
 	BAT *b, *bn = NULL;
-	int param=2;
+	int param=BAT_APPEND;
     if( (b= BATdescriptor(*bid)) == NULL ){
         throw(MAL, "bat.setAppendMode", RUNTIME_OBJECT_MISSING);
     }
