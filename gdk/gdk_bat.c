@@ -2196,10 +2196,9 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				if (b->hkey)
-					b->hkey = FALSE;
-				b->H->nonil = 0;
-				b->H->nil = 1;
+				b->hkey = b->U->count <= 1;
+				b->H->nonil = b->U->count == 0;
+				b->H->nil = b->U->count > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
