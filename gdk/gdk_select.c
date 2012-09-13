@@ -311,8 +311,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * qualifying tuples.  The return BAT is sorted on the tail value
  * (i.e. in the same order as the input BAT).
  *
- * If s[dense,OID] is specified, its tail column is list of candidates.
- * s should be sorted on the tail value.
+ * If s[dense,OID] is specified, its tail column is a list of
+ * candidates.  s should be sorted on the tail value.
  *
  * tl may not be NULL, li, hi, and anti must be either 0 or 1.
  *
