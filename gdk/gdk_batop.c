@@ -1322,7 +1322,11 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = BATleftfetchjoin(o, b, BATcount(b));
 		if (bn == NULL)
 			goto error;
-		bn = BATmaterializeh(bn);
+		if (bn->ttype == TYPE_void || isVIEW(bn)) {
+			b = BATcopy(bn, TYPE_void, ATOMtype(bn->ttype), TRUE);
+			BBPunfix(bn->batCacheid);
+			bn = b;
+		}
 	} else {
 		bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
 	}
@@ -1341,13 +1345,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups,
 				goto error;
 		} else {
 			/* create new order */
-			on = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+			on = BATnew(TYPE_void, TYPE_oid, BATcount(bn));
 			if (on == NULL)
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
-			for (p = 0, q = BATcount(b); p < q; p++)
+			for (p = 0, q = BATcount(bn); p < q; p++)
 				     grps[p] = p;
-			BATsetcount(on, BATcount(b));
+			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 		}
 		BATseqbase(on, 0);
