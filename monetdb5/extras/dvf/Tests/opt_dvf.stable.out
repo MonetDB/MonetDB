@@ -1,0 +1,115 @@
+stdout of test 'opt_dvf` in directory 'extras/dvf` itself:
+
+
+# 16:53:38 >  
+# 16:53:38 >  "/usr/bin/python" "opt_dvf.py" "opt_dvf"
+# 16:53:38 >  
+
+#SET optimizer = 'sequential_pipe';
+#declare opt_pipe_def string; set opt_pipe_def  = (select def from optimizers() where name = optimizer);
+#declare opt_pipe_def string; set opt_pipe_def  = (select def from optimizers() where name = optimizer);
+#set optimizer = substring(opt_pipe_def, 0, length(opt_pipe_def)-length('optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();')) || 'optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.DVframework();optimizer.garbageCollector();';
+#EXPLAIN SELECT MAX(sample_value) FROM mseed.dataview WHERE network = 'FR';
+% .explain # table_name
+% mal # name
+% clob # type
+% 94 # length
+function user.s0_1{autoCommit=true}(A0:str):void;
+    X_3 := sql.mvc();
+    X_4:bat[:oid,:oid]  := sql.bind_idxbat(X_3,"mseed","catalog","cat_fkey_files_file_loc",0);
+    X_9:bat[:oid,:oid]  := sql.bind_dbat(X_3,"mseed","catalog",1);
+    X_11 := bat.reverse(X_9);
+    X_12 := algebra.kdifference(X_4,X_11);
+    X_13:bat[:oid,:str]  := sql.bind(X_3,"mseed","files","network",0);
+    X_16 := algebra.uselect(X_13,A0);
+    X_17:bat[:oid,:oid]  := sql.bind_dbat(X_3,"mseed","files",1);
+    X_18 := bat.reverse(X_17);
+    X_19 := algebra.kdifference(X_16,X_18);
+    X_20 := algebra.markT(X_19,0@0:oid);
+    X_21 := bat.reverse(X_20);
+    X_22:bat[:oid,:str]  := sql.bind(X_3,"mseed","files","file_location",0);
+    X_24 := algebra.kdifference(X_22,X_18);
+    X_25 := bat.mirror(X_24);
+    X_26 := algebra.leftjoin(X_21,X_25);
+    X_27 := bat.reverse(X_26);
+    X_28 := algebra.join(X_12,X_27);
+    X_29 := algebra.markT(X_28,0@0:oid);
+    X_30 := bat.reverse(X_29);
+    X_31:bat[:oid,:str]  := sql.bind(X_3,"mseed","catalog","file_location",0);
+    X_35 := algebra.leftjoin(X_30,X_31);
+    (X_134,X_135) := group.done(X_35);
+    X_136 := bat.mirror(X_134);
+    X_137 := algebra.leftjoin(X_136,X_35);
+    dvf.plan_modifier("mseed",X_137);
+    X_36 := algebra.markT(X_35,40@0:oid);
+    X_37 := bat.reverse(X_35);
+    X_38 := algebra.markT(X_37,40@0:oid);
+    X_39 := bat.reverse(X_38);
+    X_40:bat[:oid,:wrd]  := batcalc.hash(X_39);
+    X_41 := bat.reverse(X_36);
+    X_42:bat[:oid,:int]  := sql.bind(X_3,"mseed","catalog","seq_no",0);
+    X_44 := algebra.leftjoin(X_30,X_42);
+    X_45 := algebra.leftjoin(X_41,X_44);
+    X_46:bat[:oid,:wrd]  := mkey.bulk_rotate_xor_hash(X_40,22:int,X_45);
+    X_47 := algebra.join(X_36,X_46);
+    X_48:bat[:oid,:str]  := sql.bind(X_3,"mseed","data","file_location",0);
+    X_51:bat[:oid,:oid]  := sql.bind_dbat(X_3,"mseed","data",1);
+    X_53 := bat.reverse(X_51);
+    X_54 := algebra.kdifference(X_48,X_53);
+    X_55 := algebra.markT(X_54,40@0:oid);
+    X_56 := bat.reverse(X_54);
+    X_57 := algebra.markT(X_56,40@0:oid);
+    X_58 := bat.reverse(X_57);
+    X_59:bat[:oid,:wrd]  := batcalc.hash(X_58);
+    X_60 := bat.reverse(X_55);
+    X_61:bat[:oid,:int]  := sql.bind(X_3,"mseed","data","seq_no",0);
+    X_64 := algebra.leftjoin(X_60,X_61);
+    X_65:bat[:oid,:wrd]  := mkey.bulk_rotate_xor_hash(X_59,22:int,X_64);
+    X_66 := algebra.join(X_55,X_65);
+    X_67 := bat.reverse(X_66);
+    X_68 := algebra.join(X_47,X_67);
+    X_69 := algebra.markT(X_68,4@0:oid);
+    X_70 := bat.reverse(X_69);
+    X_71 := algebra.leftjoin(X_70,X_35);
+    X_72 := bat.reverse(X_68);
+    X_73 := algebra.markT(X_72,4@0:oid);
+    X_74 := bat.reverse(X_73);
+    X_75 := algebra.leftjoin(X_74,X_48);
+    X_76:bat[:oid,:bit]  := batcalc.==(X_71,X_75);
+    X_77 := algebra.uselect(X_76,true:bit);
+    X_78 := algebra.semijoin(X_70,X_77);
+    X_79 := algebra.leftjoin(X_78,X_44);
+    X_80 := algebra.semijoin(X_74,X_77);
+    X_81 := algebra.leftjoin(X_80,X_61);
+    X_82:bat[:oid,:bit]  := batcalc.==(X_79,X_81);
+    X_83 := algebra.uselect(X_82,true:bit);
+    X_84 := algebra.semijoin(X_78,X_83);
+    X_85 := bat.reverse(X_84);
+    X_86 := algebra.semijoin(X_80,X_83);
+    X_87 := algebra.join(X_85,X_86);
+    X_88 := bat.reverse(X_87);
+    X_89 := algebra.markT(X_88,0@0:oid);
+    X_90 := bat.reverse(X_89);
+    X_91:bat[:oid,:int]  := sql.bind(X_3,"mseed","data","sample_value",0);
+    X_96 := algebra.leftjoin(X_90,X_91);
+    X_97 := algebra.selectNotNil(X_96);
+    X_98 := aggr.max(X_97);
+    sql.exportValue(1,"mseed.dataview","L1","int",32,0,6,X_98,"");
+end s0_1;
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_extras_dvf', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:38708/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+# 16:53:38 >  
+# 16:53:38 >  "Done."
+# 16:53:38 >  
+

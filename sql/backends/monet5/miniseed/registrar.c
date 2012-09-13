@@ -890,7 +890,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	finish = GDKms();
-	printf("Time for extraction and transformation of (meta-)data: %ld milliseconds\n", finish - start);
+	printf("# Time for extraction and transformation of (meta-)data: %ld milliseconds\n", finish - start);
 
 	start = GDKms();
 	/* prepare sql functions for inserting temp_container into tables_to_be_filled */
@@ -907,7 +907,7 @@ str register_repo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"registrar.register_repo", "Inserting the temp_container into one of the tables failed: %s\n", err);
 	}
 	finish = GDKms();
-	printf("Time for loading of (meta-)data: %ld milliseconds\n", finish - start);
+	printf("# Time for loading of (meta-)data: %ld milliseconds\n", finish - start);
 
 	err = register_clean_up(tc);
 	if(err != MAL_SUCCEED)

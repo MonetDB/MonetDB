@@ -1,0 +1,30 @@
+stdout of test 'registrar` in directory 'extras/dvf` itself:
+
+
+# 17:05:32 >  
+# 17:05:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/kargin/Monet/dft_miniseed/PREFIX/DFT/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=34356" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_dvf" "--set" "mal_listing=0"
+# 17:05:32 >  
+
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_extras_dvf', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:34356/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+num_file_paths: 5
+# Time for extraction and transformation of (meta-)data: 1 milliseconds
+# Time for loading of (meta-)data: 90 milliseconds
+
+
+# 17:05:33 >  
+# 17:05:33 >  "Done."
+# 17:05:33 >  
+

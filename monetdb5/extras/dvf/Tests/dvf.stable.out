@@ -1,0 +1,52 @@
+stdout of test 'dvf` in directory 'extras/dvf` itself:
+
+
+# 17:17:56 >  
+# 17:17:56 >  "/usr/bin/python" "dvf.py" "dvf"
+# 17:17:56 >  
+
+#SET optimizer = 'sequential_pipe';
+#declare opt_pipe_def string; set opt_pipe_def  = (select def from optimizers() where name = optimizer);
+#declare opt_pipe_def string; set opt_pipe_def  = (select def from optimizers() where name = optimizer);
+#set optimizer = substring(opt_pipe_def, 0, length(opt_pipe_def)-length('optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();')) || 'optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.history();optimizer.multiplex();optimizer.DVframework();optimizer.garbageCollector();';
+#SELECT AVG(sample_value) FROM mseed.dataview WHERE network = 'FR';
+% mseed. # table_name
+% L1 # name
+% double # type
+% 24 # length
+[ -8023.4	]
+#SELECT MAX(sample_value) FROM mseed.dataview WHERE seq_no < 1000;
+% mseed.dataview # table_name
+% L1 # name
+% int # type
+% 6 # length
+[ 123496	]
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_extras_dvf', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:37875/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+num_rows: 25
+num_rows: 75
+#BBPdecref: range error 931
+#BBPdecref: range error 930
+num_rows: 25
+num_rows: 75
+num_rows: 1872
+num_rows: 3760
+num_rows: 90406
+#BBPdecref: range error 953
+#BBPdecref: range error 946
+#BBPdecref: range error 949
+
+# 17:17:57 >  
+# 17:17:57 >  "Done."
+# 17:17:57 >  
+

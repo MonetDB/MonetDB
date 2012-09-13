@@ -1,0 +1,1 @@
+CALL register_repo('$TSTSRCDIR/example_mseed_file_list.txt', 0);

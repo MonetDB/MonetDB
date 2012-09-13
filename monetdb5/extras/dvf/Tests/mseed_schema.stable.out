@@ -1,0 +1,100 @@
+stdout of test 'mseed_schema` in directory 'extras/dvf` itself:
+
+
+# 15:18:27 >  
+# 15:18:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/kargin/Monet/dft_miniseed/PREFIX/DFT/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=30522" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_dvf" "--set" "mal_listing=0"
+# 15:18:27 >  
+
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_extras_dvf', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lodz.ins.cwi.nl:30522/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 79_registrar.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 81_miniseed.sql
+# loading sql script: 99_system.sql
+
+# 15:18:28 >  
+# 15:18:28 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lodz" "--port=30522"
+# 15:18:28 >  
+
+#CREATE SCHEMA mseed;
+#CREATE TABLE "mseed"."files" (
+#--	"file_id"  INTEGER,
+#	"file_location" STRING,
+#-- 	"file_last_modified"	TIMESTAMP,
+#	"dataquality"	CHAR(1),
+#	"network"	VARCHAR(10),
+#	"station"	VARCHAR(10),
+#	"location"	VARCHAR(10),
+#	"channel"	VARCHAR(10),
+#	"encoding"	TINYINT,
+#	"byte_order"	BOOLEAN,
+#--	CONSTRAINT "files_pkey_file_id" PRIMARY KEY (file_id)
+#	CONSTRAINT "files_pkey_file_loc" PRIMARY KEY (file_location)
+#);
+#CREATE TABLE "mseed"."catalog" (
+#--	"file_id" INTEGER,	
+#	"file_location" STRING,
+#	"seq_no"	INTEGER,
+#	"record_length"	INTEGER,
+#	"start_time"	TIMESTAMP,
+#	"frequency"	DOUBLE,
+#	"sample_count"   BIGINT,
+#	"sample_type"   CHAR(1),
+#--	CONSTRAINT "catalog_file_id_seq_no_pkey" PRIMARY KEY (file_id, seq_no),
+#--	CONSTRAINT "cat_fkey_files_file_id" FOREIGN KEY (file_id) REFERENCES mseed.files(file_id)
+#	CONSTRAINT "catalog_file_loc_seq_no_pkey" PRIMARY KEY (file_location, seq_no),
+#	CONSTRAINT "cat_fkey_files_file_loc" FOREIGN KEY (file_location) REFERENCES mseed.files(file_location)
+#CREATE TABLE "mseed"."data" (
+#--	"file_id"      INTEGER,
+#	"file_location" STRING,
+#	"seq_no"       INTEGER,
+#	"sample_time"  TIMESTAMP,
+#	"sample_value" INTEGER
+#--	CONSTRAINT "data_file_id_seq_no_sample_time_pkey" PRIMARY KEY (file_id, seq_no, sample_time),
+#--	CONSTRAINT "data_fkey_cat_file_id_seq_no" FOREIGN KEY (file_id, seq_no) REFERENCES mseed.catalog(file_id, seq_no)
+#-- 	CONSTRAINT "data_file_loc_seq_no_sample_time_pkey" PRIMARY KEY (file_location, seq_no, sample_time),
+#-- 	CONSTRAINT "data_fkey_cat_file_loc_seq_no" FOREIGN KEY (file_location, seq_no) REFERENCES mseed.catalog(file_location, seq_no)
+#CREATE VIEW mseed.dataview AS
+#SELECT f.file_location, dataquality, network, station, location, channel, encoding, byte_order, c.seq_no, record_length, start_time, frequency, sample_count, sample_type, sample_time, sample_value
+#FROM mseed.files AS f 
+#	JOIN mseed.catalog AS c
+#		ON f.file_location = c.file_location 
+#	JOIN mseed.data AS d 
+#		ON c.file_location = d.file_location AND c.seq_no = d.seq_no;
+
+# 15:18:28 >  
+# 15:18:28 >  "Done."
+# 15:18:28 >  
+
