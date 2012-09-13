@@ -2651,7 +2651,7 @@ BATsetaccess(BAT *b, int newmode)
 	}
 	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
-	if (bakmode != newmode) {
+	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);
