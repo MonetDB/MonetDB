@@ -672,6 +672,15 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 			BBPunfix(bn1->batCacheid);
 			bn1 = NULL;
 		}
+		if (th == NULL && !anti && BATcount(bn) > 0 &&
+		    ATOMcmp(b->ttype, tl, ATOMnilptr(b->ttype)) == 0) {
+			/* this was the only way to get nils, so we
+			 * have nils if there are any values at all */
+			bn->T->nil = 1;
+		} else {
+			/* we can't have nils */
+			bn->T->nonil = 1;
+		}
 	} else {
 		/* we want to return a [any_1,nil] BAT */
 		if (map) {
