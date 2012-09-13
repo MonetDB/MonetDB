@@ -18,7 +18,7 @@ def parse_statusline(line):
     info['min_uptime'] = int(split[10])
     info['last_crash'] = int(split[11])
     info['lastStart'] = int(split[12])
-    info['crash_avg1'] = split[1] == ("1")
+    info['crash_avg1'] = split[13] == ("1")
     info['crash_avg10'] = float(split[14])
     info['crash_avg30'] = float(split[15])
     return info
