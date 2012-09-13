@@ -14,9 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
-
-# DBAPI states that we should subclass StandardError.
-# StandardError is depricated in python 3.0, so we use Exception
+"""
+MonetDB Python API specific exceptions
+"""
 
 class Warning(Exception):
     """Exception raised for important warnings like data

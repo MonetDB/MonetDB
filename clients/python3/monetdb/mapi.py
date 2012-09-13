@@ -16,23 +16,24 @@
 # All Rights Reserved.
 
 """
-This is the python3 implementation of the MAPI protocol.
+This is the python2 implementation of the mapi protocol.
 """
 
 import socket
 import logging
 import struct
 import hashlib
-import platform
 from io import BytesIO
+import time
 
-from monetdb.exceptions import *
+from monetdb.exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
 logger = logging.getLogger("monetdb")
 
 MAX_PACKAGE_LENGTH = (1024*8)-2
 
 MSG_PROMPT = ""
+MSG_MORE = "\1\2\n"
 MSG_INFO = "#"
 MSG_ERROR = "!"
 MSG_Q = "&"
@@ -45,19 +46,30 @@ MSG_QBLOCK = "&6"
 MSG_HEADER = "%"
 MSG_TUPLE = "["
 MSG_REDIRECT = "^"
+MSG_OK = "=OK"
 
 STATE_INIT = 0
 STATE_READY = 1
 
 
-class Server:
+class Server(object):
+    """
+    MAPI (low level MonetDB API) connection
+    """
+
     def __init__(self):
         self.state = STATE_INIT
         self._result = None
-        self.socket = None
+        self.socket = ""
+        self.hostname = ""
+        self.port = 0
+        self.username = ""
+        self.password = ""
+        self.database = ""
+        self.language = ""
 
     def connect(self, hostname, port, username, password, database, language):
-        """ connect to a MonetDB database using the mapi protocol"""
+        """ setup connection to MAPI server"""
 
         self.hostname = hostname
         self.port = port
@@ -76,7 +88,7 @@ class Server:
             self.socket.connect((hostname, port))
         except socket.error as error:
             (error_code, error_str) = error
-            raise OperationalError(error_str + "(%s:%s)" % (self.hostname, self.port))
+            raise OperationalError(error_str + " (%s:%s)" % (self.hostname, self.port))
 
         self.__login()
 
@@ -90,8 +102,10 @@ class Server:
         self.__putblock(response)
         prompt = self.__getblock().strip()
 
-        if len(prompt) == 0:
+        if len(prompt) == 0 :
             # Empty response, server is happy
+            pass
+        elif prompt == MSG_OK:
             pass
         elif prompt.startswith(MSG_INFO):
             logger.info("II %s" % prompt[1:])
@@ -124,11 +138,9 @@ class Server:
                         self.password, self.database, self.language)
 
             else:
-                logger.error('!' + prompt[0])
                 raise ProgrammingError("unknown redirect: %s" % prompt)
 
         else:
-            logger.error('!' + prompt[0])
             raise ProgrammingError("unknown state: %s" % prompt)
 
         self.state = STATE_READY
@@ -151,7 +163,12 @@ class Server:
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return
+            return True
+        elif response.startswith(MSG_OK):
+            return response[3:].strip() or True
+        if response == MSG_MORE:
+            # tell server it isn't going to get more
+            return self.cmd("")
         if response[0] in [MSG_Q, MSG_HEADER, MSG_TUPLE]:
             return response
         elif response[0] == MSG_ERROR:
@@ -164,26 +181,16 @@ class Server:
         """ generate a response to a mapi login challenge """
         challenges = challenge.split(':')
         salt, identity, protocol, hashes, endian = challenges[:5]
-
         password = self.password
 
         if protocol == '9':
             algo = challenges[5]
-            if algo == 'SHA512':
-                password = hashlib.sha512(password.encode()).hexdigest()
-            elif algo == 'SHA384':
-                password = hashlib.sha384(password.encode()).hexdigest()
-            elif algo == 'SHA256':
-                password = hashlib.sha256(password.encode()).hexdigest()
-            elif algo == 'SHA224':
-                password = hashlib.sha224(password.encode()).hexdigest()
-            elif algo == 'SHA1':
-                password = hashlib.sha1(password.encode()).hexdigest()
-            elif algo == 'MD5':
-                password = hashlib.md5(password.encode()).hexdigest()
-            else:
-                raise NotSupportedError("The %s hash algorithm is not " +
-                    "supported" % algo)
+            try:
+                h = hashlib.new(algo)
+                h.update(password.encode())
+                password = h.hexdigest()
+            except ValueError as e:
+                raise NotSupportedError(e.message)
         elif protocol != "8":
             raise NotSupportedError("We only speak protocol v8 and v9")
 
@@ -224,16 +231,16 @@ class Server:
         return result_str.decode()
 
 
+
     def __getbytes(self, bytes):
         """Read an amount of bytes from the socket"""
         result = BytesIO()
         count = bytes
         while count > 0:
-            try:
-                recv = self.socket.recv(count)
-                logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
-            except socket.error as error:
-                raise OperationalError(error[1])
+            recv = self.socket.recv(count)
+            if len(recv) == 0:
+                time.sleep(1)
+            logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             count -= len(recv)
             result.write(recv)
         return result.getvalue()
@@ -251,15 +258,11 @@ class Server:
             flag = struct.pack( '<H', ( length << 1 ) + last )
             logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
             logger.debug("TX: %s" % data)
-            try:
-                self.socket.send(flag)
-                self.socket.send(data)
-            except socket.error as error:
-                raise OperationalError(error[1])
+            self.socket.send(flag)
+            self.socket.send(data)
             pos += length
 
 
     def __del__(self):
         if self.socket:
             self.socket.close()
-
