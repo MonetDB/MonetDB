@@ -376,7 +376,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, int mode)
 #endif
 		      fputc('\n', fp) >= 0 &&
 		      fflush(fp) >= 0))) {
-			if (fclose(fp) >= 0) {
+			if (fp == NULL || fclose(fp) >= 0) {
 				int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 				if (mode == STORE_PRIV)
