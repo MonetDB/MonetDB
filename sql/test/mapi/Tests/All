@@ -7,6 +7,7 @@ smack00
 smack01
 HAVE_PERL?perl_dbi
 HAVE_PYTHON?python_dbapi
-HAVE_PHP?php_monetdb
+HAVE_GEOM&HAVE_PHP?php_monetdb
+!HAVE_GEOM&HAVE_PHP?php_monetdb_nogeom
 utf8test
 python_test_monetdb_sql
