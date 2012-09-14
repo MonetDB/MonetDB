@@ -1,0 +1,12 @@
+stderr of test 'check3_nogeom` in directory 'test/leaks` itself:
+
+
+# 14:37:18 >  
+# 14:37:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib64/MonetDB/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/sql_logs" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB/xquery_logs" --set mapi_port=31055 --set monet_prompt= --trace --dbname=mTests_src_test_leaks  < check3.milM
+# 14:37:18 >  
+
+
+# 14:37:18 >  
+# 14:37:18 >  Done.
+# 14:37:18 >  
+
