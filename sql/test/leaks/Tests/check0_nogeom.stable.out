@@ -1,0 +1,84 @@
+stdout of test 'check0_nogeom` in directory 'test/leaks` itself:
+
+
+# 22:02:15 >  
+# 22:02:15 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35700 --set xrpc_port=46587 --set monet_prompt= --trace  "--dbname=mTests_src_test_leaks" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:02:15 >  
+
+# MonetDB server v5.8.0, based on kernel v1.26.0
+# Serving database 'mTests_src_test_leaks', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35700/
+# MonetDB/SQL module v2.26.0 loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_history.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_compress.sql
+# loading sql script: 18_dictionary.sql
+# loading sql script: 19_cluster.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 24_zorder.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 99_system.sql
+
+# 22:06:31 >  
+# 22:06:31 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=33453"
+# 22:06:31 >  
+
+#select htype, ttype, count from bbp() as bbp 
+#where kind like 'pers%'
+#order by htype, ttype, count;
+% .bbp,	.bbp,	.bbp # table_name
+% htype,	ttype,	count # name
+% clob,	clob,	bigint # type
+% 3,	3,	4 # length
+[ "int",	"int",	8	]
+[ "int",	"lng",	2	]
+[ "int",	"str",	142	]
+[ "oid",	"int",	20	]
+[ "oid",	"int",	20	]
+[ "oid",	"int",	1109	]
+[ "oid",	"int",	3061	]
+[ "oid",	"int",	3061	]
+[ "oid",	"int",	3061	]
+[ "oid",	"int",	3061	]
+[ "oid",	"int",	3061	]
+[ "oid",	"lng",	20	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	20	]
+[ "oid",	"str",	3061	]
+[ "oid",	"str",	3061	]
+#select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
+% .L1,	.bbp # table_name
+% L1,	L2 # name
+% char,	wrd # type
+% 9,	3 # length
+[ "transient",	499	]
+#select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
+% .L1,	.bbp # table_name
+% L1,	L2 # name
+% char,	wrd # type
+% 10,	2 # length
+[ "persistent",	17	]
+
+# 22:02:15 >  
+# 22:02:15 >  Done.
+# 22:02:15 >  
+

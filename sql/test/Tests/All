@@ -1,4 +1,5 @@
-systemfunctions
+HAVE_GEOM?systemfunctions
+!HAVE_GEOM?systemfunctions_nogeom
 example
 example-queries
 example-drop
@@ -93,6 +94,7 @@ copy_into
 antiselect
 median_stdev
 
-trace
+HAVE_GEOM?trace
+!HAVE_GEOM?trace_nogeom
 
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
