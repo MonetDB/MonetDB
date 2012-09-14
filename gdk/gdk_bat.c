@@ -365,7 +365,11 @@ BATattach(int tt, const char *heapfile)
 	bn->batRestricted = BAT_READ;
 	bn->T->heap.size = (size_t) st.st_size;
 	bn->T->heap.newstorage = bn->T->heap.storage = (bn->T->heap.size < REMAP_PAGE_MAXSIZE) ? STORE_MEM : STORE_MMAP;
-	HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE);
+	if (HEAPload(&bn->T->heap, BBP_physical(bn->batCacheid), "tail", TRUE) < 0) {
+		HEAPfree(&bn->T->heap);
+		GDKfree(bs);
+		return NULL;
+	}
 	BBPcacheit(bs, 1);
 	return bn;
 }
@@ -2192,10 +2196,9 @@ BATseqbase(BAT *b, oid o)
 		/* adapt keyness */
 		if (BAThvoid(b)) {
 			if (o == oid_nil) {
-				if (b->hkey)
-					b->hkey = FALSE;
-				b->H->nonil = 0;
-				b->H->nil = 1;
+				b->hkey = b->U->count <= 1;
+				b->H->nonil = b->U->count == 0;
+				b->H->nil = b->U->count > 0;
 				b->hsorted = b->hrevsorted = 1;
 			} else {
 				if (!b->hkey) {
@@ -2646,7 +2649,7 @@ BATsetaccess(BAT *b, int newmode)
 	}
 	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
-	if (bakmode != newmode) {
+	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
 		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
 		int wr = (newmode == BAT_WRITE);
 		int rd = (bakmode == BAT_WRITE);

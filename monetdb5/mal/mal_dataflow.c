@@ -386,7 +386,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	MalStkPtr stk = fs->stk;
 	int startpc = fs->pc;
 	InstrPtr pci;
-	lng oldtimer = 0;
 	MT_Lock *lock = &flow->done->l;
 	int tid = t->id, prevpc = 0;
 	RuntimeProfileRecord runtimeProfile;
@@ -410,9 +409,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 	printInstruction(GDKstdout, flow->mb, 0, pci, LIST_MAL_STMT | LIST_MAPI);
 #endif
 	if (stk->cmd || mb->trap) {
-		lng tm = 0;
-		if (oldtimer)
-			tm = GDKusec();
 		if (cntxt->flags & bbpFlag)
 			BBPTraceCall(cntxt, mb, stk, prevpc);
 		prevpc = stkpc;
@@ -426,11 +422,6 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			if (garbage != garbages)
 				GDKfree(garbage);
 			return ret;
-		}
-		if (oldtimer) {
-			/* ignore debugger waiting time*/
-			tm = GDKusec() - tm;
-			oldtimer += tm;
 		}
 	}
 
@@ -504,21 +495,12 @@ DFLOWstep(FlowTask *t, FlowStatus fs)
 			else {
 				/* show call before entering the factory */
 				if (cntxt->itrace || mb->trap) {
-					lng t = 0;
-
 					if (stk->cmd == 0)
 						stk->cmd = cntxt->itrace;
-					if (oldtimer)
-						t = GDKusec();
 					mdbStep(cntxt, pci->blk, stk, 0);
 					if (stk->cmd == 'x' || cntxt->mode == FINISHING) {
 						stk->cmd = 0;
 						stkpc = mb->stop;
-					}
-					if (oldtimer) {
-						/* ignore debugger waiting time*/
-						t = GDKusec() - t;
-						oldtimer += t;
 					}
 				}
 				ret = runFactory(cntxt, pci->blk, mb, stk, pci);

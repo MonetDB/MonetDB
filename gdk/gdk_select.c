@@ -92,16 +92,6 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	return NULL;
 }
 
-/*
- * @-  Value Selections
- * The string search is optimized for the degenerated case that th =
- * tl, and double elimination in the string heap.
- *
- * We allow value selections on the nil atom. This is formally not
- * correct, as in MIL (nil = nil) != true.  However, we do need an
- * implementation for selecting nil (in MIL, this is done through is
- * the "isnil" predicate). So we implement it here.
- */
 static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 {
@@ -311,8 +301,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * qualifying tuples.  The return BAT is sorted on the tail value
  * (i.e. in the same order as the input BAT).
  *
- * If s[dense,OID] is specified, its tail column is list of candidates.
- * s should be sorted on the tail value.
+ * If s[dense,OID] is specified, its tail column is a list of
+ * candidates.  s should be sorted on the tail value.
  *
  * tl may not be NULL, li, hi, and anti must be either 0 or 1.
  *
@@ -375,7 +365,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 
 	if (b->U->count == 0 || (s && s->U->count == 0)) {
 		/* trivially empty result */
-		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): trivially empty\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+				  ",s=%s,anti=%d): trivially empty\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 
@@ -411,12 +404,20 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			hval = ti;
 			lnil = ATOMcmp(t, tl, nil) == 0;
 			anti = 0;
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: switch ranges\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): anti: "
+					  "switch ranges\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 		} else if (!lval && !hval) {
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti: nil-nil range, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): anti: "
+					  "nil-nil range, nonil\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 			return newempty();
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
@@ -426,29 +427,42 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			anti = 0;
 			lval = 0;
 			hval = 0;
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): anti-nil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): anti-nil\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 		} else {
 			equi = 0;
 		}
 	}
 
-	assert(!equi || (lval && hval)); /* if equi set, then so are both lval and hval */
+	/* if equi set, then so are both lval and hval */
+	assert(!equi || (lval && hval));
 
 	if (hval && ((equi && !(li && hi)) || ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
-		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): empty range\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+				  ",s=%s,anti=%d): empty range\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 	if (equi && lnil && b->T->nonil) {
 		/* return all nils, but there aren't any */
-		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): equi-nil, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+				  ",s=%s,anti=%d): equi-nil, nonil\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
 		return newempty();
 	}
 
 	if (!equi && !lval && !hval && lnil && b->T->nonil) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): everything, nonil\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+				  ",s=%s,anti=%d): everything, nonil\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
 		if (s) {
 			return BATcopy(s, TYPE_void, s->ttype, 0);
 		} else {
@@ -468,7 +482,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			 * nil equiselect (dealt with above) */
 			assert(b->T->nonil);
 			assert(b->tsorted);
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): dense\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): dense\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 			if (hval) {
 				oid h = * (oid *) th + hi;
 
@@ -490,7 +507,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 					low = (BUN) l;
 			}
 		} else if (b->tsorted) {
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): sorted\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -510,7 +530,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			}
 		} else {
 			assert(b->trevsorted);
-			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): reverse sorted\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+					  ",s=%s,anti=%d): reverse sorted\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL", anti);
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -603,7 +626,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 	      (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
 	      estimate < BATcount(b) / 100 &&
 	      BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2))) {
-		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): hash select\n", BATgetId(b), BATcount(b), s ? BATgetId(s) : "NULL", anti);
+		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
+				  ",s=%s,anti=%d): hash select\n",
+				  BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
 		bn = BAT_hashselect(b, s, bn, tl);
 	} else {
 		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval);
@@ -611,6 +637,64 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 
 	return bn;
 }
+
+/* theta select
+ *
+ * Returns a dense-headed BAT with the OID values of b in the tail for
+ * qualifying tuples.  The return BAT is sorted on the tail value
+ * (i.e. in the same order as the input BAT).
+ *
+ * If s[dense,OID] is specified, its tail column is a list of
+ * candidates.  s should be sorted on the tail value.
+ *
+ * Theta select returns all values from b which are less/greater than
+ * or equal to the provided value depending on the value of op.  Op is
+ * a string with one of the values: "=", "==", "<", "<=", ">", ">="
+ * (the first two are equivalent).  Theta select never returns nils.
+ *
+ * If value is nil, the result is empty.
+ */
+BAT *
+BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
+{
+	const void *nil;
+
+	BATcheck(b, "BATthetasubselect");
+	BATcheck(val, "BATthetasubselect");
+	BATcheck(op, "BATthetasubselect");
+
+	nil = ATOMnilptr(b->ttype);
+	if (ATOMcmp(b->ttype, val, nil) == 0)
+		return newempty();
+	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
+		/* "=" or "==" */
+		return BATsubselect(b, s, val, NULL, 1, 1, 0);
+	}
+	if (op[0] == '<') {
+		if (op[1] == 0) {
+			/* "<" */
+			return BATsubselect(b, s, nil, val, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* "<=" */
+			return BATsubselect(b, s, nil, val, 0, 1, 0);
+		}
+	}
+	if (op[0] == '>') {
+		if (op[1] == 0) {
+			/* ">" */
+			return BATsubselect(b, s, val, nil, 0, 0, 0);
+		}
+		if (op[1] == '=' && op[2] == 0) {
+			/* ">=" */
+			return BATsubselect(b, s, val, nil, 1, 0, 0);
+		}
+	}
+	GDKerror("BATthetasubselect: unknown operator.\n");
+	return NULL;
+}
+
+/* The rest of this file contains backward-compatible interfaces */
 
 static BAT *
 BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti)
@@ -623,11 +707,15 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 	BATcheck(b, "BAT_select_");
 	/* b is a [any_1,any_2] BAT */
 	if (!BAThdense(b)) {
-		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#"BUNFMT",tail=%d): make map\n", BATgetId(b), BATcount(b), tail);
+		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
+				  ",tail=%d): make map\n",
+				  BATgetId(b), BATcount(b), tail);
 		map = BATmirror(BATmark(b, 0)); /* [dense,any_1] */
 		b1 = BATmirror(BATmark(BATmirror(b), 0)); /* dense,any_2] */
 	} else {
-		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#"BUNFMT",tail=%d): dense head\n", BATgetId(b), BATcount(b), tail);
+		ALGODEBUG fprintf(stderr, "#BAT_select_(b=%s#" BUNFMT
+				  ",tail=%d): dense head\n",
+				  BATgetId(b), BATcount(b), tail);
 		map = NULL;
 		b1 = b;		/* [dense,any_2] (any_1==dense) */
 	}
@@ -671,6 +759,15 @@ BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bi
 			/* bn is [oid,any_2] */
 			BBPunfix(bn1->batCacheid);
 			bn1 = NULL;
+		}
+		if (th == NULL && !anti && BATcount(bn) > 0 &&
+		    ATOMcmp(b->ttype, tl, ATOMnilptr(b->ttype)) == 0) {
+			/* this was the only way to get nils, so we
+			 * have nils if there are any values at all */
+			bn->T->nil = 1;
+		} else {
+			/* we can't have nils */
+			bn->T->nonil = 1;
 		}
 	} else {
 		/* we want to return a [any_1,nil] BAT */
@@ -733,42 +830,4 @@ BAT *
 BATuselect(BAT *b, const void *h, const void *t)
 {
 	return BATuselect_(b, h, t, TRUE, TRUE);
-}
-
-BAT *
-BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
-{
-	const void *nil;
-
-	BATcheck(b, "BATthetasubselect");
-	BATcheck(val, "BATthetasubselect");
-	BATcheck(op, "BATthetasubselect");
-
-	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[2] == 0)) {
-		/* "=" or "==" */
-		return BATsubselect(b, s, val, NULL, 1, 1, 0);
-	}
-	nil = ATOMnilptr(b->ttype);
-	if (op[0] == '<') {
-		if (op[1] == 0) {
-			/* "<" */
-			return BATsubselect(b, s, nil, val, 0, 0, 0);
-		}
-		if (op[1] == '=' && op[2] == 0) {
-			/* "<=" */
-			return BATsubselect(b, s, nil, val, 0, 1, 0);
-		}
-	}
-	if (op[0] == '>') {
-		if (op[1] == 0) {
-			/* ">" */
-			return BATsubselect(b, s, val, nil, 0, 0, 0);
-		}
-		if (op[1] == '=' && op[2] == 0) {
-			/* ">=" */
-			return BATsubselect(b, s, val, nil, 1, 0, 0);
-		}
-	}
-	GDKerror("BATthetasubselect: unknown operator.\n");
-	return NULL;
 }

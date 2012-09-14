@@ -291,6 +291,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 			bn->U->capacity = t->U->capacity;
 		if (t->U->first > 0)
 			bn->T->heap.base += t->U->first * t->T->width;
+		if (bn->U->count < t->U->count) {
+			/* we can't be sure anymore there are nils */
+			bn->T->nil = 0;
+		}
 	}
 
 	if (hp)

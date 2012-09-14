@@ -33,11 +33,12 @@ setup(name='python-monetdb',
     packages=['monetdb', 'monetdb.sql'],
     download_url='<will be filled in before a release>/python-monetdb-11.14.0.tar.gz',
     classifiers=[
+        "Topic :: Database",
         "Topic :: Database :: Database Engines/Servers",
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: Other/Proprietary License",
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2",
     ]
 )
 

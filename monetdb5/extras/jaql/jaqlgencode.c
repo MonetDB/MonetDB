@@ -5286,7 +5286,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 	while (t != NULL) {
 		switch (t->type) {
 			case j_output_var:
-			case j_output:
 				if (j->startoid != 0) {
 					a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -5326,24 +5325,22 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					j->startoid = 0;
 				}
 
-				if (t->type == j_output_var) {
-					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, putName("jaql", 4));
-					setFunctionId(q, putName("setVar", 6));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushStr(mb, q, t->sval);
-					q = pushArgument(mb, q, j->j1);
-					q = pushArgument(mb, q, j->j2);
-					q = pushArgument(mb, q, j->j3);
-					q = pushArgument(mb, q, j->j4);
-					q = pushArgument(mb, q, j->j5);
-					q = pushArgument(mb, q, j->j6);
-					q = pushArgument(mb, q, j->j7);
-					a = getArg(q, 0);
-					pushInstruction(mb, q);
-					break;
-				}
-
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaql", 4));
+				setFunctionId(q, putName("setVar", 6));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushStr(mb, q, t->sval);
+				q = pushArgument(mb, q, j->j1);
+				q = pushArgument(mb, q, j->j2);
+				q = pushArgument(mb, q, j->j3);
+				q = pushArgument(mb, q, j->j4);
+				q = pushArgument(mb, q, j->j5);
+				q = pushArgument(mb, q, j->j6);
+				q = pushArgument(mb, q, j->j7);
+				a = getArg(q, 0);
+				pushInstruction(mb, q);
+				break;
+			case j_output:
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, ioRef);
 				setFunctionId(q, putName("stdout", 6));
@@ -5363,6 +5360,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushArgument(mb, q, j->j5);
 					q = pushArgument(mb, q, j->j6);
 					q = pushArgument(mb, q, j->j7);
+					if (j->startoid == 0) {
+						q = pushOid(mb, q, 0);
+					} else {
+						q = pushArgument(mb, q, j->startoid);
+					}
 					pushInstruction(mb, q);
 				} else {
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -5377,6 +5379,12 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushArgument(mb, q, j->j5);
 					q = pushArgument(mb, q, j->j6);
 					q = pushArgument(mb, q, j->j7);
+					if (j->startoid == 0) {
+						q = pushOid(mb, q, 0);
+					} else {
+						q = pushArgument(mb, q, j->startoid);
+					}
+					q = pushBit(mb, q, 0);
 					pushInstruction(mb, q);
 				}
 				break;

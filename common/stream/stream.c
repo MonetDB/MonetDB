@@ -1202,8 +1202,10 @@ write_callback(char *buffer, size_t size, size_t nitems, void *userp)
 	struct curl_data *c = (struct curl_data *) s->stream_data.p;
 
 	size *= nitems;
+	if (size == 0)		/* unlikely */
+		return 0;
 	/* allocate a buffer if we don't have one yet */
-	if (c->buffer == NULL && size != 0) {
+	if (c->buffer == NULL) {
 		/* BLOCK_CURL had better be a power of 2! */
 		c->maxsize = (size + BLOCK_CURL - 1) & ~(BLOCK_CURL - 1);
 		if ((c->buffer = malloc(c->maxsize)) == NULL)

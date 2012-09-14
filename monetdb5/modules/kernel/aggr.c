@@ -51,6 +51,8 @@ AGGRgrouped(bat *retval, BAT *b, BAT *g, BAT *e, int tp,
 			BBPreleaseref(e->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	if (tp == TYPE_any && grpfunc == BATgroupmedian)
+		tp = b->ttype;
 	if (!BAThdense(b) || !BAThdense(g)) {
 		/* if b or g don't have a dense head, replace the head with a
 		 * dense sequence */
@@ -486,6 +488,14 @@ str
 AGGRmax2(bat *retval, bat *bid, bat *eid)
 {
 	return AGGRgrouped2(retval, bid, eid, TYPE_oid, BATgroupmax, 0, "aggr.max");
+}
+
+aggr_export str AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, bid, gid, eid, TYPE_any,
+						BATgroupmedian, 0, "aggr.median");
 }
 
 static str

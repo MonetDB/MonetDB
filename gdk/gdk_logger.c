@@ -766,7 +766,11 @@ logger_readlog(logger *lg, char *filename)
 		lg->log = NULL;
 		return 0;
 	}
-	stat(filename, &sb);
+	if (fstat(fileno(getFile(lg->log)), &sb) < 0) {
+		mnstr_destroy(lg->log);
+		lg->log = NULL;
+		return 0;
+	}
 	t0 = time(NULL);
 	while (!err && log_read_format(lg, &l)) {
 		char *name = NULL;
@@ -811,7 +815,9 @@ logger_readlog(logger *lg, char *filename)
 				fprintf(stderr, "logger tstart %d\n", tr->tid);
 			break;
 		case LOG_END:
-			if (l.tid != l.nr)	/* abort record */
+			if (tr == NULL)
+				err = 1;
+			else if (l.tid != l.nr)	/* abort record */
 				tr = tr_abort(lg, tr);
 			else
 				tr = tr_commit(lg, tr);
@@ -822,31 +828,31 @@ logger_readlog(logger *lg, char *filename)
 		case LOG_INSERT:
 		case LOG_DELETE:
 		case LOG_UPDATE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				err = (log_read_updates(lg, tr, &l, name) != LOG_OK);
 			break;
 		case LOG_CREATE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				err = (log_read_create(lg, tr, name) != LOG_OK);
 			break;
 		case LOG_USE:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_use(lg, tr, &l, name);
 			break;
 		case LOG_DESTROY:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_destroy(lg, tr, name);
 			break;
 		case LOG_CLEAR:
-			if (name == NULL)
+			if (name == NULL || tr == NULL)
 				err = 1;
 			else
 				log_read_clear(lg, tr, name);
@@ -948,8 +954,9 @@ check_version(logger *lg, FILE *fp)
 		}
 	} else
 		lg->postfuncp = NULL;	 /* don't call */
-	fgetc(fp);		/* skip \n */
-	fgetc(fp);		/* skip \n */
+	if (fgetc(fp) != '\n' ||	 /* skip \n */
+	    fgetc(fp) != '\n')		 /* skip \n */
+		return -1;
 	return 0;
 }
 

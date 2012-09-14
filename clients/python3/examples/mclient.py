@@ -17,6 +17,8 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
+#
+
 import sys
 import getopt
 
@@ -28,11 +30,12 @@ def main() :
     username = 'monetdb'
     password = 'monetdb'
     language = 'sql'
-    database = 'demo'
+    database = ''
+    encoding = None
 
     opts, args = getopt.getopt(sys.argv[1:], '',
-           ['host=', 'port=', 'user=', 'passwd=', 'language=', 'database='])
-
+                               ['host=', 'port=', 'user=', 'passwd=',
+                                'language=', 'database=', 'encoding='])
     for o, a in opts:
         if o == '--host':
             hostname = a
@@ -46,27 +49,42 @@ def main() :
             language = a
         elif o == '--database':
             database = a
+        elif o == '--encoding':
+            encoding = a
+
+    if encoding is None:
+        import locale
+        encoding = locale.getlocale()[1]
+        if encoding is None:
+            encoding = locale.getdefaultlocale()[1]
 
     s = mapi.Server()
+
     s.connect(hostname = hostname,
               port = int(port),
               username = username,
               password = password,
               language = language,
               database = database)
-    print("#mclient (python) connected to %s:%d as %s" %
-          (hostname, int(port), username))
+    print("#mclient (python) connected to %s:%d as %s" % (hostname, int(port), username))
     fi = sys.stdin
     prompt = '%s>' % language
-    sys.stdout.write(prompt)
+
+    sys.stdout.write(prompt.encode('utf-8'))
     line = fi.readline()
+    if encoding != 'utf-8':
+        prompt = str(prompt, 'utf-8').encode(encoding, 'replace')
     while line and line != "\q\n":
+        if encoding != 'utf-8':
+            line = str(line, encoding).encode('utf-8')
         res = s.cmd('s' + line)
+        if encoding != 'utf-8':
+            res = str(res, 'utf-8').encode(encoding, 'replace')
         print(res)
         sys.stdout.write(prompt)
         line = fi.readline()
+
     s.disconnect()
 
 if __name__ == "__main__":
     main()
-

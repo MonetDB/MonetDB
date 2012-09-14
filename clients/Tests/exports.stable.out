@@ -597,6 +597,7 @@ str AGGRcount3nonils(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRmax2(bat *retval, bat *bid, bat *eid);
 str AGGRmax3(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRmedian(bat *retval, bat *bid, int *skip_nils);
+str AGGRmedian3(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRmin2(bat *retval, bat *bid, bat *eid);
 str AGGRmin3(bat *retval, bat *bid, bat *gid, bat *eid);
 str AGGRprod2_bte(bat *retval, bat *bid, bat *eid);
