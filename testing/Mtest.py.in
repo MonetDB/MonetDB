@@ -1715,6 +1715,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
         EXT = CALL = SERVER = ""
         if COND:
             for cond in COND.split('&'):
+                if cond[:1] == '!':
+                    negate = True
+                    cond = cond[1:]
+                else:
+                    negate = False
                 if cond == 'PREVREL':
                     if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
                         reason = "as previous release database is not available"
@@ -1729,8 +1734,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                     reason = "as conditional '%s' is unknown." % cond
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
-                elif not CONDITIONALS[cond]:
-                    reason = "as conditional '%s' does not hold." % cond
+                elif (not CONDITIONALS[cond]) != negate:
+                    if negate:
+                        reason = "as conditional '%s' holds." % cond
+                    else:
+                        reason = "as conditional '%s' does not hold." % cond
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
         if reason:
@@ -1753,6 +1761,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
     if COND:
         for cond in COND.split('&'):
+            if cond[:1] == '!':
+                negate = True
+                cond = cond[1:]
+            else:
+                negate = False
             if cond == 'PREVREL':
                 if not os.path.exists(os.path.join(env['GDK_DBFARM'], 'prevrel.zip')):
                     reason = "as previous release database is not available"
@@ -1767,8 +1780,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
-            elif not CONDITIONALS[cond]:
-                reason = "as conditional '%s' does not hold." % cond
+            elif (not CONDITIONALS[cond]) != negate:
+                if negate:
+                    reason = "as conditional '%s' holds." % cond
+                else:
+                    reason = "as conditional '%s' does not hold." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
                 break
     if reason:
