@@ -586,6 +586,12 @@ HEAPfree_(Heap *h, int free_file)
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
 			GDKfree(h->base);
+		} else if (free_file) {
+			/* inform O/S as soon as possible that we're
+			 * not interested in the data: no better way
+			 * than deleting the underlying file */
+			GDKunlink(BATDIR, h->filename, NULL);
+			//GDKmunmap(h->base, h->maxsize); let the OS do the unmapping
 		} else {	/* mapped file, or STORE_PRIV */
 			int ret = HEAPcacheAdd(h->base, h->maxsize, h->filename, h->storage, free_file);
 
