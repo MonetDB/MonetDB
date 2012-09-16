@@ -185,6 +185,7 @@ stop_disconnect:
 	mapi_destroy(dbh);
 	batch = 1;
 	createTomogram();
+	exit(-1);
 }
 
 static int
