@@ -954,7 +954,7 @@ str BKCbun_inplace(int *r, int *bid, oid *id, ptr t);
 str BKCbun_inplace_force(int *r, int *bid, oid *id, ptr t, bit *force);
 str BKCcold(int *res, str *input);
 str BKCcoldBAT(int *res, int *bid);
-char *BKCdelete(int *r, int *bid, ptr h);
+char *BKCdelete(int *r, int *bid, const void *h);
 str BKCdelete_all(int *r, int *bid);
 char *BKCdelete_bat(int *r, int *bid, int *bnid);
 str BKCdelete_bat(int *r, int *bid, int *sid);
