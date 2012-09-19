@@ -287,6 +287,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		*bn->T = *t->T;
 		if (bn->U->capacity > t->U->capacity)
 			bn->U->capacity = t->U->capacity;
+		if (bn->U->count < t->U->count) {
+			/* we can't be sure anymore there are nils */
+			bn->T->nil = 0;
+		}
 	}
 
 	if (hp)
