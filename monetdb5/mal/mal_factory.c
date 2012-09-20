@@ -379,7 +379,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 			}
 		}
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
-		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
+		msg = runMAL(cntxt, mb, 0, pl->stk, 0);
 	 } else {
 		if( cmd && cntxt->timer == 0)
 			mdbStep(cntxt,mb,pl->stk,pl->pc);

@@ -356,7 +356,7 @@ prepareMALstack(MalBlkPtr mb, int size)
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
 		   MalStkPtr env, InstrPtr pcicaller)
 {
 	MalStkPtr stk = NULL;
@@ -451,7 +451,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
 
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
-	ret = runMALsequence(cntxt, mb, startpc, 0, stk, env, pcicaller);
+	runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
+	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, pcicaller);
+	runtimeProfile.ppc = 0; /* also finalize function call event */
+	runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 
 	/* pass the new debug mode to the caller */
 	if (stk->cmd && env && stk->cmd != 'f')

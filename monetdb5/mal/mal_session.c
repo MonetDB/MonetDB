@@ -616,7 +616,7 @@ MALengine(Client c)
 		c->glb->keepAlive = TRUE; /* no garbage collection */
 	}
 	if (prg->def->errors == 0)
-		msg = (str) runMAL(c, prg->def, 1, 0, c->glb, 0);
+		msg = (str) runMAL(c, prg->def, 0, c->glb, 0);
 	if (msg) {
 		/* ignore "internal" exceptions */
 		str fcn = getExceptionPlace(msg); /* retrieves from "first" exception */

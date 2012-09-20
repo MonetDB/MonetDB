@@ -1296,7 +1296,7 @@ str
 runMALDebugger(Client cntxt, Symbol s)
 {
 	cntxt->itrace = 'n';
-	runMAL(cntxt, s->def, 1, 0, 0, 0);
+	runMAL(cntxt, s->def, 0, 0, 0);
 	return MAL_SUCCEED;
 }
 
