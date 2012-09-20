@@ -569,6 +569,7 @@ static void showmemory(void)
 {
 	int i;
 	long max = 0, min= LONG_MAX;
+	long mx, mn;
 
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn ){
@@ -592,8 +593,11 @@ static void showmemory(void)
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set ylabel \"memory in GB\"\n");
 	fprintf(gnudata,"unset xtics\n");
-	fprintf(gnudata,"set yrange [%ld:%ld]\n", (long) (min/1024.0), (long)(1.2 * max/1024.0));
-	fprintf(gnudata,"set ytics (\"%.1f\" %3.2f, \"%.1f\" %3.2f)\n", min /1024.0, min/1024.0, max/1024.0, max/1024.0);
+	mn = (long) (min/1024.0);
+	mx = (long) (max/1024.0);
+	mx += (mn == mx);
+	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn,mx);
+	fprintf(gnudata,"set ytics (\"%.1f\" %ld, \"%.1f\" %ld)\n", min /1024.0, mn, max/1024.0, mx);
 	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
 	fprintf(gnudata,"unset yrange\n");
 }
@@ -618,7 +622,7 @@ static void showcpu(void)
 	fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
 		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
-			(inputfile?"scratch":filename),i+1, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
+			(inputfile?"scratch":filename), i+1, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
