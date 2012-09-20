@@ -875,7 +875,7 @@ static void createTomogram(void)
 	long totalticks;
 	static int figures=0;
 
-	if ( batch-- >= 1 )
+	if ( batch-- > 1 )
 		return;
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
