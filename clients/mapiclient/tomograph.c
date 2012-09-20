@@ -130,7 +130,7 @@ static int colormap = 0;
 static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
-static int batch = 9999; /* number of queries to combine in one run */
+static int batch = 1; /* number of queries to combine in one run */
 static long maxio=0;
 static int cpus = 0;
 
@@ -168,24 +168,31 @@ usage(void)
  * termination of the profiling session. */
 static void createTomogram(void);
 
+static void deactivateBeat(void){
+	char *id ="deactivateBeat";
+	if ( batch == 1)
+		doQ("profiler.deactivate(\"ping\");\n");
+	return;
+stop_disconnect:
+	;
+}
+
 static void
 stopListening(int i)
 {
 	char *id ="deactivateBeat";
 	wthread *walk;
 	(void)i;
+	printf("Interrupt received\n");
+	batch = 0;
+	createTomogram();
 	/* kill all connections */
+	doQ("profiler.deactivate(\"ping\");\n");
 	for (walk = thds; walk != NULL; walk = walk->next) {
 		if (walk->s != NULL)
 			mnstr_close(walk->s);
 	}
-	doQ("profiler.deactivate(\"ping\");\n");
-stop_disconnect:
-	mapi_disconnect(dbh);
-	mapi_destroy(dbh);
-	batch = 1;
-	createTomogram();
-	exit(-1);
+stop_disconnect: ;
 }
 
 static int
@@ -212,15 +219,7 @@ static void activateBeat(void){
 stop_disconnect:
 	mapi_disconnect(dbh);
 	mapi_destroy(dbh);
-}
-static void deactivateBeat(void){
-	char *id ="deactivateBeat";
-	if ( batch == 1)
-		doQ("profiler.deactivate(\"ping\");\n");
-	return;
-stop_disconnect:
-	mapi_disconnect(dbh);
-	mapi_destroy(dbh);
+	dbh = 0;
 }
 
 #define MAXTHREADS 2048
@@ -872,7 +871,7 @@ static void createTomogram(void)
 	long totalticks;
 	static int figures=0;
 
-	if ( batch-- != 1 )
+	if ( batch-- >= 1 )
 		return;
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
@@ -991,7 +990,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	char *s;
 	
 	/* ignore the flow of control statements 'function' and 'end' */
-	if ( fcn  &&  strncmp(fcn,"end ",4)== 0)
+	if ( fcn  &&  strncmp(fcn,"end ",4)== 0 )
 		return;
 	if ( starttime == 0 && state == 0) {
 		/* ignore all instructions up to the first function call */
@@ -1002,7 +1001,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		return;
 	}
 
-	if (state == 1 && fcn && strncmp(fcn,"function",8) == 0){
+	if (state == 1 && fcn && (strncmp(fcn,"function",8) == 0 || strncmp(fcn,"profiler.tomograph",18) == 0 )){
 		deactivateBeat();
 		createTomogram();
 		totalclkticks= 0; /* number of clock ticks reported */
