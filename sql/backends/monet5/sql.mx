@@ -504,12 +504,13 @@ pattern storage()(
 	schema:bat[:oid,:str],
 	table:bat[:oid,:str],
 	column:bat[:oid,:str],
+	type:bat[:oid,:str],
 	location:bat[:oid,:str],
 	count:bat[:oid,:lng],
-	capacity:bat[:oid,:lng],
-	width:bat[:oid,:int],
-	size:bat[:oid,:lng],
-	hashsize:bat[:oid,:lng],
+	atomwidth:bat[:oid,:int],
+	columnsize:bat[:oid,:lng],
+	heap:bat[:oid,:lng],
+	indices:bat[:oid,:lng],
 	sorted:bat[:oid,:bit])
 address sql_storage
 comment "return a table with storage information ";
@@ -7347,13 +7348,13 @@ str SQLoptimizersUpdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Inspection of the actual storage footprint is a recurring question of users.
  * This is modelled as a generic SQL table producing function.
  * create function storage()
- * returns table ("schema" string, "table" string, "column" string, location string, "count" bigint, capacity bigint, width int, size bigint, hashsize bigint, sorted int)
+ * returns table ("schema" string, "table" string, "column" string, "type" string, location string, "count" bigint, width int, columnsize bigint, heapsize bigint indices bigint, sorted int)
  * external name sql.storage;
  */
 str
 sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *sch, *tab, *col, *loc, *cnt, *cap, *atom, *size, *aux, *sort;
+	BAT *sch, *tab, *col, *type, *loc, *cnt, *atom, *size, *heap, *indices, *sort;
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
@@ -7362,13 +7363,14 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *rsch = (int*) getArgReference(stk,pci,0);
 	int *rtab = (int*) getArgReference(stk,pci,1);
 	int *rcol = (int*) getArgReference(stk,pci,2);
-	int *rloc = (int*) getArgReference(stk,pci,3);
-	int *rcnt = (int*) getArgReference(stk,pci,4);
-	int *rcap = (int*) getArgReference(stk,pci,5);
+	int *rtype = (int*) getArgReference(stk,pci,3);
+	int *rloc = (int*) getArgReference(stk,pci,4);
+	int *rcnt = (int*) getArgReference(stk,pci,5);
 	int *ratom = (int*) getArgReference(stk,pci,6);
 	int *rsize = (int*) getArgReference(stk,pci,7);
-	int *raux = (int*) getArgReference(stk,pci,8);
-	int *rsort = (int*) getArgReference(stk,pci,9);
+	int *rheap = (int*) getArgReference(stk,pci,8);
+	int *rindices = (int*) getArgReference(stk,pci,9);
+	int *rsort = (int*) getArgReference(stk,pci,10);
 
 	if (msg)
 		return msg;
@@ -7379,31 +7381,34 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATseqbase(tab, 0);
 	col = BATnew(TYPE_void,TYPE_str, 0);
 	BATseqbase(col, 0);
+	type = BATnew(TYPE_void,TYPE_str, 0);
+	BATseqbase(type, 0);
 	loc = BATnew(TYPE_void,TYPE_str, 0);
 	BATseqbase(loc, 0);
 	cnt = BATnew(TYPE_void,TYPE_lng, 0);
 	BATseqbase(cnt, 0);
-	cap = BATnew(TYPE_void,TYPE_lng, 0);
-	BATseqbase(cap, 0);
 	atom = BATnew(TYPE_void,TYPE_int, 0);
 	BATseqbase(atom, 0);
 	size = BATnew(TYPE_void,TYPE_lng, 0);
 	BATseqbase(size, 0);
-	aux = BATnew(TYPE_void,TYPE_lng, 0);
-	BATseqbase(aux, 0);
+	heap = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(heap, 0);
+	indices = BATnew(TYPE_void,TYPE_lng, 0);
+	BATseqbase(indices, 0);
 	sort = BATnew(TYPE_void,TYPE_bit, 0);
 	BATseqbase(sort, 0);
-	if ( sch == NULL || tab == NULL || col == NULL || loc == NULL || sort == NULL ||
-		 cnt == NULL || cap == NULL || atom == NULL || size == NULL || aux == NULL){
+	if ( sch == NULL || tab == NULL || col == NULL || type == NULL || loc == NULL || sort == NULL ||
+		 cnt == NULL || atom == NULL || size == NULL || heap == NULL ||indices == NULL){
 		if ( sch ) BBPreleaseref(sch->batCacheid);
 		if ( tab ) BBPreleaseref(tab->batCacheid);
 		if ( col ) BBPreleaseref(col->batCacheid);
 		if ( loc ) BBPreleaseref(loc->batCacheid);
 		if ( cnt ) BBPreleaseref(cnt->batCacheid);
-		if ( cap ) BBPreleaseref(cap->batCacheid);
+		if ( type ) BBPreleaseref(type->batCacheid);
 		if ( atom ) BBPreleaseref(atom->batCacheid);
 		if ( size ) BBPreleaseref(size->batCacheid);
-		if ( aux ) BBPreleaseref(aux->batCacheid);
+		if ( heap ) BBPreleaseref(heap->batCacheid);
+		if ( indices ) BBPreleaseref(indices->batCacheid);
 		if ( sort ) BBPreleaseref(sort->batCacheid);
 		throw(SQL,"sql.storage", MAL_MALLOC_FAIL);
 	}
@@ -7412,7 +7417,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s= (sql_schema*) nsch->data;
 		if ( isalpha((int)b->name[0]) )
 
-		if (s->tables.set) for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
+		if (s->tables.set) 
+		for(ntab= (s)->tables.set->h ;ntab; ntab= ntab->next){
 			sql_base *bt= ntab->data;
 			sql_table *t= (sql_table*) bt;
 			if (isTable(t))
@@ -7426,28 +7432,49 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sch = BUNappend(sch, b->name, FALSE);
 				tab = BUNappend(tab, bt->name, FALSE);
 				col = BUNappend(col, bc->name, FALSE);
+				type = BUNappend(type, c->type.type->sqlname, FALSE);
 
 				/*printf(" cnt "BUNFMT, BATcount(bn));*/
 				sz= BATcount(bn);
 				cnt = BUNappend(cnt, &sz, FALSE);
-				/*printf(" cap "BUNFMT, BATcapacity(bn));*/
-				sz= BATcapacity(bn);
-				cap = BUNappend(cap, &sz, FALSE);
 
 				/*printf(" loc %s", BBP_physical(bn->batCacheid));*/
 				loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 				/*printf(" width %d", bn->T->width);*/
 				w= bn->T->width;
+				if ( bn->ttype == TYPE_str){
+					BUN p,q;
+					double sum=0;
+					BATiter bi = bat_iterator(bn);
+					lng cnt1,cnt2= cnt1=(lng) BATcount(bn);
+					
+					/* just take a sample */
+					if ( cnt1 > 512)
+						cnt1 = cnt2 = 512;
+					BATloop(bn,p,q){
+						str s = BUNtail(bi,p);
+						if( s != NULL && strcmp(s, str_nil))
+							sum += (int) strlen(s);
+						if ( --cnt1 <= 0)
+							break;
+					}
+					if ( cnt2)
+						w = (int) (sum/cnt2);
+				}
 				atom = BUNappend(atom, &w, FALSE);
-				/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0));*/
-				sz = tailsize(bn,BATcapacity(bn)) + (bn->T->vheap? bn->T->vheap->size:0);
-				sz += headsize(bn,BATcapacity(bn)) + (bn->H->vheap? bn->H->vheap->size:0);
+
+				sz = tailsize(bn,BATcount(bn));
+				sz += headsize(bn,BATcount(bn));
 				size = BUNappend(size, &sz, FALSE);
 				
+				sz = bn->T->vheap? bn->T->vheap->size:0;
+				sz += bn->H->vheap? bn->H->vheap->size:0;
+				heap = BUNappend(heap, &sz, FALSE);
+
 				sz =  bn->T->hash?bn->T->hash->heap->size:0;
 				sz += bn->H->hash?bn->H->hash->heap->size:0;
-				aux = BUNappend(aux, &sz, FALSE);
-				/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
+				indices = BUNappend(indices, &sz, FALSE);
+				/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 				/*printf("\n");*/
 
 				w =  BATtordered(bn);
@@ -7468,28 +7495,49 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							sch = BUNappend(sch, b->name, FALSE);
 							tab = BUNappend(tab, bt->name, FALSE);
 							col = BUNappend(col, bc->name, FALSE);
+							type = BUNappend(type, "oid", FALSE);
 			
 							/*printf(" cnt "BUNFMT, BATcount(bn));*/
 							sz= BATcount(bn);
 							cnt = BUNappend(cnt, &sz, FALSE);
-							/*printf(" cap "BUNFMT, BATcapacity(bn));*/
-							sz= BATcapacity(bn);
-							cap = BUNappend(cap, &sz, FALSE);
 			
 							/*printf(" loc %s", BBP_physical(bn->batCacheid));*/
 							loc = BUNappend(loc, BBP_physical(bn->batCacheid), FALSE);
 							/*printf(" width %d", bn->T->width);*/
 							w= bn->T->width;
+							if ( bn->ttype == TYPE_str){
+								BUN p,q;
+								double sum=0;
+								BATiter bi = bat_iterator(bn);
+								lng cnt1, cnt2= cnt1 = BATcount(bn);
+								
+								/* just take a sample */
+								if ( cnt1 > 512)
+									cnt1 = cnt2 = 512;
+								BATloop(bn,p,q){
+									str s = BUNtail(bi,p);
+									if( s != NULL && strcmp(s, str_nil))
+										sum += (int) strlen(s);
+									if ( --cnt1 <= 0)
+										break;
+								}
+								if ( cnt2)
+									w = (int) (sum/cnt2);
+							}
 							atom = BUNappend(atom, &w, FALSE);
 							/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->T->vheap? bn->T->vheap->size:0));*/
-							sz = tailsize(bn,BATcapacity(bn)) + (bn->T->vheap? bn->T->vheap->size:0);
-							sz += headsize(bn,BATcapacity(bn)) + (bn->H->vheap? bn->H->vheap->size:0);
+							sz = tailsize(bn,BATcount(bn));
+							sz += headsize(bn,BATcount(bn));
 							size = BUNappend(size, &sz, FALSE);
 							
+							sz = bn->T->vheap? bn->T->vheap->size:0;
+							sz += bn->H->vheap? bn->H->vheap->size:0;
+							heap = BUNappend(heap, &sz, FALSE);
+
 							sz =  bn->T->hash?bn->T->hash->heap->size:0;
 							sz += bn->H->hash?bn->H->hash->heap->size:0;
-							aux = BUNappend(aux, &sz, FALSE);
-							/*printf(" auxsize "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
+							indices = BUNappend(indices, &sz, FALSE);
+							/*printf(" indices "BUNFMT, bn->T->hash?bn->T->hash->heap->size:0);*/
 							/*printf("\n");*/
 							w =  BATtordered(bn);
 							sort = BUNappend(sort, &w, FALSE);
@@ -7504,11 +7552,12 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*rtab = tab->batCacheid);
 	BBPkeepref(*rcol = col->batCacheid);
 	BBPkeepref(*rloc = loc->batCacheid);
+	BBPkeepref(*rtype = type->batCacheid);
 	BBPkeepref(*rcnt = cnt->batCacheid);
-	BBPkeepref(*rcap = cap->batCacheid);
 	BBPkeepref(*ratom = atom->batCacheid);
 	BBPkeepref(*rsize = size->batCacheid);
-	BBPkeepref(*raux = aux->batCacheid);
+	BBPkeepref(*rheap = heap->batCacheid);
+	BBPkeepref(*rindices = indices->batCacheid);
 	BBPkeepref(*rsort = sort->batCacheid);
 	return MAL_SUCCEED;
 }
