@@ -240,10 +240,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		     p < q;
 		     p++) {
 			v = BUNtail(bi, p);
-			if ((grps && *grps++ != prev) || cmp(pv, v) != 0) {
+			if ((grps && *grps != prev) || cmp(pv, v) != 0) {
 				ngrp++;
-				if (grps)
-					prev = *grps;
 				if (ngrp == maxgrps) {
 					/* we need to extend extents
 					 * and histo bats */
@@ -270,6 +268,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			*ngrps++ = ngrp;
 			pv = v;
+			if (grps)
+				prev = *grps++;
 		}
 		/* ngrp is the id of the last group, turn it into the count */
 		ngrp++;
