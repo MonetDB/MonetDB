@@ -30,7 +30,7 @@ stderr of test 'predicate_select.Bug-3090_nogeom` in directory 'test/BugTracker-
 # 18:53:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32323"
 # 18:53:13 >  
 
-MAPI  = monetdb@sofia:39129
+MAPI  = monetdb@madrid:32839
 QUERY = select * from tables where name;
 ERROR = !conversion from string to type bit failed.
 
