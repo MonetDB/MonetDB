@@ -7317,7 +7317,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		backend_callinline(b, cntxt, s );
 		addQueryToCache(cntxt); 
 
-		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0, 0);
+		msg = (str) runMAL(cntxt, cntxt->curprg->def, 0, 0);
 		if (!msg) { 
 			resetMalBlk(cntxt->curprg->def, oldstop);
 			freeVariables(cntxt,cntxt->curprg->def, cntxt->glb, oldvtop);

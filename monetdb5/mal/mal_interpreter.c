@@ -356,15 +356,14 @@ prepareMALstack(MalBlkPtr mb, int size)
 	return stk;
 }
 
-str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
-		   MalStkPtr env, InstrPtr pcicaller)
+str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 {
 	MalStkPtr stk = NULL;
 	int i;
 	ValPtr lhs, rhs;
-	InstrPtr pci = getInstrPtr(mb, 0);
 	str ret;
 	RuntimeProfileRecord runtimeProfile;
+	(void) mbcaller;
 
 	runtimeProfileInit(mb, &runtimeProfile, cntxt->flags & memoryFlag);
 	if (mb->errors) {
@@ -385,13 +384,12 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
  * allocate space for value stack
  * the global stack should be large enough
 */
-	if (mbcaller == NULL && env != NULL) {
+	if (env != NULL) {
 		stk = env;
 		if (mb != stk->blk)
 			showScriptException(cntxt->fdout, mb, 0, MAL, "runMAL:misalignment of symbols\n");
 		if (mb->vtop > stk->stksize)
 			showScriptException(cntxt->fdout, mb, 0, MAL, "stack too small\n");
-		pci = pcicaller;
 		initStack(env->stkbot);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
@@ -419,40 +417,10 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
  */
 	}
 
-	if (env && mbcaller) {
-		InstrPtr pp;
-		int k;
-		/*
-		 * Moreover, we have to copy the result types to the stack for later
-		 * use. The stack value has been cleared to avoid misinterpretation of left-over
-		 * information. Since a stack frame may contain values of a previous call,
-		 * we should first remove garbage.
-		 */
-		pci = pcicaller;
-		pp = getInstrPtr(mb, 0);
-		/* set return types */
-		for (i = 0; i < pci->retc; i++) {
-			lhs = &stk->stk[pp->argv[i]];
-			lhs->vtype = getVarGDKType(mb, i);
-		}
-		for (k = pp->retc; i < pci->argc; i++, k++) {
-			lhs = &stk->stk[pp->argv[k]];
-			/* variable arguments ? */
-			if (k == pp->argc - 1)
-				k--;
-
-			rhs = &env->stk[pci->argv[i]];
-			VALcopy(lhs, rhs);
-			if (lhs->vtype == TYPE_bat)
-				BBPincref(lhs->val.bval, TRUE);
-		}
-		stk->up = env;
-	}
-
 	if (stk->cmd && env && stk->cmd != 'f')
 		stk->cmd = env->cmd;
 	runtimeProfileBegin(cntxt, mb, stk, 0, &runtimeProfile, 1);
-	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, pcicaller);
+	ret = runMALsequence(cntxt, mb, 1, 0, stk, env, 0);
 	runtimeProfile.ppc = 0; /* also finalize function call event */
 	runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 

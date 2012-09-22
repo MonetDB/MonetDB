@@ -881,7 +881,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		if ( execute) {
 			if (!output)
 				sql->out = NULL; /* no output */
-			msg = (str) runMAL(c, c->curprg->def, 0, 0, 0);
+			msg = (str) runMAL(c, c->curprg->def, 0, 0);
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
@@ -1813,7 +1813,7 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 0, 0, 0);
+		msg = (str) runMAL(c, c->curprg->def, 0, 0);
 	}
 
 cleanup_engine:

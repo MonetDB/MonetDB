@@ -284,7 +284,7 @@ JAQLengine(Client c)
 	} else if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = runMAL(c, c->curprg->def, 0, 0, 0);
+		msg = runMAL(c, c->curprg->def, 0, 0);
 	}
 
 	if (msg) {

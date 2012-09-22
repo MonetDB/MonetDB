@@ -1933,7 +1933,7 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				printFunction(cntxt->fdout, prg->def, 0,
 						LIST_MAL_STMT | LIST_MAPI);
 			} else {
-				err = (str)runMAL(cntxt, prg->def, 0, 0, 0);
+				err = (str)runMAL(cntxt, prg->def, 0, 0);
 				freeMalBlk(prg->def);
 				if (err != MAL_SUCCEED) {
 					snprintf(j->err, sizeof(j->err), "%s", err);
