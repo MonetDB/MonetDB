@@ -950,39 +950,39 @@ typedef int (*GDKfcn) ();
  * @multitable @columnfractions 0.08 0.7
  * @item int
  * @tab
- *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
+ *  HEAPalloc (BAT *b, Heap *h, size_t nitems, size_t itemsize);
  * @item int
  * @tab
- *  HEAPfree (Heap *h);
+ *  HEAPfree (BAT *b, Heap *h);
  * @item int
  * @tab
- *  HEAPextend (Heap *h, size_t size);
+ *  HEAPextend (BAT *b, Heap *h, size_t size);
  * @item int
  * @tab
- *  HEAPload (Heap *h, str nme,ext, int trunc);
+ *  HEAPload (BAT *b, Heap *h, str nme,ext, int trunc);
  * @item int
  * @tab
- *  HEAPsave (Heap *h, str nme,ext);
+ *  HEAPsave (BAT *b, Heap *h, str nme,ext);
  * @item int
  * @tab
- *  HEAPcopy (Heap *dst,*src);
+ *  HEAPcopy (BAT *b, Heap *dst,*src);
  * @item int
  * @tab
- *  HEAPdelete (Heap *dst, str o, str ext);
+ *  HEAPdelete (BAT *b, Heap *dst, str o, str ext);
  * @item int
  * @tab
- *  HEAPwarm (Heap *h);
+ *  HEAPwarm (BAT *b, Heap *h);
  * @end multitable
  *
  *
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export int HEAPfree(Heap *h);
-gdk_export int HEAPextend(Heap *h, size_t size);
-gdk_export int HEAPcopy(Heap *dst, Heap *src);
-gdk_export size_t HEAPvmsize(Heap *h);
-gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export int HEAPfree(BAT *b, Heap *h);
+gdk_export int HEAPextend(BAT *b, Heap *h, size_t size);
+gdk_export int HEAPcopy(BAT *b, Heap *dst, Heap *src);
+gdk_export size_t HEAPvmsize(BAT *b, Heap *h);
+gdk_export size_t HEAPmemsize(BAT *b, Heap *h);
 
 /*
  * @- Internal HEAP Chunk Management
@@ -992,13 +992,13 @@ gdk_export size_t HEAPmemsize(Heap *h);
  *
  * @table @code
  * @item void
- * HEAP_initialize  (Heap* h, size_t nbytes, size_t nprivate, int align )
+ * HEAP_initialize  (BAT *b, Heap* h, size_t nbytes, size_t nprivate, int align )
  * @item void
  * HEAP_destroy     (Heap* h)
  * @item var_t
- * HEAP_malloc      (Heap* heap, size_t nbytes)
+ * HEAP_malloc      (BAT *b, Heap* heap, size_t nbytes)
  * @item void
- * HEAP_free        (Heap *heap, var_t block)
+ * HEAP_free        (BAT *b, Heap *heap, var_t block)
  * @item int
  * HEAP_private     (Heap* h)
  * @item void
@@ -1026,16 +1026,17 @@ typedef struct {
 } HeapRepair;
 
 gdk_export void HEAP_initialize(
+	BAT *b,
 	Heap *heap,		/* nbytes -- Initial size of the heap. */
 	size_t nbytes,		/* alignment -- for objects on the heap. */
 	size_t nprivate,	/* nprivate -- Size of private space */
 	int alignment		/* alignment restriction for allocated chunks */
 	);
 
-gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
-gdk_export void HEAP_free(Heap *heap, var_t block);
+gdk_export var_t HEAP_malloc(BAT *b, Heap *heap, size_t nbytes);
+gdk_export void HEAP_free(BAT *b, Heap *heap, var_t block);
 
-#define HEAP_index(HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
+#define HEAP_index(BAT, HEAP,INDEX,TYPE)	((TYPE *)((char *) (HEAP)->base + (INDEX)))
 
 /*
  * @- BAT construction

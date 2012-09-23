@@ -77,15 +77,15 @@ int GDKunlink(const char *dir, const char *nme, const char *extension);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
-int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
+int HEAPalloc(BAT *b, Heap *h, size_t nitems, size_t itemsize);
 void HEAPcacheInit(void);
 int HEAP_check(Heap *h, HeapRepair *hr);
-int HEAPdelete(Heap *h, const char *o, const char *ext);
-void HEAP_init(Heap *heap, int tpe);
-int HEAPload(Heap *h, const char *nme, const char *ext, int trunc);
-int HEAP_mmappable(Heap *heap);
-int HEAPsave(Heap *h, const char *nme, const char *ext);
-int HEAPwarm(Heap *h);
+int HEAPdelete(BAT *b, Heap *h, const char *o, const char *ext);
+void HEAP_init(BAT *b, Heap *heap, int tpe);
+int HEAPload(BAT *b, Heap *h, const char *nme, const char *ext, int trunc);
+int HEAP_mmappable(BAT *b, Heap *heap);
+int HEAPsave(BAT *b, Heap *h, const char *nme, const char *ext);
+int HEAPwarm(BAT *b, Heap *h);
 int intCmp(const int *r, const int *l);
 int lngCmp(const lng *r, const lng *l);
 oid MAXoid(BAT *i);
@@ -142,7 +142,7 @@ extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
 
 #define ATOMappendpriv(t, h)						\
-	((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
+	((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(NULL, h)) && \
 	 (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
 
 #define BBPdirty(x)	(BBP_dirty=(x))

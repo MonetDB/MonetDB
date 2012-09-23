@@ -464,7 +464,7 @@ BATmaterializeh(BAT *b)
 	HASHdestroy(b);
 
 	b->H->heap.filename = NULL;
-	if (HEAPalloc(&b->H->heap, cnt, sizeof(oid)) < 0) {
+	if (HEAPalloc(b, &b->H->heap, cnt, sizeof(oid)) < 0) {
 		b->H->heap = head;
 		return NULL;
 	}
@@ -493,7 +493,7 @@ BATmaterializeh(BAT *b)
 	BATsetcount(b, cnt);
 
 	/* cleanup the old heaps */
-	HEAPfree(&head);
+	HEAPfree(b, &head);
 	return b;
 }
 
@@ -610,7 +610,7 @@ VIEWreset(BAT *b)
 			if (head.filename == NULL)
 				goto bailout;
 			snprintf(head.filename, nmelen + 12, "%s.head", nme);
-			if (n->htype && HEAPalloc(&head, cnt, Hsize(n)) < 0)
+			if (n->htype && HEAPalloc(NULL, &head, cnt, Hsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->ttype) {
@@ -618,7 +618,7 @@ VIEWreset(BAT *b)
 			if (tail.filename == NULL)
 				goto bailout;
 			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
-			if (n->ttype && HEAPalloc(&tail, cnt, Tsize(n)) < 0)
+			if (n->ttype && HEAPalloc(NULL, &tail, cnt, Tsize(n)) < 0)
 				goto bailout;
 		}
 		if (n->H->vheap) {
@@ -732,10 +732,10 @@ VIEWreset(BAT *b)
 		BBPreclaim(v);
 	if (n != NULL)
 		BBPunfix(n->batCacheid);
-	HEAPfree(&head);
-	HEAPfree(&tail);
-	HEAPfree(&hh);
-	HEAPfree(&th);
+	HEAPfree(NULL, &head);
+	HEAPfree(NULL, &tail);
+	HEAPfree(n, &hh);
+	HEAPfree(n, &th);
 	return NULL;
 }
 
@@ -785,13 +785,13 @@ VIEWdestroy(BAT *b)
 	VIEWunlink(b);
 
 	if (b->htype && !b->H->heap.parentid) {
-		HEAPfree(&b->H->heap);
+		HEAPfree(b, &b->H->heap);
 	} else {
 		b->H->heap.base = NULL;
 		b->H->heap.filename = NULL;
 	}
 	if (b->ttype && !b->T->heap.parentid) {
-		HEAPfree(&b->T->heap);
+		HEAPfree(b, &b->T->heap);
 	} else {
 		b->T->heap.base = NULL;
 		b->T->heap.filename = NULL;

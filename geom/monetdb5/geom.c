@@ -547,7 +547,7 @@ wkbAsText(str *r, wkb **w)
 void
 wkbDEL(Heap *h, var_t *index)
 {
-	HEAP_free(h, *index);
+	HEAP_free(NULL, h, *index);
 }
 
 wkb *
@@ -601,7 +601,7 @@ wkbLENGTH(wkb *p)
 void
 wkbHEAP(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	HEAP_initialize(NULL, heap, capacity, 0, (int) sizeof(var_t));
 }
 
 var_t
@@ -609,7 +609,7 @@ wkbPUT(Heap *h, var_t *bun, wkb *val)
 {
 	char *base;
 
-	*bun = HEAP_malloc(h, wkb_size(val->len));
+	*bun = HEAP_malloc(NULL, h, wkb_size(val->len));
 	base = h->base;
 	if (*bun)
 		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, wkb_size(val->len));

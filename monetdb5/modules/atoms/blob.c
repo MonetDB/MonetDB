@@ -97,7 +97,7 @@ blob_put(Heap *h, var_t *bun, blob *val)
 {
 	char *base = NULL;
 
-	*bun = HEAP_malloc(h, blobsize(val->nitems));
+	*bun = HEAP_malloc(NULL, h, blobsize(val->nitems));
  	base = h->base;
 	if (*bun)
 		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, blobsize(val->nitems));
@@ -108,7 +108,7 @@ blob_put(Heap *h, var_t *bun, blob *val)
 int
 blob_get(Heap *h, int *bun, int *l, blob **val)
 {
-	blob *from = HEAP_index(h, *bun, blob);
+	blob *from = HEAP_index(NULL, h, *bun, blob);
 	var_t size = blobsize(from->nitems);
 
 	if (*val == NULL) {
@@ -142,7 +142,7 @@ blob_nequal(blob *l, blob *r)
 static void
 blob_del(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *idx);
+	HEAP_free(NULL, h, *idx);
 }
 
 static BUN
@@ -217,7 +217,7 @@ blob_length(blob *p)
 static void
 blob_heap(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
+	HEAP_initialize(NULL, heap, capacity, 0, (int) sizeof(var_t));
 }
 
 #ifndef OLDSTYLE

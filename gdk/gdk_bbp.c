@@ -476,10 +476,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		h2.parentid = 0;
 
 		/* load old string heap */
-		if (HEAPload(&h1, filename, headtail, 0) < 0)
+		if (HEAPload(NULL, &h1, filename, headtail, 0) < 0)
 			GDKfatal("fixoidheap: loading old %s heap "
 				 "for BAT %d failed\n", headtail, bid);
-		if (HEAPload(&h2, filename, htheap, 0) < 0)
+		if (HEAPload(NULL, &h2, filename, htheap, 0) < 0)
 			GDKfatal("fixoidheap: loading old string heap "
 				 "for BAT %d failed\n", bid);
 
@@ -491,7 +491,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		w = b->H->width; /* remember old width */
 		b->H->width = 1;
 		b->H->shift = 0;
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(b, &b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -528,10 +528,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 			b->H->heap.free += b->H->width;
 			Hputvalue(b, Hloc(b, i), s, 0);
 		}
-		HEAPfree(&h1);
-		HEAPfree(&h2);
-		HEAPsave(b->H->vheap, nme, htheap);
-		HEAPfree(b->H->vheap);
+		HEAPfree(NULL, &h1);
+		HEAPfree(NULL, &h2);
+		HEAPsave(b, b->H->vheap, nme, htheap);
+		HEAPfree(b, b->H->vheap);
 	} else {
 		assert(b->H->type == TYPE_oid ||
 		       (b->H->type != TYPE_void && b->H->varsized));
@@ -542,7 +542,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		h1.parentid = 0;
 
 		/* load old heap */
-		if (HEAPload(&h1, filename, headtail, 0) < 0)
+		if (HEAPload(NULL, &h1, filename, headtail, 0) < 0)
 			GDKfatal("fixoidheap: loading old %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -554,7 +554,7 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 		b->H->width = SIZEOF_OID;
 		b->H->shift = 3;
 		assert(b->H->width == (1 << b->H->shift));
-		if (HEAPalloc(&b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
+		if (HEAPalloc(b, &b->H->heap, b->U->capacity, SIZEOF_OID) < 0)
 			GDKfatal("fixoidheap: allocating new %s heap "
 				 "for BAT %d failed\n", headtail, bid);
 
@@ -568,10 +568,10 @@ fixoidheapcolumn(BAT *b, const char *srcdir, const char *nme,
 			for (i = 0; i < b->U->count; i++)
 				new[i] = old[i] == int_nil ? oid_nil : (oid) old[i];
 		b->H->heap.free = h1.free << 1;
-		HEAPfree(&h1);
+		HEAPfree(NULL, &h1);
 	}
-	HEAPsave(&b->H->heap, nme, headtail);
-	HEAPfree(&b->H->heap);
+	HEAPsave(b, &b->H->heap, nme, headtail);
+	HEAPfree(b, &b->H->heap);
 
 	if (ht < 0)
 		b->H->type = ht;
@@ -1026,7 +1026,7 @@ linkHeap(BAT *bn, COLrec *col, const char *file, const char *ext)
 		GDKfree(col->heap.filename);
 		col->heap.filename = 0;
 	}
-	if (HEAPload(&col->heap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
+	if (HEAPload(bn, &col->heap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
 		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", file);
 		BBPdestroy(bn);
 		return 0;
@@ -1062,7 +1062,7 @@ linkvHeap(BAT *bn, COLrec *col, const char *file, const char *ext)
 		GDKfree(col->vheap->filename);
 		col->vheap->filename = 0;
 	}
-	if (HEAPload(col->vheap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
+	if (HEAPload(bn, col->vheap, BBP_physical(bn->batCacheid), ext, TRUE) < 0) {
 		GDKerror("BBPimportEntry: cannot read heap file '%s'\n", file);
 		BBPdestroy(bn);
 		return 0;
@@ -1625,68 +1625,68 @@ BBPdump(void)
 			  BBP_lrefs(i),
 			  BBP_status(i),
 			  b->U->count,
-			  HEAPmemsize(&b->H->heap),
-			  HEAPvmsize(&b->H->heap),
-			  HEAPmemsize(b->H->vheap),
-			  HEAPvmsize(b->H->vheap),
-			  b->H->hash ? HEAPmemsize(b->H->hash->heap) : 0,
-			  b->H->hash ? HEAPvmsize(b->H->hash->heap) : 0,
-			  HEAPmemsize(&b->T->heap),
-			  HEAPvmsize(&b->T->heap),
-			  HEAPmemsize(b->T->vheap),
-			  HEAPvmsize(b->T->vheap),
-			  b->T->hash ? HEAPmemsize(b->T->hash->heap) : 0,
-			  b->T->hash ? HEAPvmsize(b->T->hash->heap) : 0);
+			  HEAPmemsize(b, &b->H->heap),
+			  HEAPvmsize(b, &b->H->heap),
+			  HEAPmemsize(b, b->H->vheap),
+			  HEAPvmsize(b, b->H->vheap),
+			  b->H->hash ? HEAPmemsize(b, b->H->hash->heap) : 0,
+			  b->H->hash ? HEAPvmsize(b, b->H->hash->heap) : 0,
+			  HEAPmemsize(b, &b->T->heap),
+			  HEAPvmsize(b, &b->T->heap),
+			  HEAPmemsize(b, b->T->vheap),
+			  HEAPvmsize(b, b->T->vheap),
+			  b->T->hash ? HEAPmemsize(b, b->T->hash->heap) : 0,
+			  b->T->hash ? HEAPvmsize(b, b->T->hash->heap) : 0);
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-			cmem += HEAPmemsize(&b->H->heap);
-			cvm += HEAPvmsize(&b->H->heap);
+			cmem += HEAPmemsize(b, &b->H->heap);
+			cvm += HEAPvmsize(b, &b->H->heap);
 			nc++;
 		} else {
-			mem += HEAPmemsize(&b->H->heap);
-			vm += HEAPvmsize(&b->H->heap);
+			mem += HEAPmemsize(b, &b->H->heap);
+			vm += HEAPvmsize(b, &b->H->heap);
 			n++;
 		}
 		if (b->H->vheap) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->H->vheap);
-				cvm += HEAPvmsize(b->H->vheap);
+				cmem += HEAPmemsize(b, b->H->vheap);
+				cvm += HEAPvmsize(b, b->H->vheap);
 			} else {
-				mem += HEAPmemsize(b->H->vheap);
-				vm += HEAPvmsize(b->H->vheap);
+				mem += HEAPmemsize(b, b->H->vheap);
+				vm += HEAPvmsize(b, b->H->vheap);
 			}
 		}
 		if (b->H->hash) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->H->hash->heap);
-				cvm += HEAPvmsize(b->H->hash->heap);
+				cmem += HEAPmemsize(b, b->H->hash->heap);
+				cvm += HEAPvmsize(b, b->H->hash->heap);
 			} else {
-				mem += HEAPmemsize(b->H->hash->heap);
-				vm += HEAPvmsize(b->H->hash->heap);
+				mem += HEAPmemsize(b, b->H->hash->heap);
+				vm += HEAPvmsize(b, b->H->hash->heap);
 			}
 		}
 		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-			cmem += HEAPmemsize(&b->T->heap);
-			cvm += HEAPvmsize(&b->T->heap);
+			cmem += HEAPmemsize(b, &b->T->heap);
+			cvm += HEAPvmsize(b, &b->T->heap);
 		} else {
-			mem += HEAPmemsize(&b->T->heap);
-			vm += HEAPvmsize(&b->T->heap);
+			mem += HEAPmemsize(b, &b->T->heap);
+			vm += HEAPvmsize(b, &b->T->heap);
 		}
 		if (b->T->vheap) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->T->vheap);
-				cvm += HEAPvmsize(b->T->vheap);
+				cmem += HEAPmemsize(b, b->T->vheap);
+				cvm += HEAPvmsize(b, b->T->vheap);
 			} else {
-				mem += HEAPmemsize(b->T->vheap);
-				vm += HEAPvmsize(b->T->vheap);
+				mem += HEAPmemsize(b, b->T->vheap);
+				vm += HEAPvmsize(b, b->T->vheap);
 			}
 		}
 		if (b->T->hash) {
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->T->hash->heap);
-				cvm += HEAPvmsize(b->T->hash->heap);
+				cmem += HEAPmemsize(b, b->T->hash->heap);
+				cvm += HEAPvmsize(b, b->T->hash->heap);
 			} else {
-				mem += HEAPmemsize(b->T->hash->heap);
-				vm += HEAPvmsize(b->T->hash->heap);
+				mem += HEAPmemsize(b, b->T->hash->heap);
+				vm += HEAPvmsize(b, b->T->hash->heap);
 			}
 		}
 	}

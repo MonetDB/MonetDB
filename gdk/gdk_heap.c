@@ -223,8 +223,8 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 	return base;
 }
 
-static int HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc);
-static int HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix);
+static int HEAPload_intern(BAT *b, Heap *h, const char *nme, const char *ext, const char *suffix, int trunc);
+static int HEAPsave_intern(BAT *b, Heap *h, const char *nme, const char *ext, const char *suffix);
 
 static char *
 decompose_filename(str nme)
@@ -265,12 +265,13 @@ HEAPmargin(size_t maxsize)
 
 /* in 64-bits space, use very large margins to accommodate reallocations */
 int
-HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+HEAPalloc(BAT *b, Heap *h, size_t nitems, size_t itemsize)
 {
 	char nme[PATHLENGTH];
 	size_t minsize = GDK_mmap_minsize;
 	struct stat st;
 
+	(void) b;
 	h->base = NULL;
 	h->maxsize = h->size = 1;
 	h->copied = 0;
@@ -319,7 +320,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			if (fp != NULL) {
 				fclose(fp);
 				h->newstorage = STORE_MMAP;
-				HEAPload(h, nme, ext, FALSE);
+				HEAPload(NULL, h, nme, ext, FALSE);
 			}
 			GDKfree(of);
 		}
@@ -352,10 +353,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
  * it.
  */
 int
-HEAPextend(Heap *h, size_t size)
+HEAPextend(BAT *b, Heap *h, size_t size)
 {
 	char nme[PATHLENGTH], *ext = NULL;
 
+	(void) b;
 	if (h->filename) {
 		strncpy(nme, h->filename, sizeof(nme));
 		nme[sizeof(nme) - 1] = 0;
@@ -367,11 +369,11 @@ HEAPextend(Heap *h, size_t size)
 	if (h->storage != STORE_MEM) {
 		HEAPDEBUG fprintf(stderr, "#HEAPextend: extending %s mmapped heap\n", h->storage == STORE_MMAP ? "shared" : "privately");
 		/* memory mapped files extend: save and remap */
-		if (HEAPsave_intern(h, nme, ext, ".tmp") < 0)
+		if (HEAPsave_intern(b, h, nme, ext, ".tmp") < 0)
 			return -1;
-		HEAPfree(h);
+		HEAPfree(b, h);
 		h->maxsize = h->size = size;
-		if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
+		if (HEAPload_intern(b, h, nme, ext, ".tmp", FALSE) >= 0) {
 			return 0;
 		}
 	} else {
@@ -438,25 +440,25 @@ HEAPextend(Heap *h, size_t size)
 				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
 				/* try to allocate a memory-mapped
 				 * based heap */
-				if (HEAPload(h, nme, ext, FALSE) >= 0) {
+				if (HEAPload(b, h, nme, ext, FALSE) >= 0) {
 					/* copy data to heap and free
 					 * old memory */
 					memcpy(h->base, bak.base, bak.free);
-					HEAPfree(&bak);
+					HEAPfree(b, &bak);
 					return 0;
 				}
 				/* couldn't allocate, now first save
 				 * data to file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") < 0) {
+				if (HEAPsave_intern(b, &bak, nme, ext, ".tmp") < 0) {
 					*h = bak;
 					return -1;
 				}
 				/* then free memory */
-				HEAPfree(&bak);
+				HEAPfree(b, &bak);
 				of = NULL;	/* file name is freed by HEAPfree */
 				/* and load heap back in via
 				 * memory-mapped file */
-				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) >= 0) {
+				if (HEAPload_intern(b, h, nme, ext, ".tmp", FALSE) >= 0) {
 					/* success! */
 					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
 					return 0;
@@ -500,7 +502,7 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
 	 * free value at the end; otherwise only copy the area
 	 * indicated by the "free" pointer */
 	n = (copyall ? c->heap.size : c->heap.free) >> c->shift;
-	if (HEAPextend(&c->heap, (c->heap.size >> c->shift) << shift) < 0)
+	if (HEAPextend(NULL, &c->heap, (c->heap.size >> c->shift) << shift) < 0)
 		return GDK_FAIL;
 	/* note, cast binds more closely than addition */
 	pc = (unsigned char *) c->heap.base + n;
@@ -563,9 +565,10 @@ GDKupgradevarheap(COLrec *c, var_t v, int copyall)
  * dst->filename (or NULL), which might be used in HEAPalloc().
  */
 int
-HEAPcopy(Heap *dst, Heap *src)
+HEAPcopy(BAT *b, Heap *dst, Heap *src)
 {
-	if (HEAPalloc(dst, src->size, 1) == 0) {
+	(void) b;
+	if (HEAPalloc(NULL, dst, src->size, 1) == 0) {
 		dst->free = src->free;
 		memcpy(dst->base, src->base, src->free);
 		dst->hashash = src->hashash;
@@ -580,8 +583,9 @@ HEAPcopy(Heap *dst, Heap *src)
  * pre-allocated filename.  simple: alloc and copy.
  */
 static int
-HEAPfree_(Heap *h, int free_file)
+HEAPfree_(BAT*b, Heap *h, int free_file)
 {
+	(void) b;
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
@@ -608,9 +612,9 @@ HEAPfree_(Heap *h, int free_file)
 }
 
 int
-HEAPfree(Heap *h)
+HEAPfree(BAT *b, Heap *h)
 {
-	return HEAPfree_(h, 0);
+	return HEAPfree_(b, h, 0);
 }
 
 /*
@@ -622,7 +626,7 @@ HEAPfree(Heap *h)
  * previous contents.
  */
 static int
-HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, int trunc)
+HEAPload_intern(BAT *b, Heap *h, const char *nme, const char *ext, const char *suffix, int trunc)
 {
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
 	size_t minsize = (1 + ((h->size - 1) >> REMAP_PAGE_MAXBITS)) << REMAP_PAGE_MAXBITS;
@@ -630,6 +634,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
+	(void) b;
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
@@ -697,9 +702,9 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 }
 
 int
-HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
+HEAPload(BAT *b, Heap *h, const char *nme, const char *ext, int trunc)
 {
-	return HEAPload_intern(h, nme, ext, ".new", trunc);
+	return HEAPload_intern(b, h, nme, ext, ".new", trunc);
 }
 
 /*
@@ -718,10 +723,11 @@ HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
  * safe on stable storage.
  */
 static int
-HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
+HEAPsave_intern(BAT *b, Heap *h, const char *nme, const char *ext, const char *suffix)
 {
 	storage_t store = h->newstorage;
 	long_str extension;
+	(void) b;
 
 	if (h->base == NULL) {
 		return -1;
@@ -742,9 +748,9 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 }
 
 int
-HEAPsave(Heap *h, const char *nme, const char *ext)
+HEAPsave(BAT *b, Heap *h, const char *nme, const char *ext)
 {
-	return HEAPsave_intern(h, nme, ext, ".new");
+	return HEAPsave_intern(b, h, nme, ext, ".new");
 }
 
 /*
@@ -753,16 +759,17 @@ HEAPsave(Heap *h, const char *nme, const char *ext)
  * remove any remaining X.new
  */
 int
-HEAPdelete(Heap *h, const char *o, const char *ext)
+HEAPdelete(BAT *b, Heap *h, const char *o, const char *ext)
 {
 	char ext2[64];
+ 	(void) b;
 
 	if (h->size <= 0) {
 		assert(h->base == 0);
 		return 0;
 	}
 	if (h->base)
-		HEAPfree_(h, 1);
+		HEAPfree_(NULL, h, 1);
 	if (h->copied) {
 		return 0;
 	}
@@ -772,10 +779,11 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 }
 
 int
-HEAPwarm(Heap *h)
+HEAPwarm(BAT *b, Heap *h)
 {
 	int bogus_result = 0;
 
+	(void) b;
 	if (h->storage != STORE_MEM) {
 		/* touch the heap sequentially */
 		int *cur = (int *) h->base;
@@ -793,8 +801,9 @@ HEAPwarm(Heap *h)
  * count all memory that takes up address space.
  */
 size_t
-HEAPvmsize(Heap *h)
+HEAPvmsize(BAT *b, Heap *h)
 {
+	(void) b;
 	if (h && h->free)
 		return h->maxsize;
 	return 0;
@@ -806,8 +815,9 @@ HEAPvmsize(Heap *h)
  * STORE_PRIV heaps as fully backed by swap space.
  */
 size_t
-HEAPmemsize(Heap *h)
+HEAPmemsize(BAT *b, Heap *h)
 {
+	(void) b;
 	if (h && h->free && h->storage != STORE_MMAP)
 		return h->size;
 	return 0;
@@ -887,7 +897,7 @@ roundup_num(size_t number, int alignment)
 static void
 HEAP_printstatus(Heap *heap)
 {
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(NULL, heap, 0, HEADER);
 	size_t block, cur_free = hheader->head;
 	CHUNK *blockp;
 
@@ -899,7 +909,7 @@ HEAP_printstatus(Heap *heap)
 	block = hheader->firstblock;
 
 	while (block < heap->free) {
-		blockp = HEAP_index(heap, block, CHUNK);
+		blockp = HEAP_index(NULL, heap, block, CHUNK);
 
 		if (block == cur_free) {
 			THRprintf(GDKstdout,
@@ -925,11 +935,11 @@ static void
 HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 {
 	/* Find position of header block. */
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(NULL, heap, 0, HEADER);
 
 	/* Calculate position of first and only free block. */
 	size_t head = roundup_num((size_t) (roundup_8(sizeof(HEADER)) + roundup_8(nprivate)), alignment);
-	CHUNK *headp = HEAP_index(heap, head, CHUNK);
+	CHUNK *headp = HEAP_index(NULL, heap, head, CHUNK);
 
 	assert(roundup_8(sizeof(HEADER)) + roundup_8(nprivate) <= VAR_MAX);
 
@@ -951,8 +961,9 @@ HEAP_empty(Heap *heap, size_t nprivate, int alignment)
 }
 
 void
-HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
+HEAP_initialize(BAT *b, Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 {
+	(void) b;
 	/* For now we know about two alignments. */
 	if (alignment != 8) {
 		alignment = 4;
@@ -965,7 +976,7 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 		size_t total = 100 + nbytes + nprivate + sizeof(HEADER) + sizeof(CHUNK);
 
 		total = roundup_8(total);
-		if (HEAPalloc(heap, total, 1) < 0)
+		if (HEAPalloc(NULL, heap, total, 1) < 0)
 			return;
 		heap->free = heap->size;
 	}
@@ -976,12 +987,13 @@ HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment)
 
 
 var_t
-HEAP_malloc(Heap *heap, size_t nbytes)
+HEAP_malloc(BAT *b, Heap *heap, size_t nbytes)
 {
 	size_t block, trail, ttrail;
 	CHUNK *blockp;
 	CHUNK *trailp;
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(b, heap, 0, HEADER);
+	(void) b;
 
 #ifdef TRACE
 	THRprintf(GDKstdout, "#Enter malloc with " SZFMT " bytes\n", nbytes);
@@ -999,8 +1011,8 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	 */
 	ttrail = 0;
 	trail = 0;
-	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
-		blockp = HEAP_index(heap, block, CHUNK);
+	for (block = hheader->head; block != 0; block = HEAP_index(b, heap, block, CHUNK)->next) {
+		blockp = HEAP_index(b, heap, block, CHUNK);
 
 #ifdef TRACE
 		THRprintf(GDKstdout, "#block " SZFMT " is " SZFMT " bytes\n", block, blockp->size);
@@ -1031,13 +1043,13 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		/* Double the size of the heap.
 		 * TUNE: increase heap by diffent amount. */
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s " SZFMT " " SZFMT "\n", heap->filename, heap->size, newsize);
-		if (HEAPextend(heap, newsize) < 0)
+		if (HEAPextend(NULL, heap, newsize) < 0)
 			return 0;
 		heap->free = newsize;
-		hheader = HEAP_index(heap, 0, HEADER);
+		hheader = HEAP_index(b, heap, 0, HEADER);
 
-		blockp = HEAP_index(heap, block, CHUNK);
-		trailp = HEAP_index(heap, trail, CHUNK);
+		blockp = HEAP_index(b, heap, block, CHUNK);
+		trailp = HEAP_index(b, heap, trail, CHUNK);
 
 #ifdef TRACE
 		THRprintf(GDKstdout, "#New block made at pos " SZFMT " with size " SZFMT "\n", block, heap->size - block);
@@ -1064,15 +1076,15 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 
 	/* Now we have found a block which is big enough in block.
 	 * The predecessor of this block is in trail. */
-	trailp = HEAP_index(heap, trail, CHUNK);
-	blockp = HEAP_index(heap, block, CHUNK);
+	trailp = HEAP_index(b, heap, trail, CHUNK);
+	blockp = HEAP_index(b, heap, block, CHUNK);
 
 	/* If selected block is bigger than block needed split block
 	 * in two.
 	 * TUNE: use different amount than 2*sizeof(CHUNK) */
 	if (blockp->size >= nbytes + 2 * sizeof(CHUNK)) {
 		size_t newblock = block + nbytes;
-		CHUNK *newblockp = HEAP_index(heap, newblock, CHUNK);
+		CHUNK *newblockp = HEAP_index(b, heap, newblock, CHUNK);
 
 		newblockp->size = blockp->size - nbytes;
 		newblockp->next = blockp->next;
@@ -1085,7 +1097,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	if (trail == 0) {
 		hheader->head = blockp->next;
 	} else {
-		trailp = HEAP_index(heap, trail, CHUNK);
+		trailp = HEAP_index(b, heap, trail, CHUNK);
 
 		trailp->next = blockp->next;
 	}
@@ -1095,20 +1107,22 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 }
 
 void
-HEAP_free(Heap *heap, var_t mem)
+HEAP_free(BAT *b, Heap *heap, var_t mem)
 {
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(b, heap, 0, HEADER);
 	CHUNK *beforep;
 	CHUNK *blockp;
 	CHUNK *afterp;
 	size_t after, before, block = mem << GDK_VARSHIFT;
+
+	(void) b;
 
 	if (hheader->alignment != 8 && hheader->alignment != 4) {
 		GDKfatal("HEAP_free: Heap structure corrupt\n");
 	}
 
 	block -= hheader->alignment;
-	blockp = HEAP_index(heap, block, CHUNK);
+	blockp = HEAP_index(b, heap, block, CHUNK);
 
 	/* block   -- block which we want to free
 	 * before  -- first free block before block
@@ -1116,14 +1130,14 @@ HEAP_free(Heap *heap, var_t mem)
 	 */
 
 	before = 0;
-	for (after = hheader->head; after != 0; after = HEAP_index(heap, after, CHUNK)->next) {
+	for (after = hheader->head; after != 0; after = HEAP_index(b, heap, after, CHUNK)->next) {
 		if (after > block)
 			break;
 		before = after;
 	}
 
-	beforep = HEAP_index(heap, before, CHUNK);
-	afterp = HEAP_index(heap, after, CHUNK);
+	beforep = HEAP_index(b, heap, before, CHUNK);
+	afterp = HEAP_index(b, heap, after, CHUNK);
 
 	/* If it is not the last free block. */
 	if (after != 0) {
@@ -1171,7 +1185,7 @@ HEAP_free(Heap *heap, var_t mem)
 int
 HEAP_check(Heap *heap, HeapRepair *hr)
 {
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(NULL, heap, 0, HEADER);
 	size_t head = hheader->head, alignshift = 2;
 	size_t block, nwords = (size_t) ((heap->free - 1) >> 7);
 	int *freemask;
@@ -1209,7 +1223,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	/*
 	 * Walk the freelist; register them in freemask
 	 */
-	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
+	for (block = hheader->head; block != 0; block = HEAP_index(NULL, heap, block, CHUNK)->next) {
 		size_t idx = block >> alignshift;
 		size_t pos = idx >> 5;
 		int mask = 1 << (idx & 31);
@@ -1235,7 +1249,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 		int mask = 1 << (idx & 31);
 
 		hr->validmask[pos] |= mask;
-		blockp = HEAP_index(heap, block, CHUNK);
+		blockp = HEAP_index(NULL, heap, block, CHUNK);
 
 		if (freemask[pos] & mask) {
 			freemask[pos] &= ~mask;
@@ -1252,7 +1266,7 @@ HEAP_check(Heap *heap, HeapRepair *hr)
 	/*
 	 * Check if there are left over free blocks
 	 */
-	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
+	for (block = hheader->head; block != 0; block = HEAP_index(NULL, heap, block, CHUNK)->next) {
 		size_t idx = block >> alignshift;
 		size_t pos = idx >> 5;
 		int mask = 1 << (idx & 31);
@@ -1278,9 +1292,10 @@ HEAP_check(Heap *heap, HeapRepair *hr)
  */
 /* reinitialize the size function after a load */
 void
-HEAP_init(Heap *heap, int tpe)
+HEAP_init(BAT *b, Heap *heap, int tpe)
 {
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(NULL, heap, 0, HEADER);
+	(void) b;
 
 	if (hheader->sizefcn) {
 		hheader->sizefcn = BATatoms[tpe].atomLen;
@@ -1294,7 +1309,7 @@ HEAP_init(Heap *heap, int tpe)
 		size_t idx = hheader->head;
 
 		while (idx) {
-			CHUNK *blk = HEAP_index(heap, idx, CHUNK);
+			CHUNK *blk = HEAP_index(NULL, heap, idx, CHUNK);
 
 			if (idx + blk->size > heap->free) {
 				assert(heap->free - idx <= VAR_MAX);
@@ -1312,12 +1327,13 @@ HEAP_init(Heap *heap, int tpe)
 /* a heap is mmapabble (in append-only mode) if it only has a hole at
  * the end */
 int
-HEAP_mmappable(Heap *heap)
+HEAP_mmappable(BAT *b, Heap *heap)
 {
-	HEADER *hheader = HEAP_index(heap, 0, HEADER);
+	HEADER *hheader = HEAP_index(NULL, heap, 0, HEADER);
+	(void) b;
 
 	if (hheader->head) {
-		CHUNK *blk = HEAP_index(heap, hheader->head, CHUNK);
+		CHUNK *blk = HEAP_index(NULL, heap, hheader->head, CHUNK);
 
 		if (hheader->head + blk->size >= heap->free) {
 			return TRUE;

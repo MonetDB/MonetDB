@@ -474,9 +474,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 		}
 		if (hp->storage == STORE_MEM)
-			HEAPfree(hp);
+			HEAPfree(NULL, hp);
 		else
-			HEAPdelete(hp, nme, ext);
+			HEAPdelete(NULL, hp, nme, ext);
 		GDKfree(hp);
 		GDKfree(hs);
 		GDKfree(ext);
