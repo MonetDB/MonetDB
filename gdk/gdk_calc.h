@@ -126,3 +126,9 @@ gdk_export BAT *BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_ni
 gdk_export BAT *BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+/* helper function for grouped aggregates */
+gdk_export const char *BATgroupaggrinit(
+	const BAT *b, const BAT *g, const BAT *e, const BAT *s,
+	/* outputs: */
+	oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp, BUN *cntp,
+	const oid **candp, const oid **candendp);

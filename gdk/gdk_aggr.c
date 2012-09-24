@@ -69,13 +69,11 @@
  * number of groups) and initializes the variables for candidates
  * selection.
  */
-static gdk_return
-initgroupaggr(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
-	      /* on whose behalf we're doing this */
-	      const char *func,
-	      /* outputs: */
-	      oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
-	      BUN *cntp, const oid **candp, const oid **candendp)
+const char *
+BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
+		 /* outputs: */
+		 oid *minp, oid *maxp, BUN *ngrpp, BUN *startp, BUN *endp,
+		 BUN *cntp, const oid **candp, const oid **candendp)
 {
 	oid min, max;
 	BUN i, ngrp;
@@ -83,22 +81,16 @@ initgroupaggr(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 
-	if (b == NULL || !BAThdense(b)) {
-		GDKerror("%s: b must be dense-headed\n", func);
-		return GDK_FAIL;
-	}
+	if (b == NULL || !BAThdense(b))
+		return "b must be dense-headed";
 	if (g) {
 		if (!BAThdense(g) || BATcount(b) != BATcount(g) ||
-		    (BATcount(b) != 0 && b->hseqbase != g->hseqbase)) {
-			GDKerror("%s: b and g must be aligned\n", func);
-			return GDK_FAIL;
-		}
+		    (BATcount(b) != 0 && b->hseqbase != g->hseqbase))
+			return "b and g must be aligned";
 		assert(BATttype(g) == TYPE_oid);
 	}
-	if (e != NULL && !BAThdense(e)) {
-		GDKerror("%s: e must be dense-headed\n", func);
-		return GDK_FAIL;
-	}
+	if (e != NULL && !BAThdense(e))
+		return "e must be dense-headed";
 	if (g == NULL) {
 		min = 0;
 		max = 0;
@@ -156,7 +148,7 @@ initgroupaggr(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 	*candp = cand;
 	*candendp = candend;
 
-	return GDK_SUCCEED;
+	return NULL;
 }
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
@@ -210,10 +202,13 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	unsigned int *seen;	/* bitmask for groups that we've seen */
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
-	if (initgroupaggr(b, g, e, s, "BATgroupsum", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupsum: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupsum: b and g must be aligned\n");
 		return NULL;
@@ -525,10 +520,13 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	unsigned int *seen;	/* bitmask for groups that we've seen */
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
-	if (initgroupaggr(b, g, e, s, "BATgroupprod", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupprod: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupprod: b and g must be aligned\n");
 		return NULL;
@@ -804,14 +802,17 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
 	assert(tp == TYPE_dbl);
 	(void) tp;		/* compatibility (with other BATgroup*
 				 * functions) argument */
 
-	if (initgroupaggr(b, g, e, s, "BATgroupavg", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupavg: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupavg: b and g must be aligned\n");
 		return NULL;
@@ -949,14 +950,17 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	BATiter bi;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
 	assert(tp == TYPE_wrd);
 	(void) tp;		/* compatibility (with other BATgroup* */
 	(void) abort_on_error;	/* functions) argument */
 
-	if (initgroupaggr(b, g, e, s, "BATgroupcount", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupcount: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupcount: b and g must be aligned\n");
 		return NULL;
@@ -1059,6 +1063,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	BAT *bn = NULL;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
 	assert(tp == TYPE_wrd);
 	assert(b->ttype == TYPE_bit);
@@ -1067,9 +1072,11 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	(void) abort_on_error;
 	(void) skip_nils;
 
-	if (initgroupaggr(b, g, e, s, "BATgroupsize", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupsize: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupsize: b and g must be aligned\n");
 		return NULL;
@@ -1177,6 +1184,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	BATiter bi;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
 	assert(tp == TYPE_oid);
 	(void) tp;		/* compatibility (with other BATgroup* */
@@ -1188,9 +1196,11 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return NULL;
 	}
 
-	if (initgroupaggr(b, g, e, s, "BATgroupmin", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupmin: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupmin: b and g must be aligned\n");
 		return NULL;
@@ -1313,6 +1323,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	BATiter bi;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
 	assert(tp == TYPE_oid);
 	(void) tp;		/* compatibility (with other BATgroup* */
@@ -1324,9 +1335,11 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return NULL;
 	}
 
-	if (initgroupaggr(b, g, e, s, "BATgroupmax", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupmax: %s\n", err);
 		return NULL;
+	}
 	if (g == NULL) {
 		GDKerror("BATgroupmax: b and g must be aligned\n");
 		return NULL;
@@ -1444,12 +1457,15 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	const void *v;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
+	const char *err;
 
 	(void) abort_on_error;
 
-	if (initgroupaggr(b, g, e, s, "BATgroupmedian", &min, &max, &ngrp,
-			  &start, &end, &cnt, &cand, &candend) == GDK_FAIL)
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("BATgroupmedian: %s\n", err);
 		return NULL;
+	}
 	assert(tp == b->ttype);
 	if (!ATOMlinear(b->ttype)) {
 		GDKerror("BATgroupmedian: cannot determine median on "

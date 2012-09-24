@@ -25,7 +25,7 @@ MTSAFE
 lib_atoms = {
 	NOINST
 	SOURCES = \
-		batxml.c batxml.h \
+		batxml.c \
 		blob.c blob.h \
 		color.c color.h \
 		identifier.c identifier.h \

@@ -87,5 +87,17 @@ command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
 address BATXMLisdocument
 comment "Validate the string as a XML document.";
 
+command xml.subaggr(val:bat[:oid,:xml], skip_nils:int) :bat[:oid,:xml]
+address AGGRxml
+comment "Aggregate the XML values.";
+
+command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:int) :bat[:oid,:xml]
+address AGGRsubxml
+comment "Grouped aggregation of XML values.";
+
+command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:int) :bat[:oid,:xml]
+address AGGRsubxmlcand
+comment "Grouped aggregation of XML values with candidates list.";
+
 module batcalc;
 command xml(src:bat[:oid,:str]):bat[:oid,:xml] address BATXMLstr2xml;
