@@ -561,19 +561,19 @@ BATsave(BAT *bd)
 	nme = BBP_physical(b->batCacheid);
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->H->heap.dirty)
 		if (err == 0 && b->htype)
-			err = HEAPsave(b, &b->H->heap, nme, "head");
+			err = HEAPsave(&b->H->heap, nme, "head");
 	if (b->batCopiedtodisk == 0 || b->batDirty || b->T->heap.dirty)
 		if (err == 0 && b->ttype)
-			err = HEAPsave(b, &b->T->heap, nme, "tail");
+			err = HEAPsave(&b->T->heap, nme, "tail");
 	if (b->H->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->H->vheap->dirty))
 		if (b->htype && b->hvarsized) {
 			if (err == 0)
-				err = HEAPsave(b, b->H->vheap, nme, "hheap");
+				err = HEAPsave(b->H->vheap, nme, "hheap");
 		}
 	if (b->T->vheap && (b->batCopiedtodisk == 0 || b->batDirty || b->T->vheap->dirty))
 		if (b->ttype && b->tvarsized) {
 			if (err == 0)
-				err = HEAPsave(b, b->T->vheap, nme, "theap");
+				err = HEAPsave(b->T->vheap, nme, "theap");
 		}
 
 	if (b->H->vheap)
@@ -610,7 +610,7 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD bun heap */
 	if (b->htype != TYPE_void) {
-		if (HEAPload(b, &b->H->heap, nme, "head", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(&b->H->heap, nme, "head", b->batRestricted == BAT_READ) < 0) {
 			return NULL;
 		}
 		assert(b->H->heap.size >> b->H->shift <= BUN_MAX);
@@ -619,8 +619,8 @@ BATload_intern(bat i, int lock)
 		b->H->heap.base = NULL;
 	}
 	if (b->ttype != TYPE_void) {
-		if (HEAPload(b, &b->T->heap, nme, "tail", b->batRestricted == BAT_READ) < 0) {
-			HEAPfree(b, &b->H->heap);
+		if (HEAPload(&b->T->heap, nme, "tail", b->batRestricted == BAT_READ) < 0) {
+			HEAPfree(&b->H->heap);
 			return NULL;
 		}
 		if (b->htype == TYPE_void) {
@@ -632,11 +632,11 @@ BATload_intern(bat i, int lock)
 			if (cap < (b->T->heap.size >> b->T->shift)) {
 				cap = (BUN) (b->T->heap.size >> b->T->shift);
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_inter %s " SZFMT " " SZFMT "\n", b->H->heap.filename, b->H->heap.size, headsize(b, cap));
-				HEAPextend(b, &b->H->heap, headsize(b, cap));
+				HEAPextend(&b->H->heap, headsize(b, cap));
 				b->batCapacity = cap;
 			} else {
 				HEAPDEBUG fprintf(stderr, "#HEAPextend in BATload_intern %s " SZFMT " " SZFMT "\n", b->T->heap.filename, b->T->heap.size, tailsize(b, cap));
-				HEAPextend(b, &b->T->heap, tailsize(b, cap));
+				HEAPextend(&b->T->heap, tailsize(b, cap));
 			}
 		}
 	} else {
@@ -645,13 +645,13 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD head heap */
 	if (ATOMvarsized(b->htype)) {
-		if (HEAPload(b, b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
-			HEAPfree(b, &b->H->heap);
-			HEAPfree(b, &b->T->heap);
+		if (HEAPload(b->H->vheap, nme, "hheap", b->batRestricted == BAT_READ) < 0) {
+			HEAPfree(&b->H->heap);
+			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->htype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b, b->H->vheap, b->htype);
+			HEAP_init(b->H->vheap, b->htype);
 		} else if (ATOMstorage(b->htype) == TYPE_str) {
 			strCleanHash(b->H->vheap, FALSE);	/* ensure consistency */
 		}
@@ -659,15 +659,15 @@ BATload_intern(bat i, int lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype)) {
-		if (HEAPload(b, b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
+		if (HEAPload(b->T->vheap, nme, "theap", b->batRestricted == BAT_READ) < 0) {
 			if (b->H->vheap)
-				HEAPfree(b, b->H->vheap);
-			HEAPfree(b, &b->H->heap);
-			HEAPfree(b, &b->T->heap);
+				HEAPfree(b->H->vheap);
+			HEAPfree(&b->H->heap);
+			HEAPfree(&b->T->heap);
 			return NULL;
 		}
 		if (BATatoms[b->ttype].atomHeapCheck == HEAP_check) {
-			HEAP_init(b, b->T->vheap, b->ttype);
+			HEAP_init(b->T->vheap, b->ttype);
 		} else if (ATOMstorage(b->ttype) == TYPE_str) {
 			strCleanHash(b->T->vheap, FALSE);	/* ensure consistency */
 		}
@@ -722,36 +722,36 @@ BATdelete(BAT *b)
 	assert(!b->H->heap.base || !b->T->heap.base || b->H->heap.base != b->T->heap.base);
 	if (b->batCopiedtodisk || (b->H->heap.storage != STORE_MEM)) {
 		if (b->htype != TYPE_void &&
-		    HEAPdelete(b, &b->H->heap, o, "head") &&
+		    HEAPdelete(&b->H->heap, o, "head") &&
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->H->heap.base) {
-		HEAPfree(b, &b->H->heap);
+		HEAPfree(&b->H->heap);
 	}
 	if (b->batCopiedtodisk || (b->T->heap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
-		    HEAPdelete(b, &b->T->heap, o, "tail") &&
+		    HEAPdelete(&b->T->heap, o, "tail") &&
 		    b->batCopiedtodisk)
 			IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->T->heap.base) {
-		HEAPfree(b, &b->T->heap);
+		HEAPfree(&b->T->heap);
 	}
 	if (b->H->vheap) {
 		assert(b->H->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->H->vheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b, b->H->vheap, o, "hheap") && b->batCopiedtodisk)
+			if (HEAPdelete(b->H->vheap, o, "hheap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b, b->H->vheap);
+			HEAPfree(b->H->vheap);
 		}
 	}
 	if (b->T->vheap) {
 		assert(b->T->vheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->T->vheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b, b->T->vheap, o, "theap") && b->batCopiedtodisk)
+			if (HEAPdelete(b->T->vheap, o, "theap") && b->batCopiedtodisk)
 				IODEBUG THRprintf(GDKstdout, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
-			HEAPfree(b, b->T->vheap);
+			HEAPfree(b->T->vheap);
 		}
 	}
 	b->batCopiedtodisk = FALSE;

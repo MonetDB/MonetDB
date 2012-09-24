@@ -118,7 +118,7 @@ Hash *
 HASHnew(Heap *hp, int tpe, BUN size, BUN mask)
 {
 	Hash *h = NULL;
-	if (HEAPalloc(NULL, hp, mask + size, sizeof(BUN)) < 0)
+	if (HEAPalloc(hp, mask + size, sizeof(BUN)) < 0)
 		return NULL;
 	hp->free = (mask + size) * sizeof(BUN);
 	h = (Hash *) GDKmalloc(sizeof(Hash));
@@ -233,7 +233,7 @@ BAThash(BAT *b, BUN masksize)
 
 			r = BUNfirst(b);
 			if (hp) {
-				HEAPfree(NULL, hp);
+				HEAPfree(hp);
 				GDKfree(hp);
 			}
 			if (h)
@@ -374,9 +374,9 @@ HASHremove(BAT *b)
 
 		if ((!hp || b->H->hash != hp->H->hash) && b->H->hash != (Hash *) -1) {
 			if (b->H->hash->heap->storage != STORE_MEM)
-				HEAPdelete(b, b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
+				HEAPdelete(b->H->hash->heap, BBP_physical(b->batCacheid), (b->batCacheid > 0) ? "hhash" : "thash");
 			else
-				HEAPfree(b, b->H->hash->heap);
+				HEAPfree(b->H->hash->heap);
 			GDKfree(b->H->hash->heap);
 			GDKfree(b->H->hash);
 		}

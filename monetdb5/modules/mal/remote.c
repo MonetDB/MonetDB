@@ -1221,17 +1221,17 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	if (bb.headsize > 0) {
-		HEAPextend(b, &b->H->heap, bb.headsize); /* cheap if already done */
+		HEAPextend(&b->H->heap, bb.headsize); /* cheap if already done */
 		mnstr_read(in, b->H->heap.base, bb.headsize, 1);
 		b->H->heap.dirty = TRUE;
 	}
 	if (bb.tailsize > 0) {
-		HEAPextend(b, &b->T->heap, bb.tailsize);
+		HEAPextend(&b->T->heap, bb.tailsize);
 		mnstr_read(in, b->T->heap.base, bb.tailsize, 1);
 		b->T->heap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		HEAPextend(b, b->T->vheap, bb.theapsize);
+		HEAPextend(b->T->vheap, bb.theapsize);
 		mnstr_read(in, b->T->vheap->base, bb.theapsize, 1);
 		b->T->vheap->free = bb.theapsize;
 		b->T->vheap->dirty = TRUE;

@@ -106,7 +106,7 @@ insert_string_bat(BAT *b, BAT *n, int append)
 		/* make sure we get alignment right */
 		toff = (toff + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
 		assert(((toff >> GDK_VARSHIFT) << GDK_VARSHIFT) == toff);
-		if (HEAPextend(b, b->T->vheap, toff + n->T->vheap->size) < 0) {
+		if (HEAPextend(b->T->vheap, toff + n->T->vheap->size) < 0) {
 			toff = ~ (size_t) 0;
 			goto bunins_failed;
 		}
@@ -2070,7 +2070,7 @@ BAThistogram(BAT *b)
 				goto bunins_failed;
 			GDKfilepath(bn->H->vheap->filename, NULL, nme, "hheap");
 		}
-		if (HEAPcopy(bn, bn->H->vheap, b->T->vheap) < 0)
+		if (HEAPcopy(bn->H->vheap, b->T->vheap) < 0)
 			goto bunins_failed;
 		bn->htype = b->ttype;
 		bn->hvarsized = 1;

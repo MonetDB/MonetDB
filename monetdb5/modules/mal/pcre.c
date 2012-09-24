@@ -954,7 +954,7 @@ pcre_null(void)
 void
 pcre_del(Heap *h, var_t *idx)
 {
-	HEAP_free(NULL, h, *idx);
+	HEAP_free(h, *idx);
 }
 
 #define pcresize(val) ((size_t*)val)[0]
@@ -965,7 +965,7 @@ pcre_put(Heap *h, var_t *bun, pcre * val)
 	char *base;
 
 	assert(pcresize(val) <= VAR_MAX);
-	*bun = HEAP_malloc(NULL, h, (var_t) pcresize(val));
+	*bun = HEAP_malloc(h, (var_t) pcresize(val));
 	base = h->base;
 	if (*bun)
 		memcpy(&base[*bun << GDK_VARSHIFT], (char *) val, pcresize(val));
@@ -982,7 +982,7 @@ pcre_length(pcre * p)
 void
 pcre_heap(Heap *heap, size_t capacity)
 {
-	HEAP_initialize(NULL, heap, capacity, 0, (int) sizeof(var_t));
+	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
 }
 
 /* change SQL LIKE pattern into PCRE pattern */

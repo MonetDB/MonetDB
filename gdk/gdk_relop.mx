@@ -1021,7 +1021,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 					}
 					GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 				}
-				if (HEAPcopy(bn, bn->T->vheap, r->T->vheap) < 0) {
+				if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0) {
 					BBPreclaim(bn);
 					goto ready;
 				}
@@ -1103,7 +1103,7 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 					}
 					GDKfilepath(bn->T->vheap->filename, NULL, nme, "theap");
 				}
-				if (HEAPcopy(bn, bn->T->vheap, r->T->vheap) < 0) {
+				if (HEAPcopy(bn->T->vheap, r->T->vheap) < 0) {
 					BBPreclaim(bn);
 					ret = NULL;
 					goto ready;

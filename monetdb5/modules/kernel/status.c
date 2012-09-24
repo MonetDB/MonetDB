@@ -270,7 +270,7 @@ SYSmemStatistics(int *ret, int *ret2)
 
 #define heap(X1,X2,X3,X4)\
 	if (X1) {\
-		sz = HEAPmemsize(NULL, X2);\
+		sz = HEAPmemsize(X2);\
 		if (sz > *minsize) {\
 			sprintf(buf, X4"/%s", s);\
 			BUNins(bn, buf, &sz, FALSE);\
@@ -279,7 +279,7 @@ SYSmemStatistics(int *ret, int *ret2)
 	}
 #define heapvm(X1,X2,X3,X4)\
 	if (X1) {\
-		sz = HEAPvmsize(NULL, X2);\
+		sz = HEAPvmsize(X2);\
 		if (sz > *minsize) {\
 			sprintf(buf, X4"/%s", s);\
 			BUNins(bn, buf, &sz, FALSE);\
