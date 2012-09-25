@@ -619,7 +619,8 @@ static void showcpu(void)
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
 	fprintf(gnudata,"set yrange [0:%d.1]\n",cpus);
-	fprintf(gnudata,"plot ");
+	if ( cpus)
+		fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
 		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
 			(inputfile?"scratch":filename), i+1, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
