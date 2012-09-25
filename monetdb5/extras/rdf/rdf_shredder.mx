@@ -90,7 +90,7 @@ typedef struct parserData {
 	int line;                     /* locator for errors     */
 	int column;                   /* locator for errors     */
 	                              /**GRAPH DATA             */
-	BAT *graph[N_GRAPH_BAT];      /* BATs for the result
+	BAT **graph;                  /* BATs for the result
 	                                 shredded RDF graph     */
 } parserData;
 
@@ -144,7 +144,7 @@ at a time. Function rdf_parser_triple_handler() does exactly this.
 @= rdf_BUNappend_unq_1
 bun = BUNfnd(BATmirror(@1),(ptr)@2);
 if (bun == BUN_NONE) {
-	if (BATcount(@1) > 4 * @1->T->hash->mask) {
+	if (@1->T->hash && BATcount(@1) > 4 * @1->T->hash->mask) {
 		HASHdestroy(@1);
 		BAThash(BATmirror(@1), 2*BATcount(@1));
 	}
@@ -258,7 +258,7 @@ create_BAT(int ht, int tt, int size)
 }
 
 static parserData*
-parserData_create (str location)
+parserData_create (str location, BAT** graph)
 {
 	int i;
 
@@ -271,8 +271,9 @@ parserData_create (str location)
 	pdata->error = 0;
 	pdata->warning = 0;
 	pdata->location = location;
+	pdata->graph = graph;
 
-	for (i = 0; i < N_GRAPH_BAT; i++) {
+	for (i = 0; i <= N_GRAPH_BAT; i++) {
 		pdata->graph[i] = NULL;
 	}
 
@@ -300,7 +301,7 @@ parserData_create (str location)
 		return NULL;
 	}
 	/* MAP_LEX must have the key property */
-	BATseqbase(pdata->graph[MAP_LEX], 1 << 30);
+	BATseqbase(pdata->graph[MAP_LEX], RDF_MIN_LITERAL);
 	pdata->graph[MAP_LEX]->tkey = BOUND2BTRUE;
 	pdata->graph[MAP_LEX]->T->nokey[0] = 0;
 	pdata->graph[MAP_LEX]->T->nokey[1] = 0;
@@ -380,19 +381,19 @@ post_processing (parserData *pdata)
 
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
-	map_oid = BATmark(graph[MAP_LEX], 1<<30);   /* BATmark will create a copy */
+	map_oid = BATmark(graph[MAP_LEX], RDF_MIN_LITERAL);   /* BATmark will create a copy */
 	BATorder(map_oid);
 	BATsetaccess(map_oid, BAT_READ);        /* force BAtmark not to copy bat */
-	map_oid = BATmirror(BATmark(BATmirror(map_oid), 1<<30));
+	map_oid = BATmirror(BATmark(BATmirror(map_oid), RDF_MIN_LITERAL));
 	BATsetaccess(graph[MAP_LEX], BAT_READ); /* force BATmark not to copy bat */
-	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), 1<<30));
+	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), RDF_MIN_LITERAL));
 
 	/* convert old oids of O_sort to new ones */
 	bi = bat_iterator(graph[O_sort]);
 	mi = bat_iterator(map_oid);
 	BATloop(graph[O_sort], p, d) {
 		bt = (oid *) BUNtloc(bi, p);
-		if (*bt >= (1 << 30)) {
+		if (*bt >= (RDF_MIN_LITERAL)) {
 			BUNfndVOID(r, mi, bt);
 			void_inplace(graph[O_sort], p, BUNtloc(mi, r), 1);
 		}
@@ -491,9 +492,11 @@ if (pdata != NULL) {
 @
 
 @c
+#define RDF_CHUNK_SIZE 100*1024*1024
+
 /* Main RDF parser function that drives raptor */
 str
-RDFParser (int *retval, str *location, str *graphname, str *schema)
+RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 {
 	raptor_parser *rparser;
 	parserData *pdata;
@@ -501,8 +504,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 	bit isURI;
 	str ret;
 	int iret;
-	BAT **graph;
-	BAT *retbat;
 	(void) graphname;
 
 	/* init tokenizer */
@@ -516,7 +517,7 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 #endif
 
 	/* Init pdata  */
-	pdata = parserData_create(*location);
+	pdata = parserData_create(*location,graph);
 	if (pdata == NULL) {
 #ifdef _TKNZR_H
 		TKNZRclose(&iret);
@@ -552,16 +553,38 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 		uri = raptor_new_uri((unsigned char *) pdata->location);
 		iret = raptor_parse_uri(rparser, uri, NULL);
 	} else {
-		uri = raptor_new_uri(
-				raptor_uri_filename_to_uri_string(pdata->location));
-		iret = raptor_parse_file(rparser, uri, NULL);
+		
+		/* Too slow loading --> use old code 
+		FILE *fp = fopen(pdata->location, "r");
+		char *buf = (char*) GDKmalloc(RDF_CHUNK_SIZE);
+		if (buf == NULL) {
+			throw(RDF, "rdf.rdfShred",
+				"could not allocate a %dMB file buffer\n", (int) (RDF_CHUNK_SIZE>>20));
+		}
+		uri = raptor_new_uri(raptor_uri_filename_to_uri_string(pdata->location));
+		iret = raptor_start_parse(rparser, uri);
+		while(fp && iret == 0) {
+			ssize_t len = (ssize_t) fread(buf, 1, RDF_CHUNK_SIZE, fp);  
+			iret = raptor_parse_chunk(rparser, (const unsigned char*) buf, (size_t) len, len < RDF_CHUNK_SIZE);
+		}
+		fclose(fp);
+		
+		*/
+
+		/* does/may? not work on large files -- therefore the abpove chunked read
+                   iret = raptor_parse_file_stream(rparser, fp, pdata->location, uri); 
+   		 */
+
+		/* Old code */
+                uri = raptor_new_uri(
+                                raptor_uri_filename_to_uri_string(pdata->location));
+                iret = raptor_parse_file(rparser, uri, NULL);
 	}
 	@:clean_raptor@
 #ifdef _TKNZR_H
 	TKNZRclose(&iret);
 #endif
 
-	graph = pdata->graph;
 	assert (pdata->tcount == BATcount(graph[S_sort]) &&
 			pdata->tcount == BATcount(graph[P_sort]) &&
 			pdata->tcount == BATcount(graph[O_sort]));
@@ -590,22 +613,6 @@ RDFParser (int *retval, str *location, str *graphname, str *schema)
 		@:clean@
 		throw(RDF, "rdf.rdfShred", "could not post-proccess data");
 	}
-
-	/* prepare return bat of bats */
-	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
-	if (retbat == NULL) {
-		@:clean@
-		throw(RDF, "rdf.rdfShred",
-				"could not allocate enough memory for return bat");
-	}
-	BATseqbase(retbat, 0);
-	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
-		retbat = BUNappend(retbat, &graph[iret]->batCacheid, TRUE);
-		BBPunfix(graph[iret]->batCacheid);
-	}
-
 	GDKfree(pdata);
-	BBPkeepref(*retval = retbat->batCacheid);
-
 	return MAL_SUCCEED;
 }

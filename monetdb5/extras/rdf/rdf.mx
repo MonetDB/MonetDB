@@ -25,10 +25,9 @@ All Rights Reserved.
 @mal
 module rdf;
 
-command shred(location:str, graphname:str, schema:str):bat[:void, :bat]
-address RDFParser
-comment "look behind you!"
-
+command leftfetchjoin_sorted ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] ) :bat[:any_1,:any_3]
+address ALGleftfetchjoin_sorted
+comment "like algebra_leftfetchjoin(), but asserts that the resulting tail column is sorted -- ONLY USE IF YOU ARE SURE OF THIS!!! also requires sorted tail left input"
 @h
 #ifndef _RDF_H_
 #define _RDF_H_
@@ -47,7 +46,7 @@ comment "look behind you!"
 #define _RDF_DEBUG
 
 rdf_export str
-RDFParser(int *retval, str *location, str *graphname, str *schemam);
+RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 
 #define TRIPLE_STORE 1
 #define MLA_STORE    2

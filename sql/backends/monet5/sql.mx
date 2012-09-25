@@ -6869,10 +6869,8 @@ str
 SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 #ifdef HAVE_RAPTOR
-	bat docbats;
-	BAT *graph = NULL;
+	BAT *b[128];
 	BAT *p, *s, *o;
-	bat *g;
 	sql_schema *sch;
 	sql_table *g_tbl;
 	sql_column *gname, *gid;
@@ -6909,7 +6907,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr, gname, *name, TYPE_str);
 	store_funcs.append_col(m->session->tr, gid, &id, TYPE_int);
 
-	rethrow("sql.rdfShred", msg, RDFParser(&docbats, location, name, schema));
+	rethrow("sql.rdfShred", msg, RDFParser(b, location, name, schema));
 
 	if (sizeof(oid) == 8) {
 		sql_find_subtype(&tpe, "oid", 31, 0);
@@ -6977,16 +6975,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_find_subtype(&tpe, "varchar", 1024, 0);
 	mvc_create_column(m, map_tbl, "lexical", &tpe);
 
-	if ((graph = BATdescriptor(docbats)) == NULL)
-		throw(SQL, "sql.rdfShred", "docbat is missing");
-
-	g = (bat *) Tloc(graph, BUNfirst(graph));
-
-	if ((s =  BATdescriptor(g[MAP_LEX])) == NULL) {
-		BBPreleaseref(graph->batCacheid);
-		throw(SQL, "sql.rdfShred", "map_lex is missing");
-	}
-
+	s = b[MAP_LEX];
 	store_funcs.append_col(m->session->tr,
 			mvc_bind_column(m, map_tbl, "lexical"),
 			BATmirror(BATmark(BATmirror(s),0)), TYPE_bat);
@@ -6997,9 +6986,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(s->batCacheid);
 
 #if STORE == TRIPLE_STORE
-	s = BATdescriptor(g[S_sort]);
-	p = BATdescriptor(g[P_PO]);
-	o = BATdescriptor(g[O_PO]);
+	s = b[S_sort];
+	p = b[P_PO];
+	o = b[O_PO];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, spo_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7009,12 +6998,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, spo_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	s = BATdescriptor(g[S_sort]);
-	p = BATdescriptor(g[P_OP]);
-	o = BATdescriptor(g[O_OP]);
+	s = b[S_sort];
+	p = b[P_OP];
+	o = b[O_OP];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, sop_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7024,12 +7010,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, sop_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	s = BATdescriptor(g[S_SO]);
-	p = BATdescriptor(g[P_sort]);
-	o = BATdescriptor(g[O_SO]);
+	s = b[S_SO];
+	p = b[P_sort];
+	o = b[O_SO];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, pso_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7039,12 +7022,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, pso_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	s = BATdescriptor(g[S_OS]);
-	p = BATdescriptor(g[P_sort]);
-	o = BATdescriptor(g[O_OS]);
+	s = b[S_OS];
+	p = b[P_sort];
+	o = b[O_OS];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, pos_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7054,12 +7034,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, pos_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	s = BATdescriptor(g[S_SP]);
-	p = BATdescriptor(g[P_SP]);
-	o = BATdescriptor(g[O_sort]);
+	s = b[S_SP];
+	p = b[P_SP];
+	o = b[O_sort];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, osp_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7069,12 +7046,9 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, osp_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
-	s = BATdescriptor(g[S_PS]);
-	p = BATdescriptor(g[P_PS]);
-	o = BATdescriptor(g[O_sort]);
+	s = b[S_PS];
+	p = b[P_PS];
+	o = b[O_sort];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, ops_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7084,13 +7058,10 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, ops_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
 #elif STORE == MLA_STORE
-	s = BATdescriptor(g[S_sort]);
-	p = BATdescriptor(g[P_sort]);
-	o = BATdescriptor(g[O_sort]);
+	s = b[S_sort];
+	p = b[P_sort];
+	o = b[O_sort];
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, spo_tbl, "subject"),
 			       s, TYPE_bat);
@@ -7100,14 +7071,12 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	store_funcs.append_col(m->session->tr,
 			       mvc_bind_column(m, spo_tbl, "object"),
 			       o, TYPE_bat);
-	BBPunfix(s->batCacheid);
-	BBPunfix(p->batCacheid);
-	BBPunfix(o->batCacheid);
 #endif /* STORE */
 
 	/* unfix graph */
-	BBPunfix(graph->batCacheid);
-
+	for(id=0; b[id]; id++) {
+		BBPunfix(b[id]->batCacheid); 
+	}
 	return MAL_SUCCEED;
 #else
 	(void) cntxt; (void) mb; (void) stk; (void) pci;

@@ -576,6 +576,10 @@ command leftfetchjoin ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] )
 address ALGleftfetchjoin
 comment "Hook directly into the left fetch join implementation.";
 
+command leftfetchjoin_sorted ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] ) :bat[:any_1,:any_3]
+address ALGleftfetchjoin_sorted
+comment "like leftfetchjoin(), but asserts that the resulting tail column is sorted -- ONLY USE IF YOU ARE SURE OF THIS!!! also requires sorted tail left input"
+
 command mergejoin (left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGmergejoin
@@ -1108,6 +1112,7 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryestimateExport(fetchjoin)@
 @:ALGbinaryestimateExport(leftjoin)@
 @:ALGbinaryestimateExport(leftfetchjoin)@
+@:ALGbinaryestimateExport(leftfetchjoin_sorted)@
 @:ALGbinaryestimateExport(outerjoin)@
 @:ALGbinaryExport(semijoin)@
 @:ALGbinaryExport(sunion)@
@@ -2766,6 +2771,18 @@ str
 ALGleftfetchjoin(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinaryestimate(result, lid, rid, NULL, BATleftfetchjoin, "algebra.leftfetchjoin");
+}
+
+static BAT* leftfetchjoin_sorted(BAT* left, BAT *right, BUN estimate) {
+        BAT *bn = BATleftfetchjoin(left, right, estimate);
+        if (bn) bn->tsorted = TRUE; /* OK: we must be sure of this, but you are, aren't you? */
+	return bn;
+}
+
+str
+ALGleftfetchjoin_sorted(bat *result, bat *lid, bat *rid)
+{
+	return ALGbinaryestimate(result, lid, rid, NULL, leftfetchjoin_sorted, "algebra.leftfetchjoin_sorted");
 }
 
 str
