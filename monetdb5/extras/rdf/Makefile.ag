@@ -1,7 +1,7 @@
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+# http://www.monetdb.org/Legal/MonetDBLicense
 #
 # Software distributed under the License is distributed on an "AS IS"
 # basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -12,7 +12,7 @@
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-# Copyright August 2008-2011 MonetDB B.V.
+# Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
 INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
@@ -24,25 +24,8 @@ INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
 
 MTSAFE
 
-lib__rdf = {
+lib_rdf = {
+	NOINST
 	DIR = libdir/monetdb5
-	SOURCES = rdf.mx rdf_shredder.mx
-	LIBS = ../../tools/libmonetdb5 \
-		../../../gdk/libbat \
-		$(MALLOC_LIBS) $(raptor_LIBS)
+	SOURCES = rdf_shredder.mx rdf.h
 }
-
-headers_mal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = rdf.mx
-}
-
-headers_autoload = {
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 10_rdf.mal
-}
-
-#EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 10_rdf.mal

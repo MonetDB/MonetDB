@@ -2,7 +2,7 @@
 The contents of this file are subject to the MonetDB Public License
 Version 1.1 (the "License"); you may not use this file except in
 compliance with the License. You may obtain a copy of the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+http://www.monetdb.org/Legal/MonetDBLicense
 
 Software distributed under the License is distributed on an "AS IS"
 basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
@@ -13,16 +13,18 @@ The Original Code is the MonetDB Database System.
 
 The Initial Developer of the Original Code is CWI.
 Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
-Copyright August 2008-2011 MonetDB B.V.
+Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 @
 
 @f rdf_shredder
-@a L.Sidirourgos
-
-@+ Shredder for RDF Documents
 
 @c
+/*
+ * @a L.Sidirourgos
+ *
+ * @+ Shredder for RDF Documents
+ */
 #include "monetdb_config.h"
 #include "mal_exception.h"
 #include "url.h"
@@ -90,15 +92,15 @@ typedef struct parserData {
 	int line;                     /* locator for errors     */
 	int column;                   /* locator for errors     */
 	                              /**GRAPH DATA             */
-	BAT **graph;                  /* BATs for the result
+	BAT *graph[N_GRAPH_BAT];      /* BATs for the result
 	                                 shredded RDF graph     */
 } parserData;
 
-@{
-@-
-The (fatal) errors and warnings produced by the raptor parser are handled
-by the next three message handler functions.
-
+/*
+ * @-
+ * The (fatal) errors and warnings produced by the raptor parser are handled
+ * by the next three message handler functions.
+ */
 @= raptor_exception
 @1->exception++;
 @1->exceptionMsg = @2;
@@ -122,17 +124,17 @@ static void
 	}
 }
 
-@}
-
+@
 @c
 @:rdf_parser_handler(fatal)@
 @:rdf_parser_handler(error)@
 @:rdf_parser_handler(warning)@
 
-@-
-The raptor parser needs to register a callback function that handles one triple
-at a time. Function rdf_parser_triple_handler() does exactly this.
-
+/*
+ * @-
+ * The raptor parser needs to register a callback function that handles one triple
+ * at a time. Function rdf_parser_triple_handler() does exactly this.
+ */
 @= rdf_insert
 #ifdef _TKNZR_H
  @:rdf_tknzr_insert(@2)@
@@ -144,7 +146,7 @@ at a time. Function rdf_parser_triple_handler() does exactly this.
 @= rdf_BUNappend_unq_1
 bun = BUNfnd(BATmirror(@1),(ptr)@2);
 if (bun == BUN_NONE) {
-	if (@1->T->hash && BATcount(@1) > 4 * @1->T->hash->mask) {
+	if (BATcount(@1) > 4 * @1->T->hash->mask) {
 		HASHdestroy(@1);
 		BAThash(BATmirror(@1), 2*BATcount(@1));
 	}
@@ -183,6 +185,7 @@ if (@1 == NULL) {
 	@:raptor_exception(pdata, "could not append in@1")@
 }
 
+@
 @c
 static void
 tripleHandler(void* user_data, const raptor_statement* triple)
@@ -226,9 +229,10 @@ tripleHandler(void* user_data, const raptor_statement* triple)
 	return;
 }
 
-@-
-Function RDFParser() is the entry point to parse an RDF document.
-
+/*
+ * @-
+ * Function RDFParser() is the entry point to parse an RDF document.
+ */
 @= set_handlers
 /* set callback handler for triples */
 raptor_set_statement_handler   (@1, @2, tripleHandler);
@@ -237,6 +241,7 @@ raptor_set_fatal_error_handler (@1, @2, fatalHandler);
 raptor_set_error_handler       (@1, @2, errorHandler);
 raptor_set_warning_handler     (@1, @2, warningHandler);
 
+@
 @c
 /* creates a BAT for the triple table */
 static BAT*
@@ -250,6 +255,7 @@ create_BAT(int ht, int tt, int size)
 
 	/* disable all properties */
 	b->tsorted = FALSE;
+	b->trevsorted = FALSE;
 	b->tdense = FALSE;
 	b->tkey = FALSE;
 	b->hdense = TRUE;
@@ -258,7 +264,7 @@ create_BAT(int ht, int tt, int size)
 }
 
 static parserData*
-parserData_create (str location, BAT** graph)
+parserData_create (str location)
 {
 	int i;
 
@@ -271,9 +277,8 @@ parserData_create (str location, BAT** graph)
 	pdata->error = 0;
 	pdata->warning = 0;
 	pdata->location = location;
-	pdata->graph = graph;
 
-	for (i = 0; i <= N_GRAPH_BAT; i++) {
+	for (i = 0; i < N_GRAPH_BAT; i++) {
 		pdata->graph[i] = NULL;
 	}
 
@@ -301,7 +306,7 @@ parserData_create (str location, BAT** graph)
 		return NULL;
 	}
 	/* MAP_LEX must have the key property */
-	BATseqbase(pdata->graph[MAP_LEX], RDF_MIN_LITERAL);
+	BATseqbase(pdata->graph[MAP_LEX], 1 << 30);
 	pdata->graph[MAP_LEX]->tkey = BOUND2BTRUE;
 	pdata->graph[MAP_LEX]->T->nokey[0] = 0;
 	pdata->graph[MAP_LEX]->T->nokey[1] = 0;
@@ -309,21 +314,22 @@ parserData_create (str location, BAT** graph)
 	return pdata;
 }
 
-@-
-After the RDF document has been shredded into 3 bats and a lexical value
-dictionary, a post-shred processing step follows that orders the lexical
-dictionary, re-maps oids to match the ordered dictionary and finaly creates
-all 6 permutations of the (subject, predicate, object) order.
-
-However, it is still to be examined if it worth the time to refine the order
-of the last column. In most cases, during query time, the last column will need
-to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
-so we can investigate both possibilities. In addition, the first column need to
-be stored only once for each couple of orders with the same first column. For
-example, it holds that S_SPO == S_SOP.
-
+/*
+ * @-
+ * After the RDF document has been shredded into 3 bats and a lexical value
+ * dictionary, a post-shred processing step follows that orders the lexical
+ * dictionary, re-maps oids to match the ordered dictionary and finaly creates
+ * all 6 permutations of the (subject, predicate, object) order.
+ *
+ * However, it is still to be examined if it worth the time to refine the order
+ * of the last column. In most cases, during query time, the last column will need
+ * to be re-order for a subsequent sort-merge join. We introduce sort3 and sort2
+ * so we can investigate both possibilities. In addition, the first column need to
+ * be stored only once for each couple of orders with the same first column. For
+ * example, it holds that S_SPO == S_SOP.
+ */
 @= order
-@:order3(@1,@2,@3,@4)@
+@:order2(@1,@2,@3,@4)@
 
 @= order2
 if (!CTrefine(&ctref, @1, @2))         /* refine @2 given @1= sorted  */
@@ -341,7 +347,6 @@ BBPcold(graph[@3_@4]->batCacheid);
 /* free ctref */
 BBPreclaim(ctref);
 @
-
 @= order3
 if ( !(CTrefine(&map_oid, @1, @2)         /* refine @3 given @1= sorted  */
 		&& CTrefine(&ctref, map_oid, @3)))/* refine @4 given @3          */
@@ -361,7 +366,6 @@ BBPcold(graph[@3_@4]->batCacheid);
 /* free map_oid */
 BBPreclaim(map_oid);
 @
-
 @c
 int CTrefine(BAT **ret, BAT *b, BAT *a); /* from modules/kernel/group.mx */
 
@@ -381,19 +385,19 @@ post_processing (parserData *pdata)
 
 	/* order MAP_LEX */
 	BATorder(BATmirror(graph[MAP_LEX]));
-	map_oid = BATmark(graph[MAP_LEX], RDF_MIN_LITERAL);   /* BATmark will create a copy */
+	map_oid = BATmark(graph[MAP_LEX], 1<<30);   /* BATmark will create a copy */
 	BATorder(map_oid);
 	BATsetaccess(map_oid, BAT_READ);        /* force BAtmark not to copy bat */
-	map_oid = BATmirror(BATmark(BATmirror(map_oid), RDF_MIN_LITERAL));
+	map_oid = BATmirror(BATmark(BATmirror(map_oid), 1<<30));
 	BATsetaccess(graph[MAP_LEX], BAT_READ); /* force BATmark not to copy bat */
-	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), RDF_MIN_LITERAL));
+	graph[MAP_LEX] = BATmirror(BATmark(BATmirror(graph[MAP_LEX]), 1<<30));
 
 	/* convert old oids of O_sort to new ones */
 	bi = bat_iterator(graph[O_sort]);
 	mi = bat_iterator(map_oid);
 	BATloop(graph[O_sort], p, d) {
 		bt = (oid *) BUNtloc(bi, p);
-		if (*bt >= (RDF_MIN_LITERAL)) {
+		if (*bt >= (1 << 30)) {
 			BUNfndVOID(r, mi, bt);
 			void_inplace(graph[O_sort], p, BUNtloc(mi, r), 1);
 		}
@@ -480,7 +484,6 @@ raptor_free_parser(rparser);
 raptor_free_uri(uri);
 raptor_finish();
 @
-
 @= clean
 if (pdata != NULL) {
 	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
@@ -490,13 +493,10 @@ if (pdata != NULL) {
 	GDKfree(pdata);
 }
 @
-
 @c
-#define RDF_CHUNK_SIZE 100*1024*1024
-
 /* Main RDF parser function that drives raptor */
 str
-RDFParser (BAT **graph, str *location, str *graphname, str *schema)
+RDFParser (int *retval, str *location, str *graphname, str *schema)
 {
 	raptor_parser *rparser;
 	parserData *pdata;
@@ -504,6 +504,8 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 	bit isURI;
 	str ret;
 	int iret;
+	BAT **graph;
+	BAT *retbat;
 	(void) graphname;
 
 	/* init tokenizer */
@@ -517,7 +519,7 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 #endif
 
 	/* Init pdata  */
-	pdata = parserData_create(*location,graph);
+	pdata = parserData_create(*location);
 	if (pdata == NULL) {
 #ifdef _TKNZR_H
 		TKNZRclose(&iret);
@@ -553,38 +555,16 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 		uri = raptor_new_uri((unsigned char *) pdata->location);
 		iret = raptor_parse_uri(rparser, uri, NULL);
 	} else {
-		
-		/* Too slow loading --> use old code 
-		FILE *fp = fopen(pdata->location, "r");
-		char *buf = (char*) GDKmalloc(RDF_CHUNK_SIZE);
-		if (buf == NULL) {
-			throw(RDF, "rdf.rdfShred",
-				"could not allocate a %dMB file buffer\n", (int) (RDF_CHUNK_SIZE>>20));
-		}
-		uri = raptor_new_uri(raptor_uri_filename_to_uri_string(pdata->location));
-		iret = raptor_start_parse(rparser, uri);
-		while(fp && iret == 0) {
-			ssize_t len = (ssize_t) fread(buf, 1, RDF_CHUNK_SIZE, fp);  
-			iret = raptor_parse_chunk(rparser, (const unsigned char*) buf, (size_t) len, len < RDF_CHUNK_SIZE);
-		}
-		fclose(fp);
-		
-		*/
-
-		/* does/may? not work on large files -- therefore the abpove chunked read
-                   iret = raptor_parse_file_stream(rparser, fp, pdata->location, uri); 
-   		 */
-
-		/* Old code */
-                uri = raptor_new_uri(
-                                raptor_uri_filename_to_uri_string(pdata->location));
-                iret = raptor_parse_file(rparser, uri, NULL);
+		uri = raptor_new_uri(
+				raptor_uri_filename_to_uri_string(pdata->location));
+		iret = raptor_parse_file(rparser, uri, NULL);
 	}
 	@:clean_raptor@
 #ifdef _TKNZR_H
 	TKNZRclose(&iret);
 #endif
 
+	graph = pdata->graph;
 	assert (pdata->tcount == BATcount(graph[S_sort]) &&
 			pdata->tcount == BATcount(graph[P_sort]) &&
 			pdata->tcount == BATcount(graph[O_sort]));
@@ -613,6 +593,25 @@ RDFParser (BAT **graph, str *location, str *graphname, str *schema)
 		@:clean@
 		throw(RDF, "rdf.rdfShred", "could not post-proccess data");
 	}
+
+	/* prepare return bat of bats */
+/* XXX: BAT columns of TYPE_bat are no longer allowed: this function
+ * needs to be rewritten to return multiple BATs instead of a single
+ * BAT-of-batS */
+	retbat = BATnew(TYPE_void, TYPE_bat, N_GRAPH_BAT);
+	if (retbat == NULL) {
+		@:clean@
+		throw(RDF, "rdf.rdfShred",
+				"could not allocate enough memory for return bat");
+	}
+	BATseqbase(retbat, 0);
+	for (iret = 0; iret < N_GRAPH_BAT; iret++) {
+		retbat = BUNappend(retbat, &graph[iret]->batCacheid, TRUE);
+		BBPunfix(graph[iret]->batCacheid);
+	}
+
 	GDKfree(pdata);
+	BBPkeepref(*retval = retbat->batCacheid);
+
 	return MAL_SUCCEED;
 }

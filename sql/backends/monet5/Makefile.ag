@@ -49,7 +49,7 @@ lib__sql = {
 		   ../../storage/bat/libbatstore \
 		   ../../storage/restrict/librestrictstore \
 		   ../../common/libsqlcommon \
-		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/lib_rdf \
+		   HAVE_RAPTOR?../../../monetdb5/extras/rdf/librdf \
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   ../../../common/stream/libstream \
