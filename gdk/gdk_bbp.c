@@ -909,58 +909,34 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 }
 
 static int
-BBPheader(FILE *fp, bat *limit, oid *BBPoid, int *OIDsize, int silent)
+BBPheader(FILE *fp, oid *BBPoid, int *OIDsize)
 {
 	char buf[BUFSIZ];
 	int sz, bbpversion, ptrsize, oidsize;
 	char *s;
 
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
-		if (silent) {
-			GDKerror("BBPinit: BBP.dir is empty");
-			return -1;
-		}
 		GDKfatal("BBPinit: BBP.dir is empty");
 	}
 	if (sscanf(buf, "BBP.dir, GDKversion %d\n", &bbpversion) != 1) {
 		GDKerror("BBPinit: old BBP without version number");
 		GDKerror("dump the database using a compatible version,");
 		GDKerror("then restore into new database using this version.\n");
-		if (silent)
-			return -1;
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
 	    bbpversion != GDKLIBRARY_SORTED_BYTE &&
 	    bbpversion != GDKLIBRARY_CHR &&
 	    bbpversion != GDKLIBRARY_PRE_VARWIDTH) {
-		if (silent) {
-			GDKerror("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
-			return -1;
-		}
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.", GDKLIBRARY, bbpversion);
 	}
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
-		if (silent) {
-			GDKerror("BBPinit: short BBP");
-			return -1;
-		}
 		GDKfatal("BBPinit: short BBP");
 	}
 	if (sscanf(buf, "%d %d", &ptrsize, &oidsize) != 2) {
-		if (silent) {
-			GDKerror("BBPinit: BBP.dir has incompatible format: pointer and OID sizes are missing");
-			return -1;
-		}
 		GDKfatal("BBPinit: BBP.dir has incompatible format: pointer and OID sizes are missing");
 	}
 	if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
-		if (silent) {
-			GDKerror("BBPinit: database created with incompatible server:\n"
-				 "expected pointer size %d, got %d, expected OID size %d, got %d.",
-				 (int) SIZEOF_SIZE_T, ptrsize, (int) SIZEOF_OID, oidsize);
-			return -1;
-		}
 #if SIZEOF_SIZE_T == 8 && SIZEOF_OID == 8
 		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_INT)
 #endif
@@ -971,18 +947,14 @@ BBPheader(FILE *fp, bat *limit, oid *BBPoid, int *OIDsize, int silent)
 	if (OIDsize)
 		*OIDsize = oidsize;
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
-		if (silent) {
-			GDKerror("BBPinit: short BBP");
-			return -1;
-		}
 		GDKfatal("BBPinit: short BBP");
 	}
 	*BBPoid = OIDread(buf);
 	if ((s = strstr(buf, "BBPsize")) != NULL) {
 		sscanf(s, "BBPsize=%d", &sz);
 		sz = (int) (sz * BATMARGIN);
-		if (sz > *limit)
-			*limit = sz;
+		if (sz > BBPsize)
+			BBPsize = sz;
 	}
 	return bbpversion;
 }
@@ -1036,7 +1008,7 @@ BBPinit(void)
 	memset(BBP, 0, sizeof(BBP));
 	BBPsize = 1;
 
-	bbpversion = BBPheader(fp, &BBPsize, &BBPoid, &oidsize, FALSE);
+	bbpversion = BBPheader(fp, &BBPoid, &oidsize);
 
 	BBPextend(0);		/* allocate BBP records */
 	BBPsize = 1;
