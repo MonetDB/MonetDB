@@ -779,7 +779,7 @@ vheapinit(COLrec *col, const char *buf, int hashash, bat bid)
 	return n;
 }
 
-static BATstore *
+static void
 BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpversion)
 {
 	bat bid = 0;
@@ -905,7 +905,6 @@ BBPreadEntries(FILE *fp, int *min_stamp, int *max_stamp, int oidsize, int bbpver
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 	}
-	return NULL;
 }
 
 static int
@@ -1013,7 +1012,7 @@ BBPinit(void)
 	BBPextend(0);		/* allocate BBP records */
 	BBPsize = 1;
 
-	(void) BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
+	BBPreadEntries(fp, &min_stamp, &max_stamp, oidsize, bbpversion);
 	fclose(fp);
 
 	/* normalize saved LRU stamps */
