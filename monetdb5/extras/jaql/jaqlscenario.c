@@ -182,7 +182,7 @@ JAQLparser(Client c)
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	j->vtop = oldvtop;
-	j->explain = 0;
+	j->explain = j->plan = j->planf = j->debug = j->trace = j->mapimode = 0;
 	j->buf = in->buf + in->pos;
 	j->pos = 0;
 	j->p = NULL;
@@ -215,11 +215,11 @@ JAQLparser(Client c)
 		return MAL_SUCCEED;
 	}
 
-	if (j->explain < 2 || j->explain == 4) {
+	if (!j->plan && !j->planf) {
 		Symbol prg = c->curprg;
-		j->explain |= 64;  /* request dumping in MAPI mode */
+		j->mapimode = 1;  /* request dumping in MAPI mode */
 		(void)dumptree(j, c, prg->def, j->p);
-		j->explain &= ~64;
+		j->mapimode = 0;
 		pushEndInstruction(prg->def);
 		/* codegen could report an error */
 		if (j->err[0] != '\0') {
@@ -271,20 +271,20 @@ JAQLengine(Client c)
 	chkProgram(c->fdout, c->nspace, c->curprg->def);
 
 	c->glb = 0;
-	if (j->explain == 1) {
+	if (j->explain) {
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAPI);
-	} else if (j->explain == 2 || j->explain == 3) {
+	} else if (j->plan || j->planf) {
 		mnstr_printf(c->fdout, "=");
-		printtree(c->fdout, j->p, 0, j->explain == 3);
+		printtree(c->fdout, j->p, 0, j->planf);
 		mnstr_printf(c->fdout, "\n");
 		freetree(j->p);
 		return MAL_SUCCEED;  /* don't have a plan generated */
-	} else if (j->explain == 4) {
+	} else if (j->debug) {
 		msg = runMALDebugger(c, c->curprg);
 	} else if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = runMAL(c, c->curprg->def, 0, 0);
 	}
 
 	if (msg) {

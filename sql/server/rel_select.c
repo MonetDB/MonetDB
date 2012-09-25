@@ -1230,7 +1230,7 @@ rel_with_query(mvc *sql, symbol *q )
 		sql_rel *nrel;
 
 		if (frame_find_var(sql, name)) {
-			return sql_error(sql, 01, "Variable '%s' allready declared", name);
+			return sql_error(sql, 01, "Variable '%s' already declared", name);
 		}
 		nrel = rel_semantic(sql, sym);
 		if (!nrel) {  
@@ -4661,7 +4661,7 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 				cond = rel_unop_(sql, le, NULL, "isnull", card_value);
 				le = rel_nop_(sql, cond, re, le, NULL, NULL, "ifthenelse", card_value);
 			}
-			exp_setname(sql->sa, le, nme, nm = sa_strdup(sql->sa, nm));
+			exp_setname(sql->sa, le, nme, sa_strdup(sql->sa, nm));
 			append(outexps, le);
 			list_remove_data(r_exps, re);
 		} else {
@@ -4807,7 +4807,7 @@ rel_select_exp(mvc *sql, sql_rel *rel, sql_rel *outer, SelectNode *sn, exp_kind 
 					if (!is_project(outer->op))
 						rel->l = outer = rel_project(sql->sa, outer, rel_projections(sql, outer, NULL, 1, 1));
 					/* find or create identity column */
-					if ((e = find_identity(outer->exps, outer)) == NULL) {
+					if (find_identity(outer->exps, outer) == NULL) {
 						e = rel_unop_(sql, outer->exps->h->data, NULL, "identity", card_value);
 						set_intern(e);
 						rel_project_add_exp(sql, outer, e);

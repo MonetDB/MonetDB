@@ -165,9 +165,7 @@ class DatabaseAPI20Test(unittest.TestCase):
 
     def _connect(self):
         try:
-            return self.driver.connect(
-                *self.connect_args,**self.connect_kwargs
-                )
+            return self.driver.connect(*self.connect_args, **self.connect_kwargs)
         except AttributeError:
             self.fail("No connect method found in self.driver module")
 
@@ -206,9 +204,9 @@ class DatabaseAPI20Test(unittest.TestCase):
 
     def test_Exceptions(self):
         # Make sure required exceptions exist, and are in the
-        # defined heirarchy.
-        self.assertTrue(issubclass(self.driver.Warning,StandardError))
-        self.assertTrue(issubclass(self.driver.Error,StandardError))
+        # defined hierarchy.
+        self.assertTrue(issubclass(self.driver.Warning,Exception))
+        self.assertTrue(issubclass(self.driver.Error,Exception))
         self.assertTrue(
             issubclass(self.driver.InterfaceError,self.driver.Error)
             )
@@ -881,21 +879,6 @@ class DatabaseAPI20Test(unittest.TestCase):
             'module.ROWID must be defined.'
             )
 
-    def test_utf8(self):
-        con = self._connect()
-        try:
-            cur = con.cursor()
-            self.executeDDL1(cur)
-            args = {'beer': '\xc4\xa5'}
-            cur.execute( 'insert into %sbooze values (%%(beer)s)' % self.table_prefix, args )
-            cur.execute('select name from %sbooze' % self.table_prefix)
-            res = cur.fetchall()
-            beer = res[0][0]
-            self.assertEqual(beer,args['beer'],'incorrect data retrieved')
-        finally:
-            con.close()
-
-
     def test_unicode(self):
         con = self._connect()
         try:
@@ -947,7 +930,7 @@ class DatabaseAPI20Test(unittest.TestCase):
             "abc\\tdef",
             "abc\\\tdef",
             "\\x"
-            ]
+        ]
 
         con = self._connect()
         try:

@@ -37,22 +37,6 @@ pattern cast(b:bat[:oid,:any], t:any_1):bat[:oid,:any_1]
 address JAQLcast
 comment "Return BAT b as BAT with tail type of t, if the BAT tail in reality is of that type";
 
-# select wrappers that preserve order
-function select(b:bat[:oid,:any_1], v:any_1):bat[:oid,:any_1];
-	j := algebra.markT(b, 0@0);
-	a := algebra.markH(b, 0@0);
-	q := algebra.select(a, v);
-	l := algebra.leftjoin(j, q);
-	return l;
-end select
-function uselect(b:bat[:oid,:any_1], v:any_1):bat[:oid,:void];
-	l := algebra.markT(b, 0@0);
-	r := algebra.markH(b, 0@0);
-	e := algebra.uselect(r, v);
-	s := algebra.leftjoin(l, e);
-	return s;
-end uselect
-
 # scenario functions and init call
 command prelude()
 address JAQLprelude;

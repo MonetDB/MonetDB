@@ -25,6 +25,7 @@
 #include "monetdb_config.h"
 #include "opt_prelude.h"
 
+str abortRef;
 str affectedRowsRef;
 str aggrRef;
 str alarmRef;
@@ -249,6 +250,7 @@ int toriginProp;		/* original oid source */
 
 void optimizerInit(void){
 	if(batRef == NULL){
+		abortRef = putName("abort",5);
 		affectedRowsRef = putName("affectedRows",12);
 		aggrRef = putName("aggr",4);
 		alarmRef = putName("alarm",5);

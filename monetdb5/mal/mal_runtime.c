@@ -53,10 +53,13 @@ runtimeProfileInit(MalBlkPtr mb, RuntimeProfile prof, int initmemory)
 void
 runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, RuntimeProfile prof, int start)
 {
+	if (malProfileMode == 0)
+		/* mostly true */;
+	else
 	if (stk && mb->profiler != NULL) {
 		prof->newclk = stk->clk = GDKusec();
 		if (mb->profiler[stkpc].trace) {
-			mal_set_lock(mal_contextLock, "DFLOWdelay");
+			MT_lock_set(&mal_contextLock, "DFLOWdelay");
 			gettimeofday(&stk->clock, NULL);
 			prof->ppc = stkpc;
 			mb->profiler[stkpc].clk = 0;
@@ -70,7 +73,7 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int stkpc, Runtim
 			mb->profiler[stkpc].timer = stk->timer;
 #endif
 			mb->profiler[stkpc].clk = stk->clk;
-			mal_unset_lock(mal_contextLock, "DFLOWdelay");
+			MT_lock_unset(&mal_contextLock, "DFLOWdelay");
 		}
 	}
 }
@@ -102,7 +105,7 @@ void
 runtimeTiming(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int tid, MT_Lock *lock, RuntimeProfile prof)
 {
 	str line;
-	if (cntxt->flags && stk->cmd != 't' && stk->cmd != 'C') {
+	if (cntxt->flags && stk->cmd != '\0' && stk->cmd != 't' && stk->cmd != 'C') {
 		if (lock)
 			MT_lock_set(&*lock, "timing");
 		mnstr_printf(cntxt->fdout, "= ");    /* single column rendering */

@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.12.0
+%define version 11.14.0
 %{!?buildno: %define buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -43,7 +43,8 @@ BuildRequires: libxml2-devel
 BuildRequires: openssl-devel
 BuildRequires: pcre-devel >= 4.5
 BuildRequires: perl
-BuildRequires: python
+BuildRequires: python-devel
+BuildRequires: python3-devel
 # BuildRequires: raptor-devel >= 1.4.16
 BuildRequires: readline-devel
 BuildRequires: ruby
@@ -57,7 +58,9 @@ BuildRequires: zlib-devel
 Obsoletes: %{name}-devel
 
 %define perl_libdir %(perl -MConfig -e '$x=$Config{installvendorarch}; $x =~ s|$Config{vendorprefix}/||; print $x;')
-%if ! (0%{?fedora} > 12 || 0%{?rhel} > 5)
+# need to define python_sitelib on RHEL 5 and older
+# no need to define python3_sitelib: it's defined by python3-devel
+%if 0%{?rhel} && 0%{?rhel} <= 5
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %endif
 %{!?gem_dir: %global gem_dir %(ruby -rubygems -e 'puts Gem::dir' 2>/dev/null)}
@@ -475,10 +478,8 @@ fi
 Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: MonetDB5-server = %{version}-%{release}
-%if (0%{?fedora} > 14)
 # for systemd-tmpfiles
 Requires: systemd-units
-%endif
 Obsoletes: MonetDB-SQL-devel
 Obsoletes: %{name}-SQL
 
@@ -491,24 +492,16 @@ accelerators.  It also has an SQL frontend.
 This package contains the SQL frontend for MonetDB5.  If you want to
 use SQL with MonetDB, you will need to install this package.
 
-%if (0%{?fedora} > 14)
 %post SQL-server5
 systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
 
 %files SQL-server5
 %defattr(-,root,root)
 %{_bindir}/monetdb
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
-%if (0%{?fedora} > 14)
 # Fedora 15 and newer
 %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%else
-# Fedora 14 and older
-%dir %attr(775,monetdb,monetdb) %{_localstatedir}/run/monetdb
-%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-%endif
 %config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/*_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
@@ -547,6 +540,28 @@ program.
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
 %doc clients/python/README.rst
+
+%package -n python3-monetdb
+Summary: Native MonetDB client Python3 API
+Group: Applications/Databases
+Requires: python3
+BuildArch: noarch
+
+%description -n python3-monetdb
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the files needed to use MonetDB from a Python3
+program.
+
+%files -n python3-monetdb
+%defattr(-,root,root)
+%dir %{python3_sitelib}/monetdb
+%{python3_sitelib}/monetdb/*
+%{python3_sitelib}/python_monetdb-*.egg-info
+%doc clients/python3/README.rst
 
 %package testing
 Summary: MonetDB - Monet Database Management System
@@ -637,6 +652,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir="%{gem_dir}" \
@@ -679,6 +695,54 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.11-20120917
+- Rebuilt.
+
+* Tue Sep 11 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- Rebuilt.
+
+* Fri Sep  7 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- monetdb5: Changed the way nclients maximum was calculated to avoid 'out of client
+  slots' errors way before the maximum was reached.
+
+* Fri Aug 31 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- merovingian: Resolved a problem where monetdb could fail to start a database with
+  the message "database 'X' started up, but failed to open up a
+  communication channel".  Bug #3134, comment #7.
+
+* Fri Aug 31 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.9-20120911
+- gdk: Fixed a bug in BATantijoin when either side is a singleton BAT.
+  This fixes bug 3139.
+
+* Tue Aug 14 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.9-20120911
+- java: Fixed a bug where DatabaseMetaData.getURL() did return null:0 for
+  hostname:port.
+
+* Mon Aug 13 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.7-20120813
+- Rebuilt.
+
+* Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- merovingian: Starting a server now waits for as long as the server needs to possibly
+  recover, bug #3134.  In case of a long wait, the monetdbd logfile
+  gives extra information on what the server is doing to recover.
+- merovingian: Fixed a crash of monetdbd when local databases were unshared, bug #3135
+
+* Thu Aug  2 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- monetdb5: The server now distinguishes between starting and started states,
+  such that monetdbd can wait for it to finish starting.
+
+* Fri Jul 20 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- java: Fixed adaptive cache size used when retrieving results, not to cause
+  divide by zero errors when memory gets short, bug #3119.
+
+* Wed Jul 18 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- merovingian: Resolved a problem where automatic starting of a database initiated by
+  multiple clients at the same time could cause failed starts.  Bug #3107
+
+* Tue Jul 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.11.7-20120813
+- clients: mclient no longer prints the SQLSTATE at the start of each error
+  returned by the SQL-server.
+
 * Tue Jul 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.11.5-20120710
 - Rebuilt.
 

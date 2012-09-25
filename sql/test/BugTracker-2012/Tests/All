@@ -40,10 +40,13 @@ bug_large-insert-Bug.2960
 any_null.Bug-2594
 float-mod.Bug-3086
 aggregate_vs_positional_column_crash.Bug-3085
-predicate_select.Bug-3090
+HAVE_GEOM?predicate_select.Bug-3090
+!HAVE_GEOM?predicate_select.Bug-3090_nogeom
 hash_join_crash.Bug-3089
 row-number-nyi.Bug-3087
 insert_serial_with_unique_key.Bug-3091
 with_and_exists.Bug-3099
 index_column_crash.Bug-3113
 foreign_key.Bug-3114
+cast-tinyint-Bug-3137
+not-equal-Bug.3139

@@ -54,8 +54,6 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * value is read, it is kept in a Map for reuse.
 	 */
 	private synchronized String getEnv(String key) {
-		
-
 		// if due to concurrency on this Class envs is assigned twice, I
 		// just don't care here
 		Map<String,String> menvs = envs.get(con);
@@ -132,9 +130,7 @@ public class MonetDatabaseMetaData extends MonetWrapper implements DatabaseMetaD
 	 * @throws SQLException if a database access error occurs
 	 */
 	public String getURL() throws SQLException {
-		return "jdbc:monetdb://" + getEnv("host") +
-			":" + getEnv("mapi_port") + "/" +
-			getEnv("gdk_dbname");
+		return ((MonetConnection)con).getJDBCURL();
 	}
 
 	/**

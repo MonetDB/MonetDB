@@ -114,10 +114,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	if ((ret = AUTHaddUser(&uid, &c, &user, &pwd)) != MAL_SUCCEED)
-		return ret;
+	ret = AUTHaddUser(&uid, &c, &user, &pwd);
 	if (!enc)
 		free(pwd);
+	if (ret != MAL_SUCCEED)
+		return ret;
 
 	user_id = store_next_oid();
 	db_user_info = find_sql_table(s, "db_user_info");
@@ -213,6 +214,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	/* following funcion returns a table (single column) of user names
 	   with the approriate scenario (sql) */
 	mvc_create_func(m, NULL, s, "db_users", l, &tpe, F_FUNC, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;");
+	if (m->sa == NULL)
+		_DELETE(l);
 
 	t = mvc_create_view(m, s, "users", SQL_PERSIST,
 			"SELECT u.\"name\" AS \"name\", "
@@ -267,6 +270,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 			if (oldpasswd != NULL) {
 				opwd = mcrypt_BackendSum(oldpasswd, strlen(oldpasswd));
 				if (opwd == NULL) {
+					free(pwd);
 					(void)sql_error(m, 02, "ALTER USER: crypt backend hash not found");
 					return FALSE;
 				}
@@ -276,7 +280,12 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 			opwd = oldpasswd;
 		}
 		if (user == NULL) {
-			if ((err = AUTHchangePassword(&c, &opwd, &pwd)) != MAL_SUCCEED) {
+			err = AUTHchangePassword(&c, &opwd, &pwd);
+			if (!enc) {
+				free(pwd);
+				free(opwd);
+			}
+			if (err != MAL_SUCCEED) {
 				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);
@@ -284,19 +293,32 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc,
 		} else {
 			str username = NULL;
 			if ((err = AUTHresolveUser(&username, &c->user)) != MAL_SUCCEED) {
+				if (!enc) {
+					free(pwd);
+					free(opwd);
+				}
 				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);
 			}
 			if (strcmp(username, user) == 0) {
 				/* avoid message about changePassword (from MAL level) */
+				if (!enc) {
+					free(pwd);
+					free(opwd);
+				}
 				(void)sql_error(m, 02, "ALTER USER: "
 						"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
 						"USING OLD PASSWORD yyy' "
 						"when changing your own password");
 				return(FALSE);
 			}
-			if ((err = AUTHsetPassword(&c, &user, &pwd)) != MAL_SUCCEED) {
+			err = AUTHsetPassword(&c, &user, &pwd);
+			if (!enc) {
+				free(pwd);
+				free(opwd);
+			}
+			if (err != MAL_SUCCEED) {
 				(void)sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
 				GDKfree(err);
 				return(FALSE);

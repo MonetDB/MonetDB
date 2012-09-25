@@ -56,7 +56,6 @@ str CMDscience_bat_##X2##_##X1(int *ret, int *bid)\
 	p = (X2*) Tloc(b, BUNfirst(b));\
 	q = (X2*) Tloc(b, BUNlast(b));\
 \
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);\
 	if (b->T->nonil){\
 		for(;p<q; o++, p++)\
 			*o = X1##X3(*p);\
@@ -64,7 +63,6 @@ str CMDscience_bat_##X2##_##X1(int *ret, int *bid)\
 		for(;p<q; o++, p++){\
 			*o = *p == X2##_nil? X2##_nil: X1##X3(*p);\
 		}\
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);\
 	BATsetcount(bn, BATcount(b));\
 	bn->tsorted = 0;\
 	bn->trevsorted = 0;\
@@ -95,7 +93,6 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 	p = (X2*) Tloc(b, BUNfirst(b));\
 	q = (X2*) Tloc(b, BUNlast(b));\
 \
-	BATaccessBegin(b, USE_TAIL, MMAP_SEQUENTIAL);\
 	if (b->T->nonil){\
 		for(;p<q; o++, p++)\
 			*o = X1##X3(*p,*d);\
@@ -103,7 +100,6 @@ str CMDscience_bat_cst_##X1##_##X2(int *ret, int *bid, X2 *d)\
 		for(;p<q; o++, p++){\
 			*o = *p == X2##_nil? X2##_nil: X1##X3(*p,*d);\
 		}\
-	BATaccessEnd(b, USE_TAIL, MMAP_SEQUENTIAL);\
 \
 	BATsetcount(bn, BATcount(b));\
 	bn->tsorted = 0;\

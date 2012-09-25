@@ -96,6 +96,7 @@ gdk_export int GDKinit(opt *set, int setlen);
 gdk_export int GDKnr_threads;
 
 gdk_export void GDKexit(int status);
+gdk_export int GDKexiting(void);
 
 gdk_export const char *GDKversion(void);
 

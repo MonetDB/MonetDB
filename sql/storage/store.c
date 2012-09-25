@@ -1462,7 +1462,6 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	return first;
 }
 
-static int active = 1;
 static int logging = 0;
 
 void
@@ -1473,8 +1472,6 @@ store_exit(void)
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#store exit locked\n");
 #endif
-	active = 0;
-
 	/* busy wait till the logmanager is ready */
 	while (logging) {
 		MT_lock_unset(&bs_lock, "store_exit");
@@ -1527,12 +1524,17 @@ store_apply_deltas(void)
 void
 store_manager(void)
 {
-	while (active) {
+	while (!GDKexiting()) {
 		int res = LOG_OK;
+		int t;
 
-		MT_sleep_ms(30000);
+		for (t = 30000; t > 0; t -= 50) {
+			MT_sleep_ms(50);
+			if (GDKexiting())
+				return;
+		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (store_nr_active || !active || 
+		if (store_nr_active || GDKexiting() ||
 			logger_funcs.changes() < 1000) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
@@ -1557,10 +1559,16 @@ store_manager(void)
 void
 minmax_manager(void)
 {
-	while (active) {
-		MT_sleep_ms(30000);
+	while (!GDKexiting()) {
+		int t;
+
+		for (t = 30000; t > 0; t -= 50) {
+			MT_sleep_ms(50);
+			if (GDKexiting())
+				return;
+		}
 		MT_lock_set(&bs_lock, "store_manager");
-		if (store_nr_active || !active) {
+		if (store_nr_active || GDKexiting()) {
 			MT_lock_unset(&bs_lock, "store_manager");
 			continue;
 		}

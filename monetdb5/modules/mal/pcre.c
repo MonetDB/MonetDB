@@ -231,24 +231,30 @@ re_uselect(RE *pattern, BAT *strs, int ignore)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	if (r == NULL)
+		return NULL;
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (ignore) {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
 
-			if (re_match_ignore(s, pattern))
-				BUNfastins(r, BUNhead(strsi, p), NULL);
+			if (re_match_ignore(s, pattern) &&
+				BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+				BBPreclaim(r);
+				return NULL;
+			}
 		}
 	} else {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
 
-			if (re_match_no_ignore(s, pattern))
-				BUNfastins(r, BUNhead(strsi, p), NULL);
+			if (re_match_no_ignore(s, pattern) &&
+				BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+				BBPreclaim(r);
+				return NULL;
+			}
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -272,8 +278,9 @@ re_select(RE *pattern, BAT *strs, int ignore)
 		r = BATnew(TYPE_oid, TYPE_str, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
+	if (r == NULL)
+		return NULL;
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (ignore) {
 		BATloop(strs, p, q) {
 			str s = BUNtail(strsi, p);
@@ -289,7 +296,6 @@ re_select(RE *pattern, BAT *strs, int ignore)
 				BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -532,7 +538,6 @@ pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 		throw(MAL, "pcre_select", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
 	}
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 
@@ -540,7 +545,6 @@ pcre_select(BAT **res, str pattern, BAT *strs, bit insensitive)
 			BUNins(r, BUNhead(strsi, p), s, FALSE);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	if (!(r->batDirty&2)) r = BATsetaccess(r, BAT_READ);
 	my_pcre_free(re);
 	*res = r;
@@ -565,6 +569,8 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 		r = BATnew(TYPE_oid, TYPE_void, BATcount(strs));
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
+	if (r == NULL)
+		throw(MAL, "pcre_uselect", MAL_MALLOC_FAIL);
 	if ((re = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
 		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed at %d with\n'%s'.",
 			pattern, errpos, err_p);
@@ -574,16 +580,16 @@ pcre_uselect(BAT **res, str pattern, BAT *strs, bit insensitive)
 	if (err_p)
 		throw(MAL, "pcre_uselect", OPERATION_FAILED "pcre compile of pattern (%s) failed with\n'%s'.", pattern, err_p);
 
-	BATaccessBegin(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(strs, p, q) {
 		str s = BUNtail(strsi, p);
 		int l = (int) strlen(s);
 
-		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0) {
-			BUNfastins(r, BUNhead(strsi, p), NULL);
+		if (pcre_exec(re, pe, s, l, 0, 0, NULL, 0) >= 0 &&
+			BUNfastins(r, BUNhead(strsi, p), NULL) == NULL) {
+			BBPreclaim(r);
+			throw(MAL, "pcre_uselect", OPERATION_FAILED);
 		}
 	}
-	BATaccessEnd(strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	r->H->nonil = strs->H->nonil;
 	r->hsorted = strs->hsorted;
 	r->hrevsorted = strs->hrevsorted;
@@ -758,7 +764,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	}
 
 	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
-	BATaccessBegin(origin_strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
 		len_origin_str = (int) strlen(origin_str);
@@ -816,7 +821,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 			BUNins(tmpbat, BUNhead(origin_strsi, p), origin_str, FALSE);
 		}
 	}
-	BATaccessEnd(origin_strs,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 
 	my_pcre_free(pcre_code);
 	GDKfree(ovector);
@@ -983,13 +987,14 @@ pcre_heap(Heap *heap, size_t capacity)
 
 /* change SQL LIKE pattern into PCRE pattern */
 static str
-sql2pcre(str *r, str pat, str esc_str)
+sql2pcre(str *r, const char *pat, const char *esc_str)
 {
 	int escaped = 0;
 	int hasWildcard = 0;
 	char *ppat;
 	int esc = esc_str[0]; /* should change to utf8_convert() */
-	int specials = 0;
+	int specials;
+	int c;
 
 	if (pat == NULL )
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
@@ -1002,13 +1007,10 @@ sql2pcre(str *r, str pat, str esc_str)
 	 * expression.  If the user used the "+" char as escape and has "++"
 	 * in its pattern, then replacing this with "+" is not correct and
 	 * should be "\+" instead. */
-	if (*esc_str && strchr( ".+*()[]", esc) != NULL)
-		specials = 1;
+	specials = (*esc_str && strchr( ".+*()[]", esc) != NULL);
 
 	*ppat++ = '^';
-	while (*pat) {
-		int c = *pat++;
-
+	while ((c = *pat++) != 0) {
 		if (c == esc) {
 			if (escaped) {
 				if (specials) { /* change ++ into \+ */
@@ -1372,7 +1374,6 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 		br = (bit*)Tloc(r, BUNfirst(r));
 		strsi = bat_iterator(strs);
 
-		BATaccessBegin(strs,USE_TAIL,MMAP_SEQUENTIAL);
 		if (strcmp(ppat, (char*)str_nil) == 0) {
 			BATloop(strs, p, q) {
 				str s = (str)BUNtail(strsi, p);
@@ -1421,7 +1422,6 @@ BATPCRElike3(bat *ret, int *bid, str *pat, str *esc, bit *isens, bit *not)
 			}
 			my_pcre_free(re);
 		}
-		BATaccessEnd(strs,USE_TAIL,MMAP_SEQUENTIAL);
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
@@ -1517,19 +1517,42 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 	str res;
 	char *ppat = NULL;
 
-	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
-	if (res != MAL_SUCCEED)
-		return res;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(ppat);
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && (s = BATdescriptor(*sid)) == NULL) {
-		GDKfree(ppat);
 		BBPreleaseref(b->batCacheid);
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
-	res = pcre_likesubselect(&bn, b, s, ppat, *caseignore, *anti);
+	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
+	if (res != MAL_SUCCEED) {
+		BBPreleaseref(b->batCacheid);
+		if (s)
+			BBPreleaseref(s->batCacheid);
+		return res;
+	}
+	if (strcmp(ppat, str_nil) == 0) {
+		GDKfree(ppat);
+		ppat = NULL;
+		if (*caseignore) {
+			ppat = GDKmalloc(strlen(*pat) + 3);
+			if (ppat == NULL)
+				throw(MAL, "algebra.likesubselect", MAL_MALLOC_FAIL);
+			ppat[0] = '^';
+			strcpy(ppat + 1, *pat);
+			strcat(ppat, "$");
+		}
+	}
+	if (ppat == NULL) {
+		/* no pattern and no special characters: can use normal select */
+		bn = BATsubselect(b, s, *pat, NULL, 1, 1, *anti);
+		if (bn == NULL)
+			res = createException(MAL, "algebra.likeselect", GDK_EXCEPTION);
+		else
+			res = MAL_SUCCEED;
+	} else {
+		res = pcre_likesubselect(&bn, b, s, ppat, *caseignore, *anti);
+	}
 	BBPreleaseref(b->batCacheid);
 	if (s)
 		BBPreleaseref(s->batCacheid);
@@ -1595,6 +1618,10 @@ PCRElike_pcre(int *ret, int *b, str *pat, str *esc, bit us, bit ignore)
 			res = re_select(re, bp, ignore);
 
 		re_destroy(re);
+		if (res == NULL) {
+			BBPreleaseref(bp->batCacheid);
+			throw(MAL, "pcre.like", OPERATION_FAILED);
+		}
 		*ret = res->batCacheid;
 		BBPkeepref(res->batCacheid);
 		BBPreleaseref(bp->batCacheid);

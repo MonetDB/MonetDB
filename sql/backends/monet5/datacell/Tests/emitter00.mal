@@ -5,20 +5,20 @@
 
 sql.init();
 
-basket.register("datacell","y");
-emitter.start("datacell","y","localhost",50502,"active");
+basket.register("y");
+emitter.start("y","localhost",50502);
 io.print("emitter working");
 alarm.sleep(5);
-emitter.pause("datacell","y");
+emitter.pause("y");
 io.print("emitter paused");
 alarm.sleep(5);
-emitter.resume("datacell","y");
+emitter.resume("y");
 io.print("emitter restarted");
 alarm.sleep(5);
-emitter.pause("datacell","y");
+emitter.pause("y");
 io.print("emitter stopped");
 emitter.dump();
-emitter.drop("datacell","y");
+emitter.stop("y");
 
 # The SQL equivalents
 # call datacell.basket('datacell','y);

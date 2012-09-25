@@ -118,6 +118,7 @@ profiler_export str CMDsetFootprintFlag( Client cntxt, MalBlkPtr mb, MalStkPtr s
 profiler_export str CMDsetMemoryFlag( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 profiler_export str CMDgetFootprint( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+profiler_export str CMDtomograph(int *ret);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
@@ -439,5 +440,12 @@ CMDgetMemory( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*l = cntxt->memory;
 	cntxt->flags &= ~memoryFlag;
 	cntxt->memory= 0;
+	return MAL_SUCCEED;
+}
+
+str
+CMDtomograph(int *ret)
+{
+	(void) ret;
 	return MAL_SUCCEED;
 }

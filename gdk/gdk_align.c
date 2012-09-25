@@ -277,8 +277,10 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 	 * data, though. */
 	*bn->U = *h->U;
 	*bn->H = *h->H;
-	/* we need aligned bats */
-	assert(h->U->first == t->U->first);
+	if (bn->U->first > 0) {
+		bn->H->heap.base += h->U->first * h->H->width;
+		bn->U->first = 0;
+	}
 	if (h->H == t->T) {
 		vc = 1;
 		tp = hp;
@@ -287,6 +289,12 @@ VIEWcreate_(BAT *h, BAT *t, int slice_view)
 		*bn->T = *t->T;
 		if (bn->U->capacity > t->U->capacity)
 			bn->U->capacity = t->U->capacity;
+		if (t->U->first > 0)
+			bn->T->heap.base += t->U->first * t->T->width;
+		if (bn->U->count < t->U->count) {
+			/* we can't be sure anymore there are nils */
+			bn->T->nil = 0;
+		}
 	}
 
 	if (hp)

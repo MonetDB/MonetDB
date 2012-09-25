@@ -1324,7 +1324,7 @@ exps_can_push_func(list *exps, sql_rel *rel)
  *  sometimes share (correct or not) expressions on a shared referenced table).
  *
  *  not renaming gives problems with overloaded names (ie on the lower level an expression
- *  with the given name could allready exist
+ *  with the given name could already exist
  *
  * 2 
  *  creating projections for subqueries are empty, for now we just don't rewrite these.
@@ -1332,13 +1332,15 @@ exps_can_push_func(list *exps, sql_rel *rel)
 static sql_rel *
 rel_push_func_down(int *changes, mvc *sql, sql_rel *rel) 
 {
-	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps) {
-		sql_rel *l = rel->l;
-		sql_rel *r = rel->r;
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
 		list *exps = rel->exps;
-		node *n;
 
 		if (exps_can_push_func(exps, rel)) {
+			sql_rel *nrel;
+			sql_rel *l = rel->l, *ol = l;
+			sql_rel *r = rel->r, *or = r;
+			node *n;
+
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
 			if (l->op != op_project) { 
@@ -1353,6 +1355,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 				rel->r = r = rel_project(sql->sa, r, 
 					rel_projections(sql, r, NULL, 1, 1));
 			}
+ 			nrel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
 			for(n = exps->h; n; n = n->next) {
 				sql_exp *e = n->data, *ne = NULL;
 				int must = 0, mustl = 0, mustr = 0;
@@ -1372,6 +1375,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								append(l->exps, e);
 							e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 							n->data = e;
+							(*changes)++;
 						}
 					} else {
 						ne = e->l;
@@ -1383,6 +1387,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 							else
 								append(l->exps, ne);
 							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							(*changes)++;
 						}
 						e->l = ne;
 
@@ -1396,6 +1401,7 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 							else
 								append(l->exps, ne);
 							ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+							(*changes)++;
 						}
 						e->r = ne;
 
@@ -1410,12 +1416,20 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
 								else
 									append(l->exps, ne);
 								ne = exp_column(sql->sa, exp_relname(ne), exp_name(ne), exp_subtype(ne), ne->card, has_nil(ne), is_intern(ne));
+								(*changes)++;
 							}
 							e->f = ne;
 						}
 					}
-					(*changes)++;
 				}
+			}
+			if (*changes) {
+				rel = nrel;
+			} else {
+				if (l != ol)
+					rel->l = ol;
+				if (is_join(rel->op) && r != or)
+					rel->r = or;
 			}
 		}
 	}
@@ -4842,7 +4856,8 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 						rewrite = 0;
 				}
 				if (rewrite) { 	/* rewrite to cmp_equal ! */
-					sql_exp *ne = exp_compare(sql->sa, e->l, e->r, cmp_equal);
+					list *r = e->r;
+					sql_exp *ne = exp_compare(sql->sa, e->l, r->h->data, cmp_equal);
 					/* if rewriten don't cache this query */
 					list_append(exps, ne);
 					sql->caching = 0;
@@ -5280,7 +5295,7 @@ rel_semijoin_use_fk(int *changes, mvc *sql, sql_rel *rel)
 	(void)changes;
 	if (is_semi(rel->op) && rel->exps) {
 		list *exps = rel->exps;
-		list *rels = rels = new_rel_list(sql->sa);
+		list *rels = new_rel_list(sql->sa);
 
 		rel->exps = NULL;
 		append(rels, rel->l);
@@ -5552,7 +5567,7 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 		rel = rewrite(sql, rel, &rel_remove_empty_select, &e_changes); 
 	}
 
-	if (gp.cnt[op_select] && !sql->emode == m_prepare) 
+	if (gp.cnt[op_select] && sql->emode != m_prepare) 
 		rel = rewrite(sql, rel, &rel_simplify_like_select, &changes); 
 
 	if (gp.cnt[op_select]) 

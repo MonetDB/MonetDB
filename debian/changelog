@@ -1,3 +1,87 @@
+monetdb (11.11.11-20120917) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 10:00:19 +0200
+
+monetdb (11.11.9-20120911) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 11 Sep 2012 10:33:30 +0200
+
+monetdb (11.11.9-20120911) unstable; urgency=low
+
+  * monetdb5: Changed the way nclients maximum was calculated to avoid 'out of client
+    slots' errors way before the maximum was reached.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 7 Sep 2012 10:33:29 +0200
+
+monetdb (11.11.9-20120911) unstable; urgency=low
+
+  * merovingian: Resolved a problem where monetdb could fail to start a database with
+    the message "database 'X' started up, but failed to open up a
+    communication channel".  Bug #3134, comment #7.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 31 Aug 2012 10:33:29 +0200
+
+monetdb (11.11.9-20120911) unstable; urgency=low
+
+  * gdk: Fixed a bug in BATantijoin when either side is a singleton BAT.
+    This fixes bug 3139.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 31 Aug 2012 10:33:29 +0200
+
+monetdb (11.11.9-20120911) unstable; urgency=low
+
+  * java: Fixed a bug where DatabaseMetaData.getURL() did return null:0 for
+    hostname:port.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 14 Aug 2012 10:33:29 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 13 Aug 2012 11:31:44 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * merovingian: Starting a server now waits for as long as the server needs to possibly
+    recover, bug #3134.  In case of a long wait, the monetdbd logfile
+    gives extra information on what the server is doing to recover.
+  * merovingian: Fixed a crash of monetdbd when local databases were unshared, bug #3135
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 2 Aug 2012 11:31:44 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * monetdb5: The server now distinguishes between starting and started states,
+    such that monetdbd can wait for it to finish starting.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Thu, 2 Aug 2012 11:31:44 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * java: Fixed adaptive cache size used when retrieving results, not to cause
+    divide by zero errors when memory gets short, bug #3119.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Fri, 20 Jul 2012 11:31:44 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * merovingian: Resolved a problem where automatic starting of a database initiated by
+    multiple clients at the same time could cause failed starts.  Bug #3107
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 18 Jul 2012 11:31:44 +0200
+
+monetdb (11.11.7-20120813) unstable; urgency=low
+
+  * clients: mclient no longer prints the SQLSTATE at the start of each error
+    returned by the SQL-server.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 17 Jul 2012 11:31:44 +0200
+
 monetdb (11.11.5-20120710) unstable; urgency=low
 
   * Rebuilt.

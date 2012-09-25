@@ -166,13 +166,16 @@ parsesecondinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 	switch (type) {
 	case SQL_INTERVAL_DAY:	/* SQL_C_INTERVAL_DAY */
 		nval->val *= 24;
+		/* fall through */
 	case SQL_INTERVAL_HOUR: /* SQL_C_INTERVAL_HOUR */
 	case SQL_INTERVAL_DAY_TO_HOUR: /* SQL_C_INTERVAL_DAY_TO_HOUR */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_MINUTE: /* SQL_C_INTERVAL_MINUTE */
 	case SQL_INTERVAL_HOUR_TO_MINUTE: /* SQL_C_INTERVAL_HOUR_TO_MINUTE */
 	case SQL_INTERVAL_DAY_TO_MINUTE: /* SQL_C_INTERVAL_DAY_TO_MINUTE */
 		nval->val *= 60;
+		/* fall through */
 	case SQL_INTERVAL_SECOND: /* SQL_C_INTERVAL_SECOND */
 	case SQL_INTERVAL_MINUTE_TO_SECOND: /* SQL_C_INTERVAL_MINUTE_TO_SECOND */
 	case SQL_INTERVAL_HOUR_TO_SECOND: /* SQL_C_INTERVAL_HOUR_TO_SECOND */
@@ -2680,12 +2683,14 @@ ODBCFetch(ODBCStmt *stmt,
 #define assign(buf,bufpos,buflen,value,stmt)				\
 		do {							\
 			if (bufpos >= buflen) {				\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			buf[bufpos++] = (value);			\
 		} while (0)
@@ -2694,12 +2699,14 @@ ODBCFetch(ODBCStmt *stmt,
 			size_t _len = strlen(value);			\
 			size_t _i;					\
 			while (bufpos + _len >= buflen) {		\
-				buf = realloc(buf, buflen += 1024);	\
-				if (buf == NULL) {			\
+				char *b = realloc(buf, buflen += 1024);	\
+				if (b == NULL) {			\
+					free(buf);			\
 					/* Memory allocation error */	\
 					addStmtError(stmt, "HY001", NULL, 0); \
 					return SQL_ERROR;		\
 				}					\
+				buf = b;				\
 			}						\
 			for (_i = 0; _i < _len; _i++)			\
 				buf[bufpos++] = (value)[_i];		\
@@ -2795,7 +2802,6 @@ ODBCStore(ODBCStmt *stmt,
 #ifdef WITH_WCHAR
 	case SQL_C_WCHAR:
 		slen = strlen_or_ind_ptr ? *strlen_or_ind_ptr : SQL_NTS;
-		sval = (char *) ptr;
 		fixWcharIn((SQLWCHAR *) ptr, slen, char, sval, addStmtError, stmt, return SQL_ERROR);
 		break;
 #endif
@@ -2879,7 +2885,7 @@ ODBCStore(ODBCStmt *stmt,
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)
-			nval.val |= ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
+			nval.val |= (SQLUBIGINT) ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
 		break;
 	case SQL_C_FLOAT:
 		fval = * (SQLREAL *) ptr;
@@ -3013,6 +3019,7 @@ ODBCStore(ODBCStmt *stmt,
 	}
 
 	assigns(buf, bufpos, buflen, sep, stmt);
+	*bufp = buf;
 	/* just the types supported by the server */
 	switch (sqltype) {
 	case SQL_CHAR:
@@ -3204,7 +3211,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		break;
 	case SQL_TYPE_DATE:
@@ -3230,7 +3237,7 @@ ODBCStore(ODBCStmt *stmt,
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			/* fall through */
 		case SQL_C_TYPE_DATE:
@@ -3243,7 +3250,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		break;
 	case SQL_TYPE_TIME:
@@ -3269,7 +3276,7 @@ ODBCStore(ODBCStmt *stmt,
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			/* fall through */
 		case SQL_C_TYPE_TIME:
@@ -3282,7 +3289,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		break;
 	case SQL_TYPE_TIMESTAMP:
@@ -3329,7 +3336,7 @@ ODBCStore(ODBCStmt *stmt,
 						 * value for cast
 						 * specification */
 						addStmtError(stmt, "22018", NULL, 0);
-						return SQL_ERROR;
+						goto failure;
 					}
 				}
 			}
@@ -3353,7 +3360,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		break;
 	case SQL_INTERVAL_MONTH:
@@ -3366,8 +3373,10 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsemonthintervalstring(&sval, &slen, &ival) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			break;
 		case SQL_C_BIT:
@@ -3392,7 +3401,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		switch (ival.interval_type) {
 		case SQL_IS_YEAR:
@@ -3426,8 +3435,10 @@ ODBCStore(ODBCStmt *stmt,
 #endif
 		case SQL_C_BINARY:
 			if (parsesecondintervalstring(&sval, &slen, &ival, &ivalprec) == SQL_ERROR) {
+				/* Invalid character value for cast
+				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			break;
 		case SQL_C_BIT:
@@ -3459,7 +3470,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		snprintf(data, sizeof(data), "INTERVAL %s'%u %u:%u:%u", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.day_second.day, (unsigned int) ival.intval.day_second.hour, (unsigned int) ival.intval.day_second.minute, (unsigned int) ival.intval.day_second.second);
 		assigns(buf, bufpos, buflen, data, stmt);
@@ -3492,7 +3503,7 @@ ODBCStore(ODBCStmt *stmt,
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			/* fall through */
 		case SQL_C_BIT:
@@ -3555,7 +3566,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		/* now store value contained in nval */
 		{
@@ -3574,7 +3585,7 @@ ODBCStore(ODBCStmt *stmt,
 				default:
 					/* Numeric value out of range */
 					addStmtError(stmt, "22003", NULL, 0);
-					return SQL_ERROR;
+					goto failure;
 				}
 				if (f > 1 && nval.val % f) {
 					/* String data, right truncation */
@@ -3609,7 +3620,7 @@ ODBCStore(ODBCStmt *stmt,
 			if (!parsedouble(sval, &fval)) {
 				/* Invalid character value for cast specification */
 				addStmtError(stmt, "22018", NULL, 0);
-				return SQL_ERROR;
+				goto failure;
 			}
 			break;
 		case SQL_C_BIT:
@@ -3684,7 +3695,7 @@ ODBCStore(ODBCStmt *stmt,
 		default:
 			/* Restricted data type attribute violation */
 			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
+			goto failure;
 		}
 		for (i = 1; i < 18; i++) {
 			snprintf(data, sizeof(data), "%.*e", i, fval);
@@ -3694,8 +3705,19 @@ ODBCStore(ODBCStmt *stmt,
 		assigns(buf, bufpos, buflen, data, stmt);
 		break;
 	}
+#ifdef WITH_WCHAR
+	if (ctype == SQL_C_WCHAR)
+		free(sval);
+#endif
 	*bufp = buf;
 	*bufposp = bufpos;
 	*buflenp = buflen;
 	return SQL_SUCCESS;
+
+  failure:
+#ifdef WITH_WCHAR
+	if (ctype == SQL_C_WCHAR)
+		free(sval);
+#endif
+	return SQL_ERROR;
 }

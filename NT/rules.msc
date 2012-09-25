@@ -17,7 +17,7 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-VERSION=11.12.0
+VERSION=11.14.0
 #       ^^^^^^
 # Maintained via vertoo. Please don't modify by hand!
 # Contact MonetDB-developers@lists.sourceforge.net for details and/or assistance.
@@ -81,6 +81,14 @@ PYTHONBASE=C:\Python27
 PYTHONLIB=python27.lib
 !ENDIF
 PYTHON_LIBDIR=share\MonetDB\python
+
+!IFNDEF PYTHON3BASE
+PYTHON3BASE=C:\Python32
+!ENDIF
+!IFNDEF PYTHON3LIB
+PYTHON3LIB=python32.lib
+!ENDIF
+PYTHON3_LIBDIR=share\MonetDB\python3
 
 !IFDEF HAVE_PERL
 !IFNDEF LIBPERL
@@ -189,14 +197,10 @@ CONFIGURE_PY = "$(TOPDIR)\..\NT\winconfig.py"
 WINCONFIG_INCS = "-I$(TOPDIR)\..\buildtools\conf"
 
 !IFDEF DEBUG
-!IF $(bits) == 64
-ZI = -Zi
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MDd -nologo -Od -D_DEBUG -RTC1 -Zi
 !ELSE
-ZI = -ZI
-!ENDIF
-COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MDd -nologo -Od -D_DEBUG -RTC1 $(ZI)
-!ELSE
-COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MD -nologo -Ox
+# add -Zi flag (implies -debug, not -D_DEBUG) to get symbol info in .pdb files
+COMPILERFLAGS = -GF -W3 $(W_CFLAGS) -wd4273 -wd4102 -MD -nologo -Ox -Zi
 !ENDIF
 CFLAGS = $(COMPILERFLAGS)  -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES) $(WINCONFIG_INCS) $(ICONV_CFLAGS)
 
@@ -366,6 +370,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_PYTHON3
+	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PYTHON3_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_RAPTOR
 	$(ECHO) HAVE_RAPTOR_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -428,6 +437,8 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PERL_LIBDIR=$(PERL_LIBDIR)" \
 	"PYTHON=$(PYTHON)" \
 	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
+	"PYTHON3=$(PYTHON3)" \
+	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
 	"RUBY_DIR=$(RUBY_DIR)" \
 	"TOPDIR=$(TOPDIR)" \
 	"VERSION=$(VERSION)" \

@@ -43,9 +43,9 @@ typedef struct _jc {
 	char *tokstart;
 	char err[1024];
 	void *scanner;
-	char explain;
+	char explain:1, debug:2, trace:3, plan:4, planf:5, mapimode:6;
 	jvar *vars;
-	int j1, j2, j3, j4, j5, j6 ,j7;
+	int j1, j2, j3, j4, j5, j6, j7, startoid;
 	char ro1:1, ro2:2, ro3:3, ro4:4, ro5:5, ro6:6, ro7:7;
 	int vtop;
 } jc;

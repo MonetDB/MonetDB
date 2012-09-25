@@ -66,14 +66,14 @@ All Rights Reserved.
  * The @emph{kintersect(l,r)} is used also as implementation for the
  * @emph{semijoin()}.
  */
-@h
-#ifndef _GDK_SETOP_H
-#define _GDK_SETOP_H
+@c
+#include "monetdb_config.h"
+#include "gdk.h"
+#include "gdk_private.h"
+#include "gdk_search.h"
 
 #define HITk(t1,t2)             TRUE
 #define HITs(t1,t2)             ((*cmp)(t1,t2) == 0)
-#define TAILCHECKs(l,r)         TYPEerror(BATttype(l),	BATttype(r))
-#define TAILCHECKk(l,r)         FALSE
 #define EQUALs(t1,t2)           ((*cmp)(t1,t2) == 0 && (*cmp)(t1,tnil))
 #define EQUALk(t1,t2)           TRUE
 #define FLIPs(l,r)              TRUE
@@ -96,17 +96,6 @@ All Rights Reserved.
 
 #define ENDintersect(h,t)
 #define ENDdiff(h,t)            for(;p1<q1;p1++) bunfastins(bn,h,t)
-#define RALIGNdiff(bn,l,r)      FALSE
-#define RALIGNintersect(bn,l,r) (BAThordered(l) & BAThordered(r) && (l)->hkey \
-				 && BATcount(bn)==BATcount(r))
-#endif /* _GDK_SETOP_H */
-
-@c
-#include "monetdb_config.h"
-#include "gdk.h"
-#include "gdk_private.h"
-#include "gdk_setop.h"
-#include "gdk_search.h"
 
 /*
  * @+ Double Elimination
@@ -133,8 +122,6 @@ All Rights Reserved.
 			return NULL;
 		}
 	}
-	BATaccessBegin(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(bn, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNh@2(bi, p);
 		ptr t = BUNt@3(bi, p);
@@ -158,8 +145,6 @@ All Rights Reserved.
 			zz++;
 		}
 	}
-	BATaccessEnd(b, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(bn, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_SEQUENTIAL);
 @= elim
 	{
 		int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
@@ -471,17 +456,9 @@ BATsunique(BAT *b)
 	BATiter ri = bat_iterator(r);
 
 	ALGODEBUG fprintf(stderr, "#BATins_@1@2: hashcheck[@1, @2, @3, @4, @5];\n");
-	BATaccessBegin(r, USE_HEAD, MMAP_SEQUENTIAL);
 	if (BATprepareHash(r)) {
-		BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
 		goto bunins_failed;
 	}
-	BATaccessEnd(r, USE_HEAD, MMAP_SEQUENTIAL);
-	/* use MMAP_WILLNEED only if random access is not too scattered, *
-	 * i.e., only if number of lookups is more than 10% of inner BAT */
-	if (BATcount(l) > BATcount(r)/10)
-		BATaccessBegin(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
-	BATaccessBegin(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	BATloop(l, p1, q1) {
 		h = BUNh@2(li, p1);
 		t = BUNtail(li, p1);
@@ -498,11 +475,6 @@ BATsunique(BAT *b)
 			continue;
 		MISS@1(h, t);
 	}
-	/* use MMAP_WILLNEED only if random access is not too scattered, *
-	 * i.e., only if number of lookups is more than 10% of inner BAT */
-	if (BATcount(l) > BATcount(r)/10)
-		BATaccessEnd(r, USE_HEAD|USE_TAIL|USE_HHASH, MMAP_WILLNEED);
-	BATaccessEnd(l, USE_HEAD|USE_TAIL, MMAP_SEQUENTIAL);
 	(void)h2; /* in some cases the @6 check doesn't use the h2 */
 
 @
@@ -645,6 +617,7 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 {
 	int hash = TRUE, (*cmp)(const void *, const void *), (*merge)(const void *, const void *) = NULL;
 	ptr hnil, tnil;
+	BAT *b = bn;
 
 	/* determine how to do the intersect */
 	if (BAThordered(l) & BAThordered(r)) {
@@ -767,44 +740,73 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 			}
 		}
 	}
-	return bn;
+	return b;
   bunins_failed:
-	BBPreclaim(bn);
+	BBPreclaim(b);
 	return NULL;
 }
+@
+@c
 
-BAT *
-BAT@1@2(BAT *l, BAT *r)
+@:batcheck(s,intersect,)@
+@:batcheck(s,diff,-)@
+@:batcheck(k,intersect,)@
+@:batcheck(k,diff,-)@
+
+
+static BAT *
+diff_intersect(BAT *l, BAT *r, int diff, int set)
 {
-	BUN	smaller;
-	BAT	*bn;
+	BUN smaller;
+	BAT *bn;
 
-	ERRORcheck(l == NULL, "BAT@1@2: left is null");
-	ERRORcheck(r == NULL, "BAT@1@2: right is null");
-	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "BUN@1@2: incompatible head-types");
-	ERRORcheck(TAILCHECK@1(l,r), "BUN@1@2: incompatible tail-types");
+	ERRORcheck(l == NULL, "diff_intersect: left is null");
+	ERRORcheck(r == NULL, "diff_intersect: right is null");
+	ERRORcheck(TYPEerror(BAThtype(l), BAThtype(r)), "diff_intersect: incompatible head-types");
+	if (set)
+		ERRORcheck(TYPEerror(BATttype(l), BATttype(r)), "diff_intersect: incompatible tail-types");
 
 	if (BATcount(r) == 0) {
-		return EMPTYr@2(l);
+		return diff ? BATcopy(l, l->htype, l->ttype, FALSE) : BATclone(l, 10);
 	} else if (BATcount(l) == 0) {
-		return EMPTYl@2(l);
+		return BATclone(l, 10);
 	}
-	smaller = @2_size(l, r);
+	smaller = BATcount(l);
+	if (!diff && BATcount(r) < smaller)
+		smaller = BATcount(r);
 	bn = BATnew(BAThtype(l), BATttype(l), MAX(smaller,BATTINY));
 	if (bn == NULL)
 		return NULL;
 
 	/* fill result bat bn */
-	ALGODEBUG fprintf(stderr, "#BAT@1@2: BATins_@1@2(bn, l, r);\n");
-	if (BATins_@1@2(bn, l, r) == NULL) {
-		return NULL;
+	if (set) {
+		if (diff) {
+			ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_sdiff(bn, l, r);\n");
+			bn = BATins_sdiff(bn, l, r);
+		} else {
+			ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_sintersect(bn, l, r);\n");
+			bn = BATins_sintersect(bn, l, r);
+		}
+	} else {
+		if (diff) {
+			ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_kdiff(bn, l, r);\n");
+			bn = BATins_kdiff(bn, l, r);
+		} else {
+			ALGODEBUG fprintf(stderr, "#diff_intersect: BATins_kintersect(bn, l, r);\n");
+			bn = BATins_kintersect(bn, l, r);
+		}
 	}
+	if (bn == NULL)
+		return NULL;
 
 	/* propagate alignment info */
 	if (BATcount(bn) == BATcount(l)) {
 		ALIGNset(bn, l);
 	}
-	if (RALIGN@2(bn, l, r)) {
+	if (!diff &&
+	    BAThordered(l) & BAThordered(r) &&
+	    l->hkey &&
+	    BATcount(bn) == BATcount(r)) {
 		ALIGNsetH(bn, r);
 	}
 	bn->hsorted = BAThordered(l);
@@ -822,21 +824,30 @@ BAT@1@2(BAT *l, BAT *r)
 	bn->T->nonil = l->T->nonil;
 	return bn;
 }
-@
-@c
-#define EMPTYldiff(l) BATclone(l,10)
-#define EMPTYrdiff(l) BATcopy(l, l->htype, l->ttype, FALSE)
-#define EMPTYlintersect(l) BATclone(l,10)
-#define EMPTYrintersect(l) EMPTYlintersect(l)
 
-#define intersect_size(l,r) MIN(BATcount(l), BATcount(r))
-#define diff_size(l,r) BATcount(l)
+BAT *
+BATsdiff(BAT *l, BAT *r)
+{
+	return diff_intersect(l, r, 1, 1);
+}
 
-@:batcheck(s,intersect,)@
-@:batcheck(s,diff,-)@
-@:batcheck(k,intersect,)@
-@:batcheck(k,diff,-)@
+BAT *
+BATsintersect(BAT *l, BAT *r)
+{
+	return diff_intersect(l, r, 0, 1);
+}
 
+BAT *
+BATkdiff(BAT *l, BAT *r)
+{
+	return diff_intersect(l, r, 1, 0);
+}
+
+BAT *
+BATkintersect(BAT *l, BAT *r)
+{
+	return diff_intersect(l, r, 0, 0);
+}
 
 /*
  * @+ Union

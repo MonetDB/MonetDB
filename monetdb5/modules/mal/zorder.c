@@ -150,8 +150,6 @@ ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
 	r = (int *) Tloc(by, BUNfirst(by));
 	z = (oid *) Tloc(bz, BUNfirst(bz));
 
-	BATaccessBegin(bx, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessBegin(by, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( bx->T->nonil && by->T->nonil){
 		for ( ; p<q; z++,p++,r++)
 			*z = Zencode_int_oid( *p, *r );
@@ -180,8 +178,6 @@ ZORDbatencode_int_oid(int *zbid, int *xbid, int *ybid)
 			*z = Zencode_int_oid( *p, *r );
 	}
 
-	BATaccessEnd(bx, USE_TAIL, MMAP_SEQUENTIAL);
-	BATaccessEnd(by, USE_TAIL, MMAP_SEQUENTIAL);
 	BBPunfix(bx->batCacheid);
 	BBPunfix(by->batCacheid);
 
@@ -231,7 +227,6 @@ ZORDbatdecode_int_oid(int *xbid, int *ybid, int *zbid)
 	x = (int *) Tloc(bx, BUNfirst(bx));
 	y = (int *) Tloc(by, BUNfirst(by));
 
-	BATaccessBegin(bz, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( bz->T->nonil ){
 		for ( ; z<q; z++,x++,y++)
 			Zdecode_int_oid(x,y,z);
@@ -243,8 +238,6 @@ ZORDbatdecode_int_oid(int *xbid, int *ybid, int *zbid)
 		} else
 			Zdecode_int_oid( x,y,z);
 	} 
-
-	BATaccessEnd(bz, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (!(bx->batDirty&2)) 
 		bx = BATsetaccess(bx, BAT_READ);
@@ -307,7 +300,6 @@ ZORDbatdecode_int_oid_x(int *xbid, int *zbid)
 	q = (oid *) Tloc(bz, BUNlast(bz));
 	x = (int *) Tloc(bx, BUNfirst(bx));
 
-	BATaccessBegin(bz, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( bz->T->nonil ){
 		for ( ; z<q; z++,x++)
 			Zdecode_int_oid_x(x,z);
@@ -318,8 +310,6 @@ ZORDbatdecode_int_oid_x(int *xbid, int *zbid)
 		} else
 			Zdecode_int_oid_x(x,z);
 	} 
-
-	BATaccessEnd(bz, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (!(bx->batDirty&2)) 
 		bx = BATsetaccess(bx, BAT_READ);
@@ -364,7 +354,6 @@ ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
 	q = (oid *) Tloc(bz, BUNlast(bz));
 	y = (int *) Tloc(by, BUNfirst(by));
 
-	BATaccessBegin(bz, USE_TAIL, MMAP_SEQUENTIAL);
 	if ( bz->T->nonil ){
 		for ( ; z<q; z++,y++)
 			Zdecode_int_oid_y(y,z);
@@ -375,8 +364,6 @@ ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
 		} else
 			Zdecode_int_oid_y(y,z);
 	} 
-
-	BATaccessEnd(bz, USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (!(by->batDirty&2)) 
 		by = BATsetaccess(by, BAT_READ);

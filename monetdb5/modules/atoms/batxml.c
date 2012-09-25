@@ -40,9 +40,48 @@
 	}
 
 #include "monetdb_config.h"
-#include "batxml.h"
-
+#include <gdk.h>
+#include "ctype.h"
+#include <string.h>
 #include <libxml/parser.h>
+#include "mal_interpreter.h"
+#include "mal_function.h"
+#include "xml.h"
+
+#ifdef WIN32
+#ifndef LIBATOMS
+#define batxml_export extern __declspec(dllimport)
+#else
+#define batxml_export extern __declspec(dllexport)
+#endif
+#else
+#define batxml_export extern
+#endif
+
+batxml_export str BATXMLxml2str(int *ret, int *bid);
+batxml_export str BATXMLxmltext(int *ret, int *bid);
+batxml_export str BATXMLstr2xml(int *x, int *s);
+batxml_export str BATXMLdocument(int *x, int *s);
+batxml_export str BATXMLcontent(int *x, int *s);
+batxml_export str BATXMLisdocument(int *x, int *s);
+batxml_export str BATXMLelementSmall(int *x, str *name, int *s);
+batxml_export str BATXMLoptions(int *x, str *name, str *options, int *s);
+batxml_export str BATXMLcomment(int *x, int *s);
+batxml_export str BATXMLparse(int *x, str *doccont, int *s, str *option);
+batxml_export str BATXMLxquery(int *x, int *s, str *expr);
+batxml_export str BATXMLpi(int *x, str *tgt, int *s);
+batxml_export str BATXMLroot(int *ret, int *bid, str *version, str *standalone);
+batxml_export str BATXMLattribute(int *ret, str *name, int *bid);
+batxml_export str BATXMLelement(int *ret, str *name, xml *ns, xml *attr, int *bid);
+batxml_export str BATXMLconcat(int *ret, int *bid, int *rid);
+batxml_export str BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+batxml_export str BATXMLagg(int *ret, int *bid, int *grp);
+batxml_export str BATXMLagg3(int *ret, int *bid, int *grp, int *e);
+batxml_export str BATXMLgroup(xml *ret, int *bid);
+batxml_export str AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils);
+batxml_export str AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);
+batxml_export str AGGRxml(bat *retval, bat *bid, int *skip_nils);
+
 
 #define prepareOperand(X,Y,Z)								\
     if (((X) = BATdescriptor(*(Y))) == NULL )				\
@@ -80,7 +119,6 @@ BATXMLxml2str(int *ret, int *bid)
 	prepareOperand(b, bid, "str");
 	prepareResult(bn, b, TYPE_str, "str");
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
@@ -93,11 +131,9 @@ BATXMLxml2str(int *ret, int *bid)
 			bunfastins(bn, h, t + 1);
 		}
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.str", OPERATION_FAILED " During bulk coercion");
@@ -118,7 +154,6 @@ BATXMLxmltext(int *ret, int *bid)
 	prepareOperand(b, bid, "text");
 	prepareResult(bn, b, TYPE_str, "text");
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		ptr h = BUNhead(bi, p);
 		str t = (str) BUNtail(bi, p);
@@ -181,7 +216,6 @@ BATXMLxmltext(int *ret, int *bid)
 			GDKfree(content);
 		content = NULL;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	finalizeResult(ret, bn, b);
 	if (buf != NULL)
 		GDKfree(buf);
@@ -189,7 +223,6 @@ BATXMLxmltext(int *ret, int *bid)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if (buf != NULL)
@@ -1113,7 +1146,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	first = 1;
 	gid = 0;
 	ri = bat_iterator(r);
-	BATaccessBegin(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(r, p, q) {
 		int n;
 
@@ -1156,7 +1188,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 		}
 		offset += n;
 	}
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	/* end the leftover element */
 	if (!first) {
 		bunfastins(bn, &gid, buf);
@@ -1174,7 +1205,6 @@ BATXMLagg3(int *ret, int *bid, int *grp, int *ext)
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPunfix(r->batCacheid);
 	BBPunfix(bn->batCacheid);
 	if ( buf != NULL)
@@ -1221,7 +1251,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	first = 1;
 	gid = 0;
 	ri = bat_iterator(r);
-	BATaccessBegin(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(r, p, q) {
 		int n;
 
@@ -1267,7 +1296,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 		}
 		offset += n;
 	}
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	/* end the leftover element */
 	if (!first) {
 		bunfastins(bn, &gid, buf);
@@ -1286,7 +1314,6 @@ BATXMLagg(int *ret, int *bid, int *grp)
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
   bunins_failed:
-	BATaccessEnd(r,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPunfix(bn->batCacheid);
 	BBPunfix(r->batCacheid);
 	if ( buf != NULL)
@@ -1312,7 +1339,6 @@ BATXMLgroup(xml *ret, int *bid)
 	strcpy(buf, str_nil);
 	offset = 0;
 	bi = bat_iterator(b);
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(b, p, q) {
 		int n;
 
@@ -1344,16 +1370,286 @@ BATXMLgroup(xml *ret, int *bid)
 		}
 		offset += n;
 	}
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	*ret = buf;
 	return MAL_SUCCEED;
   failed:
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BBPreleaseref(b->batCacheid);
 	if ( buf != NULL)
 		GDKfree(buf);
 	throw(MAL, "xml.agg", "%s", err);
+}
+
+static const char *
+BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
+{
+	BAT *bn = NULL, *t1, *t2 = NULL;
+	BATiter bi;
+	oid min, max;
+	BUN ngrp, start, end, cnt;
+	BUN nils = 0;
+	int isnil;
+	const oid *cand = NULL, *candend = NULL;
+	const char *v;
+	const oid *grps, *map;
+	oid prev;
+	BUN p, q;
+	int freeb = 0, freeg = 0;
+	char *buf = NULL;
+	size_t buflen, maxlen, len;
+	const char *err;
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+								&cnt, &cand, &candend)) != NULL) {
+		return err;
+	}
+	assert(b->ttype == TYPE_xml);
+	if (BATcount(b) == 0 || ngrp == 0) {
+		bn = BATconstant(TYPE_xml, ATOMnilptr(TYPE_xml), ngrp);
+		if (bn == NULL)
+			return MAL_MALLOC_FAIL;
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		*bnp = bn;
+		return NULL;
+	}
+	if (s) {
+		b = BATleftjoin(s, b, BATcount(s));
+		if (b == NULL) {
+			err = "internal leftjoin failed";
+			goto out;
+		}
+		freeb = 1;
+		if (b->htype != TYPE_void) {
+			t1 = BATmirror(BATmark(BATmirror(b), 0));
+			if (t1 == NULL) {
+				err = "internal mark failed";
+				goto out;
+			}
+			BBPunfix(b->batCacheid);
+			b = t1;
+		}
+		if (g) {
+			g = BATleftjoin(s, g, BATcount(s));
+			if (g == NULL) {
+				err = "internal leftjoin failed";
+				goto out;
+			}
+			freeg = 1;
+			if (g->htype != TYPE_void) {
+				t1 = BATmirror(BATmark(BATmirror(g), 0));
+				if (t1 == NULL) {
+					err = "internal mark failed";
+					goto out;
+				}
+				BBPunfix(g->batCacheid);
+				g = t1;
+			}
+		}
+	}
+	maxlen = BUFSIZ;
+	if ((buf = GDKmalloc(maxlen)) == NULL) {
+		err = MAL_MALLOC_FAIL;
+		goto out;
+	}
+	buflen = 0;
+	bn = BATnew(TYPE_void, TYPE_xml, ngrp);
+	if (bn == NULL) {
+		err = MAL_MALLOC_FAIL;
+		goto out;
+	}
+	bi = bat_iterator(b);
+	if (g) {
+		/* stable sort g */
+		if (BATsubsort(&t1, &t2, NULL, g, NULL, NULL, 0, 1) == GDK_FAIL) {
+			BBPreclaim(bn);
+			bn = NULL;
+			err = "internal sort failed";
+			goto out;
+		}
+		if (freeg)
+			BBPunfix(g->batCacheid);
+		g = t1;
+		freeg = 1;
+		map = (const oid *) Tloc(t2, BUNfirst(t2));
+		grps = (const oid *) Tloc(g, BUNfirst(g));
+		prev = grps[0];
+		isnil = 0;
+		for (p = 0, q = BATcount(g); p <= q; p++) {
+			if (p == q || grps[p] != prev) {
+				while (BATcount(bn) < prev - min) {
+					bunfastins_nocheck(bn, BUNlast(bn), 0, str_nil, 0, Tsize(bn));
+					nils++;
+				}
+				bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+				nils += strNil(buf);
+				strncpy(buf, str_nil, maxlen);
+				buflen = 0;
+				if (p == q)
+					break;
+				prev = grps[p];
+				isnil = 0;
+			}
+			if (isnil)
+				continue;
+			v = (const char *) BUNtail(bi, BUNfirst(b) + (BUN) map[p]);
+			if (strNil(v)) {
+				if (skip_nils)
+					continue;
+				strncpy(buf, str_nil, buflen);
+				isnil = 1;
+			} else {
+				len = strlen(v);
+				if (len >= maxlen - buflen) {
+					maxlen += len + BUFSIZ;
+					buf = GDKrealloc(buf, maxlen);
+					if (buf == NULL) {
+						err = MAL_MALLOC_FAIL;
+						goto bunins_failed;
+					}
+				}
+				if (buflen == 0) {
+					strncpy(buf, v, maxlen);
+					buflen += len;
+				} else if (buf[0] != v[0]) {
+					err = "incompatible values in group";
+					goto bunins_failed;
+				} else if (buf[0] == 'A') {
+					snprintf(buf + buflen, maxlen - buflen, " %s", v + 1);
+					buflen += len;
+				} else if (buf[0] == 'C') {
+					snprintf(buf + buflen, maxlen - buflen, "%s", v + 1);
+					buflen += len - 1;
+				} else {
+					err = "can only group attributes and element content";
+					goto bunins_failed;
+				}
+			}
+		}
+		BBPunfix(t2->batCacheid);
+		t2 = NULL;
+	} else {
+		for (p = BUNfirst(b), q = p + BATcount(b); p < q; p++) {
+			v = (const char *) BUNtail(bi, p);
+			if (strNil(v)) {
+				if (skip_nils)
+					continue;
+				strncpy(buf, str_nil, buflen);
+				nils++;
+				break;
+			}
+			len = strlen(v);
+			if (len >= maxlen - buflen) {
+				maxlen += len + BUFSIZ;
+				buf = GDKrealloc(buf, maxlen);
+				if (buf == NULL) {
+					err = MAL_MALLOC_FAIL;
+					goto bunins_failed;
+				}
+			}
+			if (buflen == 0) {
+				strncpy(buf, v, maxlen);
+				buflen += len;
+			} else if (buf[0] != v[0]) {
+				err = "incompatible values in group";
+				goto bunins_failed;
+			} else if (buf[0] == 'A') {
+				snprintf(buf + buflen, maxlen - buflen, " %s", v + 1);
+				buflen += len;
+			} else if (buf[0] == 'C') {
+				snprintf(buf + buflen, maxlen - buflen, "%s", v + 1);
+				buflen += len - 1;
+			} else {
+				err = "can only group attributes and element content";
+				goto bunins_failed;
+			}
+		}
+		bunfastins_nocheck(bn, BUNlast(bn), 0, buf, 0, Tsize(bn));
+	}
+	BATseqbase(bn, min);
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	bn->T->sorted = BATcount(bn) <= 1;
+	bn->T->revsorted = BATcount(bn) <= 1;
+	bn->T->key = BATcount(bn) <= 1;
+
+  out:
+	if (t2)
+		BBPunfix(t2->batCacheid);
+	if (freeb && b)
+		BBPunfix(b->batCacheid);
+	if (freeg && g)
+		BBPunfix(g->batCacheid);
+	if (buf)
+		GDKfree(buf);
+	*bnp = bn;
+	return err;
+
+  bunins_failed:
+	if (bn)
+		BBPreclaim(bn);
+	bn = NULL;
+	if (err == NULL)
+		err = MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
+	goto out;
+}
+
+str
+AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils)
+{
+	BAT *b, *g, *e, *s, *bn = NULL;
+	const char *err;
+
+	b = BATdescriptor(*bid);
+	g = gid ? BATdescriptor(*gid) : NULL;
+	e = eid ? BATdescriptor(*eid) : NULL;
+	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
+		if (b)
+			BBPreleaseref(b->batCacheid);
+		if (g)
+			BBPreleaseref(g->batCacheid);
+		if (e)
+			BBPreleaseref(e->batCacheid);
+		throw(MAL, "aggr.subxml", RUNTIME_OBJECT_MISSING);
+	}
+	if (sid) {
+		s = BATdescriptor(*sid);
+		if (s == NULL) {
+			BBPreleaseref(b->batCacheid);
+			if (g)
+				BBPreleaseref(g->batCacheid);
+			if (e)
+				BBPreleaseref(e->batCacheid);
+			throw(MAL, "aggr.subxml", RUNTIME_OBJECT_MISSING);
+		}
+	} else {
+		s = NULL;
+	}
+	err = BATxmlaggr(&bn, b, g, e, s, *skip_nils);
+	BBPreleaseref(b->batCacheid);
+	if (g)
+		BBPreleaseref(g->batCacheid);
+	if (e)
+		BBPreleaseref(e->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (err != NULL)
+		throw(MAL, "aggr.subxml", "%s", err);
+
+	*retval = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+AGGRsubxml(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils)
+{
+	return AGGRsubxmlcand(retval, bid, gid, eid, NULL, skip_nils);
+}
+
+str
+AGGRxml(bat *retval, bat *bid, int *skip_nils)
+{
+	return AGGRsubxmlcand(retval, bid, NULL, NULL, NULL, skip_nils);
 }
 
 str

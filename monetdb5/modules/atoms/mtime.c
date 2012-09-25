@@ -1533,18 +1533,6 @@ MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 	return MAL_SUCCEED;
 }
 
-/* returns the number of milliseconds between 'val1' and 'val2'. */
-static str
-timestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
-{
-	if (ts_isnil(*v1) || ts_isnil(*v2)) {
-		*ret = lng_nil;
-	} else {
-		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
-	}
-	return MAL_SUCCEED;
-}
-
 /* create a DST start/end date rule. */
 static str
 rule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
@@ -1650,232 +1638,6 @@ str
 MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 {
 	*ret = *src;
-	return MAL_SUCCEED;
-}
-
-/*
- * The comparison implementations are relatively straightforward.
- */
-
-str
-MTIMEdate_isnil(bit *ret, date *v)
-{
-	*ret = (*v == date_nil);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_min(date *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = date_nil;
-	else
-		*ret = *v < *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_max(date *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = date_nil;
-	else
-		*ret = *v > *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_min_no_nil(date *ret, date *v, date *w)
-{
-	if (*v == date_nil)
-		*ret = *w;
-	else if (*w == date_nil)
-		*ret = *v;
-	else
-		*ret = *v < *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_max_no_nil(date *ret, date *v, date *w)
-{
-	if (*v == date_nil)
-		*ret = *w;
-	else if (*w == date_nil)
-		*ret = *v;
-	else
-		*ret = *v > *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_EQ(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v == *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_NEQ(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v != *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_LT(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v < *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_LE(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v <= *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_GT(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v > *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdate_GE(bit *ret, date *v, date *w)
-{
-	if (*v == date_nil || *w == date_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v >= *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_isnil(bit *ret, daytime *v)
-{
-	*ret = (*v == daytime_nil);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_min(daytime *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = daytime_nil;
-	else
-		*ret = *v < *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_max(daytime *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = daytime_nil;
-	else
-		*ret = *v > *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_min_no_nil(daytime *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil)
-		*ret = *w;
-	else if (*w == daytime_nil)
-		*ret = *v;
-	else
-		*ret = *v < *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_max_no_nil(daytime *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil)
-		*ret = *w;
-	else if (*w == daytime_nil)
-		*ret = *v;
-	else
-		*ret = *v > *w ? *v : *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_EQ(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v == *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_NEQ(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v != *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_LT(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v < *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_LE(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v <= *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_GT(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v > *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEdaytime_GE(bit *ret, daytime *v, daytime *w)
-{
-	if (*v == daytime_nil || *w == daytime_nil)
-		*ret = bit_nil;
-	else
-		*ret = *v >= *w;
 	return MAL_SUCCEED;
 }
 
@@ -2302,9 +2064,125 @@ MTIMEdate_diff(int *ret, date *v1, date *v2)
 }
 
 str
+MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2)
+{
+	BAT *b1, *b2, *bn;
+	date *t1, *t2;
+	int *tn;
+	BUN i, n;
+
+	b1 = BATdescriptor(*bid1);
+	b2 = BATdescriptor(*bid2);
+	if (b1 == NULL || b2 == NULL) {
+		if (b1)
+			BBPreleaseref(b1->batCacheid);
+		if (b2)
+			BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+	}
+	n = BATcount(b1);
+	if (n != BATcount(b2)) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", "inputs not the same size");
+	}
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b1));
+	if (bn == NULL) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
+	}
+	t1 = (date *) Tloc(b1, BUNfirst(b1));
+	t2 = (date *) Tloc(b2, BUNfirst(b2));
+	tn = (int *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (*t1 == date_nil || *t2 == date_nil) {
+			*tn = int_nil;
+		} else {
+			*tn = (int) (*t1 - *t2);
+		}
+		t1++;
+		t2++;
+		tn++;
+	}
+	BBPreleaseref(b2->batCacheid);
+	if (b1->htype != bn->htype) {
+		/* temporarily reuse b2 */
+		b2 = VIEWcreate(b1, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	}
+	BBPreleaseref(b1->batCacheid);
+	BBPkeepref(bn->batCacheid);
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
+}
+
+/* returns the number of milliseconds between 'val1' and 'val2'. */
+str
 MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 {
-	return timestamp_diff(ret, v1, v2);
+	if (ts_isnil(*v1) || ts_isnil(*v2)) {
+		*ret = lng_nil;
+	} else {
+		*ret = ((lng) (v1->days - v2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (v1->msecs - v2->msecs));
+	}
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2)
+{
+	BAT *b1, *b2, *bn;
+	timestamp *t1, *t2;
+	lng *tn;
+	BUN i, n;
+
+	b1 = BATdescriptor(*bid1);
+	b2 = BATdescriptor(*bid2);
+	if (b1 == NULL || b2 == NULL) {
+		if (b1)
+			BBPreleaseref(b1->batCacheid);
+		if (b2)
+			BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+	}
+	n = BATcount(b1);
+	if (n != BATcount(b2)) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", "inputs not the same size");
+	}
+	bn = BATnew(TYPE_void, TYPE_lng, BATcount(b1));
+	if (bn == NULL) {
+		BBPreleaseref(b1->batCacheid);
+		BBPreleaseref(b2->batCacheid);
+		throw(MAL, "batmtime.diff", MAL_MALLOC_FAIL);
+	}
+	t1 = (timestamp *) Tloc(b1, BUNfirst(b1));
+	t2 = (timestamp *) Tloc(b2, BUNfirst(b2));
+	tn = (lng *) Tloc(bn, BUNfirst(bn));
+	for (i = 0; i < n; i++) {
+		if (ts_isnil(*t1) || ts_isnil(*t2)) {
+			*tn = lng_nil;
+		} else {
+			*tn = ((lng) (t1->days - t2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t1->msecs - t2->msecs));
+		}
+		t1++;
+		t2++;
+		tn++;
+	}
+	BBPreleaseref(b2->batCacheid);
+	if (b1->htype != bn->htype) {
+		/* temporarily reuse b2 */
+		b2 = VIEWcreate(b1, bn);
+		BBPunfix(bn->batCacheid);
+		bn = b2;
+	}
+	BBPreleaseref(b1->batCacheid);
+	BBPkeepref(bn->batCacheid);
+	*ret = bn->batCacheid;
+	return MAL_SUCCEED;
 }
 
 /* return whether DST holds in the tzone at a certain point of time. */
@@ -2322,127 +2200,6 @@ MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
 			*ret = TRUE;
 		}
 	}
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_isnil(bit *retval, timestamp *val)
-{
-	*retval = ts_isnil(*val);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_min(timestamp *ret, timestamp *v, timestamp *w)
-{
-	if (ts_isnil(*v) || ts_isnil(*w))
-		*ret = *timestamp_nil;
-	else if (v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
-		*ret = *v;
-	else
-		*ret = *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_max(timestamp *ret, timestamp *v, timestamp *w)
-{
-	if (ts_isnil(*v) || ts_isnil(*w))
-		*ret = *timestamp_nil;
-	else if (!(v->days < w->days ||
-			   (v->days == w->days && v->msecs < w->msecs)))
-		*ret = *v;
-	else
-		*ret = *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_min_no_nil(timestamp *ret, timestamp *v, timestamp *w)
-{
-	if (ts_isnil(*v))
-		*ret = *w;
-	else if (ts_isnil(*w))
-		*ret = *v;
-	else if (v->days < w->days || (v->days == w->days && v->msecs < w->msecs))
-		*ret = *v;
-	else
-		*ret = *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_max_no_nil(timestamp *ret, timestamp *v, timestamp *w)
-{
-	if (ts_isnil(*v))
-		*ret = *w;
-	else if (ts_isnil(*w))
-		*ret = *v;
-	else if (!(v->days < w->days ||
-			   (v->days == w->days && v->msecs < w->msecs)))
-		*ret = *v;
-	else
-		*ret = *w;
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampEQ(retval, val1, val2);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampNEQ(retval, val1, val2);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampLT(retval, val1, val2);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampLE(retval, val1, val2);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampGT(retval, val1, val2);
-	return MAL_SUCCEED;
-}
-
-str
-MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2)
-{
-	if (ts_isnil(*val1) || ts_isnil(*val2))
-		*retval = bit_nil;
-	else
-		timestampGE(retval, val1, val2);
 	return MAL_SUCCEED;
 }
 
@@ -2801,7 +2558,7 @@ MTIMEepoch2int(int *ret, timestamp *t)
 
 	if ((err = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return err;
-	if ((err = timestamp_diff(&v, t, &e)) != MAL_SUCCEED)
+	if ((err = MTIMEtimestamp_diff(&v, t, &e)) != MAL_SUCCEED)
 		return err;
 	if (v == lng_nil)
 		*ret = int_nil;
@@ -3093,7 +2850,10 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_year(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.year", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3128,7 +2888,10 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_month(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.month", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3163,7 +2926,10 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_day(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.day", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3198,7 +2964,10 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_hours(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.hours", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3233,7 +3002,10 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_minutes(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.minutes", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3268,7 +3040,10 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_seconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.seconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3303,7 +3078,10 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_sql_seconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.sql_seconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
@@ -3338,7 +3116,10 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_milliseconds(&v, &d);
-		BUNfastins(bn, BUNhead(bi, p), &v);
+		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+			BBPunfix(bn->batCacheid);
+			throw(MAL, "batmtime.milliseconds", "inserting value failed");
+		}
 	}
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;

@@ -100,8 +100,8 @@ SQLsession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "sql");
 	*ret = 0;
 	return msg;
@@ -114,8 +114,8 @@ SQLsession2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void)mb;
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	msg = setScenario(cntxt, "msql");
 	*ret = 0;
 	return msg;
@@ -140,12 +140,6 @@ SQLprelude(void)
 	s->reader = "SQLreader";
 	s->parser = "SQLparser";
 	s->engine = "SQLengine";
-	if (GDKembedded) {
-		tmp = SQLinit();
-		if (tmp == MAL_SUCCEED)
-			s->name = "sql";
-		return tmp;
-	}
 
 	ms = getFreeScenario();
 	if (!ms)
@@ -162,11 +156,11 @@ SQLprelude(void)
 	ms->optimizer = "MALoptimizer";
 	/* ms->tactics = .. */
 	ms->engine = "MALengine";
-	fprintf(stdout, "# MonetDB/SQL module loaded\n");
-	fflush(stdout); /* make merovingian see this *now* */
 	tmp = SQLinit();
 	if (tmp != MAL_SUCCEED)
 		return(tmp);
+	fprintf(stdout, "# MonetDB/SQL module loaded\n");
+	fflush(stdout); /* make merovingian see this *now* */
 
 	/* only register availability of scenarios AFTER we are inited! */
 	s->name = "sql";
@@ -191,9 +185,7 @@ SQLepilogue(void)
 	}
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKembedded)
-		return msab_retreatScenario(s);
-	return MAL_SUCCEED;
+	return msab_retreatScenario(s);
 }
 
 MT_Id sqllogthread, minmaxthread;
@@ -215,7 +207,7 @@ SQLinit(void)
 
 	MT_lock_init( &sql_contextLock, "sql_contextLock");
 
-	mal_set_lock(sql_contextLock,"SQL init");
+	MT_lock_set(&sql_contextLock, "SQL init");
 	memset((char*)&be_funcs, 0, sizeof(backend_functions));
 	be_funcs.fstack		= &monet5_freestack;
 	be_funcs.fcode		= &monet5_freecode;
@@ -238,14 +230,12 @@ SQLinit(void)
 			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
-	mal_unset_lock(sql_contextLock,"SQL init");
-	if (!GDKembedded && MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
-		mal_unset_lock(sql_contextLock,"SQL init");
+	MT_lock_unset(&sql_contextLock, "SQL init");
+	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED) != 0) {
 		throw(SQL, "SQLinit", "Starting log manager failed");
 	}
 #if 0
-	if (!GDKembedded && MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
-		mal_unset_lock(sql_contextLock,"SQL init");
+	if (MT_create_thread(&minmaxthread, (void (*)(void *)) mvc_minmaxmanager, NULL, MT_THR_DETACHED) != 0) {
 		throw(SQL, "SQLinit", "Starting minmax manager failed");
 	}
 #endif
@@ -281,6 +271,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
+	str opt;
 
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
@@ -292,7 +283,9 @@ global_variables(mvc *sql, char *user, char *schema)
 	SQLglobal("current_user", user);
 	SQLglobal("current_role", user);
 	/* inherit the optimizer from the server */
-	SQLglobal("optimizer", initSQLoptimizer());
+	opt = initSQLoptimizer();
+	SQLglobal("optimizer", opt);
+	GDKfree(opt);
 	SQLglobal("trace","show,ticks,stmt");
 
 	typename = "sec_interval";
@@ -512,8 +505,8 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 )
-		SQLprelude();
+	if (SQLinitialized == 0 && (msg = SQLprelude()) != MAL_SUCCEED)
+		return msg;
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -828,7 +821,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 			(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if (m->errstr && *m->errstr)
+			if (*m->errstr)
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			*m->errstr = 0;
 			sqlcleanup(m, err);
@@ -839,13 +832,16 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		}
 
 		/*
-		 * @-
 		 * We have dealt with the first parsing step and advanced the input reader
 		 * to the next statement (if any).
 		 * Now is the time to also perform the semantic analysis,
 		 * optimize and produce code.
 		 * We don;t search the cache for a previous incarnation yet.
 		 */
+		if (c->glb) {
+			/* MSinitClientPrg clears c->glb, so free it here */
+			_DELETE(c->glb);
+		}
 		MSinitClientPrg(c,"user",nme);
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
@@ -885,7 +881,7 @@ SQLstatementIntern(Client c, str *expr, str nme, int execute, bit output)
 		if ( execute) {
 			if (!output)
 				sql->out = NULL; /* no output */
-			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+			msg = (str) runMAL(c, c->curprg->def, 0, 0);
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c,c->curprg->def, c->glb, oldvtop);
 		}
@@ -1817,7 +1813,7 @@ SQLengineIntern(Client c, backend *be)
 	if (MALcommentsOnly(c->curprg->def)) {
 		msg = MAL_SUCCEED;
 	} else {
-		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+		msg = (str) runMAL(c, c->curprg->def, 0, 0);
 	}
 
 cleanup_engine:

@@ -132,3 +132,7 @@ comment "Get the memory footprint and reset the flag";
 pattern getMemory():lng
 address CMDgetMemory
 comment "Get the amount of memory claimed and reset the flag";
+
+command tomograph()
+address CMDtomograph
+comment "No-op operation, merely a signal to the tomograph package";

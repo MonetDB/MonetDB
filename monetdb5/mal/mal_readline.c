@@ -293,10 +293,6 @@ deinit_readline(void)
 #include <termios.h>
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define chdir _chdir
-#endif
-
 static void
 showCommands(void)
 {
@@ -419,20 +415,6 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 				}
 				line = NULL;
 				continue;
-			case 'c':	/* cd command? */
-				if (line[1] == 'd' &&
-				    (line[2] & ~0x7F) == 0 &&
-				    isspace((int) line[2])) {
-					if (line[length - 1] == '\n')
-						line[--length] = 0;
-					if (line[length - 1] == '\r')
-						line[--length] = 0;
-					if (chdir(line + 3) < 0)
-						perror(line);
-					line = NULL;
-					continue;
-				}
-				break;
 #ifdef HAVE_LIBREADLINE
 			case '!':
 				{ char *nl;

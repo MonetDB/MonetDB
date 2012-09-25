@@ -28,7 +28,6 @@ Ready.
 % name # name
 % varchar # type
 % 16 # length
-[ "gdk_alloc_map"	]
 [ "gdk_dbfarm"	]
 [ "gdk_dbname"	]
 [ "gdk_debug"	]

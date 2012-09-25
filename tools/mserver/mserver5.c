@@ -62,6 +62,8 @@
 #endif
 
 static int malloc_init = 1;
+static int monet_daemon;
+
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
@@ -174,7 +176,7 @@ monet_init(opt *set, int setlen)
 		return 0;
 
 #ifdef HAVE_CONSOLE
-	monet_daemon = GDKembedded;
+	monet_daemon = 0;
 	if (GDKgetenv_isyes("monet_daemon")) {
 		monet_daemon = 1;
 #ifdef HAVE_SETSID
@@ -209,6 +211,7 @@ main(int argc, char **av)
 	char prmodpath[1024];
 	char *modpath = NULL;
 	char *binpath = NULL;
+	str *monet_script;
 
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },

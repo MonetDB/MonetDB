@@ -1078,39 +1078,39 @@ SQLworker_column(READERtask *task, int col)
 	str err = 0;
 
 	/* watch out for concurrent threads */
-	mal_set_lock(mal_copyLock, "tablet insert value");
+	MT_lock_set(&mal_copyLock, "tablet insert value");
 	if (BATcapacity(fmt[col].c[0]) < BATcount(fmt[col].c[0]) + task->next) {
 		if ((fmt[col].c[0] = BATextend(fmt[col].c[0], BATgrows(fmt[col].c[0]) + task->limit)) == NULL) {
 			if (task->as->error == NULL)
 				task->as->error = GDKstrdup("Failed to extend the BAT, perhaps disk full");
-			mal_unset_lock(mal_copyLock, "tablet insert value");
+			MT_lock_unset(&mal_copyLock, "tablet insert value");
 			mnstr_printf(GDKout, "Failed to extend the BAT, perhaps disk full");
 			return -1;
 		}
 	}
-	mal_unset_lock(mal_copyLock, "tablet insert value");
+	MT_lock_unset(&mal_copyLock, "tablet insert value");
 
 	for (i = 0; i < task->next; i++)
 		if (task->fields[col][i]) {	/* no errors */
 			if (SQLinsert_val(&fmt[col], task->fields[col][i], task->quote, NULL, &err, col + 1)) {
 				assert(err != NULL);
-				mal_set_lock(mal_copyLock, "tablet insert value");
+				MT_lock_set(&mal_copyLock, "tablet insert value");
 				if (!task->as->tryall) {
 					/* watch out for concurrent threads */
 					if (task->as->error == NULL)
 						task->as->error = err;	/* restore for upper layers */
 				} else
 					BUNins(task->as->complaints, NULL, err, TRUE);
-				mal_unset_lock(mal_copyLock, "tablet insert value");
+				MT_lock_unset(&mal_copyLock, "tablet insert value");
 			}
 		}
 
 	if (err) {
 		/* watch out for concurrent threads */
-		mal_set_lock(mal_copyLock, "tablet insert value");
+		MT_lock_set(&mal_copyLock, "tablet insert value");
 		if (task->as->error == NULL)
 			task->as->error = err;	/* restore for upper layers */
-		mal_unset_lock(mal_copyLock, "tablet insert value");
+		MT_lock_unset(&mal_copyLock, "tablet insert value");
 	}
 	return err ? -1 : 0;
 }
@@ -1172,7 +1172,7 @@ SQLload_file_line(READERtask *task, int idx)
 					 fmt->sep, BATcount(fmt->c[0]) + idx, as->nr_attrs - 1, i);
 		  errors:
 			/* we save all errors detected */
-			mal_set_lock(mal_copyLock, "tablet line break");
+			MT_lock_set(&mal_copyLock, "tablet line break");
 			if (as->tryall)
 				BUNins(as->complaints, NULL, errmsg, TRUE);
 			if (as->error) {
@@ -1181,7 +1181,7 @@ SQLload_file_line(READERtask *task, int idx)
 				GDKfree(s);
 			}
 			as->error = GDKstrdup(errmsg);
-			mal_unset_lock(mal_copyLock, "tablet line break");
+			MT_lock_unset(&mal_copyLock, "tablet line break");
 			for (i = 0; i < as->nr_attrs; i++)
 				task->fields[i][idx] = NULL;
 			break;
@@ -1200,7 +1200,7 @@ SQLworker(void *arg)
 	lng t0;
 	Thread thr;
 
-	thr = THRnew(MT_getpid(), "SQLworker");
+	thr = THRnew("SQLworker");
 	GDKsetbuf(GDKmalloc(GDKMAXERRLEN));	/* where to leave errors */
 	GDKerrbuf[0] = 0;
 	task->errbuf = GDKerrbuf;
@@ -1372,7 +1372,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, char *csep, char
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
 	rseplen = strlen(rsep);
-	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char *));
+	task->fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
 	task->cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
 	task->time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
 	task->base = GDKzalloc(b->size + 2);

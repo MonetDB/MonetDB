@@ -34,6 +34,7 @@ BAT *BATcol_name(BAT *b, const char *tnme);
 BATstore *BATcreatedesc(int ht, int tt, int heapnames);
 void BATdestroy(BATstore *bs);
 int BATfree(BAT *b);
+gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *g, BAT *e, BAT *h, int subsorted);
 BUN BATguess(BAT *b);
 void BATinit_idents(BAT *bn);
 BAT *BATleftmergejoin(BAT *l, BAT *r, BUN estimate);
@@ -53,6 +54,7 @@ void BBPdumpcache(void);	/* never called: for debugging only */
 void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void);
 void BBPinit(void);
+bat BBPinsert(BATstore *bs);
 int BBPrecover(void);
 void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
@@ -86,6 +88,7 @@ int HEAPsave(Heap *h, const char *nme, const char *ext);
 int HEAPwarm(Heap *h);
 int intCmp(const int *r, const int *l);
 int lngCmp(const lng *r, const lng *l);
+oid MAXoid(BAT *i);
 void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
@@ -137,6 +140,10 @@ extern MT_Lock GDKtmLock;
 extern MT_Cond GDKunloadCond;
 extern MT_Lock GDKunloadLock;
 extern MT_Lock MT_system_lock;
+
+#define ATOMappendpriv(t, h)						\
+	((BATatoms[t].atomHeapCheck != HEAP_check || !HEAP_mmappable(h)) && \
+	 (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h)))
 
 #define BBPdirty(x)	(BBP_dirty=(x))
 

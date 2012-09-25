@@ -18,7 +18,7 @@
  */
 
 /*
- * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes
+ * @a M. L. Kersten, P. Boncz, S. Manegold, N. Nes, K.S. Mullender
  * @* Common BAT Operations
  * This module contains the following BAT algebra operations:
  * @itemize
@@ -308,8 +308,6 @@ BATins(BAT *b, BAT *n, bit force)
 	     (BATcount(n) && n->ttype != TYPE_void && !n->tdense))) {
 		BAThash(BATmirror(b), BATcount(b) + BATcount(n));
 	}
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	b->batDirty = 1;
 	if (fastpath) {
 		BUN p, q, r = BUNlast(b);
@@ -418,8 +416,6 @@ BATins(BAT *b, BAT *n, bit force)
 	}
 	res = b;
       bunins_failed:
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	if (tmp)
 		BBPreclaim(tmp);
 	return res;
@@ -447,8 +443,6 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 
 	b->batDirty = 1;
-	BATaccessBegin(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessBegin(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 
 	if (sz > BATcapacity(b) - BUNlast(b)) {
 		/* if needed space exceeds a normal growth extend just
@@ -669,12 +663,8 @@ BATappend(BAT *b, BAT *n, bit force)
 	}
 	b->H->nonil &= n->H->nonil;
 	b->T->nonil &= n->T->nonil;
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return b;
       bunins_failed:
-	BATaccessEnd(b, USE_HHASH | USE_THASH, MMAP_WILLNEED);
-	BATaccessEnd(n, USE_HEAD | USE_TAIL, MMAP_SEQUENTIAL);
 	return NULL;
 }
 
@@ -1096,6 +1086,8 @@ static gdk_return
 do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
 	int reverse, int stable)
 {
+	if (n <= 1)		/* trivially sorted */
+		return GDK_SUCCEED;
 	if (reverse) {
 		if (stable) {
 			if (GDKssort_rev(h, t, base, n, hs, ts, tpe) < 0) {
@@ -1261,12 +1253,12 @@ BATssort_rev(BAT *b)
  * does not need to be specified.
  */
 gdk_return
-BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
+BATsubsort(BAT **sorted, BAT **order, BAT **groups,
+	   BAT *b, BAT *o, BAT *g, int reverse, int stable)
 {
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	oid *grps, prev;
 	BUN p, q, r;
-	BATiter bni;
 
 	if (b == NULL || !BAThdense(b)) {
 		GDKerror("BATsubsort: b must be dense-headed\n");
@@ -1328,8 +1320,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int 
 	}
 	if (o) {
 		bn = BATleftfetchjoin(o, b, BATcount(b));
-		if (bn)
-			bn = BATmaterializeh(bn);
+		if (bn == NULL)
+			goto error;
+		if (bn->ttype == TYPE_void || isVIEW(bn)) {
+			b = BATcopy(bn, TYPE_void, ATOMtype(bn->ttype), TRUE);
+			BBPunfix(bn->batCacheid);
+			bn = b;
+		}
 	} else {
 		bn = BATcopy(b, TYPE_void, b->ttype, TRUE);
 	}
@@ -1348,13 +1345,13 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int 
 				goto error;
 		} else {
 			/* create new order */
-			on = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+			on = BATnew(TYPE_void, TYPE_oid, BATcount(bn));
 			if (on == NULL)
 				goto error;
 			grps = (oid *) Tloc(on, BUNfirst(on));
-			for (p = 0, q = BATcount(b); p < q; p++)
+			for (p = 0, q = BATcount(bn); p < q; p++)
 				     grps[p] = p;
-			BATsetcount(on, BATcount(b));
+			BATsetcount(on, BATcount(bn));
 			on->tkey = 1;
 		}
 		BATseqbase(on, 0);
@@ -1374,8 +1371,7 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int 
 				*order = on;
 			if (groups) {
 				BBPfix(g->batCacheid);
-				gn = g;
-				*groups = bn;
+				*groups = g;
 			}
 			return GDK_SUCCEED;
 		}
@@ -1417,50 +1413,14 @@ BATsubsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int 
 		bn->trevsorted = reverse;
 	}
 	if (groups) {
-		oid *ngrps, ngrp;
-		int (*cmp)(const void *, const void *);
-		const void *pv, *v;
-
-		gn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-		if (gn == NULL)
+		if (BATgroup_internal(groups, NULL, NULL, bn, g, NULL, NULL, 1) == GDK_FAIL)
 			goto error;
-		ngrps = (oid *) Tloc(gn, BUNfirst(gn));
-		ngrp = 0;
-		BATsetcount(gn, BATcount(b));
-		BATseqbase(gn, 0);
-		if (g) {
-			grps = (oid *) Tloc(g, BUNfirst(g));
-			prev = *grps++;
-		} else {
-			grps = NULL;
-			prev = 0;
-		}
-		bni = bat_iterator(bn);
-		pv = BUNtail(bni, BUNfirst(bn));
-		cmp = BATatoms[bn->ttype].atomCmp;
-		*ngrps++ = ngrp;
-		for (r = BUNfirst(bn), p = r + 1, q = r + BATcount(bn);
-		     p < q;
-		     p++) {
-			v = BUNtail(bni, p);
-			if (grps && *grps++ != prev) {
-				ngrp++;
-				prev = *grps;
-			} else if (cmp(pv, v) != 0)
-				ngrp++;
-			*ngrps++ = ngrp;
-			pv = v;
-		}
-		gn->tsorted = 1;
-		gn->tkey = ngrp == BATcount(gn);
-		gn->trevsorted = BATcount(gn) <= 1;
-		if (gn->tkey && (bn->tsorted || bn->trevsorted)) {
+		if ((*groups)->tkey && (bn->tsorted || bn->trevsorted)) {
 			/* if new groups bat is key and the result bat
 			 * is (rev)sorted (single input group), we
 			 * know it is key */
 			bn->tkey = 1;
 		}
-		*groups = gn;
 	}
 
 	if (sorted)
@@ -1581,81 +1541,6 @@ static void
 BATsetprop_wrd(BAT *b, int idx, wrd val)
 {
 	BATsetprop(b, idx, TYPE_wrd, &val);
-}
-
-#define BUNnumber(bx,hx,tx)	bunfastins_nocheck(bx, r, hx, (ptr)&i, Hsize(bx), Tsize(bx)); r++; i++;
-/* returns a new bat with the same head as b and consecutively
- * numbered integers starting with 0 in the tail */
-BAT *
-BATnumber(BAT *b)
-{
-/* 64bit: BATnumber should return a [any,wrd] bat instead of [any,int] */
-	int i = 0;
-	BAT *bn;
-	BUN r;
-
-	BATcheck(b, "BATnumber");
-	/* assert(BATcount(b) <= MAXINT); */
-	bn = BATnew(b->htype, TYPE_int, BATcount(b));
-	if (bn == NULL)
-		return NULL;
-	r = BUNfirst(bn);
-	updateloop(bn, b, BUNnumber);
-	ALIGNsetH(bn, b);
-	BATsetprop_wrd(bn, GDK_AGGR_CARD, i);	/* 64bit: no (wrd) cast to remind us */
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = 1;
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = 1;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-BAT *
-BATgroup(BAT *b, int start, int incr, int grpsize)
-{
-/* 64bit: this should probably use wrd instead of int */
-	BUN p, q, r;
-	int ngroups = 1, i = 0;
-	BAT *bn;
-	BATiter bi = bat_iterator(b);
-
-	BATcheck(b, "BATgroup");
-	bn = BATnew(b->htype, TYPE_int, BATcount(b));
-	if (bn == NULL)
-		return NULL;
-	r = BUNfirst(bn);
-
-	ALIGNsetH(bn, b);
-
-	BATloop(b, p, q) {
-		bunfastins_nocheck(bn, r, BUNhead(bi, p), (ptr) &start, Hsize(bn), Tsize(bn));
-		r++;
-		if (i == grpsize - 1) {
-			start += incr;
-			i = 0;
-			ngroups++;
-		} else {
-			i++;
-		}
-	}
-	if (i == 0)
-		ngroups--;
-	BATsetprop_wrd(bn, GDK_AGGR_CARD, ngroups);
-	bn->hsorted = BAThordered(b);
-	bn->tsorted = 1;
-	bn->hrevsorted = BAThrevordered(b);
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->H->nonil = b->H->nonil;
-	bn->T->nonil = 1;
-	return bn;
-      bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 #define mark_grp_init(BUNfnd)				\
@@ -1869,18 +1754,17 @@ BATmark_grp(BAT *b, BAT *g, oid *s)
 	return NULL;
 }
 
-
+/* return a new BAT of length n with a dense head and the constant v
+ * in the tail */
 BAT *
-BATconst(BAT *b, int tailtype, const void *v)
+BATconstant(int tailtype, const void *v, BUN n)
 {
 	BAT *bn;
 	void *p;
-	BUN i, n;
+	BUN i;
 
-	BATcheck(b, "BATconst");
 	if (v == NULL)
 		return NULL;
-	n = BATcount(b);
 	bn = BATnew(TYPE_void, tailtype, n);
 	if (bn == NULL)
 		return NULL;
@@ -1919,13 +1803,33 @@ BATconst(BAT *b, int tailtype, const void *v)
 		bn->T->nil = n >= 1 && ATOMcmp(tailtype, v, ATOMnilptr(tailtype)) == 0;
 		for (i = BUNfirst(bn), n += i; i < n; i++)
 			tfastins_nocheck(bn, i, v, Tsize(bn));
+		n -= BUNfirst(bn);
 		break;
 	}
-	BATsetcount(bn, BATcount(b));
+	BATsetcount(bn, n);
 	bn->tsorted = 1;
 	bn->trevsorted = 1;
 	bn->T->nonil = !bn->T->nil;
 	bn->T->key = BATcount(bn) <= 1;
+	BATseqbase(bn, 0);
+	return bn;
+
+  bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+
+/* return a new bat which is aligned with b and with the constant v in
+ * the tail */
+BAT *
+BATconst(BAT *b, int tailtype, const void *v)
+{
+	BAT *bn;
+
+	BATcheck(b, "BATconst");
+	bn = BATconstant(tailtype, v, BATcount(b));
+	if (bn == NULL)
+		return NULL;
 	if (b->H->type != bn->H->type) {
 		BAT *bnn = VIEWcreate(b, bn);
 		BBPunfix(bn->batCacheid);
@@ -1935,10 +1839,6 @@ BATconst(BAT *b, int tailtype, const void *v)
 	}
 
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /*

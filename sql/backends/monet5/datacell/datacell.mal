@@ -17,11 +17,15 @@
 
 module datacell;
 
-pattern basket(tab:str):void
-address DCregister
-comment "Initialize a new basket based on a specific table definition in the datacell schema");
+pattern basket(tbl:str)
+address DCbasket
+comment "Define a basket table.";
 
 pattern emitter(tbl:str, host:str, port:int)
+address DCemitter
+comment "Define a emitter based on a basket table.";
+
+pattern emitter(tbl:str, host:str, port:int, proto:str, mode:str)
 address DCemitter
 comment "Define a emitter based on a basket table.";
 
@@ -29,25 +33,21 @@ pattern receptor(tbl:str, host:str, port:int)
 address DCreceptor
 comment "Define a receptor based on a basket table..";
 
-pattern mode(tbl:str, arg:str)
-address DCmode
-comment "Change the mode of the adaptor to active/passive";
-
-pattern protocol(tbl:str, arg:str)
-address DCprotocol
-comment "Change the protocol of the adaptor UDP/TCP/CSV";
-
-pattern remove(obj:str):void
-address DCremove
-comment "Remove a basket, receptor or emitter";
+pattern receptor(tbl:str, host:str, port:int, proto:str, mode:str)
+address DCreceptor
+comment "Define a receptor based on a basket table..";
 
 pattern pause(obj:str):void
-address DCpause
+address DCpauseObject
 comment "Pause a receptor or emitter";
 
 pattern resume(obj:str):void
 address DCresumeObject
 comment "(Re)start a receptor or emitter";
+
+pattern stop(obj:str):void
+address DCstopObject
+comment "Remove a basket, receptor or emitter";
 
 pattern query(name:str,def:str):void
 address DCquery
@@ -59,15 +59,23 @@ comment "Add a new continuous query procedure.";
 
 pattern prelude()
 address DCprelude
+comment "Prepare datacell runtime system";
+
+pattern initialize()
+address DCinitialize
 comment "Convert the datacell schema to a stream processing infrastructure";
 
 pattern pause()
 address DCpauseScheduler
-comment "(Re)start the petrinet scheduler.";
+comment "Pause all queries";
 
 pattern resume()
-address DCresume
-comment "Resume the petrinet scheduler.";
+address DCresumeScheduler
+comment "Resume all queries.";
+
+pattern stop():void
+address DCstopScheduler
+comment "Stop all receptors, emitters and queries";
 
 pattern postlude()
 address DCpostlude
@@ -81,22 +89,32 @@ command threshold{unsafe}(bskt:str, mi:int):bit
 address DCthreshold
 comment "Prefilter on bucket content";
 
-command window{unsafe}(bskt:str, size:int, slide:int):bit
+command window{unsafe}(bskt:str, size:lng, slide:lng):bit
 address DCwindow
 comment "Slide the basket with a limited number of events";
 
-command timewindow{unsafe}(bskt:str, N:int, S:int):bit
+command timewindow{unsafe}(bskt:str, N:lng, S:lng):bit
 address DCtimewindow
 comment "Slide the basket with a time window of N milliseconds with stride S milliseconds";
 
-command beat(bskt:str, t:int):bit
+command beat(bskt:str, t:lng):bit
 address DCbeat
 comment "Schedule query with T milliseconds interval";
 
 command baskets()(nme:bat[:oid,:str], threshold:bat[:oid,:int], winsize:bat[:oid,:int], winstride:bat[:oid,:int], timeslice:bat[:oid,:int], 
-timestride:bat[:oid,:int], beat:bat[:oid,:int], seen:bat[:oid,:timestamp], grabs:bat[:oid,:int], events:bat[:oid,:int])
+timestride:bat[:oid,:int], beat:bat[:oid,:int], seen:bat[:oid,:timestamp], events:bat[:oid,:int])
 address BSKTtable
 comment "Inspect the datacell baskets";
+
+command receptors()(nme:bat[:oid,:str], host:bat[:oid,:str], port:bat[:oid,:int], protocol:bat[:oid,:str], mode:bat[:oid,:str],
+status:bat[:oid,:str], seen:bat[:oid,:timestamp], cycles:bat[:oid,:int], received:bat[:oid,:int], pending:bat[:oid,:int])
+address RCtable
+comment "Inspect the receptors";
+
+command emitters()(nme:bat[:oid,:str], host:bat[:oid,:str], port:bat[:oid,:int], protocol:bat[:oid,:str], mode:bat[:oid,:str],
+status:bat[:oid,:str], seen:bat[:oid,:timestamp], cycles:bat[:oid,:int], sent:bat[:oid,:int], pending:bat[:oid,:int])
+address EMtable
+comment "Inspect the emitters";
 
 command queries()(nme:bat[:oid,:str], status:bat[:oid,:str], seen:bat[:oid,:timestamp], cycles:bat[:oid,:int], events:bat[:oid,:int], time:bat[:oid,:lng], error:bat[:oid,:str], def:bat[:oid,:str])
 address PNtable

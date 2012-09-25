@@ -88,7 +88,7 @@ HEAPcacheInit(void)
 		int i;
 
 		MT_lock_init(&HEAPcacheLock, "HEAPcache_init");
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		hc = (heap_cache*)GDKmalloc(sizeof(heap_cache));
 		hc->used = 0;
 		hc->sz = HEAP_CACHE_SIZE;
@@ -101,7 +101,7 @@ HEAPcacheInit(void)
 			snprintf(fn, PATHLENGTH, "%d", i);
 			GDKunlink(HCDIR, fn, NULL);
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 }
 
@@ -112,7 +112,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 
 
 	if (hc && free_file && fn && storage == STORE_MMAP && hc->used < hc->sz) {
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 		if (hc->used < hc->sz) {
 			heap_cache_e *e = hc->hc+hc->used;
 
@@ -124,7 +124,7 @@ HEAPcacheAdd(void *base, size_t maxsz, char *fn, storage_t storage, int free_fil
 			hc->used++;
 			added = 1;
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 	if (!added)
 		return GDKmunmap(base, maxsz);
@@ -140,7 +140,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 	*maxsz = (1 + (*maxsz >> 16)) << 16;	/* round up to 64K */
 	if (hc && mode == STORE_MMAP && hc->used < hc->sz) {
 		HEAPDEBUG fprintf(stderr, "#HEAPcacheFind (%s)" SZFMT " %d %d\n", fn, *maxsz, (int) mode, hc->used);
-		gdk_set_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_set(&HEAPcacheLock, "HEAPcache_init");
 
 		if (hc->used) {
 			int i;
@@ -165,21 +165,30 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 
 				if ((fp = fopen(fn, "rb+")) != NULL &&
 #ifdef _WIN64
-				   _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    _fseeki64(fp, (ssize_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
 #ifdef HAVE_FSEEKO
-				   fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseeko(fp, (off_t) *maxsz-1, SEEK_SET) >= 0 &&
 #else
-				   fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
+				    fseek(fp, (long) *maxsz-1, SEEK_SET) >= 0 &&
 #endif
 #endif
-				   fputc('\n', fp) >= 0 &&
-				   fflush(fp) >= 0 &&
-				   fclose(fp) >= 0) {
-					void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
-					GDKmunmap(e->base, e->maxsz);
-					e->base = base;
-					e->maxsz = *maxsz;
+				    fputc('\n', fp) >= 0 &&
+				    fflush(fp) >= 0) {
+					if (fclose(fp) >= 0) {
+						void *base = GDKload(fn, NULL, *maxsz, *maxsz, STORE_MMAP);
+						GDKmunmap(e->base, e->maxsz);
+						e->base = base;
+						e->maxsz = *maxsz;
+					}
+					/* after fclose, successful or
+					 * not, we can't call fclose
+					 * again */
+					fp = NULL;
+				}
+				if (fp) {
+					/* if set, extending the file failed */
+					fclose(fp);
 				}
 			}
 			base = e->base;
@@ -200,7 +209,7 @@ HEAPcacheFind(size_t *maxsz, char *fn, storage_t mode)
 				GDKmove(HCDIR, hc->hc[hc->used].fn, NULL, HCDIR, e->fn, NULL);
 			}
 		}
-		gdk_unset_lock(HEAPcacheLock, "HEAPcache_init");
+		MT_lock_unset(&HEAPcacheLock, "HEAPcache_init");
 	}
 	if (!base) {
 		FILE *fp = GDKfilelocate(fn, "wb", NULL);
@@ -303,7 +312,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		} else {
 			char *ext;
 
-			strcpy(nme, of);
+			strncpy(nme, of, sizeof(nme));
+			nme[sizeof(nme) - 1] = 0;
 			ext = decompose_filename(nme);
 			fp = GDKfilelocate(nme, "wb", ext);
 			if (fp != NULL) {
@@ -347,7 +357,8 @@ HEAPextend(Heap *h, size_t size)
 	char nme[PATHLENGTH], *ext = NULL;
 
 	if (h->filename) {
-		strcpy(nme, h->filename);
+		strncpy(nme, h->filename, sizeof(nme));
+		nme[sizeof(nme) - 1] = 0;
 		ext = decompose_filename(nme);
 	}
 	if (size <= h->size)
@@ -619,7 +630,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int ret = 0, desc_status = 0;
 	long_str srcpath, dstpath;
 	struct stat st;
-	char *p;
 
 	h->storage = h->newstorage;
 	h->maxsize = h->size;
@@ -660,9 +670,8 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	 * takes precedence. */
 	GDKfilepath(srcpath, BATDIR, nme, ext);
 	GDKfilepath(dstpath, BATDIR, nme, ext);
-	for (p = srcpath; *p; p++)
-		;
-	strcpy(p, suffix);
+	assert(strlen(srcpath) + strlen(suffix) < sizeof(srcpath));
+	strcat(srcpath, suffix);
 	ret = stat(dstpath, &st);
 	if (stat(srcpath, &st) == 0) {
 		int t0;
@@ -720,8 +729,8 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix)
 	if (h->storage != STORE_MEM && store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM;
-		strcpy(extension, ext);
-		strcat(extension, suffix);
+		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
+		snprintf(extension, sizeof(extension), "%s%s", ext, suffix);
 		ext = extension;
 	} else if (store != STORE_MEM) {
 		store = h->storage;
@@ -757,8 +766,8 @@ HEAPdelete(Heap *h, const char *o, const char *ext)
 	if (h->copied) {
 		return 0;
 	}
-	strcpy(ext2, ext);
-	strcat(ext2, ".new");
+	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
+	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
 	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0) ? 0 : -1;
 }
 

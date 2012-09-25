@@ -22,8 +22,8 @@ function user.main():void;
 end main;
 function user.qry():void;               #  0 qry:void := user.qry() {G}
     a := array.grid(1,2,4,1);           #  1 a:bat[:oid,:int] := ARRAYgrid_int(_2:int, _3:int, _4:int, _2:int) {G}
-    b := batcalc.+(a,1);                #  2 b:bat[:oid,:int] := CMDbatADDcstsignal(a:bat[:oid,:int], _2:int) {G}
-    c := batcalc.*(b,4);                #  3 c:bat[:oid,:int] := CMDbatMULcstsignal(b:bat[:oid,:int], _4:int) {G}
+    b := batcalc.+(a,1);                #  2 b:bat[:oid,:int] := CMDbatADDsignal(a:bat[:oid,:int], _2:int) {G}
+    c := batcalc.*(b,4);                #  3 c:bat[:oid,:int] := CMDbatMULsignal(b:bat[:oid,:int], _4:int) {G}
 end qry;                                #  4  
 
 # 21:35:55 >  

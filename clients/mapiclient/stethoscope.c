@@ -61,7 +61,7 @@ static struct {
 	/*  8  */ { 'c', "cpu", "cutime", 0 },
 	/*  9  */ { 'c', "cpu", "stime", 0 },
 	/*  0  */ { 'c', "cpu", "cstime", 0 },
-	/*  1  */ { 'm', "memory", "arena", 0 },
+	/*  1  */ { 'm', "memory", "arena", 0 },/* memory details are ignored*/
 	/*  2  */ { 'm', "memory", "ordblks", 0 },
 	/*  3  */ { 'm', "memory", "smblks", 0 },
 	/*  4  */ { 'm', "memory", "hblkhd", 0 },
@@ -126,7 +126,7 @@ usage(void)
 	fprintf(stderr, "  T = wall clock time\n");
 	fprintf(stderr, "  t = ticks in microseconds\n");
 	fprintf(stderr, "  c = cpu statistics (utime,ctime,stime,cstime)\n");
-	fprintf(stderr, "  m = memory resources as provided by OS\n");
+	fprintf(stderr, "  m = rss memory as provided by OS (in MB)\n");
 	fprintf(stderr, "  r = block reads\n");
 	fprintf(stderr, "  w = block writes\n");
 	fprintf(stderr, "  b = bytes read/written\n");

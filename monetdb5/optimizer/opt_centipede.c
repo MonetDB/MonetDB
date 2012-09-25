@@ -42,6 +42,8 @@ typedef	struct{
 	ValRecord bounds[MAXSITES];
 } Slices;
 
+static int nrservers;
+
 /*
  * The query will be controlled from the coordinator with a plan
  * geared at parallel execution 

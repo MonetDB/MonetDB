@@ -140,7 +140,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) == sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
+		if (hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
 			/* close old flow block */
 			if (flowblock){
 				int sf = simpleFlow(old,start,i);
@@ -148,7 +148,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					for( j=start ; j<i; j++)
 					if (old[j]) 
 						for( k=0; k<old[j]->retc; k++)
-						if( getBeginLifespan(span,getArg(old[j],k)) > start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
+						if( getBeginLifespan(span,getArg(old[j],k)) >= start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
 							InstrPtr r= newAssignment(mb);
 							getArg(r,0)= getArg(old[j],k);
 							pushNil(mb,r,getArgType(mb,old[j],k));
@@ -187,7 +187,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						for( j=start ; j<i; j++)
 						if (old[j]) 
 							for( k=0; k<old[j]->retc; k++)
-							if( getBeginLifespan(span,getArg(old[j],k)) > start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
+							if( getBeginLifespan(span,getArg(old[j],k)) >= start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
 								InstrPtr r= newAssignment(mb);
 								getArg(r,0)= getArg(old[j],k);
 								pushNil(mb,r,getArgType(mb,old[j],k));

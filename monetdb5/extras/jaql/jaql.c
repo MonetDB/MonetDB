@@ -1910,49 +1910,43 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (j->err[0] != '\0')
 			break;
-		if (j->p == NULL)
-			j->explain = 99; /* jump over switch below */
-
-		switch (j->explain) {
-			case 0: /* normal (execution) mode */
-			case 1: /* explain: show MAL-plan */ {
-				str err;
-				Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
-						FUNCTIONsymbol);
-				/* we do not return anything */
-				setVarType(prg->def, 0, TYPE_void);
-				setVarUDFtype(prg->def, 0);
-				(void)dumptree(j, cntxt, prg->def, j->p);
-				pushEndInstruction(prg->def);
-				/* codegen could report an error */
-				if (j->err[0] != '\0')
-					break;
-
-				chkProgram(cntxt->fdout, cntxt->nspace, prg->def);
-				if (j->explain == 1) {
-					printFunction(cntxt->fdout, prg->def, 0,
-							LIST_MAL_STMT | LIST_MAPI);
-				} else {
-					err = (str)runMAL(cntxt, prg->def, 1, 0, 0, 0);
-					freeMalBlk(prg->def);
-					if (err != MAL_SUCCEED) {
-						snprintf(j->err, sizeof(j->err), "%s", err);
-						GDKfree(err);
-						break;
-					}
-				}
-			}	break;
-			case 2: /* plan */
-			case 3: /* planf */
-				printtree(cntxt->fdout, j->p, 0, j->explain == 3);
-				mnstr_printf(cntxt->fdout, "\n");
+		if (j->p == NULL) {
+			/* do nothing */
+		} else if (j->plan || j->planf) {
+			printtree(cntxt->fdout, j->p, 0, j->planf);
+			mnstr_printf(cntxt->fdout, "\n");
+		} else {
+			str err;
+			Symbol prg = newFunction(putName("user", 4), putName("jaql", 4),
+					FUNCTIONsymbol);
+			/* we do not return anything */
+			setVarType(prg->def, 0, TYPE_void);
+			setVarUDFtype(prg->def, 0);
+			(void)dumptree(j, cntxt, prg->def, j->p);
+			pushEndInstruction(prg->def);
+			/* codegen could report an error */
+			if (j->err[0] != '\0')
 				break;
+
+			chkProgram(cntxt->fdout, cntxt->nspace, prg->def);
+			if (j->explain) {
+				printFunction(cntxt->fdout, prg->def, 0,
+						LIST_MAL_STMT | LIST_MAPI);
+			} else {
+				err = (str)runMAL(cntxt, prg->def, 0, 0);
+				freeMalBlk(prg->def);
+				if (err != MAL_SUCCEED) {
+					snprintf(j->err, sizeof(j->err), "%s", err);
+					GDKfree(err);
+					break;
+				}
+			}
 		}
 		freetree(j->p);
 		/* reset */
 		j->p = NULL;
 		j->esc_depth = 0;
-		j->explain = 0;
+		j->explain = j->plan = j->planf = j->debug = j->trace = j->mapimode = 0;
 	} while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0' && j->err[0] == '\0');
 
 	jaqllex_destroy(j->scanner);

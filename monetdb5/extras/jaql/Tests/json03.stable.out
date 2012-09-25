@@ -20,18 +20,18 @@ function user.main():void;
 # use extract to semi-construct a new result 
     s := io.stdout();
     (l1,l2,l3,l4,l5,l6,l7) := json.shred("[{\"id\":1,\"name\":\"Fabian\",\"data\":[0,2,true,null]},{\"id\":2,\"name\":\"Niels\"},{\"id\":3,\"name\":\"Martin\",\"data\":null}]");
-    json.print(s,l1,l2,l3,l4,l5,l6,l7,true);
+    json.print(s,l1,l2,l3,l4,l5,l6,l7,0@0,true);
     (r1,r2,r3,r4,r5,r6,r7) := json.shred("[{\"userid\":2,\"prj\":\"sql\"},{\"userid\":1,\"prj\":[\"merovingian\",\"jdbc\",\"jacqueline\"]}]");
-    json.print(s,r1,r2,r3,r4,r5,r6,r7,true);
+    json.print(s,r1,r2,r3,r4,r5,r6,r7,0@0,true);
     elems := bat.new(:oid,:oid);
     elems := bat.insert(elems,1@0,4@0);
     elems := bat.insert(elems,9@0,1@0);
     (r1,r2,r3,r4,r5,r6,r7) := json.extract(r1,r2,r3,r4,r5,r6,r7,elems,0@0);
-    json.print(s,r1,r2,r3,r4,r5,r6,r7,true);
+    json.print(s,r1,r2,r3,r4,r5,r6,r7,0@0,true);
     elems := bat.reverse(elems);
     lastid := json.nextid(r1);
     (l1,l2,l3,l4,l5,l6,l7) := json.extract(l1,l2,l3,l4,l5,l6,l7,elems,lastid);
-    json.print(s,l1,l2,l3,l4,l5,l6,l7,true);
+    json.print(s,l1,l2,l3,l4,l5,l6,l7,lastid,true);
 # objects from l and r, order should match elems and be equal to elemes 
 # if startoid is 0@0 
     o5 := bat.reverse(l5);
@@ -73,7 +73,7 @@ function user.main():void;
     r5 := bat.insert(r5,objs);
     r6 := bat.insert(r6,l6);
     r7 := bat.insert(r7,l7);
-    json.print(s,r1,r2,r3,r4,r5,r6,r7,true);
+    json.print(s,r1,r2,r3,r4,r5,r6,r7,0@0,true);
 end main;
 [
   { "id": 1, "name": "Fabian", "data": [ 0, 2, true, null ] },

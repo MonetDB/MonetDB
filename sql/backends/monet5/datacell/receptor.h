@@ -32,16 +32,31 @@
 /* #define _DEBUG_RECEPTOR_*/
 #define RCout GDKout
 
-/*
- * @-
- * Multiple protocols for event handling are foreseen.
- * We experiment with the two dominant versions.
- * TCP provides a reliable protocol for event exchange.
- * UDP is not-reliable and its behavior in the context
- * of the DataCell depends on the ability to handle the
- * event stream at the same speed as it arrives.
- */
-#define PAUSEDEFAULT 1000
+typedef struct RECEPTOR {
+	str name;
+	str host;
+	int port;
+	int mode;   	/* active/passive */
+	int protocol;   /* event protocol UDP,TCP,CSV */
+	int bskt;   	/* connected to a basket */
+	int status;
+	int delay;  	/* control the delay between attempts to connect */
+	int lck;
+	str scenario;   /* use a scenario file */
+	int sequence;   /* repetition count */
+	str modnme, fcnnme; /* generic receptor generators */
+	SOCKET sockfd;
+	SOCKET newsockfd;
+	str error;  /* what went wrong */
+	MT_Id pid;
+	/* statistics */
+	timestamp lastseen;
+	int cycles;		/* how often emptied */
+	int pending;		/* pending events */
+	int received;
+	Tablet table;   /* tuple input structure */
+	struct RECEPTOR *nxt, *prv;
+} RCrecord, *Receptor;
 
 #ifdef WIN32
 #ifndef LIBDATACELL
@@ -53,16 +68,17 @@
 #define adapters_export extern
 #endif
 
-adapters_export str DCreceptorNew(int *ret, str *tbl, str *host, int *port);
-adapters_export str DCreceptorPause(int *ret, str *nme);
-adapters_export str DCreceptorResume(int *ret, str *nme);
+adapters_export str RCreceptorStart(int *ret, str *tbl, str *host, int *port);
+adapters_export str RCreceptorPause(int *ret, str *nme);
+adapters_export str RCreceptorResume(int *ret, str *nme);
+adapters_export str RCreceptorStop(int *ret, str *nme);
+adapters_export Receptor RCfind(str nme);
+adapters_export str RCpause(int *ret);
 adapters_export str RCresume(int *ret);
-adapters_export str RCdrop(int *ret, str *nme);
-adapters_export str RCreset(int *ret);
-adapters_export str RCmode(int *ret, str *nme, str *arg);
-adapters_export str RCprotocol(int *ret, str *nme, str *arg);
-adapters_export str DCscenario(int *ret, str *nme, str *fnme, int *seq);
-adapters_export str DCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
+adapters_export str RCstop(int *ret);
+adapters_export str RCscenario(int *ret, str *nme, str *fnme, int *seq);
+adapters_export str RCgenerator(int *ret, str *nme, str *modnme, str *fcnnme);
 adapters_export str RCdump(void) ;
+adapters_export str RCtable(int *nameId, int *hostId, int *portId, int *protocolId, int *mode, int *statusId, int *seenId, int *cyclesId, int *receivedId, int *pendingId);
 #endif
 

@@ -38,7 +38,7 @@
 
 mal_export void showErrors(Client cntxt);
 mal_export MalStkPtr prepareMALstack(MalBlkPtr mb, int size);
-mal_export str runMAL(Client c, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
+mal_export str runMAL(Client c, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env);
 mal_export str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
 mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
@@ -48,7 +48,6 @@ mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 mal_export str malCommandCall(MalStkPtr stk, InstrPtr pci);
 mal_export void updateBigFoot(Client cntxt, int bid, int add);
 mal_export int isNotUsedIn(InstrPtr p, int start, int a);
-mal_export str runMALprocess(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int start, int stop);
 mal_export str safeguardStack(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str catchKernelException(Client cntxt, str ret);
 

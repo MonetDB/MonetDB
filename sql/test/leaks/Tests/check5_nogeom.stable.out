@@ -1,0 +1,199 @@
+stdout of test 'check5_nogeom` in directory 'test/leaks` itself:
+
+
+# 22:02:17 >  
+# 22:02:17 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/sql_logs"  --set mapi_open=true --set xrpc_open=true --set mapi_port=35700 --set xrpc_port=46587 --set monet_prompt= --trace  "--dbname=mTests_src_test_leaks" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:02:17 >  
+
+# MonetDB server v5.8.0, based on kernel v1.26.0
+# Serving database 'mTests_src_test_leaks', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008- MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35700/
+# MonetDB/SQL module v2.26.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 22:02:17 >  
+# 22:02:17 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35700 
+# 22:02:17 >  
+
+% .bbp,	.bbp,	.bbp # table_name
+% htype,	ttype,	count # name
+% clob,	clob,	bigint # type
+% 3,	9,	4 # length
+[ "oid",	"bit",	0	]
+[ "oid",	"bit",	60	]
+[ "oid",	"bit",	60	]
+[ "oid",	"bit",	303	]
+[ "oid",	"bit",	1108	]
+[ "oid",	"bit",	1108	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	0	]
+[ "oid",	"int",	1	]
+[ "oid",	"int",	1	]
+[ "oid",	"int",	1	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	2	]
+[ "oid",	"int",	3	]
+[ "oid",	"int",	3	]
+[ "oid",	"int",	4	]
+[ "oid",	"int",	4	]
+[ "oid",	"int",	19	]
+[ "oid",	"int",	19	]
+[ "oid",	"int",	19	]
+[ "oid",	"int",	19	]
+[ "oid",	"int",	19	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	29	]
+[ "oid",	"int",	60	]
+[ "oid",	"int",	60	]
+[ "oid",	"int",	144	]
+[ "oid",	"int",	195	]
+[ "oid",	"int",	195	]
+[ "oid",	"int",	303	]
+[ "oid",	"int",	303	]
+[ "oid",	"int",	303	]
+[ "oid",	"int",	303	]
+[ "oid",	"int",	303	]
+[ "oid",	"int",	1108	]
+[ "oid",	"int",	1108	]
+[ "oid",	"int",	1108	]
+[ "oid",	"int",	1108	]
+[ "oid",	"int",	3056	]
+[ "oid",	"int",	3056	]
+[ "oid",	"int",	3056	]
+[ "oid",	"int",	3056	]
+[ "oid",	"int",	3056	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	0	]
+[ "oid",	"lng",	1	]
+[ "oid",	"lng",	2	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	0	]
+[ "oid",	"oid",	2	]
+[ "oid",	"oid",	4	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	0	]
+[ "oid",	"sht",	60	]
+[ "oid",	"sht",	60	]
+[ "oid",	"sht",	195	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	0	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	1	]
+[ "oid",	"str",	2	]
+[ "oid",	"str",	2	]
+[ "oid",	"str",	2	]
+[ "oid",	"str",	3	]
+[ "oid",	"str",	4	]
+[ "oid",	"str",	29	]
+[ "oid",	"str",	29	]
+[ "oid",	"str",	60	]
+[ "oid",	"str",	60	]
+[ "oid",	"str",	144	]
+[ "oid",	"str",	303	]
+[ "oid",	"str",	303	]
+[ "oid",	"str",	303	]
+[ "oid",	"str",	303	]
+[ "oid",	"str",	1108	]
+[ "oid",	"str",	1108	]
+[ "oid",	"str",	1108	]
+[ "oid",	"str",	3056	]
+[ "oid",	"str",	3056	]
+[ "oid",	"timestamp",	0	]
+[ "oid",	"timestamp",	0	]
+[ "oid",	"wrd",	0	]
+[ "oid",	"wrd",	0	]
+[ "oid",	"wrd",	0	]
+[ "oid",	"wrd",	0	]
+#select 'transient', count(*) from bbp() as bbp where kind like 'tran%';
+% .L1,	.bbp # table_name
+% L1,	L2 # name
+% char,	wrd # type
+% 9,	3 # length
+[ "transient",	183	]
+#select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
+% .L1,	.bbp # table_name
+% L1,	L2 # name
+% char,	wrd # type
+% 10,	3 # length
+[ "persistent",	152	]
+
+# 22:02:17 >  
+# 22:02:17 >  Done.
+# 22:02:17 >  
+

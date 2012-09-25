@@ -58,61 +58,61 @@ command tostr() :str
 address date_tostr;
 
 
-command ==(v:date,w:date):bit
-address MTIMEdate_EQ
+pattern ==(v:date,w:date):bit
+address CMDvarEQ
 comment "Equality of two dates";
-command !=(v:date,w:date):bit
-address MTIMEdate_NEQ
+pattern !=(v:date,w:date):bit
+address CMDvarNE
 comment "Equality of two dates";
-command <(v:date,w:date):bit
-address MTIMEdate_LT
+pattern <(v:date,w:date):bit
+address CMDvarLT
 comment "Equality of two dates";
-command <=(v:date,w:date):bit
-address MTIMEdate_LE
+pattern <=(v:date,w:date):bit
+address CMDvarLE
 comment "Equality of two dates";
-command >(v:date,w:date):bit
-address MTIMEdate_GT
+pattern >(v:date,w:date):bit
+address CMDvarGT
 comment "Equality of two dates";
-command >=(v:date,w:date):bit
-address MTIMEdate_GE
+pattern >=(v:date,w:date):bit
+address CMDvarGE
 comment "Equality of two dates";
-command isnil(v:date):bit
-address MTIMEdate_isnil
+pattern isnil(v:date):bit
+address CMDvarISNIL
 comment "Nil test for date value";
 
 module mtime;
-command calc.==(v:date,w:date):bit
-address MTIMEdate_EQ
+pattern calc.==(v:date,w:date):bit
+address CMDvarEQ
 comment "Equality of two dates";
-command calc.!=(v:date,w:date):bit
-address MTIMEdate_NEQ
+pattern calc.!=(v:date,w:date):bit
+address CMDvarNE
 comment "Equality of two dates";
-command calc.<(v:date,w:date):bit
-address MTIMEdate_LT
+pattern calc.<(v:date,w:date):bit
+address CMDvarLT
 comment "Equality of two dates";
-command calc.<=(v:date,w:date):bit
-address MTIMEdate_LE
+pattern calc.<=(v:date,w:date):bit
+address CMDvarLE
 comment "Equality of two dates";
-command calc.>(v:date,w:date):bit
-address MTIMEdate_GT
+pattern calc.>(v:date,w:date):bit
+address CMDvarGT
 comment "Equality of two dates";
-command calc.>=(v:date,w:date):bit
-address MTIMEdate_GE
+pattern calc.>=(v:date,w:date):bit
+address CMDvarGE
 comment "Equality of two dates";
-command calc.isnil(v:date):bit
-address MTIMEdate_isnil
+pattern calc.isnil(v:date):bit
+address CMDvarISNIL
 comment "Nil test for date value";
-command calc.min(v:date,w:date):date
-address MTIMEdate_min
+pattern calc.min(v:date,w:date):date
+address CALCmin
 comment "Minimum test for date value";
-command calc.max(v:date,w:date):date
-address MTIMEdate_max
+pattern calc.max(v:date,w:date):date
+address CALCmax
 comment "Maximum test for date value";
-command calc.min_no_nil(v:date,w:date):date
-address MTIMEdate_min_no_nil
+pattern calc.min_no_nil(v:date,w:date):date
+address CALCmin_no_nil
 comment "Minimum test for date value";
-command calc.max_no_nil(v:date,w:date):date
-address MTIMEdate_max_no_nil
+pattern calc.max_no_nil(v:date,w:date):date
+address CALCmax_no_nil
 comment "Maximum test for date value";
 
 
@@ -139,61 +139,61 @@ command tostr():str
 address daytime_tostr;
 
 
-command ==(v:daytime,w:daytime):bit
-address MTIMEdaytime_EQ
+pattern ==(v:daytime,w:daytime):bit
+address CMDvarEQ
 comment "Equality of two daytimes";
-command !=(v:daytime,w:daytime):bit
-address MTIMEdaytime_NEQ
+pattern !=(v:daytime,w:daytime):bit
+address CMDvarNE
 comment "Equality of two daytimes";
-command <(v:daytime,w:daytime):bit
-address MTIMEdaytime_LT
+pattern <(v:daytime,w:daytime):bit
+address CMDvarLT
 comment "Equality of two daytimes";
-command <=(v:daytime,w:daytime):bit
-address MTIMEdaytime_LE
+pattern <=(v:daytime,w:daytime):bit
+address CMDvarLE
 comment "Equality of two daytimes";
-command >(v:daytime,w:daytime):bit
-address MTIMEdaytime_GT
+pattern >(v:daytime,w:daytime):bit
+address CMDvarGT
 comment "Equality of two daytimes";
-command >=(v:daytime,w:daytime):bit
-address MTIMEdaytime_GE
+pattern >=(v:daytime,w:daytime):bit
+address CMDvarGE
 comment "Equality of two daytimes";
-command isnil(v:daytime):bit
-address MTIMEdaytime_isnil
+pattern isnil(v:daytime):bit
+address CMDvarISNIL
 comment "Nil test for daytime value";
 
 module mtime;
-command calc.==(v:daytime,w:daytime):bit
-address MTIMEdaytime_EQ
+pattern calc.==(v:daytime,w:daytime):bit
+address CMDvarEQ
 comment "Equality of two daytimes";
-command calc.!=(v:daytime,w:daytime):bit
-address MTIMEdaytime_NEQ
+pattern calc.!=(v:daytime,w:daytime):bit
+address CMDvarNE
 comment "Equality of two daytimes";
-command calc.<(v:daytime,w:daytime):bit
-address MTIMEdaytime_LT
+pattern calc.<(v:daytime,w:daytime):bit
+address CMDvarLT
 comment "Equality of two daytimes";
-command calc.<=(v:daytime,w:daytime):bit
-address MTIMEdaytime_LE
+pattern calc.<=(v:daytime,w:daytime):bit
+address CMDvarLE
 comment "Equality of two daytimes";
-command calc.>(v:daytime,w:daytime):bit
-address MTIMEdaytime_GT
+pattern calc.>(v:daytime,w:daytime):bit
+address CMDvarGT
 comment "Equality of two daytimes";
-command calc.>=(v:daytime,w:daytime):bit
-address MTIMEdaytime_GE
+pattern calc.>=(v:daytime,w:daytime):bit
+address CMDvarGE
 comment "Equality of two daytimes";
-command calc.isnil(v:daytime):bit
-address MTIMEdaytime_isnil
+pattern calc.isnil(v:daytime):bit
+address CMDvarISNIL
 comment "Nil test for daytime value";
-command calc.min(v:daytime,w:daytime):daytime
-address MTIMEdaytime_min
+pattern calc.min(v:daytime,w:daytime):daytime
+address CALCmin
 comment "Minimum test for daytime value";
-command calc.max(v:daytime,w:daytime):daytime
-address MTIMEdaytime_max
+pattern calc.max(v:daytime,w:daytime):daytime
+address CALCmax
 comment "Maximum test for daytime value";
-command calc.min_no_nil(v:daytime,w:daytime):daytime
-address MTIMEdaytime_min_no_nil
+pattern calc.min_no_nil(v:daytime,w:daytime):daytime
+address CALCmin_no_nil
 comment "Minimum test for daytime value";
-command calc.max_no_nil(v:daytime,w:daytime):daytime
-address MTIMEdaytime_max_no_nil
+pattern calc.max_no_nil(v:daytime,w:daytime):daytime
+address CALCmax_no_nil
 comment "Maximum test for daytime value";
 
 
@@ -242,61 +242,61 @@ address MTIMEtimestamp
 comment "convert seconds since epoch into a timestamp";
 
 
-command ==(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_EQ
+pattern ==(v:timestamp,w:timestamp):bit
+address CMDvarEQ
 comment "Equality of two timestamps";
-command !=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_NEQ
+pattern !=(v:timestamp,w:timestamp):bit
+address CMDvarNE
 comment "Equality of two timestamps";
-command <(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_LT
+pattern <(v:timestamp,w:timestamp):bit
+address CMDvarLT
 comment "Equality of two timestamps";
-command <=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_LE
+pattern <=(v:timestamp,w:timestamp):bit
+address CMDvarLE
 comment "Equality of two timestamps";
-command >(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_GT
+pattern >(v:timestamp,w:timestamp):bit
+address CMDvarGT
 comment "Equality of two timestamps";
-command >=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_GE
+pattern >=(v:timestamp,w:timestamp):bit
+address CMDvarGE
 comment "Equality of two timestamps";
-command isnil(v:timestamp):bit
-address MTIMEtimestamp_isnil
+pattern isnil(v:timestamp):bit
+address CMDvarISNIL
 comment "Nil test for timestamp value";
 
 module mtime;
-command calc.==(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_EQ
+pattern calc.==(v:timestamp,w:timestamp):bit
+address CMDvarEQ
 comment "Equality of two timestamps";
-command calc.!=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_NEQ
+pattern calc.!=(v:timestamp,w:timestamp):bit
+address CMDvarNE
 comment "Equality of two timestamps";
-command calc.<(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_LT
+pattern calc.<(v:timestamp,w:timestamp):bit
+address CMDvarLT
 comment "Equality of two timestamps";
-command calc.<=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_LE
+pattern calc.<=(v:timestamp,w:timestamp):bit
+address CMDvarLE
 comment "Equality of two timestamps";
-command calc.>(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_GT
+pattern calc.>(v:timestamp,w:timestamp):bit
+address CMDvarGT
 comment "Equality of two timestamps";
-command calc.>=(v:timestamp,w:timestamp):bit
-address MTIMEtimestamp_GE
+pattern calc.>=(v:timestamp,w:timestamp):bit
+address CMDvarGE
 comment "Equality of two timestamps";
-command calc.isnil(v:timestamp):bit
-address MTIMEtimestamp_isnil
+pattern calc.isnil(v:timestamp):bit
+address CMDvarISNIL
 comment "Nil test for timestamp value";
-command calc.min(v:timestamp,w:timestamp):timestamp
-address MTIMEtimestamp_min
+pattern calc.min(v:timestamp,w:timestamp):timestamp
+address CALCmin
 comment "Minimum test for timestamp value";
-command calc.max(v:timestamp,w:timestamp):timestamp
-address MTIMEtimestamp_max
+pattern calc.max(v:timestamp,w:timestamp):timestamp
+address CALCmax
 comment "Maximum test for timestamp value";
-command calc.min_no_nil(v:timestamp,w:timestamp):timestamp
-address MTIMEtimestamp_min_no_nil
+pattern calc.min_no_nil(v:timestamp,w:timestamp):timestamp
+address CALCmin_no_nil
 comment "Minimum test for timestamp value";
-command calc.max_no_nil(v:timestamp,w:timestamp):timestamp
-address MTIMEtimestamp_max_no_nil
+pattern calc.max_no_nil(v:timestamp,w:timestamp):timestamp
+address CALCmax_no_nil
 comment "Maximum test for timestamp value";
 
 

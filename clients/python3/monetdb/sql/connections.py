@@ -24,13 +24,13 @@ from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
 
-class Connection:
-    """A MonetDB SQL database connection"""
+class Connection(object):
+    """This represents a MonetDB SQL database connection"""
     default_cursor = cursors.Cursor
 
     def __init__(self, username="monetdb", password="monetdb",
-        hostname="localhost", port=50000, database="demo", autocommit=False,
-        user=None, host=None):
+                 hostname="localhost", port=50000, database="demo", autocommit=False,
+                 user=None, host=None):
         """ Set up a connection to a MonetDB SQL database.
 
         username   -- username for connection (default: monetdb)
@@ -58,7 +58,6 @@ class Connection:
         without committing the changes first will cause an implicit rollback
         to be performed.
         """
-
         if self.mapi:
             if not self.autocommit:
                 self.rollback()
@@ -81,6 +80,7 @@ class Connection:
         """
         self.command("Xsizeheader %s" % int(sizeheader))
         self.sizeheader = sizeheader
+
 
     def commit(self):
         """
@@ -152,3 +152,4 @@ class Connection:
     InternalError = InternalError
     ProgrammingError = ProgrammingError
     NotSupportedError = NotSupportedError
+

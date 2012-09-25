@@ -47,6 +47,7 @@ struct PIPELINES {
 	char *status;
 	char *prerequisite;
 	MalBlkPtr mb;
+	char builtin;
 } pipes[MAXOPTPIPES] = {
 /* The minimal pipeline necessary by the server to operate correctly*/
 	{"minimal_pipe",
@@ -55,7 +56,7 @@ struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
+	 "stable", NULL, NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
  * access locality
@@ -80,32 +81,8 @@ struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
 	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
-	{"groups_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.joinPath();"
-	 "optimizer.groups();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
+	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizer mitosis is omitted.  It is
  * used mainly to make some tests work deterministically, and to check
@@ -131,9 +108,8 @@ struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
 	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
+	 "stable", NULL, NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
  * omitted.  It is use mainly to make some tests work
@@ -158,9 +134,8 @@ struct PIPELINES {
 	 "optimizer.reduce();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
 	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
+	 "stable", NULL, NULL, 1},
 /* The default pipeline used in the November 2009 release
 	{"nov2009_pipe",	
 	 "optimizer.inline();"
@@ -182,7 +157,7 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
+	 "stable", NULL, NULL, 1},
  */
 /* Experimental pipelines stressing various components under
  * development.  Do not use any of these pipelines in production
@@ -210,30 +185,8 @@ struct PIPELINES {
 	 "optimizer.replication();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", 0, 0},
+	 "experimental", NULL, NULL, 1},
 */
-	{"accumulator_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.constants();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "stable", 0, 0},
 	{"recycler_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
@@ -252,49 +205,7 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", 0, 0},
-	{"cracker_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.selcrack();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTselcrack", 0},
-	{"sidcrack_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.sidcrack();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTsidcrack", 0},
+	 "experimental", NULL, NULL, 1},
 /*
  * The Octopus pipeline for distributed processing (Merovingian enabled platforms only)
  */
@@ -322,7 +233,7 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", "OPToctopus", 0},
+	 "experimental", "OPToctopus", NULL, 1},
 /*
  * The centipede pipe line aims at a map-reduce style of query processing
  */
@@ -347,59 +258,9 @@ struct PIPELINES {
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
 	 "optimizer.garbageCollector();",
-	 "experimental", "OPTcentipede", 0},
+	 "experimental", "OPTcentipede", NULL, 1},
 #endif
-	{"datacell_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.datacell();"
-	 "optimizer.garbageCollector();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 "optimizer.multiplex();"
-	 "optimizer.accumulators();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTdatacell", 0},
-/* The default + datacyclotron*/
-	{"datacyclotron_pipe",
-	 "optimizer.inline();"
-	 "optimizer.remap();"
-	 "optimizer.evaluate();"
-	 "optimizer.costModel();"
-	 "optimizer.coercions();"
-	 "optimizer.emptySet();"
-	 "optimizer.aliases();"
-	 "optimizer.datacyclotron();"
-	 "optimizer.mergetable();"
-	 "optimizer.deadcode();"
-	 "optimizer.commonTerms();"
-	 "optimizer.groups();"
-	 "optimizer.joinPath();"
-	 "optimizer.reorder();"
-	 "optimizer.deadcode();"
-	 "optimizer.reduce();"
-	 "optimizer.dataflow();"
-	 "optimizer.history();"
-	 /* "optimizer.replication();" not used */
-	 "optimizer.multiplex();"
-	 "optimizer.garbageCollector();",
-	 "experimental", "OPTdatacyclotron", 0},
 /* The default + dictionary*/
 	{"dictionary_pipe",
 	 "optimizer.inline();"
@@ -422,7 +283,7 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", "OPTdictionary", 0},
+	 "experimental", "OPTdictionary", NULL, 1},
 /* The default + compression */
 	{"compression_pipe",
 	 "optimizer.inline();"
@@ -446,16 +307,12 @@ struct PIPELINES {
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
-	 "experimental", "OPTcompress", 0},
+	 "experimental", "OPTcompress", NULL, 1},
+/* sentinel */
+	{NULL, NULL, NULL, NULL, NULL, 0}
 };
 
-#ifdef WIN32
-static int builtinoptimizers = 8;
-#else
-static int builtinoptimizers = 11;
-#endif
 /*
- * @-
  * Debugging the optimizer pipeline",
  * The best way is to use mdb and inspect the information gathered",
  * during the optimization phase.  Several optimizers produce more",
@@ -476,13 +333,13 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	struct PIPELINES oldpipe;
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (pipes[i].name && strcmp(name, pipes[i].name) == 0)
+		if (strcmp(name, pipes[i].name) == 0)
 			break;
 
-	if (i < builtinoptimizers)
-		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed");
 	if (i == MAXOPTPIPES)
 		throw(MAL, "optimizer.addPipeDefinition", "Out of slots");
+	if (pipes[i].name && pipes[i].builtin)
+		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed");
 
 	/* save old value */
 	oldpipe = pipes[i];
@@ -509,6 +366,11 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 			freeMalBlk(oldpipe.mb);
 		if (oldpipe.status)
 			GDKfree(oldpipe.status);
+		if (++i < MAXOPTPIPES) {
+			pipes[i].name = pipes[i].def = pipes[i].status = pipes[i].prerequisite = NULL;
+			pipes[i].mb = NULL;
+			pipes[i].builtin = 0;
+		}
 	}
 	return msg;
 }
@@ -628,14 +490,14 @@ validateOptimizerPipes(void)
 	int i;
 	str msg = MAL_SUCCEED;
 
-	mal_set_lock(mal_contextLock, "optimizer validation");
+	MT_lock_set(&mal_contextLock, "optimizer validation");
 	for (i = 0; i < MAXOPTPIPES && pipes[i].def; i++)
 		if (pipes[i].mb) {
 			msg = validatePipe(pipes[i].mb);
 			if (msg != MAL_SUCCEED)
 				break;
 		}
-	mal_unset_lock(mal_contextLock, "optimizer validation");
+	MT_lock_unset(&mal_contextLock, "optimizer validation");
 	return msg;
 }
 
@@ -701,6 +563,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
 		if (strcmp(pipes[i].name, name) == 0)
 			break;
+
+	if (i == MAXOPTPIPES)
+		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");;
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);

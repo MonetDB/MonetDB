@@ -421,16 +421,21 @@ SQLExecute_(ODBCStmt *stmt)
 		offset = 0;
 	sep = "";
 	for (i = 1; i <= stmt->nparams; i++) {
-		if (ODBCStore(stmt, i, offset, 0, &query, &querypos, &querylen, sep) == SQL_ERROR)
+		if (ODBCStore(stmt, i, offset, 0, &query, &querypos, &querylen, sep) == SQL_ERROR) {
+			if (query)
+				free(query);
 			return SQL_ERROR;
+		}
 		sep = ",";
 	}
-	if (querypos >= querylen) {
-		query = realloc(query, querylen += 10);
-		if (query == NULL) {
+	if (querypos + 1 >= querylen) {
+		char *q = realloc(query, querylen += 10);
+		if (q == NULL) {
+			free(query);
 			addStmtError(stmt, "HY001", NULL, 0);
 			return SQL_ERROR;
 		}
+		query = q;
 	}
 	query[querypos++] = ')';
 	query[querypos] = 0;

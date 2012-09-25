@@ -2595,7 +2595,7 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
 	fprintf(stderr, " -u user     | --user=user        user id\n");
-	fprintf(stderr, " -d database | --database=database  database to connect to\n");
+	fprintf(stderr, " -d database | --database=database  database to connect to (may be URI)\n");
 
 	fprintf(stderr, " -e          | --echo             echo the query\n");
 #ifdef HAVE_ICONV
@@ -3003,7 +3003,13 @@ main(int argc, char **argv)
 		has_fileargs = optind != argc;
 	}
 
-	mid = mapi_connect(host, port, user, passwd, language, dbname);
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		mid = mapi_mapiuri(dbname, user, passwd, language);
+	} else {
+		mid = mapi_mapi(host, port, user, passwd, language, dbname);
+	}
+	if (mid && mapi_error(mid) == MOK)
+		mapi_reconnect(mid);	/* actually, initial connect */
 
 	if (mid == NULL) {
 		fprintf(stderr, "failed to allocate Mapi structure\n");

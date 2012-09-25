@@ -1013,7 +1013,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (token == UNION) {
 		int next = sqllex(yylval, parm);
 
-		if (token == JOIN) {
+		if (next == JOIN) {
 			token = UNIONJOIN;
 		} else {
 			lc->yynext = next;

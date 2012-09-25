@@ -230,7 +230,7 @@ char *
 msab_retreatScenario(const char *lang)
 {
 	FILE *f;
-	char buf[256];	/* should be enough for now */
+	char buf[256];	/* should be enough to hold the entire file */
 	size_t len;
 	char pathbuf[PATHLENGTH];
 	char *path = pathbuf;
@@ -242,30 +242,25 @@ msab_retreatScenario(const char *lang)
 	if ((f = fopen(path, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
-			FILE *tmpf = tmpfile();
-			int written = 0;
+			char written = 0;
 
 			buf[len] = '\0';
 			tmp = buf;
 			/* find newlines and evaluate string */
 			while ((p = strchr(tmp, '\n')) != NULL) {
 				*p = '\0';
-				if (strcmp(tmp, lang) != 0) {
-					fprintf(tmpf, "%s\n", buf);
+				if (strcmp(tmp, lang) == 0) {
+					memmove(tmp, p + 1, strlen(p + 1) + 1);
 					written = 1;
+				} else {
+					*p = '\n';
+					tmp = p;
 				}
-				tmp = p;
 			}
 			if (written != 0) {
-				/* no idea how to "move" a file by it's fd (sounds
-				 * impossible anyway) and tmpnam is so much "DO NOT USE"
-				 * that I decided to just copy over the file again... */
 				rewind(f);
-				fflush(tmpf);
-				rewind(tmpf);
-				len = fread(tmp, 1, 256, tmpf);
-				if (fwrite(tmp, 1, len, f) < len) {
-					(void)fclose(tmpf);
+				len = strlen(buf) + 1;
+				if (fwrite(buf, 1, len, f) < len) {
 					(void)fclose(f);
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
 							strerror(errno), path);
@@ -273,7 +268,6 @@ msab_retreatScenario(const char *lang)
 				}
 				fflush(f);
 				fclose(f);
-				fclose(tmpf); /* this should remove it automagically */
 				return(NULL);
 			} else {
 				(void)fclose(f);
@@ -282,7 +276,7 @@ msab_retreatScenario(const char *lang)
 			}
 		} else if (len == 0) {
 			(void)fclose(f);
-			unlink(path);
+			unlink(path);  /* empty file? try to remove */
 			return(NULL);
 		} else { /* some error */
 			(void)fclose(f);
@@ -337,6 +331,7 @@ msab_marchConnection(const char *host, const int port)
 	}
 }
 
+#define STARTEDFILE ".started"
 /**
  * Removes all known publications of available services.  The function
  * name is a nostalgic phrase from "Defender of the Crown" from the
@@ -357,6 +352,10 @@ msab_wildRetreat(void)
 		return(tmp);
 	unlink(path);
 
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
+		return(tmp);
+	unlink(path);
+
 	if ((tmp = getDBPath(&path, PATHLENGTH, _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
 	unlink(path);
@@ -365,7 +364,6 @@ msab_wildRetreat(void)
 }
 
 #define UPLOGFILE ".uplog"
-#define STARTINGFILE ".starting"
 /**
  * Writes a start attempt to the sabaoth start/stop log.  Examination of
  * the log at a later stage reveals crashes of the server.  In addition
@@ -409,11 +407,12 @@ msab_registerStarting(void)
 		return(NULL);
 	}
 	fclose(fopen(path, "w"));
-	/* flag this database as starting up, with the same boundary
-	 * conditions as above */
-	if ((tmp = getDBPath(&path, PATHLENGTH, STARTINGFILE)) != NULL)
+	
+	/* remove any stray file that would suggest we've finished starting up */
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
-	fclose(fopen(path, "w"));
+	unlink(path);
+
 
 	return(NULL);
 }
@@ -430,10 +429,10 @@ msab_registerStarted(void)
 	char *path = pathbuf;
 	char *tmp;
 
-	/* remove starting flag */
-	if ((tmp = getDBPath(&path, PATHLENGTH, STARTINGFILE)) != NULL)
+	/* flag this database as started up */
+	if ((tmp = getDBPath(&path, PATHLENGTH, STARTEDFILE)) != NULL)
 		return(tmp);
-	unlink(path);
+	fclose(fopen(path, "w"));
 
 	return(NULL);
 }
@@ -625,11 +624,11 @@ msab_getStatus(sabdb** ret, char *dbname)
 				} else if (data[0] == '\t') {
 					/* see if the database has finished starting */
 					snprintf(buf, sizeof(buf), "%s/%s/%s",
-							path, e->d_name, STARTINGFILE);
+							path, e->d_name, STARTEDFILE);
 					if (stat(buf, &statbuf) == -1) {
-						sdb->state = SABdbRunning;
-					} else {
 						sdb->state = SABdbStarting;
+					} else {
+						sdb->state = SABdbRunning;
 					}
 				} else { /* should be \n */
 					sdb->state = SABdbInactive;
@@ -648,11 +647,11 @@ msab_getStatus(sabdb** ret, char *dbname)
 			/* lock denied, so mserver is running, see if the database
 			 * has finished starting */
 			snprintf(buf, sizeof(buf), "%s/%s/%s",
-					path, e->d_name, STARTINGFILE);
+					path, e->d_name, STARTEDFILE);
 			if (stat(buf, &statbuf) == -1) {
-				sdb->state = SABdbRunning;
-			} else {
 				sdb->state = SABdbStarting;
+			} else {
+				sdb->state = SABdbRunning;
 			}
 		} else {
 			/* locking succeed, check for a crash in the uplog */
@@ -874,7 +873,7 @@ msab_serialise(char **ret, const sabdb *db)
 	avail = sizeof(conns) - 1;
 	for (l = db->conns; l != NULL; l = l->next) {
 		len = strlen(l->val);
-		if (len > avail)
+		if (len >= avail)
 			break;
 		memcpy(p, l->val, len);
 		p += len + 1;
@@ -992,6 +991,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u = malloc(sizeof(sabuplog));
 
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain startcounter: %s", lasts);
 		return(strdup(buf));
@@ -1000,6 +1000,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->startcntr = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain stopcounter: %s", lasts);
 		return(strdup(buf));
@@ -1008,6 +1009,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->stopcntr = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain crashcounter: %s", lasts);
 		return(strdup(buf));
@@ -1016,6 +1018,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->crashcntr = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain avguptime: %s", lasts);
 		return(strdup(buf));
@@ -1024,6 +1027,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->avguptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain maxuptime: %s", lasts);
 		return(strdup(buf));
@@ -1032,6 +1036,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->maxuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain minuptime: %s", lasts);
 		return(strdup(buf));
@@ -1040,6 +1045,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->minuptime = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain lastcrash: %s", lasts);
 		return(strdup(buf));
@@ -1048,6 +1054,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->lastcrash = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain laststart: %s", lasts);
 		return(strdup(buf));
@@ -1056,6 +1063,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->laststart = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain crashavg1: %s", lasts);
 		return(strdup(buf));
@@ -1064,6 +1072,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->crashavg1 = atoi(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does not contain crashavg10: %s", lasts);
 		return(strdup(buf));
@@ -1072,6 +1081,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	u->crashavg10 = atof(lasts);
 	lasts = p;
 	if ((p = strchr(p, ',')) != NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), 
 				"string does contain additional garbage after crashavg30: %s",
 				lasts);
@@ -1082,6 +1092,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	/* fill/create sabdb struct */
 
 	if (strrchr(path, '/') == NULL) {
+		free(u);
 		snprintf(buf, sizeof(buf), "invalid path: %s", path);
 		return(strdup(buf));
 	}

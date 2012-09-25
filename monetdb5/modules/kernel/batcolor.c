@@ -75,7 +75,6 @@ str CLRbat##X1(int *ret, int *l)\
 \
 	bi = bat_iterator(b);\
 \
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	BATloop(b, p, q) {\
 		ptr h = BUNhead(bi,p);\
 		x= (X3 *) BUNtail(bi,p);\
@@ -86,12 +85,10 @@ str CLRbat##X1(int *ret, int *l)\
 			X2(yp,x);\
 		bunfastins(bn, h, yp);\
 	}\
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	bn->H->nonil = b->H->nonil;\
 	finalizeResult(ret,bn,b);\
 	return MAL_SUCCEED;\
 bunins_failed:\
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	BBPreleaseref(b->batCacheid);\
 	BBPreleaseref(bn->batCacheid);\
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");\
@@ -140,9 +137,6 @@ str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)\
 \
 	p2= BUNfirst(b2);\
 	p3= BUNfirst(b3);\
-	BATaccessBegin(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessBegin(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessBegin(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	BATloop(b, p, q) {\
 		ptr h = BUNhead(bi,p);\
 		x= (X3 *) BUNtail(bi,p);\
@@ -159,16 +153,10 @@ str CLRbat##X1(int *ret, int *l, int *bid2, int *bid3)\
 		p2++;\
 		p3++;\
 	}\
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	bn->H->nonil = b->H->nonil;\
 	finalizeResult(ret,bn,b);\
 	return MAL_SUCCEED;\
 bunins_failed:\
-	BATaccessEnd(b,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessEnd(b2,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
-	BATaccessEnd(b3,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);\
 	BBPreleaseref(b->batCacheid);\
 	BBPreleaseref(bn->batCacheid);\
 	throw(MAL, "batstr.==", OPERATION_FAILED " During bulk operation");\

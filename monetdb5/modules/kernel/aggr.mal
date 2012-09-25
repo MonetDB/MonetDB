@@ -1,0 +1,868 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2012 MonetDB B.V.
+# All Rights Reserved.
+
+module aggr;
+
+command sum(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:bte]
+address AGGRsum2_bte
+comment "Sum over grouped tail sum on bte";
+
+command sum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:bte]
+address AGGRsum3_bte
+comment "Grouped tail sum on bte";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:bte]
+address AGGRsubsum_bte
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:bte]
+address AGGRsubsumcand_bte
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:bte]
+address AGGRprod2_bte
+comment "Product over grouped tail product on bte";
+
+command product(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:bte]
+address AGGRprod3_bte
+comment "Grouped tail product on bte";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:bte]
+address AGGRsubprod_bte
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:bte]
+address AGGRsubprodcand_bte
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:sht]
+address AGGRsum2_sht
+comment "Sum over grouped tail sum on bte";
+
+command sum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:sht]
+address AGGRsum3_sht
+comment "Grouped tail sum on bte";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubsum_sht
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubsumcand_sht
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:sht]
+address AGGRprod2_sht
+comment "Product over grouped tail product on bte";
+
+command product(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:sht]
+address AGGRprod3_sht
+comment "Grouped tail product on bte";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubprod_sht
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubprodcand_sht
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRsum2_int
+comment "Sum over grouped tail sum on bte";
+
+command sum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRsum3_int
+comment "Grouped tail sum on bte";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsum_int
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRprod2_int
+comment "Product over grouped tail product on bte";
+
+command product(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRprod3_int
+comment "Grouped tail product on bte";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprod_int
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRsum2_wrd
+comment "Sum over grouped tail sum on bte";
+
+command sum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRsum3_wrd
+comment "Grouped tail sum on bte";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsum_wrd
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsumcand_wrd
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRprod2_wrd
+comment "Product over grouped tail product on bte";
+
+command product(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRprod3_wrd
+comment "Grouped tail product on bte";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprod_wrd
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprodcand_wrd
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRsum2_lng
+comment "Sum over grouped tail sum on bte";
+
+command sum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRsum3_lng
+comment "Grouped tail sum on bte";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsum_lng
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRprod2_lng
+comment "Product over grouped tail product on bte";
+
+command product(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRprod3_lng
+comment "Grouped tail product on bte";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprod_lng
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:sht]
+address AGGRsum2_sht
+comment "Sum over grouped tail sum on sht";
+
+command sum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:sht]
+address AGGRsum3_sht
+comment "Grouped tail sum on sht";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubsum_sht
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubsumcand_sht
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:sht]
+address AGGRprod2_sht
+comment "Product over grouped tail product on sht";
+
+command product(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:sht]
+address AGGRprod3_sht
+comment "Grouped tail product on sht";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubprod_sht
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:sht]
+address AGGRsubprodcand_sht
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRsum2_int
+comment "Sum over grouped tail sum on sht";
+
+command sum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRsum3_int
+comment "Grouped tail sum on sht";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsum_int
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRprod2_int
+comment "Product over grouped tail product on sht";
+
+command product(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRprod3_int
+comment "Grouped tail product on sht";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprod_int
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRsum2_wrd
+comment "Sum over grouped tail sum on sht";
+
+command sum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRsum3_wrd
+comment "Grouped tail sum on sht";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsum_wrd
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsumcand_wrd
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRprod2_wrd
+comment "Product over grouped tail product on sht";
+
+command product(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRprod3_wrd
+comment "Grouped tail product on sht";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprod_wrd
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprodcand_wrd
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRsum2_lng
+comment "Sum over grouped tail sum on sht";
+
+command sum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRsum3_lng
+comment "Grouped tail sum on sht";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsum_lng
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRprod2_lng
+comment "Product over grouped tail product on sht";
+
+command product(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRprod3_lng
+comment "Grouped tail product on sht";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprod_lng
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRsum2_int
+comment "Sum over grouped tail sum on int";
+
+command sum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRsum3_int
+comment "Grouped tail sum on int";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsum_int
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubsumcand_int
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:int]
+address AGGRprod2_int
+comment "Product over grouped tail product on int";
+
+command product(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:int]
+address AGGRprod3_int
+comment "Grouped tail product on int";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprod_int
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:int]
+address AGGRsubprodcand_int
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRsum2_wrd
+comment "Sum over grouped tail sum on int";
+
+command sum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRsum3_wrd
+comment "Grouped tail sum on int";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsum_wrd
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsumcand_wrd
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRprod2_wrd
+comment "Product over grouped tail product on int";
+
+command product(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRprod3_wrd
+comment "Grouped tail product on int";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprod_wrd
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprodcand_wrd
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRsum2_lng
+comment "Sum over grouped tail sum on int";
+
+command sum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRsum3_lng
+comment "Grouped tail sum on int";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsum_lng
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRprod2_lng
+comment "Product over grouped tail product on int";
+
+command product(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRprod3_lng
+comment "Grouped tail product on int";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprod_lng
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRsum2_wrd
+comment "Sum over grouped tail sum on wrd";
+
+command sum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRsum3_wrd
+comment "Grouped tail sum on wrd";
+
+command subsum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsum_wrd
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsumcand_wrd
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRprod2_wrd
+comment "Product over grouped tail product on wrd";
+
+command product(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRprod3_wrd
+comment "Grouped tail product on wrd";
+
+command subprod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprod_wrd
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprodcand_wrd
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRsum2_lng
+comment "Sum over grouped tail sum on wrd";
+
+command sum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRsum3_lng
+comment "Grouped tail sum on wrd";
+
+command subsum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsum_lng
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRprod2_lng
+comment "Product over grouped tail product on wrd";
+
+command product(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRprod3_lng
+comment "Grouped tail product on wrd";
+
+command subprod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprod_lng
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRsum2_wrd
+comment "Sum over grouped tail sum on lng";
+
+command sum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRsum3_wrd
+comment "Grouped tail sum on lng";
+
+command subsum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsum_wrd
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubsumcand_wrd
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:wrd]
+address AGGRprod2_wrd
+comment "Product over grouped tail product on lng";
+
+command product(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:wrd]
+address AGGRprod3_wrd
+comment "Grouped tail product on lng";
+
+command subprod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprod_wrd
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:wrd]
+address AGGRsubprodcand_wrd
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRsum2_lng
+comment "Sum over grouped tail sum on lng";
+
+command sum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRsum3_lng
+comment "Grouped tail sum on lng";
+
+command subsum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsum_lng
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubsumcand_lng
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:lng]
+address AGGRprod2_lng
+comment "Product over grouped tail product on lng";
+
+command product(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:lng]
+address AGGRprod3_lng
+comment "Grouped tail product on lng";
+
+command subprod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprod_lng
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:lng]
+address AGGRsubprodcand_lng
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:flt]
+address AGGRsum2_flt
+comment "Sum over grouped tail sum on flt";
+
+command sum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:flt]
+address AGGRsum3_flt
+comment "Grouped tail sum on flt";
+
+command subsum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:flt]
+address AGGRsubsum_flt
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:flt]
+address AGGRsubsumcand_flt
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:flt]
+address AGGRprod2_flt
+comment "Product over grouped tail product on flt";
+
+command product(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:flt]
+address AGGRprod3_flt
+comment "Grouped tail product on flt";
+
+command subprod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:flt]
+address AGGRsubprod_flt
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:flt]
+address AGGRsubprodcand_flt
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRsum2_dbl
+comment "Sum over grouped tail sum on flt";
+
+command sum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:dbl]
+address AGGRsum3_dbl
+comment "Grouped tail sum on flt";
+
+command subsum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubsum_dbl
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubsumcand_dbl
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRprod2_dbl
+comment "Product over grouped tail product on flt";
+
+command product(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:dbl]
+address AGGRprod3_dbl
+comment "Grouped tail product on flt";
+
+command subprod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubprod_dbl
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubprodcand_dbl
+comment "Grouped product aggregate with candidates list";
+
+command sum(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRsum2_dbl
+comment "Sum over grouped tail sum on dbl";
+
+command sum(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:dbl]
+address AGGRsum3_dbl
+comment "Grouped tail sum on dbl";
+
+command subsum(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubsum_dbl
+comment "Grouped sum aggregate";
+
+command subsum(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubsumcand_dbl
+comment "Grouped sum aggregate with candidates list";
+
+command product(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRprod2_dbl
+comment "Product over grouped tail product on dbl";
+
+command product(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1])
+		:bat[:oid,:dbl]
+address AGGRprod3_dbl
+comment "Grouped tail product on dbl";
+
+command subprod(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubprod_dbl
+comment "Grouped product aggregate";
+
+command subprod(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubprodcand_dbl
+comment "Grouped product aggregate with candidates list";
+
+# We may have to extend the signatures to all possible {void,oid} combos
+command avg(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on bte";
+
+command avg(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on bte";
+
+command subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on sht";
+
+command avg(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on sht";
+
+command subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on int";
+
+command avg(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on int";
+
+command subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on wrd";
+
+command avg(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on wrd";
+
+command subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on lng";
+
+command avg(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on lng";
+
+command subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on flt";
+
+command avg(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on flt";
+
+command subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+command avg(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRavg2_dbl
+comment "Grouped tail average on dbl";
+
+command avg(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRavg3_dbl
+comment "Grouped tail average on dbl";
+
+command subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavg_dbl
+comment "Grouped avg aggregate";
+
+command subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubavgcand_dbl
+comment "Grouped avg aggregate with candidates list";
+
+
+command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
+address AGGRmin2;
+
+command max(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
+address AGGRmax2;
+
+command min(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:any_1]
+address AGGRmin3;
+
+command max(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
+		:bat[:oid,:any_1]
+address AGGRmax3;
+
+command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:oid]
+address AGGRsubmin
+comment "Grouped minimum aggregate";
+
+command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:oid]
+address AGGRsubmincand
+comment "Grouped minimum aggregate with candidates list";
+
+command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:oid]
+address AGGRsubmax
+comment "Grouped maximum aggregate";
+
+command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:oid]
+address AGGRsubmaxcand
+comment "Grouped maximum aggregate with candidates list";
+
+command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
+	:bat[:oid,:wrd]
+address AGGRcount2
+comment "Grouped count";
+
+command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2],
+		ignorenils:bit) :bat[:void,:wrd]
+address AGGRcount3;
+
+command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:wrd]
+address AGGRsize2nils
+comment "Grouped count of true values";
+
+command count(b:bat[:void,:any_1], e:bat[:oid,:any_2]) :bat[:void,:wrd]
+address AGGRcount2nils
+comment "Grouped count";
+
+command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:wrd]
+address AGGRcount2nils;
+
+command count_no_nil(b:bat[:oid,:any_1],e:bat[:oid,:any_1]):bat[:oid,:wrd]
+address AGGRcount2nonils;
+
+command count(b:bat[:oid,:any_1], g:bat[:oid,:oid], e:bat[:oid,:any_2])
+	:bat[:oid,:wrd]
+address AGGRcount3nils
+comment "Grouped count";
+
+command count_no_nil(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2])
+	:bat[:oid,:wrd]
+address AGGRcount3nonils;
+
+command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:wrd]
+address AGGRsubcount
+comment "Grouped count aggregate";
+
+command subcount(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:wrd]
+address AGGRsubcountcand
+comment "Grouped count aggregate with candidates list";
+
+command median(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2]) :bat[:oid,:any_1]
+address AGGRmedian3
+comment "Grouped median aggregate";
+
+function median(b:bat[:oid,:any_1]) :any_1;
+	bn := submedian(b, 0);
+	return algebra.fetch(bn, 0);
+end aggr.median;
+
+command submedian(b:bat[:oid,:any_1],skip_nils:int) :bat[:oid,:any_1]
+address AGGRmedian
+comment "Median aggregate";
+
+command submedian(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmedian
+comment "Grouped median aggregate";
+
+command submedian(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmediancand
+comment "Grouped median aggregate with candidate list";

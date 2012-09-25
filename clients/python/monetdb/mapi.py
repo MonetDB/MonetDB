@@ -24,6 +24,7 @@ import logging
 import struct
 import hashlib
 from cStringIO import StringIO
+import time
 
 from monetdb.exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
@@ -45,6 +46,7 @@ MSG_QBLOCK = "&6"
 MSG_HEADER = "%"
 MSG_TUPLE = "["
 MSG_REDIRECT = "^"
+MSG_OK = "=OK"
 
 STATE_INIT = 0
 STATE_READY = 1
@@ -100,8 +102,10 @@ class Server(object):
         self.__putblock(response)
         prompt = self.__getblock().strip()
 
-        if len(prompt) == 0:
+        if len(prompt) == 0 :
             # Empty response, server is happy
+            pass
+        elif prompt == MSG_OK:
             pass
         elif prompt.startswith(MSG_INFO):
             logger.info("II %s" % prompt[1:])
@@ -134,11 +138,9 @@ class Server(object):
                         self.password, self.database, self.language)
 
             else:
-                logger.error('!' + prompt[0])
                 raise ProgrammingError("unknown redirect: %s" % prompt)
 
         else:
-            logger.error('!' + prompt[0])
             raise ProgrammingError("unknown state: %s" % prompt)
 
         self.state = STATE_READY
@@ -161,7 +163,9 @@ class Server(object):
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return
+            return True
+        elif response.startswith(MSG_OK):
+            return response[3:].strip() or True
         if response == MSG_MORE:
             # tell server it isn't going to get more
             return self.cmd("")
@@ -232,7 +236,9 @@ class Server(object):
         count = bytes
         while count > 0:
             try:
-                recv = self.socket.recv(bytes)
+                recv = self.socket.recv(count)
+                if len(recv) == 0:
+                    time.sleep(1)
                 logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             except socket.error, error:
                 raise OperationalError(error[1])

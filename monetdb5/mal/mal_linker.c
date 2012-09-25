@@ -289,8 +289,10 @@ loadLibrary(str filename, int flag)
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not locate library %s (from within file '%s')", s, filename);
 	}
 
-	mal_set_lock(mal_contextLock, "loadModule");
+	MT_lock_set(&mal_contextLock, "loadModule");
 	if (lastfile == maxfiles) {
+		if (handle)
+			dlclose(handle);
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].filename = GDKstrdup(filename);
@@ -298,7 +300,7 @@ loadLibrary(str filename, int flag)
 		filesLoaded[lastfile].handle = handle;
 		lastfile ++;
 	}
-	mal_unset_lock(mal_contextLock, "loadModule");
+	MT_lock_unset(&mal_contextLock, "loadModule");
 
 	return MAL_SUCCEED;
 }
@@ -314,7 +316,7 @@ unloadLibraries(void)
 {
 	int i;
 
-	mal_set_lock(mal_contextLock, "unloadModule");
+	MT_lock_set(&mal_contextLock, "unloadModule");
 	for (i = 0; i < lastfile; i++)
 		if (filesLoaded[i].fullname) {
 			/* dlclose(filesLoaded[i].handle);*/
@@ -322,7 +324,7 @@ unloadLibraries(void)
 			GDKfree(filesLoaded[i].fullname);
 		}
 	lastfile = 0;
-	mal_unset_lock(mal_contextLock, "unloadModule");
+	MT_lock_unset(&mal_contextLock, "unloadModule");
 }
 /*
  * @-

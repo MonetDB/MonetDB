@@ -479,10 +479,10 @@ DICTinit(void)
 {
     	BAT *b, *bn, *bs;
 	if ( dictIndex == NULL){
-		mal_set_lock(mal_contextLock, "dictionary");
+		MT_lock_set(&mal_contextLock, "dictionary");
 		if ( dictIndex ){
 			/* parallel initialization action */
-			mal_unset_lock(mal_contextLock, "dictionary");
+			MT_lock_unset(&mal_contextLock, "dictionary");
 			return 0;
 		}
 		b = BATdescriptor(BBPindex("dictIndex"));
@@ -499,7 +499,7 @@ DICTinit(void)
 				BBPreleaseref(b->batCacheid);
 			}
 		}
-		mal_unset_lock(mal_contextLock, "dictionary");
+		MT_lock_unset(&mal_contextLock, "dictionary");
 	}
 	return dictIndex != 0 && dictValue != 0 && dictBase != 0;
 }
@@ -509,23 +509,23 @@ str DICTinitialize(int *ret)
     	BAT *b, *bn, *bs;
 	if ( DICTinit() == 0)
 		return MAL_SUCCEED;
-	mal_set_lock(mal_contextLock, "dictionary");
+	MT_lock_set(&mal_contextLock, "dictionary");
 	b = BATnew(TYPE_int,TYPE_str, 255);
 	if (b == NULL) {
-		mal_unset_lock(mal_contextLock, "dictionary");
+		MT_lock_unset(&mal_contextLock, "dictionary");
         	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATnew(TYPE_int, TYPE_str, 255);
 	if (bn == NULL) {
 		BBPreleaseref(b->batCacheid);
-		mal_unset_lock(mal_contextLock, "dictionary");
+		MT_lock_unset(&mal_contextLock, "dictionary");
         	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 	bs = BATnew(TYPE_int, TYPE_str, 255);
 	if (bs == NULL) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(bn->batCacheid);
-		mal_unset_lock(mal_contextLock, "dictionary");
+		MT_lock_unset(&mal_contextLock, "dictionary");
         	throw(MAL,"dictionary.initialize",RUNTIME_OBJECT_MISSING);
 	}
 
@@ -546,7 +546,7 @@ str DICTinitialize(int *ret)
 	BATmode(bs, PERSISTENT);
 	BBPkeepref(bs->batCacheid);
 	dictBase = bs;
-	mal_unset_lock(mal_contextLock, "dictionary");
+	MT_lock_unset(&mal_contextLock, "dictionary");
 	DICTcommit(dictIndex,dictValue, dictBase,0);
 	(void) ret;
 	return MAL_SUCCEED;
@@ -864,7 +864,7 @@ str DICTdecompress(int *ret, str *nme)
 		BBPreleaseref(bx->batCacheid);
         throw(MAL,"dictionary.compress",RUNTIME_OBJECT_MISSING);
 	}
-	mal_set_lock(mal_contextLock, "dictionary");
+	MT_lock_set(&mal_contextLock, "dictionary");
 	b = BATjoin(bx,bv,BUN_NONE);
 	BATappend(bs,b,TRUE);
 	BBPreleaseref(b->batCacheid);
@@ -878,7 +878,7 @@ str DICTdecompress(int *ret, str *nme)
 	}
 	BBPreleaseref(bv->batCacheid); BBPreleaseref(bx->batCacheid);
 	BBPreleaseref(bs->batCacheid);
-	mal_unset_lock(mal_contextLock, "dictionary");
+	MT_lock_unset(&mal_contextLock, "dictionary");
 	(void) ret;
 	return MAL_SUCCEED;
 }

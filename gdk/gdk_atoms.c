@@ -190,7 +190,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 {
 	int t;
 
-	gdk_set_lock(GDKthreadLock, "ATOMproperty");
+	MT_lock_set(&GDKthreadLock, "ATOMproperty");
 	t = ATOMindex(id);
 
 	if (t < 0) {
@@ -231,6 +231,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 	} else if (strcmp("storage", property) == 0) {
 		BATatoms[t] = BATatoms[val];	/* copy from example */
 		strncpy(BATatoms[t].name, id, IDLENGTH); /* restore name */
+		BATatoms[t].name[IDLENGTH - 1] = 0;
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(const char *, int *, void **)) arg;
 	} else if (strcmp("tostr", property) == 0) {
@@ -286,7 +287,7 @@ ATOMproperty(str id, str property, GDKfcn arg, int val)
 		BATatoms[t].storage = t;	/* critical redefine: undo remapping */
 	}
       out:
-	gdk_unset_lock(GDKthreadLock, "ATOMproperty");
+	MT_lock_unset(&GDKthreadLock, "ATOMproperty");
 }
 
 int
@@ -1620,9 +1621,9 @@ OIDrand(void)
 oid
 OIDbase(oid o)
 {
-	gdk_set_lock(MT_system_lock, "OIDbase");
+	MT_lock_set(&MT_system_lock, "OIDbase");
 	GDKoid = o;
-	gdk_unset_lock(MT_system_lock, "OIDbase");
+	MT_lock_unset(&MT_system_lock, "OIDbase");
 	return o;
 }
 
@@ -1631,13 +1632,13 @@ OIDseed(oid o)
 {
 	oid t, p = GDKoid;
 
-	gdk_set_lock(MT_system_lock, "OIDseed");
+	MT_lock_set(&MT_system_lock, "OIDseed");
 	t = OIDrand();
 	if (o > t)
 		t = o;
 	if (p >= t)
 		t = p;
-	gdk_unset_lock(MT_system_lock, "OIDseed");
+	MT_lock_unset(&MT_system_lock, "OIDseed");
 	return t;
 }
 
@@ -1670,7 +1671,7 @@ OIDwrite(stream *s)
 {
 	int ret = 0;
 
-	gdk_set_lock(MT_system_lock, "OIDwrite");
+	MT_lock_set(&MT_system_lock, "OIDwrite");
 	if (GDKoid) {
 		GDKflushed = GDKoid;
 		ATOMprint(TYPE_oid, &GDKflushed, s);
@@ -1678,7 +1679,7 @@ OIDwrite(stream *s)
 		    mnstr_write(s, " ", 1, 1) <= 0)
 			ret = -1;
 	}
-	gdk_unset_lock(MT_system_lock, "OIDwrite");
+	MT_lock_unset(&MT_system_lock, "OIDwrite");
 	return ret;
 }
 
@@ -1699,12 +1700,12 @@ OIDnew(oid inc)
 {
 	oid ret;
 
-	gdk_set_lock(MT_system_lock, "OIDnew");
+	MT_lock_set(&MT_system_lock, "OIDnew");
 	if (!GDKoid)
 		GDKoid = OIDrand();
 	ret = GDKoid;
 	GDKoid += inc;
-	gdk_unset_lock(MT_system_lock, "OIDnew");
+	MT_lock_unset(&MT_system_lock, "OIDnew");
 	return ret;
 }
 

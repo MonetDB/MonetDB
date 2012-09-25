@@ -17,11 +17,6 @@
  * All Rights Reserved.
  */
 
-/*
- * @-
- * @+ Implementation
- * The implementation is derived from the emitter module.
- */
 #ifndef _EMITTER_
 #define _EMITTER_
 #include "mal_interpreter.h"
@@ -31,6 +26,30 @@
 
 /* #define _DEBUG_EMITTER_ */
 #define EMout GDKout
+
+typedef struct EMITTER {
+	str name;
+	str host;
+	int port;
+	int mode;   	/* active/passive */
+	int protocol;   /* event protocol UDP,TCP,CSV */
+	int bskt;   	/* connected to a basket */
+	int status;
+	int delay; 		/* control the delay between attempts to connect */
+	int lck;
+	SOCKET sockfd;
+	SOCKET newsockfd;
+	stream *emitter;
+	str error;
+	MT_Id pid;
+	/* statistics */
+	timestamp lastseen;
+	int cycles;		/* how often emptied */
+	int pending;		/* pending events */
+	int sent;
+	Tablet table;
+	struct EMITTER *nxt, *prv;
+} EMrecord, *Emitter;
 
 #ifdef WIN32
 #ifndef LIBDATACELL
@@ -42,15 +61,16 @@
 #define adapters_export extern
 #endif
 
-adapters_export str DCemitterNew(int *ret, str *tbl, str *host, int *port);
-adapters_export str DCemitterPause(int *ret, str *nme);
-adapters_export str DCemitterResume(int *ret, str *nme);
+adapters_export str EMemitterStart(int *ret, str *tbl, str *host, int *port);
+adapters_export str EMemitterPause(int *ret, str *nme);
+adapters_export str EMemitterResume(int *ret, str *nme);
+adapters_export str EMemitterStop(int *ret, str *nme);
+adapters_export Emitter EMfind(str nme);
+adapters_export str EMpause(int *ret);
 adapters_export str EMresume(int *ret);
-adapters_export str EMstop(int *ret, str *nme);
-adapters_export str EMreset(int *ret);
+adapters_export str EMstop(int *ret);
 adapters_export str EMdump(void);
-adapters_export str EMmode(int *ret, str *nme, str *arg);
-adapters_export str EMprotocol(int *ret, str *nme, str *arg);
+adapters_export str EMtable(int *nameId, int *hostId, int *portId, int *protocolId, int *mode, int *statusId, int *seenId, int *cyclesId, int *sentId, int *pendingId);
 
 #endif
 

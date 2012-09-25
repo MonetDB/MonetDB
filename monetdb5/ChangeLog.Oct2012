@@ -1,0 +1,7 @@
+# ChangeLog file for MonetDB5
+# This file is updated with Maddlog
+
+* Wed Aug  8 2012 Fabian Groffen <fabian@cwi.nl>
+- The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
+  most likely non-functional.
+

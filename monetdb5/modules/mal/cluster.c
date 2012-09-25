@@ -266,7 +266,7 @@ CLUSTER_column_any(BAT *nb, BAT *b, BAT *cmap)
 	BATsetcount(nb, BATcount(b));
 	BATderiveProps(nb, 0);
 	if (!(nb->batDirty&2)) 
-		nb = BATsetaccess(nb, BAT_READ);
+		BATsetaccess(nb, BAT_READ);
 	return MAL_SUCCEED;
 }
 /*
@@ -398,8 +398,6 @@ CLUSTER_map(bat *RB, bat *B)
 
 	mp = (oid*) Tloc(map, 0);
 	bp = (oid*) Tloc(b, 0);
-	BATaccessBegin(b,USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessBegin(map,USE_TAIL,MMAP_WILLNEED);
 	BATloop(b,p,q){
 		oid ocur = bp[p];
 
@@ -426,8 +424,6 @@ CLUSTER_map(bat *RB, bat *B)
 		mp[basket[bnr].base] = idx++;
 		basket[bnr].base++;
 	}
-	BATaccessEnd(b,USE_TAIL,MMAP_SEQUENTIAL);
-	BATaccessEnd(map,USE_TAIL,MMAP_WILLNEED);
 	BBPunfix(*B);
 	BBPkeepref(*RB= map->batCacheid);
 	GDKfree(basket);
