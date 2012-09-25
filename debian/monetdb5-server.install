@@ -10,7 +10,6 @@ debian/tmp/usr/lib/monetdb5/alarm.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/algebra.mal usr/lib/monetdb5
 #debian/tmp/usr/lib/monetdb5/algebraExtensions.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/array.mal usr/lib/monetdb5
-debian/tmp/usr/lib/monetdb5/attach.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/bat*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/bbp.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/blob.mal usr/lib/monetdb5

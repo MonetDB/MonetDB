@@ -143,7 +143,6 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 #include "opt_prelude.h"
-#include "attach.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -291,6 +290,28 @@ FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * common term optimizer, because the first bind has a side-effect.
  */
 
+static int
+BATlocation(str *fnme, int *bid)
+{
+	/* this function was formerly ATTlocation in removed file
+	 * monetdb5/modules/mal/attach.c */
+	BAT *b = BBPquickdesc(*bid, FALSE);
+	char path[BUFSIZ], *s;
+
+	if (b == NULL)
+		return 0;
+
+	snprintf(path, BUFSIZ, "%s%c%s%c", GDKgetenv("gdk_dbfarm"),
+		 DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+	GDKfilepath(path + strlen(path), BATDIR,
+		    (b->T->heap.filename ? b->T->heap.filename: b->H->heap.filename), 0);
+	s = strrchr(path, '.');
+	if (s)
+		*s = 0;
+	*fnme = GDKstrdup(path);
+	return 1;
+}
+
 static void
 SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 {
@@ -343,7 +364,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					b = store_funcs.bind_idx(m->session->tr,i,0);
 					if ( b ) {
 						str loc;
-						if (b->batPersistence == PERSISTENT && ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
+						if (b->batPersistence == PERSISTENT && BATlocation(&loc,&b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
 						BBPreleaseref(b->batCacheid);
@@ -363,7 +384,7 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 					b = store_funcs.bind_col(m->session->tr,c,0);
 					if ( b ){
 						str loc;
-						if (b->batPersistence == PERSISTENT &&  ATTlocation(&loc,&b->batCacheid) == MAL_SUCCEED && loc)
+						if (b->batPersistence == PERSISTENT &&  BATlocation(&loc,&b->batCacheid) && loc)
 							varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, loc));
 						cnt = BATcount(b);
 						BBPreleaseref(b->batCacheid);
