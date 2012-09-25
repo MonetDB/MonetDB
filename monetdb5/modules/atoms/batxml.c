@@ -1596,7 +1596,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 str
 AGGRsubxmlcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils)
 {
-	BAT *b, *g, *e, *s, *bn;
+	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
 
 	b = BATdescriptor(*bid);
