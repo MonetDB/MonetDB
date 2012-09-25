@@ -807,8 +807,8 @@ typedef struct {
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 set:1,			/* real set semantics */
 	 restricted:2,		/* access priviliges */
-	 persistence:2,		/* should the BAT persist on disk? */
-	 unused:21;		/* value=0 for now */
+	 persistence:1,		/* should the BAT persist on disk? */
+	 unused:23;		/* value=0 for now */
 	int sharecnt;		/* incoming view count */
 	char map_head;		/* mmap mode for head bun heap */
 	char map_tail;		/* mmap mode for tail bun heap */
@@ -1449,13 +1449,11 @@ bat_iterator(BAT *b)
  * dimensions.
  *
  * The persistency indicator tells the retention period of BATs.  The
- * system support three modes: PERSISTENT, TRANSIENT, and SESSION.
+ * system support three modes: PERSISTENT and TRANSIENT.
  * The PERSISTENT BATs are automatically saved upon session boundary
  * or transaction commit.  TRANSIENT BATs are removed upon transaction
- * boundary.  SESSION BATs are removed at the end of a session.  They
- * are normally used to maintain temporary results.  All BATs are
- * initially TRANSIENT unless their mode is changed using the routine
- * BATmode.
+ * boundary.  All BATs are initially TRANSIENT unless their mode is
+ * changed using the routine BATmode.
  *
  * The BAT properties may be changed at any time using BATkey, BATset,
  * and BATmode.
@@ -1491,8 +1489,7 @@ gdk_export int BATgetaccess(BAT *b);
 			 ((b)->H->vheap?(b)->H->vheap->dirty:0) ||	\
 			 ((b)->T->vheap?(b)->T->vheap->dirty:0))
 
-#define PERSISTENT		3
-#define SESSION			2
+#define PERSISTENT		0
 #define TRANSIENT		1
 
 #define BAT_WRITE		0	/* all kinds of access allowed */

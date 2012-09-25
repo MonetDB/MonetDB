@@ -442,7 +442,7 @@ DESCload(int i)
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
-	b->batPersistence = (BBP_status(b->batCacheid) & BBPTMP) ? TRANSIENT : (BBP_status(b->batCacheid) & (BBPNEW | BBPPERSISTENT)) ? PERSISTENT : SESSION;
+	b->batPersistence = (BBP_status(b->batCacheid) & BBPPERSISTENT) ? PERSISTENT : TRANSIENT;
 	b->batCopiedtodisk = 1;
 	DESCclean(b);
 	return bs;

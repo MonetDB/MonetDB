@@ -192,8 +192,6 @@ CMDinfo(BAT **ret1, BAT **ret2, BAT *b)
 
 	if (b->batPersistence == PERSISTENT) {
 		mode = "persistent";
-	} else if (b->batPersistence == SESSION) {
-		mode = "session";
 	} else if (b->batPersistence == TRANSIENT) {
 		mode = "transient";
 	} else {
@@ -467,8 +465,6 @@ CMDunload(bit *res, str input)
 		BBPfix(bid);
 		b = BBP_cache(bid);
 		if (b) {
-			if (b->batPersistence == SESSION)
-				BATmode(b, TRANSIENT);
 			BBPcold(bid);	/* will trigger unload of also persistent bats */
 		}
 		*res = BBPunfix(bid) == 0;
@@ -1429,7 +1425,7 @@ BKCpersists(int *r, int *bid, bit *flg)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.setPersistence", RUNTIME_OBJECT_MISSING);
 	}
-	BATmode(b, (*flg == TRUE) ? PERSISTENT : (*flg ==FALSE) ? TRANSIENT : SESSION);
+	BATmode(b, (*flg == TRUE) ? PERSISTENT : TRANSIENT);
 	BBPreleaseref(b->batCacheid);
 	*r = 0;
 	return MAL_SUCCEED;
