@@ -445,8 +445,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
  * answer to direct their actions. Or, a dataflow scheduler could step in
  * to enforce a completely different execution order.
  */
-str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
-			   MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
+str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk)
 {
 	str ret;
 	int keepAlive;
@@ -454,14 +453,11 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 	keepAlive = stk->keepAlive;
-	if (env && stk && stk->cmd != 'f') stk->cmd = env->cmd;
-
-	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, env, pcicaller);
+	ret = runMALsequence(cntxt, mb, startpc, stoppc, stk, 0, 0);
 
 	/* pass the new debug mode to the caller */
-	if (env && stk->cmd != 'f') env->cmd = stk->cmd;
 	if (keepAlive == 0 && garbageControl(getInstrPtr(mb, 0)))
-		garbageCollector(cntxt, mb, stk, env != stk);
+		garbageCollector(cntxt, mb, stk, stk != 0);
 	return ret;
 }
 
