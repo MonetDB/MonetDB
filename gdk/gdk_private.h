@@ -54,7 +54,6 @@ void BBPdump(void);		/* never called: for debugging only */
 void BBPexit(void);
 void BBPinit(void);
 bat BBPinsert(BATstore *bs);
-int BBPrecover(void);
 void BBPreleaselref(bat i);
 void BBPtrim(size_t delta);
 void BBPunshare(bat b);
