@@ -9657,8 +9657,13 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 
 	bn->T->nil = nils != 0;
 	bn->T->nonil = nils == 0;
-	bn->T->sorted = nils == 0 && b->T->sorted;
-	bn->T->revsorted = nils == 0 && b->T->revsorted;
+	if (b->T->type != TYPE_str || BATcount(bn) < 2 ) {
+		bn->T->sorted = nils == 0 && b->T->sorted;
+		bn->T->revsorted = nils == 0 && b->T->revsorted;
+	} else {
+		bn->T->sorted = 0;
+		bn->T->revsorted = 0;
+	}
 	bn->T->key = (b->T->key & 1) && nils <= 1;
 
 	return bn;

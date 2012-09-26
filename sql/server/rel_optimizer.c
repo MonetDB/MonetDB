@@ -1282,6 +1282,11 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		node *n;
 		int res = 1, lmust = 0;
 		
+		if (e->f){
+			sql_subfunc *f = e->f;
+			if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+				return 0;
+		}
 		if (l) for (n = l->h; n && res; n = n->next)
 			res &= can_push_func(n->data, rel, &lmust);
 		if (!lmust)

@@ -29,7 +29,6 @@
 #include "sql_types.h"
 
 extern stmt *rel2bin(mvc *c, stmt *s);
-extern sql_column *basecolumn(stmt *st);
 
 #endif /* _SQL_REL2BIN_H */
 

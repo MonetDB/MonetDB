@@ -76,9 +76,10 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 
 /* we could have an unsafe mode which simply forgets the old values */
 static void
-update_bat( sql_bat *bat, BAT *upd, int isnew) 
+update_bat( sql_bat *bat, BAT *rids, BAT *updates, int isnew) 
 {
 	BAT *b;
+	BAT *upd = BATleftfetchjoin(BATmirror(rids), updates, BATcount(rids));
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
@@ -103,6 +104,7 @@ update_bat( sql_bat *bat, BAT *upd, int isnew)
 	}
 	void_replace_bat(b, upd, TRUE);
 	bat_destroy(b);
+	bat_destroy(upd);
 }
 
 static void
@@ -146,27 +148,27 @@ update_val( sql_bat *bat, oid rid, void *upd, int isnew)
 /* for now we simply apply the updates, problem is we can't rollback */
 
 static void
-update_col(sql_trans *tr, sql_column *c, void *i, int tpe, oid rid)
+update_col(sql_trans *tr, sql_column *c, void *rid, void *upd, int tpe)
 {
 	sql_bat *bat = c->data;
 
 	c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->stime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
-		update_bat(bat, i, isNew(c));
+		update_bat(bat, rid, upd, isNew(c));
 	else 
-		update_val(bat, rid, i, isNew(c));
+		update_val(bat, *(oid*)rid, upd, isNew(c));
 }
 
 static void 
-update_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+update_idx(sql_trans *tr, sql_idx * i, void *rid, void *upd, int tpe)
 {
 	sql_bat *bat = i->data;
 
 	i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->stime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
-		update_bat(bat, ib, isNew(i));
+		update_bat(bat, rid, upd, isNew(i));
 	else
 		assert(0);
 }

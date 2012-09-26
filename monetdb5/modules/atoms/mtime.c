@@ -2842,19 +2842,28 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdate", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.year", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_year(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.year", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -2880,19 +2889,28 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdate", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.month", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_month(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.month", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -2918,19 +2936,28 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdate", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.day", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdate_extract_day(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.day", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -2956,19 +2983,28 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.hours", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_hours(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.hours", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -2994,19 +3030,28 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_minutes(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.minutes", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -3032,19 +3077,28 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_seconds(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.seconds", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -3070,19 +3124,28 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_sql_seconds(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.sql_seconds", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;
@@ -3108,19 +3171,28 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bbp.getdaytime", "Cannot access descriptor");
 
-	bn = BATnew(BAThtype(b), TYPE_int, BATcount(b));
+	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
+	BATseqbase(bn, 0);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
 		d = *(date *) BUNtail(bi, p);
 		MTIMEdaytime_extract_milliseconds(&v, &d);
-		if (BUNfastins(bn, BUNhead(bi, p), &v) == NULL) {
+		if (BUNappend(bn, &v, FALSE) == NULL) {
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "batmtime.milliseconds", "inserting value failed");
 		}
 	}
+
+        if (b->htype != bn->htype) {
+                BAT *r = VIEWcreate(b,bn);
+
+                BBPreleaseref(bn->batCacheid);
+                bn = r;
+        }
+
 	bn->H->nonil = b->H->nonil;
 	bn->hsorted = b->hsorted;
 	bn->hrevsorted = b->hrevsorted;

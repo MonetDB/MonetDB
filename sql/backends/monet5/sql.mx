@@ -243,9 +243,9 @@ pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)";
 
-pattern update(mvc:int, sname:str, tname:str, cname:str, ins:any):int
+pattern update(mvc:int, sname:str, tname:str, cname:str, rids:any, upd:any):int
 address mvc_update_wrap
-comment "Append b to the column tname.cname (possibly optimized to replace the insert bat of tname.cname (returns sequence number for order dependence)";
+comment "Update the values of the column tname.cname";
 
 pattern clear_table{unsafe}(sname:str, tname:str) :wrd
 address mvc_clear_table_wrap
@@ -857,46 +857,88 @@ comment "return the densely ranked bat";
 command aggr.exist(b:bat[:any_1,:any_2], h:any_1):bit 
 address ALGexist;
 
-function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], a:bat[:any_2,:any_3], g:bat[:oid,:oid]) :bat[:oid,:int]; 
-	# order based on b
-	bm := algebra.markT(b,0:oid);
-	mb := bat.reverse(bm);
-	ma := algebra.leftfetchjoin(mb, a);
-	aa := bat.mirror(a);
-	maa := algebra.leftfetchjoin(mb, aa);
-	x := algebra.mark_grp(ma,g,1:oid);
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	x := algebra.mark_grp(og,ext,1:oid);
 	mg := batcalc.int(x);
-	# restore the order based on a 
-	aam := bat.reverse(maa);
-	return mark_grp := algebra.leftfetchjoin(aam, mg);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.fetchjoin(gg, or);
+	return mark_grp := algebra.leftfetchjoin(go, mg);
+end batcalc.mark_grp;
+
+function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+        x := algebra.markT(b,1:oid);
+        mg := batcalc.int(x);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.fetchjoin(gg, or);
+	return mark_grp := algebra.leftfetchjoin(go, mg);
 end batcalc.mark_grp;
 
 function batcalc.mark_grp{inline}( b:bat[:oid,:any_1] ) :bat[:oid,:int]; 
-	x := algebra.markT(b,1:oid);
-	return mark_grp:= batcalc.int(x);
+        x := algebra.markT(b,1:oid);
+        return mark_grp:= batcalc.int(x);
 end batcalc.mark_grp;
 
-function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
-	o := bat.mirror(b);
-	g := algebra.join(o, gp);
-	return rank_grp:= sql.rank_grp(b, g, gpe);
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	rg := sql.rank_grp(b, og, ext);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.fetchjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, rg);
+end batcalc.rank_grp;
+
+function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+	rg := sql.rank(b);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.fetchjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, rg);
 end batcalc.rank_grp;
 
 function batcalc.rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
 	return rank_grp:= sql.rank(b);
 end batcalc.rank_grp;
 
-function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:int]; 
-	o := bat.mirror(b);
-	g := algebra.join(o, gp);
-	return dense_rank_grp:= sql.dense_rank_grp(b, g, gpe);
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:bat[:oid,:oid], ext:bat[:oid,:oid]) :bat[:oid,:int]; 
+	# order is based on ord
+	og := algebra.leftfetchjoin(ord, grp);
+	drg := sql.dense_rank_grp(b, og, ext);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(grp);
+	go := algebra.fetchjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, drg);
+end batcalc.dense_rank_grp;
+
+function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:bat[:oid,:any_2]) :bat[:oid,:int]; 
+	drg := sql.dense_rank(b);
+
+	# restore the order based on grp 
+	or := bat.reverse(ord);
+	gg := bat.mirror(orig);
+	go := algebra.fetchjoin(gg, or);
+	return rank_grp := algebra.leftfetchjoin(go, drg);
 end batcalc.dense_rank_grp;
 
 function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int]; 
 	return dense_rank_grp:= sql.dense_rank(b);
 end batcalc.dense_rank_grp;
 
-function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid]) :bat[:oid,:any_1];
+function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:int) :bat[:oid,:any_1];
 	(e,g) := group.new(gp);
 	m := aggr.max(e);
 	c0 := calc.isnil(m);
@@ -908,7 +950,7 @@ function sql.zero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat
 	msg1 := str.+(msg, ">1)");
 	sql.assert(c11, msg1);
 	return zero_or_one := b;
-end sql.zero_or_one;
+end sql.subzero_or_one;
 
 
 function mmath.rand{inline}( v:int ) :int;
@@ -1231,7 +1273,7 @@ sql.prelude();
 #include <str.h>
 #include "sql_privileges.h"
 #include "sql_rel2bin.h"
-#include <bin_optimizer.h>
+//#include <bin_optimizer.h>
 #include "sql_decimal.h"
 #include "sql_string.h"
 #include "sql_qc.h"
@@ -1709,7 +1751,7 @@ sql_relation2stmt(mvc *c, sql_rel *r)
 		if (s) {
 			/* only needed for delta tables */
 			s = rel2bin(c, s); 	
-			s = bin_optimizer(c, s);
+			//s = bin_optimizer(c, s);
 			return s;
 		}
 	}
@@ -3081,6 +3123,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
 			/* partitioned access */
+			assert(0);
 			lval = *(oid *)getArgReference(stk, pci, 6);
 			hval = *(oid *)getArgReference(stk, pci, 7);
 			if (*access == 0) {
@@ -3263,8 +3306,10 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *(str *)getArgReference(stk, pci, 2);
 	str tname = *(str *)getArgReference(stk, pci, 3);
 	str cname = *(str *)getArgReference(stk, pci, 4);
-	ptr ins = (ptr)getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5);
+	bat Tids = *(bat*)getArgReference(stk, pci, 5);
+	bat Upd = *(bat*)getArgReference(stk, pci, 6);
+	BAT *tids, *upd;
+	int tpe = getArgType(mb, pci, 6);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -3274,10 +3319,12 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (tpe > TYPE_any)
 		tpe = TYPE_bat;
-	if( tpe == TYPE_bat && (ins = BATdescriptor(*(int*)ins)) == NULL) 
+	else
+		assert(0);
+	if( tpe == TYPE_bat && (tids = BATdescriptor(Tids)) == NULL) 
 		throw(SQL, "sql.update","Cannot access descriptor");
-	if (ATOMextern(tpe)) 
-		ins = *(ptr*)ins;
+	if( tpe == TYPE_bat && (upd = BATdescriptor(Upd)) == NULL) 
+		throw(SQL, "sql.update","Cannot access descriptor");
 	s = mvc_bind_schema(m, sname);
 	if ( s == NULL)
 		throw(SQL,"sql.update","Schema missing");
@@ -3285,15 +3332,14 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( t == NULL)
 		throw(SQL,"sql.update","Table missing");
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, ins, tpe, 0);
+		store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
 	} else if (cname[0] == '%') {
  		sql_idx *i = mvc_bind_idx(m, s, cname+1);
 		if (i)
-			store_funcs.update_idx(m->session->tr, i, ins, tpe);
+			store_funcs.update_idx(m->session->tr, i, tids, upd, tpe);
 	}
-	if (tpe == TYPE_bat) {
-		BBPunfix(((BAT*)ins)->batCacheid);
-	}
+	BBPunfix(tids->batCacheid);
+	BBPunfix(upd->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -6183,11 +6229,13 @@ do_sql_rank_grp(bat *rid, bat *bid, bat *gid, int nrank, int dense, const char *
 		BBPreleaseref(g->batCacheid);
 		throw(SQL, name, "bats not aligned");
 	}
+/*
 	if (!BATtordered(b)) {
 		BBPreleaseref(b->batCacheid);
 		BBPreleaseref(g->batCacheid);
 		throw(SQL, name, "bat not sorted");
 	}
+*/
 	r = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	if (r == NULL){
 		BBPreleaseref(b->batCacheid);
@@ -7309,7 +7357,7 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		rel_destroy(rel);
 		s = rel2bin(m, s); 	
-		s = bin_optimizer(m, s);
+		//s = bin_optimizer(m, s);
 
 		MSinitClientPrg(cntxt, "user", "test"); 
 
@@ -7455,6 +7503,32 @@ function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid],e:bat[:o
 	res := batcalc.@1(r);
 	return res;
 end aggr.corr;
+
+function sql.sortTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
+	s := algebra.sortTail(b);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.sortTail;
+
+function sql.sortReverseTail( b:bat[:oid,:any_1]) :bat[:oid,:oid];
+	s := algebra.sortReverseTail(b);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.sortReverseTail;
+
+function sql.refine(b:bat[:oid,:oid],  a:bat[:oid,:any_1]) :bat[:oid,:oid];
+	r := bat.reverse(b);
+	s := group.refine(r, a);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.refine;
+
+function sql.refine_rev(b:bat[:oid,:oid],  a:bat[:oid,:any_1]) :bat[:oid,:oid];
+	r := bat.reverse(b);
+	s := group.refine_rev(r,a);
+	m := algebra.markT(s, 0:oid);
+	return bat.reverse(m);
+end sql.refine_rev;
 
 @mal
 @:analytic(bte)@

@@ -544,7 +544,7 @@ OPTbakePlans(Client cntxt, MalBlkPtr mb, Slices *slices)
 				status[i] = PARTITION;
 			}
 		} else
-		if ( getModuleId(p) == groupRef && ( getFunctionId(p) == newRef ||getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef) ){
+		if ( getModuleId(p) == groupRef && ( getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) ){
 			if ( head[getArg(p, p->retc)] ){
 				/* groups against the partition column is allowed.
 				   It calls for a proper group reconstruction at the receiver 

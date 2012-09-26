@@ -47,7 +47,7 @@ extern BAT * delta_bind_ubat(sql_delta *bat, int access);
 extern BAT * delta_bind_bat( sql_delta *bat, int access, int temp);
 extern BAT * delta_bind_del(sql_dbat *bat, int access);
 
-extern void delta_update_bat( sql_delta *bat, BAT *upd, int is_new);
+extern void delta_update_bat( sql_delta *bat, BAT *tids, BAT *upd, int is_new);
 extern void delta_update_val( sql_delta *bat, oid rid, void *upd);
 extern void delta_append_bat( sql_delta *bat, BAT *i );
 extern void delta_append_val( sql_delta *bat, void *i );

@@ -89,8 +89,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 		if ( getModuleId(p) == groupRef) {
-			if ( getFunctionId(p) == newRef ||
-				 getFunctionId(p) == doneRef ) {
+			if ( getFunctionId(p) == newRef) {
 				h= varGetProp(mb, getArg(p,1), horiginProp);
 				if ( h ){
 					VALset(&val, TYPE_str, GDKstrdup(h->value.val.sval));

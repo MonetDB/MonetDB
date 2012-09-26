@@ -370,8 +370,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 				"your database is damaged, user not found in SQL catalog");
 		return(FALSE);
 	}
-	table_funcs.column_update_value(m->session->tr, users_name, rid,
-			newuser);
+	table_funcs.column_update_value(m->session->tr, users_name, rid, newuser);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name,
 			olduser, NULL);
@@ -380,8 +379,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 				"your database is damaged, auth not found in SQL catalog");
 		return(FALSE);
 	}
-	table_funcs.column_update_value(m->session->tr, auths_name, rid,
-			newuser);
+	table_funcs.column_update_value(m->session->tr, auths_name, rid, newuser);
 
 	return(TRUE);
 }

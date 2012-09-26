@@ -166,7 +166,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
 	assert(rid != oid_nil);
 
-	store_funcs.update_col(tr, c, value, c->type.type->localtype, rid);
+	store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
 	return 0;
 }
 

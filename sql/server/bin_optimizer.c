@@ -24,141 +24,15 @@
 #include "sql_rel2bin.h"
 #include "sql_env.h"
 
-static stmt *
-stmt_uselect_select(stmt *s)
-{
-	assert(s->type == st_uselect2 || (s->type == st_uselect && !s->op2->nrcols));
-	if (s->type == st_uselect2)
-		s->type = st_select2;
-	else
-		s->type = st_select;
-	assert(!s->t);
-	s->t = s->op1->t;
-	return s;
-}
-
-static stmt *
-eliminate_inter(sql_allocator *sa, stmt *s)
-{
-	stmt *s1, *s2;
-	sql_column *bc1, *bc2;
-
-	assert(s->type == st_inter);
-	s1 = s->op1;
-	s2 = s->op2;
-	bc1 = basecolumn(s1);
-	bc2 = basecolumn(s2);
-	if (bc1 && bc1 == bc2) {
-		int match1 = (PSEL(s1) || RSEL(s1));
-		int match2 = (PSEL(s2) || RSEL(s2));
-
-		if (match1 && match2) {
-			/* intersect( select(x,..), select(x,..) ) */
-			int swap = 0;
-
-			if (PSEL(s1) && s1->flag == cmp_equal) {
-				/* do point select first */
-				swap = 0;
-			} else if (PSEL(s2) && s2->flag == cmp_equal) {
-				/* do point select first */
-				swap = 1;
-			} else if (PSEL(s2) && s2->flag == cmp_notequal) {
-				/* do notequal select last */
-				swap = 0;
-			} else if (PSEL(s1) && s1->flag == cmp_notequal) {
-				/* do notequal select last */
-				swap = 1;
-			} else if (PSEL(s1)) {
-				/* single-sided range before double-sided range */
-				swap = 0;
-			} else if (PSEL(s2)) {
-				/* single-sided range before double-sided range */
-				swap = 1;
-			}
-			if (swap) {
-				stmt *os;
-
-				os = s1;
-				s1 = s2;
-				s2 = os;
-			}
-			if (USEL(s1)) {
-				/* uselect => select  to keep tail for s2 */
-				s1 = stmt_uselect_select(s1);
-			}
-		} else if (match1) {
-			/* intersect( select(x,..), f(x) )  =>  intersect( f(x), select(x,..) ) */
-			stmt *os;
-			int m;
-
-			m = match1;
-			match1 = match2;
-			match2 = m;
-			os = s1;
-			s1 = s2;
-			s2 = os;
-		}
-		if (match2 && 0) {
-			/* intersect( f(x), select(x,..) )  =>  select( f(x), .. ) */
-			stmt *ns = NULL;
-
-			switch (s2->type) {
-			case st_select:
-			case st_uselect:
-				/* uselect => select  as intersect also propagates the left input's tail */
-				ns = stmt_select(sa, s1, s2->op2, (comp_type) s2->flag);
-				break;
-			case st_select2:
-			case st_uselect2:
-				/* uselect => select  as intersect also propagates the left input's tail */
-				ns = stmt_select2(sa, s1, s2->op2, s2->op3, s2->flag);
-				break;
-			default:
-				/* pacify compiler; should never be reached. */
-				assert(0);
-			}
-			return ns;
-		}
-	}
-	return s;
-}
-
-static stmt *
-eliminate_reverse(stmt *s)
-{
-	stmt *os = s->op1, *ns;
-
-	assert(s->type == st_reverse);
-	switch (os->type) {
-	case st_reverse:
-		/* reverse(reverse(x)) => x */
-		ns = os->op1;
-		break;
-	case st_mirror:
-		/* reverse(mirror(x)) => mirror(x) */
-		ns = os;
-		break;
-	default:
-		ns = s;
-	}
-	return ns;
-}
-
 /* push this select through the statement s */
 static stmt *
 push_select( sql_allocator *sa, stmt *select, stmt *s )
 {
-	if (select->type == st_select2) 
-		return stmt_select2(sa,  s, select->op2, select->op3, (comp_type)select->flag);
-
 	if (select->type == st_uselect2) 
-		return stmt_uselect2(sa,  s, select->op2, select->op3, (comp_type)select->flag);
-
-	if (select->type == st_select) 
-		return stmt_select(sa, s, select->op2, (comp_type)select->flag);
+		return stmt_uselect2(sa,  s, select->op2, select->op3, (comp_type)select->flag, select->op4.stval);
 
 	if (select->type == st_uselect) 
-		return stmt_uselect(sa,  s, select->op2, (comp_type)select->flag);
+		return stmt_uselect(sa,  s, select->op2, (comp_type)select->flag, select->op3);
 	assert(0);
 	return NULL;
 }
@@ -268,11 +142,7 @@ _bin_optimizer(mvc *c, stmt *s)
 				return os;
 			}
 		} 
-		if (!mvc_debug_on(c, 4096) && os->nrcols) {
-			ns = eliminate_inter(c->sa, os);
-		} else {
-			ns = os;
-		}
+		ns = os;
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
 			assert(s->rewritten==NULL);
@@ -334,11 +204,7 @@ _bin_optimizer(mvc *c, stmt *s)
 		stmt *os, *ns;
 
 		os = stmt_reverse(c->sa, _bin_optimizer(c, s->op1));
-		if (!mvc_debug_on(c, 4096)) {
-			ns = eliminate_reverse(os);
-		} else {
-			ns = os;
-		}
+		ns = os;
 		s->optimized = ns->optimized = 3;
 		if (ns != s) {
 			assert(s->rewritten==NULL);
@@ -346,12 +212,15 @@ _bin_optimizer(mvc *c, stmt *s)
 		}
 		return ns;
 	}
-	case st_select:
-	case st_select2:
 	case st_uselect:
 	case st_uselect2: {
 		stmt *res = NULL;
 
+		if (s->flag == cmp_filter) {
+			s->optimized = 3;
+			return s;
+		}
+			
 		/* push down the select through st_alias */
 		if (s->op1->type == st_alias) {
 			stmt *a = s->op1;
@@ -406,14 +275,11 @@ _bin_optimizer(mvc *c, stmt *s)
 	case st_single:
 	case st_diff:
 	case st_union:
-	case st_outerjoin:
 	case st_mirror:
 	case st_const:
 	case st_mark:
 	case st_gen_group:
 	case st_group:
-	case st_group_ext:
-	case st_derive:
 	case st_unique:
 	case st_order:
 	case st_reorder:
@@ -498,7 +364,6 @@ _bin_optimizer(mvc *c, stmt *s)
 	}
 
 	case st_releqjoin:
-	case st_relselect:
 
 	default:
 		assert(0);	/* these should have been rewriten by now */
