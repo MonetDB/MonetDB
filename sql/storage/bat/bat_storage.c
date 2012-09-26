@@ -187,7 +187,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 void
 delta_update_val( sql_delta *bat, oid rid, void *upd) 
 {
-	BAT *b;
+	BAT *b = NULL;
 
 	assert(rid != oid_nil);
 
@@ -218,7 +218,8 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 		b = temp_descriptor(bat->ibid);
 		void_inplace(b, rid, upd, TRUE);
 	}
-	bat_destroy(b);
+	if (b)
+		bat_destroy(b);
 }
 
 static void

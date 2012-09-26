@@ -1880,7 +1880,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_update_col:
 		case st_append_col:{
-			int tids = _dumpstmt(sql, mb, s->op1), upd;
+			int tids = _dumpstmt(sql, mb, s->op1), upd = 0;
 			sql_column *c = s->op4.cval;
 			char *n = (s->type==st_append_col)?appendRef:updateRef;
 
@@ -1904,7 +1904,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		case st_update_idx:
 		case st_append_idx:{
-			int tids = _dumpstmt(sql, mb, s->op1), upd;
+			int tids = _dumpstmt(sql, mb, s->op1), upd = 0;
 			sql_idx *i = s->op4.idxval;
 			char *n = (s->type==st_append_idx)?appendRef:updateRef;
 
