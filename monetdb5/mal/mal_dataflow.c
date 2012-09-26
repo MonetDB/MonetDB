@@ -927,7 +927,7 @@ runDFLOWworker(void *t)
  * blocking counter should be decremented upon finishing it.
  */
 static void
-DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
+DFLOWinitBlk(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 {
 	int pc, i, j, k, l, n, etop = 0;
 	int *assign;
@@ -1227,7 +1227,7 @@ str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
-	DFLOWinit(flow, cntxt, mb, stk, size);
+	DFLOWinitBlk(flow, cntxt, mb, stk, size);
 
 	ret = DFLOWscheduler(flow);
 
