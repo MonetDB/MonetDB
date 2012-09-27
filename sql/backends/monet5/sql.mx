@@ -3321,16 +3321,26 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = TYPE_bat;
 	else
 		assert(0);
-	if( tpe == TYPE_bat && (tids = BATdescriptor(Tids)) == NULL) 
+	if (tpe != TYPE_bat)
+		throw(SQL, "sql.update", "bat expected");
+	if ((tids = BATdescriptor(Tids)) == NULL)
 		throw(SQL, "sql.update","Cannot access descriptor");
-	if( tpe == TYPE_bat && (upd = BATdescriptor(Upd)) == NULL) 
+	if ((upd = BATdescriptor(Upd)) == NULL) {
+		BBPunfix(tids->batCacheid);
 		throw(SQL, "sql.update","Cannot access descriptor");
+	}
 	s = mvc_bind_schema(m, sname);
-	if ( s == NULL)
+	if ( s == NULL) {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
 		throw(SQL,"sql.update","Schema missing");
+	}
 	t = mvc_bind_table(m, s, tname);
-	if ( t == NULL)
+	if ( t == NULL) {
+		BBPunfix(tids->batCacheid);
+		BBPunfix(upd->batCacheid);
 		throw(SQL,"sql.update","Table missing");
+	}
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
 		store_funcs.update_col(m->session->tr, c, tids, upd, tpe);
 	} else if (cname[0] == '%') {
