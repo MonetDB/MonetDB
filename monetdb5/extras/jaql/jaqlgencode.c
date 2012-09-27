@@ -5938,65 +5938,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					if (w == NULL) {
 						MALCOMMENT(mb, "simple group into {");
 						/* simple "into" query: equivalent of a single group */
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, putName("selectH", 7));
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j->j5);
-						q = pushOid(mb, q, (oid)0);
-						a = getArg(q, 0);
-						pushInstruction(mb, q);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, putName("kdifference", 11));
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j->j5);
-						q = pushArgument(mb, q, a);
-						j->j5 = getArg(q, 0);
-						pushInstruction(mb, q);
 						b = dumpnextid(mb, j->j1);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, projectRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, b);
-						q = pushArgument(mb, q, a);
-						a = getArg(q, 0);
-						pushInstruction(mb, q);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, batRef);
-						setFunctionId(q, insertRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, a);
-						q = pushOid(mb, q, (oid)0);
-						q = pushArgument(mb, q, b);
-						a = getArg(q, 0);
-						pushInstruction(mb, q);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, batRef);
-						setFunctionId(q, insertRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, a);
-						q = pushArgument(mb, q, j->j5);
-						j->j5 = getArg(q, 0);
-						pushInstruction(mb, q);
-
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, batRef);
-						setFunctionId(q, newRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushType(mb, q, TYPE_oid);
-						q = pushType(mb, q, TYPE_bte);
-						c = getArg(q, 0);
-						pushInstruction(mb, q);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, batRef);
-						setFunctionId(q, insertRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, c);
-						q = pushArgument(mb, q, j->j1);
-						j->j1 = getArg(q, 0);
-						pushInstruction(mb, q);
+						dumpbatwritable(j, mb, 1);
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
@@ -6006,6 +5949,22 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						q = pushBte(mb, q, 'a');
 						j->j1 = getArg(q, 0);
 						pushInstruction(mb, q);
+						dumpbatwritable(j, mb, 5);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, insertRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, j->j5);
+						q = pushArgument(mb, q, b);
+						if (j->startoid == 0) {
+							q = pushOid(mb, q, (oid)0);
+						} else {
+							q = pushArgument(mb, q, j->startoid);
+						}
+						j->j5 = getArg(q, 0);
+						pushInstruction(mb, q);
+
+						j->startoid = b;
 
 						t->type = j_transform;
 						t->tval1 = GDKzalloc(sizeof(tree));
