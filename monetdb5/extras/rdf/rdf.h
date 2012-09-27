@@ -27,6 +27,8 @@
 #ifndef _RDF_H_
 #define _RDF_H_
 
+#include <gdk.h>
+
 #ifdef WIN32
 #ifndef LIBRDF
 #define rdf_export extern __declspec(dllimport)
@@ -43,8 +45,10 @@
 rdf_export str
 RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 
-rdf_export str RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
-rdf_export str RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
+rdf_export str 
+RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
+rdf_export str 
+RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
 
 
 #define TRIPLE_STORE 1

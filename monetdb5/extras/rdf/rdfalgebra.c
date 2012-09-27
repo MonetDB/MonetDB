@@ -25,15 +25,30 @@
 #include "algebra.h"
 #include <gdk.h>
 
-static BAT* leftfetchjoin_sorted(BAT* left, BAT *right, BUN estimate) {
-        BAT *bn = BATleftfetchjoin(left, right, estimate);
-        if (bn) bn->tsorted = TRUE; /* OK: we must be sure of this, but you are, aren't you? */
-        return bn;
-}
-
 str
 RDFleftfetchjoin_sorted(bat *result, bat *lid, bat *rid)
 {
-        return ALGbinaryestimate(result, lid, rid, NULL, leftfetchjoin_sorted, "rdf.leftfetchjoin_sorted");
+        BAT *left, *right, *bn = NULL;
+
+        if ((left = BATdescriptor(*lid)) == NULL) {
+                throw(MAL, "rdf.leftfetchjoin_sorted", RUNTIME_OBJECT_MISSING);
+        }
+        if ((right = BATdescriptor(*rid)) == NULL) {
+                BBPreleaseref(left->batCacheid);
+                throw(MAL, "rdf.leftfetchjoin_sorted", RUNTIME_OBJECT_MISSING);
+        }
+        bn = BATleftfetchjoin(left, right, BUN_NONE);
+        BBPreleaseref(left->batCacheid);
+        BBPreleaseref(right->batCacheid);
+        if (bn == NULL)
+                throw(MAL, "rdf.leftfetchjoin_sorted", GDK_EXCEPTION);
+
+        bn->tsorted = TRUE;
+
+        if (!(bn->batDirty&2))
+                bn = BATsetaccess(bn, BAT_READ);
+        *result = bn->batCacheid;
+        BBPkeepref(*result);
+        return MAL_SUCCEED;
 }
 
