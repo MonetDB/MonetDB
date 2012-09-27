@@ -316,7 +316,7 @@ SQLemptyset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				actions, mb->errors,start+1);
 			printFunction(cntxt->fdout, mb,0, LIST_MAL_STMT | LIST_MAPI);
 #endif
-			msg= reenterMAL(cntxt,mb,start+1,0,stk,0,0);
+			msg= reenterMAL(cntxt,mb,start+1,0,stk);
 		}
 #ifdef DEBUG_SQL_EMPTYSET
 		else mnstr_printf(cntxt->fdout,"#optimizer fails:%s\n",msg);

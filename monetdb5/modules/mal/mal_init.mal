@@ -80,7 +80,6 @@ include batcolor;
 include sabaoth;
 include pcre;
 include clients;
-include attach;
 include bbp;
 include const;
 include box;

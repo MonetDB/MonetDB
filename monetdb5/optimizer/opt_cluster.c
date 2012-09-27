@@ -80,21 +80,21 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			g = getArg(q,0);
 		} else if (state == GRP_NEW && 
 		    getModuleId(q) == groupRef &&
-		    getFunctionId(q) == newRef &&
+		    getFunctionId(q) == subgroupRef &&
 		    q->argc == 2) {
 			state = GRP_DERIVE;
 			h = getArg(q,0);
 			g = getArg(q,1);
 		} else if (state == GRP_NEW && 
 		    getModuleId(q) == groupRef &&
-		    getFunctionId(q) == doneRef &&
+		    getFunctionId(q) == subgroupdoneRef &&
 		    q->argc == 2) {
 			state = GRP_DONE;
 			h = getArg(q,0);
 			g = getArg(q,1);
 		} else if (state == GRP_DERIVE &&
 		    getModuleId(q) == groupRef &&
-		    getFunctionId(q) == deriveRef &&
+		    getFunctionId(q) == subgroupRef &&
 		    q->argc == 4 &&
 		    h == getArg(q,2) && g == getArg(q,3)) {
 			state = GRP_DERIVE;
@@ -102,7 +102,7 @@ cluster_groupby(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			g = getArg(q,1);
 		} else if (state == GRP_DERIVE &&
 		    getModuleId(q) == groupRef &&
-		    getFunctionId(q) == doneRef &&
+		    getFunctionId(q) == subgroupdoneRef &&
 		    q->argc == 4 &&
 		    h == getArg(q,2) && g == getArg(q,3)) {
 			state = GRP_DONE;

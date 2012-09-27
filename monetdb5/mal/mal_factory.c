@@ -383,7 +383,7 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	 } else {
 		if( cmd && cntxt->timer == 0)
 			mdbStep(cntxt,mb,pl->stk,pl->pc);
-		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	}
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
@@ -458,7 +458,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	}
 	if( flag && cntxt->timer == 0)
 		mdbStep(cntxt,mb,pl->stk,pl->pc);
-	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+	ret=  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
 	/* garbage collect the string arguments, these positions
 	   will simply be overwritten the next time.
 	for (i = psig->retc; i < psig->argc; i++)

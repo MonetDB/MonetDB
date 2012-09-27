@@ -45,7 +45,6 @@ gdk_export int BBPout;		/* BATs swapped out of BBP */
 gdk_export bat BBPsize;		/* current occupied size of BBP array */
 
 /* global calls */
-gdk_export bat BBPimportEntry(char *nme);
 gdk_export int BBPdir(int cnt, bat *subcommit);
 
 /* update interface */

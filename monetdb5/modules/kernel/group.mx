@@ -86,9 +86,14 @@ All Rights Reserved.
 @mal
 module group;
 
-command subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:bat,:wrd])
+command subgroup(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
 address GRPsubgroup1;
-command subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:bat,:wrd])
+command subgroup(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
+address GRPsubgroup2;
+
+command subgroupdone(b:bat[:oid,:any_1]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
+address GRPsubgroup1;
+command subgroupdone(b:bat[:oid,:any_1],g:bat[:oid,:oid]) (groups:bat[:oid,:oid],extents:bat[:oid,:oid],histo:bat[:oid,:wrd])
 address GRPsubgroup2;
 
 command new(attr:bat[:any_1,:any_2] )

@@ -635,7 +635,7 @@ RCgeneratorInternal(Receptor rc)
 		case BSKTERROR:
 			return;
 		case BSKTRUNNING:
-			reenterMAL(cntxt, mb, pc, pc + 1, glb, 0, 0);
+			reenterMAL(cntxt, mb, pc, pc + 1, glb);
 		}
 
 }

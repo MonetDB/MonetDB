@@ -278,7 +278,7 @@ RUNsqlbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (p->fcn == f) {
-			if ((msg = reenterMAL(cntxt, mb, i, i + 1, stk, 0, 0)))
+			if ((msg = reenterMAL(cntxt, mb, i, i + 1, stk)))
 				break;
 			/* fetch the BAT properties and turn off this instruction */
 			p->token = NOOPsymbol;

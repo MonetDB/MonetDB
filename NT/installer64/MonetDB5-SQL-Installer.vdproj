@@ -375,12 +375,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7DF78105CD3F477BBF540F5878631C7D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_7E6F0DD7ED2F472C836206FC14A644BE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -2097,26 +2091,6 @@
             "TargetName" = "8:MSQLserver.bat"
             "Tag" = "8:"
             "Folder" = "8:_D9A7267FC9784D8BBD3CBC6EC1754DBE"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7DF78105CD3F477BBF540F5878631C7D"
-            {
-            "SourcePath" = "8:lib\\monetdb5\\attach.mal"
-            "TargetName" = "8:attach.mal"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"

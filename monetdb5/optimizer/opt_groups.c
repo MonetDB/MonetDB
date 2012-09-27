@@ -51,29 +51,32 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if (getModuleId(p) == groupRef && p->argc == 3 && getFunctionId(p) == newRef ){
+		if (0 && getModuleId(p) == groupRef && p->argc == 4 && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)){
 			setFunctionId(p, multicolumnsRef);
 			pc[getArg(p,0)] = i;
 			pc[getArg(p,1)] = i;
+			pc[getArg(p,2)] = i;
 			actions++;
 			OPTDEBUGgroups {
 				mnstr_printf(cntxt->fdout,"#new groups instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 			}
 		}
-		if (getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == deriveRef || getFunctionId(p) == doneRef)){
+		if (0 && getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)){
 			/*
 			 * @-
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of derive paths, many of which will be removed during deadcode elimination.
 			 */
-			if (pc[getArg(p,2)] && pc[getArg(p,2)]== pc[getArg(p,3)]){
-				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,2)]));
+			if (pc[getArg(p,4)]){
+				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,4)]));
 				q= pushArgument(mb,q, getArg(p,4));
 				getArg(q,0) = getArg(p,0);
 				getArg(q,1) = getArg(p,1);
+				getArg(q,2) = getArg(p,2);
 				pc[getArg(q,0)] = i;
 				pc[getArg(q,1)] = i;
+				pc[getArg(q,2)] = i;
 				freeInstruction(p);
 				p= q;
 				OPTDEBUGgroups{

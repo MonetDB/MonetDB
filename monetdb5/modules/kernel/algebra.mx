@@ -241,7 +241,7 @@ command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
-command groupby(b:bat[:any_1,:wrd]) :bat[:any_1,:oid] 
+command groupby(gids:bat[:oid,:oid], cnts:bat[:oid,:wrd]) :bat[:oid,:oid] 
 address ALGgroupby
 comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
 
@@ -1048,7 +1048,7 @@ algebra_export str ALGmax_@1(@1* res, int *bid) ;
 algebra_export str ALGminany(ptr result, int *bid);
 algebra_export str ALGmaxany(ptr result, int *bid);
 algebra_export str ALGtopN(int *res, int *bid, lng *top);
-algebra_export str ALGgroupby(int *res, int *bid);
+algebra_export str ALGgroupby(int *res, int *gids, int *cnts);
 algebra_export str ALGcard(lng *result, int *bid);
 algebra_export str ALGBATminimum(ptr *result, int *bid);
 algebra_export str ALGBATmaximum(ptr *result, int *bid);
@@ -1515,40 +1515,45 @@ CMDantiuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 }
 
 static int
-CMDgen_group(BAT **result, BAT *b )
+CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 {
-	BATiter bi = bat_iterator(b);
-	BUN u, v;
-	int htpe = (b->htype == TYPE_void)?TYPE_oid:b->htype;
-	BAT *r = BATnew(htpe, TYPE_void, BATcount(b)*2);
+	wrd j, gcnt = BATcount(gids);
+	BAT *r = BATnew(TYPE_void, TYPE_oid, BATcount(gids)*2);
 
-	if (b->hvarsized) {
-		BATloop(b, u, v) {
-			wrd i, sz = *(wrd*)BUNtloc(bi, u);
+	BATseqbase(r, 0);
+	if (gids->ttype == TYPE_void) {
+		oid id = gids->hseqbase;
+		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		for(j = 0; j < gcnt; j++) {
+			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNfastins(r, BUNhvar(bi, u), NULL) == NULL) {
+				if (BUNappend(r, &id, FALSE) == NULL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
 			}
+			id++;
 		}
 	} else {
-		BATloop(b, u, v) {
-			wrd i, sz = *(wrd*)BUNtloc(bi, u);
+		oid *id = (oid*)Tloc(gids, 0);
+		wrd *cnt = (wrd*)Tloc(cnts, 0);
+		for(j = 0; j < gcnt; j++) {
+			wrd i, sz = cnt[j];
 			for(i = 0; i < sz; i++) {
-				if (BUNfastins(r, BUNhloc(bi, u), NULL) == NULL) {
+				if (BUNappend(r, id, FALSE) == NULL) {
 					BBPreclaim(r);
 					return GDK_FAIL;
 				}
 			}
+			id++;
 		}
 	}
-	r -> hsorted = BAThordered(b);
-	r -> hrevsorted = BAThrevordered(b);
-	r -> tsorted = BATtordered(b);
-	r -> trevsorted = BATtrevordered(b);
-	r -> H ->nonil = b->H->nonil;
-	r -> T ->nonil = 0;
+	r -> hdense = TRUE;
+	r -> hsorted = TRUE;
+	r -> hrevsorted = FALSE;
+	r -> tsorted = BATtordered(gids);
+	r -> trevsorted = BATtrevordered(gids);
+	r -> T ->nonil = gids->T->nonil;
 	*result = r;
 	return GDK_SUCCEED;
 }
@@ -1927,16 +1932,22 @@ ALGtopN(int *res, int *bid, lng *top)
 }
 
 str
-ALGgroupby(int *res, int *bid)
+ALGgroupby(int *res, int *gids, int *cnts)
 {
-	BAT *b,*bn;
+	BAT *bn, *g, *c;
 
-	b = BATdescriptor(*bid);
-	if (b == NULL) {
+	g = BATdescriptor(*gids);
+	if (g == NULL) {
 		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
 	}
-	if( CMDgen_group(&bn,b) == GDK_FAIL){
-		BBPreleaseref(b->batCacheid);
+	c = BATdescriptor(*cnts);
+	if (c == NULL) {
+		BBPreleaseref(g->batCacheid);
+		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
+	}
+	if( CMDgen_group(&bn, g, c) == GDK_FAIL){
+		BBPreleaseref(g->batCacheid);
+		BBPreleaseref(c->batCacheid);
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
 	if( bn){
@@ -1944,7 +1955,8 @@ ALGgroupby(int *res, int *bid)
 		*res = bn->batCacheid;
 		BBPkeepref(bn->batCacheid);
 	}
-	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(g->batCacheid);
+	BBPreleaseref(c->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2013,7 +2025,7 @@ ALGsubselect2(bat *result, bat *bid, bat *sid, const void *low, const void *high
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && *hi == 1 &&
+	if (*li == 1 && *hi == 1 && 
 		ATOMcmp(b->ttype, low, nilptr) == 0 &&
 		ATOMcmp(b->ttype, high, nilptr) == 0) {
 		/* special case: equi-select for NIL */

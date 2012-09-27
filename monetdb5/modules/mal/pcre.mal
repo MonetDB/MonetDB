@@ -52,7 +52,7 @@ address PCRElike_uselect_pcre;
 command like_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCRElike_uselect_pcre;
 
-command like_filter(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
 address PCRElike_join_pcre;
 
 command ilike_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
@@ -61,7 +61,7 @@ address PCREilike_uselect_pcre;
 command ilike_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCREilike_uselect_pcre;
 
-command ilike_filter(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
 address PCREilike_join_pcre;
 
 command like_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
@@ -184,3 +184,25 @@ comment "Select all head values of the first input BAT for which the
 	Input is a dense-headed BAT, output is a dense-headed BAT with in
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
+
+function likesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return likesubselect(b, pat, esc, false, anti);
+end likesubselect;
+
+function ilikesubselect(b:bat[:oid,:str], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return likesubselect(b, pat, esc, true, anti);
+end ilikesubselect;
+
+function likesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return likesubselect(b, cand, pat, esc, false, anti);
+end likesubselect;
+
+function ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str, anti:bit) :bat[:oid,:oid];
+	return likesubselect(b, cand, pat, esc, true, anti);
+end ilikesubselect;
+
+command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+address PCRElike_join_pcre;
+
+command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+address PCREilike_join_pcre;

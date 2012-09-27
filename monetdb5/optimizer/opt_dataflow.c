@@ -92,6 +92,23 @@ dflowAssignTest(Lifespan span, InstrPtr p, int i)
 	return 0;
 }
 
+/* a limited set of MAL instructions may appear in the dataflow block*/
+static int
+dflowInstruction(InstrPtr p) {
+	switch(p->token){
+	case ASSIGNsymbol:
+	case PATcall:
+	case CMDcall:
+	case FACcall:
+	case FCNcall:
+	case NOOPsymbol:
+	case REMsymbol:
+		return ! (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) || 
+					blockCntrl(p) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)));
+	}
+	return 0;
+}
+
 int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -140,7 +157,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) || (!dumbcopy && blockExit(p)) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)) || dflowAssignTest(span,p,i) ){
+		if (!dflowInstruction(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
 			/* close old flow block */
 			if (flowblock){
 				int sf = simpleFlow(old,start,i);

@@ -592,7 +592,7 @@ reinit:
 				(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 				t = GDKusec();
 				pnet[i].cycles++;
-				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb, 0, 0);
+				msg = reenterMAL(cntxt, mb, pnet[i].pc, pnet[i].pc + 1, glb);
 				pnet[i].time += GDKusec() - t + analysis;   /* keep around in microseconds */
 				if (msg != MAL_SUCCEED && !strstr(msg, "too early")) {
 					char buf[BUFSIZ];
@@ -604,7 +604,7 @@ reinit:
 					pnet[i].enabled = -1;
 					/* abort current transaction  */
 					if ( abortpc )
-						msg = reenterMAL(cntxt, mb, abortpc, abortpc + 1, glb, 0, 0);
+						msg = reenterMAL(cntxt, mb, abortpc, abortpc + 1, glb);
 				} else {
 					(void) MTIMEcurrent_timestamp(&pnet[i].seen);
 					for (j = 0; j < pnet[i].srctop; j++) {

@@ -29,52 +29,60 @@ function user.main{autoCommit=nil}():void;
     mdb.listMapi();
     X_2 := sql.mvc();
 "    X_3 := calc.str(""sys"");"
-    X_5 := calc.ptr(140529384786912);
+    X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
 "    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-    X_16 := algebra.selectNotNil(X_11);
-"    X_17:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_19 := bat.reverse(X_17);
-"    X_20 := algebra.kdifference(X_16,X_19);"
-"    (ext23,grp21) := group.done(X_20);"
-    X_23 := grp21;
-    X_24 := bat.mirror(ext23);
-"    X_25:bat[:oid,:wrd]  := aggr.count(X_23,X_23,X_24);"
-    X_26 := aggr.count(X_25);
-    X_27:wrd  := aggr.sum(X_25);
-    X_28 := calc.isnil(X_27);
-    X_29 := calc.wrd(0:wrd);
-"    X_31 := calc.ifthenelse(X_28,X_29,X_27);"
-"    X_32 := calc.!=(X_26,X_31);"
-"    X_33 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_32,X_33);"
+"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
+    X_16 := bat.reverse(X_14);
+"    X_17 := algebra.kdifference(X_11,X_16);"
+    X_18 := calc.oid(0@0);
+"    X_20 := algebra.markT(X_17,X_18);"
+    X_21 := bat.reverse(X_20);
+"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_23 := algebra.leftjoin(X_21,X_22);"
+    X_24 := calc.int(nil:int);
+"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
+"    X_28 := algebra.leftjoin(X_26,X_23);"
+"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
+    X_32 := aggr.count(r2_29);
+    X_33:wrd  := aggr.sum(r2_29);
+    X_34 := calc.isnil(X_33);
+    X_35 := calc.wrd(0:wrd);
+"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
+"    X_38 := calc.!=(X_32,X_37);"
+"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_38,X_39);"
 "    sql.exportOperation("""");"
 end main;
 function user.main{autoCommit=nil}():void;
     mdb.listMapi();
     X_2 := sql.mvc();
 "    X_3 := calc.str(""sys"");"
-    X_5 := calc.ptr(140529384786912);
+    X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
 "    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-    X_16 := algebra.selectNotNil(X_11);
-"    X_17:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_19 := bat.reverse(X_17);
-"    X_20 := algebra.kdifference(X_16,X_19);"
-"    (ext23,grp21) := group.done(X_20);"
-    X_23 := grp21;
-    X_24 := bat.mirror(ext23);
-"    X_25:bat[:oid,:wrd]  := aggr.count(X_23,X_23,X_24);"
-    X_26 := aggr.count(X_25);
-    X_27:wrd  := aggr.sum(X_25);
-    X_28 := calc.isnil(X_27);
-    X_29 := calc.wrd(0:wrd);
-"    X_31 := calc.ifthenelse(X_28,X_29,X_27);"
-"    X_32 := calc.!=(X_26,X_31);"
-"    X_33 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_32,X_33);"
+"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
+    X_16 := bat.reverse(X_14);
+"    X_17 := algebra.kdifference(X_11,X_16);"
+    X_18 := calc.oid(0@0);
+"    X_20 := algebra.markT(X_17,X_18);"
+    X_21 := bat.reverse(X_20);
+"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_23 := algebra.leftjoin(X_21,X_22);"
+    X_24 := calc.int(nil:int);
+"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
+"    X_28 := algebra.leftjoin(X_26,X_23);"
+"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
+    X_32 := aggr.count(r2_29);
+    X_33:wrd  := aggr.sum(r2_29);
+    X_34 := calc.isnil(X_33);
+    X_35 := calc.wrd(0:wrd);
+"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
+"    X_38 := calc.!=(X_32,X_37);"
+"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_38,X_39);"
 "    sql.exportOperation("""");"
 end main;
 #~EndVariableOutput~#
@@ -83,26 +91,30 @@ function user.main{autoCommit=nil}():void;
     mdb.listMapi();
     X_2 := sql.mvc();
 "    X_3 := calc.str(""sys"");"
-    X_5 := calc.ptr(140529384487152);
+    X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
 "    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-    X_16 := algebra.selectNotNil(X_11);
-"    X_17:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_19 := bat.reverse(X_17);
-"    X_20 := algebra.kdifference(X_16,X_19);"
-"    (ext23,grp21) := group.done(X_20);"
-    X_23 := grp21;
-    X_24 := bat.mirror(ext23);
-"    X_25:bat[:oid,:wrd]  := aggr.count(X_23,X_23,X_24);"
-    X_26 := aggr.count(X_25);
-    X_27:wrd  := aggr.sum(X_25);
-    X_28 := calc.isnil(X_27);
-    X_29 := calc.wrd(0:wrd);
-"    X_31 := calc.ifthenelse(X_28,X_29,X_27);"
-"    X_32 := calc.!=(X_26,X_31);"
-"    X_33 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_32,X_33);"
+"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
+    X_16 := bat.reverse(X_14);
+"    X_17 := algebra.kdifference(X_11,X_16);"
+    X_18 := calc.oid(0@0);
+"    X_20 := algebra.markT(X_17,X_18);"
+    X_21 := bat.reverse(X_20);
+"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_23 := algebra.leftjoin(X_21,X_22);"
+    X_24 := calc.int(nil:int);
+"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
+"    X_28 := algebra.leftjoin(X_26,X_23);"
+"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
+    X_32 := aggr.count(r2_29);
+    X_33:wrd  := aggr.sum(r2_29);
+    X_34 := calc.isnil(X_33);
+    X_35 := calc.wrd(0:wrd);
+"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
+"    X_38 := calc.!=(X_32,X_37);"
+"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_38,X_39);"
 "    sql.exportOperation("""");"
 end main;
 #~EndVariableOutput~#

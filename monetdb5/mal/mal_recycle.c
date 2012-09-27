@@ -2220,7 +2220,7 @@ RECYCLEreuse(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
         s->keepAlive = TRUE;
         k = p->recycle;
         p->recycle = NO_RECYCLING; /* No recycling for instructions with        subsumption */
-        (void) reenterMAL(cntxt,mb,i,i+1,s,0,0);
+        (void) reenterMAL(cntxt,mb,i,i+1,s);
         /* restore the situation */
 /*        ticks = GDKusec() - ticks; */
         p->recycle= k;

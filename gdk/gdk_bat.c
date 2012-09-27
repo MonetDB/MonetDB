@@ -2765,13 +2765,6 @@ BATmode(BAT *b, int mode)
 		}
 		BBPdirty(1);
 
-		/* a SESSION bat is a TRANSIENT with one logical
-		 * reference added */
-		if (mode == SESSION) {
-			BBPincref(bid, TRUE);
-		} else if (b->batPersistence == SESSION) {
-			BBPdecref(bid, TRUE);
-		}
 		if (mode == PERSISTENT && isVIEW(b)) {
 			VIEWreset(b);
 		}

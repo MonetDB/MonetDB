@@ -920,6 +920,27 @@ runDFLOWworker(void *t)
 	THRdel(thr);
 }
 
+/* 
+ * Create a set of DFLOW interpreters.
+ * One worker will be adaptively be available for each client.
+ * The remainder are taken from the GDKnr_threads argument and
+ * typically is equal to the number of cores
+ * The global workers are assembled in a local table for possible
+ * debugging.
+static THR *workers;
+static int workercnt;
+void
+DFLOWinitialize()
+{
+	int i;
+	MT_lock_set(&mal_contextLock, "DFLOWinitialize");
+	workers = (THR*) GDKzalloc( sizeof(THR) * GDKnr_threads);
+	for ( i= 0; i < GDKnr_threads; i++)
+	MT_create_thread(&flow->worker[i].tid, runDFLOWworker,
+					 flow->worker + i, MT_THR_JOINABLE);
+	MT_lock_unset(&mal_contextLock, "DFLOWinitialize");
+}
+ */
 /*
  * The dataflow administration is based on administration of
  * how many variables are still missing before it can be executed.
@@ -927,7 +948,7 @@ runDFLOWworker(void *t)
  * blocking counter should be decremented upon finishing it.
  */
 static void
-DFLOWinit(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
+DFLOWinitBlk(DataFlow flow, Client cntxt, MalBlkPtr mb, MalStkPtr stk, int size)
 {
 	int pc, i, j, k, l, n, etop = 0;
 	int *assign;
@@ -1227,7 +1248,7 @@ str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
 	size = DFLOWgraphSize(mb, startpc, stoppc);
 	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
-	DFLOWinit(flow, cntxt, mb, stk, size);
+	DFLOWinitBlk(flow, cntxt, mb, stk, size);
 
 	ret = DFLOWscheduler(flow);
 

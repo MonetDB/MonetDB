@@ -1392,6 +1392,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	const oid *cand = NULL, *candend = NULL;
 	const char *v;
 	const oid *grps, *map;
+	oid mapoff = 0;
 	oid prev;
 	BUN p, q;
 	int freeb = 0, freeg = 0;
@@ -1470,7 +1471,12 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			BBPunfix(g->batCacheid);
 		g = t1;
 		freeg = 1;
-		map = (const oid *) Tloc(t2, BUNfirst(t2));
+		if (t2->ttype == TYPE_void) {
+			map = NULL;
+			mapoff = b->tseqbase;
+		} else {
+			map = (const oid *) Tloc(t2, BUNfirst(t2));
+		}
 		grps = (const oid *) Tloc(g, BUNfirst(g));
 		prev = grps[0];
 		isnil = 0;
@@ -1491,7 +1497,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 			if (isnil)
 				continue;
-			v = (const char *) BUNtail(bi, BUNfirst(b) + (BUN) map[p]);
+			v = (const char *) BUNtail(bi, BUNfirst(b) + (map ? (BUN) map[p] : p + mapoff));
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;

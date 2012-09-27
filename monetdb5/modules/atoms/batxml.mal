@@ -87,8 +87,8 @@ command xml.isdocument(val:bat[:oid,:str]):bat[:oid,:bit]
 address BATXMLisdocument
 comment "Validate the string as a XML document.";
 
-command xml.subaggr(val:bat[:oid,:xml], skip_nils:int) :bat[:oid,:xml]
-address AGGRxml
+command xml.aggr(val:bat[:oid,:xml]):xml
+address BATXMLgroup
 comment "Aggregate the XML values.";
 
 command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:int) :bat[:oid,:xml]
