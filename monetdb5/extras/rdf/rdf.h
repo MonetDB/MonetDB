@@ -43,6 +43,10 @@
 rdf_export str
 RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 
+rdf_export str RDFleftfetchjoin_sortedestimate(int *result, int *lid, int *rid, lng *estimate);
+rdf_export str RDFleftfetchjoin_sorted(int *result, int* lid, int *rid);
+
+
 #define TRIPLE_STORE 1
 #define MLA_STORE    2
 
