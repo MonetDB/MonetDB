@@ -6449,12 +6449,18 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				MALCOMMENT(mb, "} j_sort");
 			} break;
 			case j_top:
+				MALCOMMENT(mb, "j_top(%lld) {", t->nval - 1);
+
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, putName("selectH", 7));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j->j1);
-				q = pushOid(mb, q, 0);
+				if (j->startoid == 0) {
+					q = pushOid(mb, q, 0);
+				} else {
+					q = pushArgument(mb, q, j->startoid);
+				}
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -6495,22 +6501,41 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				q = pushWrd(mb, q, (wrd)(t->nval - 1));
 				b = getArg(q, 0);
 				pushInstruction(mb, q);
+
+				/* start a new top array for results */
+				e = dumpnextid(mb, j->j1);
+				dumpbatwritable(j, mb, 1);
 				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sdifference", 11));
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
-				q = pushArgument(mb, q, b);
-				b = getArg(q, 0);
+				q = pushArgument(mb, q, j->j1);
+				q = pushArgument(mb, q, e);
+				q = pushBte(mb, q, 'a');
+				j->j1 = getArg(q, 0);
 				pushInstruction(mb, q);
+				j->startoid = e;
+
+				/* add members new top array */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, algebraRef);
-				setFunctionId(q, putName("sdifference", 11));
+				setFunctionId(q, projectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushArgument(mb, q, b);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 5);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, j->j5);
-				q = pushArgument(mb, q, b);
+				q = pushArgument(mb, q, g);
 				j->j5 = getArg(q, 0);
 				pushInstruction(mb, q);
+
+				MALCOMMENT(mb, "} j_top(%lld)", t->nval - 1);
 				break;
 			case j_func: {
 				enum treetype coltypes[MAXJAQLARG];
