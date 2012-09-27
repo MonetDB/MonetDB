@@ -399,6 +399,7 @@ recover_dir(int direxists)
 	return GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir");
 }
 
+static int BBPrecover(void);
 static int BBPrecover_subdir(void);
 static int BBPdiskscan(const char *);
 

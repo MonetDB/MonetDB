@@ -58,6 +58,16 @@ quiet = False
 
 releaserun = False
 
+if os.isatty(sys.stdout.fileno()):
+    # color output a little
+    RED = '\033[1;31m'
+    GREEN = '\033[0;32m'
+    PURPLE = '\033[1;35m'       # actually magenta
+    BLACK = '\033[0;0m'
+else:
+    # no coloring if not to a tty
+    RED = GREEN = PURPLE = BLACK = ''
+
 # Python 2.3 doesn't know about os.devnull...
 try:
     os.devnull
@@ -74,7 +84,7 @@ def ErrExit(msg):
 def _configure(str):
     # expand configure variables in str and return result
     config = [
-        ('${source}', '@QXSOURCE@'),
+        ('{source}', '@QXSOURCE@'),
         ('${build}', '@QXBUILD@'),
 
         ('${bindir}', '@QXbindir@'),
@@ -2248,29 +2258,29 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length) :
 
         if not verbose and not quiet:
             if tres == 'timeout':
-                STDOUT.write("TIMEOUT")
+                STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
             elif tres == 'recursion':
-                STDOUT.write("RECURSION")
+                STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
             elif tres == 'segfault':
-                STDOUT.write("CRASHED")
+                STDOUT.write("%sCRASHED%s" % (PURPLE, BLACK))
             elif tres == 'abort':
-                STDOUT.write('ABORTED')
+                STDOUT.write('%sABORTED%s' % (PURPLE, BLACK))
             elif tres == 'signal':
-                STDOUT.write('SIGNALED')
+                STDOUT.write('%sSIGNALED%s' % (PURPLE, BLACK))
             else:
                 if FailedOut == F_OK:
-                    STDOUT.write('OK   ')
+                    STDOUT.write('%sOK%s   ' % (GREEN, BLACK))
                 elif FailedOut == F_WARN:
-                    STDOUT.write('minor')
+                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
                 else:
-                    STDOUT.write('MAJOR')
+                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
                 STDOUT.write(' ')
                 if FailedErr == F_OK:
-                    STDOUT.write('OK')
+                    STDOUT.write('%sOK%s' % (GREEN, BLACK))
                 elif FailedErr == F_WARN:
-                    STDOUT.write('minor')
+                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
                 else:
-                    STDOUT.write('MAJOR')
+                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
             STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links
