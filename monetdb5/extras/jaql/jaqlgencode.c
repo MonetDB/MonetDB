@@ -6164,6 +6164,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				int lw;
 				tree *rpreds = NULL, *w;
 
+				MALCOMMENT(mb, "j_sort {");
 				/* build backwards list of sort predicates, such that we
 				 * can resort with stable sort back to the first and
 				 * most significant sort predicate */
@@ -6175,12 +6176,13 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				t->tval2 = rpreds;
 
 				a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
-				
+				g = 0;
+
 				for (w = rpreds; w != NULL; w = w->tval3) {
+					MALCOMMENT(mb, "| sort col %s", w->tval1->sval);
 					/* avoid double free upon cleanup */
 					w->next = NULL;
 
-					b = dumprefvar(j, mb, w->tval1, a);
 					/* can only sort on one type (str, lng, dbl), and can't
 					 * combine these, so pick first element's type and
 					 * sort all of those */
@@ -6219,6 +6221,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushBte(mb, q, 'd');
 					c = getArg(q, 0);
 					pushInstruction(mb, q);
+					/* work around oid-headed restriction */
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, batRef);
 					setFunctionId(q, reverseRef);
@@ -6233,6 +6236,35 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushArgument(mb, q, c);
 					c = getArg(q, 0);
 					pushInstruction(mb, q);
+
+					if (g != 0) {
+						/* update walkvar order */
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, reverseRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, g);
+						g = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, batRef);
+						setFunctionId(q, mirrorRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, g);
+						g = getArg(q, 0);
+						pushInstruction(mb, q);
+						q = newInstruction(mb, ASSIGNsymbol);
+						setModuleId(q, algebraRef);
+						setFunctionId(q, leftjoinRef);
+						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+						q = pushArgument(mb, q, g);
+						q = pushArgument(mb, q, a);
+						a = getArg(q, 0);
+						pushInstruction(mb, q);
+					}
+					b = dumprefvar(j, mb, w->tval1, a);
+
+					/* retrieve kind of first element */
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
 					setFunctionId(q, semijoinRef);
@@ -6243,7 +6275,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
-					setFunctionId(q, joinRef);
+					setFunctionId(q, leftjoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, e);
 					q = pushArgument(mb, q, c);
@@ -6265,6 +6297,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushArgument(mb, q, f);
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
+
 					q = newInstruction(mb, ASSIGNsymbol);
 					g = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
 					q = pushReturn(mb, q, g);
@@ -6330,56 +6363,44 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						q->barrier = EXITsymbol;
 					}
 
+					/* need to preserve order of g */
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
-					setFunctionId(q, leftjoinRef); /* need to preserve order of g */
+					setFunctionId(q, leftjoinRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, g);
 					q = pushArgument(mb, q, b);
 					g = getArg(q, 0);
 					pushInstruction(mb, q);
+
+					/* add back entries that didn't match the sort type */
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, batRef);
 					setFunctionId(q, reverseRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, g);
-					g = getArg(q, 0);
+					e = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, batRef);
 					setFunctionId(q, mirrorRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, g);
-					g = getArg(q, 0);
-					pushInstruction(mb, q);
-					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, batRef);
-					setFunctionId(q, reverseRef);
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, j->j5);
+					q = pushArgument(mb, q, a);
 					f = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, algebraRef);
-					setFunctionId(q, leftjoinRef); /* need to preserve order of g */
+					setFunctionId(q, putName("kdifference", 11));
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, g);
 					q = pushArgument(mb, q, f);
-					g = getArg(q, 0);
+					q = pushArgument(mb, q, e);
+					e = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
 					setModuleId(q, batRef);
 					setFunctionId(q, reverseRef);
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, g);
-					g = getArg(q, 0);
-					pushInstruction(mb, q);
-					q = newInstruction(mb, ASSIGNsymbol);
-					setModuleId(q, algebraRef);
-					setFunctionId(q, putName("sdifference", 11));
-					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-					q = pushArgument(mb, q, j->j5);
-					q = pushArgument(mb, q, g);
+					q = pushArgument(mb, q, e);
 					e = getArg(q, 0);
 					pushInstruction(mb, q);
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -6388,10 +6409,44 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 					q = pushArgument(mb, q, g);
 					q = pushArgument(mb, q, e);
-					j->j5 = getArg(q, 0);
-					j->ro5 = 0;
+					g = getArg(q, 0);
 					pushInstruction(mb, q);
 				}
+
+				/* start a new top array for results */
+				e = dumpnextid(mb, j->j1);
+				dumpbatwritable(j, mb, 1);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j->j1);
+				q = pushArgument(mb, q, e);
+				q = pushBte(mb, q, 'a');
+				j->j1 = getArg(q, 0);
+				pushInstruction(mb, q);
+				j->startoid = e;
+
+				/* add members new top array */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, projectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, e);
+				q = pushArgument(mb, q, g);
+				g = getArg(q, 0);
+				pushInstruction(mb, q);
+				dumpbatwritable(j, mb, 5);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j->j5);
+				q = pushArgument(mb, q, g);
+				j->j5 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				MALCOMMENT(mb, "} j_sort");
 			} break;
 			case j_top:
 				q = newInstruction(mb, ASSIGNsymbol);
