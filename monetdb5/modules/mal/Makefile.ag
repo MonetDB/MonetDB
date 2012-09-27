@@ -28,7 +28,6 @@ MTSAFE
 lib_mal = {
 	NOINST
 	SOURCES = \
-		attach.c attach.h \
 		batExtensions.c batExtensions.h \
 		bbp.c bbp.h \
 		box.c box.h \
@@ -70,7 +69,7 @@ headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
 	SOURCES = language.mal constraints.mal mal_init.mal box.mal bbp.mal \
-		profiler.mal const.mal attach.mal batExtensions.mal \
+		profiler.mal const.mal batExtensions.mal \
 		inspect.mal manual.mal mal_io.mal pqueue.mal mkey.mal \
 		iterator.mal clients.mal \
 		factories.mal groupby.mal mdb.mal pcre.mal mat.mal \
@@ -82,7 +81,7 @@ headers_mal = {
 		calc.mal batcalc.mal batmtime.mal
 }
 
-EXTRA_DIST = attach.mal batExtensions.mal iterator.mal constraints.mal \
+EXTRA_DIST = batExtensions.mal iterator.mal constraints.mal \
 	groupby.mal mal_init.mal manual.mal mkey.mal pcre.mal \
 	profiler.mal recycle.mal remote.mal sabaoth.mal trader.mal \
 	transaction.mal txtsim.mal tablet.mal tablet.h sample.mal \
