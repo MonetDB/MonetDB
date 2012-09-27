@@ -16,6 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
+	  	   ../../modules/kernel \
 		   ../../../clients/mapilib \
 		   ../../../common/options \
 		   ../../../common/stream \
