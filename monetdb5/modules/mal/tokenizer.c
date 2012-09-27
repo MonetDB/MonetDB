@@ -67,6 +67,20 @@ static char name[128];
 #define GET_d(x) ((sht)((x)&255))
 #define GET_h(x) ((x)>>8)
 
+static int prvlocate(BAT* b, oid *prv, str part) { 
+	BAT *m = BATmirror(b);
+	BATiter mi = bat_iterator(m);
+	BUN p;
+	if (m->H->hash == NULL) BAThash(m, 2*BATcount(m));
+	HASHloop_str(mi, m->H->hash, p, part) {
+		if (*((oid *)BUNtail(mi,p)) == *prv) {
+			*prv = (oid) p;
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 str
 TKNZRopen(int *ret, str *in)
 {
@@ -80,9 +94,9 @@ TKNZRopen(int *ret, str *in)
 		throw(MAL, "tokenizer.open",
 				ILLEGAL_ARGUMENT " tokenizer name too long");
 
-	MT_lock_set(&mal_contextLock, "tokenizer");
+	mal_set_lock(mal_contextLock,"tokenizer");
 	if (TRANS != NULL) {
-		MT_lock_unset(&mal_contextLock, "tokenizer");
+		mal_unset_lock(mal_contextLock,"tokenizer");
 		throw(MAL, "tokenizer.open", "Another tokenizer is already open");
 	}
 
@@ -93,11 +107,11 @@ TKNZRopen(int *ret, str *in)
 
 	TRANS = BATnew(TYPE_void, TYPE_str, MAX_TKNZR_DEPTH+1);
 	if (TRANS == NULL) {
-		MT_lock_unset(&mal_contextLock, "tokenizer");
+		mal_unset_lock(mal_contextLock,"tokenizer");
 		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
 	}
 	/* now we are sure that none overwrites the tokenizer table*/
-	MT_lock_unset(&mal_contextLock, "tokenizer");
+	mal_unset_lock(mal_contextLock,"tokenizer");
     BATseqbase(TRANS, 0);
 
 	snprintf(name, 128, "%s", *in);
@@ -260,19 +274,7 @@ TKNZRappend(oid *pos, str *s)
 	if (p != BUN_NONE) {
 		prv = (oid) p;
 		for (i = 1; i < new; i++) {
-			BAT *m = BATmirror(tokenBAT[i]);
-			BATiter mi = bat_iterator(m);
-			int fnd = 0;
-
-			if (m->H->hash == NULL) BAThash(m, 2*BATcount(m));
-			HASHloop_str(mi, m->H->hash, p, parts[i]) {
-				if (*((oid *)BUNtail(mi,p)) == prv) {
-					prv = (oid) p;
-					fnd = 1;
-					break;
-				}
-			}
-			if (!fnd) break;
+			if (!prvlocate(tokenBAT[i], &prv, parts[i])) break;
 		}
 	} else {
 		i = 0;
@@ -422,14 +424,9 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (p != BUN_NONE) {
 			prv = (oid) p;
 			for (i = 1; i < depth; i++) {
-				p = BUNlocate(tokenBAT[i],(ptr) &prv, parts[i]);
-				if (p == BUN_NONE) {
-					prv = oid_nil;
-					break;
-				}
-				prv = (oid) p;
+				if (!prvlocate(tokenBAT[i],(ptr) &prv, parts[i])) break;
 			}
-			if (prv == oid_nil) {
+			if (i < depth) {
 				pos = oid_nil;
 			} else {
 				comp = COMP(prv,i);
@@ -445,25 +442,13 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
-TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	oid id;
-	int depth;
+static str takeOid(oid id, str *ret, size_t *totlen, str fcn) {
+	int i, depth;
 	str parts[MAX_TKNZR_DEPTH];
-	int i;
 	size_t lngth = 0;
-	str ret, s;
-
-	(void) cntxt;
-	(void) mb;
-
-	if (TRANS == NULL)
-		throw(MAL, "tokenizer", "no tokenizer store open");
-
-	id = *(oid*) getArgReference(stk, pci, 1);
+	str s;
 	if (id >= BATcount(tokenBAT[INDEX])) {
-		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
+		throw(MAL, fcn, OPERATION_FAILED " illegal oid");
 	}
 	id = *(oid *) Tloc(tokenBAT[INDEX], id);
 
@@ -477,16 +462,103 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lngth += strlen(parts[i]);
 	}
 
-	ret = (str) GDKmalloc(lngth+depth+1);
-	s = ret;
+	if (*totlen < lngth+depth+3) {
+		if (*ret) GDKfree(*ret);
+		*totlen = lngth+depth+3;
+		*ret = (str) GDKmalloc(*totlen);
+		if (*ret == NULL) throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " malloc failed");
+	}
+	s = *ret;
+	*s++ = '<';
 	for (i = 0; i < depth; i++) {
 		strcpy(s, parts[i]);
 		s += strlen(parts[i]);
 		*s++ = '/';
 	}
+	*s++ = '>';
 	*s = '\0';
+	return MAL_SUCCEED;
+}
 
-	VALset(getArgReference(stk,pci,0), TYPE_str, ret);
+str
+TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str ret, val = NULL;
+	size_t l = 0;
+	oid id;
+	(void) cntxt;
+	(void) mb;
+	
+	if (TRANS == NULL) {
+		throw(MAL, "tokenizer", "no tokenizer store open");
+	}
+	id = *(oid*) getArgReference(stk, pci, 1);
+	ret = takeOid(id, &val, &l, "tokenizer.takeOid");
+	if (ret == MAL_SUCCEED) {
+		VALset(getArgReference(stk,pci,0), TYPE_str, val);
+	}
+	return ret;
+}
+
+
+str
+TKNZRrdf2str(bat *res, bat *bid, bat *map) {
+	BAT *r, *b, *m;
+	BATiter bi, mi;
+	BUN p, q;
+	str s = NULL;
+	size_t l = 0;
+
+ 	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING " null bat b");
+	}
+	m = BATdescriptor(*map);
+	if (m == NULL) {
+		BBPunfix(*bid);
+		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING "null bat m");
+	}
+	if (!BAThdense(b)) {
+		BBPunfix(*bid);
+		BBPunfix(*map);
+		throw(MAL, "tokenizer.rdf2str", SEMANTIC_TYPE_ERROR " semantic error");
+	}
+	r = BATnew(TYPE_void, TYPE_str, BATcount(b));
+	if (r == NULL) {
+		BBPunfix(*bid);
+		BBPunfix(*map);
+		throw(MAL, "tokenizer.rdf2str", RUNTIME_OBJECT_MISSING "null bat r");
+	}
+	*res = r->batCacheid;
+	BATseqbase(r, b->hseqbase);
+	bi = bat_iterator(b);
+	mi = bat_iterator(m);
+	
+	BATloop(b, p, q) {
+		oid id = *(oid*) BUNtloc(bi,p);
+		if (id >= RDF_MIN_LITERAL) {			
+			BUN pos = BUNfirst(m) +  (id - RDF_MIN_LITERAL);
+			if (pos < BUNfirst(m) || pos >= BUNlast(m)) {
+				BBPunfix(*bid);
+				BBPunfix(*map);
+				BBPunfix(*res);
+				throw(MAL, "tokenizer.rdf2str", OPERATION_FAILED " illegal oid");
+			}
+			s = (str) BUNtail(mi, pos);
+		} else {
+			str ret = takeOid(id, &s, &l, "tokenizer.rdf2str");
+			if (ret != MAL_SUCCEED) {
+				BBPunfix(*bid);
+				BBPunfix(*map);
+				BBPunfix(*res);
+				return ret;
+			}
+		}
+		BUNappend(r, s, FALSE);	
+	}
+	BBPunfix(*bid);
+	BBPunfix(*map);
+	BBPkeepref(*res);
 	return MAL_SUCCEED;
 }
 
