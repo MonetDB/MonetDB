@@ -41,7 +41,7 @@
 #define _RDF_DEBUG
 
 rdf_export str
-RDFParser(int *retval, str *location, str *graphname, str *schemam);
+RDFParser(BAT **graph, str *location, str *graphname, str *schemam);
 
 #define TRIPLE_STORE 1
 #define MLA_STORE    2
