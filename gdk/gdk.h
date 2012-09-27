@@ -1844,11 +1844,11 @@ typedef struct {
 } BBPrec;
 
 gdk_export bat BBPlimit;
-#define N_BBPINIT	100
+#define N_BBPINIT	1000
 #if SIZEOF_VOID_P == 4
 #define BBPINITLOG	11
 #else
-#define BBPINITLOG	13
+#define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
 /* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
