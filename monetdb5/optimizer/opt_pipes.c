@@ -64,7 +64,22 @@ struct PIPELINES {
 	{"default_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.deadcode();"
+     "optimizer.evaluate();"
+     "optimizer.costModel();"
+     "optimizer.coercions();"
+     "optimizer.emptySet();"
+     "optimizer.aliases();"
+//     "optimizer.mitosis();"
+//     "optimizer.mergetable();"
+     "optimizer.deadcode();"
+     "optimizer.commonTerms();"
+     "optimizer.groups();"
+     "optimizer.joinPath();"
+//     "optimizer.reorder();"
+     "optimizer.deadcode();"
+     "optimizer.reduce();"
+//     "optimizer.dataflow();"
+     "optimizer.history();"
 	 "optimizer.multiplex();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
