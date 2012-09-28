@@ -17,4 +17,4 @@
 
 # This loads the MonetDB/RDF module
 include tokenizer;
-include rdf;
+include rdfalgebra;

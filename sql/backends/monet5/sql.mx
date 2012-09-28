@@ -7111,7 +7111,7 @@ SQLrdfShred(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* unfix graph */
 	for(id=0; b[id]; id++) {
-	BBPunfix(b[id]->batCacheid);
+		BBPunfix(b[id]->batCacheid);
 	}
 	return MAL_SUCCEED;
 #else
