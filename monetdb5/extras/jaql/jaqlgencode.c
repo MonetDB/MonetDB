@@ -5675,7 +5675,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				dumpbatwritable(j, mb, 1);
 				dumpbatwritable(j, mb, 6);
 				dumpbatwritable(j, mb, 7);
-				for (w = t->tval1; w != NULL; w = w->tval1) {
+				for (w = t->tval2->tval1; w != NULL; w = w->tval1) {
 					MALCOMMENT(mb, "| reverse object traversal with re-creation");
 
 					/* get parents of variable matches */

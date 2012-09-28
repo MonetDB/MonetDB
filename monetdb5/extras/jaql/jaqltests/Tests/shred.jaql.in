@@ -3,4 +3,4 @@ a = shred("file://$TSTSRCDIR/imenu.json");
 
 a;
 
-a -> expand unroll $.menu.items -> filter $.items.id == "OpenNew";
+a -> expand unroll $.menu.items -> filter $.menu.items.id == "OpenNew";
