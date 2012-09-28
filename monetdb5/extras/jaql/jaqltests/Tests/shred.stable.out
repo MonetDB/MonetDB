@@ -111,7 +111,6 @@ Ready.
   }
 ]
 #a -> expand unroll $.menu.items -> filter $.menu.items.id == "OpenNew";
-#BATsetaccess: tmp_775 has 4 views; deliver a copy.
 % .json # table_name
 % json # name
 % clob # type

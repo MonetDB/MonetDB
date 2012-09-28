@@ -25,7 +25,6 @@ Ready.
 # 19:22:35 >  
 
 #a -> expand unroll $.menu.items;
-#BATsetaccess: tmp_775 has 4 views; deliver a copy.
 % .json # table_name
 % json # name
 % clob # type
