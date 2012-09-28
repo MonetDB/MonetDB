@@ -720,14 +720,14 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 }
 
 static void
-heapfree(Heap *src, Heap *dst)
+heapfree(Heap *dst, Heap *src)
 {
-	if (dst->filename == NULL) {
-		dst->filename = src->filename;
-		src->filename = NULL;
+	if (src->filename == NULL) {
+		src->filename = dst->filename;
+		dst->filename = NULL;
 	}
-	HEAPfree(src);
-	*src = *dst;
+	HEAPfree(dst);
+	*dst = *src;
 }
 
 static int
