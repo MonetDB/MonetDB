@@ -2657,8 +2657,7 @@ BATsetaccess(BAT *b, int newmode)
 		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-
-			PROPDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; creating a copy\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE), newmode);
 			if (b && b->batStamp > 0)
 				b->batStamp = -b->batStamp;	/* prevent MIL setaccess */
