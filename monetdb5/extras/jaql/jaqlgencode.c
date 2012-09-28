@@ -5954,6 +5954,19 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					b = dumprefvar(j, mb, w->tval2, a);
 					/* b should point to all "groups" now */
 
+					g = dumpnextid(mb, j->j1);
+					dumpbatwritable(j, mb, 1);
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, batRef);
+					setFunctionId(q, insertRef);
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					q = pushArgument(mb, q, j->j1);
+					q = pushArgument(mb, q, g);
+					q = pushBte(mb, q, 'a');
+					j->j1 = getArg(q, 0);
+					pushInstruction(mb, q);
+					j->startoid = g;
+					dumpbatwritable(j, mb, 5);
 					for (; *lp != -1; lp++) {
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, algebraRef);
@@ -6021,24 +6034,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						/* e = grouparrayid:elementid */
 
 						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, projectRef);
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushOid(mb, q, (oid)0);
-						q = pushArgument(mb, q, e);
-						d = getArg(q, 0);
-						pushInstruction(mb, q);
-						q = newInstruction(mb, ASSIGNsymbol);
-						setModuleId(q, algebraRef);
-						setFunctionId(q, putName("sdifference", 11));
-						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushArgument(mb, q, j->j5);
-						q = pushArgument(mb, q, d);
-						j->j5 = getArg(q, 0);
-						j->ro5 = 0;
-						pushInstruction(mb, q);
-
-						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -6058,7 +6053,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						setModuleId(q, algebraRef);
 						setFunctionId(q, projectRef);
 						q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-						q = pushOid(mb, q, (oid)0);
+						q = pushArgument(mb, q, g);
 						q = pushArgument(mb, q, e);
 						e = getArg(q, 0);
 						pushInstruction(mb, q);
@@ -6079,7 +6074,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						q = pushBte(mb, q, 'a');
 						e = getArg(q, 0);
 						pushInstruction(mb, q);
-						dumpbatwritable(j, mb, 1);
 						q = newInstruction(mb, ASSIGNsymbol);
 						setModuleId(q, batRef);
 						setFunctionId(q, insertRef);
