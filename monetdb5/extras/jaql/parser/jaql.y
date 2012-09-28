@@ -352,7 +352,7 @@ arr_list: arr_list ',' val_var_arith  {$$ = append_elem($1, $3);}
 
 obj_pair: variable                    {$$ = make_pair(NULL, $1);}
 		| variable '.' '*'            {$$ = make_pair(NULL, append_varname($1, NULL));}
-		| STRING ':' val_var_arith    {$$ = make_pair($1, $3);}
+		| STRING ':' json_value       {$$ = make_pair($1, $3);}
 		;
 
 json_value: val_var_arith             {$$ = $1;}
