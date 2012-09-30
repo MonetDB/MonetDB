@@ -1364,9 +1364,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			assert(l >= 0 && r >= 0);
 
-			if (s->flag == cmp_project) {
+			if (s->flag == cmp_project || s->flag == cmp_reorder_project) {
 				/* projections, ie left is void headed */
-				q = newStmt2(mb, algebraRef, leftjoinRef);
+				if (s->flag == cmp_project)
+					q = newStmt1(mb, algebraRef, "leftfetchjoin");
+				else
+					q = newStmt2(mb, algebraRef, leftjoinRef);
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1426,6 +1429,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				break;
 			case cmp_project:
+			case cmp_reorder_project:
 				assert(0);
 				break;
 			default:

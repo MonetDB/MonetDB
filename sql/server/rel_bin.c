@@ -816,7 +816,7 @@ stmt_col( mvc *sql, sql_column *c, stmt *ts, stmt *bcs, stmt *ics)
 		stmt *u = stmt_bat(sql->sa, c, ts, RD_UPD);
 		sc = stmt_diff(sql->sa, sc, u);
 		sc = stmt_union(sql->sa, sc, u);
-		sc = stmt_project(sql->sa, bcs, sc);
+		sc = stmt_reorder_project(sql->sa, bcs, sc);
 		i = stmt_project(sql->sa, ics, i);
 		sc = stmt_append(sql->sa, sc, i);
 	} else { /* always handle the deletes */
@@ -838,7 +838,7 @@ stmt_idx( mvc *sql, sql_idx *i, stmt *ts, stmt *bcs, stmt *ics)
 		stmt *u = stmt_idxbat(sql->sa, i, ts, RD_UPD);
 		sc = stmt_diff(sql->sa, sc, u);
 		sc = stmt_union(sql->sa, sc, u);
-		sc = stmt_project(sql->sa, bcs, sc);
+		sc = stmt_reorder_project(sql->sa, bcs, sc);
 		ic = stmt_project(sql->sa, ics, ic);
 		sc = stmt_append(sql->sa, sc, ic);
 	} else { /* always handle the deletes */
@@ -1982,7 +1982,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		lcnt = stmt_project(sql->sa, stmt_reverse(sql->sa, lm), s);
 		s = stmt_union(sql->sa, ecnt, lcnt);
 		o = stmt_mark_tail(sql->sa, lext, 0);
-		s = stmt_project(sql->sa, stmt_reverse(sql->sa, o), s);
+		s = stmt_reorder_project(sql->sa, stmt_reverse(sql->sa, o), s);
 
 		/* now we have gid,cnt, blowup to full groupsizes */
 		s = stmt_gen_group(sql->sa, lext, s);
@@ -2878,7 +2878,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		s = stmt_col(sql, c->c, ts, bcs, ics);
 		if ((k->type == ukey) && stmt_has_null(s)) {
 			stmt *nn = stmt_selectnonil(sql, s, NULL);
-			s = stmt_project(sql->sa, nn, s);
+			s = stmt_reorder_project(sql->sa, nn, s);
 		}
 		if (h->nrcols) {
 			s = stmt_join(sql->sa, s, h, cmp_equal);
@@ -2905,7 +2905,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 			/* inserted vaules may be null */
 			if ((k->type == ukey) && stmt_has_null(ins)) {
 				stmt *nn = stmt_selectnonil(sql, ins, NULL);
-				ins = stmt_project(sql->sa, nn, ins);
+				ins = stmt_reorder_project(sql->sa, nn, ins);
 			}
 		
 			g = stmt_group(sql->sa, ins, NULL, NULL, NULL);
@@ -3281,7 +3281,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				/* remove nulls */
 				if ((k->type == ukey) && stmt_has_null(upd)) {
 					stmt *nn = stmt_selectnonil(sql, upd, NULL);
-					upd = stmt_project(sql->sa, nn, upd);
+					upd = stmt_reorder_project(sql->sa, nn, upd);
 				}
 
 				g = stmt_group(sql->sa, upd, grp, ext, Cnt);
@@ -3346,7 +3346,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			/* remove nulls */
 			if ((k->type == ukey) && stmt_has_null(upd)) {
 				stmt *nn = stmt_selectnonil(sql, upd, NULL);
-				upd = stmt_project(sql->sa, nn, upd);
+				upd = stmt_reorder_project(sql->sa, nn, upd);
 			}
 
 			g = stmt_group(sql->sa, upd, NULL, NULL, NULL);
@@ -3770,9 +3770,9 @@ join_idx_update(mvc *sql, sql_idx * i, stmt **updates, int updcol)
 		s = stmt_union(sql->sa, s, stmt_const(sql->sa, null, stmt_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL))));
 	/* correct the order */
 	if (updates)
-		return stmt_project(sql->sa, stmt_mirror(sql->sa, updates[updcol]->op1), s);
+		return stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, updates[updcol]->op1), s);
 	else
-		return stmt_project(sql->sa, stmt_mirror(sql->sa, new_updates[updcolumn->colnr]), s);
+		return stmt_reorder_project(sql->sa, stmt_mirror(sql->sa, new_updates[updcolumn->colnr]), s);
 }
 
 static list *

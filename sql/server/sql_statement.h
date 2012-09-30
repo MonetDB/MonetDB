@@ -133,7 +133,8 @@ typedef enum comp_type {
 
 	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
 	cmp_all = 10,		/* special case for crossproducts */
-	cmp_project = 11	/* special case for projection joins */
+	cmp_project = 11,	/* special case for projection joins */
+	cmp_reorder_project = 12	/* special case for (reordering) projection joins */
 } comp_type;
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
@@ -249,6 +250,7 @@ extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp,
 extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op);
 
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2);
 
 extern stmt *stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);

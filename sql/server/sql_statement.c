@@ -1103,6 +1103,12 @@ stmt_project(sql_allocator *sa, stmt *op1, stmt *op2)
 }
 
 stmt *
+stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2)
+{
+	return stmt_join(sa, op1, op2, cmp_reorder_project);
+}
+
+stmt *
 stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp, int swapped)
 {
 	stmt *s = stmt_create(sa, st_join2);

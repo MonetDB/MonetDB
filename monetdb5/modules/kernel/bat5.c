@@ -1111,13 +1111,17 @@ BKCappend_force_wrap(int *r, int *bid, int *uid, bit *force)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
-	if ((b = setaccess(b, BAT_WRITE)) == NULL)
-		throw(MAL, "bat.append", OPERATION_FAILED);
 	if ((u = BATdescriptor(*uid)) == NULL) {
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "bat.append", RUNTIME_OBJECT_MISSING);
 	}
-	bn = BATappend(b, u, *force);
+	if (BATcount(u) == 0) {
+		bn = b;
+	} else {
+		if ((b = setaccess(b, BAT_WRITE)) == NULL)
+			throw(MAL, "bat.append", OPERATION_FAILED);
+		bn = BATappend(b, u, *force);
+	}
 	if (b != bn)
 		BBPreleaseref(b->batCacheid);
 	BBPreleaseref(u->batCacheid);
