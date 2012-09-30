@@ -694,8 +694,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	q = newStmt2(mb, batRef, reverseRef );
 	q = pushArgument(mb, q, mtj);
 	mtj = getDestVar(q);
-	if (q)
-		k = getDestVar(q);
+	k = getDestVar(q);
 
 	q = newStmt2(mb, algebraRef, markHRef);
 	q = pushArgument(mb, q, j);
