@@ -694,8 +694,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 	q = newStmt2(mb, batRef, reverseRef );
 	q = pushArgument(mb, q, mtj);
 	mtj = getDestVar(q);
-	if (q)
-		k = getDestVar(q);
+	k = getDestVar(q);
 
 	q = newStmt2(mb, algebraRef, markHRef);
 	q = pushArgument(mb, q, j);
@@ -1200,7 +1199,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			InstrPtr r,p;
 			int l = _dumpstmt(sql, mb, s->op1);
 			stmt *base, *low = NULL, *high = NULL;
-			int r1 = -1, r2 = -1, rs = 0, k, j, mtj, mhj;
+			int r1 = -1, r2 = -1, rs = 0, j, mtj, mhj;
 			bit anti = (s->flag&ANTI)?TRUE:FALSE;
 			char *cmd = 
 				(s->type == st_uselect2) ?
@@ -1214,6 +1213,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if ((s->op2->nrcols > 0 || s->op3->nrcols) && (s->type == st_uselect2)) {
 				char *mod = calcRef;
 				char *op1 = "<", *op2 = "<";
+				int k;
 
 				r1 = _dumpstmt(sql, mb, s->op2);
 				r2 = _dumpstmt(sql, mb, s->op3);
@@ -1363,9 +1363,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			assert(l >= 0 && r >= 0);
 
-			if (s->flag == cmp_project) {
+			if (s->flag == cmp_project || s->flag == cmp_reorder_project) {
 				/* projections, ie left is void headed */
-				q = newStmt2(mb, algebraRef, leftjoinRef);
+				if (s->flag == cmp_project)
+					q = newStmt1(mb, algebraRef, "leftfetchjoin");
+				else
+					q = newStmt2(mb, algebraRef, leftjoinRef);
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -1425,6 +1428,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				break;
 			case cmp_project:
+			case cmp_reorder_project:
 				assert(0);
 				break;
 			default:

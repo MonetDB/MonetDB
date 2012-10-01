@@ -866,7 +866,7 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:b
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(grp);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return mark_grp := algebra.leftfetchjoin(go, mg);
 end batcalc.mark_grp;
 
@@ -877,7 +877,7 @@ function batcalc.mark_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(orig);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return mark_grp := algebra.leftfetchjoin(go, mg);
 end batcalc.mark_grp;
 
@@ -894,7 +894,7 @@ function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], grp:b
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(grp);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return rank_grp := algebra.leftfetchjoin(go, rg);
 end batcalc.rank_grp;
 
@@ -904,7 +904,7 @@ function batcalc.rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid], orig:
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(orig);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return rank_grp := algebra.leftfetchjoin(go, rg);
 end batcalc.rank_grp;
 
@@ -920,7 +920,7 @@ function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid],
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(grp);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return rank_grp := algebra.leftfetchjoin(go, drg);
 end batcalc.dense_rank_grp;
 
@@ -930,7 +930,7 @@ function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1], ord:bat[:oid,:oid],
 	# restore the order based on grp 
 	or := bat.reverse(ord);
 	gg := bat.mirror(orig);
-	go := algebra.fetchjoin(gg, or);
+	go := algebra.leftjoin(gg, or);
 	return rank_grp := algebra.leftfetchjoin(go, drg);
 end batcalc.dense_rank_grp;
 

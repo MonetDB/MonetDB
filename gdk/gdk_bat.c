@@ -720,14 +720,14 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 }
 
 static void
-heapfree(Heap *src, Heap *dst)
+heapfree(Heap *dst, Heap *src)
 {
-	if (dst->filename == NULL) {
-		dst->filename = src->filename;
-		src->filename = NULL;
+	if (src->filename == NULL) {
+		src->filename = dst->filename;
+		dst->filename = NULL;
 	}
-	HEAPfree(src);
-	*src = *dst;
+	HEAPfree(dst);
+	*dst = *src;
 }
 
 static int
@@ -2657,8 +2657,7 @@ BATsetaccess(BAT *b, int newmode)
 		storage_t b0, b1, b2 = STORE_MEM, b3 = STORE_MEM;
 
 		if (b->batSharecnt && newmode != BAT_READ) {
-
-			PROPDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; deliver a copy.\n", BATgetId(b), b->batSharecnt);
+			BATDEBUG THRprintf(GDKout, "#BATsetaccess: %s has %d views; creating a copy\n", BATgetId(b), b->batSharecnt);
 			b = BATsetaccess(BATcopy(b, b->htype, b->ttype, TRUE), newmode);
 			if (b && b->batStamp > 0)
 				b->batStamp = -b->batStamp;	/* prevent MIL setaccess */
