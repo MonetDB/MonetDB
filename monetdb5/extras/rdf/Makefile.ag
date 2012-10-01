@@ -44,9 +44,9 @@ headers_rdf_mal = {
 headers_autoload = {
         HEADERS = mal
         DIR = libdir/monetdb5/autoload
-        SOURCES = 10_rdf.mal
+        SOURCES = 30_rdf.mal
 }
 
 #EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 10_rdf.mal rdfalgebra.mal
+EXTRA_DIST = 30_rdf.mal rdfalgebra.mal
 
