@@ -560,6 +560,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	} else {
 		backup = backups;
 		garbage = garbages;
+		memset((char*) garbages, 0, 16 * sizeof(int));
 	}
 
 	/* also produce event record for start of function */
