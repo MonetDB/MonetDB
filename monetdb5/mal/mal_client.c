@@ -88,8 +88,7 @@ MCinit(void)
 
 	MAL_MAXCLIENTS =
 		/* console */ 1 +
-		/* client connections */ maxclients +
-		/* workers */ threads;
+		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 }
 
