@@ -61,6 +61,7 @@ str
 CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
+	char u[24];
 
 	(void) cntxt;
 	(void) mb;
@@ -72,17 +73,11 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "const.prelude", BOX_CLOSED);
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		char u[24 + 1];
-		snprintf(u, 24, OIDFMT, cntxt->user);
-		u[24] = '\0';
-		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
 		insertToBox(box, "version", VERSION);
 		snprintf(u, 24, "%s", GDKversion());
 		insertToBox(box, "gdk_version", u);
-		insertToBox(box, "config", GDKgetenv("gdk_config"));
-		/* old bat.mx and algebra.mx constants */
 	}
 	return MAL_SUCCEED;
 }
