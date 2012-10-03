@@ -76,7 +76,6 @@ void
 MCinit(void)
 {
 	char *max_clients = GDKgetenv("max_clients");
-	int threads = GDKnr_threads;
 	int maxclients = 0;
 
 	if (max_clients != NULL)
