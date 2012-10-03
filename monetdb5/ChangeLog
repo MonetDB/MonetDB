@@ -1,3 +1,9 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Oct  3 2012 Martin Kersten <mk@cwi.nl>
+- The scheduler of mserver5 was changed to use a fixed set of workers to
+  perform the work for all connected clients.  Previously, each client
+  connection had its own set of workers, easily causing resource problems
+  upon multiple connections to the server.
+
