@@ -56,6 +56,7 @@
 
 #define COUNTERSDEFAULT "ISTestmrw"
 
+#define TOMOGRAPHPATTERN "tomograph start 2012"
 /* #define _DEBUG_TOMOGRAPH_*/
 
 static struct {
@@ -131,6 +132,7 @@ static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
 static int batch = 1; /* number of queries to combine in one run */
+static int startup= 0; /* count openStream calls first */
 static long maxio=0;
 static int cpus = 0;
 
@@ -214,6 +216,8 @@ static void activateBeat(void){
 	char buf[BUFSIZ];
 	char *id ="activateBeat";
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n",beat);
+	doQ(buf);
+	snprintf(buf, BUFSIZ, "io.print(\"%s\");\n",TOMOGRAPHPATTERN);
 	doQ(buf);
 	return;
 stop_disconnect:
@@ -1006,7 +1010,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		return;
 	}
 
-	if (state == 1 && fcn && (strncmp(fcn,"function",8) == 0 || strncmp(fcn,"profiler.tomograph",18) == 0 )){
+	if (state == 1 && fcn && (strncmp(fcn,"function",8) == 0 || strncmp(fcn,"profiler.tomograph",18) == 0)  && startup > 1 ){
 		deactivateBeat();
 		createTomogram();
 		totalclkticks= 0; /* number of clock ticks reported */
@@ -1150,6 +1154,12 @@ static void parser(char *row){
 	c = strchr(c+1, (int)',');
 	c++;
 	fcn = c;
+	if (fcn && strstr(fcn, TOMOGRAPHPATTERN) ){
+		startup++;	// start counting 
+		if (debug)
+			printf("Found start marker\n");
+		if ( startup == 2 ) batch++;
+	}
 	stmt = strdup(fcn);
 	c = strstr(c+1, ":=");
 	if ( c ){

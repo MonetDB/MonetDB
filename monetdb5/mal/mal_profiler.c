@@ -125,11 +125,12 @@ activateCounter(str name)
 		if (strcmp(profileCounter[i].name, name) == 0) {
 			profileCounter[i].status = 1;
 			return 0;
-		} else
-		if ( strncmp("ping",name,4) == 0){
-			startHeartbeat(atoi(name+4));
-			return 0;
-		}
+		} 
+	if ( strncmp("ping",name,4) == 0){
+		startHeartbeat(atoi(name+4));
+		profileCounter[PROFping].status = 1;
+		return 0;
+	}
 	throw(MAL, "activateCounter", RUNTIME_OBJECT_UNDEFINED ":%s", name);
 }
 
