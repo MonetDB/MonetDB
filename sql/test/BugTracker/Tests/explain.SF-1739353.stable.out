@@ -45,7 +45,7 @@ Operation successful
 |     X_26 := algebra.markT(X_25,0@0:oid);                            |
 |     X_27 := bat.reverse(X_26);                                      |
 |     X_28:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",1); |
-|     X_29 := algebra.leftjoin(X_27,X_28);                            |
+|     X_29 := algebra.leftfetchjoin(X_27,X_28);                       |
 |     X_30 := bat.append(X_23,X_29,true);                             |
 |     X_32 := algebra.thetasubselect(X_30,2:sht,"<");                 |
 |     X_34:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",0); |
@@ -54,9 +54,9 @@ Operation successful
 |     X_41 := algebra.kunion(X_40,X_39);                              |
 |     X_42 := algebra.leftjoin(X_16,X_41);                            |
 |     X_43:bat[:oid,:str]  := sql.bind(X_2,"sys","_tables","name",1); |
-|     X_45 := algebra.leftjoin(X_27,X_43);                            |
+|     X_45 := algebra.leftfetchjoin(X_27,X_43);                       |
 |     X_46 := bat.append(X_42,X_45,true);                             |
-|     X_47 := algebra.leftjoin(X_32,X_46);                            |
+|     X_47 := algebra.leftfetchjoin(X_32,X_46);                       |
 |     X_48 := bat.append(X_3,X_47,true);                              |
 |     X_49:bat[:oid,:int]  := sql.bind(X_2,"tmp","_tables","id",0);   |
 |     X_52:bat[:oid,:oid]  := sql.bind_dbat(X_2,"tmp","_tables",1);   |
@@ -65,18 +65,19 @@ Operation successful
 |     X_55 := algebra.markT(X_54,0@0:oid);                            |
 |     X_56 := bat.reverse(X_55);                                      |
 |     X_57:bat[:oid,:sht]  := sql.bind(X_2,"tmp","_tables","type",0); |
-|     X_59 := algebra.leftjoin(X_56,X_57);                            |
+|     X_59 := algebra.leftfetchjoin(X_56,X_57);                       |
 |     X_60 := algebra.thetasubselect(X_59,2:sht,"<");                 |
 |     X_62:bat[:oid,:str]  := sql.bind(X_2,"tmp","_tables","name",0); |
-|     X_66:bat[:oid,:str]  := algebra.leftjoinPath(X_60,X_56,X_62);   |
-|     X_67 := bat.append(X_48,X_66,true);                             |
-|     X_69 := sql.resultSet(1,1,X_67);                                |
-|     sql.rsColumn(X_69,".tables","name","varchar",1024,0,X_67);      |
-|     X_75 := io.stdout();                                            |
-|     sql.exportResult(X_75,X_69);                                    |
+|     X_66 := algebra.leftfetchjoin(X_56,X_62);                       |
+|     X_67 := algebra.leftfetchjoin(X_60,X_66);                       |
+|     X_68 := bat.append(X_48,X_67,true);                             |
+|     X_70 := sql.resultSet(1,1,X_68);                                |
+|     sql.rsColumn(X_70,".tables","name","varchar",1024,0,X_68);      |
+|     X_76 := io.stdout();                                            |
+|     sql.exportResult(X_76,X_70);                                    |
 | end s0_1;                                                           |
 +---------------------------------------------------------------------+
-49 rows
+50 rows
 
 
 # 15:15:37 >  

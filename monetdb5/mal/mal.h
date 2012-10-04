@@ -46,7 +46,6 @@
  */
 #define MAXSCRIPT 64
 #define MEMORY_THRESHOLD  0.8
-#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
 mal_export char     monet_cwd[PATHLENGTH];
 mal_export size_t	monet_memory;

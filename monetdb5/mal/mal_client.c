@@ -76,7 +76,6 @@ void
 MCinit(void)
 {
 	char *max_clients = GDKgetenv("max_clients");
-	int threads = GDKnr_threads;
 	int maxclients = 0;
 
 	if (max_clients != NULL)
@@ -88,8 +87,7 @@ MCinit(void)
 
 	MAL_MAXCLIENTS =
 		/* console */ 1 +
-		/* client connections */ maxclients +
-		/* workers per client */ (maxclients * threads);
+		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 }
 

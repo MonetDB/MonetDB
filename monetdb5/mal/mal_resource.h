@@ -17,13 +17,20 @@
  * All Rights Reserved.
 */
 
-#ifndef _MAL_DATAFLOW_H
-#define _MAL_DATAFLOW_H
+#ifndef _MAL_RESOURCE_H
+#define _MAL_RESOURCE_H
 
 #include "mal_interpreter.h"
-#include "mal_runtime.h"
-#include "mal_resource.h"
 
-mal_export str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr stk);
+#define TIMESLICE  2000 /* ms */
+#define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
-#endif /*  _MAL_DATAFLOW_H*/
+#define USE_MAL_ADMISSION
+#ifdef USE_MAL_ADMISSION
+mal_export int MALadmission(lng argclaim, lng hotclaim);
+#endif
+
+mal_export lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, int pc, int i, int flag);
+mal_export void MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec);
+
+#endif /*  _MAL_RESOURCE_H*/

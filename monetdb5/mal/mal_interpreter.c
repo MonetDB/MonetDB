@@ -24,6 +24,7 @@
 #include "monetdb_config.h"
 #include "mal_runtime.h"
 #include "mal_interpreter.h"
+#include "mal_resource.h"
 #include "mal_listing.h"
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_recycle.h"
@@ -528,6 +529,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
  * The core of the interpreter is presented next. It takes the context information
  * and starts the interpretation at the designated instruction.
  * Note that the stack frame is aligned and initialized in the enclosing routine.
+ * When we start executing the first instruction, we take the wall-clock time for
+ * resource management.
  */
 str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
@@ -560,11 +563,14 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	} else {
 		backup = backups;
 		garbage = garbages;
+		memset((char*) garbages, 0, 16 * sizeof(int));
 	}
 
 	/* also produce event record for start of function */
-	if ( startpc == 1 ) 
+	if ( startpc == 1 ) {
 		runtimeProfileInit(mb, &runtimeProfileFunction, cntxt->flags & memoryFlag);
+		mb->starttime = GDKusec();
+	}
 	stkpc = startpc;
 	exceptionVar = -1;
 
@@ -593,6 +599,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
+		if ( cntxt->idx > 1 )
+			MALresourceFairness(cntxt,mb,0);
 		runtimeProfileBegin(cntxt, mb, stk, stkpc, &runtimeProfile, 1);
 		if (pci->recycle > 0)
 			stk->clk = GDKusec();

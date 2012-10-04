@@ -133,7 +133,7 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if ( getPC(mb, pci) > pci->jump)
 		throw(MAL,"language.dataflow","Illegal statement range");
-	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk, 0, pci);
+	msg = runMALdataflow(cntxt, mb, getPC(mb,pci), pci->jump, stk);
 	*ret = 0;	/* continue at end of block */
 	return msg;
 }
