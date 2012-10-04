@@ -130,6 +130,7 @@ newMalBlk(int maxvars, int maxstmts)
 	mb->recycle = 0;
 	mb->recid = 0;
 	mb->trap = 0;
+	mb->starttime = 0;
 	if (newMalBlkStmt(mb, maxstmts) < 0)
 		return NULL;
 	return mb;
