@@ -20,17 +20,21 @@ stdout of test 'tst605` in directory 'mal` itself:
 function user.main():void;
     io.print("Contents of the 'const' box");
 barrier (b,nme) := const.newIterator();
-    io.printf("# %s=",nme);
+    io.printf("[ %s ]\n",nme);
     val:str  := const.toString(nme);
-    io.printf("%s\n",val);
+    io.printf("#%s\n",val);
     redo (b,nme) := const.hasMoreElements();
 exit b;
 end main;
 [ "Contents of the 'const' box" ]
-# dbname=mTests_mal
-# dbfarm=/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Oct2012-sofia.ins.cwi.nl/five/dbfarm
-# version=11.13.0
-# gdk_version=11.13.0
+[ dbname ]
+#mTests_mal
+[ dbfarm ]
+#/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Oct2012-sofia.ins.cwi.nl/five/dbfarm
+[ version ]
+#11.13.0
+[ gdk_version ]
+#11.13.0
 
 # 14:52:15 >  
 # 14:52:15 >  "Done."
