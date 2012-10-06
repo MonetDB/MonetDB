@@ -254,18 +254,18 @@ DFLOWworker(void *t)
 			continue;
 		}
 
-#ifdef USE_MAL_ADMISSION
-		if (MALadmission(fe->argclaim, fe->hotclaim)) {
-			fe->hotclaim = 0;   /* don't assume priority anymore */
-			if (todo->last == 0)
-				MT_sleep_ms(DELAYUNIT);
-			q_requeue(todo, fe);
-			continue;
-		}
-#endif
+		usec = GDKusec();
 		/* skip all instructions when we have encontered an error */
 		if (flow->error == 0) {
-			usec = GDKusec();
+#ifdef USE_MAL_ADMISSION
+			if (MALadmission(fe->argclaim, fe->hotclaim)) {
+				fe->hotclaim = 0;   /* don't assume priority anymore */
+				if (todo->last == 0)
+					MT_sleep_ms(DELAYUNIT);
+				q_requeue(todo, fe);
+				continue;
+			}
+#endif
 			error = runMALsequence(flow->cntxt, flow->mb, fe->pc, fe->pc + 1, flow->stk, 0, 0);
 			PARDEBUG mnstr_printf(GDKstdout, "#executed pc= %d wrk= %d claim= " LLFMT "," LLFMT " %s\n",
 								  fe->pc, id, fe->argclaim, fe->hotclaim, error ? error : "");
@@ -295,8 +295,6 @@ DFLOWworker(void *t)
 				continue;
 			}
 		}
-
-		PARDEBUG mnstr_printf(GDKstdout, "#execute pc= %d wrk= %d finished %s\n", fe->pc, id, flow->error ? flow->error : "");
 
 		/* see if you can find an eligible instruction that uses the
 		 * result just produced. Then we can continue with it right away.
@@ -518,13 +516,8 @@ DFLOWscheduler(DataFlow flow)
 		/*
 		 * When an instruction is finished we have to reduce the blocked
 		 * counter for all dependent instructions.  for those where it
-		 * drops to zero we can scheduler it Moreover, we add the return
-		 * variable claim size to the target instruction and remember
-		 * the last increment as hotclaim.
+		 * drops to zero we can scheduler it we do it here instead of the scheduler
 		 */
-
-		/* enter all dependencies before releasing the queue  */
-		/* otherwise you can be overtaken by a worker */
 
 		for (last = f->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending) {
