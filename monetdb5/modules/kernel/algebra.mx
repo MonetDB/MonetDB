@@ -529,9 +529,40 @@ comment "Returns the union of two BATs; looking at head-columns only.
 command tunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGtunion;
+
+
 # @+ Join operations
 # The core of every relational engine.
 # The join collection provided by the GDK kernel.
+command antijoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGantijoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+command join( left:bat[:oid,:any_1], right:bat[:oid,:any_1])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGjoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+# @- Theta Join
+command thetajoin( left:bat[:oid,:any_1], right:bat[:oid,:any_1], opname:int)
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGthetajoin2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
+command crossproduct( left:bat[:oid,:any_1], right:bat[:oid,:any_2])
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGcrossproduct2
+comment "Returns 2 columns with all BUNs, consisting of the head-oids 
+	  from 'left' and 'right' for which there are BUNs in 'left' 
+	  and 'right' with equal tails";
+
 # Note that joins over void columns are handled as if they are oids.
 command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
@@ -1070,6 +1101,12 @@ algebra_export str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr hi
 algebra_export str ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGantiuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin);
 algebra_export str ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh);
+
+algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
+algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
+
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
 algebra_export str ALGbandjoin_default(int *result, int *lid, int *rid, ptr *minus, ptr *plus);
@@ -2703,6 +2740,126 @@ str
 ALGantijoin(bat *result, bat *lid, bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATantijoin, "algebra.antijoin");
+}
+
+str
+ALGantijoin2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.antijoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = antijoin(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATantijoin(L, BATmirror(R));
+	if (!j)
+		throw(MAL, "algebra.antijoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGjoin2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = join(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATjoin(L, BATmirror(R), BUN_NONE);
+	if (!j)
+		throw(MAL, "algebra.join", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGthetajoin2( bat *l, bat *r, bat *left, bat *right, int *opc)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.thetajoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = thetajoin(left,reverse(right), opc)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATthetajoin(L, BATmirror(R), *opc, lng_nil);
+	if (!j)
+		throw(MAL, "algebra.thetajoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcrossproduct2( bat *l, bat *r, bat *left, bat *right)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = crossproduct(left,reverse(right))
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATcross(L, BATmirror(R));
+	if (!j)
+		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str

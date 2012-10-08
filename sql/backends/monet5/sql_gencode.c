@@ -1211,9 +1211,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				sub = _dumpstmt(sql, mb, s->op4.stval);
 
 			if ((s->op2->nrcols > 0 || s->op3->nrcols) && (s->type == st_uselect2)) {
+				int k;
 				char *mod = calcRef;
 				char *op1 = "<", *op2 = "<";
-				int k;
 
 				r1 = _dumpstmt(sql, mb, s->op2);
 				r2 = _dumpstmt(sql, mb, s->op3);
@@ -1258,18 +1258,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				cmd = bandjoinRef;
 			}
 
-/* TODO REMOVE 
-			if (s->op2->type == st_atom &&
-			    s->op3->type == st_atom &&
-			    atom_null(s->op2->op4.aval) &&
-			    atom_null(s->op3->op4.aval)
-			) {
-				q = newStmt2(mb, algebraRef, selectNotNilRef);
-				q = pushArgument(mb, q, l);
-				s->nr = getDestVar(q);
-				break;
-			}
-*/
 			if (!rs) {
 				r1 = _dumpstmt(sql, mb, s->op2);
 				r2 = _dumpstmt(sql, mb, s->op3);
@@ -1357,8 +1345,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_join:{
-			int l = _dumpstmt(sql, mb, s->op1), j;
-			int r = _dumpstmt(sql, mb, s->op2), mhj, mtj;
+			int l = _dumpstmt(sql, mb, s->op1);
+			int r = _dumpstmt(sql, mb, s->op2);
 			char *jt = "join", *nme;
 
 			assert(l >= 0 && r >= 0);
@@ -1376,54 +1364,51 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				return s->nr;
 			}
 
-			q = newStmt2(mb, batRef, reverseRef);
-			q = pushArgument(mb, q, r);
-			r = getDestVar(q);
 
 			switch (s->flag) {
 			case cmp_equal:
 				q = newStmt1(mb, algebraRef, jt);
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				break;
 			case cmp_notequal:
 				q = newStmt1(mb, algebraRef, "antijoin");
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				break;
 			case cmp_lt:
 				q = newStmt1(mb, algebraRef, "thetajoin");
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, -1);
 				break;
 			case cmp_lte:
 				q = newStmt1(mb, algebraRef, "thetajoin");
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, -2);
 				break;
 			case cmp_gt:
 				q = newStmt1(mb, algebraRef, "thetajoin");
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, 1);
 				break;
 			case cmp_gte:
 				q = newStmt1(mb, algebraRef, "thetajoin");
-
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				q = pushInt(mb, q, 2);
 				break;
 			case cmp_all:	/* aka cross table */
-				//q = dump_crossproduct(mb, l, r);
 				q = newStmt2(mb, algebraRef, crossRef);
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				break;
@@ -1434,29 +1419,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			default:
 				showException(GDKout, SQL,"sql","SQL2MAL: error impossible\n");
 			}
-			j = getDestVar(q);
-
-			q = newStmt2(mb, algebraRef, markTRef);
-			q = pushArgument(mb, q, j);
-			q = pushOid(mb, q, 0);
-			mtj = getDestVar(q);
-
-			q = newStmt2(mb, batRef, reverseRef );
-			q = pushArgument(mb, q, mtj);
-			mtj = getDestVar(q);
-			if (q)
-				s->nr = getDestVar(q);
-
-			q = newStmt2(mb, algebraRef, markHRef);
-			q = pushArgument(mb, q, j);
-			q = pushOid(mb, q, 0);
-			mhj = getDestVar(q);
+			s->nr = getDestVar(q);
 
 			/* rename second result */
 			nme = GDKmalloc(SMALLBUFSIZ);
 			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, mhj, nme);
-
+			renameVariable(mb, getArg(q,1), nme);
 			break;
 		}
 		case st_group:{
