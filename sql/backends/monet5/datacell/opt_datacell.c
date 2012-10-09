@@ -38,6 +38,20 @@
 #include "opt_statistics.h"
 #include "opt_dataflow.h"
 
+str
+OPTdatacellPrelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	addPipeDefinition(cntxt, "datacell_pipe",
+			"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();"
+			"optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();"
+			"optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
+	return MAL_SUCCEED;
+}
+
 int
 OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -235,10 +249,6 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (actions)
 	{
-		addPipeDefinition(cntxt, "datacell_pipe",
-				"optimizer.inline();optimizer.remap();optimizer.datacell();optimizer.garbageCollector();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();"
-				"optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();"
-				"optimizer.history();optimizer.multiplex();optimizer.accumulators();optimizer.garbageCollector();");
 		/* extend the plan with the new optimizer pipe required */
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);

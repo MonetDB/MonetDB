@@ -21,3 +21,8 @@ pattern optimizer.datacell(mod:str, fcn:str):str
 address OPTdatacell
 comment "Datacell expression optimizer";
 
+pattern optimizer.datacellprelude():void
+address OPTdatacellPrelude
+comment "Add the datacell optimizer pipe";
+
+optimizer.datacellprelude();
