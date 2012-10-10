@@ -1,3 +1,65 @@
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Wed, 10 Oct 2012 11:31:56 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * merovingian: Fixed problem where monetdbd would refuse to startup when discovery
+    was set to false, bug #3155
+
+ -- Fabian Groffen <fabian@cwi.nl>  Tue, 9 Oct 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * monetdb5: Removed module attach since it wasn't used or even tested.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * clients: mclient now accepts URIs as database to connect to.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * monetdb5: The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
+    most likely non-functional.
+
+ -- Fabian Groffen <fabian@cwi.nl>  Mon, 17 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * gdk: Removed the gdk_embedded (and embedded) option.  The code wasn't tested
+    and most likely non-functional.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * clients: all strings returned by python2 are unicode, removed use_unicode option
+  * clients: python2 and 3 type convertion speed improvements
+  * clients: python2 uses new styl objects now (bug #3104)
+  * clients: split python2 and python3
+
+ -- Gijs Molenaar <g.j.molenaar@uva.nl>  Mon, 17 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * gdk: BAT-of-BATs is no longer allowed.  It was already not allowed to
+    make these types of BATs persistent, but now they can't be created at
+    all anymore.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
+
+monetdb (11.13.1-20121010) unstable; urgency=low
+
+  * buildtools: Removed --enable-noexpand configure option.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 17 Sep 2012 11:31:55 +0200
+
 monetdb (11.11.11-20120917) unstable; urgency=low
 
   * Rebuilt.
