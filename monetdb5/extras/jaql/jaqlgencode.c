@@ -3977,7 +3977,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									dynaarg[i][0] = getArg(q, 0);
 									pushInstruction(mb, q);
 								} else {
@@ -4021,7 +4025,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushStr(mb, q, "");
 									dynaarg[i][1] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -4062,7 +4070,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushDbl(mb, q, 0.0);
 									dynaarg[i][2] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -4103,7 +4115,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushLng(mb, q, 0);
 									dynaarg[i][3] = getArg(q, 0);
 									pushInstruction(mb, q);
