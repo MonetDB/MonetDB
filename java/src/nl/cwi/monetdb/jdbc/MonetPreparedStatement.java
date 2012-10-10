@@ -724,12 +724,9 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public boolean isSigned(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
 				// we can hardcode this, based on the colum type
 				// (from ResultSetMetaData.isSigned)
-				switch (javaType[param - 1]) {
+				switch (javaType[getColumnIdx(param)]) {
 					case Types.NUMERIC:
 					case Types.DECIMAL:
 					case Types.TINYINT:
@@ -759,10 +756,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getPrecision(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return digits[param - 1];
+				return digits[getColumnIdx(param)];
 			}
 
 			/**
@@ -774,10 +768,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getScale(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return scale[param - 1];
+				return scale[getColumnIdx(param)];
 			}
 
 			/**
@@ -788,10 +779,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterType(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return javaType[param - 1];
+				return javaType[getColumnIdx(param)];
 			}
 
 			/**
@@ -805,10 +793,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterTypeName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return monetdbType[param - 1];
+				return monetdbType[getColumnIdx(param)];
 			}
 
 			/**
@@ -825,10 +810,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterClassName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param, "M1M05");
-
-				return MonetResultSet.getClassForType(javaType[param - 1]).getName();
+				return MonetResultSet.getClassForType(javaType[getColumnIdx(param)]).getName();
 			}
 
 			/**
@@ -1525,15 +1507,12 @@ public class MonetPreparedStatement
 	 *                      the given object is ambiguous
 	 */
 	public void setObject(int index, Object x) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		setObject(index, x, javaType[index - 1]);
+		setObject(index, x, javaType[getColumnIdx(index)]);
 	}
 
 	/**
 	 * Sets the value of the designated parameter with the given object. This
-	 * method is like the method setObject blow, except that it assumes a scale
+	 * method is like the method setObject below, except that it assumes a scale
 	 * of zero.
 	 *
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
@@ -2023,10 +2002,7 @@ public class MonetPreparedStatement
 	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getColumnIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case
@@ -2081,10 +2057,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index, "M1M05");
-
-		boolean hasTimeZone = monetdbType[index - 1].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getColumnIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case

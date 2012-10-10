@@ -124,4 +124,3 @@ command errors()(nme:bat[:oid,:str],error:bat[:oid,:str])
 address BSKTtableerrors
 comment "Return a table the erroneous events";
 
-io.printf("# MonetDB/DataCell loaded\n");

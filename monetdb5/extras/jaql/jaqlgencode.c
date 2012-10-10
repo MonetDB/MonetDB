@@ -3977,7 +3977,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									dynaarg[i][0] = getArg(q, 0);
 									pushInstruction(mb, q);
 								} else {
@@ -4021,7 +4025,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushStr(mb, q, "");
 									dynaarg[i][1] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -4062,7 +4070,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushDbl(mb, q, 0.0);
 									dynaarg[i][2] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -4103,7 +4115,11 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = pushArgument(mb, q, j->j5);
 									q = pushArgument(mb, q, j->j6);
 									q = pushArgument(mb, q, j->j7);
-									q = pushArgument(mb, q, j->startoid);
+									if (j->startoid == 0) {
+										q = pushOid(mb, q, 0);
+									} else {
+										q = pushArgument(mb, q, j->startoid);
+									}
 									q = pushLng(mb, q, 0);
 									dynaarg[i][3] = getArg(q, 0);
 									pushInstruction(mb, q);
@@ -6611,6 +6627,46 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					/* treat pipe as first input */
 					switch (coltypes[i]) {
 						case j_json_arr:
+							/* make sure we give "clean" input to a
+							 * function */
+							if (j->startoid != 0) {
+								a = dumpwalkvar(mb, j->j1, j->j5, j->startoid);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, batRef);
+								setFunctionId(q, mirrorRef);
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, a);
+								a = getArg(q, 0);
+								pushInstruction(mb, q);
+								q = newInstruction(mb, ASSIGNsymbol);
+								setModuleId(q, putName("json", 4));
+								setFunctionId(q, putName("extract", 7));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+								q = pushArgument(mb, q, j->j1);
+								q = pushArgument(mb, q, j->j2);
+								q = pushArgument(mb, q, j->j3);
+								q = pushArgument(mb, q, j->j4);
+								q = pushArgument(mb, q, j->j5);
+								q = pushArgument(mb, q, j->j6);
+								q = pushArgument(mb, q, j->j7);
+								q = pushArgument(mb, q, a);
+								q = pushOid(mb, q, 0);
+								j->j1 = getArg(q, 0);
+								j->j2 = getArg(q, 1);
+								j->j3 = getArg(q, 2);
+								j->j4 = getArg(q, 3);
+								j->j5 = getArg(q, 4);
+								j->j6 = getArg(q, 5);
+								j->j7 = getArg(q, 6);
+								pushInstruction(mb, q);
+								j->startoid = 0;
+							}
 							dynaarg[i][0] = j->j1;
 							dynaarg[i][1] = j->j2;
 							dynaarg[i][2] = j->j3;
@@ -6636,7 +6692,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							q = pushArgument(mb, q, j->j5);
 							q = pushArgument(mb, q, j->j6);
 							q = pushArgument(mb, q, j->j7);
-							q = pushOid(mb, q, (oid)0);
+							if (j->startoid == 0) {
+								q = pushOid(mb, q, (oid)0);
+							} else {
+								q = pushArgument(mb, q, j->startoid);
+							}
 							a = getArg(q, 0);
 							dynaarg[i][0] = a;
 							pushInstruction(mb, q);
@@ -6672,7 +6732,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j->j5);
 								q = pushArgument(mb, q, j->j6);
 								q = pushArgument(mb, q, j->j7);
-								q = pushOid(mb, q, (oid)0);
+								if (j->startoid == 0) {
+									q = pushOid(mb, q, (oid)0);
+								} else {
+									q = pushArgument(mb, q, j->startoid);
+								}
 								q = pushStr(mb, q, "");
 								dynaarg[i][1] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -6713,7 +6777,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j->j5);
 								q = pushArgument(mb, q, j->j6);
 								q = pushArgument(mb, q, j->j7);
-								q = pushOid(mb, q, (oid)0);
+								if (j->startoid == 0) {
+									q = pushOid(mb, q, (oid)0);
+								} else {
+									q = pushArgument(mb, q, j->startoid);
+								}
 								q = pushDbl(mb, q, 0.0);
 								dynaarg[i][2] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -6754,7 +6822,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 								q = pushArgument(mb, q, j->j5);
 								q = pushArgument(mb, q, j->j6);
 								q = pushArgument(mb, q, j->j7);
-								q = pushOid(mb, q, (oid)0);
+								if (j->startoid == 0) {
+									q = pushOid(mb, q, (oid)0);
+								} else {
+									q = pushArgument(mb, q, j->startoid);
+								}
 								q = pushLng(mb, q, 0);
 								dynaarg[i][3] = getArg(q, 0);
 								pushInstruction(mb, q);
@@ -6818,7 +6890,11 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							setModuleId(q, algebraRef);
 							setFunctionId(q, projectRef);
 							q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-							q = pushOid(mb, q, 0);
+							if (j->startoid == 0) {
+								q = pushOid(mb, q, (oid)0);
+							} else {
+								q = pushArgument(mb, q, j->startoid);
+							}
 							q = pushArgument(mb, q, a);
 							a = getArg(q, 0);
 							pushInstruction(mb, q);
@@ -7096,6 +7172,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					j->j5 = getArg(q, 4);
 					j->j6 = getArg(q, 5);
 					j->j7 = getArg(q, 6);
+					j->startoid = 0; /* external output should be "clean" */
 					for (i = 0; i < coltpos; i++) {
 						switch (coltypes[i]) {
 							case j_json:
@@ -7149,6 +7226,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 					j->j5 = getArg(r, 4);
 					j->j6 = getArg(r, 5);
 					j->j7 = getArg(r, 6);
+					j->startoid = 0;  /* wrap returns "clean" document */
 					pushInstruction(mb, r);
 				}
 			} break;

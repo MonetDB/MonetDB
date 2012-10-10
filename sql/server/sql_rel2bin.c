@@ -79,8 +79,8 @@ releqjoin( mvc *sql, int flag, list *l1, list *l2 )
 	for (; n1 && n2; n1 = n1->next, n2 = n2->next) {
 		stmt *ld = n1->data;
 		stmt *rd = n2->data;
-		stmt *le = stmt_project(sql->sa, l, ld );
-		stmt *re = stmt_project(sql->sa, r, rd );
+		stmt *le = stmt_reorder_project(sql->sa, l, ld );
+		stmt *re = stmt_reorder_project(sql->sa, r, rd );
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
 		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);

@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Jul2012-SP2/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2012/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -695,6 +695,41 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Oct 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.1-20121010
+- Rebuilt.
+
+* Tue Oct  9 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- merovingian: Fixed problem where monetdbd would refuse to startup when discovery
+  was set to false, bug #3155
+
+* Tue Sep 25 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- monetdb5: Removed module attach since it wasn't used or even tested.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- clients: mclient now accepts URIs as database to connect to.
+
+* Mon Sep 17 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.1-20121010
+- monetdb5: The MAL-to-C Compiler (mcc) was removed.  The code wasn't tested and
+  most likely non-functional.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: Removed the gdk_embedded (and embedded) option.  The code wasn't tested
+  and most likely non-functional.
+
+* Mon Sep 17 2012 Gijs Molenaar <g.j.molenaar@uva.nl> - 11.13.1-20121010
+- clients: all strings returned by python2 are unicode, removed use_unicode option
+- clients: python2 and 3 type convertion speed improvements
+- clients: python2 uses new styl objects now (bug #3104)
+- clients: split python2 and python3
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- gdk: BAT-of-BATs is no longer allowed.  It was already not allowed to
+  make these types of BATs persistent, but now they can't be created at
+  all anymore.
+
+* Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.1-20121010
+- buildtools: Removed --enable-noexpand configure option.
+
 * Mon Sep 17 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.11-20120917
 - Rebuilt.
 

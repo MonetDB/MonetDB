@@ -20,4 +20,3 @@ address OPTdatacell;
 pattern optimizer.datacell(mod:str, fcn:str):str
 address OPTdatacell
 comment "Datacell expression optimizer";
-
