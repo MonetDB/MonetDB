@@ -1408,7 +1408,27 @@ JSONunwrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATselect(BATmirror(jb.array), BUNhead(bi, p), NULL);
 	b = BATsemijoin(jb.kind, b);
 	bi = bat_iterator(b);
-	assert(BATcount(b) != 0);
+
+	if (BATcount(b) == 0) {
+		/* input empty, return empty result */
+		unloadbats();
+		switch (tpe->vtype) {
+			case TYPE_str:
+				r = BATnew(TYPE_oid, TYPE_str, 0);
+				break;
+			case TYPE_dbl:
+				r = BATnew(TYPE_oid, TYPE_dbl, 0);
+				break;
+			case TYPE_lng:
+				r = BATnew(TYPE_oid, TYPE_lng, 0);
+				break;
+			default:
+				assert(0); /* should not happen, checked above */
+		}
+		BBPkeepref(r->batCacheid);
+		*ret = r->batCacheid;
+		return MAL_SUCCEED;
+	}
 
 	/* special case for when the argument is a single array */
 	c = BATantiuselect_(b, "a", NULL, TRUE, TRUE);
