@@ -1199,12 +1199,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			InstrPtr r,p;
 			int l = _dumpstmt(sql, mb, s->op1);
 			stmt *base, *low = NULL, *high = NULL;
-			int r1 = -1, r2 = -1, rs = 0, j, mtj, mhj;
+			int r1 = -1, r2 = -1, rs = 0;
 			bit anti = (s->flag&ANTI)?TRUE:FALSE;
-			char *cmd = 
-				(s->type == st_uselect2) ?
-				"subselect":
-				"join", *nme;
+			char *cmd = (s->type == st_uselect2) ?  "subselect": "join", *nme;
 			int sub = -1;
 
 			if (s->op4.stval)
@@ -1244,9 +1241,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			    range_join_convertable(s, &base, &low, &high)) {
 				int tt = tail_type(base)->type->localtype;
 				rs = _dumpstmt(sql, mb, base);
-				q = newStmt2(mb, batRef, reverseRef);
-				q = pushArgument(mb, q, rs);
-				rs = getDestVar(q);
 				if (low)
 					r1 = _dumpstmt(sql, mb, low);
 				else
@@ -1263,6 +1257,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				r2 = _dumpstmt(sql, mb, s->op3);
 			}
 			q = newStmt1(mb, algebraRef, cmd);
+			if (s->type == st_join2)
+                        	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 			q = pushArgument(mb, q, l);
 			if (sub > 0)
 				q = pushArgument(mb, q, sub);
@@ -1294,33 +1290,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				s->nr = getDestVar(q);
 				break;
 			}
-
-			j = getDestVar(q);
-
-			q = newStmt2(mb, algebraRef, markTRef);
-			q = pushArgument(mb, q, j);
-			q = pushOid(mb, q, 0);
-			mtj = getDestVar(q);
-
-			q = newStmt2(mb, batRef, reverseRef );
-			q = pushArgument(mb, q, mtj);
-			mtj = getDestVar(q);
-			if (q)
-				s->nr = getDestVar(q);
-
-			q = newStmt2(mb, algebraRef, markHRef);
-			q = pushArgument(mb, q, j);
-			q = pushOid(mb, q, 0);
-			mhj = getDestVar(q);
+			s->nr = getDestVar(q);
 
 			/* rename second result */
 			nme = GDKmalloc(SMALLBUFSIZ);
 			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, mhj, nme);
-
+			renameVariable(mb, getArg(q,1), nme);
 			break;
 		}
-			break;
 		case st_joinN:
 			s->nr = dump_joinN(sql, mb, s);
 			break;

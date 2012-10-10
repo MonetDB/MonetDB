@@ -563,6 +563,19 @@ comment "Returns 2 columns with all BUNs, consisting of the head-oids
 	  from 'left' and 'right' for which there are BUNs in 'left' 
 	  and 'right' with equal tails";
 
+command bandjoin( outer:bat[:oid,:any_2], inner:bat[:oid,:any_3], minus:any_2 , plus:any_2, li:bit, hi:bit ) 
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGbandjoin2
+comment "This is a join() for which the predicate is that two BUNs match 
+		if the left-tail value is within the range [right-head - minus, 
+		right-head + plus], depending on (l_in/h_in), the bounds 
+		are included. Works only for the builtin numerical types, 
+		and their derivates.";
+
+command join(left:bat[:oid,:any_2], rl:bat[:oid,:any_2], rh:bat[:oid,:any_2], li:bit, hi:bit) 
+		(l:bat[:oid,:oid],r:bat[:oid,:oid])
+address ALGrangejoin2;
+
 # Note that joins over void columns are handled as if they are oids.
 command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
@@ -1106,6 +1119,8 @@ algebra_export str ALGantijoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGjoin2(int *l, int *r, int *lid, int *rid);
 algebra_export str ALGthetajoin2(int *l, int *r, int *lid, int *rid, int *opc);
 algebra_export str ALGcrossproduct2(int *l, int *r, int *lid, int *rid);
+algebra_export str ALGbandjoin2(int *l, int *r, int *lid, int *rid, ptr *minus, ptr *plus, bit *li, bit *hi);
+algebra_export str ALGrangejoin2(int *l, int *r, int *lid, int *rlid, int *rhid, bit *li, bit *hi);
 
 algebra_export str ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate);
 algebra_export str ALGthetajoin(int *result, int *lid, int *rid, int *opc);
@@ -2854,6 +2869,71 @@ ALGcrossproduct2( bat *l, bat *r, bat *left, bat *right)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+ALGbandjoin2(bat *l, bat *r, bat *left, bat *right, ptr *minus, ptr *plus, bit *li, bit *hi)
+{
+	BAT *L, *R, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.bandjoin", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = bandjoin(left,reverse(right), minus, plus, li, hi)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATbandjoin(L, BATmirror(R), minus, plus, *li, *hi);
+	if (!j)
+		throw(MAL, "algebra.bandjoin", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*l = L->batCacheid);
+	BBPkeepref(*r = R->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str 
+ALGrangejoin2(int *l, int *r, int *left, int *rightl, int *righth, bit *li, bit *hi)
+{
+	BAT *L, *R, *RL, *RH, *j;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((RL = BATdescriptor(*rightl)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+	if ((RH = BATdescriptor(*righth)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(RL->batCacheid);
+		throw(MAL, "algebra.join", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* j = join(left,rightl,righth, li, hi)
+	   l = reverse(mark(j))
+	   r = reverse(mark(reverse(j)))
+	*/
+	j = BATrangejoin(L, RL, RH, *li, *hi);
+	if (!j)
+		throw(MAL, "algebra.join", GDK_EXCEPTION);
+	BBPunfix(L->batCacheid);
+	BBPunfix(RL->batCacheid);
+	BBPunfix(RH->batCacheid);
 	L = BATmirror(BATmark(j,0));
 	R = BATmirror(BATmark(BATmirror(j),0));
 	BBPunfix(j->batCacheid);
