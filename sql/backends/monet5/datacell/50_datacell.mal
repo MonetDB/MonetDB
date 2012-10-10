@@ -16,10 +16,11 @@
 # All Rights Reserved.
 
 # This loads the MonetDB/DataCell module
-include opt_datacell;
 include datacell;
+include opt_datacell;
 include basket;
 include receptor;
 include emitter;
 
 datacell.prelude();
+io.printf("# MonetDB/DataCell loaded\n");

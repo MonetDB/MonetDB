@@ -1,7 +1,5 @@
 # using spaces
 
-u:str:=const.take("user");
-io.printf("#User bound to %s\n",u);
 roomnumber:= 321;
 const.deposit("roomnumber",roomnumber);
 

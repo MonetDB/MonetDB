@@ -254,6 +254,7 @@ OPTdatacellImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 
 	if (actions)
 	{
+		/* extend the plan with the new optimizer pipe required */
 		clk = GDKusec();
 		optimizerCheck(cntxt, mb, "optimizer.datacell", 1, /*t =*/ (GDKusec() - clk), OPT_CHECK_ALL);
 		addtoMalBlkHistory(mb, "datacell");

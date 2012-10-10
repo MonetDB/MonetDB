@@ -1,21 +1,22 @@
 /*
- *The contents of this file are subject to the MonetDB Public License
- *Version 1.1 (the "License"); you may not use this file except in
- *compliance with the License. You may obtain a copy of the License at
- *http://www.monetdb.org/Legal/MonetDBLicense
+ * The contents of this file are subject to the MonetDB Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.monetdb.org/Legal/MonetDBLicense
  *
- *Software distributed under the License is distributed on an "AS IS"
- *basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
- *License for the specific language governing rights and limitations
- *under the License.
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+ * License for the specific language governing rights and limitations
+ * under the License.
  *
- *The Original Code is the MonetDB Database System.
+ * The Original Code is the MonetDB Database System.
  *
- *The Initial Developer of the Original Code is CWI.
- *Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
- *Copyright August 2008-2012 MonetDB B.V.
- *All Rights Reserved.
-*/
+ * The Initial Developer of the Original Code is CWI.
+ * Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+ * Copyright August 2008-2012 MonetDB B.V.
+ * All Rights Reserved.
+ */
+
 /*
  * author Martin Kersten
  * Constants
@@ -60,6 +61,7 @@ str
 CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
+	char u[24];
 
 	(void) cntxt;
 	(void) mb;
@@ -71,17 +73,11 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "const.prelude", BOX_CLOSED);
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		char u[24 + 1];
-		snprintf(u, 24, OIDFMT, cntxt->user);
-		u[24] = '\0';
-		insertToBox(box, "user", u);
 		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
 		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
 		insertToBox(box, "version", VERSION);
 		snprintf(u, 24, "%s", GDKversion());
 		insertToBox(box, "gdk_version", u);
-		insertToBox(box, "config", GDKgetenv("gdk_config"));
-		/* old bat.mx and algebra.mx constants */
 	}
 	return MAL_SUCCEED;
 }

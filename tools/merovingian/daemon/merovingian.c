@@ -1069,7 +1069,7 @@ main(int argc, char *argv[])
 			(e = openConnectionTCP(&sock, port, stdout)) == NO_ERR &&
 			(unlink(control_usock) | unlink(mapi_usock) | 1) &&
 			(e = openConnectionUNIX(&socku, mapi_usock, 0, stdout)) == NO_ERR &&
-			(discovery == 1 && (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
+			(discovery == 0 || (e = openConnectionUDP(&usock, port)) == NO_ERR) &&
 			(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR
 	   )
 	{
