@@ -1201,3 +1201,18 @@ tst400e		0.510/0.468/0.012
 
 tst901a		0.060/0.040/0.014
 tst901b		1.462/1.422/0.025
+======================== 6 oct 2012 ===================
+Vienna Fedora 16
+Oct2012 release
+The compilation mode for V5 is --enable-optimize --disable-debug
+compilation took 5m25 
+command: time mserver5 TST </dev/null >/dev/null
+base		0.110/0.040/0.012.
+tst400a		0.160/0.076/0.007
+tst400bHuge	0.210/0.119/0.011
+tst400cHuge	0.211/0.132/0.015
+tst400d		0.463/0.370/0.015
+tst400e		0.613/0.524/0.013
+
+tst901a		1.315/0.651/0.595
+tst901b		1.313/1.222/0.016
