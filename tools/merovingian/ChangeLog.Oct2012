@@ -1,7 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Tue Oct  9 2012 Fabian Groffen <fabian@cwi.nl>
-- Fixed problem where monetdbd would refuse to startup when discovery
-  was set to false, bug #3155
-
