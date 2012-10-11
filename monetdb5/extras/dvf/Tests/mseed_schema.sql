@@ -67,6 +67,12 @@ CREATE TABLE "mseed"."data" (
 -- INSERT INTO mseed.data VALUES ('location1', 21, '2001-05-04 19:52:39.247', 57);
 -- INSERT INTO mseed.data VALUES ('location1', 21, '2001-05-04 19:52:39.297', 56);
 
+CREATE VIEW mseed.metadataview AS
+SELECT f.file_location, dataquality, network, station, location, channel, encoding, byte_order, seq_no, record_length, start_time, frequency, sample_count, sample_type
+FROM mseed.files AS f
+	JOIN mseed.catalog AS c
+		ON f.file_location = c.file_location;
+
 CREATE VIEW mseed.dataview AS
 SELECT f.file_location, dataquality, network, station, location, channel, encoding, byte_order, c.seq_no, record_length, start_time, frequency, sample_count, sample_type, sample_time, sample_value
 FROM mseed.files AS f 
