@@ -1053,7 +1053,7 @@ JSONdrop(int *ret, str *name)
 	snprintf(buf, sizeof(buf), "json_%s_kind", *name);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.drop",
 				"no such JSON object with name: %s", *name);
 
 	t = BBPquickdesc(ABS(bid), FALSE);
