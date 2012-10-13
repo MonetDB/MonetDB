@@ -1038,6 +1038,14 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 		*name = 0;
 	}
 
+	/* incref for MAL interpreter ref */
+	BBPincref(*kind, TRUE);
+	BBPincref(*string, TRUE);
+	BBPincref(*integer, TRUE);
+	BBPincref(*doble, TRUE);
+	BBPincref(*array, TRUE);
+	BBPincref(*object, TRUE);
+	BBPincref(*name, TRUE);
 	return MAL_SUCCEED;
 }
 
