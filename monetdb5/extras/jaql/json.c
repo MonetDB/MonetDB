@@ -991,7 +991,7 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 	snprintf(buf, sizeof(buf), "json_%s_kind", *nme);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.load",
 				"no such JSON object with name: %s", *nme);
 
 	*kind = bid;
