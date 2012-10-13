@@ -470,10 +470,9 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 }
 
 #define loadbat(name) \
-	jb.name = BBPquickdesc(ABS(*name), FALSE); \
+	jb.name = BATdescriptor(ABS(*name)); \
 	if (*name < 0) \
-		jb.name = BATmirror(jb.name); \
-	BBPfix(*name);
+		jb.name = BATmirror(jb.name);
 #define loadbats() \
 	loadbat(kind); \
 	loadbat(string); \
