@@ -35,6 +35,11 @@ exit MALException:str ;
     (i1,i2,i3,i4,i5,i6,i7) := json.load("demo");
     json.print(s,i1,i2,i3,i4,i5,i6,i7);
     json.drop("demo");
+# this should no longer exist 
+    (i1,i2,i3,i4,i5,i6,i7) := json.load("demo");
+catch MALException:str ;
+    io.printf("!%s\n",MALException);
+exit MALException:str ;
 end main;
 [ 1, 3, 5 ]
 [ "hello", "world" ]
@@ -42,6 +47,7 @@ end main;
 [ { "from": 101, "to": [ 20, 81, 94 ], "ts": 1234567, "msg": "Hello world!" } ]
 !MALException:json.store:no such JSON object with name: demo
 [ { "from": 101, "to": [ 20, 81, 94 ], "ts": 1234567, "msg": "Hello world!" } ]
+!MALException:json.store:no such JSON object with name: demo
 
 # 11:20:37 >  
 # 11:20:37 >  "Done."

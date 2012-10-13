@@ -1046,9 +1046,6 @@ JSONdrop(int *ret, str *name)
 {
 	char buf[256];
 	int bid;
-	BAT *t;
-	bat blist[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	int bcnt = 1;
 
 	snprintf(buf, sizeof(buf), "json_%s_kind", *name);
 	bid = BBPindex(buf);
@@ -1056,54 +1053,32 @@ JSONdrop(int *ret, str *name)
 		throw(MAL, "json.drop",
 				"no such JSON object with name: %s", *name);
 
-	t = BBPquickdesc(ABS(bid), FALSE);
-	BATmode(t, TRANSIENT);
-	blist[bcnt++] = ABS(bid);
+	BBPclear(bid);
 
 	snprintf(buf, sizeof(buf), "json_%s_string", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
+	if (bid)
+		BBPclear(bid);
 	snprintf(buf, sizeof(buf), "json_%s_integer", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
+	if (bid)
+		BBPclear(bid);
 	snprintf(buf, sizeof(buf), "json_%s_doble", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
+	if (bid)
+		BBPclear(bid);
 	snprintf(buf, sizeof(buf), "json_%s_array", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
+	if (bid)
+		BBPclear(bid);
 	snprintf(buf, sizeof(buf), "json_%s_object", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
+	if (bid)
+		BBPclear(bid);
 	snprintf(buf, sizeof(buf), "json_%s_name", *name);
 	bid = BBPindex(buf);
-	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
-		blist[bcnt++] = ABS(bid);
-	}
-
-	TMsubcommit_list(blist, bcnt);
+	if (bid)
+		BBPclear(bid);
 
 	*ret = 0;
 	return MAL_SUCCEED;
