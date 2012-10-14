@@ -34,12 +34,24 @@ true
 % clob # type
 % 23 # length
 [ 1, 2.000000, "drie" ]
+#list();
+% .json # table_name
+% json # name
+% clob # type
+% 13 # length
+[ "doctest" ]
 #drop("doctest");
 % .json # table_name
 % json # name
 % clob # type
 % 4 # length
 true
+#list();
+% .json # table_name
+% json # name
+% clob # type
+% 4 # length
+[  ]
 #[4,5,6] -> store("doctest");
 % .json # table_name
 % json # name

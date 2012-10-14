@@ -7,11 +7,15 @@ load("doctest");
 # re-retrieve it
 load("doctest");
 
+# see it
+list();
+
 # drop it again
 drop("doctest");
 
 # hence, shouldn't exist any more
 load("doctest");
+list();
 
 # and we can store another thing under that name
 [4,5,6] -> store("doctest");

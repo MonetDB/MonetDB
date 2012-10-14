@@ -29,10 +29,10 @@ stderr of test 'documents` in directory 'extras/jaql/jaqltests` itself:
 # 09:19:01 >  "mclient" "-ljaql" "-ftest" "-Eutf-8" "-i" "-e" "--host=Phoebe" "--port=31818"
 # 09:19:01 >  
 
-MAPI  = monetdb@Phoebe:31818
+MAPI  = monetdb@Phoebe:33035
 QUERY = load("doctest");
 ERROR = !no such JSON object with name: doctest
-MAPI  = monetdb@Phoebe:31818
+MAPI  = monetdb@Phoebe:33035
 QUERY = load("doctest");
 ERROR = !no such JSON object with name: doctest
 
