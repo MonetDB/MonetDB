@@ -131,7 +131,10 @@ function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng]
 	bats := bbp.getNames();
 	docs := pcre.select("json_.*_kind", bats);
 
-	jdocs := batstr.string(docs, 5);
+	lens := batstr.length(docs);
+	lens := batcalc.-(lens, 10);
+	offs := algebra.project(lens, 6);
+	docs := batstr.substring(docs, offs, lens);
 
 	# in the future we could try to list some info about the document
 	# here, like size
@@ -145,7 +148,7 @@ function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng]
 	r7 := bat.new(:oid,:str);
 
 	r1 := bat.insert(r1, 0@0, 97:bte); # a
-	r2 := algebra.markH(jdocs, 1@0);
+	r2 := algebra.markH(docs, 1@0);
 
 	t1 := algebra.project(r2, 115:bte); # s
 	r1 := bat.insert(r1, t1);
