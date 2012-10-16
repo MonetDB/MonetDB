@@ -324,7 +324,7 @@ in the package top-level directory issue the command
 
  Mtest.py -r [--package=<package>]
 
-where *package* is one of ``clients``, ``MonetDB5`` or ``sql``
+where *package* is one of ``clients``, ``monetdb5`` or ``sql``
 (the ``--package=<package>`` option can be omitted when
 using a Mercurial checkout; see
 
