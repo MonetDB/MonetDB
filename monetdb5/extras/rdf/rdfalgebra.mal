@@ -15,37 +15,8 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-INCLUDES = ../../modules/atoms ../../modules/mal ../../mal \
-		   ../../modules/kernel \
-		   ../../../clients/mapilib \
-		   ../../../common/options \
-		   ../../../common/stream \
-		   ../../../gdk \
-		   $(raptor_CFLAGS)
+module rdf;
 
-MTSAFE
-
-lib_rdf = {
-	MODULE
-	DIR = libdir/monetdb5
-	SOURCES = rdf.h rdf_shredder.mx rdfalgebra.c
-
-	LIBS = ../../tools/libmonetdb5 \
-		   ../../../gdk/libbat \
-		   $(MALLOC_LIBS) $(raptor_LIBS)
-}
-
-headers_rdf_mal = {
-	HEADERS = mal
-	DIR = libdir/monetdb5
-	SOURCES = rdfalgebra.mal
-}
-
-headers_autoload = {
-	HEADERS = mal
-	DIR = libdir/monetdb5/autoload
-	SOURCES = 30_rdf.mal
-}
-
-#EXTRA_DIST_DIR = Tests
-EXTRA_DIST = 30_rdf.mal rdfalgebra.mal
+command leftfetchjoin_sorted ( left:bat[:any_1,:oid], right:bat[:oid,:any_3] ) :bat[:any_1,:any_3]
+address RDFleftfetchjoin_sorted
+comment "like algebra_leftfetchjoin(), but asserts that the resulting tail column is sorted -- ONLY USE IF YOU ARE SURE OF THIS!!! also requires sorted tail left input"
