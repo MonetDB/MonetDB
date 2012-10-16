@@ -1,7 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Wed Oct 10 2012 Fabian Groffen <fabian@cwi.nl>
-- Fixed problem with PreparedStatements and setXXX() methods using column
-  numbers instead of names, bug #3158
-
