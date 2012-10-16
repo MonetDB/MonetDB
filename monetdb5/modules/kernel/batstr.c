@@ -792,7 +792,7 @@ str STRbatTail(int *ret, int *l, int *r)
 	BATiter lefti, righti;
 	BAT *bn, *left, *right;
 	BUN p,q;
-	str v, *vp= &v;
+	str v;
 
 	prepareOperand2(left,l,right,r,);
 	if( BATcount(left) != BATcount(right) )
@@ -806,8 +806,8 @@ str STRbatTail(int *ret, int *l, int *r)
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		strTail(vp, tl, tr);
-		bunfastins(bn, h, vp);
+		strTail(&v, tl, tr);
+		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -827,7 +827,7 @@ str STRbatTailcst(int *ret, int *l, int *cst)
 	BATiter lefti;
 	BAT *bn, *left;
 	BUN p,q;
-	str v, *vp= &v;
+	str v;
 
 	prepareOperand(left,l,);
 	prepareResult(bn,left,TYPE_str,);
@@ -837,8 +837,8 @@ str STRbatTailcst(int *ret, int *l, int *cst)
 	BATloop(left, p, q) {
 		ptr h = BUNhead(lefti,p);
 		ptr tl = BUNtail(lefti,p);
-		strTail(vp, tl, cst);
-		bunfastins(bn, h, vp);
+		strTail(&v, tl, cst);
+		bunfastins(bn, h, v);
 		GDKfree(v);
 	}
 	bn->T->nonil = 0;
@@ -850,6 +850,7 @@ bunins_failed:
 	BBPreleaseref(*ret);
 	throw(MAL, "batstr", OPERATION_FAILED " During bulk operation");
 }
+
 str STRbatWChrAt(int *ret, int *l, int *r)
 {   
 	BATiter lefti, righti;

@@ -470,10 +470,9 @@ parse_json_array(jsonbat *jb, oid *id, char *p)
 }
 
 #define loadbat(name) \
-	jb.name = BBPquickdesc(ABS(*name), FALSE); \
+	jb.name = BATdescriptor(ABS(*name)); \
 	if (*name < 0) \
-		jb.name = BATmirror(jb.name); \
-	BBPfix(*name);
+		jb.name = BATmirror(jb.name);
 #define loadbats() \
 	loadbat(kind); \
 	loadbat(string); \
@@ -991,7 +990,7 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 	snprintf(buf, sizeof(buf), "json_%s_kind", *nme);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.load",
 				"no such JSON object with name: %s", *nme);
 
 	*kind = bid;
@@ -1038,6 +1037,14 @@ JSONload(int *kind, int *string, int *integer, int *doble, int *array, int *obje
 		*name = 0;
 	}
 
+	/* incref for MAL interpreter ref */
+	BBPincref(*kind, TRUE);
+	BBPincref(*string, TRUE);
+	BBPincref(*integer, TRUE);
+	BBPincref(*doble, TRUE);
+	BBPincref(*array, TRUE);
+	BBPincref(*object, TRUE);
+	BBPincref(*name, TRUE);
 	return MAL_SUCCEED;
 }
 
@@ -1046,60 +1053,52 @@ JSONdrop(int *ret, str *name)
 {
 	char buf[256];
 	int bid;
-	BAT *t;
 	bat blist[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 	int bcnt = 1;
 
 	snprintf(buf, sizeof(buf), "json_%s_kind", *name);
 	bid = BBPindex(buf);
 	if (!bid)
-		throw(MAL, "json.store",
+		throw(MAL, "json.drop",
 				"no such JSON object with name: %s", *name);
 
-	t = BBPquickdesc(ABS(bid), FALSE);
-	BATmode(t, TRANSIENT);
+	BBPclear(bid);
 	blist[bcnt++] = ABS(bid);
 
 	snprintf(buf, sizeof(buf), "json_%s_string", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_integer", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_doble", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_array", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_object", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 	snprintf(buf, sizeof(buf), "json_%s_name", *name);
 	bid = BBPindex(buf);
 	if (bid) {
-		t = BBPquickdesc(ABS(bid), FALSE);
-		BATmode(t, TRANSIENT);
+		BBPclear(bid);
 		blist[bcnt++] = ABS(bid);
 	}
 

@@ -85,6 +85,80 @@ function shred(uri:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:o
 	return (r1,r2,r3,r4,r5,r6,r7);
 end shred;
 
+# (persistently) store input document
+function store(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str], docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	json.store(docname, kind,string,integer,double,array,object,name);
+
+	r1 := bat.new(:oid,:bte);
+	r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	r1 := bat.insert(r1, 0@0, 116:bte); # t
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end store
+
+# load previously stored document
+function load(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	(r1,r2,r3,r4,r5,r6,r7) := json.load(docname);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end load;
+
+# drop a stored document
+function drop(docname:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	json.drop(docname);
+
+	r1 := bat.new(:oid,:bte);
+	r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	r1 := bat.insert(r1, 0@0, 116:bte); # t
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end drop;
+
+# show all stored documents
+function list()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	bats := bbp.getNames();
+	docs := pcre.select("json_.*_kind", bats);
+
+	lens := batstr.length(docs);
+	lens := batcalc.-(lens, 10);
+	offs := algebra.project(lens, 6);
+	docs := batstr.substring(docs, offs, lens);
+
+	# in the future we could try to list some info about the document
+	# here, like size
+
+	r1 := bat.new(:oid,:bte);
+	#r2 := bat.new(:oid,:str);
+	r3 := bat.new(:oid,:lng);
+	r4 := bat.new(:oid,:dbl);
+	#r5 := bat.new(:oid,:oid);
+	r6 := bat.new(:oid,:oid);
+	r7 := bat.new(:oid,:str);
+
+	r1 := bat.insert(r1, 0@0, 97:bte); # a
+	r2 := algebra.markH(docs, 1@0);
+
+	t1 := algebra.project(r2, 115:bte); # s
+	r1 := bat.insert(r1, t1);
+	
+	t2 := algebra.project(r2, 0@0);
+	r5 := bat.reverse(t2);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end list();
+
 # produce a JSON document with trace information
 function gettrace()(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
 	r1 := bat.new(:oid,:bte);
