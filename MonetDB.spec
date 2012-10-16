@@ -695,6 +695,13 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Tue Oct 16 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.3-20121016
+- Rebuilt.
+
+* Wed Oct 10 2012 Fabian Groffen <fabian@cwi.nl> - 11.13.3-20121016
+- java: Fixed problem with PreparedStatements and setXXX() methods using column
+  numbers instead of names, bug #3158
+
 * Wed Oct 10 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.1-20121010
 - Rebuilt.
 
