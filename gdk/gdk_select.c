@@ -181,7 +181,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 
 #define addresult {\
 	if( cnt == lim ){ \
-		BATextend(bn, BATgrows(bn));\
+		BATextend(bn, BATcount( b));\
 		lim = BATcapacity(bn); \
 		dst = (oid*) Tloc(bn, bn->U->first);\
 	 } \
