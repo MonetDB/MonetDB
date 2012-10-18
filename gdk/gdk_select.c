@@ -188,7 +188,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			assert(!anti);\
 			for ((i) = (p); (i) < (q); (i)++){  \
 				r = (BUN) (*candlist++ - off) ;\
-				if ( (src)[(BUN) (*candlist++ - off) ] == *(TYPE*) tl ) \
+				if ( (src)[r] == *(TYPE*) tl ) \
 					(dst)[cnt++] = i;\
 			}\
 		} else if (anti){\
@@ -250,14 +250,18 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 		} else {\
 			if ( nil == NULL) \
 			for ((i) = (p); (i) < (q); (i)++) {\
-				if( (!lval || ( *(TYPE*) tl < (src)[i] || (li && ((src)[i] == *(TYPE*) tl)))) &&\
-				 (!hval || ( *(TYPE*) th > (src)[i] || (hi && ((src)[i] == *(TYPE*) th)))))\
+				int lc,rc; \
+				lc =(!lval || ( *(TYPE*) tl < (src)[i] || (li && ((src)[i] == *(TYPE*) tl)))); \
+				rc = (!hval || ( *(TYPE*) th > (src)[i] || (hi && ((src)[i] == *(TYPE*) th)))); \
+				if ( lc + rc == 2)\
 					(dst)[cnt++] = i;\
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
-				if( ((src)[i] != TYPE##_nil) &&\
-				 (!lval || ( *(TYPE*) tl < (src)[i] || (li && ((src)[i] == *(TYPE*) tl)))) &&\
-				 (!hval || ( *(TYPE*) th > (src)[i] || (hi && ((src)[i] == *(TYPE*) th)))))\
+				int nc, lc,rc; \
+				nc =((src)[i] != TYPE##_nil);\
+				lc =(!lval || ( *(TYPE*) tl < (src)[i] || (li && ((src)[i] == *(TYPE*) tl)))); \
+				rc = (!hval || ( *(TYPE*) th > (src)[i] || (hi && ((src)[i] == *(TYPE*) th)))); \
+				if ( nc +lc + rc == 3)\
 					(dst)[cnt++] = i;\
 			}\
 		}\
