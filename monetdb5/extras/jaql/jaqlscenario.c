@@ -145,14 +145,19 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 str
 JAQLreader(Client c)
 {
-	if (MCreadClient(c) > 0)
-		return MAL_SUCCEED;
+	/* dummy stub, the scanner reads for us
+	 * TODO: pre-fill the buf if we have single line mode */
 
-	c->mode = FINISHING;
-	if (c->fdin) {
-		c->fdin->buf[c->fdin->pos] = 0;
-	} else {
+	if (c->fdin == NULL)
 		throw(MAL, "jaql.reader", RUNTIME_IO_EOF);
+
+	/* "activate" the stream by sending a prompt (client sync) */
+	if (c->fdin->eof != 0) {
+		if (mnstr_flush(c->fdout) < 0) {
+			c->mode = FINISHING;
+		} else {
+			c->fdin->eof = 0;
+		}
 	}
 
 	return MAL_SUCCEED;
@@ -183,37 +188,36 @@ JAQLparser(Client c)
 	oldstop = c->curprg->def->stop;
 	j->vtop = oldvtop;
 	j->explain = j->plan = j->planf = j->debug = j->trace = j->mapimode = 0;
-	j->buf = in->buf + in->pos;
+	j->buf = NULL;
+	j->scanstreamin = in;
+	j->scanstreamout = out;
+	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
 
 	jaqlparse(j);
-	
-	/* now the parsing is done we should advance the stream */
-	in->pos = in->len;
+
+	/* stop if it seems nothing is going to come any more */
+	if (j->scanstreameof == 1) {
+		c->mode = FINISHING;
+		freetree(j->p);
+		j->p = NULL;
+		return MAL_SUCCEED;
+	}
+
+	/* parsing is done */
+	in->pos = j->pos;
 	c->yycur = 0;
 
 	if (j->err[0] != '\0') {
 		/* tell the client */
 		mnstr_printf(out, "!%s\n", j->err);
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
 		j->err[0] = '\0';
 		return MAL_SUCCEED;
 	}
 
-	if (j->p == NULL) { /* there was nothing to parse, EOF */
-		/* read away anything left */
-		while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-			freetree(j->p);
-			jaqlparse(j);
-		}
-		j->err[0] = '\0';
+	if (j->p == NULL)  /* there was nothing to parse, EOF */
 		return MAL_SUCCEED;
-	}
 
 	if (!j->plan && !j->planf) {
 		Symbol prg = c->curprg;
@@ -246,12 +250,6 @@ JAQLparser(Client c)
 		}
 	}
 
-	/* read away anything left */
-	while (j->buf[j->pos + (j->tokstart - j->scanbuf)] != '\0') {
-		freetree(j->p);
-		jaqlparse(j);
-	}
-	j->err[0] = '\0';
 	return MAL_SUCCEED;
 }
 

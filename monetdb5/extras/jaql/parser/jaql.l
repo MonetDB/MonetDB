@@ -19,8 +19,13 @@
 
 %{
 #include <stdio.h>
+#include <stream.h>
 #include "jaqltree.h"
 #include "jaql.tab.h"
+
+/* prompt: more data needed (stolen from mapi.h to avoid conflicts) */
+#define PROMPT2  "\001\002\n"
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #define fileno _fileno
@@ -62,8 +67,8 @@ extern void jaqlerror(jc* j, char const *msg);
 #define stdout (FILE *)0
 
 static void readinput(jc *j, char *buf, int *res, size_t max_size) {
-	if (j->buf[j->pos] != '\0') {
-		*res = (int)strlen(j->buf + j->pos);
+	if (j->buf != NULL && j->buf[j->pos] != '\0') {
+		*res = (int)strlen(j->buf + j->pos);  /* FIXME: cache this */
 		if ((size_t)*res > max_size)
 			*res = (int)max_size;
 		memcpy(buf, j->buf + j->pos, *res);
@@ -71,6 +76,40 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 		j->pos += *res;
 		j->scanbuf = buf;
 	} else {
+		if (j->expect_json != ';' && j->scanstreamin != NULL) {
+			bstream *bs = (bstream *)j->scanstreamin;
+
+			/* try and read some more data */
+			if (bstream_next(bs) < 0) {
+				/* read failed, force shutdown next iteration */
+				j->scanstreameof = 1;
+				*res = YY_NULL;
+				return;
+			}
+
+			/* request more if we appear to be at the end of current
+			 * block */
+			if (j->buf != NULL && bs->eof == 1) {
+				stream *s = (stream *)j->scanstreamout;
+				if (mnstr_write(s, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1) {
+					mnstr_flush(s);
+					bs->eof = 0;
+				}
+				if (bstream_next(bs) < 0) {
+					/* read failed, force shutdown next iteration */
+					j->scanstreameof = 1;
+					*res = YY_NULL;
+					return;
+				}
+			}
+
+			/* did we get some query text */
+			if (bs->eof == 0) {
+				j->buf = bs->buf;
+				readinput(j, buf, res, max_size);
+				return;
+			}
+		}
 		*res = YY_NULL;
 	}
 }
@@ -82,12 +121,14 @@ static void readinput(jc *j, char *buf, int *res, size_t max_size) {
 %%
 	/* if the parser expects a JSON bit, give it */
 	if (yyextra->expect_json == '[') {
-		yyextra->esc_depth = 1;
+		yyextra->esc_depth = 0;
 		yyextra->expect_json = 0;
+		unput('[');
 		BEGIN(ARR);
 	} else if (yyextra->expect_json == '{') {
-		yyextra->esc_depth = 1;
+		yyextra->esc_depth = 0;
 		yyextra->expect_json = 0;
+		unput('{');
 		BEGIN(OBJ);
 	}
 
@@ -150,7 +191,7 @@ null       return NIL;
 <ARR>{
 	"]"   {
 		if (--yyextra->esc_depth == 0) {
-			yylval->j_json = GDKstrdup(yytext - 1);
+			yylval->j_json = GDKstrdup(yytext);
 			BEGIN(INITIAL);
 			return ARRAY;
 		} else {
@@ -174,7 +215,7 @@ null       return NIL;
 <OBJ>{
 	"}"   {
 		if (--yyextra->esc_depth == 0) {
-			yylval->j_json = GDKstrdup(yytext - 1);
+			yylval->j_json = GDKstrdup(yytext);
 			BEGIN(INITIAL);
 			return OBJECT;
 		} else {
@@ -195,13 +236,12 @@ null       return NIL;
 }
 "}"        return '}';
 "{"        return '{';
-";"        BEGIN(SCOLON);
+";"        { yyextra->expect_json = ';'; BEGIN(SCOLON); }
 <SCOLON>{
 	";" /* ignore superfluous semi-colons */;
 	[ \t\r\n]+ /* ignore whitespace */;
-	("#"|"//").*\n /* ignore comments */;
-	<<EOF>> { BEGIN(INITIAL); return ';'; }
-	.  { unput(yytext[0]); BEGIN(INITIAL); return ';'; }
+	<<EOF>> { yyextra->expect_json = 0; BEGIN(INITIAL); return ';'; }
+	.  { unput(yytext[0]); yyextra->expect_json = 0; BEGIN(INITIAL); return ';'; }
 }
 [ \t\r\n]+ /* ignore whitespace */;
 ("#"|"//").*\n /* ignore comments */;
