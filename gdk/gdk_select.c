@@ -211,10 +211,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				r = (BUN) (*candlist++ - off) ;\
-				if ( ((src)[i] != TYPE##_nil) &&\
-				((lval && ( *(TYPE*) tl OP1 (src)[r]) ) ||\
-				 (hval && ( *(TYPE*) th OP2 (src)[r]) )))\
-					addresult;\
+				if ( ((lval && ( *(TYPE*) tl OP1 (src)[r]) ) ||\
+				      (hval && ( *(TYPE*) th OP2 (src)[r]) )))\
+					if ( (src)[r] != TYPE##_nil) addresult; \
 			}\
 		} else {\
 			if ( nil == NULL) \
@@ -226,10 +225,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				r = (BUN) (*candlist++ - off) ;\
-				if ( ((src)[i] != TYPE##_nil) && \
-				     (!lval || ( *(TYPE*) tl OP3 (src)[r] )) && \
+				if ( (!lval || ( *(TYPE*) tl OP3 (src)[r] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[r] )) ) \
-					addresult;\
+					if ( (src)[r] != TYPE##_nil) addresult; \
 			}\
 		}\
 		BATsetcount(bn,cnt);\
@@ -260,10 +258,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 					addresult; \
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
-				if ( ((src)[i] != TYPE##_nil) &&\
-				((lval && ( *(TYPE*) tl OP1 (src)[i]) ) ||\
-				 (hval && ( *(TYPE*) th OP2 (src)[i]) )))\
-					addresult; \
+				if ( ((lval && ( *(TYPE*) tl OP1 (src)[i]) ) ||\
+				      (hval && ( *(TYPE*) th OP2 (src)[i]) )))\
+					if ( (src)[i] != TYPE##_nil) addresult; \
 			}\
 		} else {\
 			if ( nil == NULL) \
@@ -273,10 +270,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 					addresult; \
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
-				if ( ((src)[i] != TYPE##_nil) && \
-				     (!lval || ( *(TYPE*) tl OP3 (src)[i] )) && \
+				if ( (!lval || ( *(TYPE*) tl OP3 (src)[i] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[i] )) ) \
-					addresult; \
+					if ( (src)[i] != TYPE##_nil) addresult; \
 			}\
 		}\
 		BATsetcount(bn,cnt);\
