@@ -179,13 +179,13 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 		}							\
 	} while (0)
 
-#define addresult {\
+#define addresult(I) {\
 	if( cnt == lim ){ \
 		BATextend(bn, BATcount( b));\
 		lim = BATcapacity(bn); \
 		dst = (oid*) Tloc(bn, bn->U->first);\
 	 } \
-	(dst)[cnt++] = i;\
+	(dst)[cnt++] = I;\
 }
 
 #define SCANLOOPCAND5(TYPE,OP1,OP2,OP3,OP4)\
@@ -199,7 +199,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			for ((i) = (p); (i) < (q); (i)++){  \
 				r = (BUN) (*candlist++ - off) ;\
 				if ( (src)[r] == *(TYPE*) tl ) \
-					addresult;\
+					addresult(r);\
 			}\
 		} else if (anti){\
 			if ( nil == NULL) \
@@ -207,13 +207,13 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 				r = (BUN) (*candlist++ - off) ;\
 				if ( ((lval && ( *(TYPE*) tl OP1 (src)[r])) ) ||\
 				      (hval && ( *(TYPE*) th OP2 (src)[r])) )\
-					addresult;\
+					addresult(r);\
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				r = (BUN) (*candlist++ - off) ;\
 				if ( ((lval && ( *(TYPE*) tl OP1 (src)[r]) ) ||\
 				      (hval && ( *(TYPE*) th OP2 (src)[r]) )))\
-					if ( (src)[r] != TYPE##_nil) addresult; \
+					if ( (src)[r] != TYPE##_nil) addresult(r); \
 			}\
 		} else {\
 			if ( nil == NULL) \
@@ -221,13 +221,13 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 				r = (BUN) (*candlist++ - off) ;\
 				if ( (!lval || ( *(TYPE*) tl OP3 (src)[r] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[r] )) ) \
-					addresult;\
+					addresult(r);\
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				r = (BUN) (*candlist++ - off) ;\
 				if ( (!lval || ( *(TYPE*) tl OP3 (src)[r] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[r] )) ) \
-					if ( (src)[r] != TYPE##_nil) addresult; \
+					if ( (src)[r] != TYPE##_nil) addresult(r); \
 			}\
 		}\
 		BATsetcount(bn,cnt);\
@@ -249,30 +249,30 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			assert(!anti);\
 			for ((i) = (p); (i) < (q); (i)++)  \
 				if ( (src)[i] == *(TYPE*) tl ) \
-					addresult; \
+					addresult(i); \
 		} else if (anti){\
 			if ( nil == NULL) \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				if ( ((lval && ( *(TYPE*) tl OP1 (src)[i])) ) ||\
 				 (hval && ( *(TYPE*) th OP2 (src)[i])) )\
-					addresult; \
+					addresult(i); \
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				if ( ((lval && ( *(TYPE*) tl OP1 (src)[i]) ) ||\
 				      (hval && ( *(TYPE*) th OP2 (src)[i]) )))\
-					if ( (src)[i] != TYPE##_nil) addresult; \
+					if ( (src)[i] != TYPE##_nil) addresult(i); \
 			}\
 		} else {\
 			if ( nil == NULL) \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				if ( (!lval || ( *(TYPE*) tl OP3 (src)[i] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[i] )) ) \
-					addresult; \
+					addresult(i); \
 			} else \
 			for ((i) = (p); (i) < (q); (i)++) {\
 				if ( (!lval || ( *(TYPE*) tl OP3 (src)[i] )) && \
 				     (!hval || ( *(TYPE*) th OP4 (src)[i] )) ) \
-					if ( (src)[i] != TYPE##_nil) addresult; \
+					if ( (src)[i] != TYPE##_nil) addresult(i); \
 			}\
 		}\
 		BATsetcount(bn,cnt);\
