@@ -263,7 +263,7 @@ int yydebug=1;
 	dimension
 	array_dim_slice
 	array_cell_ref
-	index_term
+	range_term
 
 %type <type>
 	data_type
@@ -381,11 +381,8 @@ int yydebug=1;
 	XML_value_expression_list
 	window_frame_extent
 	window_frame_between
-	dim_range
-	dim_range_list
-	dim_exp
-	index_exp /* position indices of array cells */
-	index_exp_list
+	range_exp
+	range_exp_list
 	array_element_def_list
 	tiling_commalist
 
@@ -1654,7 +1651,8 @@ generated_column:
 	}
  ;
 
-dimension: DIMENSION dim_range
+dimension:
+	DIMENSION range_exp
 	{
 		dlist *l = L();
 		append_list(l, $2);
@@ -1663,63 +1661,7 @@ dimension: DIMENSION dim_range
   | DIMENSION {
 		$$= _symbol_create_list(SQL_DIMENSION,NULL);
 	}
-  | ARRAY dim_range_list
-	{
-		dlist *l = L();
-		append_list(l, $2);
-		$$= _symbol_create_list(SQL_DIMENSION,l);
-	}
 ;
-
-dim_range_list:	
-	dim_range {
-		$$= $1;
-	}
-  | dim_range_list dim_range {
-		$$= append_list($1,$2);
-	}
-;
-
-dim_range:
-	'[' dim_exp ':' dim_exp ':' dim_exp ']'
-	{
-		dlist *l = L();
-		append_list(l, $2);
-		append_list(l, $4);
-		$$ = append_list(l, $6);
-	}
-	| '[' dim_exp ':' dim_exp ']'
-	{
-		dlist *l = L();
-		append_list(l, $2);
-		$$ = append_list(l, $4);
-	}
-	| '[' dim_exp ']' /* size of INT dim or '*' */
-	{
-		$$= append_list(L(), $2);
-	}
-	| '[' ident ']'  /* sequence name or variable name */
-	{
-		$$= append_string(L(), $2);
-	}
-;
-
-dim_exp:
-	literal
-	{
-		$$= append_symbol(L(), $1);
-	}
- |	'-' literal
-	{
-		dlist *l = L();
-		append_string(l, sa_strdup(SA, "sql_neg"));
-		$$= append_symbol(l, $2);
-	}
-  | '*'
-	{
-		$$= append_symbol(L(), NULL);
-	}
- ;
 
 serial_opt_params:
 	/* empty: return the defaults */
@@ -3617,7 +3559,7 @@ value_exp:
 ;
 
 array_dim_slice:
-	qname index_exp_list { 
+	qname range_exp_list { 
 		dlist *l = L();
 		append_list(l, $1);
 		append_list(l, $2);
@@ -4507,38 +4449,38 @@ column_ref:
 				  L(), $1), $3), $5);}
  ;
 
-index_exp_list:
-	index_exp
+range_exp_list:
+	range_exp
 	{
 		$$= append_list(L(), $1);
 	}
-  | index_exp_list index_exp
+  | range_exp_list range_exp
 	{
 		$$ = append_list($1, $2);
 	}
 ;
 
-index_exp:
-	'[' index_term ':' index_term ':' index_term ']'
+range_exp:
+	'[' range_term ':' range_term ':' range_term ']'
 	{
 		dlist *l = L();
 		append_symbol(l, $2);
 		append_symbol(l, $4);
 		$$ = append_symbol(l, $6);
 	}
-	| '[' index_term ':' index_term ']'
+	| '[' range_term ':' range_term ']'
 	{
 		dlist *l = L();
 		append_symbol(l, $2);
 		$$ = append_symbol(l, $4);
 	}
-	| '[' index_term ']'
+	| '[' range_term ']'
 	{
 		$$= append_symbol(L(), $2);
 	}
 ;
 
-index_term:
+range_term:
 	scalar_exp { $$= $1; }
   | '*' { $$= NULL; }
 ;
