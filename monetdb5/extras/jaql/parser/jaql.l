@@ -18,6 +18,17 @@
  */
 
 %{
+/* copied from Windows' monetdb_config.h because we cannot include it
+ * here, but need it on windows for stream.h */
+#ifdef WIN32
+/* Define to `int' if <sys/types.h> does not define. */
+#ifdef _WIN64
+#define ssize_t __int64
+#else
+#define ssize_t int
+#endif
+#endif
+
 #include <stdio.h>
 #include <stream.h>
 #include "jaqltree.h"
