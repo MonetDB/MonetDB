@@ -20,7 +20,7 @@
 %{
 /* copied from Windows' monetdb_config.h because we cannot include it
  * here, but need it on windows for stream.h */
-#ifdef WIN32
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
 /* Define to `int' if <sys/types.h> does not define. */
 #ifdef _WIN64
 #define ssize_t __int64
