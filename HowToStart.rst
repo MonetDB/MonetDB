@@ -164,8 +164,7 @@ development sources on your computer.
  hg clone http://dev.monetdb.org/hg/MonetDB
 
 This will create the directory MonetDB in your current working directory
-with underneath all subcomponents.  Then first follow the instructions
-in ``buildtools/README`` before continuing with the others.
+with underneath all subcomponents.  
 
 
 Bootstrap, Configure and Make
