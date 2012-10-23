@@ -1,3 +1,16 @@
+monetdb (11.13.3-20121016) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Tue, 16 Oct 2012 13:02:31 +0200
+
+monetdb (11.13.3-20121016) unstable; urgency=low
+
+  * java: Fixed problem with PreparedStatements and setXXX() methods using column
+    numbers instead of names, bug #3158
+
+ -- Fabian Groffen <fabian@cwi.nl>  Wed, 10 Oct 2012 13:02:30 +0200
+
 monetdb (11.13.1-20121010) unstable; urgency=low
 
   * Rebuilt.
