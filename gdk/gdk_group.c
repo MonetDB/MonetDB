@@ -63,6 +63,12 @@
  * If a hash table already exists on b, we can make use of it.
  *
  * Otherwise we build a partial hash table on the fly.
+ *
+ * A decision should be made on the order in which grouping occurs 
+ * Let |b| has << different values as |g| then the linked lists gets
+ * extremely long, leading to a n^2 algorithm.
+ * At the MAL level, the multigroup function would perform the dynamic
+ * optimization.
  */
 gdk_return
 BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
@@ -243,10 +249,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if ((grps && *grps != prev) || cmp(pv, v) != 0) {
 				ngrp++;
 				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats */
-					maxgrps += GROUPBATINCR;
-					if (maxgrps > BATcount(b))
+					/* we need to extend extents and histo bats, do it once */
+					if ( maxgrps != BATcount(b))
 						maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
@@ -321,10 +325,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			/* start a new group */
 			if (ngrp == maxgrps) {
-				/* we need to extend extents and histo
-				 * bats */
-				maxgrps += GROUPBATINCR;
-				if (maxgrps > BATcount(b))
+				/* we need to extend extents and histo bats, do it once */
+				if ( maxgrps != BATcount(b))
 					maxgrps = BATcount(b);
 				if (extents) {
 					BATsetcount(en, ngrp);
@@ -371,10 +373,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (hb == BUN_NONE) {
 				/* no equal found: start new group */
 				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats */
-					maxgrps += GROUPBATINCR;
-					if (maxgrps > BATcount(b))
+					/* we need to extend extents and histo bats, do it once */
+					if ( maxgrps != BATcount(b))
 						maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
@@ -428,29 +428,54 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
+#define GRPhashloop(TYPE,EXP1,EXP2) {\
+v = BUNtail(bi, p);\
+prb = hash_##TYPE(hs, v) EXP1;\
+for (hb = hs->hash[prb];\
+	 hb != BUN_NONE;\
+	 hb = hs->link[hb]) {\
+	if (EXP2 *(TYPE*) v == *(TYPE*) BUNtail(bi,hb) ){\
+		ngrps[p - r] = ngrps[hb - r];\
+		if (histo)\
+			cnts[ngrps[hb - r]]++;\
+		break;\
+	}\
+} }
+
+#define GRPhashfactor(TYPE) \
+	if (grps == NULL ) { GRPhashloop(TYPE,, ) }\
+	else GRPhashloop(TYPE, ^ hash_oid(hs, (oid *)&grps[p-r])  ,grps[hb - r] == grps[p - r] &&) 
+
+#define GRPhashswitch \
+switch( ATOMstorage(hs->type)){\
+case TYPE_bte: GRPhashfactor(bte); break;\
+case TYPE_sht: GRPhashfactor(sht); break;\
+case TYPE_int: GRPhashfactor(int); break;\
+case TYPE_flt: GRPhashfactor(flt); break;\
+case TYPE_lng: GRPhashfactor(lng); break;\
+default: \
+	v = BUNtail(bi, p);\
+	prb = hash_any(hs, v);\
+	for (hb = hs->hash[prb];\
+		 hb != BUN_NONE;\
+		 hb = hs->link[hb]) {\
+		if ((grps == NULL ||\
+			 grps[hb - r] == grps[p - r]) &&\
+			cmp(v, BUNtail(bi, hb)) == 0) {\
+			ngrps[p - r] = ngrps[hb - r];\
+			if (histo)\
+				cnts[ngrps[hb - r]]++;\
+			break;\
+ } } }
+
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
-			v = BUNtail(bi, p);
-			prb = HASHprobe(hs, v);
-			for (hb = hs->hash[prb];
-			     hb != BUN_NONE;
-			     hb = hs->link[hb]) {
-				if ((grps == NULL ||
-				     grps[hb - r] == grps[p - r]) &&
-				    cmp(v, BUNtail(bi, hb)) == 0) {
-					ngrps[p - r] = ngrps[hb - r];
-					if (histo)
-						cnts[ngrps[hb - r]]++;
-					break;
-				}
-			}
+			GRPhashswitch;
 			if (hb == BUN_NONE) {
 				/* no equal found: start new group and
 				 * enter into hash table */
 				if (ngrp == maxgrps) {
-					/* we need to extend extents
-					 * and histo bats */
-					maxgrps += GROUPBATINCR;
-					if (maxgrps > BATcount(b))
+					/* we need to extend extents and histo bats, do it at most once */
+					if ( maxgrps != BATcount(b))
 						maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
