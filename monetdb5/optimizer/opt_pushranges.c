@@ -74,7 +74,8 @@ OPTpushrangesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			range[getArg(p,j)].lastupdate= i;
 			if( range[getArg(p,j)].lastrange == 0)
 				range[getArg(p,j)].lastrange= i;
-		} if( getModuleId(p)== algebraRef && 
+		} 
+		if( getModuleId(p)== algebraRef && 
 			( getFunctionId(p)== selectRef || getFunctionId(p)== uselectRef) ){
 			/*
 			 * The operation X:= algebra.select(Y,L,H,Li,Hi) is analysed.

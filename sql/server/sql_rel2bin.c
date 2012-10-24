@@ -121,7 +121,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_none:
 	case st_rs_column:
 	case st_dbat:
-	case st_basetable:
+	case st_tid:
 
 	case st_atom:
 	case st_export:

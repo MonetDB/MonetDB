@@ -32,27 +32,24 @@ function user.main{autoCommit=nil}():void;
     X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
-"    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_16 := bat.reverse(X_14);
-"    X_17 := algebra.kdifference(X_11,X_16);"
-    X_18 := calc.oid(0@0);
-"    X_20 := algebra.markT(X_17,X_18);"
-    X_21 := bat.reverse(X_20);
-"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_23 := algebra.leftjoin(X_21,X_22);"
-    X_24 := calc.int(nil:int);
-"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
-"    X_28 := algebra.leftjoin(X_26,X_23);"
-"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
-    X_32 := aggr.count(r2_29);
-    X_33:wrd  := aggr.sum(r2_29);
-    X_34 := calc.isnil(X_33);
-    X_35 := calc.wrd(0:wrd);
-"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
-"    X_38 := calc.!=(X_32,X_37);"
-"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_38,X_39);"
+"    X_11:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
+"    X_13:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_15:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
+"    X_17:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
+"    X_19 := sql.delta(X_13,X_15,X_17);"
+"    X_20 := algebra.leftfetchjoin(X_11,X_19);"
+    X_21 := calc.int(nil:int);
+"    X_23 := algebra.subselect(X_20,X_21,X_21,true,true,true);"
+"    X_25 := algebra.leftjoin(X_23,X_20);"
+"    (X_26,r1_26,r2_26) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_26);
+    X_30:wrd  := aggr.sum(r2_26);
+    X_31 := calc.isnil(X_30);
+    X_32 := calc.wrd(0:wrd);
+"    X_34 := calc.ifthenelse(X_31,X_32,X_30);"
+"    X_35 := calc.!=(X_29,X_34);"
+"    X_36 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_35,X_36);"
 "    sql.exportOperation("""");"
 end main;
 function user.main{autoCommit=nil}():void;
@@ -62,27 +59,24 @@ function user.main{autoCommit=nil}():void;
     X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
-"    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_16 := bat.reverse(X_14);
-"    X_17 := algebra.kdifference(X_11,X_16);"
-    X_18 := calc.oid(0@0);
-"    X_20 := algebra.markT(X_17,X_18);"
-    X_21 := bat.reverse(X_20);
-"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_23 := algebra.leftjoin(X_21,X_22);"
-    X_24 := calc.int(nil:int);
-"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
-"    X_28 := algebra.leftjoin(X_26,X_23);"
-"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
-    X_32 := aggr.count(r2_29);
-    X_33:wrd  := aggr.sum(r2_29);
-    X_34 := calc.isnil(X_33);
-    X_35 := calc.wrd(0:wrd);
-"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
-"    X_38 := calc.!=(X_32,X_37);"
-"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_38,X_39);"
+"    X_11:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
+"    X_13:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_15:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
+"    X_17:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
+"    X_19 := sql.delta(X_13,X_15,X_17);"
+"    X_20 := algebra.leftfetchjoin(X_11,X_19);"
+    X_21 := calc.int(nil:int);
+"    X_23 := algebra.subselect(X_20,X_21,X_21,true,true,true);"
+"    X_25 := algebra.leftjoin(X_23,X_20);"
+"    (X_26,r1_26,r2_26) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_26);
+    X_30:wrd  := aggr.sum(r2_26);
+    X_31 := calc.isnil(X_30);
+    X_32 := calc.wrd(0:wrd);
+"    X_34 := calc.ifthenelse(X_31,X_32,X_30);"
+"    X_35 := calc.!=(X_29,X_34);"
+"    X_36 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_35,X_36);"
 "    sql.exportOperation("""");"
 end main;
 #~EndVariableOutput~#
@@ -94,27 +88,24 @@ function user.main{autoCommit=nil}():void;
     X_5 := calc.ptr(nil);
     X_7 := calc.int(0);
 "    sql.catalog(29,X_3,X_5,X_7);"
-"    X_11:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_14:bat[:oid,:oid]  := sql.bind_dbat(X_2,""sys"",""blabla"",1);"
-    X_16 := bat.reverse(X_14);
-"    X_17 := algebra.kdifference(X_11,X_16);"
-    X_18 := calc.oid(0@0);
-"    X_20 := algebra.markT(X_17,X_18);"
-    X_21 := bat.reverse(X_20);
-"    X_22:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
-"    X_23 := algebra.leftjoin(X_21,X_22);"
-    X_24 := calc.int(nil:int);
-"    X_26 := algebra.subselect(X_23,X_24,X_24,true,true,true);"
-"    X_28 := algebra.leftjoin(X_26,X_23);"
-"    (X_29,r1_29,r2_29) := group.subgroupdone(X_28);"
-    X_32 := aggr.count(r2_29);
-    X_33:wrd  := aggr.sum(r2_29);
-    X_34 := calc.isnil(X_33);
-    X_35 := calc.wrd(0:wrd);
-"    X_37 := calc.ifthenelse(X_34,X_35,X_33);"
-"    X_38 := calc.!=(X_32,X_37);"
-"    X_39 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
-"    sql.assert(X_38,X_39);"
+"    X_11:bat[:oid,:oid]  := sql.tid(X_2,""sys"",""blabla"");"
+"    X_13:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",0);"
+"    X_15:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",2);"
+"    X_17:bat[:oid,:int]  := sql.bind(X_2,""sys"",""blabla"",""id"",1);"
+"    X_19 := sql.delta(X_13,X_15,X_17);"
+"    X_20 := algebra.leftfetchjoin(X_11,X_19);"
+    X_21 := calc.int(nil:int);
+"    X_23 := algebra.subselect(X_20,X_21,X_21,true,true,true);"
+"    X_25 := algebra.leftjoin(X_23,X_20);"
+"    (X_26,r1_26,r2_26) := group.subgroupdone(X_25);"
+    X_29 := aggr.count(r2_26);
+    X_30:wrd  := aggr.sum(r2_26);
+    X_31 := calc.isnil(X_30);
+    X_32 := calc.wrd(0:wrd);
+"    X_34 := calc.ifthenelse(X_31,X_32,X_30);"
+"    X_35 := calc.!=(X_29,X_34);"
+"    X_36 := calc.str(""UPDATE: UNIQUE constraint 'blabla.dada' violated"");"
+"    sql.assert(X_35,X_36);"
 "    sql.exportOperation("""");"
 end main;
 #~EndVariableOutput~#
