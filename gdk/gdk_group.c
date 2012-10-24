@@ -250,8 +250,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				ngrp++;
 				if (ngrp == maxgrps) {
 					/* we need to extend extents and histo bats, do it once */
-					if ( maxgrps != BATcount(b))
-						maxgrps = BATcount(b);
+					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
 						en = BATextend(en, maxgrps);
@@ -326,8 +325,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* start a new group */
 			if (ngrp == maxgrps) {
 				/* we need to extend extents and histo bats, do it once */
-				if ( maxgrps != BATcount(b))
-					maxgrps = BATcount(b);
+				maxgrps = BATcount(b);
 				if (extents) {
 					BATsetcount(en, ngrp);
 					en = BATextend(en, maxgrps);
@@ -374,8 +372,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				/* no equal found: start new group */
 				if (ngrp == maxgrps) {
 					/* we need to extend extents and histo bats, do it once */
-					if ( maxgrps != BATcount(b))
-						maxgrps = BATcount(b);
+					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
 						en = BATextend(en, maxgrps);
@@ -475,8 +472,7 @@ default: \
 				 * enter into hash table */
 				if (ngrp == maxgrps) {
 					/* we need to extend extents and histo bats, do it at most once */
-					if ( maxgrps != BATcount(b))
-						maxgrps = BATcount(b);
+					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
 						en = BATextend(en, maxgrps);
