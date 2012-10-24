@@ -55,7 +55,6 @@ _bin_optimizer(mvc *c, stmt *s)
 	case st_none:
 	case st_rs_column:
 	case st_dbat:
-	case st_basetable:
 	case st_idxbat:
 
 	case st_atom:
@@ -63,6 +62,7 @@ _bin_optimizer(mvc *c, stmt *s)
 	case st_var:
 	case st_table_clear:
 
+	case st_tid:
 	case st_bat:
 
 		s->optimized = 3;

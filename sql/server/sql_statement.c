@@ -66,13 +66,13 @@ st_type2string(st_type type)
 		ST(none);
 		ST(var);
 
-		ST(basetable);
 		ST(table);
 		ST(temp);
 		ST(single);
 
 		ST(rs_column);
 
+		ST(tid);
 		ST(bat);
 		ST(dbat);
 		ST(idxbat);
@@ -251,7 +251,6 @@ stmt_create(sql_allocator *sa, st_type type)
 	s->op3 = NULL;
 	s->op4.lval = NULL;
 	s->flag = 0;
-	s->data = NULL;
 	s->nrcols = 0;
 	s->key = 0;
 	s->aggr = 0;
@@ -391,7 +390,7 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			break;
 
 		/* special cases */
-		case st_basetable:
+		case st_tid:
 			if (depend_type == COLUMN_DEPENDENCY) {
 				dep_list = cond_append(dep_list, &s->op4.tval->base.id);	
 			}
@@ -514,16 +513,6 @@ stmt_table(sql_allocator *sa, stmt *cols, int temp)
 }
 
 stmt *
-stmt_basetable(sql_allocator *sa, sql_table *t, char *name)
-{
-	stmt *s = stmt_create(sa, st_basetable);
-
-	s->op1 = stmt_atom_string(sa, name);
-	s->op4.tval = t;
-	return s;
-}
-
-stmt *
 stmt_temp(sql_allocator *sa, sql_subtype *t)
 {
 	stmt *s = stmt_create(sa, st_temp);
@@ -534,24 +523,11 @@ stmt_temp(sql_allocator *sa, sql_subtype *t)
 }
 
 stmt *
-stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access )
-{
-	stmt *s = stmt_create(sa, st_bat);
-
-	s->data = basetable;	/* oid's used from this basetable */
-	s->op4.cval = c;
-	s->nrcols = 1;
-	s->flag = access;
-	return s;
-}
-
-stmt *
 stmt_tbat(sql_allocator *sa, sql_table *t, int access)
 {
 	stmt *s = stmt_create(sa, st_dbat);
 
 	assert(access == RD_INS);
-
 	s->nrcols = 0;
 	s->flag = access;
 	s->op4.tval = t;
@@ -559,64 +535,34 @@ stmt_tbat(sql_allocator *sa, sql_table *t, int access)
 }
 
 stmt *
-stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access, int readonly )
+stmt_tid(sql_allocator *sa, sql_table *t)
 {
-	stmt *s = stmt_bat(sa, c, basetable, access );
+	stmt *s = stmt_create(sa, st_tid);
 
-	if (isTable(c->t) && !readonly &&
-	   (c->base.flag != TR_NEW || c->t->base.flag != TR_NEW /* alter */) &&
-	    access == RDONLY && c->t->persistence == SQL_PERSIST && !c->t->commit_action) {
-		stmt *i = stmt_bat(sa, c, basetable, RD_INS );
-#if 0
-		stmt *u = stmt_bat(sa, c, basetable, RD_UPD );
-
-		s = stmt_diff(sa, s, u);
-		s = stmt_union(sa, s, u);
-#endif
-		s = stmt_union(sa, s, i);
-	} 
-	/* even temp and readonly tables have deletes because we like to keep void heads */
-	if (access == RDONLY && isTable(c->t)) {
-		stmt *d = stmt_tbat(sa, c->t, RD_INS);
-		s = stmt_diff(sa, s, stmt_reverse(sa, d));
-	}
+	s->op4.tval = t;
+	s->nrcols = 1;
 	return s;
 }
 
 stmt *
-stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access)
+stmt_bat(sql_allocator *sa, sql_column *c, int access )
 {
-	stmt *s = stmt_create(sa, st_idxbat);
+	stmt *s = stmt_create(sa, st_bat);
 
-	s->data = basetable;	/* oid's used from this basetable */
-	s->op4.idxval = i;
+	s->op4.cval = c;
 	s->nrcols = 1;
 	s->flag = access;
 	return s;
 }
 
 stmt *
-stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * idx, stmt *basetable, int access, int readonly)
+stmt_idxbat(sql_allocator *sa, sql_idx * i, int access)
 {
-	stmt *s = stmt_idxbat(sa, idx, basetable, access);
+	stmt *s = stmt_create(sa, st_idxbat);
 
-	if (isTable(idx->t) && !readonly &&
-	   (idx->base.flag != TR_NEW || idx->t->base.flag != TR_NEW /* alter */) && 
-	    access == RDONLY && idx->t->persistence == SQL_PERSIST && !idx->t->commit_action) {
-		stmt *i = stmt_idxbat(sa, idx, basetable, RD_INS);
-#if 0
-		stmt *u = stmt_idxbat(sa, idx, basetable, RD_UPD);
-
-		s = stmt_diff(sa, s, u);
-		s = stmt_union(sa, s, u);
-#endif
-		s = stmt_union(sa, s, i);
-	} 
-	/* even temp and readonly tables have deletes because we like to keep void heads */
-	if (access == RDONLY && isTable(idx->t)) {
-		stmt *d = stmt_tbat(sa, idx->t, RD_INS);
-		s = stmt_diff(sa, s, stmt_reverse(sa, d));
-	}
+	s->op4.idxval = i;
+	s->nrcols = 1;
+	s->flag = access;
 	return s;
 }
 
@@ -1102,6 +1048,15 @@ stmt_project(sql_allocator *sa, stmt *op1, stmt *op2)
 	return stmt_join(sa, op1, op2, cmp_project);
 }
 
+/* TODO create special statement */
+stmt *
+stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins)
+{
+	stmt *s = stmt_join(sa, col, upd, cmp_project);
+	s->op3 = ins;
+	return s;
+}
+
 stmt *
 stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2)
 {
@@ -1524,6 +1479,7 @@ tail_type(stmt *st)
 	case st_reorder:
 	case st_group:
 	case st_result:
+	case st_tid:
 		return sql_bind_localtype("oid");
 	case st_table_clear:
 		return sql_bind_localtype("lng");
@@ -1596,8 +1552,10 @@ head_type(stmt *st)
 
 	case st_temp:
 	case st_single:
+	case st_tid:
 	case st_bat:
 	case st_idxbat:
+	case st_dbat:
 	case st_const:
 	case st_rs_column:
 		return sql_bind_localtype("oid");
@@ -1796,14 +1754,12 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_unique:
 		return table_name(sa, st->op1);
 
-	case st_basetable:
-		if (st->op2)
-			return table_name(sa, st->op2);
 	case st_table_clear:
 		return st->op4.tval->base.name;
 	case st_idxbat:
 	case st_bat:
-		return table_name(sa, st->data);
+	case st_tid:
+		return st->op4.cval->t->base.name;
 	case st_alias:
 		if (st->tname)
 			return st->tname;
@@ -2082,7 +2038,6 @@ print_stmt( sql_allocator *sa, stmt *s )
 		}
 		printf(");\n");
 	}	break;
-	case st_basetable:
 	case st_releqjoin:
 		/*assert(0);*/
 	default:
@@ -2094,6 +2049,11 @@ print_stmt( sql_allocator *sa, stmt *s )
 			break;
 		case st_rs_column:
 			printf("%s, ", s->op4.typeval.type->base.name);
+			break;
+		case st_tid:
+			printf("%s.%s.TID(), ", 
+				s->op4.tval->s->base.name, 
+				s->op4.tval->base.name);
 			break;
 		case st_bat:
 		case st_append_col:

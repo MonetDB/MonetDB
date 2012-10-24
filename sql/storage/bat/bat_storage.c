@@ -125,7 +125,7 @@ void
 delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new) 
 {
 	BAT *b;
-	BAT *upd = BATleftfetchjoin(BATmirror(tids), updates, BATcount(tids));
+	BAT *upd = BATleftjoin(BATmirror(tids), updates, BATcount(tids));
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);

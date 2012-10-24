@@ -182,6 +182,7 @@ struct OPTcatalog {
 {"sidcrack",	0,	0,	0,	DEBUG_OPT_SIDCRACK},
 {"strengthreduction",	0,	0,	0,	DEBUG_OPT_STRENGTHREDUCTION},
 {"centipede",	0,	0,	0,	DEBUG_OPT_CENTIPEDE},
+{"pushselect",	0,	0,	0,	DEBUG_OPT_PUSHSELECT},
 { 0,	0,	0,	0,	0}
 };
 
@@ -769,6 +770,8 @@ hasSideEffects(InstrPtr p, int strict)
 			return TRUE;
 
 	if (getModuleId(p) == sqlRef){
+		if (getFunctionId(p) == deltaRef) return FALSE;
+		if (getFunctionId(p) == tidRef) return FALSE;
 		if (getFunctionId(p) == bindRef) return FALSE;
 		if (getFunctionId(p) == bindidxRef) return FALSE;
 		if (getFunctionId(p) == binddbatRef) return FALSE;
