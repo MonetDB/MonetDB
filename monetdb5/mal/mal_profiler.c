@@ -47,6 +47,7 @@ stream *eventstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
+static str myname = 0;
 
 int
 profilerAvailable(void)
