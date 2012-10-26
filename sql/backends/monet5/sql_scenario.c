@@ -1726,7 +1726,7 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 			argv[pci->retc + i] = &arg->data;
 		}
 	}
-	glb = (MalStkPtr)(q->stk);
+	c->glb = glb = (MalStkPtr)(q->stk);
 	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
 	if (ret && SQLdebug&16)
 		printFunction(c->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI );
