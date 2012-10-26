@@ -913,6 +913,9 @@ endofcompile:
 	sizevars = m->sizevars;
 	topvars = m->topvars;
 	vars = m->vars;
+	o->qc = m->qc;
+	if (!o->qc)
+		o->qc = qc_create(o->clientid, 0);
 	*m = *o;
 	_DELETE(o);
 	m->sizevars = sizevars;
