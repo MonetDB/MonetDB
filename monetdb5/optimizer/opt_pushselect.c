@@ -90,7 +90,7 @@ subselect_find_subselect( subselect_t *subselects, int tid)
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars;
+	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0;
 	InstrPtr p, *old;
 	subselect_t subselects;
 
@@ -120,7 +120,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tdifferenceRef)) 
 			return 0;
 
-		if (getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal tids */
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef)
+			push_down_delta++;
+
+		if (getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal table ids */
 			int sname = getArg(p, 2), tname = getArg(p, 3), s;
 
 			for (s = 0; s < subselects.nr; s++) {
@@ -142,7 +145,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
 
-			/* find the tids */
+			/* find the table ids */
 			while(!tid) {
 				if (getModuleId(q) == algebraRef && getFunctionId(q) == leftfetchjoinRef) {
 					int i1 = getArg(q, 1);
@@ -177,14 +180,13 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 
-		/* inject tids into subselect 
+		/* inject table ids into subselect 
 		 * s = subselect(c, C1..) => subselect(c, t, C1..)
 		 */
 		if (getModuleId(p) == algebraRef && 
 		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
 			int tid = 0;
 
-			/* if find subselect */
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
 				p = PushArgument(mb, p, tid, 2);
 				p->token = ASSIGNsymbol; 
@@ -194,11 +196,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				actions++;
 			}
 		}
-		/* Leftfetchjoins involving rewriten tids need to be flattend
+		/* Leftfetchjoins involving rewriten table ids need to be flattend
 		 * l = leftfetchjoin(t, c); => l = c;
-		 *
 		 * and
-		 *
 		 * l = leftfetchjoin(s, ntids); => l = s;
 		 */
 		else if (getModuleId(p) == algebraRef && getFunctionId(p) == leftfetchjoinRef) {
@@ -210,14 +210,15 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(q, 0) = getArg(p, 0); 
 				q = pushArgument(mb, q, getArg(p, 2));
 				actions++;
+				freeInstruction(p);
 				continue;
-			} else { /* deletes/updates use tids */
+			} else { /* deletes/updates use table ids */
 				int var = getArg(p, 2);
-				InstrPtr q = mb->stmt[vars[var]];
+				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
 				if (q->token == ASSIGNsymbol) {
 					var = getArg(q, 1);
-					q = mb->stmt[vars[var]];
+					q = mb->stmt[vars[var]]; 
 				}
 				if (subselect_find_subselect(&subselects, var) > 0) {
 					InstrPtr q = newAssignment(mb);
@@ -225,14 +226,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					getArg(q, 0) = getArg(p, 0); 
 					q = pushArgument(mb, q, getArg(p, 1));
 					actions++;
+					freeInstruction(p);
 					continue;
 				}
-				/* 
-		 		 * c = sql.delta(b,ins,upd);
+				/* c = sql.delta(b,ins,upd);
 		 		 * l = leftfetchjoin(x, c); 
-		 		 * 
 		 		 * into
-		 		 *
 		 		 * l = sql.project(b,x,ins,upd);
 		 		 */
 				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
@@ -246,7 +245,6 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		pushInstruction(mb,p);
 	}
-	GDKfree(vars);
 	for (; i<limit; i++) 
 		if (old[i])
 			pushInstruction(mb,old[i]);
@@ -254,5 +252,81 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
+	if (1 || !push_down_delta) {
+		GDKfree(vars);
+		return actions;
+	}
+
+	/* now push selects through delta's */
+	limit = mb->stop;
+	slimit= mb->ssize;
+	old = mb->stmt;
+
+	if (newMalBlkStmt(mb, mb->ssize+(5*push_down_delta)) <0 ) {
+		mb->stmt = old;
+		GDKfree(vars);
+		return actions;
+
+	}
+	pushInstruction(mb,old[0]);
+
+	for (i = 1; i < limit; i++) {
+		p = old[i];
+
+		for (j = 0; j<p->retc; j++) {
+ 			int res = getArg(p, j);
+			vars[res] = i;
+		}
+
+		/* c = delta(b, ins, upd)
+		 * s = subselect(c, C1..)
+		 *
+		 * nc = subselect(b, C1..)
+		 * ni = subselect(ins, C1..)
+		 * uid = upd.tail_rever(upd);
+		 * uv = upd.tail_rever(upd);
+		 * nu = subselect(uv, C1..)
+		 * s = subdelta(c (original length), i (not needed), uid, nc, ni, nu);
+		 */
+		if (getModuleId(p) == algebraRef && 
+		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
+			int var = getArg(p, 1);
+			InstrPtr q = old[vars[var]];
+
+			if (q->token == ASSIGNsymbol) {
+				var = getArg(q, 1);
+				q = old[vars[var]]; 
+			}
+			if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr s = copyInstruction(p);
+				InstrPtr t = copyInstruction(p);
+				InstrPtr u = copyInstruction(q);
+		
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(r, 1) = getArg(q, 1); /* column */
+				pushInstruction(mb,r);
+				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(s, 1) = getArg(q, 2); /* inserts */
+				pushInstruction(mb,s);
+				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
+				getArg(t, 1) = getArg(q, 3); /* updates */
+				pushInstruction(mb,t);
+
+				getArg(u, 0) = getArg(p,0);
+				getArg(u, 1) = getArg(r,0);
+				getArg(u, 2) = getArg(s,0);
+				getArg(u, 3) = getArg(t,0);
+				pushInstruction(mb,u);	
+				freeInstruction(p);
+				continue;
+			}
+		}
+		pushInstruction(mb,p);
+	}
+	for (; i<limit; i++) 
+		if (old[i])
+			pushInstruction(mb,old[i]);
+	GDKfree(vars);
 	return actions;
 }
