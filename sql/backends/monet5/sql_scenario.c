@@ -1165,12 +1165,8 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	c->itrace='n';
 	if( onoff){
 		newStmt(c->curprg->def,"mdb","start");
-		c->debugOptimizer = TRUE;
-		c->curprg->def->keephistory = TRUE;
 	} else {
 		newStmt(c->curprg->def,"mdb","stop");
-		c->debugOptimizer = FALSE;
-		c->curprg->def->keephistory = FALSE;
 	}
 }
 
@@ -1290,25 +1286,6 @@ SQLsetTrace(backend *be, Client c, bit onoff)
 	}
 	GDKfree(def);
 }
-
-static void
-SQLshowPlan(Client c)
-{
-	/* we should determine rendering requirements first */
-	/* FIXME: unify this with direct printFunction() calls as used below */
-	newStmt(c->curprg->def, "mdb", "listMapi");
-}
-
-static void
-SQLshowDot(Client c)
-{
-	InstrPtr q;
-	/* we should determine rendering requirements first */
-	/* FIXME: unify this with direct showFlowGraph() calls as used below */
-	q = newStmt(c->curprg->def, "mdb", "dot");
-	q = pushStr(c->curprg->def, q, "stdout-mapi");
-}
-
 
 #define MAX_QUERY 	(64*1024*1024)
 
@@ -1456,15 +1433,8 @@ SQLparser(Client c)
 		goto finalize;
 	}
 
-	if ((err = sqlparse(m)) && m->debug & 1) {
-		/* switch to different language mode */
-		char oldlang = be->language;
-		be->language = 'D';
-		runMALDebugger(c, c->curprg);
-		be->language = oldlang;
-	}
-	if (err ||
-	    /* Only forget old errors on transaction boundaries */
+	if ( (err = sqlparse(m)) ||
+	    	/* Only forget old errors on transaction boundaries */
 		(mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
@@ -1476,7 +1446,6 @@ SQLparser(Client c)
 		goto finalize;
 	}
 	/*
-	 * @-
 	 * We have dealt with the first parsing step and advanced the input reader
 	 * to the next statement (if any).
 	 * Now is the time to also perform the semantic analysis, optimize and
@@ -1512,8 +1481,7 @@ SQLparser(Client c)
 		scanner_query_processed(&(m->scanner));
 	} else if (cachable(m, NULL) && 
                   (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
-		if (m->emod & mod_explain)
-			SQLshowPlan(c);
+
 		if (m->emod & mod_debug)
 			SQLsetDebugger(c, m, TRUE);
 		if (m->emod & mod_trace)
@@ -1532,9 +1500,8 @@ SQLparser(Client c)
 			goto finalize;
 		}
 		assert(s);
-		/* generate and call the MAL code */
-		if (m->emod & mod_explain)
-			SQLshowPlan(c);
+
+		/* generate the MAL code */
 		if (m->emod & mod_trace)
 			SQLsetTrace(be, c, TRUE);
 		if (m->emod & mod_debug)
@@ -1586,20 +1553,13 @@ SQLparser(Client c)
 		}
 	}
 
-	/*
-	 * @-
-	 * In the final phase we add any debugging control
-	 */
-
-	if (m->emod & mod_dot)
-		SQLshowDot(c);
+	/* In the final phase we add any debugging control */
 	if (m->emod & mod_trace)
 		SQLsetTrace(be, c, FALSE);
 	if (m->emod & mod_debug)
 		SQLsetDebugger(c, m, FALSE);
 
 	/*
-	 * @-
 	 * During the execution of the query exceptions can be raised.
 	 * The default action is to print them out at the end of the
 	 * query block.
@@ -1612,13 +1572,6 @@ SQLparser(Client c)
 		/* we know more in this case than
 		    chkProgram(c->fdout, c->nspace, c->curprg->def); */
 		if (c->curprg->def->errors) {
-			if (m->emod & mod_debug) {
-				/* switch to differnt language mode */
-				char oldlang = be->language;
-				be->language = 'D';
-				runMALDebugger(c, c->curprg);
-				be->language = oldlang;
-			}
 			showErrors(c);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
@@ -1627,26 +1580,7 @@ SQLparser(Client c)
 			msg = createException(PARSE, "SQLparser", "Semantic errors");
 		}
 	}
-/*
- * Inspect the variables for post code-generation actions.
- */
 finalize:
-	if (m->emod & mod_explain && !msg) {
-		if (be->q && be->q->code)
-			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-		else if (c->curprg && c->curprg->def)
-			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
-	}
-	if (m->emod & mod_dot && !msg) {
-		if (be->q && be->q->code)
-			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
-		else if (c->curprg && c->curprg->def)
-			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
-	}
-	/*
-	 * Gather the statistics for post analysis. It should preferably
-	 * be stored in an SQL table
-	 */
 	if (msg)
 		sqlcleanup(m, 0);
 	return msg;
@@ -1726,8 +1660,6 @@ SQLexecutePrepared(Client c, backend *be, cq *q )
 	}
 	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(c, mb, &glb, argv, (m->emod & mod_debug?'n':0));
-	if (ret && SQLdebug&16)
-		printFunction(c->fdout, mb, 0, LIST_MAL_STMT | LIST_MAPI );
 	/* cleanup the arguments */
 	for(i=pci->retc; i<pci->argc; i++) {
 		garbageElement(c,v= &glb->stk[pci->argv[i]]);
@@ -1756,19 +1688,34 @@ SQLengineIntern(Client c, backend *be)
 	InstrPtr p;
 	MalBlkPtr mb;
 
-	if ( oldlang == 'X'){ 	/* return directly from X-commands */
+	if (oldlang == 'X'){ 	/* return directly from X-commands */
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
 
+	if (m->emod & mod_explain) {
+		if (be->q && be->q->code)
+			printFunction(c->fdout, ((Symbol) (be->q->code))->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+		else if (c->curprg && c->curprg->def)
+			printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_STMT | LIST_MAL_UDF | LIST_MAPI);
+	}
+	if (m->emod & mod_dot) {
+		if (be->q && be->q->code)
+			showFlowGraph(((Symbol) (be->q->code))->def, 0, "stdout-mapi");
+		else if (c->curprg && c->curprg->def)
+			showFlowGraph(c->curprg->def, 0, "stdout-mapi");
+	}
 	if (m->emod & (mod_explain | mod_dot)) {
 		sqlcleanup(be->mvc, 0);
 		goto cleanup_engine;
 	}
+
 	if (c->curprg->def->errors){
+		assert(0);
 		sqlcleanup(be->mvc, 0);
 		throw(SQL, "SQLengine", "39000!program contains errors");
 	}
+
 #ifdef SQL_SCENARIO_DEBUG
 	mnstr_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
@@ -1777,32 +1724,15 @@ SQLengineIntern(Client c, backend *be)
 		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
 	}
+
 	if (m->emode == m_inplace) {
 		msg = SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
-	if( m->emode == m_prepare){
+
+	if( m->emode == m_prepare)
 		goto cleanup_engine;
-	} else if (m->emod & (mod_explain | mod_dot)) {
-		/*
-		 * If you want to see the detailed code, we have to pick it up from
-		 * the cache as well. This calls for finding the call to the
-		 * cached routine, which may be hidden. For now we take a shortcut.
-		 */
-		assert(0);
-		if (be->q) {
-			InstrPtr p;
-			p = getInstrPtr(c->curprg->def,1);
-			if (p->blk) {
-				if (m->emod & mod_explain) {
-					printFunction(c->fdout, p->blk, 0, c->listing | LIST_MAPI);
-				} else {
-					showFlowGraph(p->blk, 0, "stdout-mapi");
-				}
-			}
-		}
-		c->curprg->def->errors = -1; /* don't execute */
-	}
+
 	c->glb = 0;
 	be->language = 'D';
 	/*
@@ -1843,12 +1773,6 @@ cleanup_engine:
 		showErrors(c);
 		m->session->status = -10;
 	}
-/*
- * @-
- * If we are dealing with a {runonce} plan, the query cache should
- * be adjusted too.
- */
-/* postpone */
 
 	mb= c->curprg->def;
 	if (be->q && mb &&
@@ -1865,7 +1789,6 @@ cleanup_engine:
 	freeVariables(c,c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
 	/*
-	 * @-
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.
 	 */
