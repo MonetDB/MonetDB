@@ -47,6 +47,7 @@ stream *eventstream = 0;
 
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
+static str myname = 0;
 
 int
 profilerAvailable(void)
@@ -181,6 +182,10 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		}
 	}
 	if (profileCounter[PROFstart].status == 0 && start)
+		return;
+	if (myname == 0)
+		myname = putName("profiler", 8);
+	if (getModuleId(getInstrPtr(mb, pc)) == myname)
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(idx, mb, stk, pc,start);
