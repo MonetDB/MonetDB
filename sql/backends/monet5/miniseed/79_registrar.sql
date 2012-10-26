@@ -17,7 +17,7 @@ Copyright August 2008-2012 MonetDB B.V.
 All Rights Reserved.
 */
 
-CREATE PROCEDURE register_repo(repo string, mode int)
+CREATE PROCEDURE register_repo(repo string, mode int, num_threads int)
 external name registrar.register_repo;
 
 

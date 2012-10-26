@@ -1,6 +1,6 @@
 module registrar;
 
-pattern register_repo(entry:str, mode:int):void
+pattern register_repo(entry:str, mode:int, num_threads:int):void
 address register_repo
 comment "read the files in the repository, fill and return a temp_container accordingly.";
 
