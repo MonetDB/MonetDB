@@ -70,6 +70,37 @@
  * At the MAL level, the multigroup function would perform the dynamic
  * optimization.
  */
+#define GRPhashloop(TYPE)						\
+	do {								\
+		v = BUNtail(bi, p);					\
+		if (grps) {						\
+			prb = hash_##TYPE(hs, v) ^ hash_oid(hs, &grps[p-r]); \
+			for (hb = hs->hash[prb];			\
+			     hb != BUN_NONE;				\
+			     hb = hs->link[hb]) {			\
+				if (grps[hb - r] == grps[p - r] &&	\
+				    *(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
+					ngrps[p - r] = ngrps[hb - r];	\
+					if (histo)			\
+						cnts[ngrps[hb - r]]++;	\
+					break;				\
+				}					\
+			}						\
+		} else {						\
+			prb = hash_##TYPE(hs, v);			\
+			for (hb = hs->hash[prb];			\
+			     hb != BUN_NONE;				\
+			     hb = hs->link[hb]) {			\
+				if (*(TYPE *) v == *(TYPE *) BUNtail(bi, hb)){ \
+					ngrps[p - r] = ngrps[hb - r];	\
+					if (histo)			\
+						cnts[ngrps[hb - r]]++;	\
+					break;				\
+				}					\
+			}						\
+		}							\
+	} while (0)
+
 gdk_return
 BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  BAT *b, BAT *g, BAT *e, BAT *h, int subsorted)
@@ -111,7 +142,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	if (b->tkey || BATcount(b) <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: 1 element per group\n");
+		ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: "
+				  "1 element per group\n");
 		if (BATcount(b) == 1 && b->htype == TYPE_oid)
 			ngrp = * (oid *) Hloc(b, BUNfirst(b));
 		else
@@ -146,7 +178,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL) {
 			/* there's only a single group: 0 */
-			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: single output group\n");
+			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: "
+					  "single output group\n");
 			ngrp = 0;
 			gn = BATconstant(TYPE_oid, &ngrp, BATcount(b));
 			if (gn == NULL)
@@ -178,7 +211,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: copy input groups\n");
+			ALGODEBUG fprintf(stderr, "#BATgroup: trivial case: "
+					  "copy input groups\n");
 			gn = BATcopy(g, g->htype, g->ttype, 0);
 			if (gn == NULL)
 				goto error;
@@ -249,7 +283,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if ((grps && *grps != prev) || cmp(pv, v) != 0) {
 				ngrp++;
 				if (ngrp == maxgrps) {
-					/* we need to extend extents and histo bats, do it once */
+					/* we need to extend extents
+					 * and histo bats, do it
+					 * once */
 					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
@@ -324,7 +360,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			/* start a new group */
 			if (ngrp == maxgrps) {
-				/* we need to extend extents and histo bats, do it once */
+				/* we need to extend extents and histo
+				 * bats, do it once */
 				maxgrps = BATcount(b);
 				if (extents) {
 					BATsetcount(en, ngrp);
@@ -371,7 +408,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (hb == BUN_NONE) {
 				/* no equal found: start new group */
 				if (ngrp == maxgrps) {
-					/* we need to extend extents and histo bats, do it once */
+					/* we need to extend extents
+					 * and histo bats, do it
+					 * once */
 					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
@@ -425,53 +464,50 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
-#define GRPhashloop(TYPE,EXP1,EXP2) {\
-v = BUNtail(bi, p);\
-prb = hash_##TYPE(hs, v) EXP1;\
-for (hb = hs->hash[prb];\
-	 hb != BUN_NONE;\
-	 hb = hs->link[hb]) {\
-	if (EXP2 *(TYPE*) v == *(TYPE*) BUNtail(bi,hb) ){\
-		ngrps[p - r] = ngrps[hb - r];\
-		if (histo)\
-			cnts[ngrps[hb - r]]++;\
-		break;\
-	}\
-} }
-
-#define GRPhashfactor(TYPE) \
-	if (grps == NULL ) { GRPhashloop(TYPE,, ) }\
-	else GRPhashloop(TYPE, ^ hash_oid(hs, (oid *)&grps[p-r])  ,grps[hb - r] == grps[p - r] &&) 
-
-#define GRPhashswitch \
-switch( ATOMstorage(hs->type)){\
-case TYPE_bte: GRPhashfactor(bte); break;\
-case TYPE_sht: GRPhashfactor(sht); break;\
-case TYPE_int: GRPhashfactor(int); break;\
-case TYPE_flt: GRPhashfactor(flt); break;\
-case TYPE_lng: GRPhashfactor(lng); break;\
-default: \
-	v = BUNtail(bi, p);\
-	prb = hash_any(hs, v);\
-	for (hb = hs->hash[prb];\
-		 hb != BUN_NONE;\
-		 hb = hs->link[hb]) {\
-		if ((grps == NULL ||\
-			 grps[hb - r] == grps[p - r]) &&\
-			cmp(v, BUNtail(bi, hb)) == 0) {\
-			ngrps[p - r] = ngrps[hb - r];\
-			if (histo)\
-				cnts[ngrps[hb - r]]++;\
-			break;\
- } } }
 
 		for (r = BUNfirst(b), p = r, q = r + BATcount(b); p < q; p++) {
-			GRPhashswitch;
+			switch (ATOMstorage(hs->type)) {
+			case TYPE_bte:
+				GRPhashloop(bte);
+				break;
+			case TYPE_sht:
+				GRPhashloop(sht);
+				break;
+			case TYPE_int:
+				GRPhashloop(int);
+				break;
+			case TYPE_lng:
+				GRPhashloop(lng);
+				break;
+			case TYPE_flt:
+				GRPhashloop(flt);
+				break;
+			case TYPE_dbl:
+				GRPhashloop(dbl);
+				break;
+			default:
+				v = BUNtail(bi, p);
+				prb = hash_any(hs, v);
+				for (hb = hs->hash[prb];
+				     hb != BUN_NONE;
+				     hb = hs->link[hb]) {
+					if ((grps == NULL ||
+					     grps[hb - r] == grps[p - r]) &&
+					    cmp(v, BUNtail(bi, hb)) == 0) {
+						ngrps[p - r] = ngrps[hb - r];
+						if (histo)
+							cnts[ngrps[hb - r]]++;
+						break;
+					}
+				}
+			}
 			if (hb == BUN_NONE) {
 				/* no equal found: start new group and
 				 * enter into hash table */
 				if (ngrp == maxgrps) {
-					/* we need to extend extents and histo bats, do it at most once */
+					/* we need to extend extents
+					 * and histo bats, do it at
+					 * most once */
 					maxgrps = BATcount(b);
 					if (extents) {
 						BATsetcount(en, ngrp);
