@@ -492,4 +492,12 @@ pattern mdb.collect(v:any_1):void
 address OPTtraceCall
 comment "Dump the previous instruction to a temporary file";
 
+#opt_pushranges.mal
+
+pattern optimizer.pushselect():str
+address OPTwrapper;
+pattern optimizer.pushselect(mod:str, fcn:str):str
+address OPTwrapper
+comment "Push selects down projections";
+
 optimizer.prelude();

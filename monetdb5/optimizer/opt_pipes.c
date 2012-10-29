@@ -69,6 +69,7 @@ struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.emptySet();"
 	 "optimizer.aliases();"
+	 "optimizer.pushselect();"
 //     "optimizer.mitosis();"
 //     "optimizer.mergetable();"
 	 "optimizer.deadcode();"

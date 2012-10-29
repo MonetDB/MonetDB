@@ -2813,6 +2813,8 @@ with_list_element:
  ;
 
 sql:
+    select_statement_single_row
+|
     select_no_parens_orderby
  ;
 

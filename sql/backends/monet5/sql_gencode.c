@@ -802,13 +802,26 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			s->nr = getDestVar(q);
 		} break;
+		case st_tid: {
+			int ht = TYPE_oid;
+			int tt = TYPE_oid;
+			sql_table *t = s->op4.tval;
+
+			q = newStmt1(mb, sqlRef, "tid");
+			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
+			setVarUDFtype(mb,getArg(q,0));
+			q = pushArgument(mb, q, sql->mvc_var);
+			q = pushSchema(mb, q, t);
+			q = pushStr(mb, q, t->base.name);
+			s->nr = getDestVar(q);
+		}
+			break;
 		case st_bat: {
 			int ht = TYPE_oid;
 			int tt = s->op4.cval->type.type->localtype;
 			sql_table *t = s->op4.cval->t;
-			str mod = sqlRef;
 
-			q = newStmt2(mb, mod, bindRef);
+			q = newStmt2(mb, sqlRef, bindRef);
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -822,9 +835,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_dbat:{
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.tval;
-			str mod = sqlRef;
 
-			q = newStmt2(mb, mod, binddbatRef);
+			q = newStmt2(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
 			setVarUDFtype(mb,getArg(q,0));
 			q = pushArgument(mb, q, sql->mvc_var);
@@ -838,9 +850,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int tt;
 			int ht = TYPE_oid;
 			sql_table *t = s->op4.idxval->t;
-			str mod = sqlRef;
 
-			q = newStmt2(mb, mod, bindidxRef);
+			q = newStmt2(mb, sqlRef, bindidxRef);
 			tt = tail_type(s)->type->localtype;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			setVarUDFtype(mb,getArg(q,0));
@@ -1329,13 +1340,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			assert(l >= 0 && r >= 0);
 
 			if (s->flag == cmp_project || s->flag == cmp_reorder_project) {
+				int ins;
+
+				/* delta bat */
+				if (s->op3) {
+					ins = _dumpstmt(sql, mb, s->op3);
+
+					q = newStmt2(mb, sqlRef, deltaRef);
+					q = pushArgument(mb, q, l); 
+					q = pushArgument(mb, q, r);
+					q = pushArgument(mb, q, ins);
+					s->nr = getDestVar(q);
+					return s->nr;
+				} 
 				/* projections, ie left is void headed */
 				if (s->flag == cmp_project)
 					q = newStmt1(mb, algebraRef, "leftfetchjoin");
 				else
 					q = newStmt2(mb, algebraRef, leftjoinRef);
-
-				q = pushArgument(mb, q, l);
+				q = pushArgument(mb, q, l); 
 				q = pushArgument(mb, q, r);
 				s->nr = getDestVar(q);
 				return s->nr;
@@ -2204,7 +2227,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} 	break;
 
 			/* todo */
-		case st_basetable:
 		case st_releqjoin:
 			mnstr_printf(GDKout, "not implemented stmt\n");
 			assert(0);

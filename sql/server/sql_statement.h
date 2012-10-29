@@ -45,11 +45,11 @@ typedef enum stmt_type {
 	st_none,
 	st_var,			/* use and/or declare variable */
 
-	st_basetable,	
 	st_table,		/* some functions return a table */
 	st_temp,		/* temporal bat */
 	st_single,		/* single value bat */
 	st_rs_column,
+	st_tid,
 	st_bat,
 	st_dbat,
 	st_idxbat,
@@ -159,7 +159,6 @@ typedef struct stmt {
 	char aggr;		/* aggregated */
 
 	int flag;
-	void *data;
 
 	int nr;			/* variable assignment */
 
@@ -186,19 +185,14 @@ extern stmt *stmt_var(sql_allocator *sa, char *varname, sql_subtype *t, int decl
 extern stmt *stmt_varnr(sql_allocator *sa, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(sql_allocator *sa, stmt *cols, int temp);
-extern stmt *stmt_basetable(sql_allocator *sa, sql_table *t, char *tname);
 extern stmt *stmt_tbat(sql_allocator *sa, sql_table *t, int access);
 
 
-#define isbasetable(s) (s->type == st_basetable && isTable(s->op1.tval))
-#define basetable_table(s) s->op1.tval
-
 extern stmt *stmt_rs_column(sql_allocator *sa, stmt *result_set, int i, sql_subtype *tpe);
 
-extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access );
-extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access);
-extern stmt *stmt_delta_table_bat(sql_allocator *sa, sql_column *c, stmt *basetable, int access, int readonly );
-extern stmt *stmt_delta_table_idxbat(sql_allocator *sa, sql_idx * i, stmt *basetable, int access, int readonly);
+extern stmt *stmt_bat(sql_allocator *sa, sql_column *c, int access);
+extern stmt *stmt_idxbat(sql_allocator *sa, sql_idx * i, int access);
+extern stmt *stmt_tid(sql_allocator *sa, sql_table *t);
 
 extern stmt *stmt_append_col(sql_allocator *sa, sql_column *c, stmt *b);
 extern stmt *stmt_append_idx(sql_allocator *sa, sql_idx *i, stmt *b);
@@ -250,6 +244,7 @@ extern stmt *stmt_join2(sql_allocator *sa, stmt *l, stmt *ra, stmt *rb, int cmp,
 extern stmt *stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op);
 
 extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins);
 extern stmt *stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2);
 
 extern stmt *stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2);
