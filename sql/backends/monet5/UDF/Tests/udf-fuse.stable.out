@@ -96,25 +96,25 @@ end s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 60 # length
 function user.s11_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");
-    X_6:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",0);
-    X_9:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",2);
-    X_11:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","a",1);
-    X_13 := sql.delta(X_6,X_9,X_11);
-    X_14 := algebra.leftfetchjoin(X_3,X_13);
-    X_15:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",0);
-    X_17:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",2);
-    X_18:bat[:oid,:bte]  := sql.bind(X_2,"sys","udf_fuse","b",1);
-    X_19 := sql.delta(X_15,X_17,X_18);
-    X_20 := algebra.leftfetchjoin(X_3,X_19);
-    X_21:bat[:oid,:sht]  := batudf.fuse(X_14,X_20);
-    X_23 := sql.resultSet(1,1,X_21);
-    sql.rsColumn(X_23,"sys.","fuse_a","smallint",16,0,X_21);
-    X_28 := io.stdout();
-    sql.exportResult(X_28,X_23);
+    X_6 := sql.bind(X_2,"sys","udf_fuse","a",0);
+    (X_9,r1_9) := sql.bind(X_2,"sys","udf_fuse","a",2);
+    X_12 := sql.bind(X_2,"sys","udf_fuse","a",1);
+    X_14 := sql.delta(X_6,X_9,r1_9,X_12);
+    X_15 := algebra.leftfetchjoin(X_3,X_14);
+    X_16 := sql.bind(X_2,"sys","udf_fuse","b",0);
+    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","b",2);
+    X_20 := sql.bind(X_2,"sys","udf_fuse","b",1);
+    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_22 := algebra.leftfetchjoin(X_3,X_21);
+    X_23:bat[:oid,:sht]  := batudf.fuse(X_15,X_22);
+    X_25 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_25,"sys.","fuse_a","smallint",16,0,X_23);
+    X_30 := io.stdout();
+    sql.exportResult(X_30,X_25);
 end s11_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -122,25 +122,25 @@ end s11_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 57 # length
 function user.s12_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");
-    X_6:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",0);
-    X_9:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",2);
-    X_11:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","c",1);
-    X_13 := sql.delta(X_6,X_9,X_11);
-    X_14 := algebra.leftfetchjoin(X_3,X_13);
-    X_15:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",0);
-    X_17:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",2);
-    X_18:bat[:oid,:sht]  := sql.bind(X_2,"sys","udf_fuse","d",1);
-    X_19 := sql.delta(X_15,X_17,X_18);
-    X_20 := algebra.leftfetchjoin(X_3,X_19);
-    X_21:bat[:oid,:int]  := batudf.fuse(X_14,X_20);
-    X_23 := sql.resultSet(1,1,X_21);
-    sql.rsColumn(X_23,"sys.","fuse_c","int",32,0,X_21);
-    X_28 := io.stdout();
-    sql.exportResult(X_28,X_23);
+    X_6 := sql.bind(X_2,"sys","udf_fuse","c",0);
+    (X_9,r1_9) := sql.bind(X_2,"sys","udf_fuse","c",2);
+    X_12 := sql.bind(X_2,"sys","udf_fuse","c",1);
+    X_14 := sql.delta(X_6,X_9,r1_9,X_12);
+    X_15 := algebra.leftfetchjoin(X_3,X_14);
+    X_16 := sql.bind(X_2,"sys","udf_fuse","d",0);
+    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","d",2);
+    X_20 := sql.bind(X_2,"sys","udf_fuse","d",1);
+    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_22 := algebra.leftfetchjoin(X_3,X_21);
+    X_23:bat[:oid,:int]  := batudf.fuse(X_15,X_22);
+    X_25 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_25,"sys.","fuse_c","int",32,0,X_23);
+    X_30 := io.stdout();
+    sql.exportResult(X_30,X_25);
 end s12_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -148,25 +148,25 @@ end s12_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 65 # length
+% 58 # length
 function user.s13_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_fuse");
-    X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",0);
-    X_9:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",2);
-    X_11:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","e",1);
-    X_13 := sql.delta(X_6,X_9,X_11);
-    X_14 := algebra.leftfetchjoin(X_3,X_13);
-    X_15:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",0);
-    X_17:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",2);
-    X_18:bat[:oid,:int]  := sql.bind(X_2,"sys","udf_fuse","f",1);
-    X_19 := sql.delta(X_15,X_17,X_18);
-    X_20 := algebra.leftfetchjoin(X_3,X_19);
-    X_21:bat[:oid,:lng]  := batudf.fuse(X_14,X_20);
-    X_23 := sql.resultSet(1,1,X_21);
-    sql.rsColumn(X_23,"sys.","fuse_e","bigint",64,0,X_21);
-    X_28 := io.stdout();
-    sql.exportResult(X_28,X_23);
+    X_6 := sql.bind(X_2,"sys","udf_fuse","e",0);
+    (X_9,r1_9) := sql.bind(X_2,"sys","udf_fuse","e",2);
+    X_12 := sql.bind(X_2,"sys","udf_fuse","e",1);
+    X_14 := sql.delta(X_6,X_9,r1_9,X_12);
+    X_15 := algebra.leftfetchjoin(X_3,X_14);
+    X_16 := sql.bind(X_2,"sys","udf_fuse","f",0);
+    (X_18,r1_20) := sql.bind(X_2,"sys","udf_fuse","f",2);
+    X_20 := sql.bind(X_2,"sys","udf_fuse","f",1);
+    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_22 := algebra.leftfetchjoin(X_3,X_21);
+    X_23:bat[:oid,:lng]  := batudf.fuse(X_15,X_22);
+    X_25 := sql.resultSet(1,1,X_23);
+    sql.rsColumn(X_25,"sys.","fuse_e","bigint",64,0,X_23);
+    X_30 := io.stdout();
+    sql.exportResult(X_30,X_25);
 end s13_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

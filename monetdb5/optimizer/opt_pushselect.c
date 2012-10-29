@@ -32,6 +32,18 @@ PushArgument(MalBlkPtr mb, InstrPtr p, int arg, int pos)
 	return p;
 }
 
+static InstrPtr
+RemoveArgument(InstrPtr p, int pos)
+{
+	int i;
+
+	p->argc--;
+	for (i = pos; i < p->argc; i++) 
+		getArg(p, i) = getArg(p, i+1);
+	return p;
+}
+
+
 #define MAX_TABLES 64
 
 typedef struct subselect_t {
@@ -189,6 +201,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
 				p = PushArgument(mb, p, tid, 2);
+				/* make sure to resolve again */
 				p->token = ASSIGNsymbol; 
 				p->typechk = TYPE_UNKNOWN;
         			p->fcn = NULL;
@@ -229,14 +242,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					freeInstruction(p);
 					continue;
 				}
-				/* c = sql.delta(b,ins,upd);
+				/* c = sql.delta(b,uid,uval,ins);
 		 		 * l = leftfetchjoin(x, c); 
 		 		 * into
-		 		 * l = sql.project(b,x,ins,upd);
+		 		 * l = sql.projectdelta(b,x,ins,upd);
 		 		 */
-				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
+				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
 					q = copyInstruction(q);
-					setFunctionId(q, delta_projectRef);
+					setFunctionId(q, projectdeltaRef);
 					getArg(q, 0) = getArg(p, 0); 
 					p = PushArgument(mb, q, getArg(p, 1), 1);
 					actions++;
@@ -252,7 +265,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	if (1 || !push_down_delta) {
+	if (!push_down_delta) {
 		GDKfree(vars);
 		return actions;
 	}
@@ -278,15 +291,13 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			vars[res] = i;
 		}
 
-		/* c = delta(b, ins, upd)
+		/* c = delta(b, uid, uvl, ins)
 		 * s = subselect(c, C1..)
 		 *
 		 * nc = subselect(b, C1..)
 		 * ni = subselect(ins, C1..)
-		 * uid = upd.tail_rever(upd);
-		 * uv = upd.tail_rever(upd);
-		 * nu = subselect(uv, C1..)
-		 * s = subdelta(c (original length), i (not needed), uid, nc, ni, nu);
+		 * nu = subselect(uvl, C1..)
+		 * s = subdelta(nc, uid, nu, ni);
 		 */
 		if (getModuleId(p) == algebraRef && 
 		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
@@ -307,16 +318,24 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				getArg(r, 1) = getArg(q, 1); /* column */
 				pushInstruction(mb,r);
 				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-				getArg(s, 1) = getArg(q, 2); /* inserts */
+				getArg(s, 1) = getArg(q, 3); /* updates */
+				RemoveArgument(s, 2); 	/* no candidate list on updates */
+				/* make sure to resolve again */
+				s->token = ASSIGNsymbol; 
+				s->typechk = TYPE_UNKNOWN;
+        			s->fcn = NULL;
+        			s->blk = NULL;
 				pushInstruction(mb,s);
 				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid, TYPE_oid));
-				getArg(t, 1) = getArg(q, 3); /* updates */
+				getArg(t, 1) = getArg(q, 4); /* inserts */
 				pushInstruction(mb,t);
 
+				setFunctionId(u, subdeltaRef);
 				getArg(u, 0) = getArg(p,0);
 				getArg(u, 1) = getArg(r,0);
-				getArg(u, 2) = getArg(s,0);
-				getArg(u, 3) = getArg(t,0);
+				getArg(u, 2) = getArg(q,2); /* update ids */
+				getArg(u, 3) = getArg(s,0);
+				getArg(u, 4) = getArg(t,0);
 				pushInstruction(mb,u);	
 				freeInstruction(p);
 				continue;

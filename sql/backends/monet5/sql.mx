@@ -192,7 +192,7 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, low:oid, hgh:oid):bat[:oid,:any_1]
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int)(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
 address mvc_bind_idxbat_wrap
 comment "Bind the 'schema.table.index' BAT with access kind:
 	0 - base table
@@ -213,9 +213,9 @@ comment "Bind the 'schema.table.column' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
-pattern bind(mvc:int, schema:str, table:str, column:str, access:int, low:oid, hgh:oid ):bat[:oid,:any_1]
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int )(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
 address mvc_bind_wrap
-comment "Bind the 'schema.table.column' BAT partition with access kind:
+comment "Bind the 'schema.table.column' BAT with access kind:
 	0 - base table
 	1 - inserts
 	2 - updates";
@@ -227,23 +227,18 @@ comment "Bind the 'schema.table.column' BAT partition with access kind:
 	1 - inserts
 	2 - updates";
 
-command bind_dbat(clientid:int, schema:str, table:str, access:int, oldversion:lng, version:lng):bat[:oid,:oid]
-address mvc_diff_dbat_wrap
-comment "Bind to 'schema.table' BAT with deleted objecs
-and with specific access kind:
-	0 - base table
-	1 - inserts
-	2 - updates";
-
-command delta ( col:bat[:oid,:any_3], upd:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
+command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
 		:bat[:oid,:any_3] 
 address DELTAbat
 comment "Return column bat with delta's applied.";
 
-command delta_project ( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], upd:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
-		:bat[:oid,:any_3] 
+command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] ) :bat[:oid,:any_3] 
 address DELTAproject
 comment "Return column bat with delta's applied.";
+
+command subdelta ( col:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid], ins:bat[:oid,:oid] ) :bat[:oid,:oid]
+address DELTAsub
+comment "Return a single bat of subselected delta.";
 
 command getVersion(clientid:int):lng
 address mvc_getVersion
@@ -1017,44 +1012,17 @@ pattern gzexpand(sch:str, tbl:str):void
 address SQLexpand
 comment "Remove the compressed image";
 
-# @-
 # The distributed processing of queries requires the SQL runtime
-# system to be able to deliver portions of the BATs in an efficient
-# way.
+# system to be able to deliver portions of the BATs in an efficient way.
 # It should be cast into a more efficient C procedure, which also
 # takes care of NAS opportunities.
-function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, 
-low:oid, hgh:oid, version:int):bat[:oid,:any_1];
-	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,low,hgh);
-	return bind:= b;
-end bind;
 
 function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind);
 	return bind:= b;
 end bind;
 
-function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
-low:oid, hgh:oid, version:int):bat[:oid,:any_1];
-	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
-	m := nil:int;
-	rm := remote.put(conn,m);
-	rm := remote.exec(conn,"sql","mvc");
-	s := remote.put(conn,sch);
-	t := remote.put(conn,tab);
-	c := remote.put(conn,col);
-	k := remote.put(conn,kind);
-	v := remote.put(conn,version);
-	l := remote.put(conn,low);
-	h := remote.put(conn,hgh);
-	rb:= remote.put(conn,b);
-	rb:= remote.exec(conn,"sql","bind",rm,s,t,c,k,l,h);
-	b:bat[:oid,:any_1]:= remote.get(conn,rb);
-	return bind:= b;
-end octopus.bind;
-
-function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, 
-version:int):bat[:oid,:any_1];
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
 	m := nil:int;
 	rm := remote.put(conn,m);
@@ -1108,32 +1076,13 @@ function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, 
 	return bind_idxbat:= b;
 end octopus.bind_idxbat;
 
-function octopus.bind_idxbat(conn:str, sch:str, tab:str, index:str, access:int, low:oid, hgh:oid, version:int):bat[:oid,:oid];
-	b:bat[:oid,:oid] := nil:bat[:oid,:oid];
-	m := nil:int;
-	rm := remote.put(conn,m);
-	rm := remote.exec(conn,"sql","mvc");
-	s := remote.put(conn,sch);
-	t := remote.put(conn,tab);
-	i := remote.put(conn,index);
-	a := remote.put(conn,access);
-	l := remote.put(conn,low);
-	h := remote.put(conn,hgh);
-	bh:= remote.put(conn,b);
-	bh:= remote.exec(conn,"sql","bind_idxbat",rm,s,t,i,a,l,h);
-	b:bat[:oid,:oid]:= remote.get(conn,bh);
-	return bind_idxbat:= b;
-end octopus.bind_idxbat;
-# @-
 # Octopus.bind signatures adjusted to new mitosis sql.bind (part_nr, nr_parts)
-function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int,
-		part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
+function octopus.bind(mvc:int, sch:str, tab:str,col:str,kind:int, part_nr:int, nr_parts:int, version:int) :bat[:oid,:any_1];
 	b:bat[:oid,:any_1]:= sql.bind(mvc,sch,tab,col,kind,part_nr,nr_parts);
 	return bind:= b;
 end bind;
 
-function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int,
-part_nr:int, nr_parts:int, version:int):bat[:oid,:any_1];
+function octopus.bind(conn:str, sch:str, tab:str,col:str,kind:int, part_nr:int, nr_parts:int, version:int):bat[:oid,:any_1];
 	b:bat[:oid,:any_1] := nil:bat[:oid,:any_1];
 	m := nil:int;
 	rm := remote.put(conn,m);
@@ -1351,8 +1300,9 @@ sql5_export str mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, 
 sql5_export str mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str DELTAbat(bat *result, bat *col, bat *upd, bat *ins);
-sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *upd, bat *ins);
+sql5_export str DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
+sql5_export str DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
+sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1380,8 +1330,6 @@ sql5_export str mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str mvc_diff_idxbat_wrap(bat *b, int *clientid, str *s, str *t, str *i, int *access, lng *oldversion, lng *version );
-sql5_export str mvc_diff_dbat_wrap(bat *b, int *clientid, str *s, str *t, int *access, lng *oldversion, lng *version);
 sql5_export str mvc_getVersion(lng *r, int *clientid);
 sql5_export str mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str zero_or_one(ptr ret, int *bid);
@@ -3113,8 +3061,15 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 {
 	sql_trans *tr = m->session->tr;
 	BAT *b = NULL;
-	sql_schema *s = mvc_bind_schema(m, sname);
-	sql_idx *i = mvc_bind_idx(m, s, iname);
+	sql_schema *s = NULL;
+	sql_idx *i = NULL;
+
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		return NULL;
+	i = mvc_bind_idx(m, s, iname);
+	if (i == NULL)
+		return NULL;
 
 	(void) tname;
 	b = store_funcs.bind_idx(tr, i, access);
@@ -3125,39 +3080,25 @@ mvc_bind_idxbat(mvc *m, char *sname, char *tname, char *iname, int access)
 str
 mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL, *bn;
 	int *bid = (int *)getArgReference(stk, pci, 0);
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
-	str *sname = (str *)getArgReference(stk, pci, 2);
-	str *tname = (str *)getArgReference(stk, pci, 3);
-	str *cname = (str *)getArgReference(stk, pci, 4);
-	int *access = (int *)getArgReference(stk, pci, 5);
-	oid lval,hval=0;
+	str *sname = (str *)getArgReference(stk, pci, 2+upd);
+	str *tname = (str *)getArgReference(stk, pci, 3+upd);
+	str *cname = (str *)getArgReference(stk, pci, 4+upd);
+	int *access = (int *)getArgReference(stk, pci, 5+upd);
 
 	if (msg)
 		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
-		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
-			/* partitioned access */
-			assert(0);
-			lval = *(oid *)getArgReference(stk, pci, 6);
-			hval = *(oid *)getArgReference(stk, pci, 7);
-			if (*access == 0) {
-				bn =  BATslice(b, lval,hval);
-				BATseqbase(bn, lval);
-				BBPreleaseref(b->batCacheid);
-			} else {
-				bn = b;
-			}
-			BBPkeepref( *bid = bn->batCacheid);
-			return MAL_SUCCEED;
-		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
+		if ( pci->argc == (8+upd) && getArgType(mb,pci,6+upd) == TYPE_int){
 			BUN cnt = BATcount(b), psz;
 			/* partitioned access */
-			int part_nr = *(int *)getArgReference(stk, pci, 6);
-			int nr_parts = *(int *)getArgReference(stk, pci, 7);
+			int part_nr = *(int *)getArgReference(stk, pci, 6+upd);
+			int nr_parts = *(int *)getArgReference(stk, pci, 7+upd);
 
 			if (*access == 0) {
 				psz = cnt?(cnt/nr_parts):0;
@@ -3172,14 +3113,23 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h = (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz);
 				h--;
 				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
-			
 				BBPreleaseref(c->batCacheid);
 			}
-			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
-			return MAL_SUCCEED;
+			b = bn;
 		}
-		BBPkeepref( *bid = b->batCacheid);
+		if (upd) {
+			int *uvl = (int *)getArgReference(stk, pci, 1);
+
+			BAT *id = BATmirror(BATmark(b, 0));
+			BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+			BBPreleaseref(b->batCacheid);
+			
+			BBPkeepref( *bid = id->batCacheid);
+			BBPkeepref( *uvl = vl->batCacheid);
+		} else {
+			BBPkeepref( *bid = b->batCacheid);
+		}
 		return MAL_SUCCEED;
 	}
 	throw(SQL, "sql.bind", "unable to find %s.%s(%s)", *sname, *tname, *cname);
@@ -3190,38 +3140,25 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	int upd = (pci->argc == 7 || pci->argc == 9);
 	BAT *b = NULL,*bn;
 	int *bid = (int *)getArgReference(stk, pci, 0);
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt,mb, &m, NULL);
-	str *sname = (str *)getArgReference(stk, pci, 2);
-	str *tname = (str *)getArgReference(stk, pci, 3);
-	str *iname = (str *)getArgReference(stk, pci, 4);
-	int *access = (int *)getArgReference(stk, pci, 5);
-	oid lval,hval=0;
+	str *sname = (str *)getArgReference(stk, pci, 2+upd);
+	str *tname = (str *)getArgReference(stk, pci, 3+upd);
+	str *iname = (str *)getArgReference(stk, pci, 4+upd);
+	int *access = (int *)getArgReference(stk, pci, 5+upd);
 
 	if (msg)
 		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b) {
-		if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_oid){
-			/* partitioned access, TODO fix update bats */
-			lval = *(oid *)getArgReference(stk, pci, 6);
-			hval = *(oid *)getArgReference(stk, pci, 7);
-			if (*access == 0) {
-				bn =  BATslice(b, lval,hval);
-				BATseqbase(bn, lval);
-				BBPreleaseref(b->batCacheid);
-			} else {
-				bn = b;
-			}
-			BBPkeepref( *bid = bn->batCacheid);
-			return MAL_SUCCEED;
-		} else if ( pci->argc == 8 && getArgType(mb,pci,6) == TYPE_int){
+		if ( pci->argc == (8+upd) && getArgType(mb,pci,6+upd) == TYPE_int){
 			BUN cnt = BATcount(b), psz;
 			/* partitioned access */
-			int part_nr = *(int *)getArgReference(stk, pci, 6);
-			int nr_parts = *(int *)getArgReference(stk, pci, 7);
+			int part_nr = *(int *)getArgReference(stk, pci, 6+upd);
+			int nr_parts = *(int *)getArgReference(stk, pci, 7+upd);
 
 			if (*access == 0) {
 				psz = cnt?(cnt/nr_parts):0;
@@ -3236,38 +3173,26 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h = (part_nr+1==nr_parts)?cnt:((part_nr+1)*psz);
 				h--;
 				bn = BATmirror(BATselect(BATmirror(b), &l, &h));
-			
 				BBPreleaseref(c->batCacheid);
 			}
-			BBPkeepref( *bid = bn->batCacheid);
 			BBPreleaseref(b->batCacheid);
-			return MAL_SUCCEED;
+			b = bn;
 		}
-		BBPkeepref( *bid = b->batCacheid);
+		if (upd) {
+			int *uvl = (int *)getArgReference(stk, pci, 1);
+
+			BAT *id = BATmirror(BATmark(b, 0));
+			BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+			BBPreleaseref(b->batCacheid);
+			
+			BBPkeepref( *bid = id->batCacheid);
+			BBPkeepref( *uvl = vl->batCacheid);
+		} else {
+			BBPkeepref( *bid = b->batCacheid);
+		}
 		return MAL_SUCCEED;
 	}
-	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s",
-			*iname, *sname, *tname);
-}
-
-str 
-mvc_diff_idxbat_wrap(bat *bid, int *clientid, str *s, str *t, str *i, int *access, lng *oldversion, lng *version)
-{
-	mvc *m = NULL;
-	Client cntxt = MCgetClient(*clientid);
-	str msg = getSQLContext(cntxt, NULL, &m, NULL);
-	BAT *b;
-
-	if (msg)
-		return msg;
-	(void)oldversion;
-	(void)version;
-	b = mvc_bind(m, *s, *t, *i, *access);
-	if (b) {
-		BBPkeepref( *bid = b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *i, *s, *t);
+	throw(SQL, "sql.idxbind", "unable to find index %s for %s.%s", *iname, *sname, *tname);
 }
 
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
@@ -3415,26 +3340,6 @@ mvc_bind_dbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "mvc_bind_dbat_wrap", "error");
 }
 
-str 
-mvc_diff_dbat_wrap(bat *bid, int *clientid, str *s, str *t, int *access, lng *oldversion, lng *version )
-{
-	mvc *m = NULL;
-	Client cntxt = MCgetClient(*clientid);
-	str msg = getSQLContext(cntxt, NULL, &m, NULL);
-	BAT *b;
-
-	if (msg)
-		return msg;
-	(void)oldversion;
-	(void)version;
-	b = mvc_bind_dbat(m, *s, *t, *access);
-	if (b) {
-		BBPkeepref( *bid = b->batCacheid);
-		return MAL_SUCCEED;
-	}
-	throw(SQL, "mvc_bind_dbat_wrap", "error");
-}
-
 /* str mvc_clear_table_wrap(wrd *res, str *sname, str *tname); */
 str
 mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -3509,35 +3414,35 @@ setwritable(BAT *b)
 }
 
 str 
-DELTAbat(bat *result, bat *col, bat *upd, bat *ins)
+DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
-	BAT *c, *u, *i, *res;
+	BAT *c, *u_id, *u_val, *u, *i, *res;
 
-	if ((u = BATdescriptor(*upd)) == NULL) 
+	if ((u_id = BATdescriptor(*uid)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	if ((i = BATdescriptor(*ins)) == NULL) {
-		BBPunfix(u->batCacheid);
+		BBPunfix(u_id->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no updates, no inserts */
-	if (BATcount(u) == 0 && BATcount(i) == 0) {
-		BBPunfix(u->batCacheid);
+	if (BATcount(u_id) == 0 && BATcount(i) == 0) {
+		BBPunfix(u_id->batCacheid);
 		BBPunfix(i->batCacheid);
 		BBPincref(*result = *col, TRUE);
 		return MAL_SUCCEED;
 	}
 
 	if ((c = BATdescriptor(*col)) == NULL) {
-		BBPunfix(u->batCacheid);
+		BBPunfix(u_id->batCacheid);
 		BBPunfix(i->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* bat may change */
-	if (BATcount(c) == 0 && BATcount(u) == 0) {
+	if (BATcount(c) == 0 && BATcount(u_id) == 0) {
 		BBPunfix(c->batCacheid);
-		BBPunfix(u->batCacheid);
+		BBPunfix(u_id->batCacheid);
 		assert(i->H->seq == 0);
 		BBPkeepref(*result = i->batCacheid);
 		return MAL_SUCCEED;
@@ -3549,6 +3454,14 @@ DELTAbat(bat *result, bat *col, bat *upd, bat *ins)
 	BBPunfix(c->batCacheid);
 	res->H->seq = 0;
 
+	if ((u_val = BATdescriptor(*uval)) == NULL) {
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(i->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
+	BBPunfix(u_id->batCacheid);
+	BBPunfix(u_val->batCacheid);
 	if (BATcount(u)) 
 		res = BATreplace(res, u, TRUE);
 	BBPunfix(u->batCacheid);
@@ -3562,9 +3475,69 @@ DELTAbat(bat *result, bat *col, bat *upd, bat *ins)
 }
 
 str 
-DELTAproject(bat *result, bat *sub, bat *col, bat *upd, bat *ins)
+DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
-	BAT *s, *c, *u, *i, *res;
+	BAT *c, *cminu, *u_id, *u_val, *u, *i, *res;
+
+	if ((u_id = BATdescriptor(*uid)) == NULL) 
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	if ((i = BATdescriptor(*ins)) == NULL) {
+		BBPunfix(u_id->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* no updates, no inserts */
+	if (BATcount(u_id) == 0 && BATcount(i) == 0) {
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(i->batCacheid);
+		BBPincref(*result = *col, TRUE);
+		return MAL_SUCCEED;
+	}
+
+	if ((c = BATdescriptor(*col)) == NULL) {
+		BBPunfix(u_id->batCacheid);
+		BBPunfix(i->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+
+	/* bat may change */
+	if (BATcount(c) == 0 && BATcount(u_id) == 0) {
+		BBPunfix(c->batCacheid);
+		BBPunfix(u_id->batCacheid);
+		assert(i->H->seq == 0);
+		BBPkeepref(*result = i->batCacheid);
+		return MAL_SUCCEED;
+	}
+
+	cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
+	BBPunfix(c->batCacheid);
+	c = BATmirror(BATmark(cminu, 0));
+	BBPunfix(cminu->batCacheid);
+
+	if ((u_val = BATdescriptor(*uval)) == NULL) {
+		BBPunfix(c->batCacheid);
+		BBPunfix(i->batCacheid);
+		BBPunfix(u_id->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
+	BBPunfix(u_id->batCacheid);
+	BBPunfix(u_val->batCacheid);
+	res = BATappend(c, u, TRUE);
+	BBPunfix(u->batCacheid);
+
+	res = BATappend(res, i, TRUE);
+	BBPunfix(i->batCacheid);
+
+	BBPkeepref(*result = res->batCacheid);
+	return MAL_SUCCEED;
+}
+
+
+str 
+DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
+{
+	BAT *s, *c, *u_id, *u_val, *u, *i, *res;
 
 	if ((s = BATdescriptor(*sub)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
@@ -3606,12 +3579,21 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *upd, bat *ins)
 	}
 	BBPunfix(i->batCacheid);
 
-	if ((u = BATdescriptor(*upd)) == NULL) {
+	if ((u_id = BATdescriptor(*uid)) == NULL) {
+		BBPunfix(res->batCacheid);
+		BBPunfix(s->batCacheid);
+		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+	}
+	if ((u_val = BATdescriptor(*uval)) == NULL) {
+		BBPunfix(u_id->batCacheid);
 		BBPunfix(res->batCacheid);
 		BBPunfix(s->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 	
+	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
+	BBPunfix(u_id->batCacheid);
+	BBPunfix(u_val->batCacheid);
 	if (BATcount(u)) {
 		BAT *nu = BATleftjoin(s, u, BATcount(u));
 		res = setwritable(res);

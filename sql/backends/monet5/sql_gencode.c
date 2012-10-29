@@ -822,14 +822,24 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			sql_table *t = s->op4.cval->t;
 
 			q = newStmt2(mb, sqlRef, bindRef);
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			setVarUDFtype(mb,getArg(q,0));
+			if (s->flag == RD_UPD) {
+				//setVarType(mb, getArg(q, 0), newBatType(ht, ht));
+                        	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
+			} else 
+				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.cval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
+
+			if (s->flag == RD_UPD) {
+				/* rename second result */
+				char *nme = GDKmalloc(SMALLBUFSIZ);
+				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
+				renameVariable(mb, getArg(q,1), nme);
+			}
 		}
 			break;
 		case st_dbat:{
@@ -838,7 +848,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt2(mb, sqlRef, binddbatRef);
 			setVarType(mb, getArg(q,0), newBatType(ht,TYPE_oid));
-			setVarUDFtype(mb,getArg(q,0));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
@@ -847,20 +856,29 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_idxbat:{
-			int tt;
 			int ht = TYPE_oid;
+			int tt = tail_type(s)->type->localtype;
 			sql_table *t = s->op4.idxval->t;
 
 			q = newStmt2(mb, sqlRef, bindidxRef);
-			tt = tail_type(s)->type->localtype;
-			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
-			setVarUDFtype(mb,getArg(q,0));
+			if (s->flag == RD_UPD) {
+				//setVarType(mb, getArg(q, 0), newBatType(ht, ht));
+                        	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
+			} else
+				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushArgument(mb, q, sql->mvc_var);
 			q = pushSchema(mb, q, t);
 			q = pushStr(mb, q, t->base.name);
 			q = pushStr(mb, q, s->op4.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
 			s->nr = getDestVar(q);
+
+			if (s->flag == RD_UPD) {
+				/* rename second result */
+				char *nme = GDKmalloc(SMALLBUFSIZ);
+				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
+				renameVariable(mb, getArg(q,1), nme);
+			}
 		}
 			break;
 		case st_const:{
@@ -1344,11 +1362,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				/* delta bat */
 				if (s->op3) {
-					ins = _dumpstmt(sql, mb, s->op3);
+					char nme[SMALLBUFSIZ];
+					int uval = -1;
 
+					snprintf(nme, SMALLBUFSIZ, "r1_%d", r);
+					uval = findVariable(mb, nme);
+					assert(uval >= 0);
+	
+					ins = _dumpstmt(sql, mb, s->op3);
 					q = newStmt2(mb, sqlRef, deltaRef);
 					q = pushArgument(mb, q, l); 
 					q = pushArgument(mb, q, r);
+					q = pushArgument(mb, q, uval);
 					q = pushArgument(mb, q, ins);
 					s->nr = getDestVar(q);
 					return s->nr;

@@ -26,6 +26,30 @@
 #define SNAPSHOT_MINSIZE ((BUN) 1024)
 
 BAT *
+delta_bind_del(sql_dbat *bat, int access) 
+{
+	BAT *b;
+
+#ifdef NDEBUG
+	(void) access; /* satisfy compiler */
+#endif
+	assert(access == RDONLY || access == RD_INS);
+	assert(access!=RD_UPD);
+
+	b = temp_descriptor(bat->dbid);
+	assert(b);
+	return b;
+}
+
+
+static BAT *
+bind_del(sql_trans *tr, sql_table *t, int access)
+{
+	t->s->base.rtime = t->base.rtime = tr->stime;
+	return delta_bind_del(t->data, access);
+}
+
+BAT *
 delta_bind_ubat(sql_delta *bat, int access)
 {
 	BAT *b;
@@ -42,15 +66,29 @@ delta_bind_ubat(sql_delta *bat, int access)
 static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access)
 {
+	BAT *u = NULL, *d, *r;
+
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
-	return delta_bind_ubat(c->data, access);
+	u = delta_bind_ubat(c->data, access);
+	d = delta_bind_del(c->t->data, RD_INS);
+	r = BATkdiff(u, BATmirror(d));
+	BBPunfix(u->batCacheid);
+	BBPunfix(d->batCacheid);
+	return r;
 }
 
 static BAT *
 bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
+	BAT *u = NULL, *d, *r;
+
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	return delta_bind_ubat(i->data, access);
+	u = delta_bind_ubat(i->data, access);
+	d = delta_bind_del(i->t->data, RD_INS);
+	r = BATkdiff(u, BATmirror(d));
+	BBPunfix(u->batCacheid);
+	BBPunfix(d->batCacheid);
+	return r;
 }
 
 BAT *
@@ -95,30 +133,6 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	if (tr)
 		i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	return delta_bind_bat( i->data, access, isTemp(i));
-}
-
-BAT *
-delta_bind_del(sql_dbat *bat, int access) 
-{
-	BAT *b;
-
-#ifdef NDEBUG
-	(void) access; /* satisfy compiler */
-#endif
-	assert(access == RDONLY || access == RD_INS);
-	assert(access!=RD_UPD);
-
-	b = temp_descriptor(bat->dbid);
-	assert(b);
-	return b;
-}
-
-
-static BAT *
-bind_del(sql_trans *tr, sql_table *t, int access)
-{
-	t->s->base.rtime = t->base.rtime = tr->stime;
-	return delta_bind_del(t->data, access);
 }
 
 void

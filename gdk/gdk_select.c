@@ -170,9 +170,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
 		while (p < q) {						\
-			v = BUNtail(bi, p);				\
+			v = BUNtail(bi, p-off);				\
 			if (TEST) {					\
-				o = (oid) p + off;			\
+				o = (oid) p;				\
 				bunfastins(bn, NULL, &o);		\
 			}						\
 			p++;						\
@@ -367,8 +367,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			p += BUNfirst(b);
 			q += BUNfirst(b);
 		} else {
-			p = BUNfirst(b);
-			q = BUNlast(b);
+			p = BUNfirst(b) + off;
+			q = BUNlast(b) + off;
 		}
 		switch(ATOMstorage(b->ttype) ){
 		case TYPE_bte: SCANLOOP(bte); break;
@@ -673,11 +673,11 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 			BUN first = SORTfndlast(b, nil);
 			/* match: [first..low) + [high..count) */
 			if (s) {
-				oid o = (oid) first;
+				oid o = (oid) first + b->H->seq;
 				first = SORTfndfirst(s, &o);
-				o = (oid) low;
+				o = (oid) low + b->H->seq;
 				low = SORTfndfirst(s, &o);
-				o = (oid) high;
+				o = (oid) high + b->H->seq;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
 			} else {
@@ -687,9 +687,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int
 		} else {
 			/* match: [low..high) */
 			if (s) {
-				oid o = (oid) low;
+				oid o = (oid) low + b->H->seq;
 				low = SORTfndfirst(s, &o);
-				o = (oid) high;
+				o = (oid) high + b->H->seq;
 				high = SORTfndfirst(s, &o);
 				v = VIEWhead(BATmirror(s));
 			} else {
