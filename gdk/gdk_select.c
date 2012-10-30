@@ -173,9 +173,9 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
 		while (p < q) {						\
-			v = BUNtail(bi, p-off);				\
+			v = BUNtail(bi, p);				\
 			if (TEST) {					\
-				o = (oid) p;				\
+				o = (oid) p + off;			\
 				bunfastins(bn, NULL, &o);		\
 			}						\
 			p++;						\
@@ -254,14 +254,14 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			p = (BUN) s->tseqbase;
 			q = p + BATcount(s);
 			if ((oid) p < b->hseqbase)
-				p = b->hseqbase;
+				p = (BUN) b->hseqbase;
 			if ((oid) q > b->hseqbase + BATcount(b))
-				q = b->hseqbase + BATcount(b);
-			p += BUNfirst(b);
-			q += BUNfirst(b);
+				q = (BUN) b->hseqbase + BATcount(b);
+			p -= off;
+			q -= off;
 		} else {
-			p = BUNfirst(b) + off;
-			q = BUNlast(b) + off;
+			p = BUNfirst(b);
+			q = BUNlast(b);
 		}
 		if (equi) {
 			assert(li && hi);
@@ -563,27 +563,27 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		}
 		if (anti) {
-			BUN first = SORTfndlast(b, nil);
+			BUN first = SORTfndlast(b, nil) - BUNfirst(b);
 			/* match: [first..low) + [high..count) */
 			if (s) {
 				oid o = (oid) first + b->H->seq;
-				first = SORTfndfirst(s, &o);
+				first = SORTfndfirst(s, &o) - BUNfirst(s);
 				o = (oid) low + b->H->seq;
-				low = SORTfndfirst(s, &o);
+				low = SORTfndfirst(s, &o) - BUNfirst(s);
 				o = (oid) high + b->H->seq;
-				high = SORTfndfirst(s, &o);
+				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				v = VIEWhead(BATmirror(s));
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
 			}
-			bn = BATslice2(v, first, low, high, BUNlast(v));
+			bn = BATslice2(v, first, low, high, BATcount(v));
 		} else {
 			/* match: [low..high) */
 			if (s) {
 				oid o = (oid) low + b->H->seq;
-				low = SORTfndfirst(s, &o);
+				low = SORTfndfirst(s, &o) - BUNfirst(s);
 				o = (oid) high + b->H->seq;
-				high = SORTfndfirst(s, &o);
+				high = SORTfndfirst(s, &o) - BUNfirst(s);
 				v = VIEWhead(BATmirror(s));
 			} else {
 				v = VIEWhead(b); /* [oid,nil] */
