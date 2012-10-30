@@ -169,66 +169,139 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	return bn;
 }
 
-/* scan select loop with candidates */
-#define candscanloop(TEST)						\
-	do {								\
-		ALGODEBUG fprintf(stderr,				\
-			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
-			    "scanselect %s\n", BATgetId(b), BATcount(b), \
-			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
-		r = p;							\
-		while (p < q) {						\
-			o = *candlist++;				\
-			v = BUNtail(bi, o - off);			\
-			if (TEST) {					\
-				buninsfix(bn, T, dst, cnt, oid, o,	\
-				          (BUN) ((dbl) cnt / (dbl) (p-r)\
-				                 * (dbl) (q-p) * 1.1),	\
-				          maximum, NULL);		\
-				cnt++;					\
-			}						\
-			p++;						\
-		}							\
-	} while (0)
 
-/* scan select loop without candidates */
-#define scanloop(TEST)							\
-	do {								\
-		ALGODEBUG fprintf(stderr,				\
-			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
-			    "scanselect %s\n", BATgetId(b), BATcount(b), \
-			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
-		r = p;							\
+/* core scan select loop with & without candidates */
+#define scanloop(CAND,READ,TEST)					\
+do {									\
+	ALGODEBUG fprintf(stderr,					\
+			"#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "	\
+			"scanselect %s\n", BATgetId(b), BATcount(b),	\
+			s ? BATgetId(s) : "NULL", anti, #TEST);		\
+	if (BATcapacity(bn) < maximum) {				\
 		while (p < q) {						\
-			v = BUNtail(bi, p);				\
+			CAND;						\
+			READ;						\
 			if (TEST) {					\
-				o = (oid) p + off;			\
 				buninsfix(bn, T, dst, cnt, oid, o,	\
 				          (BUN) ((dbl) cnt / (dbl) (p-r)\
 				                 * (dbl) (q-p) * 1.1),	\
-				          maximum, NULL);		\
+				          maximum, BUN_NONE);		\
 				cnt++;					\
 			}						\
 			p++;						\
 		}							\
-	} while (0)
+	} else {							\
+		while (p < q) {						\
+			CAND;						\
+			READ;						\
+			if (TEST) {					\
+				dst[cnt] = o;				\
+				cnt++;					\
+			}						\
+			p++;						\
+		}							\
+	}								\
+} while (0)
+
+/* scan select predicate switch */
+#define scantest(CAND,READ,COMP)				\
+do {								\
+	if (equi) {						\
+		scanloop ( CAND , READ , COMP(v,==,vl) );	\
+	} else 							\
+	if (anti) {						\
+		scanloop ( CAND , READ ,			\
+		          (b->T->nonil || COMP(v,!=,nil)) &&	\
+		          ((lval && (COMP(v,<,vl) ||		\
+		            (!li && COMP(v,==,vl)))) ||		\
+		           (hval && (COMP(v,>,vh) ||		\
+		            (!hi && COMP(v,==,vh))))) );	\
+	} else {						\
+		scanloop ( CAND , READ ,			\
+		          (b->T->nonil || COMP(v,!=,nil)) &&	\
+		          ((!lval ||  COMP(v,>,vl) ||		\
+		            (li && COMP(v,==,vl))) &&		\
+		           (!hval ||  COMP(v,<,vh) ||		\
+		            (hi && COMP(v,==,vh)))) );		\
+	}							\
+} while (0)
+
+/* local variables for known fixed-width types */
+#define scaninit_fix(TYPE)				\
+	TYPE vl = *(TYPE *) tl;				\
+	TYPE vh = *(TYPE *) th;				\
+	TYPE v;						\
+	TYPE nil = TYPE##_nil;				\
+	const TYPE *src = (const TYPE *) Tloc(b, 0);
+
+/* local variables for generic types */
+#define scaninit_var(TYPE)						\
+	const void *vl = tl;						\
+	const void *vh = th;						\
+	const void *v;							\
+	const void *nil = ATOMnilptr(b->ttype);				\
+	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;\
+	BATiter bi = bat_iterator(b);					\
+
+/* various comparison calls for known fixed-width types */
+#define scancomp_fix(l,o,r)	(l) o (r)
+
+/* various comparison calls for generic types */
+#define scancomp_var(l,o,r)	(*cmp)((l),(r)) o 0
+
+/* argument list for type-specific core scan select function call */
+#define scanargs	\
+	b, s, bn, tl, th, li, hi, equi, anti, lval, hval, \
+	p, q, cnt, off, dst, candlist, maximum
+
+/* definition of type-specific core scan select function */
+#define scanfunc(NAME,WHAT,TYPE,CAND,READ)				\
+static BUN								\
+NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
+               int li, int hi, int equi, int anti, int lval, int hval,	\
+               BUN r, BUN q, BUN cnt, wrd off, oid *dst,		\
+               const oid *candlist, BUN maximum)			\
+{									\
+	scaninit_##WHAT ( TYPE )					\
+	oid o;								\
+	BUN p = r;							\
+	(void) candlist;						\
+	scantest(CAND, READ, scancomp_##WHAT);				\
+	return cnt;							\
+}
+
+/* scan select type switch */
+#define scan_sel(NAME,CAND)						\
+	scanfunc ( NAME , fix , bte , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , fix , sht , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , fix , int , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , fix , flt , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , fix , dbl , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , fix , lng , CAND , v = src[o-off]        )	\
+	scanfunc ( NAME , var , any , CAND , v = BUNtail(bi,o-off) )
+
+/* scan select with candidates */
+scan_sel ( candscan , o = *candlist++ )
+/* scan select without candidates */
+scan_sel ( fullscan , o = p + off     )
+
 
 static BAT *
 BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	       int li, int hi, int equi, int anti, int lval, int hval,
 	       BUN maximum)
 {
-	BATiter bi = bat_iterator(b);
+#ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
-	BUN p, q, r, cnt;
+#endif
+	BUN p, q, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
 	 * 32/64-bit OIDs */
 	wrd off;
-	const void *nil, *v;
-	int c;
+	const oid *candlist;
 
 	assert(b != NULL);
 	assert(bn != NULL);
@@ -237,18 +310,22 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	assert(anti == 0 || anti == 1);
 	assert(!lval || tl != NULL);
 	assert(!hval || th != NULL);
+	assert(!equi || (li && hi && !anti));
+	assert(!anti || lval || hval);
+	assert( anti || lval || hval || !b->T->nonil);
+	assert(b->ttype != TYPE_oid || equi || b->T->nonil);
 
+#ifndef NDEBUG
 	cmp = BATatoms[b->ttype].atomCmp;
+#endif
 
 	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
 
-	nil = b->T->nonil ? NULL : ATOMnilptr(b->ttype);
 	off = b->hseqbase - BUNfirst(b);
 	dst = (oid*) Tloc(bn, BUNfirst(bn));
 	cnt = 0;
 
 	if (s && !BATtdense(s)) {
-		const oid *candlist;
 
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -260,27 +337,31 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		/* should we return an error if p > BUNfirst(s) || q <
 		 * BUNlast(s) (i.e. s not fully used)? */
 		candlist = (const oid *) Tloc(s, p);
-		if (equi) {
-			assert(li && hi);
-			assert(!anti);
-			candscanloop((*cmp)(tl, v) == 0);
-		} else if (anti) {
-			candscanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
-				     ((lval &&
-				       ((c = (*cmp)(tl, v)) > 0 ||
-					(!li && c == 0))) ||
-				      (hval &&
-				       ((c = (*cmp)(th, v)) < 0 ||
-					(!hi && c == 0)))));
-		} else {
-			candscanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
-				     ((!lval ||
-				       (c = cmp(tl, v)) < 0 ||
-				       (li && c == 0)) &&
-				      (!hval ||
-				       (c = cmp(th, v)) > 0 ||
-				       (hi && c == 0))));
+		/* call type-specific core scan select function */
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			cnt = candscan_bte(scanargs);
+			break;
+		case TYPE_sht:
+			cnt = candscan_sht(scanargs);
+			break;
+		case TYPE_int:
+			cnt = candscan_int(scanargs);
+			break;
+		case TYPE_flt:
+			cnt = candscan_flt(scanargs);
+			break;
+		case TYPE_dbl:
+			cnt = candscan_dbl(scanargs);
+			break;
+		case TYPE_lng:
+			cnt = candscan_lng(scanargs);
+			break;
+		default:
+			cnt = candscan_any(scanargs);
 		}
+		if (cnt == BUN_NONE)
+			return NULL;
 	} else {
 		if (s) {
 			assert(BATtdense(s));
@@ -296,27 +377,32 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			p = BUNfirst(b);
 			q = BUNlast(b);
 		}
-		if (equi) {
-			assert(li && hi);
-			assert(!anti);
-			scanloop((*cmp)(tl, v) == 0);
-		} else if (anti) {
-			scanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
-				 ((lval &&
-				   ((c = (*cmp)(tl, v)) > 0 ||
-				    (!li && c == 0))) ||
-				  (hval &&
-				   ((c = (*cmp)(th, v)) < 0 ||
-				    (!hi && c == 0)))));
-		} else {
-			scanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
-				 ((!lval ||
-				   (c = cmp(tl, v)) < 0 ||
-				   (li && c == 0)) &&
-				  (!hval ||
-				   (c = cmp(th, v)) > 0 ||
-				   (hi && c == 0))));
+		candlist = NULL;
+		/* call type-specific core scan select function */
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			cnt = fullscan_bte(scanargs);
+			break;
+		case TYPE_sht:
+			cnt = fullscan_sht(scanargs);
+			break;
+		case TYPE_int:
+			cnt = fullscan_int(scanargs);
+			break;
+		case TYPE_flt:
+			cnt = fullscan_flt(scanargs);
+			break;
+		case TYPE_dbl:
+			cnt = fullscan_dbl(scanargs);
+			break;
+		case TYPE_lng:
+			cnt = fullscan_lng(scanargs);
+			break;
+		default:
+			cnt = fullscan_any(scanargs);
 		}
+		if (cnt == BUN_NONE)
+			return NULL;
 	}
 	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
