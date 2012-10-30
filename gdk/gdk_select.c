@@ -145,7 +145,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 }
 
 /* scan select loop with candidates */
-
 #define candscanloop(TEST)						\
 	do {								\
 		ALGODEBUG fprintf(stderr,				\
@@ -179,158 +178,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 		}							\
 	} while (0)
 
-#define LT(a, b)	((a) < (b))
-#define LE(a, b)	((a) <= (b))
-#define GT(a, b)	((a) > (b))
-#define GE(a, b)	((a) >= (b))
-
-#define addresult(I)						\
-	do {							\
-		if (cnt == lim) {				\
-			BATextend(bn, BATcount(b));		\
-			lim = BATcapacity(bn);			\
-			dst = (oid*) Tloc(bn, bn->U->first);	\
-		 }						\
-		dst[cnt++] = I;					\
-	} while (0)
-
-#define SCANLOOPCAND5(TYPE, OP1, OP2)					\
-	do {								\
-		TYPE *src = (TYPE *) Tloc(b, b->U->first);		\
-		oid *dst = (oid *) Tloc(bn, bn->U->first);		\
-		BUN lim = BATcapacity(bn);				\
-		BUN r;							\
-		if (equi) {						\
-			assert(li && hi);				\
-			assert(!anti);					\
-			for (i = p; i < q; i++) {			\
-				r = (BUN) (*candlist++ - off);		\
-				if (src[r] == *(TYPE *) tl)		\
-					addresult(r);			\
-			}						\
-		} else if (anti) {					\
-			if (nil == NULL) {				\
-				for (i = p; i < q; i++) {	\
-					r = (BUN) (*candlist++ - off) ;	\
-					if ((lval &&			\
-					     OP1(*(TYPE *) tl, src[r])) || \
-					    (hval &&			\
-					     OP2(*(TYPE *) th, src[r]))) \
-						addresult(r);		\
-				}					\
-			} else {					\
-				for (i = p; i < q; i++) {	\
-					r = (BUN) (*candlist++ - off) ;	\
-					if (((lval &&			\
-					      OP1(*(TYPE *) tl, src[r])) || \
-					     (hval &&			\
-					      OP2(*(TYPE *) th, src[r]))) && \
-					    src[r] != TYPE##_nil)	\
-						addresult(r);		\
-				}					\
-			}						\
-		} else {						\
-			if (nil == NULL) {				\
-				for (i = p; i < q; i++) {		\
-					r = (BUN) (*candlist++ - off) ;	\
-					if ((!lval ||			\
-					     !OP1(*(TYPE *) tl, src[r])) && \
-					    (!hval ||			\
-					     !OP2(*(TYPE *) th, src[r]))) \
-						addresult(r);		\
-				}					\
-			} else {					\
-				for (i = p; i < q; i++) {		\
-					r = (BUN) (*candlist++ - off) ;	\
-					if ((!lval ||			\
-					     !OP1(*(TYPE *) tl, src[r])) && \
-					    (!hval ||			\
-					     !OP2(*(TYPE *) th, src[r])) && \
-					    src[r] != TYPE##_nil)	\
-						addresult(r);		\
-				}					\
-			}						\
-		}							\
-		BATsetcount(bn,cnt);					\
-	} while (0)
-
-#define SCANLOOPCAND(TYPE)				\
-	do {						\
-		if (li && hi)				\
-			SCANLOOPCAND5(TYPE, GT, LT);	\
-		else if (li)				\
-			SCANLOOPCAND5(TYPE, GT, LE);	\
-		else if (hi)				\
-			SCANLOOPCAND5(TYPE, GE, LT);	\
-		else					\
-			SCANLOOPCAND5(TYPE, GE, LE);	\
-	} while (0)
-
-#define SCANLOOP5(TYPE, OP1, OP2)					\
-	do {								\
-		TYPE *src = (TYPE *) Tloc(b, b->U->first);		\
-		oid *dst = (oid *) Tloc(bn, bn->U->first);		\
-		BUN lim = BATcapacity(bn);				\
-		if (equi) {						\
-			assert(li && hi);				\
-			assert(!anti);					\
-			for (i = p; i < q; i++)				\
-				if (src[i] == *(TYPE *) tl)		\
-					addresult(i);			\
-		} else if (anti) {					\
-			if (nil == NULL) {				\
-				for (i = p; i < q; i++) {		\
-					if ((lval &&			\
-					     OP1(*(TYPE *) tl, src[i])) || \
-					    (hval &&			\
-					     OP2(*(TYPE *) th, src[i]))) \
-						addresult(i);		\
-				}					\
-			} else {					\
-				for (i = p; i < q; i++) {		\
-					if (((lval &&			\
-					      OP1(*(TYPE *) tl, src[i])) || \
-					     (hval &&			\
-					      OP2(*(TYPE *) th, src[i]))) && \
-					    src[i] != TYPE##_nil)	\
-						addresult(i);		\
-				}					\
-			}						\
-		} else {						\
-			if (nil == NULL) {				\
-				for (i = p; i < q; i++) {		\
-					if ((!lval ||			\
-					     !OP1(*(TYPE *) tl, src[i])) && \
-					    (!hval ||			\
-					     !OP2(*(TYPE *) th, src[i]))) \
-						addresult(i);		\
-				}					\
-			} else {					\
-				for (i = p; i < q; i++) {		\
-					if ((!lval ||			\
-					     !OP1(*(TYPE *) tl, src[i])) && \
-					    (!hval ||			\
-					     !OP2(*(TYPE *) th, src[i])) && \
-					    src[i] != TYPE##_nil)	\
-						addresult(i);		\
-				}					\
-			}						\
-		}							\
-		BATsetcount(bn,cnt);					\
-	} while (0)
-
-#define SCANLOOP(TYPE)					\
-	do {						\
-		if (li && hi)				\
-			SCANLOOP5(TYPE, GT, LT);	\
-		else if (li)				\
-			SCANLOOP5(TYPE, GT, LE);	\
-		else if (hi)				\
-			SCANLOOP5(TYPE, GE, LT);	\
-		else					\
-			SCANLOOP5(TYPE, GE, LE);	\
-	} while (0)
-
 static BAT *
 BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	       int li, int hi, int equi, int anti, int lval, int hval)
@@ -338,7 +185,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(const void *, const void *);
 	BUN p, q;
-	BUN i,cnt =0;
 	oid o, off;
 	const void *nil, *v;
 	int c;
@@ -372,49 +218,26 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 		/* should we return an error if p > BUNfirst(s) || q <
 		 * BUNlast(s) (i.e. s not fully used)? */
 		candlist = (const oid *) Tloc(s, p);
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			SCANLOOPCAND(bte);
-			break;
-		case TYPE_sht:
-			SCANLOOPCAND(sht);
-			break;
-		case TYPE_int:
-			SCANLOOPCAND(int);
-			break;
-		case TYPE_flt:
-			SCANLOOPCAND(flt);
-			break;
-		case TYPE_dbl:
-			SCANLOOPCAND(dbl);
-			break;
-		case TYPE_lng:
-			SCANLOOPCAND(lng);
-			break;
-		default:
-			if (equi) {
-				assert(li && hi);
-				assert(!anti);
-				candscanloop((*cmp)(tl, v) == 0);
-			} else if (anti) {
-				candscanloop((nil == NULL ||
-					      (*cmp)(v, nil) != 0) &&
-					     ((lval &&
-					       ((c = (*cmp)(tl, v)) > 0 ||
-						(!li && c == 0))) ||
-					      (hval &&
-					       ((c = (*cmp)(th, v)) < 0 ||
-						(!hi && c == 0)))));
-			} else {
-				candscanloop((nil == NULL ||
-					      (*cmp)(v, nil) != 0) &&
-					     ((!lval ||
-					       (c = cmp(tl, v)) < 0 ||
-					       (li && c == 0)) &&
-					      (!hval ||
-					       (c = cmp(th, v)) > 0 ||
-					       (hi && c == 0))));
-			}
+		if (equi) {
+			assert(li && hi);
+			assert(!anti);
+			candscanloop((*cmp)(tl, v) == 0);
+		} else if (anti) {
+			candscanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
+				     ((lval &&
+				       ((c = (*cmp)(tl, v)) > 0 ||
+					(!li && c == 0))) ||
+				      (hval &&
+				       ((c = (*cmp)(th, v)) < 0 ||
+					(!hi && c == 0)))));
+		} else {
+			candscanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
+				     ((!lval ||
+				       (c = cmp(tl, v)) < 0 ||
+				       (li && c == 0)) &&
+				      (!hval ||
+				       (c = cmp(th, v)) > 0 ||
+				       (hi && c == 0))));
 		}
 	} else {
 		if (s) {
@@ -431,49 +254,26 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 			p = BUNfirst(b) + off;
 			q = BUNlast(b) + off;
 		}
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			SCANLOOP(bte);
-			break;
-		case TYPE_sht:
-			SCANLOOP(sht);
-			break;
-		case TYPE_int:
-			SCANLOOP(int);
-			break;
-		case TYPE_flt:
-			SCANLOOP(flt);
-			break;
-		case TYPE_dbl:
-			SCANLOOP(dbl);
-			break;
-		case TYPE_lng:
-			SCANLOOP(lng);
-			break;
-		default:
-			if (equi) {
-				assert(li && hi);
-				assert(!anti);
-				scanloop((*cmp)(tl, v) == 0);
-			} else if (anti) {
-				scanloop((nil == NULL ||
-					  (*cmp)(v, nil) != 0) &&
-					 ((lval &&
-					   ((c = (*cmp)(tl, v)) > 0 ||
-					    (!li && c == 0))) ||
-					  (hval &&
-					   ((c = (*cmp)(th, v)) < 0 ||
-					    (!hi && c == 0)))));
-			} else {
-				scanloop((nil == NULL ||
-					  (*cmp)(v, nil) != 0) &&
-					 ((!lval ||
-					   (c = cmp(tl, v)) < 0 ||
-					   (li && c == 0)) &&
-					  (!hval ||
-					   (c = cmp(th, v)) > 0 ||
-					   (hi && c == 0))));
-			}
+		if (equi) {
+			assert(li && hi);
+			assert(!anti);
+			scanloop((*cmp)(tl, v) == 0);
+		} else if (anti) {
+			scanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
+				 ((lval &&
+				   ((c = (*cmp)(tl, v)) > 0 ||
+				    (!li && c == 0))) ||
+				  (hval &&
+				   ((c = (*cmp)(th, v)) < 0 ||
+				    (!hi && c == 0)))));
+		} else {
+			scanloop((nil == NULL || (*cmp)(v, nil) != 0) &&
+				 ((!lval ||
+				   (c = cmp(tl, v)) < 0 ||
+				   (li && c == 0)) &&
+				  (!hval ||
+				   (c = cmp(th, v)) > 0 ||
+				   (hi && c == 0))));
 		}
 	}
 	bn->tsorted = 1;
@@ -528,8 +328,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * - if th==nil, no upper bound
  */
 BAT *
-BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
-	     int li, int hi, int anti)
+BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti)
 {
 	int hval, lval, equi, t, lnil;
 	const void *nil;
@@ -898,8 +697,7 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 /* The rest of this file contains backward-compatible interfaces */
 
 static BAT *
-BAT_select_(BAT *b, const void *tl, const void *th,
-	    bit li, bit hi, bit tail, bit anti)
+BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti)
 {
 	BAT *bn;
 	BAT *bn1 = NULL;
