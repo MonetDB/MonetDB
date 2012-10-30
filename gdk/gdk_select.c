@@ -204,26 +204,43 @@ do {									\
 } while (0)
 
 /* scan select predicate switch */
-#define scantest(CAND,READ,COMP)				\
-do {								\
-	if (equi) {						\
-		scanloop ( CAND , READ , COMP(v,==,vl) );	\
-	} else 							\
-	if (anti) {						\
-		scanloop ( CAND , READ ,			\
-		          (b->T->nonil || COMP(v,!=,nil)) &&	\
-		          ((lval && (COMP(v,<,vl) ||		\
-		            (!li && COMP(v,==,vl)))) ||		\
-		           (hval && (COMP(v,>,vh) ||		\
-		            (!hi && COMP(v,==,vh))))) );	\
-	} else {						\
-		scanloop ( CAND , READ ,			\
-		          (b->T->nonil || COMP(v,!=,nil)) &&	\
-		          ((!lval ||  COMP(v,>,vl) ||		\
-		            (li && COMP(v,==,vl))) &&		\
-		           (!hval ||  COMP(v,<,vh) ||		\
-		            (hi && COMP(v,==,vh)))) );		\
-	}							\
+#define scantest(CAND,READ,COMP,NIL1,NIL2)	\
+do {						\
+if (equi                                                 ) { scanloop ( CAND , READ ,  COMP(v,==,vl)                           ); } else \
+if ( anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,>=,vh))         ); } else \
+if ( anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,> ,vh))         ); } else \
+if ( anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,>=,vh))         ); } else \
+if ( anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,> ,vh))         ); } else \
+if ( anti &&  b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,<=,vl)                 )         ); } else \
+if ( anti &&  b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,< ,vl)                 )         ); } else \
+if ( anti &&  b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,>=,vh))         ); } else \
+if ( anti &&  b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,> ,vh))         ); } else \
+if ( anti && !b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,>=,vh)) NIL1(v) ); } else \
+if ( anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,> ,vh)) NIL1(v) ); } else \
+if ( anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,>=,vh)) NIL1(v) ); } else \
+if ( anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,> ,vh)) NIL1(v) ); } else \
+if ( anti && !b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,<=,vl)                 ) NIL1(v) ); } else \
+if ( anti && !b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,< ,vl)                 ) NIL1(v) ); } else \
+if ( anti && !b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,>=,vh)) NIL2(v) ); } else \
+if ( anti && !b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,> ,vh)) NIL2(v) ); } else \
+if (!anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,< ,vh))         ); } else \
+if (!anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,<=,vh))         ); } else \
+if (!anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,< ,vh))         ); } else \
+if (!anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,<=,vh))         ); } else \
+if (!anti &&  b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,> ,vl)                 )         ); } else \
+if (!anti &&  b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,>=,vl)                 )         ); } else \
+if (!anti &&  b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,< ,vh))         ); } else \
+if (!anti &&  b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,<=,vh))         ); } else \
+if (!anti && !b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,< ,vh)) NIL2(v) ); } else \
+if (!anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,<=,vh)) NIL2(v) ); } else \
+if (!anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,< ,vh)) NIL2(v) ); } else \
+if (!anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,<=,vh)) NIL2(v) ); } else \
+if (!anti && !b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,> ,vl)                 ) NIL2(v) ); } else \
+if (!anti && !b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,>=,vl)                 ) NIL2(v) ); } else \
+if (!anti && !b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,< ,vh)) NIL1(v) ); } else \
+if (!anti && !b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,<=,vh)) NIL1(v) ); } else \
+if (!anti && !b->T->nonil && !lval        && !hval       ) { scanloop ( CAND , READ ,  COMP(v,!=,nil)                          ); } else \
+assert(0);	\
 } while (0)
 
 /* local variables for known fixed-width types */
@@ -245,9 +262,13 @@ do {								\
 
 /* various comparison calls for known fixed-width types */
 #define scancomp_fix(l,o,r)	(l) o (r)
+#define scannil1_fix(v)		&& scancomp_fix(v,!=,nil)
+#define scannil2_fix(v)		
 
 /* various comparison calls for generic types */
 #define scancomp_var(l,o,r)	(*cmp)((l),(r)) o 0
+#define scannil1_var(v)		&& scancomp_var(v,!=,nil)
+#define scannil2_var(v)		scannil1_var(v)
 
 /* argument list for type-specific core scan select function call */
 #define scanargs	\
@@ -266,7 +287,8 @@ NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
 	oid o;								\
 	BUN p = r;							\
 	(void) candlist;						\
-	scantest(CAND, READ, scancomp_##WHAT);				\
+	scantest(CAND, READ, scancomp_##WHAT,				\
+	         scannil1_##WHAT, scannil2_##WHAT);			\
 	return cnt;							\
 }
 
