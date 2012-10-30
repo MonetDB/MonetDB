@@ -7087,6 +7087,17 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 									assert(0);
 							}
 							break;
+						case j_var:
+							dumpgetvar(mb, w->tval1->sval,
+									&a1, &a2, &a3, &a4, &a5, &a6, &a7);
+							dynaarg[i][0] = a1;
+							dynaarg[i][1] = a2;
+							dynaarg[i][2] = a3;
+							dynaarg[i][3] = a4;
+							dynaarg[i][4] = a5;
+							dynaarg[i][5] = a6;
+							dynaarg[i][6] = a7;
+							break;
 						case j_str:
 						case j_num:
 						case j_dbl:
@@ -7144,8 +7155,6 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 							pushInstruction(mb, q);
 							dynaarg[i][0] = a;
 							break;
-						case j_var: /* TODO */
-							/* j_var is actually impossible at this level */
 						default:
 							snprintf(j->err, sizeof(j->err),
 									"unhandled argument type (1)");
@@ -7177,6 +7186,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 						switch (coltypes[i]) {
 							case j_json:
 							case j_json_arr:
+							case j_var:
 								q = pushArgument(mb, q, dynaarg[i][0]);
 								q = pushArgument(mb, q, dynaarg[i][1]);
 								q = pushArgument(mb, q, dynaarg[i][2]);
