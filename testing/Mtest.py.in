@@ -58,7 +58,7 @@ quiet = False
 
 releaserun = False
 
-if os.isatty(sys.stdout.fileno()):
+if os.name != 'nt' and os.isatty(sys.stdout.fileno()):
     # color output a little
     RED = '\033[1;31m'
     GREEN = '\033[0;32m'
