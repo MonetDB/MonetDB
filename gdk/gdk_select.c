@@ -337,7 +337,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * - if th==nil, no upper bound
  */
 BAT *
-BATsubselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti)
+BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
+             int li, int hi, int anti)
 {
 	int hval, lval, equi, t, lnil;
 	const void *nil;
@@ -706,7 +707,8 @@ BATthetasubselect(BAT *b, BAT *s, const void *val, const char *op)
 /* The rest of this file contains backward-compatible interfaces */
 
 static BAT *
-BAT_select_(BAT *b, const void *tl, const void *th, bit li, bit hi, bit tail, bit anti)
+BAT_select_(BAT *b, const void *tl, const void *th,
+            bit li, bit hi, bit tail, bit anti)
 {
 	BAT *bn;
 	BAT *bn1 = NULL;
