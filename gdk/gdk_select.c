@@ -200,43 +200,111 @@ do {									\
 } while (0)
 
 /* scan select predicate switch */
-#define scantest(CAND,READ,COMP,NIL1,NIL2)	\
-do {						\
-if (equi                                                 ) { scanloop ( CAND , READ ,  COMP(v,==,vl)                           ); } else \
-if ( anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,>=,vh))         ); } else \
-if ( anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,> ,vh))         ); } else \
-if ( anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,>=,vh))         ); } else \
-if ( anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,> ,vh))         ); } else \
-if ( anti &&  b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,<=,vl)                 )         ); } else \
-if ( anti &&  b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,< ,vl)                 )         ); } else \
-if ( anti &&  b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,>=,vh))         ); } else \
-if ( anti &&  b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,> ,vh))         ); } else \
-if ( anti && !b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,>=,vh)) NIL1(v) ); } else \
-if ( anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,<=,vl) || COMP(v,> ,vh)) NIL1(v) ); } else \
-if ( anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,>=,vh)) NIL1(v) ); } else \
-if ( anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,< ,vl) || COMP(v,> ,vh)) NIL1(v) ); } else \
-if ( anti && !b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,<=,vl)                 ) NIL1(v) ); } else \
-if ( anti && !b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,< ,vl)                 ) NIL1(v) ); } else \
-if ( anti && !b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,>=,vh)) NIL2(v) ); } else \
-if ( anti && !b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,> ,vh)) NIL2(v) ); } else \
-if (!anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,< ,vh))         ); } else \
-if (!anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,<=,vh))         ); } else \
-if (!anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,< ,vh))         ); } else \
-if (!anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,<=,vh))         ); } else \
-if (!anti &&  b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,> ,vl)                 )         ); } else \
-if (!anti &&  b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,>=,vl)                 )         ); } else \
-if (!anti &&  b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,< ,vh))         ); } else \
-if (!anti &&  b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,<=,vh))         ); } else \
-if (!anti && !b->T->nonil &&  lval && !li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,< ,vh)) NIL2(v) ); } else \
-if (!anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,> ,vl) && COMP(v,<=,vh)) NIL2(v) ); } else \
-if (!anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,< ,vh)) NIL2(v) ); } else \
-if (!anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) { scanloop ( CAND , READ , (COMP(v,>=,vl) && COMP(v,<=,vh)) NIL2(v) ); } else \
-if (!anti && !b->T->nonil &&  lval && !li && !hval       ) { scanloop ( CAND , READ , (COMP(v,> ,vl)                 ) NIL2(v) ); } else \
-if (!anti && !b->T->nonil &&  lval &&  li && !hval       ) { scanloop ( CAND , READ , (COMP(v,>=,vl)                 ) NIL2(v) ); } else \
-if (!anti && !b->T->nonil && !lval        &&  hval && !hi) { scanloop ( CAND , READ , (                 COMP(v,< ,vh)) NIL1(v) ); } else \
-if (!anti && !b->T->nonil && !lval        &&  hval &&  hi) { scanloop ( CAND , READ , (                 COMP(v,<=,vh)) NIL1(v) ); } else \
-if (!anti && !b->T->nonil && !lval        && !hval       ) { scanloop ( CAND , READ ,  COMP(v,!=,nil)                          ); } else \
-assert(0);	\
+#define scantest(CAND,READ,COMP,NIL1,NIL2)					\
+do {										\
+	if (equi                                                 ) {		\
+		scanloop(CAND,READ, COMP(v,==,vl)                          );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,>=,vh))        );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,> ,vh))        );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,>=,vh))        );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,> ,vh))        );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval && !li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl)                 )        );	\
+	} else									\
+	if ( anti &&  b->T->nonil &&  lval &&  li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl)                 )        );	\
+	} else									\
+	if ( anti &&  b->T->nonil && !lval        &&  hval && !hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,>=,vh))        );	\
+	} else									\
+	if ( anti &&  b->T->nonil && !lval        &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,> ,vh))        );	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval && !li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,>=,vh)) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,> ,vh)) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,>=,vh)) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,> ,vh)) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval && !li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,<=,vl)                 ) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil &&  lval &&  li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,< ,vl)                 ) NIL1(v));	\
+	} else									\
+	if ( anti && !b->T->nonil && !lval        &&  hval && !hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,>=,vh)) NIL2(v));	\
+	} else									\
+	if ( anti && !b->T->nonil && !lval        &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,> ,vh)) NIL2(v));	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,< ,vh))        );	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,<=,vh))        );	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,< ,vh))        );	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,<=,vh))        );	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval && !li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl)                 )        );	\
+	} else									\
+	if (!anti &&  b->T->nonil &&  lval &&  li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl)                 )        );	\
+	} else									\
+	if (!anti &&  b->T->nonil && !lval        &&  hval && !hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,< ,vh))        );	\
+	} else									\
+	if (!anti &&  b->T->nonil && !lval        &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,<=,vh))        );	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval && !li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,< ,vh)) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,<=,vh)) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,< ,vh)) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,<=,vh)) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval && !li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,> ,vl)                 ) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil &&  lval &&  li && !hval       ) {		\
+		scanloop(CAND,READ,(COMP(v,>=,vl)                 ) NIL2(v));	\
+	} else									\
+	if (!anti && !b->T->nonil && !lval        &&  hval && !hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,< ,vh)) NIL1(v));	\
+	} else									\
+	if (!anti && !b->T->nonil && !lval        &&  hval &&  hi) {		\
+		scanloop(CAND,READ,(                 COMP(v,<=,vh)) NIL1(v));	\
+	} else									\
+	if (!anti && !b->T->nonil && !lval        && !hval       ) {		\
+		scanloop(CAND,READ, COMP(v,!=,nil)                         );	\
+	} else									\
+		assert(0);							\
 } while (0)
 
 /* local variables for known fixed-width types */
