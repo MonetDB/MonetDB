@@ -73,7 +73,7 @@ struct PIPELINES {
 //     "optimizer.mitosis();"
 //     "optimizer.mergetable();"
 	 "optimizer.deadcode();"
-//	 "optimizer.commonTerms();"
+	 "optimizer.commonTerms();"
 	 "optimizer.groups();"
 //	 "optimizer.joinPath();"
 //     "optimizer.reorder();"
