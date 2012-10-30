@@ -113,7 +113,7 @@ q_create(int sz)
 		return NULL;
 	q->size = ((sz << 1) >> 1); /* we want a multiple of 2 */
 	q->last = 0;
-	q->data = (void*)GDKmalloc(sizeof(void*) * q->size);
+	q->data = (void*)GDKmalloc(sizeof(FlowEvent) * q->size);
 	if (q->data == NULL) {
 		GDKfree(q);
 		return NULL;
@@ -133,7 +133,7 @@ q_enqueue_(queue *q, FlowEvent d)
 	assert(d);
 	if (q->last == q->size) {
 		q->size <<= 1;
-		q->data = GDKrealloc(q->data, sizeof(void*) * q->size);
+		q->data = GDKrealloc(q->data, sizeof(FlowEvent) * q->size);
 	}
 	q->data[q->last++] = d;
 }
@@ -245,6 +245,7 @@ DFLOWworker(void *t)
 		if (fnxt == 0)
 			fe = q_dequeue(todo);
 		else fe = fnxt;
+		fnxt = 0;
 		assert(fe);
 		flow = fe->flow;
 
@@ -309,7 +310,6 @@ DFLOWworker(void *t)
 		for (i = 0; i < p->retc; i++)
 			fe->hotclaim += getMemoryClaim(flow->mb, flow->stk, fe->pc, i, FALSE);
 #endif
-        fnxt = 0;
 		for (last = fe->pc - flow->start; last >= 0 && (i = flow->nodes[last]) > 0; last = flow->edges[last])
 			if (flow->status[i].state == DFLOWpending &&
 				flow->status[i].blocks == 1) {
@@ -578,7 +578,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	flow->stop = stoppc;
 
 	MT_lock_init(&flow->flowlock, "DFLOWworker");
-	flow->done = q_create(stoppc- startpc);
+	flow->done = q_create(stoppc- startpc+1);
 
 	flow->status = (FlowEvent)GDKzalloc((stoppc - startpc + 1) * sizeof(FlowEventRec));
 	size = DFLOWgraphSize(mb, startpc, stoppc);
