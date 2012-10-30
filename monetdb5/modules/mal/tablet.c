@@ -665,7 +665,7 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
 				p = *localbuf;
 			}
-			if (fill + l + f->seplen > *len) {
+			if (fill + l + f->seplen >= *len) {
 				/* extend the buffer */
 				*buf = (char *) GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
 				*len = fill + l + f->seplen + BUFSIZ;
