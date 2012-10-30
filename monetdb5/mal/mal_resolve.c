@@ -528,7 +528,7 @@ findFunctionType(stream *out, Module scope, MalBlkPtr mb, InstrPtr p, int silent
 
 #ifdef DEBUG_MAL_RESOLVE
 		if (tracefcn) {
-			printInstruction(out, mb, 0 mp, LIST_MAL_ALL);
+			printInstruction(out, mb, 0, p, LIST_MAL_ALL);
 			mnstr_printf(out, "Finished matching\n");
 		}
 #endif
