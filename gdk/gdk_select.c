@@ -21,6 +21,17 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
+#define buninsfix(B,C,A,I,T,V)						\
+	do {								\
+		if ((I) == BATcapacity((B))) {				\
+			BATsetcount((B), (I));				\
+			if (BATextend((B), BATgrows(B)) == NULL)	\
+				goto bunins_failed;			\
+			A = (T *) C##loc((B), BUNfirst((B)));		\
+		} 							\
+		A[(I)] = (V);						\
+	} while (0)
+
 static BAT *
 newempty(void)
 {
@@ -96,8 +107,8 @@ static BAT *
 BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 {
 	BATiter bi;
-	BUN i;
-	oid o;
+	BUN i, cnt;
+	oid o, *dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
@@ -114,20 +125,26 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 		return NULL;
 	}
 	bi = bat_iterator(b);
+	dst = (oid*) Tloc(bn, BUNfirst(bn));
+	cnt = 0;
 	if (s) {
 		assert(s->tsorted);
 		s = BATmirror(s); /* SORTfnd works on HEAD column */
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) i + off;
-			if (SORTfnd(s, &o) != BUN_NONE)
-				bunfastins(bn, NULL, &o);
+			if (SORTfnd(s, &o) != BUN_NONE) {
+				buninsfix(bn, T, dst, cnt, oid, o);
+				cnt++;
+			}
 		}
 	} else {
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) i + off;
-			bunfastins(bn, NULL, &o);
+			buninsfix(bn, T, dst, cnt, oid, o);
+			cnt++;
 		}
 	}
+	BATsetcount(bn, cnt);
 	bn->tkey = 1;
 	bn->tdense = bn->tsorted = bn->trevsorted = bn->U->count <= 1;
 	if (bn->U->count == 1)
@@ -159,8 +176,10 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			o = *candlist++;				\
 			r = (BUN) (o - off);				\
 			v = BUNtail(bi, r);				\
-			if (TEST)					\
-				bunfastins(bn, NULL, &o);		\
+			if (TEST) {					\
+				buninsfix(bn, T, dst, cnt, oid, o);	\
+				cnt++;					\
+			}						\
 			p++;						\
 		}							\
 	} while (0)
@@ -176,7 +195,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			v = BUNtail(bi, p);				\
 			if (TEST) {					\
 				o = (oid) p + off;			\
-				bunfastins(bn, NULL, &o);		\
+				buninsfix(bn, T, dst, cnt, oid, o);	\
+				cnt++;					\
 			}						\
 			p++;						\
 		}							\
@@ -188,8 +208,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 {
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(const void *, const void *);
-	BUN p, q;
-	oid o;
+	BUN p, q, cnt;
+	oid o, *dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
 	 * instead of wrd, we could also use ssize_t or int/lng with
@@ -212,6 +232,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 	nil = b->T->nonil ? NULL : ATOMnilptr(b->ttype);
 	off = b->hseqbase - BUNfirst(b);
+	dst = (oid*) Tloc(bn, BUNfirst(bn));
+	cnt = 0;
 
 	if (s && !BATtdense(s)) {
 		const oid *candlist;
@@ -285,6 +307,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				   (hi && c == 0))));
 		}
 	}
+	BATsetcount(bn, cnt);
 	bn->tsorted = 1;
 	bn->trevsorted = bn->U->count <= 1;
 	bn->tkey = 1;
