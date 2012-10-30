@@ -38,33 +38,33 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 63 # length
+% 61 # length
 function user.s4_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","t2564");
-    X_6:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c1",0);
-    X_9:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c1",2);
-    X_11:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c1",1);
-    X_13 := sql.delta(X_6,X_9,X_11);
-    X_14 := algebra.leftfetchjoin(X_3,X_13);
-    X_15:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c3",0);
-    X_17:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c3",2);
-    X_18:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c3",1);
-    X_19 := sql.delta(X_15,X_17,X_18);
-    X_20 := algebra.leftfetchjoin(X_3,X_19);
-    X_21:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c2",0);
-    X_23:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c2",2);
-    X_24:bat[:oid,:int]  := sql.bind(X_2,"sys","t2564","c2",1);
-    X_25 := sql.delta(X_21,X_23,X_24);
-    X_26 := algebra.leftfetchjoin(X_3,X_25);
-    (X_27,r1_33,r2_33) := group.subgroup(X_26);
-    (X_30,r1_36,r2_36) := group.subgroup(X_20,X_27);
-    (X_33,r1_39,r2_39) := group.subgroupdone(X_14,X_30);
-    X_36:bat[:oid,:wrd]  := aggr.subcount(X_33,X_33,r1_39,0);
-    X_39 := sql.resultSet(1,1,X_36);
-    sql.rsColumn(X_39,"sys.t2564","L1","wrd",64,0,X_36);
-    X_45 := io.stdout();
-    sql.exportResult(X_45,X_39);
+    X_6 := sql.bind(X_2,"sys","t2564","c1",0);
+    (X_9,r1_9) := sql.bind(X_2,"sys","t2564","c1",2);
+    X_12 := sql.bind(X_2,"sys","t2564","c1",1);
+    X_14 := sql.delta(X_6,X_9,r1_9,X_12);
+    X_15 := algebra.leftfetchjoin(X_3,X_14);
+    X_16 := sql.bind(X_2,"sys","t2564","c3",0);
+    (X_18,r1_20) := sql.bind(X_2,"sys","t2564","c3",2);
+    X_20 := sql.bind(X_2,"sys","t2564","c3",1);
+    X_21 := sql.delta(X_16,X_18,r1_20,X_20);
+    X_22 := algebra.leftfetchjoin(X_3,X_21);
+    X_23 := sql.bind(X_2,"sys","t2564","c2",0);
+    (X_25,r1_29) := sql.bind(X_2,"sys","t2564","c2",2);
+    X_27 := sql.bind(X_2,"sys","t2564","c2",1);
+    X_28 := sql.delta(X_23,X_25,r1_29,X_27);
+    X_29 := algebra.leftfetchjoin(X_3,X_28);
+    (X_30,r1_36,r2_36) := group.subgroup(X_29);
+    (X_33,r1_39,r2_39) := group.subgroup(X_22,X_30);
+    (X_36,r1_42,r2_42) := group.subgroupdone(X_15,X_33);
+    X_39:bat[:oid,:wrd]  := aggr.subcount(X_36,X_36,r1_42,0);
+    X_42 := sql.resultSet(1,1,X_39);
+    sql.rsColumn(X_42,"sys.t2564","L1","wrd",64,0,X_39);
+    X_48 := io.stdout();
+    sql.exportResult(X_48,X_42);
 end s4_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.t2564 # table_name

@@ -47,6 +47,10 @@ create table storagemodelinput(
 	"reference" boolean,-- used as foreign key reference
 	"sorted" boolean 	-- if set there is no need for an index
 );
+update _tables
+	set system = true
+	where name = 'storagemodelinput'
+		and schema_id = (select id from schemas where name = 'sys');
 -- this table can be adjusted to reflect the anticipated final database size
 
 -- The model input can be derived from the current database using
@@ -152,3 +156,7 @@ as select "schema","table",max(count) as "count",
 	sum(indices) as indices,
 	sum(case when sorted = false then 8 * count else 0 end) as auxillary
 from storagemodel() group by "schema","table";
+update _tables
+	set system = true
+	where name = 'tablestoragemodel'
+		and schema_id = (select id from schemas where name = 'sys');

@@ -20,6 +20,7 @@ module jaqlfunc;
 
 
 # generate a JSON record by merging two JSON arrays
+# http://code.google.com/p/jaql/wiki/Builtin_functions#arrayToRecord()
 function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str],kindv:bat[:oid,:bte],stringv:bat[:oid,:str],integerv:bat[:oid,:lng],doublev:bat[:oid,:dbl],arrayv:bat[:oid,:oid],objectv:bat[:oid,:oid],namev:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
 	r1 := bat.new(:oid,:bte);
 	r2 := bat.new(:oid,:str);
@@ -77,6 +78,56 @@ function arrayToRecord(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[
 
 	return (r1,r2,r3,r4,r5,r6,r7);
 end arrayToRecord;
+
+# combine two arrays (A,B) into one array C
+# http://code.google.com/p/jaql/wiki/Builtin_functions#pairwise()
+function pairwise(kindn:bat[:oid,:bte],stringn:bat[:oid,:str],integern:bat[:oid,:lng],doublen:bat[:oid,:dbl],arrayn:bat[:oid,:oid],objectn:bat[:oid,:oid],namen:bat[:oid,:str],kindv:bat[:oid,:bte],stringv:bat[:oid,:str],integerv:bat[:oid,:lng],doublev:bat[:oid,:dbl],arrayv:bat[:oid,:oid],objectv:bat[:oid,:oid],namev:bat[:oid,:str])(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);
+	nextid := json.nextid(kindn);
+
+	# re-base second json to be appended to the first
+	elems := algebra.selectH(arrayv, 0@0);
+	(v1,v2,v3,v4,v5,v6,v7) := json.extract(kindv, stringv, integerv, doublev, arrayv, objectv, namev, elems, nextid);
+
+	u1 := bat.insert(kindn, v1);
+	u2 := bat.insert(stringn, v2);
+	u3 := bat.insert(integern, v3);
+	u4 := bat.insert(doublen, v4);
+	u5 := bat.insert(arrayn, v5);
+	u6 := bat.insert(objectn, v6);
+	u7 := bat.insert(namen, v7);
+
+	# construct arrays with values from n and v, the size of n is
+	# leading, that is, we pad with nulls on v, but don't pad nulls on n
+	# when v is larger
+	elemsn := algebra.selectH(u5, 0@0);
+	elemsv := algebra.selectH(u5, nextid);
+
+	nullid := json.nextid(u1);
+	u1 := bat.insert(u1, nullid, 110:bte);  # n
+
+	nextid := json.nextid(u1);
+
+	t1 := algebra.project(elemsn, 97:bte);  # a
+	t2 := algebra.markH(t1, nextid);
+
+	t3 := algebra.markH(elemsn, nextid);
+	t4 := algebra.markH(elemsv, nextid);
+
+	# find size mismatch between t3 and t4, and pad with nulls
+	d := algebra.kdifference(t3, t4);
+	dn := algebra.project(d, nullid);
+	t4 := bat.insert(t4, dn);
+
+	u1 := bat.insert(u1, t2);
+	u5 := bat.insert(u5, t3);
+	u5 := bat.insert(u5, t4);
+
+	t6 := bat.mirror(t2);
+
+	(r1,r2,r3,r4,r5,r6,r7) := json.extract(u1,u2,u3,u4,u5,u6,u7, t6, 0@0);
+
+	return (r1,r2,r3,r4,r5,r6,r7);
+end pairwise;
 
 # read JSON data from URI
 function shred(uri:str)(kind:bat[:oid,:bte],string:bat[:oid,:str],integer:bat[:oid,:lng],double:bat[:oid,:dbl],array:bat[:oid,:oid],object:bat[:oid,:oid],name:bat[:oid,:str]);

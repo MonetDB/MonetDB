@@ -333,8 +333,9 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 		if( getModuleId(p) == sqlRef &&
 		    (f == bindRef || f == bindidxRef || f == binddbatRef ) ){
 			ValRecord vr;
-			char *sname = getVarConstant(mb, getArg(p,2)).val.sval;
-			char *tname = getVarConstant(mb, getArg(p,3)).val.sval;
+			int upd = (p->argc == 7 || p->argc == 9);
+			char *sname = getVarConstant(mb, getArg(p,2+upd)).val.sval;
+			char *tname = getVarConstant(mb, getArg(p,3+upd)).val.sval;
 			char *cname = NULL;
 			int not_null = 0;
 			wrd rows = 1; /* default to cope with delta bats */
@@ -350,8 +351,8 @@ SQLgetStatistics(Client cntxt, mvc *m, MalBlkPtr mb)
 			if (f == binddbatRef) {
 				mode = getVarConstant(mb, getArg(p,4)).val.ival;
 			} else {
-				cname = getVarConstant(mb, getArg(p,4)).val.sval;
-				mode = getVarConstant(mb, getArg(p,5)).val.ival;
+				cname = getVarConstant(mb, getArg(p,4+upd)).val.sval;
+				mode = getVarConstant(mb, getArg(p,5+upd)).val.ival;
 			}
 
 			if (s && f == bindidxRef && cname) {
