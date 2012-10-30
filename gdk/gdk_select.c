@@ -21,12 +21,16 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define buninsfix(B,C,A,I,T,V)						\
+#define buninsfix(B,C,A,I,T,V,G,M,R)					\
 	do {								\
 		if ((I) == BATcapacity((B))) {				\
 			BATsetcount((B), (I));				\
-			if (BATextend((B), BATgrows(B)) == NULL)	\
-				goto bunins_failed;			\
+			if (BATextend((B),				\
+			              MIN(BATcapacity((B)) + (G),	\
+			                  (M))) == NULL) {		\
+				BBPreclaim((B));	 		\
+				return (R);				\
+			}						\
 			A = (T *) C##loc((B), BUNfirst((B)));		\
 		} 							\
 		A[(I)] = (V);						\
@@ -104,7 +108,7 @@ BATslice2(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 }
 
 static BAT *
-BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
+BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 {
 	BATiter bi;
 	BUN i, cnt;
@@ -133,14 +137,18 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) i + off;
 			if (SORTfnd(s, &o) != BUN_NONE) {
-				buninsfix(bn, T, dst, cnt, oid, o);
+				buninsfix(bn, T, dst, cnt, oid, o,
+				          maximum - BATcapacity(bn),
+				          maximum, NULL);
 				cnt++;
 			}
 		}
 	} else {
 		HASHloop(bi, b->H->hash, i, tl) {
 			o = (oid) i + off;
-			buninsfix(bn, T, dst, cnt, oid, o);
+			buninsfix(bn, T, dst, cnt, oid, o,
+				  maximum - BATcapacity(bn),
+				  maximum, NULL);
 			cnt++;
 		}
 	}
@@ -159,10 +167,6 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 	bn->hsorted = 1;
 	bn->hrevsorted = bn->U->count <= 1;
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /* scan select loop with candidates */
@@ -172,12 +176,15 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
+		r = p;							\
 		while (p < q) {						\
 			o = *candlist++;				\
-			r = (BUN) (o - off);				\
-			v = BUNtail(bi, r);				\
+			v = BUNtail(bi, o - off);			\
 			if (TEST) {					\
-				buninsfix(bn, T, dst, cnt, oid, o);	\
+				buninsfix(bn, T, dst, cnt, oid, o,	\
+				          (BUN) ((dbl) cnt / (dbl) (p-r)\
+				                 * (dbl) (q-p) * 1.1),	\
+				          maximum, NULL);		\
 				cnt++;					\
 			}						\
 			p++;						\
@@ -191,11 +198,15 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 			    "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): " \
 			    "scanselect %s\n", BATgetId(b), BATcount(b), \
 			    s ? BATgetId(s) : "NULL", anti, #TEST);	\
+		r = p;							\
 		while (p < q) {						\
 			v = BUNtail(bi, p);				\
 			if (TEST) {					\
 				o = (oid) p + off;			\
-				buninsfix(bn, T, dst, cnt, oid, o);	\
+				buninsfix(bn, T, dst, cnt, oid, o,	\
+				          (BUN) ((dbl) cnt / (dbl) (p-r)\
+				                 * (dbl) (q-p) * 1.1),	\
+				          maximum, NULL);		\
 				cnt++;					\
 			}						\
 			p++;						\
@@ -204,11 +215,12 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 
 static BAT *
 BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
-	       int li, int hi, int equi, int anti, int lval, int hval)
+	       int li, int hi, int equi, int anti, int lval, int hval,
+	       BUN maximum)
 {
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(const void *, const void *);
-	BUN p, q, cnt;
+	BUN p, q, r, cnt;
 	oid o, *dst;
 	/* off must be signed as it can be negative,
 	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
@@ -237,7 +249,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 	if (s && !BATtdense(s)) {
 		const oid *candlist;
-		BUN r;
 
 		assert(s->tsorted);
 		assert(s->tkey);
@@ -321,10 +332,6 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->hrevsorted = bn->U->count <= 1;
 
 	return bn;
-
-  bunins_failed:
-	BBPreclaim(bn);
-	return NULL;
 }
 
 /* generic range select
@@ -724,9 +731,10 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  ",s=%s,anti=%d): hash select\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL", anti);
-		bn = BAT_hashselect(b, s, bn, tl);
+		bn = BAT_hashselect(b, s, bn, tl, maximum);
 	} else {
-		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval);
+		bn = BAT_scanselect(b, s, bn, tl, th, li, hi, equi, anti, lval, hval,
+		                    maximum);
 	}
 
 	return bn;
