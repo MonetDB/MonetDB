@@ -340,10 +340,10 @@ BAT *
 BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
              int li, int hi, int anti)
 {
-	int hval, lval, equi, t, lnil;
+	int hval, lval, equi, t, lnil, hash;
 	const void *nil;
 	BAT *bn;
-	BUN estimate;
+	BUN estimate = BUN_NONE, maximum = BUN_NONE;
 
 	BATcheck(b, "BATsubselect");
 	BATcheck(tl, "BATsubselect: tl value required");
@@ -601,41 +601,102 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return bn;
 	}
 
-	if (b->tkey) {
-		estimate = 1;
-	} else if (s) {
-		estimate = BATcount(s);
-	} else if (BATcount(b) <= 100000) {
-		estimate = BATguess(b);
-	} else {
-		BAT *tmp1 = BATmirror(BATmark(BATmirror(b), oid_nil));
-		estimate = 0;
-		if (tmp1) {
-			BAT *tmp2 = BATsample(tmp1, 128);
-			if (tmp2) {
-				BAT *tmp3;
-				BATseqbase(tmp2, 0);
-				tmp3 = BATsubselect(tmp2, NULL, tl, th, li, hi, anti);
-				if (tmp3) {
-					estimate = (BUN) ((lng) BATcount(tmp3) * BATcount(b) / 100);
-					BBPreclaim(tmp3);
-				}
-				BBPreclaim(tmp2);
-			}
-			BBPreclaim(tmp1);
+	/* upper limit for result size */
+	maximum = BATcount(b);
+	if (s) {
+		/* refine upper limit of result size by candidate list */
+		oid ol = b->hseqbase;
+		oid oh = ol + BATcount(b);
+		assert(s->tsorted);
+		assert(s->tkey);
+		if (BATtdense(s)) {
+			maximum = MIN( maximum , 
+			               MIN( oh , s->tseqbase + BATcount(s)) 
+			               - MAX( ol , s->tseqbase ) );
+		} else {
+			maximum = MIN( maximum ,
+			               SORTfndfirst(s, &oh) 
+			               - SORTfndfirst(s, &ol) ) ;
 		}
 	}
+	if (b->tkey) {
+		/* exact result size in special cases */
+		if (equi) {
+			estimate = 1;
+		} else
+		if (!anti && lval && hval) {
+			if (ATOMstorage(b->ttype) == TYPE_bte) {
+				estimate = (BUN) (*(bte*) th - *(bte*) tl);
+			} else
+			if (ATOMstorage(b->ttype) == TYPE_sht) {
+				estimate = (BUN) (*(sht*) th - *(sht*) tl);
+			} else
+			if (ATOMstorage(b->ttype) == TYPE_int) {
+				estimate = (BUN) (*(int*) th - *(int*) tl);
+			} else
+			if (ATOMstorage(b->ttype) == TYPE_lng) {
+				estimate = (BUN) (*(lng*) th - *(lng*) tl);
+			}
+			if (estimate != BUN_NONE) {
+				estimate += li + hi - 1;
+			}
+		}
+	}
+	/* refine upper limit by exact size (if known) */
+	maximum = MIN(maximum, estimate);
+	hash = b->batPersistence == PERSISTENT &&
+	       (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
+	       BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2;
+	if (estimate == BUN_NONE && equi && !b->T->hash && hash) {
+		/* no exact result size, but we need estimate to choose
+		 * between hash- & scan-select */
+		if (BATcount(b) <= 10000) {
+			/* "small" input: don't bother about more accurate
+			 * estimate */
+			estimate = maximum;
+		} else {
+			/* layman's quick "pseudo-sample" of 1000 tuples,
+			 * i.e., 333 from begin, middle & end of BAT */
+			BUN smpl_cnt = 0, slct_cnt = 0, pos, skip, delta;
+			BAT *smpl, *slct;
+
+			delta = 1000 / 3 / 2;
+			skip = (BATcount(b) - (2 * delta)) / 2;
+			for (pos = delta; pos < BATcount(b); pos += skip) {
+				smpl = BATslice(b, pos - delta, pos + delta);
+				if (smpl) {
+					slct = BATsubselect(smpl, NULL, tl,
+					                    th, li, hi, anti);
+					if (slct) {
+						smpl_cnt += BATcount(smpl);
+						slct_cnt += BATcount(slct);
+						BBPreclaim(slct);
+					}
+					BBPreclaim(smpl);
+				}
+			}
+			if (smpl_cnt > 0 && slct_cnt > 0) {
+				/* linear extrapolation plus 10% margin */
+				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt
+				                  * (dbl) BATcount(b) * 1.1);
+			}
+		}
+		hash = hash && estimate < BATcount(b) / 100;
+	}
+	if (estimate == BUN_NONE) {
+		/* no better estimate possible/required:
+		 * (pre-)allocate 1M tuples, i.e., avoid/delay extend
+		 * without too much overallocation */
+		estimate = 1000000;
+	}
+	/* limit estimation by upper limit */
+	estimate = MIN(estimate, maximum);
 
 	bn = BATnew(TYPE_void, TYPE_oid, estimate);
 	if (bn == NULL)
 		return NULL;
 
-	if (equi &&
-	    (b->T->hash ||
-	     (b->batPersistence == PERSISTENT &&
-	      (size_t) ATOMsize(b->ttype) > sizeof(BUN) / 4 &&
-	      estimate < BATcount(b) / 100 &&
-	      BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2))) {
+	if (equi && (b->T->hash || hash)) {
 		ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 				  ",s=%s,anti=%d): hash select\n",
 				  BATgetId(b), BATcount(b),
