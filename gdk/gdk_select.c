@@ -181,23 +181,19 @@ do {									\
 		while (p < q) {						\
 			CAND;						\
 			READ;						\
-			if (TEST) {					\
-				buninsfix(bn, T, dst, cnt, oid, o,	\
-				          (BUN) ((dbl) cnt / (dbl) (p-r)\
-				                 * (dbl) (q-p) * 1.1),	\
-				          maximum, BUN_NONE);		\
-				cnt++;					\
-			}						\
+			buninsfix(bn, T, dst, cnt, oid, o,		\
+			          (BUN) ((dbl) cnt / (dbl) (p-r)	\
+			                 * (dbl) (q-p) * 1.1),		\
+			          maximum, BUN_NONE);			\
+			cnt += (TEST);					\
 			p++;						\
 		}							\
 	} else {							\
 		while (p < q) {						\
 			CAND;						\
 			READ;						\
-			if (TEST) {					\
-				dst[cnt] = o;				\
-				cnt++;					\
-			}						\
+			dst[cnt] = o;					\
+			cnt += (TEST);					\
 			p++;						\
 		}							\
 	}								\
@@ -815,7 +811,7 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 			if (smpl_cnt > 0 && slct_cnt > 0) {
 				/* linear extrapolation plus 10% margin */
-				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt
+				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt 
 				                  * (dbl) BATcount(b) * 1.1);
 			}
 		}
