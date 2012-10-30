@@ -98,7 +98,11 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl)
 	BATiter bi;
 	BUN i;
 	oid o;
-	oid off;
+	/* off must be signed as it can be negative,
+	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * instead of wrd, we could also use ssize_t or int/lng with
+	 * 32/64-bit OIDs */
+	wrd off;
 
 	assert(bn->htype == TYPE_void);
 	assert(bn->ttype == TYPE_oid);
@@ -185,7 +189,12 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	BATiter bi = bat_iterator(b);
 	int (*cmp)(const void *, const void *);
 	BUN p, q;
-	oid o, off;
+	oid o;
+	/* off must be signed as it can be negative,
+	 * e.g., if b->hseqbase == 0 and b->U->first > 0;
+	 * instead of wrd, we could also use ssize_t or int/lng with
+	 * 32/64-bit OIDs */
+	wrd off;
 	const void *nil, *v;
 	int c;
 
