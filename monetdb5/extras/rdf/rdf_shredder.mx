@@ -476,9 +476,9 @@ post_processing (parserData *pdata)
 	graph[O_sort] = BATmirror(BATmark(BATmirror(graph[O_sort]), 0));
 
 	/* free memory */
-	BBPreclaim(S);
-	BBPreclaim(P);
-	BBPreclaim(O);
+	BBPunfix(S->batCacheid);
+	BBPunfix(P->batCacheid);
+	BBPunfix(O->batCacheid);
 
 	return MAL_SUCCEED;
 
