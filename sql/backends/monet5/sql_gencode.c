@@ -288,7 +288,6 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	s = stmt_table(m->sa, s, 1);
 	s = stmt_return(m->sa, s, 0);
 	opt = rel2bin(m, s);
-	//s = bin_optimizer(m, opt);
 	s = opt;
 
 	backup = c->curprg;
@@ -823,7 +822,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt2(mb, sqlRef, bindRef);
 			if (s->flag == RD_UPD) {
-				//setVarType(mb, getArg(q, 0), newBatType(ht, ht));
                         	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
 			} else 
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -862,7 +860,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			q = newStmt2(mb, sqlRef, bindidxRef);
 			if (s->flag == RD_UPD) {
-				//setVarType(mb, getArg(q, 0), newBatType(ht, ht));
                         	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(ht, tt)));
 			} else
 				setVarType(mb, getArg(q, 0), newBatType(ht, tt));
@@ -1840,7 +1837,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 			if (g && minmax) {
-				//q = newStmt2(mb, algebraRef, leftjoinRef);
+				/*q = newStmt2(mb, algebraRef, leftjoinRef); needs fix in min/max code */
 				q = newStmt1(mb, algebraRef, "outerjoin");
 				q = pushArgument(mb, q, s->nr);
 				q = pushArgument(mb, q, l);
@@ -2526,7 +2523,6 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	s = stmt_table(m->sa, s, 1);
 	s = stmt_return(m->sa, s, 0);
 	opt = rel2bin(m, s);
-	//s = bin_optimizer(m, opt);
 	s = opt;
 
 	backup = c->curprg;
@@ -2626,7 +2622,6 @@ backend_create_func(backend *be, sql_func *f)
 
 		m->sa = sa;
 		opt = rel2bin(m, s);
-		//s = bin_optimizer(m, opt);
 		s = opt;
 	}
 	assert(s);

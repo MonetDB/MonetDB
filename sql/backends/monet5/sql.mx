@@ -1237,7 +1237,6 @@ sql.prelude();
 #include <str.h>
 #include "sql_privileges.h"
 #include "sql_rel2bin.h"
-//#include <bin_optimizer.h>
 #include "sql_decimal.h"
 #include "sql_string.h"
 #include "sql_qc.h"
@@ -1717,7 +1716,6 @@ sql_relation2stmt(mvc *c, sql_rel *r)
 		if (s) {
 			/* only needed for delta tables */
 			s = rel2bin(c, s); 	
-			//s = bin_optimizer(c, s);
 			return s;
 		}
 	}
@@ -7580,7 +7578,6 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		rel_destroy(rel);
 		s = rel2bin(m, s); 	
-		//s = bin_optimizer(m, s);
 
 		MSinitClientPrg(cntxt, "user", "test"); 
 
