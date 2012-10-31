@@ -129,7 +129,7 @@ Dependencies between database objects
 % .t,	.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 12,	35,	8 # length
+% 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "dependencies",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
 [ "dependencies",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
@@ -157,6 +157,7 @@ Dependencies between database objects
 [ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
+[ "storagemodelinput",	"storagemodel",	"DEP_FUNC"	]
 [ "t1",	"f2",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_functions_os_triggers",	"DEP_FUNC"	]
@@ -167,12 +168,12 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 9,	8,	8 # length
 [ "id",	"querylog",	"DEP_VIEW"	]
-[ "id",	"querylog",	"DEP_VIEW"	]
 [ "defined",	"querylog",	"DEP_VIEW"	]
 [ "name",	"querylog",	"DEP_VIEW"	]
 [ "query",	"querylog",	"DEP_VIEW"	]
 [ "parse",	"querylog",	"DEP_VIEW"	]
 [ "optimize",	"querylog",	"DEP_VIEW"	]
+[ "id",	"querylog",	"DEP_VIEW"	]
 [ "ctime",	"querylog",	"DEP_VIEW"	]
 [ "arguments",	"querylog",	"DEP_VIEW"	]
 [ "execute",	"querylog",	"DEP_VIEW"	]
@@ -281,6 +282,15 @@ Dependencies between database objects
 [ "name",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
+[ "schema",	"storagemodel",	"DEP_FUNC"	]
+[ "table",	"storagemodel",	"DEP_FUNC"	]
+[ "column",	"storagemodel",	"DEP_FUNC"	]
+[ "type",	"storagemodel",	"DEP_FUNC"	]
+[ "count",	"storagemodel",	"DEP_FUNC"	]
+[ "distinct",	"storagemodel",	"DEP_FUNC"	]
+[ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
+[ "reference",	"storagemodel",	"DEP_FUNC"	]
+[ "sorted",	"storagemodel",	"DEP_FUNC"	]
 [ "id",	"f2",	"DEP_FUNC"	]
 [ "name",	"f2",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
@@ -325,7 +335,10 @@ Dependencies between database objects
 % sys.f1,	sys.f2,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	31,	8 # length
+% 10,	31,	8 # length
+[ "=",	"columnsize",	"DEP_FUNC"	]
+[ "left_shift",	"columnsize",	"DEP_FUNC"	]
+[ "sql_mul",	"columnsize",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "sql_div",	"degrees",	"DEP_FUNC"	]
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
@@ -337,6 +350,12 @@ Dependencies between database objects
 [ "<",	"f2",	"DEP_FUNC"	]
 [ ">",	"f2",	"DEP_FUNC"	]
 [ "f1",	"f2",	"DEP_FUNC"	]
+[ "<>",	"heapsize",	"DEP_FUNC"	]
+[ "and",	"heapsize",	"DEP_FUNC"	]
+[ "sql_add",	"heapsize",	"DEP_FUNC"	]
+[ "sql_mul",	"heapsize",	"DEP_FUNC"	]
+[ "=",	"indexsize",	"DEP_FUNC"	]
+[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -352,6 +371,9 @@ Dependencies between database objects
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
+[ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "heapsize",	"storagemodel",	"DEP_FUNC"	]
+[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
 #SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name
@@ -371,7 +393,10 @@ Dependencies between functions with same name
 % sys.f1,	sys.f2,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	31,	8 # length
+% 10,	31,	8 # length
+[ "=",	"columnsize",	"DEP_FUNC"	]
+[ "left_shift",	"columnsize",	"DEP_FUNC"	]
+[ "sql_mul",	"columnsize",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "sql_div",	"degrees",	"DEP_FUNC"	]
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
@@ -386,6 +411,12 @@ Dependencies between functions with same name
 [ "f1",	"f2",	"DEP_FUNC"	]
 [ "<",	"f3",	"DEP_FUNC"	]
 [ "f1",	"f3",	"DEP_FUNC"	]
+[ "<>",	"heapsize",	"DEP_FUNC"	]
+[ "and",	"heapsize",	"DEP_FUNC"	]
+[ "sql_add",	"heapsize",	"DEP_FUNC"	]
+[ "sql_mul",	"heapsize",	"DEP_FUNC"	]
+[ "=",	"indexsize",	"DEP_FUNC"	]
+[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -401,17 +432,32 @@ Dependencies between functions with same name
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
+[ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "heapsize",	"storagemodel",	"DEP_FUNC"	]
+[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+#DROP FUNCTION f2;
+#DROP FUNCTION f3;
+#DROP ALL FUNCTION f1;
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
 % sys.f1,	sys.f2,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	31,	8 # length
+% 10,	31,	8 # length
+[ "=",	"columnsize",	"DEP_FUNC"	]
+[ "left_shift",	"columnsize",	"DEP_FUNC"	]
+[ "sql_mul",	"columnsize",	"DEP_FUNC"	]
 [ "pi",	"degrees",	"DEP_FUNC"	]
 [ "sql_div",	"degrees",	"DEP_FUNC"	]
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
+[ "<>",	"heapsize",	"DEP_FUNC"	]
+[ "and",	"heapsize",	"DEP_FUNC"	]
+[ "sql_add",	"heapsize",	"DEP_FUNC"	]
+[ "sql_mul",	"heapsize",	"DEP_FUNC"	]
+[ "=",	"indexsize",	"DEP_FUNC"	]
+[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
@@ -427,6 +473,18 @@ Dependencies between functions with same name
 [ "pi",	"radians",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
+[ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "heapsize",	"storagemodel",	"DEP_FUNC"	]
+[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
+#create table t1(id int, name varchar(1024), age int);
+#create function f1()
+#returns int
+#BEGIN
+#        return 1;
+#END;
+#create view v1 as select * from t1 where id = f1();
+#DROP function f1 cascade;
+#DROP table t1;
 done
 Cleanup
 % sys.s,	.u,	. # table_name
@@ -466,7 +524,7 @@ Cleanup
 % .t,	.f,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 12,	35,	8 # length
+% 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "dependencies",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
 [ "dependencies",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
@@ -494,6 +552,7 @@ Cleanup
 [ "objects",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "schemas",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
+[ "storagemodelinput",	"storagemodel",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_columns_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_functions_os_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
@@ -613,6 +672,15 @@ Cleanup
 [ "name",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "id",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
 [ "name",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
+[ "schema",	"storagemodel",	"DEP_FUNC"	]
+[ "table",	"storagemodel",	"DEP_FUNC"	]
+[ "column",	"storagemodel",	"DEP_FUNC"	]
+[ "type",	"storagemodel",	"DEP_FUNC"	]
+[ "count",	"storagemodel",	"DEP_FUNC"	]
+[ "distinct",	"storagemodel",	"DEP_FUNC"	]
+[ "atomwidth",	"storagemodel",	"DEP_FUNC"	]
+[ "reference",	"storagemodel",	"DEP_FUNC"	]
+[ "sorted",	"storagemodel",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % .c,	.tri,	.L1 # table_name
 % name,	name,	L1 # name
@@ -650,17 +718,26 @@ Cleanup
 % sys.f1,	sys.f2,	. # table_name
 % name,	name,	single_value # name
 % varchar,	varchar,	char # type
-% 9,	31,	8 # length
+% 10,	31,	8 # length
+[ "=",	"indexsize",	"DEP_FUNC"	]
+[ "=",	"columnsize",	"DEP_FUNC"	]
 [ "=",	"ms_round",	"DEP_FUNC"	]
+[ "<>",	"heapsize",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
 [ "isnull",	"dependencies_tables_on_indexes",	"DEP_FUNC"	]
 [ ">",	"ms_stuff",	"DEP_FUNC"	]
 [ "<",	"ms_stuff",	"DEP_FUNC"	]
+[ "and",	"heapsize",	"DEP_FUNC"	]
 [ "or",	"ms_stuff",	"DEP_FUNC"	]
 [ "not",	"ms_round",	"DEP_FUNC"	]
 [ "sql_neg",	"dependencies_columns_on_keys",	"DEP_FUNC"	]
 [ "sql_sub",	"ms_stuff",	"DEP_FUNC"	]
+[ "sql_add",	"heapsize",	"DEP_FUNC"	]
 [ "sql_add",	"ms_stuff",	"DEP_FUNC"	]
+[ "sql_mul",	"indexsize",	"DEP_FUNC"	]
+[ "sql_mul",	"heapsize",	"DEP_FUNC"	]
+[ "sql_mul",	"columnsize",	"DEP_FUNC"	]
+[ "left_shift",	"columnsize",	"DEP_FUNC"	]
 [ "sql_mul",	"radians",	"DEP_FUNC"	]
 [ "sql_mul",	"degrees",	"DEP_FUNC"	]
 [ "sql_div",	"radians",	"DEP_FUNC"	]
@@ -672,6 +749,9 @@ Cleanup
 [ "concat",	"ms_stuff",	"DEP_FUNC"	]
 [ "length",	"ms_stuff",	"DEP_FUNC"	]
 [ "ms_trunc",	"ms_round",	"DEP_FUNC"	]
+[ "columnsize",	"storagemodel",	"DEP_FUNC"	]
+[ "heapsize",	"storagemodel",	"DEP_FUNC"	]
+[ "indexsize",	"storagemodel",	"DEP_FUNC"	]
 #SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
 % sys.f,	sys.tri,	. # table_name
 % name,	name,	single_value # name

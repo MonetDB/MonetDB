@@ -27,7 +27,7 @@ Ready.
 % .tt,	.tv,	.tv # table_name
 % name,	s,	i # name
 % varchar,	char,	tinyint # type
-% 15,	3,	1 # length
+% 17,	3,	1 # length
 [ "schemas",	"str",	1	]
 [ "types",	"str",	1	]
 [ "functions",	"str",	1	]
@@ -57,6 +57,8 @@ Ready.
 [ "queryhistory",	"str",	1	]
 [ "callhistory",	"str",	1	]
 [ "querylog",	"str",	1	]
+[ "storagemodelinput",	"str",	1	]
+[ "tablestoragemodel",	"str",	1	]
 [ "systemfunctions",	"str",	1	]
 [ "test_update",	"str",	1	]
 [ " ",	"str",	1	]
