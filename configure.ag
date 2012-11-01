@@ -923,12 +923,6 @@ if test "x$enable_optim" = xyes; then
       dnl handle non-Intel compilers ($icc_ver=""), first
       *solaris*-)      CFLAGS="$CFLAGS -xO5"
                        ;;
-#     *irix*-)         CFLAGS="$CFLAGS -O3 -Ofast=IP27 -OPT:alias=restrict -IPA"
-      *irix*-)         CFLAGS="$CFLAGS -O3 -OPT:div_split=ON:fast_complex=ON:fast_exp=ON:fast_nint=ON:Olimit=2147483647:roundoff=3 -TARG:processor=r10k -IPA"
-                       LDFLAGS="$LDFLAGS -IPA"
-                       ;;
-      *aix*-)          CFLAGS="$CFLAGS -O3"
-                       ;;
       *-*-*-)          CFLAGS="$CFLAGS -O2"
                        ;;
 
