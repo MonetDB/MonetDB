@@ -870,65 +870,53 @@ if test "x$enable_optim" = xyes; then
 	JAVACFLAGS="$JAVACFLAGS -g:none -O"
 	case "$GCC-$CC" in
     yes-*clang*)
-                      CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
+	  CFLAGS="$CFLAGS -O3 -fomit-frame-pointer -finline-functions"
       ;;
     yes-*)
       dnl -fomit-frame-pointer crashes memprof
-      case "$host-$gcc_ver" in
-		powerpc*-apple-darwin*)
-		  # -fast switch causes arithmetic differences, and slower
-		  # running code for SQL, some faster for M5, so we don't use
-		  # it.  Instead we just run with modest -O3 and
-		  # -fomit-frame-pointer (we don't intend to debug the binary).
-		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
-		;;
-		i?86-apple-darwin*|x86_64-apple-darwin*)
-		  # -fast switch on Intel is a lot less tuned, and hence safer:
-		  #  -O3 -fomit-frame-pointer -fstrict-aliasing
-		  #  -momit-leaf-frame-pointer -fno-tree-pre -falign-loops
-		  CFLAGS="-fast -pipe ${CFLAGS}"
-		;;
-        *)
-		  # -O1 on gcc enables all slight optimisations:
-		  #   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
-		  #   -fdelayed-branch -fdse -fguess-branch-probability
-		  #   -fif-conversion2 -fif-conversion -fipa-pure-const
-		  #   -fipa-reference -fmerge-constants -fsplit-wide-types
-		  #   -ftree-builtin-call-dce -ftree-ccp -ftree-ch
-		  #   -ftree-copyrename -ftree-dce -ftree-dominator-opts
-		  #   -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
-		  #   -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time 
-		  # on top of this -fomit-frame-pointer is enabled on machines
-		  # where this does not interfere with debugging.
-		  # -O2 on gcc enables optimisations which do not involve a
-		  # speed-space tradeoff on top of -O1:
-		  #   -fthread-jumps -falign-functions  -falign-jumps
-		  #   -falign-loops -falign-labels -fcaller-saves -fcrossjumping
-		  #   -fcse-follow-jumps  -fcse-skip-blocks
-		  #   -fdelete-null-pointer-checks -fexpensive-optimizations
-		  #   -fgcse -fgcse-lm -finline-small-functions
-		  #   -findirect-inlining -fipa-sra -foptimize-sibling-calls
-		  #   -fpeephole2 -fregmove -freorder-blocks -freorder-functions
-		  #   -frerun-cse-after-loop -fsched-interblock -fsched-spec
-		  #   -fschedule-insns -fschedule-insns2 -fstrict-aliasing
-		  #   -fstrict-overflow -ftree-switch-conversion -ftree-pre
-		  #   -ftree-vrp
-		  # (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
-		  # -O3 on gcc enables some more expensive optimisations on top
-		  # of -O2:
-		  #  -finline-functions, -funswitch-loops,
-		  #  -fpredictive-commoning, -fgcse-after-reload,
-		  #  -ftree-vectorize and -fipa-cp-clone 
-		  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
-		  # because we explicitly disable debugging, we can explicitly
-		  # enable -fomit-frame-pointer here
-		  # notes on -funroll-all-loops:
-		  # - does nothing on i?86-linux and x86_64-linux
-		  # - speeds up and causes crashes on powerpc-linux
-		  # - slows down and makes output incorrect on sparc-solaris
-		  # - speeds up and fixes some outputs on sparcv9-solaris
-		;;
-      esac
+	  # -O1 on gcc enables all slight optimisations:
+	  #   -fauto-inc-dec -fcprop-registers -fdce -fdefer-pop
+	  #   -fdelayed-branch -fdse -fguess-branch-probability
+	  #   -fif-conversion2 -fif-conversion -fipa-pure-const
+	  #   -fipa-reference -fmerge-constants -fsplit-wide-types
+	  #   -ftree-builtin-call-dce -ftree-ccp -ftree-ch
+	  #   -ftree-copyrename -ftree-dce -ftree-dominator-opts
+	  #   -ftree-dse -ftree-forwprop -ftree-fre -ftree-phiprop
+	  #   -ftree-sra -ftree-pta -ftree-ter -funit-at-a-time 
+	  # on top of this -fomit-frame-pointer is enabled on machines
+	  # where this does not interfere with debugging.
+	  # -O2 on gcc enables optimisations which do not involve a
+	  # speed-space tradeoff on top of -O1:
+	  #   -fthread-jumps -falign-functions  -falign-jumps
+	  #   -falign-loops -falign-labels -fcaller-saves -fcrossjumping
+	  #   -fcse-follow-jumps  -fcse-skip-blocks
+	  #   -fdelete-null-pointer-checks -fexpensive-optimizations
+	  #   -fgcse -fgcse-lm -finline-small-functions
+	  #   -findirect-inlining -fipa-sra -foptimize-sibling-calls
+	  #   -fpeephole2 -fregmove -freorder-blocks -freorder-functions
+	  #   -frerun-cse-after-loop -fsched-interblock -fsched-spec
+	  #   -fschedule-insns -fschedule-insns2 -fstrict-aliasing
+	  #   -fstrict-overflow -ftree-switch-conversion -ftree-pre
+	  #   -ftree-vrp
+	  # (Gentoo enables -D_FORTIFY_SOURCE=2 starting at -O2)
+	  # -O3 on gcc enables some more expensive optimisations on top
+	  # of -O2:
+	  #  -finline-functions, -funswitch-loops,
+	  #  -fpredictive-commoning, -fgcse-after-reload,
+	  #  -ftree-vectorize and -fipa-cp-clone 
+	  CFLAGS="-O3 -fomit-frame-pointer -pipe ${CFLAGS}"
+	  # because we explicitly disable debugging, we can explicitly
+	  # enable -fomit-frame-pointer here
+	  # notes on -funroll-all-loops:
+	  # - does nothing on i?86-linux and x86_64-linux
+	  # - speeds up and causes crashes on powerpc-linux
+	  # - slows down and makes output incorrect on sparc-solaris
+	  # - speeds up and fixes some outputs on sparcv9-solaris
+	  # notes on -fast for Darwin:
+	  # - ppc: -fast switch causes arithmetic differences, and slower
+	  #   running code for SQL, some faster for M5
+	  # - x86/x64: -fast switch results in json code producing wrong
+	  #   results, or segaults (when used with Mtest)
 
       # The default configure invocation when doing an rpmbuild also uses this
       MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
