@@ -2220,7 +2220,11 @@ yes|auto)
 	fi
 	if test "x$have_geos" != xno; then
 		GEOS_INCS="`$GEOS_CONFIG --cflags`"
-		GEOS_LIBS="`$GEOS_CONFIG --libs | sed 's:-lgeos:-lgeos_c:'`"
+		if GEOS_LIBS="`$GEOS_CONFIG --clibs 2> /dev/null`"; then
+			:
+		else
+			GEOS_LIBS="`$GEOS_CONFIG --libs | sed 's:-lgeos:-lgeos_c:'`"
+		fi
 	fi
 	if test "x$have_geos" = xno; then
 		if test "x$enable_geom" = xyes; then
