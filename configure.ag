@@ -917,10 +917,7 @@ if test "x$enable_optim" = xyes; then
 	  #   running code for SQL, some faster for M5
 	  # - x86/x64: -fast switch results in json code producing wrong
 	  #   results, or segaults (when used with Mtest)
-
-      # The default configure invocation when doing an rpmbuild also uses this
-      MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
-      ;;
+	  ;;
     *)
       case "$host-$icc_ver" in
       dnl handle non-Intel compilers ($icc_ver=""), first
@@ -1010,6 +1007,9 @@ if test "x$enable_optim" = xyes; then
 	done
 	changedCFLAGS="`echo $changedCFLAGS | sed -e 's|^, ||'`"
 	AC_MSG_RESULT([yes: $changedCFLAGS])
+
+	# The default configure invocation when doing an rpmbuild also uses this
+	MCHECK_ADD_FLAG([-Wp,-D_FORTIFY_SOURCE=2])
 else
 	AC_MSG_RESULT([no])
 fi
