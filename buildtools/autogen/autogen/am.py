@@ -1133,7 +1133,7 @@ def am_includes(fd, var, values, am):
         else:
             incs = incs + " -I" + am_translate_dir(i, am) \
                    + am_add_srcdir(i, am, " -I")
-    fd.write("INCLUDES = " + incs + "\n")
+    fd.write("AM_CPPFLAGS = " + incs + "\n")
 
 output_funcs = {'SUBDIRS': am_subdirs,
                 'EXTRA_DIST': am_extra_dist,
