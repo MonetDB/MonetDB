@@ -4,6 +4,7 @@ HAVE_JDBCTESTS?Test_Cmanycon
 HAVE_JDBCTESTS?Test_Creplysize
 HAVE_JDBCTESTS?Test_Csavepoints
 HAVE_JDBCTESTS?Test_Ctransaction
+HAVE_JDBCTESTS?Test_Csendthread
 HAVE_JDBCTESTS?Test_Dobjects
 HAVE_JDBCTESTS?Test_PSgeneratedkeys
 HAVE_JDBCTESTS?Test_PSsomeamount
