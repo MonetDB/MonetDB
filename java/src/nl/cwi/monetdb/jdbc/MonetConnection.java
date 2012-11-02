@@ -333,6 +333,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			}
 			// close the socket
 			server.close();
+			// close active SendThread if any
+			if (sendThread != null) {
+				sendThread.shutdown();
+				sendThread = null;
+			}
 			// report ourselves as closed
 			closed = true;
 		}
@@ -2561,6 +2566,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 		private final static int WAIT = 0;
 		/** The state QUERY represents this thread to be executing a query */
 		private final static int QUERY = 1;
+		/** The state SHUTDOWN is the final state that ends this thread */
+		private final static int SHUTDOWN = -1;
 
 		private String[] templ;
 		private String query;
@@ -2596,6 +2603,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 							// woken up, eh?
 						}
 					}
+					if (state == SHUTDOWN)
+						break;
 
 					// state is QUERY here
 					try {
@@ -2630,7 +2639,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				if (state != WAIT) 
-					throw new SQLException("SendThread already in use!", "M0M03");
+					throw new SQLException("SendThread already in use or shutting down!", "M0M03");
 
 				this.templ = templ;
 				this.query = query;
@@ -2652,17 +2661,29 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				// make sure the thread is in WAIT state, not QUERY
-				while (state != WAIT) {
+				while (state == QUERY) {
 					try {
 						waiting.await();
 					} catch (InterruptedException e) {
 						// just try again
 					}
 				}
+				if (state == SHUTDOWN)
+					error = "SendThread is shutting down";
 			} finally {
 				sendLock.unlock();
 			}
 			return error;
+		}
+
+		/**
+		 * Requests this SendThread to stop. 
+		 */
+		public void shutdown() {
+			sendLock.lock();
+			state = SHUTDOWN;
+			sendLock.unlock();
+			this.interrupt();  // break any wait conditions
 		}
 	}
 	// }}}
