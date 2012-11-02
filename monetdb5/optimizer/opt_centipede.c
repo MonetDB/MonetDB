@@ -179,47 +179,49 @@ OPTexecController(Client cntxt, MalBlkPtr mb, MalBlkPtr pmb, Slices *slices, oid
 	  make sure that they have contiguous void headed columns 
 	*/
 	p = getInstrPtr(pmb,0);
-	if ( slices->column) 
-	for ( k=0 ; k < nrpack; k++) 
-	/* after packing we may have to re-do groupings*/
-	if (sscanf(getVarName(pmb, getArg(p,k)),"ext%d",&j) == 1){
-		/* x:= mat.pack(...);  */
-		getArg(pack[k],0) = newTmpVariable(cmb,TYPE_any);
-		pushInstruction(cmb, pack[k]);
+	if ( slices->column) {
+		for ( k=0 ; k < nrpack; k++) {
+			/* after packing we may have to re-do groupings*/
+			if (sscanf(getVarName(pmb, getArg(p,k)),"ext%d",&j) == 1){
+				/* x:= mat.pack(...);  */
+				getArg(pack[k],0) = newTmpVariable(cmb,TYPE_any);
+				pushInstruction(cmb, pack[k]);
 
-		/* (ext,grp) := group.new(pack[k]) */
-		q= newStmt(cmb, groupRef, newRef);
-		q->retc = q->argc = 0;
-		q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
-		q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_oid)));
-		q= pushArgument(pmb,q, getArg(pack[k],0));
-		j = getArg(q,0);
+				/* (ext,grp) := group.new(pack[k]) */
+				q= newStmt(cmb, groupRef, newRef);
+				q->retc = q->argc = 0;
+				q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
+				q= pushReturn(pmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_oid)));
+				q= pushArgument(pmb,q, getArg(pack[k],0));
+				j = getArg(q,0);
 
-		/* sum the group counts */
+				/* sum the group counts */
 
-		/* j := newresult */
-		q= newAssignment(cmb);
-		getArg(q,0) = getArg(p,k);
-		q= pushArgument(cmb,q, j);
-	} else
-	if (sscanf(getVarName(pmb, getArg(p,k)),"grp%dvalues",&j) == 1){
-		char buf[BUFSIZ];
-		/* x:= mat.pack(...);  */
-		pushInstruction(cmb, pack[k]);
+				/* j := newresult */
+				q= newAssignment(cmb);
+				getArg(q,0) = getArg(p,k);
+				q= pushArgument(cmb,q, j);
+			} else
+			if (sscanf(getVarName(pmb, getArg(p,k)),"grp%dvalues",&j) == 1){
+				char buf[BUFSIZ];
+				/* x:= mat.pack(...);  */
+				pushInstruction(cmb, pack[k]);
 
-		/* (ext,grp) := group.new(pack[k]) */
-		q= newStmt(cmb, groupRef, newRef);
-		q->retc = q->argc = 0;
-		q= pushReturn(cmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
-		q= pushReturn(cmb,q, getArg(p,k));
-		q= pushArgument(cmb,q, getArg(pack[k],0));
-		snprintf(buf,BUFSIZ,"grp%d",k);
-		setVarName(cmb, getArg(p,k), GDKstrdup(buf));
-		setVarType(cmb, getArg(p,k), newBatType(TYPE_oid, TYPE_oid));
-	} else
-	{
-		pushInstruction(cmb, pack[k]);
-		getArg(pack[k],0)= getArg(p,k);
+				/* (ext,grp) := group.new(pack[k]) */
+				q= newStmt(cmb, groupRef, newRef);
+				q->retc = q->argc = 0;
+				q= pushReturn(cmb,q, newTmpVariable(cmb,newBatType(TYPE_oid, TYPE_wrd)));
+				q= pushReturn(cmb,q, getArg(p,k));
+				q= pushArgument(cmb,q, getArg(pack[k],0));
+				snprintf(buf,BUFSIZ,"grp%d",k);
+				setVarName(cmb, getArg(p,k), GDKstrdup(buf));
+				setVarType(cmb, getArg(p,k), newBatType(TYPE_oid, TYPE_oid));
+			} else
+			{
+				pushInstruction(cmb, pack[k]);
+				getArg(pack[k],0)= getArg(p,k);
+			}
+		}
 	}
 
 	/* finalize the dataflow block */
