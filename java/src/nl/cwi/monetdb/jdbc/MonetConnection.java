@@ -2589,7 +2589,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 			sendLock.lock();
 			try {
 				while (true) {
-					
 					while (state == WAIT) {
 						try {
 							queryAvailable.await();
@@ -2600,9 +2599,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 
 					// state is QUERY here
 					try {
-						// we issue notify here, so incase we get blocked on IO
-						// the thread that waits on us in runQuery can continue
-//						this.notify();
 						out.writeLine(
 								(templ[0] == null ? "" : templ[0]) +
 								query +
@@ -2642,13 +2638,6 @@ public class MonetConnection extends MonetWrapper implements Connection {
 				// let the thread know there is some work to do
 				state = QUERY;
 				queryAvailable.signal();
-
-				// implement the following behaviour:
-				// - let the SendThread first try to send whatever it can over
-				//   the socket
-				// - return as soon as the SendThread gets blocked
-				// the effect is a relatively high chance of data waiting to be
-				// read when returning from this method.
 			} finally {
 				sendLock.unlock();
 			}
