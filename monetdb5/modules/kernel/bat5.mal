@@ -376,3 +376,10 @@ command reuseMap(b:bat[:oid,:any_1],del:bat[:oid,:oid]):bat[:oid,:oid]
 address BKCreuseBATmap
 comment "Derive the oid mapping for reuse BAT based on list of to-be-deleted";
 
+command mergecand(a:bat[:oid,:oid],b:bat[:oid,:oid]) :bat[:oid,:oid]
+address BKCmergecand
+comment "Merge two candidate lists into one";
+
+command intersectcand(a:bat[:oid,:oid],b:bat[:oid,:oid]) :bat[:oid,:oid]
+address BKCintersectcand
+comment "Intersect two candidate lists into one";

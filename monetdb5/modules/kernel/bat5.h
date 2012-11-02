@@ -131,4 +131,7 @@ bat5_export str BKCsetReadMode(int *res, int *bid) ;
 bat5_export str BKChasReadMode(bit *res, int *bid);
 bat5_export str BKCsetAppendMode(int *res, int *bid) ;
 bat5_export str BKChasAppendMode(bit *res, int *bid);
+
+bat5_export str BKCmergecand(bat *ret, bat *aid, bat *bid);
+bat5_export str BKCintersectcand(bat *ret, bat *aid, bat *bid);
 #endif /*_BAT_H_*/

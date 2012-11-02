@@ -2418,3 +2418,46 @@ BKCreuseBATmap(int *ret, int *bid, int *did)
 	return MAL_SUCCEED;
 }
 
+str
+BKCmergecand(bat *ret, bat *aid, bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "bat.mergecand", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATmergecand(a, b);
+	BBPreleaseref(a->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.mergecand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+BKCintersectcand(bat *ret, bat *aid, bat *bid)
+{
+	BAT *a, *b, *bn;
+
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		BBPreleaseref(a->batCacheid);
+		throw(MAL, "bat.intersectcand", RUNTIME_OBJECT_MISSING);
+	}
+	bn = BATintersectcand(a, b);
+	BBPreleaseref(a->batCacheid);
+	BBPreleaseref(b->batCacheid);
+	if (bn == NULL)
+		throw(MAL, "bat.intersectcand", OPERATION_FAILED);
+	*ret = bn->batCacheid;
+	BBPkeepref(*ret);
+	return MAL_SUCCEED;
+}
