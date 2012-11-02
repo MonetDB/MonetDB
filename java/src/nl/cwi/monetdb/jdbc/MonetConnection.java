@@ -2323,7 +2323,8 @@ public class MonetConnection extends MonetWrapper implements Connection {
 					// but block.
 					if (query.length() > MapiSocket.BLOCK) {
 						// get a reference to the send thread
-						if (sendThread == null) sendThread = new SendThread(out);
+						if (sendThread == null)
+							sendThread = new SendThread(out);
 						// tell it to do some work!
 						sendThread.runQuery(templ, query);
 						sendThreadInUse = true;
@@ -2551,12 +2552,7 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	 * facilitates the prevention of such 'full block', because this
 	 * separate thread only will block.<br />
 	 * This thread is designed for reuse, as thread creation costs are
-	 * high.<br />
-	 * <br />
-	 * NOTE: This thread is neither thread safe nor synchronised.  The
-	 * reason for this is that program wise only one thread (the
-	 * CacheThread) will use this thread, so costly locking mechanisms
-	 * can be avoided.
+	 * high.
 	 */
 	// {{{ SendThread class implementation
 	static class SendThread extends Thread {
