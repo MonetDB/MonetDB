@@ -440,8 +440,13 @@ struct COLOR{
 	{0,0,"mal","idle","white"},
 	{0,0,"mal","*","white"},
 
+	{0,0,"aggr","subcount","darkgreen"},
 	{0,0,"aggr","count","darkgreen"},
-	{0,0,"aggr","sum","lawngreen"},
+	{0,0,"aggr","subsum","lawngreen"},
+	{0,0,"aggr","submin","lawngreen"},
+	{0,0,"aggr","min","lawngreen"},
+	{0,0,"aggr","submax","lawngreen"},
+	{0,0,"aggr","max","lawngreen"},
 	{0,0,"aggr","*","green"},
 
 	{0,0,"algebra","leftjoin","yellow"},
@@ -453,8 +458,9 @@ struct COLOR{
 	//{0,0,"algebra","sortTail","cyan"},
 	{0,0,"algebra","markT","blue"},
 	{0,0,"algebra","selectNotNil","forestgreen"},
-	{0,0,"algebra","thetauselect","mediumseagreen"},
-	{0,0,"algebra","uselect","green"},
+	{0,0,"algebra","thetaselect","mediumseagreen"},
+	{0,0,"algebra","thetasubselect","mediumseagreen"},
+	{0,0,"algebra","subselect","green"},
 	{0,0,"algebra","*","lightgreen"},
 
 	{0,0,"bat","mirror","orange"},
@@ -484,7 +490,7 @@ struct COLOR{
 	{0,0,"mat","*","red"},
 
 
-	{0,0,"pcre","like_filter","burlywood"},
+	{0,0,"pcre","likesubselect","burlywood"},
 	{0,0,"pcre","*","burlywood"},
 
 	//{0,0,"pqueue","topn_max","lightcoral"},
@@ -498,7 +504,9 @@ struct COLOR{
 	//{0,0,"sql","bind","thistle"},
 	//{0,0,"sql","bind_dbat","thistle"},
 	//{0,0,"sql","mvc","thistle"},
-	//{0,0,"sql","resultSet ","thistle"},
+	{0,0,"sql","delta ","thistle"},
+	{0,0,"sql","projectdelta ","thistle"},
+	{0,0,"sql","subdelta ","thistle"},
 	{0,0,"sql","*","thistle"},
 
 	{0,0,"*","*","lavender"},
