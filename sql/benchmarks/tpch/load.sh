@@ -21,7 +21,6 @@ set -x
 
 PWD=`pwd`
 echo $PWD
-#PWD='/home/niels/scratch/tpch/'
 
 SQL='mclient -lsql'
 if [ $# -eq 1 ]; then
