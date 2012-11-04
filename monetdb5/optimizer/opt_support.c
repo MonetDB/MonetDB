@@ -782,6 +782,9 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
+		if (getFunctionId(p) == deltaRef) return FALSE;
+		if (getFunctionId(p) == subdeltaRef) return FALSE;
+		if (getFunctionId(p) == projectdeltaRef) return FALSE;
 		/* the update instructions for SQL has side effects.
 		   whether this is relevant should be explicitly checked
 		   in the environment of the call */
