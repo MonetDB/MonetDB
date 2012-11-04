@@ -367,6 +367,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		} 
+
 		for( fm= p->argc-1; fm>p->retc ; fm--)
 			if ((m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0)
 				break;
@@ -405,6 +406,17 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
+		/* subselect on insert, should use last tid only */
+		if (match == 1 && fm == 2 && getModuleId(p) == algebraRef && p->retc == 1 &&
+		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef) &&
+		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0) {
+			r = copyInstruction(p);
+			getArg(r, fm) = getArg(mat[m].mi, mat[m].mi->argc-1);
+			pushInstruction(mb, r);
+			actions++;
+			continue;
+		}
+
 		if (match == 3 && bats == 3 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0 &&
@@ -421,17 +433,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
 			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL)
 				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
-			actions++;
-			continue;
-		}
-
-		/* subselect on insert, should use last tid only */
-		if (match == 1 && fm == 2 && getModuleId(p) == algebraRef && p->retc == 1 &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef) &&
-		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0) {
-			r = copyInstruction(p);
-			getArg(r, fm) = getArg(mat[m].mi, mat[m].mi->argc-1);
-			pushInstruction(mb, r);
 			actions++;
 			continue;
 		}
