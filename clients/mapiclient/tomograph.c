@@ -565,7 +565,10 @@ static void dumpboxes(void)
 			fprintf(fcpu,"%ld %s\n",box[i].clkend,box[i].stmt);
 		}
 	}
-	(void) fclose(f);
+	if ( f)
+		(void) fclose(f);
+	if (fcpu)
+		(void) fclose(fcpu);
 }
 
 /* produce memory thread trace */
@@ -626,8 +629,8 @@ static void showcpu(void)
 	if ( cpus)
 		fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
-		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d) notitle with lines linecolor rgb \"%s\"%s",
-			(inputfile?"scratch":filename), i+1, i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
+		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d.%d) notitle with lines linecolor rgb \"%s\"%s",
+			(inputfile?"scratch":filename), i+2, i,i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -1001,7 +1004,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	/* ignore the flow of control statements 'function' and 'end' */
 	if ( fcn  &&  strncmp(fcn,"end ",4)== 0 )
 		return;
-	if ( starttime == 0 && state == 0) {
+	if ( starttime == 0 && (state == 0 || state == 4)) {
 		/* ignore all instructions up to the first function call */
 		if ( fcn && strncmp(fcn,"function",8) != 0)
 			return;
@@ -1024,7 +1027,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	clkticks -=starttime;
 
 	/* handle a ping event, keep the current instruction in focus */
-	if ( state == 4){
+	if ( state == 4 ){
 		idx = threads[thread];
 		b = box[idx];
 		box[idx].state = 4;
@@ -1342,7 +1345,7 @@ main(int argc, char **argv)
 {
 	int a = 1;
 	int i, k=0;
-	char *host = NULL;
+	char *host = "localhost";
 	int portnr = 50000;
 	char *dbname = NULL;
 	char *user = NULL;
