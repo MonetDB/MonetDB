@@ -206,6 +206,13 @@ comment "Bind the 'schema.table.index' BAT with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern bind_idxbat(mvc:int, schema:str, table:str, index:str, access:int, part_nr:int, nr_parts:int)(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+address mvc_bind_idxbat_wrap
+comment "Bind the 'schema.table.index' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
 pattern bind(mvc:int, schema:str, table:str, column:str, access:int ):bat[:oid,:any_1]
 address mvc_bind_wrap
 comment "Bind the 'schema.table.column' BAT with access kind:
@@ -227,6 +234,13 @@ comment "Bind the 'schema.table.column' BAT partition with access kind:
 	1 - inserts
 	2 - updates";
 
+pattern bind(mvc:int, schema:str, table:str, column:str, access:int, part_nr:int, nr_parts:int )(uid:bat[:oid,:oid],uval:bat[:oid,:any_1])
+address mvc_bind_wrap
+comment "Bind the 'schema.table.column' BAT with access kind:
+	0 - base table
+	1 - inserts
+	2 - updates";
+
 command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3], ins:bat[:oid,:any_3] )
 		:bat[:oid,:any_3] 
 address DELTAbat
@@ -238,6 +252,18 @@ comment "Return column bat with delta's applied.";
 
 command subdelta ( col:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid], ins:bat[:oid,:oid] ) :bat[:oid,:oid]
 address DELTAsub
+comment "Return a single bat of subselected delta.";
+
+command delta ( col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3]) :bat[:oid,:any_3] 
+address DELTAbat2
+comment "Return column bat with delta's applied.";
+
+command projectdelta( subselect:bat[:oid,:oid], col:bat[:oid,:any_3], uid:bat[:oid,:oid], uval:bat[:oid,:any_3]) :bat[:oid,:any_3] 
+address DELTAproject2
+comment "Return column bat with delta's applied.";
+
+command subdelta ( col:bat[:oid,:oid], uid:bat[:oid,:oid], uval:bat[:oid,:oid]) :bat[:oid,:oid]
+address DELTAsub2
 comment "Return a single bat of subselected delta.";
 
 command getVersion(clientid:int):lng
@@ -257,6 +283,10 @@ address mvc_clear_table_wrap
 comment "Clear table";
 
 pattern tid( mvc:int, sname:str, tname:str):bat[:oid,:any_3] 
+address TID
+comment "Return the tables tid column.";
+
+pattern tid( mvc:int, sname:str, tname:str, part_nr:int, nr_parts:int ):bat[:oid,:any_3] 
 address TID
 comment "Return the tables tid column.";
 
@@ -1302,6 +1332,9 @@ sql5_export str TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins);
 sql5_export str DELTAproject(bat *result, bat *subselect, bat *col, bat *uid, bat *uval, bat *ins);
+sql5_export str DELTAbat2(bat *result, bat *col, bat *uid, bat *uval);
+sql5_export str DELTAsub2(bat *result, bat *col, bat *uid, bat *uval);
+sql5_export str DELTAproject2(bat *result, bat *subselect, bat *col, bat *uid, bat *uval);
 sql5_export str mvc_result_row_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_file_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_result_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -3412,49 +3445,64 @@ setwritable(BAT *b)
 }
 
 str 
+DELTAbat2(bat *result, bat *col, bat *uid, bat *uval)
+{
+	return DELTAbat(result, col, uid, uval, NULL);
+}
+
+str 
+DELTAsub2(bat *result, bat *col, bat *uid, bat *uval)
+{
+	return DELTAsub(result, col, uid, uval, NULL);
+}
+
+str 
+DELTAproject2(bat *result, bat *sub, bat *col, bat *uid, bat *uval)
+{
+	return DELTAproject(result, sub, col, uid, uval, NULL);
+}
+
+str 
 DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
-	BAT *c, *u_id, *u_val, *u, *i, *res;
+	BAT *c, *u_id, *u_val, *u, *i = NULL, *res;
 
 	if ((u_id = BATdescriptor(*uid)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if ((i = BATdescriptor(*ins)) == NULL) {
+	if (ins && (i = BATdescriptor(*ins)) == NULL) {
 		BBPunfix(u_id->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no updates, no inserts */
-	if (BATcount(u_id) == 0 && BATcount(i) == 0) {
+	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
 		BBPunfix(u_id->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		BBPincref(*result = *col, TRUE);
 		return MAL_SUCCEED;
 	}
 
 	if ((c = BATdescriptor(*col)) == NULL) {
 		BBPunfix(u_id->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* bat may change */
-	if (BATcount(c) == 0 && BATcount(u_id) == 0) {
+	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
 		BBPunfix(c->batCacheid);
 		BBPunfix(u_id->batCacheid);
-		assert(i->H->seq == 0);
 		BBPkeepref(*result = i->batCacheid);
 		return MAL_SUCCEED;
 	}
 
-	c->H->seq = 0;
-	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL)
+	if ((res = BATcopy(c, TYPE_void, c->ttype, TRUE)) == NULL) 
 		throw(MAL, "sql.delta", OPERATION_FAILED);
 	BBPunfix(c->batCacheid);
-	res->H->seq = 0;
 
 	if ((u_val = BATdescriptor(*uval)) == NULL) {
 		BBPunfix(u_id->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 	u = BATleftfetchjoin(BATmirror(u_id), u_val, BATcount(u_val));
@@ -3464,9 +3512,9 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		res = BATreplace(res, u, TRUE);
 	BBPunfix(u->batCacheid);
 
-	if (BATcount(i)) 
+	if (i && BATcount(i)) 
 		res = BATappend(res, i, TRUE);
-	BBPunfix(i->batCacheid);
+	if (i) BBPunfix(i->batCacheid);
 
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
@@ -3475,34 +3523,33 @@ DELTAbat(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 str 
 DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 {
-	BAT *c, *cminu, *u_id, *u_val, *u, *i, *res;
+	BAT *c, *cminu, *u_id, *u_val, *u, *i = NULL, *res;
 
 	if ((u_id = BATdescriptor(*uid)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
-	if ((i = BATdescriptor(*ins)) == NULL) {
+	if (ins && (i = BATdescriptor(*ins)) == NULL) {
 		BBPunfix(u_id->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no updates, no inserts */
-	if (BATcount(u_id) == 0 && BATcount(i) == 0) {
+	if (BATcount(u_id) == 0 && (!i || BATcount(i) == 0)) {
 		BBPunfix(u_id->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		BBPincref(*result = *col, TRUE);
 		return MAL_SUCCEED;
 	}
 
 	if ((c = BATdescriptor(*col)) == NULL) {
 		BBPunfix(u_id->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* bat may change */
-	if (BATcount(c) == 0 && BATcount(u_id) == 0) {
+	if (i && BATcount(c) == 0 && BATcount(u_id) == 0) {
 		BBPunfix(c->batCacheid);
 		BBPunfix(u_id->batCacheid);
-		assert(i->H->seq == 0);
 		BBPkeepref(*result = i->batCacheid);
 		return MAL_SUCCEED;
 	}
@@ -3514,7 +3561,7 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 
 	if ((u_val = BATdescriptor(*uval)) == NULL) {
 		BBPunfix(c->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		BBPunfix(u_id->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
@@ -3524,31 +3571,30 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 	res = BATappend(c, u, TRUE);
 	BBPunfix(u->batCacheid);
 
-	res = BATappend(res, i, TRUE);
-	BBPunfix(i->batCacheid);
+	if (i) res = BATappend(res, i, TRUE);
+	if (i) BBPunfix(i->batCacheid);
 
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
 
-
 str 
 DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 {
-	BAT *s, *c, *u_id, *u_val, *u, *i, *res, *tres;
+	BAT *s, *c, *u_id, *u_val, *u, *i = NULL, *res, *tres;
 
 	if ((s = BATdescriptor(*sub)) == NULL) 
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 
-	if ((i = BATdescriptor(*ins)) == NULL) {
+	if (ins && (i = BATdescriptor(*ins)) == NULL) {
 		BBPunfix(s->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (BATcount(s) == 0) {
+	if (i && BATcount(s) == 0) {
 		res = BATleftfetchjoin(s, i, 0);
 		BBPunfix(s->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 
 		BBPkeepref(*result = res->batCacheid);
 		return MAL_SUCCEED;
@@ -3556,13 +3602,13 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 
 	if ((c = BATdescriptor(*col)) == NULL) {
 		BBPunfix(s->batCacheid);
-		BBPunfix(i->batCacheid);
+		if (i) BBPunfix(i->batCacheid);
 		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
 	}
 
 	/* leftfetchjoin(sub,col).union(leftfetchjoin(sub,i)) */
 	res = c;
-	if (BATcount(i)) {
+	if (i && BATcount(i)) {
 		if (BATcount(c) == 0) {
 			res = i;
 			i = c;
@@ -3573,9 +3619,14 @@ DELTAproject(bat *result, bat *sub, bat *col, bat *uid, bat *uval, bat *ins)
 			BBPunfix(c->batCacheid);
 		}
 	}
-	BBPunfix(i->batCacheid);
+	if (i) BBPunfix(i->batCacheid);
 
 	tres = BATleftfetchjoin(s, res, BATcount(res));
+	if (!tres) {
+		BATprint(s);
+		BATprint(res);
+		assert(0);
+	}
 	BBPunfix(res->batCacheid);
 	res = tres;
 
@@ -3628,7 +3679,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *t;
 	sql_column *c;
 	BAT *b, *i, *d, *tids, *diff, *mark;
-	size_t nr;
+	size_t nr, sb = 0, inr = 0;
 	int readonly = 0;
 
 	*res = 0;
@@ -3644,21 +3695,35 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	c = t->columns.set->h->data;
 
 	b = store_funcs.bind_col(tr, c, RDONLY);
+	nr = BATcount(b);
+	BBPunfix(b->batCacheid);
+
 	if (isTable(t) && !readonly &&
 	   (t->base.flag != TR_NEW /* alter */) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action) {
 		i = store_funcs.bind_col(tr, c, RD_INS);
-		nr = BATcount(b)+BATcount(i);
+		inr = BATcount(i);
 		BBPunfix(i->batCacheid);
-	} else {
-		nr = BATcount(b);
 	}
-	BBPunfix(b->batCacheid);
+	if ( pci->argc == 6){ /* partion version */
+		size_t cnt = nr;
+		int part_nr = *(int *)getArgReference(stk, pci, 4);
+		int nr_parts = *(int *)getArgReference(stk, pci, 5);
+
+		nr /= nr_parts;
+		sb = part_nr*nr;
+		if (nr_parts == (part_nr+1)){ /* last part gets the inserts */
+			nr = cnt - (part_nr*nr); /* keep rest */
+			nr += inr;
+		}
+	} else {
+		nr += inr;
+	}
 	d = store_funcs.bind_del(tr, t, RD_INS);
 
 	/* create void,void bat with length and oid's set */
 	tids = BATnew(TYPE_void, TYPE_void, 0);
-	tids->H->seq = 0;
+	tids->H->seq = sb;
 	tids->T->seq = 0;
 	BATsetcount(tids, nr);
 	tids->H->revsorted = 0;
@@ -3666,7 +3731,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	
 	diff = BATkdiff(tids, BATmirror(d));
 	BBPunfix(d->batCacheid);
-	mark = BATmark(diff, 0);
+	mark = BATmark(diff, sb);
 	BBPunfix(diff->batCacheid);
 	d = BATmirror(mark);
 	BBPkeepref( *res = d->batCacheid ); 

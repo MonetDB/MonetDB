@@ -80,6 +80,8 @@ str deriveRef;
 str differenceRef;
 str tdifferenceRef;
 str tintersectRef;
+str mergecandRef;
+str intersectcandRef;
 str divRef;
 str disconnectRef;
 str evalRef;
@@ -316,6 +318,8 @@ void optimizerInit(void){
 		differenceRef= putName("difference",10);
 		tdifferenceRef= putName("tdifference",11);
 		tintersectRef= putName("tintersect",10);
+		mergecandRef= putName("mergecand",9);
+		intersectcandRef= putName("intersectcand",13);
 		divRef = putName("/",1);
 		disconnectRef= putName("disconnect",10);
 		evalRef = putName("eval",4);

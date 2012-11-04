@@ -202,9 +202,8 @@ row2cols(mvc *sql, stmt *sub)
 	return sub;
 }
 
-/* Here we also recognize 'IN'.
- * We change that into a 
- * tintersect( column, bat_of_vals)). 
+/* Here we also recognize 'IN/NOT IN'.
+ * We change that into multiple subselects (with for IN merges). 
  */
 static int
 are_equality_exps( list *exps ) 
@@ -259,28 +258,23 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *
 				s = i;
 		}
 	} else {
-		/* create bat append values */
-		s = stmt_temp(sql->sa, exp_subtype(ce));
+		int cmp = (in)?cmp_equal:cmp_notequal;
+
+		if (!in)
+			s = sel;
 		for( n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			stmt *i = exp_bin(sql, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
 			
-			s = stmt_append(sql->sa, s, i);
-		}
-		/* TODO 
-                 * 	tinter and tdiff should include the mark_tail and reverse
- 		 *	tinter and tdiff are like subselect, ie can have a cand list
- 		 *	once done opt_pushselect can also handle these, now we need to bail out 
- 	    	 */
-		if (in)
-			s = stmt_tinter(sql->sa, c, s);
-		else 
-			s = stmt_tdiff(sql->sa, c, stmt_unique(sql->sa, s, NULL, NULL, NULL));
-		s = stmt_mark_tail(sql->sa, s, 0);
-		s = stmt_reverse(sql->sa, s);
-		if (sel) {
-			s = stmt_tinter(sql->sa, s, sel);
-			s = stmt_mark(sql->sa, s, 0);
+			if (in) { 
+				i = stmt_uselect(sql->sa, c, i, cmp, sel); 
+				if (s)
+					s = stmt_tunion(sql->sa, s, i); 
+				else
+					s = i;
+			} else {
+				s = stmt_uselect(sql->sa, c, i, cmp, s); 
+			}
 		}
 	}
 	return s;
@@ -618,9 +612,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			node *n;
 			stmt *sel1 = NULL, *sel2 = NULL;
 
-			/* Here we also recognize 'IN'.
-			 * We change that into a 
-			 * tintersect( column, bat_of_vals). 
+			/* Here we also recognize 'IN/NOT IN'.
+			 * We change that into multiple subselects (with for IN merges). 
 			 */
 			if (are_equality_exps(e->l) && are_equality_exps(e->r))
 				if ((s = handle_equality_exps(sql, e->l, e->r, left, right, grp, ext, cnt, sel)) != NULL)
@@ -658,11 +651,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 				predicate = stmt_const(sql->sa, predicate, stmt_bool(sql->sa, 1));
 				sel2 = stmt_uselect(sql->sa, predicate, sel2, cmp_equal, NULL);
 			}
-			sel1 = stmt_reverse(sql->sa, sel1);
-			sel2 = stmt_reverse(sql->sa, sel2);
-			sel1 = stmt_union(sql->sa, sel1, sel2);
-			sel1 = stmt_mark_tail(sql->sa, sel1, 0);
-			return stmt_reverse(sql->sa, sel1);
+			return stmt_tunion(sql->sa, sel1, sel2);
 		}
 		if (e->flag == cmp_or && right)  /* join */
 			assert(0);
@@ -1208,7 +1197,7 @@ rel2bin_sql_table(mvc *sql, sql_table *t)
 		/* tid function  sql.tid(t) */
 		char *rnme = sa_strdup(sql->sa, t->base.name);
 
-		stmt *sc = stmt_tid(sql->sa, t);
+		stmt *sc = dels?dels:stmt_tid(sql->sa, t);
 		sc = stmt_alias(sql->sa, sc, rnme, sa_strdup(sql->sa, TID));
 		list_append(l, sc);
 	}
@@ -1747,8 +1736,8 @@ rel2bin_semijoin( mvc *sql, sql_rel *rel, list *refs)
 		stmt *c = left->op4.lval->h->data;
 		join = stmt_inter(sql->sa, c, stmt_reverse(sql->sa, jl));
 	}
-
 	join = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, join, 0));
+
 
 	/* project all the left columns */
 	for( n = left->op4.lval->h; n; n = n->next ) {

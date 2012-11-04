@@ -52,7 +52,7 @@ address PCRElike_uselect_pcre;
 command like_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCRElike_uselect_pcre;
 
-command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCRElike_join_pcre;
 
 command ilike_uselect(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
@@ -61,7 +61,7 @@ address PCREilike_uselect_pcre;
 command ilike_filter(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:oid]
 address PCREilike_uselect_pcre;
 
-command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCREilike_join_pcre;
 
 command like_select(s:bat[:oid,:str], pat:str, esc:str):bat[:oid,:str]
@@ -201,8 +201,8 @@ function ilikesubselect(b:bat[:oid,:str], cand:bat[:oid,:oid], pat:str, esc:str,
 	return likesubselect(b, cand, pat, esc, true, anti);
 end ilikesubselect;
 
-command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command likesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCRElike_join_pcre;
 
-command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str):bat[:oid,:oid]
+command ilikesubselect(s:bat[:oid,:str], pat:bat[:oid,:str], esc:str) (l:bat[:oid,:oid],r:bat[:oid,:oid])
 address PCREilike_join_pcre;

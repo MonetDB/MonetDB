@@ -664,7 +664,7 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 {
 	char *mod, *fimp, *nme; 
 	InstrPtr q;
-	int j, k, op1, op2, op3 = 0, mtj, mhj;
+	int op1, op2, op3 = 0;
 
 	backend_create_func(sql, s->op4.funcval->func);
 	mod = sql_func_mod(s->op4.funcval->func);
@@ -678,34 +678,18 @@ dump_joinN(backend *sql, MalBlkPtr mb, stmt *s)
 
 	/* filter qualifying tuples, return oids of h and tail */
 	q = newStmt(mb, mod, fimp);
+        q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	q = pushArgument(mb, q, op1);
 	q = pushArgument(mb, q, op2);
 	if (s->op3)
 		q = pushArgument(mb, q, op3);
-
-	j = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, markTRef);
-	q = pushArgument(mb, q, j);
-	q = pushOid(mb, q, 0);
-	mtj = getDestVar(q);
-
-	q = newStmt2(mb, batRef, reverseRef );
-	q = pushArgument(mb, q, mtj);
-	mtj = getDestVar(q);
-	k = getDestVar(q);
-
-	q = newStmt2(mb, algebraRef, markHRef);
-	q = pushArgument(mb, q, j);
-	q = pushOid(mb, q, 0);
-	mhj = getDestVar(q);
+	s->nr = getDestVar(q);
 
 	/* rename second result */
 	nme = GDKmalloc(SMALLBUFSIZ);
-	snprintf(nme, SMALLBUFSIZ, "r1_%d", k);
-	renameVariable(mb, mhj, nme);
-
-	return k;
+	snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
+	renameVariable(mb, getArg(q,1), nme);
+	return s->nr;
 }
 
 static InstrPtr
@@ -1327,8 +1311,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_joinN:
 			s->nr = dump_joinN(sql, mb, s);
 			break;
-		case st_tinter:{
-			dump_2_(sql, mb, s, algebraRef, "tintersect");
+		case st_tunion:{
+			dump_2_(sql, mb, s, batRef, "mergecand");
 		}
 			break;
 		case st_tdiff:{

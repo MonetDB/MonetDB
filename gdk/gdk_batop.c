@@ -2280,6 +2280,7 @@ BATmergecand(BAT *a, BAT *b)
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
 	BATseqbase(bn, 0);
+	bn->trevsorted = 0;
 	bn->tsorted = 1;
 	bn->tkey = 1;
 	bn->T->nil = 0;
@@ -2375,6 +2376,7 @@ BATintersectcand(BAT *a, BAT *b)
 	/* properties */
 	BATsetcount(bn, (BUN) (p - (oid *) Tloc(bn, BUNfirst(bn))));
 	BATseqbase(bn, 0);
+	bn->trevsorted = 0;
 	bn->tsorted = 1;
 	bn->tkey = 1;
 	bn->T->nil = 0;

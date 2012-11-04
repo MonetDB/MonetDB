@@ -2845,7 +2845,7 @@ MTIMEdate_extract_year_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.year", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -2892,7 +2892,7 @@ MTIMEdate_extract_month_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.month", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -2939,7 +2939,7 @@ MTIMEdate_extract_day_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.day", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -2986,7 +2986,7 @@ MTIMEdaytime_extract_hours_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.hours", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -3033,7 +3033,7 @@ MTIMEdaytime_extract_minutes_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.minutes", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -3080,7 +3080,7 @@ MTIMEdaytime_extract_seconds_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.seconds", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -3127,7 +3127,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.sql_seconds", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {
@@ -3174,7 +3174,7 @@ MTIMEdaytime_extract_milliseconds_bulk(int *ret, int *bid)
 	bn = BATnew(TYPE_void, TYPE_int, BATcount(b));
 	if (bn == NULL)
 		throw(MAL, "batmtime.milliseconds", "memory allocation failure");
-	BATseqbase(bn, 0);
+	BATseqbase(bn, b->H->seq);
 
 	bi = bat_iterator(b);
 	BATloop(b, p, q) {

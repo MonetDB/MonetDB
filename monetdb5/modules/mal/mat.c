@@ -109,20 +109,20 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 		return MAL_SUCCEED;
 	}
 
+	assert(ht == TYPE_void);
 	bn = BATnew(ht, tt, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
-	/* must set seqbase or else BATins will not materialize column */
-	if (ht == TYPE_void)
-		BATseqbase(bn, 0);
-	if (tt == TYPE_void)
-		BATseqbase(BATmirror(bn), 0);
+	BATsettrivprop(bn);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
 		if( b ){
-			/* use the right oid ranges, don't change the input */
-			BATins(bn,b,FALSE);
+			if (BATcount(bn) == 0)
+				BATseqbase(bn, b->H->seq);
+			if (BATcount(bn) == 0)
+				BATseqbase(BATmirror(bn), b->T->seq);
+			BATappend(bn,b,FALSE);
 			BBPunfix(b->batCacheid);
 		}
 	}

@@ -150,7 +150,7 @@ rel2bin(mvc *c, stmt *s)
 		return res;
 	}
 
-	case st_tinter: 
+	case st_tunion: 
 	case st_tdiff:
 	case st_limit: 
 	case st_limit2: 

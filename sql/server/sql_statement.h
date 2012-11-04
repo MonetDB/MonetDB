@@ -73,7 +73,7 @@ typedef enum stmt_type {
 	st_atom,
 	st_uselect,
 	st_uselect2,
-	st_tinter,
+	st_tunion,
 	st_tdiff,
 
 	st_releqjoin,
@@ -229,7 +229,7 @@ extern stmt *stmt_genselect(sql_allocator *sa, stmt *l, stmt *rops, sql_subfunc 
 #define isEqJoin(j) \
 	(j->type == st_join && (j->flag == cmp_equal || j->flag == cmp_project))
 
-extern stmt *stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_tunion(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2);
 
 #define NEED_HASH 0

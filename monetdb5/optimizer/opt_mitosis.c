@@ -40,17 +40,17 @@ static int eligible(MalBlkPtr mb )
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, k, limit, estimate=0, tpe, pieces=1;
+	int i, j, limit, estimate=0, pieces=1;
 	str schema=0, table=0;
 	VarRecord low,hgh;
 	BUN slice;
 	wrd r = 0, rowcnt=0;	/* table should be sizeable to consider parallel execution*/
-	InstrPtr q,*old, target= 0, matq;
+	InstrPtr q, *old, target= 0;
 	size_t argsize = 6 * sizeof(lng);
 	/*     per op:   6 = (2+1)*2   <=  2 args + 1 res, each with head & tail */
 	int threads = GDKnr_threads ? GDKnr_threads:1;
-	ValRecord vr;
-	VarPtr loc,rows;
+	//ValRecord vr;
+	//VarPtr loc,rows;
 
 	(void)cntxt;
 	(void) stk;
@@ -60,7 +60,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* locate the largest non-partitioned table */
 	for (i=1; i< mb->stop; i++){
 		q= getInstrPtr(mb,i);
-		if (getModuleId(q)!= sqlRef || getFunctionId(q)!=bindRef )
+		if (getModuleId(q) != sqlRef || getFunctionId(q) != bindRef)
 			continue;
 		/* don't split insert BATs */
 		if (getVarConstant(mb, getArg(q,5)).val.ival == 1 )
@@ -68,7 +68,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if( q->argc > 6 )
 			continue; /* already partitioned */
 		/*
-		 * @-
 		 * The SQL optimizer already collects the counts of the
 		 * base table and passes them on as a row property.
 		 * All pieces for a single subplan should ideally fit together.
@@ -139,27 +138,32 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	schema = getVarConstant(mb, getArg(target,2)).val.sval;
 	table = getVarConstant(mb, getArg(target,3)).val.sval;
 	for(i=0;i<limit;i++){
+		int upd=0, qtpe, rtpe, qv, rv;
+		InstrPtr matq, matr;
 		p= old[i];
 
 		if (getModuleId(p)!= sqlRef || 
 			!(getFunctionId(p)==bindRef ||
-			  getFunctionId(p)==bindidxRef )){
+			  getFunctionId(p)==bindidxRef || 
+			  getFunctionId(p)==tidRef)){
 			pushInstruction(mb,p);
 			continue;
 		}
 		/* don't split insert BATs */
-		if (getVarConstant(mb, getArg(p,5)).val.ival == 1 ){
+		if (p->argc == 6 && getVarConstant(mb, getArg(p,5)).val.ival == 1 ){
 			pushInstruction(mb,p);
 			continue;
 		}
 		/* Don't split the (index) bat if we already have identified a range */
 		/* This will happen if we inline separately optimized routines */
-		if ( p->argc != 6 ){
+		if ( p->argc > 7 ){
 			pushInstruction(mb,p);
 			continue;
 		}
-		if (strcmp(schema, getVarConstant(mb, getArg(p,2)).val.sval) ||
-		    strcmp(table, getVarConstant(mb, getArg(p,3)).val.sval)){
+		if (p->retc == 2)
+			upd = 1;
+		if (strcmp(schema, getVarConstant(mb, getArg(p,2+upd)).val.sval) ||
+		    strcmp(table, getVarConstant(mb, getArg(p,3+upd)).val.sval)){
 			pushInstruction(mb,p);
 			continue;
 		}
@@ -171,12 +175,20 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		slice= (BUN) (rowcnt/pieces);
 		hgh.value.vtype= low.value.vtype= TYPE_oid;
 		low.value.val.oval= 0;
-		tpe = getVarType(mb,getArg(p,0));
+		qtpe = getVarType(mb,getArg(p,0));
 
 		matq= newInstruction(NULL,ASSIGNsymbol);
 		setModuleId(matq,matRef);
 		setFunctionId(matq,newRef);
 		getArg(matq,0)= getArg(p,0);
+
+		if (upd) {
+			matr= newInstruction(NULL,ASSIGNsymbol);
+			setModuleId(matr,matRef);
+			setFunctionId(matr,newRef);
+			getArg(matr,0)= getArg(p,1);
+			rtpe = getVarType(mb,getArg(p,1));
+		}
 
 		for(j=0; j < pieces; j++){
 			q= copyInstruction(p);
@@ -191,37 +203,48 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			}
 			/*q = pushOid(mb,q,hgh.value.val.oval);*/
 
-			k= getArg(q,0)= newTmpVariable(mb,tpe);
-			setVarUDFtype(mb,k);
-			setVarUsed(mb,k);
+			qv= getArg(q,0)= newTmpVariable(mb,qtpe);
+			setVarUDFtype(mb,qv);
+			setVarUsed(mb,qv);
+			if (upd) {
+				rv = getArg(q,1)= newTmpVariable(mb,rtpe);
+				setVarUDFtype(mb,rv);
+				setVarUsed(mb,rv);
+			}
 			/*
-			 * @-
 			 * The target variable should inherit file location and row count
 			 */
+			(void)hgh;
+			/*
 			loc = varGetProp(mb, getArg(p,0), fileProp);
 			if ( loc ){
 				memset((char*) &vr, 0, sizeof(vr));
-				varSetProp(mb, k, fileProp, op_eq, VALset(&vr, TYPE_str, GDKstrdup(loc->value.val.sval)));
+				varSetProp(mb, qv, fileProp, op_eq, VALset(&vr, TYPE_str, GDKstrdup(loc->value.val.sval)));
 			}
 			rows = varGetProp(mb, getArg(p,0), rowsProp);
 			if ( rows){
 				wrd prows = rows->value.val.wval / pieces + 1;
 				memset((char*) &vr, 0, sizeof(vr));
-				varSetProp(mb, k, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &prows));
+				varSetProp(mb, qv, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &prows));
 			}
 
-			if (getFunctionId(p) == binddbatRef) {
-				varSetProp(mb, k, PropertyIndex("tlb"), op_gte, (ptr) &low.value);
-				varSetProp(mb, k, PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
+			if (getFunctionId(p) == tidRef) {
+				varSetProp(mb, qv, PropertyIndex("tlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, qv, PropertyIndex("tub"), op_lt, (ptr) &hgh.value);
 			} else {
-				varSetProp(mb, k, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-				varSetProp(mb, k, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
+				varSetProp(mb, qv, PropertyIndex("hlb"), op_gte, (ptr) &low.value);
+				varSetProp(mb, qv, PropertyIndex("hub"), op_lt, (ptr) &hgh.value);
 			}
 			low.value.val.oval += slice;
+			*/
 			pushInstruction(mb,q);
-			matq= pushArgument(mb,matq,k);
+			matq= pushArgument(mb,matq,qv);
+			if (upd)
+				matr= pushArgument(mb,matr,rv);
 		}
 		pushInstruction(mb,matq);
+		if (upd)
+			pushInstruction(mb,matr);
 	}
 	return 1;
 }

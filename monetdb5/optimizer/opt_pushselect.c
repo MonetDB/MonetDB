@@ -142,17 +142,19 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr q = old[vars[subselects.tid[s]]];
 				int Qsname = getArg(q, 2), Qtname = getArg(q, 3);
 
-				if (sname == Qsname && tname == Qtname) {
+				if ((sname == Qsname && tname == Qtname) ||
+				    (0 && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
+				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0)) {
 					clrFunction(p);
 					p->retc = 1;
 					p->argc = 2;
 					getArg(p, 1) = getArg(q, 0);
+					break;
 				}
 			}
 		}
-		if (getModuleId(p) == algebraRef &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef ||
-		   (getFunctionId(p) == likesubselectRef && !isaBatType(getArgType(mb, p, 2)) && !isaBatType(getArgType(mb, p, 3)))) && 
+		if (getModuleId(p) == algebraRef && p->retc == 1 &&
+		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef) && 
 		   /* no cand list */ getArgType(mb, p, 2) != newBatType(TYPE_oid, TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -195,7 +197,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* inject table ids into subselect 
 		 * s = subselect(c, C1..) => subselect(c, t, C1..)
 		 */
-		if (getModuleId(p) == algebraRef && 
+		if (getModuleId(p) == algebraRef && p->retc == 1 &&
 		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
 			int tid = 0;
 
@@ -299,7 +301,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * nu = subselect(uvl, C1..)
 		 * s = subdelta(nc, uid, nu, ni);
 		 */
-		if (getModuleId(p) == algebraRef && 
+		if (getModuleId(p) == algebraRef && p->retc == 1 &&
 		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];

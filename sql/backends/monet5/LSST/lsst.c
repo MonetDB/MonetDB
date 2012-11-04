@@ -443,64 +443,64 @@ str qserv_ptInSphPoly(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 */
 
 str
-LSSTxmatch(int *ret, int *lid, int *rid, int *delta)
+LSSTxmatch(int *lres, int *rres, int *lid, int *rid, int *delta)
 {
-    BAT *bn, *bl, *br;
+    	BAT *j, *L, *R, *bl, *br;
 	lng *l, *r;
 	lng lhtm, rhtm;
 	lng *lend, *rend;
 	int shift;
 	oid lo = 0, ro=0;
 
-
 	if( *delta < 0 || *delta >31)
-         throw(MAL, "algebra.xmatch", "delta not in 0--31");
+         	throw(MAL, "algebra.xmatch", "delta not in 0--31");
 	shift = 2 * *delta; 
 
-    if( (bl= BATdescriptor(*lid)) == NULL )
-         throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+    	if( (bl= BATdescriptor(*lid)) == NULL )
+        	throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
  
-    if( (br= BATdescriptor(*rid)) == NULL )
-         throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+    	if( (br= BATdescriptor(*rid)) == NULL )
+         	throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
 
 	l= (lng*) Tloc(bl, BUNfirst(bl));
 	lend= (lng*) Tloc(bl, BUNlast(bl));
 	r= (lng*) Tloc(br, BUNfirst(br));
 	rend= (lng*) Tloc(br, BUNlast(br));
 
-	bn = BATnew(TYPE_oid, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
-	if ( bn == NULL)
-         throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
-    bn->hsorted = bn->tsorted = 0;
-    bn->hrevsorted = bn->trevsorted = 0;
-	bn->T->nonil = 1;
-	bn->H->nonil = 1;
-
+	j = BATnew(TYPE_oid, TYPE_oid, MIN(BATcount(bl), BATcount(br)));
+	if ( j == NULL)
+        	throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+    	j->hsorted = j->tsorted = 0;
+    	j->hrevsorted = j->trevsorted = 0;
+	j->T->nonil = 1;
+	j->H->nonil = 1;
 
 	for(; l < lend; lo++, l++) 
-	if ( *l != lng_nil) {
-		lhtm = *l >> shift;
+		if ( *l != lng_nil) {
+			lhtm = *l >> shift;
         for(; r < rend; ro++, r++)
-			if ( *r != lng_nil)
-			{
-				rhtm = *r >> shift;
-				if ( lhtm == rhtm){
-					/* match */
-					BUNins(bn,&lo,&ro, FALSE);
-				} else if ( lhtm < rhtm ) {
-					lhtm = lhtm << shift;
-					for ( ; *l < lhtm && l < lend; lo++, l++)
+		if ( *r != lng_nil) {
+			rhtm = *r >> shift;
+			if ( lhtm == rhtm){
+				/* match */
+				BUNins(j,&lo,&ro, FALSE);
+			} else if ( lhtm < rhtm ) {
+				lhtm = lhtm << shift;
+				for ( ; *l < lhtm && l < lend; lo++, l++)
 						;
-					lhtm = lhtm >> shift;
-				} else{
-					rhtm = rhtm << shift;
-					for ( ; *r < rhtm && r < rend; ro++, r++)
-						;
-					rhtm = rhtm >> shift;
-				}
+				lhtm = lhtm >> shift;
+			} else {
+				rhtm = rhtm << shift;
+				for ( ; *r < rhtm && r < rend; ro++, r++)
+					;
+				rhtm = rhtm >> shift;
 			}
+		}
 	}
-
-	BBPkeepref(*ret = bn->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref(*lres = L->batCacheid);
+	BBPkeepref(*rres = R->batCacheid);
 	return MAL_SUCCEED;
 }

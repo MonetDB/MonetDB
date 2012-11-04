@@ -770,8 +770,10 @@ hasSideEffects(InstrPtr p, int strict)
 			return TRUE;
 
 	if (getModuleId(p) == sqlRef){
-		if (getFunctionId(p) == deltaRef) return FALSE;
 		if (getFunctionId(p) == tidRef) return FALSE;
+		if (getFunctionId(p) == deltaRef) return FALSE;
+		if (getFunctionId(p) == subdeltaRef) return FALSE;
+		if (getFunctionId(p) == projectdeltaRef) return FALSE;
 		if (getFunctionId(p) == bindRef) return FALSE;
 		if (getFunctionId(p) == bindidxRef) return FALSE;
 		if (getFunctionId(p) == binddbatRef) return FALSE;
@@ -782,9 +784,6 @@ hasSideEffects(InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
-		if (getFunctionId(p) == deltaRef) return FALSE;
-		if (getFunctionId(p) == subdeltaRef) return FALSE;
-		if (getFunctionId(p) == projectdeltaRef) return FALSE;
 		/* the update instructions for SQL has side effects.
 		   whether this is relevant should be explicitly checked
 		   in the environment of the call */
@@ -867,7 +866,6 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
 }
 
 /*
- * @-
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */
@@ -923,59 +921,51 @@ int isMatJoinOp(InstrPtr p){
 		);
 }
 
+int isDelta(InstrPtr p){
+	return
+			(getModuleId(p)== sqlRef && (
+				getFunctionId(p)== deltaRef ||
+				getFunctionId(p)== projectdeltaRef ||
+				getFunctionId(p)== subdeltaRef 
+			) 
+		);
+}
+
+int isFragmentGroup2(InstrPtr p){
+	return
+			(getModuleId(p)== algebraRef && (
+				getFunctionId(p)== leftfetchjoinRef
+			)) ||
+			(getModuleId(p)== batRef && (
+				getFunctionId(p)== mergecandRef || 
+				getFunctionId(p)== intersectcandRef 
+			) 
+		);
+}
+
 int isFragmentGroup(InstrPtr p){
 	return
-/*
-			(getModuleId(p)== constraintsRef &&
-				getFunctionId(p)== putName("emptySet",8)) ||
-*/
 			(getModuleId(p)== pcreRef && (
 			getFunctionId(p)== likeselectRef ||
 			getFunctionId(p)== likeuselectRef  ||
 			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef
+			getFunctionId(p)== ilikeuselectRef 
 			))  ||
 			(getModuleId(p)== algebraRef && (
+				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== selectRef ||
 				getFunctionId(p)== selectNotNilRef ||
 				getFunctionId(p)== uselectRef ||
-				getFunctionId(p)== projectRef ||
 				getFunctionId(p)== antiuselectRef ||
 				getFunctionId(p)== thetauselectRef ||
-				getFunctionId(p)== reuseRef
-			)	)  ||
-			(getModuleId(p)== pcreRef && (
-				getFunctionId(p)== likeselectRef ||
-				getFunctionId(p)== likeuselectRef
-			)	)  ||
-			(getModuleId(p)== batRef && (
-				getFunctionId(p)== reverseRef ||
-				getFunctionId(p)== mirrorRef /*||
-				getFunctionId(p)== setAccessRef ||
-				getFunctionId(p)== setWriteModeRef */
-			) );
+				getFunctionId(p)== subselectRef ||
+				getFunctionId(p)== thetasubselectRef ||
+				getFunctionId(p)== likesubselectRef 
+			)
+		);
 }
 
-int isSelect(InstrPtr p)
-{
-	return  (getModuleId(p)== pcreRef && (
-			getFunctionId(p)== likeselectRef ||
-			getFunctionId(p)== likeuselectRef  ||
-			getFunctionId(p)== ilikeselectRef  ||
-			getFunctionId(p)== ilikeuselectRef
-			))  ||
-			(getModuleId(p)== algebraRef && (
-		getFunctionId(p)== selectRef ||
-		getFunctionId(p)== selectNotNilRef ||
-		getFunctionId(p)== uselectRef ||
-		getFunctionId(p)== projectRef ||
-		getFunctionId(p)== antiuselectRef ||
-		getFunctionId(p)== thetauselectRef ||
-		getFunctionId(p)== likeselectRef ||
-		getFunctionId(p)== likeuselectRef ));
-}
 /*
- * @-
  * Some optimizers are interdependent (e.g. mitosis and octopus), which
  * requires inspection of the pipeline attached to a MAL block.
  */

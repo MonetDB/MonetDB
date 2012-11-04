@@ -92,8 +92,8 @@ pcre_export str PCREselectDef(int *res, str *pattern, int *bid);
 pcre_export str PCREuselectDef(int *res, str *pattern, int *bid);
 pcre_export str PCRElike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCREilike_uselect_pcre(int *ret, int *b, str *pat, str *esc);
-pcre_export str PCRElike_join_pcre(int *ret, int *b, int *pat, str *esc);
-pcre_export str PCREilike_join_pcre(int *ret, int *b, int *pat, str *esc);
+pcre_export str PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
+pcre_export str PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc);
 pcre_export str PCRElike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc);
 pcre_export str pcre_init(void);
@@ -1702,12 +1702,11 @@ PCREilike_select_pcre(int *ret, int *b, str *pat, str *esc)
 }
 
 static str
-PCRElike_join(int *ret, int *b, int *pat, str *esc, int case_sensitive)
+PCRElike_join(int *l, int *r, int *b, int *pat, str *esc, int case_sensitive)
 {
 	BUN p;
-	BAT *B = BATdescriptor(*b);
-	BAT *Bpat = BATdescriptor(*pat);
-	BAT *tr, *x, *res = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
+	BAT *B = BATdescriptor(*b), *Bpat = BATdescriptor(*pat), *L, *R;
+	BAT *tr, *x, *j = BATnew(TYPE_oid, TYPE_oid, BATcount(B) * BATcount(Bpat));
 	BATiter pati = bat_iterator(Bpat);
 	
 	for(p = 0; p < BATcount(Bpat); p++) {
@@ -1725,25 +1724,28 @@ PCRElike_join(int *ret, int *b, int *pat, str *esc, int case_sensitive)
 		
 		tr = BATdescriptor(r);
 		x = BATconst(tr, TYPE_oid, BUNhead(pati, p));
-		BATins(res, x, TRUE);
+		BATins(j, x, TRUE);
 		BBPreleaseref(tr->batCacheid);
 		BBPreleaseref(x->batCacheid);
 	}
 	BBPreleaseref(B->batCacheid);
 	BBPreleaseref(Bpat->batCacheid);
-	*ret = res->batCacheid;
-	BBPkeepref(res->batCacheid);
+	L = BATmirror(BATmark(j,0));
+	R = BATmirror(BATmark(BATmirror(j),0));
+	BBPunfix(j->batCacheid);
+	BBPkeepref((*l = L->batCacheid));
+	BBPkeepref((*r = R->batCacheid));
 	return MAL_SUCCEED;
 }
 
 str
-PCRElike_join_pcre(int *ret, int *b, int *pat, str *esc)
+PCRElike_join_pcre(int *l, int *r, int *b, int *pat, str *esc)
 {
-	return PCRElike_join(ret, b, pat, esc, 1);
+	return PCRElike_join(l, r, b, pat, esc, 1);
 }
 
 str
-PCREilike_join_pcre(int *ret, int *b, int *pat, str *esc)
+PCREilike_join_pcre(int *l, int *r, int *b, int *pat, str *esc)
 {
-	return PCRElike_join(ret, b, pat, esc, 0);
+	return PCRElike_join(l, r, b, pat, esc, 0);
 }
