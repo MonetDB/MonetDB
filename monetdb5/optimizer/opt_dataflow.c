@@ -92,6 +92,28 @@ dflowAssignTest(Lifespan span, InstrPtr p, int i)
 	return 0;
 }
 
+static int
+dflowUpdateTest(Lifespan span, InstrPtr p, int i)
+{
+	/* Updates are permitted if it is a unique update on 
+	 * a BAT created in the context of this block
+	 * As far as we know, no SQL nor MAL test re-uses the
+	 * target BAT to insert again and subsequently calls dataflow.
+	 * In MAL scripts, they still can occur.
+	*/
+	(void) span;
+	(void) i;
+	if ( getModuleId(p) == batRef  &&
+	   (getFunctionId(p) == insertRef ||
+		getFunctionId(p) == inplaceRef ||
+		getFunctionId(p) == appendRef ||
+		getFunctionId(p) == updateRef ||
+		getFunctionId(p) == replaceRef ||
+		getFunctionId(p) == deleteRef ) )
+			return FALSE;/* always */
+	return FALSE;
+}
+
 /* a limited set of MAL instructions may appear in the dataflow block*/
 static int
 dflowInstruction(InstrPtr p) {
@@ -101,12 +123,9 @@ dflowInstruction(InstrPtr p) {
 	case CMDcall:
 	case FACcall:
 	case FCNcall:
-	case NOOPsymbol:
-	case REMsymbol:
-		return ! (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) || 
-					blockCntrl(p) || (getModuleId(p) != sqlRef && isUpdateInstruction(p)));
+		return ! (	hasSideEffects(p,FALSE) || isUnsafeFunction(p) || blockCntrl(p) );
 	}
-	return 0;
+	return FALSE;
 }
 
 int
@@ -157,7 +176,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		if (p->token == ENDsymbol)
 			break;
-		if (!dflowInstruction(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) ){
+		if (!dflowInstruction(p) || (!dumbcopy && blockExit(p)) || dflowAssignTest(span,p,i) || dflowUpdateTest(span,p,i)){
 			/* close old flow block */
 			if (flowblock){
 				int sf = simpleFlow(old,start,i);
