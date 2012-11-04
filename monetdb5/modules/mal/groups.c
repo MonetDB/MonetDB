@@ -36,14 +36,15 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *grp = (int*) getArgReference(stk,pci,0);
 	int *ext = (int*) getArgReference(stk,pci,1);
-	int i, j, oldgrp, oldext;
+	int *hist = (int*) getArgReference(stk,pci,2);
+	int i, j, oldgrp;
 	str msg = MAL_SUCCEED;
 	lng *sizes = (lng*) GDKzalloc(sizeof(lng) * pci->argc), l;
 	bat *bid = (bat*) GDKzalloc(sizeof(bat) * pci->argc), bi;
 	BUN *cnt = (BUN*) GDKzalloc(sizeof(BUN) * pci->argc), c;
 	BAT *b, *sample, *uniq;
 
-	for( i=2; i< pci->argc; i++){
+	for( i=3; i< pci->argc; i++){
 		bid[i] = *(int *) getArgReference(stk, pci, i);
 		b = BATdescriptor(bid[i]);
 		if ( b ){
@@ -61,11 +62,11 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	/* for (i=2; i<pci->argc; i++)
+	/* for (i=3; i<pci->argc; i++)
 		mnstr_printf(cntxt->fdout,"# before[%d] "LLFMT"\n",i, sizes[i]); */
 	/* sort order may have influences */
 	/* SF100 Q16 showed < ordering is 2 times faster as > ordering */
-	for ( i = 2; i< pci->argc; i++)
+	for ( i = 3; i< pci->argc; i++)
 	for ( j = i+1; j<pci->argc; j++)
 	if ( sizes[j] < sizes[i]){
 		l = sizes[j]; sizes[j]= sizes[i]; sizes[i]= l;
@@ -75,10 +76,10 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* for (i=2; i<pci->argc; i++)
 		mnstr_printf(cntxt->fdout,"# after [%d] "LLFMT"\n",i, sizes[i]); */
 
-	/* (grp,ext) := group.new(..) */
+	/* (grp,ext,his) := group.subgroup(..) */
 	*grp = 0;
 	*ext = 0;
-	msg = GRPgroup(grp, ext, &bid[2]);
+	msg = GRPsubgroup1(grp, ext, hist, &bid[3]);
 	if ( msg != MAL_SUCCEED){
 		GDKfree(sizes);
 		GDKfree(bid);
@@ -87,18 +88,15 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* check group count */
 	b = BATdescriptor(*grp);
-	if (  b && BATcount(b) != cnt[2]) {
+	if (  b && BATcount(b) != cnt[3]) {
 		BBPreleaseref(*grp);
 		b = 0;
-		/* (grp,ext) := group.derive(grp,ext,arg) */
-		/* (grp,ext) := group.done(grp,ext,arg) */
-		for ( i=3; i < pci->argc; i++){
+		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
+		for ( i=4; i < pci->argc; i++){
 			oldgrp= *grp;
-			oldext= *ext;
-			msg = GRPderive(grp, ext, &oldgrp, &oldext, &bid[i]);
+			msg = GRPsubgroup2(grp, ext, hist, &bid[i], &oldgrp);
 			if ( msg == MAL_SUCCEED){
 				BBPdecref(oldgrp, TRUE);
-				BBPdecref(oldext, TRUE);
 			} else break;
 			/* check group count */
 			b = BATdescriptor(*grp);
