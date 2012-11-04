@@ -24,9 +24,8 @@ int
 OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, actions=0;
-	int *pc;
 	InstrPtr q;
-	InstrPtr *old;
+	InstrPtr *old, *ref;
 	int limit,slimit;
 
 	(void) cntxt;
@@ -36,8 +35,8 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 
 	/* beware, new variables and instructions are introduced */
-	pc= (int*) GDKzalloc(sizeof(int)* mb->vtop * 2); /* to find last assignment */
-	if ( pc == NULL) {
+	ref= (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop); /* to find last assignment */
+	if ( ref == NULL) {
 		return 0;
 	}
 
@@ -45,44 +44,37 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb,mb->ssize) <0) {
-		GDKfree(pc);
+		GDKfree(ref);
 		return 0;
 	}
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if (0 && getModuleId(p) == groupRef && p->argc == 4 && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)){
+		if (getModuleId(p) == groupRef && p->argc == 4 && getFunctionId(p) == subgroupRef ){
 			setFunctionId(p, multicolumnsRef);
-			pc[getArg(p,0)] = i;
-			pc[getArg(p,1)] = i;
-			pc[getArg(p,2)] = i;
+			ref[getArg(p,0)] = p;
 			actions++;
 			OPTDEBUGgroups {
 				mnstr_printf(cntxt->fdout,"#new groups instruction\n");
 				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 			}
 		}
-		if (0 && getModuleId(p) == groupRef && p->argc == 5 && (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)){
+		if (getModuleId(p) == groupRef && p->argc == 5 && getFunctionId(p) == subgroupdoneRef && ref[getArg(p,4)] != NULL){
 			/*
-			 * @-
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of derive paths, many of which will be removed during deadcode elimination.
 			 */
-			if (pc[getArg(p,4)]){
-				q= copyInstruction(getInstrPtr(mb,pc[getArg(p,4)]));
-				q= pushArgument(mb,q, getArg(p,4));
-				getArg(q,0) = getArg(p,0);
-				getArg(q,1) = getArg(p,1);
-				getArg(q,2) = getArg(p,2);
-				pc[getArg(q,0)] = i;
-				pc[getArg(q,1)] = i;
-				pc[getArg(q,2)] = i;
-				freeInstruction(p);
-				p= q;
-				OPTDEBUGgroups{
-					mnstr_printf(cntxt->fdout,"#new groups instruction extension\n");
-					printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
-				}
+			q= copyInstruction(ref[getArg(p,4)]);
+			q= pushArgument(mb, q, getArg(p,3));
+			getArg(q,0) = getArg(p,0);
+			getArg(q,1) = getArg(p,1);
+			getArg(q,2) = getArg(p,2);
+			ref[getArg(q,0)] = q;
+			freeInstruction(p);
+			p= q;
+			OPTDEBUGgroups{
+				mnstr_printf(cntxt->fdout,"#new groups instruction extension\n");
+				printInstruction(cntxt->fdout,mb, 0, p, LIST_MAL_ALL);
 			}
 		} 
 		pushInstruction(mb,p);
@@ -91,7 +83,7 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if(old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	GDKfree(pc);
+	GDKfree(ref);
 	DEBUGoptimizers
 		mnstr_printf(cntxt->fdout,"#opt_groups: %d statements glued\n",actions);
 	return actions;
