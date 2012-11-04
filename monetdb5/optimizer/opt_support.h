@@ -107,7 +107,6 @@ opt_export int isDependent(InstrPtr p, InstrPtr q);
 opt_export int safetyBarrier(InstrPtr p, InstrPtr q);
 opt_export int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q, int stop);
 opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
-opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int isProcedure(MalBlkPtr mb, InstrPtr p);
 opt_export int isUpdateInstruction(InstrPtr p);

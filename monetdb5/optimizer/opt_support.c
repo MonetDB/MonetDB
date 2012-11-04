@@ -542,57 +542,8 @@ safetyBarrier(InstrPtr p, InstrPtr q)
 	}
 	return FALSE;
 }
-/*
- * @-
- * Variables can be changed later in the program and, thus, may
- * not be simply replaced by an alias.
- * Variables could also be changed by functions with side effects.
- */
-int
-isUpdated(MalBlkPtr mb, int pc)
-{
-	InstrPtr p, q;
-	int j, k;
-
-	p = getInstrPtr(mb, pc);
-	for (pc++; pc < mb->stop; pc++) {
-		q = getInstrPtr(mb, pc);
-		/* target is later assigned a new value */
-		for (j = 0; j < p->retc; j++)
-			for (k = 0; k < q->retc; k++)
-				if (p->argv[j] == q->argv[k]) {
-					int c = 0;
-
-					if (p->argc != q->argc)
-						return TRUE;
-
-					/* instruction q may not be a common expression */
-					/* TO WEAK, test stability of its arguments */
-					for (j = 0; j < p->argc; j++)
-						if (p->argv[j] == q->argv[k] && isInvariant(mb, 0, pc, q->argv[k]))
-							c++;
-					return c != p->argc;
-				}
-
-		/* result is used in an unsafe function */
-		for (j = 0; j < p->retc; j++)
-			for (k = q->retc; k < q->argc; k++)
-				if (p->argv[j] == q->argv[k] ){
-				/*
-				 * @-
-				 * If the operation involves an update of the operand it should told.
-				 */
-				if ( isUpdateInstruction(q) )
-					return TRUE;
-				if (getFunctionId(q) && idcmp("destroy", getFunctionId(q)) == 0)
-					return TRUE;
-			}
-	}
-	return FALSE;
-}
 
 /*
- * @-
  * In many cases we should be assured that a variable is not used in
  * the instruction range identified. For, we may exchange some instructions that
  * might change its content.
