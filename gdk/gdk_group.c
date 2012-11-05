@@ -548,16 +548,29 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			default:
 				v = BUNtail(bi, p);
 				prb = hash_any(hs, v);
-				for (hb = hs->hash[prb];
-				     hb != BUN_NONE;
-				     hb = hs->link[hb]) {
-					if ((grps == NULL ||
-					     grps[hb - r] == grps[p - r]) &&
-					    cmp(v, BUNtail(bi, hb)) == 0) {
-						ngrps[p - r] = ngrps[hb - r];
-						if (histo)
-							cnts[ngrps[hb - r]]++;
-						break;
+				if (grps) {
+					prb ^= hash_oid(hs, &grps[p-r]);
+					for (hb = hs->hash[prb];
+					     hb != BUN_NONE;
+					     hb = hs->link[hb]) {
+						if (grps[hb - r] == grps[p - r] &&
+						    cmp(v, BUNtail(bi, hb)) == 0) {
+							ngrps[p - r] = ngrps[hb - r];
+							if (histo)
+								cnts[ngrps[hb - r]]++;
+							break;
+						}
+					}
+				} else {
+					for (hb = hs->hash[prb];
+					     hb != BUN_NONE;
+					     hb = hs->link[hb]) {
+						if (cmp(v, BUNtail(bi, hb)) == 0) {
+							ngrps[p - r] = ngrps[hb - r];
+							if (histo)
+								cnts[ngrps[hb - r]]++;
+							break;
+						}
 					}
 				}
 			}
