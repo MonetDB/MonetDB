@@ -139,7 +139,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	table = getVarConstant(mb, getArg(target,3)).val.sval;
 	for(i=0;i<limit;i++){
 		int upd=0, qtpe, rtpe, qv, rv;
-		InstrPtr matq, matr;
+		InstrPtr matq, matr = NULL;
 		p= old[i];
 
 		if (getModuleId(p)!= sqlRef || 
