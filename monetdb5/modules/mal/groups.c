@@ -21,10 +21,8 @@
 #include "group.h"
 
 /*
- * The groups optimizer takes a sequence and attempts to minimize the intermediate result.
+ * The groups optimizer takes a grouping sequence and attempts to minimize the intermediate result.
  * The choice depends on a good estimate of intermediate results using properties.
- * We start by just performing the underlying MAL instructions in sequence as requested
- * This will lead to better locality of BAT access.
  */
 typedef struct{
 	int *arg;
@@ -41,14 +39,15 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 	lng *sizes = (lng*) GDKzalloc(sizeof(lng) * pci->argc), l;
 	bat *bid = (bat*) GDKzalloc(sizeof(bat) * pci->argc), bi;
-	BUN *cnt = (BUN*) GDKzalloc(sizeof(BUN) * pci->argc), c;
 	BAT *b, *sample, *uniq;
+	BUN count=0;
 
+	assert(pci->argc >= 4);
 	for( i=3; i< pci->argc; i++){
 		bid[i] = *(int *) getArgReference(stk, pci, i);
 		b = BATdescriptor(bid[i]);
 		if ( b ){
-			cnt[i]= BATcount(b);
+			sizes[i] = count = BATcount(b);
 			sample = BATsample(b,1000);
 			if ( sample) {
 				uniq = BATkunique( BATmirror(sample));
@@ -71,44 +70,40 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( sizes[j] < sizes[i]){
 		l = sizes[j]; sizes[j]= sizes[i]; sizes[i]= l;
 		bi = bid[j]; bid[j]= bid[i]; bid[i]= bi;
-		c = cnt[j]; cnt[j]= cnt[i]; cnt[i]= c;
 	}
 	/* for (i=2; i<pci->argc; i++)
 		mnstr_printf(cntxt->fdout,"# after [%d] "LLFMT"\n",i, sizes[i]); */
 
-	/* (grp,ext,his) := group.subgroup(..) */
+	/* (grp,ext,hist) := group.subgroup(..) */
 	*grp = 0;
 	*ext = 0;
+	*hist = 0;
 	msg = GRPsubgroup1(grp, ext, hist, &bid[3]);
-	if ( msg != MAL_SUCCEED){
-		GDKfree(sizes);
-		GDKfree(bid);
-		GDKfree(cnt);
-		return msg;
-	}
-	/* check group count */
-	b = BATdescriptor(*grp);
-	if (  b && BATcount(b) != cnt[3]) {
-		BBPreleaseref(*grp);
-		b = 0;
-		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
-		for ( i=4; i < pci->argc; i++){
-			oldgrp= *grp;
-			msg = GRPsubgroup2(grp, ext, hist, &bid[i], &oldgrp);
-			if ( msg == MAL_SUCCEED){
-				BBPdecref(oldgrp, TRUE);
-			} else break;
-			/* check group count */
-			b = BATdescriptor(*grp);
-			if ( b && BATcount(b) == cnt[i])
-				break;
+	i = 4;
+	if (msg == MAL_SUCCEED && pci->argc > 4 )
+	do {
+		if (*ext) 
+			BBPdecref(*ext, TRUE);
+		/* early break when there are as many groups as histogram entries */
+		b = BATdescriptor(*hist);
+		if (  b ){
+			j = BATcount(b) == count;
+			BBPreleaseref(*hist);
+			if ( j) break;
 		}
-	} 
-	if (b) 
-		BBPreleaseref(*grp);
+		if (*hist) 
+			BBPdecref(*hist, TRUE);
+		
+		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
+		oldgrp= *grp;
+		*grp = 0;
+		*ext = 0;
+		*hist = 0;
+		msg = GRPsubgroup2(grp, ext, hist, &bid[i], &oldgrp);
+		BBPdecref(oldgrp,TRUE);
+	} while (msg == MAL_SUCCEED &&  ++i < pci->argc); 
 	GDKfree(sizes);
 	GDKfree(bid);
-	GDKfree(cnt);
 	(void) cntxt;
 	(void) mb;
 	return msg;
