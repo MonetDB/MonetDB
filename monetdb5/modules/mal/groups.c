@@ -68,12 +68,8 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for ( i = 3; i< pci->argc; i++)
 		for ( j = i+1; j<pci->argc; j++)
 			if ( sizes[j] < sizes[i]){
-				l = sizes[j];
-				sizes[j]= sizes[i];
-				sizes[i]= l;
-				bi = bid[j];
-				bid[j]= bid[i];
-				bid[i]= bi;
+				l = sizes[j]; sizes[j]= sizes[i]; sizes[i]= l;
+				bi = bid[j]; bid[j]= bid[i]; bid[i]= bi;
 			}
 	/* for (i=2; i<pci->argc; i++)
 		mnstr_printf(cntxt->fdout,"# after [%d] "LLFMT"\n",i, sizes[i]); */
@@ -93,8 +89,8 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(*hist);
 			if ( j) break;
 		}
-		BBPdecref(*ext, TRUE);
 		BBPdecref(*hist, TRUE);
+		BBPdecref(*ext, TRUE);
 		
 		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
 		oldgrp= *grp;
