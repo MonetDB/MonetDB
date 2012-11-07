@@ -135,7 +135,7 @@ mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int 
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
-	setFunctionId(r,newRef);
+	setFunctionId(r,packRef);
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
@@ -172,7 +172,7 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
-	setFunctionId(r,newRef);
+	setFunctionId(r,packRef);
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
@@ -195,7 +195,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int mvar, 
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
-	setFunctionId(r,newRef);
+	setFunctionId(r,packRef);
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
@@ -220,7 +220,7 @@ mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nva
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
-	setFunctionId(r,newRef);
+	setFunctionId(r,packRef);
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
@@ -396,7 +396,7 @@ mat_pack_group(MalBlkPtr mb, mat_t *mat, int mtop, int g)
  * and one for the current group 
  */
 static int
-mat_group_attr(MalBlkPtr mb, mat_t *mat, int mtop, int g, InstrPtr cext )
+mat_group_attr(MalBlkPtr mb, mat_t *mat, int mtop, int g, InstrPtr cext, int push )
 {
         int cnt = group_by_length(mat, g), i;	/* number of attributes */
 	int ogrp = g; 				/* previous group */
@@ -410,7 +410,7 @@ mat_group_attr(MalBlkPtr mb, mat_t *mat, int mtop, int g, InstrPtr cext )
 		InstrPtr attr = newInstruction(mb, ASSIGNsymbol);
 
 		setModuleId(attr,matRef);
-		setFunctionId(attr,newRef);
+		setFunctionId(attr,packRef);
 		//getArg(attr,0) = newTmpVariable(mb, atp);
 		getArg(attr,0) = getArg(mat[b].mi,0);
 
@@ -434,7 +434,8 @@ mat_group_attr(MalBlkPtr mb, mat_t *mat, int mtop, int g, InstrPtr cext )
 	
 			attr = pushArgument(mb, attr, getArg(q, 0)); 
 		}
-		pushInstruction(mb,attr);
+		if (push)
+			pushInstruction(mb,attr);
 		mtop = mat_add_var(mat, mtop, attr, getArg(attr, 0), mat_ext,  -1, -1);
 		/* keep new attribute with the group extend */
 		mat[aext].im = mtop-1;
@@ -448,30 +449,32 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b)
 	int tp0 = getArgType(mb,p,0);
 	int tp1 = getArgType(mb,p,1);
 	int tp2 = getArgType(mb,p,2);
-	int atp = getArgType(mb,p,3), i, a, g;
+	int atp = getArgType(mb,p,3), i, a, g, push = 0;
 	InstrPtr r0, r1, r2, attr;
+
+	if (getFunctionId(p) == subgroupdoneRef)
+		push = 1;
 
 	r0 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r0,matRef);
-	setFunctionId(r0,newRef);
+	setFunctionId(r0,packRef);
 	getArg(r0,0) = newTmpVariable(mb, tp0);
 
 	r1 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r1,matRef);
-	setFunctionId(r1,newRef);
+	setFunctionId(r1,packRef);
 	getArg(r1,0) = newTmpVariable(mb, tp1);
 
 	r2 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r2,matRef);
-	setFunctionId(r2,newRef);
+	setFunctionId(r2,packRef);
 	getArg(r2,0) = newTmpVariable(mb, tp2);
 
 	/* we keep an extend, attr table result, which will later be used
 	 * when we pack the group result */
 	attr = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(attr,matRef);
-	setFunctionId(attr,newRef);
-	//getArg(attr,0) = newTmpVariable(mb, atp);
+	setFunctionId(attr,packRef);
 	getArg(attr,0) = getArg(mat[b].mi,0);
 
 	for(i=1; i<mat[b].mi->argc; i++) {
@@ -501,14 +504,15 @@ mat_group_new(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b)
 	pushInstruction(mb,r0);
 	pushInstruction(mb,r1);
 	pushInstruction(mb,r2);
-	pushInstruction(mb,attr);
+	if (push)
+		pushInstruction(mb,attr);
 
 	/* create mat's for the intermediates */
 	a = mtop = mat_add_var(mat, mtop, attr, getArg(attr, 0), mat_ext,  -1, -1);
 	g = mtop = mat_add_var(mat, mtop, r0, getArg(p, 0), mat_grp, b, -1);
 	mtop = mat_add_var(mat, mtop, r1, getArg(p, 1), mat_ext, a-1, mtop-1); /* point back at group */
 	mtop = mat_add_var(mat, mtop, r2, getArg(p, 2), mat_cnt, -1, mtop-1); /* point back at ext */
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (push)
 		mat_pack_group(mb, mat, mtop, g-1);
 	return mtop;
 }
@@ -519,8 +523,11 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 	int tp0 = getArgType(mb,p,0);
 	int tp1 = getArgType(mb,p,1);
 	int tp2 = getArgType(mb,p,2); 
-	int atp = getArgType(mb,p,3), i, a; 
+	int atp = getArgType(mb,p,3), i, a, push = 0; 
 	InstrPtr r0, r1, r2, attr;
+
+	if (getFunctionId(p) == subgroupdoneRef)
+		push = 1;
 
 	if (mat[g].im == -1){ /* allready packed */
 		pushInstruction(mb, copyInstruction(p));
@@ -529,25 +536,24 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 
 	r0 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r0,matRef);
-	setFunctionId(r0,newRef);
+	setFunctionId(r0,packRef);
 	getArg(r0,0) = newTmpVariable(mb, tp0);
 
 	r1 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r1,matRef);
-	setFunctionId(r1,newRef);
+	setFunctionId(r1,packRef);
 	getArg(r1,0) = newTmpVariable(mb, tp1);
 
 	r2 = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r2,matRef);
-	setFunctionId(r2,newRef);
+	setFunctionId(r2,packRef);
 	getArg(r2,0) = newTmpVariable(mb, tp2);
 	
 	/* we keep an extend, attr table result, which will later be used
 	 * when we pack the group result */
 	attr = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(attr,matRef);
-	setFunctionId(attr,newRef);
-	//getArg(attr,0) = newTmpVariable(mb, atp);
+	setFunctionId(attr,packRef);
 	getArg(attr,0) = getArg(mat[b].mi,0);
 
 	/* we need overlapping ranges */
@@ -580,9 +586,10 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 	pushInstruction(mb,r0);
 	pushInstruction(mb,r1);
 	pushInstruction(mb,r2);
-	pushInstruction(mb,attr);
+	if (push)
+		pushInstruction(mb,attr);
 
-	mtop = mat_group_attr(mb, mat, mtop, g, r1);
+	mtop = mat_group_attr(mb, mat, mtop, g, r1, push);
 
 	/* create mat's for the intermediates */
 	a = mtop = mat_add_var(mat, mtop, attr, getArg(attr, 0), mat_ext,  -1, -1);
@@ -590,7 +597,7 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 	mtop = mat_add_var(mat, mtop, r1, getArg(p, 1), mat_ext, a-1, mtop-1); /* point back at group */
 	mtop = mat_add_var(mat, mtop, r2, getArg(p, 2), mat_cnt, -1, mtop-1); /* point back at ext */
 
-	if (getFunctionId(p) == subgroupdoneRef)
+	if (push)
 		mat_pack_group(mb, mat, mtop, g-1);
 	return mtop;
 }
