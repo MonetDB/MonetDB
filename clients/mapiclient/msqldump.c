@@ -66,7 +66,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -D          | --describe         describe database\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements\n");
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
-	fprintf(stderr, " -t          | --trace            trace mapi network interaction\n");
+	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 	exit(xit);
 }
@@ -100,7 +100,7 @@ main(int argc, char **argv)
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
 		{"inserts", 0, 0, 'N'},
-		{"trace", 2, 0, 't'},
+		{"Xdebug", 2, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
@@ -195,7 +195,7 @@ main(int argc, char **argv)
 		case 'q':
 			quiet = 1;
 			break;
-		case 't':
+		case 'X':
 			trace = MAPI_TRACE;
 			break;
 		case '?':
