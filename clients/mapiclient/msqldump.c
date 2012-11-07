@@ -63,11 +63,13 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -u user     | --user=user        user id\n");
 	fprintf(stderr, " -d database | --database=database  database to connect to\n");
 	fprintf(stderr, " -f          | --functions        dump functions\n");
+	fprintf(stderr, " -t table    | --table=table      dump a database table\n");
 	fprintf(stderr, " -D          | --describe         describe database\n");
 	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements\n");
 	fprintf(stderr, " -q          | --quiet            don't print welcome message\n");
 	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
+	fprintf(stderr, "--functions and --table are mutually exclusive\n");
 	exit(xit);
 }
 
@@ -93,12 +95,14 @@ main(int argc, char **argv)
 	struct stat statb;
 	stream *config = NULL;
 	char user_set_as_flag = 0;
+	char *table = NULL;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},
 		{"database", 1, 0, 'd'},
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
+		{"table", 1, 0, 't'},
 		{"inserts", 0, 0, 'N'},
 		{"Xdebug", 2, 0, 'X'},
 		{"user", 1, 0, 'u'},
@@ -190,7 +194,14 @@ main(int argc, char **argv)
 			useinserts = 1;
 			break;
 		case 'f':
+			if (table)
+				usage(argv[0], -1);
 			functions = 1;
+			break;
+		case 't':
+			if (table || functions)
+				usage(argv[0], -1);
+			table = optarg;
 			break;
 		case 'q':
 			quiet = 1;
@@ -261,13 +272,16 @@ main(int argc, char **argv)
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)
 			*p = 0;
-		mnstr_printf(out, "-- msqldump %s %s %s\n",
+		mnstr_printf(out, "-- msqldump %s %s%s %s\n",
 			     describe ? "describe" : "dump",
-			     functions ? "functions" : "database", buf);
+			     functions ? "functions" : table ? "table " : "database",
+			     table ? table : "", buf);
 		dump_version(mid, out, "--");
 	}
 	if (functions)
 		c = dump_functions(mid, out, NULL, NULL);
+	else if (table)
+		c = dump_table(mid, NULL, table, out, describe, 1, useinserts);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
