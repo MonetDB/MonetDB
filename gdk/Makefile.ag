@@ -36,7 +36,7 @@ lib_gdk = {
 		gdk_private.h gdk_delta.h gdk_logger.h gdk_posix.h \
 		gdk_system.h gdk_tm.h gdk_storage.h \
 		gdk_calc.c gdk_calc.h gdk_calc_compare.h gdk_calc_private.h \
-		gdk_aggr.c gdk_group.c \
+		gdk_aggr.c gdk_group.c gdk_mapreduce.c gdk_mapreduce.h \
 		bat.feps bat1.feps bat2.feps \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \

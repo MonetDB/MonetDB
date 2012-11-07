@@ -66,11 +66,15 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* sort order may have influences */
 	/* SF100 Q16 showed < ordering is 2 times faster as > ordering */
 	for ( i = 3; i< pci->argc; i++)
-	for ( j = i+1; j<pci->argc; j++)
-	if ( sizes[j] < sizes[i]){
-		l = sizes[j]; sizes[j]= sizes[i]; sizes[i]= l;
-		bi = bid[j]; bid[j]= bid[i]; bid[i]= bi;
-	}
+		for ( j = i+1; j<pci->argc; j++)
+			if ( sizes[j] < sizes[i]){
+				l = sizes[j];
+				sizes[j]= sizes[i];
+				sizes[i]= l;
+				bi = bid[j];
+				bid[j]= bid[i];
+				bid[i]= bi;
+			}
 	/* for (i=2; i<pci->argc; i++)
 		mnstr_printf(cntxt->fdout,"# after [%d] "LLFMT"\n",i, sizes[i]); */
 
@@ -82,8 +86,6 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	i = 4;
 	if (msg == MAL_SUCCEED && pci->argc > 4 )
 	do {
-		if (*ext) 
-			BBPdecref(*ext, TRUE);
 		/* early break when there are as many groups as histogram entries */
 		b = BATdescriptor(*hist);
 		if (  b ){
@@ -91,8 +93,8 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(*hist);
 			if ( j) break;
 		}
-		if (*hist) 
-			BBPdecref(*hist, TRUE);
+		BBPdecref(*ext, TRUE);
+		BBPdecref(*hist, TRUE);
 		
 		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
 		oldgrp= *grp;
