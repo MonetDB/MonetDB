@@ -31,16 +31,16 @@
 
 /* each entry in the queue contains a list of tasks */
 typedef struct MRQUEUE {
-    MRtask **tasks;
-	int index;	/* next available task */
-	int size;	/* number of tasks */
+	MRtask **tasks;
+	int index;		/* next available task */
+	int size;		/* number of tasks */
 } MRqueue;
 
 static MRqueue *mrqueue;
-static int mrqsize= -1;   /* size of queue */
-static int mrqlast= -1;   
-static MT_Lock mrqlock;  /* its a shared resource, ie we need locks */
-static MT_Sema mrqsema;  /* threads wait on empty queues */
+static int mrqsize = -1;	/* size of queue */
+static int mrqlast = -1;
+static MT_Lock mrqlock;		/* its a shared resource, ie we need locks */
+static MT_Sema mrqsema;		/* threads wait on empty queues */
 
 
 static void MRworker(void *);
@@ -52,34 +52,34 @@ MRqueueCreate(int sz)
 	MT_Id tid;
 
 	MT_lock_init(&mrqlock, "q_create");
-	MT_lock_set(&mrqlock,"q_create");
+	MT_lock_set(&mrqlock, "q_create");
 	MT_sema_init(&mrqsema, 0, "q_create");
-	sz = ((sz << 1) >> 1); /* we want a multiple of 2 */
-	mrqueue = (MRqueue*)GDKzalloc(sizeof(MRqueue) *sz);
+	sz = ((sz << 1) >> 1);		/* we want a multiple of 2 */
+	mrqueue = (MRqueue *) GDKzalloc(sizeof(MRqueue) * sz);
 	assert(mrqueue);
 	mrqsize = sz;
 	mrqlast = 0;
-	/* create a worker thread for each core as specified as system parameter*/
-	for ( i =0; i < GDKnr_threads; i++)
+	/* create a worker thread for each core as specified as system parameter */
+	for (i = 0; i < GDKnr_threads; i++)
 		MT_create_thread(&tid, MRworker, (void *) 0, MT_THR_JOINABLE);
-	MT_lock_unset(&mrqlock,"q_create");
+	MT_lock_unset(&mrqlock, "q_create");
 }
 
 static void
-MRenqueue(int taskcnt, MRtask **tasks)
+MRenqueue(int taskcnt, MRtask ** tasks)
 {
 	assert(taskcnt > 0);
-    MT_lock_set(&mrqlock, "mrqlock");
-    if (mrqlast == mrqsize) {
-        mrqsize <<= 1;
-        mrqueue = (MRqueue*) GDKrealloc(mrqueue, sizeof(MRqueue) * mrqsize);
-    }
+	MT_lock_set(&mrqlock, "mrqlock");
+	if (mrqlast == mrqsize) {
+		mrqsize <<= 1;
+		mrqueue = (MRqueue *) GDKrealloc(mrqueue, sizeof(MRqueue) * mrqsize);
+	}
 	mrqueue[mrqlast].index = 0;
 	mrqueue[mrqlast].tasks = tasks;
 	mrqueue[mrqlast].size = taskcnt;
-    mrqlast++;
-    MT_lock_unset(&mrqlock, "mrqlock");
-	/* a task list is added for consumption*/
+	mrqlast++;
+	MT_lock_unset(&mrqlock, "mrqlock");
+	/* a task list is added for consumption */
 	while (taskcnt-- > 0)
 		MT_sema_up(&mrqsema, "mrqsema");
 }
@@ -87,55 +87,55 @@ MRenqueue(int taskcnt, MRtask **tasks)
 static MRtask *
 MRdequeue(void)
 {
-    MRtask *r = NULL;
+	MRtask *r = NULL;
 	int idx;
 
-    MT_sema_down(&mrqsema, "mrqsema");
-    assert(mrqlast);
-    MT_lock_set(&mrqlock, "mrqlock");
-    if (mrqlast > 0) {
-		idx = mrqueue[mrqlast-1].index;
-        r = mrqueue[mrqlast-1].tasks[idx++];
-		if ( mrqueue[mrqlast-1].size == idx)
+	MT_sema_down(&mrqsema, "mrqsema");
+	assert(mrqlast);
+	MT_lock_set(&mrqlock, "mrqlock");
+	if (mrqlast > 0) {
+		idx = mrqueue[mrqlast - 1].index;
+		r = mrqueue[mrqlast - 1].tasks[idx++];
+		if (mrqueue[mrqlast - 1].size == idx)
 			mrqlast--;
-		else 
-			mrqueue[mrqlast-1].index = idx;
+		else
+			mrqueue[mrqlast - 1].index = idx;
 	}
-    MT_lock_unset(&mrqlock, "mrqlock");
-    assert(r);
-    return r;
+	MT_lock_unset(&mrqlock, "mrqlock");
+	assert(r);
+	return r;
 }
 
 static void
-MRworker(void * arg)
+MRworker(void *arg)
 {
 	MRtask *task;
 	(void) arg;
-	do{
-		task= MRdequeue();
-		(task->cmd)(task);
+	do {
+		task = MRdequeue();
+		(task->cmd) (task);
 		MT_sema_up(task->sema, "mrqsema");
 	} while (1);
 }
 
 /* schedule the tasks and return when all are done */
 void
-MRschedule(int taskcnt, void **arg, void (*cmd)(void*p))
+MRschedule(int taskcnt, void **arg, void (*cmd) (void *p))
 {
 	int i;
 	MT_Sema sema;
-	MRtask **task = (MRtask**) arg;
+	MRtask **task = (MRtask **) arg;
 
-	if ( mrqueue == 0)
+	if (mrqueue == 0)
 		MRqueueCreate(1024);
-	
+
 	MT_sema_init(&sema, 0, "q_create");
-	for ( i= 0; i < taskcnt; i++){
-		task[i]->sema = & sema;
+	for (i = 0; i < taskcnt; i++) {
+		task[i]->sema = &sema;
 		task[i]->cmd = cmd;
 	}
-	MRenqueue(taskcnt,task);
+	MRenqueue(taskcnt, task);
 	/* waiting for all report result */
-	for ( i= 0; i < taskcnt; i++)
+	for (i = 0; i < taskcnt; i++)
 		MT_sema_down(&sema, "mrqsema");
 }
