@@ -258,7 +258,7 @@ handle_in_exps( mvc *sql, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *
 				s = i;
 		}
 	} else {
-		int cmp = (in)?cmp_equal:cmp_notequal;
+		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
 		if (!in)
 			s = sel;
