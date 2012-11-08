@@ -292,6 +292,7 @@ CONDITIONALS = {
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
+    'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
     'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
     'HAVE_SPHINXCLIENT'    : "@HAVE_SPHINXCLIENT_FALSE@",
