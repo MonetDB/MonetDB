@@ -20,8 +20,6 @@
 #ifndef _GDK_MAPREDUCE_H_
 #define _GDK_MAPREDUCE_H_
 
-#include <monet_options.h>
-
 typedef struct {
 	MT_Sema *sema;			/* micro scheduler handle */
 	void (*cmd) (void *);		/* the function to be executed */
