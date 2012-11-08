@@ -12,13 +12,13 @@
 
 - How to run an example
 	- Go and Refer to .sql and .py files in the Tests/ directory under monetdb5/extras/dvf/.
-	- You need a file containing a list of mSEED files with their absolute paths that you would like to have in the repository. Run "Mtest create_file_list" to get a small example of mSEED file repository.
+	- You need a file containing a list of mSEED files with their absolute paths that you would like to have in the repository. Run "Mtest create_file_list" to get a small example of mSEED file repository. Or you might run "find $PWD -name "*.mseed" > file.lst" to get a list of mseed files under current directory.
 	- Run "export LD_LIBRARY_PATH=$LIBMSEED_LOCATION/libmseed".
 	- Run "mserver5" to start mserver with the default settings.
 	- Run "mclient" in another terminal to get a client connection to the database server using 'demo' database.
 	- In the mclient sql interface,
 		- run 'mseed_schema.sql' script to create the normalized schema of mSEED.
-		- run "CALL register_repo('TESTDIR/example_mseed_file_list.txt', 0);" where TESTDIR is the relative or absolute path of the aforementioned Tests/ directory. This will employ the registrar module to load (only) metadata of mSEED files.
+		- run "CALL register_repo('TESTDIR/example_mseed_file_list.txt', 0, 1);" where TESTDIR is the relative or absolute path of the aforementioned Tests/ directory. This will employ the registrar module to load (only) metadata of mSEED files. The last argument specifies the number threads to use.
 	- Leave mclient and stop mserver5. Then run "mserver5 --readonly" to restart in readonly mode. The current incomplete version works only in readonly mode.
 	- Run "mclient" again and in the mclient sql interface,
 		- run 'initializer.sql' script to modify MonetDB optimizer pipeline in order to include DVframework optimizer in the pipeline. This is need to me done after every restart of mclient, unfortunately.
