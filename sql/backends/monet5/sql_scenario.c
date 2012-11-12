@@ -492,6 +492,35 @@ sql_update_oct2012(Client c)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2012_sp1(Client c)
+{
+	char *buf = GDKmalloc(2048), *err = NULL;
+	size_t bufsize = 2048, pos = 0;
+
+
+	/* sys.stddev functions */
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TINYINT) returns TINYINT external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val SMALLINT) returns SMALLINT external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val INTEGER) returns INTEGER external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val BIGINT) returns BIGINT external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val REAL) returns REAL external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val DOUBLE) returns DOUBLE external name \"aggr\".\"stddev\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val DATE) returns DATE external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIME) returns TIME external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIMESTAMP) returns TIMESTAMP external name \"aggr\".\"stddev\";\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 str
 SQLinitClient(Client c)
 {
@@ -630,7 +659,7 @@ SQLinitClient(Client c)
 			if ((err = sql_update_apr2012_sp1(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
-		/* if aggregate function sys.median(int) does not
+		/* if function sys.alpa(double) does not
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "double", 0, 0);
 		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "alpha", &tp, &tp, F_FUNC )) {
@@ -651,6 +680,13 @@ SQLinitClient(Client c)
 				if ((err = sql_update_oct2012(c)) != NULL)
 					fprintf(stderr, "!%s\n", err);
 			}
+		}
+		/* if aggregate function sys.stddev(int) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "int", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_oct2012_sp1(c)) != NULL)
+				fprintf(stderr, "!%s\n", err);
 		}
 	}
 	fflush(stdout);
