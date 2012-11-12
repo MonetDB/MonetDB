@@ -57,8 +57,8 @@ Ready.
 [ 5195,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5209,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5226,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 5832,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5941,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
+[ 5877,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 5986,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."
