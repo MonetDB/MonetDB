@@ -305,6 +305,8 @@ function count(v:bat[:oid,:any]):bat[:oid,:lng];
 	return r;
 end count;
 
+# generates a continuous array of numbers
+# http://code.google.com/p/jaql/wiki/Builtin_functions#range()
 function range(start:bat[:oid,:lng], vend:bat[:oid,:lng], skip:bat[:oid,:lng]):bat[:oid,:lng];
 	ret := bat.new(:oid,:lng);
 	barrier (h,t) := iterator.new(start);
@@ -321,13 +323,11 @@ function range(start:bat[:oid,:lng], vend:bat[:oid,:lng], skip:bat[:oid,:lng]):b
 	exit (h,t);
 	return ret;
 end range;
-
 function range(start:bat[:oid,:lng], vend:bat[:oid,:lng]):bat[:oid,:lng];
 	step := algebra.project(start, 1:lng);
 	ret := jaqlfunc.range(start, vend, step);
 	return ret;
 end range;
-
 function range(size:bat[:oid,:lng]):bat[:oid,:lng];
 	start := algebra.project(size, 0:lng);
 	vend := batcalc.-(size,1);
