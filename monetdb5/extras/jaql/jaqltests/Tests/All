@@ -10,3 +10,4 @@ HAVE_JAQL?shred
 HAVE_JAQL?in
 HAVE_JAQL?documents
 HAVE_JAQL?multiline
+HAVE_JAQL?calculations

@@ -2879,10 +2879,12 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			int u = -1, v;
 			int h, i, k = -1, l = -1, m;
 			InstrPtr p;
-			b = -1;
+			b = c = -1;
 			switch (t->tval1->type) {
 				case j_var:
 				case j_operation:
+				case j_num:
+				case j_dbl:
 					b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
 
 					q = newInstruction(mb, ASSIGNsymbol);
