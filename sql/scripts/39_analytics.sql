@@ -1,3 +1,22 @@
+create aggregate stddev(val TINYINT) returns TINYINT
+	external name "aggr"."stddev";
+create aggregate stddev(val SMALLINT) returns SMALLINT
+	external name "aggr"."stddev";
+create aggregate stddev(val INTEGER) returns INTEGER
+	external name "aggr"."stddev";
+create aggregate stddev(val BIGINT) returns BIGINT
+	external name "aggr"."stddev";
+create aggregate stddev(val REAL) returns REAL
+	external name "aggr"."stddev";
+create aggregate stddev(val DOUBLE) returns DOUBLE
+	external name "aggr"."stddev";
+
+create aggregate stddev(val DATE) returns DATE
+	external name "aggr"."stddev";
+create aggregate stddev(val TIME) returns TIME
+	external name "aggr"."stddev";
+create aggregate stddev(val TIMESTAMP) returns TIMESTAMP
+	external name "aggr"."stddev";
 
 create aggregate median(val TINYINT) returns TINYINT
 	external name "aggr"."median";

@@ -1186,66 +1186,59 @@ make_operation(tree *var1, tree *op, tree *var2)
 		return res;
 	}
 
-	if (var1->type != j_var && var1->type != j_operation) {
-		/* left is value (literal) */
-		if (var2->type == j_var || var2->type == j_operation) {
-			/* right is var, or another operation, swap (want the var
-			 * left eventually (if any)) */
-			tree *t = var1;
-			var1 = var2;
-			var2 = t;
-		} else {
-			/* right is literal, pre-compute the value
-			 * only cases left are number/double combinations */
-			if (var1->type == j_num)
-				var1->dval = (double)var1->nval;
-			if (var2->type == j_num)
-				var2->dval = (double)var2->nval;
-			switch (op->cval) {
-				case j_plus:
-					if (var1->type == j_dbl || var2->type == j_dbl) {
-						res->type = j_dbl;
-						res->dval = var1->dval + var2->dval;
-					} else {
-						res->type = j_num;
-						res->nval = var1->nval + var2->nval;
-					}
-					break;
-				case j_min:
-					if (var1->type == j_dbl || var2->type == j_dbl) {
-						res->type = j_dbl;
-						res->dval = var1->dval - var2->dval;
-					} else {
-						res->type = j_num;
-						res->nval = var1->nval - var2->nval;
-					}
-					break;
-				case j_multiply:
-					if (var1->type == j_dbl || var2->type == j_dbl) {
-						res->type = j_dbl;
-						res->dval = var1->dval * var2->dval;
-					} else {
-						res->type = j_num;
-						res->nval = var1->nval * var2->nval;
-					}
-					break;
-				case j_divide:
-					if (var1->type == j_dbl || var2->type == j_dbl) {
-						res->type = j_dbl;
-						res->dval = var1->dval / var2->dval;
-					} else {
-						res->type = j_num;
-						res->nval = var1->nval / var2->nval;
-					}
-					break;
-				default:
-					assert(0);
-			}
-			freetree(var1);
-			freetree(op);
-			freetree(var2);
-			return res;
+	if (var1->type != j_var && var1->type != j_operation &&
+			var2->type != j_var && var2->type != j_operation)
+	{
+		/* both are constants, pre-compute the value
+		 * only cases left are number/double combinations */
+		if (var1->type == j_num)
+			var1->dval = (double)var1->nval;
+		if (var2->type == j_num)
+			var2->dval = (double)var2->nval;
+		switch (op->cval) {
+			case j_plus:
+				if (var1->type == j_dbl || var2->type == j_dbl) {
+					res->type = j_dbl;
+					res->dval = var1->dval + var2->dval;
+				} else {
+					res->type = j_num;
+					res->nval = var1->nval + var2->nval;
+				}
+				break;
+			case j_min:
+				if (var1->type == j_dbl || var2->type == j_dbl) {
+					res->type = j_dbl;
+					res->dval = var1->dval - var2->dval;
+				} else {
+					res->type = j_num;
+					res->nval = var1->nval - var2->nval;
+				}
+				break;
+			case j_multiply:
+				if (var1->type == j_dbl || var2->type == j_dbl) {
+					res->type = j_dbl;
+					res->dval = var1->dval * var2->dval;
+				} else {
+					res->type = j_num;
+					res->nval = var1->nval * var2->nval;
+				}
+				break;
+			case j_divide:
+				if (var1->type == j_dbl || var2->type == j_dbl) {
+					res->type = j_dbl;
+					res->dval = var1->dval / var2->dval;
+				} else {
+					res->type = j_num;
+					res->nval = var1->nval / var2->nval;
+				}
+				break;
+			default:
+				assert(0);
 		}
+		freetree(var1);
+		freetree(op);
+		freetree(var2);
+		return res;
 	}
 
 	res->type = j_operation;

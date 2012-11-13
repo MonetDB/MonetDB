@@ -3788,14 +3788,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, char *aggrstr, dnode *args, int
 	}
 	/* TODO: convert to single super type (iff |exps| > 1) */
 	if (a) {
-		/* type may have changed, ie. need to fix_scale */
-		sql_exp *fe = exps->h->data;
-		sql_subtype *t = exp_subtype(fe);
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
 		if (*rel != groupby || f != sql_sel) /* selection */
 			e = rel_groupby_add_aggr(sql, groupby, e);
-		return exp_fix_scale(sql, t, e, 1, (t->type->scale == SCALE_FIX));
+		return e;
 	} else {
 		sql_exp *e;
 		char *type = "unknown";

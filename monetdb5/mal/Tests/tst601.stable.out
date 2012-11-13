@@ -38,6 +38,8 @@ function user.main():void;
     const.close();
 # save the content on persistent store 
     io.print(p2);
+# don't leave any residues 
+    const.destroy();
 end main;
 [ 3.14700007 ]
 [ 3.14700007 ]

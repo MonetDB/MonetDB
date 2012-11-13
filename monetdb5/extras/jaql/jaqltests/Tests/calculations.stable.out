@@ -77,8 +77,8 @@ Ready.
 % .json # table_name
 % json # name
 % clob # type
-% 31 # length
-[ 10, 2, 5, 2.439024, 2 ]
+% 32 # length
+[ 10, 5, 1, 4.761905, 4.761905 ]
 #AB -> transform $.A / $.B;
 % .json # table_name
 % json # name

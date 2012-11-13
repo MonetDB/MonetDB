@@ -721,8 +721,16 @@ VIEWreset(BAT *b)
 		/* reset capacity */
 		n->U->capacity = cnt;
 
+		/* swap n and v in case the original input was reversed, because
+		 * BATins demands (v)oid-headed input */
+		if (b->batCacheid < 0) {
+			n = m;
+			m = BATmirror(v);
+		} else {
+			m = v;
+		}
 		/* insert all of v in n, and quit */
-		BATins(n, v, FALSE);
+		BATins(n, m, FALSE);
 		BBPreclaim(v);
 		BBPunfix(n->batCacheid);
 	}
