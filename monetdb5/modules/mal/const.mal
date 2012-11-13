@@ -48,10 +48,10 @@ comment "Get the string representation of an element in the box.";
 pattern discard(name:any_1) :void 		
 address CSTdiscard
 comment "Release the const from the box.";
-pattern newIterator()(:lng,:str)
+pattern newIterator()(:oid,:str)
 address CSTnewIterator
 comment "Locate next element in the box.";
-pattern hasMoreElements()(:lng,:str)
+pattern hasMoreElements()(:oid,:str)
 address CSThasMoreElements
 comment "Locate next element in the box.";
 
