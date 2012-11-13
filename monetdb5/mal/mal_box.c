@@ -358,12 +358,15 @@ destroyBox(str name)
 	for (i = j = 0; i < topbox; i++) {
 		if (idcmp(malbox[i]->name, name) == 0) {
 			freeMalBlk(malbox[i]->sym);
+			malbox[i]->sym = NULL;
 			if ( malbox[i]->val)
 				freeStack(malbox[i]->val);
+			malbox[i]->val = NULL;
 			boxfile = boxFileName(malbox[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
 			GDKfree(malbox[i]->name);
+			malbox[i]->name = NULL;
 			MT_lock_destroy(&malbox[i]->lock);
 		} else {
 			if (j < i)
@@ -371,6 +374,8 @@ destroyBox(str name)
 			j++;
 		}
 	}
+	for (i = j; i < topbox; i++)
+		malbox[i] = NULL;
 	topbox = j;
 	MT_lock_unset(&mal_contextLock, "destroyBox");
 }
