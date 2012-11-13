@@ -498,7 +498,6 @@ sql_update_oct2012_sp1(Client c)
 	char *buf = GDKmalloc(2048), *err = NULL;
 	size_t bufsize = 2048, pos = 0;
 
-
 	/* sys.stddev functions */
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TINYINT) returns TINYINT external name \"aggr\".\"stddev\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val SMALLINT) returns SMALLINT external name \"aggr\".\"stddev\";\n");
@@ -511,7 +510,7 @@ sql_update_oct2012_sp1(Client c)
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIME) returns TIME external name \"aggr\".\"stddev\";\n");
 	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIMESTAMP) returns TIMESTAMP external name \"aggr\".\"stddev\";\n");
 
-	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
 
 	assert(pos < 2048);
 
