@@ -1162,8 +1162,9 @@ make_op(enum comptype t)
 
 /* create an operation over two vars/literals, apply some simple rules
  * to reduce work lateron (e.g. static calculations)
- * return is either a j_num, j_dbl or j_operation with tval1 being j_val
- * or j_operation and tval2 being j_num, j_dbl, j_val or j_operation */
+ * return is either a j_num, j_dbl, j_str or j_operation with tval1
+ * being j_val or j_operation and tval2 being j_num, j_dbl, j_val or
+ * j_operation */
 tree *
 make_operation(tree *var1, tree *op, tree *var2)
 {
@@ -1173,13 +1174,13 @@ make_operation(tree *var1, tree *op, tree *var2)
 	assert(op != NULL && op->type == j_op);
 	assert(var2 != NULL);
 
-	if (var1->type == j_bool || var1->type == j_str ||
-			var2->type == j_bool || var2->type == j_str)
+	if (var1->type == j_bool || var1->type == j_null ||
+			var2->type == j_bool || var2->type == j_null)
 	{
 		/* we can't do arithmetic with these */
 		res->type = j_error;
 		res->sval = GDKstrdup("transform: cannot perform arithmetic on "
-				"string or boolean values");
+				"null or boolean values");
 		freetree(var1);
 		freetree(op);
 		freetree(var2);
@@ -1197,7 +1198,32 @@ make_operation(tree *var1, tree *op, tree *var2)
 			var2->dval = (double)var2->nval;
 		switch (op->cval) {
 			case j_plus:
-				if (var1->type == j_dbl || var2->type == j_dbl) {
+				if (var1->type == j_str || var2->type == j_str) {
+					size_t tsize;
+
+					if (var1->type != var2->type) {
+						res->type = j_error;
+						res->sval = GDKstrdup("transform: can only concatenate "
+								"two strings");
+						freetree(var1);
+						freetree(op);
+						freetree(var2);
+						return res;
+					}
+
+					tsize = strlen(var1->sval) + strlen(var2->sval) + 1;
+					res->type = j_str;
+					if ((res->sval = GDKmalloc(tsize)) == NULL) {
+						res->type = j_error;
+						res->sval = GDKstrdup("transform: str concat: "
+								"out of memory");
+						freetree(var1);
+						freetree(op);
+						freetree(var2);
+						return res;
+					}
+					snprintf(res->sval, tsize, "%s%s", var1->sval, var2->sval);
+				} else if (var1->type == j_dbl || var2->type == j_dbl) {
 					res->type = j_dbl;
 					res->dval = var1->dval + var2->dval;
 				} else {
@@ -1206,7 +1232,15 @@ make_operation(tree *var1, tree *op, tree *var2)
 				}
 				break;
 			case j_min:
-				if (var1->type == j_dbl || var2->type == j_dbl) {
+				if (var1->type == j_str || var2->type == j_str) {
+					res->type = j_error;
+					res->sval = GDKstrdup("transform: cannot perform "
+							"minus on strings");
+					freetree(var1);
+					freetree(op);
+					freetree(var2);
+					return res;
+				} else if (var1->type == j_dbl || var2->type == j_dbl) {
 					res->type = j_dbl;
 					res->dval = var1->dval - var2->dval;
 				} else {
@@ -1215,7 +1249,15 @@ make_operation(tree *var1, tree *op, tree *var2)
 				}
 				break;
 			case j_multiply:
-				if (var1->type == j_dbl || var2->type == j_dbl) {
+				if (var1->type == j_str || var2->type == j_str) {
+					res->type = j_error;
+					res->sval = GDKstrdup("transform: cannot perform "
+							"multiplication on strings");
+					freetree(var1);
+					freetree(op);
+					freetree(var2);
+					return res;
+				} else if (var1->type == j_dbl || var2->type == j_dbl) {
 					res->type = j_dbl;
 					res->dval = var1->dval * var2->dval;
 				} else {
@@ -1224,7 +1266,15 @@ make_operation(tree *var1, tree *op, tree *var2)
 				}
 				break;
 			case j_divide:
-				if (var1->type == j_dbl || var2->type == j_dbl) {
+				if (var1->type == j_str || var2->type == j_str) {
+					res->type = j_error;
+					res->sval = GDKstrdup("transform: cannot perform "
+							"division on strings");
+					freetree(var1);
+					freetree(op);
+					freetree(var2);
+					return res;
+				} else if (var1->type == j_dbl || var2->type == j_dbl) {
 					res->type = j_dbl;
 					res->dval = var1->dval / var2->dval;
 				} else {
@@ -2090,5 +2140,71 @@ JAQLcast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "jaql.cast", "BAT tail is not of required type");
 
 	*ret = *b;
+	return MAL_SUCCEED;
+}
+
+/* BAT-wise string concat, currently missing in-core */
+str
+JAQLbatconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	int *l = (int *)getArgReference(stk, pci, 1);
+	int *r = (int *)getArgReference(stk, pci, 2);
+	BAT *left, *right, *b;
+	BATiter bil, bir;
+	BUN pl, ql, pr;
+	char *vall, *valr, *valc;
+	size_t valsize, valcsize = 1024;
+
+	(void)mb;
+	(void)cntxt;
+
+	left = BATdescriptor(ABS(*l));
+	if (*l < 0)
+		left = BATmirror(left);
+	right = BATdescriptor(ABS(*r));
+	if (*r < 0)
+		right = BATmirror(right);
+
+	bil = bat_iterator(left);
+	bir = bat_iterator(right);
+
+	if (BATcount(left) != BATcount(right))
+		throw(MAL, "jaql.batconcat", "both input BATs must have same count");
+
+	if (left->ttype != TYPE_str || right->ttype != TYPE_str)
+		throw(MAL, "jaql.batconcat", "BAT tail types must be str");
+
+	b = BATnew(TYPE_oid, TYPE_str, BATcount(left));
+	if (b == NULL)
+		throw(MAL, "jaql.batconcat", "failed to create return BAT");
+
+	valc = GDKmalloc(valcsize);
+	if (valc == NULL)
+		throw(MAL, "jaql.batconcat", "failed to allocate memory "
+				"for result string");
+
+	for (ql = BUNlast(left), pl = BUNfirst(left), pr = BUNfirst(right); pl < ql; pl++, pr++) {
+		vall = (char *)BUNtail(bil, pl);
+		valr = (char *)BUNtail(bir, pr);
+		valsize = strlen(vall) + strlen(valr);
+
+		if (valsize >= valcsize) {
+			GDKfree(valc);
+			valcsize = valsize + 24;  /* allocate some extra for the future */
+			valc = GDKmalloc(valcsize);
+			if (valc == NULL) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "jaql.batconcat", "failed to allocate memory "
+						"for result string");
+			}
+		}
+		snprintf(valc, valcsize, "%s%s", vall, valr);
+		BUNins(b, BUNhead(bil, pl), valc, FALSE);
+	}
+	GDKfree(valc);
+
+	BBPkeepref(b->batCacheid);
+	*ret = b->batCacheid;
 	return MAL_SUCCEED;
 }
