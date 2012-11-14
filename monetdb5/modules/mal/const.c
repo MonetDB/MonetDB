@@ -28,7 +28,7 @@
  * multiple clients to exchange (scalar) information easily.
  *
  * The default constant box is initialized with session variables,
- * such as 'user','dbname', 'dbfarm', and 'dbdir'.
+ * such as 'user' and 'dbpath'.
  * These actions are encapsulated in the prelude routine called.
  *
  * A box should be opened before being used. It is typically used
@@ -73,8 +73,7 @@ CSTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "const.prelude", BOX_CLOSED);
 	/* if the box was already filled we can skip initialization */
 	if (box->sym->vtop == 0) {
-		insertToBox(box, "dbname", GDKgetenv("gdk_dbname"));
-		insertToBox(box, "dbfarm", GDKgetenv("gdk_dbfarm"));
+		insertToBox(box, "dbpath", GDKgetenv("gdk_dbpath"));
 		insertToBox(box, "version", VERSION);
 		snprintf(u, 24, "%s", GDKversion());
 		insertToBox(box, "gdk_version", u);

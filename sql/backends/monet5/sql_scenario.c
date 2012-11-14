@@ -196,7 +196,7 @@ SQLinit(void)
 	char *debug_str = GDKgetenv("sql_debug");
 	int readonly  = GDKgetenv_isyes("gdk_readonly");
 	int single_user = GDKgetenv_isyes("gdk_single_user");
-	char *gmt = "GMT", *dbname = NULL;
+	char *gmt = "GMT";
 	tzone tz;
 
 #ifdef _SQL_SCENARIO_DEBUG
@@ -223,11 +223,10 @@ SQLinit(void)
 		SQLdebug |= 64;
 	if (readonly)
 		SQLdebug |= 32;
-	dbname = GDKgetenv("gdk_dbname");
-	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_suro, 0)) < 0) ||
-			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_su, 0)) < 0) ||
-			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_ro, 0)) < 0) ||
-			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(dbname, FALSE, store_bat, 0)) < 0))
+	if (((SQLdebug&96)==96 && (SQLnewcatalog = mvc_init(FALSE, store_suro, 0)) < 0) ||
+			((SQLdebug&96)==64 && (SQLnewcatalog = mvc_init(FALSE, store_su, 0)) < 0) ||
+			((SQLdebug&96)==32 && (SQLnewcatalog = mvc_init(FALSE, store_ro, 0)) < 0) ||
+			((SQLdebug&112)==0 && (SQLnewcatalog = mvc_init(FALSE, store_bat, 0)) < 0))
 		throw(SQL, "SQLinit", "Catalogue initialization failed");
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock, "SQL init");

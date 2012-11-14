@@ -17,7 +17,7 @@ rem prepare the arguments to mserver5 to tell it where to put the dbfarm
 if "%APPDATA%" == "" goto usevar
 rem if the APPDATA variable does exist, put the database there
 set MONETDBDIR=%APPDATA%\MonetDB5
-set MONETDBFARM="--dbfarm=%MONETDBDIR%\dbfarm"
+set MONETDBFARM="--dbpath=%MONETDBDIR%\dbfarm\demo"
 goto skipusevar
 :usevar
 rem if the APPDATA variable does not exist, put the database in the

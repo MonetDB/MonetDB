@@ -1441,7 +1441,7 @@ def returnCode(proc, f = None):
 def GetBitsAndOIDsAndModsAndStaticAndThreads(env) :
     rtrn = 0
     cmd = splitcommand(env['exe']['Mserver'][1])
-    cmd.append('--dbname=%s' % TSTPREF)
+    cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
     if procdebug:
         print 'GetBitsAndOIDsAndModsAndStaticAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd)
     proc = subprocess.Popen(cmd, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, universal_newlines = True)
@@ -2616,7 +2616,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 if dbinit:
                     DBINIT = ['--dbinit=%s' % dbinit]
 
-            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB]
+            Srvr = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)]
             lang=""
 
             if SERVER == "MAL":
@@ -2658,7 +2658,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 cmd = splitcommand(exe['python'][1]) + [TST + EXT, TST] + PRELUDE
                 returncode = RunIt(cmd, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL in ["mal", "malXs"]:
-                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbname=%s' % TSTDB] + PRELUDE
+                cmd = splitcommand(exe['Mserver'][1]) + LOCAL_CONF + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTDB)] + PRELUDE
                 if CALL == "mal":
                     X=""
                 else:
@@ -3208,7 +3208,6 @@ def main(argv) :
         dft['GDK_NR_THREADS'] = "TSTTHREADS"
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-        dft['setGDK_DBFARM']     = "'--set \"gdk_dbfarm='+env['GDK_DBFARM']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
         dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
         dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
@@ -3473,10 +3472,6 @@ def main(argv) :
             env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
         else:
             env['setMONETDB_MOD_PATH'] = ''
-        if env.has_key('GDK_DBFARM'):
-            env['setGDK_DBFARM'] = eval(dft['setGDK_DBFARM'])
-        else:
-            env['setGDK_DBFARM'] = ''
         if env.has_key('DBG'):
             env['setDBG'] = env['DBG']
         else:
@@ -3571,7 +3566,7 @@ def main(argv) :
     STDERR.flush()
     if THISFILE == "Mtest.py":
         vars_ = vars_ + ['GDK_DBFARM']
-        vars_ = vars_ + ['setGDK_DBFARM','setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['setMONETDB_MOD_PATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -3646,8 +3641,8 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
@@ -3796,7 +3791,7 @@ def main(argv) :
             elif CONDITIONALS.has_key('BITS64') and CONDITIONALS['BITS64']:
                 env['TST_BITS'] = "64bit"
         else:
-            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbname=%s' % TSTPREF], 'clients.quit();\n'):
+            if Check(splitcommand(env['exe']['Mserver'][1]) + ['--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF)], 'clients.quit();\n'):
                 sys.exit(1)
             if GetBitsAndOIDsAndModsAndStaticAndThreads(env):
                 sys.exit(1)

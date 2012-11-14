@@ -78,8 +78,7 @@ usage(char *prog)
 	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
 	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
 	fprintf(stderr, " -t                  | --time                       \n");
-	fprintf(stderr, "                       --dbname=<database_name>     \n");
-	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
+	fprintf(stderr, "                       --dbpath=<database_directory>\n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
 	fprintf(stderr, " -?                  | --help                       \n");
 	exit(-1);
@@ -101,8 +100,7 @@ main(int argc, char **av)
 
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
-		{"dbname", 1, 0, 0},
-		{"dbfarm", 1, 0, 0},
+		{"dbpath", 1, 0, 0},
 		{"debug", 2, 0, 'd'},
 		{"time", 0, 0, 't'},
 		{"set", 1, 0, 's'},
@@ -124,12 +122,8 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
+			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
 				break;
 			}
 			usage(prog);

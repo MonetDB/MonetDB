@@ -437,7 +437,7 @@
  * @- GDK session handling
  * @multitable @columnfractions 0.08 0.7
  * @item int
- * @tab GDKinit (char *db, char *dbfarm, int allocmap)
+ * @tab GDKinit (char *db, char *dbpath, int allocmap)
  * @item int
  * @tab GDKexit (int status)
  * @end multitable

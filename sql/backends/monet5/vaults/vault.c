@@ -91,7 +91,7 @@
  * @end verbatim
  *
  * The module is developed solely for a Linux environment.
- * The vault root is a subdirectory of the dbfarm/<dbname>/vault/ and contains
+ * The vault root is a subdirectory of the dbpath/vault/ and contains
  * a subdirectory for each vault kind. In turn, each vault kind comes
  * with a refinement of the catalog identified above using the vid to relate the two.
  *
@@ -235,7 +235,7 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 	if ( vaultpath[0] == 0){
-		snprintf(vaultpath, PATHLENGTH, "%s%c%s%cvault", GDKgetenv("gdk_dbfarm"), DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+		snprintf(vaultpath, PATHLENGTH, "%s%cvault", GDKgetenv("gdk_dbpath"), DIR_SEP);
 		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST)
 			return createException(MAL,"vault.getLocation", "can not access vault directory");
 	}

@@ -947,7 +947,7 @@ check_version(logger *lg, FILE *fp)
 		    (*lg->prefuncp)(version, lg->version) != 0) {
 			GDKerror("Incompatible database version %06d, "
 				 "this server supports version %06d\n"
-				 "Please move away %s and its corresponding dbfarm.",
+				 "Please move away %s.",
 				 version, lg->version, lg->dir);
 
 			return -1;
@@ -1029,7 +1029,7 @@ logger_fatal(const char *format, const char *arg1, const char *arg2, const char 
 }
 
 static logger *
-logger_new(int debug, char *fn, char *logdir, char *dbname, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
 	int id = LOG_SID;
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
@@ -1057,8 +1057,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 	 * logger_create/logger_new "manually" */
 	assert(!MT_path_absolute(logdir));
 
-	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c%s%c",
-		 GDKgetenv("gdk_dbfarm"), DIR_SEP, dbname, DIR_SEP,
+	snprintf(filename, BUFSIZ, "%s%c%s%c%s%c",
+		 GDKgetenv("gdk_dbpath"), DIR_SEP,
 		 logdir, DIR_SEP, fn, DIR_SEP);
 	lg->fn = GDKstrdup(fn);
 	lg->dir = GDKstrdup(filename);
@@ -1202,7 +1202,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		if (fp != NULL) {
 			logger_fatal("logger_new: there is no logger catalog, but there is a log file.\n"
 				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n",
+				     "(--dbpath) and log directory (--set %s_logdir)?\n",
 				     fn, 0, 0);
 			goto error;
 		}
@@ -1266,7 +1266,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		if (fp == NULL) {
 			logger_fatal("logger_new: there is a logger catalog, but no log file.\n"
 				     "Are you sure you are using the correct combination of database\n"
-				     "(--dbfarm / --dbname) and log directory (--set %s_logdir)?\n"
+				     "(--dbpath) and log directory (--set %s_logdir)?\n"
 				     "If you have done a recent update of the server, it may be that your\n"
 				     "logs are in an old location.  You should then either use\n"
 				     "--set %s_logdir=<path to old log directory> or move the old log\n"
@@ -1352,7 +1352,7 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		}
 
 #if SIZEOF_OID == 8
-		/* When a file *_32-64-convert exists in the dbfarm,
+		/* When a file *_32-64-convert exists in the database,
 		 * it was left there by the BBP initialization code
 		 * when it did a conversion of 32-bit OIDs to 64 bits
 		 * (see the comment above fixoidheapcolumn and
@@ -1360,18 +1360,18 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		 * first create a file called convert-32-64 in the log
 		 * directory and we write the current log ID into that
 		 * file.  After this file is created, we delete the
-		 * *_32-64-convert file in the dbfarm.  We then know
+		 * *_32-64-convert file in the database.  We then know
 		 * that while reading the logs, we have to read OID
 		 * values as 32 bits (this is indicated by setting the
 		 * read32bitoid flag).  When we're done reading the
 		 * logs, we remove the file (and reset the flag).  If
 		 * we get interrupted before we have written this
-		 * file, the file in the dbfarm will still exist, so
+		 * file, the file in the database will still exist, so
 		 * the next time we're started, BBPinit will not
 		 * convert OIDs (that was done before we got
 		 * interrupted), but we will still know to convert the
 		 * OIDs ourselves.  If we get interrupted after we
-		 * have deleted the file from the dbfarm, we check
+		 * have deleted the file from the database, we check
 		 * whether the file convert-32-64 exists and if it
 		 * contains the expected ID.  If it does, we again
 		 * know that we have to convert.  If the ID is not
@@ -1379,8 +1379,8 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 		 * already, and so we can delete the file. */
 
 		snprintf(cvfile, sizeof(cvfile),
-			 "%s%c%s%c%s%c%s%cconvert-32-64",
-			 GDKgetenv("gdk_dbfarm"), DIR_SEP, dbname,
+			 "%s%c%s%c%s%cconvert-32-64",
+			 GDKgetenv("gdk_dbpath"),
 			 DIR_SEP, logdir, DIR_SEP, fn, DIR_SEP);
 		snprintf(bak, sizeof(bak), "%s_32-64-convert", fn);
 		{
@@ -1459,9 +1459,9 @@ logger_new(int debug, char *fn, char *logdir, char *dbname, int version, prevers
 }
 
 logger *
-logger_create(int debug, char *fn, char *logdir, char *dbname, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, char *fn, char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
 {
-	logger *lg = logger_new(debug, fn, logdir, dbname, version, prefuncp, postfuncp);
+	logger *lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
 
 	if (!lg)
 		return NULL;

@@ -67,7 +67,8 @@ typedef struct Ssabuplog {
 #define msab_export extern
 #endif
 
-msab_export void msab_init(char *dbfarm, char *dbname);
+msab_export void msab_dbpathinit(const char *dbpath);
+msab_export void msab_dbfarminit(const char *dbfarm);
 msab_export char *msab_getDBfarm(char **ret);
 msab_export char *msab_getDBname(char **ret);
 msab_export char *msab_marchScenario(const char *lang);

@@ -27,14 +27,12 @@ barrier (b,nme) := const.newIterator();
 exit b;
 end main;
 [ "Contents of the 'const' box" ]
-[ dbname ]
-#mTests_mal
-[ dbfarm ]
-#/net/sofia.ins.cwi.nl/export/scratch1/fabian/tmp/mtest-Oct2012-sofia.ins.cwi.nl/five/dbfarm
+[ dbpath ]
+#/ufs/sjoerd/Monet-devel/var/MonetDB/mTests_mal
 [ version ]
 #11.13.0
 [ gdk_version ]
-#11.13.0
+#11.14.0 (hg id: c4627c1
 
 # 14:52:15 >  
 # 14:52:15 >  "Done."

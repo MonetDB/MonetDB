@@ -1053,7 +1053,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-	msab_init(dbfarm, NULL);
+	msab_dbfarminit(dbfarm);
 
 
 	/* write out the pid */

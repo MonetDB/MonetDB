@@ -301,8 +301,7 @@ BATlocation(str *fnme, int *bid)
 	if (b == NULL)
 		return 0;
 
-	snprintf(path, BUFSIZ, "%s%c%s%c", GDKgetenv("gdk_dbfarm"),
-		 DIR_SEP, GDKgetenv("gdk_dbname"), DIR_SEP);
+	snprintf(path, BUFSIZ, "%s%c", GDKgetenv("gdk_dbpath"), DIR_SEP);
 	GDKfilepath(path + strlen(path), BATDIR,
 		    (b->T->heap.filename ? b->T->heap.filename: b->H->heap.filename), 0);
 	s = strrchr(path, '.');

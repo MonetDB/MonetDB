@@ -1934,9 +1934,9 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 			      "SELECT \"name\", \"value\" "
 			      "FROM sys.env() AS env "
 			      "WHERE \"name\" IN ('gdk_dbname', "
-				       "'monet_version', "
-					   "'monet_release', "
-					   "'merovingian_uri')")) == NULL ||
+					"'monet_version', "
+					"'monet_release', "
+					"'merovingian_uri')")) == NULL ||
 			mapi_error(mid))
 		goto cleanup;
 

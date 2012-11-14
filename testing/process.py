@@ -44,6 +44,7 @@ _mal_client = splitcommand(os.getenv('MAL_CLIENT', 'mclient -lmal'))
 _sql_client = splitcommand(os.getenv('SQL_CLIENT', 'mclient -lsql'))
 _sql_dump = splitcommand(os.getenv('SQL_DUMP', 'msqldump -q'))
 _server = splitcommand(os.getenv('MSERVER', ''))
+_dbfarm = os.getenv('GDK_DBFARM', None)
 
 _dotmonetdbfile = []
 
@@ -334,17 +335,27 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--set')
         cmd.append('mapi_port=%d' % int(mapiport))
+    for i in range(len(cmd)):
+        if cmd[i][:9] == '--dbpath=':
+            dbpath = cmd[i][9:]
+            del cmd[i]
+            break
+        elif cmd[i] == '--dbpath':
+            dbpath = cmd[i+1]
+            del cmd[i:i+2]
+            break
+    else:
+        dbpath = None
+    if dbname is None and dbfarm is not None:
+        dbname = 'demo'
     if dbname is not None:
-        cmd.append('--set')
-        cmd.append('gdk_dbname=%s' % dbname)
-    if dbfarm is not None:
-        for i in range(len(cmd)):
-            if cmd[i][:11] == 'gdk_dbfarm=':
-                del cmd[i]
-                del cmd[i - 1]
-                break
-        cmd.append('--set')
-        cmd.append('gdk_dbfarm=%s' % dbfarm)
+        if dbfarm is None:
+            if _dbfarm is None:
+                raise RuntimeError('no dbfarm known')
+            dbfarm = _dbfarm
+        dbpath = os.path.join(dbfarm, dbname)
+    if dbpath is not None:
+        cmd.append('--dbpath=%s' % dbpath)
     if verbose:
         print 'Executing', ' '.join(cmd +  args)
         sys.stdout.flush()

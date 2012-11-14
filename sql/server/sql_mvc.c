@@ -35,20 +35,18 @@
 static int mvc_debug = 0;
 
 int
-mvc_init(char *dbname, int debug, store_type store, backend_stack stk)
+mvc_init(int debug, store_type store, backend_stack stk)
 {
 	int first = 0;
 	char *logdir = "sql_logs";
 
-	assert(dbname);
-
 	mvc_debug = debug;
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_init logdir %s%c%s\n", logdir, DIR_SEP, dbname);
+		fprintf(stderr, "#mvc_init logdir %s\n", logdir);
 	keyword_init();
 	scanner_init_keywords();
 
-	if ((first = store_init(debug, store, logdir, dbname, stk)) < 0) {
+	if ((first = store_init(debug, store, logdir, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}

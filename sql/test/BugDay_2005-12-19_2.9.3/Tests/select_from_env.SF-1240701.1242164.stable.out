@@ -28,8 +28,8 @@ Ready.
 % name # name
 % varchar # type
 % 16 # length
-[ "gdk_dbfarm"	]
 [ "gdk_dbname"	]
+[ "gdk_dbpath"	]
 [ "gdk_debug"	]
 [ "gdk_mem_bigsize"	]
 [ "gdk_mem_pagebits"	]

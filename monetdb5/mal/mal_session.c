@@ -140,7 +140,7 @@ void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
-	char *database = NULL, *s;
+	char *database = NULL, *s, *dbname;
 	Client c;
 	MT_Id p;
 
@@ -211,13 +211,14 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout)
 			*s = 0;
 	}
 
+	dbname = GDKgetenv("gdk_dbname");
 	if (database != NULL && database[0] != '\0' &&
-		strcmp(database, GDKgetenv("gdk_dbname")) != 0)
+		strcmp(database, dbname) != 0)
 	{
 		mnstr_printf(fout, "!request for database '%s', "
 						   "but this is database '%s', "
 						   "did you mean to connect to monetdbd instead?\n",
-				database, GDKgetenv("gdk_dbname"));
+				database, dbname);
 		/* flush the error to the client, and abort further execution */
 		mnstr_flush(fout);
 		GDKfree(command);

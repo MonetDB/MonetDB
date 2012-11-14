@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-embeddedclient_export Mapi monetdb_sql(char *dbfarm, char *dbname);
+embeddedclient_export Mapi monetdb_sql(char *dbpath);
 embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #ifdef __cplusplus

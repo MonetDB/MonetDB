@@ -83,8 +83,7 @@ static void
 usage(char *prog)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
-	fprintf(stderr, "    --dbname=<database_name>  Specify database name\n");
-	fprintf(stderr, "    --dbfarm=<directory>      Specify database location\n");
+	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
 	fprintf(stderr, "    --dbinit=<stmt>           Execute statement at startup\n");
 	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --daemon=yes|no           Do not read commands from standard input [no]\n");
@@ -145,7 +144,7 @@ monet_hello(void)
 	printf("# Found %.3f %ciB available main-memory.\n",
 			sz_mem_h, qc[qi]);
 #ifdef MONET_GLOBAL_DEBUG
-	printf("# Database farm:%s\n", GDKgetenv("gdk_dbfarm"));
+	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) 1993-July 2008 CWI.\n");
@@ -215,8 +214,7 @@ main(int argc, char **av)
 
 	static struct option long_options[] = {
 		{ "config", 1, 0, 'c' },
-		{ "dbname", 1, 0, 0 },
-		{ "dbfarm", 1, 0, 0 },
+		{ "dbpath", 1, 0, 0 },
 		{ "dbinit", 1, 0, 0 },
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
@@ -290,12 +288,8 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
-			if (strcmp(long_options[option_index].name, "dbname") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
+			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", optarg);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
@@ -482,8 +476,8 @@ main(int argc, char **av)
 			GDKsetenv("monet_mod_path", modpath);
 	}
 
-	/* configure sabaoth to use the right dbfarm and active database */
-	msab_init(GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	/* configure sabaoth to use the right dbpath and active database */
+	msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 	/* wipe out all cruft, if left over */
 	if ((err = msab_wildRetreat()) != NULL) {
 		/* just swallow the error */

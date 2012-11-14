@@ -11,8 +11,7 @@ stderr of test 'mserver5--help` in directory 'tools` itself:
 # 16:36:12 >  
 
 Usage: mserver5 [options] [scripts]
-    --dbname=<database_name>  Specify database name
-    --dbfarm=<directory>      Specify database location
+    --dbpath=<directory>      Specify database location
     --dbinit=<stmt>           Execute statement at startup
     --config=<config_file>    Use config_file to read options from
     --daemon=yes|no           Do not read commands from standard input [no]

@@ -1247,7 +1247,7 @@ store_schema_number(void)
 }
 
 int
-store_init(int debug, store_type store, char *logdir, char *dbname, backend_stack stk)
+store_init(int debug, store_type store, char *logdir, backend_stack stk)
 {
 	sqlid id = 0;
 	lng lng_store_oid;
@@ -1285,7 +1285,7 @@ store_init(int debug, store_type store, char *logdir, char *dbname, backend_stac
 	}
 	active_store_type = store;
 	if (!logger_funcs.create ||
-	    logger_funcs.create(logdir, dbname, CATALOG_VERSION*v) == LOG_ERR)
+	    logger_funcs.create(logdir, CATALOG_VERSION*v) == LOG_ERR)
 		return -1;
 
 	MT_lock_init(&bs_lock, "SQL_bs_lock");

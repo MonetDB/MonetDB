@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Nov 14 2012 Sjoerd Mullender <sjoerd@acm.org>
+- mserver5: The --dbname and --dbfarm options have been replaced by the
+  single --dbpath option.
+
 * Wed Oct  3 2012 Martin Kersten <mk@cwi.nl>
 - The scheduler of mserver5 was changed to use a fixed set of workers to
   perform the work for all connected clients.  Previously, each client

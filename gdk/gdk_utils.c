@@ -31,8 +31,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-static char GDKdbfarmStr[PATHLENGTH] = { "dbfarm" };
-static char GDKdbnameStr[PATHLENGTH] = { 0 };
+static char GDKdbpathStr[PATHLENGTH] = { "dbpath" };
 
 BAT *GDKkey = NULL;
 BAT *GDKval = NULL;
@@ -92,29 +91,23 @@ static int GDKgetHome(void);
  */
 
 static int
-GDKenvironment(str dbname, str dbfarm)
+GDKenvironment(str dbpath)
 {
-	if (dbname == 0) {
-		fprintf(stdout, "!GDKenvironment: database name missing.\n");
+	if (dbpath == 0) {
+		fprintf(stderr, "!GDKenvironment: database name missing.\n");
 		return 0;
 	}
-	if (dbfarm == 0) {
-		fprintf(stdout, "!GDKenvironment: dbfarm missing.\n");
+	if (strlen(dbpath) >= PATHLENGTH) {
+		fprintf(stderr, "!GDKenvironment: database name too long.\n");
 		return 0;
 	}
-
-	if (!MT_path_absolute(dbfarm)) {
-		fprintf(stdout, "!GDKenvironment: wrong directory %s.\n", dbfarm);
+	if (!MT_path_absolute(dbpath)) {
+		fprintf(stderr, "!GDKenvironment: directory not an absolute path: %s.\n", dbpath);
 		return 0;
 	}
-
-	assert(strlen(dbname) < PATHLENGTH);
-	assert(strlen(dbfarm) < PATHLENGTH);
-	strncpy(GDKdbnameStr, dbname, PATHLENGTH);
-	strncpy(GDKdbfarmStr, dbfarm, PATHLENGTH);
+	strncpy(GDKdbpathStr, dbpath, PATHLENGTH);
 	/* make coverity happy: */
-	GDKdbnameStr[PATHLENGTH - 1] = 0;
-	GDKdbfarmStr[PATHLENGTH - 1] = 0;
+	GDKdbpathStr[PATHLENGTH - 1] = 0;
 	return 1;
 }
 
@@ -1065,13 +1058,6 @@ GDKmunmap(void *addr, size_t size)
 
 /*
  * @+ Session Initialization
- * The parameter @emph{db} is followed by the database name relative
- * to the environment variable dbfarm.  The parameter monetrc tells
- * that the system variables setting should be overruled by the
- * specification given in the file argument.  This format is only
- * necessary to temporarily experiment with variable settings, without
- * disturbing a system/site default setting.
- *
  * The interface code to the operating system is highly dependent on
  * the processing environment. It can be filtered away with
  * compile-time flags.  Suicide is necessary due to some system
@@ -1129,8 +1115,7 @@ static int THRinit(void);
 int
 GDKinit(opt *set, int setlen)
 {
-	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
-	char *dbfarm = mo_find_option(set, setlen, "gdk_dbfarm");
+	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
 	char *p;
 	opt *n;
 	int i, j, nlen = 0;
@@ -1169,7 +1154,7 @@ GDKinit(opt *set, int setlen)
 	MT_lock_init(&GDKtmLock, "GDKtmLock");
 	MT_lock_init(&mbyteslock, "mbyteslock");
 	errno = 0;
-	if (!GDKenvironment(dbname, dbfarm))
+	if (!GDKenvironment(dbpath))
 		return 0;
 
 	if ((p = mo_find_option(set, setlen, "gdk_debug")))
@@ -1245,6 +1230,15 @@ GDKinit(opt *set, int setlen)
 		GDKsetenv(n[i].name, n[i].value);
 	free(n);
 
+	if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
+	    (p = strrchr(p, DIR_SEP)) != NULL) {
+		GDKsetenv("gdk_dbname", p + 1);
+#if DIR_SEP != '/'		/* on Windows look for different separator */
+	} else if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
+	    (p = strrchr(p, '/')) != NULL) {
+		GDKsetenv("gdk_dbname", p + 1);
+#endif
+	}
 	if ((p = GDKgetenv("gdk_mem_maxsize"))) {
 		GDK_mem_maxsize = MAX(1 << 26, (size_t) strtoll(p, NULL, 10));
 	}
@@ -1384,22 +1378,21 @@ void
 GDKlockHome(void)
 {
 	char *p = 0, buf[1024], host[PATHLENGTH];
-	char GDKdirStr[PATHLENGTH];
 
 	/*
 	 * Go there and obtain the global database lock.
 	 */
-	/* The DIR_SEP at the end of the path is needed for a
-	 * successful call to GDKcreatedir */
+	if (chdir(GDKdbpathStr) < 0) {
+		char GDKdirStr[PATHLENGTH];
 
-	snprintf(GDKdirStr, PATHLENGTH, "%s%c%s%c", GDKdbfarmStr, DIR_SEP, GDKdbnameStr, DIR_SEP);
-
-	if (chdir(GDKdirStr) < 0) {
+		/* The DIR_SEP at the end of the path is needed for a
+		 * successful call to GDKcreatedir */
+		snprintf(GDKdirStr, PATHLENGTH, "%s%c", GDKdbpathStr, DIR_SEP);
 		if (!GDKcreatedir(GDKdirStr))
-			GDKfatal("GDKlockHome: could not create %s\n", GDKdirStr);
-		if (chdir(GDKdirStr) < 0)
-			GDKfatal("GDKlockHome: could not move to %s\n", GDKdirStr);
-		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: created directory %s\n", GDKdirStr);
+			GDKfatal("GDKlockHome: could not create %s\n", GDKdbpathStr);
+		if (chdir(GDKdbpathStr) < 0)
+			GDKfatal("GDKlockHome: could not move to %s\n", GDKdbpathStr);
+		IODEBUG THRprintf(GDKstdout, "#GDKlockHome: created directory %s\n", GDKdbpathStr);
 	}
 	if (GDKrecovery && unlink(GDKLOCK) < 0) {
 		GDKfatal("GDKlockHome: unlock DB failed\n");

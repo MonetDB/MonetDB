@@ -51,6 +51,8 @@
 #define unlink _unlink
 #endif
 
+#define PATHLENGTH 4096
+
 /** the directory where the databases are (aka dbfarm) */
 char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
@@ -106,8 +108,8 @@ getDBPath(char **ret, size_t size, const char *extra)
  * dbname may be NULL to indicate that there is no active database.  The
  * arguments are copied for internal use.
  */
-void
-msab_init(char *dbfarm, char *dbname)
+static void
+msab_init(const char *dbfarm, const char *dbname)
 {
 	size_t len;
 
@@ -143,6 +145,23 @@ msab_init(char *dbfarm, char *dbname)
 		_sabaoth_internal_dbname = strdup(dbname);
 	}
 }
+void
+msab_dbpathinit(const char *dbpath)
+{
+	char dbfarm[PATHLENGTH];
+	const char *p;
+
+	p = strrchr(dbpath, DIR_SEP);
+	assert(p != NULL);
+	strncpy(dbfarm, dbpath, p - dbpath);
+	dbfarm[p - dbpath] = 0;
+	msab_init(dbfarm, p + 1);
+}
+void
+msab_dbfarminit(const char *dbfarm)
+{
+	msab_init(dbfarm, NULL);
+}
 
 /**
  * Returns the dbfarm as received during msab_init.  Returns an
@@ -171,8 +190,6 @@ msab_getDBname(char **ret)
 	*ret = strdup(_sabaoth_internal_dbname);
 	return(NULL);
 }
-
-#define PATHLENGTH 4096
 
 #define SCENARIOFILE ".scen"
 

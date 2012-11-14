@@ -24,7 +24,6 @@
 #include <mal.h>
 #include <mal_exception.h>
 #include <msabaoth.h>
-mal_export void SABAOTHinit(str dbfarm, str dbname);
 mal_export str SABAOTHgetDBfarm(str *ret);
 mal_export str SABAOTHgetDBname(str *ret);
 mal_export str SABAOTHmarchScenario(int *ret, str *lang);

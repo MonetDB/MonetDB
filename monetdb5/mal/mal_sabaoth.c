@@ -66,14 +66,6 @@ fromMallocToGDK(char *val)
 		free(X);										\
 		return(_me);									\
 	} while (0)
-/**
- * Initialises this Sabaoth instance to use the given dbfarm and dbname.
- * dbname may be NULL to indicate that there is no active database.  The
- * arguments are copied for internal use.
- */
-void SABAOTHinit(str dbfarm, str dbname) {
-	msab_init(dbfarm, dbname);
-}
 
 /**
  * Returns the dbfarm as received during SABAOTHinit.  Throws an

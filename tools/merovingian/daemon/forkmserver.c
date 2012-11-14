@@ -269,8 +269,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	pid = fork();
 	if (pid == 0) {
 		char *sabdbfarm;
-		char dbfarm[1024];
-		char dbname[512];
+		char dbpath[1024];
 		char port[24];
 		char muri[512]; /* possibly undersized */
 		char usock[512];
@@ -334,18 +333,15 @@ forkMserver(char *database, sabdb** stats, int force)
 		mport = (unsigned int)getConfNum(_mero_props, "port");
 
 		/* ok, now exec that mserver we want */
-		snprintf(dbfarm, sizeof(dbfarm),
-				"gdk_dbfarm=%s", sabdbfarm);
-		snprintf(dbname, sizeof(dbname),
-				"--dbname=%s", database);
+		snprintf(dbpath, sizeof(dbpath),
+				"--dbpath=%s/%s", sabdbfarm, database);
 		snprintf(vaultkey, sizeof(vaultkey),
 				"monet_vault_key=%s/.vaultkey", (*stats)->path);
 		snprintf(muri, sizeof(muri),
 				"merovingian_uri=mapi:monetdb://%s:%u/%s",
 				_mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
-		argv[c++] = "--set"; argv[c++] = dbfarm;
-		argv[c++] = dbname;
+		argv[c++] = dbpath;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (mydoproxy == 1) {
 			struct sockaddr_un s; /* only for sizeof(s.sun_path) :( */
