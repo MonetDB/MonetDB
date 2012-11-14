@@ -37,6 +37,10 @@ pattern cast(b:bat[:oid,:any], t:any_1):bat[:oid,:any_1]
 address JAQLcast
 comment "Return BAT b as BAT with tail type of t, if the BAT tail in reality is of that type";
 
+pattern batconcat(l:bat[:oid,:str], r:bat[:oid,:str]):bat[:oid,:str]
+address JAQLbatconcat
+comment "Return the string concatenation of the tails of both input BATs";
+
 # scenario functions and init call
 command prelude()
 address JAQLprelude;

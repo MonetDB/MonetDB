@@ -54,6 +54,12 @@ Ready.
 % clob # type
 % 12 # length
 [ 2.900000 ]
+#[ 1 ] -> transform "hello" + "world";
+% .json # table_name
+% json # name
+% clob # type
+% 16 # length
+[ "helloworld" ]
 #AB;
 % .json # table_name
 % json # name
@@ -64,45 +70,46 @@ Ready.
   { "A": 5, "B": 2 },
   { "A": 2, "B": 6 },
   { "A": 4.100000, "B": 2.100000 },
-  { "A": 5, "B": 2.100000 }
+  { "A": 5, "B": 2.100000 },
+  { "A": "hello", "B": "world" }
 ]
 ## some runtime evaluated queries
 #A -> transform $ / 2;
 % .json # table_name
 % json # name
 % clob # type
-% 24 # length
-[ 0, 2, 1, 2.050000, 2 ]
+% 30 # length
+[ 0, 2, 1, 2.050000, 2, null ]
 #B -> transform 10 / $;
 % .json # table_name
 % json # name
 % clob # type
-% 32 # length
-[ 10, 5, 1, 4.761905, 4.761905 ]
+% 38 # length
+[ 10, 5, 1, 4.761905, 4.761905, null ]
 #AB -> transform $.A / $.B;
 % .json # table_name
 % json # name
 % clob # type
-% 31 # length
-[ 1, 2, 0, 1.952381, 2.380952 ]
+% 37 # length
+[ 1, 2, 0, 1.952381, 2.380952, null ]
 #AB -> transform $.A * $.B;
 % .json # table_name
 % json # name
 % clob # type
-% 34 # length
-[ 1, 10, 12, 8.610000, 10.500000 ]
+% 40 # length
+[ 1, 10, 12, 8.610000, 10.500000, null ]
 #AB -> transform $.A + $.B;
 % .json # table_name
 % json # name
 % clob # type
-% 31 # length
-[ 2, 7, 8, 6.200000, 7.100000 ]
+% 45 # length
+[ 2, 7, 8, 6.200000, 7.100000, "helloworld" ]
 #AB -> transform $.A - $.B;
 % .json # table_name
 % json # name
 % clob # type
-% 32 # length
-[ 0, 3, -4, 2.000000, 2.900000 ]
+% 38 # length
+[ 0, 3, -4, 2.000000, 2.900000, null ]
 
 # 21:20:59 >  
 # 21:20:59 >  "Done."

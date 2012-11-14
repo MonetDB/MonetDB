@@ -15,7 +15,6 @@ stdout of test 'transform00` in directory 'extras/jaql` itself:
 # Listening for connection requests on mapi:monetdb://sofia.ins.cwi.nl:35341/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell module not loaded: MALException:jaql.context:JAQL environment not found
 function user.main():void;
     jaql.x("[1,2,3] -> transform 2 * 2;");
     jaql.x("[1,2,3] -> transform {\"value\":2 + 2};");

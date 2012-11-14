@@ -2877,7 +2877,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 		case j_operation: {
 			int r, s;
 			int u = -1, v;
-			int h, i, k = -1, l = -1, m;
+			int h, i, k = -1, l = -1, m, n = -1;
 			InstrPtr p;
 			b = c = -1;
 			switch (t->tval1->type) {
@@ -2885,6 +2885,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				case j_operation:
 				case j_num:
 				case j_dbl:
+				case j_str:
 					b = dumpvariabletransformation(j, cntxt, mb, t->tval1, elems);
 
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -2912,6 +2913,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			switch (t->tval3->type) {
 				case j_var:
 				case j_operation:
+				case j_str:
 					c = dumpvariabletransformation(j, cntxt, mb, t->tval3, elems);
 
 					q = newInstruction(mb, ASSIGNsymbol);
@@ -3053,6 +3055,131 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			} else {
 				s = d;
 				v = f;
+			}
+
+			if (t->tval2->cval == j_plus && c != -1) {
+				int s1, s2, s3, s4, s5;
+				/* special case for string concatenations, jaql performs
+				 * implicit concat on str/str additions only */
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j->j2);
+				q = pushArgument(mb, q, b);
+				s1 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j->j2);
+				q = pushArgument(mb, q, c);
+				s2 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, r);
+				q = pushArgument(mb, q, s1);
+				s3 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, u);
+				q = pushArgument(mb, q, s2);
+				s4 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s3);
+				s3 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, reverseRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s4);
+				s4 = getArg(q, 0);
+				pushInstruction(mb, q);
+				
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, putName("kintersect", 10));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s3);
+				q = pushArgument(mb, q, s4);
+				s5 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s3);
+				q = pushArgument(mb, q, s5);
+				s3 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, semijoinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s4);
+				q = pushArgument(mb, q, s5);
+				s4 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, joinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s3);
+				q = pushArgument(mb, q, s1);
+				s1 = getArg(q, 0);
+				pushInstruction(mb, q);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, joinRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s4);
+				q = pushArgument(mb, q, s2);
+				s2 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, putName("jaql", 4));
+				setFunctionId(q, putName("batconcat", 9));
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s1);
+				q = pushArgument(mb, q, s2);
+				s1 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				dumpbatwritable(j, mb, 2);
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, j->j2);
+				q = pushArgument(mb, q, s1);
+				j->j2 = getArg(q, 0);
+				pushInstruction(mb, q);
+
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, algebraRef);
+				setFunctionId(q, projectRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, s1);
+				q = pushBte(mb, q, 's');
+				n = getArg(q, 0);
+				pushInstruction(mb, q);
 			}
 
 			q = newInstruction(mb, ASSIGNsymbol);
@@ -3403,6 +3530,16 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				pushInstruction(mb, q);
 			} else {
 				h = i;
+			}
+			if (t->tval2->cval == j_plus && n != -1) {
+				q = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(q, batRef);
+				setFunctionId(q, insertRef);
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, h);
+				q = pushArgument(mb, q, n);
+				h = getArg(q, 0);
+				pushInstruction(mb, q);
 			}
 			q = newInstruction(mb, ASSIGNsymbol);
 			setModuleId(q, algebraRef);

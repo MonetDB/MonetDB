@@ -1490,6 +1490,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 InstrPtr
 pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 {
+	assert(varid >= 0);
 	if (p->argc + 1 == p->maxarg) {
 		InstrPtr pn;
 		int pc = 0, pclimit;
