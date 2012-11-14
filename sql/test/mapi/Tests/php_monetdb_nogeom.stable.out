@@ -91,11 +91,11 @@ id	name	schema_id	query	type	system	commit_action	readonly	temporary
 5220	queryhistory	2000		0	true	0	false	0	
 5234	callhistory	2000		0	true	0	false	0	
 5251	querylog	2000	create view querylog asnselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory qlnwhere qd.id = ql.id;	1	true	0	false	0	
-5648	storagemodelinput	2000		0	true	0	false	0	
-5689	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom storagemodel() group by "schema","table";	1	true	0	false	0	
-5711	systemfunctions	2000		0	true	0	false	0	
+5684	storagemodelinput	2000		0	true	0	false	0	
+5725	tablestoragemodel	2000	-- A summary of the table storage requirement is is available as a table view.n-- The auxillary column denotes the maximum space if all non-sorted columnsn-- would be augmented with a hash (rare situation)ncreate view tablestoragemodelnas select "schema","table",max(count) as "count",ntsum(columnsize) as columnsize,ntsum(heapsize) as heapsize,ntsum(indices) as indices,ntsum(case when sorted = false then 8 * count else 0 end) as auxillarynfrom storagemodel() group by "schema","table";	1	true	0	false	0	
+5747	systemfunctions	2000		0	true	0	false	0	
 
-# 13:02:42 >  
-# 13:02:42 >  "Done."
-# 13:02:42 >  
+# 09:27:56 >  
+# 09:27:56 >  "Done."
+# 09:27:56 >  
 
