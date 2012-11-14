@@ -3201,15 +3201,16 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 					assert(0);
 			}
 			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-			q = pushArgument(mb, q, s);
-			q = pushArgument(mb, q, v);
+			p = copyInstruction(q); /* reuse for dbl case below */
+
 			if (v != -1) {
+				q = pushArgument(mb, q, s);
+				q = pushArgument(mb, q, v);
 				h = getArg(q, 0);
 				pushInstruction(mb, q);
 			} else {
 				h = -1;
 			}
-			p = copyInstruction(q); /* reuse for dbl case below */
 
 			if (h != -1) {
 				q = newInstruction(mb, ASSIGNsymbol);
@@ -3469,8 +3470,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 			}
 
 			q = p;
-			getArg(q, 1) = s;
-			getArg(q, 2) = v;
+			q = pushArgument(mb, q, s);
+			q = pushArgument(mb, q, v);
 			s = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
 			pushInstruction(mb, q);
 
