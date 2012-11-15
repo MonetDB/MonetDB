@@ -56,7 +56,6 @@
 
 #define COUNTERSDEFAULT "ISTestmrw"
 
-#define TOMOGRAPHPATTERN "tomograph start 2012"
 /* #define _DEBUG_TOMOGRAPH_*/
 
 static struct {
@@ -132,7 +131,6 @@ static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
 static int batch = 1; /* number of queries to combine in one run */
-static int startup= 0; /* count openStream calls first */
 static long maxio=0;
 static int cpus = 0;
 
@@ -170,10 +168,16 @@ usage(void)
  * termination of the profiling session. */
 static void createTomogram(void);
 
+static int deactivated = 0;
 static void deactivateBeat(void){
 	char *id ="deactivateBeat";
-	if ( batch == 1)
-		doQ("profiler.deactivate(\"ping\");\n");
+	if ( deactivated)
+		return;
+	deactivated =1;
+	if ( debug)
+		fprintf(stderr,"Deactivate beat\n");
+	doQ("profiler.deactivate(\"ping\");\n");
+	doQ("profiler.stop();");
 	return;
 stop_disconnect:
 	;
@@ -182,19 +186,18 @@ stop_disconnect:
 static void
 stopListening(int i)
 {
-	char *id ="deactivateBeat";
 	wthread *walk;
 	(void)i;
-	printf("Interrupt received\n");
+	if ( debug) 
+		fprintf(stderr,"Interrupt received\n");
 	batch = 0;
-	createTomogram();
-	/* kill all connections */
-	doQ("profiler.deactivate(\"ping\");\n");
+	deactivateBeat();
+	/* kill all connections  */
 	for (walk = thds; walk != NULL; walk = walk->next) {
 		if (walk->s != NULL)
 			mnstr_close(walk->s);
 	}
-stop_disconnect: ;
+	createTomogram();
 }
 
 static int
@@ -215,9 +218,9 @@ setCounter(char *nme)
 static void activateBeat(void){
 	char buf[BUFSIZ];
 	char *id ="activateBeat";
+	if ( debug)
+		fprintf(stderr,"Activate beat\n");
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n",beat);
-	doQ(buf);
-	snprintf(buf, BUFSIZ, "io.print(\"%s\");\n",TOMOGRAPHPATTERN);
 	doQ(buf);
 	return;
 stop_disconnect:
@@ -450,6 +453,7 @@ struct COLOR{
 	{0,0,"aggr","*","green"},
 
 	{0,0,"algebra","leftjoin","yellow"},
+	{0,0,"algebra","leftfetchjoin","yellow"},
 	{0,0,"algebra","join","navy"},
 	{0,0,"algebra","semijoin","lightblue"},
 	{0,0,"algebra","kdifference","cyan"},
@@ -504,9 +508,9 @@ struct COLOR{
 	//{0,0,"sql","bind","thistle"},
 	//{0,0,"sql","bind_dbat","thistle"},
 	//{0,0,"sql","mvc","thistle"},
-	{0,0,"sql","delta ","thistle"},
-	{0,0,"sql","projectdelta ","thistle"},
-	{0,0,"sql","subdelta ","thistle"},
+	{0,0,"sql","projectdelta ","mediumpurple"},
+	{0,0,"sql","subdelta ","purple"},
+	{0,0,"sql","tid ","purple"},
 	{0,0,"sql","*","thistle"},
 
 	{0,0,"*","*","lavender"},
@@ -526,7 +530,7 @@ static void initcolors(void)
 		if ( c )
 			colors[i].col = c;
 		else
-			printf("color '%s' not found\n",colors[i].col);
+			fprintf(stderr,"color '%s' not found\n",colors[i].col);
 	}
 }
 
@@ -611,7 +615,7 @@ static void showmemory(void)
 	mn = (long) (min/1024.0);
 	mx = (long) (max/1024.0);
 	mx += (mn == mx);
-	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn,mx);
+	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn, (long)(1.01 * mx));
 	fprintf(gnudata,"set ytics (\"%.1f\" %ld, \"%.1f\" %ld)\n", min /1024.0, mn, max/1024.0, mx);
 	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
 	fprintf(gnudata,"unset yrange\n");
@@ -633,7 +637,7 @@ static void showcpu(void)
 	fprintf(gnudata,"unset border\n");
 
 	fprintf(gnudata,"set xrange [%f:%f]\n", (double)startrange, ((double)lastclktick-starttime));
-	fprintf(gnudata,"set yrange [0:%d.1]\n",cpus);
+	fprintf(gnudata,"set yrange [0:%d.%d]\n",cpus,cpus);
 	if ( cpus)
 		fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
@@ -817,7 +821,7 @@ static void scandata(char *filename)
 		snprintf(buf,BUFSIZ,"%s.trace",filename);
 		f = fopen(buf,"r");
 		if ( f == NULL){
-			printf("Could not open file '%s'\n",buf);
+			fprintf(stderr,"Could not open file '%s'\n",buf);
 			exit(-1);
 		}
 	}
@@ -891,8 +895,6 @@ static void createTomogram(void)
 	long totalticks;
 	static int figures=0;
 
-	if ( batch-- > 1 )
-		return;
 	snprintf(buf,BUFSIZ,"%s.gpl", filename);
 	gnudata= fopen(buf,"w");
 	if ( gnudata == 0){
@@ -989,11 +991,11 @@ static void createTomogram(void)
 	(void)fclose(gnudata);
 
 	if ( figures++ == 0){
-		printf("Created tomogram '%s' \n",buf);
-		printf("Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
+		fprintf(stderr,"Created tomogram '%s' \n",buf);
+		fprintf(stderr,"Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
 		if ( inputfile == 0){
-			printf("The memory map is stored in '%s.dat'\n",filename);
-			printf("The trace is saved in '%s.trace' for use with --input option\n",filename);
+			fprintf(stderr,"The memory map is stored in '%s.dat'\n",filename);
+			fprintf(stderr,"The trace is saved in '%s.trace' for use with --input option\n",filename);
 		}
 	}
 	exit(0);
@@ -1012,16 +1014,19 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	/* ignore the flow of control statements 'function' and 'end' */
 	if ( fcn  &&  strncmp(fcn,"end ",4)== 0 )
 		return;
-	if ( starttime == 0 && (state == 0 || state == 4)) {
+	if ( starttime == 0 ){
 		/* ignore all instructions up to the first function call */
-		if ( fcn && strncmp(fcn,"function",8) != 0)
+		if (state == 4 || fcn== 0 || strncmp(fcn,"function",8) != 0)
 			return;
 		starttime = clkticks;
-		activateBeat();
 		return;
 	}
 
-	if (state == 1 && fcn && (strncmp(fcn,"function",8) == 0 || strncmp(fcn,"profiler.tomograph",18) == 0)  && startup > 1 ){
+	if (state == 1 && fcn && (strncmp(fcn,"function",8) == 0 || strncmp(fcn,"profiler.tomograph",18) == 0)  ){
+		if ( debug )
+			fprintf(stderr,"Batch %d\n",batch);
+		if ( strncmp(fcn,"function",8) == 0 && batch-- > 1 )
+			return;
 		deactivateBeat();
 		createTomogram();
 		totalclkticks= 0; /* number of clock ticks reported */
@@ -1092,7 +1097,8 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		totalexecticks += box[idx].ticks - box[idx].ticks;
 	}
 	if ( topbox == MAXBOX){
-		printf("Out of space for trace");
+		fprintf(stderr,"Out of space for trace");
+		deactivateBeat();
 		createTomogram();
 		exit(0);
 	}
@@ -1109,9 +1115,6 @@ static void parser(char *row){
 	char *fcn = 0, *stmt= 0;
 	int state= 0;
 	long reads, writes;
-
-	if ( debug)
-		printf("%s\n",row);
 
 	if (row[0] != '[')
 		return;
@@ -1150,28 +1153,39 @@ static void parser(char *row){
 			clkticks += usec;
 		}
 		c = strchr(c+1, (int)'"');
-	}
+	} else return;
+
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	thread = atoi(c+1);
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	ticks = atol(c+1);
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	memory = atol(c+1);
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	reads = atol(c+1);
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	writes = atol(c+1);
 
 	c = strchr(c+1, (int)',');
+	if ( c == 0)
+		return;
 	c++;
 	fcn = c;
-	if (fcn && strstr(fcn, TOMOGRAPHPATTERN) ){
-		startup++;	// start counting 
-		if (debug)
-			printf("Found start marker\n");
-		if ( startup == 2 ) batch++;
-	}
 	stmt = strdup(fcn);
+
+	if ( debug)
+		fprintf(stderr,"%s\n",row);
+
 	c = strstr(c+1, ":=");
 	if ( c ){
 		fcn = c+2;
@@ -1235,7 +1249,6 @@ doProfile(void *d)
 	}
 
 	/* set counters */
-	deactivateBeat();
 	x = NULL;
 	for (i = 0; profileCounter[i].tag; i++) {
 		/* skip duplicates */
@@ -1310,6 +1323,7 @@ doProfile(void *d)
 #ifdef _DEBUG_TOMOGRAPH_
 	printf("-- %sprofiler.start();\n", id);
 #endif
+	activateBeat();
 	doQ("profiler.start();");
 	fflush(NULL);
 
