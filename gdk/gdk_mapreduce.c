@@ -82,6 +82,11 @@ MRenqueue(int taskcnt, MRtask ** tasks)
 	if (mrqlast == mrqsize) {
 		mrqsize <<= 1;
 		mrqueue = (MRqueue *) GDKrealloc(mrqueue, sizeof(MRqueue) * mrqsize);
+		if ( mrqueue == 0) {
+			MT_lock_unset(&mrqlock, "mrqlock");
+			GDKerror("Could not enlarge the map-reduce queue");
+			return;
+		}
 	}
 	mrqueue[mrqlast].index = 0;
 	mrqueue[mrqlast].tasks = tasks;
