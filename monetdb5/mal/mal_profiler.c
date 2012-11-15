@@ -1298,7 +1298,6 @@ static void profilerHeartbeat(void *dummy){
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
 #endif
-	static int eventcounter;
 	struct timeval tv;
 	time_t clock, prevclock=0;
 #ifdef HAVE_TIMES
