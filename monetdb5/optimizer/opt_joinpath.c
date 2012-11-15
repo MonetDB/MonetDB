@@ -52,9 +52,6 @@ static int
 OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 {
 	int i,j,k,top=0, actions =0;
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
-	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q = NULL, p, *old;
 	int limit, slimit;
 	Candidate *candidate;
@@ -68,7 +65,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	limit= mb->stop;
 	slimit= mb->ssize;
 	for(i=0, p= getInstrPtr(mb, i); i< limit; i++, p= getInstrPtr(mb, i))
-		if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)
+		if ( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef || getFunctionId(p) == leftfetchjoinPathRef)
 			for ( j= p->retc; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p)){
@@ -98,7 +95,7 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 	}
 
 	for(i=0, p= old[i]; i< limit; i++, p= old[i]) {
-		if( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef)
+		if( getFunctionId(p)== joinPathRef || getFunctionId(p)== leftjoinPathRef || getFunctionId(p) == semijoinPathRef || getFunctionId(p)== leftfetchjoinPathRef)
 			for ( j= p->retc ; j< p->argc-1; j++){
 				for (k= top-1; k >= 0 ; k--)
 					if ( candidate[k].lvar == getArg(p,j) && candidate[k].rvar == getArg(p,j+1) && candidate[k].fcn == getFunctionId(p) && candidate[k].cnt > 1){
@@ -109,6 +106,8 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 								q= newStmt(mb, algebraRef, leftjoinRef);
 							else if ( candidate[k].fcn == semijoinPathRef)
 								q= newStmt(mb, algebraRef, semijoinRef);
+							else if ( candidate[k].fcn == leftfetchjoinPathRef)
+								q= newStmt(mb, algebraRef, leftfetchjoinRef);
 							q= pushArgument(mb,q, candidate[k].lvar);
 							q= pushArgument(mb,q, candidate[k].rvar);
 							candidate[k].p = q;
@@ -122,6 +121,8 @@ OPTjoinSubPath(Client cntxt, MalBlkPtr mb)
 								setFunctionId(p, semijoinRef);
 							else if ( getFunctionId(p) == joinPathRef)
 								setFunctionId(p, joinRef);
+							else if ( getFunctionId(p) == leftfetchjoinPathRef)
+								setFunctionId(p, leftfetchjoinRef);
 						}
 						actions ++;
 						OPTDEBUGjoinPath {
@@ -154,9 +155,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, actions=0;
 	int *pc;
-	str joinPathRef = putName("joinPath",8);
-	str leftjoinPathRef = putName("leftjoinPath",12);
-	str semijoinPathRef = putName("semijoinPath",12);
 	InstrPtr q,r;
 	InstrPtr *old;
 	int *varcnt;		/* use count */
@@ -182,7 +180,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		return 0;
 	}
 	/*
-	 * @-
 	 * Count the variable use as arguments first.
 	 */
 	for (i = 0; i<limit; i++){
@@ -193,9 +190,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	for (i = 0; i<limit; i++){
 		p= old[i];
-		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == semijoinRef)){
+		if( getModuleId(p)== algebraRef && (getFunctionId(p)== joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == semijoinRef || getFunctionId(p) == leftfetchjoinRef)){
 			/*
-			 * @-
 			 * Try to expand its argument list with what we have found so far.
 			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
 			 */
@@ -204,7 +200,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			for(j=p->retc; j<p->argc; j++){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				/*
-				 * @-
 				 * Don't inject a pattern when it is used more than once.
 				 */
 				if (r && varcnt[getArg(p,j)] > 1){
@@ -237,6 +232,12 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 							q = pushArgument(mb,q,getArg(r,k));
 					} else 
 						q = pushArgument(mb,q,getArg(p,j));
+				} else if ( getFunctionId(p) == leftfetchjoinRef){
+					if( r &&  getModuleId(r)== algebraRef && ( getFunctionId(r)== leftfetchjoinRef  || getFunctionId(r)== leftfetchjoinPathRef) ){
+						for(k= r->retc; k<r->argc; k++) 
+							q = pushArgument(mb,q,getArg(r,k));
+					} else 
+						q = pushArgument(mb,q,getArg(p,j));
 				}
 			}
 			OPTDEBUGjoinPath {
@@ -250,7 +251,6 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				goto wrapup;
 			}
 			/*
-			 * @-
 			 * Final type check and hardwire the result type, because that  can not be inferred directly from the signature
 			 */
 			for(j=1; j<q->argc-1; j++)
@@ -273,6 +273,8 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setFunctionId(q,leftjoinPathRef);
 			else if ( q->argc > 2  &&  getFunctionId(q) == semijoinRef)
 				setFunctionId(q,semijoinPathRef);
+			else if ( q->argc > 2  &&  getFunctionId(q) == leftfetchjoinRef)
+				setFunctionId(q,leftfetchjoinPathRef);
 			freeInstruction(p);
 			p= q;
 			actions++;

@@ -288,6 +288,10 @@ pattern algebra.leftjoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";
 
+pattern algebra.leftfetchjoinPath(l:bat[:any,:any]...):bat[:any,:any]
+address ALGjoinPath
+comment "Routine to handle join paths.  The type analysis is rather tricky.";
+
 pattern algebra.semijoinPath(l:bat[:any,:any]...):bat[:any,:any]
 address ALGjoinPath
 comment "Routine to handle join paths.  The type analysis is rather tricky.";

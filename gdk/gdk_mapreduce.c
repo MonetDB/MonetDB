@@ -45,6 +45,7 @@ static MT_Sema mrqsema;		/* threads wait on empty queues */
 
 static void MRworker(void *);
 
+/* There is just a single queue for the workers */
 static void
 MRqueueCreate(int sz)
 {
@@ -54,14 +55,21 @@ MRqueueCreate(int sz)
 	MT_lock_init(&mrqlock, "q_create");
 	MT_lock_set(&mrqlock, "q_create");
 	MT_sema_init(&mrqsema, 0, "q_create");
-	sz = ((sz << 1) >> 1);		/* we want a multiple of 2 */
+	if ( mrqueue ) {
+		GDKerror("One map-reduce queue allowed");
+		return;
+	}
+	sz *= 2;
 	mrqueue = (MRqueue *) GDKzalloc(sizeof(MRqueue) * sz);
-	assert(mrqueue);
+	if ( mrqueue == 0) {
+		GDKerror("Could not create the map-reduce queue");
+		return;
+	}
 	mrqsize = sz;
 	mrqlast = 0;
 	/* create a worker thread for each core as specified as system parameter */
 	for (i = 0; i < GDKnr_threads; i++)
-		MT_create_thread(&tid, MRworker, (void *) 0, MT_THR_JOINABLE);
+		MT_create_thread(&tid, MRworker, (void *) 0, MT_THR_DETACHED);
 	MT_lock_unset(&mrqlock, "q_create");
 }
 
