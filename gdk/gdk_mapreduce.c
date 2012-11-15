@@ -62,6 +62,7 @@ MRqueueCreate(int sz)
 	sz *= 2;
 	mrqueue = (MRqueue *) GDKzalloc(sizeof(MRqueue) * sz);
 	if ( mrqueue == 0) {
+		MT_lock_unset(&mrqlock, "q_create");
 		GDKerror("Could not create the map-reduce queue");
 		return;
 	}
