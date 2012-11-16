@@ -2143,7 +2143,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_667BD650736E43C9A8B6899179FA0CAA"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.13.4\\dump-restore.txt"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.13.5\\dump-restore.txt"
             "TargetName" = "8:dump-restore.txt"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -3063,7 +3063,7 @@
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A9DB6CF8297A4BEEAF7A6D4958A4B0D6"
             {
-            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.13.4\\dump-restore.html"
+            "SourcePath" = "8:share\\doc\\MonetDB-SQL-11.13.5\\dump-restore.html"
             "TargetName" = "8:dump-restore.html"
             "Tag" = "8:"
             "Folder" = "8:_6C21CE578F0941D09FDD9951A229FF37"
@@ -4147,7 +4147,7 @@
                                 {
                                     "{9EF0B969-E518-4E46-987F-47570745A589}:_6C21CE578F0941D09FDD9951A229FF37"
                                     {
-                                    "Name" = "8:MonetDB-SQL-11.13.4"
+                                    "Name" = "8:MonetDB-SQL-11.13.5"
                                     "AlwaysCreate" = "11:FALSE"
                                     "Condition" = "8:"
                                     "Transitive" = "11:FALSE"
@@ -4189,15 +4189,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB5"
-        "ProductCode" = "8:{BABA070D-DFD8-4E5E-9619-E259FD7550F2}"
-        "PackageCode" = "8:{E2CAE0D6-FD86-4E73-9921-9BDC5FFDC4CD}"
+        "ProductCode" = "8:{8F677D86-1C10-4AC5-A7CE-BC2DF6A33F50}"
+        "PackageCode" = "8:{C4F60574-2159-4058-94C8-FD4BAC26CF5E}"
         "UpgradeCode" = "8:{839D3C90-B578-41E2-A004-431440F9E899}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:11.13.4"
+        "ProductVersion" = "8:11.13.5"
         "Manufacturer" = "8:MonetDB"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:http://www.monetdb.org/"
