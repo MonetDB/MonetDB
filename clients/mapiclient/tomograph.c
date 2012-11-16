@@ -153,6 +153,8 @@ usage(void)
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
 	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
 	fprintf(stderr, "  -D | --debug\n");
+	fprintf(stderr, "  -l | --list\n");
+	fprintf(stderr, "  -? | --help\n");
 }
 
 
@@ -1386,16 +1388,16 @@ main(int argc, char **argv)
 		{ "password", 1, 0, 'P' },
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
-		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
-		{ "debug", 0, 0, 'D' },
-		{ "list", 0, 0, 'l' },
+		{ "colormap", 0, 0, 'm' },
 		{ "beat", 1, 0, 'b' },
 		{ "batch", 1, 0, 'B' },
-		{ "colormap", 0, 0, 'm' },
+		{ "debug", 0, 0, 'D' },
+		{ "list", 0, 0, 'l' },
+		{ "help", 0, 0, '?' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -1453,31 +1455,16 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g:D:t:c:m:l:i:r:b:B",
+		int c = getopt_long(argc, argv, "d:u:P:p:h:T:i:r:o:mb:B:Dl?",
 			long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
-		case 'B':
-			batch = atoi(optarg ? optarg :"1");
-			break;
-		case 'b':
-			beat = atoi(optarg ? optarg:"50");
-			break;
-		case 'D':
-			debug = 1;
-			break;
 		case 'd':
 			dbname = optarg;
 			break;
-		case 'l':
-			listing = 1;
-			break;
 		case 'u':
 			user = optarg;
-			break;
-		case 'm':
-			colormap=1;
 			break;
 		case 'P':
 			password = optarg;
@@ -1497,9 +1484,6 @@ main(int argc, char **argv)
 				inputfile = strdup(filename);
 			else
 				inputfile= optarg;
-			break;
-		case 'o':
-			filename = optarg;
 			break;
 		case 'r':
 		{ char *s;
@@ -1521,9 +1505,33 @@ main(int argc, char **argv)
 			}
 			break;
 		}
+		case 'o':
+			filename = optarg;
+			break;
+		case 'm':
+			colormap=1;
+			break;
+		case 'b':
+			beat = atoi(optarg ? optarg:"50");
+			break;
+		case 'B':
+			batch = atoi(optarg ? optarg :"1");
+			break;
+		case 'D':
+			debug = 1;
+			break;
+		case 'l':
+			listing = 1;
+			break;
+		case '?':
+			usage();
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usage();
-			exit(0);
+			exit(-1);
 		}
 	}
 
