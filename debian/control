@@ -6,7 +6,7 @@ Homepage: http://www.monetdb.org/
 Vcs-Browser: http://dev.monetdb.org/hg/MonetDB/
 Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
 # for Build-Depends and Depends syntax, see
-# http://wiki.debian.org/DebianInstaller/Build
+# http://www.debian.org/doc/debian-policy/ch-relationships.html
 Build-Depends: debhelper (>= 5), autotools-dev, bison, flex, libbz2-dev,
  libcurl4-gnutls-dev, libgeos-dev, libpcre3-dev,
  libreadline-gplv2-dev|libreadline-dev, libssl-dev, libxml2-dev, perl,
