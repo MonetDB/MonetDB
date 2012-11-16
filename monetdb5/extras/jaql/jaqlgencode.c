@@ -3971,8 +3971,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				return a;
 			}
 
-			b = -1;
 			for (i = 0, w = t->tval1; w != NULL; w = w->next, i++) {
+				b = -1;
 				assert(w->type == j_func_arg);
 				assert(w->tval1 != NULL);
 
@@ -4157,7 +4157,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = newInstruction(mb, ASSIGNsymbol);
 									setModuleId(q, putName("json", 4));
 									setFunctionId(q, putName("unwrap", 6));
-									q = pushReturn(mb, q, c);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 									q = pushArgument(mb, q, j->j1);
 									q = pushArgument(mb, q, j->j2);
 									q = pushArgument(mb, q, j->j3);
@@ -4171,8 +4171,25 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 										q = pushArgument(mb, q, j->startoid);
 									}
 									q = pushStr(mb, q, "");
+									c = getArg(q, 0);
+									pushInstruction(mb, q);
+
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, batRef);
+									setFunctionId(q, reverseRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
 									dynaarg[i][1] = getArg(q, 0);
 									pushInstruction(mb, q);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, algebraRef);
+									setFunctionId(q, joinRef);
+									q = pushReturn(mb, q, d);
+									q = pushArgument(mb, q, dynaarg[i][1]);
+									q = pushArgument(mb, q, c);
+									dynaarg[i][1] = getArg(q, 0);
+									pushInstruction(mb, q);
+
 									q = newAssignment(mb);
 									getArg(q, 0) = e;
 									q->argc = q->retc = 1;
@@ -4202,7 +4219,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = newInstruction(mb, ASSIGNsymbol);
 									setModuleId(q, putName("json", 4));
 									setFunctionId(q, putName("unwrap", 6));
-									q = pushReturn(mb, q, d);
+									q = pushReturn(mb, q, newTmpVariable(mb,    TYPE_any));
 									q = pushArgument(mb, q, j->j1);
 									q = pushArgument(mb, q, j->j2);
 									q = pushArgument(mb, q, j->j3);
@@ -4216,8 +4233,25 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 										q = pushArgument(mb, q, j->startoid);
 									}
 									q = pushDbl(mb, q, 0.0);
+									c = getArg(q, 0);
+									pushInstruction(mb, q);
+
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, batRef);
+									setFunctionId(q, reverseRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
 									dynaarg[i][2] = getArg(q, 0);
 									pushInstruction(mb, q);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, algebraRef);
+									setFunctionId(q, joinRef);
+									q = pushReturn(mb, q, d);
+									q = pushArgument(mb, q, dynaarg[i][2]);
+									q = pushArgument(mb, q, c);
+									dynaarg[i][2] = getArg(q, 0);
+									pushInstruction(mb, q);
+
 									q = newAssignment(mb);
 									getArg(q, 0) = f;
 									q->argc = q->retc = 1;
@@ -4247,7 +4281,7 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 									q = newInstruction(mb, ASSIGNsymbol);
 									setModuleId(q, putName("json", 4));
 									setFunctionId(q, putName("unwrap", 6));
-									q = pushReturn(mb, q, d);
+									q = pushReturn(mb, q, newTmpVariable(mb,    TYPE_any));
 									q = pushArgument(mb, q, j->j1);
 									q = pushArgument(mb, q, j->j2);
 									q = pushArgument(mb, q, j->j3);
@@ -4261,8 +4295,25 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 										q = pushArgument(mb, q, j->startoid);
 									}
 									q = pushLng(mb, q, 0);
+									c = getArg(q, 0);
+									pushInstruction(mb, q);
+
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, batRef);
+									setFunctionId(q, reverseRef);
+									q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+									q = pushArgument(mb, q, b);
 									dynaarg[i][3] = getArg(q, 0);
 									pushInstruction(mb, q);
+									q = newInstruction(mb, ASSIGNsymbol);
+									setModuleId(q, algebraRef);
+									setFunctionId(q, joinRef);
+									q = pushReturn(mb, q, d);
+									q = pushArgument(mb, q, dynaarg[i][3]);
+									q = pushArgument(mb, q, c);
+									dynaarg[i][3] = getArg(q, 0);
+									pushInstruction(mb, q);
+									
 									q = newAssignment(mb);
 									getArg(q, 0) = g;
 									q->argc = q->retc = 1;
@@ -4571,8 +4622,8 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushArgument(mb, q, a7);
 				j->j7 = getArg(q, 0);
 
-				/* return bat has b in head, 0 in tail (this is an
-				 * aggregate (can it be anything else?) */
+				/* prepare return bat, with single element */
+				/* TODO: do we always return an aggregate here? */
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, batRef);
 				setFunctionId(q, newRef);
@@ -4760,14 +4811,6 @@ dumpvariabletransformation(jc *j, Client cntxt, MalBlkPtr mb, tree *t, int elems
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 				q = pushArgument(mb, q, a);
 				q = pushArgument(mb, q, h);
-				a = getArg(q, 0);
-				pushInstruction(mb, q);
-				q = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(q, algebraRef);
-				setFunctionId(q, joinRef);
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-				q = pushArgument(mb, q, a);
-				q = pushArgument(mb, q, b);
 				a = getArg(q, 0);
 				pushInstruction(mb, q);
 
