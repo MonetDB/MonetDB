@@ -1949,7 +1949,9 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	jaqllex_init_extra(j, &j->scanner);
 
 	do {
+		j->timing.parse = GDKusec();
 		jaqlparse(j);
+		j->timing.parse = GDKusec() - j->timing.parse;
 
 		if (j->err[0] != '\0')
 			break;
@@ -1971,7 +1973,9 @@ JAQLexecute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (j->err[0] != '\0')
 				break;
 
+			j->timing.optimise = GDKusec();
 			chkProgram(cntxt->fdout, cntxt->nspace, prg->def);
+			j->timing.optimise = GDKusec() - j->timing.optimise;
 			if (j->explain) {
 				printFunction(cntxt->fdout, prg->def, 0,
 						LIST_MAL_STMT | LIST_MAPI);
@@ -2206,5 +2210,39 @@ JAQLbatconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BBPkeepref(b->batCacheid);
 	*ret = b->batCacheid;
+	return MAL_SUCCEED;
+}
+
+str
+JAQLprintTimings(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret = (int *)getArgReference(stk, pci, 0);
+	lng *exec = (lng *)getArgReference(stk, pci, 1);
+	lng *trans = (lng *)getArgReference(stk, pci, 2);
+	jc *j = NULL;
+	str err;
+
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	
+	if ((err = getJAQLContext(cntxt, &j)) != MAL_SUCCEED)
+		GDKfree(err);
+
+	mnstr_printf(cntxt->fdout,
+				"# [\n"
+				"#    { \"parse\":     %9lld },\n"
+				"#    { \"gencode\":   %9lld },\n"
+				"#    { \"optimise\":  %9lld },\n"
+				"#    { \"execute\":   %9lld },\n"
+				"#    { \"transport\": %9lld }\n"
+				"# ]\n",
+				j->timing.parse,
+				j->timing.gencode,
+				j->timing.optimise,
+				*exec,
+				*trans);
+
+	*ret = 0;
 	return MAL_SUCCEED;
 }

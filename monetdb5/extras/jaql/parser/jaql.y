@@ -58,7 +58,7 @@ jaql_import void GDKfree(const char *);
 %start stmt
 
 %token EACH FILTER TRANSFORM EXPAND GROUP INTO BY AS JOIN WHERE IN
-%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG TRACE UNROLL PRESERVE
+%token SORT TOP DESC ASC EXPLAIN PLAN PLANF DEBUG TRACE TIME UNROLL PRESERVE
 
 %token ARROW ASSIGN EQUALS NEQUAL TRUE FALSE NIL
 %token GREATER GEQUAL LESS LEQUAL NOT AND OR
@@ -159,6 +159,12 @@ stmt: jaql ';'
 		j->trace = 1;
 		YYACCEPT;
 	}
+	| TIME jaql ';'
+	{
+		j->p = $2;
+		j->time = 1;
+		YYACCEPT;
+	}
 	| error ';'
 	| ';'
 	|
@@ -167,8 +173,8 @@ stmt: jaql ';'
 		YYACCEPT;
 	};
 
-jaql: jaqlpipe                  {$$ = append_jaql_pipe($1, make_json_output(NULL));}
-	| IDENT ASSIGN jaqlpipe     {$$ = append_jaql_pipe($3, make_json_output($1));}
+jaql: jaqlpipe              {$$ = append_jaql_pipe($1, make_json_output(NULL));}
+	| IDENT ASSIGN jaqlpipe {$$ = append_jaql_pipe($3, make_json_output($1));}
 	;
 
 jaqlpipe: IDENT opt_actions     {$$ = append_jaql_pipe(make_varname($1), $2);}
