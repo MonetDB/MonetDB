@@ -1314,7 +1314,7 @@ static void profilerHeartbeat(void *dummy){
 	gettimeofday(&tv,NULL);
 	prevclock = (time_t) tv.tv_sec;
 
-	while (hbdelay && eventstream){
+	while (eventstream){
 		MT_sleep_ms(hbdelay);
 
 		if (delayswitch > 0) {
@@ -1426,6 +1426,7 @@ static void profilerHeartbeat(void *dummy){
 	}
 	if ( proc)
 		(void) fclose(proc);
+	hbdelay = 0;
 	THRdel(thr);
 }
 
@@ -1434,6 +1435,11 @@ void startHeartbeat(int delay){
 
 	if ( delay < 0 )
 		return;
+	if ( hbdelay ) {
+		/* thread already running */	
+		hbdelay = delay;
+		return;
+	}
 	hbdelay = delay;
 	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
 }
