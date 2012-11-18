@@ -172,7 +172,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "u:p:d:DNfqh:t::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NX::u:q?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;
