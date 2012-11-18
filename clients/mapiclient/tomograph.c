@@ -121,7 +121,7 @@ typedef struct _wthread {
 static wthread *thds = NULL;
 static char hostname[128];
 static char *filename="tomograph";
-static char *inputfile=0;
+//static char *inputfile=0;
 static char *tracefile=0;
 static long startrange=0, endrange= 0;
 static char *title =0;
