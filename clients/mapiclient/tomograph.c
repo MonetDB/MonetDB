@@ -122,14 +122,17 @@ static wthread *thds = NULL;
 static char hostname[128];
 static char *filename="tomograph";
 static char *inputfile=0;
+static char *tracefile=0;
 static long startrange=0, endrange= 0;
 static char *title =0;
-static int listing = 0;
 static int debug = 0;
 static int colormap = 0;
 static int beat= 50;
 static Mapi dbh = NULL;
 static MapiHdl hdl = NULL;
+static Mapi dbhsql = NULL;
+static MapiHdl hdlsql = NULL;
+static char *sqlstatement = NULL;
 static int batch = 1; /* number of queries to combine in one run */
 static long maxio=0;
 static int cpus = 0;
@@ -146,15 +149,15 @@ usage(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -T | --title=<plot title>\n");
-	fprintf(stderr, "  -i | --input=<filename>\n");
+	//fprintf(stderr, "  -i | --input=<sql input filename>\n");
+	fprintf(stderr, "  -s | --sql=<single sql expression>\n");
+	fprintf(stderr, "  -t | --trace=<tomograph trace filename>\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
 	fprintf(stderr, "  -o | --output=<file prefix > (default 'tomograph'\n");
-	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
 	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
+	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -D | --debug\n");
-	fprintf(stderr, "  -l | --list\n");
-	fprintf(stderr, "  -? | --help\n");
 }
 
 
@@ -165,6 +168,10 @@ usage(void)
 #define doQ(X) \
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
+#define doQsql(X) \
+	if ((hdlsql = mapi_query(dbhsql, X)) == NULL || mapi_error(dbhsql) != MOK) \
+			 die(dbhsql, hdlsql);
+
 
 /* Any signal should be captured and turned into a graceful
  * termination of the profiling session. */
@@ -543,7 +550,7 @@ static void dumpboxes(void)
 	char buf[BUFSIZ];
 	int i;
 	
-	if ( inputfile ){
+	if ( tracefile ){
 		snprintf(buf,BUFSIZ,"scratch.dat");
 		f = fopen(buf,"w");
 		snprintf(buf,BUFSIZ,"scratch_cpu.dat");
@@ -619,7 +626,7 @@ static void showmemory(void)
 	mx += (mn == mx);
 	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn, (long)(1.01 * mx));
 	fprintf(gnudata,"set ytics (\"%.1f\" %ld, \"%.1f\" %ld)\n", min /1024.0, mn, max/1024.0, mx);
-	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(inputfile?"scratch":filename));
+	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(tracefile?"scratch":filename));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -644,7 +651,7 @@ static void showcpu(void)
 		fprintf(gnudata,"plot ");
 	for(i=0; i< cpus; i++)
 		fprintf(gnudata,"\"%s_cpu.dat\" using 1:($%d+%d.%d) notitle with lines linecolor rgb \"%s\"%s",
-			(inputfile?"scratch":filename), i+2, i,i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
+			(tracefile?"scratch":filename), i+2, i,i, (i%2 == 0? "black":"red"), (i<cpus-1?",\\\n":"\n"));
 	fprintf(gnudata,"unset yrange\n");
 }
 
@@ -675,8 +682,8 @@ static void showio(void)
 	fprintf(gnudata,"unset ylabel\n");
 	fprintf(gnudata,"set y2tics in (\"%d\" %ld)\n", (int)(max/beat), max/beat);
 	fprintf(gnudata,"set y2label \"IO per ms\"\n");
-	fprintf(gnudata,"plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",(inputfile?"scratch":filename),beat);
-	fprintf(gnudata,"\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",(inputfile?"scratch":filename),beat);
+	fprintf(gnudata,"plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n",(tracefile?"scratch":filename),beat);
+	fprintf(gnudata,"\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n",(tracefile?"scratch":filename),beat);
 	fprintf(gnudata,"unset y2label\n");
 	fprintf(gnudata,"unset y2tics\n");
 	fprintf(gnudata,"unset y2range\n");
@@ -790,18 +797,17 @@ static void keepdata(char *filename)
 	FILE *f;
 	char buf[BUFSIZ];
 
-	if ( inputfile)
+	if ( tracefile)
 		return;
 	snprintf(buf,BUFSIZ,"%s.trace",filename);
 	f = fopen(buf,"w");
 	assert(f);
 
-	if ( listing)
-	for ( i = 0; i < topbox; i++)
-	if ( box[i].clkend)
-		printf("%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 	for ( i = 0; i < topbox; i++)
 	if ( box[i].clkend && box[i].fcn){
+		//if ( debug)
+			//fprintf(stderr,"%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
+
 		fprintf(f,"%d\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend);
 		fprintf(f,"%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
 		fprintf(f,"%d\t%ld\t%ld\n", box[i].state, box[i].reads, box[i].writes);
@@ -995,7 +1001,7 @@ static void createTomogram(void)
 	if ( figures++ == 0){
 		fprintf(stderr,"Created tomogram '%s' \n",buf);
 		fprintf(stderr,"Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
-		if ( inputfile == 0){
+		if ( tracefile == 0){
 			fprintf(stderr,"The memory map is stored in '%s.dat'\n",filename);
 			fprintf(stderr,"The trace is saved in '%s.trace' for use with --input option\n",filename);
 		}
@@ -1212,6 +1218,69 @@ static void parser(char *row){
 #endif
 }
 
+static void
+format_result(Mapi mid, MapiHdl hdl)
+{
+	char *reply;
+	char *line;
+	(void) mid;
+
+	do {
+		/* handle errors first */
+		if ((reply = mapi_result_error(hdl)) != NULL) {
+			mapi_explain_result(hdl, stderr);
+			/* don't need to print something like '0
+			 * tuples' if we got an error */
+			break;
+		}
+		if ( debug)
+			fprintf(stderr,"Receive:%s\n",reply);
+
+		switch (mapi_get_querytype(hdl)) {
+		case Q_BLOCK:
+		case Q_PARSE:
+			/* should never see these */
+			continue;
+		case Q_UPDATE:
+			fprintf(stderr, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+			continue;
+		case Q_SCHEMA:
+		case Q_TRANS:
+		case Q_PREPARE:
+		case Q_TABLE:
+			break;
+		default:
+			while ((line = mapi_fetch_line(hdl)) != 0) {
+				if (*line == '=')
+					line++;
+				fprintf(stderr, "%s\n", line);
+			}
+		}
+	} while (mapi_next_result(hdl) == 1);
+	if ( debug)
+		fprintf(stderr,"Done\n");
+}
+
+static int
+doRequest(Mapi mid, const char *buf)
+{
+	MapiHdl hdl;
+
+	if ( debug)
+		fprintf(stderr,"Sent:%s\n",buf);
+	if ((hdl = mapi_query(mid, buf)) == NULL) {
+		mapi_explain(mid, stderr);
+		return 1;
+	}
+
+	format_result(mid, hdl);
+
+	//if (mapi_get_active(mid) == NULL)
+		//mapi_close_handle(hdl);
+	fprintf(stderr, "  -t | --trace=<filename>\n");
+	return 0;
+}
+
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
 static DWORD WINAPI
 #else
@@ -1230,6 +1299,17 @@ doProfile(void *d)
 	char *host;
 	int portnr;
 	char id[10];
+
+	/* set up the SQL session */
+	if ( sqlstatement) {
+		id[0] = '\0';
+		dbhsql = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "sql");
+		if (dbhsql == NULL || mapi_error(dbhsql))
+			die(dbhsql, hdlsql);
+		mapi_reconnect(dbhsql);
+		if (mapi_error(dbhsql))
+			die(dbhsql, hdlsql);
+	}
 
 	/* set up the profiler */
 	id[0] = '\0';
@@ -1331,6 +1411,11 @@ doProfile(void *d)
 
 	for ( i = 0; i < MAXTHREADS; i++)
 		threads[i] = topbox++;
+
+	/* sent single query */
+	if ( sqlstatement) {
+		doRequest(dbhsql, sqlstatement);
+	}
 	i = 0;
 	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ)) > 0) {
 		buf[n] = 0;
@@ -1382,22 +1467,24 @@ main(int argc, char **argv)
 	wthread *walk;
 	stream * config = NULL;
 
-	static struct option long_options[17] = {
+	static struct option long_options[18] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "password", 1, 0, 'P' },
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
+		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
+		{ "trace", 1, 0, 't' },
 		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
-		{ "colormap", 0, 0, 'm' },
-		{ "beat", 1, 0, 'b' },
-		{ "batch", 1, 0, 'B' },
 		{ "debug", 0, 0, 'D' },
 		{ "list", 0, 0, 'l' },
-		{ "help", 0, 0, '?' },
+		{ "beat", 1, 0, 'b' },
+		{ "batch", 1, 0, 'B' },
+		{ "sql", 1, 0, 's' },
+		{ "colormap", 0, 0, 'm' },
 		{ 0, 0, 0, 0 }
 	};
 
@@ -1455,16 +1542,28 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:T:i:r:o:mb:B:Dl?",
+		int c = getopt_long(argc, argv, "d:i:P:p:h:?:T:t:i:r:o:D:b:B:s:m",
 			long_options, &option_index);
 		if (c == -1)
 			break;
 		switch (c) {
+		case 'B':
+			batch = atoi(optarg ? optarg :"1");
+			break;
+		case 'b':
+			beat = atoi(optarg ? optarg:"50");
+			break;
+		case 'D':
+			debug = 1;
+			break;
 		case 'd':
 			dbname = optarg;
 			break;
 		case 'u':
 			user = optarg;
+			break;
+		case 'm':
+			colormap=1;
 			break;
 		case 'P':
 			password = optarg;
@@ -1479,11 +1578,18 @@ main(int argc, char **argv)
 		case 'T':
 			title = optarg;
 			break;
-		case 'i':
+		case 't':
 			if ( optarg == 0)
-				inputfile = strdup(filename);
+				tracefile = strdup(filename);
 			else
-				inputfile= optarg;
+				tracefile= optarg;
+			break;
+		case 'i':
+			//inputfile= optarg; /* file with SQL statements */
+			usage();
+			break;
+		case 'o':
+			filename = optarg;
 			break;
 		case 'r':
 		{ char *s;
@@ -1505,39 +1611,18 @@ main(int argc, char **argv)
 			}
 			break;
 		}
-		case 'o':
-			filename = optarg;
+		case 's':
+			sqlstatement = optarg;
 			break;
-		case 'm':
-			colormap=1;
-			break;
-		case 'b':
-			beat = atoi(optarg ? optarg:"50");
-			break;
-		case 'B':
-			batch = atoi(optarg ? optarg :"1");
-			break;
-		case 'D':
-			debug = 1;
-			break;
-		case 'l':
-			listing = 1;
-			break;
-		case '?':
-			usage();
-			/* a bit of a hack: look at the option that the
-			   current `c' is based on and see if we recognize
-			   it: if -? or --help, exit with 0, else with -1 */
-			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usage();
-			exit(-1);
+			exit(0);
 		}
 	}
 
-	if ( inputfile){
+	if ( tracefile){
 		/* reload existing tomogram */
-		scandata(inputfile);
+		scandata(tracefile);
 		createTomogram();
 		exit(0);
 	}
