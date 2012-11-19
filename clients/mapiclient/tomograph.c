@@ -111,6 +111,9 @@ typedef struct _wthread {
 #endif
 	int tid;
 	char *uri;
+	char *host;
+	char *dbname;
+	int port;
 	char *user;
 	char *pass;
 	stream *s;
@@ -1296,14 +1299,17 @@ doProfile(void *d)
 	char buf[BUFSIZ + 1];
 	char *e;
 	char *mod, *fcn;
-	char *host;
+	char *host = NULL;
 	int portnr;
 	char id[10];
 
 	/* set up the SQL session */
 	if ( sqlstatement) {
 		id[0] = '\0';
-		dbhsql = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "sql");
+		if (wthr->uri)
+			dbhsql = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "sql");
+		else
+			dbhsql = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "sql", wthr->dbname);
 		if (dbhsql == NULL || mapi_error(dbhsql))
 			die(dbhsql, hdlsql);
 		mapi_reconnect(dbhsql);
@@ -1313,20 +1319,28 @@ doProfile(void *d)
 
 	/* set up the profiler */
 	id[0] = '\0';
-	dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
+	if (wthr->uri)
+		dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
+	else
+		dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 	mapi_reconnect(dbh);
 	if (mapi_error(dbh))
 		die(dbh, hdl);
+	host = strdup(mapi_get_host(dbh));
+	if (host && *host == '/') {
+		fprintf(stderr, "!! UNIX domain socket not supported\n");
+		goto stop_disconnect;
+	}
 	if (wthr->tid > 0) {
 		snprintf(id, 10, "[%d] ", wthr->tid);
 #ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s is %s\n", wthr->uri, id);
+		printf("-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host ? host : "localhost", id);
 #endif
 	} else {
 #ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s\n", wthr->uri);
+		printf("-- connection with server %s\n", wthr->uri ? wthr->uri : host ? host : "localhost");
 #endif
 	}
 
@@ -1351,7 +1365,6 @@ doProfile(void *d)
 		x = profileCounter[i].ptag;
 	}
 
-	host = mapi_get_host(dbh);
 	for (portnr = 50010; portnr < 62010; portnr++) {
 		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
 			break;
@@ -1446,7 +1459,10 @@ stop_disconnect:
 		mapi_destroy(dbh);
 	}
 
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri);
+	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host ? host : "localhost");
+
+	if (host)
+		free(host);
 
 	return(0);
 }
@@ -1456,8 +1472,8 @@ main(int argc, char **argv)
 {
 	int a = 1;
 	int i, k=0;
-	char *host = "localhost";
-	int portnr = 50000;
+	char *host = NULL;
+	int portnr = 0;
 	char *dbname = NULL;
 	char *user = NULL;
 	char *password = NULL;
@@ -1635,10 +1651,11 @@ main(int argc, char **argv)
 
 	if (alts == NULL || *alts == NULL) {
 		/* nothing to redirect, so a single host to try */
-		char uri[512];
-		snprintf(uri, 512, "mapi:monetdb://%s:%d/%s", host, portnr, dbname);
 		walk = thds = malloc(sizeof(wthread));
-		walk->uri = uri;
+		walk->uri = NULL;
+		walk->host = host;
+		walk->port = portnr;
+		walk->dbname = dbname;
 		walk->user = user;
 		walk->pass = password;
 		walk->argc = argc - a;
@@ -1666,6 +1683,9 @@ main(int argc, char **argv)
 		while (1) {
 			walk->tid = i++;
 			walk->uri = *alts;
+			walk->host = NULL;
+			walk->port = 0;
+			walk->dbname = NULL;
 			walk->user = user;
 			walk->pass = password;
 			walk->argc = argc - a;
