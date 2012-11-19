@@ -1480,7 +1480,6 @@ main(int argc, char **argv)
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
-		{ "list", 0, 0, 'l' },
 		{ "beat", 1, 0, 'b' },
 		{ "batch", 1, 0, 'B' },
 		{ "sql", 1, 0, 's' },
