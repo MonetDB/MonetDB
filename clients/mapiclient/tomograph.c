@@ -121,7 +121,6 @@ typedef struct _wthread {
 static wthread *thds = NULL;
 static char hostname[128];
 static char *filename="tomograph";
-//static char *inputfile=0;
 static char *tracefile=0;
 static long startrange=0, endrange= 0;
 static char *title =0;
@@ -149,7 +148,6 @@ usage(void)
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -T | --title=<plot title>\n");
-	//fprintf(stderr, "  -i | --input=<sql input filename>\n");
 	fprintf(stderr, "  -s | --sql=<single sql expression>\n");
 	fprintf(stderr, "  -t | --trace=<tomograph trace filename>\n");
 	fprintf(stderr, "  -r | --range=<starttime>-<endtime>[ms,s] \n");
@@ -1004,7 +1002,7 @@ static void createTomogram(void)
 		fprintf(stderr,"Run: 'gnuplot %s.gpl' to create the '%s.pdf' file\n",buf,filename);
 		if ( tracefile == 0){
 			fprintf(stderr,"The memory map is stored in '%s.dat'\n",filename);
-			fprintf(stderr,"The trace is saved in '%s.trace' for use with --input option\n",filename);
+			fprintf(stderr,"The trace is saved in '%s.trace' for use with --trace option\n",filename);
 		}
 	}
 	exit(0);
@@ -1477,7 +1475,6 @@ main(int argc, char **argv)
 		{ "help", 0, 0, '?' },
 		{ "title", 1, 0, 'T' },
 		{ "trace", 1, 0, 't' },
-		{ "input", 1, 0, 'i' },
 		{ "range", 1, 0, 'r' },
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
@@ -1542,7 +1539,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:?T:t:i:r:o:Db:B:s:m",
+		int c = getopt_long(argc, argv, "d:u:P:p:h:?T:t:r:o:Db:B:s:m",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1583,10 +1580,6 @@ main(int argc, char **argv)
 				tracefile = strdup(filename);
 			else
 				tracefile= optarg;
-			break;
-		case 'i':
-			//inputfile= optarg; /* file with SQL statements */
-			usage();
 			break;
 		case 'o':
 			filename = optarg;
