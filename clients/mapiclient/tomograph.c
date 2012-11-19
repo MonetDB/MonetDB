@@ -1329,18 +1329,18 @@ doProfile(void *d)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	host = strdup(mapi_get_host(dbh));
-	if (host && *host == '/') {
+	if (*host == '/') {
 		fprintf(stderr, "!! UNIX domain socket not supported\n");
 		goto stop_disconnect;
 	}
 	if (wthr->tid > 0) {
 		snprintf(id, 10, "[%d] ", wthr->tid);
 #ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host ? host : "localhost", id);
+		printf("-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
 #endif
 	} else {
 #ifdef _DEBUG_TOMOGRAPH_
-		printf("-- connection with server %s\n", wthr->uri ? wthr->uri : host ? host : "localhost");
+		printf("-- connection with server %s\n", wthr->uri ? wthr->uri : host);
 #endif
 	}
 
@@ -1459,10 +1459,9 @@ stop_disconnect:
 		mapi_destroy(dbh);
 	}
 
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host ? host : "localhost");
+	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host);
 
-	if (host)
-		free(host);
+	free(host);
 
 	return(0);
 }
@@ -1650,7 +1649,7 @@ main(int argc, char **argv)
 		alts = NULL;
 
 	if (alts == NULL || *alts == NULL) {
-		/* nothing to redirect, so a single host to try */
+		/* nothing to redirect, so a single db to try */
 		walk = thds = malloc(sizeof(wthread));
 		walk->uri = NULL;
 		walk->host = host;
