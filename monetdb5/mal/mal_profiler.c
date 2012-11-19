@@ -1250,16 +1250,18 @@ static struct{
 } corestat[256];
 
 static char cpuload[BUFSIZ];
-static FILE *proc;
 
 static void gatherCPULoad(void){
     int cpu, len;
 	long user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
+	FILE *proc;
 
-    if ( proc == 0)
-        return;
-	rewind(proc);
+	proc = fopen("/proc/stat","r");
+	if ( proc == NULL) {
+		/* unexpected */
+		return;
+	}
 	while (fgets(buf, BUFSIZ,proc) != NULL)
 	if ( strncmp(buf,"cpu",3)== 0){
 		s= buf+3;
@@ -1290,6 +1292,7 @@ static void gatherCPULoad(void){
 		len -= (int)strlen(s);
 		s += (int) strlen(s);
 	}
+	fclose(proc);
 }
 
 static void profilerHeartbeat(void *dummy){
@@ -1309,14 +1312,12 @@ static void profilerHeartbeat(void *dummy){
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
 	(void) dummy;
-    proc = fopen("/proc/stat","r");
 	gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	prevclock = (time_t) tv.tv_sec;
 
-	while (eventstream){
+	while (eventstream ){
 		MT_sleep_ms(hbdelay);
-
 		if (delayswitch > 0) {
 			/* first call to profiled */
 			offlineProfilerHeader();
@@ -1424,8 +1425,6 @@ static void profilerHeartbeat(void *dummy){
 		flushLog();
 		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
-	if ( proc)
-		(void) fclose(proc);
 	hbdelay = 0;
 	THRdel(thr);
 }
