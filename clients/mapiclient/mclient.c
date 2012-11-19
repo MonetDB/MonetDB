@@ -56,6 +56,7 @@
 #include "stream.h"
 #include "msqldump.h"
 #include "mprompt.h"
+#include "dotmonetdb.h"
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -2649,7 +2650,6 @@ main(int argc, char **argv)
 	int settz = 1;
 	int autocommit = 1;	/* autocommit mode default on */
 	struct stat statb;
-	stream *config = NULL;
 	char user_set_as_flag = 0;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
@@ -2704,99 +2704,16 @@ main(int argc, char **argv)
 #endif
 
 	/* parse config file first, command line options override */
-	if (getenv("DOTMONETDBFILE") == NULL) {
-		if (stat(".monetdb", &statb) == 0) {
-			config = open_rastream(".monetdb");
-		} else if (getenv("HOME") != NULL) {
-			char buf[1024];
-			snprintf(buf, sizeof(buf), "%s/.monetdb", getenv("HOME"));
-			if (stat(buf, &statb) == 0) {
-				config = open_rastream(buf);
-			}
+	parse_dotmonetdb(&user, &passwd, &language, &save_history, &output, &pagewidth);
+	pagewidthset = pagewidth != 0;
+	if (language) {
+		if (strcmp(language, "sql") == 0) {
+			mode = SQL;
+		} else if (strcmp(language, "mal") == 0) {
+			mode = MAL;
+		} else if (strcmp(language, "jaql") == 0) {
+			mode = JAQL;
 		}
-	} else {
-		char *cfile = getenv("DOTMONETDBFILE");
-		if (strcmp(cfile, "") != 0) {
-			if (stat(cfile, &statb) == 0) {
-				config = open_rastream(cfile);
-			} else {
-				mnstr_printf(stderr_stream,
-					      "failed to open file '%s': %s\n",
-					      cfile, strerror(errno));
-			}
-		}
-	}
-
-	if (config != NULL) {
-		char buf[1024];
-		char *q;
-		ssize_t len;
-		int line = 0;
-		while ((len = mnstr_readline(config, buf, sizeof(buf) - 1)) > 0) {
-			line++;
-			buf[len - 1] = '\0';	/* drop newline */
-			if (buf[0] == '#' || buf[0] == '\0')
-				continue;
-			if ((q = strchr(buf, '=')) == NULL) {
-				mnstr_printf(stderr_stream, "%s:%d: syntax error: %s\n", mnstr_name(config), line, buf);
-				continue;
-			}
-			*q++ = '\0';
-			/* this basically sucks big time, as I can't easily set
-			 * a default, hence I only do things I think are useful
-			 * for now, needs a better solution */
-			if (strcmp(buf, "user") == 0) {
-				user = strdup(q);	/* leak */
-				q = NULL;
-			} else if (strcmp(buf, "password") == 0 || strcmp(buf, "passwd") == 0) {
-				passwd = strdup(q);	/* leak */
-				q = NULL;
-			} else if (strcmp(buf, "language") == 0) {
-				language = strdup(q);	/* leak */
-				if (strcmp(language, "sql") == 0) {
-					mode = SQL;
-					q = NULL;
-				} else if (strcmp(language, "mal") == 0) {
-					mode = MAL;
-					q = NULL;
-				} else if (strcmp(language, "jaql") == 0) {
-					mode = JAQL;
-					q = NULL;
-				} else {
-					/* make sure we don't set garbage */
-					mnstr_printf(stderr_stream,
-						      "%s:%d: unsupported "
-						      "language: %s\n",
-						      mnstr_name(config),
-						      line, q);
-					free(language);
-					language = NULL;
-					q = NULL;
-				}
-			} else if (strcmp(buf, "save_history") == 0) {
-				if (strcmp(q, "true") == 0 ||
-				    strcmp(q, "on") == 0)
-				{
-					save_history = 1;
-					q = NULL;
-				} else if (strcmp(q, "false") == 0 ||
-					   strcmp(q, "off") == 0)
-				{
-					save_history = 0;
-					q = NULL;
-				}
-			} else if (strcmp(buf, "format") == 0) {
-				output = strdup(q);
-			} else if (strcmp(buf, "width") == 0) {
-				pagewidth = atoi(q);
-				pagewidthset = pagewidth != 0;
-			}
-			if (q != NULL)
-				mnstr_printf(stderr_stream,
-					      "%s:%d: unknown property: %s\n",
-					      mnstr_name(config), line, buf);
-		}
-		mnstr_destroy(config);
 	}
 
 	while ((c = getopt_long(argc, argv, "aDNd:e"
@@ -2866,7 +2783,9 @@ main(int argc, char **argv)
 			nullstring = optarg;
 			break;
 		case 'u':
-			user = optarg;
+			if (user)
+				free(user);
+			user = strdup(optarg);
 			user_set_as_flag = 1;
 			break;
 		case 'f':
@@ -2985,8 +2904,11 @@ main(int argc, char **argv)
 #endif /* HAVE_ICONV */
 
 	/* when config file would provide defaults */
-	if (user_set_as_flag)
+	if (user_set_as_flag) {
+		if (passwd)
+			free(passwd);
 		passwd = NULL;
+	}
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
@@ -3008,6 +2930,12 @@ main(int argc, char **argv)
 	} else {
 		mid = mapi_mapi(host, port, user, passwd, language, dbname);
 	}
+	if (user)
+		free(user);
+	user = NULL;
+	if (passwd)
+		free(passwd);
+	passwd = NULL;
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 

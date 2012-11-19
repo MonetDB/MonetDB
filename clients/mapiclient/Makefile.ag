@@ -20,7 +20,7 @@ INCLUDES = ../mapilib ../../common/options ../../common/stream $(READLINE_INCS)
 
 lib_mcutil = {
 	NOINST
-	SOURCES = dump.c prompt.c
+	SOURCES = dump.c prompt.c dotmonetdb.c
 }
 
 bin_mclient = {
@@ -61,6 +61,6 @@ bin_mnc = {
 
 man_MANS = mclient.1 msqldump.1
 
-EXTRA_DIST = msqldump.h mprompt.h $(man_MANS)
+EXTRA_DIST = msqldump.h mprompt.h dotmonetdb.h $(man_MANS)
 
 EXTRA_DIST_DIR = Tests
