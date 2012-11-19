@@ -1440,8 +1440,10 @@ stop_cleanup:
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
 stop_disconnect:
-	mapi_disconnect(dbh);
-	mapi_destroy(dbh);
+	if (dbh) {
+		mapi_disconnect(dbh);
+		mapi_destroy(dbh);
+	}
 
 	printf("-- %sconnection with server %s closed\n", id, wthr->uri);
 
