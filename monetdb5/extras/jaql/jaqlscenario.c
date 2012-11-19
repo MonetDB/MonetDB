@@ -194,8 +194,11 @@ JAQLparser(Client c)
 	j->scanstreameof = 0;
 	j->pos = 0;
 	j->p = NULL;
+	j->timing.parse = j->timing.optimise = j->timing.gencode = 0L;
 
+	j->timing.parse = GDKusec();
 	jaqlparse(j);
+	j->timing.parse = GDKusec() - j->timing.parse;
 
 	/* stop if it seems nothing is going to come any more */
 	if (j->scanstreameof == 1) {
@@ -235,7 +238,9 @@ JAQLparser(Client c)
 			throw(PARSE, "JAQLparse", "%s", j->err);
 		}
 
+		j->timing.optimise = GDKusec();
 		chkTypes(out, c->nspace, prg->def, FALSE);
+		j->timing.optimise = GDKusec() - j->timing.optimise;
 		if (prg->def->errors) {
 			/* this is bad already, so let's try to make it debuggable */
 			mnstr_printf(out, "!jaqlgencode: generated program contains errors\n");

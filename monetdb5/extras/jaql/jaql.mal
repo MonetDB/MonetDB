@@ -41,6 +41,10 @@ pattern batconcat(l:bat[:oid,:str], r:bat[:oid,:str]):bat[:oid,:str]
 address JAQLbatconcat
 comment "Return the string concatenation of the tails of both input BATs";
 
+pattern printTimings(execute:lng, transport:lng):void
+address JAQLprintTimings
+comment "Print timing breakdown information to stdout stream";
+
 # scenario functions and init call
 command prelude()
 address JAQLprelude;

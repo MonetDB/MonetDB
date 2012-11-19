@@ -168,6 +168,7 @@ plan       return PLAN;
 planf      return PLANF;
 debug      return DEBUG;
 trace      return TRACE;
+time       return TIME;
 
  /* language constructs */
 "->"       return ARROW;

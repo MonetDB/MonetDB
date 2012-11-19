@@ -5427,6 +5427,7 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 {
 	InstrPtr q;
 	int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+	int etime = -1, ttime = -1, stime = -1;
 	tree *trout = NULL;
 
 	/* start with a clean sheet */
@@ -5435,6 +5436,14 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 
 	/* this function is not used recursively, so this is the first thing
 	 * in the resulting MAL plan */
+	if (j->time) {
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, alarmRef);
+		setFunctionId(q, putName("usec", 4));
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		etime = getArg(q, 0);
+		pushInstruction(mb, q);
+	}
 	if (j->trace) {
 		newStmt(mb, profilerRef, "reset");
 		q = newStmt(mb, profilerRef, "setFilter");
@@ -5449,6 +5458,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		trout->next = NULL;
 		j->p = t;
 	}
+
+	j->timing.gencode = GDKusec();
 
 	/* each iteration in this loop is a pipe (a JSON document)
 	 * represented by the j1..7 vars */
@@ -5510,6 +5521,14 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 				pushInstruction(mb, q);
 				break;
 			case j_output:
+				if (j->time) {
+					q = newInstruction(mb, ASSIGNsymbol);
+					setModuleId(q, alarmRef);
+					setFunctionId(q, putName("usec", 4));
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+					ttime = getArg(q, 0);
+					pushInstruction(mb, q);
+				}
 				q = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(q, ioRef);
 				setFunctionId(q, putName("stdout", 6));
@@ -7433,6 +7452,8 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		t = t->next;
 	}
 
+	j->timing.gencode = GDKusec() - j->timing.gencode;
+
 	if (j->trace) {
 		newStmt(mb, profilerRef, "stop");
 		/* call gettrace function, and print it */
@@ -7444,6 +7465,55 @@ dumptree(jc *j, Client cntxt, MalBlkPtr mb, tree *t)
 		dumptree(j, cntxt, mb, t);
 		j->trace = 1;
 		freetree(t);
+	}
+	if (j->time) {
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, alarmRef);
+		setFunctionId(q, putName("usec", 4));
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		stime = getArg(q, 0);
+		pushInstruction(mb, q);
+		if (ttime >= 0) {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, calcRef);
+			setFunctionId(q, putName("-", 1));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, stime);
+			q = pushArgument(mb, q, ttime);
+			a = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, calcRef);
+			setFunctionId(q, putName("-", 1));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, ttime);
+			q = pushArgument(mb, q, etime);
+			b = getArg(q, 0);
+			pushInstruction(mb, q);
+			etime = b;
+			ttime = a;
+		} else {
+			q = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(q, calcRef);
+			setFunctionId(q, putName("-", 1));
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, stime);
+			q = pushArgument(mb, q, etime);
+			etime = getArg(q, 0);
+			pushInstruction(mb, q);
+			q = newInstruction(mb, ASSIGNsymbol);
+			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushLng(mb, q, 0L);
+			ttime = getArg(q, 0);
+			pushInstruction(mb, q);
+		}
+		q = newInstruction(mb, ASSIGNsymbol);
+		setModuleId(q, putName("jaql", 4));
+		setFunctionId(q, putName("printTimings", 12));
+		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+		q = pushArgument(mb, q, etime);
+		q = pushArgument(mb, q, ttime);
+		pushInstruction(mb, q);
 	}
 
 	return -1;

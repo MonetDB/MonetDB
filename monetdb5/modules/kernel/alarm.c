@@ -59,63 +59,6 @@ static monet_timer_t timer[MAXtimer];
 static int timerTop = 0;
 
 /*
- * @
- * @-
- * The timer is awakened by a clock interrupt. The interrupt granularity
- * is OS-dependent. The timer should be initialized as long as there
- * are outstanding timer events.
- */
-#ifdef SIGALRM
-static void
-CLKinitTimer(int sec, int usec)
-{
-	int i = sec - time(0);
-
-	(void) usec;
-
-	alarm(i);
-}
-#endif
-/*
- * @-
- * A new alarm is pushed onto the stack using @%CLKalarm@.
- * The parameter is the real-time value to be approximated.
- */
-#if 0
-#ifdef SIGALRM
-static void
-CLKalarm(time_t t, str action)
-{
-	int j;
-	int k;
-
-
-	if (timerTop == MAXtimer) {
-		GDKerror("CLKalarm: timer stack overflow\n");
-		return;
-	}
-	for (j = 0; j < timerTop; j++) {
-		if (timer[j].alarm_time > t)
-			break;
-	}
-	for (k = timerTop; k > j; k--) {
-		timer[k] = timer[k - 1];
-	}
-	timer[k].alarm_time = t;
-	if (action) {
-		timer[k].action = GDKstrdup(action);
-	} else {
-		timer[k].action = 0;
-		MT_sema_init(&timer[k].sema, 0, "timersema");
-	}
-	if (k == timerTop++) {
-		CLKinitTimer(t, 0);	/* set it sooner */
-	}
-}
-#endif
-#endif
-/*
- * @-
  * Once a timer interrupt occurs, we should inspect the timer queue and
  * emit a notify signal.
  */
@@ -152,151 +95,14 @@ CLKsignal(int nr)
 		timerTop--;
 	}
 	if (timerTop > 0) {
-		CLKinitTimer(timer[timerTop - 1].alarm_time, 0);
+		alarm(timer[timerTop - 1].alarm_time - time(0));
 	}
 }
 #endif
 
-static int
-CMDsleep(int *secs)
-{
-
-	if (*secs < 0) {
-		GDKerror("CMDsleep: negative delay\n");
-		return GDK_FAIL;
-	} else {
-#ifdef __CYGWIN__
-		/* CYGWIN cannot handle SIGALRM with sleep */
-		lng t = GDKusec() + (*secs)*1000000;
-
-		while (GDKusec() < t)
-			;
-#else
-		MT_sleep_ms(*secs * 1000);
-#endif
-	}
-	return GDK_SUCCEED;
-}
-
-/*
- * @-
- * Problem with CMDtimers is that they use static buffers that
- * may be overwritten under parallel processing.
- * Therefore, the code below is dangerous (!) and the re-entrant code
- * should be used.  However, on Windows where ctime_r is not available,
- * ctime is actually thread-safe.
- */
-#if 0
-static int
-CMDtimers(BAT **retval)
-{
-	char buf[27];
-	int k;
-
-	*retval = BATnew(TYPE_str, TYPE_str, timerTop);
-	if (*retval == NULL)
-		return GDK_FAIL;
-	BATroles(*retval, "alarm", "action");
-	for (k = 0; k < timerTop; k++) {
-		time_t t = timer[k].alarm_time;
-
-#ifdef HAVE_CTIME_R3
-		ctime_r(&t, buf, sizeof(buf));
-#else
-#ifdef HAVE_CTIME_R
-		ctime_r(&t, buf);
-#else
-		strncpy(buf, ctime(&t), sizeof(buf));
-#endif
-#endif
-		BUNins(*retval, buf, timer[k].action ? timer[k].action : "barrier", FALSE);
-	}
-	return GDK_SUCCEED;
-}
-#endif
-
-static int
-CMDctime(str *retval)
-{
-	time_t t = time(0);
-	char *base, *c;
-
-#ifdef HAVE_CTIME_R3
-	char buf[26];
-
-	ctime_r(&t, buf, sizeof(buf));
-	base = buf;
-#else
-#ifdef HAVE_CTIME_R
-	char buf[26];
-
-	ctime_r(&t, buf);
-	base = buf;
-#else
-	base = ctime(&t);
-#endif
-#endif
-	if (base == NULL) {
-		/* very unlikely to happen... */
-		GDKerror("CMDctime: failed to format time\n");
-		return GDK_FAIL;
-	}
-	c = strchr(base, '\n');
-	if (c)
-		*c = 0;
-	*retval = GDKstrdup(base);
-	return GDK_SUCCEED;
-}
-
-static int
-CMDepoch(int *retval)		/* XXX should be lng */
-{
-	*retval = (int) time(0);
-	return GDK_SUCCEED;
-}
-
-/* should return lng */
-static int
-CMDusec(lng *retval)
-{
-	*retval = GDKusec();
-	return GDK_SUCCEED;
-}
-
-static int
-CMDtime(int *retval)
-{
-	*retval = GDKms();
-	return GDK_SUCCEED;
-}
-
-/*
- * @- Wrapping
- * Wrapping the Version 4 code base
- */
 #include "mal.h"
 #include "mal_exception.h"
 
-#if 0
-void
-ALARMinitTimer(int sec, int usec)
-{
-	(void) sec;
-	(void) usec;
-#ifdef SIGALRM
-	CLKinitTimer(sec, usec);
-#endif
-}
-
-#ifdef SIGALRM
-str
-ALARMalarm(int t, str *action)
-{
-	CLKalarm(t, *action);
-	return MAL_SUCCEED;
-}
-#endif
-#endif
 
 str
 ALARMprelude(void)
@@ -330,7 +136,7 @@ ALARMepilogue(void)
 str
 ALARMusec(lng *ret)
 {
-	CMDusec(ret);
+	*ret = GDKusec();
 	return MAL_SUCCEED;
 }
 
@@ -338,7 +144,20 @@ str
 ALARMsleep(int *res, int *secs)
 {
 	(void) res;		/* fool compilers */
-	CMDsleep(secs);
+	if (*secs < 0)
+		throw(MAL, "alarm.sleep", "negative delay");
+
+#ifdef __CYGWIN__
+	/* CYGWIN cannot handle SIGALRM with sleep */
+	{
+		lng t = GDKusec() + (*secs)*1000000;
+
+		while (GDKusec() < t)
+			;
+	}
+#else
+	MT_sleep_ms(*secs * 1000);
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -361,21 +180,46 @@ ALARMtimers(int *res)
 str
 ALARMctime(str *res)
 {
-	CMDctime(res);
+	time_t t = time(0);
+	char *base, *c;
+
+#ifdef HAVE_CTIME_R3
+	char buf[26];
+
+	ctime_r(&t, buf, sizeof(buf));
+	base = buf;
+#else
+#ifdef HAVE_CTIME_R
+	char buf[26];
+
+	ctime_r(&t, buf);
+	base = buf;
+#else
+	base = ctime(&t);
+#endif
+#endif
+	if (base == NULL)
+		/* very unlikely to happen... */
+		throw(MAL, "alarm.ctime", "failed to format time");
+
+	c = strchr(base, '\n');
+	if (c)
+		*c = 0;
+	*res = GDKstrdup(base);
 	return MAL_SUCCEED;
 }
 
 str
-ALARMepoch(int *res)
+ALARMepoch(int *res)  /* XXX should be lng */
 {
-	CMDepoch(res);
+	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
 str
 ALARMtime(int *res)
 {
-	CMDtime(res);
+	*res = GDKms();
 	return MAL_SUCCEED;
 }
 

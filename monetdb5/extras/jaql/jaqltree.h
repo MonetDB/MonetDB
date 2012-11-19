@@ -50,12 +50,18 @@ typedef struct _jc {
 		 trace:3,
 		 plan:4,
 		 planf:5,
-		 mapimode:6,
-		 scanstreameof:7;
+		 time:6,
+		 mapimode:7,
+		 scanstreameof:8;
 	jvar *vars;
 	int j1, j2, j3, j4, j5, j6, j7, startoid;
 	char ro1:1, ro2:2, ro3:3, ro4:4, ro5:5, ro6:6, ro7:7;
 	int vtop;
+	struct {
+		long long int parse;
+		long long int gencode;
+		long long int optimise;
+	} timing;
 } jc;
 
 /* the order here does matter for filter */
