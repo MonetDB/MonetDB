@@ -1622,7 +1622,7 @@ main(int argc, char **argv)
 			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usage();
-			exit(0);
+			exit(-1);
 		}
 	}
 
