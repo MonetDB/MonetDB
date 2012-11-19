@@ -1581,8 +1581,8 @@ SQLparser(Client c)
 			backend_callinline(be, c, s);
 			trimMalBlk(c->curprg->def);
 			mb = c->curprg->def;
-        		chkProgram(c->fdout, c->nspace, mb);
-        		addOptimizerPipe(c, mb, "minimal_pipe");
+			chkProgram(c->fdout, c->nspace, mb);
+			addOptimizerPipe(c, mb, "minimal_pipe");
 			optimizeMALBlock(c, mb);
 			c->curprg->def = mb;
 		} else {
