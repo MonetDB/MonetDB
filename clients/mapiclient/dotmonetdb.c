@@ -31,10 +31,11 @@ void
 parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history, char **output, int *pagewidth)
 {
 	char *cfile;
-	FILE *config;
+	FILE *config = NULL;
 	char buf[1024];
 
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
+		/* no environment variable: use a default */
 		if ((config = fopen(".monetdb", "r")) == NULL) {
 			if ((cfile = getenv("HOME")) != NULL) {
 				snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
@@ -47,7 +48,10 @@ parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history,
 		} else {
 			cfile = strdup(".monetdb");
 		}
-	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
+	} else if (*cfile == 0) {
+		/* empty environment variable: skip the file */
+		cfile = NULL;
+	} else if ((config = fopen(cfile, "r")) == NULL) {
 		cfile = NULL;
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
