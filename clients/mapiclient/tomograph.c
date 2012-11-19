@@ -158,6 +158,7 @@ usage(void)
 	fprintf(stderr, "  -B | --batch=<number> of combined queries\n");
 	fprintf(stderr, "  -m | --colormap produces colormap \n");
 	fprintf(stderr, "  -D | --debug\n");
+	fprintf(stderr, "  -? | --help\n");
 }
 
 
@@ -1613,6 +1614,12 @@ main(int argc, char **argv)
 		case 's':
 			sqlstatement = optarg;
 			break;
+		case '?':
+			usage();
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usage();
 			exit(0);
