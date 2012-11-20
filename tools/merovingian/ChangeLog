@@ -1,3 +1,7 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Tue Nov 20 2012 Fabian Groffen <fabian@cwi.nl>
+- monetdb status now prints last crash date only if the database has
+  not been started since.
+

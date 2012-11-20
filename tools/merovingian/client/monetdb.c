@@ -288,12 +288,14 @@ printStatus(sabdb *stats, int mode, int twidth)
 		if (stats->locked == 1)
 			state = "locked ";
 
-		if (uplog.lastcrash == -1) {
-			crash[0] = '\0';
-		} else {
+		crash[0] = '\0';
+		if (uplog.lastcrash != -1 &&
+				stats->state != SABdbRunning &&
+				uplog.crashavg1 == 1)
+		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(crash, sizeof(crash), "crash %Y-%m-%d %H:%M:%S", t);
+			strftime(crash, sizeof(crash), "crashed on %Y-%m-%d %H:%M:%S", t);
 		}
 
 		if (stats->state != SABdbRunning) {
