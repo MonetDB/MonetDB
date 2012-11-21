@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDB 1 "OCTOBER 2011" MonetDB "MonetDB Applications"
+.TH MONETDB 1 "NOVEMBER 2012" MonetDB "MonetDB Applications"
 .SH NAME
 monetdb \- control a MonetDB Database Server instance
 .SH SYNOPSIS
@@ -136,14 +136,15 @@ flag controls which databases are being shown, matching their state.
 The required argument to this flag can be a combination of any of the
 following characters.  Note that the order in which they are put also
 controls the order in which the databases are printed.
-.I r, s, c
+.I b, r, s, c
 and
 .I l
-are used to print a started (running), stopped, crashed and locked
-database respectively.  The default order which is used when the
+are used to print a starting up (booting), started (running), stopped,
+crashed and locked database respectively.  The default order which is
+used when the
 .I \-s
 flag is absent, is
-.I rscl.
+.I rbscl.
 .IP "start [\-a] database [database ...]"
 .IP "stop [\-a] database [database ...]"
 .IP "kill [\-a] database [database ...]"

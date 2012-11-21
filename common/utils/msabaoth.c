@@ -565,6 +565,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 			sdb = sdb->next = malloc(sizeof(sabdb));
 		}
 		sdb->uplog = NULL;
+		sdb->uri = NULL;
 		sdb->next = NULL;
 
 		/* store the database name */
@@ -716,6 +717,8 @@ msab_freeStatus(sabdb** ret)
 	while (p != NULL) {
 		if (p->path != NULL)
 			free(p->path);
+		if (p->uri != NULL)
+			free(p->uri);
 		if (p->uplog != NULL)
 			free(p->uplog);
 		r = p->scens;
@@ -853,7 +856,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 }
 
 /* used in the serialisation to be able to change it in the future */
-#define SABDBVER "1"
+#define SABDBVER "2"
 
 /**
  * Produces a string representation suitable for storage/sending.
@@ -863,7 +866,6 @@ msab_serialise(char **ret, const sabdb *db)
 {
 	char buf[8096];
 	char scens[64];
-	char conns[1024];
 	sablist *l;
 	sabuplog dbu;
 	char *p;
@@ -885,32 +887,18 @@ msab_serialise(char **ret, const sabdb *db)
 	if (p != scens)
 		p[-1] = '\0';
 
-	conns[0] = '\0';
-	p = conns;
-	avail = sizeof(conns) - 1;
-	for (l = db->conns; l != NULL; l = l->next) {
-		len = strlen(l->val);
-		if (len >= avail)
-			break;
-		memcpy(p, l->val, len);
-		p += len + 1;
-		avail -= len + 1;
-		memcpy(p - 1, "'", 2);
-	}
-	if (p != conns)
-		p[-1] = '\0';
-
 	if ((p = msab_getUplogInfo(&dbu, db)) != NULL)
 		return(p);
 
 	/* sabdb + sabuplog structs in one */
 	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
-			"%s,%d,%d,%s,%s" ","
+			"%s,%s,%d,%d,%s,"
 			"%d,%d,%d,"
 			"" LLFMT "," LLFMT "," LLFMT ","
 			"" LLFMT "," LLFMT ","
 			"%d,%f,%f",
-			db->path, db->locked, (int)(db->state), scens, conns,
+			db->dbname, db->uri ? db->uri : "", db->locked,
+			(int)(db->state), scens,
 			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
 			(lng)dbu.avguptime, (lng)dbu.maxuptime, (lng)dbu.minuptime,
 			(lng)dbu.lastcrash, (lng)dbu.laststart,
@@ -926,17 +914,18 @@ msab_serialise(char **ret, const sabdb *db)
 char *
 msab_deserialise(sabdb **ret, char *sdb)
 {
-	char *path;
+	char *dbname;
+	char *uri;
 	int locked;
 	int state;
 	char *scens = "";
-	char *conns = "";
 	sabdb *s;
 	sabuplog *u;
 	sablist *l;
 	char *p;
 	char *lasts;
 	char buf[PATHLENGTH];
+	char protover = 0;
 
 	lasts = sdb;
 	if ((p = strchr(lasts, ':')) == NULL) {
@@ -957,19 +946,45 @@ msab_deserialise(sabdb **ret, char *sdb)
 		return(strdup(buf));
 	}
 	*p++ = '\0';
-	if (strcmp(lasts, SABDBVER) != 0) {
+	if (strcmp(lasts, "1") == 0) {
+		/* Protocol 1 was used uptil Oct2012.  Since Jul2012 a new state
+		 * SABdbStarting was introduced, but not exposed to the client
+		 * in serialise.  After Oct2012, the path component was removed
+		 * and replaced by an URI field.  This meant dbname could no
+		 * longer be deduced from path, and hence sent separately.
+		 * Since the conns property became useless in the light of the
+		 * added uri, it was dropped.
+		 * These four changes were effectuated in protocol 2.  When
+		 * reading protocol 1, we use the path field to set dbname, but
+		 * ignore the path information (and set uri to "<unknown>".  The
+		 * SABdbStarting state never occurs. */
+	} else if (strcmp(lasts, SABDBVER) != 0) {
 		snprintf(buf, sizeof(buf), 
 				"string has unsupported version: %s", lasts);
 		return(strdup(buf));
 	}
+	protover = lasts[0];
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		snprintf(buf, sizeof(buf), 
-				"string does not contain path: %s", lasts);
+				"string does not contain %s: %s",
+				protover == '1' ? "path" : "dbname", lasts);
 		return(strdup(buf));
 	}
 	*p++ = '\0';
-	path = lasts;
+	dbname = lasts;
+	if (protover == '1') {
+		uri = "<unknown>";
+	} else {
+		lasts = p;
+		if ((p = strchr(p, ',')) == NULL) {
+			snprintf(buf, sizeof(buf), 
+					"string does not contain uri: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		uri = lasts;
+	}
 	lasts = p;
 	if ((p = strchr(p, ',')) == NULL) {
 		snprintf(buf, sizeof(buf), 
@@ -995,14 +1010,15 @@ msab_deserialise(sabdb **ret, char *sdb)
 	*p++ = '\0';
 	scens = lasts;
 	lasts = p;
-	if ((p = strchr(p, ',')) == NULL) {
-		snprintf(buf, sizeof(buf), 
-				"string does not contain connections: %s", lasts);
-		return(strdup(buf));
+	if (protover == '1') {
+		if ((p = strchr(p, ',')) == NULL) {
+			snprintf(buf, sizeof(buf), 
+					"string does not contain connections: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		lasts = p;
 	}
-	*p++ = '\0';
-	conns = lasts;
-	lasts = p;
 
 	/* start parsing sabuplog struct */
 	u = malloc(sizeof(sabuplog));
@@ -1108,17 +1124,20 @@ msab_deserialise(sabdb **ret, char *sdb)
 
 	/* fill/create sabdb struct */
 
-	if (strrchr(path, '/') == NULL) {
-		free(u);
-		snprintf(buf, sizeof(buf), "invalid path: %s", path);
-		return(strdup(buf));
+	if (protover == '1') {
+		if ((dbname = strrchr(dbname, '/')) == NULL) {
+			free(u);
+			snprintf(buf, sizeof(buf), "invalid path: %s", dbname);
+			return(strdup(buf));
+		}
+		dbname++;
 	}
 
 	s = malloc(sizeof(sabdb));
 
-	s->path = strdup(path);
 	/* msab_freeStatus() actually relies on this trick */
-	s->dbname = strrchr(s->path, '/') + 1;
+	s->path = s->dbname = strdup(dbname);
+	s->uri = strdup(uri);
 	s->locked = locked;
 	s->state = (SABdbState)state;
 	if (strlen(scens) == 0) {
@@ -1139,24 +1158,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 			}
 		}
 	}
-	if (strlen(conns) == 0) {
-		s->conns = NULL;
-	} else {
-		l = s->conns = malloc(sizeof(sablist));
-		p = strtok_r(conns, "'", &lasts);
-		if (p == NULL) {
-			l->val = strdup(conns);
-			l->next = NULL;
-		} else {
-			l->val = strdup(p);
-			l->next = NULL;
-			while ((p = strtok_r(NULL, "'", &lasts)) != NULL) {
-				l = l->next = malloc(sizeof(sablist));
-				l->val = strdup(p);
-				l->next = NULL;
-			}
-		}
-	}
+	s->conns = NULL;
 	s->uplog = u;
 	s->next = NULL;
 

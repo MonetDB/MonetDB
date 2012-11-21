@@ -121,7 +121,7 @@ command_help(int argc, char *argv[])
 		printf("  -c  crash statistics listing\n");
 		printf("  -s  only show databases matching a state, combination\n");
 		printf("      possible from r (running), s (stopped), c (crashed)\n");
-		printf("      and l (locked).\n");
+		printf("      b (booting) and l (locked).\n");
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("Usage: monetdb start [-a] database [database ...]\n");
 		printf("  Starts the given database, if the MonetDB Database Server\n");
@@ -267,7 +267,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 		char *state;
 		char uptime[12];
 		char avg[8];
-		char crash[32];
+		char info[32];
 		char *dbname;
 
 		switch (stats->state) {
@@ -277,6 +277,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 			case SABdbCrashed:
 				state = "crashed";
 			break;
+			case SABdbStarting:
 			case SABdbInactive:
 				state = "stopped";
 			break;
@@ -288,14 +289,18 @@ printStatus(sabdb *stats, int mode, int twidth)
 		if (stats->locked == 1)
 			state = "locked ";
 
-		crash[0] = '\0';
-		if (uplog.lastcrash != -1 &&
+		info[0] = '\0';
+		if (stats->state == SABdbStarting) {
+			struct tm *t;
+			t = localtime(&uplog.laststart);
+			strftime(info, sizeof(info), "starting up since %Y-%m-%d %H:%M:%S", t);
+		} else if (uplog.lastcrash != -1 &&
 				stats->state != SABdbRunning &&
 				uplog.crashavg1 == 1)
 		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
-			strftime(crash, sizeof(crash), "crashed on %Y-%m-%d %H:%M:%S", t);
+			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
 		}
 
 		if (stats->state != SABdbRunning) {
@@ -315,7 +320,7 @@ printStatus(sabdb *stats, int mode, int twidth)
 		if (uplog.startcntr)
 			printf("  %3d%%, %3s  %s",
 					100 - (uplog.crashcntr * 100 / uplog.startcntr),
-					avg, crash);
+					avg, info[0] != '\0' ? info : stats->uri ? stats->uri : "");
 		printf("\n");
 	} else if (mode == 2) {
 		/* long mode */
@@ -325,6 +330,9 @@ printStatus(sabdb *stats, int mode, int twidth)
 		struct tm *t;
 
 		switch (stats->state) {
+			case SABdbStarting:
+				state = "starting up";
+			break;
 			case SABdbRunning:
 				state = "running";
 			break;
@@ -340,21 +348,12 @@ printStatus(sabdb *stats, int mode, int twidth)
 		}
 
 		printf("%s:\n", stats->dbname);
-		printf("  location: %s\n", stats->path);
+		printf("  connection uri: %s\n", stats->uri);
 		printf("  database name: %s\n", stats->dbname);
 		printf("  state: %s\n", state);
 		printf("  locked: %s\n", stats->locked == 1 ? "yes" : "no");
 		entry = stats->scens;
 		printf("  scenarios:");
-		if (entry == NULL) {
-			printf(" (none)");
-		} else while (entry != NULL) {
-			printf(" %s", entry->val);
-			entry = entry->next;
-		}
-		printf("\n");
-		entry = stats->conns;
-		printf("  connections:");
 		if (entry == NULL) {
 			printf(" (none)");
 		} else while (entry != NULL) {
@@ -398,27 +397,32 @@ printStatus(sabdb *stats, int mode, int twidth)
 		/* this shows most used properties, and is shown also for modes
 		 * that are added but we don't understand (yet) */
 		char buf[64];
+		char up[32];
 		char min[8], avg[8], max[8];
 		struct tm *t;
+		size_t off = 0;
 		/* dbname, status -- since, crash averages */
 
 		switch (stats->state) {
-			case SABdbRunning: {
-				char up[32];
+			case SABdbStarting:
+				snprintf(buf, sizeof(buf), "starting ");
+				off = sizeof("starting ") - 1;
+			case SABdbRunning:
 				t = localtime(&uplog.laststart);
-				strftime(buf, 64, "up since %Y-%m-%d %H:%M:%S, ", t);
+				strftime(buf + off, sizeof(buf) - off,
+						"up since %Y-%m-%d %H:%M:%S, ", t);
 				secondsToString(up, time(NULL) - uplog.laststart, 999);
 				strcat(buf, up);
-			} break;
+			break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);
-				strftime(buf, 64, "crashed on %Y-%m-%d %H:%M:%S", t);
+				strftime(buf, sizeof(buf), "crashed on %Y-%m-%d %H:%M:%S", t);
 			break;
 			case SABdbInactive:
-				snprintf(buf, 64, "not running");
+				snprintf(buf, sizeof(buf), "not running");
 			break;
 			default:
-				snprintf(buf, 64, "unknown");
+				snprintf(buf, sizeof(buf), "unknown");
 			break;
 		}
 		if (stats->locked == 1)
@@ -619,7 +623,7 @@ command_status(int argc, char *argv[])
 {
 	int doall = 1; /* we default to showing all */
 	int mode = 1;  /* 0=crash, 1=short, 2=long */
-	char *state = "rscl"; /* contains states to show */
+	char *state = "rbscl"; /* contains states to show */
 	int i;
 	char *p;
 	char *e;
@@ -656,6 +660,7 @@ command_status(int argc, char *argv[])
 						}
 						for (p = state; *p != '\0'; p++) {
 							switch (*p) {
+								case 'b': /* booting (starting up) */
 								case 'r': /* running (started) */
 								case 's': /* stopped */
 								case 'c': /* crashed */
@@ -729,6 +734,9 @@ command_status(int argc, char *argv[])
 		int curLock = 0;
 		SABdbState curMode = SABdbIllegal;
 		switch (*p) {
+			case 'b':
+				curMode = SABdbStarting;
+			break;
 			case 'r':
 				curMode = SABdbRunning;
 			break;

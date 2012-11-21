@@ -24,6 +24,8 @@ typedef struct Ssablist {
 	struct Ssablist* next;   /* pointer to the next available value*/
 } sablist;
 
+/* only append to this enum, as its numbers are used in
+ * serialise/deserialise */
 typedef enum {
 	SABdbIllegal = 0,
 	SABdbRunning,
@@ -34,12 +36,13 @@ typedef enum {
 
 typedef struct Ssabdb {
 	char *dbname;            /* database name */
-	char *path;              /* full path to database */
+	char *path;              /* path to this database */
 	int locked;              /* whether this database is under maintenance */
 	SABdbState state;        /* current database state */
 	sablist* scens;          /* scenarios available for this database */
 	sablist* conns;          /* connections available for this database */
 	struct Ssabuplog *uplog; /* sabuplog struct for this database */
+	char *uri;               /* URI to connect to this database */
 	struct Ssabdb* next;     /* next database */
 } sabdb;
 
