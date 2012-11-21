@@ -30,7 +30,7 @@
  * primary goals of this tool.
  */
 
-#define TOOLKIT_VERSION   "1.0"
+#define TOOLKIT_VERSION   "1.1"
 
 #include "monetdb_config.h"
 #include "utils.h"

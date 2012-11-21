@@ -26,7 +26,7 @@
 
 #include "utils/utils.h" /* confkeyval */
 
-#define MERO_VERSION   "1.6"
+#define MERO_VERSION   "1.7"
 #define MERO_PORT      "50000"
 #define MERO_SOCK      ".s.monetdb."
 #define CONTROL_SOCK   ".s.merovingian."
