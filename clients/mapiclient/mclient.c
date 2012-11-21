@@ -94,7 +94,7 @@ static stream *toConsole_raw;	/* toConsole without iconv conversion */
 static stream *stdout_stream;
 static stream *stderr_stream;
 static FILE *fromConsole = NULL;
-static char *language = "sql";
+static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
@@ -2714,6 +2714,9 @@ main(int argc, char **argv)
 		} else if (strcmp(language, "jaql") == 0) {
 			mode = JAQL;
 		}
+	} else {
+		language = strdup("sql");
+		mode = SQL;
 	}
 
 	while ((c = getopt_long(argc, argv, "aDNd:e"
@@ -2758,21 +2761,25 @@ main(int argc, char **argv)
 			    strcmp(optarg, "sq") == 0 ||
 				strcmp(optarg, "s") == 0)
 			{
-				language = optarg;
+				free(language);
+				language = strdup(optarg);
 				mode = SQL;
 			} else if (strcmp(optarg, "mal") == 0 ||
 				   strcmp(optarg, "ma") == 0) {
-				language = "mal";
+				free(language);
+				language = strdup("mal");
 				mode = MAL;
 			} else if (strcmp(optarg, "jaql") == 0 ||
 					strcmp(optarg, "jaq") == 0 ||
 					strcmp(optarg, "ja") == 0 ||
 					strcmp(optarg, "j") == 0)
 			{
-				language = "jaql";
+				free(language);
+				language = strdup("jaql");
 				mode = JAQL;
 			} else if (strcmp(optarg, "msql") == 0) {
-				language = "msql";
+				free(language);
+				language = strdup("msql");
 				mode = MAL;
 			} else {
 				fprintf(stderr, "language option needs to be sql or mal\n");
