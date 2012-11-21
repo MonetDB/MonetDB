@@ -1251,7 +1251,7 @@ static struct{
 
 static char cpuload[BUFSIZ];
 
-static void gatherCPULoad(void){
+static int gatherCPULoad(void){
     int cpu, len;
 	long user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
@@ -1260,7 +1260,7 @@ static void gatherCPULoad(void){
 	proc = fopen("/proc/stat","r");
 	if ( proc == NULL) {
 		/* unexpected */
-		return;
+		return -1;
 	}
 	while (fgets(buf, BUFSIZ,proc) != NULL)
 	if ( strncmp(buf,"cpu",3)== 0){
@@ -1293,6 +1293,7 @@ static void gatherCPULoad(void){
 		s += (int) strlen(s);
 	}
 	fclose(proc);
+	return 0;
 }
 
 static void profilerHeartbeat(void *dummy){
@@ -1312,7 +1313,7 @@ static void profilerHeartbeat(void *dummy){
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
 	(void) dummy;
-	gatherCPULoad();
+	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	prevclock = (time_t) tv.tv_sec;
 
@@ -1335,7 +1336,8 @@ static void profilerHeartbeat(void *dummy){
 
 		/* get CPU load on second boundaries only */
 		if ( clock - prevclock >= 0 ) {
-			gatherCPULoad();
+			if ( gatherCPULoad() )
+				continue;
 			prevclock = clock;
 		}
 		MT_lock_set(&mal_profileLock, "profileLock");
