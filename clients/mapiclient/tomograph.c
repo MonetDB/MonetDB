@@ -120,6 +120,8 @@ typedef struct _wthread {
 	size_t argc;
 	char **argv;
 	struct _wthread *next;
+	Mapi dbh;
+	MapiHdl hdl;
 } wthread;
 
 static wthread *thds = NULL;
@@ -131,10 +133,6 @@ static char *title =0;
 static int debug = 0;
 static int colormap = 0;
 static int beat= 50;
-static Mapi dbh = NULL;
-static MapiHdl hdl = NULL;
-static Mapi dbhsql = NULL;
-static MapiHdl hdlsql = NULL;
 static char *sqlstatement = NULL;
 static int batch = 1; /* number of queries to combine in one run */
 static long maxio=0;
@@ -169,8 +167,8 @@ usage(void)
 					   fprintf(stderr, "!! %scommand failed\n", id)); \
 					   goto stop_disconnect;}
 #define doQ(X) \
-	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
-			 die(dbh, hdl);
+	if ((wthr->hdl = mapi_query(wthr->dbh, X)) == NULL || mapi_error(wthr->dbh) != MOK) \
+			 die(wthr->dbh, wthr->hdl);
 #define doQsql(X) \
 	if ((hdlsql = mapi_query(dbhsql, X)) == NULL || mapi_error(dbhsql) != MOK) \
 			 die(dbhsql, hdlsql);
@@ -180,16 +178,21 @@ usage(void)
  * termination of the profiling session. */
 static void createTomogram(void);
 
-static int deactivated = 0;
+static int activated = 0;
 static void deactivateBeat(void){
+	wthread *wthr;
 	char *id ="deactivateBeat";
-	if ( deactivated)
+	if ( activated == 0)
 		return;
-	deactivated =1;
+	activated = 0;
 	if ( debug)
 		fprintf(stderr,"Deactivate beat\n");
-	doQ("profiler.deactivate(\"ping\");\n");
-	doQ("profiler.stop();");
+	/* deactivate all connections  */
+	for (wthr = thds; wthr != NULL; wthr = wthr->next) 
+	if (wthr->dbh ){
+		doQ("profiler.deactivate(\"ping\");\n");
+		doQ("profiler.stop();");
+	}
 	return;
 stop_disconnect:
 	;
@@ -206,8 +209,9 @@ stopListening(int i)
 	deactivateBeat();
 	/* kill all connections  */
 	for (walk = thds; walk != NULL; walk = walk->next) {
-		if (walk->s != NULL)
+		if (walk->s != NULL){
 			mnstr_close(walk->s);
+		}
 	}
 	createTomogram();
 }
@@ -230,15 +234,26 @@ setCounter(char *nme)
 static void activateBeat(void){
 	char buf[BUFSIZ];
 	char *id ="activateBeat";
+	wthread *wthr;
+
 	if ( debug)
 		fprintf(stderr,"Activate beat\n");
+	if ( activated == 1)
+		return;
+	activated = 1;
 	snprintf(buf, BUFSIZ, "profiler.activate(\"ping%d\");\n",beat);
-	doQ(buf);
+	/* activate all connections  */
+	for (wthr = thds; wthr != NULL; wthr = wthr->next) 
+	if (wthr->dbh ){
+		doQ(buf);
+	}
 	return;
 stop_disconnect:
-	mapi_disconnect(dbh);
-	mapi_destroy(dbh);
-	dbh = 0;
+	if ( wthr ){
+		mapi_disconnect(wthr->dbh);
+		mapi_destroy(wthr->dbh);
+		wthr->dbh = 0;
+	}
 }
 
 #define MAXTHREADS 2048
@@ -627,7 +642,7 @@ static void showmemory(void)
 	mn = (long) (min/1024.0);
 	mx = (long) (max/1024.0);
 	mx += (mn == mx);
-	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn, (long)(1.01 * mx));
+	fprintf(gnudata,"set yrange [%ld:%ld]\n", mn, (long)(1.1 * mx));
 	fprintf(gnudata,"set ytics (\"%.1f\" %ld, \"%.1f\" %ld)\n", min /1024.0, mn, max/1024.0, mx);
 	fprintf(gnudata,"plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n",(tracefile?"scratch":filename));
 	fprintf(gnudata,"unset yrange\n");
@@ -1302,6 +1317,8 @@ doProfile(void *d)
 	char *host = NULL;
 	int portnr;
 	char id[10];
+	Mapi dbhsql = NULL;
+	MapiHdl hdlsql = NULL;
 
 	/* set up the SQL session */
 	if ( sqlstatement) {
@@ -1320,15 +1337,15 @@ doProfile(void *d)
 	/* set up the profiler */
 	id[0] = '\0';
 	if (wthr->uri)
-		dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
+		wthr->dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
 	else
-		dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
-	if (dbh == NULL || mapi_error(dbh))
-		die(dbh, hdl);
-	mapi_reconnect(dbh);
-	if (mapi_error(dbh))
-		die(dbh, hdl);
-	host = strdup(mapi_get_host(dbh));
+		wthr->dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
+	if (wthr->dbh == NULL || mapi_error(wthr->dbh))
+		die(wthr->dbh, wthr->hdl);
+	mapi_reconnect(wthr->dbh);
+	if (mapi_error(wthr->dbh))
+		die(wthr->dbh, wthr->hdl);
+	host = strdup(mapi_get_host(wthr->dbh));
 	if (*host == '/') {
 		fprintf(stderr, "!! UNIX domain socket not supported\n");
 		goto stop_disconnect;
@@ -1454,9 +1471,9 @@ stop_cleanup:
 	doQ("profiler.stop();");
 	doQ("profiler.closeStream();");
 stop_disconnect:
-	if (dbh) {
-		mapi_disconnect(dbh);
-		mapi_destroy(dbh);
+	if (wthr->dbh) {
+		mapi_disconnect(wthr->dbh);
+		mapi_destroy(wthr->dbh);
 	}
 
 	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host);
@@ -1508,7 +1525,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:?T:t:r:o:Db:B:s:m",
+		int c = getopt_long(argc, argv, "d:u:P:p:h:?:T:t:r:o:D:b:B:s:m",
 			long_options, &option_index);
 		if (c == -1)
 			break;
