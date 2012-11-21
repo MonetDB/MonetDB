@@ -228,7 +228,15 @@ secondsToString(char *buf, time_t t, int longness)
 	time_t p;
 	size_t i = 0;
 
-	p = 1 * 60 * 60 * 24 * 7;
+	p = 1 * 60 * 60 * 24 * 7 * 52;
+	if (t > p) {
+		i += sprintf(buf + i, "%dy", (int)(t / p));
+		t -= (t / p) * p;
+		if (--longness == 0)
+			return;
+		buf[i++] = ' ';
+	}
+	p /= 52;
 	if (t > p) {
 		i += sprintf(buf + i, "%dw", (int)(t / p));
 		t -= (t / p) * p;
