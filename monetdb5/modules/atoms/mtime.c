@@ -2095,9 +2095,13 @@ MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2)
 	t1 = (date *) Tloc(b1, BUNfirst(b1));
 	t2 = (date *) Tloc(b2, BUNfirst(b2));
 	tn = (int *) Tloc(bn, BUNfirst(bn));
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 	for (i = 0; i < n; i++) {
 		if (*t1 == date_nil || *t2 == date_nil) {
 			*tn = int_nil;
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		} else {
 			*tn = (int) (*t1 - *t2);
 		}
@@ -2106,11 +2110,16 @@ MTIMEdate_diff_bulk(bat *ret, bat *bid1, bat *bid2)
 		tn++;
 	}
 	BBPreleaseref(b2->batCacheid);
+	BATsetcount(bn, (BUN) (tn - (int *) Tloc(bn, BUNfirst(bn))));
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
 	if (b1->htype != bn->htype) {
 		/* temporarily reuse b2 */
 		b2 = VIEWcreate(b1, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
+	} else {
+		BATseqbase(bn, b1->hseqbase);
 	}
 	BBPreleaseref(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);
@@ -2162,9 +2171,13 @@ MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2)
 	t1 = (timestamp *) Tloc(b1, BUNfirst(b1));
 	t2 = (timestamp *) Tloc(b2, BUNfirst(b2));
 	tn = (lng *) Tloc(bn, BUNfirst(bn));
+	bn->T->nonil = 1;
+	bn->T->nil = 0;
 	for (i = 0; i < n; i++) {
 		if (ts_isnil(*t1) || ts_isnil(*t2)) {
 			*tn = lng_nil;
+			bn->T->nonil = 0;
+			bn->T->nil = 1;
 		} else {
 			*tn = ((lng) (t1->days - t2->days)) * ((lng) 24 * 60 * 60 * 1000) + ((lng) (t1->msecs - t2->msecs));
 		}
@@ -2173,11 +2186,16 @@ MTIMEtimestamp_diff_bulk(bat *ret, bat *bid1, bat *bid2)
 		tn++;
 	}
 	BBPreleaseref(b2->batCacheid);
+	BATsetcount(bn, (BUN) (tn - (lng *) Tloc(bn, BUNfirst(bn))));
+	bn->tsorted = BATcount(bn) <= 1;
+	bn->trevsorted = BATcount(bn) <= 1;
 	if (b1->htype != bn->htype) {
 		/* temporarily reuse b2 */
 		b2 = VIEWcreate(b1, bn);
 		BBPunfix(bn->batCacheid);
 		bn = b2;
+	} else {
+		BATseqbase(bn, b1->hseqbase);
 	}
 	BBPreleaseref(b1->batCacheid);
 	BBPkeepref(bn->batCacheid);

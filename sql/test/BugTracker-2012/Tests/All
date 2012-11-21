@@ -52,3 +52,4 @@ cast-tinyint-Bug-3137
 not-equal-Bug.3139
 many-columns-truncated.Bug-3161
 aggregate_incorrect_precision_scale.Bug-3182
+timestamp-diff.Bug-3190
