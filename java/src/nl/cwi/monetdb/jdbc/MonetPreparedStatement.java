@@ -480,7 +480,7 @@ public class MonetPreparedStatement
 			 * @return table name or "" if not applicable
 			 */
 			public String getTableName(int col) throws SQLException {
-				return column[getColumnIdx(col)];
+				return table[getColumnIdx(col)];
 			}
 
 			/**
