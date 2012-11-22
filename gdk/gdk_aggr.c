@@ -153,22 +153,23 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
-		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		const TYPE1 *vals = (const TYPE1 *) values;		\
 		for (i = start; i < end; i++, vals++) {			\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
+				if (i < *cand - seqb) {			\
 					if (gids)			\
-						gids++;			\
+						gids += gidincr;	\
 					continue;			\
 				}					\
-				assert(i == *cand - b->hseqbase);	\
+				assert(i == *cand - seqb);		\
 				if (++cand == candend)			\
 					end = i + 1;			\
 			}						\
-			if (gids == NULL ||				\
+			if (gids == NULL || gidincr == 0 ||		\
 			    (*gids >= min && *gids <= max)) {		\
 				gid = gids ? *gids - min : (oid) i;	\
-				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+				if (nil_if_empty &&			\
+				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					sums[gid] = 0;			\
 				}					\
@@ -185,21 +186,156 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				}					\
 			}						\
 			if (gids)					\
-				gids++;					\
+				gids += gidincr;			\
 		}							\
 	} while (0)
+
+static BUN
+dosum(const void *values, oid seqb, BUN start, BUN end, void *results,
+      BUN ngrp, int tp1, int tp2, const oid *cand, const oid *candend,
+      const oid *gids, int gidincr, oid min, oid max,
+      int skip_nils, int abort_on_error, int nil_if_empty, const char *func)
+{
+	BUN nils = 0;
+	BUN i;
+	oid gid;
+	unsigned int *seen;	/* bitmask for groups that we've seen */
+
+	/* allocate bitmap for seen group ids */
+	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
+	if (seen == NULL) {
+		GDKerror("%s: cannot allocate enough memory\n", func);
+		return BUN_NONE;
+	}
+
+	switch (ATOMstorage(tp2)) {
+	case TYPE_bte: {
+		bte *sums = (bte *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, bte);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_sht: {
+		sht *sums = (sht *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, sht);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, sht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_int: {
+		int *sums = (int *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, int);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, int);
+			break;
+		case TYPE_int:
+			AGGR_SUM(int, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_lng: {
+		lng *sums = (lng *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_SUM(bte, lng);
+			break;
+		case TYPE_sht:
+			AGGR_SUM(sht, lng);
+			break;
+		case TYPE_int:
+			AGGR_SUM(int, lng);
+			break;
+		case TYPE_lng:
+			AGGR_SUM(lng, lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_flt: {
+		flt *sums = (flt *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_flt:
+			AGGR_SUM(flt, flt);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_dbl: {
+		dbl *sums = (dbl *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_flt:
+			AGGR_SUM(flt, dbl);
+			break;
+		case TYPE_dbl:
+			AGGR_SUM(dbl, dbl);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	default:
+		goto unsupported;
+	}
+
+	if (nils == 0 && nil_if_empty) {
+		/* figure out whether there were any empty groups
+		 * (that result in a nil value) */
+		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
+			if (seen[i] != ~0U) {
+				nils = 1;
+				break;
+			}
+		}
+	}
+	GDKfree(seen);
+
+	return nils;
+
+  unsupported:
+	GDKfree(seen);
+	GDKerror("%s: type combination (sum(%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2));
+	return BUN_NONE;
+
+  overflow:
+	GDKfree(seen);
+	GDKerror("22003!overflow in calculation.\n");
+	return BUN_NONE;
+}
 
 /* calculate group sums with optional candidates list */
 BAT *
 BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
 	const oid *gids;
-	oid gid;
 	oid min, max;
-	BUN i, ngrp;
-	BUN nils = 0;
+	BUN ngrp;
+	BUN nils;
 	BAT *bn;
-	unsigned int *seen;	/* bitmask for groups that we've seen */
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
@@ -230,16 +366,8 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
-	if (seen == NULL) {
-		GDKerror("BATgroupsum: cannot allocate enough memory\n");
-		return NULL;
-	}
-
-	bn = BATnew(TYPE_void, tp, ngrp);
+	bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
 	if (bn == NULL) {
-		GDKfree(seen);
 		return NULL;
 	}
 
@@ -248,163 +376,153 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	switch (ATOMstorage(tp)) {
-	case TYPE_bte: {
-		bte *sums = (bte *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = bte_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_SUM(bte, bte);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_sht: {
-		sht *sums = (sht *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = sht_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_SUM(bte, sht);
-			break;
-		case TYPE_sht:
-			AGGR_SUM(sht, sht);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_int: {
-		int *sums = (int *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = int_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_SUM(bte, int);
-			break;
-		case TYPE_sht:
-			AGGR_SUM(sht, int);
-			break;
-		case TYPE_int:
-			AGGR_SUM(int, int);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_lng: {
-		lng *sums = (lng *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = lng_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_SUM(bte, lng);
-			break;
-		case TYPE_sht:
-			AGGR_SUM(sht, lng);
-			break;
-		case TYPE_int:
-			AGGR_SUM(int, lng);
-			break;
-		case TYPE_lng:
-			AGGR_SUM(lng, lng);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_flt: {
-		flt *sums = (flt *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = flt_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_flt:
-			AGGR_SUM(flt, flt);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_dbl: {
-		dbl *sums = (dbl *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			sums[i] = dbl_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_flt:
-			AGGR_SUM(flt, dbl);
-			break;
-		case TYPE_dbl:
-			AGGR_SUM(dbl, dbl);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	default:
-		goto unsupported;
-	}
-	BATsetcount(bn, ngrp);
+	nils = dosum(Tloc(b, BUNfirst(b)), b->hseqbase, start, end,
+		     Tloc(bn, BUNfirst(bn)), ngrp, b->ttype, tp,
+		     cand, candend, gids, 1, min, max,
+		     skip_nils, abort_on_error, 1, "BATgroupsum");
 
-	if (nils == 0) {
-		/* figure out whether there were any empty groups
-		 * (that result in a nil value) */
-		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
-		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
-			if (seen[i] != ~0U) {
-				nils = 1;
-				break;
-			}
-		}
+	if (nils < BUN_NONE) {
+		BATsetcount(bn, ngrp);
+		BATseqbase(bn, min);
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->T->nil = nils != 0;
+		bn->T->nonil = nils == 0;
+	} else {
+		BBPunfix(bn->batCacheid);
+		bn = NULL;
 	}
-	GDKfree(seen);
-	BATseqbase(bn, min);
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+
 	return bn;
+}
 
-  unsupported:
-	GDKfree(seen);
-	BBPunfix(bn->batCacheid);
-	GDKerror("BATgroupsum: type combination (sum(%s)->%s) not supported.\n",
-		 ATOMname(b->ttype), ATOMname(tp));
-	return NULL;
+gdk_return
+BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+{
+	oid min, max;
+	BUN ngrp;
+	BUN nils;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
-  overflow:
-	GDKfree(seen);
-	BBPunfix(bn->batCacheid);
-	GDKerror("22003!overflow in calculation.\n");
-	return NULL;
+	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
+				    &start, &end, &cnt,
+				    &cand, &candend)) != NULL) {
+		GDKerror("BATsum: %s\n", err);
+		return GDK_FAIL;
+	}
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte:
+		* (bte *) res = nil_if_empty ? bte_nil : 0;
+		break;
+	case TYPE_sht:
+		* (sht *) res = nil_if_empty ? sht_nil : 0;
+		break;
+	case TYPE_int:
+		* (int *) res = nil_if_empty ? int_nil : 0;
+		break;
+	case TYPE_lng:
+		* (lng *) res = nil_if_empty ? lng_nil : 0;
+		break;
+	case TYPE_flt:
+	case TYPE_dbl:
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+		{
+			/* special case for summing integer types into
+			 * a floating point: We calculate the average
+			 * (which is done exactly), and multiply the
+			 * result by the count to get the sum.  Note
+			 * that if we just summed into a floating
+			 * point number, we could loose too much
+			 * accuracy, and if we summed into lng first,
+			 * we could get unnecessary overflow. */
+			dbl avg;
+			BUN cnt;
+
+			if (BATcalcavg(b, s, &avg, &cnt) == GDK_FAIL)
+				return GDK_FAIL;
+			if (cnt == 0) {
+				avg = nil_if_empty ? dbl_nil : 0;
+			}
+			if (cnt < BATcount(b) && !skip_nils) {
+				/* there were nils */
+				avg = dbl_nil;
+			}
+			if (ATOMstorage(tp) == TYPE_flt) {
+				if (avg == dbl_nil)
+					*(flt *) res = flt_nil;
+				else if (cnt > 0 &&
+					 GDK_flt_max / cnt < ABS(avg)) {
+					if (abort_on_error) {
+						GDKerror("22003!overflow in calculation.\n");
+						return GDK_FAIL;
+					}
+					*(flt *) res = flt_nil;
+				} else {
+					*(flt *) res = (flt) avg * cnt;
+				}
+			} else {
+				if (avg == dbl_nil) {
+					*(dbl *) res = dbl_nil;
+				} else if (cnt > 0 &&
+					   GDK_dbl_max / cnt < ABS(avg)) {
+					if (abort_on_error) {
+						GDKerror("22003!overflow in calculation.\n");
+						return GDK_FAIL;
+					}
+					*(dbl *) res = dbl_nil;
+				} else {
+					*(dbl *) res = avg * cnt;
+				}
+			}
+			return GDK_SUCCEED;
+		}
+		default:
+			break;
+		}
+		if (ATOMstorage(b->ttype) == TYPE_dbl)
+			* (dbl *) res = nil_if_empty ? dbl_nil : 0;
+		else
+			* (flt *) res = nil_if_empty ? flt_nil : 0;
+		break;
+	default:
+		GDKerror("BATsum: type combination (sum(%s)->%s) not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
+		return GDK_FAIL;
+	}
+	if (BATcount(b) == 0)
+		return GDK_SUCCEED;
+	nils = dosum(Tloc(b, BUNfirst(b)), b->hseqbase, start, end, res, 1,
+		     b->ttype, tp, cand, candend, &min, 0, min, max,
+		     skip_nils, abort_on_error, nil_if_empty, "BATsum");
+	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define AGGR_PROD(TYPE1, TYPE2, TYPE3)					\
 	do {								\
-		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		const TYPE1 *vals = (const TYPE1 *) values;		\
 		for (i = start; i < end; i++, vals++) {			\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
+				if (i < *cand - seqb) {			\
 					if (gids)			\
-						gids++;			\
+						gids += gidincr;	\
 					continue;			\
 				}					\
-				assert(i == *cand - b->hseqbase);	\
+				assert(i == *cand - seqb);	\
 				if (++cand == candend)			\
 					end = i + 1;			\
 			}						\
-			if (gids == NULL ||				\
+			if (gids == NULL || gidincr == 0 ||		\
 			    (*gids >= min && *gids <= max)) {		\
 				gid = gids ? *gids - min : (oid) i;	\
-				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+				if (nil_if_empty &&			\
+				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
@@ -422,28 +540,29 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 				}					\
 			}						\
 			if (gids)					\
-				gids++;					\
+				gids += gidincr;			\
 		}							\
 	} while (0)
 
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
-		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		const TYPE *vals = (const TYPE *) values;		\
 		for (i = start; i < end; i++, vals++) {			\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
+				if (i < *cand - seqb) {			\
 					if (gids)			\
-						gids++;			\
+						gids += gidincr;	\
 					continue;			\
 				}					\
-				assert(i == *cand - b->hseqbase);	\
+				assert(i == *cand - seqb);		\
 				if (++cand == candend)			\
 					end = i + 1;			\
 			}						\
-			if (gids == NULL ||				\
+			if (gids == NULL || gidincr == 0 ||		\
 			    (*gids >= min && *gids <= max)) {		\
 				gid = gids ? *gids - min : (oid) i;	\
-				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+				if (nil_if_empty &&			\
+				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
@@ -460,28 +579,29 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 				}					\
 			}						\
 			if (gids)					\
-				gids++;					\
+				gids += gidincr;			\
 		}							\
 	} while (0)
 
 #define AGGR_PROD_FLOAT(TYPE1, TYPE2)					\
 	do {								\
-		const TYPE1 *vals = (const TYPE1 *) Tloc(b, BUNfirst(b)); \
+		const TYPE1 *vals = (const TYPE1 *) values;		\
 		for (i = start; i < end; i++, vals++) {			\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
+				if (i < *cand - seqb) {			\
 					if (gids)			\
-						gids++;			\
+						gids += gidincr;	\
 					continue;			\
 				}					\
-				assert(i == *cand - b->hseqbase);	\
+				assert(i == *cand - seqb);		\
 				if (++cand == candend)			\
 					end = i + 1;			\
 			}						\
-			if (gids == NULL ||				\
+			if (gids == NULL || gidincr == 0 ||		\
 			    (*gids >= min && *gids <= max)) {		\
 				gid = gids ? *gids - min : (oid) i;	\
-				if (!(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+				if (nil_if_empty &&			\
+				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
@@ -503,21 +623,180 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 				}					\
 			}						\
 			if (gids)					\
-				gids++;					\
+				gids += gidincr;			\
 		}							\
 	} while (0)
+
+static BUN
+doprod(const void *values, oid seqb, BUN start, BUN end, void *results,
+       BUN ngrp, int tp1, int tp2, const oid *cand, const oid *candend,
+       const oid *gids, int gidincr, oid min, oid max,
+       int skip_nils, int abort_on_error, int nil_if_empty, const char *func)
+{
+	BUN nils = 0;
+	BUN i;
+	oid gid;
+	unsigned int *seen;	/* bitmask for groups that we've seen */
+
+	/* allocate bitmap for seen group ids */
+	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
+	if (seen == NULL) {
+		GDKerror("%s: cannot allocate enough memory\n", func);
+		return GDK_FAIL;
+	}
+
+	switch (ATOMstorage(tp2)) {
+	case TYPE_bte: {
+		bte *prods = (bte *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, bte, sht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_sht: {
+		sht *prods = (sht *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, sht, int);
+			break;
+		case TYPE_sht:
+			AGGR_PROD(sht, sht, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_int: {
+		int *prods = (int *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD(bte, int, lng);
+			break;
+		case TYPE_sht:
+			AGGR_PROD(sht, int, lng);
+			break;
+		case TYPE_int:
+			AGGR_PROD(int, int, lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_lng: {
+		lng *prods = (lng *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD_LNG(bte);
+			break;
+		case TYPE_sht:
+			AGGR_PROD_LNG(sht);
+			break;
+		case TYPE_int:
+			AGGR_PROD_LNG(int);
+			break;
+		case TYPE_lng:
+			AGGR_PROD_LNG(lng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_flt: {
+		flt *prods = (flt *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD_FLOAT(bte, flt);
+			break;
+		case TYPE_sht:
+			AGGR_PROD_FLOAT(sht, flt);
+			break;
+		case TYPE_int:
+			AGGR_PROD_FLOAT(int, flt);
+			break;
+		case TYPE_lng:
+			AGGR_PROD_FLOAT(lng, flt);
+			break;
+		case TYPE_flt:
+			AGGR_PROD_FLOAT(flt, flt);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_dbl: {
+		dbl *prods = (dbl *) results;
+		switch (ATOMstorage(tp1)) {
+		case TYPE_bte:
+			AGGR_PROD_FLOAT(bte, dbl);
+			break;
+		case TYPE_sht:
+			AGGR_PROD_FLOAT(sht, dbl);
+			break;
+		case TYPE_int:
+			AGGR_PROD_FLOAT(int, dbl);
+			break;
+		case TYPE_lng:
+			AGGR_PROD_FLOAT(lng, dbl);
+			break;
+		case TYPE_flt:
+			AGGR_PROD_FLOAT(flt, dbl);
+			break;
+		case TYPE_dbl:
+			AGGR_PROD_FLOAT(dbl, dbl);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	default:
+		goto unsupported;
+	}
+
+	if (nils == 0 && nil_if_empty) {
+		/* figure out whether there were any empty groups
+		 * (that result in a nil value) */
+		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
+		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
+			if (seen[i] != ~0U) {
+				nils = 1;
+				break;
+			}
+		}
+	}
+	GDKfree(seen);
+
+	return nils;
+
+  unsupported:
+	GDKfree(seen);
+	GDKerror("%s: type combination (mul(%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2));
+	return BUN_NONE;
+
+  overflow:
+	GDKfree(seen);
+	GDKerror("22003!overflow in calculation.\n");
+	return BUN_NONE;
+}
 
 /* calculate group products with optional candidates list */
 BAT *
 BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
 {
 	const oid *gids;
-	oid gid;
 	oid min, max;
-	BUN i, ngrp;
-	BUN nils = 0;
+	BUN ngrp;
+	BUN nils;
 	BAT *bn;
-	unsigned int *seen;	/* bitmask for groups that we've seen */
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
@@ -548,16 +827,8 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 		return BATconvert(b, s, tp, abort_on_error);
 	}
 
-	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
-	if (seen == NULL) {
-		GDKerror("BATgroupprod: cannot allocate enough memory\n");
-		return NULL;
-	}
-
-	bn = BATnew(TYPE_void, tp, ngrp);
+	bn = BATconstant(tp, ATOMnilptr(tp), ngrp);
 	if (bn == NULL) {
-		GDKfree(seen);
 		return NULL;
 	}
 
@@ -566,143 +837,73 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	switch (ATOMstorage(tp)) {
-	case TYPE_bte: {
-		bte *prods = (bte *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = bte_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_PROD(bte, bte, sht);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_sht: {
-		sht *prods = (sht *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = sht_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_PROD(bte, sht, int);
-			break;
-		case TYPE_sht:
-			AGGR_PROD(sht, sht, int);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_int: {
-		int *prods = (int *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = int_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_PROD(bte, int, lng);
-			break;
-		case TYPE_sht:
-			AGGR_PROD(sht, int, lng);
-			break;
-		case TYPE_int:
-			AGGR_PROD(int, int, lng);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_lng: {
-		lng *prods = (lng *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = lng_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_bte:
-			AGGR_PROD_LNG(bte);
-			break;
-		case TYPE_sht:
-			AGGR_PROD_LNG(sht);
-			break;
-		case TYPE_int:
-			AGGR_PROD_LNG(int);
-			break;
-		case TYPE_lng:
-			AGGR_PROD_LNG(lng);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_flt: {
-		flt *prods = (flt *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = flt_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_flt:
-			AGGR_PROD_FLOAT(flt, flt);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_dbl: {
-		dbl *prods = (dbl *) Tloc(bn, BUNfirst(bn));
-		for (i = 0; i < ngrp; i++)
-			prods[i] = dbl_nil;
-		switch (ATOMstorage(b->ttype)) {
-		case TYPE_flt:
-			AGGR_PROD_FLOAT(flt, dbl);
-			break;
-		case TYPE_dbl:
-			AGGR_PROD_FLOAT(dbl, dbl);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	default:
-		goto unsupported;
-	}
-	BATsetcount(bn, ngrp);
+	nils = doprod(Tloc(b, BUNfirst(b)), b->hseqbase, start, end,
+		      Tloc(bn, BUNfirst(bn)), ngrp, b->ttype, tp,
+		      cand, candend, gids, 1, min, max,
+		      skip_nils, abort_on_error, 1, "BATgroupprod");
 
-	if (nils == 0) {
-		/* figure out whether there were any empty groups
-		 * (that result in a nil value) */
-		seen[ngrp >> 5] |= ~0U << (ngrp & 0x1F); /* fill last slot */
-		for (i = 0, ngrp = (ngrp + 31) / 32; i < ngrp; i++) {
-			if (seen[i] != ~0U) {
-				nils = 1;
-				break;
-			}
-		}
+	if (nils < BUN_NONE) {
+		BATsetcount(bn, ngrp);
+		BATseqbase(bn, min);
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->T->nil = nils != 0;
+		bn->T->nonil = nils == 0;
+	} else {
+		BBPunfix(bn->batCacheid);
+		bn = NULL;
 	}
-	GDKfree(seen);
-	BATseqbase(bn, min);
-	bn->tkey = BATcount(bn) <= 1;
-	bn->tsorted = BATcount(bn) <= 1;
-	bn->trevsorted = BATcount(bn) <= 1;
-	bn->T->nil = nils != 0;
-	bn->T->nonil = nils == 0;
+
 	return bn;
+}
 
-  unsupported:
-	GDKfree(seen);
-	BBPunfix(bn->batCacheid);
-	GDKerror("BATgroupprod: type combination (mul(%s)->%s) not supported.\n",
-		 ATOMname(b->ttype), ATOMname(tp));
-	return NULL;
+gdk_return
+BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty)
+{
+	oid min, max;
+	BUN ngrp;
+	BUN nils;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
 
-  overflow:
-	GDKfree(seen);
-	BBPunfix(bn->batCacheid);
-	GDKerror("22003!overflow in calculation.\n");
-	return NULL;
+	if ((err = BATgroupaggrinit(b, NULL, NULL, s, &min, &max, &ngrp,
+				    &start, &end, &cnt,
+				    &cand, &candend)) != NULL) {
+		GDKerror("BATprod: %s\n", err);
+		return GDK_FAIL;
+	}
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte:
+		* (bte *) res = nil_if_empty ? bte_nil : (bte) 1;
+		break;
+	case TYPE_sht:
+		* (sht *) res = nil_if_empty ? sht_nil : (sht) 1;
+		break;
+	case TYPE_int:
+		* (int *) res = nil_if_empty ? int_nil : (int) 1;
+		break;
+	case TYPE_lng:
+		* (lng *) res = nil_if_empty ? lng_nil : (lng) 1;
+		break;
+	case TYPE_flt:
+		* (flt *) res = nil_if_empty ? flt_nil : (flt) 1;
+		break;
+	case TYPE_dbl:
+		* (dbl *) res = nil_if_empty ? dbl_nil : (dbl) 1;
+		break;
+	default:
+		GDKerror("BATprod: type combination (prod(%s)->%s) not supported.\n",
+			 ATOMname(b->ttype), ATOMname(tp));
+		return GDK_FAIL;
+	}
+	if (BATcount(b) == 0)
+		return GDK_SUCCEED;
+	nils = doprod(Tloc(b, BUNfirst(b)), b->hseqbase, start, end, res, 1,
+		      b->ttype, tp, cand, candend, &min, 0, min, max,
+		      skip_nils, abort_on_error, nil_if_empty, "BATprod");
+	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define AGGR_AVG(TYPE)							\

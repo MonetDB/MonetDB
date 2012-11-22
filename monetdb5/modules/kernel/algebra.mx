@@ -34,7 +34,7 @@ All Rights Reserved.
  * to simplify recursive bat-expression and manage reference counts.
  * In the current version we return only a BAT identifier when a new
  * bat is being created.
- * @-
+ *
  * All parameters to the modules are passed by reference.
  * In particular, this means that
  * string values are passed to the module layer as (str *)
@@ -188,7 +188,7 @@ comment "Select all BUNs of a BAT with a certain
 command selectNotNil(b:bat[:any_1,:any_2]):bat[:any_1,:any_2]
 address ALGselectNotNil
 comment "Select all not-nil values";
-# @-
+
 # The second group uses the head to perform the range selection.
 command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
 			:bat[:any_1,:any_2] 
@@ -200,7 +200,7 @@ address ALGselectInclusiveHead;
 
 command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
 address ALGselect1Head;
-# @-
+
 # A special case for this set are the void tailed bats.
 command select(b:bat[:any_2,:void], low:any_2) 
 		:bat[:any_2,:void] 
@@ -213,7 +213,6 @@ command select(b:bat[:any_2,:void], low:any_2, high:any_2,li:bit, hi:bit)
 		:bat[:any_2,:void] 
 address ALGselectInclusiveHead;
 
-# @-
 # The second group uses the head to perform the range selection
 
 command fragment ( b:bat[:any_1,:any_2], hlow:any_1, hhigh:any_1,
@@ -813,13 +812,12 @@ comment "Produce a BAT containing the histogram over the tail values.";
 command cardinality( b:bat[:any_1,:any_2] ) :lng 
 address ALGcard
 comment "Return the cardinality of the BAT tail values.";
-# @-
+
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{ min()} and @emph{ max()} routines below catch any tail-type.
 # The type-specific routines defined later are faster, and will
 # override these any implementations.
-#
-# @-
+
 command min(b:bat[:any_1,:any_2]):any_2 
 address ALGminany
 comment "Return the lowest tail value or nil.";
@@ -827,48 +825,6 @@ comment "Return the lowest tail value or nil.";
 command max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany
 comment "Return the highest tail value or nil.";
-
-# @+ Type-Specific Sum, Prod, Max and Min
-# For X in @{ bte,sht,int,wrd,flt,dbl,lng @},  we generate the
-# aggregate functions using a macro.
-# @-
-@:sumprod(sum,"Gives the sum of all tail values.")@
-@:sumprod(prod,"Gives the product of all tail values.")@
-@= sumprod_definition
-command @1 (b:bat[:any_1,:@2], empty_is_nil:bit ) :@4 
-address ALG@1_@2_@4
-comment @3;
-
-function @1 (b:bat[:any_1,:@2] ) :@4;
-	return @1 := aggr.@1(b, true); 
-end @1;
-@
-@mal
-@= sumprod
-@:sumprod_definition(@1,bte,@2,bte)@
-@:sumprod_definition(@1,bte,@2,sht)@
-@:sumprod_definition(@1,bte,@2,int)@
-@:sumprod_definition(@1,bte,@2,wrd)@
-@:sumprod_definition(@1,bte,@2,lng)@
-@:sumprod_definition(@1,sht,@2,sht)@
-@:sumprod_definition(@1,sht,@2,int)@
-@:sumprod_definition(@1,sht,@2,wrd)@
-@:sumprod_definition(@1,sht,@2,lng)@
-@:sumprod_definition(@1,int,@2,int)@
-@:sumprod_definition(@1,int,@2,wrd)@
-@:sumprod_definition(@1,int,@2,lng)@
-@:sumprod_definition(@1,wrd,@2,wrd)@
-@:sumprod_definition(@1,wrd,@2,lng)@
-@:sumprod_definition(@1,lng,@2,lng)@
-@:sumprod_definition(@1,flt,@2,flt)@
-@:sumprod_definition(@1,flt,@2,dbl)@
-@:sumprod_definition(@1,dbl,@2,dbl)@
-
-@:sumprod_definition(@1,bte,@2,dbl)@
-@:sumprod_definition(@1,sht,@2,dbl)@
-@:sumprod_definition(@1,int,@2,dbl)@
-@:sumprod_definition(@1,wrd,@2,dbl)@
-@:sumprod_definition(@1,lng,@2,dbl)@
 
 @= avg_definition
 command avg (b:bat[:any_1,:@1] ) :dbl
@@ -902,7 +858,6 @@ comment "Gives the standard deviation of all tail values";
 @:stdev_definition(flt)@
 @:stdev_definition(dbl)@
 
-# @-
 @= aggregate_definition
 command @1 ( b:bat[:any_1,:@2] ) :@2 
 address ALG@1_@2 comment @3;
@@ -1019,62 +974,6 @@ algebra_export str ALGstdev_@1(dbl *res, int *bid);
 @:stdev_export(lng)@
 @:stdev_export(flt)@
 @:stdev_export(dbl)@
-
-@= ALGsum_export
-algebra_export str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
-@= ALGprod_export
-algebra_export str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) ;
-@
-@h
-@:ALGsum_export(bte,bte,0)@
-@:ALGsum_export(bte,sht,0)@
-@:ALGsum_export(bte,int,0)@
-@:ALGsum_export(bte,wrd,0)@
-@:ALGsum_export(bte,lng,0)@
-@:ALGsum_export(sht,sht,0)@
-@:ALGsum_export(sht,int,0)@
-@:ALGsum_export(sht,wrd,0)@
-@:ALGsum_export(sht,lng,0)@
-@:ALGsum_export(int,int,0)@
-@:ALGsum_export(int,wrd,0)@
-@:ALGsum_export(int,lng,0)@
-@:ALGsum_export(wrd,wrd,0)@
-@:ALGsum_export(wrd,lng,0)@
-@:ALGsum_export(lng,lng,0)@
-@:ALGsum_export(flt,flt,0.0)@
-@:ALGsum_export(flt,dbl,0.0)@
-@:ALGsum_export(dbl,dbl,0.0)@
-
-@:ALGsum_export(bte,dbl,0.0)@
-@:ALGsum_export(sht,dbl,0.0)@
-@:ALGsum_export(int,dbl,0.0)@
-@:ALGsum_export(wrd,dbl,0.0)@
-@:ALGsum_export(lng,dbl,0.0)@
-
-@:ALGprod_export(bte,bte,1)@
-@:ALGprod_export(bte,sht,1)@
-@:ALGprod_export(bte,int,1)@
-@:ALGprod_export(bte,wrd,1)@
-@:ALGprod_export(bte,lng,1)@
-@:ALGprod_export(sht,sht,1)@
-@:ALGprod_export(sht,int,1)@
-@:ALGprod_export(sht,wrd,1)@
-@:ALGprod_export(sht,lng,1)@
-@:ALGprod_export(int,int,1)@
-@:ALGprod_export(int,wrd,1)@
-@:ALGprod_export(int,lng,1)@
-@:ALGprod_export(wrd,wrd,1)@
-@:ALGprod_export(wrd,lng,1)@
-@:ALGprod_export(lng,lng,1)@
-@:ALGprod_export(flt,flt,1.0)@
-@:ALGprod_export(flt,dbl,1.0)@
-@:ALGprod_export(dbl,dbl,1.0)@
-
-@:ALGprod_export(bte,dbl,0.0)@
-@:ALGprod_export(sht,dbl,0.0)@
-@:ALGprod_export(int,dbl,0.0)@
-@:ALGprod_export(wrd,dbl,0.0)@
-@:ALGprod_export(lng,dbl,0.0)@
 
 @= ALGaggregate_export
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
@@ -1240,78 +1139,14 @@ algebra_export str ALGreuse(int *ret, int *bid);
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
  */
-@= sum_implementation
-static int
-CMDsum_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
-{
-	BATiter bi = bat_iterator(b);
-	BUN p,q;
-	@2 result=@3;
 
-	BATcheck(b,"BATsum_@1_@2");
-	if (!BATcount(b) && *empty_is_nil)
-		result = @2_nil;
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			result += *(@1*) BUNtloc(bi, p);
-		}
-	} else {
-		BATloop(b, p, q) {
-			@1 *value = (@1*) BUNtloc(bi, p);
-			if (*value == @1_nil) {
-				result = @2_nil;
-				break;
-			} else {
-				result += *value;
-			}
-		}
-	}
-	*res = result;
-	return GDK_SUCCEED;
-}
-
-@
- * @+ BAT prod[uct] operation
- * The prod[uct] aggregate only works for int and float fields.
- * The routines below assumes that the caller knows what type
- * is large enough to prevent overflow.
-@= prod_implementation
-static int
-CMDprod_@1_@2(@2* res, BAT *b, bit *empty_is_nil)
-{
-	BATiter bi = bat_iterator(b);
-	BUN p,q;
-	@2 result=@3;
-
-	BATcheck(b,"BATprodInt");
-	if (!BATcount(b) && *empty_is_nil)
-		result = @2_nil;
-	if (b->T->nonil) {
-		BATloop(b, p, q) {
-			result *= *(@1*) BUNtloc(bi, p);
-		}
-	} else {
-		BATloop(b, p, q) {
-			@1 *value = (@1*) BUNtloc(bi, p);
-			if (*value == @1_nil) {
-				result = @2_nil;
-				break;
-			} else {
-				result *= *value;
-			}
-		}
-	}
-	*res = result;
-	return GDK_SUCCEED;
-}
-
-@
- * @+ Minimum and Maximum
+/* @+ Minimum and Maximum
  * The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
  * maximum value of the tail column of a BAT.
  * Aggregate values are calculated just before they are requested by
  * the user. They are not maintained continuously, because we expect
  * them to be used sparsely.
+ */
 @= aggregate_implementation
 static int
 CMDmin_@1(@1* result, BAT *b)
@@ -1423,56 +1258,6 @@ BAT@1(BAT *b, ptr aggr)
 @c
 @:BATaggr(min)@
 @:BATaggr(max)@
-
-@:sum_implementation(bte,bte,0)@
-@:sum_implementation(bte,sht,0)@
-@:sum_implementation(bte,int,0)@
-@:sum_implementation(bte,wrd,0)@
-@:sum_implementation(bte,lng,0)@
-@:sum_implementation(sht,sht,0)@
-@:sum_implementation(sht,int,0)@
-@:sum_implementation(sht,wrd,0)@
-@:sum_implementation(sht,lng,0)@
-@:sum_implementation(int,int,0)@
-@:sum_implementation(int,wrd,0)@
-@:sum_implementation(int,lng,0)@
-@:sum_implementation(wrd,wrd,0)@
-@:sum_implementation(wrd,lng,0)@
-@:sum_implementation(lng,lng,0)@
-@:sum_implementation(flt,flt,0.0)@
-@:sum_implementation(flt,dbl,0.0)@
-@:sum_implementation(dbl,dbl,0.0)@
-
-@:sum_implementation(bte,dbl,0.0)@
-@:sum_implementation(sht,dbl,0.0)@
-@:sum_implementation(int,dbl,0.0)@
-@:sum_implementation(wrd,dbl,0.0)@
-@:sum_implementation(lng,dbl,0.0)@
-
-@:prod_implementation(bte,bte,1)@
-@:prod_implementation(bte,sht,1)@
-@:prod_implementation(bte,int,1)@
-@:prod_implementation(bte,wrd,1)@
-@:prod_implementation(bte,lng,1)@
-@:prod_implementation(sht,sht,1)@
-@:prod_implementation(sht,int,1)@
-@:prod_implementation(sht,wrd,1)@
-@:prod_implementation(sht,lng,1)@
-@:prod_implementation(int,int,1)@
-@:prod_implementation(int,wrd,1)@
-@:prod_implementation(int,lng,1)@
-@:prod_implementation(wrd,wrd,1)@
-@:prod_implementation(wrd,lng,1)@
-@:prod_implementation(lng,lng,1)@
-@:prod_implementation(flt,flt,1.0)@
-@:prod_implementation(flt,dbl,1.0)@
-@:prod_implementation(dbl,dbl,1.0)@
-
-@:prod_implementation(bte,dbl,0.0)@
-@:prod_implementation(sht,dbl,0.0)@
-@:prod_implementation(int,dbl,0.0)@
-@:prod_implementation(wrd,dbl,0.0)@
-@:prod_implementation(lng,dbl,0.0)@
 
 @:aggregate_implementation(bte)@
 @:aggregate_implementation(sht)@
@@ -1821,84 +1606,7 @@ bunins_failed:
  * The routines below assumes that the caller knows what type
  * is large enough to prevent overflow.
  */
-@= ALGsum_implementation
-str ALGsum_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.sum", RUNTIME_OBJECT_MISSING);
-	}
 
-	CMDsum_@1_@2(res, b, empty_is_nil);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-@= ALGprod_implementation
-str ALGprod_@1_@2(@2* res, int *bid, bit *empty_is_nil) {
-	BAT *b;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 throw(MAL, "algebra.prod", RUNTIME_OBJECT_MISSING);
-	}
-	CMDprod_@1_@2(res, b, empty_is_nil);
-	BBPreleaseref(b->batCacheid);
-	return MAL_SUCCEED;
-}
-@
-@c
-@:ALGsum_implementation(bte,bte,0)@
-@:ALGsum_implementation(bte,sht,0)@
-@:ALGsum_implementation(bte,int,0)@
-@:ALGsum_implementation(bte,wrd,0)@
-@:ALGsum_implementation(bte,lng,0)@
-@:ALGsum_implementation(sht,sht,0)@
-@:ALGsum_implementation(sht,int,0)@
-@:ALGsum_implementation(sht,wrd,0)@
-@:ALGsum_implementation(sht,lng,0)@
-@:ALGsum_implementation(int,int,0)@
-@:ALGsum_implementation(int,wrd,0)@
-@:ALGsum_implementation(int,lng,0)@
-@:ALGsum_implementation(wrd,wrd,0)@
-@:ALGsum_implementation(wrd,lng,0)@
-@:ALGsum_implementation(lng,lng,0)@
-@:ALGsum_implementation(flt,flt,0.0)@
-@:ALGsum_implementation(flt,dbl,0.0)@
-@:ALGsum_implementation(dbl,dbl,0.0)@
-
-@:ALGsum_implementation(bte,dbl,0.0)@
-@:ALGsum_implementation(sht,dbl,0.0)@
-@:ALGsum_implementation(int,dbl,0.0)@
-@:ALGsum_implementation(wrd,dbl,0.0)@
-@:ALGsum_implementation(lng,dbl,0.0)@
-
-@:ALGprod_implementation(bte,bte,1)@
-@:ALGprod_implementation(bte,sht,1)@
-@:ALGprod_implementation(bte,int,1)@
-@:ALGprod_implementation(bte,wrd,1)@
-@:ALGprod_implementation(bte,lng,1)@
-@:ALGprod_implementation(sht,sht,1)@
-@:ALGprod_implementation(sht,int,1)@
-@:ALGprod_implementation(sht,wrd,1)@
-@:ALGprod_implementation(sht,lng,1)@
-@:ALGprod_implementation(int,int,1)@
-@:ALGprod_implementation(int,wrd,1)@
-@:ALGprod_implementation(int,lng,1)@
-@:ALGprod_implementation(wrd,wrd,1)@
-@:ALGprod_implementation(wrd,lng,1)@
-@:ALGprod_implementation(lng,lng,1)@
-@:ALGprod_implementation(flt,flt,1.0)@
-@:ALGprod_implementation(flt,dbl,1.0)@
-@:ALGprod_implementation(dbl,dbl,1.0)@
-
-@:ALGprod_implementation(bte,dbl,0.0)@
-@:ALGprod_implementation(sht,dbl,0.0)@
-@:ALGprod_implementation(int,dbl,0.0)@
-@:ALGprod_implementation(wrd,dbl,0.0)@
-@:ALGprod_implementation(lng,dbl,0.0)@
-
-
-/*
- * @-
- */
 @= ALGaggregate_implementation
 str ALGmin_@1(@1* res, int *bid) {
 	BAT *b;
@@ -4013,7 +3721,6 @@ ALGprojectNIL(int *ret, int *bid)
 }
 
 /*
- * @-
  * The constant versions are typed by the parser
  */
 str
@@ -4164,20 +3871,16 @@ str ALGstdev_@1(dbl *res, int *bid) {
 	if (cnt) {
 		dbl stdev = 0;
 		/* first, we need the average of the tail values */
-		bit t = TRUE;
 		dbl avg = 0;
-		CMDsum_@1_dbl(&avg, b, &t);
-		if (avg != dbl_nil) {
+		if (BATcalcavg(b, NULL, &avg, &cnt) == GDK_SUCCEED && avg != dbl_nil && cnt == BATcount(b)) {
 			BATiter bi = bat_iterator(b);
 			BUN p,q;
 
-			avg /= cnt;
+			/* next, we need the sum of the squares of the difference
+			 * of each value in the tail with the avg */
 
-			/* next, we need the sum of the squares of the difference of each
-			   value in the tail with the avg */
-
-			/* no need to check for nil values on the tail, the CMDsum has
-			   already done that and reported back */
+			/* no need to check for nil values on the tail, the
+			 * BATcalcavg has already done that and reported back */
 			BATloop(b, p, q) {
 				dbl value = (dbl) *(@1*) BUNtloc(bi, p);
 				value -= avg;    /* diff from avg  */

@@ -773,3 +773,71 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memcpy(getArgReference(stk, pci, 0), p1, ATOMsize(t));
 	return MAL_SUCCEED;
 }
+
+static str
+CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, int, int, int),
+			  const char *func)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	bat bid = * (bat *) getArgReference(stk, pci, 1);
+	BAT *b;
+	BAT *s = NULL;
+	int nil_if_empty = 1;
+	gdk_return r;
+
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, func, RUNTIME_OBJECT_MISSING);
+	if (pci->argc >= 3) {
+		if (getArgType(mb, pci, 2) == TYPE_bit) {
+			assert(pci->argc == 3);
+			nil_if_empty = * (bit *) getArgReference(stk, pci, 2);
+		} else {
+			bat sid = * (bat *) getArgReference(stk, pci, 2);
+			if ((s = BATdescriptor(sid)) == NULL) {
+				BBPreleaseref(b->batCacheid);
+				throw(MAL, func, RUNTIME_OBJECT_MISSING);
+			}
+			if (pci->argc >= 4) {
+				assert(pci->argc == 4);
+				assert(getArgType(mb, pci, 3) == TYPE_bit);
+				nil_if_empty = * (bit *) getArgReference(stk, pci, 3);
+			}
+		}
+	}
+	if (s == NULL && !BAThdense(b)) {
+		/* XXX backward compatibility code: ignore non-dense head, but
+		 * only if no candidate list */
+		s = BATmirror(BATmark(BATmirror(b), 0));
+		BBPreleaseref(b->batCacheid);
+		b = s;
+		s = NULL;
+	}
+	r = (*sumprod)(VALget(ret), ret->vtype, b, s, 1, 1, nil_if_empty);
+	BBPreleaseref(b->batCacheid);
+	if (s)
+		BBPreleaseref(s->batCacheid);
+	if (r == GDK_FAIL)
+		return mythrow(MAL, func, OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+calc_export str CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+
+	return CMDBATsumprod(mb, stk, pci, BATsum, "aggr.sum");
+}
+
+calc_export str CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+
+	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
+}
