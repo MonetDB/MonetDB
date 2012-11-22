@@ -55,8 +55,8 @@ Ready.
 % . # table_name
 % def # name
 % clob # type
-% 423 # length
-[ "optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
+% 446 # length
+[ "optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/:\tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -66,8 +66,8 @@ function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     (X_5:bat[:oid,:int] ,X_6:bat[:oid,:int] ,X_7:bat[:oid,:int] ) := sql.copy_from("sys":str,"ttt":str,"|":str,"\\n":str,nil:str,"null":str,"/:\\tmp/xyz":str,-1:lng,0:lng,0:int);
     X_9 := sql.append(X_2,"sys","ttt","a",X_5);
-    X_11 := sql.append(X_9,"sys":str,"ttt":str,"b",X_6);
-    X_15 := sql.append(X_11,"sys":str,"ttt":str,"c",X_7);
+    X_11 := sql.append(X_9,"sys","ttt","b",X_6);
+    X_15 := sql.append(X_11,"sys","ttt","c",X_7);
     X_16 := aggr.count(X_7);
     sql.affectedRows(X_15,X_16,"");
 end s2_1;
@@ -83,8 +83,8 @@ end s2_1;
 % . # table_name
 % def # name
 % clob # type
-% 446 # length
-[ "optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 469 # length
+[ "optimizer.inline();optimizer.remap();optimizer.evaluate();optimizer.costModel();optimizer.coercions();optimizer.emptySet();optimizer.aliases();optimizer.pushselect();optimizer.mitosis();optimizer.mergetable();optimizer.deadcode();optimizer.commonTerms();optimizer.groups();optimizer.joinPath();optimizer.reorder();optimizer.deadcode();optimizer.reduce();optimizer.dataflow();optimizer.history();optimizer.multiplex();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/:\tmp/xyz';
 % .explain # table_name
 % mal # name

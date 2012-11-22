@@ -73,9 +73,9 @@ Ready.
 
 Operation successful
 
-+-------------------------------------------------------------+
++------------------------------------------------------------------------+
 | mal                                                                 |
-+=============================================================+
++========================================================================+
 | function user.s1_1{autoCommit=true}():void;                         |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
@@ -90,26 +90,24 @@ Operation successful
 |     (X_23,r1_29) := sql.bind(X_2,"sys","_tables","id",2);   |
 |     X_25 := sql.bind(X_2,"sys","_tables","id",1);           |
 |     X_26 := sql.delta(X_21,X_23,r1_29,X_25);                |
-|     X_27 := algebra.leftfetchjoin(X_6,X_26);                |
-|     X_28 := algebra.leftfetchjoin(X_19,X_27);               |
-|     X_29 := aggr.count(X_28);                               |
-|     X_30 := sql.single(X_29);                               |
-|     X_31 := bat.append(X_3,X_30,true);                      |
-|     X_33:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");   |
-|     X_36 := sql.bind(X_2,"tmp","_tables","type",0);         |
-|     X_39 := algebra.leftfetchjoin(X_33,X_36);               |
-|     X_40 := algebra.thetasubselect(X_39,2:sht,"<");         |
-|     X_42 := sql.bind(X_2,"tmp","_tables","id",0);           |
-|     X_44 := algebra.leftfetchjoin(X_33,X_42);               |
-|     X_45 := algebra.leftfetchjoin(X_40,X_44);               |
-|     X_46 := aggr.count(X_45);                               |
-|     X_47 := bat.append(X_31,X_46,true);                     |
-|     X_49 := algebra.selectNotNil(X_47);                     |
-|     X_50:wrd  := aggr.sum(X_49);                            |
-|     sql.exportValue(1,".tables","L1","wrd",64,0,6,X_50,""); |
+|     X_27:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_19,X_6,X_26);  |
+|     X_28 := aggr.count(X_27);                                          |
+|     X_29 := sql.single(X_28);                                          |
+|     X_30 := bat.append(X_3,X_29,true);                                 |
+|     X_32:bat[:oid,:oid]  := sql.tid(X_2,"tmp","_tables");              |
+|     X_35 := sql.bind(X_2,"tmp","_tables","type",0);                    |
+|     X_38 := algebra.leftfetchjoin(X_32,X_35);                          |
+|     X_39 := algebra.thetasubselect(X_38,2:sht,"<");                    |
+|     X_41 := sql.bind(X_2,"tmp","_tables","id",0);                      |
+|     X_43:bat[:oid,:int]  := algebra.leftfetchjoinPath(X_39,X_32,X_41); |
+|     X_44 := aggr.count(X_43);                                          |
+|     X_45 := bat.append(X_30,X_44,true);                                |
+|     X_47 := algebra.selectNotNil(X_45);                                |
+|     X_48:wrd  := aggr.sum(X_47);                                       |
+|     sql.exportValue(1,".tables","L1","wrd",64,0,6,X_48,"");            |
 | end s1_1;                                                           |
-+-------------------------------------------------------------+
-32 rows
++------------------------------------------------------------------------+
+30 rows
 
 
 # 19:39:11 >  
