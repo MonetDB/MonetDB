@@ -302,7 +302,7 @@ public class MonetPreparedStatement
 	private int getColumnIdx(int colnr) throws SQLException {
 		int curcol = 0;
 		for (int i = 0; i < size; i++) {
-			if (column[i] != null)
+			if (column[i] == null)
 				continue;
 			curcol++;
 			if (curcol == colnr)
@@ -310,6 +310,22 @@ public class MonetPreparedStatement
 		}
 		throw new SQLException("No such column with index: " + colnr, "M1M05");
 	}
+	/**
+	 * Returns the index in the backing arrays for the given
+	 * parameter number
+	 */
+	private int getParamIdx(int paramnr) throws SQLException {
+		int curparam = 0;
+		for (int i = 0; i < size; i++) {
+			if (column[i] != null)
+				continue;
+			curparam++;
+			if (curparam == paramnr)
+				return i;
+		}
+		throw new SQLException("No such parameter with index: " + paramnr, "M1M05");
+	}
+
 
 	/* helper for the anonymous class inside getMetaData */
 	private abstract class rsmdw extends MonetWrapper implements ResultSetMetaData {}
@@ -695,7 +711,14 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterCount() throws SQLException {
-				return size;
+				int cnt = 0;
+
+				for (int i = 0; i < size; i++) {
+					if (column[i] == null)
+						cnt++;
+				}
+				
+				return cnt;
 			}
 
 			/**
@@ -726,7 +749,7 @@ public class MonetPreparedStatement
 			public boolean isSigned(int param) throws SQLException {
 				// we can hardcode this, based on the colum type
 				// (from ResultSetMetaData.isSigned)
-				switch (javaType[getColumnIdx(param)]) {
+				switch (javaType[getParamIdx(param)]) {
 					case Types.NUMERIC:
 					case Types.DECIMAL:
 					case Types.TINYINT:
@@ -756,7 +779,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getPrecision(int param) throws SQLException {
-				return digits[getColumnIdx(param)];
+				return digits[getParamIdx(param)];
 			}
 
 			/**
@@ -768,7 +791,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getScale(int param) throws SQLException {
-				return scale[getColumnIdx(param)];
+				return scale[getParamIdx(param)];
 			}
 
 			/**
@@ -779,7 +802,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public int getParameterType(int param) throws SQLException {
-				return javaType[getColumnIdx(param)];
+				return javaType[getParamIdx(param)];
 			}
 
 			/**
@@ -793,7 +816,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterTypeName(int param) throws SQLException {
-				return monetdbType[getColumnIdx(param)];
+				return monetdbType[getParamIdx(param)];
 			}
 
 			/**
@@ -810,7 +833,7 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterClassName(int param) throws SQLException {
-				return MonetResultSet.getClassForType(javaType[getColumnIdx(param)]).getName();
+				return MonetResultSet.getClassForType(javaType[getParamIdx(param)]).getName();
 			}
 
 			/**
@@ -1507,7 +1530,7 @@ public class MonetPreparedStatement
 	 *                      the given object is ambiguous
 	 */
 	public void setObject(int index, Object x) throws SQLException {
-		setObject(index, x, javaType[getColumnIdx(index)]);
+		setObject(index, x, javaType[getParamIdx(index)]);
 	}
 
 	/**
@@ -2002,7 +2025,7 @@ public class MonetPreparedStatement
 	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
-		boolean hasTimeZone = monetdbType[getColumnIdx(index)].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case
@@ -2057,7 +2080,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		boolean hasTimeZone = monetdbType[getColumnIdx(index)].endsWith("tz");
+		boolean hasTimeZone = monetdbType[getParamIdx(index)].endsWith("tz");
 		if (hasTimeZone) {
 			// timezone shouldn't matter, since the server is timezone
 			// aware in this case
@@ -2161,7 +2184,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if the given index is out of bounds
 	 */
 	void setValue(int index, String val) throws SQLException {
-		values[getColumnIdx(index)] = val;
+		values[getParamIdx(index)] = val;
 	}
 
 	/**
