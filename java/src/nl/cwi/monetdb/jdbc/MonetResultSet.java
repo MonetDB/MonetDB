@@ -25,6 +25,8 @@ import java.util.*;
 import java.math.*;
 import java.net.*;
 import java.text.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import nl.cwi.monetdb.mcl.parser.*;
 
 /**
@@ -1293,9 +1295,17 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			 */
 			public String getColumnClassName(int column) throws SQLException {
 				try {
-					return getClassForType(
-							getJavaType(types[column - 1])
-						).getName();
+					Class type;
+					Map map = getStatement().getConnection().getTypeMap();
+					if (map.containsKey(types[column - 1])) {
+						type = (Class)map.get(types[column - 1]);
+					} else {
+						type = getClassForType(getJavaType(types[column - 1]));
+					}
+					if (type != null)
+						return type.getName();
+					throw new SQLException("column type mapping null: " +
+							types[column - 1], "M0M03");
 				} catch (IndexOutOfBoundsException e) {
 					throw new SQLException("No such column " + column, "M1M05");
 				}
@@ -1419,6 +1429,15 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 		return getObject(columnIndex, this.getStatement().getConnection().getTypeMap());
 	}
 
+	private boolean classImplementsSQLData(Class cl) {
+		Class[] cls = cl.getInterfaces();
+		for (int i = 0; i < cls.length; i++) {
+			if (cls[i] == SQLData.class)
+				return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Retrieves the value of the designated column in the current row of this
 	 * ResultSet object as an Object in the Java programming language. If the
@@ -1475,6 +1494,136 @@ public class MonetResultSet extends MonetWrapper implements ResultSet {
 			return getClob(i);
 		} else if (type == Blob.class) {
 			return getBlob(i);
+		} else if (classImplementsSQLData(type)) {
+			SQLData x;
+			try {
+				Constructor<? extends SQLData> ctor =
+					((Class)type).getConstructor();
+				x = ctor.newInstance();
+			} catch (NoSuchMethodException nsme) {
+				throw new SQLException(nsme.getMessage(), "M0M27");
+			} catch (InstantiationException ie) {
+				throw new SQLException(ie.getMessage(), "M0M27");
+			} catch (IllegalAccessException iae) {
+				throw new SQLException(iae.getMessage(), "M0M27");
+			} catch (IllegalArgumentException ige) {
+				throw new SQLException(ige.getMessage(), "M0M27");
+			} catch (InvocationTargetException ite) {
+				throw new SQLException(ite.getMessage(), "M0M27");
+			}
+			final int colnum = i;
+			final boolean valwasnull = wasNull();
+			SQLInput input = new SQLInput() {
+				public String readString() throws SQLException {
+					return getString(colnum);
+				}
+
+				public boolean readBoolean() throws SQLException {
+					return getBoolean(colnum);
+				}
+
+				public byte readByte() throws SQLException {
+					return getByte(colnum);
+				}
+
+				public short readShort() throws SQLException {
+					return getShort(colnum);
+				}
+
+				public int readInt() throws SQLException {
+					return getInt(colnum);
+				}
+
+				public long readLong() throws SQLException {
+					return getLong(colnum);
+				}
+
+				public float readFloat() throws SQLException {
+					return getFloat(colnum);
+				}
+
+				public double readDouble() throws SQLException {
+					return getDouble(colnum);
+				}
+
+				public BigDecimal readBigDecimal() throws SQLException {
+					return getBigDecimal(colnum);
+				}
+
+				public byte[] readBytes() throws SQLException {
+					return getBytes(colnum);
+				}
+
+				public java.sql.Date readDate() throws SQLException {
+					return getDate(colnum);
+				}
+
+				public java.sql.Time readTime() throws SQLException {
+					return getTime(colnum);
+				}
+
+				public Timestamp readTimestamp() throws SQLException {
+					return getTimestamp(colnum);
+				}
+
+				public Reader readCharacterStream() throws SQLException {
+					return getCharacterStream(colnum);
+				}
+
+				public InputStream readAsciiStream() throws SQLException {
+					return getAsciiStream(colnum);
+				}
+
+				public InputStream readBinaryStream() throws SQLException {
+					return getBinaryStream(colnum);
+				}
+
+				public Object readObject() throws SQLException {
+					return getObject(colnum);
+				}
+
+				public Ref readRef() throws SQLException {
+					return getRef(colnum);
+				}
+
+				public Blob readBlob() throws SQLException {
+					return getBlob(colnum);
+				}
+
+				public Clob readClob() throws SQLException {
+					return getClob(colnum);
+				}
+
+				public Array readArray() throws SQLException {
+					return getArray(colnum);
+				}
+
+				public boolean wasNull() throws SQLException {
+					return valwasnull;
+				}
+
+				public URL readURL() throws SQLException {
+					return getURL(colnum);
+				}
+
+				public NClob readNClob() throws SQLException {
+					return getNClob(colnum);
+				}
+
+				public String readNString() throws SQLException {
+					return getNString(colnum);
+				}
+
+				public SQLXML readSQLXML() throws SQLException {
+					return getSQLXML(colnum);
+				}
+
+				public RowId readRowId() throws SQLException {
+					return getRowId(colnum);
+				}
+			};
+			x.readSQL(input, types[i - 1]);
+			return x;
 		} else {
 			return getString(i);
 		}

@@ -52,6 +52,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import nl.cwi.monetdb.jdbc.types.INET;
+import nl.cwi.monetdb.jdbc.types.URL;
 import nl.cwi.monetdb.mcl.MCLException;
 import nl.cwi.monetdb.mcl.io.BufferedMCLReader;
 import nl.cwi.monetdb.mcl.io.BufferedMCLWriter;
@@ -114,8 +116,11 @@ public class MonetConnection extends MonetWrapper implements Connection {
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
 	/** The Connection specific mapping of user defined types to Java
-	 * types (not used) */
-	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>();
+	 * types */
+	private Map<String,Class<?>> typeMap = new HashMap<String,Class<?>>() {{
+			put("inet", INET.class);
+			put("url",  URL.class);
+	}};
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
 	// it does !!!NOW!!! (only when you deal with it of course)

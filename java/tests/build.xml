@@ -49,7 +49,7 @@ All Rights Reserved.
   </target>
 
   <!-- Compiles the tests -->
-  <target name="compile" depends="prepare">
+  <target name="compile" depends="prepare,jdbc">
     <echo message="Compiling JDBC tests" />
     <javac
       srcdir="${srcdir}"
@@ -61,6 +61,7 @@ All Rights Reserved.
       <include name="**/*.java" />
       <classpath>
         <pathelement path="${srcdir}" />
+        <pathelement path="${jdbc_jar}" />
       </classpath>
     </javac>
   </target>
@@ -120,10 +121,13 @@ All Rights Reserved.
     <antcall target="Test_PStimezone" />
     <antcall target="Test_PStypes" />
     <antcall target="Test_PSmanycon" />
+    <antcall target="Test_PSmetadata" />
+    <antcall target="Test_PSsqldata" />
     <antcall target="Test_Rbooleans" />
     <antcall target="Test_Rmetadata" />
     <antcall target="Test_Rpositioning" />
     <antcall target="Test_Rtimedate" />
+    <antcall target="Test_Rsqldata" />
     <antcall target="Test_Sbatching" />
     <antcall target="Test_Smoreresults" />
     <antcall target="BugConcurrent_clients_SF_1504657" />
@@ -264,6 +268,18 @@ All Rights Reserved.
     </antcall>
   </target>
 
+  <target name="Test_PSmetadata">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSmetadata" />
+    </antcall>
+  </target>
+
+  <target name="Test_PSsqldata">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_PSsqldata" />
+    </antcall>
+  </target>
+
   <target name="Test_Rbooleans">
     <antcall target="test_class">
       <param name="test.class" value="Test_Rbooleans" />
@@ -279,6 +295,12 @@ All Rights Reserved.
   <target name="Test_Rtimedate">
     <antcall target="test_class">
       <param name="test.class" value="Test_Rtimedate" />
+    </antcall>
+  </target>
+
+  <target name="Test_Rsqldata">
+    <antcall target="test_class">
+      <param name="test.class" value="Test_Rsqldata" />
     </antcall>
   </target>
 
