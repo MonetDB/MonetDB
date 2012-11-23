@@ -153,48 +153,157 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
+		TYPE1 x;						\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
-		for (i = start; i < end; i++, vals++) {			\
-			if (cand) {					\
+		if (ngrp == 1 && cand == NULL) {			\
+			TYPE2 sum;					\
+			int seenval;					\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: no candidates, no groups; " \
+					  "start " BUNFMT ", end " BUNFMT \
+					  ", nonil = %d\n",		\
+					  func, start, end, nonil);	\
+			sum = 0;					\
+			if (nonil) {					\
+				seenval = start > end;			\
+				for (i = start; i < end && nils == 0; i++, vals++) { \
+					x = *vals;			\
+					ADD_WITH_CHECK(TYPE1, x,	\
+						       TYPE2, sum,	\
+						       TYPE2, sum,	\
+						       goto overflow);	\
+				}					\
+			} else {					\
+				seenval = 0;				\
+				for (i = start; i < end && nils == 0; i++, vals++) { \
+					x = *vals;			\
+					if (x == TYPE1##_nil) {		\
+						if (!skip_nils) {	\
+							sum = TYPE2##_nil; \
+							nils = 1;	\
+						}			\
+					} else {			\
+						ADD_WITH_CHECK(TYPE1, x, \
+							       TYPE2, sum, \
+							       TYPE2, sum, \
+							       goto overflow); \
+						seenval = 1;		\
+					}				\
+				}					\
+			}						\
+			if (seenval)					\
+				*sums = sum;				\
+		} else if (ngrp == 1) {					\
+			TYPE2 sum;					\
+			int seenval = 0;				\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: with candidates, no groups; " \
+					  "start " BUNFMT ", end " BUNFMT \
+					  "\n",				\
+					  func, start, end);		\
+			sum = 0;					\
+			for (i = start; i < end && nils == 0; i++, vals++) { \
 				if (i < *cand - seqb) {			\
-					if (gids)			\
-						gids += gidincr;	\
 					continue;			\
 				}					\
 				assert(i == *cand - seqb);		\
 				if (++cand == candend)			\
 					end = i + 1;			\
-			}						\
-			if (gids == NULL || gidincr == 0 ||		\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
-				if (nil_if_empty &&			\
-				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
-					seen[gid >> 5] |= 1 << (gid & 0x1F); \
-					sums[gid] = 0;			\
-				}					\
-				if (*vals == TYPE1##_nil) {		\
+				x = *vals;				\
+				if (x == TYPE1##_nil) {			\
 					if (!skip_nils) {		\
-						sums[gid] = TYPE2##_nil; \
-						nils++;			\
+						sum = TYPE2##_nil;	\
+						nils = 1;		\
 					}				\
-				} else if (sums[gid] != TYPE2##_nil) {	\
-					ADD_WITH_CHECK(TYPE1, *vals,	\
-						       TYPE2, sums[gid], \
-						       TYPE2, sums[gid], \
+				} else {				\
+					ADD_WITH_CHECK(TYPE1, x,	\
+						       TYPE2, sum,	\
+						       TYPE2, sum,	\
 						       goto overflow);	\
+					seenval = 1;			\
 				}					\
 			}						\
-			if (gids)					\
-				gids += gidincr;			\
+			if (seenval)					\
+				*sums = sum;				\
+		} else if (cand == NULL) {				\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: no candidates, with groups; " \
+					  "start " BUNFMT ", end " BUNFMT \
+					  "\n",				\
+					  func, start, end);		\
+			for (i = start; i < end; i++, vals++) {		\
+				if (gids == NULL ||			\
+				    (*gids >= min && *gids <= max)) {	\
+					gid = gids ? *gids - min : (oid) i; \
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						sums[gid] = 0;		\
+					}				\
+					x = *vals;			\
+					if (x == TYPE1##_nil) {		\
+						if (!skip_nils) {	\
+							sums[gid] = TYPE2##_nil; \
+							nils++;		\
+						}			\
+					} else if (sums[gid] != TYPE2##_nil) { \
+						ADD_WITH_CHECK(TYPE1, x, \
+							       TYPE2, sums[gid], \
+							       TYPE2, sums[gid], \
+							       goto overflow); \
+					}				\
+				}					\
+				if (gids)				\
+					gids++;				\
+			}						\
+		} else {						\
+			ALGODEBUG fprintf(stderr,			\
+					  "#%s: with candidates, with groups; " \
+					  "start " BUNFMT ", end " BUNFMT \
+					  "\n",				\
+					  func, start, end);		\
+			for (i = start; i < end; i++, vals++) {		\
+				if (i < *cand - seqb) {			\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - seqb);		\
+				if (++cand == candend)			\
+					end = i + 1;			\
+				if (gids == NULL ||			\
+				    (*gids >= min && *gids <= max)) {	\
+					gid = gids ? *gids - min : (oid) i; \
+					if (nil_if_empty &&		\
+					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
+						seen[gid >> 5] |= 1 << (gid & 0x1F); \
+						sums[gid] = 0;		\
+					}				\
+					x = *vals;			\
+					if (x == TYPE1##_nil) {		\
+						if (!skip_nils) {	\
+							sums[gid] = TYPE2##_nil; \
+							nils++;		\
+						}			\
+					} else if (sums[gid] != TYPE2##_nil) { \
+						ADD_WITH_CHECK(TYPE1, x, \
+							       TYPE2, sums[gid], \
+							       TYPE2, sums[gid], \
+							       goto overflow); \
+					}				\
+				}					\
+				if (gids)				\
+					gids++;				\
+			}						\
 		}							\
 	} while (0)
 
 static BUN
-dosum(const void *values, oid seqb, BUN start, BUN end, void *results,
-      BUN ngrp, int tp1, int tp2, const oid *cand, const oid *candend,
-      const oid *gids, int gidincr, oid min, oid max,
-      int skip_nils, int abort_on_error, int nil_if_empty, const char *func)
+dosum(const void *values, int nonil, oid seqb, BUN start, BUN end,
+      void *results, BUN ngrp, int tp1, int tp2,
+      const oid *cand, const oid *candend, const oid *gids,
+      oid min, oid max, int skip_nils, int abort_on_error,
+      int nil_if_empty, const char *func)
 {
 	BUN nils = 0;
 	BUN i;
@@ -376,9 +485,9 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	else
 		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
 
-	nils = dosum(Tloc(b, BUNfirst(b)), b->hseqbase, start, end,
+	nils = dosum(Tloc(b, BUNfirst(b)), b->T->nonil, b->hseqbase, start, end,
 		     Tloc(bn, BUNfirst(bn)), ngrp, b->ttype, tp,
-		     cand, candend, gids, 1, min, max,
+		     cand, candend, gids, min, max,
 		     skip_nils, abort_on_error, 1, "BATgroupsum");
 
 	if (nils < BUN_NONE) {
@@ -498,8 +607,8 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	}
 	if (BATcount(b) == 0)
 		return GDK_SUCCEED;
-	nils = dosum(Tloc(b, BUNfirst(b)), b->hseqbase, start, end, res, 1,
-		     b->ttype, tp, cand, candend, &min, 0, min, max,
+	nils = dosum(Tloc(b, BUNfirst(b)), b->T->nonil, b->hseqbase, start, end,
+		     res, 1, b->ttype, tp, cand, candend, &min, min, max,
 		     skip_nils, abort_on_error, nil_if_empty, "BATsum");
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }

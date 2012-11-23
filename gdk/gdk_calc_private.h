@@ -50,9 +50,16 @@ typedef unsigned __int64 ulng;
 			assert(BATttype(s) == TYPE_oid);		\
 			if (BATcount(s) == 0) {				\
 				start = end = 0;			\
-			} else if (BATtdense(s)) {			\
-				start = (s)->T->seq;			\
-				end = start + BATcount(s);		\
+			} else {					\
+				if (BATtdense(s)) {			\
+					start = (s)->T->seq;		\
+					end = start + BATcount(s);	\
+				} else {				\
+					cand = (const oid *) Tloc((s), BUNfirst(s)); \
+					candend = cand + BATcount(s);	\
+					start = *cand;			\
+					end = candend[-1] + 1;		\
+				}					\
 				if (start < (b)->H->seq)		\
 					start = 0;			\
 				else					\
@@ -61,9 +68,6 @@ typedef unsigned __int64 ulng;
 					end = cnt;			\
 				else					\
 					end -= (b)->H->seq;		\
-			} else {					\
-				cand = (const oid *) Tloc((s), BUNfirst(s)); \
-				candend = cand + BATcount(s);		\
 			}						\
 		}							\
 	} while (0)
