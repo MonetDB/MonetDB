@@ -9741,23 +9741,75 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 /* ---------------------------------------------------------------------- */
 /* average (any numeric type) */
 
-#define AVERAGE_TYPE(TYPE)					\
-	do {							\
-		TYPE a = 0, x;					\
-		for (i = start; i < end; i++) {			\
-			if (cand) {				\
-				if (i < *cand - b->H->seq)	\
-					continue;		\
-				assert(i == *cand - b->H->seq);	\
-				if (++cand == candend)		\
-					end = i + 1;		\
-			}					\
-			x = ((const TYPE *) src)[i];		\
-			if (x == TYPE##_nil)			\
-				continue;			\
-			AVERAGE_ITER(TYPE, x, a, r, n);		\
-		}						\
-		*avg = n > 0 ? a + (dbl) r / n : dbl_nil;	\
+#define AVERAGE_TYPE(TYPE)						\
+	do {								\
+		TYPE x, a;						\
+									\
+		/* first try to calculate the sum of all values into a */ \
+		/* lng */						\
+		for (i = start; i < end; i++) {				\
+			if (cand) {					\
+				if (i < *cand - b->H->seq) {		\
+					continue;			\
+				}					\
+				assert(i == *cand - b->H->seq);		\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			x = ((const TYPE *) src)[i];			\
+			if (x == TYPE##_nil)				\
+				continue;				\
+			ADD_WITH_CHECK(TYPE, x,				\
+				       lng, sum,			\
+				       lng, sum,			\
+				       goto overflow##TYPE);		\
+			/* don't count value until after overflow check */ \
+			n++;						\
+		}							\
+		/* the sum fit, so now we can calculate the average */	\
+		*avg = (dbl) sum / n;					\
+		if (0) {						\
+		  overflow##TYPE:					\
+			/* we get here if sum(x[0],...,x[i]) doesn't */	\
+			/* fit in a lng but sum(x[0],...,x[i-1]) did */ \
+			/* the variable sum contains that sum */	\
+			/* the rest of the calculation is done */	\
+			/* according to the loop invariant described */	\
+			/* in the below loop */				\
+			if (sum >= 0) {					\
+				a = (TYPE) (sum / (lng) n); /* this fits */ \
+				r = (BUN) (sum % (SBUN) n);		\
+			} else {					\
+				sum = -sum;				\
+				a = - (TYPE) (sum / (lng) n); /* this fits */ \
+				r = (BUN) (sum % (SBUN) n);		\
+				if (r) {				\
+					a--;				\
+					r = n - r;			\
+				}					\
+			}						\
+			if (cand)					\
+				--cand;					\
+									\
+			for (; i < end; i++) {				\
+				/* loop invariant: */			\
+				/* a + r/n == average(x[0],...,x[n]); */ \
+				/* 0 <= r < n (if n > 0) */		\
+				/* or if n == 0: a == 0; r == 0 */	\
+				if (cand) {				\
+					if (i < *cand - b->H->seq)	\
+						continue;		\
+					assert(i == *cand - b->H->seq);	\
+					if (++cand == candend)		\
+						end = i + 1;		\
+				}					\
+				x = ((const TYPE *) src)[i];		\
+				if (x == TYPE##_nil)			\
+					continue;			\
+				AVERAGE_ITER(TYPE, x, a, r, n);		\
+			}						\
+			*avg = n > 0 ? a + (dbl) r / n : dbl_nil;	\
+		}							\
 	} while (0)
 
 #define AVERAGE_FLOATTYPE(TYPE)					\
@@ -9784,9 +9836,13 @@ int
 BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 {
 	BUN n = 0, r = 0, i = 0;
+	lng sum = 0;
 	BUN start, end, cnt;
 	const oid *cand = NULL, *candend = NULL;
 	const void *src;
+	/* these two needed for ADD_WITH_CHECK macro */
+	int abort_on_error = 1;
+	BUN nils = 0;
 
 	CANDINIT(b, s);
 
