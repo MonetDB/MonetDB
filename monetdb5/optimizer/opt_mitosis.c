@@ -43,8 +43,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, j, limit, estimate = 0, pieces = 1;
 	str schema = 0, table = 0;
-	VarRecord low, hgh;
-	BUN slice;
 	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
 	size_t argsize = 6 * sizeof(lng);
@@ -172,9 +170,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 * easy undo when the mergtable can not do something */
 		pushInstruction(mb, p);
 
-		slice = (BUN) (rowcnt / pieces);
-		hgh.value.vtype = low.value.vtype = TYPE_oid;
-		low.value.val.oval = 0;
 		qtpe = getVarType(mb, getArg(p, 0));
 
 		matq = newInstruction(NULL, ASSIGNsymbol);
@@ -194,14 +189,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			q = copyInstruction(p);
 			q = pushInt(mb, q, j);
 			q = pushInt(mb, q, pieces);
-			/*q= pushOid(mb,q,low.value.val.oval);*/
-			if (j + 1 < pieces) {
-				hgh.value.val.oval = low.value.val.oval + slice;
-			} else {
-				assert(rowcnt <= (wrd) BUN_MAX);
-				hgh.value.val.oval = (BUN) rowcnt;
-			}
-			/*q = pushOid(mb,q,hgh.value.val.oval);*/
 
 			qv = getArg(q, 0) = newTmpVariable(mb, qtpe);
 			setVarUDFtype(mb, qv);
@@ -211,32 +198,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				setVarUDFtype(mb, rv);
 				setVarUsed(mb, rv);
 			}
-			/*
-			 * The target variable should inherit file location and row count
-			 */
-			(void) hgh;
-			/*
-			loc = varGetProp(mb, getArg(p, 0), fileProp);
-			if (loc) {
-				memset((char *) &vr, 0, sizeof(vr));
-				varSetProp(mb, qv, fileProp, op_eq, VALset(&vr, TYPE_str, GDKstrdup(loc->value.val.sval)));
-			}
-			rows = varGetProp(mb, getArg(p, 0), rowsProp);
-			if (rows) {
-				wrd prows = rows->value.val.wval / pieces + 1;
-				memset((char *) &vr, 0, sizeof(vr));
-				varSetProp(mb, qv, rowsProp, op_eq, VALset(&vr, TYPE_wrd, &prows));
-			}
-
-			if (getFunctionId(p) == tidRef) {
-				varSetProp(mb, qv, PropertyIndex("tlb"), op_gte, (ptr) & low.value);
-				varSetProp(mb, qv, PropertyIndex("tub"), op_lt, (ptr) & hgh.value);
-			} else {
-				varSetProp(mb, qv, PropertyIndex("hlb"), op_gte, (ptr) & low.value);
-				varSetProp(mb, qv, PropertyIndex("hub"), op_lt, (ptr) & hgh.value);
-			}
-			low.value.val.oval += slice;
-			 */
 			pushInstruction(mb, q);
 			matq = pushArgument(mb, matq, qv);
 			if (upd)

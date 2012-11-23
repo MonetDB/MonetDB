@@ -191,6 +191,22 @@ command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid
 address AGGRsubmaxcand
 comment "Grouped maximum aggregate with candidates list";
 
+command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmin_val
+comment "Grouped minimum aggregate";
+
+command submin(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmincand_val
+comment "Grouped minimum aggregate with candidates list";
+
+command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmax_val
+comment "Grouped maximum aggregate";
+
+command submax(b:bat[:oid,:any_1],g:bat[:oid,:oid],e:bat[:oid,:any_2],s:bat[:oid,:oid],skip_nils:int) :bat[:oid,:any_1]
+address AGGRsubmaxcand_val
+comment "Grouped maximum aggregate with candidates list";
+
 command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
 	:bat[:oid,:wrd]
 address AGGRcount2

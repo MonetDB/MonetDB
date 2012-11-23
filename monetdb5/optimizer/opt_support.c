@@ -856,17 +856,10 @@ int isDiffOp(InstrPtr p){
  	     	 getFunctionId(p) == kdifferenceRef));
 }
 
-int isProjection(InstrPtr p){
-	return (getModuleId(p) == algebraRef &&
-                 getFunctionId(p) == leftjoinRef
-		);
-}
-
 int isMatJoinOp(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
                 (getFunctionId(p) == joinRef ||
-/*               getFunctionId(p) == antijoinRef || is not mat save */
-                 getFunctionId(p) == leftjoinRef ||
+                 getFunctionId(p) == antijoinRef || /* is not mat save */
                  getFunctionId(p) == thetajoinRef ||
                  getFunctionId(p) == bandjoinRef)
 		);
@@ -912,8 +905,19 @@ int isFragmentGroup(InstrPtr p){
 				getFunctionId(p)== subselectRef ||
 				getFunctionId(p)== thetasubselectRef ||
 				getFunctionId(p)== likesubselectRef 
+			))  ||
+			(getModuleId(p)== batRef && (
+				getFunctionId(p)== mirrorRef 
 			)
 		);
+}
+
+int isSubSelect(InstrPtr p)
+{
+	return (getModuleId(p)== algebraRef && (
+			getFunctionId(p)== subselectRef ||
+			getFunctionId(p)== thetasubselectRef ||
+			getFunctionId(p)== likesubselectRef ));
 }
 
 /*

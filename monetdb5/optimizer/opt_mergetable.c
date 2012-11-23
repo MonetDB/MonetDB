@@ -29,9 +29,6 @@ typedef enum mat_type_t {
 	mat_rdr = 6	/* Phase one of sorting, ie sorted the parts sofar */
 } mat_type_t;
 
-/* TODO have a seperate mat_variable list, ie old_var, mat instruction */
-/* including first or second result */
-
 typedef struct mat {
 	InstrPtr mi;		/* mat instruction */
 	int mv;			/* mat variable */
@@ -79,12 +76,14 @@ nr_of_bats(MalBlkPtr mb, InstrPtr p)
 }
 
 inline static int
-mat_add(mat_t *mat, int mtop, InstrPtr q, mat_type_t type) 
+mat_add(mat_t *mat, int mtop, InstrPtr q, mat_type_t type, char *func) 
 {
 	mat[mtop].mi = q;
 	mat[mtop].mv = getArg(q,0);
 	mat[mtop].type = type;
 	mat[mtop].pm = -1;
+	(void)func;
+	//printf (" mtop %d %s\n", mtop, func);
 	return mtop+1;
 }
 
@@ -127,11 +126,90 @@ mat_pack(MalBlkPtr mb, mat_t *mat, int m)
 	return r;
 }
 
+static void
+setPartnr(MalBlkPtr mb, int ivar, int ovar, int pnr)
+{
+	int tpnr = -1;
+	VarPtr partnr = (ivar >= 0)?varGetProp(mb, ivar, toriginProp):NULL;
+	ValRecord val;
+
+	if (partnr) {
+		varSetProp(mb, ovar, toriginProp, op_eq, &partnr->value);
+		tpnr = partnr->value.val.ival;
+	}
+	val.val.ival = pnr;
+	val.vtype = TYPE_int;
+	varSetProp(mb, ovar, horiginProp, op_eq, &val);
+	(void)tpnr;
+	//printf("%d %d ", pnr, tpnr);
+}
+
+static void
+propagatePartnr(MalBlkPtr mb, int ivar, int ovar, int pnr)
+{
+	/* prop head ids to tail */
+	int tpnr = -1;
+	VarPtr partnr = varGetProp(mb, ivar, horiginProp);
+	ValRecord val;
+
+	val.val.ival = pnr;
+	val.vtype = TYPE_int;
+	if (partnr) {
+		varSetProp(mb, ovar, toriginProp, op_eq, &partnr->value);
+		tpnr = partnr->value.val.ival;
+	} 
+	varSetProp(mb, ovar, horiginProp, op_eq, &val);
+	(void)tpnr;
+	//printf("%d %d ", pnr, tpnr);
+}
+
+static void
+propagateMirror(MalBlkPtr mb, int ivar, int ovar)
+{
+	/* prop head ids to head and tail */
+	VarPtr partnr = varGetProp(mb, ivar, horiginProp);
+
+	if (partnr) {
+		varSetProp(mb, ovar, toriginProp, op_eq, &partnr->value);
+		varSetProp(mb, ovar, horiginProp, op_eq, &partnr->value);
+	} 
+}
+
+static int 
+overlap( MalBlkPtr mb, int lv, int rv, int lnr, int rnr, int ontails)
+{
+	VarPtr lpartnr = varGetProp(mb, lv, toriginProp); 
+	VarPtr rpartnr = varGetProp(mb, rv, (ontails)?toriginProp:horiginProp); 
+
+	if (!lpartnr && !rpartnr)
+		return lnr == rnr;
+	if (!rpartnr) 
+		return lpartnr->value.val.ival == rnr; 
+	if (!lpartnr)
+		return rpartnr->value.val.ival == lnr; 
+	return lpartnr->value.val.ival == rpartnr->value.val.ival; 
+}
+
+static void
+mat_set_prop( MalBlkPtr mb, InstrPtr p)
+{
+	int k, tpe = getArgType(mb, p, 0);
+
+	tpe = getTailType(tpe);
+	for(k=1; k < p->argc; k++) {
+		setPartnr(mb, -1, getArg(p,k), k);
+		if (tpe == TYPE_oid)
+			propagateMirror(mb, getArg(p,k), getArg(p,k));
+	}
+}
+
 static InstrPtr
 mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
 {
-	int tpe, k;
+	int tpe, k, is_subdelta = (getFunctionId(p) == subdeltaRef);
 	InstrPtr r = NULL;
+
+	//printf("# %s.%s(%d,%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o, e);
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
@@ -158,6 +236,7 @@ mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int 
 		if (e >= 0)
 			getArg(q, evar) = getArg(mat[e].mi, k);
 		pushInstruction(mb, q);
+		setPartnr(mb, is_subdelta?getArg(mat[m].mi, k):-1, getArg(q,0), k);
 		r = pushArgument(mb, r, getArg(q, 0));
 	}
 	return r;
@@ -167,8 +246,10 @@ mat_delta(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int e, int 
 static InstrPtr
 mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 {
-	int tpe, k;
+	int tpe, k, is_select = isSubSelect(p), is_mirror = (getFunctionId(p) == mirrorRef);
 	InstrPtr r = NULL;
+
+	//printf("# %s.%s(%d)", getModuleId(p), getFunctionId(p), m);
 
 	r = newInstruction(mb, ASSIGNsymbol);
 	setModuleId(r,matRef);
@@ -182,6 +263,42 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int var)
 		getArg(q, 0) = newTmpVariable(mb, tpe);
 		getArg(q, var) = getArg(mat[m].mi, k);
 		pushInstruction(mb, q);
+		if (is_mirror) {
+			propagateMirror(mb, getArg(mat[m].mi, k), getArg(q,0));
+		} else if (is_select)
+			propagatePartnr(mb, getArg(mat[m].mi, k), getArg(q,0), k);
+		else
+			setPartnr(mb, -1, getArg(q,0), k);
+		r = pushArgument(mb, r, getArg(q, 0));
+	}
+	return r;
+}
+
+static InstrPtr
+mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nvar)
+{
+	int tpe, k, is_select = isSubSelect(p);
+	InstrPtr r = NULL;
+
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+
+	r = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(r,matRef);
+	setFunctionId(r,packRef);
+	getArg(r, 0) = getArg(p,0);
+	tpe = getArgType(mb,p,0);
+
+	for(k=1; k < mat[m].mi->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+
+		getArg(q, 0) = newTmpVariable(mb, tpe);
+		getArg(q, mvar) = getArg(mat[m].mi, k);
+		getArg(q, nvar) = getArg(mat[n].mi, k);
+		pushInstruction(mb, q);
+		if (is_select)
+			setPartnr(mb, getArg(q,2), getArg(q,0), k);
+		else
+			setPartnr(mb, -1, getArg(q,0), k);
 		r = pushArgument(mb, r, getArg(q, 0));
 	}
 	return r;
@@ -199,6 +316,8 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int mvar, 
 	getArg(r, 0) = getArg(p,0);
 	tpe = getArgType(mb,p,0);
 
+	//printf("# %s.%s(%d,%d,%d)", getModuleId(p), getFunctionId(p), m, n, o);
+
 	for(k=1; k < mat[m].mi->argc; k++) {
 		InstrPtr q = copyInstruction(p);
 
@@ -207,33 +326,249 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int o, int mvar, 
 		getArg(q, nvar) = getArg(mat[n].mi, k);
 		getArg(q, ovar) = getArg(mat[o].mi, k);
 		pushInstruction(mb, q);
+		setPartnr(mb, -1, getArg(q,0), k);
 		r = pushArgument(mb, r, getArg(q, 0));
 	}
 	return r;
 }
 
-static InstrPtr
-mat_apply2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nvar)
-{
-	int tpe, k;
-	InstrPtr r = NULL;
 
-	r = newInstruction(mb, ASSIGNsymbol);
+static int
+mat_setop(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+{
+	int tpe = getArgType(mb,p, 0), k, j;
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
 	setModuleId(r,matRef);
 	setFunctionId(r,packRef);
-	getArg(r, 0) = getArg(p,0);
-	tpe = getArgType(mb,p,0);
+	getArg(r,0) = getArg(p,0);
+	
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+	assert(m>=0 || n>=0);
+	if (m >= 0 && n >= 0) {
+		int nr = 1;
+		for(k=1; k<mat[m].mi->argc; k++) { 
+			InstrPtr q = copyInstruction(p);
+			InstrPtr s = newInstruction(mb, ASSIGNsymbol);
 
-	for(k=1; k < mat[m].mi->argc; k++) {
-		InstrPtr q = copyInstruction(p);
+			setModuleId(s,matRef);
+			setFunctionId(s,packRef);
+			getArg(s,0) = newTmpVariable(mb, tpe);
+	
+			for (j=1; j<mat[n].mi->argc; j++) {
+				if (overlap(mb, getArg(mat[m].mi, k), getArg(mat[n].mi, j), -1, -2, 1)){
+					s = pushArgument(mb,s,getArg(mat[n].mi,j));
+				}
+			}
+			pushInstruction(mb,s);
 
-		getArg(q, 0) = newTmpVariable(mb, tpe);
-		getArg(q, mvar) = getArg(mat[m].mi, k);
-		getArg(q, nvar) = getArg(mat[n].mi, k);
-		pushInstruction(mb, q);
-		r = pushArgument(mb, r, getArg(q, 0));
+			getArg(q,0) = newTmpVariable(mb, tpe);
+			getArg(q,1) = getArg(mat[m].mi,k);
+			getArg(q,2) = getArg(s,0);
+			setPartnr(mb, getArg(mat[m].mi,k), getArg(q,0), nr);
+			pushInstruction(mb,q);
+
+			r = pushArgument(mb,r,getArg(q,0));
+			nr++;
+		}
+	} else {
+		assert(m >= 0);
+		for(k=1; k<mat[m].mi->argc; k++) {
+			InstrPtr q = copyInstruction(p);
+
+			getArg(q,0) = newTmpVariable(mb, tpe);
+			getArg(q,1) = getArg(mat[m].mi, k);
+			pushInstruction(mb,q);
+
+			setPartnr(mb, getArg(q, 2), getArg(q,0), k);
+			r = pushArgument(mb, r, getArg(q,0));
+		}
 	}
-	return r;
+
+	mtop = mat_add(mat, mtop, r, mat_none, getFunctionId(p));
+	return mtop;
+}
+
+static int
+mat_leftfetchjoin(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+{
+	int tpe = getArgType(mb,p, 0), k, j;
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,packRef);
+	getArg(r,0) = getArg(p,0);
+	
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+	assert(m>=0 || n>=0);
+	if (m >= 0 && n >= 0) {
+		int nr = 1;
+		for(k=1; k<mat[m].mi->argc; k++) { 
+			for (j=1; j<mat[n].mi->argc; j++) {
+				if (overlap(mb, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 0)){
+					InstrPtr q = copyInstruction(p);
+
+					getArg(q,0) = newTmpVariable(mb, tpe);
+					getArg(q,1) = getArg(mat[m].mi,k);
+					getArg(q,2) = getArg(mat[n].mi,j);
+					pushInstruction(mb,q);
+		
+					setPartnr(mb, getArg(mat[n].mi, j), getArg(q,0), nr);
+					r = pushArgument(mb,r,getArg(q,0));
+
+					nr++;
+					break;
+				}
+			}
+		}
+	} else {
+		assert(m >= 0);
+		for(k=1; k<mat[m].mi->argc; k++) {
+			InstrPtr q = copyInstruction(p);
+
+			getArg(q,0) = newTmpVariable(mb, tpe);
+			getArg(q,1) = getArg(mat[m].mi, k);
+			pushInstruction(mb,q);
+
+			setPartnr(mb, getArg(q, 2), getArg(q,0), k);
+			r = pushArgument(mb, r, getArg(q,0));
+		}
+	}
+
+	mtop = mat_add(mat, mtop, r, mat_none, getFunctionId(p));
+	return mtop;
+}
+
+static int
+mat_join2(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n)
+{
+	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
+	InstrPtr l = newInstruction(mb, ASSIGNsymbol);
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(l,matRef);
+	setFunctionId(l,packRef);
+	getArg(l,0) = getArg(p,0);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,packRef);
+	getArg(r,0) = getArg(p,1);
+
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+	
+	assert(m>=0 || n>=0);
+	if (m >= 0 && n >= 0) {
+		for(k=1; k<mat[m].mi->argc; k++) {
+			for (j=1; j<mat[n].mi->argc; j++) {
+				InstrPtr q = copyInstruction(p);
+
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				getArg(q,1) = newTmpVariable(mb, tpe);
+				getArg(q,2) = getArg(mat[m].mi,k);
+				getArg(q,3) = getArg(mat[n].mi,j);
+				pushInstruction(mb,q);
+	
+				propagatePartnr(mb, getArg(mat[m].mi, k), getArg(q,0), nr);
+				propagatePartnr(mb, getArg(mat[n].mi, j), getArg(q,1), nr);
+
+				/* add result to mat */
+				l = pushArgument(mb,l,getArg(q,0));
+				r = pushArgument(mb,r,getArg(q,1));
+				nr++;
+			}
+		}
+	} else {
+		int mv = (m>=0)?m:n;
+		int av = (m>=0)?0:1;
+		int bv = (m>=0)?1:0;
+
+		for(k=1; k<mat[mv].mi->argc; k++) {
+			InstrPtr q = copyInstruction(p);
+
+			getArg(q,0) = newTmpVariable(mb, tpe);
+			getArg(q,1) = newTmpVariable(mb, tpe);
+			getArg(q,p->retc+av) = getArg(mat[mv].mi, k);
+			pushInstruction(mb,q);
+
+			propagatePartnr(mb, getArg(mat[mv].mi, k), getArg(q,av), k);
+			propagatePartnr(mb, getArg(p, p->retc+bv), getArg(q,bv), k);
+
+			/* add result to mat */
+			l = pushArgument(mb, l, getArg(q,0));
+			r = pushArgument(mb, r, getArg(q,1));
+		}
+	}
+	mtop = mat_add(mat, mtop, l, mat_none, getFunctionId(p));
+	mtop = mat_add(mat, mtop, r, mat_none, getFunctionId(p));
+	return mtop;
+}
+
+static int
+mat_join3(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m, int n, int o)
+{
+	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
+	InstrPtr l = newInstruction(mb, ASSIGNsymbol);
+	InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+
+	setModuleId(l,matRef);
+	setFunctionId(l,packRef);
+	getArg(l,0) = getArg(p,0);
+
+	setModuleId(r,matRef);
+	setFunctionId(r,packRef);
+	getArg(r,0) = getArg(p,1);
+
+	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
+	
+	assert(m>=0 || n>=0);
+	if (m >= 0 && n >= 0 && o >= 0) {
+		assert(mat[n].mi->argc == mat[o].mi->argc);
+		for(k=1; k<mat[m].mi->argc; k++) {
+			for (j=1; j<mat[n].mi->argc; j++) {
+				InstrPtr q = copyInstruction(p);
+
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				getArg(q,1) = newTmpVariable(mb, tpe);
+				getArg(q,2) = getArg(mat[m].mi,k);
+				getArg(q,3) = getArg(mat[n].mi,j);
+				getArg(q,4) = getArg(mat[o].mi,j);
+				pushInstruction(mb,q);
+	
+				propagatePartnr(mb, getArg(mat[m].mi, k), getArg(q,0), nr);
+				propagatePartnr(mb, getArg(mat[n].mi, j), getArg(q,1), nr);
+
+				/* add result to mat */
+				l = pushArgument(mb,l,getArg(q,0));
+				r = pushArgument(mb,r,getArg(q,1));
+				nr++;
+			}
+		}
+	} else {
+		int mv = (m>=0)?m:n;
+		int av = (m>=0)?0:1;
+		int bv = (m>=0)?1:0;
+
+		for(k=1; k<mat[mv].mi->argc; k++) {
+			InstrPtr q = copyInstruction(p);
+
+			getArg(q,0) = newTmpVariable(mb, tpe);
+			getArg(q,1) = newTmpVariable(mb, tpe);
+			getArg(q,p->retc+av) = getArg(mat[mv].mi, k);
+			if (o >= 0)
+				getArg(q,p->retc+2) = getArg(mat[o].mi, k);
+			pushInstruction(mb,q);
+
+			propagatePartnr(mb, getArg(mat[mv].mi, k), getArg(q,av), k);
+			propagatePartnr(mb, getArg(p, p->retc+bv), getArg(q,bv), k);
+
+			/* add result to mat */
+			l = pushArgument(mb, l, getArg(q,0));
+			r = pushArgument(mb, r, getArg(q,1));
+		}
+	}
+	mtop = mat_add(mat, mtop, l, mat_none, getFunctionId(p));
+	mtop = mat_add(mat, mtop, r, mat_none, getFunctionId(p));
+	return mtop;
 }
 
 
@@ -356,7 +691,8 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, mat[g].mv);
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
 	ai2 = pushInt(mb, ai2, 1); /* skip nils */
-	ai2 = pushInt(mb, ai2, 0); /* continue on errors */
+	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
+		ai2 = pushInt(mb, ai2, 0); /* continue on errors */
 	pushInstruction(mb, ai2);
 }
 
@@ -657,7 +993,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		p = old[i];
 		if (getModuleId(p) == matRef && 
 		   (getFunctionId(p) == newRef || getFunctionId(p) == packRef)){
-			mtop = mat_add(mat, mtop, p, mat_none);
+			mat_set_prop(mb, p);
+			mtop = mat_add(mat, mtop, p, mat_none, getFunctionId(p));
 			continue;
 		}
 
@@ -671,6 +1008,20 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		bats = nr_of_bats(mb, p);
 
+		/* (l,r) Join (L, R, ..) */
+		if (match > 0 && isMatJoinOp(p) && p->argc >= 3 && p->retc == 2 &&
+				match <= 3 && bats >= 2) {
+		   	m = is_a_mat(getArg(p,p->retc), mat, mtop);
+		   	n = is_a_mat(getArg(p,p->retc+1), mat, mtop);
+		   	o = is_a_mat(getArg(p,p->retc+2), mat, mtop);
+
+			if (bats == 3 && match >= 2)
+				mtop = mat_join3(mb, p, mat, mtop, m, n, o);
+			else
+				mtop = mat_join2(mb, p, mat, mtop, m, n);
+			actions++;
+			continue;
+		}
 		/*
 		 * Aggregate handling is a prime target for optimization.
 		 * The simple cases are dealt with first.
@@ -724,13 +1075,33 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
-		/* Handle cases of ext.leftjoin and .leftjoin(grp) */
+		/* Handle cases of ext.leftfetchjoin and .leftfetchjoin(grp) */
 		if (match == 2 && getModuleId(p) == algebraRef &&
-		    getFunctionId(p) == leftfetchjoinRef && 
+		    getFunctionId(p) == leftfetchjoinRef &&
 		   (m=is_a_mat(getArg(p,1), mat, mtop)) >= 0 &&
 		   (n=is_a_mat(getArg(p,2), mat, mtop)) >= 0 &&
 		   (mat[m].type == mat_ext || mat[n].type == mat_grp)) {
 			pushInstruction(mb, copyInstruction(p));
+			continue;
+		}
+
+		/* Handle leftfetchjoin */
+		if (match > 0 && getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == leftfetchjoinRef && 
+		   (m=is_a_mat(getArg(p,1), mat, mtop)) >= 0) { 
+		   	n=is_a_mat(getArg(p,2), mat, mtop);
+			mtop = mat_leftfetchjoin(mb, p, mat, mtop, m, n);
+			actions++;
+			continue;
+		}
+		/* Handle setops */
+		if (match > 0 && getModuleId(p) == algebraRef &&
+		    (getFunctionId(p) == tdiffRef || 
+		     getFunctionId(p) == tinterRef) && 
+		   (m=is_a_mat(getArg(p,1), mat, mtop)) >= 0) { 
+		   	n=is_a_mat(getArg(p,2), mat, mtop);
+			mtop = mat_setop(mb, p, mat, mtop, m, n);
+			actions++;
 			continue;
 		}
 
@@ -758,7 +1129,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), mat, mtop)) >= 0){
 			if ((r = mat_delta(mb, p, mat, m, n, o, -1, fm, fn, fo, 0)) != NULL)
-				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}
@@ -768,14 +1139,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), mat, mtop)) >= 0 &&
 		   (e=is_a_mat(getArg(p,fe), mat, mtop)) >= 0){
 			if ((r = mat_delta(mb, p, mat, m, n, o, e, fm, fn, fo, fe)) != NULL)
-				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}
 
 		/* subselect on insert, should use last tid only */
-		if (match == 1 && fm == 2 && getModuleId(p) == algebraRef && p->retc == 1 &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef) &&
+		if (match == 1 && fm == 2 && isSubSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0) {
 			r = copyInstruction(p);
 			getArg(r, fm) = getArg(mat[m].mi, mat[m].mi->argc-1);
@@ -790,7 +1160,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), mat, mtop)) >= 0){
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
 			if ((r = mat_apply3(mb, p, mat, m, n, o, fm, fn, fo)) != NULL)
-				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}
@@ -799,7 +1169,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), mat, mtop)) >= 0){
 			assert(mat[m].mi->argc == mat[n].mi->argc); 
 			if ((r = mat_apply2(mb, p, mat, m, n, fm, fn)) != NULL)
-				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}
@@ -808,7 +1178,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (!getModuleId(p) && !getFunctionId(p) && p->barrier == 0 /* simple assignment */)) && p->retc != 2 && 
 		   (m=is_a_mat(getArg(p,fm), mat, mtop)) >= 0){
 			if ((r = mat_apply1(mb, p, mat, m, fm)) != NULL)
-				mtop = mat_add(mat, mtop, r, mat_type(mat, m));
+				mtop = mat_add(mat, mtop, r, mat_type(mat, m), getFunctionId(p));
 			actions++;
 			continue;
 		}

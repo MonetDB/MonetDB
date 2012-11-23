@@ -101,12 +101,12 @@ st_type2string(st_type type)
 		ST(uselect2);
 		ST(tunion);
 		ST(tdiff);
+		ST(tinter);
 
 		ST(releqjoin);
 		ST(join);
 		ST(join2);
 		ST(joinN);
-		ST(inter);
 		ST(diff);
 		ST(union);
 
@@ -342,7 +342,9 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		/* simple case of statements of only statements */
 		case st_releqjoin: 
 		case st_alias:
-		case st_inter:
+		case st_tunion:
+		case st_tdiff:
+		case st_tinter:
 		case st_diff:
 		case st_union:
 		case st_join:
@@ -379,8 +381,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 
 		case st_uselect:
 		case st_uselect2:
-		case st_tunion:
-		case st_tdiff:
 			if (s->op1)
 				push(s->op1);
 			if (s->op2)
@@ -807,8 +807,14 @@ stmt_mirror(sql_allocator *sa, stmt *s)
 stmt *
 stmt_result(sql_allocator *sa, stmt *s, int nr)
 {
-	stmt *ns = stmt_create(sa, st_result);
+	stmt *ns;
 
+	if (s->type == st_join && s->flag == cmp_joined){
+		if (nr)
+			return s->op2;
+		return s->op1;
+	}
+       	ns = stmt_create(sa, st_result);
 	ns->op1 = s;
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
@@ -984,6 +990,19 @@ stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2)
 }
 
 stmt *
+stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2)
+{
+	stmt *s = stmt_create(sa, st_tinter);
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+	return s;
+}
+
+stmt *
 stmt_releqjoin_init(sql_allocator *sa)
 {
 	stmt *s = stmt_create(sa, st_releqjoin);
@@ -1088,19 +1107,6 @@ stmt_joinN(sql_allocator *sa, stmt *l, stmt *r, stmt *opt, sql_subfunc *op)
 	s->op3 = opt;
 	s->op4.funcval = op;
 	s->nrcols = (opt)?3:2;
-	return s;
-}
-
-stmt *
-stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2)
-{
-	stmt *s = stmt_create(sa, st_inter);
-
-	s->op1 = op1;
-	s->op2 = op2;
-	s->nrcols = op1->nrcols;
-	s->key = op1->key;
-	s->aggr = op1->aggr;
 	return s;
 }
 
@@ -1454,7 +1460,7 @@ tail_type(stmt *st)
 	case st_sample:
 	case st_tunion:
 	case st_tdiff:
-	case st_inter:
+	case st_tinter:
 	case st_diff:
 	case st_union:
 	case st_unique:
@@ -1527,14 +1533,14 @@ head_type(stmt *st)
 	case st_binop:
 	case st_Nop:
 	case st_unique:
-	case st_inter:
+	case st_tunion:
+	case st_tdiff:
+	case st_tinter:
 	case st_diff:
 	case st_union:
 	case st_join:
 	case st_join2:
 	case st_joinN:
-	case st_tunion:
-	case st_tdiff:
 	case st_mirror:
 	case st_uselect:
 	case st_uselect2:
@@ -1667,7 +1673,7 @@ _column_name(sql_allocator *sa, stmt *st)
 	case st_sample:
 	case st_tunion:
 	case st_tdiff:
-	case st_inter:
+	case st_tinter:
 	case st_diff:
 	case st_union:
 	case st_unique:
@@ -1747,7 +1753,7 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_sample:
 	case st_tunion:
 	case st_tdiff:
-	case st_inter:
+	case st_tinter:
 	case st_diff:
 	case st_union:
 	case st_aggr:
@@ -1809,7 +1815,7 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_sample:
 	case st_tunion:
 	case st_tdiff:
-	case st_inter:
+	case st_tinter:
 	case st_diff:
 	case st_union:
 	case st_unique:

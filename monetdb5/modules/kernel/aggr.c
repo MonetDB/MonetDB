@@ -854,6 +854,87 @@ AGGRsubmaxcand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_ni
 						  0, TYPE_oid, BATgroupmax, "aggr.submax");
 }
 
+aggr_export str AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);
+str
+AGGRsubmin_val(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils)
+{
+	BAT *a, *b, *r;
+	str res;
+
+	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
+		return res;
+	b = BATdescriptor(*bid);
+	a = BATdescriptor(*retval);
+	r = BATouterjoin(a, b, BATcount(a));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	BBPdecref(*retval, TRUE);
+	BBPkeepref(*retval = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+aggr_export str AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils);
+str
+AGGRsubmincand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils)
+{
+	BAT *a, *b, *r;
+	str res;
+
+	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmin, "aggr.submin")) != MAL_SUCCEED)
+		return res;
+	b = BATdescriptor(*bid);
+	a = BATdescriptor(*retval);
+	r = BATouterjoin(a, b, BATcount(a));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	BBPdecref(*retval, TRUE);
+	BBPkeepref(*retval = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+aggr_export str AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);
+str
+AGGRsubmax_val(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils)
+{
+	BAT *a, *b, *r;
+	str res;
+
+	if ((res = AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
+		return res;
+	b = BATdescriptor(*bid);
+	a = BATdescriptor(*retval);
+	r = BATouterjoin(a, b, BATcount(a));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	BBPdecref(*retval, TRUE);
+	BBPkeepref(*retval = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+aggr_export str AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils);
+str
+AGGRsubmaxcand_val(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils)
+{
+	BAT *a, *b, *r;
+	str res;
+
+	if ((res = AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  0, TYPE_oid, BATgroupmax, "aggr.submax")) != MAL_SUCCEED)
+		return res;
+	b = BATdescriptor(*bid);
+	a = BATdescriptor(*retval);
+	r = BATouterjoin(a, b, BATcount(a));
+	BBPreleaseref(b->batCacheid);
+	BBPreleaseref(a->batCacheid);
+	BBPdecref(*retval, TRUE);
+	BBPkeepref(*retval = r->batCacheid);
+	return MAL_SUCCEED;
+}
+
+
 aggr_export str AGGRmedian(bat *retval, bat *bid, int *skip_nils);
 str
 AGGRmedian(bat *retval, bat *bid, int *skip_nils)

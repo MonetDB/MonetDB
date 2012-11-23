@@ -80,6 +80,8 @@ opt_export  str deriveRef;
 opt_export  str differenceRef;
 opt_export  str tdifferenceRef;
 opt_export  str tintersectRef;
+opt_export  str tdiffRef;
+opt_export  str tinterRef;
 opt_export  str mergecandRef;
 opt_export  str intersectcandRef;
 opt_export  str divRef;

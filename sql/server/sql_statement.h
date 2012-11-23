@@ -75,12 +75,12 @@ typedef enum stmt_type {
 	st_uselect2,
 	st_tunion,
 	st_tdiff,
+	st_tinter,
 
 	st_releqjoin,
 	st_join,
 	st_join2,
 	st_joinN,
-	st_inter,
 	st_diff,
 	st_union,
 
@@ -134,7 +134,8 @@ typedef enum comp_type {
 	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
 	cmp_all = 10,		/* special case for crossproducts */
 	cmp_project = 11,	/* special case for projection joins */
-	cmp_reorder_project = 12	/* special case for (reordering) projection joins */
+	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
+	cmp_joined = 13 	/* special case already joined */
 } comp_type;
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
@@ -231,6 +232,7 @@ extern stmt *stmt_genselect(sql_allocator *sa, stmt *l, stmt *rops, sql_subfunc 
 
 extern stmt *stmt_tunion(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(sql_allocator *sa, stmt *op1, stmt *op2);
+extern stmt *stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2);
 
 #define NEED_HASH 0
 #define NO_HASH 1
@@ -247,7 +249,6 @@ extern stmt *stmt_project(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(sql_allocator *sa, stmt *col, stmt *upd, stmt *ins);
 extern stmt *stmt_reorder_project(sql_allocator *sa, stmt *op1, stmt *op2);
 
-extern stmt *stmt_inter(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_diff(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_union(sql_allocator *sa, stmt *op1, stmt *op2);
 extern stmt *stmt_list(sql_allocator *sa, list *l);

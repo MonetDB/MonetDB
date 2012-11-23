@@ -1316,11 +1316,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_tdiff:{
-			dump_2_(sql, mb, s, algebraRef, "tdifference");
+			dump_2_(sql, mb, s, algebraRef, "tdiff");
 		}
 			break;
-		case st_inter:{
-			dump_2(sql, mb, s, algebraRef, semijoinRef);
+		case st_tinter:{
+			dump_2_(sql, mb, s, algebraRef, "tinter");
 		}
 			break;
 		case st_diff:{
@@ -1338,6 +1338,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			assert(l >= 0 && r >= 0);
 
+			if (s->flag == cmp_joined) {
+				s->nr = l;
+				return s->nr;
+			}
 			if (s->flag == cmp_project || s->flag == cmp_reorder_project) {
 				int ins;
 
@@ -1470,7 +1474,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		case st_result:{
 			int l = _dumpstmt(sql, mb, s->op1);
 
-			if (s->flag) {
+			if (s->op1->type == st_join && s->op1->flag == cmp_joined) {
+				s->nr = l;
+				if (s->flag)
+					s->nr = s->op1->op2->nr;
+			} else if (s->flag) {
 				char nme[SMALLBUFSIZ];
 				int v = -1;
 
@@ -1499,7 +1507,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				grp = getDestVar(q);
 				ext = getArg(q, 1);
 				
-				q = newStmt2(mb, algebraRef, leftjoinRef);
+				q = newStmt2(mb, algebraRef, leftfetchjoinRef);
 				q = pushArgument(mb, q, ext);
 				q = pushArgument(mb, q, l);
 			} else {
@@ -1755,14 +1763,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *mod, *aggrfunc;
 			char aggrF[64];
 			int restype = s->op4.aggrval->res.type->localtype;
-			int sum_or_prod = 0, minmax = 0;
+			int sum_or_prod = 0;
 
 			backend_create_func(sql, s->op4.aggrval->aggr);
 			mod = s->op4.aggrval->aggr->mod;
 			aggrfunc = s->op4.aggrval->aggr->imp;
 
-			if (strcmp(aggrfunc, "min") == 0 || strcmp(aggrfunc, "max") == 0) 
-				minmax = 1;
 			if (strcmp(aggrfunc, "sum") == 0 ||
 			    strcmp(aggrfunc, "prod") == 0)
 				sum_or_prod = 1;
@@ -1774,10 +1780,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				e = _dumpstmt(sql, mb, s->op3);
 
 				q = newStmt(mb, mod, aggrfunc);
-				if (minmax)
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_any, TYPE_oid));
-				else
-					setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_any, restype));
 				setVarUDFtype(mb, getArg(q, 0));
 			} else {
 				if (no_nil) {
@@ -1807,7 +1810,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				for (n = s->op1->op4.lval->h; n; n = n->next) {
 					stmt *op = n->data;
 
-					l = op->nr;
 					q = pushArgument(mb, q, op->nr);
 				}
 			}
@@ -1820,13 +1822,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushInt(mb, q, TRUE);
 			}
 			s->nr = getDestVar(q);
-			if (g && minmax) {
-				/*q = newStmt2(mb, algebraRef, leftjoinRef); needs fix in min/max code */
-				q = newStmt1(mb, algebraRef, "outerjoin");
-				q = pushArgument(mb, q, s->nr);
-				q = pushArgument(mb, q, l);
-				s->nr = getDestVar(q);
-			}
 		}
 			break;
 		case st_atom: {

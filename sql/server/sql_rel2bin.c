@@ -79,26 +79,23 @@ releqjoin( mvc *sql, int flag, list *l1, list *l2 )
 	for (; n1 && n2; n1 = n1->next, n2 = n2->next) {
 		stmt *ld = n1->data;
 		stmt *rd = n2->data;
-		stmt *le = stmt_reorder_project(sql->sa, l, ld );
-		stmt *re = stmt_reorder_project(sql->sa, r, rd );
+		stmt *le = stmt_project(sql->sa, l, ld );
+		stmt *re = stmt_project(sql->sa, r, rd );
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
 		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-
 		stmt * cmp;
 
 		assert(f);
 
-		/* TODO use uselect only */
 		cmp = stmt_binop(sql->sa, le, re, f);
-
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal, NULL);
-
-		/* TODO the intersect may break the order!! */
-		l = stmt_inter(sql->sa, l, cmp);
-		r = stmt_inter(sql->sa, r, cmp);
+		l = stmt_project(sql->sa, cmp, l );
+		r = stmt_project(sql->sa, cmp, r );
 	}
-	res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), stmt_reverse(sql->sa, r), cmp_equal);
+	/* TODO just create stmt with left and right (no need to join anymore) */
+	//res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), stmt_reverse(sql->sa, r), cmp_equal);
+	res = stmt_join(sql->sa, l, r, cmp_joined);
 	return res;
 }
 
@@ -152,6 +149,7 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_tunion: 
 	case st_tdiff:
+	case st_tinter:
 	case st_limit: 
 	case st_limit2: 
 	case st_sample: 
@@ -165,7 +163,6 @@ rel2bin(mvc *c, stmt *s)
 
 	case st_temp:
 	case st_single:
-	case st_inter:
 	case st_diff:
 	case st_union:
 	case st_mirror:

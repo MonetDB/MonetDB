@@ -101,6 +101,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 				ht = b->htype;
 				tt = b->ttype;
 			}
+			if (!tt && tt != b->ttype)
+				tt = b->ttype;
 			cap += BATcount(b);
 		}
 	}
@@ -126,6 +128,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 		}
 	}
+	assert(!bn->H->nil || !bn->H->nonil);
+	assert(!bn->T->nil || !bn->T->nonil);
 	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
