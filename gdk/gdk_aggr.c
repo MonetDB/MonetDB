@@ -165,7 +165,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  func, start, end, nonil);	\
 			sum = 0;					\
 			if (nonil) {					\
-				seenval = start > end;			\
+				seenval = start < end;			\
 				for (i = start; i < end && nils == 0; i++, vals++) { \
 					x = *vals;			\
 					ADD_WITH_CHECK(TYPE1, x,	\
