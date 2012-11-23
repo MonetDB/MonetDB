@@ -157,7 +157,6 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 		const TYPE1 *vals = (const TYPE1 *) values;		\
 		if (ngrp == 1 && cand == NULL) {			\
 			TYPE2 sum;					\
-			int seenval;					\
 			ALGODEBUG fprintf(stderr,			\
 					  "#%s: no candidates, no groups; " \
 					  "start " BUNFMT ", end " BUNFMT \
@@ -165,7 +164,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  func, start, end, nonil);	\
 			sum = 0;					\
 			if (nonil) {					\
-				seenval = start < end;			\
+				*seen = start < end;			\
 				for (i = start; i < end && nils == 0; i++, vals++) { \
 					x = *vals;			\
 					ADD_WITH_CHECK(TYPE1, x,	\
@@ -174,7 +173,7 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 						       goto overflow);	\
 				}					\
 			} else {					\
-				seenval = 0;				\
+				int seenval = 0;			\
 				for (i = start; i < end && nils == 0; i++, vals++) { \
 					x = *vals;			\
 					if (x == TYPE1##_nil) {		\
@@ -190,8 +189,9 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 						seenval = 1;		\
 					}				\
 				}					\
+				*seen = seenval;			\
 			}						\
-			if (seenval)					\
+			if (*seen)					\
 				*sums = sum;				\
 		} else if (ngrp == 1) {					\
 			TYPE2 sum;					\
