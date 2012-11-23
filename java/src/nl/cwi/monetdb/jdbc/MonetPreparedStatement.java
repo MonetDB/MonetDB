@@ -833,7 +833,16 @@ public class MonetPreparedStatement
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getParameterClassName(int param) throws SQLException {
-				return MonetResultSet.getClassForType(javaType[getParamIdx(param)]).getName();
+				Map map = getConnection().getTypeMap();
+				Class c;
+				if (map.containsKey(monetdbType[getParamIdx(param)])) {
+					c = (Class)map.get(monetdbType[getParamIdx(param)]);
+				} else {
+					c = MonetResultSet.getClassForType(
+							javaType[getParamIdx(param)]
+					);
+				}
+				return c.getName();
 			}
 
 			/**
@@ -1911,10 +1920,126 @@ public class MonetPreparedStatement
 		} else if (x instanceof SQLXML) {
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLXML currently not supported!", "0A000");
 		} else if (x instanceof SQLData) { // not in JDBC4.1???
-			// do something with:
-			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
-			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type SQLData currently not supported!", "0A000");
+			SQLData sx = (SQLData)x;
+			final int paramnr = parameterIndex;
+			final String sqltype = sx.getSQLTypeName();
+			SQLOutput out = new SQLOutput() {
+				public void writeString(String x) throws SQLException {
+					// special situation, this is when a string
+					// representation is given, but we need to prefix it
+					// with the actual sqltype the server expects, or we
+					// will get an error back
+					setValue(
+							paramnr,
+							sqltype + " '" + x.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'") + "'"
+					);
+				}
+
+				public void writeBoolean(boolean x) throws SQLException {
+					setBoolean(paramnr, x);
+				}
+
+				public void writeByte(byte x) throws SQLException {
+					setByte(paramnr, x);
+				}
+
+				public void writeShort(short x) throws SQLException {
+					setShort(paramnr, x);
+				}
+
+				public void writeInt(int x) throws SQLException {
+					setInt(paramnr, x);
+				}
+
+				public void writeLong(long x) throws SQLException {
+					setLong(paramnr, x);
+				}
+				
+				public void writeFloat(float x) throws SQLException {
+					setFloat(paramnr, x);
+				}
+
+				public void writeDouble(double x) throws SQLException {
+					setDouble(paramnr, x);
+				}
+
+				public void writeBigDecimal(BigDecimal x) throws SQLException {
+					setBigDecimal(paramnr, x);
+				}
+
+				public void writeBytes(byte[] x) throws SQLException {
+					setBytes(paramnr, x);
+				}
+
+				public void writeDate(java.sql.Date x) throws SQLException {
+					setDate(paramnr, x);
+				}
+
+				public void writeTime(java.sql.Time x) throws SQLException {
+					setTime(paramnr, x);
+				}
+
+				public void writeTimestamp(Timestamp x) throws SQLException {
+					setTimestamp(paramnr, x);
+				}
+
+				public void writeCharacterStream(Reader x) throws SQLException {
+					setCharacterStream(paramnr, x);
+				}
+
+				public void writeAsciiStream(InputStream x) throws SQLException {
+					setAsciiStream(paramnr, x);
+				}
+
+				public void writeBinaryStream(InputStream x) throws SQLException {
+					setBinaryStream(paramnr, x);
+				}
+
+				public void writeObject(SQLData x) throws SQLException {
+					setObject(paramnr, x);
+				}
+
+				public void writeRef(Ref x) throws SQLException {
+					setRef(paramnr, x);
+				}
+
+				public void writeBlob(Blob x) throws SQLException {
+					setBlob(paramnr, x);
+				}
+
+				public void writeClob(Clob x) throws SQLException {
+					setClob(paramnr, x);
+				}
+
+				public void writeStruct(Struct x) throws SQLException {
+					setObject(paramnr, x);
+				}
+
+				public void writeArray(Array x) throws SQLException {
+					setArray(paramnr, x);
+				}
+
+				public void writeURL(URL x) throws SQLException {
+					setURL(paramnr, x);
+				}
+
+				public void writeNString(String x) throws SQLException {
+					setNString(paramnr, x);
+				}
+
+				public void writeNClob(NClob x) throws SQLException {
+					setNClob(paramnr, x);
+				}
+
+				public void writeRowId(RowId x) throws SQLException {
+					setRowId(paramnr, x);
+				}
+
+				public void writeSQLXML(SQLXML x) throws SQLException {
+					setSQLXML(paramnr, x);
+				}
+			};
+			sx.writeSQL(out);
 		} else {	// java Class
 			throw new SQLFeatureNotSupportedException("Operation setObject() with object of type Class currently not supported!", "0A000");
 		}
