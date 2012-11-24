@@ -89,7 +89,7 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	int i, *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bn;
 	BUN cap = 0;
-	int ht = TYPE_any, tt = TYPE_any;
+	int tt = TYPE_any;
 
 	for (i = 1; i < p->argc; i++) {
 		int bid = stk->stk[getArg(p,i)].val.ival;
@@ -97,8 +97,8 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 		if (b && bid < 0)
 			b = BATmirror(b);
 		if( b ){
-			if (ht == TYPE_any){
-				ht = b->htype;
+			assert(BAThdense(b));
+			if (tt == TYPE_any){
 				tt = b->ttype;
 			}
 			if (!tt && tt != b->ttype)
@@ -106,13 +106,12 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 			cap += BATcount(b);
 		}
 	}
-	if (ht == TYPE_any){
+	if (tt == TYPE_any){
 		*ret = 0;
 		return MAL_SUCCEED;
 	}
 
-	assert(ht == TYPE_void);
-	bn = BATnew(ht, tt, cap);
+	bn = BATnew(TYPE_void, tt, cap);
 	if (bn == NULL)
 		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 	BATsettrivprop(bn);
