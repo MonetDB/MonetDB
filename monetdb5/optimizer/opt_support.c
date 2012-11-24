@@ -821,7 +821,7 @@ int isAllScalar(MalBlkPtr mb, InstrPtr p)
  * and should be conservative.
  */
 int isMapOp(InstrPtr p){
-	return	(getModuleId(p) == multiplexRef) ||
+	return	(getModuleId(p) == malRef && getFunctionId(p) == multiplexRef) ||
 		(getModuleId(p)== batcalcRef && getFunctionId(p) != mark_grpRef && getFunctionId(p) != rank_grpRef) ||
 		(getModuleId(p)== batmtimeRef) ||
 		(getModuleId(p)== batstrRef) ||

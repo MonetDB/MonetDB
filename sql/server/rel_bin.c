@@ -1572,15 +1572,11 @@ rel2bin_join( mvc *sql, sql_rel *rel, list *refs)
 		/* we need to add the missing oid's */
 		ld = stmt_mirror(sql->sa, bin_first_column(sql->sa, left));
 		ld = stmt_tdiff(sql->sa, ld, jl);
-		//ld = stmt_diff(sql->sa, bin_first_column(sql->sa, left), stmt_reverse(sql->sa, jl));
-		//ld = stmt_mark(sql->sa, stmt_reverse(sql->sa, ld), 0);
 	}
 	if (rel->op == op_right || rel->op == op_full) {
 		/* we need to add the missing oid's */
 		rd = stmt_mirror(sql->sa, bin_first_column(sql->sa, right));
 		rd = stmt_tdiff(sql->sa, rd, jr);
-		//rd = stmt_diff(sql->sa, bin_first_column(sql->sa, right), stmt_reverse(sql->sa, jr));
-		//rd = stmt_mark(sql->sa, stmt_reverse(sql->sa, rd), 0);
 	}
 
 	for( n = left->op4.lval->h; n; n = n->next ) {
@@ -1870,7 +1866,6 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 	stmt *lext = NULL, *rext = NULL;
 	stmt *lcnt = NULL, *rcnt = NULL;
 	stmt *s, *lm, *rm, *ecnt = NULL;
-	//sql_subaggr *a;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l, refs);
@@ -1940,8 +1935,7 @@ rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 		grcnt = stmt_project(sql->sa, rm, rcnt);
 
  		sub = sql_bind_func(sql->sa, sql->session->schema, "sql_sub", wrd, wrd, F_FUNC);
-		s = stmt_binop(sql->sa, glcnt, grcnt, sub);
-		//s = stmt_select(sql->sa, s, stmt_atom_wrd(sql->sa, 0), cmp_gt, NULL);
+		s = stmt_binop(sql->sa, glcnt, grcnt, sub); /* use count */
 
 		/* now we need to add the groups which weren't in B */
 		lcnt = stmt_project(sql->sa, stmt_reverse(sql->sa, lm), s);
@@ -2006,7 +2000,6 @@ rel2bin_inter( mvc *sql, sql_rel *rel, list *refs)
 	stmt *lext = NULL, *rext = NULL;
 	stmt *lcnt = NULL, *rcnt = NULL;
 	stmt *s, *lm, *rm;
-	//sql_subaggr *a;
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(sql, rel->l, refs);
@@ -2874,8 +2867,7 @@ insert_check_ukey(mvc *sql, list *inserts, sql_key *k, stmt *idx_inserts)
 		
 			g = stmt_group(sql->sa, ins, NULL, NULL, NULL);
 			stmt_group_done(g);
-			//ss = stmt_aggr(sql->sa, grp, ext, cnt, 1, 0);
-			ss = stmt_result(sql->sa, g, 2);
+			ss = stmt_result(sql->sa, g, 2); /* use count */
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
 			ssum = stmt_aggr(sql->sa, ss, NULL, NULL, sum, 1, 0);
@@ -3188,7 +3180,6 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 			s = stmt_releqjoin_init(sql->sa);
 			s->flag = NO_HASH;
 			if (k->idx && hash_index(k->idx->type))
-				//stmt_releqjoin_fill(s, stmt_project(sql->sa, tids, stmt_idx(sql, k->idx, dels)), idx_updates);
 				stmt_releqjoin_fill(s, stmt_idx(sql, k->idx, nu_tids), idx_updates);
 			for (m = k->columns->h; m; m = m->next) {
 				sql_kc *c = m->data;
@@ -3200,7 +3191,6 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				} else {
 					upd = stmt_project(sql->sa, tids, stmt_col(sql, c->c, dels));
 				}
-				//l = stmt_diff(sql->sa, stmt_col(sql, c->c, dels), stmt_reverse(sql->sa, tids));
 				l = stmt_col(sql, c->c, nu_tids);
 				stmt_releqjoin_fill(s, l, upd);
 			}
@@ -3248,8 +3238,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 				Cnt = stmt_result(sql->sa, g, 2);
 			}
 			stmt_group_done(g);
-			//ss = stmt_aggr(sql->sa, grp, ext, cnt, 1, 0);
-			ss = Cnt;
+			ss = Cnt; /* use count */
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
 			ssum = stmt_aggr(sql->sa, ss, NULL, NULL, sum, 1, 0);
@@ -3310,8 +3299,7 @@ update_check_ukey(mvc *sql, stmt **updates, sql_key *k, stmt *tids, stmt *idx_up
 
 			g = stmt_group(sql->sa, upd, NULL, NULL, NULL);
 			stmt_group_done(g);
-			ss = stmt_result(sql->sa, g, 2);
-			//ss = stmt_aggr(sql->sa, grp, ext, cnt, 1, 0);
+			ss = stmt_result(sql->sa, g, 2); /* use count */
 
 			/* (count(ss) <> sum(ss)) */
 			sum = sql_bind_aggr(sql->sa, sql->session->schema, "sum", wrd);
@@ -3415,7 +3403,6 @@ join_updated_pkey(mvc *sql, sql_key * k, stmt *tids, stmt **updates, int updcol)
 				null = nn;
 			nulls = 1;
 		}
-		//stmt_releqjoin_fill(s, upd, stmt_inter(sql->sa, stmt_col(sql, fc->c, fdels), rows ));
 		col = stmt_project(sql->sa, rows, stmt_col(sql, fc->c, fdels));
 		stmt_releqjoin_fill(s, upd, col);
 	}

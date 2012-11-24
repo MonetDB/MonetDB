@@ -1211,6 +1211,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			stmt *base, *low = NULL, *high = NULL;
 			int r1 = -1, r2 = -1, rs = 0;
 			bit anti = (s->flag&ANTI)?TRUE:FALSE;
+			bit swapped = (s->flag&SWAPPED)?TRUE:FALSE;
 			char *cmd = (s->type == st_uselect2) ?  "subselect": "join", *nme;
 			int sub = -1;
 
@@ -1302,10 +1303,32 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 
-			/* rename second result */
-			nme = GDKmalloc(SMALLBUFSIZ);
-			snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
-			renameVariable(mb, getArg(q,1), nme);
+			if (swapped) {
+				InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+				getArg(r,0) = newTmpVariable(mb, TYPE_any);
+				getArg(r,1) = getArg(q,1);
+				r->retc = 1;
+				r->argc = 2;
+				pushInstruction(mb, r);
+				s->nr = getArg(r,0);
+
+				r = newInstruction(mb, ASSIGNsymbol);
+				getArg(r,0) = newTmpVariable(mb, TYPE_any);
+				getArg(r,1) = getArg(q,0);
+				r->retc = 1;
+				r->argc = 2;
+				pushInstruction(mb, r);
+
+				/* rename second result */
+				nme = GDKmalloc(SMALLBUFSIZ);
+				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
+				renameVariable(mb, getArg(r,0), nme);
+			} else {
+				/* rename second result */
+				nme = GDKmalloc(SMALLBUFSIZ);
+				snprintf(nme, SMALLBUFSIZ, "r1_%d", s->nr);
+				renameVariable(mb, getArg(q,1), nme);
+			}
 			break;
 		}
 		case st_joinN:

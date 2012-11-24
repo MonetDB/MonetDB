@@ -81,20 +81,16 @@ releqjoin( mvc *sql, int flag, list *l1, list *l2 )
 		stmt *rd = n2->data;
 		stmt *le = stmt_project(sql->sa, l, ld );
 		stmt *re = stmt_project(sql->sa, r, rd );
-		/* intentional both tail_type's of le (as re sometimes is a
-		   find for bulk loading */
+		/* intentional both tail_type's of le (as re sometimes is a find for bulk loading */
 		sql_subfunc *f=sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		stmt * cmp;
 
 		assert(f);
-
 		cmp = stmt_binop(sql->sa, le, re, f);
 		cmp = stmt_uselect(sql->sa, cmp, stmt_bool(sql->sa, 1), cmp_equal, NULL);
 		l = stmt_project(sql->sa, cmp, l );
 		r = stmt_project(sql->sa, cmp, r );
 	}
-	/* TODO just create stmt with left and right (no need to join anymore) */
-	//res = stmt_join(sql->sa, stmt_reverse(sql->sa, l), stmt_reverse(sql->sa, r), cmp_equal);
 	res = stmt_join(sql->sa, l, r, cmp_joined);
 	return res;
 }
