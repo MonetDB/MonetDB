@@ -2046,12 +2046,24 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 				a1 = sql_div_fixup(sql, a1, cond, 0);
 			} else if (a1->type == e_func && a1->l) { 
 				a1->l = exps_case_fixup(sql, a1->l, cond, 0); 
+			} else if (a1->type == e_convert) { 
+				sql_exp *l = a1->l;
+				sql_subfunc *f = l->f;
+
+				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+					a1->l = sql_div_fixup(sql, l, cond, 0);
 			}
 			if  (a2->type == e_func && !a2f->func->s && 
 			     !strcmp(a2f->func->base.name, "sql_div")) { 
 				a2 = sql_div_fixup(sql, a2, cond, 1);
 			} else if (a2->type == e_func && a2->l) { 
 				a2->l = exps_case_fixup(sql, a2->l, cond, 1); 
+			} else if (a2->type == e_convert) { 
+				sql_exp *l = a2->l;
+				sql_subfunc *f = l->f;
+
+				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+					a2->l = sql_div_fixup(sql, l, cond, 1);
 			}
 			nne = exp_op3(sql->sa, cond, a1, a2, ne->f);
 			exp_setname(sql->sa, nne, ne->rname, ne->name );
