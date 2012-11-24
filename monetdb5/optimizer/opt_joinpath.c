@@ -196,7 +196,7 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 * This creates a series of join paths, many of which will be removed during deadcode elimination.
 			 */
 			q= copyInstruction(p);
-			q->argc=1;
+			q->argc=p->retc;
 			for(j=p->retc; j<p->argc; j++){
 				r= getInstrPtr(mb,pc[getArg(p,j)]);
 				/*
