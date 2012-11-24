@@ -2695,6 +2695,10 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	if (rel_is_ref(rel))
 		return rel;
 
+	/* don't make changes for empty selects */
+	if (is_select(rel->op) && (!rel->exps || list_length(rel->exps) == 0)) 
+		return rel;
+
 	/* merge 2 selects */
 	r = rel->l;
 	if (is_select(rel->op) && r && is_select(r->op) && !(rel_is_ref(r))) {
@@ -5604,8 +5608,10 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 
 	rel = rewrite(sql, rel, &rel_merge_table_rewrite, &changes);
 
-	if (changes && level > 10)
+	if (changes && level > 10) {
 		assert(0);
+		return rel;
+	}
 
 	if (changes)
 		return _rel_optimizer(sql, rel, ++level);
