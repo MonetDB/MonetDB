@@ -205,6 +205,7 @@ getRemoteDB(char *database)
 			walk->conns = malloc(sizeof(sablist));
 			walk->conns->val = strdup(rdb->conn);
 			walk->conns->next = NULL;
+			walk->uri = NULL;
 			walk->next = NULL;
 			walk->uplog = NULL;
 
