@@ -205,6 +205,7 @@ str semijoinPathRef;
 str setAccessRef;
 str setWriteModeRef;
 str sliceRef;
+str subsliceRef;
 str sortHRef;
 str sortHTRef;
 str sortRef;
@@ -454,6 +455,7 @@ void optimizerInit(void){
 		setAccessRef = putName("setAccess",9);
 		setWriteModeRef= putName("setWriteMode",12);
 		sliceRef = putName("slice",5);
+		subsliceRef = putName("subslice",8);
 		singleRef = putName("single",6);
 		sortHRef = putName("sortH",5);
 		sortHTRef = putName("sortHT",6);

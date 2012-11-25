@@ -402,8 +402,6 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs)
 		if (rel->l) {
 			if (need_distinct(rel))
 				mnstr_printf(fout, "distinct ");
-			if (need_including(rel))
-				mnstr_printf(fout, "including ");
 			mnstr_printf(fout, "%s (", r);
 			if (rel_is_ref(rel->l)) {
 				int nr = find_ref(refs, rel->l);

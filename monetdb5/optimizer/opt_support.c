@@ -838,7 +838,7 @@ int isTopn(InstrPtr p){
 
 int isSlice(InstrPtr p){
 	return (getModuleId(p) == algebraRef &&
-		getFunctionId(p) == sliceRef);
+		getFunctionId(p) == subsliceRef);
 }
 
 int isOrderby(InstrPtr p){

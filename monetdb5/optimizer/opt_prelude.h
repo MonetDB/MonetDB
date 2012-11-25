@@ -203,6 +203,7 @@ opt_export  str semijoinPathRef;
 opt_export  str setAccessRef;
 opt_export  str setWriteModeRef;
 opt_export  str sliceRef;
+opt_export  str subsliceRef;
 opt_export  str singleRef;
 opt_export  str sortHRef;
 opt_export  str sortHTRef;

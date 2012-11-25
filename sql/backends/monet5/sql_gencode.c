@@ -936,10 +936,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, topn);
 				l = getDestVar(q);
 
+				/* pqueue doesn't handle offsets, ie use slice for this */
+
 				/* since both arguments of algebra.slice are
 				   inclusive correct the LIMIT value by
 				   substracting 1 */
 				if (s->op2->op4.aval->data.val.wval) {
+					assert(0);
 					q = newStmt1(mb, calcRef, "-");
 					q = pushArgument(mb, q, topn);
 					q = pushInt(mb, q, 1);
@@ -957,7 +960,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, len);
 				len = getDestVar(q);
 
-				/* since both arguments of algebra.slice are
+				/* since both arguments of algebra.subslice are
 				   inclusive correct the LIMIT value by
 				   substracting 1 */
 				q = newStmt1(mb, calcRef, "-");
@@ -965,7 +968,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, 1);
 				len = getDestVar(q);
 
-				q = newStmt1(mb, algebraRef, "slice");
+				q = newStmt1(mb, algebraRef, "subslice");
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, offset);
 				q = pushArgument(mb, q, len);

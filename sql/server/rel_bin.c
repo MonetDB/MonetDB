@@ -2212,18 +2212,18 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 	stmt_set_nrcols(psub);
 
 	/* In case of a topn 
-		if both order by and distinct: then get first order by col early
-			do topn on it. Project all again! Then rest
+		if both order by and distinct: then get first order by col 
+		do topn on it. Project all again! Then rest
          */
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
-		/* including bounds, topn returns atleast N */
-		int including = need_including(topn) || need_distinct(rel);
+		/* distinct, topn returns atleast N (unique) */
+		int distinct = need_distinct(rel);
 		stmt *limit = NULL; 
 
 		for (n=oexps->h; n; n = n->next) {
 			sql_exp *orderbycole = n->data; 
- 			int inc = including || n->next;
+ 			int inc = distinct || n->next;
 
 			stmt *orderbycolstmt = exp_bin(sql, orderbycole, sub, psub, NULL, NULL, NULL, NULL); 
 
@@ -2240,7 +2240,10 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 		}
 
-		limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
+		if (distinct) 
+			limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
+		else	/* add limit to mark end of pqueue topns */
+			limit = stmt_limit(sql->sa, limit, stmt_atom_wrd(sql->sa, 0), l, LIMIT_DIRECTION(0, 0, 0));
 		for ( n=pl->h ; n; n = n->next) 
 			list_append(npl, stmt_project(sql->sa, limit, column(sql->sa, n->data)));
 		psub = stmt_list(sql->sa, npl);
@@ -2515,7 +2518,6 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		char *cname = column_name(sql->sa, sc);
 		char *tname = table_name(sql->sa, sc);
 		list *newl = sa_list(sql->sa);
-		int including = need_including(rel);
 
 		if (le)
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -2528,9 +2530,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			o = stmt_atom_wrd(sql->sa, 0);
 
 		sc = column(sql->sa, sc);
-		limit = stmt_limit(sql->sa, stmt_alias(sql->sa, sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,including));
+		limit = stmt_limit(sql->sa, stmt_alias(sql->sa, sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,0));
 
-		limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
 			char *cname = column_name(sql->sa, sc);

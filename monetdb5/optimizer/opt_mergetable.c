@@ -25,7 +25,7 @@ typedef enum mat_type_t {
 	mat_ext = 2,	/* after mat_grp the extend gets a mat.mirror */
 	mat_cnt = 3,	/* after mat_grp the extend gets a mat.mirror */
 	mat_tpn = 4,	/* Phase one of topn on a mat */
-	mat_slc = 5,	/* Phase one of topn on a mat */
+	mat_slc = 5,	/* Last phase of topn (or just slice) on a mat */
 	mat_rdr = 6	/* Phase one of sorting, ie sorted the parts sofar */
 } mat_type_t;
 
@@ -938,6 +938,84 @@ mat_group_derive(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int b, int g)
 	return mtop;
 }
 
+static void
+mat_topn_project(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n)
+{
+	int tpe = getArgType(mb, p, 0), k;
+	InstrPtr pck, q;
+
+	pck = newInstruction(mb, ASSIGNsymbol);
+	setModuleId(pck,matRef);
+	setFunctionId(pck,packRef);
+	getArg(pck,0) = newTmpVariable(mb, tpe);
+
+	for(k=1; k<mat[m].mi->argc; k++) { 
+		InstrPtr q = copyInstruction(p);
+
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m].mi, k);
+		getArg(q,2) = getArg(mat[n].mi, k);
+		pushInstruction(mb, q);
+
+		pck = pushArgument(mb, pck, getArg(q, 0));
+	}
+	pushInstruction(mb, pck);
+
+       	q = copyInstruction(p);
+	getArg(q,2) = getArg(pck,0);
+	pushInstruction(mb, q);
+}
+
+/* for now just slices */
+static int
+mat_topn(MalBlkPtr mb, InstrPtr p, mat_t *mat, int mtop, int m)
+{
+	int tpe = getArgType(mb,p,0), k, is_slice = isSlice(p), zero = -1;
+	InstrPtr pck, r;
+
+	/* dummy mat instruction (needed to share result of p) */
+	pck = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(pck, matRef);
+	setFunctionId(pck, packRef);
+	getArg(pck,0) = getArg(p,0);
+
+	if (is_slice) {
+		ValRecord cst;
+		cst.vtype= getArgType(mb,p,2);
+		cst.val.wval= 0;
+		zero = defConstant(mb, cst.vtype, &cst);
+	}
+	for(k=1; k< mat[m].mi->argc; k++) {
+		InstrPtr q = copyInstruction(p);
+		getArg(q,0) = newTmpVariable(mb, tpe);
+		getArg(q,1) = getArg(mat[m].mi,k);
+		if (is_slice) /* lower bound should always be 0 on partial slices */
+			getArg(q,2) = zero;
+		pushInstruction(mb,q);
+		
+		pck = pushArgument(mb, pck, getArg(q,0));
+	}
+
+	/* real instruction */
+	r = newInstruction(mb,ASSIGNsymbol);
+	setModuleId(r, matRef);
+	setFunctionId(r, packRef);
+	getArg(r,0) = newTmpVariable(mb, tpe);
+
+	for(k=1; k< pck->argc; k++) 
+		r = pushArgument(mb, r, getArg(pck,k));
+	pushInstruction(mb,r);
+
+	mtop = mat_add(mat, mtop, pck, is_slice?mat_slc:mat_tpn, getFunctionId(p));
+	if (is_slice) { /* pack */
+		InstrPtr q = copyInstruction(p);
+		getArg(q,1) = getArg(r,0);
+
+		pushInstruction(mb,q);
+	}
+	return mtop;
+}
+
 int
 OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p) 
 {
@@ -1043,6 +1121,13 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		} 
+		if (match == 1 && bats == 1 && p->argc == 4 && isSlice(p) &&
+	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
+			// mat[m].type == mat_none) {
+			mtop = mat_topn(mb, p, mat, mtop, m);
+			actions++;
+			continue;
+		}
 
 		/* Now we handle subgroup and aggregation statements. */
 		if (match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
@@ -1082,6 +1167,17 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,2), mat, mtop)) >= 0 &&
 		   (mat[m].type == mat_ext || mat[n].type == mat_grp)) {
 			pushInstruction(mb, copyInstruction(p));
+			continue;
+		}
+
+		/* Handle cases of slice.leftfetchjoin */
+		if (match == 2 && getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == leftfetchjoinRef &&
+		   (m=is_a_mat(getArg(p,1), mat, mtop)) >= 0 &&
+		   (n=is_a_mat(getArg(p,2), mat, mtop)) >= 0 &&
+		   (mat[m].type == mat_slc)) {
+			mat_topn_project(mb, p, mat, m, n);
+			actions++;
 			continue;
 		}
 

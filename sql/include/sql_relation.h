@@ -225,14 +225,6 @@ typedef enum operator_type {
 #define set_nodistinct(e) \
 	e->flag &= (~EXP_DISTINCT)
 
-/* limit including or excluding bounds (relations only) */
-#define need_including(r) \
-	((r->flag&TOPN_INCLUDING)==TOPN_INCLUDING)
-#define set_including(r) \
-	r->flag |= TOPN_INCLUDING
-#define set_excluding(r) \
-	r->flag &= (~TOPN_INCLUDING)
-
 /* used for expressions and relations */
 #define is_intern(e) \
 	(e->type != e_atom && (e->flag&EXP_INTERN)==EXP_INTERN)
