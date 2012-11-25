@@ -424,7 +424,7 @@ struct {
 	{"rosybrown","#BC8F8F",188,143,143},
 	{"royalblue","#4169E1",65,105,225},
 	{"saddlebrown","#8B4513",139,69,19},
-	{"salmon ‡","#FA8072",250,128,114},
+	{"salmon","#FA8072",250,128,114},
 	{"sandybrown","#F4A460",244,164, 96},
 	{"seagreen","#2E8B57",46,139, 87},
 	{"seashell","#FFF5EE",255,245,238},
@@ -522,6 +522,7 @@ struct COLOR{
 
 
 	{0,0,"pcre","likesubselect","burlywood"},
+	{0,0,"batstr","likeselect","burlywood"},
 	{0,0,"pcre","*","burlywood"},
 
 	//{0,0,"pqueue","topn_max","lightcoral"},
@@ -535,9 +536,10 @@ struct COLOR{
 	//{0,0,"sql","bind","thistle"},
 	//{0,0,"sql","bind_dbat","thistle"},
 	//{0,0,"sql","mvc","thistle"},
-	{0,0,"sql","projectdelta ","mediumpurple"},
-	{0,0,"sql","subdelta ","purple"},
-	{0,0,"sql","tid ","purple"},
+	{0,0,"sql","projectdelta ","hotpink"},
+	{0,0,"sql","subdelta ","violet"},
+	{0,0,"sql","delta ","salmon"},
+	{0,0,"sql","tid ","plum"},
 	{0,0,"sql","*","thistle"},
 
 	{0,0,"*","*","lavender"},
