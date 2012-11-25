@@ -170,7 +170,6 @@ rel2bin(mvc *c, stmt *s)
 	case st_unique:
 	case st_order:
 	case st_reorder:
-	case st_ordered:
 
 	case st_alias:
 	case st_exception:

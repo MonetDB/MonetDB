@@ -66,7 +66,6 @@ typedef enum stmt_type {
 	st_order,
 	st_reorder,
 
-	st_ordered,
 	st_output,
 	st_affected_rows,
 
@@ -287,7 +286,6 @@ extern stmt *stmt_unique(sql_allocator *sa, stmt *s, stmt *grp, stmt *ext, stmt 
 
 extern stmt *stmt_alias(sql_allocator *sa, stmt *op1, char *tname, char *name);
 
-extern stmt *stmt_ordered(sql_allocator *sa, stmt *order, stmt *res);
 extern stmt *stmt_output(sql_allocator *sa, stmt *l);
 extern stmt *stmt_affected_rows(sql_allocator *sa, stmt *l);
 

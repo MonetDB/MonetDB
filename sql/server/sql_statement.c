@@ -91,7 +91,6 @@ st_type2string(st_type type)
 		ST(order);
 		ST(reorder);
 
-		ST(ordered);
 		ST(output);
 		ST(affected_rows);
 
@@ -373,7 +372,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 		case st_sample:
 		case st_order:
 		case st_reorder:
-		case st_ordered:
 		case st_output:
 		case st_affected_rows:
 
@@ -1213,20 +1211,6 @@ stmt_list(sql_allocator *sa, list *l)
 	s->op4.lval = l;
 	stmt_set_nrcols(s);
 	return s;
-}
-
-stmt *
-stmt_ordered(sql_allocator *sa, stmt *order, stmt *res)
-{
-	stmt *ns = stmt_create(sa, st_ordered);
-
-	ns->type = st_ordered;
-	ns->op1 = order;
-	ns->op2 = res;
-	ns->nrcols = res->nrcols;
-	ns->key = res->key;
-	ns->aggr = res->aggr;
-	return ns;
 }
 
 stmt *

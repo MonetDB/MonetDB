@@ -1994,12 +1994,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = (void*)s->op1->rewritten;
 			s->nr = getArg(q,s->flag);
 		} break;
-		case st_ordered:{
-			int l = _dumpstmt(sql, mb, s->op1);
-
-			_dumpstmt(sql, mb, s->op2);
-			s->nr = l;
-		} break;
 		case st_affected_rows:{
 			InstrPtr q;
 			int o1 = _dumpstmt(sql, mb, s->op1);
@@ -2013,28 +2007,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_output:
 		case st_export:{
-			stmt *order = NULL;
 			stmt *lst = s->op1;
 
 			_dumpstmt(sql, mb, lst);
 
-			if (lst->type == st_ordered) {
-				order = lst->op1;
-				lst = lst->op2;
-			}
 			if (lst->type == st_list) {
 				list *l = lst->op4.lval;
 				int file, cnt = list_length(l);
-				stmt *f;
+				stmt *first;
 				InstrPtr k;
 
 				n = l->h;
-				f = n->data;
+				first = n->data;
 
 				/* single value result, has a fast exit */
-				if (cnt == 1 && !order && f->nrcols <= 0 &&
-						s->type != st_export)
-				{
+				if (cnt == 1 && first->nrcols <= 0 && s->type != st_export) {
 					stmt *c = n->data;
 					sql_subtype *t = tail_type(c);
 					char *tname = table_name(sql->mvc->sa, c);
@@ -2066,11 +2053,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					_DELETE(fqtn);
 					break;
 				}
-				if (n) {
-					if (!order) {
-						order = n->data;
-					}
-				}
 				k = newStmt2(mb, sqlRef, resultSetRef);
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
@@ -2088,7 +2070,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				} else {
 					k = pushInt(mb, k, sql->mvc->type);
 				}
-				(void) pushArgument(mb, k, order->nr);
+				(void) pushArgument(mb, k, first->nr);
 				dump_header(sql->mvc, mb, s, l);
 
 				if (s->type == st_export && s->op2) {
@@ -2111,22 +2093,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, "io", "stdout");
 					file = getDestVar(q);
 				}
-/*
-
-				q = newStmt2(mb, sqlRef, putName("exportHead",10));
-				q = pushArgument(mb, q, file);
-				q = pushArgument(mb, q, s->nr);
-				q = newStmt2(mb, sqlRef, putName("exportChunk",11));
-				q = pushArgument(mb, q, file);
-				q = pushArgument(mb, q, s->nr);
-				q = pushInt(mb,q,0);
-				q = pushInt(mb,q,10);
-				q = newStmt2(mb, sqlRef, putName("exportChunk",11));
-				q = pushArgument(mb, q, file);
-				q = pushArgument(mb, q, s->nr);
-				q = pushInt(mb,q,10);
-				q = pushInt(mb,q,0);
-*/
 				q = newStmt2(mb, sqlRef, exportResultRef);
 				q = pushArgument(mb, q, file);
 				(void) pushArgument(mb, q, s->nr);

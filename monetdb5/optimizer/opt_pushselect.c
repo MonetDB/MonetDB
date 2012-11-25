@@ -102,7 +102,7 @@ subselect_find_subselect( subselect_t *subselects, int tid)
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0;
+	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0;
 	InstrPtr p, *old;
 	subselect_t subselects;
 
@@ -131,6 +131,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p) == algebraRef && 
 			(getFunctionId(p) == tintersectRef || getFunctionId(p) == tdifferenceRef)) 
 			return 0;
+
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == sliceRef)
+			nr_topn++;
 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef)
 			push_down_delta++;
@@ -185,7 +188,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if (!subselects.nr || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
+	if ((!subselects.nr && !nr_topn)  || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
 		GDKfree(vars);
 		return 0;
 	}
@@ -247,7 +250,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* c = sql.delta(b,uid,uval,ins);
 		 		 * l = leftfetchjoin(x, c); 
 		 		 * into
-		 		 * l = sql.projectdelta(b,x,ins,upd);
+		 		 * l = sql.projectdelta(x,b,uid,uval,ins);
 		 		 */
 				else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
 					q = copyInstruction(q);

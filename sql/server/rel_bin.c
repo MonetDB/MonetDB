@@ -2162,8 +2162,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 		sql_exp *le = topn_limit(topn);
 		sql_exp *oe = topn_offset(topn);
 
-		if (!le) { /* for now only handle topn 
-				including limit, ie not just offset */
+		if (!le) { /* Don't push only offset */
 			topn = NULL;
 		} else {
 			l = exp_bin(sql, le, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -2190,11 +2189,7 @@ rel2bin_project( mvc *sql, sql_rel *rel, list *refs, sql_rel *topn)
 			sub = subrel_bin(sql, rel->l, refs);
 		}
 		if (!sub) 
-			return NULL;	
-		if (sub->type == st_ordered) {
-			stmt *n = sql_reorder(sql, sub->op1, sub->op2);
-			sub = n;
-		}
+			return NULL;
 	}
 
 	pl = sa_list(sql->sa);
@@ -2495,9 +2490,8 @@ rel2bin_groupby( mvc *sql, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 {
-	list *newl;
 	sql_exp *oe = NULL, *le = NULL;
-	stmt *sub = NULL, *order = NULL, *l = NULL, *o = NULL;
+	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
 
 	if (rel->l) { /* first construct the sub relation */
@@ -2515,20 +2509,12 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 	le = topn_limit(rel);
 	oe = topn_offset(rel);
 
-	if (sub->type == st_ordered) {
-		stmt *s = sub->op2;
-		order = column(sql->sa, sub->op1);
-		sub = s;
-	}
 	n = sub->op4.lval->h;
-	newl = sa_list(sql->sa);
-
 	if (n) {
-		stmt *limit = NULL;
-		/*
-		sql_rel *rl = rel->l;
-		int including = (rl && need_distinct(rl)) || need_including(rel);
-		*/
+		stmt *limit = NULL, *sc = n->data;
+		char *cname = column_name(sql->sa, sc);
+		char *tname = table_name(sql->sa, sc);
+		list *newl = sa_list(sql->sa);
 		int including = need_including(rel);
 
 		if (le)
@@ -2541,16 +2527,8 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 		if (!o)
 			o = stmt_atom_wrd(sql->sa, 0);
 
-		if (order) {
-		 	limit = stmt_limit(sql->sa, order, o, l, LIMIT_DIRECTION(0,0,including));
-		} else {
-			stmt *sc = n->data;
-			char *cname = column_name(sql->sa, sc);
-			char *tname = table_name(sql->sa, sc);
-
-			sc = column(sql->sa, sc);
-			limit = stmt_limit(sql->sa, stmt_alias(sql->sa, sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,including));
-		}
+		sc = column(sql->sa, sc);
+		limit = stmt_limit(sql->sa, stmt_alias(sql->sa, sc, tname, cname), o, l, LIMIT_DIRECTION(0,0,including));
 
 		limit = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, limit, 0));
 		for ( ; n; n = n->next) {
@@ -2562,13 +2540,7 @@ rel2bin_topn( mvc *sql, sql_rel *rel, list *refs)
 			sc = stmt_project(sql->sa, limit, sc);
 			list_append(newl, stmt_alias(sql->sa, sc, tname, cname));
 		}
-		if (order) 
-			order = stmt_project(sql->sa, limit, order);
-	}
-	sub = stmt_list(sql->sa, newl);
-	if (order) {
-		assert(0);
-		return stmt_ordered(sql->sa, order, sub);
+		sub = stmt_list(sql->sa, newl);
 	}
 	return sub;
 }
@@ -3040,11 +3012,6 @@ rel2bin_insert( mvc *sql, sql_rel *rel, list *refs)
 
 	if (!inserts)  
 		return NULL;	
-
-	if (inserts->type == st_ordered) {
-		stmt *n = sql_reorder(sql, inserts->op1, inserts->op1);
-		inserts = n;
-	}
 
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
