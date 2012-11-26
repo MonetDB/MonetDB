@@ -151,6 +151,9 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 	return NULL;
 }
 
+/* ---------------------------------------------------------------------- */
+/* sum */
+
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
 		TYPE1 x;						\
@@ -613,6 +616,9 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
+/* ---------------------------------------------------------------------- */
+/* product */
+
 #define AGGR_PROD(TYPE1, TYPE2, TYPE3)					\
 	do {								\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
@@ -1015,6 +1021,9 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 	return nils < BUN_NONE ? GDK_SUCCEED : GDK_FAIL;
 }
 
+/* ---------------------------------------------------------------------- */
+/* average */
+
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
@@ -1217,6 +1226,9 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
 	return NULL;
 }
+
+/* ---------------------------------------------------------------------- */
+/* count */
 
 #define AGGR_COUNT(TYPE)						\
 	do {								\
@@ -1441,6 +1453,9 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 	bn->T->nonil = 1;
 	return bn;
 }
+
+/* ---------------------------------------------------------------------- */
+/* min and max */
 
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
@@ -1751,6 +1766,9 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	bn->T->nonil = nils == 0;
 	return bn;
 }
+
+/* ---------------------------------------------------------------------- */
+/* median */
 
 BAT *
 BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error)
