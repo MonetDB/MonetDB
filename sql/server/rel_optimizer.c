@@ -50,7 +50,7 @@ static sql_subfunc *find_func( mvc *sql, char *name, list *exps );
  */
 
 /* currently we only find simple column expressions */
-static sql_column *
+static void *
 name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt ) 
 {
 	sql_exp *alias = NULL;
@@ -79,6 +79,15 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
+				*bt = rel;
+				if (pnr < 0 || (c->t->p &&
+				    list_position(c->t->p->tables.set, c->t) == pnr))
+					return c;
+			}
+		}
+		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+			sql_idx *c = cn->data;
+			if (strcmp(c->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (c->t->p &&
 				    list_position(c->t->p->tables.set, c->t) == pnr))
@@ -136,7 +145,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 			else
 				alias = exps_bind_column(rel->r, alias->r, NULL);
 		}
-		if (!alias && rel->l) {
+		if (is_groupby(rel->op) && !alias && rel->l) {
 			/* Group by column not found as alias in projection 
 			 * list, fall back to check plain input columns */
 			return name_find_column( rel->l, rname, name, pnr, bt);
@@ -650,8 +659,10 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 			int swapped = 0;
 			list *aaje = matching_joins(sa, rels, aje, je);
 			list *eje = list_select(aaje, (void*)1, (fcmp) &exp_is_eqjoin, (fdup)NULL);
-			sql_rel *lr = find_rel(rels, le);
-			sql_rel *rr = find_rel(rels, re);
+			sql_rel *lr = find_rel(rels, le), *olr = lr;
+			sql_rel *rr = find_rel(rels, re), *orr = rr;
+			sql_rel *bt = NULL;
+			char *iname;
 
 			sql_table *l, *r;
 			list *lexps = list_map(eje, lr, (fmap) &joinexp_col);
@@ -678,7 +689,12 @@ find_fk(sql_allocator *sa, list *rels, list *exps)
 				swapped = 1;
 			} 
 
-			if (idx) { 	
+			if (idx && (iname = sa_strconcat( sa, "%", idx->base.name)) != NULL &&
+				   ((!swapped && name_find_column(olr, NULL, iname, -2, &bt) == NULL) ||
+			            ( swapped && name_find_column(orr, NULL, iname, -2, &bt) == NULL))) 
+				idx = NULL;
+
+			if (idx) { 
 				prop *p;
 				node *n;
 	
@@ -1283,6 +1299,11 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		node *n;
 		int res = 1, lmust = 0;
 		
+		if (e->f){
+			sql_subfunc *f = e->f;
+			if (!f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+				return 0;
+		}
 		if (l) for (n = l->h; n && res; n = n->next)
 			res &= can_push_func(n->data, rel, &lmust);
 		if (!lmust)

@@ -48,6 +48,7 @@ insert_serial_with_unique_key.Bug-3091
 with_and_exists.Bug-3099
 index_column_crash.Bug-3113
 foreign_key.Bug-3114
+insert_into_table_with_2_foreignkeys.Bug-3124
 cast-tinyint-Bug-3137
 not-equal-Bug.3139
 many-columns-truncated.Bug-3161
