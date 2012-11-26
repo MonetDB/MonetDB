@@ -554,6 +554,8 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGjoin;
+command join( left:bat[:any_1,:void], right:bat[:oid,:any_3]) :bat[:any_1,:any_3] address ALGjoin;
+
 command leftjoin( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGleftjoin;
