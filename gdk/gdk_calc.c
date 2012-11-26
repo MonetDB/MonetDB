@@ -99,7 +99,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				nils++;					\
 				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
 			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], ((const TYPE2 *) rgt)[j]); \
+				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
+							  ((const TYPE2 *) rgt)[j]); \
 			}						\
 		}							\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
@@ -110,7 +111,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, 0, start);	\
 		for (i = start * incr1, j = start * incr2, k = start;	\
 		     k < end; i += incr1, j += incr2, k++)		\
-			((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], ((const TYPE2 *) rgt)[j]); \
+			((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
+						  ((const TYPE2 *) rgt)[j]); \
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
 	} while (0)
 
@@ -131,7 +133,8 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				((TYPE3 *)dst)[k] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\
-				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], ((const TYPE2 *) rgt)[j]); \
+				((TYPE3 *) dst)[k] = FUNC(((const TYPE1 *) lft)[i], \
+							  ((const TYPE2 *) rgt)[j]); \
 			}						\
 		}							\
 		CANDLOOP((TYPE3 *) dst, k, TYPE3##_nil, end, cnt);	\
@@ -856,60 +859,60 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 /* addition (any numeric type) */
 
 #define ADD_3TYPE(TYPE1, TYPE2, TYPE3)					\
-	static BUN							\
-	add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				ADD_WITH_CHECK(TYPE1, lft[i],		\
-					       TYPE2, rgt[j],		\
-					       TYPE3, dst[k],		\
-					       return BUN_NONE);	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			ADD_WITH_CHECK(TYPE1, lft[i],			\
+				       TYPE2, rgt[j],			\
+				       TYPE3, dst[k],			\
+				       return BUN_NONE);		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 #define ADD_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
-	static BUN							\
-	add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff) \
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff)	\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] + rgt[j];	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) lft[i] + rgt[j];		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 ADD_3TYPE(bte, bte, bte)
 ADD_3TYPE_enlarge(bte, bte, sht)
@@ -1831,7 +1834,8 @@ add_typeswitchloop(const void *lft, int tp1, int incr1,
 	return nils;
 
   unsupported:
-	GDKerror("%s: type combination (add(%s,%s)->%s) not supported.\n", func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
+	GDKerror("%s: type combination (add(%s,%s)->%s) not supported.\n",
+		 func, ATOMname(tp1), ATOMname(tp2), ATOMname(tp));
 	return BUN_NONE;
 }
 
@@ -1981,7 +1985,8 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp, int abort_on_error)
 }
 
 int
-VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
+VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   int abort_on_error)
 {
 	if (add_typeswitchloop(VALptr(lft), lft->vtype, 0,
 			       VALptr(rgt), rgt->vtype, 0,
@@ -2067,73 +2072,73 @@ VARcalcincr(ValPtr ret, const ValRecord *v, int abort_on_error)
 /* subtraction (any numeric type) */
 
 #define SUB_3TYPE(TYPE1, TYPE2, TYPE3)					\
-	static BUN							\
-	sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else if (rgt[j] < 1) {				\
+			if (GDK_##TYPE3##_max + rgt[j] < lft[i]) {	\
+				if (abort_on_error)			\
+					return BUN_NONE;		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
-			} else if (rgt[j] < 1) {			\
-				if (GDK_##TYPE3##_max + rgt[j] < lft[i]) { \
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) lft[i] - rgt[j]; \
-				}					\
 			} else {					\
-				if (GDK_##TYPE3##_min + rgt[j] >= lft[i]) { \
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) lft[i] - rgt[j]; \
-				}					\
+				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
-		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
-
-#define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
-	static BUN							\
-	sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff) \
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
-									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
+		} else {						\
+			if (GDK_##TYPE3##_min + rgt[j] >= lft[i]) {	\
+				if (abort_on_error)			\
+					return BUN_NONE;		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
 				dst[k] = (TYPE3) lft[i] - rgt[j];	\
 			}						\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
+
+#define SUB_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
+static BUN								\
+sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff)	\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
+									\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) lft[i] - rgt[j];		\
+		}							\
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 SUB_3TYPE(bte, bte, bte)
 SUB_3TYPE_enlarge(bte, bte, sht)
@@ -2263,7 +2268,8 @@ static BUN
 sub_typeswitchloop(const void *lft, int tp1, int incr1,
 		   const void *rgt, int tp2, int incr2,
 		   void *dst, int tp, BUN cnt,
-		   BUN start, BUN end, const oid *cand, const oid *candend, oid candoff,
+		   BUN start, BUN end, const oid *cand,
+		   const oid *candend, oid candoff,
 		   int abort_on_error, const char *func)
 {
 	BUN nils;
@@ -3290,127 +3296,126 @@ VARcalcdecr(ValPtr ret, const ValRecord *v, int abort_on_error)
 /* TYPE4 must be a type larger than both TYPE1 and TYPE2 so that
  * multiplying into it doesn't cause overflow */
 #define MUL_4TYPE(TYPE1, TYPE2, TYPE3, TYPE4)				\
-	static BUN							\
-	mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				MUL4_WITH_CHECK(TYPE1, lft[i],		\
-					       TYPE2, rgt[j],		\
-					       TYPE3, dst[k],		\
-					       TYPE4,			\
-					       return BUN_NONE);	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			MUL4_WITH_CHECK(TYPE1, lft[i],			\
+				       TYPE2, rgt[j],			\
+				       TYPE3, dst[k],			\
+				       TYPE4,				\
+				       return BUN_NONE);		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 #define MUL_3TYPE_enlarge(TYPE1, TYPE2, TYPE3)				\
-	static BUN							\
-	mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start,	\
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff) \
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff)	\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) lft[i] * rgt[j];		\
+		}							\
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
+
+#define MUL_2TYPE_lng(TYPE1, TYPE2)					\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,		\
+			    const TYPE2 *rgt, int incr2,		\
+			    lng *dst, BUN cnt, BUN start,		\
+			    BUN end, const oid *cand,			\
+			    const oid *candend, oid candoff,		\
+			    int abort_on_error)				\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
+									\
+	CANDLOOP(dst, k, lng_nil, 0, start);				\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, lng_nil);			\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = lng_nil;				\
+			nils++;						\
+		} else {						\
+			LNGMUL_CHECK(TYPE1, lft[i],			\
+				     TYPE2, rgt[j],			\
+				     dst[k], return BUN_NONE);		\
+		}							\
+	}								\
+	CANDLOOP(dst, k, lng_nil, end, cnt);				\
+	return nils;							\
+}
+
+#define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
+static BUN								\
+mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
+									\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			/* only check for overflow, not for underflow */ \
+			if (ABSOLUTE(lft[i]) > 1 &&			\
+			    GDK_##TYPE3##_max / ABSOLUTE(lft[i]) < ABSOLUTE(rgt[j])) { \
+				if (abort_on_error)			\
+					return BUN_NONE;		\
 				dst[k] = TYPE3##_nil;			\
 				nils++;					\
 			} else {					\
 				dst[k] = (TYPE3) lft[i] * rgt[j];	\
 			}						\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
-
-#define MUL_2TYPE_lng(TYPE1, TYPE2)					\
-	static BUN							\
-	mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *lft, int incr1,	\
-				    const TYPE2 *rgt, int incr2,	\
-				    lng *dst, BUN cnt, BUN start,	\
-				    BUN end, const oid *cand,		\
-				    const oid *candend, oid candoff,	\
-				    int abort_on_error)			\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
-									\
-		CANDLOOP(dst, k, lng_nil, 0, start);			\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, lng_nil);		\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = lng_nil;			\
-				nils++;					\
-			} else {					\
-				LNGMUL_CHECK(TYPE1, lft[i],		\
-					     TYPE2, rgt[j],		\
-					     dst[k], return BUN_NONE);	\
-			}						\
-		}							\
-		CANDLOOP(dst, k, lng_nil, end, cnt);			\
-		return nils;						\
-	}
-
-#define MUL_2TYPE_float(TYPE1, TYPE2, TYPE3)				\
-	static BUN							\
-	mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start,	\
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
-									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				/* only check for overflow, not for */	\
-				/* underflow */				\
-				if (ABSOLUTE(lft[i]) > 1 &&		\
-				    GDK_##TYPE3##_max / ABSOLUTE(lft[i]) < ABSOLUTE(rgt[j])) { \
-					if (abort_on_error)		\
-						return BUN_NONE;	\
-					dst[k] = TYPE3##_nil;		\
-					nils++;				\
-				} else {				\
-					dst[k] = (TYPE3) lft[i] * rgt[j]; \
-				}					\
-			}						\
-		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 MUL_4TYPE(bte, bte, bte, sht)
 MUL_3TYPE_enlarge(bte, bte, sht)
@@ -4514,72 +4519,71 @@ VARcalcmul(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* division (any numeric type) */
 
 #define DIV_3TYPE(TYPE1, TYPE2, TYPE3)					\
-	static BUN							\
-	div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else if (rgt[j] == 0) {			\
-				if (abort_on_error)			\
-					return BUN_NONE;		\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) (lft[i] / rgt[j]);	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else if (rgt[j] == 0) {				\
+			if (abort_on_error)				\
+				return BUN_NONE;			\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) (lft[i] / rgt[j]);		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 #define DIV_3TYPE_float(TYPE1, TYPE2, TYPE3)				\
-	static BUN							\
-	div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else if (rgt[j] == 0 ||			\
-				   (ABSOLUTE(rgt[j]) < 1 &&		\
-				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
-				/* only check for overflow, not for */	\
-				/* underflow */				\
-				if (abort_on_error)			\
-					return BUN_NONE + (rgt[j] != 0); \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] / rgt[j];	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else if (rgt[j] == 0 ||				\
+			   (ABSOLUTE(rgt[j]) < 1 &&			\
+			    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+			/* only check for overflow, not for underflow */ \
+			if (abort_on_error)				\
+				return BUN_NONE + (rgt[j] != 0);	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) lft[i] / rgt[j];		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 DIV_3TYPE(bte, bte, bte)
 #ifdef FULL_IMPLEMENTATION
@@ -5782,69 +5786,69 @@ VARcalcdiv(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
 /* modulo (any numeric type) */
 
 #define MOD_3TYPE(TYPE1, TYPE2, TYPE3)					\
-	static BUN							\
-	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else if (rgt[j] == 0) {			\
-				if (abort_on_error)			\
-					return BUN_NONE;		\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) lft[i] % rgt[j];	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else if (rgt[j] == 0) {				\
+			if (abort_on_error)				\
+				return BUN_NONE;			\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) lft[i] % rgt[j];		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 #define FMOD_3TYPE(TYPE1, TYPE2, TYPE3, FUNC)				\
-	static BUN							\
-	mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,	\
-					const TYPE2 *rgt, int incr2,	\
-					TYPE3 *dst, BUN cnt, BUN start, \
-					BUN end, const oid *cand,	\
-					const oid *candend, oid candoff, \
-					int abort_on_error)		\
-	{								\
-		BUN i, j, k;						\
-		BUN nils = 0;						\
+static BUN								\
+mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
+				const TYPE2 *rgt, int incr2,		\
+				TYPE3 *dst, BUN cnt, BUN start,		\
+				BUN end, const oid *cand,		\
+				const oid *candend, oid candoff,	\
+				int abort_on_error)			\
+{									\
+	BUN i, j, k;							\
+	BUN nils = 0;							\
 									\
-		CANDLOOP(dst, k, TYPE3##_nil, 0, start);		\
-		for (i = start * incr1, j = start * incr2, k = start;	\
-		     k < end; i += incr1, j += incr2, k++) {		\
-			CHECKCAND(dst, k, candoff, TYPE3##_nil);	\
-			if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) { \
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else if (rgt[j] == 0) {			\
-				if (abort_on_error)			\
-					return BUN_NONE;		\
-				dst[k] = TYPE3##_nil;			\
-				nils++;					\
-			} else {					\
-				dst[k] = (TYPE3) FUNC((TYPE3) lft[i],	\
-						      (TYPE3) rgt[j]);	\
-			}						\
+	CANDLOOP(dst, k, TYPE3##_nil, 0, start);			\
+	for (i = start * incr1, j = start * incr2, k = start;		\
+	     k < end; i += incr1, j += incr2, k++) {			\
+		CHECKCAND(dst, k, candoff, TYPE3##_nil);		\
+		if (lft[i] == TYPE1##_nil || rgt[j] == TYPE2##_nil) {	\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else if (rgt[j] == 0) {				\
+			if (abort_on_error)				\
+				return BUN_NONE;			\
+			dst[k] = TYPE3##_nil;				\
+			nils++;						\
+		} else {						\
+			dst[k] = (TYPE3) FUNC((TYPE3) lft[i],		\
+					      (TYPE3) rgt[j]);		\
 		}							\
-		CANDLOOP(dst, k, TYPE3##_nil, end, cnt);		\
-		return nils;						\
-	}
+	}								\
+	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\
+	return nils;							\
+}
 
 MOD_3TYPE(bte, bte, bte)
 #ifdef FULL_IMPLEMENTATION
@@ -7536,16 +7540,20 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_bte:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7554,16 +7562,20 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_sht:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7572,16 +7584,20 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_int:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7590,16 +7606,20 @@ lsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_lng:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7748,7 +7768,8 @@ BATcalccstlsh(const ValRecord *v, BAT *b, BAT *s, int abort_on_error)
 }
 
 int
-VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_error)
+VARcalclsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt,
+	   int abort_on_error)
 {
 	ret->vtype = lft->vtype;
 	if (lsh_typeswitchloop(VALptr(lft), lft->vtype, 0,
@@ -7779,16 +7800,20 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_bte:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, RSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7797,16 +7822,20 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_sht:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, RSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7815,16 +7844,20 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_int:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(int, bte, int, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, bte, int, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(int, sht, int, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, sht, int, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(int, int, int, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, int, int, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(int, lng, int, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(int, lng, int, RSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -7833,16 +7866,20 @@ rsh_typeswitchloop(const void *lft, int tp1, int incr1,
 	case TYPE_lng:
 		switch (ATOMstorage(tp2)) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, RSH,
+						SHIFT_CHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, RSH, SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, RSH,
+						SHIFT_CHECK);
 			break;
 		default:
 			goto unsupported;
@@ -8309,7 +8346,8 @@ BATcalcbetween_intern(const void *src, int incr1, const char *hp1, int wd1,
 		if (!BATatoms[tp].linear ||
 		    (atomcmp = BATatoms[tp].atomCmp) == NULL) {
 			BBPunfix(bn->batCacheid);
-			GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
+			GDKerror("%s: bad input type %s.\n",
+				 func, ATOMname(tp));
 			return NULL;
 		}
 		nil = ATOMnilptr(tp);
@@ -8572,8 +8610,10 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo, const ValRec
 
 static BAT *
 BATcalcifthenelse_intern(BAT *b,
-			 const void *col1, int incr1, const char *heap1, int width1, int nonil1,
-			 const void *col2, int incr2, const char *heap2, int width2, int nonil2,
+			 const void *col1, int incr1, const char *heap1,
+			 int width1, int nonil1,
+			 const void *col2, int incr2, const char *heap2,
+			 int width2, int nonil2,
 			 int tpe)
 {
 	BAT *bn;
@@ -9622,7 +9662,8 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 					abort_on_error);
 	else if (tp == TYPE_str)
 		nils = convert_any_str(b->T->type, Tloc(b, b->U->first), bn,
-				       cnt, start, end, cand, candend, b->H->seq);
+				       cnt, start, end, cand, candend,
+				       b->H->seq);
 	else if (b->T->type == TYPE_str)
 		nils = convert_str_any(b, tp, Tloc(bn, bn->U->first),
 				       start, end, cand, candend, b->H->seq,
