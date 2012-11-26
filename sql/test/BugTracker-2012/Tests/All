@@ -56,3 +56,4 @@ timestamp-diff.Bug-3190
 string-insert-default-null-crash.Bug-3168
 case_evaluated_too_early.Bug-3186
 recursive_optimizer.Bug-3191
+join_over_multitable_using_index.Bug-3181
