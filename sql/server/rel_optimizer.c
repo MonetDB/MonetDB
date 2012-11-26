@@ -173,6 +173,7 @@ exp_find_column_( sql_rel *rel, sql_exp *exp, int pnr, sql_rel **bt )
 	return NULL;
 }
 
+/* find column for the select/join expression */
 static sql_column *
 sjexp_col(sql_exp *e, sql_rel *r) 
 {
@@ -728,7 +729,7 @@ order_joins(mvc *sql, list *rels, list *exps)
 		/* complex expressions may touch multiple base tables 
 		 * Should be pushed up to extra selection.
 		 * */
-		if (cje->type != e_cmp || !is_complex_exp(cje->flag) /*||
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) /*||
 		   (cje->type == e_cmp && cje->f == NULL)*/) {
 			l = find_one_rel(rels, cje->l);
 			r = find_one_rel(rels, cje->r);
@@ -2051,12 +2052,24 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 				a1 = sql_div_fixup(sql, a1, cond, 0);
 			} else if (a1->type == e_func && a1->l) { 
 				a1->l = exps_case_fixup(sql, a1->l, cond, 0); 
+			} else if (a1->type == e_convert) { 
+				sql_exp *l = a1->l;
+				sql_subfunc *f = l->f;
+
+				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+					a1->l = sql_div_fixup(sql, l, cond, 0);
 			}
 			if  (a2->type == e_func && !a2f->func->s && 
 			     !strcmp(a2f->func->base.name, "sql_div")) { 
 				a2 = sql_div_fixup(sql, a2, cond, 1);
 			} else if (a2->type == e_func && a2->l) { 
 				a2->l = exps_case_fixup(sql, a2->l, cond, 1); 
+			} else if (a2->type == e_convert) { 
+				sql_exp *l = a2->l;
+				sql_subfunc *f = l->f;
+
+				if (l->type == e_func && !f->func->s && !strcmp(f->func->base.name, "sql_div")) 
+					a2->l = sql_div_fixup(sql, l, cond, 1);
 			}
 			nne = exp_op3(sql->sa, cond, a1, a2, ne->f);
 			exp_setname(sql->sa, nne, ne->rname, ne->name );
@@ -2686,6 +2699,10 @@ rel_push_select_down(int *changes, mvc *sql, sql_rel *rel)
 	node *n;
 
 	if (rel_is_ref(rel))
+		return rel;
+
+	/* don't make changes for empty selects */
+	if (is_select(rel->op) && (!rel->exps || list_length(rel->exps) == 0)) 
 		return rel;
 
 	/* merge 2 selects */
@@ -4668,6 +4685,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 	/* Depending on the index type we should (in the rel_bin) generate
 	   more code, ie for spatial index add post filter etc, for hash
 	   compute hash value and use index */
+
 	if (sub->exps && rel->exps) 
 	for(n = sub->exps->h; n; n = n->next) {
 		prop *p;
@@ -4687,6 +4705,8 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 				continue;
 			/* now we obtain the columns, move into sql_column_kc_cmp! */
 			cols = list_map(exps, sub, (fmap) &sjexp_col);
+
+			/* TODO check that at most 2 relations are involved */
 
 			/* Match the index columns with the expression columns. 
 			   TODO, Allow partial matches ! */
@@ -4736,20 +4756,34 @@ rel_use_index(int *changes, mvc *sql, sql_rel *rel)
 		if (i) {
 			prop *p;
 			node *n;
+			int single_table = 1;
+			sql_exp *re = NULL;
 	
-			/* add PROP_HASHCOL to all column exps */
-			for( n = exps->h; n; n = n->next) { 
+			for( n = exps->h; n && single_table; n = n->next) { 
 				sql_exp *e = n->data;
+				sql_exp *nre = e->r;
 
-				/* swapped ? */
 				if (is_join(rel->op) && 
-					 ((left && !rel_find_exp(rel->l, e->l)) ||
-					 (!left && !rel_find_exp(rel->r, e->l)))) 
-					n->data = e = exp_compare(sql->sa, e->r, e->l, cmp_equal);
-				p = find_prop(e->p, PROP_HASHCOL);
-				if (!p)
-					e->p = p = prop_create(sql->sa, PROP_HASHCOL, e->p);
-				p->value = i;
+				 	((left && !rel_find_exp(rel->l, e->l)) ||
+				 	(!left && !rel_find_exp(rel->r, e->l)))) 
+					nre = e->l;
+				single_table = (re && !exps_match_col_exps(nre, re));
+				re = nre;
+			}
+			if (single_table) { /* add PROP_HASHCOL to all column exps */
+				for( n = exps->h; n; n = n->next) { 
+					sql_exp *e = n->data;
+
+					/* swapped ? */
+					if (is_join(rel->op) && 
+					 	((left && !rel_find_exp(rel->l, e->l)) ||
+					 	(!left && !rel_find_exp(rel->r, e->l)))) 
+						n->data = e = exp_compare(sql->sa, e->r, e->l, cmp_equal);
+					p = find_prop(e->p, PROP_HASHCOL);
+					if (!p)
+						e->p = p = prop_create(sql->sa, PROP_HASHCOL, e->p);
+					p->value = i;
+				}
 			}
 			/* add the remaining exps to the new exp list */
 			if (list_length(rel->exps) > list_length(exps)) {
@@ -5597,8 +5631,10 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 
 	rel = rewrite(sql, rel, &rel_merge_table_rewrite, &changes);
 
-	if (changes && level > 10)
+	if (changes && level > 10) {
 		assert(0);
+		return rel;
+	}
 
 	if (changes)
 		return _rel_optimizer(sql, rel, ++level);
