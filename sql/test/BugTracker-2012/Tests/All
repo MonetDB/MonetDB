@@ -65,5 +65,5 @@ insert_gives_39000_program_error.Bug-3097
 create_function.Bug-3172
 currenttime.Bug-2781
 timestamp_minus_date.Bug-2977
+null_except_null.Bug-3040
 create_index_update.Bug-3098.sql
-
