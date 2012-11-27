@@ -1,0 +1,1 @@
+select (localtime() - time '13:33:43' < time '00:00:20') and (time '13:33:43' - localtime() < time '00:00:20');
