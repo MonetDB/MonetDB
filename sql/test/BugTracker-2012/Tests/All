@@ -59,3 +59,4 @@ case_evaluated_too_early.Bug-3186
 recursive_optimizer.Bug-3191
 join_over_multitable_using_index.Bug-3181
 overflow-in-list.Bug-3189
+incorrect_cast_from_double_to_int.Bug-2579
