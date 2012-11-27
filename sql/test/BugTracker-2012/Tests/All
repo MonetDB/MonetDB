@@ -71,3 +71,4 @@ algebra_find.Bug-2728
 row_number_does_not_work_in_complex_query.Bug-2805
 day-of-month-localization.Bug-2962
 scalar_subquery_with_alias.Bug-3093
+power_priority.Bug-2291
