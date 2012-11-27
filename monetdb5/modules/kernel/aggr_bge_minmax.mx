@@ -326,15 +326,26 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
+	/* workaround for bug 3152: if type is str do not create a view and
+	   because an assert will be triggered if the vheap is extended */
+	if (BATttype(b) == TYPE_str) {
+		bn = BATnew(TYPE_oid, BATttype(b), BATcount(e));
+	} else {
+		bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
+	}
 	if( bn == NULL) {
 		GDKerror("aggrX3_@13_@3_@4_@5(): BATnew() failed");
 		return GDK_FAIL;
 	}
 
-	/* init: prepare the result bat;
-	 * trick: by using "tail-type" void, we only write the head column, here */
-	@:init_result(void)@
+	/* do not do "the trick" if str */
+	if (BATttype(b) == TYPE_str) {
+		@:init_result(str)@
+	} else {
+		/* init: prepare the result bat;
+		* trick: by using "tail-type" void, we only write the head column, here */
+		@:init_result(void)@
+	}
 	bni = bat_iterator(bn);
 	cmp = BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
