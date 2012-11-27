@@ -1,11 +1,11 @@
-stdout of test 'currenttime.Bug-2791` in directory 'test/BugTracker-2012` itself:
+stdout of test 'currenttime.Bug-2781` in directory 'test/BugTracker-2012` itself:
 
 
-# 13:47:05 >  
-# 13:47:05 >  "/usr/bin/python" "currenttime.Bug-2791.py" "currenttime.Bug-2791"
-# 13:47:05 >  
+# 14:00:10 >  
+# 14:00:10 >  "/usr/bin/python" "currenttime.Bug-2781.py" "currenttime.Bug-2781"
+# 14:00:10 >  
 
-#select (localtime() - time '13:48:19' < time '00:00:20') and (time '13:48:19' - localtime() < time '00:00:20');
+#select (localtime() - time '14:00:10' < time '00:00:20') and (time '14:00:10' - localtime() < time '00:00:20');
 % . # table_name
 % sql_sub_localtime # name
 % boolean # type
@@ -19,7 +19,7 @@ stdout of test 'currenttime.Bug-2791` in directory 'test/BugTracker-2012` itself
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://london.ins.cwi.nl:30109/
+# Listening for connection requests on mapi:monetdb://london.ins.cwi.nl:32575/
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
@@ -47,7 +47,7 @@ stdout of test 'currenttime.Bug-2791` in directory 'test/BugTracker-2012` itself
 # loading sql script: 80_udf.sql
 # loading sql script: 99_system.sql
 
-# 13:47:05 >  
-# 13:47:05 >  "Done."
-# 13:47:05 >  
+# 14:00:10 >  
+# 14:00:10 >  "Done."
+# 14:00:10 >  
 
