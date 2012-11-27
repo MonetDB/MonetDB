@@ -913,9 +913,6 @@ retryRead:
 				printStackElm(out, mb, stk->stk + i, i, size, first);
 			continue;
 		}
-		case 'S':
-			dumpNamespaceStatistics(out, 1);
-			break;
 		case 'u':
 			if (strncmp("unset", b, 5)) {
 				skipWord(cntxt, b);
