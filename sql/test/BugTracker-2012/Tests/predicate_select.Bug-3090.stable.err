@@ -30,9 +30,9 @@ stderr of test 'predicate_select.Bug-3090` in directory 'test/BugTracker-2012` i
 # 18:53:13 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=32323"
 # 18:53:13 >  
 
-MAPI  = monetdb@madrid:31973
+MAPI  = monetdb@niels:31937
 QUERY = select * from tables where name;
-ERROR = !conversion of string 'r' to type bit failed.
+ERROR = !conversion of string 'systemfunctions' to type bit failed.
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

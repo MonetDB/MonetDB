@@ -596,7 +596,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		sql_exp *re = e->r, *re2 = e->f;
 		prop *p;
 
-		if (e->flag == cmp_filter) {
+		if (get_cmp(e) == cmp_filter) {
 			list *r = e->r;
 
 			re2 = NULL;
@@ -671,6 +671,8 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			} else {
 				r = bin_find_column(sql->sa, right, er->l, TID);
 			}
+			if (!l || !r)
+				return NULL;
 			/* small performance improvement, ie use idx directly */
 			if (l->type == st_alias && 
 			    l->op1->type == st_idxbat &&
@@ -713,7 +715,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 		}
 
 		/* general predicate, select and join */
-		if (e->flag == cmp_filter) {
+		if (get_cmp(e) == cmp_filter) {
 			list *ops;
 
 			if (l->nrcols == 0)
@@ -732,7 +734,10 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stm
 			append(ops, r);
 			append(ops, r2);
 			r = stmt_list(sql->sa, ops);
-			return stmt_genselect(sql->sa, l, r, e->f, sel);
+			s = stmt_genselect(sql->sa, l, r, e->f, sel);
+                        if (s && is_anti(e))
+                        	s->flag |= ANTI;
+                        return s;
 		}
 		if (left && right && !is_select &&
 		   ((l->nrcols && (r->nrcols || (r2 && r2->nrcols))) || 
@@ -1258,14 +1263,31 @@ rel2bin_table( mvc *sql, sql_rel *rel, list *refs)
 		int i;
 		sql_subfunc *f = op->f;
 		sql_table *t = f->res.comp_type;
+		stmt *psub = NULL;
 			
 		if (!t)
 			t = f->func->res.comp_type;
-		sub = exp_bin(sql, op, sub, NULL, NULL, NULL, NULL, NULL); /* table function */
-		if (!t || !sub) { 
+
+		if (rel->l) { /* first construct the sub relation */
+			sql_rel *l = rel->l;
+			if (l->op == op_ddl) {
+				sql_table *t = rel_ddl_table_get(l);
+
+				if (t)
+					sub = rel2bin_sql_table(sql, t);
+			} else {
+				sub = subrel_bin(sql, rel->l, refs);
+			}
+			if (!sub) 
+				return NULL;
+		}
+
+		psub = exp_bin(sql, op, sub, psub, NULL, NULL, NULL, NULL); /* table function */
+		if (!t || !psub) { 
 			assert(0);
 			return NULL;	
 		}
+		sub = psub;
 		l = sa_list(sql->sa);
 		for(i = 0, n = t->columns.set->h; n; n = n->next, i++ ) {
 			sql_column *c = n->data;

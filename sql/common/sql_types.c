@@ -1475,6 +1475,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func3(sa, "like", "str", "like", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func(sa, "ilike", "str", "ilike", *t, *t, BIT, SCALE_NONE);
 		sql_create_func3(sa, "ilike", "str", "ilike", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_like", "str", "not_like", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_like", "str", "not_like", *t, *t, *t, BIT, SCALE_NONE);
+		sql_create_func(sa, "not_ilike", "str", "not_ilike", *t, *t, BIT, SCALE_NONE);
+		sql_create_func3(sa, "not_ilike", "str", "not_ilike", *t, *t, *t, BIT, SCALE_NONE);
 		sql_create_func(sa, "patindex", "pcre", "patindex", *t, *t, INT, SCALE_NONE);
 		sql_create_func(sa, "truncate", "str", "stringleft", *t, INT, *t, SCALE_NONE);
 		sql_create_func(sa, "concat", "calc", "+", *t, *t, *t, DIGITS_ADD);

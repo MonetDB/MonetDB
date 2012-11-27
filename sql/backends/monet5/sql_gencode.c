@@ -1043,6 +1043,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1);
 			int r = s->op2?_dumpstmt(sql, mb, s->op2):-1;
 			int sub = -1;
+			int anti = is_anti(s);
 
 			if (s->op3)
 				sub = _dumpstmt(sql, mb, s->op3);
@@ -1053,7 +1054,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int k;
 				int op3 = -1;
 
-				switch (s->flag) {
+				switch (get_cmp(s)) {
 				case cmp_equal:
 					op = "=";
 					break;
@@ -1080,6 +1081,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					op = sql_func_imp(s->op4.funcval->func);
 					mod  = sql_func_mod(s->op4.funcval->func);
 			
+					assert(anti == 0);
 					r = p2->nr;
 					if (s->op2->op4.lval->h->next) {
 						p3 = s->op2->op4.lval->h->next->data;
@@ -1118,7 +1120,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				if (s->flag != cmp_equal && s->flag != cmp_notequal)
 					cmd = "thetasubselect";
 
-				if (s->flag == cmp_filter) {
+				if (get_cmp(s) == cmp_filter) {
 					node *n;
 					char *mod, *fimp;
 
@@ -1136,7 +1138,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 						q = pushArgument(mb, q, op->nr);
 					}
-					q = pushBit(mb, q, FALSE);
+					q = pushBit(mb, q, anti);
 					s->nr = getDestVar(q);
 					break;
 				}
@@ -1552,7 +1554,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1);
 
 			if (t->type->localtype == f->type->localtype &&
-			    t->type->eclass == f->type->eclass &&
+			   (t->type->eclass == f->type->eclass || 
+			   (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) &&
 			    f->type->eclass != EC_INTERVAL &&
 			    f->type->eclass != EC_DEC &&
 			    (t->digits == 0 ||

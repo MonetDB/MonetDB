@@ -3198,24 +3198,28 @@ like_predicate:
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, FALSE);  /* case sensitive */
-		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
+		  append_int(l, TRUE);  /* anti */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp NOT ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $4);
 		  append_int(l, TRUE);  /* case insensitive */
-		  $$ = _symbol_create_symbol(SQL_NOT, _symbol_create_list( SQL_LIKE, l )); }
+		  append_int(l, TRUE);  /* anti */
+		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp LIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  append_int(l, FALSE);  /* case sensitive */
+		  append_int(l, FALSE);  /* anti */
 		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  |  pred_exp ILIKE like_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
 		  append_int(l, TRUE);  /* case insensitive */
+		  append_int(l, FALSE);  /* anti */
 		  $$ = _symbol_create_list( SQL_LIKE, l ); }
  ;
 

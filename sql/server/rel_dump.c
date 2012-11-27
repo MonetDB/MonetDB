@@ -153,16 +153,18 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	case e_cmp: 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_print(sql, fout, e->l, depth, alias, 1);
-			cmp_print(sql, fout, e->flag );
+			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, alias, 1);
 		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, alias, 1);
-			cmp_print(sql, fout, e->flag );
+			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, alias, 1);
-		} else if (e->flag == cmp_filter) {
+		} else if (get_cmp(e) == cmp_filter) {
 			sql_subfunc *f = e->f;
 
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
+			if (is_anti(e))
+				mnstr_printf(fout, " !");
 			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
 			exps_print(sql, fout, e->r, depth, alias, 1);
 		} else if (e->f) {
@@ -179,7 +181,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 			exp_print(sql, fout, e->l, depth+1, 0, 0);
 			if (is_anti(e))
 				mnstr_printf(fout, " ! ");
-			cmp_print(sql, fout, e->flag );
+			cmp_print(sql, fout, get_cmp(e));
 
 			exp_print(sql, fout, e->r, depth+1, 0, 0);
 		}

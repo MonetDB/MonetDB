@@ -352,7 +352,7 @@ exp_count(int *cnt, int seqnr, sql_exp *e)
 			if (e->f)
 				exp_count(cnt, seqnr, e->f);
 		}	
-		switch (e->flag) {
+		switch (get_cmp(e)) {
 		case cmp_equal:
 			*cnt += 90;
 			return 90;
@@ -519,7 +519,7 @@ exp_joins_rels(sql_exp *e, list *rels)
 		
 	if (e->flag == cmp_or) {
 		l = NULL;
-	} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+	} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 		list *lr = e->r;
 
 		l = find_rel(rels, e->l);
@@ -1067,12 +1067,12 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			list *r = exps_rename(sql, e->r, f, t);
 			if (l && r)
 				ne = exp_or(sql->sa, l,r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			sql_exp *l = exp_rename(sql, e->l, f, t);
 			list *r = exps_rename(sql, e->r, f, t);
 			if (l && r) {
-				if (e->flag == cmp_filter)
-					ne = exp_filter(sql->sa, l, r, e->f);
+				if (get_cmp(e) == cmp_filter) 
+					ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
 				else
 					ne = exp_in(sql->sa, l, r, e->flag);
 			}
@@ -1190,15 +1190,15 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!l || !r) 
 				return NULL;
 			return exp_or(sql->sa, l, r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			list *r;
 
 			l = _exp_push_down(sql, e->l, f, t);
 			r = exps_push_down(sql, e->r, f, t);
 			if (!l || !r)
 				return NULL;
-			if (e->flag == cmp_filter)
-				return exp_filter(sql->sa, l, r, e->f);
+			if (get_cmp(e) == cmp_filter) 
+				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
 			return exp_in(sql->sa, l, r, e->flag);
 		} else {
 			l = _exp_push_down(sql, e->l, f, t);
@@ -1284,7 +1284,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) 
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
 			return 0;
 		return (l->type != e_column && can_push_func(l, rel, &mustl) && (*must = mustl)) || 
 	               (!f && r->type != e_column && can_push_func(r, rel, &mustr) && (*must = mustr)) || 
@@ -1856,14 +1856,14 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!l || !r) 
 				return NULL;
 			return exp_or(sql->sa, l, r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			sql_exp *l = exp_push_down_prj(sql, e->l, f, t);
 			list *r = exps_push_down_prj(sql, e->r, f, t);
 
 			if (!l || !r) 
 				return NULL;
-			if (e->flag == cmp_filter) 
-				return exp_filter(sql->sa, l, r, e->f);
+			if (get_cmp(e) == cmp_filter) 
+				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
 			return exp_in(sql->sa, l, r, e->flag);
 		} else {
 			l = exp_push_down_prj(sql, e->l, f, t);
@@ -4192,7 +4192,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 			l = e->r;
 			for (n = l->h; n != NULL; n = n->next) 
 				exp_mark_used(subrel, n->data);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			list *r = e->r;
 			node *n;
 
@@ -4872,7 +4872,7 @@ rel_simplify_like_select(int *changes, mvc *sql, sql_rel *rel)
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0) {
+			if (e->type == e_cmp && get_cmp(e) == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0) {
 				list *r = e->r;
 				sql_exp *fmt = r->h->data;
 				sql_exp *esc = (r->h->next)?r->h->next->data:NULL;

@@ -102,7 +102,7 @@ subselect_find_subselect( subselect_t *subselects, int tid)
 int
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0;
+	int i, j, limit, slimit, actions=0, *vars, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
 	InstrPtr p, *old;
 	subselect_t subselects;
 
@@ -135,6 +135,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == sliceRef)
 			nr_topn++;
 
+		if (isLikeOp(p))
+			nr_likes++;
+
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef)
 			push_down_delta++;
 
@@ -156,8 +159,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				}
 			}
 		}
-		if (getModuleId(p) == algebraRef && p->retc == 1 &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef) && 
+		if (isSubSelect(p) && p->retc == 1 &&
 		   /* no cand list */ getArgType(mb, p, 2) != newBatType(TYPE_oid, TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
@@ -171,10 +173,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					if (getModuleId(s) == sqlRef && getFunctionId(s) == tidRef) 
 						tid = getArg(q, 1);
 					break;
-				} else if (getModuleId(q) == batcalcRef && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
+				} else if (isMapOp(q) && q->argc >= 2 && isaBatType(getArgType(mb, q, 1))) {
 					int i1 = getArg(q, 1);
 					q = old[vars[i1]];
-				} else if (getModuleId(q) == batcalcRef && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
+				} else if (isMapOp(q) && q->argc >= 3 && isaBatType(getArgType(mb, q, 2))) {
 					int i2 = getArg(q, 2);
 					q = old[vars[i2]];
 				} else {
@@ -188,7 +190,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if ((!subselects.nr && !nr_topn)  || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
+	if ((!subselects.nr && !nr_topn && !nr_likes)  || newMalBlkStmt(mb, mb->ssize+20) <0 ) {
 		GDKfree(vars);
 		return 0;
 	}
@@ -197,11 +199,40 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	for (i = 1; i < limit; i++) {
 		p = old[i];
 
+		/* rewrite batstr.like + subselect -> likesubselect */
+		if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == subselectRef) { 
+			int var = getArg(p, 1);
+			InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
+
+			if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
+				InstrPtr r = newInstruction(mb, ASSIGNsymbol);
+				int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid, TYPE_oid)); 
+				int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
+
+				setModuleId(r, algebraRef);
+				setFunctionId(r, likesubselectRef);
+				getArg(r,0) = getArg(p,0);
+				r = pushArgument(mb, r, getArg(q, 1));
+				if (has_cand)
+					r = pushArgument(mb, r, getArg(p, 2));
+				for(a = 2; a<q->argc; a++)
+					r = pushArgument(mb, r, getArg(q, a));
+				if (r->argc < (4+has_cand))
+					r = pushStr(mb, r, ""); /* default esc */ 
+				if (r->argc < (5+has_cand))
+					r = pushBit(mb, r, ignore_case);
+				if (r->argc < (6+has_cand))
+					r = pushBit(mb, r, anti);
+				freeInstruction(p);
+				p = r;
+				actions++;
+			}
+		}
+
 		/* inject table ids into subselect 
 		 * s = subselect(c, C1..) => subselect(c, t, C1..)
 		 */
-		if (getModuleId(p) == algebraRef && p->retc == 1 &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
+		if (isSubSelect(p) && p->retc == 1) { 
 			int tid = 0;
 
 			if ((tid = subselect_find_tids(&subselects, getArg(p, 0))) >= 0) {
@@ -304,8 +335,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * nu = subselect(uvl, C1..)
 		 * s = subdelta(nc, uid, nu, ni);
 		 */
-		if (getModuleId(p) == algebraRef && p->retc == 1 &&
-		   (getFunctionId(p) == subselectRef || getFunctionId(p) == thetasubselectRef || getFunctionId(p) == likesubselectRef)) { 
+		if (isSubSelect(p) && p->retc == 1) {
 			int var = getArg(p, 1);
 			InstrPtr q = old[vars[var]];
 

@@ -2130,10 +2130,7 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	}
 	if (!f || !ls || !rs)
 		return NULL;
-	e = exp_filter2(sql->sa, ls, rs, rs2, f);
-
-	if (anti)
-		set_anti(e);
+	e = exp_filter2(sql->sa, ls, rs, rs2, f, anti);
 
 	/* atom or row => select */
 	if (ls->card > rel->card) {
@@ -2624,10 +2621,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
+		int anti = sc->data.lval->h->next->next->next->data.i_val;
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
-		char *like = insensitive ? "ilike" : "like";
+		char *like = insensitive ? (anti ? "not_ilike" : "ilike") : (anti ? "not_like" : "like");
 
 		if (!le)
 			return NULL;
@@ -3140,6 +3138,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = sc->data.lval->h->data.sym;
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
+		int anti = sc->data.lval->h->next->next->next->data.i_val;
 		sql_subtype *st = sql_bind_localtype("str");
 		sql_exp *le = rel_value_exp(sql, &rel, lo, f, ek);
 		sql_exp *re, *ee = NULL;
@@ -3170,7 +3169,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 		if ((le = rel_check_type(sql, st, le, type_equal)) == NULL) 
 			return sql_error(sql, 02, "LIKE: wrong type, should be string");
-		return rel_compare_exp(sql, rel, le, re, (insensitive ? "ilike" : "like"), ee, TRUE);
+		return rel_filter_exp_(sql, rel, le, re, ee, (insensitive ? "ilike" : "like"), anti);
 	}
 	case SQL_BETWEEN:
 	case SQL_NOT_BETWEEN:
@@ -4165,6 +4164,144 @@ rel_order_by_simple_column_exp(mvc *sql, sql_rel *r, symbol *column_r)
 	return sql_error(sql, 02, "ORDER BY: absolute column names not supported");
 }
 
+static list *
+rel_projections_(mvc *sql, sql_rel *rel)
+{
+	list *rexps, *exps ;
+
+	if (is_subquery(rel) && is_project(rel->op))
+		return new_exp_list(sql->sa);
+
+	switch(rel->op) {
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+		exps = rel_projections_(sql, rel->l);
+		rexps = rel_projections_(sql, rel->r);
+		exps = list_merge( exps, rexps, (fdup)NULL);
+		return exps;
+	case op_groupby:
+	case op_project:
+	case op_table:
+	case op_basetable:
+	case op_ddl:
+
+	case op_union:
+	case op_except:
+	case op_inter:
+
+		exps = new_exp_list(sql->sa);
+		if (rel->exps) {
+			node *en;
+
+			for (en = rel->exps->h; en; en = en->next) {
+				sql_exp *e = en->data;
+				if (e) {
+					if (e->type == e_column) {
+						sql_exp *oe = e;
+						e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+						exp_setname(sql->sa, e, oe->l, oe->r);
+					}
+					append(exps, e);
+				}
+			}
+		}
+		if (is_groupby(rel->op) && rel->r) {
+			list *l = rel->r;
+			node *en;
+
+			for (en = l->h; en; en = en->next) {
+				sql_exp *e = en->data;
+				if (e) {
+					if (e->type == e_column) {
+						sql_exp *oe = e;
+						e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+						exp_setname(sql->sa, e, oe->l, oe->r);
+					}
+					append(exps, e);
+				}
+			}
+		}
+		return exps;
+	case op_semi:
+	case op_anti:
+
+	case op_select:
+	case op_topn:
+	case op_sample:
+		return rel_projections_(sql, rel->l);
+	default:
+		return NULL;
+	}
+}
+
+/* exp_rewrite */
+static sql_exp * exp_rewrite(mvc *sql, sql_exp *e, sql_rel *t);
+
+static list *
+exps_rename(mvc *sql, list *l, sql_rel *r) 
+{
+	node *n;
+	list *nl = new_exp_list(sql->sa);
+
+	for(n=l->h; n; n=n->next) {
+		sql_exp *arg = n->data;
+
+		arg = exp_rewrite(sql, arg, r);
+		if (!arg) 
+			return NULL;
+		append(nl, arg);
+	}
+	return nl;
+}
+
+static sql_exp *
+exp_rewrite(mvc *sql, sql_exp *e, sql_rel *r) 
+{
+	sql_exp *l, *ne = NULL;
+
+	switch(e->type) {
+	case e_column:
+		if (e->l) { 
+			e = exps_bind_column2(r->exps, e->l, e->r);
+		} else {
+			e = exps_bind_column(r->exps, e->r, NULL);
+		}
+		if (!e)
+			return NULL;
+		return exp_column(sql->sa, e->l, e->r, exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+	case e_aggr:
+	case e_cmp: 
+		return NULL;
+	case e_convert:
+		l = exp_rewrite(sql, e->l, r);
+		if (l)
+			ne = exp_convert(sql->sa, l, exp_fromtype(e), exp_totype(e));
+		break;
+	case e_func: {
+		list *l = e->l, *nl = NULL;
+
+		if (!l) {
+			return e;
+		} else {
+			nl = exps_rename(sql, l, r);
+			if (!nl)
+				return NULL;
+		}
+		if (e->type == e_func)
+			ne = exp_op(sql->sa, nl, e->f);
+		else 
+			ne = exp_aggr(sql->sa, nl, e->f, need_distinct(e), need_no_nil(e), e->card, has_nil(e));
+		break;
+	}	
+	case e_atom:
+	case e_psm:
+		return e;
+	}
+	return ne;
+}
+
 /* second complex columns only */
 static sql_exp *
 rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r)
@@ -4196,6 +4333,24 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r)
 		if (e) {
 			rel_project_add_exp(sql, r, e);
 			e = rel_lastexp(sql, r);
+		}
+		/* try with reverted aliases */
+		if (!e && sql->session->status != -ERR_AMBIGUOUS) {
+			sql_rel *nr = rel_project(sql->sa, r, rel_projections_(sql, r));
+
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+
+			set_processed(nr);
+			e = rel_value_exp(sql, &nr, column_r, sql_sel, ek);
+			if (e) {
+				/* first rewrite e back into current column names */
+				e = exp_rewrite(sql, e, nr);
+				
+				rel_project_add_exp(sql, r, e);
+				e = rel_lastexp(sql, r);
+			}
 		}
 	}
 	if (e)
@@ -4394,23 +4549,21 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 
 			/* group by needed ? */
 			if (e->card > CARD_ATOM && e->card > ek.card) {
+				int processed = is_processed(r);
 				sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(e));
 
 				e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, 0);
-				if (!*rel) {
-					int processed = is_processed(r);
-					r = rel_groupby(sql, r, NULL);
-					e = rel_groupby_add_aggr(sql, r, e);
-					if (processed)
-						set_processed(r);
-				}
+				r = rel_groupby(sql, r, NULL);
+				e = rel_groupby_add_aggr(sql, r, e);
+				if (processed)
+					set_processed(r);
 			}
 			if (*rel) {
 				/* current projection list */
 				sql_rel *p = *rel;
 				list *pre_proj = (*rel)->exps;
 
-				if (is_project((*rel)->op) && (*rel)->l) {
+				if ((*rel)->op == op_project && (*rel)->l) {
 					(*rel)->exps = NULL;
 					p = rel_dup((*rel)->l);
 					rel_destroy(*rel);
@@ -4442,6 +4595,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					rel_setsubquery(r);
 					*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					*rel = rel_project(sql->sa, *rel, pre_proj);
+					if (f != sql_sel)
+						rel_project_add_exp(sql, *rel, e);
 				}
 				*is_last = 1;
 				return rel_lastexp(sql, r);

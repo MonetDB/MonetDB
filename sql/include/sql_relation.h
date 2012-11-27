@@ -62,8 +62,10 @@ typedef struct expression {
 #define EXP_DISTINCT	1
 #define NO_NIL		2
 #define TOPN_INCLUDING	4
-/* ASCENDING > 8 else we have problems with cmp types */
+/* ASCENDING > 15 else we have problems with cmp types */
 #define ASCENDING	16
+#define CMPMASK		(ASCENDING-1)
+#define get_cmp(e) 	(e->flag&CMPMASK)
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128

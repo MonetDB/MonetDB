@@ -119,6 +119,7 @@ opt_export int isFragmentGroup2(InstrPtr q);
 opt_export int isDelta(InstrPtr q);
 opt_export int isMatJoinOp(InstrPtr q);
 opt_export int isMapOp(InstrPtr q);
+opt_export int isLikeOp(InstrPtr q);
 opt_export int isTopn(InstrPtr q);
 opt_export int isSlice(InstrPtr q);
 opt_export int isOrderby(InstrPtr q);

@@ -58,3 +58,6 @@ string-insert-default-null-crash.Bug-3168
 case_evaluated_too_early.Bug-3186
 recursive_optimizer.Bug-3191
 join_over_multitable_using_index.Bug-3181
+rewrite_like_into_likesubselect.Bug-3179
+order_by_on_column_exp.Bug-3193
+table_function_with_column_subselects.Bug-3172

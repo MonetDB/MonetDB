@@ -140,12 +140,12 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e) == cmp_filter)
+#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
 
 /* flag to indicate anti join/select */
-#define ANTI 16
+#define SWAPPED 16
+#define ANTI ANTISEL
 #define GRP_DONE 32
-#define SWAPPED 64
 
 typedef struct stmt {
 	st_type type;

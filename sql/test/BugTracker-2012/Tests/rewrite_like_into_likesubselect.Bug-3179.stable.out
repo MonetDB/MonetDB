@@ -1,0 +1,613 @@
+stdout of test 'rewrite_like_into_likesubselect.Bug-3179` in directory 'test/BugTracker-2012` itself:
+
+
+# 13:28:50 >  
+# 13:28:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=4" "--set" "mapi_open=true" "--set" "mapi_port=31819" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 13:28:50 >  
+
+# MonetDB 5 server v11.14.0
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.778 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:31819/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:28:50 >  
+# 13:28:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=31819"
+# 13:28:50 >  
+
+#start transaction;
+#explain select name,func from functions where name like '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s0_1(A0:str):void;
+    X_87 := nil:bat[:oid,:str];
+    X_88 := nil:bat[:oid,:str];
+    X_89 := nil:bat[:oid,:str];
+    X_90 := nil:bat[:oid,:str];
+    X_91 := nil:bat[:oid,:str];
+    X_92 := nil:bat[:oid,:str];
+    X_93 := nil:bat[:oid,:str];
+    X_94 := nil:bat[:oid,:str];
+barrier X_96 := language.dataflow();
+    X_2 := sql.mvc();
+    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_47:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_48:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_49:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_50:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_75 := algebra.likesubselect(X_47,X_40,A0,"":str,false);
+    X_76 := algebra.likesubselect(X_48,X_42,A0,"":str,false);
+    X_77 := algebra.likesubselect(X_49,X_44,A0,"":str,false);
+    X_78 := algebra.likesubselect(X_50,X_46,A0,"":str,false);
+    X_79 := algebra.likesubselect(X_52,A0,"":str,false);
+    X_80 := algebra.likesubselect(X_54,A0,"":str,false);
+    X_81 := algebra.likesubselect(X_56,A0,"":str,false);
+    X_82 := algebra.likesubselect(X_58,A0,"":str,false);
+    X_37 := algebra.likesubselect(X_8,X_46,A0,"":str,false);
+    X_83 := sql.subdelta(X_75,X_51,X_79);
+    X_84 := sql.subdelta(X_76,X_53,X_80);
+    X_85 := sql.subdelta(X_77,X_55,X_81);
+    X_86 := sql.subdelta(X_78,X_57,X_82,X_37);
+    X_87 := sql.projectdelta(X_83,X_47,X_51,X_52);
+    X_88 := sql.projectdelta(X_84,X_48,X_53,X_54);
+    X_89 := sql.projectdelta(X_85,X_49,X_55,X_56);
+    X_90 := sql.projectdelta(X_86,X_50,X_57,X_58,X_8);
+    X_59:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_60:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_61:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_62:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_67:bat[:oid,:oid] ,X_68:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_13 := sql.bind(X_2,"sys","functions","func",1);
+    X_91 := sql.projectdelta(X_83,X_59,X_63,X_64);
+    X_92 := sql.projectdelta(X_84,X_60,X_65,X_66);
+    X_93 := sql.projectdelta(X_85,X_61,X_67,X_68);
+    X_94 := sql.projectdelta(X_86,X_62,X_69,X_70,X_13);
+exit X_96;
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    X_15 := sql.resultSet(2,1,X_11);
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    sql.rsColumn(X_15,"sys.functions","name","varchar",256,0,X_11);
+    X_14 := mat.pack(X_91,X_92,X_93,X_94);
+    sql.rsColumn(X_15,"sys.functions","func","varchar",8196,0,X_14);
+    X_24 := io.stdout();
+    sql.exportResult(X_24,X_15);
+end s0_1;
+#explain select name,func from functions where name not like '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s1_1(A0:str):void;
+    X_87 := nil:bat[:oid,:str];
+    X_88 := nil:bat[:oid,:str];
+    X_89 := nil:bat[:oid,:str];
+    X_90 := nil:bat[:oid,:str];
+    X_91 := nil:bat[:oid,:str];
+    X_92 := nil:bat[:oid,:str];
+    X_93 := nil:bat[:oid,:str];
+    X_94 := nil:bat[:oid,:str];
+barrier X_96 := language.dataflow();
+    X_2 := sql.mvc();
+    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_47:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_48:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_49:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_50:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_75 := algebra.likesubselect(X_47,X_40,A0,"":str,true);
+    X_76 := algebra.likesubselect(X_48,X_42,A0,"":str,true);
+    X_77 := algebra.likesubselect(X_49,X_44,A0,"":str,true);
+    X_78 := algebra.likesubselect(X_50,X_46,A0,"":str,true);
+    X_79 := algebra.likesubselect(X_52,A0,"":str,true);
+    X_80 := algebra.likesubselect(X_54,A0,"":str,true);
+    X_81 := algebra.likesubselect(X_56,A0,"":str,true);
+    X_82 := algebra.likesubselect(X_58,A0,"":str,true);
+    X_37 := algebra.likesubselect(X_8,X_46,A0,"":str,true);
+    X_83 := sql.subdelta(X_75,X_51,X_79);
+    X_84 := sql.subdelta(X_76,X_53,X_80);
+    X_85 := sql.subdelta(X_77,X_55,X_81);
+    X_86 := sql.subdelta(X_78,X_57,X_82,X_37);
+    X_87 := sql.projectdelta(X_83,X_47,X_51,X_52);
+    X_88 := sql.projectdelta(X_84,X_48,X_53,X_54);
+    X_89 := sql.projectdelta(X_85,X_49,X_55,X_56);
+    X_90 := sql.projectdelta(X_86,X_50,X_57,X_58,X_8);
+    X_59:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_60:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_61:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_62:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_67:bat[:oid,:oid] ,X_68:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_13 := sql.bind(X_2,"sys","functions","func",1);
+    X_91 := sql.projectdelta(X_83,X_59,X_63,X_64);
+    X_92 := sql.projectdelta(X_84,X_60,X_65,X_66);
+    X_93 := sql.projectdelta(X_85,X_61,X_67,X_68);
+    X_94 := sql.projectdelta(X_86,X_62,X_69,X_70,X_13);
+exit X_96;
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    X_15 := sql.resultSet(2,1,X_11);
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    sql.rsColumn(X_15,"sys.functions","name","varchar",256,0,X_11);
+    X_14 := mat.pack(X_91,X_92,X_93,X_94);
+    sql.rsColumn(X_15,"sys.functions","func","varchar",8196,0,X_14);
+    X_24 := io.stdout();
+    sql.exportResult(X_24,X_15);
+end s1_1;
+#explain select name,func from functions where name ilike '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s2_1(A0:str):void;
+    X_87 := nil:bat[:oid,:str];
+    X_88 := nil:bat[:oid,:str];
+    X_89 := nil:bat[:oid,:str];
+    X_90 := nil:bat[:oid,:str];
+    X_91 := nil:bat[:oid,:str];
+    X_92 := nil:bat[:oid,:str];
+    X_93 := nil:bat[:oid,:str];
+    X_94 := nil:bat[:oid,:str];
+barrier X_96 := language.dataflow();
+    X_2 := sql.mvc();
+    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_47:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_48:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_49:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_50:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_75 := algebra.ilikesubselect(X_47,X_40,A0,"":str,false);
+    X_76 := algebra.ilikesubselect(X_48,X_42,A0,"":str,false);
+    X_77 := algebra.ilikesubselect(X_49,X_44,A0,"":str,false);
+    X_78 := algebra.ilikesubselect(X_50,X_46,A0,"":str,false);
+    X_79 := algebra.ilikesubselect(X_52,A0,"":str,false);
+    X_80 := algebra.ilikesubselect(X_54,A0,"":str,false);
+    X_81 := algebra.ilikesubselect(X_56,A0,"":str,false);
+    X_82 := algebra.ilikesubselect(X_58,A0,"":str,false);
+    X_37 := algebra.ilikesubselect(X_8,X_46,A0,"":str,false);
+    X_83 := sql.subdelta(X_75,X_51,X_79);
+    X_84 := sql.subdelta(X_76,X_53,X_80);
+    X_85 := sql.subdelta(X_77,X_55,X_81);
+    X_86 := sql.subdelta(X_78,X_57,X_82,X_37);
+    X_87 := sql.projectdelta(X_83,X_47,X_51,X_52);
+    X_88 := sql.projectdelta(X_84,X_48,X_53,X_54);
+    X_89 := sql.projectdelta(X_85,X_49,X_55,X_56);
+    X_90 := sql.projectdelta(X_86,X_50,X_57,X_58,X_8);
+    X_59:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_60:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_61:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_62:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_67:bat[:oid,:oid] ,X_68:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_13 := sql.bind(X_2,"sys","functions","func",1);
+    X_91 := sql.projectdelta(X_83,X_59,X_63,X_64);
+    X_92 := sql.projectdelta(X_84,X_60,X_65,X_66);
+    X_93 := sql.projectdelta(X_85,X_61,X_67,X_68);
+    X_94 := sql.projectdelta(X_86,X_62,X_69,X_70,X_13);
+exit X_96;
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    X_15 := sql.resultSet(2,1,X_11);
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    sql.rsColumn(X_15,"sys.functions","name","varchar",256,0,X_11);
+    X_14 := mat.pack(X_91,X_92,X_93,X_94);
+    sql.rsColumn(X_15,"sys.functions","func","varchar",8196,0,X_14);
+    X_24 := io.stdout();
+    sql.exportResult(X_24,X_15);
+end s2_1;
+#explain select name,func from functions where name not ilike '%optimizers%';
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s3_1(A0:str):void;
+    X_87 := nil:bat[:oid,:str];
+    X_88 := nil:bat[:oid,:str];
+    X_89 := nil:bat[:oid,:str];
+    X_90 := nil:bat[:oid,:str];
+    X_91 := nil:bat[:oid,:str];
+    X_92 := nil:bat[:oid,:str];
+    X_93 := nil:bat[:oid,:str];
+    X_94 := nil:bat[:oid,:str];
+barrier X_96 := language.dataflow();
+    X_2 := sql.mvc();
+    X_40:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_42:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_44:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_46:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_47:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_48:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_49:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_50:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_51:bat[:oid,:oid] ,X_52:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_53:bat[:oid,:oid] ,X_54:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_55:bat[:oid,:oid] ,X_56:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_57:bat[:oid,:oid] ,X_58:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_75 := algebra.ilikesubselect(X_47,X_40,A0,"":str,true);
+    X_76 := algebra.ilikesubselect(X_48,X_42,A0,"":str,true);
+    X_77 := algebra.ilikesubselect(X_49,X_44,A0,"":str,true);
+    X_78 := algebra.ilikesubselect(X_50,X_46,A0,"":str,true);
+    X_79 := algebra.ilikesubselect(X_52,A0,"":str,true);
+    X_80 := algebra.ilikesubselect(X_54,A0,"":str,true);
+    X_81 := algebra.ilikesubselect(X_56,A0,"":str,true);
+    X_82 := algebra.ilikesubselect(X_58,A0,"":str,true);
+    X_37 := algebra.ilikesubselect(X_8,X_46,A0,"":str,true);
+    X_83 := sql.subdelta(X_75,X_51,X_79);
+    X_84 := sql.subdelta(X_76,X_53,X_80);
+    X_85 := sql.subdelta(X_77,X_55,X_81);
+    X_86 := sql.subdelta(X_78,X_57,X_82,X_37);
+    X_87 := sql.projectdelta(X_83,X_47,X_51,X_52);
+    X_88 := sql.projectdelta(X_84,X_48,X_53,X_54);
+    X_89 := sql.projectdelta(X_85,X_49,X_55,X_56);
+    X_90 := sql.projectdelta(X_86,X_50,X_57,X_58,X_8);
+    X_59:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_60:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_61:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_62:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_67:bat[:oid,:oid] ,X_68:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_69:bat[:oid,:oid] ,X_70:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_13 := sql.bind(X_2,"sys","functions","func",1);
+    X_91 := sql.projectdelta(X_83,X_59,X_63,X_64);
+    X_92 := sql.projectdelta(X_84,X_60,X_65,X_66);
+    X_93 := sql.projectdelta(X_85,X_61,X_67,X_68);
+    X_94 := sql.projectdelta(X_86,X_62,X_69,X_70,X_13);
+exit X_96;
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    X_15 := sql.resultSet(2,1,X_11);
+    X_11 := mat.pack(X_87,X_88,X_89,X_90);
+    sql.rsColumn(X_15,"sys.functions","name","varchar",256,0,X_11);
+    X_14 := mat.pack(X_91,X_92,X_93,X_94);
+    sql.rsColumn(X_15,"sys.functions","func","varchar",8196,0,X_14);
+    X_24 := io.stdout();
+    sql.exportResult(X_24,X_15);
+end s3_1;
+#create function contains(str string, substr string)
+#returns boolean
+#begin
+#	  return str like '%'||substr||'%';
+#end; 
+#create function not_contains(str string, substr string)
+#returns boolean
+#begin
+#	  return str not like '%'||substr||'%';
+#end; 
+#create function icontains(str string, substr string)
+#returns boolean
+#begin
+#	  return str ilike '%'||substr||'%';
+#end; 
+#create function not_icontains(str string, substr string)
+#returns boolean
+#begin
+#	  return str not ilike '%'||substr||'%';
+#end; 
+#explain select name,func from functions where contains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s4_1(A0:str):void;
+    X_94 := nil:bat[:oid,:str];
+    X_95 := nil:bat[:oid,:str];
+    X_96 := nil:bat[:oid,:str];
+    X_97 := nil:bat[:oid,:str];
+    X_99 := nil:bat[:oid,:str];
+    X_101 := nil:bat[:oid,:str];
+    X_103 := nil:bat[:oid,:str];
+    X_105 := nil:bat[:oid,:str];
+barrier X_106 := language.dataflow();
+    X_2 := sql.mvc();
+    X_47:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_49:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_51:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_53:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_54:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_55:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_56:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_57:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_58:bat[:oid,:oid] ,X_59:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_60:bat[:oid,:oid] ,X_61:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_62:bat[:oid,:oid] ,X_63:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_64:bat[:oid,:oid] ,X_65:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_40 := calc.+("%":str,A0);
+    X_41 := calc.+(X_40,"%":str);
+    X_82 := algebra.likesubselect(X_54,X_47,X_41,"",false,false);
+    X_83 := algebra.likesubselect(X_55,X_49,X_41,"",false,false);
+    X_84 := algebra.likesubselect(X_56,X_51,X_41,"",false,false);
+    X_85 := algebra.likesubselect(X_57,X_53,X_41,"",false,false);
+    X_86 := algebra.likesubselect(X_59,X_41,"",false,false);
+    X_87 := algebra.likesubselect(X_61,X_41,"",false,false);
+    X_88 := algebra.likesubselect(X_63,X_41,"",false,false);
+    X_89 := algebra.likesubselect(X_65,X_41,"",false,false);
+    X_44 := algebra.likesubselect(X_8,X_53,X_41,"",false,false);
+    X_90 := sql.subdelta(X_82,X_58,X_86);
+    X_91 := sql.subdelta(X_83,X_60,X_87);
+    X_92 := sql.subdelta(X_84,X_62,X_88);
+    X_93 := sql.subdelta(X_85,X_64,X_89,X_44);
+    X_94 := sql.projectdelta(X_90,X_54,X_58,X_59);
+    X_95 := sql.projectdelta(X_91,X_55,X_60,X_61);
+    X_96 := sql.projectdelta(X_92,X_56,X_62,X_63);
+    X_97 := sql.projectdelta(X_93,X_57,X_64,X_65,X_8);
+    X_66:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_67:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_68:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_69:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_70:bat[:oid,:oid] ,X_71:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_72:bat[:oid,:oid] ,X_73:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_74:bat[:oid,:oid] ,X_75:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_76:bat[:oid,:oid] ,X_77:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_14 := sql.bind(X_2,"sys","functions","func",1);
+    X_99 := sql.projectdelta(X_90,X_66,X_70,X_71);
+    X_101 := sql.projectdelta(X_91,X_67,X_72,X_73);
+    X_103 := sql.projectdelta(X_92,X_68,X_74,X_75);
+    X_105 := sql.projectdelta(X_93,X_69,X_76,X_77,X_14);
+exit X_106;
+    X_10 := mat.pack(X_94,X_95,X_96,X_97);
+    X_16 := sql.resultSet(2,1,X_10);
+    X_10 := mat.pack(X_94,X_95,X_96,X_97);
+    sql.rsColumn(X_16,"sys.functions","name","varchar",256,0,X_10);
+    X_15 := mat.pack(X_99,X_101,X_103,X_105);
+    sql.rsColumn(X_16,"sys.functions","func","varchar",8196,0,X_15);
+    X_27 := io.stdout();
+    sql.exportResult(X_27,X_16);
+end s4_1;
+#explain select name,func from functions where not_contains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s5_1(A0:str):void;
+    X_95 := nil:bat[:oid,:str];
+    X_96 := nil:bat[:oid,:str];
+    X_97 := nil:bat[:oid,:str];
+    X_98 := nil:bat[:oid,:str];
+    X_100 := nil:bat[:oid,:str];
+    X_102 := nil:bat[:oid,:str];
+    X_104 := nil:bat[:oid,:str];
+    X_106 := nil:bat[:oid,:str];
+barrier X_107 := language.dataflow();
+    X_2 := sql.mvc();
+    X_48:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_50:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_52:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_54:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_55:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_56:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_57:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_58:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_40 := calc.+("%":str,A0);
+    X_41 := calc.+(X_40,"%":str);
+    X_83 := algebra.likesubselect(X_55,X_48,X_41,"",false,true:bit);
+    X_84 := algebra.likesubselect(X_56,X_50,X_41,"",false,true:bit);
+    X_85 := algebra.likesubselect(X_57,X_52,X_41,"",false,true:bit);
+    X_86 := algebra.likesubselect(X_58,X_54,X_41,"",false,true:bit);
+    X_87 := algebra.likesubselect(X_60,X_41,"",false,true:bit);
+    X_88 := algebra.likesubselect(X_62,X_41,"",false,true:bit);
+    X_89 := algebra.likesubselect(X_64,X_41,"",false,true:bit);
+    X_90 := algebra.likesubselect(X_66,X_41,"",false,true:bit);
+    X_45 := algebra.likesubselect(X_8,X_54,X_41,"",false,true:bit);
+    X_91 := sql.subdelta(X_83,X_59,X_87);
+    X_92 := sql.subdelta(X_84,X_61,X_88);
+    X_93 := sql.subdelta(X_85,X_63,X_89);
+    X_94 := sql.subdelta(X_86,X_65,X_90,X_45);
+    X_95 := sql.projectdelta(X_91,X_55,X_59,X_60);
+    X_96 := sql.projectdelta(X_92,X_56,X_61,X_62);
+    X_97 := sql.projectdelta(X_93,X_57,X_63,X_64);
+    X_98 := sql.projectdelta(X_94,X_58,X_65,X_66,X_8);
+    X_67:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_68:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_69:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_70:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_71:bat[:oid,:oid] ,X_72:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_73:bat[:oid,:oid] ,X_74:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_75:bat[:oid,:oid] ,X_76:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_77:bat[:oid,:oid] ,X_78:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_14 := sql.bind(X_2,"sys","functions","func",1);
+    X_100 := sql.projectdelta(X_91,X_67,X_71,X_72);
+    X_102 := sql.projectdelta(X_92,X_68,X_73,X_74);
+    X_104 := sql.projectdelta(X_93,X_69,X_75,X_76);
+    X_106 := sql.projectdelta(X_94,X_70,X_77,X_78,X_14);
+exit X_107;
+    X_10 := mat.pack(X_95,X_96,X_97,X_98);
+    X_16 := sql.resultSet(2,1,X_10);
+    X_10 := mat.pack(X_95,X_96,X_97,X_98);
+    sql.rsColumn(X_16,"sys.functions","name","varchar",256,0,X_10);
+    X_15 := mat.pack(X_100,X_102,X_104,X_106);
+    sql.rsColumn(X_16,"sys.functions","func","varchar",8196,0,X_15);
+    X_27 := io.stdout();
+    sql.exportResult(X_27,X_16);
+end s5_1;
+#explain select name,func from functions where icontains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s6_1(A0:str):void;
+    X_95 := nil:bat[:oid,:str];
+    X_96 := nil:bat[:oid,:str];
+    X_97 := nil:bat[:oid,:str];
+    X_98 := nil:bat[:oid,:str];
+    X_100 := nil:bat[:oid,:str];
+    X_102 := nil:bat[:oid,:str];
+    X_104 := nil:bat[:oid,:str];
+    X_106 := nil:bat[:oid,:str];
+barrier X_107 := language.dataflow();
+    X_2 := sql.mvc();
+    X_48:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_50:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_52:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_54:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_55:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_56:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_57:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_58:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_59:bat[:oid,:oid] ,X_60:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_61:bat[:oid,:oid] ,X_62:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_63:bat[:oid,:oid] ,X_64:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_65:bat[:oid,:oid] ,X_66:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_40 := calc.+("%":str,A0);
+    X_41 := calc.+(X_40,"%":str);
+    X_83 := algebra.likesubselect(X_55,X_48,X_41,"",true:bit,false);
+    X_84 := algebra.likesubselect(X_56,X_50,X_41,"",true:bit,false);
+    X_85 := algebra.likesubselect(X_57,X_52,X_41,"",true:bit,false);
+    X_86 := algebra.likesubselect(X_58,X_54,X_41,"",true:bit,false);
+    X_87 := algebra.likesubselect(X_60,X_41,"",true:bit,false);
+    X_88 := algebra.likesubselect(X_62,X_41,"",true:bit,false);
+    X_89 := algebra.likesubselect(X_64,X_41,"",true:bit,false);
+    X_90 := algebra.likesubselect(X_66,X_41,"",true:bit,false);
+    X_45 := algebra.likesubselect(X_8,X_54,X_41,"",true:bit,false);
+    X_91 := sql.subdelta(X_83,X_59,X_87);
+    X_92 := sql.subdelta(X_84,X_61,X_88);
+    X_93 := sql.subdelta(X_85,X_63,X_89);
+    X_94 := sql.subdelta(X_86,X_65,X_90,X_45);
+    X_95 := sql.projectdelta(X_91,X_55,X_59,X_60);
+    X_96 := sql.projectdelta(X_92,X_56,X_61,X_62);
+    X_97 := sql.projectdelta(X_93,X_57,X_63,X_64);
+    X_98 := sql.projectdelta(X_94,X_58,X_65,X_66,X_8);
+    X_67:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_68:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_69:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_70:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_71:bat[:oid,:oid] ,X_72:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_73:bat[:oid,:oid] ,X_74:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_75:bat[:oid,:oid] ,X_76:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_77:bat[:oid,:oid] ,X_78:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_14 := sql.bind(X_2,"sys","functions","func",1);
+    X_100 := sql.projectdelta(X_91,X_67,X_71,X_72);
+    X_102 := sql.projectdelta(X_92,X_68,X_73,X_74);
+    X_104 := sql.projectdelta(X_93,X_69,X_75,X_76);
+    X_106 := sql.projectdelta(X_94,X_70,X_77,X_78,X_14);
+exit X_107;
+    X_10 := mat.pack(X_95,X_96,X_97,X_98);
+    X_16 := sql.resultSet(2,1,X_10);
+    X_10 := mat.pack(X_95,X_96,X_97,X_98);
+    sql.rsColumn(X_16,"sys.functions","name","varchar",256,0,X_10);
+    X_15 := mat.pack(X_100,X_102,X_104,X_106);
+    sql.rsColumn(X_16,"sys.functions","func","varchar",8196,0,X_15);
+    X_27 := io.stdout();
+    sql.exportResult(X_27,X_16);
+end s6_1;
+#explain select name,func from functions where not_icontains(name, 'optimizers');
+% .explain # table_name
+% mal # name
+% clob # type
+% 96 # length
+function user.s7_1(A0:str):void;
+    X_94 := nil:bat[:oid,:str];
+    X_95 := nil:bat[:oid,:str];
+    X_96 := nil:bat[:oid,:str];
+    X_97 := nil:bat[:oid,:str];
+    X_99 := nil:bat[:oid,:str];
+    X_101 := nil:bat[:oid,:str];
+    X_103 := nil:bat[:oid,:str];
+    X_105 := nil:bat[:oid,:str];
+barrier X_106 := language.dataflow();
+    X_2 := sql.mvc();
+    X_47:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",0,4);
+    X_49:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",1,4);
+    X_51:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",2,4);
+    X_53:bat[:oid,:oid]  := sql.tid(X_2,"sys","functions",3,4);
+    X_54:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,0,4);
+    X_55:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,1,4);
+    X_56:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,2,4);
+    X_57:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","name",0,3,4);
+    (X_58:bat[:oid,:oid] ,X_59:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,0,4);
+    (X_60:bat[:oid,:oid] ,X_61:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,1,4);
+    (X_62:bat[:oid,:oid] ,X_63:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,2,4);
+    (X_64:bat[:oid,:oid] ,X_65:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","name",2,3,4);
+    X_8 := sql.bind(X_2,"sys","functions","name",1);
+    X_40 := calc.+("%":str,A0);
+    X_41 := calc.+(X_40,"%":str);
+    X_82 := algebra.likesubselect(X_54,X_47,X_41,"",true:bit,true:bit);
+    X_83 := algebra.likesubselect(X_55,X_49,X_41,"",true:bit,true:bit);
+    X_84 := algebra.likesubselect(X_56,X_51,X_41,"",true:bit,true:bit);
+    X_85 := algebra.likesubselect(X_57,X_53,X_41,"",true:bit,true:bit);
+    X_86 := algebra.likesubselect(X_59,X_41,"",true:bit,true:bit);
+    X_87 := algebra.likesubselect(X_61,X_41,"",true:bit,true:bit);
+    X_88 := algebra.likesubselect(X_63,X_41,"",true:bit,true:bit);
+    X_89 := algebra.likesubselect(X_65,X_41,"",true:bit,true:bit);
+    X_44 := algebra.likesubselect(X_8,X_53,X_41,"",true:bit,true:bit);
+    X_90 := sql.subdelta(X_82,X_58,X_86);
+    X_91 := sql.subdelta(X_83,X_60,X_87);
+    X_92 := sql.subdelta(X_84,X_62,X_88);
+    X_93 := sql.subdelta(X_85,X_64,X_89,X_44);
+    X_94 := sql.projectdelta(X_90,X_54,X_58,X_59);
+    X_95 := sql.projectdelta(X_91,X_55,X_60,X_61);
+    X_96 := sql.projectdelta(X_92,X_56,X_62,X_63);
+    X_97 := sql.projectdelta(X_93,X_57,X_64,X_65,X_8);
+    X_66:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,0,4);
+    X_67:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,1,4);
+    X_68:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,2,4);
+    X_69:bat[:oid,:str]  := sql.bind(X_2,"sys","functions","func",0,3,4);
+    (X_70:bat[:oid,:oid] ,X_71:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,0,4);
+    (X_72:bat[:oid,:oid] ,X_73:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,1,4);
+    (X_74:bat[:oid,:oid] ,X_75:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,2,4);
+    (X_76:bat[:oid,:oid] ,X_77:bat[:oid,:str] ) := sql.bind(X_2,"sys","functions","func",2,3,4);
+    X_14 := sql.bind(X_2,"sys","functions","func",1);
+    X_99 := sql.projectdelta(X_90,X_66,X_70,X_71);
+    X_101 := sql.projectdelta(X_91,X_67,X_72,X_73);
+    X_103 := sql.projectdelta(X_92,X_68,X_74,X_75);
+    X_105 := sql.projectdelta(X_93,X_69,X_76,X_77,X_14);
+exit X_106;
+    X_10 := mat.pack(X_94,X_95,X_96,X_97);
+    X_16 := sql.resultSet(2,1,X_10);
+    X_10 := mat.pack(X_94,X_95,X_96,X_97);
+    sql.rsColumn(X_16,"sys.functions","name","varchar",256,0,X_10);
+    X_15 := mat.pack(X_99,X_101,X_103,X_105);
+    sql.rsColumn(X_16,"sys.functions","func","varchar",8196,0,X_15);
+    X_27 := io.stdout();
+    sql.exportResult(X_27,X_16);
+end s7_1;
+#rollback;
+
+# 13:28:51 >  
+# 13:28:51 >  "Done."
+# 13:28:51 >  
+
