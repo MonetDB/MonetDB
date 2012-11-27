@@ -1600,27 +1600,21 @@ rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
  */
 
 static list *
-sum_limit_offset(sql_allocator *sa, list *exps )
+sum_limit_offset(mvc *sql, list *exps )
 {
-	list *nexps = new_exp_list(sa);
-	wrd l = 0;
+	list *nexps = new_exp_list(sql->sa);
 	node *n;
+	sql_subtype *wrd = sql_bind_localtype("wrd");
+	sql_subfunc *add;
 
 	/* if the expression list only consists of a limit expression, 
 	 * we copy it */
 	if (list_length(exps) == 1 && exps->h->data)
 		return append(nexps, exps->h->data);
-	for (n = exps->h; n; n = n->next ) {
-		sql_exp *e = n->data;
-
-		if (e) {
-			atom *a = e->l;
-
-			assert(e->type == e_atom);
-			l += a->data.val.wval;
-		}
-	}
-	return append(nexps, exp_atom_wrd(sa, l));
+	for (n = exps->h; n; n = n->next ) 
+		nexps = append(nexps, n->data);
+	add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", wrd, wrd, wrd);
+	return append(nexps, exp_op(sql->sa, exps, add));
 }
 
 static int 
@@ -1715,11 +1709,11 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			ul = rel_project(sql->sa, ul, NULL);
 			ul->exps = exps_copy(sql->sa, r->exps);
 			ul->r = exps_copy(sql->sa, r->r);
-			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql->sa, rel->exps));
+			ul = rel_topn(sql->sa, ul, sum_limit_offset(sql, rel->exps));
 			ur = rel_project(sql->sa, ur, NULL);
 			ur->exps = exps_copy(sql->sa, r->exps);
 			ur->r = exps_copy(sql->sa, r->r);
-			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql->sa, rel->exps));
+			ur = rel_topn(sql->sa, ur, sum_limit_offset(sql, rel->exps));
 			u = rel_setop(sql->sa, ul, ur, op_union);
 			u->exps = exps_copy(sql->sa, r->exps); 
 			/* zap names */
@@ -1743,14 +1737,14 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 			}
 		}
 		if (r && r != rel && r->op == op_project && !(rel_is_ref(r)) && !r->r && r->l) {
-			r = rel_topn(sql->sa, r, sum_limit_offset(sql->sa, rel->exps));
+			r = rel_topn(sql->sa, r, sum_limit_offset(sql, rel->exps));
 		}
 
 		/* push topn under crossproduct */
 		if (r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		    ((sql_rel *)r->l)->op != op_topn && ((sql_rel *)r->r)->op != op_topn) {
-			r->l = rel_topn(sql->sa, r->l, sum_limit_offset(sql->sa, rel->exps));
-			r->r = rel_topn(sql->sa, r->r, sum_limit_offset(sql->sa, rel->exps));
+			r->l = rel_topn(sql->sa, r->l, sum_limit_offset(sql, rel->exps));
+			r->r = rel_topn(sql->sa, r->r, sum_limit_offset(sql, rel->exps));
 			(*changes)++;
 			return rel;
 		}
@@ -1763,8 +1757,8 @@ rel_push_topn_down(int *changes, mvc *sql, sql_rel *rel)
 		    rp->op == op_join && rp->exps && rp->exps->h && ((prop*)((sql_exp*)rp->exps->h->data)->p)->kind == PROP_FETCH &&
 		    ((sql_rel *)rp->l)->op != op_topn && ((sql_rel *)rp->r)->op != op_topn) {
 			/* TODO check if order by columns are independend of join conditions */
-			r->l = rel_topn(sql->sa, r->l, sum_limit_offset(sql->sa, rel->exps));
-			r->r = rel_topn(sql->sa, r->r, sum_limit_offset(sql->sa, rel->exps));
+			r->l = rel_topn(sql->sa, r->l, sum_limit_offset(sql, rel->exps));
+			r->r = rel_topn(sql->sa, r->r, sum_limit_offset(sql, rel->exps));
 			(*changes)++;
 			return rel;
 		}
