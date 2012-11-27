@@ -63,3 +63,4 @@ incorrect_cast_from_double_to_int.Bug-2579
 conditions_when_for_triggers_do_not_work.Bug-2073
 insert_gives_39000_program_error.Bug-3097
 create_function.Bug-3172
+currenttime.Bug-2791
