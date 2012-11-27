@@ -54,25 +54,41 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!eligible(mb))
 		return 0;
 
-	/* locate the largest non-partitioned table */
+	old = mb->stmt;
 	for (i = 1; i < mb->stop; i++) {
-		q = getInstrPtr(mb, i);
-		if (getModuleId(q) != sqlRef || getFunctionId(q) != bindRef)
+		InstrPtr p = old[i];
+
+		/* mitosis/mergetable bailout conditions */
+		
+		/* Mergetable cannot handle order related batcalc ops */
+		if ((getModuleId(p) == batcalcRef || getModuleId(p) == sqlRef) && 
+		   (getFunctionId(p) == rankRef || getFunctionId(p) == rank_grpRef ||
+		    getFunctionId(p) == mark_grpRef || getFunctionId(p) == dense_rank_grpRef)) 
+			return 0;
+
+		if (getModuleId(p) == aggrRef && getFunctionId(p) == submedianRef) 
+			return 0;
+		/* Mergetable cannot handle intersect/except's for now */
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) 
+			return 0;
+
+		/* locate the largest non-partitioned table */
+		if (getModuleId(p) != sqlRef || getFunctionId(p) != bindRef)
 			continue;
 		/* don't split insert BATs */
-		if (getVarConstant(mb, getArg(q, 5)).val.ival == 1)
+		if (getVarConstant(mb, getArg(p, 5)).val.ival == 1)
 			continue;
-		if (q->argc > 6)
+		if (p->argc > 6)
 			continue;  /* already partitioned */
 		/*
 		 * The SQL optimizer already collects the counts of the base
 		 * table and passes them on as a row property.  All pieces for a
 		 * single subplan should ideally fit together.
 		 */
-		r = getVarRows(mb, getArg(q, 0));
+		r = getVarRows(mb, getArg(p, 0));
 		if (r >= rowcnt) {
 			rowcnt = r;
-			target = q;
+			target = p;
 			estimate++;
 			r = 0;
 		}
@@ -128,7 +144,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
 				 rowcnt, r, threads, pieces);
 
-	old = mb->stmt;
+
 	limit = mb->stop;
 	if (newMalBlkStmt(mb, mb->ssize + 2 * estimate) < 0)
 		return 0;

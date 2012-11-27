@@ -24,10 +24,6 @@
  * The groups optimizer takes a grouping sequence and attempts to minimize the intermediate result.
  * The choice depends on a good estimate of intermediate results using properties.
  */
-typedef struct{
-	int *arg;
-	BAT *b;
-} Elm;
 
 str
 GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

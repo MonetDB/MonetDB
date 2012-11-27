@@ -1095,47 +1095,48 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old;
 	mat_t *mat;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, mtop=0, slimit;
-	int size=0, match, actions=0, distinct_topn = 0, topn_res = 0;
-
+	int size=0, match, actions=0, distinct_topn = 0, topn_res = 0, groupdone = 0, *vars;
 
 	old = mb->stmt;
 	oldtop= mb->stop;
 
+        vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop; i++) {
+		int j;
+
 		p = old[i];
 
-		/* bail out on multiple subgroups (ie distinct) */
-		if (getModuleId(p) == groupRef && getFunctionId(p) == subgroupdoneRef) {
-			if (size > 0)
-				return 0;
-			size++;
+		for (j = 0; j<p->retc; j++) {
+ 			int res = getArg(p, j);
+			vars[res] = i;
 		}
-		if ((getModuleId(p) == batcalcRef || getModuleId(p) == sqlRef) && 
-		   (getFunctionId(p) == rankRef || getFunctionId(p) == rank_grpRef ||
-		    getFunctionId(p) == mark_grpRef || getFunctionId(p) == dense_rank_grpRef)) { 
-			/* Mergetable cannot handle order related batcalc ops */
-			return 0;
+
+		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
+		if (getModuleId(p) == groupRef && p->argc == 5 && 
+		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef)) {
+			InstrPtr q = old[vars[getArg(p, p->argc-1)]]; /* group result from a previous group(done) */
+
+			if (getModuleId(q) == groupRef && getFunctionId(q) == subgroupdoneRef)
+				groupdone = 1;
 		}
-		if (getModuleId(p) == aggrRef && 
-		    getFunctionId(p) == submedianRef)
-			return 0;
 
 		if (isTopn(p))
 			topn_res = getArg(p, 0);
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == markTRef && getArg(p, 1) == topn_res)
 			distinct_topn = 1;
 	}
+	GDKfree(vars);
 
 	/* the number of MATs is limited to the variable stack*/
 	mat = (mat_t*) GDKzalloc(mb->vtop * sizeof(mat_t));
-	if ( mat == NULL)
+	if ( mat == NULL) 
 		return 0;
 
 	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize)? mb->ssize:(int)(mb->stop * 1.2);
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
-	if ( mb->stmt == NULL){
+	if ( mb->stmt == NULL) {
 		mb->stmt = old;
 		return 0;
 	}
@@ -1222,14 +1223,14 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* Now we handle subgroup and aggregation statements. */
-		if (match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
+		if (!groupdone && match == 1 && bats == 1 && p->argc == 4 && getModuleId(p) == groupRef && 
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
 	 	   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0)) {
 			mtop = mat_group_new(mb, p, mat, mtop, m);
 			actions++;
 			continue;
 		}
-		if (match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef && 
+		if (!groupdone && match == 2 && bats == 2 && p->argc == 5 && getModuleId(p) == groupRef && 
 		   (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef) && 
 		   ((m=is_a_mat(getArg(p,p->retc), mat, mtop)) >= 0) &&
 		   ((n=is_a_mat(getArg(p,p->retc+1), mat, mtop)) >= 0) && 
