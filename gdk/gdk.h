@@ -772,8 +772,8 @@ gdk_export int VALisnil(const ValRecord *v);
  *           oid    talign;           // alignment OID for head.
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
- *           Heap   theap;            // heap for varsized tail values
- *           Hash   thash;            // linear chained hash table on tail
+ *           Heap   *theap;           // heap for varsized tail values
+ *           Hash   *thash;           // linear chained hash table on tail
  *  } BAT;
  * @end verbatim
  *
