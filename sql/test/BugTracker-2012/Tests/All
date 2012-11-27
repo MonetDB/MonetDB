@@ -61,3 +61,4 @@ join_over_multitable_using_index.Bug-3181
 overflow-in-list.Bug-3189
 incorrect_cast_from_double_to_int.Bug-2579
 conditions_when_for_triggers_do_not_work.Bug-2073
+insert_gives_39000_program_error.Bug-3097
