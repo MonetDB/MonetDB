@@ -60,6 +60,7 @@ recursive_optimizer.Bug-3191
 join_over_multitable_using_index.Bug-3181
 strange_escaping_in_csv.Bug-2133
 overflow-in-list.Bug-3189
+now_results_in_illegal_argument.Bug-2978
 incorrect_cast_from_double_to_int.Bug-2579
 conditions_when_for_triggers_do_not_work.Bug-2073
 insert_gives_39000_program_error.Bug-3097
