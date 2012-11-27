@@ -455,6 +455,8 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
  * The events may be sent for offline processing through a
  * stream, including "stdout".
  */
+
+
 str
 setLogFile(stream *fd, Module mod, str fname)
 {
@@ -1252,38 +1254,48 @@ static struct{
 static char cpuload[BUFSIZ];
 
 static int gatherCPULoad(void){
-    int cpu, len;
+    int cpu, len, i;
 	long user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
-	FILE *proc;
+	static FILE *proc= NULL;
 
-	proc = fopen("/proc/stat","r");
+	if ( proc == NULL || ferror(proc))
+		proc = fopen("/proc/stat","r");
+	else rewind(proc);
 	if ( proc == NULL) {
 		/* unexpected */
 		return -1;
 	}
-	while (fgets(buf, BUFSIZ,proc) != NULL)
-	if ( strncmp(buf,"cpu",3)== 0){
-		s= buf+3;
-		if ( *s == ' ') {
-			s++;
-			cpu = 0;
-		} else{
-			cpu = atoi(s);
-			s= strchr(buf,' ');
-			if ( s== 0) break;
-		}
-		while( *s && isspace((int)*s)) s++;
-		(void) sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
-		corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-		if ( corestat[cpu].load )
-			corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
-		corestat[cpu].user = user;
-		corestat[cpu].nice = nice;
-		corestat[cpu].system = system;
-		corestat[cpu].idle = idle;
-		corestat[cpu].iowait = iowait;
-	} else break;
+	/* read complete file to avoid concurrent write issues */
+	if ( fread(buf, 1, BUFSIZ,proc) == 0 )
+		return -1;
+	for ( s= buf; *s; s++)
+	{
+		if ( strncmp(s,"cpu",3)== 0){
+			s +=3;
+			if ( *s == ' ') {
+				s++;
+				cpu = 0;
+			} else{
+				cpu = atoi(s);
+				s= strchr(s,' ');
+				if ( s== 0) goto skip;
+			}
+			while( *s && isspace((int)*s)) s++;
+			i= sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
+			if ( i != 5 )
+				goto skip;
+			corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+			if ( corestat[cpu].load )
+				corestat[cpu].load = corestat[cpu].load / (corestat[cpu].load + idle - corestat[cpu].idle);
+			corestat[cpu].user = user;
+			corestat[cpu].nice = nice;
+			corestat[cpu].system = system;
+			corestat[cpu].idle = idle;
+			corestat[cpu].iowait = iowait;
+		} 
+		skip: while( *s && *s != '\n') s++;
+	}
 
 	s= cpuload;
 	len = BUFSIZ;
@@ -1292,18 +1304,17 @@ static int gatherCPULoad(void){
 		len -= (int)strlen(s);
 		s += (int) strlen(s);
 	}
-	fclose(proc);
 	return 0;
 }
 
 static void profilerHeartbeat(void *dummy){
-	Thread thr = THRnew("profilerHeartbeat");
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
 #endif
 	struct timeval tv;
-	time_t clock, prevclock=0;
+	time_t clock;
+	//time_t prevclock=0;
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
@@ -1315,17 +1326,13 @@ static void profilerHeartbeat(void *dummy){
 	(void) dummy;
 	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
-	prevclock = (time_t) tv.tv_sec;
+	//prevclock = (time_t) tv.tv_sec;
 
-	while (eventstream ){
+	while (1){
+		/* wait until you need this info */
+		while( hbdelay ==0 || eventstream  == NULL ) 
+			MT_sleep_ms(1000);
 		MT_sleep_ms(hbdelay);
-		if (delayswitch > 0) {
-			/* first call to profiled */
-			offlineProfilerHeader();
-			delayswitch--;
-		}
-		if (eventstream == NULL)
-			continue;
 
 		/* without this cast, compilation on Windows fails with
 		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
@@ -1335,11 +1342,11 @@ static void profilerHeartbeat(void *dummy){
 		clock = (time_t) tv.tv_sec;
 
 		/* get CPU load on second boundaries only */
-		if ( clock - prevclock >= 0 ) {
+		//if ( clock - prevclock >= 0 ) {
 			if ( gatherCPULoad() )
 				continue;
-			prevclock = clock;
-		}
+			//prevclock = clock;
+		//}
 		MT_lock_set(&mal_profileLock, "profileLock");
 #ifdef HAVE_TIMES
 		times(&newTms);
@@ -1428,12 +1435,9 @@ static void profilerHeartbeat(void *dummy){
 		MT_lock_unset(&mal_profileLock, "profileLock");
 	}
 	hbdelay = 0;
-	THRdel(thr);
 }
 
 void startHeartbeat(int delay){
-	MT_Id p;
-
 	if ( delay < 0 )
 		return;
 	if ( hbdelay ) {
@@ -1442,9 +1446,14 @@ void startHeartbeat(int delay){
 		return;
 	}
 	hbdelay = delay;
-	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
 }
 
 void stopHeartbeat(void){
 	hbdelay = 0;
+}
+
+void initHeartbeat(void)
+{
+	static MT_Id p =0;
+	MT_create_thread(&p, profilerHeartbeat, (void *) 0, MT_THR_JOINABLE);
 }

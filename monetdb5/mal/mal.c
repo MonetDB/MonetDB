@@ -240,6 +240,7 @@ int mal_init(void){
 		monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
 	initParser();
+	initHeartbeat();
 	RECYCLEinit();
 	if( malBootstrap() == 0)
 		return -1;
