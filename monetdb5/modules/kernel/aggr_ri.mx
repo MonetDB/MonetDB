@@ -28,8 +28,6 @@ All Rights Reserved.
 @= init_result
 {
 	register BUN _cnt = BATcount(e);
-	BAT *bm = 0;
-
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	bn->T->nonil = 0;
@@ -57,7 +55,7 @@ All Rights Reserved.
 			BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
 		}
 	}
-#if (TYPE_@1 != TYPE_void) && (TYPE_@1 != TYPE_str)
+#if TYPE_@1 != TYPE_void
 {
 	/* set all sums/avgs/counts to zero; for prod, zero is 1 */
 	BUN _i = 0;
@@ -69,27 +67,16 @@ All Rights Reserved.
 }
 #endif
 	BATsetcount(bn, _cnt);
-#if TYPE_@1 == TYPE_str
-{
-	/* copy head values */
-	BUN _i = 0;
-	oid *bnh = (oid*)Hloc(bn,BUNfirst(bn));
-	oid *eh = (oid*)Hloc(e,BUNfirst(e));
-	(void) bm; /* silence compiler */
-	BATaccessBegin(bn,USE_HEAD,MMAP_SEQUENTIAL);
-	BATaccessBegin(e,USE_HEAD,MMAP_SEQUENTIAL);
-	for (_i = 0; _i < _cnt; _i++)
-		bnh[_i] = eh[_i];
-	BATaccessEnd(bn,USE_HEAD,MMAP_SEQUENTIAL);
-	BATaccessEnd(e,USE_HEAD,MMAP_SEQUENTIAL);
-}
-#else
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
+}
+
+@= finalize_result
+{
+	BAT *bm = 0;
 	bm = VIEWcreate(e,bn);
 	BBPreleaseref(bn->batCacheid);
 	bn = bm;
 	bm = 0;
 	ALIGNsetH(bn, e);
-#endif
 }

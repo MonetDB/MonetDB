@@ -216,6 +216,7 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 		BATgetId(b), BATgetId(e));
 	/* init: set all prods to zero and calculate min/max oid */
 	@:init_result(@3)@
+	@:finalize_result@
 	bni = bat_iterator(bn);
 	off = BUNfirst(bn);
 	range = max - min + 1;

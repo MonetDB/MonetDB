@@ -218,6 +218,7 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 		BATgetId(b),BATgetId(e));
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(dbl)@
+	@:finalize_result@
 	bni = bat_iterator(bn);
 	off = BUNfirst(bn);
 	range = max - min + 1;
@@ -271,7 +272,6 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 			@:aggrX3_avg(0,1,HASHfnd_oid,loc,BUNhloc(bi,p),@1,@2,BUNt@2(bni,r),r-off)@
 		}
 	}
-
 	*ret = bn;
 	return GDK_SUCCEED;
 }

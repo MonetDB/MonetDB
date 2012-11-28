@@ -218,6 +218,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 
 	/* init: set all counts to zero and calculate min/max oid */
 	@:init_result(wrd)@
+	@:finalize_result@
 	bni = bat_iterator(bn);
 	range = max - min + 1;
 

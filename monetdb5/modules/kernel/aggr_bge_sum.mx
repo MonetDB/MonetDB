@@ -286,6 +286,7 @@ CMDaggrX3_sum3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	/* init: set all sums to zero and calculate min/max oid */
 	@:init_result(@2)@
+	@:finalize_result@
 	bni = bat_iterator(bn);
 	off = BUNfirst(bn);
 	*ret = bn;

@@ -102,7 +102,7 @@ All Rights Reserved.
 	/* insert the extreme values into the result */
 	BATaccessBegin(bn,USE_HEAD|USE_TAIL,MMAP_SEQUENTIAL);
 	BATloop(bn, r, q) {
-		oid *h = (oid*)BUNh@4(bni,r);
+		oid *h = (oid*)BUNh@4(ei,r);
 		ptr val = extremes[@8];
 		(void) h;	/* silence compiler about unused variable */
 		Tputvalue(bn, BUNtloc(bni,r), val?val:nil, 0);
@@ -125,7 +125,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[10];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					ptr *val = &extremes[@8];
 					if (*val == NULL || (*cmp)(t,*val) @1 0) {
@@ -143,7 +143,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[10];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					ptr *val = &extremes[@8];
 					if (*val != nil) {
@@ -234,7 +234,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[10];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					oid *val = &extremes[@8];
 					if ((*cmp)(t,val) @1 0) {
@@ -253,7 +253,7 @@ All Rights Reserved.
 			if (w >= base && w < end) {
 				@[10];
 
-				@3(r, bni, (oid*)h);
+				@3(r, ei, (oid*)h);
 				if (r != BUN_NONE) {
 					oid *val = &extremes[@8];
 					if (*val != *(oid*)nil) {
@@ -273,7 +273,7 @@ All Rights Reserved.
 		BATaccessEnd(b,b_use,MMAP_SEQUENTIAL);
 	/* insert the extreme values into the result */
 	BATloop(bn, r, q) {
-		oid *h = (oid*)BUNh@4(bni,r);
+		oid *h = (oid*)BUNh@4(ei,r);
 		oid val = hit[@8] ? extremes[@8] : *(oid*)nil;
 		(void) h;	/* silence compiler about unused variable */
 		Tputvalue(bn, BUNtloc(bni,r), &val, 0);
@@ -295,7 +295,7 @@ static int
 aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 {
 	BAT *bn;
-	BATiter bni, bi = bat_iterator(b);
+	BATiter bni, bi = bat_iterator(b), ei = bat_iterator(e);
 	int (*cmp)(const void *, const void *);
 	ptr nil;
 	BUN off;
@@ -326,26 +326,15 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 		return rtrn;
 	}
 
-	/* workaround for bug 3152: if type is str do not create a view and
-	   because an assert will be triggered if the vheap is extended */
-	if (BATttype(b) == TYPE_str) {
-		bn = BATnew(TYPE_oid, BATttype(b), BATcount(e));
-	} else {
-		bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
-	}
+	bn = BATnew(TYPE_void, BATttype(b), BATcount(e));
 	if( bn == NULL) {
 		GDKerror("aggrX3_@13_@3_@4_@5(): BATnew() failed");
 		return GDK_FAIL;
 	}
 
-	/* do not do "the trick" if str */
-	if (BATttype(b) == TYPE_str) {
-		@:init_result(str)@
-	} else {
-		/* init: prepare the result bat;
-		* trick: by using "tail-type" void, we only write the head column, here */
-		@:init_result(void)@
-	}
+	/* init: prepare the result bat;
+	* trick: by using "tail-type" void, we only write the head column, here */
+	@:init_result(void)@
 	bni = bat_iterator(bn);
 	cmp = BATatoms[bn->ttype].atomCmp;
 	nil = ATOMnilptr(bn->ttype);
@@ -356,6 +345,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 	slots = BATcount(e);
 	if (slots == 0) {
 		/* empty extend => empty result */
+		@:finalize_result@
 		*ret = bn;
 		return GDK_SUCCEED;
 	}
@@ -401,6 +391,7 @@ aggrX3_@13_@3_@4_@5(BAT **ret, BAT *b, BAT *g, BAT *e)
 			@:aggrX3_minmax3_@5(@2,1,HASHfnd_oid,loc,BUNhloc(bi,p),@3,@4,r-off,@6)@
 		}
 	}
+	@:finalize_result@
 	*ret = bn;
 bunins_failed:
 	if (extremes)

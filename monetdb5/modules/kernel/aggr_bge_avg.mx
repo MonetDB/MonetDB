@@ -263,6 +263,7 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 
 	/* init: set all sums & counts to zero and calculate min/max oid */
 	@:init_result(dbl)@
+	@:finalize_result@
 	bni = bat_iterator(bn);
 	off = BUNfirst(bn);
 	range = max - min + 1;
