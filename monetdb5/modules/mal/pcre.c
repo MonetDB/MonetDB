@@ -135,7 +135,28 @@ strcasestr (char *haystack, char *needle)
 #endif
 
 static int
-re_match_ignore(str s, RE *pattern)
+re_simple(const char *pat)
+{
+	int nr = 0;
+	const char *s = pat;
+
+	if (s == 0)
+		return 0;
+	if (*s == '%')
+		s++;
+	while(*s) {
+		if (*s == '_')
+			return 0;
+		if (*s++ == '%')
+			nr++;
+	}
+	if (*(s-1) != '%')
+		return 0;
+	return nr;
+}
+
+static int
+re_match_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
@@ -150,7 +171,7 @@ re_match_ignore(str s, RE *pattern)
 }
 
 static int
-re_match_no_ignore(str s, RE *pattern)
+re_match_no_ignore(const char *s, RE *pattern)
 {
 	RE *r;
 
@@ -165,7 +186,7 @@ re_match_no_ignore(str s, RE *pattern)
 }
 
 static RE *
-re_create( char *pat, int nr)
+re_create( const char *pat, int nr)
 {
 	char *x = GDKstrdup(pat);
 	RE *r = (RE*)GDKmalloc(sizeof(RE)), *n = r;
@@ -513,6 +534,112 @@ pcre_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, i
 	BBPreclaim(bn);
 	my_pcre_free(re);
 	my_pcre_free(pe);
+	*bnp = NULL;
+	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
+}
+
+static str
+re_likesubselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int anti)
+{
+	BATiter bi = bat_iterator(b);
+	BAT *bn;
+	BUN p, q;
+	oid o, off;
+	const char *v;
+	int nr;
+	RE *re = NULL;
+
+	assert(BAThdense(b));
+	assert(ATOMstorage(b->ttype) == TYPE_str);
+	assert(anti == 0 || anti == 1);
+
+	bn = BATnew(TYPE_void, TYPE_oid, s ? BATcount(s) : BATcount(b));
+	if (bn == NULL) 
+		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
+	off = b->hseqbase - BUNfirst(b);
+
+	nr = re_simple(pat);
+	re = re_create(pat, nr);
+	if (!re)
+		throw(MAL, "pcre.likesubselect", MAL_MALLOC_FAIL);
+	if (s && !BATtdense(s)) {
+		const oid *candlist;
+		BUN r;
+
+		assert(BAThdense(s));
+		assert(s->ttype == TYPE_oid || s->ttype == TYPE_void);
+		assert(s->tsorted);
+		assert(s->tkey);
+		/* setup candscanloop loop vars to only iterate over
+		 * part of s that has values that are in range of b */
+		o = b->hseqbase + BATcount(b);
+		q = SORTfndfirst(s, &o);
+		p = SORTfndfirst(s, &b->hseqbase);
+		candlist = (const oid *) Tloc(s, p);
+		if (caseignore) {
+			if (anti)
+				candscanloop(v && *v != '\200' &&
+					re_match_ignore(v, re) == 0);
+			else
+				candscanloop(v && *v != '\200' &&
+					re_match_ignore(v, re));
+		} else {
+			if (anti)
+				candscanloop(v && *v != '\200' &&
+					re_match_no_ignore(v, re) == 0);
+			else
+				candscanloop(v && *v != '\200' &&
+					re_match_no_ignore(v, re));
+		}
+	} else {
+		if (s) {
+			assert(BATtdense(s));
+			p = (BUN) s->tseqbase;
+			q = p + BATcount(s);
+			if ((oid) p < b->hseqbase)
+				p = b->hseqbase;
+			if ((oid) q > b->hseqbase + BATcount(b))
+				q = b->hseqbase + BATcount(b);
+			p += BUNfirst(b);
+			q += BUNfirst(b);
+		} else {
+			p = BUNfirst(b) + off;
+			q = BUNlast(b) + off;
+		}
+		if (caseignore) {
+			if (anti)
+				scanloop(v && *v != '\200' &&
+					re_match_ignore(v, re) == 0);
+			else
+				scanloop(v && *v != '\200' &&
+					re_match_ignore(v, re));
+		} else {
+			if (anti)
+				scanloop(v && *v != '\200' &&
+					re_match_no_ignore(v, re) == 0);
+			else
+				scanloop(v && *v != '\200' &&
+					re_match_no_ignore(v, re));
+		}
+	}
+	bn->tsorted = 1;
+	bn->trevsorted = bn->U->count <= 1;
+	bn->tkey = 1;
+	bn->tdense = bn->U->count <= 1;
+	if (bn->U->count == 1)
+		bn->tseqbase =  * (oid *) Tloc(bn, BUNfirst(bn));
+	bn->hsorted = 1;
+	bn->hdense = 1;
+	bn->hseqbase = 0;
+	bn->hkey = 1;
+	bn->hrevsorted = bn->U->count <= 1;
+	*bnp = bn;
+	re_destroy(re);
+	return MAL_SUCCEED;
+
+  bunins_failed:
+	re_destroy(re);
+	BBPreclaim(bn);
 	*bnp = NULL;
 	throw(MAL, "pcre.likesubselect", OPERATION_FAILED);
 }
@@ -1516,6 +1643,7 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 	BAT *b, *s = NULL, *bn = NULL;
 	str res;
 	char *ppat = NULL;
+	int use_re = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
@@ -1524,26 +1652,36 @@ PCRElikesubselect2(bat *ret, bat *bid, bat *sid, str *pat, str *esc, bit *caseig
 		BBPreleaseref(b->batCacheid);
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
-	res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
-	if (res != MAL_SUCCEED) {
-		BBPreleaseref(b->batCacheid);
-		if (s)
-			BBPreleaseref(s->batCacheid);
-		return res;
-	}
-	if (strcmp(ppat, str_nil) == 0) {
-		GDKfree(ppat);
-		ppat = NULL;
-		if (*caseignore) {
-			ppat = GDKmalloc(strlen(*pat) + 3);
-			if (ppat == NULL)
-				throw(MAL, "algebra.likesubselect", MAL_MALLOC_FAIL);
-			ppat[0] = '^';
-			strcpy(ppat + 1, *pat);
-			strcat(ppat, "$");
+
+	/* no escape, try if a simple list of keywords works */
+	if ((strcmp(*esc, str_nil) == 0 || strlen(*esc) == 0) && 
+             re_simple(*pat) > 0) {
+		use_re = 1;
+	} else {
+		res = sql2pcre(&ppat, *pat, strcmp(*esc, str_nil) != 0 ? *esc : "\\");
+		if (res != MAL_SUCCEED) {
+			BBPreleaseref(b->batCacheid);
+			if (s)
+				BBPreleaseref(s->batCacheid);
+			return res;
+		}
+		if (strcmp(ppat, str_nil) == 0) {
+			GDKfree(ppat);
+			ppat = NULL;
+			if (*caseignore) {
+				ppat = GDKmalloc(strlen(*pat) + 3);
+				if (ppat == NULL)
+					throw(MAL, "algebra.likesubselect", MAL_MALLOC_FAIL);
+				ppat[0] = '^';
+				strcpy(ppat + 1, *pat);
+				strcat(ppat, "$");
+			}
 		}
 	}
-	if (ppat == NULL) {
+
+	if (use_re) {
+		res = re_likesubselect(&bn, b, s, *pat, *caseignore, *anti);
+	} else if (ppat == NULL) {
 		/* no pattern and no special characters: can use normal select */
 		bn = BATsubselect(b, s, *pat, NULL, 1, 1, *anti);
 		if (bn == NULL)
@@ -1569,31 +1707,6 @@ str
 PCRElikesubselect1(bat *ret, bat *bid, str *pat, str *esc, bit *caseignore, bit *anti)
 {
 	return PCRElikesubselect2(ret, bid, NULL, pat, esc, caseignore, anti);
-}
-
-static int
-re_simple(char *pat)
-{
-	int nr = 0;
-	char *s = pat;
-
-#if 0
-	if (*s++ != '%')
-		return 0;
-#endif
-	if (s == 0)
-		return 0;
-	if (*s == '%')
-		s++;
-	while(*s) {
-		if (*s == '_')
-			return 0;
-		if (*s++ == '%')
-			nr++;
-	}
-	if (*(s-1) != '%')
-		return 0;
-	return nr;
 }
 
 static str
