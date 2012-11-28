@@ -186,7 +186,7 @@ mvc_trans(mvc *m)
 
 	store_lock();
 	schema_changed = sql_trans_begin(m->session);
-	if (m->qc && (schema_changed || m->qc->nr > 20000 || err)){
+	if (m->qc && (schema_changed || m->qc->nr > m->cache || err)){
 		if (schema_changed || err) {
 			int seqnr = m->qc->id;
 			if (m->qc)
@@ -427,7 +427,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->emod = mod_none;
 	m->reply_size = 100;
 	m->debug = debug;
-	m->cache = 1;
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	m->history = 0;
 
@@ -495,9 +495,9 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	if (m->debug != debug)
 		stack_set_number(m, "debug", debug);
 	m->debug = debug;
-	if (m->cache != 1)
-		stack_set_number(m, "cache", 1);
-	m->cache = 1;
+	if (m->cache != DEFAULT_CACHESIZE)
+		stack_set_number(m, "cache", DEFAULT_CACHESIZE);
+	m->cache = DEFAULT_CACHESIZE;
 	m->caching = m->cache;
 	if (m->history != 0)
 		stack_set_number(m, "history", 0);
