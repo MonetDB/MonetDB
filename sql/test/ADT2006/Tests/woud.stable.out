@@ -65,7 +65,7 @@ Ready.
 % bigint # type
 % 1 # length
 % . # table_name
-% L4 # name
+% L5 # name
 % double # type
 % 24 # length
 [ NULL	]

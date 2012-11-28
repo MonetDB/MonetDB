@@ -4224,14 +4224,13 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 
 	if ((is_topn(subrel->op) || is_sample(subrel->op)) && subrel->l)
 		subrel = subrel->l;
+	/* everything is used within the set operation */
 	if (rel->exps && subrel->exps) {
-		node *n, *m;
-		for (n=rel->exps->h, m=subrel->exps->h; n && m; n = n->next, m = m->next) {
-			sql_exp *e = n->data;
+		node *m;
+		for (m=subrel->exps->h; m; m = m->next) {
 			sql_exp *se = m->data;
 
-			if (e->used)
-				se->used = 1;
+			se->used = 1;
 		}
 	}
 }
@@ -4453,9 +4452,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_project:
 	case op_groupby: 
 
-	case op_union: 
-	case op_inter: 
-	case op_except: 
 
 		if (rel->l && rel->exps) {
 			node *n;
@@ -4482,6 +4478,10 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			rel->exps = exps;
 		}
 		return rel;
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
 
 	case op_insert:
 	case op_update:

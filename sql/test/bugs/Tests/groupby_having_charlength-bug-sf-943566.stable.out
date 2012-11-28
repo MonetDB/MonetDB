@@ -24,7 +24,7 @@ Ready.
 # 11:55:30 >  
 
 % sys.s,	sys.,	sys.s # table_name
-% name,	char_length_name,	L12 # name
+% name,	char_length_name,	L1 # name
 % varchar,	int,	wrd # type
 % 3,	1,	2 # length
 [ "sys",	3,	10	]
