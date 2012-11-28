@@ -124,6 +124,12 @@ q_create(int sz)
 	return q;
 }
 
+static void
+q_destroy(queue *q)
+{
+	GDKfree(q->data);
+	GDKfree(q);
+}
 
 /* keep a simple LIFO queue. It won't be a large one, so shuffles of requeue is possible */
 /* we might actually sort it for better scheduling behavior */
@@ -597,7 +603,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 	GDKfree(flow->status);
 	GDKfree(flow->edges);
 	GDKfree(flow->nodes);
-	GDKfree(flow->done);
+	q_destroy(flow->done);
 	GDKfree(flow);
 	return ret;
 }
