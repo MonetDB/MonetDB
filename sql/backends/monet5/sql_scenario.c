@@ -267,7 +267,6 @@ global_variables(mvc *sql, char *user, char *schema)
 	sql_subtype ctype;
 	char *typename;
 	lng sec = 0;
-	bit T = TRUE;
 	bit F = FALSE;
 	ValRecord src;
 	str opt;
@@ -275,6 +274,7 @@ global_variables(mvc *sql, char *user, char *schema)
  	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
 	SQLglobal("debug", &sql->debug);
+	SQLglobal("cache", &sql->cache);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 1024, 0);
@@ -293,7 +293,6 @@ global_variables(mvc *sql, char *user, char *schema)
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("cache", &T);
 	SQLglobal("history", &F);
 
 	return 0;
