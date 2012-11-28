@@ -147,6 +147,10 @@ insert_string_bat(BAT *b, BAT *n, int append)
 	BATloop(n, p, q) {
 		if (!append)
 			hp = b->H->type ? BUNhloc(ni, p) : NULL;
+		if (!append && b->H->type && !n->H->type) {
+			o = n->H->seq;
+			hp = &o;
+		}
 
 		tp = b->T->type ? BUNtail(ni, p) : NULL;
 		if (toff != ~ (size_t) 0) {

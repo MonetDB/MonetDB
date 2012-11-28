@@ -2941,7 +2941,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		sql_rel *left = NULL, *right = NULL, *outer = rel;
 		sql_exp *l = rel_value_exp(sql, &left, lo, f, ek), *e, *r = NULL;
 		list *vals = NULL;
-		int correlated = 0, vals_only = 1;
+		int correlated = 0;
 		int l_is_value = 1, r_is_rel = 0;
 
 		if (!l && sql->session->status != -ERR_AMBIGUOUS) {
@@ -2973,53 +2973,80 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		/* list of values or subqueries */
 		if (n->type == type_list) {
 			sql_subtype *st = exp_subtype(l);
+			sql_rel *z = NULL;
 
 			vals = new_exp_list(sql->sa);
+			n = dl->h->next;
 			n = n->data.lval->h;
+
+			/* Simple value list first */
 			for (; n; n = n->next) {
-				symbol *sval = n->data.sym;
-				/* without correlation first */
-				sql_rel *z = NULL;
-				sql_rel *rl;
-
-				r = rel_value_exp(sql, &z, sval, f, ek);
-				if (z)
-					r_is_rel = 1;
-				if (!r && sql->session->status != -ERR_AMBIGUOUS) {
-					/* reset error */
-					sql->session->status = 0;
-					sql->errstr[0] = 0;
-
-					/* TODO remove null checking (not needed in correlated case because of the semi/anti join) ! */
-					if (l_is_value) 
-						rel = rel_dup(outer);
-					else
-						rel = left = rel_dup(left);
-					r = rel_value_exp(sql, &rel, sval, f, ek);
-					if (r && !is_project(rel->op)) {
-						rel = rel_project(sql->sa, rel, NULL);
-						rel_project_add_exp(sql, rel, r);
-					}
-					z = rel;
-					correlated = 1;
-				}
-				if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
-					rel_destroy(right);
+				r = rel_value_exp(sql, &z, n->data.sym, f, ek);
+				if (z || !r)
+					break;
+				if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 					return NULL;
+				list_append(vals, r);
+			}
+			if (!n) { /* correct types */
+				list *nvals = new_exp_list(sql->sa);
+				node *n;
+
+				st = exp_subtype(l);
+				for ( n=vals->h; n; n = n->next) {
+					if ((r = rel_check_type(sql, st, n->data, type_equal)) == NULL) 
+						return NULL;
+					list_append(nvals, r);
 				}
-				if (z) {
-					vals_only = 0;
-					rl = z;
-				} else {
-					list_append(vals, r);
-					rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
+				e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);
+				return rel_select(sql->sa, rel, e);
+			} else { /* complex case */
+				vals = new_exp_list(sql->sa);
+				n = dl->h->next;
+				n = n->data.lval->h;
+				for (; n; n = n->next) {
+					symbol *sval = n->data.sym;
+					/* without correlation first */
+					sql_rel *z = NULL;
+					sql_rel *rl;
+
+					r = rel_value_exp(sql, &z, sval, f, ek);
+					if (z)
+						r_is_rel = 1;
+					if (!r && sql->session->status != -ERR_AMBIGUOUS) {
+						/* reset error */
+						sql->session->status = 0;
+						sql->errstr[0] = 0;
+
+						if (l_is_value) 
+							rel = rel_dup(outer);
+						else
+							rel = left = rel_dup(left);
+						r = rel_value_exp(sql, &rel, sval, f, ek);
+						if (r && !is_project(rel->op)) {
+							rel = rel_project(sql->sa, rel, NULL);
+							rel_project_add_exp(sql, rel, r);
+						}
+						z = rel;
+						correlated = 1;
+					}
+					if (!r || !(r=rel_check_type(sql, st, r, type_equal))) {
+						rel_destroy(right);
+						return NULL;
+					}
+					if (z) {
+						rl = z;
+					} else {
+						list_append(vals, r);
+						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
+					}
+					if (right) {
+						rl = rel_setop(sql->sa, right, rl, op_union);
+						rl->exps = rel_projections(sql, rl, NULL, 0, 1);
+						set_processed(rl);
+					}
+					right = rl;
 				}
-				if (right) {
-					rl = rel_setop(sql->sa, right, rl, op_union);
-					rl->exps = rel_projections(sql, rl, NULL, 0, 1);
-					set_processed(rl);
-				}
-				right = rl;
 			}
 			if (!correlated) {
 				if (right->processed)
@@ -3031,29 +3058,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		}
 
 		if (right) {
-			if (vals_only && !correlated) {
-				list *nvals = sa_list(sql->sa);
-				sql_exp *e = NULL;
-				node *n;
-
-				rel_destroy(right);
-				for(n=vals->h; n; n = n->next) {
-					sql_exp *r = n->data;
-
-					r = rel_check_type(sql, exp_subtype(l), r, type_equal);
-					if (!r)
-						return NULL;
-					append(nvals, r);
-				}
-
-				if (sc->token == SQL_NOT_IN) {
-					e = exp_in(sql->sa, l, nvals, cmp_notin);
-				} else {
-					e = exp_in(sql->sa, l, nvals, cmp_in);
-				}
-				rel = rel_select(sql->sa, rel, e);
-				return rel;
-			}
 			r = rel_lastexp(sql, right);
 			rel = rel_crossproduct(sql->sa, left, right, op_join);
 			if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 

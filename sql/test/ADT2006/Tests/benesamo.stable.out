@@ -190,12 +190,12 @@ Ready.
 [ "Ada",	"Wilson",	"(survived the attack on 1888-28-03)"	]
 [ "Annie",	"Farmer",	"(survived the attack on 1888-11-20)"	]
 % sys.scene_witness # table_name
-% L5 # name
+% L12 # name
 % wrd # type
 % 1 # length
 [ 6	]
 % sys.scene_inspector # table_name
-% L3 # name
+% L4 # name
 % wrd # type
 % 1 # length
 [ 2	]

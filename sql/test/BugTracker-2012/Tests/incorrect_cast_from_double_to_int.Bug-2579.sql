@@ -1,0 +1,11 @@
+select 1.0/2.0;
+select cast (1 as double)/2;
+select 1.0/2.0;
+select 1.0/2.1;
+select 1.1/2.1;
+select 1.1/2.0;
+select 1.0/2.0;
+SELECT '3.1'/'5.1';
+SELECT '3.1'/5.1;
+SELECT 3.1/5.1;
+SELECT 3.1/'5.1';

@@ -19,11 +19,17 @@ stdout of test 'constants-optimizer.Bug-2317` in directory 'test/BugTracker-2010
 
 Ready.
 
+# 16:29:22 >  
+# 16:29:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=37979"
+# 16:29:22 >  
 
-# 00:10:51 >  
-# 00:10:51 >  mclient -lsql -ftest -i -e --host=eir --port=37160 
-# 00:10:51 >  
-
+#set optimizer='accumulator_pipe';
+#select optimizer;
+% . # table_name
+% single_value # name
+% varchar # type
+% 16 # length
+[ "accumulator_pipe"	]
 #create table x( id serial, a varchar(1000));
 #drop table x;
 

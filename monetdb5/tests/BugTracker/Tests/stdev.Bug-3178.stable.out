@@ -1,0 +1,44 @@
+stdout of test 'stdev.Bug-3178` in directory 'tests/BugTracker` itself:
+
+
+# 11:24:28 >  
+# 11:24:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/export/scratch2/zhang/monet-install/bugday/debug/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=38647" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_tests_BugTracker" "stdev.Bug-3178.mal"
+# 11:24:28 >  
+
+# MonetDB 5 server v11.13.6
+# This is an unreleased version
+# Serving database 'mTests_tests_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://riga.ins.cwi.nl:38647/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+# MonetDB/DataCell loaded
+function user.main():void;
+    b3178 := bat.new(:oid,:int);
+    b3178 := bat.append(b3178,20);
+    b3178 := bat.append(b3178,480);
+    b3178 := bat.append(b3178,28);
+    b3178 := bat.append(b3178,841);
+    b3178 := bat.append(b3178,8492);
+    a3178 := aggr.stdev(b3178);
+    io.print(a3178);
+    b3178 := bat.append(b3178,429496700);
+    b3178 := bat.append(b3178,429496700);
+    b3178 := bat.append(b3178,429496700);
+    b3178 := bat.append(b3178,492);
+    b3178 := bat.append(b3178,92);
+    a3178 := aggr.stdev(b3178);
+    io.print(a3178);
+end main;
+[ 3660.7739891995500 ]
+[ 207465895.60681600 ]
+
+# 11:24:28 >  
+# 11:24:28 >  "Done."
+# 11:24:28 >  
+

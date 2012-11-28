@@ -299,7 +299,7 @@
 			return FALSE;
 		}
 		
-		if (($row_array =  monetdb_fetch_assoc(&$hdl, $row)) == FALSE) {
+		if (($row_array =  monetdb_fetch_assoc($hdl, $row)) == FALSE) {
 			return FALSE;
 		}
 		
