@@ -3555,12 +3555,16 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 			if (l && r)
 				return exp_binop(sql->sa, l, r, f);
 		}
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+
+		l = ol;
+		r = or;
 	}
-	if (r && l)
-		res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'",
-				fname,
-				exp_subtype(l)->type->sqlname,
-				exp_subtype(r)->type->sqlname);
+	res = sql_error(sql, 02, "SELECT: no such binary operator '%s(%s,%s)'", fname,
+			exp_subtype(l)->type->sqlname,
+			exp_subtype(r)->type->sqlname);
 	return res;
 }
 

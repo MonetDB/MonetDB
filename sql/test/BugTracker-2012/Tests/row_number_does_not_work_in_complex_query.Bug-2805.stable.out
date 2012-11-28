@@ -254,7 +254,7 @@ Ready.
 [ 1	]
 #with Raw as (select a,b,c,count(*) as value from  T where e<10 and c<50 group by a,b,c) select Raw.*, row_number() over (partition by a order by value desc) from Raw;
 % sys.raw,	sys.raw,	sys.raw,	sys.raw,	. # table_name
-% a,	b,	c,	value,	row_number_value # name
+% a,	b,	c,	value,	row_number_a # name
 % int,	int,	int,	wrd,	int # type
 % 1,	1,	1,	1,	1 # length
 [ 7,	7,	7,	1,	1	]

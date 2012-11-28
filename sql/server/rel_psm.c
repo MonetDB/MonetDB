@@ -227,8 +227,11 @@ psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
 
-		if (sql->session->status || !cond || !ifstmts || rel) 
+		if (sql->session->status || !cond || !ifstmts || rel) {
+			if (rel)
+				return sql_error(sql, 02, "IF THEN: No SELECT statements allowed within the IF condition");
 			return NULL;
+		}
 		return append(sa_list(sql->sa), exp_if( sql->sa, cond, ifstmts, elsestmts));
 	} else { /* else */
 		symbol *e = elseif->data.sym;
@@ -255,8 +258,11 @@ rel_psm_if_then_else( mvc *sql, sql_subtype *res, dnode *elseif, int is_func)
 		ifstmts = sequential_block(sql, res, n->data.lval, NULL, is_func);
 		n = n->next;
 		elsestmts = psm_if_then_else( sql, res, n, is_func);
-		if (sql->session->status || !cond || !ifstmts || rel) 
+		if (sql->session->status || !cond || !ifstmts || rel) {
+			if (rel)
+				return sql_error(sql, 02, "IF THEN ELSE: No SELECT statements allowed within the IF condition");
 			return NULL;
+		}
 		return exp_if( sql->sa, cond, ifstmts, elsestmts);
 	}
 	return NULL;
@@ -295,8 +301,10 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 		exp_kind ek = {type_value, card_value, FALSE};
 		sql_exp *v = rel_value_exp(sql, &rel, case_value, sql_sel, ek);
 
-		if (!v || rel)
+		if (!v)
 			return NULL;
+		if (rel)
+			return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 		if (else_statements) {
 			else_stmt = sequential_block( sql, res, else_statements, NULL, is_func);
 			if (!else_stmt) 
@@ -311,8 +319,11 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 
 			if (!when_value || rel ||
 			   (cond = rel_binop_(sql, v, when_value, NULL, "=", card_value)) == NULL || 
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+				if (rel)
+					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
+			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;
@@ -341,8 +352,11 @@ rel_psm_case( mvc *sql, sql_subtype *res, dnode *case_when, int is_func )
 			sql_exp *case_stmt = NULL;
 
 			if (!cond || rel ||
-			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) 
+			   (if_stmts = sequential_block( sql, res, m->next->data.lval, NULL, is_func)) == NULL ) {
+				if (rel)
+					return sql_error(sql, 02, "CASE: No SELECT statements allowed within the CASE condition");
 				return NULL;
+			}
 			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
 			list_append(case_stmts, case_stmt);
 			n = n->next;

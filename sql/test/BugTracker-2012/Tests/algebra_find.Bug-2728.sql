@@ -29,3 +29,5 @@ insert into kvk values (1, 'test', 1, 0, 'Oude Trambaan 8', '2265CA', 'Leidschen
 
 select count(*) from vve, kvk where toevoeging is null and vve.huisnummer is not null and vve.postcode = kvk.postcode and kvk.adres like ' %'||vve.huisnummer;
 
+drop table kvk;
+drop table vve;

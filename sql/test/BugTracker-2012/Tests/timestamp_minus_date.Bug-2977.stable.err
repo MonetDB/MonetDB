@@ -29,7 +29,9 @@ stderr of test 'timestamp_minus_date.Bug-2977` in directory 'test/BugTracker-201
 # 13:51:42 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=warsaw" "--port=39949"
 # 13:51:42 >  
 
-There should be a error message stating that SQL(-99) does not allow arrithmetic between timestamps and dates.
+MAPI  = monetdb@niels:34679
+QUERY = select (cast('1970-01-01 0:00' as timestamp) - cast('1970-01-01' as date));
+ERROR = !SELECT: no such binary operator 'sql_sub(timestamp,date)'
 
 # 13:51:43 >  
 # 13:51:43 >  "Done."
