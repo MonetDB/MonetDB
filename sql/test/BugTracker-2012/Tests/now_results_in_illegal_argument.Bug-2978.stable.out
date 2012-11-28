@@ -47,8 +47,6 @@ Ready.
 # 12:53:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=budapest" "--port=36456"
 # 12:53:46 >  
 
-1 second #expected output of 2nd query
-0	#expected ouput of 3rd query
 
 # 12:53:46 >  
 # 12:53:46 >  "Done."

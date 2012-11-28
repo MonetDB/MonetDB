@@ -3487,9 +3487,14 @@ exps_unique( list *exps )
 
 	if ((n = exps->h) != NULL) {
 		sql_exp *e = n->data;
+		prop *p;
 
-		if (e && find_prop(e->p, PROP_HASHCOL))
-			return 1;
+		/* TODO, check if ukey is complete */
+		if (e && (p = find_prop(e->p, PROP_HASHCOL)) != NULL) {
+			sql_ukey *k = p->value;
+			if (list_length(k->k.columns) <= 1)
+				return 1;
+		}
 	}
 	return 0;
 }
@@ -3497,6 +3502,10 @@ exps_unique( list *exps )
 static sql_rel *
 rel_push_project_down_union(int *changes, mvc *sql, sql_rel *rel) 
 {
+	/* first remove distinct if allready unique */
+	if (rel->op == op_project && need_distinct(rel) && rel->exps && exps_unique(rel->exps))
+		set_nodistinct(rel);
+
 	if (rel->op == op_project && rel->l && rel->exps && !rel->r && !project_unsafe(rel)) {
 		int need_distinct = need_distinct(rel);
 		sql_rel *u = rel->l;

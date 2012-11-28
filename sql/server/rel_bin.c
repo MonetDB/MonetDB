@@ -1875,6 +1875,8 @@ rel2bin_union( mvc *sql, sql_rel *rel, list *refs)
 	return sub;
 }
 
+/* Both EXCEPT and INTERSECT need work, current versions aren't mergetable save 
+ * (bails out on the gen_group) */
 static stmt *
 rel2bin_except( mvc *sql, sql_rel *rel, list *refs)
 {
