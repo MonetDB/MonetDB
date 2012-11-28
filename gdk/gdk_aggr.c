@@ -1024,6 +1024,66 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 /* ---------------------------------------------------------------------- */
 /* average */
 
+#define AVERAGE_ITER(TYPE, x, a, r, n)					\
+	do {								\
+		TYPE an, xn, z1;					\
+		BUN z2;							\
+		(n)++;							\
+		/* calculate z1 = (x - a) / n, rounded down (towards */	\
+		/* negative infinity), and calculate z2 = remainder */	\
+		/* of the division (i.e. 0 <= z2 < n); do this */	\
+		/* without causing overflow */				\
+		an = (TYPE) ((a) / (SBUN) (n));				\
+		xn = (TYPE) ((x) / (SBUN) (n));				\
+		/* z1 will be (x - a) / n rounded towards -INF */	\
+		z1 = xn - an;						\
+		xn = (x) - (TYPE) (xn * (SBUN) (n));			\
+		an = (a) - (TYPE) (an * (SBUN) (n));			\
+		/* z2 will be remainder of above division */		\
+		if (xn >= an) {						\
+			z2 = (BUN) (xn - an);				\
+			/* loop invariant: */				\
+			/* (x - a) - z1 * n == z2 */			\
+			while (z2 >= (n)) {				\
+				z2 -= (n);				\
+				z1++;					\
+			}						\
+		} else {						\
+			z2 = (BUN) (an - xn);				\
+			/* loop invariant (until we break): */		\
+			/* (x - a) - z1 * n == -z2 */			\
+			for (;;) {					\
+				z1--;					\
+				if (z2 < (n)) {				\
+					/* proper remainder */		\
+					z2 = (n) - z2;			\
+					break;				\
+				}					\
+				z2 -= (n);				\
+			}						\
+		}							\
+		(a) += z1;						\
+		(r) += z2;						\
+		if ((r) >= (n)) {					\
+			(r) -= (n);					\
+			(a)++;						\
+		}							\
+	} while (0)
+
+#define AVERAGE_ITER_FLOAT(TYPE, x, a, n)				\
+	do {								\
+		(n)++;							\
+		if (((a) > 0) == ((x) > 0)) {				\
+			/* same sign */					\
+			(a) += ((x) - (a)) / (SBUN) (n);		\
+		} else {						\
+			/* no overflow at the cost of an */		\
+			/* extra division and slight loss of */		\
+			/* precision */					\
+			(a) = (a) - (a) / (SBUN) (n) + (x) / (SBUN) (n); \
+		}							\
+	} while (0)
+
 #define AGGR_AVG(TYPE)							\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
@@ -1225,6 +1285,142 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	GDKfree(cnts);
 	GDKerror("BATgroupavg: cannot allocate enough memory.\n");
 	return NULL;
+}
+
+#define AVERAGE_TYPE(TYPE)						\
+	do {								\
+		TYPE x, a;						\
+									\
+		/* first try to calculate the sum of all values into a */ \
+		/* lng */						\
+		for (i = start; i < end; i++) {				\
+			if (cand) {					\
+				if (i < *cand - b->H->seq) {		\
+					continue;			\
+				}					\
+				assert(i == *cand - b->H->seq);		\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			x = ((const TYPE *) src)[i];			\
+			if (x == TYPE##_nil)				\
+				continue;				\
+			ADD_WITH_CHECK(TYPE, x,				\
+				       lng, sum,			\
+				       lng, sum,			\
+				       goto overflow##TYPE);		\
+			/* don't count value until after overflow check */ \
+			n++;						\
+		}							\
+		/* the sum fit, so now we can calculate the average */	\
+		*avg = (dbl) sum / n;					\
+		if (0) {						\
+		  overflow##TYPE:					\
+			/* we get here if sum(x[0],...,x[i]) doesn't */	\
+			/* fit in a lng but sum(x[0],...,x[i-1]) did */ \
+			/* the variable sum contains that sum */	\
+			/* the rest of the calculation is done */	\
+			/* according to the loop invariant described */	\
+			/* in the below loop */				\
+			if (sum >= 0) {					\
+				a = (TYPE) (sum / (lng) n); /* this fits */ \
+				r = (BUN) (sum % (SBUN) n);		\
+			} else {					\
+				sum = -sum;				\
+				a = - (TYPE) (sum / (lng) n); /* this fits */ \
+				r = (BUN) (sum % (SBUN) n);		\
+				if (r) {				\
+					a--;				\
+					r = n - r;			\
+				}					\
+			}						\
+			if (cand)					\
+				--cand;					\
+									\
+			for (; i < end; i++) {				\
+				/* loop invariant: */			\
+				/* a + r/n == average(x[0],...,x[n]); */ \
+				/* 0 <= r < n (if n > 0) */		\
+				/* or if n == 0: a == 0; r == 0 */	\
+				if (cand) {				\
+					if (i < *cand - b->H->seq)	\
+						continue;		\
+					assert(i == *cand - b->H->seq);	\
+					if (++cand == candend)		\
+						end = i + 1;		\
+				}					\
+				x = ((const TYPE *) src)[i];		\
+				if (x == TYPE##_nil)			\
+					continue;			\
+				AVERAGE_ITER(TYPE, x, a, r, n);		\
+			}						\
+			*avg = n > 0 ? a + (dbl) r / n : dbl_nil;	\
+		}							\
+	} while (0)
+
+#define AVERAGE_FLOATTYPE(TYPE)					\
+	do {							\
+		double a = 0;					\
+		TYPE x;						\
+		for (i = start; i < end; i++) {			\
+			if (cand) {				\
+				if (i < *cand - b->H->seq)	\
+					continue;		\
+				assert(i == *cand - b->H->seq);	\
+				if (++cand == candend)		\
+					end = i + 1;		\
+			}					\
+			x = ((const TYPE *) src)[i];		\
+			if (x == TYPE##_nil)			\
+				continue;			\
+			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
+		}						\
+		*avg = n > 0 ? a : dbl_nil;			\
+	} while (0)
+
+int
+BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
+{
+	BUN n = 0, r = 0, i = 0;
+	lng sum = 0;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	const void *src;
+	/* these two needed for ADD_WITH_CHECK macro */
+	int abort_on_error = 1;
+	BUN nils = 0;
+
+	CANDINIT(b, s);
+
+	src = Tloc(b, b->U->first);
+
+	switch (b->T->type) {
+	case TYPE_bte:
+		AVERAGE_TYPE(bte);
+		break;
+	case TYPE_sht:
+		AVERAGE_TYPE(sht);
+		break;
+	case TYPE_int:
+		AVERAGE_TYPE(int);
+		break;
+	case TYPE_lng:
+		AVERAGE_TYPE(lng);
+		break;
+	case TYPE_flt:
+		AVERAGE_FLOATTYPE(flt);
+		break;
+	case TYPE_dbl:
+		AVERAGE_FLOATTYPE(dbl);
+		break;
+	default:
+		GDKerror("BATcalcavg: average of type %s unsupported.\n",
+			 ATOMname(b->T->type));
+		return GDK_FAIL;
+	}
+	if (vals)
+		*vals = n;
+	return GDK_SUCCEED;
 }
 
 /* ---------------------------------------------------------------------- */
