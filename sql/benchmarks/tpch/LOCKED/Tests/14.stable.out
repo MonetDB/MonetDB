@@ -22,7 +22,7 @@ Ready.
 % promo_revenue # name
 % decimal # type
 % 21 # length
-[ 15.486545	]
+[ 15.48	]
 #select * from optimizer_stats() stats;
 % .stats,	.stats # table_name
 % rewrite,	count # name

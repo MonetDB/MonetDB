@@ -518,7 +518,8 @@ int yydebug=1;
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT CONCATSTRING SUBSTRING POSITION
 %right UMINUS
-%left <operation> '*' '/' '%'
+%left <operation> '*' 
+%left <operation> '/' '%'
 %left <operation> '~'
 
 	/* literal keyword tokens */
