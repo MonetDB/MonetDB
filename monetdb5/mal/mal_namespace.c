@@ -196,3 +196,10 @@ str putName(str nme, size_t len)
 	MT_lock_unset(&mal_contextLock, "putName");
 	return putName(nme, len);	/* just to be sure */
 }
+
+/* dummy function to maintain ABI compatibility */
+void dumpNamespaceStatistics(stream *f, int details)
+{
+	(void) f;
+	(void) details;
+}
