@@ -818,7 +818,7 @@ static void updmap(int idx)
 		fcn = "*";
 	for (i = 0; colors[i].col; i++)
 		if (mod && strcmp(mod, colors[i].mod) == 0) {
-			if (strcmp(fcn, colors[i].fcn) == 0 || colors[i].fcn[0] == '*') {
+			if (strcmp(fcn, colors[i].fcn) == 0) {
 				fnd = i;
 				break;
 			}
