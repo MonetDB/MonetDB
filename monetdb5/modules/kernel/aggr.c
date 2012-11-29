@@ -404,6 +404,36 @@ AGGRavg2_dbl(bat *retval, bat *bid, bat *eid)
 	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupavg, 1, "aggr.avg");
 }
 
+aggr_export str AGGRstdev3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRstdev3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupstdev_sample, 1, "aggr.stdev");
+}
+
+aggr_export str AGGRstdev2_dbl(bat *retval, bat *bid, bat *eid);
+str
+AGGRstdev2_dbl(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupstdev_sample, 1, "aggr.stdev");
+}
+
+aggr_export str AGGRstdevp3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRstdevp3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupstdev_population, 1, "aggr.stdevp");
+}
+
+aggr_export str AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid);
+str
+AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupstdev_population, 1, "aggr.stdevp");
+}
+
 aggr_export str AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils);
 str
 AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils)
@@ -804,6 +834,38 @@ AGGRsubavgcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *ski
 {
 	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
 						  *abort_on_error, TYPE_dbl, BATgroupavg, "aggr.subavg");
+}
+
+aggr_export str AGGRsubstdev_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubstdev_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, "aggr.substdev");
+}
+
+aggr_export str AGGRsubstdevcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubstdevcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_sample, "aggr.substdev");
+}
+
+aggr_export str AGGRsubstdevp_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubstdevp_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, "aggr.substdevp");
+}
+
+aggr_export str AGGRsubstdevpcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubstdevpcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, "aggr.substdevp");
 }
 
 aggr_export str AGGRsubcount(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);

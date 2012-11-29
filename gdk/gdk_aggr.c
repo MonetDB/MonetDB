@@ -2114,3 +2114,294 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	BBPunfix(bn->batCacheid);
 	return NULL;
 }
+
+/* ---------------------------------------------------------------------- */
+/* standard deviation (both biases and non-biased) */
+
+#define AGGR_STDEV(TYPE)						\
+	do {								\
+		TYPE x;							\
+		for (i = 0; i < cnt; i++) {				\
+			x = ((const TYPE *) values)[i];			\
+			if (x == TYPE##_nil)				\
+				continue;				\
+			n++;						\
+			delta = (dbl) x - mean;				\
+			mean += delta / n;				\
+			m2 += delta * ((dbl) x - mean);			\
+		}							\
+	} while (0)
+
+static dbl
+calcstdev(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
+{
+	BUN n = 0, i;
+	dbl mean = 0;
+	dbl m2 = 0;
+	dbl delta;
+
+	assert(issample == 0 || issample == 1);
+
+	switch (ATOMstorage(tp)) {
+	case TYPE_bte:
+		AGGR_STDEV(bte);
+		break;
+	case TYPE_sht:
+		AGGR_STDEV(sht);
+		break;
+	case TYPE_int:
+		AGGR_STDEV(int);
+		break;
+	case TYPE_lng:
+		AGGR_STDEV(lng);
+		break;
+	case TYPE_flt:
+		AGGR_STDEV(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_STDEV(dbl);
+		break;
+	default:
+		return dbl_nil;
+	}
+	if (n <= (BUN) issample) {
+		if (avgp)
+			*avgp = dbl_nil;
+		return dbl_nil;
+	}
+	if (avgp)
+		*avgp = mean;
+	return sqrt(m2 / (n - issample));
+}
+
+dbl
+BATcalcstdev_population(dbl *avgp, BAT *b)
+{
+	return calcstdev(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			 BATcount(b), b->ttype, 0);
+}
+
+dbl
+BATcalcstdev_sample(dbl *avgp, BAT *b)
+{
+	return calcstdev(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			 BATcount(b), b->ttype, 1);
+}
+
+#undef AGGR_STDEV
+#define AGGR_STDEV(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
+		for (i = start; i < end; i++, vals++) {			\
+			if (cand) {					\
+				if (i < *cand - b->hseqbase) {		\
+					if (gids)			\
+						gids++;			\
+					continue;			\
+				}					\
+				assert(i == *cand - b->hseqbase);	\
+				if (++cand == candend)			\
+					end = i + 1;			\
+			}						\
+			if (gids == NULL ||				\
+			    (*gids >= min && *gids <= max)) {		\
+				gid = gids ? *gids - min : (oid) i;	\
+				if (*vals == TYPE##_nil) {		\
+					if (!skip_nils)			\
+						cnts[gid] = BUN_NONE;	\
+				} else if (cnts[gid] != BUN_NONE) {	\
+					cnts[gid]++;			\
+					delta[gid] = (dbl) *vals - mean[gid]; \
+					mean[gid] += delta[gid] / cnts[gid]; \
+					m2[gid] += delta[gid] * ((dbl) *vals - mean[gid]); \
+				}					\
+			}						\
+			if (gids)					\
+				gids++;					\
+		}							\
+		for (i = 0; i < ngrp; i++) {				\
+			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+				dbls[i] = dbl_nil;			\
+				mean[i] = dbl_nil;			\
+				nils++;					\
+			} else if (cnts[i] == 1) {			\
+				dbls[i] = 0;				\
+			} else {					\
+				dbls[i] = m2[i] / (cnts[i] - issample);	\
+			}						\
+		}							\
+	} while (0)
+
+/* Calculate group standard deviation (population (i.e. biased) or
+ * sample (i.e. non-biased)) with optional candidates list.
+ *
+ * Note that this helper function is prepared to return two BATs: one
+ * (as return value) with the standard deviation per group, and one
+ * (as return argument) with the average per group.  This isn't
+ * currently used since it doesn't fit into the mold of grouped
+ * aggregates. */
+static BAT *
+dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+	     int skip_nils, int issample, const char *func)
+{
+	const oid *gids;
+	oid gid;
+	oid min, max;
+	BUN i, ngrp;
+	BUN nils = 0;
+	BUN *cnts = NULL;
+	dbl *dbls, *mean, *delta, *m2;
+	BAT *bn = NULL;
+	BUN start, end, cnt;
+	const oid *cand = NULL, *candend = NULL;
+	const char *err;
+
+	assert(tp == TYPE_dbl);
+	(void) tp;		/* compatibility (with other BATgroup*
+				 * functions) argument */
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &start, &end,
+				    &cnt, &cand, &candend)) != NULL) {
+		GDKerror("%s: %s\n", func, err);
+		return NULL;
+	}
+	if (g == NULL) {
+		GDKerror("%s: b and g must be aligned\n", func);
+		return NULL;
+	}
+
+	if (BATcount(b) == 0 || ngrp == 0) {
+		/* trivial: no products, so return bat aligned with g
+		 * with nil in the tail */
+		bn = BATconstant(TYPE_dbl, &dbl_nil, ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	if ((e == NULL ||
+	     (BATcount(e) == BATcount(b) && e->hseqbase == b->hseqbase)) &&
+	    (BATtdense(g) || (g->tkey && g->T->nonil))) {
+		/* trivial: singleton groups, so all results are equal
+		 * to zero (population) or nil (sample) */
+		dbl v = issample ? dbl_nil : 0;
+		bn = BATconstant(TYPE_dbl, &v, ngrp);
+		BATseqbase(bn, ngrp == 0 ? 0 : min);
+		return bn;
+	}
+
+	delta = GDKmalloc(ngrp * sizeof(dbl));
+	m2 = GDKmalloc(ngrp * sizeof(dbl));
+	cnts = GDKzalloc(ngrp * sizeof(BUN));
+	if (avgb) {
+		if ((*avgb = BATnew(TYPE_void, TYPE_dbl, ngrp)) == NULL) {
+			mean = NULL;
+			goto alloc_fail;
+		}
+		mean = (dbl *) Tloc(*avgb, BUNfirst(*avgb));
+	} else {
+		mean = GDKmalloc(ngrp * sizeof(dbl));
+	}
+	if (mean == NULL || delta == NULL || m2 == NULL || cnts == NULL)
+		goto alloc_fail;
+
+	bn = BATnew(TYPE_void, TYPE_dbl, ngrp);
+	if (bn == NULL)
+		goto alloc_fail;
+	dbls = (dbl *) Tloc(bn, BUNfirst(bn));
+
+	for (i = 0; i < ngrp; i++) {
+		mean[i] = 0;
+		delta[i] = 0;
+		m2[i] = 0;
+	}
+
+	if (BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, BUNfirst(g) + start);
+
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+		AGGR_STDEV(bte);
+		break;
+	case TYPE_sht:
+		AGGR_STDEV(sht);
+		break;
+	case TYPE_int:
+		AGGR_STDEV(int);
+		break;
+	case TYPE_lng:
+		AGGR_STDEV(lng);
+		break;
+	case TYPE_flt:
+		AGGR_STDEV(flt);
+		break;
+	case TYPE_dbl:
+		AGGR_STDEV(dbl);
+		break;
+	default:
+		if (avgb)
+			BBPreclaim(*avgb);
+		else
+			GDKfree(mean);
+		GDKfree(delta);
+		GDKfree(m2);
+		GDKfree(cnts);
+		BBPunfix(bn->batCacheid);
+		GDKerror("%s: type (%s) not supported.\n",
+			 func, ATOMname(b->ttype));
+		return NULL;
+	}
+	if (avgb) {
+		BATsetcount(*avgb, ngrp);
+		BATseqbase(*avgb, 0);
+		(*avgb)->tkey = ngrp <= 1;
+		(*avgb)->tsorted = ngrp <= 1;
+		(*avgb)->trevsorted = ngrp <= 1;
+		(*avgb)->T->nil = nils != 0;
+		(*avgb)->T->nonil = nils == 0;
+	} else {
+		GDKfree(mean);
+	}
+	GDKfree(delta);
+	GDKfree(m2);
+	GDKfree(cnts);
+	BATsetcount(bn, ngrp);
+	BATseqbase(bn, min);
+	bn->tkey = ngrp <= 1;
+	bn->tsorted = ngrp <= 1;
+	bn->trevsorted = ngrp <= 1;
+	bn->T->nil = nils != 0;
+	bn->T->nonil = nils == 0;
+	return bn;
+
+  alloc_fail:
+	if (avgb && *avgb)
+		BBPreclaim(*avgb);
+	if (bn)
+		BBPreclaim(bn);
+	GDKfree(mean);
+	GDKfree(delta);
+	GDKfree(m2);
+	GDKfree(cnts);
+	GDKerror("%s: cannot allocate enough memory.\n", func);
+	return NULL;
+}
+
+BAT *
+BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+		     int skip_nils, int abort_on_error)
+{
+	(void) abort_on_error;
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 1,
+			    "BATgroupstdev_sample");
+}
+
+BAT *
+BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+			 int skip_nils, int abort_on_error)
+{
+	(void) abort_on_error;
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 0,
+			    "BATgroupstdev_population");
+}

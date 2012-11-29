@@ -135,3 +135,8 @@ gdk_export const char *BATgroupaggrinit(
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 gdk_export gdk_return BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
+
+gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);

@@ -692,6 +692,38 @@ command subavg(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
 
+command stdev(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on bte";
+
+command stdev(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on bte";
+
+command substdev(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on bte";
+
+command stdevp(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on bte";
+
+command substdevp(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
+
 command avg(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on sht";
@@ -707,6 +739,38 @@ comment "Grouped avg aggregate";
 command subavg(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
+
+command stdev(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on sht";
+
+command stdev(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on sht";
+
+command substdev(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on sht";
+
+command stdevp(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on sht";
+
+command substdevp(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
 
 command avg(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -724,6 +788,38 @@ command subavg(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
 
+command stdev(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on int";
+
+command stdev(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on int";
+
+command substdev(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on int";
+
+command stdevp(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on int";
+
+command substdevp(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
+
 command avg(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on wrd";
@@ -739,6 +835,38 @@ comment "Grouped avg aggregate";
 command subavg(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
+
+command stdev(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on wrd";
+
+command stdev(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on wrd";
+
+command substdev(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on wrd";
+
+command stdevp(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on wrd";
+
+command substdevp(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
 
 command avg(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -756,6 +884,38 @@ command subavg(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
 
+command stdev(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on lng";
+
+command stdev(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on lng";
+
+command substdev(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on lng";
+
+command stdevp(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on lng";
+
+command substdevp(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
+
 command avg(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on flt";
@@ -772,6 +932,38 @@ command subavg(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
 
+command stdev(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on flt";
+
+command stdev(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on flt";
+
+command substdev(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on flt";
+
+command stdevp(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on flt";
+
+command substdevp(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
+
 command avg(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on dbl";
@@ -787,6 +979,38 @@ comment "Grouped avg aggregate";
 command subavg(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
+
+command stdev(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdev2_dbl
+comment "Grouped tail average on dbl";
+
+command stdev(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdev3_dbl
+comment "Grouped tail average on dbl";
+
+command substdev(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdev_dbl
+comment "Grouped stdev aggregate";
+
+command substdev(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevcand_dbl
+comment "Grouped stdev aggregate with candidates list";
+
+command stdevp(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRstdevp2_dbl
+comment "Grouped tail average on dbl";
+
+command stdevp(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRstdevp3_dbl
+comment "Grouped tail average on dbl";
+
+command substdevp(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevp_dbl
+comment "Grouped stdevp aggregate";
+
+command substdevp(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubstdevpcand_dbl
+comment "Grouped stdevp aggregate with candidates list";
 
 command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
 address AGGRmin2;

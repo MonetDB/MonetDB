@@ -854,7 +854,10 @@ comment "Gives the avg of all tail values";
 # from the mean (average) value, divided by the population of the set.
 @= stdev_definition
 command stdev (b:bat[:any_1,:@1] ) :dbl
-address ALGstdev_@1
+address ALGstdev
+comment "Gives the standard deviation of all tail values";
+command stdevp (b:bat[:any_1,:@1] ) :dbl
+address ALGstdevp
 comment "Gives the standard deviation of all tail values";
 @
 @mal
@@ -971,17 +974,8 @@ algebra_export ptr BATmin(BAT *b, ptr aggr);
 
 algebra_export str ALGavg(dbl *res, int *bid);
 
-@= stdev_export
-algebra_export str ALGstdev_@1(dbl *res, int *bid);
-@
-@h
-@:stdev_export(bte)@
-@:stdev_export(sht)@
-@:stdev_export(int)@
-@:stdev_export(wrd)@
-@:stdev_export(lng)@
-@:stdev_export(flt)@
-@:stdev_export(dbl)@
+algebra_export str ALGstdev(dbl *res, int *bid);
+algebra_export str ALGstdevp(dbl *res, int *bid);
 
 @= ALGaggregate_export
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
@@ -3941,56 +3935,34 @@ ALGavg(dbl *res, int *bid)
 /*
  * @+ BAT standard deviation
  */
-@= stdev_impl
-str ALGstdev_@1(dbl *res, int *bid) {
+str
+ALGstdev(dbl *res, int *bid)
+{
 	BAT *b;
-	BUN cnt = 0;
+	dbl stdev;
 
-	if ((b=BATdescriptor(*bid)) == NULL) {
+	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
-	}
-	cnt = BATcount(b);
-
-	if (cnt) {
-		dbl stdev = 0;
-		/* first, we need the average of the tail values */
-		dbl avg = 0;
-		if (BATcalcavg(b, NULL, &avg, &cnt) == GDK_SUCCEED && avg != dbl_nil && cnt == BATcount(b)) {
-			BATiter bi = bat_iterator(b);
-			BUN p,q;
-
-			/* next, we need the sum of the squares of the difference
-			 * of each value in the tail with the avg */
-
-			/* no need to check for nil values on the tail, the
-			 * BATcalcavg has already done that and reported back */
-			BATloop(b, p, q) {
-				dbl value = (dbl) *(@1*) BUNtloc(bi, p);
-				value -= avg;    /* diff from avg  */
-				value *= value;  /* square         */
-				stdev += value;  /* sum of squares */
-			}
-
-			/* finaly, divide by the cnt and compute the square root */
-			*res = sqrt(stdev/cnt);
-		} else {
-			*res = dbl_nil;
-		}
-	} else {
-		*res = dbl_nil;
-	}
-
+	stdev = BATcalcstdev_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
+	if (stdev == dbl_nil)
+		throw(MAL, "algebra.stdev", SEMANTIC_TYPE_MISMATCH);
+	*res = stdev;
 	return MAL_SUCCEED;
 }
 
-@
-@c
-@:stdev_impl(bte)@
-@:stdev_impl(sht)@
-@:stdev_impl(int)@
-@:stdev_impl(wrd)@
-@:stdev_impl(lng)@
-@:stdev_impl(flt)@
-@:stdev_impl(dbl)@
+str
+ALGstdevp(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl stdev;
 
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
+	stdev = BATcalcstdev_population(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (stdev == dbl_nil)
+		throw(MAL, "algebra.stdev", SEMANTIC_TYPE_MISMATCH);
+	*res = stdev;
+	return MAL_SUCCEED;
+}
