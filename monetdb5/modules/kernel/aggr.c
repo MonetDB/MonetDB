@@ -434,6 +434,36 @@ AGGRstdevp2_dbl(bat *retval, bat *bid, bat *eid)
 	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupstdev_population, 1, "aggr.stdevp");
 }
 
+aggr_export str AGGRvariance3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRvariance3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupvariance_sample, 1, "aggr.variance");
+}
+
+aggr_export str AGGRvariance2_dbl(bat *retval, bat *bid, bat *eid);
+str
+AGGRvariance2_dbl(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupvariance_sample, 1, "aggr.variance");
+}
+
+aggr_export str AGGRvariancep3_dbl(bat *retval, bat *bid, bat *gid, bat *eid);
+str
+AGGRvariancep3_dbl(bat *retval, bat *bid, bat *gid, bat *eid)
+{
+	return AGGRgrouped3(retval, bid, gid, eid, TYPE_dbl,
+						BATgroupvariance_population, 1, "aggr.variancep");
+}
+
+aggr_export str AGGRvariancep2_dbl(bat *retval, bat *bid, bat *eid);
+str
+AGGRvariancep2_dbl(bat *retval, bat *bid, bat *eid)
+{
+	return AGGRgrouped2(retval, bid, eid, TYPE_dbl, BATgroupvariance_population, 1, "aggr.variancep");
+}
+
 aggr_export str AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils);
 str
 AGGRcount3(bat *retval, bat *bid, bat *gid, bat *eid, bit *ignorenils)
@@ -866,6 +896,38 @@ AGGRsubstdevpcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *
 {
 	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
 						  *abort_on_error, TYPE_dbl, BATgroupstdev_population, "aggr.substdevp");
+}
+
+aggr_export str AGGRsubvariance_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubvariance_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, "aggr.subvariance");
+}
+
+aggr_export str AGGRsubvariancecand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubvariancecand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_sample, "aggr.subvariance");
+}
+
+aggr_export str AGGRsubvariancep_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubvariancep_dbl(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, NULL, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, "aggr.subvariancep");
+}
+
+aggr_export str AGGRsubvariancepcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error);
+str
+AGGRsubvariancepcand_dbl(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, int *skip_nils, int *abort_on_error)
+{
+	return AGGRsubgrouped(retval, bid, gid, eid, sid, *skip_nils,
+						  *abort_on_error, TYPE_dbl, BATgroupvariance_population, "aggr.subvariancep");
 }
 
 aggr_export str AGGRsubcount(bat *retval, bat *bid, bat *gid, bat *eid, int *skip_nils);

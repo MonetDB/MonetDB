@@ -497,20 +497,81 @@ sql_update_oct2012_sp1(Client c)
 	size_t bufsize = 2048, pos = 0;
 
 	/* sys.stddev functions */
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TINYINT) returns TINYINT external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val SMALLINT) returns SMALLINT external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val INTEGER) returns INTEGER external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val BIGINT) returns BIGINT external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val REAL) returns REAL external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val DOUBLE) returns DOUBLE external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TINYINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(SMALLINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(INTEGER);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(BIGINT);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(REAL);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(DOUBLE);\n");
 
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val DATE) returns DATE external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIME) returns TIME external name \"aggr\".\"stddev\";\n");
-	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev(val TIMESTAMP) returns TIMESTAMP external name \"aggr\".\"stddev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(DATE);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TIME);\n");
+	pos += snprintf(buf+pos, bufsize-pos, "drop aggregate sys.stddev(TIMESTAMP);\n");
 
-	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+	pos += snprintf(buf + pos, bufsize-pos, "delete from sys.systemfunctions where function_id in (select f.id from sys.functions f, sys.schemas s where f.name = 'stddev' and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
 
 	assert(pos < 2048);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_feb2013(Client c)
+{
+	char *buf = GDKmalloc(4096), *err = NULL;
+	size_t bufsize = 4096, pos = 0;
+
+	/* sys.stddev_samp functions */
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TINYINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val REAL) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val DATE) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TIME) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_samp(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"stdev\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TINYINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val REAL) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val DATE) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TIME) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.stddev_pop(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"stdevp\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TINYINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val SMALLINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val INTEGER) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val BIGINT) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val REAL) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val DOUBLE) returns DOUBLE external name \"aggr\".\"variance\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val DATE) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TIME) returns DOUBLE external name \"aggr\".\"variance\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_samp(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"variance\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TINYINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val SMALLINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val INTEGER) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val BIGINT) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val REAL) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val DOUBLE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val DATE) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TIME) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+	pos += snprintf(buf+pos, bufsize-pos, "create aggregate sys.var_pop(val TIMESTAMP) returns DOUBLE external name \"aggr\".\"variancep\";\n");
+
+	pos += snprintf(buf + pos, bufsize-pos, "insert into sys.systemfunctions (select f.id from sys.functions f, sys.schemas s where f.name in ('stddev_samp', 'stddev_pop', 'var_samp', 'var_pop') and f.type = %d and f.schema_id = s.id and s.name = 'sys');\n", F_AGGR);
+
+	assert(pos < 4096);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0);
@@ -678,11 +739,18 @@ SQLinitClient(Client c)
 					fprintf(stderr, "!%s\n", err);
 			}
 		}
-		/* if aggregate function sys.stddev(int) does not
+		/* if aggregate function sys.stddev(int) does
 		 * exist, we need to update */
         	sql_find_subtype(&tp, "int", 0, 0);
-		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev", &tp, NULL, F_AGGR )) {
+		if (sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev", &tp, NULL, F_AGGR )) {
 			if ((err = sql_update_oct2012_sp1(c)) != NULL)
+				fprintf(stderr, "!%s\n", err);
+		}
+		/* if aggregate function sys.stddev_samp(int) does not
+		 * exist, we need to update */
+        	sql_find_subtype(&tp, "int", 0, 0);
+		if (!sql_bind_func(m->sa, mvc_bind_schema(m,"sys"), "stddev_samp", &tp, NULL, F_AGGR )) {
+			if ((err = sql_update_feb2013(c)) != NULL)
 				fprintf(stderr, "!%s\n", err);
 		}
 	}

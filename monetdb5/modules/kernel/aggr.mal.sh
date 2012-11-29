@@ -158,39 +158,43 @@ command subavg(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid
 address AGGRsubavgcand_dbl
 comment "Grouped avg aggregate with candidates list";
 
-command stdev(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGRstdev2_dbl
+EOF
+    for func in stdev variance; do
+	cat <<EOF
+command ${func}(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGR${func}2_dbl
 comment "Grouped tail average on ${tp}";
 
-command stdev(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
-address AGGRstdev3_dbl
+command ${func}(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGR${func}3_dbl
 comment "Grouped tail average on ${tp}";
 
-command substdev(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubstdev_dbl
-comment "Grouped stdev aggregate";
+command sub${func}(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsub${func}_dbl
+comment "Grouped ${func} aggregate";
 
-command substdev(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubstdevcand_dbl
-comment "Grouped stdev aggregate with candidates list";
+command sub${func}(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsub${func}cand_dbl
+comment "Grouped ${func} aggregate with candidates list";
 
-command stdevp(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
-address AGGRstdevp2_dbl
+command ${func}p(b:bat[:oid,:${tp}], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGR${func}p2_dbl
 comment "Grouped tail average on ${tp}";
 
-command stdevp(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
-address AGGRstdevp3_dbl
+command ${func}p(b:bat[:oid,:${tp}], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGR${func}p3_dbl
 comment "Grouped tail average on ${tp}";
 
-command substdevp(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubstdevp_dbl
-comment "Grouped stdevp aggregate";
+command sub${func}p(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsub${func}p_dbl
+comment "Grouped ${func}p aggregate";
 
-command substdevp(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
-address AGGRsubstdevpcand_dbl
-comment "Grouped stdevp aggregate with candidates list";
+command sub${func}p(b:bat[:oid,:${tp}],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsub${func}pcand_dbl
+comment "Grouped ${func}p aggregate with candidates list";
 
 EOF
+    done
 done
 
 cat <<EOF

@@ -724,6 +724,38 @@ command substdevp(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oi
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
 
+command variance(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on bte";
+
+command variance(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on bte";
+
+command subvariance(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:bte], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on bte";
+
+command variancep(b:bat[:oid,:bte], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on bte";
+
+command subvariancep(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:bte],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
+
 command avg(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on sht";
@@ -771,6 +803,38 @@ comment "Grouped stdevp aggregate";
 command substdevp(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
+
+command variance(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on sht";
+
+command variance(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on sht";
+
+command subvariance(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:sht], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on sht";
+
+command variancep(b:bat[:oid,:sht], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on sht";
+
+command subvariancep(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:sht],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
 
 command avg(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -820,6 +884,38 @@ command substdevp(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oi
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
 
+command variance(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on int";
+
+command variance(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on int";
+
+command subvariance(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:int], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on int";
+
+command variancep(b:bat[:oid,:int], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on int";
+
+command subvariancep(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:int],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
+
 command avg(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on wrd";
@@ -867,6 +963,38 @@ comment "Grouped stdevp aggregate";
 command substdevp(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
+
+command variance(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on wrd";
+
+command variance(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on wrd";
+
+command subvariance(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:wrd], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on wrd";
+
+command variancep(b:bat[:oid,:wrd], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on wrd";
+
+command subvariancep(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:wrd],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
 
 command avg(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
@@ -916,6 +1044,38 @@ command substdevp(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oi
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
 
+command variance(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on lng";
+
+command variance(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on lng";
+
+command subvariance(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:lng], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on lng";
+
+command variancep(b:bat[:oid,:lng], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on lng";
+
+command subvariancep(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:lng],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
+
 command avg(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on flt";
@@ -964,6 +1124,38 @@ command substdevp(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oi
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
 
+command variance(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on flt";
+
+command variance(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on flt";
+
+command subvariance(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:flt], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on flt";
+
+command variancep(b:bat[:oid,:flt], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on flt";
+
+command subvariancep(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:flt],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
+
 command avg(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
 address AGGRavg2_dbl
 comment "Grouped tail average on dbl";
@@ -1011,6 +1203,38 @@ comment "Grouped stdevp aggregate";
 command substdevp(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
 address AGGRsubstdevpcand_dbl
 comment "Grouped stdevp aggregate with candidates list";
+
+command variance(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariance2_dbl
+comment "Grouped tail average on dbl";
+
+command variance(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariance3_dbl
+comment "Grouped tail average on dbl";
+
+command subvariance(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariance_dbl
+comment "Grouped variance aggregate";
+
+command subvariance(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancecand_dbl
+comment "Grouped variance aggregate with candidates list";
+
+command variancep(b:bat[:oid,:dbl], e:bat[:oid,:any_1]) :bat[:oid,:dbl]
+address AGGRvariancep2_dbl
+comment "Grouped tail average on dbl";
+
+command variancep(b:bat[:oid,:dbl], g:bat[:oid,:oid], e:bat[:oid,:any_1]):bat[:oid,:dbl]
+address AGGRvariancep3_dbl
+comment "Grouped tail average on dbl";
+
+command subvariancep(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancep_dbl
+comment "Grouped variancep aggregate";
+
+command subvariancep(b:bat[:oid,:dbl],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid],skip_nils:int,abort_on_error:int) :bat[:oid,:dbl]
+address AGGRsubvariancepcand_dbl
+comment "Grouped variancep aggregate with candidates list";
 
 command min(b:bat[:oid,:any_1], e:bat[:oid,:any_2]) :bat[:oid,:any_1]
 address AGGRmin2;

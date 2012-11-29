@@ -2133,7 +2133,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 	} while (0)
 
 static dbl
-calcstdev(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
+calcvariance(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 {
 	BUN n = 0, i;
 	dbl mean = 0;
@@ -2171,21 +2171,37 @@ calcstdev(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 	}
 	if (avgp)
 		*avgp = mean;
-	return sqrt(m2 / (n - issample));
+	return m2 / (n - issample);
 }
 
 dbl
 BATcalcstdev_population(dbl *avgp, BAT *b)
 {
-	return calcstdev(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			 BATcount(b), b->ttype, 0);
+	dbl v = calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			     BATcount(b), b->ttype, 0);
+	return v == dbl_nil ? dbl_nil : sqrt(v);
 }
 
 dbl
 BATcalcstdev_sample(dbl *avgp, BAT *b)
 {
-	return calcstdev(avgp, (const void *) Tloc(b, BUNfirst(b)),
-			 BATcount(b), b->ttype, 1);
+	dbl v = calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			     BATcount(b), b->ttype, 1);
+	return v == dbl_nil ? dbl_nil : sqrt(v);
+}
+
+dbl
+BATcalcvariance_population(dbl *avgp, BAT *b)
+{
+	return calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			    BATcount(b), b->ttype, 0);
+}
+
+dbl
+BATcalcvariance_sample(dbl *avgp, BAT *b)
+{
+	return calcvariance(avgp, (const void *) Tloc(b, BUNfirst(b)),
+			    BATcount(b), b->ttype, 1);
 }
 
 #define AGGR_STDEV(TYPE)						\
@@ -2224,9 +2240,12 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
 				mean[i] = dbl_nil;			\
 				nils++;					\
 			} else if (cnts[i] == 1) {			\
-				dbls[i] = 0;				\
-			} else {					\
+				dbls[i] = issample ? dbl_nil : 0;	\
+				nils2++;				\
+			} else if (variance) {				\
 				dbls[i] = m2[i] / (cnts[i] - issample);	\
+			} else {					\
+				dbls[i] = sqrt(m2[i] / (cnts[i] - issample)); \
 			}						\
 		}							\
 	} while (0)
@@ -2241,13 +2260,13 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
  * aggregates. */
 static BAT *
 dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
-	     int skip_nils, int issample, const char *func)
+	     int skip_nils, int issample, int variance, const char *func)
 {
 	const oid *gids;
 	oid gid;
 	oid min, max;
 	BUN i, ngrp;
-	BUN nils = 0;
+	BUN nils = 0, nils2 = 0;
 	BUN *cnts = NULL;
 	dbl *dbls, *mean, *delta, *m2;
 	BAT *bn = NULL;
@@ -2362,6 +2381,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	} else {
 		GDKfree(mean);
 	}
+	nils += nils2;
 	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
@@ -2392,7 +2412,7 @@ BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		     int skip_nils, int abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 1,
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 1, 0,
 			    "BATgroupstdev_sample");
 }
 
@@ -2401,6 +2421,24 @@ BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 			 int skip_nils, int abort_on_error)
 {
 	(void) abort_on_error;
-	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 0,
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 0, 0,
 			    "BATgroupstdev_population");
+}
+
+BAT *
+BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+		     int skip_nils, int abort_on_error)
+{
+	(void) abort_on_error;
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 1, 1,
+			    "BATgroupvariance_sample");
+}
+
+BAT *
+BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
+			 int skip_nils, int abort_on_error)
+{
+	(void) abort_on_error;
+	return dogroupstdev(NULL, b, g, e, s, tp, skip_nils, 0, 1,
+			    "BATgroupvariance_population");
 }

@@ -140,3 +140,7 @@ gdk_export dbl BATcalcstdev_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcstdev_sample(dbl *avgp, BAT *b);
 gdk_export BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
+gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
+gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);

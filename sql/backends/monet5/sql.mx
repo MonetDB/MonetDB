@@ -7706,23 +7706,10 @@ function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
 	return v;
 end aggr.covar;
 
-function aggr.stddev(e:bat[:oid,:@1]):@1;
-	a:dbl := aggr.avg(e);
-	ed := batcalc.dbl(e);
-	ea := batcalc.-(ed,a);
-	ea2 := batcalc.*(ea,ea);
-	es := aggr.sum(ea2);
-	c := aggr.count(e);
-	v:dbl := calc./(es,c);
-	r := mmath.sqrt(v);
-	res:@1 := calc.@1(r);
-	return res;
-end aggr.stddev;
-
 function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1]):@1;
 	cv:@1 := aggr.covar(e1,e2);
-	sd1:@1 := aggr.stddev(e1);
-	sd2:@1 := aggr.stddev(e2);
+	sd1 := aggr.stdev(e1);
+	sd2 := aggr.stdev(e2);
 	sd := calc.*(sd1,sd2);
 	r := calc./(cv,sd);
 	res := calc.@1(r);
@@ -7743,44 +7730,10 @@ function aggr.covar(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[
 	return v;
 end aggr.covar;
 
-function aggr.stddev(v:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
-	a:bat[:oid,:dbl] := aggr.avg(v,g,e);
-	ed := batcalc.dbl(v);
-	ea := algebra.leftjoin(g,a);
-	va := batcalc.-(ed,ea);
-	ea2 := batcalc.*(va,va);
-	es := aggr.sum(ea2,g,e);
-	c := aggr.count(v,g,e);
-	cr := batcalc.dbl(c);
-	ev:bat[:oid,:dbl] := batcalc./(es,cr);
-	r := batmmath.sqrt(ev);
-	res:bat[:oid,:@1] := batcalc.@1(r);
-	return res;
-end aggr.stddev;
-
-# var_pop(expr) = (sum(expr) - sum(expr)/count(expr)) /count(expr)
-# stddev_pop(expr) = sqrt(var_pop(expr))
-function aggr.stddev_pop(v:bat[:oid,:@1], g:bat[:oid,:oid], e:bat[:oid,:any_2]):bat[:oid,:@1];
-	v2 := batcalc.*(v,v);
-	a1 := aggr.sum(v2,g,e);
-	a := aggr.sum(v,g,e);
-	a2 := batcalc.*(a,a);
-	c := aggr.count(v,g,e);
-	ad1 := batcalc.dbl(a1);
-	ad2 := batcalc.dbl(a2);
-	cd := batcalc.dbl(c);
-	sc := batcalc./(ad2,cd);
-	ssc := batcalc.-(ad1,sc);
-	sc2 := batcalc./(ssc,cd);
-	r := batmmath.sqrt(sc2);
-	res:bat[:oid,:@1] := batcalc.@1(r);
-	return res;
-end aggr.stddev_pop;
-
 function aggr.corr(e1:bat[:oid,:@1], e2:bat[:oid,:@1], g:bat[:oid,:oid],e:bat[:oid,:any_2]):bat[:oid,:@1];
 	cv:bat[:oid,:@1] := aggr.covar(e1,e2,g,e);
-	sd1:bat[:oid,:@1] := aggr.stddev_pop(e1,g,e);
-	sd2:bat[:oid,:@1] := aggr.stddev_pop(e2,g,e);
+	sd1 := aggr.stdevp(e1,g,e);
+	sd2 := aggr.stdevp(e2,g,e);
 	sd := batcalc.*(sd1,sd2);
 	sdn := batcalc.==(sd,0:@1);
 	sds := batcalc.ifthenelse(sdn,1:@1,sd);

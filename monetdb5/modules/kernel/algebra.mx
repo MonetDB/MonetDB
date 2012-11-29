@@ -859,6 +859,12 @@ comment "Gives the standard deviation of all tail values";
 command stdevp (b:bat[:any_1,:@1] ) :dbl
 address ALGstdevp
 comment "Gives the standard deviation of all tail values";
+command variance (b:bat[:any_1,:@1] ) :dbl
+address ALGvariance
+comment "Gives the variance of all tail values";
+command variancep (b:bat[:any_1,:@1] ) :dbl
+address ALGvariancep
+comment "Gives the variance of all tail values";
 @
 @mal
 @:stdev_definition(bte)@
@@ -976,6 +982,8 @@ algebra_export str ALGavg(dbl *res, int *bid);
 
 algebra_export str ALGstdev(dbl *res, int *bid);
 algebra_export str ALGstdevp(dbl *res, int *bid);
+algebra_export str ALGvariance(dbl *res, int *bid);
+algebra_export str ALGvariancep(dbl *res, int *bid);
 
 @= ALGaggregate_export
 algebra_export str ALGmin_@1(@1* res, int *bid) ;
@@ -3921,11 +3929,11 @@ ALGavg(dbl *res, int *bid)
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
 	ret = BATcalcavg(b, NULL, res, &cnt);
 	BBPreleaseref(b->batCacheid);
 	if (ret == GDK_FAIL)
-		throw(MAL, "algebra.avg", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.avg", SEMANTIC_TYPE_MISMATCH);
 	/* backward compatibility: return nil if there are nils in the input */
 	if (cnt < BATcount(b))
 		*res = dbl_nil;
@@ -3942,11 +3950,11 @@ ALGstdev(dbl *res, int *bid)
 	dbl stdev;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPreleaseref(b->batCacheid);
 	if (stdev == dbl_nil)
-		throw(MAL, "algebra.stdev", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
 }
@@ -3958,11 +3966,46 @@ ALGstdevp(dbl *res, int *bid)
 	dbl stdev;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.stdev", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPreleaseref(b->batCacheid);
 	if (stdev == dbl_nil)
-		throw(MAL, "algebra.stdev", SEMANTIC_TYPE_MISMATCH);
+		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
+	return MAL_SUCCEED;
+}
+
+/*
+ * @+ BAT variance
+ */
+str
+ALGvariance(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl variance;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
+	variance = BATcalcvariance_sample(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (variance == dbl_nil)
+		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
+	*res = variance;
+	return MAL_SUCCEED;
+}
+
+str
+ALGvariancep(dbl *res, int *bid)
+{
+	BAT *b;
+	dbl variance;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
+	variance = BATcalcvariance_population(NULL, b);
+	BBPreleaseref(b->batCacheid);
+	if (variance == dbl_nil)
+		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
+	*res = variance;
 	return MAL_SUCCEED;
 }
