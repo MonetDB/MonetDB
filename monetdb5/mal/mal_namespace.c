@@ -108,7 +108,7 @@ void initNamespace(void) {
 void finishNamespace(void) {
 	int i;
 
-	MT_lock_set(&mal_contextLock, "putName");
+	MT_lock_set(&mal_namespaceLock, "putName");
 	for(i=0;i<namespace.nmetop; i++) {
 		if( namespace.nme[i])
 			GDKfree(namespace.nme[i]);
@@ -117,7 +117,7 @@ void finishNamespace(void) {
 	GDKfree(namespace.nme); namespace.nme= 0;
 	GDKfree(namespace.link); namespace.link= 0;
 	GDKfree(namespace.length); namespace.length= 0;
-	MT_lock_unset(&mal_contextLock, "putName");
+	MT_lock_unset(&mal_namespaceLock, "putName");
 }
 
 /*
@@ -131,15 +131,15 @@ str getName(str nme, size_t len)
 	size_t l;
 	if(len == 0 || nme== NULL || *nme==0) return 0;
 
-	MT_lock_set(&mal_contextLock, "putName");
+	MT_lock_set(&mal_namespaceLock, "putName");
 	for(l= NMEHASH(nme,len); l && namespace.nme[l]; l= namespace.link[l]){
 		if (namespace.length[l] == len  &&
 			strncmp(nme,namespace.nme[l],len)==0) {
-			MT_lock_unset(&mal_contextLock, "putName");
+			MT_lock_unset(&mal_namespaceLock, "putName");
 			return namespace.nme[l];
 	    }
 	}
-	MT_lock_unset(&mal_contextLock, "putName");
+	MT_lock_unset(&mal_namespaceLock, "putName");
 	return 0;
 }
 /*
@@ -157,8 +157,8 @@ void delName(str nme, size_t len){
 	if( nme[0]==0 || n == 0) return ;
 
 	/*Namespace garbage collection not available yet 
-	MT_lock_set(&mal_contextLock, "putName");
-	MT_lock_unset(&mal_contextLock, "putName");
+	MT_lock_set(&mal_namespaceLock, "putName");
+	MT_lock_unset(&mal_namespaceLock, "putName");
 	*/
 }
 str putName(str nme, size_t len)
@@ -169,11 +169,11 @@ str putName(str nme, size_t len)
 	if( nme == NULL || len == 0)
 		return NULL;
 	/* protect this, as it will be updated by multiple threads */
-	MT_lock_set(&mal_contextLock, "putName");
+	MT_lock_set(&mal_namespaceLock, "putName");
 	for(l= NMEHASH(nme,len); l && namespace.nme[l]; l= namespace.link[l]){
 	    if( namespace.length[l] == len  &&
 			strncmp(nme,namespace.nme[l],len) == 0 ) {
-			MT_lock_unset(&mal_contextLock, "putName");
+			MT_lock_unset(&mal_namespaceLock, "putName");
 			return namespace.nme[l];
 	    }
 	}
@@ -193,6 +193,6 @@ str putName(str nme, size_t len)
 		namespace.link[l] = (int)top;
 	namespace.length[top]= len;
 	namespace.nmetop++;
-	MT_lock_unset(&mal_contextLock, "putName");
+	MT_lock_unset(&mal_namespaceLock, "putName");
 	return putName(nme, len);	/* just to be sure */
 }
