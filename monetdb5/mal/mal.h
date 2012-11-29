@@ -113,6 +113,7 @@ mal_export int 		memoryclaims;    /* number of threads active with expensive ope
 
 
 mal_export MT_Lock  mal_contextLock;
+mal_export MT_Lock  mal_namespaceLock;
 mal_export MT_Lock  mal_remoteLock;
 mal_export MT_Lock  mal_profileLock ;
 mal_export MT_Lock  mal_copyLock ;
