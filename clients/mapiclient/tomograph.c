@@ -822,11 +822,10 @@ static void updmap(int idx)
 				fnd = i;
 				break;
 			}
-		} else if (colors[i].mod[0] == '*') {
-			fnd = i;
-			break;
 		}
 
+	if ( colors[i].col == 0 )
+		fnd = i-1;
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
