@@ -2118,7 +2118,7 @@ BATgroupmedian(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biases and non-biased) */
 
-#define AGGR_STDEV(TYPE)						\
+#define AGGR_STDEV_SINGLE(TYPE)						\
 	do {								\
 		TYPE x;							\
 		for (i = 0; i < cnt; i++) {				\
@@ -2144,22 +2144,22 @@ calcstdev(dbl *avgp, const void *values, BUN cnt, int tp, int issample)
 
 	switch (ATOMstorage(tp)) {
 	case TYPE_bte:
-		AGGR_STDEV(bte);
+		AGGR_STDEV_SINGLE(bte);
 		break;
 	case TYPE_sht:
-		AGGR_STDEV(sht);
+		AGGR_STDEV_SINGLE(sht);
 		break;
 	case TYPE_int:
-		AGGR_STDEV(int);
+		AGGR_STDEV_SINGLE(int);
 		break;
 	case TYPE_lng:
-		AGGR_STDEV(lng);
+		AGGR_STDEV_SINGLE(lng);
 		break;
 	case TYPE_flt:
-		AGGR_STDEV(flt);
+		AGGR_STDEV_SINGLE(flt);
 		break;
 	case TYPE_dbl:
-		AGGR_STDEV(dbl);
+		AGGR_STDEV_SINGLE(dbl);
 		break;
 	default:
 		return dbl_nil;
@@ -2188,7 +2188,6 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
 			 BATcount(b), b->ttype, 1);
 }
 
-#undef AGGR_STDEV
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
