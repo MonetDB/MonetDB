@@ -407,6 +407,13 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			sprintf(up, "(unknown)");
 		}
 		printf("  last start: %s\n", up);
+		if (uplog.laststop != -1) {
+			t = localtime(&uplog.laststop);
+			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
+		} else {
+			sprintf(up, "(unknown)");
+		}
+		printf("  last stop: %s\n", up);
 		printf("  average of crashes in the last start attempt: %d\n",
 				uplog.crashavg1);
 		printf("  average of crashes in the last 10 start attempts: %.2f\n",
