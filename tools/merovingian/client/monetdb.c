@@ -819,6 +819,9 @@ command_status(int argc, char *argv[])
 				if (uriwidth < 8)
 					uriwidth = 8;
 			}
+		} else {
+			if (dbwidth < 4)
+				dbwidth = 4;
 		}
 
 		/* print header */
