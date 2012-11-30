@@ -102,7 +102,6 @@ st_type2string(st_type type)
 		ST(tdiff);
 		ST(tinter);
 
-		ST(releqjoin);
 		ST(join);
 		ST(join2);
 		ST(joinN);
@@ -339,7 +338,6 @@ stmt_deps(list *dep_list, stmt *s, int depend_type, int dir)
 			list_deps(dep_list, s->op4.lval, depend_type, dir);
 			break;
 		/* simple case of statements of only statements */
-		case st_releqjoin: 
 		case st_alias:
 		case st_tunion:
 		case st_tdiff:
@@ -1001,52 +999,6 @@ stmt_tinter(sql_allocator *sa, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_releqjoin_init(sql_allocator *sa)
-{
-	stmt *s = stmt_create(sa, st_releqjoin);
-
-	s->op1 = stmt_list(sa, sa_list(sa));
-	s->op2 = stmt_list(sa, sa_list(sa));
-	s->nrcols = 2;
-	return s;
-}
-
-void
-stmt_releqjoin_fill(stmt *rj, stmt *lc, stmt *rc)
-{
-	list_append(rj->op1->op4.lval, lc);
-	list_append(rj->op2->op4.lval, rc);
-}
-
-static stmt *
-stmt_releqjoin__(sql_allocator *sa, list *l1, list *l2)
-{
-	stmt *s = stmt_create(sa, st_releqjoin);
-
-	s->op1 = stmt_list(sa, l1);
-	s->op2 = stmt_list(sa, l2);
-	s->nrcols = 2;
-	return s;
-}
-
-stmt *
-stmt_releqjoin(sql_allocator *sa, list *joins)
-{
-	list *l1 = sa_list(sa);
-	list *l2 = sa_list(sa);
-	node *n = NULL;
-
-	for (n = joins->h; n; n = n->next) {
-		stmt *l = ((stmt *) (n->data))->op1;
-		stmt *r = ((stmt *) (n->data))->op2;
-
-		l1 = list_append(l1, l);
-		l2 = list_append(l2, r);
-	}
-	return stmt_releqjoin__(sa, l1, l2);
-}
-
-stmt *
 stmt_join(sql_allocator *sa, stmt *op1, stmt *op2, comp_type cmptype)
 {
 	stmt *s = stmt_create(sa, st_join);
@@ -1432,10 +1384,6 @@ tail_type(stmt *st)
 		/* The tail type of a join2 is the head of the second operant!,
 		   ie should be 'oid' */
 		return head_type(st->op2);
-	case st_releqjoin:
-		/* The tail type of a releqjoin is the head of the second list!,
-		   ie should be 'oid' */
-		return head_type(st->op4.lval->h->data);
 
 	case st_uselect:
 	case st_uselect2:
@@ -1534,7 +1482,6 @@ head_type(stmt *st)
 	case st_result:
 	case st_order:
 	case st_mark:
-	case st_releqjoin:
 		return head_type(st->op1);
 
 	case st_list:
@@ -1690,8 +1637,6 @@ _column_name(sql_allocator *sa, stmt *st)
 			return sa_strdup(sa, "single_value");
 		return "single_value";
 
-	case st_releqjoin:
-		return column_name(sa, st->op1);
 	case st_list:
 		if (list_length(st->op4.lval))
 			return column_name(sa, st->op4.lval->h->data);
@@ -1769,7 +1714,6 @@ _table_name(sql_allocator *sa, stmt *st)
 	case st_var:
 	case st_temp:
 	case st_single:
-	case st_releqjoin:
 	default:
 		return NULL;
 	}
@@ -1820,8 +1764,6 @@ schema_name(sql_allocator *sa, stmt *st)
 	case st_temp:
 	case st_single:
 		return NULL;
-	case st_releqjoin:
-		return schema_name(sa, st->op1);
 	case st_list:
 		if (list_length(st->op4.lval))
 			return schema_name(sa, st->op4.lval->h->data);
@@ -2028,8 +1970,6 @@ print_stmt( sql_allocator *sa, stmt *s )
 		}
 		printf(");\n");
 	}	break;
-	case st_releqjoin:
-		/*assert(0);*/
 	default:
 		printf("s%d := %s(", s->nr, st_type2string(s->type));
 		switch(s->type) {

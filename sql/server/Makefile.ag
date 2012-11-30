@@ -32,9 +32,7 @@ lib_sqlserver = {
 		sql_atom.c \
 		sql_datetime.c \
 		sql_decimal.c \
-		sql_statement.c \
 		sql_semantic.c \
-		sql_rel2bin.c \
 		sql_qc.c \
 		sql_symbol.c \
 		sql_scan.c \   
@@ -52,15 +50,14 @@ lib_sqlserver = {
 		rel_exp.c \
 		rel_optimizer.c \
 		rel_distribute.c \
-		rel_bin.c \
 		rel_psm.c \
 		rel_xml.c \
 		rel_dump.c \
-		rel_bin.h rel_dump.h rel_exp.h \
+		rel_dump.h rel_exp.h \
 		rel_optimizer.h rel_distribute.h rel_prop.h rel_schema.h rel_select.h \
 		rel_semantic.h rel_sequence.h rel_trans.h \
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \
 		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
-		sql_privileges.h sql_qc.h sql_rel2bin.h sql_scan.h \
-		sql_semantic.h sql_statement.h sql_symbol.h
+		sql_privileges.h sql_qc.h sql_scan.h \
+		sql_semantic.h sql_symbol.h
 }

@@ -20,7 +20,6 @@
 
 #include "monetdb_config.h"
 #include "rel_psm.h"
-#include "rel_bin.h"
 #include "rel_semantic.h"
 #include "rel_schema.h"
 #include "rel_select.h"
@@ -518,7 +517,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 {
 	list *l=0;
 	dnode *n;
-	int i;
+	//int i;
 
  	if (THRhighwater())
 		return sql_error(sql, 10, "SELECT: too many nested operators");
@@ -596,7 +595,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 		else
 			list_merge(l, reslist, NULL);
 	}
-	/* drop the declared tables of this frame */
+	/* drop the declared tables of this frame 
 	if (l && l->t && !has_return(l)) {
 		i = sql->topvars;
 		while(sql->vars[--i].s) {
@@ -606,6 +605,7 @@ sequential_block (mvc *sql, sql_subtype *restype, dlist *blk, char *opt_label, i
 				list_append(l, stmt_assign(sql->sa, v->name, NULL, sql->frame));
 		}
 	}
+	 * */
 	stack_pop_frame(sql);
 	return l;
 }

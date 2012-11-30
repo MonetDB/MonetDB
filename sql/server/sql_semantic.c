@@ -21,7 +21,6 @@
 #include "monetdb_config.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
-#include "sql_statement.h"
 #include "sql_semantic.h"
 #include "sql_env.h"
 #include "sql_privileges.h"
@@ -35,7 +34,6 @@
 
 #include <rel_semantic.h>
 #include <rel_optimizer.h>
-#include <rel_bin.h>
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 

@@ -22,7 +22,6 @@
 
 #include "sql_parser.h"
 #include "sql_symbol.h"
-#include "sql_statement.h"
 #include "sql_mvc.h"
 
 extern int mvc_debug_on(mvc *m, int flag);

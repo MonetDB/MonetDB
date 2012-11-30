@@ -25,7 +25,6 @@
 
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
