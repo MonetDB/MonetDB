@@ -47,7 +47,6 @@
 #include "opt_prelude.h"
 #include "mal_builder.h"
 
-#include <sql_rel2bin.h>
 #include <rel_select.h>
 #include <rel_optimizer.h>
 #include <rel_prop.h>
@@ -271,7 +270,7 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;
-	stmt *s, *opt;
+	stmt *s;
 
 	r = rel_optimizer(m, rel);
 	s = rel_bin(m, r);
@@ -287,8 +286,6 @@ _create_relational_function(mvc *m, char *name, sql_rel *rel, stmt *call)
 	}
 	s = stmt_table(m->sa, s, 1);
 	s = stmt_return(m->sa, s, 0);
-	opt = rel2bin(m, s);
-	s = opt;
 
 	backup = c->curprg;
 	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
@@ -2221,13 +2218,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			(void) pushArgument(mb, q, r);
 		} 	break;
-
-			/* todo */
-		case st_releqjoin:
-			mnstr_printf(GDKout, "not implemented stmt\n");
-			assert(0);
-
-
 		}
 
 		return s->nr;
@@ -2479,7 +2469,7 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL;
-	stmt *s, *opt;
+	stmt *s;
 
 	(void)t;
 	r = rel_optimizer(m, rel);
@@ -2496,8 +2486,6 @@ monet5_create_table_function(ptr M, char *name, sql_rel *rel, sql_table *t)
 	}
 	s = stmt_table(m->sa, s, 1);
 	s = stmt_return(m->sa, s, 0);
-	opt = rel2bin(m, s);
-	s = opt;
 
 	backup = c->curprg;
 	c->curprg = newFunction(userRef,putName(name,strlen(name)), FUNCTIONsymbol);
@@ -2591,12 +2579,6 @@ backend_create_func(backend *be, sql_func *f)
 		fputs(m->errstr, stderr);
 		sa_destroy(sa);
 		return;
-	} else {
-		stmt *opt;
-
-		m->sa = sa;
-		opt = rel2bin(m, s);
-		s = opt;
 	}
 	assert(s);
 

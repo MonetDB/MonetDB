@@ -1,21 +1,21 @@
-create aggregate stddev(val TINYINT) returns DOUBLE
+create aggregate stddev_samp(val TINYINT) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val SMALLINT) returns DOUBLE
+create aggregate stddev_samp(val SMALLINT) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val INTEGER) returns DOUBLE
+create aggregate stddev_samp(val INTEGER) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val BIGINT) returns DOUBLE
+create aggregate stddev_samp(val BIGINT) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val REAL) returns DOUBLE
+create aggregate stddev_samp(val REAL) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val DOUBLE) returns DOUBLE
+create aggregate stddev_samp(val DOUBLE) returns DOUBLE
 	external name "aggr"."stdev";
 
-create aggregate stddev(val DATE) returns DOUBLE
+create aggregate stddev_samp(val DATE) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val TIME) returns DOUBLE
+create aggregate stddev_samp(val TIME) returns DOUBLE
 	external name "aggr"."stdev";
-create aggregate stddev(val TIMESTAMP) returns DOUBLE
+create aggregate stddev_samp(val TIMESTAMP) returns DOUBLE
 	external name "aggr"."stdev";
 
 create aggregate stddev_pop(val TINYINT) returns DOUBLE

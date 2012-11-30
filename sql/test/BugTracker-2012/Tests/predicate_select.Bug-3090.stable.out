@@ -57,10 +57,10 @@ Ready.
 [ 5262,	"queryhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5276,	"callhistory",	2000,	NULL,	0,	true,	0,	false,	0	]
 [ 5293,	"querylog",	2000,	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;",	1,	true,	0,	false,	0	]
-[ 5926,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 5967,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
-[ 5989,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
-[ 6098,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
+[ 6034,	"storagemodelinput",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6075,	"tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxillary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(indices) as indices,\n\tsum(case when sorted = false then 8 * count else 0 end) as auxillary\nfrom storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	false,	0	]
+[ 6097,	"systemfunctions",	2000,	NULL,	0,	true,	0,	false,	0	]
+[ 6206,	"r",	2000,	NULL,	0,	false,	0,	false,	0	]
 
 # 18:53:13 >  
 # 18:53:13 >  "Done."

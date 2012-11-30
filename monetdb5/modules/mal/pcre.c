@@ -111,7 +111,7 @@ typedef struct RE {
 
 #ifndef HAVE_STRCASESTR
 static char *
-strcasestr (char *haystack, char *needle)
+strcasestr (const char *haystack, const char *needle)
 {
 	char *p, *startn = 0, *np = 0;
 

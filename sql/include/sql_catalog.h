@@ -122,6 +122,31 @@ typedef enum temp_t {
 	SQL_REPLICA_TABLE
 } temp_t;
 
+typedef enum comp_type {
+	cmp_gt = 0,
+	cmp_gte = 1,
+	cmp_lte = 2,
+	cmp_lt = 3,
+	cmp_equal = 4,
+	cmp_notequal = 5,
+
+	cmp_filter = 6,
+	cmp_or = 7,
+	cmp_in = 8,
+	cmp_notin = 9,
+
+	/* cmp_all and cmp_project are only used within stmt (not sql_exp) */
+	cmp_all = 10,		/* special case for crossproducts */
+	cmp_project = 11,	/* special case for projection joins */
+	cmp_reorder_project = 12,	/* special case for (reordering) projection joins */
+	cmp_joined = 13 	/* special case already joined */
+} comp_type;
+
+#define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
+		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+
+#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
+
 typedef enum commit_action_t { 
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
 	CA_DELETE, 	/* delete rows */

@@ -20,7 +20,7 @@
 #ifndef _SQL_PARSER_H_
 #define _SQL_PARSER_H_
 
-#include "sql_statement.h"
+#include "sql_mvc.h"
 
 /* the next define makes the parser output more specific error messages,
  * instead of only a dull 'parse error' */

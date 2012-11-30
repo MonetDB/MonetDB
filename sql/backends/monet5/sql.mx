@@ -1266,12 +1266,12 @@ sql.prelude();
 #include <mkey.h>
 #include <str.h>
 #include "sql_privileges.h"
-#include "sql_rel2bin.h"
 #include "sql_decimal.h"
 #include "sql_string.h"
 #include "sql_qc.h"
 #include "sql_env.h"
 #include "sql_emptyset.h"
+#include "sql_statement.h"
 
 #include <bat/bat_storage.h>
 
@@ -1745,11 +1745,6 @@ sql_relation2stmt(mvc *c, sql_rel *r)
 			rel_print(c, r, 0);
 		} else {
 			s = output_rel_bin(c, r);
-		}
-		if (s) {
-			/* only needed for delta tables */
-			s = rel2bin(c, s); 	
-			return s;
 		}
 	}
 	return s;
@@ -7636,13 +7631,12 @@ RAstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *msg;
 
 		rel_print(m, rel, 0);
-		s = output_rel_bin(m, rel);
 		if (*opt) { 
 			rel = rel_optimizer(m, rel);
 			rel_print(m, rel, 0);
 		}
+		s = output_rel_bin(m, rel);
 		rel_destroy(rel);
-		s = rel2bin(m, s); 	
 
 		MSinitClientPrg(cntxt, "user", "test"); 
 

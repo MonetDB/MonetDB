@@ -23,13 +23,13 @@ Ready.
 # 16:29:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=vienna" "--port=37979"
 # 16:29:22 >  
 
-#set optimizer='accumulator_pipe';
+#set optimizer='dictionary_pipe';
 #select optimizer;
 % . # table_name
 % single_value # name
 % varchar # type
-% 16 # length
-[ "accumulator_pipe"	]
+% 15 # length
+[ "dictionary_pipe"	]
 #create table x( id serial, a varchar(1000));
 #drop table x;
 

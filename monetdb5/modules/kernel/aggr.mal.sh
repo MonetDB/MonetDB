@@ -45,7 +45,7 @@ fixtypes="bit $numeric oid"
 alltypes="$fixtypes str"
 
 for tp1 in 1:bte 2:sht 4:int 8:wrd 8:lng; do
-    for tp2 in 1:bte 2:sht 4:int 4:wrd 8:lng 8:dbl; do
+    for tp2 in 8:dbl 1:bte 2:sht 4:int 4:wrd 8:lng; do
 	if [ ${tp1%:*} -le ${tp2%:*} -o ${tp1#*:} = ${tp2#*:} ]; then
 	    tp1=${tp1#*:}
 	    tp2=${tp2#*:}
