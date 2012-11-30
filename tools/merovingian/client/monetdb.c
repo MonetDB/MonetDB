@@ -308,10 +308,19 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
 		}
 
-		if (stats->state != SABdbRunning && stats->state != SABdbStarting) {
-			uptime[0] = '\0';
-		} else {
-			secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+		switch (stats->state) {
+			case SABdbRunning:
+			case SABdbStarting:
+				secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+				break;
+			case SABdbInactive:
+				if (uplog.laststop != -1) {
+					secondsToString(uptime, time(NULL) - uplog.laststop, 1);
+					break;
+				} /* else fall through */
+			default:
+				uptime[0] = '\0';
+				break;
 		}
 
 		/* cut too long names */
