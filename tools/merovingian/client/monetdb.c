@@ -334,12 +334,14 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		printf("%-*s  %c%c%3s", dbwidth, dbname,
 				locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
-		if (uplog.startcntr)
+		if (uplog.startcntr) {
 			secondsToString(avg, uplog.avguptime, 1);
-			printf("  %3d%% %3s  %-*s",
-					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg,
-					uriwidth, uri);
-		printf("\n");
+			printf("  %3d%% %3s",
+					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
+		} else {
+			printf("           ");
+		}
+		printf("  %-*s\n", uriwidth, uri);
 	} else if (mode == 2) {
 		/* long mode */
 		char *state;
