@@ -55,6 +55,7 @@ typedef struct Ssabuplog {
 	time_t minuptime;  /* shortest uptime when not crashing */
 	time_t lastcrash;  /* time of last crash, -1 if none */
 	time_t laststart;  /* time of last start */
+	time_t laststop;   /* time of last stop, -1 if running */
 	int crashavg1;     /* if there was a crash in the last start attempt */
 	double crashavg10; /* average of crashes in the last 10 start attempts */
 	double crashavg30; /* average of crashes in the last 30 start attempts */
