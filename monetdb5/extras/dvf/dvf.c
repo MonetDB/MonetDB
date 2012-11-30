@@ -4,7 +4,6 @@
 #include "monetdb_config.h"
 
 #include "../../modules/atoms/mtime.h"
-#include "sql.h"
 #include "dvf.h"
 #include "mal_interpreter.h"
 
