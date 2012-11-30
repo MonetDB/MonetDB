@@ -17,28 +17,19 @@ stdout of test 'stdev.Bug-3178` in directory 'tests/BugTracker` itself:
 # MonetDB/GIS module loaded
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
-# MonetDB/DataCell loaded
-function user.main():void;
-    b3178 := bat.new(:oid,:int);
-    b3178 := bat.append(b3178,20);
-    b3178 := bat.append(b3178,480);
-    b3178 := bat.append(b3178,28);
-    b3178 := bat.append(b3178,841);
-    b3178 := bat.append(b3178,8492);
-    a3178 := aggr.stdev(b3178);
-    io.print(a3178);
-    b3178 := bat.append(b3178,429496700);
-    b3178 := bat.append(b3178,429496700);
-    b3178 := bat.append(b3178,429496700);
-    b3178 := bat.append(b3178,492);
-    b3178 := bat.append(b3178,92);
-    a3178 := aggr.stdev(b3178);
-    io.print(a3178);
-end main;
-[ 3660.7739891995500 ]
-[ 207465895.60681600 ]
 
-# 11:24:28 >  
-# 11:24:28 >  "Done."
-# 11:24:28 >  
+Ready.
+
+# 11:04:02 >  
+# 11:04:02 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=39657"
+# 11:04:02 >  
+
+#io.print(a3178);
+[ 3660.773989	]
+#io.print(a3178);
+[ 207465895.6	]
+
+# 11:04:02 >  
+# 11:04:02 >  "Done."
+# 11:04:02 >  
 
