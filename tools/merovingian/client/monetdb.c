@@ -224,6 +224,7 @@ MEROgetStatus(sabdb **ret, char *database)
 				printf("WARNING: failed to parse response from "
 						"monetdbd: %s\n", e);
 				free(e);
+				swpos--;
 				continue;
 			}
 			if (swpos == swlen)
