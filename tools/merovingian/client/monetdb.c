@@ -271,6 +271,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		char avg[8];
 		char info[32];
 		char *dbname;
+		char *uri;
 
 		switch (stats->state) {
 			case SABdbStarting:
@@ -313,18 +314,22 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			secondsToString(uptime, time(NULL) - uplog.laststart, 1);
 		}
 
-		/* cut too long database names */
+		/* cut too long names */
 		dbname = malloc(sizeof(char) * (dbwidth + 1));
 		abbreviateString(dbname, stats->dbname, dbwidth);
+		uri = malloc(sizeof(char) * (uriwidth + 1));
+		abbreviateString(uri,
+				info[0] != '\0' ? info : stats->uri ? stats->uri : "",
+				uriwidth);
 		/* dbname | state | health | uri/crash */
-		printf("%-*s  %c%c%3s", dbwidth,
-				dbname, locked ? locked : state, locked ? state : ' ', uptime);
+		printf("%-*s  %c%c%3s", dbwidth, dbname,
+				locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
 		if (uplog.startcntr)
 			secondsToString(avg, uplog.avguptime, 1);
 			printf("  %3d%% %3s  %-*s",
-					100 - (uplog.crashcntr * 100 / uplog.startcntr),
-					avg, uriwidth, info[0] != '\0' ? info : stats->uri ? stats->uri : "");
+					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg,
+					uriwidth, uri);
 		printf("\n");
 	} else if (mode == 2) {
 		/* long mode */
