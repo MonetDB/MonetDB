@@ -39,8 +39,6 @@ sub pass_chal {
       warn "unsupported password hash: ".$pwhash;
       return;
     }
-  } elsif ($challenge[2] == 8) {
-    # can leave passwd cleartext
   } else {
     warn "unsupported protocol version: ".$challenge[2];
     return;
@@ -64,8 +62,8 @@ sub pass_chal {
     }
   }
   if (!$chal) {
-    # we assume v8's "plain"
-    $chal = "{plain}".$passwd.$challenge[0];
+    warn "unsupported hash algorithm necessary for login: ".$challenge[3];
+    return;
   }
 
   return $chal;
@@ -102,7 +100,6 @@ sub new {
 
   #binmode($self->{socket},":utf8");
 
-  #block challenge:mserver:8:cypher(s):content_byteorder(BIG/LIT)\n");
   #block challenge:mserver:9:cypher(s):content_byteorder(BIG/LIT):pwhash\n");
   my $block = $self->getblock();
   my @challenge = split(/:/, $block);

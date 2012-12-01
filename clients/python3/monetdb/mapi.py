@@ -191,8 +191,8 @@ class Server(object):
                 password = h.hexdigest()
             except ValueError as e:
                 raise NotSupportedError(e.message)
-        elif protocol != "8":
-            raise NotSupportedError("We only speak protocol v8 and v9")
+		else:
+            raise NotSupportedError("We only speak protocol v9")
 
         h = hashes.split(",")
         if "SHA1" in h:
@@ -205,11 +205,8 @@ class Server(object):
             m.update(password.encode())
             m.update(salt.encode())
             pwhash = "{MD5}" + m.hexdigest()
-        elif "crypt" in h:
-            import crypt
-            pwhash = "{crypt}" + crypt.crypt((password+salt)[:8], salt[-2:])
         else:
-            pwhash = "{plain}" + password + salt
+            raise NotSupportedError("Unsupported hash algorithms required for login: %s" % (hashes));
 
         return ":".join(["BIG", self.username, pwhash, self.language,
             self.database]) + ":"

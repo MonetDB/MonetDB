@@ -49,7 +49,6 @@ MONET_ERROR           = -1
 LANG_SQL = "sql"
 
 # Protocols
-MAPIv8 = 8
 MAPIv9 = 9
 
 MONETDB_MEROVINGIAN = "merovingian"
@@ -71,7 +70,7 @@ class MonetDBConnection
   @@CLIENT_ENDIANNESS   = "BIG"
   
   # MAPI protocols supported by the driver
-  @@SUPPORTED_PROTOCOLS = [ MAPIv8, MAPIv9 ]
+  @@SUPPORTED_PROTOCOLS = [ MAPIv9 ]
   
   attr_reader :socket, :auto_commit, :transactions, :lang
   
@@ -133,32 +132,24 @@ class MonetDBConnection
       @protocol = server_challenge.split(':')[2].to_i
       @supported_auth_types = server_challenge.split(':')[3].split(',')
       @server_endianness = server_challenge.split(':')[4]
-      if @protocol == MAPIv9
-        @pwhash = server_challenge.split(':')[5]
+      if @@SUPPORTED_PROTOCOLS.include?(@protocol) == False
+        raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
       end
+      @pwhash = server_challenge.split(':')[5]
     else
       raise MonetDBConnectionError, "Error: server returned an empty challenge string."
     end
     
-    # The server supports only RIPMED168 or crypt as an authentication hash function, but the driver does not.
+    # The server supports only RIPMED160 or crypt as an authentication hash function, but the driver does not.
     if @supported_auth_types.length == 1
       auth = @supported_auth_types[0]
-      if auth.upcase == "RIPEMD160" or auth.upcase == "CRYPT"
+      if auth.upcase == "RIPEMD160"
         raise MonetDBConnectionError, auth.upcase + " " + ": algorithm not supported by ruby-monetdb."
       end
     end
-    
-    
-    # If the server protocol version is not 8: abort and notify the user.
-    if @@SUPPORTED_PROTOCOLS.include?(@protocol) == false
-      raise MonetDBProtocolError, "Protocol not supported. The current implementation of ruby-monetdb works with MAPI protocols #{@@SUPPORTED_PROTOCOLS} only."
-    
-    elsif mapi_proto_v8?
-      reply = build_auth_string_v8(@auth_type, salt, @database)
-    elsif mapi_proto_v9?
-      reply = build_auth_string_v9(@auth_type, salt, @database)
-    end
-             
+
+    reply = build_auth_string_v9(@auth_type, salt, @database)
+
     if @socket != nil
       @connection_established = true
 
@@ -310,32 +301,6 @@ class MonetDBConnection
     end
   
     return data
-  end
-    
-  # Builds and authentication string given the parameters submitted by the user (MAPI protocol v8).
-  # 
-  def build_auth_string_v8(auth_type, salt, db_name)
-    # seed = password + salt
-    if (auth_type.upcase == "MD5" or auth_type.upcase == "SHA1") and @supported_auth_types.include?(auth_type.upcase)
-      auth_type = auth_type.upcase
-      digest = Hasher.new(auth_type, @passwd+salt)
-      hashsum = digest.hashsum
-    elsif auth_type.downcase == "plain" or not  @supported_auth_types.include?(auth_type.upcase)
-      auth_type = 'plain'
-      hashsum = @passwd + salt
-      
-    elsif auth_type.downcase == "crypt"
-      auth_type =  @supported_auth_types[@supported_auth_types.index(auth_type)+1]
-      $stderr.print "The selected hashing algorithm is not supported by the Ruby driver. #{auth_type} will be used instead."
-      digest = Hasher.new(auth_type, @passwd+salt)
-      hashsum = digest.hashsum
-    else
-      # The user selected an auth type not supported by the server.
-      raise MonetDBConnectionError, "#{auth_type} not supported by the server. Please choose one from #{@supported_auth_types}"
-      
-    end    
-    # Build the reply message with header
-    reply = @client_endianness + ":" + @user + ":{" + auth_type + "}" + hashsum + ":" + @lang + ":" + db_name + ":"
   end
 
   #
@@ -502,23 +467,6 @@ class MonetDBConnection
     else
       false
     end
-  end
-  
-  # Check which protocol is spoken by the server
-  def mapi_proto_v8?
-    if @protocol == MAPIv8
-      true
-    else
-      false
-    end
-  end
-  
-  def mapi_proto_v9?
-    if @protocol == MAPIv9
-      true
-    else
-      false
-    end    
   end
 end
 

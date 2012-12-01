@@ -481,7 +481,7 @@ public final class MapiSocket {
 				} catch (UnsupportedEncodingException e) {
 					throw new AssertionError("internal error: " + e.toString());
 				}
-			case 8:
+
 				// proto 7 (finally) used the challenge and works with a
 				// password hash.  The supported implementations come
 				// from the server challenge.  We chose the best hash
@@ -518,8 +518,6 @@ public final class MapiSocket {
 				} else if (hashesSet.contains("MD5")) {
 					algo = "MD5";
 					pwhash = "{MD5}";
-				} else if (version == 8 && hashesSet.contains("PLAIN")) {
-					pwhash = "{plain}" + password + challenge;
 				} else {
 					throw new MCLException("no supported password hashes in " + hashes);
 				}

@@ -27,14 +27,17 @@ import java.util.*;
  * This Class implements a parser for the string representation of a
  * sabaoth information struct as returned by monetdbd.
  * <br />
- * Currently this class implements version 1 of the sabdb serialisation.
+ * Currently this class implements version 1 and 2 of the sabdb
+ * serialisation.
  *
- * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.0
+ * @version 2.0
  */
 public class SabaothDB {
-	/** The physical path at the server side */
-	private String path;
+	/** The name of the database */
+	private String dbname;
+	/** The URI how to connect to this database, or null if not
+	 * shared */
+	private String uri;
 	/** Whether or not the database is under maintenance */
 	private boolean locked;
 	/** The state of this database, one of SABdbState */
@@ -42,9 +45,6 @@ public class SabaothDB {
 	/** A list of Strings representing the available scenarios of this
 	 * database */
 	private String[] scenarios;
-	/** A list of Strings representing the available connections to this
-	 * database */
-	private String[] connections;
 	/** The number of times this database was started */
 	private int startCounter;
 	/** The number of times this database was stopped */
@@ -61,6 +61,8 @@ public class SabaothDB {
 	private Date lastCrash;
 	/** The last time this database was started, null if never */
 	private Date lastStart;
+	/** The last time this database was stopped, null if never */
+	private Date lastStop;
 	/** Whether the last start was a crash */
 	private boolean crashAvg1;
 	/** Average of crashes in the last 10 start attempts */
@@ -68,15 +70,16 @@ public class SabaothDB {
 	/** Average of crashes in the last 30 start attempts */
 	private double crashAvg30;
 
-	/** The serialised format version of a Sabaoth struct we support */
-	private final String sabdbver = "sabdb:1:";
+	/** The serialised format header */
+	private final String sabdbhdr = "sabdb:";
 
 	/** Sabaoth state enumeration */
 	public enum SABdbState {
 		SABdbIllegal (0),
 		SABdbRunning (1),
 		SABdbCrashed (2),
-		SABdbInactive(3);
+		SABdbInactive(3),
+		SABdbStarting(4);
 
 		private final int cValue;
 
@@ -112,50 +115,84 @@ public class SabaothDB {
 	{
 		if (sabdb == null)
 			throw new IllegalArgumentException("String is null");
-		if (!sabdb.startsWith(sabdbver))
-			throw new IllegalArgumentException("String is not a " +
-					sabdbver + " Sabaoth struct");
-		String[] parts = sabdb.substring(sabdbver.length()).split(",", -2);
-		if (parts.length != 16)
+		if (!sabdb.startsWith(sabdbhdr))
+			throw new IllegalArgumentException("String is not a Sabaoth struct");
+		String[] parts = sabdb.split(":", 3);
+		if (parts.length != 3)
 			throw new IllegalArgumentException("String seems incomplete, " +
-					"expected 16 components, only found " + parts.length);
+					"expected 3 components, only found " + parts.length);
+		int protover;
+		try {
+			protover = Integer.parseInt(parts[1]);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Illegal protocol version: " +
+					parts[1]);
+		}
+		if (protover != 1 && protover != 2)
+			throw new IllegalArgumentException("Unsupported protocol version: " + protover);
+		sabdb = parts[2];
+		parts = sabdb.split(",", -2);
+		if (protover == 1 && parts.length != 16 || protover == 2 && parts.length != 17)
+			throw new IllegalArgumentException("String seems wrong, " +
+					"unexpected number of components: " + parts.length);
 
 		/* Sabaoth sabdb struct */
-		this.path = parts[0];
-		this.locked = parts[1].equals("1") ? true : false;
-		this.state = SABdbState.getInstance(Integer.parseInt(parts[2]));
-		this.scenarios = parts[3].split("'");
-		this.connections = parts[4].split("'");
+		int pc = 0;
+		this.dbname = parts[pc++];
+		if (protover == 1) {
+			this.uri = "<unknown>";
+			int lastslash = this.dbname.lastIndexOf('/');
+			if (lastslash == -1)
+				throw new IllegalArgumentException("invalid path (needs slash): " + this.dbname);
+			this.dbname = this.dbname.substring(lastslash + 1);
+		} else {
+			this.uri = parts[pc++];
+		}
+		this.locked = parts[pc++].equals("1") ? true : false;
+		this.state = SABdbState.getInstance(Integer.parseInt(parts[pc++]));
+		this.scenarios = parts[pc++].split("'");
+		if (protover == 1)  /* skip connections */
+			pc++;
 		/* Sabaoth sabuplog struct */
-		this.startCounter = Integer.parseInt(parts[5]);
-		this.stopCounter = Integer.parseInt(parts[6]);
-		this.crashCounter = Integer.parseInt(parts[7]);
-		this.avgUptime = Long.parseLong(parts[8]);
-		this.maxUptime = Long.parseLong(parts[9]);
-		this.minUptime = Long.parseLong(parts[10]);
-		long t = Long.parseLong(parts[11]);
+		this.startCounter = Integer.parseInt(parts[pc++]);
+		this.stopCounter = Integer.parseInt(parts[pc++]);
+		this.crashCounter = Integer.parseInt(parts[pc++]);
+		this.avgUptime = Long.parseLong(parts[pc++]);
+		this.maxUptime = Long.parseLong(parts[pc++]);
+		this.minUptime = Long.parseLong(parts[pc++]);
+		long t = Long.parseLong(parts[pc++]);
 		if (t == -1) {
 			this.lastCrash = null;
 		} else {
 			this.lastCrash = new Date(t * 1000);
 		}
-		t = Long.parseLong(parts[12]);
+		t = Long.parseLong(parts[pc++]);
 		if (t == -1) {
 			this.lastStart = null;
 		} else {
 			this.lastStart = new Date(t * 1000);
 		}
-		this.crashAvg1 = parts[13].equals("1") ? true : false;
-		this.crashAvg10 = Double.parseDouble(parts[14]);
-		this.crashAvg30 = Double.parseDouble(parts[15]);
+		if (protover != 1) {
+			t = Long.parseLong(parts[pc++]);
+			if (t == -1) {
+				this.lastStop = null;
+			} else {
+				this.lastStop = new Date(t * 1000);
+			}
+		} else {
+			this.lastStop = null;
+		}
+		this.crashAvg1 = parts[pc++].equals("1") ? true : false;
+		this.crashAvg10 = Double.parseDouble(parts[pc++]);
+		this.crashAvg30 = Double.parseDouble(parts[pc++]);
 	}
 
 	public String getName() {
-		return(path.substring(path.lastIndexOf('/') + 1));
+		return(dbname);
 	}
 
-	public String getPath() {
-		return(path);
+	public String getURI() {
+		return(uri);
 	}
 
 	public boolean isLocked() {
@@ -168,10 +205,6 @@ public class SabaothDB {
 
 	public String[] getScenarios() {
 		return(scenarios);
-	}
-
-	public String[] getConnections() {
-		return(connections);
 	}
 
 	public int getStartCount() {
@@ -204,6 +237,10 @@ public class SabaothDB {
 
 	public Date lastStarted() {
 		return(lastStart);
+	}
+
+	public Date lastStopped() {
+		return(lastStop);
 	}
 
 	public boolean lastStartWasSuccessful() {

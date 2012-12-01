@@ -1,6 +1,11 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Sat Dec  1 2012 Fabian Groffen <fabian@monetdb.org>
+- Mapi protocol v8 support was removed from all client drivers.  Protocol
+  v8 has not been used by the servers any more since Apr2012 release
+- The tool mnc was removed from installations
+
 * Wed Nov  7 2012 Sjoerd Mullender <sjoerd@acm.org>
 - msqldump: Implmented an option (--table/-t) to dump a single table.
 - Changed msqdump's trace option to be in line with mclient.  In both
