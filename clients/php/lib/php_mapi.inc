@@ -37,7 +37,6 @@
 	define("MSG_TUPLE", "[");
 	define("MSG_PROMPT", "");
 
-	define("PROTOCOL_v8", 8); // supported protocol(s)
 	define("PROTOCOL_v9", 9); // supported protocol(s)
 
 	define("LANG_SQL", "sql");
@@ -333,10 +332,7 @@
 
 
 		// $challenge[0] contains the salt
-		if ($credentials[2] == PROTOCOL_v8 ){
-			// Protocol v8 supported only for legacy reasons
- 			mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $lang);
-		} else if ($credentials[2] == PROTOCOL_v9) {
+		if ($credentials[2] == PROTOCOL_v9) {
 			// $credentials[5] contains pwhash
 			// $credentials[0] contains the hash
 			mapi_authenticate_v9($socket, $user, $passwd, $hash, $algos, $credentials[0], $dbname, $credentials[5]);
@@ -400,30 +396,6 @@
 		return TRUE;
 	}
 
-	/*
-	* Protocol 8 is supported to speak to merovingian and m4 which support only 'plain' as and auth method.
-	* Hash methods have to be lowercase.
-	*/
-	function mapi_authenticate_v8($socket, $user, $passwd, $hash, $algos, $salt, $dbname, $lang) {
-		global $last_error;
-		$auth_string = "";
-
-		if ( (is_array($algos) && (! in_array(strtolower($hash), $algos)) )  ) 			 {
-			// We are connection to m4 or merovingian
-			$hash = 'plain'; // force auth only in plain mode.
-		}
-
-		if (strtolower($hash) != "plain") {
-			$hashsum = hash(strtolower($hash), $passwd . $salt);
-		} else {
-			$hashsum = $passwd+$salt;
-		}
-
-		$auth_string = "BIG:" . $user . ":{" . strtolower($hash) . "}" . $hashsum . ":" . $lang .":" . $dbname . ":";
-
-		mapi_write($socket, $auth_string);
-	}
-
 	/* Hash function names have to be uppercase */
 	function mapi_authenticate_v9($socket, $user, $passwd, $hash, $algos, $salt, $dbname, $pwhash) {
 		$auth_string = "";
@@ -457,10 +429,10 @@
 
 
 		while ((ord($header[0]) & 1) == 0 ) {
-                	if ( ($header = socket_read($socket, 2)) == FALSE) {
-                        	$last_error = socket_strerror(socket_last_error());
-                      		exit();
-                	}
+			if ( ($header = socket_read($socket, 2)) == FALSE) {
+				$last_error = socket_strerror(socket_last_error());
+				exit();
+			}
 
 			$chunk_size = ( ((ord($header[1]))  << 7) | (ord($header[0]) >> 1) );
 

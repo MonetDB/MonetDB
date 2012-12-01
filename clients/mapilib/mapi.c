@@ -2436,21 +2436,19 @@ mapi_start_talking(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion < 8) {
-		/* because the headers changed, and because it makes no sense to
-		 * try and be backwards compatible, we bail out with a friendly
-		 * message saying so.
-		 */
-		snprintf(buf, BLOCK, "Unsupported protocol version: %d.  "
-			 "This client only supports version 8 and 9.  "
-			 "Sorry, can't help you here!", pversion);
-		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
-		return mid->error;
-	} else if (pversion == 8 || pversion == 9) {
+	if (pversion == 9) {
 		char *hash = NULL;
 		char *hashes = NULL;
 		char *byteo = NULL;
 		char *serverhash = NULL;
+		char *algsv[] = {
+			"RIPEMD160",
+			"SHA1",
+			"MD5",
+			NULL
+		};
+		char **algs = algsv;
+		char *p;
 
 		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
@@ -2462,11 +2460,11 @@ mapi_start_talking(Mapi mid)
 
 		/* the database has sent a list of supported hashes to us, it's
 		 * in the form of a comma separated list and in the variable
-		 * rest.  We try to use the strongest algorithm.
-		 */
+		 * rest.  We try to use the strongest algorithm. */
 		if (rest == NULL) {
 			/* protocol violation, not enough fields */
-			mapi_setError(mid, "Not enough fields in challenge string", "mapi_start_talking", MERROR);
+			mapi_setError(mid, "Not enough fields in challenge string",
+					"mapi_start_talking", MERROR);
 			return mid->error;
 		}
 		hashes = rest;
@@ -2488,133 +2486,67 @@ mapi_start_talking(Mapi mid)
 		 * hash, that is salted like in v8.  The hash algorithm is
 		 * specified in the 6th field.  If we don't support it, we
 		 * can't login. */
-		if (pversion == 9) {
-			serverhash = rest;
-			hash = strchr(serverhash, ':');
-			if (hash) {
-				*hash = '\0';
-				rest = hash + 1;
+		serverhash = rest;
+		hash = strchr(serverhash, ':');
+		if (hash) {
+			*hash = '\0';
+			rest = hash + 1;
+		}
+		hash = NULL;
+		/* hash password, if not already */
+		if (mid->password[0] != '\1') {
+			char *pwdhash = NULL;
+			if (strcmp(serverhash, "RIPEMD160") == 0) {
+				pwdhash = mcrypt_RIPEMD160Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "SHA512") == 0) {
+				pwdhash = mcrypt_SHA512Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "SHA384") == 0) {
+				pwdhash = mcrypt_SHA384Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "SHA256") == 0) {
+				pwdhash = mcrypt_SHA256Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "SHA224") == 0) {
+				pwdhash = mcrypt_SHA224Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "SHA1") == 0) {
+				pwdhash = mcrypt_SHA1Sum(mid->password,
+						strlen(mid->password));
+			} else if (strcmp(serverhash, "MD5") == 0) {
+				pwdhash = mcrypt_MD5Sum(mid->password,
+						strlen(mid->password));
+			} else {
+				snprintf(buf, BLOCK, "server requires unknown hash '%s'",
+						serverhash);
+				close_connection(mid);
+				return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 			}
-			hash = NULL;
-			/* hash password, if not already */
-			if (mid->password[0] != '\1') {
-				char *pwdhash = NULL;
-				if (strcmp(serverhash, "RIPEMD160") == 0) {
-					pwdhash = mcrypt_RIPEMD160Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "SHA512") == 0) {
-					pwdhash = mcrypt_SHA512Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "SHA384") == 0) {
-					pwdhash = mcrypt_SHA384Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "SHA256") == 0) {
-					pwdhash = mcrypt_SHA256Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "SHA224") == 0) {
-					pwdhash = mcrypt_SHA224Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "SHA1") == 0) {
-					pwdhash = mcrypt_SHA1Sum(mid->password,
-							strlen(mid->password));
-				} else if (strcmp(serverhash, "MD5") == 0) {
-					pwdhash = mcrypt_MD5Sum(mid->password,
-							strlen(mid->password));
-				} else {
-					snprintf(buf, BLOCK, "server requires unknown hash '%s'", serverhash);
-					close_connection(mid);
-					return mapi_setError(mid, buf, "mapi_start_talking", MERROR);
-				}
 
-				free(mid->password);
-				mid->password = malloc(sizeof(char) * (1 + strlen(pwdhash) + 1));
-				sprintf(mid->password, "\1%s", pwdhash);
-				free(pwdhash);
-			}
+			free(mid->password);
+			mid->password = malloc(sizeof(char) * (1 + strlen(pwdhash) + 1));
+			sprintf(mid->password, "\1%s", pwdhash);
+			free(pwdhash);
 		}
 
-		{
-			char *algsv[] = {
-				"RIPEMD160",
-				"SHA1",
-				"MD5",
-				NULL
-			};
-			char **algs = algsv;
-			char *p;
+		p = mid->password + 1;
 
-			if (pversion == 9) {
-				p = mid->password + 1;
-			} else {
-				p = mid->password;
-			}
-
-			for (; *algs != NULL; algs++) {
-				/* TODO: make this actually obey the separation by
-				 * commas, and only allow full matches */
-				if (strstr(hashes, *algs) != NULL) {
-					char *pwh = mcrypt_hashPassword(*algs, p, chal);
-					size_t len;
-					if (pwh == NULL)
-						continue;
-					len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
-					hash = malloc(sizeof(char) * len);
-					snprintf(hash, len, "{%s}%s", *algs, pwh);
-					free(pwh);
-					break;
-				}
+		for (; *algs != NULL; algs++) {
+			/* TODO: make this actually obey the separation by
+			 * commas, and only allow full matches */
+			if (strstr(hashes, *algs) != NULL) {
+				char *pwh = mcrypt_hashPassword(*algs, p, chal);
+				size_t len;
+				if (pwh == NULL)
+					continue;
+				len = strlen(pwh) + 11 /* {RIPEMD160} */ + 1;
+				hash = malloc(sizeof(char) * len);
+				snprintf(hash, len, "{%s}%s", *algs, pwh);
+				free(pwh);
+				break;
 			}
 		}
-#ifdef HAVE_CRYPT
-		if (pversion == 8 && hash == NULL && strstr(hashes, "crypt") != NULL) {
-			/* The crypt hash algorithm uses UNIX crypt, a modification of
-			 * DES which uses a 2-char wide salt.  Because crypt only cares
-			 * about the first eight characters of the given password, the
-			 * challenge may not be taken into account at all.  As salt, the
-			 * last two characters of the challenge are used.
-			 * As of proto v9 this weak hash has been dropped. */
-			char key[8];	/* NULL termination is not necessary */
-			char salt[3];	/* NULL termination is a necessity! */
-			char *cr;
-			int n;
-
-			/* prepare the key */
-			n = strlen(mid->password);
-			if (n >= 8) {
-				strncpy(key, mid->password, 8);
-			} else {
-				/* pad with the challenge, we know it is always 8+ chars */
-				strncpy(key, mid->password, n);
-				strncpy(key + n, chal, 8 - n);
-			}
-
-			/* prepare the salt */
-			n = strlen(chal);
-			salt[0] = chal[n - 2];
-			salt[1] = chal[n - 1];
-			salt[2] = '\0';
-
-			/* call crypt to do the work */
-			cr = crypt(key, salt);
-			assert(cr != NULL);
-			hash = malloc(sizeof(char) * ( /*{crypt} */ 7 + strlen(cr) + 1));
-			sprintf(hash, "{crypt}%s", cr);
-		} else
-#endif
-		if (pversion == 8 && hash == NULL && strstr(hashes, "plain") != NULL) {
-			/* The plain text algorithm, doesn't really hash at all.  It's
-			 * the easiest algorithm, as it just appends the challenge to
-			 * the password and returns it.
-			 * As of proto v9 this super insecure "hash" has been dropped. */
-			if (strcmp(server, "merovingian") == 0) {
-				hash = strdup("{plain}Mellon...");	/* Elfish word for friend */
-			} else {
-				hash = malloc(sizeof(char) * ( /*{plain} */ 7 +
-							      strlen(mid->password) + strlen(chal) + 1));
-				sprintf(hash, "{plain}%s%s", mid->password, chal);
-			}
-		}
-		/* could use else here, but below looks cleaner */
 		if (hash == NULL) {
 			/* the server doesn't support what we can */
 			snprintf(buf, BLOCK, "unsupported hash algorithms: %s", hashes);
@@ -2637,10 +2569,11 @@ mapi_start_talking(Mapi mid)
 
 		free(hash);
 	} else {
-		/* we don't know what this is, so don't try to do anything with
-		 * it */
-		snprintf(buf, BLOCK, "Unsupported protocol version: %d  "
-			 "Sorry, can't help you here!", pversion);
+		/* because the headers changed, and because it makes no sense to
+		 * try and be backwards (or forwards) compatible, we bail out
+		 * with a friendly message saying so */
+		snprintf(buf, BLOCK, "unsupported protocol version: %d, "
+			 "this client only supports version 9", pversion);
 		mapi_setError(mid, buf, "mapi_start_talking", MERROR);
 		return mid->error;
 	}
