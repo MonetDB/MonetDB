@@ -100,7 +100,7 @@ main(int argc, char **argv)
 		{"describe", 0, 0, 'D'},
 		{"functions", 0, 0, 'f'},
 		{"inserts", 0, 0, 'N'},
-		{"trace", 2, 0, 't'},
+		{"trace", 0, 0, 't'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
@@ -168,7 +168,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "u:p:d:DNfqh:t::?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "u:p:d:DNfqh:t?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;
