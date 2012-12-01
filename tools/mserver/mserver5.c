@@ -76,11 +76,11 @@ mserver_abort()
 }
 #endif
 
-static void usage(char *prog)
+static void usage(char *prog, int xit)
 __attribute__((__noreturn__));
 
 static void
-usage(char *prog)
+usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
@@ -102,13 +102,15 @@ usage(char *prog)
 	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
+#if 0
 	fprintf(stderr, "     --xproperties\n");
+#endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
-	exit(0);
+	exit(xit);
 }
 
 static void
@@ -218,22 +220,23 @@ main(int argc, char **av)
 		{ "dbinit", 1, 0, 0 },
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
-		{ "help", 0, 0, 'h' },
+		{ "help", 0, 0, '?' },
 		{ "version", 0, 0, 0 },
 		{ "readonly", 0, 0, 'r' },
 		{ "single-user", 0, 0, 0 },
 		{ "set", 1, 0, 's' },
-		{ "trace", 0, 0, 't' },
 		{ "threads", 0, 0, 0 },
 		{ "memory", 0, 0, 0 },
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
-		{ "transaction", 0, 0, 0 },
+		{ "transactions", 0, 0, 0 },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
+#if 0
 		{ "xproperties", 0, 0, 0 },
+#endif
 		{ "forcemito", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
@@ -275,12 +278,12 @@ main(int argc, char **av)
 	binpath = get_bin_path();
 
 	if (!(setlen = mo_builtin_settings(&set)))
-		usage(prog);
+		usage(prog, -1);
 
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -326,10 +329,12 @@ main(int argc, char **av)
 				grpdebug |= GRPoptimizers;
 				break;
 			}
+#if 0
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
 				grpdebug |= GRPxproperties;
 				break;
 			}
+#endif
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;
@@ -362,7 +367,7 @@ main(int argc, char **av)
 				grpdebug |= GRPheaps;
 				break;
 			}
-			usage(prog);
+			usage(prog, -1);
 		/* not reached */
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -389,22 +394,20 @@ main(int argc, char **av)
 			}
 		}
 		break;
-		case 't':   /* trace option, ignored to reduce testweb complaints
-			           fprintf(stderr, "#warning: trace option not yet supported\n");
-			         */
-			break;
-		case 'h':
 		case '?':
-			usage(prog);
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
 							"code '%c' 0%o\n", c, c);
-			usage(prog);
+			usage(prog, -1);
 		}
 	}
 
 	if (!(setlen = mo_system_config(&set, setlen)))
-		usage(prog);
+		usage(prog, -1);
 
 	if (debug || grpdebug) {
 		long_str buf;

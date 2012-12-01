@@ -219,8 +219,10 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPalgorithms;
 	if( strcmp("performance",*flg)==0)
 		GDKdebug |= GRPperformance;
+#if 0
 	if( strcmp("xproperties",*flg)==0)
 		GDKdebug |= GRPxproperties;
+#endif
 	if( strcmp("forcemito",*flg)==0)
 		GDKdebug |= GRPforcemito;
     return MAL_SUCCEED;

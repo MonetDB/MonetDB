@@ -16,6 +16,7 @@ stethoscope [options] +[trace options] {<mod>.<fcn>}
   -P | --password=<password>
   -p | --port=<portnr>
   -h | --host=<hostname>
+  -? | --help
 
 The trace options (default 'ISTest'):
   S = monitor start of instruction profiling

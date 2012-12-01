@@ -1524,7 +1524,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:?:T:t:r:o:D:b:B:s:m",
+		int c = getopt_long(argc, argv, "d:u:P:p:h:?T:t:r:o:Db:B:s:m",
 			long_options, &option_index);
 		if (c == -1)
 			break;
