@@ -230,7 +230,7 @@ main(int argc, char **av)
 		{ "memory", 0, 0, 0 },
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
-		{ "transaction", 0, 0, 0 },
+		{ "transactions", 0, 0, 0 },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
