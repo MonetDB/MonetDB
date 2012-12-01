@@ -50,7 +50,7 @@ Operation successful
 +---------------------------------------------------------------------+
 | mal                                                                 |
 +=====================================================================+
-| function user.s2_1{autoCommit=true}():void;                         |
+| function user.s1_1{autoCommit=true}():void;                         |
 |     X_3:bat[:oid,:wrd]  := bat.new(nil:oid,nil:wrd);                |
 |     X_2 := sql.mvc();                                               |
 |     X_6:bat[:oid,:sht]  := sql.bind(X_2,"sys","_tables","type",0);  |
@@ -91,7 +91,7 @@ Operation successful
 |     X_61 := algebra.selectNotNil(X_59);                             |
 |     X_62:wrd  := aggr.sum(X_61);                                    |
 |     sql.exportValue(1,".tables","L1","wrd",32,0,6,X_62,"");         |
-| end s2_1;                                                           |
+| end s1_1;                                                           |
 +---------------------------------------------------------------------+
 42 rows
 
