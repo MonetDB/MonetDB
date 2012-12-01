@@ -282,7 +282,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
+		int c = getopt_long(argc, av, "c:d::trs:h?",
 				long_options, &option_index);
 
 		if (c == -1)
