@@ -224,6 +224,7 @@ MEROgetStatus(sabdb **ret, char *database)
 				printf("WARNING: failed to parse response from "
 						"monetdbd: %s\n", e);
 				free(e);
+				swpos--;
 				continue;
 			}
 			if (swpos == swlen)
@@ -251,7 +252,7 @@ MEROgetStatus(sabdb **ret, char *database)
 }
 
 static void
-printStatus(sabdb *stats, int mode, int twidth)
+printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 {
 	sabuplog uplog;
 	char *e;
@@ -264,30 +265,34 @@ printStatus(sabdb *stats, int mode, int twidth)
 
 	if (mode == 1) {
 		/* short one-line (default) mode */
-		char *state;
+		char state = '\0';
+		char locked = '\0';
 		char uptime[12];
 		char avg[8];
 		char info[32];
 		char *dbname;
+		char *uri;
 
 		switch (stats->state) {
+			case SABdbStarting:
+				state = 'B';
+			break;
 			case SABdbRunning:
-				state = "running";
+				state = 'R';
 			break;
 			case SABdbCrashed:
-				state = "crashed";
+				state = 'C';
 			break;
-			case SABdbStarting:
 			case SABdbInactive:
-				state = "stopped";
+				state = 'S';
 			break;
 			default:
-				state = "unknown";
+				state = ' ';
 			break;
 		}
 		/* override if locked for brevity */
 		if (stats->locked == 1)
-			state = "locked ";
+			locked = 'L';
 
 		info[0] = '\0';
 		if (stats->state == SABdbStarting) {
@@ -303,25 +308,40 @@ printStatus(sabdb *stats, int mode, int twidth)
 			strftime(info, sizeof(info), "crashed on %Y-%m-%d %H:%M:%S", t);
 		}
 
-		if (stats->state != SABdbRunning) {
-			uptime[0] = '\0';
-		} else {
-			secondsToString(uptime, time(NULL) - uplog.laststart, 3);
+		switch (stats->state) {
+			case SABdbRunning:
+			case SABdbStarting:
+				secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+				break;
+			case SABdbInactive:
+				if (uplog.laststop != -1) {
+					secondsToString(uptime, time(NULL) - uplog.laststop, 1);
+					break;
+				} /* else fall through */
+			default:
+				uptime[0] = '\0';
+				break;
 		}
 
-		/* cut too long database names */
-		dbname = malloc(sizeof(char) * (twidth + 1));
-		abbreviateString(dbname, stats->dbname, twidth);
-		/* dbname | state | uptime | health */
-		secondsToString(avg, uplog.avguptime, 1);
-		printf("%-*s  %s %12s", twidth,
-				dbname, state, uptime);
+		/* cut too long names */
+		dbname = malloc(sizeof(char) * (dbwidth + 1));
+		abbreviateString(dbname, stats->dbname, dbwidth);
+		uri = malloc(sizeof(char) * (uriwidth + 1));
+		abbreviateString(uri,
+				info[0] != '\0' ? info : stats->uri ? stats->uri : "",
+				uriwidth);
+		/* dbname | state | health | uri/crash */
+		printf("%-*s  %c%c%3s", dbwidth, dbname,
+				locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
-		if (uplog.startcntr)
-			printf("  %3d%%, %3s  %s",
-					100 - (uplog.crashcntr * 100 / uplog.startcntr),
-					avg, info[0] != '\0' ? info : stats->uri ? stats->uri : "");
-		printf("\n");
+		if (uplog.startcntr) {
+			secondsToString(avg, uplog.avguptime, 1);
+			printf("  %3d%% %3s",
+					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
+		} else {
+			printf("           ");
+		}
+		printf("  %-*s\n", uriwidth, uri);
 	} else if (mode == 2) {
 		/* long mode */
 		char *state;
@@ -387,6 +407,13 @@ printStatus(sabdb *stats, int mode, int twidth)
 			sprintf(up, "(unknown)");
 		}
 		printf("  last start: %s\n", up);
+		if (uplog.laststop != -1) {
+			t = localtime(&uplog.laststop);
+			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
+		} else {
+			sprintf(up, "(unknown)");
+		}
+		printf("  last stop: %s\n", up);
 		printf("  average of crashes in the last start attempt: %d\n",
 				uplog.crashavg1);
 		printf("  average of crashes in the last 10 start attempts: %.2f\n",
@@ -629,9 +656,12 @@ command_status(int argc, char *argv[])
 	char *e;
 	sabdb *stats;
 	sabdb *orig;
+	sabdb *prev;
+	sabdb *neworig = NULL;
 	int t;
-	int dbwidth = 0;
 	int twidth = TERMWIDTH;
+	int dbwidth = 0;
+	int uriwidth = 0;
 
 	if (argc == 0) {
 		exit(2);
@@ -708,29 +738,9 @@ command_status(int argc, char *argv[])
 		msab_freeStatus(&orig);
 		orig = stats;
 	}
-	/* calculate width, BUG: SABdbState selection is only done at
-	 * printing */
-	for (stats = orig; stats != NULL; stats = stats->next) {
-		if ((t = strlen(stats->dbname)) > dbwidth)
-			dbwidth = t;
-	}
 
-	if (mode == 1 && orig != NULL) {
-		/* print header for short mode, state -- last crash = 54 chars */
-		twidth -= 54;
-		if (twidth < 6)
-			twidth = 6;
-		if (dbwidth < 14)
-			dbwidth = 14;
-		if (dbwidth < twidth)
-			twidth = dbwidth;
-		printf("%*sname%*s  ",
-				twidth - 4 /* name */ - ((twidth - 4) / 2), "",
-				(twidth - 4) / 2, "");
-		printf(" state     uptime       health\n");
-	}
-
-	for (p = state; *p != '\0'; p++) {
+	/* perform selection based on state (and order at the same time) */
+	for (p = &state[strlen(state) - 1]; p >= state; p--) {
 		int curLock = 0;
 		SABdbState curMode = SABdbIllegal;
 		switch (*p) {
@@ -751,14 +761,95 @@ command_status(int argc, char *argv[])
 			break;
 		}
 		stats = orig;
+		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
 					(curLock == 1 || 
 					 (curLock == 0 && stats->state == curMode)))
-				printStatus(stats, mode, twidth);
-			stats = stats->next;
+			{
+				sabdb *next = stats->next;
+				stats->next = neworig;
+				neworig = stats;
+				if (prev == NULL) {
+					orig = next;
+				} else {
+					prev->next = next;
+				}
+				stats = next;
+			} else {
+				prev = stats;
+				stats = stats->next;
+			}
 		}
 	}
+	msab_freeStatus(&orig);
+	orig = neworig;
+
+	if (mode == 1 && orig != NULL) {
+		int len = 0;
+
+		/* calculate dbwidth and uriwidth */
+		for (stats = orig; stats != NULL; stats = stats->next) {
+			if ((t = strlen(stats->dbname)) > dbwidth)
+				dbwidth = t;
+			if (stats->uri != NULL && (t = strlen(stats->uri)) > uriwidth)
+				uriwidth = t;
+			if (stats->locked && uriwidth < 32)
+				uriwidth = 32;
+		}
+
+		/* Ultra Condensed State(tm) since Feb2013:
+		state
+		R  6s     (Running)
+		R 14w
+		R 99y     (purely hypothetical)
+		B  3s     (Booting: in practice cannot be observed yet due to lock)
+		S  1w     (Stopped)
+		LR12h     (Locked/Running)
+		LS        (Locked/Stopped)
+		C         (Crashed)
+		      = 5 chars
+		*/
+
+		/* health
+		 health
+		100% 12d
+		 42%  4s
+		         = 8 chars
+		*/
+
+		len = dbwidth < 4 ? 4 : dbwidth + 2 + 5 + 2 + 8 + 2 + uriwidth;
+		if (len > twidth) {
+			if (len - twidth < 10) {
+				uriwidth -= len - twidth;
+				if (dbwidth < 4)
+					dbwidth = 4;
+			} else {
+				/* reduce relative to usage */
+				if (dbwidth < 4) {
+					dbwidth = 4;
+				} else {
+					dbwidth = (int)(dbwidth * 1.0 / (dbwidth + uriwidth) * (len - twidth));
+					if (dbwidth < 4)
+						dbwidth = 4;
+				}
+				uriwidth = twidth - (dbwidth + 2 + 5 + 2 + 8 + 2);
+				if (uriwidth < 8)
+					uriwidth = 8;
+			}
+		} else {
+			if (dbwidth < 4)
+				dbwidth = 4;
+		}
+
+		/* print header */
+		printf("%*sname%*s  state   health   %*sremarks\n",
+				(dbwidth - 4) / 2, "", (dbwidth - 4 + 1) / 2, "",
+				(uriwidth - 7) / 2, "");
+	}
+
+	for (stats = orig; stats != NULL; stats = stats->next)
+		printStatus(stats, mode, dbwidth, uriwidth);
 
 	if (orig != NULL)
 		msab_freeStatus(&orig);

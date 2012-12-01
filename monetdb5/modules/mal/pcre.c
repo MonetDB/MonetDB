@@ -110,10 +110,10 @@ typedef struct RE {
 } RE;
 
 #ifndef HAVE_STRCASESTR
-static char *
+static const char *
 strcasestr (const char *haystack, const char *needle)
 {
-	char *p, *startn = 0, *np = 0;
+	const char *p, *np = 0, *startn = 0;
 
 	for (p = haystack; *p; p++) {
 		if (np) {

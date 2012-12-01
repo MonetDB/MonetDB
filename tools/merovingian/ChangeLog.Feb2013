@@ -1,6 +1,10 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Fri Nov 30 2012 Fabian Groffen <fabian@monetdb.org>
+- monetdb status now uses a more condensed output, to cater for the uris
+  being shown, and prints how long a database is stopped
+
 * Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org>
 - monetdb status now prints the connection uri for each database,
   when available.  The connections and database path properties have

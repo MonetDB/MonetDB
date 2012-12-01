@@ -114,7 +114,15 @@ output.  By default a condensed one-line output per database format is
 used.  This output resembles pretty much the output of various
 .B xxxstat
 programs, and is ideal for quickly gaining an overview of the system
-state.
+state.  The output is divided in four columns,
+.IR name ", " state ", " health " and " remarks .
+The state column contains two characters that identify the state of the
+database, based on Booting (starting up), Running, Stopped, Crashed and
+Locked (under maintenance).  This is followed by the uptime when
+running.  The health column contains the percentage of successful starts
+and stops, followed by the average uptime.  The remarks column can
+contain arbitrary information about the database state, but usually
+contains the URI the database can be connected to.
 .IP "  \-c"
 The
 .I \-c

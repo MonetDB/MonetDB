@@ -774,6 +774,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	memset(ret, 0, sizeof(sabuplog));
 	ret->minuptime = -1;
 	ret->lastcrash = -1;
+	ret->laststop = -1;
 
 	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
 	if ((f = fopen(log, "r")) != NULL) {
@@ -800,7 +801,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 					/* successful stop */
 					ret->stopcntr++;
 					*p = '\0';
-					stop = (time_t)atol(data);
+					ret->laststop = stop = (time_t)atol(data);
 					p = data;
 					i = (int) (stop - start);
 					if (i > ret->maxuptime)
@@ -895,13 +896,13 @@ msab_serialise(char **ret, const sabdb *db)
 			"%s,%s,%d,%d,%s,"
 			"%d,%d,%d,"
 			"" LLFMT "," LLFMT "," LLFMT ","
-			"" LLFMT "," LLFMT ","
+			"" LLFMT "," LLFMT "," LLFMT ","
 			"%d,%f,%f",
 			db->dbname, db->uri ? db->uri : "", db->locked,
 			(int)(db->state), scens,
 			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
 			(lng)dbu.avguptime, (lng)dbu.maxuptime, (lng)dbu.minuptime,
-			(lng)dbu.lastcrash, (lng)dbu.laststart,
+			(lng)dbu.lastcrash, (lng)dbu.laststart, (lng)dbu.laststop,
 			dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
 
 	*ret = strdup(buf);
@@ -949,11 +950,12 @@ msab_deserialise(sabdb **ret, char *sdb)
 	if (strcmp(lasts, "1") == 0) {
 		/* Protocol 1 was used uptil Oct2012.  Since Jul2012 a new state
 		 * SABdbStarting was introduced, but not exposed to the client
-		 * in serialise.  After Oct2012, the path component was removed
+		 * in serialise.  In Feb2013, the path component was removed
 		 * and replaced by an URI field.  This meant dbname could no
 		 * longer be deduced from path, and hence sent separately.
 		 * Since the conns property became useless in the light of the
-		 * added uri, it was dropped.
+		 * added uri, it was dropped.  On top of this, a laststop
+		 * property was added to the uplog struct.
 		 * These four changes were effectuated in protocol 2.  When
 		 * reading protocol 1, we use the path field to set dbname, but
 		 * ignore the path information (and set uri to "<unknown>".  The
@@ -1095,6 +1097,19 @@ msab_deserialise(sabdb **ret, char *sdb)
 	*p++ = '\0';
 	u->laststart = (time_t)strtoll(lasts, (char **)NULL, 10);
 	lasts = p;
+	if (protover != '1') {
+		if ((p = strchr(p, ',')) == NULL) {
+			free(u);
+			snprintf(buf, sizeof(buf), 
+					"string does not contain laststop: %s", lasts);
+			return(strdup(buf));
+		}
+		*p++ = '\0';
+		u->laststop = (time_t)strtoll(lasts, (char **)NULL, 10);
+		lasts = p;
+	} else {
+		u->laststop = -1;
+	}
 	if ((p = strchr(p, ',')) == NULL) {
 		free(u);
 		snprintf(buf, sizeof(buf), 
