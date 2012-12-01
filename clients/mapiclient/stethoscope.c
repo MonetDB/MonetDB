@@ -115,6 +115,7 @@ usage(void)
 	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
+	fprintf(stderr, "  -? | --help\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "The trace options (default '%s'):\n",COUNTERSDEFAULT);
 	fprintf(stderr, "  S = monitor start of instruction profiling\n");
@@ -406,7 +407,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:?:h:g",
+		int c = getopt_long(argc, argv, "d:u:P:p:h:?",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -427,9 +428,14 @@ main(int argc, char **argv)
 			host = optarg;
 			break;
 		case '?':
+			usage();
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			exit(strcmp(argv[optind - 1], "-?") == 0 || strcmp(argv[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			usage();
-			exit(0);
+			exit(-1);
 		}
 	}
 
