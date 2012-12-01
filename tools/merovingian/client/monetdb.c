@@ -313,6 +313,9 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			case SABdbStarting:
 				secondsToString(uptime, time(NULL) - uplog.laststart, 1);
 				break;
+			case SABdbCrashed:
+				secondsToString(uptime, time(NULL) - uplog.lastcrash, 1);
+				break;
 			case SABdbInactive:
 				if (uplog.laststop != -1) {
 					secondsToString(uptime, time(NULL) - uplog.laststop, 1);

@@ -3,7 +3,8 @@
 
 * Fri Nov 30 2012 Fabian Groffen <fabian@monetdb.org>
 - monetdb status now uses a more condensed output, to cater for the uris
-  being shown, and prints how long a database is stopped
+  being shown, and prints how long a database is stopped, or how long
+  ago it crashed
 
 * Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org>
 - monetdb status now prints the connection uri for each database,
