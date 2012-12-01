@@ -2612,6 +2612,7 @@ usage(const char *prog, int xit)
 #ifdef HAVE_POPEN
 	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
+	fprintf(stderr, " -v          | --version          show version information and exit\n");
 	fprintf(stderr, " -?          | --help             show this usage message\n");
 
 	fprintf(stderr, "\nSQL specific opions \n");
