@@ -102,7 +102,9 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --transactions\n");
 	fprintf(stderr, "     --modules\n");
 	fprintf(stderr, "     --algorithms\n");
+#if 0
 	fprintf(stderr, "     --xproperties\n");
+#endif
 	fprintf(stderr, "     --performance\n");
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --forcemito\n");
@@ -233,7 +235,9 @@ main(int argc, char **av)
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
+#if 0
 		{ "xproperties", 0, 0, 0 },
+#endif
 		{ "forcemito", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
@@ -326,10 +330,12 @@ main(int argc, char **av)
 				grpdebug |= GRPoptimizers;
 				break;
 			}
+#if 0
 			if (strcmp(long_options[option_index].name, "xproperties") == 0) {
 				grpdebug |= GRPxproperties;
 				break;
 			}
+#endif
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
 				break;
