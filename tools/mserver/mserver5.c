@@ -76,11 +76,11 @@ mserver_abort()
 }
 #endif
 
-static void usage(char *prog)
+static void usage(char *prog, int xit)
 __attribute__((__noreturn__));
 
 static void
-usage(char *prog)
+usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options] [scripts]\n", prog);
 	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
@@ -108,7 +108,7 @@ usage(char *prog)
 	fprintf(stderr, "     --forcemito\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
-	exit(0);
+	exit(xit);
 }
 
 static void
@@ -228,7 +228,7 @@ main(int argc, char **av)
 		{ "memory", 0, 0, 0 },
 		{ "properties", 0, 0, 0 },
 		{ "io", 0, 0, 0 },
-		{ "transaction", 0, 0, 0 },
+		{ "transactions", 0, 0, 0 },
 		{ "modules", 0, 0, 0 },
 		{ "algorithms", 0, 0, 0 },
 		{ "optimizers", 0, 0, 0 },
@@ -275,12 +275,12 @@ main(int argc, char **av)
 	binpath = get_bin_path();
 
 	if (!(setlen = mo_builtin_settings(&set)))
-		usage(prog);
+		usage(prog, -1);
 
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::t:rh?s:m:i:a:e:x:h",
+		int c = getopt_long(argc, av, "c:d::trs:h?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -362,7 +362,7 @@ main(int argc, char **av)
 				grpdebug |= GRPheaps;
 				break;
 			}
-			usage(prog);
+			usage(prog, -1);
 		/* not reached */
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -395,16 +395,19 @@ main(int argc, char **av)
 			break;
 		case 'h':
 		case '?':
-			usage(prog);
+			/* a bit of a hack: look at the option that the
+			   current `c' is based on and see if we recognize
+			   it: if -? or --help, exit with 0, else with -1 */
+			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
 							"code '%c' 0%o\n", c, c);
-			usage(prog);
+			usage(prog, -1);
 		}
 	}
 
 	if (!(setlen = mo_system_config(&set, setlen)))
-		usage(prog);
+		usage(prog, -1);
 
 	if (debug || grpdebug) {
 		long_str buf;

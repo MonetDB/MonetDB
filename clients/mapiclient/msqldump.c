@@ -104,7 +104,7 @@ main(int argc, char **argv)
 		{"functions", 0, 0, 'f'},
 		{"table", 1, 0, 't'},
 		{"inserts", 0, 0, 'N'},
-		{"Xdebug", 2, 0, 'X'},
+		{"Xdebug", 0, 0, 'X'},
 		{"user", 1, 0, 'u'},
 		{"quiet", 0, 0, 'q'},
 		{"help", 0, 0, '?'},
@@ -172,7 +172,7 @@ main(int argc, char **argv)
 		mnstr_destroy(config);
 	}
 
-	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NX::u:q?", long_options, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "h:p:d:Dft:NXu:q?", long_options, NULL)) != -1) {
 		switch (c) {
 		case 'u':
 			user = optarg;

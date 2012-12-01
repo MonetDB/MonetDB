@@ -28,6 +28,7 @@ Options are:
  -X          | --Xdebug          trace mapi network interaction
  -z          | --timezone         do not tell server our timezone
  -| cmd      | --pager=cmd        for pagination
+ -v          | --version          show version information and exit
  -?          | --help             show this usage message
 
 SQL specific opions 

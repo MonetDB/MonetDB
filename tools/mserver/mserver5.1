@@ -112,7 +112,7 @@ integer, which value can be (a combination of):
                              for debugging (GDK developers, only)
   134217728 = OPTMASK      = trace the actions, decisions and
                              effects of MAL optimizers
-  268435456 = HEAPMASK   = trace/debug HEAPextend;
+  268435456 = HEAPMASK     = trace/debug HEAPextend;
                              used only for development & debugging
   536870912 = FORCEMITOMASK = forcefully activate mitosis even on
                               small tables, i.e., split small tables
@@ -130,12 +130,13 @@ integer, which value can be (a combination of):
 Note that mserver5 recognizes a series of command line options that sets
 one or more of these debug flags as well:
 .EX
-  --threads       (1 | PARMASK)
-  --memory        (MEMMASK)
+  --threads       (THRDMASK | PARMASK)
+  --memory        (MEMMASK | ALLOCMASK)
   --properties    (CHECKMASK | PROPMASK | BATMASK)
   --io            (IOMASK | PERFMASK)
+  --heaps         (HEAPMASK) 
   --transactions  (TMMASK | DELTAMASK | TEMMASK)
-  --modules       (DLMASK | LOADMASK)
+  --modules       (LOADMASK)
   --algorithms    (ALGOMASK | ESTIMASK)
   --xproperties   (XPROPMASK )
   --performance   (JOINPROPMASK | DEADBEEFMASK)
