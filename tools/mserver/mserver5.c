@@ -220,7 +220,7 @@ main(int argc, char **av)
 		{ "dbinit", 1, 0, 0 },
 		{ "daemon", 1, 0, 0 },
 		{ "debug", 2, 0, 'd' },
-		{ "help", 0, 0, 'h' },
+		{ "help", 0, 0, '?' },
 		{ "version", 0, 0, 0 },
 		{ "readonly", 0, 0, 'r' },
 		{ "single-user", 0, 0, 0 },
@@ -283,7 +283,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:h?",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -394,7 +394,6 @@ main(int argc, char **av)
 			}
 		}
 		break;
-		case 'h':
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
