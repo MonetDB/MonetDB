@@ -208,10 +208,10 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	SYSTVER		`uname``uname -r`
 	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
 	MDIFF		"$MTIMEOUT Mdiff"
-	MSERVER		"$MTIMEOUT mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt= --trace"
+	MSERVER		"$MTIMEOUT mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
 	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
-	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
-	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT --trace"
+	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
 	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory

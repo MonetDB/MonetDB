@@ -225,7 +225,6 @@ main(int argc, char **av)
 		{ "readonly", 0, 0, 'r' },
 		{ "single-user", 0, 0, 0 },
 		{ "set", 1, 0, 's' },
-		{ "trace", 0, 0, 't' },
 		{ "threads", 0, 0, 0 },
 		{ "memory", 0, 0, 0 },
 		{ "properties", 0, 0, 0 },
@@ -284,7 +283,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::trs:h?",
+		int c = getopt_long(argc, av, "c:d::rs:h?",
 				long_options, &option_index);
 
 		if (c == -1)
@@ -395,10 +394,6 @@ main(int argc, char **av)
 			}
 		}
 		break;
-		case 't':   /* trace option, ignored to reduce testweb complaints
-			           fprintf(stderr, "#warning: trace option not yet supported\n");
-			         */
-			break;
 		case 'h':
 		case '?':
 			/* a bit of a hack: look at the option that the
