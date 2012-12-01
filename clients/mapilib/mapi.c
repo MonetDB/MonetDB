@@ -823,14 +823,6 @@
 # endif
 #endif
 
-#ifdef HAVE_CRYPT_H
-# include <crypt.h>
-#else
-# if defined(HAVE_CRYPT) && defined(__MINGW32__)
-_CRTIMP char *__cdecl crypt(const char *key, const char *salt);
-# endif
-#endif
-
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
