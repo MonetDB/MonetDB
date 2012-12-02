@@ -139,8 +139,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (pieces <= 1)
 		return 0;
 	gdk_mito_parts = GDKgetenv_int("mito_parts", 0);
-	printf("fixed parts %d\n", gdk_mito_parts);
-	fflush(stdout);
 	if (gdk_mito_parts > 0) 
 		pieces = gdk_mito_parts;
 	OPTDEBUGmitosis
