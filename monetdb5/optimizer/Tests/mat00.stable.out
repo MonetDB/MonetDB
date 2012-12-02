@@ -25,16 +25,16 @@ function user.main():void;
     bat.append(m1,1@0);
     m2 := bat.new(:oid,:oid);
     bat.append(m2,2@0);
-    X_32 := algebra.select(m0,0@0,2@0);
-    X_33 := algebra.select(m1,0@0,2@0);
-    X_34 := algebra.select(m2,0@0,2@0);
-    X_36 := aggr.count(X_32);
-    X_37 := aggr.count(X_33);
-    X_38 := aggr.count(X_34);
-    X_35 := mat.pack(X_36,X_37,X_38);
-    X_39 := algebra.selectNotNil(X_35);
-    i := aggr.sum(X_39);
-    s := mat.pack(X_32,X_33,X_34);
+    X_35 := algebra.select(m0,0@0,2@0);
+    X_36 := algebra.select(m1,0@0,2@0);
+    X_37 := algebra.select(m2,0@0,2@0);
+    X_39 := aggr.count(X_35);
+    X_40 := aggr.count(X_36);
+    X_41 := aggr.count(X_37);
+    X_38 := mat.pack(X_39,X_40,X_41);
+    X_42 := algebra.selectNotNil(X_38);
+    i := aggr.sum(X_42);
+    s := mat.pack(X_35,X_36,X_37);
     io.print(s);
     io.print(i);
     c0 := bat.new(:oid,:oid);
@@ -43,49 +43,49 @@ function user.main():void;
     bat.append(c1,5@0);
     c := mat.pack(c0,c1);
     bat.append(c,6@0);
-    X_40 := algebra.join(m0,c);
-    X_41 := algebra.join(m1,c);
-    X_42 := algebra.join(m2,c);
-    j := mat.pack(X_40,X_41,X_42);
+    b := mat.pack(m0,m1,m2);
+    c := mat.pack(c0,c1);
+    j := algebra.join(b,c);
     io.print(j);
     b := mat.pack(m0,m1,m2);
     io.print(b);
+    c := mat.pack(c0,c1);
     io.print(c);
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
 # the Multi Assocation Tables 
     mdb.List();                         #  2 _2:void := MDBlistDetail() 
-    m0 := bat.new(:oid,:oid);           #  3 m0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
-    bat.append(m0,0@0);                 #  4 _5:bat[:oid,:oid] := BKCappend_val_wrap(m0:bat[:oid,:oid], _6:oid) {G}
-    m1 := bat.new(:oid,:oid);           #  5 m1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
-    bat.append(m1,1@0);                 #  6 _8:bat[:oid,:oid] := BKCappend_val_wrap(m1:bat[:oid,:oid], _9:oid) {G}
-    m2 := bat.new(:oid,:oid);           #  7 m2:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
-    bat.append(m2,2@0);                 #  8 _11:bat[:oid,:oid] := BKCappend_val_wrap(m2:bat[:oid,:oid], _12:oid) {G}
-    X_32 := algebra.select(m0,0@0,2@0); #  9 _32:bat[:oid,:oid] := ALGselect(m0:bat[:oid,:oid], _6:oid, _12:oid) {G}
-    X_33 := algebra.select(m1,0@0,2@0); # 10 _33:bat[:oid,:oid] := ALGselect(m1:bat[:oid,:oid], _6:oid, _12:oid) {G}
-    X_34 := algebra.select(m2,0@0,2@0); # 11 _34:bat[:oid,:oid] := ALGselect(m2:bat[:oid,:oid], _6:oid, _12:oid) {G}
-    X_36 := aggr.count(X_32);           # 12 _36:wrd := ALGcount_bat(_32:bat[:oid,:oid]) {G}
-    X_37 := aggr.count(X_33);           # 13 _37:wrd := ALGcount_bat(_33:bat[:oid,:oid]) {G}
-    X_38 := aggr.count(X_34);           # 14 _38:wrd := ALGcount_bat(_34:bat[:oid,:oid]) {G}
-    X_35 := mat.pack(X_36,X_37,X_38);   # 15 _35:bat[:oid,:wrd] := MATpackValues(_36:wrd, _37:wrd, _38:wrd) {G}
-    X_39 := algebra.selectNotNil(X_35); # 16 _39:bat[:oid,:wrd] := ALGselectNotNil(_35:bat[:oid,:wrd]) {G}
-    i := aggr.sum(X_39);                # 17 i:wrd := aggr.sum(_39:bat[:oid,:wrd]) {G}
-    s := mat.pack(X_32,X_33,X_34);      # 18 s:bat[:oid,:oid] := MATpack(_32:bat[:oid,:oid], _33:bat[:oid,:oid], _34:bat[:oid,:oid]) {G}
+    m0{horigin=1, torigin=1} := bat.new(:oid,:oid);#  3 m0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m0{horigin=1, torigin=1},0@0);#  4 _5:bat[:oid,:oid] := BKCappend_val_wrap(m0:bat[:oid,:oid], _6:oid) {G}
+    m1{horigin=2, torigin=2} := bat.new(:oid,:oid);#  5 m1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m1{horigin=2, torigin=2},1@0);#  6 _8:bat[:oid,:oid] := BKCappend_val_wrap(m1:bat[:oid,:oid], _9:oid) {G}
+    m2{horigin=3, torigin=3} := bat.new(:oid,:oid);#  7 m2:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(m2{horigin=3, torigin=3},2@0);#  8 _11:bat[:oid,:oid] := BKCappend_val_wrap(m2:bat[:oid,:oid], _12:oid) {G}
+    X_35{horigin=1} := algebra.select(m0{horigin=1, torigin=1},0@0,2@0);#  9 _35:bat[:oid,:oid] := ALGselect(m0:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_36{horigin=2} := algebra.select(m1{horigin=2, torigin=2},0@0,2@0);# 10 _36:bat[:oid,:oid] := ALGselect(m1:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_37{horigin=3} := algebra.select(m2{horigin=3, torigin=3},0@0,2@0);# 11 _37:bat[:oid,:oid] := ALGselect(m2:bat[:oid,:oid], _6:oid, _12:oid) {G}
+    X_39 := aggr.count(X_35{horigin=1});# 12 _39:wrd := ALGcount_bat(_35:bat[:oid,:oid]) {G}
+    X_40 := aggr.count(X_36{horigin=2});# 13 _40:wrd := ALGcount_bat(_36:bat[:oid,:oid]) {G}
+    X_41 := aggr.count(X_37{horigin=3});# 14 _41:wrd := ALGcount_bat(_37:bat[:oid,:oid]) {G}
+    X_38 := mat.pack(X_39,X_40,X_41);   # 15 _38:bat[:oid,:wrd] := MATpackValues(_39:wrd, _40:wrd, _41:wrd) {G}
+    X_42 := algebra.selectNotNil(X_38); # 16 _42:bat[:oid,:wrd] := ALGselectNotNil(_38:bat[:oid,:wrd]) {G}
+    i := aggr.sum(X_42);                # 17 i:wrd := CMDBATsum(_42:bat[:oid,:wrd]) {G}
+    s := mat.pack(X_35{horigin=1},X_36{horigin=2},X_37{horigin=3});# 18 s:bat[:oid,:oid] := MATpack(_35:bat[:oid,:oid], _36:bat[:oid,:oid], _37:bat[:oid,:oid]) {G}
     io.print(s);                        # 19 _16:void := IOprint_val(s:bat[:oid,:oid]) {G}
     io.print(i);                        # 20 _17:void := IOprint_val(i:wrd) 
-    c0 := bat.new(:oid,:oid);           # 21 c0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
-    bat.append(c0,4@0);                 # 22 _19:bat[:oid,:oid] := BKCappend_val_wrap(c0:bat[:oid,:oid], _20:oid) {G}
-    c1 := bat.new(:oid,:oid);           # 23 c1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
-    bat.append(c1,5@0);                 # 24 _22:bat[:oid,:oid] := BKCappend_val_wrap(c1:bat[:oid,:oid], _23:oid) {G}
-    c := mat.pack(c0,c1);               # 25 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
+    c0{horigin=1, torigin=1} := bat.new(:oid,:oid);# 21 c0:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(c0{horigin=1, torigin=1},4@0);# 22 _19:bat[:oid,:oid] := BKCappend_val_wrap(c0:bat[:oid,:oid], _20:oid) {G}
+    c1{horigin=2, torigin=2} := bat.new(:oid,:oid);# 23 c1:bat[:oid,:oid] := CMDBATnew(_4:oid, _4:oid) {G}
+    bat.append(c1{horigin=2, torigin=2},5@0);# 24 _22:bat[:oid,:oid] := BKCappend_val_wrap(c1:bat[:oid,:oid], _23:oid) {G}
+    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 25 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
     bat.append(c,6@0);                  # 26 _25:bat[:oid,:oid] := BKCappend_val_wrap(c:bat[:oid,:oid], _26:oid) {G}
-    X_40 := algebra.join(m0,c);         # 27 _40:bat[:oid,:oid] := ALGjoin(m0:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
-    X_41 := algebra.join(m1,c);         # 28 _41:bat[:oid,:oid] := ALGjoin(m1:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
-    X_42 := algebra.join(m2,c);         # 29 _42:bat[:oid,:oid] := ALGjoin(m2:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
-    j := mat.pack(X_40,X_41,X_42);      # 30 j:bat[:oid,:oid] := MATpack(_40:bat[:oid,:oid], _41:bat[:oid,:oid], _42:bat[:oid,:oid]) {G}
-    io.print(j);                        # 31 _28:void := IOprint_val(j:bat[:oid,:oid]) {G}
-    b := mat.pack(m0,m1,m2);            # 32 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
-    io.print(b);                        # 33 _29:void := IOprint_val(b:bat[:oid,:oid]) {G}
+    b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=2, torigin=2},m2{horigin=3, torigin=3});# 27 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
+    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 28 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
+    j := algebra.join(b,c);             # 29 j:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
+    io.print(j);                        # 30 _28:void := IOprint_val(j:bat[:oid,:oid]) {G}
+    b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=2, torigin=2},m2{horigin=3, torigin=3});# 31 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
+    io.print(b);                        # 32 _29:void := IOprint_val(b:bat[:oid,:oid]) {G}
+    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 33 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
     io.print(c);                        # 34 _30:void := IOprint_val(c:bat[:oid,:oid]) {G}
 end main;                               # 35  
 #-----------------#
@@ -93,30 +93,28 @@ end main;                               # 35
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
-[ 0@0,	  2@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
 [ 3 ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  4@0	  ]
-[ 0@0,	  5@0	  ]
-[ 0@0,	  6@0	  ]
+[ 1@0,	  5@0	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0@0	  ]
-[ 0@0,	  1@0	  ]
-[ 0@0,	  2@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 0@0,	  4@0	  ]
-[ 0@0,	  5@0	  ]
-[ 1@0,	  6@0	  ]
+[ 1@0,	  5@0	  ]
 
 # 08:54:20 >  
 # 08:54:20 >  Done.
