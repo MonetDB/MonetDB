@@ -42,7 +42,7 @@ eligible(MalBlkPtr mb)
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, limit, estimate = 0, pieces = 1, gdk_mito_parts = 0;
+	int i, j, limit, estimate = 0, pieces = 1, mito_parts = 0, mito_size = 0, row_size = 0;
 	str schema = 0, table = 0;
 	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
@@ -88,6 +88,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		 */
 		r = getVarRows(mb, getArg(p, 0));
 		if (r >= rowcnt) {
+			/* the rowsize depends on the column types, assume void-headed */
+			row_size = ATOMsize(getTailType(getArgType(mb,p,0)));
 			rowcnt = r;
 			target = p;
 			estimate++;
@@ -138,15 +140,24 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if (pieces <= 1)
 		return 0;
-	gdk_mito_parts = GDKgetenv_int("mito_parts", 0);
-	if (gdk_mito_parts > 0) 
-		pieces = gdk_mito_parts;
+	/* to enable experimentation we introduce the option to set
+	 * the number of parts required and/or the size of each chunk (in K)
+	 */
+	mito_parts = GDKgetenv_int("mito_parts", 0);
+	if (mito_parts > 0) 
+		pieces = mito_parts;
+	mito_size = GDKgetenv_int("mito_size", 0);
+	if (mito_size > 0) 
+		pieces = (rowcnt * row_size)/ (mito_size * 1024);
+
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
-							   " with " SSZFMT " rows into " SSZFMT " rows/piece %d threads %d pieces\n",
+							   " with " SSZFMT " rows of size %d into " SSZFMT 
+								" rows/piece %d threads %d pieces"
+								" fixed parts %d fixed size %d\n",
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
-				 rowcnt, r, threads, pieces);
+				 rowcnt, row_size, r, threads, pieces, mito_parts, mito_size);
 
 
 	limit = mb->stop;
