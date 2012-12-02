@@ -70,7 +70,7 @@ parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history,
 	if (save_history)
 		*save_history = 0;
 	if (pagewidth)
-		*pagewidth = -1;
+		*pagewidth = 0;
 
 	if (config) {
 		int line = 0;
