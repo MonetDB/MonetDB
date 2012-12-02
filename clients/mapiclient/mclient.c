@@ -151,7 +151,7 @@ static char *pager = 0;		/* use external pager */
 #include <signal.h>		/* to block SIGPIPE */
 #endif
 static int rowsperpage = 0;	/* for SQL pagination */
-static int pagewidth = -1;	/* -1: take whatever is necessary, >0: limit */
+static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
 static int croppedfields = 0;  /* whatever got cropped/truncated */
 static char firstcrop = 1;     /* first time we see cropping/truncation */
