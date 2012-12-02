@@ -767,9 +767,9 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					ret = shutdownFactory(cntxt, mb);
 				if (oldtimer)
 					cntxt->timer = oldtimer;
+				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				if (pcicaller && garbageControl(getInstrPtr(mb, 0)))
 					garbageCollector(cntxt, mb, stk, TRUE);
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 					ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
@@ -792,6 +792,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				continue;
 			}
 
+			/* monitoring information should reflect the input arguments,
+			   which may be removed by garbage collection  */
+			runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
+			runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 			/* check for strong debugging after each MAL statement */
 			if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 				if (GDKdebug & (CHECKMASK|PROPMASK) && exceptionVar < 0) {
@@ -969,7 +973,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					}
 				}
 				if (stkpc == mb->stop) {
-					runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 					if (cntxt->qtimeout && time(NULL) - stk->clock.tv_usec > cntxt->qtimeout){
 						ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 						stkpc = mb->stop;
@@ -979,8 +982,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				pci = getInstrPtr(mb, stkpc);
 			}
 		}
-		runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
-		runtimeTiming(cntxt, mb, stk, pci, tid, lock, &runtimeProfile);
 
 /*
  * After the expression has been evaluated we should check for a
@@ -1154,7 +1155,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 			}
 			if (stkpc == mb->stop) {
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				runtimeProfile.ppc = 0; /* also finalize function call event */
 				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				break;
@@ -1176,7 +1176,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				yieldResult(mb, pci, stkpc);
 				shutdownFactory(cntxt, mb);
 			} else {
-				runtimeProfileExit(cntxt, mb, stk, &runtimeProfile);
 				/* a fake multi-assignment */
 				if (env != NULL && pcicaller != NULL) {
 					InstrPtr pp = pci;
