@@ -20,6 +20,7 @@
 #include "opt_mitosis.h"
 #include "opt_octopus.h"
 #include "mal_interpreter.h"
+#include <gdk_utils.h>
 
 static int
 eligible(MalBlkPtr mb)
@@ -41,7 +42,7 @@ eligible(MalBlkPtr mb)
 int
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, limit, estimate = 0, pieces = 1;
+	int i, j, limit, estimate = 0, pieces = 1, gdk_mito_parts = 0;
 	str schema = 0, table = 0;
 	wrd r = 0, rowcnt = 0;    /* table should be sizeable to consider parallel execution*/
 	InstrPtr q, *old, target = 0;
@@ -137,6 +138,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	if (pieces <= 1)
 		return 0;
+	gdk_mito_parts = GDKgetenv_int("mito_parts", 0);
+	printf("fixed parts %d\n", gdk_mito_parts);
+	fflush(stdout);
+	if (gdk_mito_parts > 0) 
+		pieces = gdk_mito_parts;
 	OPTDEBUGmitosis
 	mnstr_printf(cntxt->fdout, "#opt_mitosis: target is %s.%s "
 							   " with " SSZFMT " rows into " SSZFMT " rows/piece %d threads %d pieces\n",

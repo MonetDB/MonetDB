@@ -145,7 +145,7 @@ GDKgetenv_istrue(const char *name)
 	return 0;
 }
 
-static int
+int
 GDKgetenv_int(const char *name, int def)
 {
 	char *val = GDKgetenv(name);
