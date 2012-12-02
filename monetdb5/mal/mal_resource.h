@@ -25,7 +25,7 @@
 #define TIMESLICE  2000 /* ms */
 #define DELAYUNIT 100 /* ms delay in parallel processing decissions */
 
-#define USE_MAL_ADMISSION
+//#define USE_MAL_ADMISSION
 #ifdef USE_MAL_ADMISSION
 mal_export int MALadmission(lng argclaim, lng hotclaim);
 #endif
