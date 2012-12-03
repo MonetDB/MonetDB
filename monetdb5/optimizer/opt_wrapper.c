@@ -58,6 +58,7 @@ All Rights Reserved.
 #include "opt_inline.h"
 #include "opt_joinpath.h"
 #include "opt_mapreduce.h"
+#include "opt_matpack.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -99,6 +100,7 @@ struct{
 	{"inline", &OPTinlineImplementation},
 	{"joinPath", &OPTjoinPathImplementation},
 	{"mapreduce", &OPTmapreduceImplementation},
+	{"matpack", &OPTmatpackImplementation},
 	{"mergetable", &OPTmergetableImplementation},
 	{"mitosis", &OPTmitosisImplementation},
 	{"multiplex", &OPTmultiplexImplementation},

@@ -21,6 +21,14 @@ pattern pack3(b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpack3
 comment "Materialize the MAT into a BAT by considering the heads as void. (used in centipede)";
 
+pattern packIncrement(b:bat[:oid,:any_2],pieces:int):bat[:oid,:any_2]
+address MATpackIncrement
+comment "Prepare incremental mat pack";
+
+pattern packIncrement(b:bat[:oid,:any_2],c:bat[:oid,:any_2]):bat[:oid,:any_2]
+address MATpackIncrement
+comment "Prepare incremental mat pack";
+
 pattern slice(first:wrd, last:wrd, b:bat[:oid,:any_2]...):bat[:oid,:any_2]
 address MATpackSlice
 comment "Materialize a sliced MAT into a BAT";
