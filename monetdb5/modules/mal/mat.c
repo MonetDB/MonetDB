@@ -133,6 +133,55 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+/*
+ * Enable incremental packing. The SQL front-end requires
+ * fixed oid sequences.
+ */
+str
+MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int bid, *ret = (int*) getArgReference(stk,p,0);
+	BAT *b, *bb, *bn;
+
+	(void) cntxt;
+	b = BATdescriptor( bid = stk->stk[getArg(p,1)].val.ival);
+	if ( b == NULL)
+		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+	if ( bid < 0 )
+		b = BATmirror(b);
+	assert(BAThdense(b));
+
+	if ( getArgType(mb,p,2) == TYPE_int){
+		/* first step */
+		bn = BATnew(TYPE_void, b->ttype, BATcount(b) * stk->stk[getArg(p,2)].val.ival);
+		if (bn == NULL)
+			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		BATsettrivprop(bn);
+		BATseqbase(bn, b->H->seq);
+		BATseqbase(BATmirror(bn), b->T->seq);
+		BATappend(bn,b,FALSE);
+		BBPreleaseref(b->batCacheid);
+		assert(!bn->H->nil || !bn->H->nonil);
+		assert(!bn->T->nil || !bn->T->nonil);
+		BBPkeepref(*ret = bn->batCacheid);
+	} else {
+		/* remaining steps */
+		bb = BATdescriptor(stk->stk[getArg(p,2)].val.ival);
+		if ( bb ){
+			if (BATcount(b) == 0)
+				BATseqbase(b, bb->H->seq);
+			if (BATcount(b) == 0)
+				BATseqbase(BATmirror(b), bb->T->seq);
+			BATappend(b,bb,FALSE);
+		}
+		assert(!b->H->nil || !b->H->nonil);
+		assert(!b->T->nil || !b->T->nonil);
+		BBPkeepref(*ret = b->batCacheid);
+		BBPreleaseref(bb->batCacheid);
+	}
+	return MAL_SUCCEED;
+}
+
 static str
 MATpackSliceInternal(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {

@@ -164,6 +164,7 @@ struct OPTcatalog {
 {"joinPath",	0,	0,	0,	DEBUG_OPT_JOINPATH},
 {"macro",		0,	0,	0,	DEBUG_OPT_MACRO},
 {"mapreduce",	0,	0,	0,	DEBUG_OPT_MAPREDUCE},
+{"matpack",		0,	0,	0,	DEBUG_OPT_MATPACK},
 {"mergetable",	0,	0,	0,	DEBUG_OPT_MERGETABLE},
 {"mitosis",		0,	0,	0,	DEBUG_OPT_MITOSIS},
 {"multiplex",	0,	0,	0,	DEBUG_OPT_MULTIPLEX},

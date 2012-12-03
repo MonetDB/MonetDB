@@ -358,6 +358,13 @@ pattern optimizer.multiplex(mod:str,fcn:str):void
 address OPTwrapper
 comment "Compiler for multiplexed instructions.";
 
+#opt_matpack
+pattern optimizer.matpack():str
+address OPTwrapper;
+pattern optimizer.matpack(mod:str, fcn:str):str
+address OPTwrapper
+comment "Unroll the mat.pack operation";
+
 #opt_octopus.mal
 module octopus;
 pattern optimizer.octopus():str
