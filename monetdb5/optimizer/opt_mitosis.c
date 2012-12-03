@@ -138,8 +138,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (pieces > MAXSLICES)
 			pieces = MAXSLICES;
 	}
-	if (pieces <= 1)
-		return 0;
 	/* to enable experimentation we introduce the option to set
 	 * the number of parts required and/or the size of each chunk (in K)
 	 */
@@ -158,7 +156,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				 getVarConstant(mb, getArg(target, 2)).val.sval,
 				 getVarConstant(mb, getArg(target, 3)).val.sval,
 				 rowcnt, row_size, r, threads, pieces, mito_parts, mito_size);
-
+	if (pieces <= 1)
+		return 0;
 
 	limit = mb->stop;
 	if (newMalBlkStmt(mb, mb->ssize + 2 * estimate) < 0)
