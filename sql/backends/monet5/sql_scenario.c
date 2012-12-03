@@ -1544,7 +1544,7 @@ SQLparser(Client c)
 		}
 		m->emode = m_inplace;
 		scanner_query_processed(&(m->scanner));
-	} else if (cachable(m, NULL) && 
+	} else if (cachable(m, NULL) && m->emode != m_prepare &&
                   (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		if (m->emod & mod_explain)
 			SQLshowPlan(c);
