@@ -27,6 +27,7 @@ Options are:
  -s stmt     | --statement=stmt  run single statement
  -X          | --Xdebug          trace mapi network interaction
  -z          | --timezone         do not tell server our timezone
+ -v          | --version          show version information and exit
  -?          | --help             show this usage message
 
 SQL specific opions 
