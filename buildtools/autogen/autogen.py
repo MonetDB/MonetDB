@@ -92,7 +92,7 @@ def read_makefile(p, cwd):
     lineno = 0
     for line in fileinput.input(os.path.join(cwd, 'Makefile.ag')):
         if line.lstrip()[0:1] != "#":
-            for token in string.split(line):
+            for token in line.split():
                 p.parse(token, lineno, line)
             p.parse("\n", lineno, line)
         lineno = lineno + 1
@@ -109,19 +109,19 @@ def expand_subdirs(subdirs):
     res = []
     for subdir in subdirs:
         if "?" in subdir:
-            parts = string.split(subdir, "?")
+            parts = subdir.split("?")
             if len(parts) == 2:
-                dirs = string.split(parts[1], ":")
+                dirs = parts[1].split(":")
                 if len(dirs) > 2:
-                    print "!ERROR:syntax error in conditional subdir:", subdir
+                    print("!ERROR:syntax error in conditional subdir: " + subdir)
                 else:
                     cond = parts[0]
                     for d in dirs:
-                        if string.strip(d) != "":
+                        if d.strip() != "":
                             res.append((d, cond))
                         cond = "!" + cond
             else:
-                print "!ERROR:syntax error in conditional subdir:", subdir
+                print("!ERROR:syntax error in conditional subdir: " + subdir)
         else:
             res.append((subdir, None))
     return res
@@ -172,18 +172,7 @@ def filter(st):
         return st + '\n'
     return ''
 
-def dirlen(l, r):
-    if string.count(l, os.sep) < string.count(r, os.sep):
-        return -1
-    elif string.count(l, os.sep) > string.count(r, os.sep):
-        return 1
-    elif l < r:
-        return -1
-    elif l > r:
-        return 1
-    return 0
-
-OutList.sort(dirlen)
+OutList.sort(key=lambda x: x.count(os.sep))
 OutList = map(filter, OutList)
 OutListFd = open("acout.in", "w")
 OutListFd.writelines(OutList)

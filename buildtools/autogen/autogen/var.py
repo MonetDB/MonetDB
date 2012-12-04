@@ -45,7 +45,7 @@ class groupvar(var):
         return self._values.items()
 
     def has_key(self,key):
-        return self._values.has_key(key)
+        return key in self._values
 
     def __getitem__(self,key):
         return self._values[key]
