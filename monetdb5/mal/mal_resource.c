@@ -179,6 +179,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	lng delay, clk;
 	int threads;
 	double factor;
+	int delayed= 0;
 
 	threads= GDKnr_threads > 0? GDKnr_threads: 1;
 	if ( running == 0) // reset workers pool count
@@ -201,8 +202,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			clk = DELAYUNIT;
 		}
 
-	if ( 0 && clk >= DELAYUNIT ) {
-		mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
+	if ( clk >= DELAYUNIT ) {
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
 			if (running < 2)
@@ -215,8 +215,11 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
 			delay = (long) (delay * running / threads);
 			running--;
-			if (delay)
+			if (delay) {
+				if ( delayed++ == 0)
+						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 				MT_sleep_ms(delay);
+			}
 			running++;
 			clk -= DELAYUNIT;
 		}
