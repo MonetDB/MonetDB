@@ -179,6 +179,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	lng delay, clk;
 	int threads;
 	double factor;
+	int delayed= 0;
 
 	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
@@ -203,7 +204,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			clk = DELAYUNIT;
 		}
 
-	if ( 0 && clk > DELAYUNIT ) {
+	if ( clk > DELAYUNIT ) {
 		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
@@ -217,8 +218,11 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
 			delay = (long) ( ((double)delay) * running / threads);
 			running--;
-			if (delay)
+			if (delay) {
+				if ( delayed++ == 0)
+						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 				MT_sleep_ms(delay);
+			}
 			running++;
 			clk -= DELAYUNIT;
 		}
