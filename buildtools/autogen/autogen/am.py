@@ -1002,7 +1002,7 @@ def am_python_generic(fd, var, python, am, PYTHON):
                    pyre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
         pkgnams.append(pynmre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(2))
         for pkg in pkgs:
-            pkgdir = posixpath.join(pkg.split('.'))
+            pkgdir = posixpath.join(*pkg.split('.'))
             pkgdirs.append(pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
