@@ -21,19 +21,19 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define buninsfix(B,C,A,I,T,V,G,M,R)					\
-	do {								\
-		if ((I) == BATcapacity((B))) {				\
-			BATsetcount((B), (I));				\
-			if (BATextend((B),				\
-			              MIN(BATcapacity((B)) + (G),	\
-			                  (M))) == NULL) {		\
-				BBPreclaim((B));	 		\
-				return (R);				\
-			}						\
-			A = (T *) C##loc((B), BUNfirst((B)));		\
-		} 							\
-		A[(I)] = (V);						\
+#define buninsfix(B,C,A,I,T,V,G,M,R)				\
+	do {							\
+		if ((I) == BATcapacity(B)) {			\
+			BATsetcount((B), (I));			\
+			if (BATextend((B),			\
+			              MIN(BATcapacity(B) + (G),	\
+			                  (M))) == NULL) {	\
+				BBPreclaim(B);			\
+				return (R);			\
+			}					\
+			A = (T *) C##loc((B), BUNfirst(B));	\
+		}						\
+		A[(I)] = (V);					\
 	} while (0)
 
 static BAT *
@@ -183,8 +183,8 @@ do {									\
 			READ;						\
 			buninsfix(bn, T, dst, cnt, oid, o,		\
 			          (BUN) ((dbl) cnt / (dbl) (p-r)	\
-			                 * (dbl) (q-p) * 1.1),		\
-			          maximum, BUN_NONE);			\
+			                 * (dbl) (q-p) * 1.1 + 1024),	\
+			          BATcapacity(bn) + q - p, BUN_NONE);	\
 			cnt += (TEST);					\
 			p++;						\
 		}							\
