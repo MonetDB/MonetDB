@@ -614,6 +614,9 @@
 /* Define if you have _sys_siglist */
 /* #undef HAVE__SYS_SIGLIST */
 
+/* Define to 1 if the system has the type `__int128'. */
+/* #undef HAVE___INT128 */
+
 /* Define to 1 if the system has the type `__int64'. */
 #define HAVE___INT64 1
 

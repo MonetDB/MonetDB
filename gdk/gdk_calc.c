@@ -3463,7 +3463,11 @@ MUL_3TYPE_enlarge(bte, int, lng)
 MUL_3TYPE_enlarge(bte, int, flt)
 MUL_3TYPE_enlarge(bte, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(bte, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(bte, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(bte, lng, flt)
 MUL_3TYPE_enlarge(bte, lng, dbl)
@@ -3491,7 +3495,11 @@ MUL_3TYPE_enlarge(sht, int, lng)
 MUL_3TYPE_enlarge(sht, int, flt)
 MUL_3TYPE_enlarge(sht, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(sht, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(sht, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(sht, lng, flt)
 MUL_3TYPE_enlarge(sht, lng, dbl)
@@ -3517,7 +3525,11 @@ MUL_3TYPE_enlarge(int, int, lng)
 MUL_3TYPE_enlarge(int, int, flt)
 MUL_3TYPE_enlarge(int, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(int, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(int, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(int, lng, flt)
 MUL_3TYPE_enlarge(int, lng, dbl)
@@ -3525,22 +3537,38 @@ MUL_3TYPE_enlarge(int, lng, dbl)
 MUL_2TYPE_float(int, flt, flt)
 MUL_3TYPE_enlarge(int, flt, dbl)
 MUL_2TYPE_float(int, dbl, dbl)
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, bte, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, bte)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, bte, flt)
 MUL_3TYPE_enlarge(lng, bte, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, sht, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, sht)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, sht, flt)
 MUL_3TYPE_enlarge(lng, sht, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, int, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, int)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, int, flt)
 MUL_3TYPE_enlarge(lng, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, lng, flt)
 MUL_3TYPE_enlarge(lng, lng, dbl)
