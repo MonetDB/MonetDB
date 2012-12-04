@@ -58,7 +58,7 @@ BATsample(BAT *b, BUN n)
 
 	cnt = BATcount(b);
 	if (cnt <= n) {
-		bn = BATcopy(b, b->htype, b->ttype, FALSE);
+		bn = BATcopy(b, b->htype, b->ttype, TRUE);
 	} else {
 		BUN top = cnt - n;
 		BUN smp = n;
@@ -99,8 +99,10 @@ BATsample(BAT *b, BUN n)
 		bn->tdense = FALSE;
 		BATkey(bn, BAThkey(b));
 		BATkey(BATmirror(bn), BATtkey(b));
-		bn->H->nil = bn->htype == TYPE_void; /* implies seq == nil */
-		bn->T->nil = bn->ttype == TYPE_void; /* implies seq == nil */
+		bn->H->seq = b->H->seq;
+		bn->T->seq = b->T->seq;
+		bn->H->nil = b->H->nonil;
+		bn->T->nil = b->T->nonil;
 		bn->H->nonil = b->H->nonil;
 		bn->T->nonil = b->T->nonil;
 		BATsetcount(bn, n);
