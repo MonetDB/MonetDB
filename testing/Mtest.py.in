@@ -2640,7 +2640,22 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 SrvrOut.write(ln)
                 SrvrOut.flush()
             if ln[:6] != 'Ready.':
-                ServerReady = False
+                # If not ready, it may be that there are far to many
+                # network connections in use, all in TIME_WAIT status.
+                # We'll just wait a while for that to clear and try
+                # again.
+                pSrvr.stdin.close()
+                CollectIt(pSrvr.stdout, SrvrOut)
+                pSrvr.wait()
+                time.sleep(120)
+                pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                ln="dummy"
+                while 0 < len(ln) and ln[:6] != 'Ready.':
+                    ln=pSrvr.stdout.readline()
+                    SrvrOut.write(ln)
+                    SrvrOut.flush()
+                if ln[:6] != 'Ready.':
+                    ServerReady = False
 
             if ServerReady:
                 port = int(env['MAPIPORT'])
