@@ -37,7 +37,7 @@ override_dh_auto_configure:
 	--with-mseed=no \
 	--with-perl=yes \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir=lib/ruby/gems/1.8 \
@@ -50,11 +50,11 @@ override_dh_auto_test:
 
 override_dh_auto_install:
 	dh_auto_install
-	cd clients/python && python setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+	cd clients/python2 && python setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 	cd clients/python3 && python3 setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 
 override_dh_clean:
 	dh_clean
-	cd clients/python && python setup.py clean
+	cd clients/python2 && python setup.py clean
 	cd clients/python3 && python3 setup.py clean
 
