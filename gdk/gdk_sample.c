@@ -114,3 +114,74 @@ bunins_failed:
 	BBPreclaim(bn);
 	return NULL;
 }
+
+/* BATsample_ implements sampling for void headed BATs */
+BAT *
+BATsample_(BAT *b, BUN n)
+{
+	BAT *bn;
+	BUN cnt;
+
+	BATcheck(b, "BATsample");
+	assert(BAThdense(b));
+	ERRORcheck(n > BUN_MAX, "BATsample: sample size larger than BUN_MAX\n");
+	ALGODEBUG fprintf(stderr, "#BATsample: sample " BUNFMT " elements.\n", n);
+
+	cnt = BATcount(b);
+	/* empty sample size */
+	if (n == 0) {
+		bn = BATnew(TYPE_void, TYPE_void, 0);
+		BATsetcount(bn, 0);
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), 0);
+	/* sample size is larger than the input BAT, return all oids */
+	} else if (cnt <= n) {
+		bn = BATnew(TYPE_void, TYPE_void, cnt);
+		BATsetcount(bn, cnt);
+		BATseqbase(bn, 0);
+		BATseqbase(BATmirror(bn), b->H->seq);
+	} else {
+		BUN smp = 0;
+		/* we use wrd and not BUN since p may be -1 */
+		wrd top = b->hseqbase + cnt - n;
+		wrd p = ((wrd) b->hseqbase) - 1;
+		oid *o;
+		bn = BATnew(TYPE_void, TYPE_oid, smp);
+		if (bn == NULL) {
+			GDKerror("#BATsample: memory allocation error");
+			return NULL;
+		}
+		o = (oid *) Tloc(bn, BUNfirst(bn));
+		while (smp < n-1) { /* loop until all but 1 values are sampled */
+			double v = DRAND;
+			double quot = (double)top/(double)cnt;
+			BUN jump = 0;
+			while (quot > v) { /* determine how many positions to jump */
+				jump++;
+				top--;
+				cnt--;
+				quot *= (double)top/(double)cnt;
+			}
+			p += (jump+1);
+			cnt--;
+			o[smp++] = (oid) p;
+		}
+		/* 1 left */
+		p += (BUN) rand() % cnt;
+		o[smp] = (oid) p;
+
+		/* property management */
+		BATsetcount(bn, n);
+		bn->trevsorted = bn->U->count <= 1;
+		bn->tkey = 1;
+		bn->tdense = bn->U->count <= 1;
+		if (bn->U->count == 1)
+			bn->tseqbase = * (oid *) Tloc(bn, BUNfirst(bn));
+		bn->hdense = 1;
+		bn->hseqbase = 0;
+		bn->hkey = 1;
+		bn->hrevsorted = bn->U->count <= 1;
+	}
+
+	return bn;
+}

@@ -3165,6 +3165,7 @@ gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
  *
  */
 gdk_export BAT *BATsample(BAT *b, BUN n);
+gdk_export BAT *BATsample_(BAT *b, BUN n); /* version that expects void head and returns oids */
 
 /* generic n-ary multijoin beast, with defines to interpret retval */
 #define MULTIJOIN_SORTED(r)	((char*) &r)[0]
