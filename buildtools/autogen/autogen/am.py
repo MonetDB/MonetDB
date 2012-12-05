@@ -74,7 +74,7 @@ def am_sort_libs(libs, tree):
     for (pref,lib,sep,cond) in libs:
         after = -1
         # does lib depend on another library
-        if tree.has_key('lib_'+ lib):
+        if 'lib_'+ lib in tree:
             v = tree['lib_'+lib]
             if "LIBS" in v:
                 for l in v['LIBS']:
@@ -84,7 +84,7 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos
-        elif tree.has_key('LIBS'):
+        elif 'LIBS' in tree:
             v = tree['LIBS']
             if lib[1:] + "_DLIBS" in v:
                 for l in v[lib[1:] + '_DLIBS']:
@@ -1181,11 +1181,11 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     if cwd == topdir:
         fd.write('ACLOCAL_AMFLAGS = -I buildtools/conf\n')
 
-    if not tree.has_key('INCLUDES'):
+    if 'INCLUDES' not in tree:
         tree.add('INCLUDES', [])
 
     am = {}
-    if tree.has_key('NAME'):
+    if 'NAME' in tree:
         am['NAME'] = tree['NAME']
     else:
         if cwd != topdir:
