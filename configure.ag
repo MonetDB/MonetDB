@@ -1258,6 +1258,13 @@ AC_SUBST(PYTHON3)
 AM_CONDITIONAL(HAVE_PYTHON3, test x"$have_python3" != xno)
 AC_SUBST(PYTHON3_LIBDIR)
 
+# Mtest/Mfilter currently require Python 2
+if test "x$enable_testing" != xno ; then
+	if test "x$PYTHON2" = xfalse ; then
+		enable_testing = no
+	fi
+fi
+
 RUBY=ruby
 have_rubygem_dir=auto
 AC_ARG_WITH(rubygem-dir,
