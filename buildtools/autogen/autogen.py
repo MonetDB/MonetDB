@@ -77,7 +77,7 @@ class parser:
         elif self.state == "=" and isName(token):
             if token == '""':
                 token = ""
-            if self.top.has_key(token):
+            if token in self.top:
                 for i in self.top[token]:
                     self.curvar.append(i)
             else:
@@ -133,7 +133,7 @@ def main(cwd, topdir, automake, incdirsmap, conditional = ()):
     codegen(p.curvar, cwd, topdir, incdirsmap)
     (InstallList, DocList, OutList) = am.output(p.curvar, cwd, topdir, automake, conditional)
     msc.output(p.curvar, cwd, topdir)
-    if p.curvar.has_key('SUBDIRS'):
+    if 'SUBDIRS' in p.curvar:
         for (dir, cond) in expand_subdirs(p.curvar['SUBDIRS']):
             d = os.path.join(cwd, dir)
             if os.path.exists(d):

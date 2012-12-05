@@ -44,7 +44,7 @@ class groupvar(var):
     def items(self):
         return self._values.items()
 
-    def has_key(self,key):
+    def __contains__(self,key):
         return key in self._values
 
     def __getitem__(self,key):

@@ -1124,7 +1124,7 @@ def output(tree, cwd, topdir):
 
     fd.write(MAKEFILE_HEAD)
 
-    if tree.has_key('INCLUDES'):
+    if 'INCLUDES' not in tree:
         tree.add('INCLUDES', [])
 
     msc = {}
@@ -1156,7 +1156,7 @@ def output(tree, cwd, topdir):
     fd.write("TOPDIR = %s\n" % reldir.replace('/', '\\'))
     fd.write("srcdir = $(TOPDIR)\\..%s\n" % srcdir.replace('/', '\\'))
     fd.write("!INCLUDE $(TOPDIR)\\..\\NT\\rules.msc\n")
-    if tree.has_key("SUBDIRS"):
+    if 'SUBDIRS' in tree:
         fd.write("all: build-all\n")
         fd.write("check: check-recursive check-msc\n")
         fd.write("install: install-recursive install-msc\n")
@@ -1197,7 +1197,7 @@ def output(tree, cwd, topdir):
             fd.write(" %s" % v)
         fd.write("\n")
 
-    if tree.has_key('SUBDIRS'):
+    if 'SUBDIRS' in tree:
         fd.write('build-all: $(BUILT_SOURCES) all-recursive all-msc\n')
 
 ##    fd.write("EXTRA_DIST = Makefile.ag Makefile.msc")
