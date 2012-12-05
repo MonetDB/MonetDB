@@ -1022,8 +1022,8 @@ def am_python_generic(fd, var, python, am, PYTHON):
     for pkgdir in sorted(pkgdirs, reverse = True):
         fd.write("\t[ '$(srcdir)' -ef . ] || rm -r '%s'\n" % pkgdir)
 
-def am_python(fd, var, python, am):
-    am_python_generic(fd, var, python, am, 'PYTHON')
+def am_python2(fd, var, python, am):
+    am_python_generic(fd, var, python, am, 'PYTHON2')
 
 def am_python3(fd, var, python3, am):
     am_python_generic(fd, var, python3, am, 'PYTHON3')
@@ -1156,7 +1156,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
                 'GEM': am_gem,
-                'PYTHON': am_python,
+                'PYTHON2': am_python2,
                 'PYTHON3': am_python3,
                 }
 
