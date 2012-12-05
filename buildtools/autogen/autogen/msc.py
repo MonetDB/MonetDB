@@ -1029,8 +1029,8 @@ def msc_python_generic(fd, var, python, msc, PYTHON):
         fd.write('install_%s:\n' % f)
         fd.write('\t$(%s) %s install --prefix "$(prefix)"\n' % (PYTHON, f))
 
-def msc_python(fd, var, python, msc):
-    msc_python_generic(fd, var, python, msc, 'PYTHON')
+def msc_python2(fd, var, python, msc):
+    msc_python_generic(fd, var, python, msc, 'PYTHON2')
 
 def msc_python3(fd, var, python3, msc):
     msc_python_generic(fd, var, python3, msc, 'PYTHON3')
@@ -1105,7 +1105,7 @@ output_funcs = {'SUBDIRS': msc_subdirs,
                 'HEADERS': msc_headers,
                 'ANT': msc_ant,
                 'GEM': msc_gem,
-                'PYTHON': msc_python,
+                'PYTHON2': msc_python2,
                 'PYTHON3': msc_python3,
                 }
 

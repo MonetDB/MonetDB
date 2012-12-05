@@ -292,6 +292,7 @@ CONDITIONALS = {
     'HAVE_PCRE'            : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'            : "@HAVE_PERL_FALSE@",
     'HAVE_PYTHON'          : "@HAVE_PYTHON_FALSE@",
+    'HAVE_PYTHON2'         : "@HAVE_PYTHON2_FALSE@",
     'HAVE_PYTHON3'         : "@HAVE_PYTHON3_FALSE@",
     'HAVE_RAPTOR'          : "@HAVE_RAPTOR_FALSE@",
     'HAVE_RUBYGEM'         : "@HAVE_RUBYGEM_FALSE@",
@@ -3577,7 +3578,7 @@ def main(argv) :
     # inject vars that tell various languages where to find their libs
     env['PERL5LIB'] = _configure(os.path.join('@QXprefix@', '@PERL_LIBDIR@'))
 # set dynamically for python test lib
-#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON_LIBDIR@'))
+#    env['PYTHONPATH'] = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
     env['PHP_INCPATH'] = _configure(os.path.join('@datadir@', 'php'))
     env['BINDIR'] = _configure('@bindir@')
     vars_ = vars_ + ['PERL5LIB', 'PHP_INCPATH', 'BINDIR']
