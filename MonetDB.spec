@@ -650,7 +650,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-mseed=no \
 	--with-perl=yes \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
