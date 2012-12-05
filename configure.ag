@@ -1207,12 +1207,7 @@ if test "x$have_python3" != xno; then
 			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
 			fi
-			case "$host_os-`"$PYTHON3" -V 2>&1`" in
-				darwin9*-*2.5.1)
-					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,1,"")' 2>/dev/null`/site-packages";;
-				*)
-					PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python3_lib(0,0,"")' 2>/dev/null`";;
-			esac
+			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,""))' 2>/dev/null`"
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious

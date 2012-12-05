@@ -454,7 +454,7 @@ def collect_includes(incdirs, cwd, topdir):
 def codegen(tree, cwd, topdir, incdirsmap):
     includes = {}
     incmap = {}
-    if tree.has_key("INCLUDES"):
+    if 'INCLUDES' in tree:
         includes,incmap = collect_includes(tree["INCLUDES"],cwd, topdir)
 
     deps = {}
