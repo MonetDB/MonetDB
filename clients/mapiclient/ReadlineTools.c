@@ -39,6 +39,8 @@
 #endif
 #endif
 
+#include <errno.h>
+
 #define PATHLENGTH	256	/* maximum file pathname length. */
 
 static const char *sql_commands[] = {
@@ -390,8 +392,36 @@ init_readline(Mapi mid, char *lang, int save_history)
 			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
 		_save_history = 1;
 #endif
-		if (_save_history)
-			read_history(_history_file);
+		if (_save_history) {
+			FILE *f;
+			switch (read_history(_history_file)) {
+			case 0:
+				/* success */
+				break;
+			case ENOENT:
+				/* history file didn't exist, so try to create
+				 * it and then try again */
+				if ((f = fopen(_history_file, "w")) != NULL) {
+					/* failed to create, don't
+					 * bother saving */
+					_save_history = 0;
+				} else {
+					(void) fclose(f);
+					if (read_history(_history_file) != 0) {
+						/* still no luck, don't
+						 * bother saving */
+						_save_history = 0;
+					}
+				}
+				break;
+			default:
+				/* unrecognized failure, don't bother saving */
+				_save_history = 0;
+				break;
+			}
+		}
+		if (!_save_history)
+			fprintf(stderr, "Warning: not saving history\n");
 	}
 }
 
