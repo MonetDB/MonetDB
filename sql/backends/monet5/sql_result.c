@@ -655,8 +655,7 @@ mvc_import_table(Client cntxt, mvc *m, bstream *bs, char *sname, char *tname, ch
 
 				assert(b != NULL);
 
-				HASHremove(b);
-				HASHremove(BATmirror(b));
+				HASHdestroy(b);
 
 				fmt[i].c[0] = b;
 				cnt = BATcount(b);

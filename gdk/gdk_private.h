@@ -76,6 +76,7 @@ int GDKunlink(const char *dir, const char *nme, const char *extension);
 int HASHgonebad(BAT *b, const void *v);
 BUN HASHmask(BUN cnt);
 Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask);
+void HASHremove(BAT *b);
 int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 void HEAPcacheInit(void);
 int HEAP_check(Heap *h, HeapRepair *hr);

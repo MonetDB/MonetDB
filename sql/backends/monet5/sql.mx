@@ -6984,8 +6984,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 		if (b == NULL) 
 			throw(SQL,"sql.drop_hash","Can not access descriptor");
-		HASHremove(b);
-		HASHremove(BATmirror(b));
+		HASHdestroy(b);
 		BBPreleaseref(b->batCacheid);
 	}
 	return MAL_SUCCEED;
