@@ -78,3 +78,4 @@ type_resolution_error_in_SQL_procedural_code.Bug-3143
 update_crash.Bug-2655
 tuples_INTERSECT_vs_count_intersect_differs.Bug-2659
 large-number-operation-strange-results.Bug-2929
+inet-casts.Bug-3205
