@@ -539,7 +539,7 @@ program.
 %dir %{python_sitelib}/monetdb
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python/README.rst
+%doc clients/python2/README.rst
 
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
