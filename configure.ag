@@ -1108,7 +1108,7 @@ PYTHON_MAJ=
 if test "x$PYTHON" != xno; then
 	AC_MSG_CHECKING([major version of $PYTHON])
 	case "`"$PYTHON" -V 2>&1`" in
-		"Python 2."[67]*)  # older Pythons don't get Python3 syntax
+		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
 			PYTHON_MAJ=2
 			AC_MSG_RESULT([2])
 			;;
