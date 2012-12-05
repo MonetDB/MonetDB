@@ -29,8 +29,6 @@ stderr of test 'inet-casts.Bug-3205` in directory 'test/BugTracker-2012` itself:
 # 10:36:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=madrid" "--port=35702"
 # 10:36:53 >  
 
-MAPI  = monetdb@madrid:35702
-QUERY = drop tab3205;
 
 
 # 10:36:53 >  

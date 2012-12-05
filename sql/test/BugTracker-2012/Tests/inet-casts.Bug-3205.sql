@@ -9,4 +9,4 @@ select * from tab3205 where col = cast('127.0.0.1' as inet) order by pos;
 select * from tab3205 where col = inet '127.0.0.1' order by pos;
 select * from tab3205 where col = inet '127.0.0.1' order by pos;
 select * from tab3205 order by pos;
-drop tab3205;
+drop table tab3205;
