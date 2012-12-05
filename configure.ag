@@ -1099,73 +1099,99 @@ AC_SUBST(PERL)
 AM_CONDITIONAL(HAVE_PERL, test x"$have_perl" != xno)
 AC_SUBST(PERL_LIBDIR)
 
-have_python=auto
-PYTHON=python
+# check major version of python
+# check if python2 and python3 exist
+# if python2 or python3 doesn't exist, use python if major matches
 
-AC_ARG_WITH(python,
-	AS_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	have_python="$withval")
+AC_PATH_PROG(PYTHON,python,no,$PATH)
+PYTHON_MAJ=
+if test "x$PYTHON" != xno; then
+	AC_MSG_CHECKING([major version of $PYTHON])
+	case "`"$PYTHON" -V 2>&1`" in
+		"Python 2."[67]*)  # older Pythons don't get Python3 syntax
+			PYTHON_MAJ=2
+			AC_MSG_RESULT([2])
+			;;
+		"Python 3."*)
+			PYTHON_MAJ=3
+			AC_MSG_RESULT([3])
+			;;
+		*)
+			AC_MSG_ERROR([unknown Python version])
+			;;
+	esac
+fi
 
-case "$have_python" in
+
+have_python2=auto
+PYTHON2=python2
+
+AC_ARG_WITH(python2,
+	AS_HELP_STRING([--with-python2=FILE], [python2 is installed as FILE]),
+	have_python2="$withval")
+
+case "$have_python2" in
 	yes|no|auto) ;;
 	*)
-		PYTHON="$have_python"
-		have_python=yes
+		PYTHON2="$have_python"
 		;;
 esac
 
-if test "x$have_python" != xno; then
+if test "x$have_python2" != xno; then
 	if test x$cross_compiling != xyes; then
-		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
-		if test "x$PYTHON" = xno; then
-			if test "x$have_python" != xauto; then
-				AC_MSG_ERROR([No Python executable found])
+		AC_PATH_PROG(PYTHON2,$PYTHON2,no,$PATH)
+		if test "x$PYTHON2" = xno; then
+			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = 2; then
+				PYTHON2="$PYTHON"
+				have_python2=yes
+			elif test "x$have_python2" != xauto; then
+				AC_MSG_ERROR([Python 2 executable not found])
 			fi
-			have_python=no
+			have_python2=no
 		fi
 	fi
 fi
 
-if test "x$have_python" != xno; then
-	have_python_libdir=auto
+if test "x$have_python2" != xno; then
+	have_python2_libdir=auto
 
-	AC_ARG_WITH(python-libdir,
-		AS_HELP_STRING([--with-python-libdir=DIR],
-			[relative path for Python library directory (where Python modules should be installed)]),
-		have_python_libdir="$withval")
+	AC_ARG_WITH(python2-libdir,
+		AS_HELP_STRING([--with-python2-libdir=DIR],
+			[relative path for Python 2 library directory (where Python 2 modules should be installed)]),
+		have_python2_libdir="$withval")
 
-	case "$have_python_libdir" in
+	case "$have_python2_libdir" in
 		yes|auto)
 			if test x$cross_compiling = xyes; then
-				AC_MSG_ERROR([Must specify --with-python-libdir when cross compiling])
+				AC_MSG_ERROR([Must specify --with-python2-libdir when cross compiling])
 			fi
-			case "$host_os-`"$PYTHON" -V 2>&1`" in
+			case "$host_os-`"$PYTHON2" -V 2>&1`" in
 				darwin9*-*2.5.1)
-					PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
 				*)
-					PYTHON_LIBDIR="`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
 			esac
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
-			PYTHON_LIBDIR=`echo "$have_python_libdir" | sed "s|^$Qprefix/||"`
-			have_python_libdir=yes
+			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
+			have_python2_libdir=yes
 			;;
-		*)	PYTHON_LIBDIR="$have_python_libdir"
-			have_python_libdir=yes
+		*)	PYTHON2_LIBDIR="$have_python2_libdir"
+			have_python2_libdir=yes
 			;;
 	esac
 else
-	# no Python implies no Python libraries
-	have_python_libdir=no
-	PYTHON_LIBDIR=""
+	# no Python 2 implies no Python 2 libraries
+	have_python2_libdir=no
+	PYTHON2_LIBDIR=""
 	# and no interpreter
-	PYTHON=false
+	PYTHON2=false
 fi
 
-AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
-AC_SUBST(PYTHON_LIBDIR)
+AC_SUBST(PYTHON2)
+AM_CONDITIONAL(HAVE_PYTHON2, test x"$have_python2" != xno)
+AC_SUBST(PYTHON2_LIBDIR)
 
 have_python3=auto
 PYTHON3=python3
@@ -1178,7 +1204,6 @@ case "$have_python3" in
 	yes|no|auto) ;;
 	*)
 		PYTHON3="$have_python3"
-		have_python3=yes
 		;;
 esac
 
@@ -1186,8 +1211,11 @@ if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON3,$PYTHON3,no,$PATH)
 		if test "x$PYTHON3" = xno; then
-			if test "x$have_python3" != xauto; then
-				AC_MSG_ERROR([No Python3 executable found])
+			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = 3; then
+				PYTHON3="$PYTHON"
+				have_python3=yes
+			elif test "x$have_python3" != xauto; then
+				AC_MSG_ERROR([Python3 executable not found])
 			fi
 			have_python3=no
 		fi
@@ -1199,7 +1227,7 @@ if test "x$have_python3" != xno; then
 
 	AC_ARG_WITH(python3-libdir,
 		AS_HELP_STRING([--with-python3-libdir=DIR],
-			[relative path for Python3 library directory (where Python3 modules should be installed)]),
+			[relative path for Python 3 library directory (where Python 3 modules should be installed)]),
 		have_python3_libdir="$withval")
 
 	case "$have_python3_libdir" in
@@ -1219,7 +1247,7 @@ if test "x$have_python3" != xno; then
 			;;
 	esac
 else
-	# no Python3 implies no Python3 libraries
+	# no Python 3 implies no Python 3 libraries
 	have_python3_libdir=no
 	PYTHON3_LIBDIR=""
 	# and no interpreter
