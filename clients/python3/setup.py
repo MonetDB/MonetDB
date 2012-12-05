@@ -31,7 +31,7 @@ setup(name='python-monetdb',
     author_email='info@monetdb.org',
     url='http://www.monetdb.org/',
     packages=['monetdb', 'monetdb.sql'],
-    download_url='<will be filled in before a release>/python-monetdb-11.13.6.tar.gz',
+    download_url='<will be filled in before a release>/python3-monetdb-11.13.6.tar.gz',
     classifiers=[
         "Topic :: Database :: Database Engines/Servers",
         "Development Status :: 5 - Production/Stable",
