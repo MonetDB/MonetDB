@@ -30,6 +30,7 @@
 #   contains(<file>,<string>)
 # - do multi-level prompting?
 # - normalize all path's used
+# - Python 3? (or do a full rewrite?)
 
 try:
     True
@@ -165,24 +166,27 @@ except ImportError:
         os.environ['PYTHONPATH'] = p
 
 ttywidth = 0
-if os.name != 'nt' and isatty and os.isatty(sys.stdin.fileno()):
-    try:
-        proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE)
-    except OSError:
-        pass
+if isatty and os.isatty(sys.stdin.fileno()):
+    if os.name != 'nt':
+        ttywidth = 80
     else:
-        out, err = proc.communicate()
-        res = re.search('columns ([0-9]+)', out)
-        if res is not None:
-            ttywidth = int(res.group(1))
+        try:
+            proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE)
+        except OSError:
+            pass
         else:
-            res = re.search(' ([0-9]+) columns', out)
+            out, err = proc.communicate()
+            res = re.search('columns ([0-9]+)', out)
             if res is not None:
                 ttywidth = int(res.group(1))
-        if ttywidth < 60:
-            # rediculously narrow tty, ignore value
-            ttywidth = 0
+            else:
+                res = re.search(' ([0-9]+) columns', out)
+                if res is not None:
+                    ttywidth = int(res.group(1))
+            if ttywidth < 60:
+                # rediculously narrow tty, ignore value
+                ttywidth = 0
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -2982,7 +2986,7 @@ def CheckClassPath() :
         cp = ''
         cpx = ''
     JARS = {
-        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+\.jar$'),
+        'HAVE_MONETDBJDBC_JAR' : re.compile('^monetdb-jdbc-[0-9]\.[0-9]+(-[a-f0-9]{12})?\.jar$'),
         'HAVE_JDBCCLIENT_JAR'  : re.compile('^jdbcclient\.jar$'),
         'HAVE_JDBCTESTS_JAR'   : re.compile('^jdbctests\.jar$'),
     }
@@ -3139,6 +3143,15 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     SYST = 'Windows'
     HOST = "WINE"
     RELEASE = "5.2"
+
+# see if we can use UNIX sockets
+SOCK = False
+try:
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    SOCK = True
+except socket.error, (Serrno,Serrstr):
+    # apparently not
+    pass
 
 if SYST == "Linux":
     #  Please keep this aligned / in sync with configure.ag !
@@ -3714,12 +3727,20 @@ def main(argv) :
         # if no revision known, can't refer to repository
         URLPREFIX = None
 
+    global SOCK
+    if SOCK:
+        SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                (env['GDK_DBFARM'], env['MAPIPORT'])
+        HOST = env['GDK_DBFARM']
+    else:
+        SOCK = ""
+
     # check for executables, set their standard options and export them
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], env['MSERVER_SET'])
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --forcemito --set mal_listing=2 %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
