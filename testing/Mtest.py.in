@@ -2704,6 +2704,24 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
+                if not ServerReady:
+                    pSrvr.stdin.close()
+                    CollectIt(pSrvr.stdout, SrvrOut)
+                    pSrvr.wait()
+                    time.sleep(120)
+                    ServerReady = True
+                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                    ln="dummy"
+                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                        ln=pSrvr.stdout.readline()
+                        SrvrOut.write(ln)
+                        SrvrOut.flush()
+                    if ln[:6] != 'Ready.':
+                        ServerReady = False
+
+                    if ServerReady:
+                        port = int(env['MAPIPORT'])
+                        ServerReady = mapi_ping(port, lang)
 
         else:
             ClntOut = open(TestOutFile, 'a')
