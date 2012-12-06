@@ -96,6 +96,23 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 }
 
 sample_export str
+SAMPLEsubuniform(bat *r, bat *b, ptr s) {
+	BAT *br, *bb;
+
+	if ((bb = BATdescriptor(*b)) == NULL) {
+		throw(MAL, "sample.subuniform", INTERNAL_BAT_ACCESS);
+	}
+	br = BATsample_(bb,*(BUN *)s);
+	if (br == NULL)
+		throw(MAL, "sample.subuniform", OPERATION_FAILED);
+
+	BBPunfix(bb->batCacheid);
+	BBPkeepref(*r = br->batCacheid);
+	return MAL_SUCCEED;
+
+}
+
+sample_export str
 SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
 	BAT *bb;
 	double pr = *(double *)p;

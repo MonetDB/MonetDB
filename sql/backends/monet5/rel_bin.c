@@ -2677,7 +2677,6 @@ rel2bin_sample( mvc *sql, sql_rel *rel, list *refs)
 		sc = column(sql->sa, sc);
 		sample = stmt_sample(sql->sa, stmt_alias(sql->sa, sc, tname, cname),s);
 
-		sample = stmt_reverse(sql->sa, stmt_mark_tail(sql->sa, sample, 0));
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
 			char *cname = column_name(sql->sa, sc);

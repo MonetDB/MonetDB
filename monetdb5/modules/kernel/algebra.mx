@@ -282,6 +282,11 @@ comment "Selects all elements that have 'substr' as in the tail.";
 command sample ( b:bat[:oid,:any_2], num:int ) :bat[:oid,:any_2] 
 address ALGsample
 comment "Produce a random selection of size 'num' from the input BAT.";
+
+command subsample(b:bat[:oid,:any_1], num:int ) :bat[:oid,:oid] 
+address ALGsubsample
+comment "Return the oids of a random selection of size 'num' from the input BAT.";
+
 # @+ BAT copying
 command copy( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGcopy
@@ -1076,6 +1081,7 @@ algebra_export str ALG@1(int *result, int* lid, int *rid);
 @:ALGbinaryExport(tdifference)@
 @:ALGbinaryExport(tdiff)@
 @:ALGbinaryintExport(sample)@
+@:ALGbinaryintExport(subsample)@
 
 algebra_export str ALGtunique(int *result, int *bid);
 algebra_export str ALGtsort(int *result, int *bid);
@@ -2765,6 +2771,11 @@ ALGsample(bat *result, bat *bid, int *param)
 	return ALGbinaryint(result, bid, param, BATsample, "algebra.sample");
 }
 
+str
+ALGsubsample(bat *result, bat *bid, int *param)
+{
+	return ALGbinaryint(result, bid, param, BATsample_, "algebra.subsample");
+}
 
 /* add items missing in the kernel */
 str
