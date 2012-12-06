@@ -141,7 +141,7 @@ embedded_sql(opt *set, int len)
 }
 
 Mapi
-monetdb_sql(char *dbfarm, char *dbname)
+monetdb_sql(char *dbpath)
 {
 	Mapi mid;
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
@@ -155,8 +155,7 @@ monetdb_sql(char *dbfarm, char *dbname)
 
 	/* needed, to prevent the MonetDB config file to be used */  
 	embedded_len = mo_system_config(&embedded_set, len);
-	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbfarm", dbfarm);
-	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbname", dbname);
+	embedded_len = mo_add_option(&embedded_set, embedded_len, opt_cmdline, "gdk_dbpath", dbpath);
 
 	server = mapi_embedded_init(&mid,"sql");
 
