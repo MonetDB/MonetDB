@@ -1225,6 +1225,7 @@ str runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc,
 
 	flow->status = (FlowStatus)GDKzalloc((flow->stop - flow->start + 1) * sizeof(FlowStatusRec));
 	size = DFLOWgraphSize(mb, startpc, stoppc);
+	size += stoppc - startpc;
 	flow->nodes = (int*)GDKzalloc(sizeof(int) * size);
 	flow->edges = (int*)GDKzalloc(sizeof(int) * size);
 	DFLOWinit(flow, cntxt, mb, stk, size);
