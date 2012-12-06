@@ -3144,6 +3144,15 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     HOST = "WINE"
     RELEASE = "5.2"
 
+# see if we can use UNIX sockets
+SOCK = False
+try:
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    SOCK = True
+except socket.error, (Serrno,Serrstr):
+    # apparently not
+    pass
+
 if SYST == "Linux":
     #  Please keep this aligned / in sync with configure.ag !
     LINUX_DIST=''
@@ -3723,12 +3732,20 @@ def main(argv) :
         # if no revision known, can't refer to repository
         URLPREFIX = None
 
+    global SOCK
+    if SOCK:
+        SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                (env['GDK_DBFARM'], env['MAPIPORT'])
+        HOST = env['GDK_DBFARM']
+    else:
+        SOCK = ""
+
     # check for executables, set their standard options and export them
     if THISFILE == "Mtest.py":
         exe = {}
         exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
-        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
-                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], env['MSERVER_SET'])
+        exe['Mserver']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= --trace --forcemito --set mal_listing=2 %s' % \
+                                                               (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['MAPIPORT'], SOCK, env['MSERVER_SET'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s -i -e --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])
