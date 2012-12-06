@@ -58,7 +58,10 @@ quiet = False
 
 releaserun = False
 
-if os.name != 'nt' and os.isatty(sys.stdout.fileno()):
+# whether output goes to a tty
+isatty = os.isatty(sys.stdout.fileno())
+
+if os.name != 'nt' and isatty:
     # color output a little
     RED = '\033[1;31m'
     GREEN = '\033[0;32m'
@@ -160,6 +163,26 @@ except ImportError:
         if os.environ.has_key('PYTHONPATH'):
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
+
+ttywidth = 0
+if os.name != 'nt' and isatty and os.isatty(sys.stdin.fileno()):
+    try:
+        proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
+                                stderr = subprocess.PIPE)
+    except OSError:
+        pass
+    else:
+        out, err = proc.communicate()
+        res = re.search('columns ([0-9]+)', out)
+        if res is not None:
+            ttywidth = int(res.group(1))
+        else:
+            res = re.search(' ([0-9]+) columns', out)
+            if res is not None:
+                ttywidth = int(res.group(1))
+        if ttywidth < 60:
+            # rediculously narrow tty, ignore value
+            ttywidth = 0
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -1031,7 +1054,17 @@ def SkipTest(env, TST, EXT, REASON, length) :
             REASON = REASON[3:]
         if REASON.endswith('.'):
             REASON = REASON[:-1]
-        STDOUT.write('%s%-*s skipped (%s)\n' % (prompt(), length, TST, REASON))
+        if length + 10 + len(REASON) + 11 > ttywidth:
+            # 10 - length of prompt()
+            # 11 - length of " skipped ()"
+            l = ttywidth - 10 - 11 - len(REASON)
+            if len(TST) <= l:
+                s = '%-*s' % (l, TST)
+            else:
+                s = '%s...%s' % (TST[:l/2 - 2], TST[-(l/2 - 1):])
+        else:
+            s = '%-*s' % (length, TST)
+        STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
 
     if testweb:
         return None
@@ -2570,8 +2603,18 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                      (prompt(), os.path.join(env['TSTDIR'], TST + EXT),
                       PRELUDE and PRELUDE[0] or '', TIMEOUT, CTIMEOUT, STIMEOUT))
     else:
-        STDOUT.write('%s%-*s ' % (prompt(), length, TST))
-        if os.isatty(STDOUT.fileno()):
+        if ttywidth > 0 and length + 10 + 21 > ttywidth:
+            # 10 - length of prompt()
+            # 21 - length of time plus result
+            l = ttywidth - 10 - 21 - 1
+            if len(TST) <= l:
+                s = '%-*s ' % (l, TST)
+            else:
+                s = '%s...%s ' % (TST[:l/2 - 2], TST[-(l/2-1):])
+        else:
+            s = '%-*s ' % (length, TST)
+        STDOUT.write('%s%s' % (prompt(), s))
+        if isatty:
             s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
             STDOUT.write(s + '\b' * len(s))
 
@@ -2661,6 +2704,24 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if ServerReady:
                 port = int(env['MAPIPORT'])
                 ServerReady = mapi_ping(port, lang)
+                if not ServerReady:
+                    pSrvr.stdin.close()
+                    CollectIt(pSrvr.stdout, SrvrOut)
+                    pSrvr.wait()
+                    time.sleep(120)
+                    ServerReady = True
+                    pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
+                    ln="dummy"
+                    while 0 < len(ln) and ln[:6] != 'Ready.':
+                        ln=pSrvr.stdout.readline()
+                        SrvrOut.write(ln)
+                        SrvrOut.flush()
+                    if ln[:6] != 'Ready.':
+                        ServerReady = False
+
+                    if ServerReady:
+                        port = int(env['MAPIPORT'])
+                        ServerReady = mapi_ping(port, lang)
 
         else:
             ClntOut = open(TestOutFile, 'a')
