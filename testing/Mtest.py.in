@@ -3145,13 +3145,13 @@ if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     RELEASE = "5.2"
 
 # see if we can use UNIX sockets
-SOCK = False
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-    SOCK = True
-except socket.error, (Serrno,Serrstr):
+except (socket.error, AttributeError):
     # apparently not
-    pass
+    SOCK = False
+else:
+    SOCK = True
 
 if SYST == "Linux":
     #  Please keep this aligned / in sync with configure.ag !
@@ -3727,7 +3727,7 @@ def main(argv) :
         # if no revision known, can't refer to repository
         URLPREFIX = None
 
-    global SOCK
+    global SOCK, HOST
     if SOCK:
         SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
                 (env['GDK_DBFARM'], env['MAPIPORT'])
