@@ -165,24 +165,27 @@ except ImportError:
         os.environ['PYTHONPATH'] = p
 
 ttywidth = 0
-if os.name != 'nt' and isatty and os.isatty(sys.stdin.fileno()):
-    try:
-        proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
-                                stderr = subprocess.PIPE)
-    except OSError:
-        pass
+if isatty and os.isatty(sys.stdin.fileno()):
+    if os.name != 'nt':
+        ttywidth = 80
     else:
-        out, err = proc.communicate()
-        res = re.search('columns ([0-9]+)', out)
-        if res is not None:
-            ttywidth = int(res.group(1))
+        try:
+            proc = subprocess.Popen(['stty', '-a'], stdout = subprocess.PIPE,
+                                    stderr = subprocess.PIPE)
+        except OSError:
+            pass
         else:
-            res = re.search(' ([0-9]+) columns', out)
+            out, err = proc.communicate()
+            res = re.search('columns ([0-9]+)', out)
             if res is not None:
                 ttywidth = int(res.group(1))
-        if ttywidth < 60:
-            # rediculously narrow tty, ignore value
-            ttywidth = 0
+            else:
+                res = re.search(' ([0-9]+) columns', out)
+                if res is not None:
+                    ttywidth = int(res.group(1))
+            if ttywidth < 60:
+                # rediculously narrow tty, ignore value
+                ttywidth = 0
 
 import string                   # for whitespace
 def splitcommand(cmd):
