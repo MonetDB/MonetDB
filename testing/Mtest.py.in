@@ -30,6 +30,7 @@
 #   contains(<file>,<string>)
 # - do multi-level prompting?
 # - normalize all path's used
+# - Python 3? (or do a full rewrite?)
 
 try:
     True
