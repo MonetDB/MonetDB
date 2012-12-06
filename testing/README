@@ -103,12 +103,12 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
   one of the following:
   * TST[.sh|.exe|.com|.bat|.cmd] TST [TST.prelude]
   * python TST.py [TST.prelude]
-  * mserver5 --dbname=TSTDB [TST.prelude] < TST.mal
-  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
+  * mserver5 --dbpath=GDK_DBFARM/TSTDB [TST.prelude] < TST.mal
+  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
          mclient -lmal < TST[_(s|p)XX].malC
      or  TST.MAL.(sh|exe|com|bat|cmd) TST
      or  python TST.MAL.py
-  * mserver5 --dbname=TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
+  * mserver5 --dbpath=GDK_DBFARM/TSTDB --set mapi_port=$MAPIPORT --set xrpc_port=$XRPCPORT --dbinit="[<TST.dbinit5]" [TST.prologue5] &
          mclient -lsql < TST[_(s|p)XX].sql
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST..SQL.py
