@@ -7,7 +7,10 @@ import tempfile
 import copy
 import atexit
 import threading
-import Queue
+if sys.version[:1] == '2':
+    import Queue as queue
+else:
+    import queue
 
 from subprocess import PIPE
 
@@ -60,10 +63,10 @@ atexit.register(_delfiles)
 class _BufferedPipe:
     def __init__(self, fd, waitfor = None, skip = None):
         self._pipe = fd
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
         self._eof = False
         if waitfor is not None:
-            self._wfq = Queue.Queue()
+            self._wfq = queue.Queue()
         else:
             self._wfq = None
         self._thread = threading.Thread(target = self._readerthread,
@@ -271,24 +274,24 @@ def client(lang, args = [], stdin = None, stdout = None, stderr = None,
                 break
         cmd.append('--host=%s' % host)
     if verbose:
-        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
         cmdstr = ' '.join(cmd +  args)
         if hasattr(stdin, 'name'):
             cmdstr += ' < "%s"' % stdin.name
-        print
-        print prompt
-        print '%s%s' % (prompt, cmdstr)
-        print prompt
-        print
+        sys.stdout.write('\n')
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('\n')
         sys.stdout.flush()
-        print >> sys.stderr
-        print >> sys.stderr, prompt
-        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
-        print >> sys.stderr, prompt
-        print >> sys.stderr
+        sys.stderr.write('\n')
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('\n')
         sys.stderr.flush()
     if stdin is None:
         # if no input provided, use /dev/null as input
@@ -356,24 +359,24 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
     if dbpath is not None:
         cmd.append('--dbpath=%s' % dbpath)
     if verbose:
-        print 'Executing', ' '.join(cmd +  args)
+        sys.stdout.write('Executing' + ' '.join(cmd +  args) + '\n')
         sys.stdout.flush()
     if log:
         prompt = time.strftime('# %H:%M:%S >  ')
         cmdstr = ' '.join(cmd +  args)
         if hasattr(stdin, 'name'):
             cmdstr += ' < "%s"' % stdin.name
-        print
-        print prompt
-        print '%s%s' % (prompt, cmdstr)
-        print prompt
-        print
+        sys.stdout.write('\n')
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('%s%s\n' % (prompt, cmdstr))
+        sys.stdout.write(prompt + '\n')
+        sys.stdout.write('\n')
         sys.stdout.flush()
-        print >> sys.stderr
-        print >> sys.stderr, prompt
-        print >> sys.stderr, '%s%s' % (prompt, cmdstr)
-        print >> sys.stderr, prompt
-        print >> sys.stderr
+        sys.stderr.write('\n')
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('%s%s\n' % (prompt, cmdstr))
+        sys.stderr.write(prompt + '\n')
+        sys.stderr.write('\n')
         sys.stderr.flush()
     p = Popen(cmd + args,
               stdin = stdin,
