@@ -26,14 +26,14 @@ import re
 #       FUNCTIONS
 
 def Usage(THISFILE) :
-    print """
+    print("""
 
 Usage:  %s [-I<exp>] <files>
 
 -I<exp> : ignore lines matching <exp> during first count (optional, default: -I'^#`)
 <files> : list of files to be processed
 
-""" % THISFILE
+""" % THISFILE)
 ### Usage(THISFILE) #
 
 def warn(THISFILE,TEXT) :
@@ -233,7 +233,9 @@ def mFilter (FILE, IGNORE) :
                     ln = ln[:-1].replace('\n', '\n' + pref) + '\n'
             try:
                 fout.write(ln.expandtabs())
-            except IOError, (IOerrNo, IOerrStr):
+            except IOError:
+                IOerrNo = sys.exc_info()[1].errno
+                IOerrStr = sys.exc_info()[1].strerror
                 warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
                 if IOerrNo == 28:
                     # No space left on device
@@ -247,7 +249,9 @@ def mFilter (FILE, IGNORE) :
                         pass
                     try:
                         fout.write(ln.expandtabs())
-                    except IOError, (IOerrNo, IOerrStr):
+                    except IOError:
+                        IOerrNo = sys.exc_info()[1].errno
+                        IOerrStr = sys.exc_info()[1].strerror
                         warn(THISFILE, "Writing to output file '%s' failed with #%d: '%s'." % (fout.name, IOerrNo, IOerrStr))
         fout.flush()
     fout.close()
