@@ -11,7 +11,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *targetfile = (str*) getArgReference(stk,pci,4); /* arg 1: string containing the input file path. */
 	BAT *btime, *bdata, *bfile, *bseqno; /* BATs to return, representing columns of a table. */
 
-	VarRecord low, high;
 	wrd num_rows = 0;
 
 	MSRecord *msr = NULL;
@@ -35,10 +34,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	cntxt = cntxt; /* to escape 'unused' parameter error. */
 	mb = mb; /* to escape 'unused' parameter error. */
-
-	/* prepare to set low and high oids of return vars */
-	high.value.vtype= low.value.vtype= TYPE_oid;
-	low.value.val.oval= 0;
 
 	bfile = BATnew(TYPE_void, TYPE_str, 0); /* create empty BAT for ret0. */
 	if ( bfile == NULL)
@@ -108,19 +103,6 @@ str MiniseedMount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ms_readmsr_r (&msfp, &msr, NULL, 0, NULL, NULL, 0, 0, 0);
 
 	printf("num_rows: %ld\n", num_rows);
-	high.value.val.oval= (BUN) num_rows;
-
-	varSetProp(mb, getArg(pci, 0), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-	varSetProp(mb, getArg(pci, 0), PropertyIndex("hub"), op_lt, (ptr) &high.value);
-
-	varSetProp(mb, getArg(pci, 1), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-	varSetProp(mb, getArg(pci, 1), PropertyIndex("hub"), op_lt, (ptr) &high.value);
-
-	varSetProp(mb, getArg(pci, 2), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-	varSetProp(mb, getArg(pci, 2), PropertyIndex("hub"), op_lt, (ptr) &high.value);
-
-	varSetProp(mb, getArg(pci, 3), PropertyIndex("hlb"), op_gte, (ptr) &low.value);
-	varSetProp(mb, getArg(pci, 3), PropertyIndex("hub"), op_lt, (ptr) &high.value);
 
 	BBPkeepref(*ret[0] = bfile->batCacheid); /* return BAT. */
 	BBPkeepref(*ret[1] = bseqno->batCacheid); /* return BAT. */
