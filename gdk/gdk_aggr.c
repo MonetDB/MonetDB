@@ -119,14 +119,13 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 		} else {
 			/* we'll do a complete scan */
 			gids = (const oid *) Tloc(g, BUNfirst(g));
-			for (i = 0, ngrp = BATcount(g); i < ngrp; i++) {
+			for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
 				if (*gids != oid_nil) {
 					if (*gids < min)
 						min = *gids;
 					if (*gids > max)
 						max = *gids;
 				}
-				gids++;
 			}
 			/* note: max < min is possible if all groups
 			 * are nil (or BATcount(g)==0) */
@@ -168,8 +167,8 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 			sum = 0;					\
 			if (nonil) {					\
 				*seen = start < end;			\
-				for (i = start; i < end && nils == 0; i++, vals++) { \
-					x = *vals;			\
+				for (i = start; i < end && nils == 0; i++) { \
+					x = vals[i];			\
 					ADD_WITH_CHECK(TYPE1, x,	\
 						       TYPE2, sum,	\
 						       TYPE2, sum,	\
@@ -177,8 +176,8 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 				}					\
 			} else {					\
 				int seenval = 0;			\
-				for (i = start; i < end && nils == 0; i++, vals++) { \
-					x = *vals;			\
+				for (i = start; i < end && nils == 0; i++) { \
+					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
@@ -205,14 +204,11 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  "\n",				\
 					  func, start, end);		\
 			sum = 0;					\
-			for (i = start; i < end && nils == 0; i++, vals++) { \
-				if (i < *cand - seqb) {			\
-					continue;			\
-				}					\
-				assert(i == *cand - seqb);		\
-				if (++cand == candend)			\
-					end = i + 1;			\
-				x = *vals;				\
+			while (cand < candend) {			\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
+				x = vals[i];				\
 				if (x == TYPE1##_nil) {			\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
@@ -234,16 +230,16 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 					  "start " BUNFMT ", end " BUNFMT \
 					  "\n",				\
 					  func, start, end);		\
-			for (i = start; i < end; i++, vals++) {		\
+			for (i = start; i < end; i++) {			\
 				if (gids == NULL ||			\
-				    (*gids >= min && *gids <= max)) {	\
-					gid = gids ? *gids - min : (oid) i; \
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
 					if (nil_if_empty &&		\
 					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 						seen[gid >> 5] |= 1 << (gid & 0x1F); \
 						sums[gid] = 0;		\
 					}				\
-					x = *vals;			\
+					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
@@ -251,38 +247,33 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 						}			\
 					} else if (sums[gid] != TYPE2##_nil) { \
 						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2, sums[gid], \
-							       TYPE2, sums[gid], \
+							       TYPE2,	\
+							       sums[gid], \
+							       TYPE2,	\
+							       sums[gid], \
 							       goto overflow); \
 					}				\
 				}					\
-				if (gids)				\
-					gids++;				\
 			}						\
 		} else {						\
 			ALGODEBUG fprintf(stderr,			\
-					  "#%s: with candidates, with groups; " \
-					  "start " BUNFMT ", end " BUNFMT \
-					  "\n",				\
+					  "#%s: with candidates, with " \
+					  "groups; start " BUNFMT ", "	\
+					  "end " BUNFMT "\n",		\
 					  func, start, end);		\
-			for (i = start; i < end; i++, vals++) {		\
-				if (i < *cand - seqb) {			\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - seqb);		\
-				if (++cand == candend)			\
-					end = i + 1;			\
+			while (cand < candend) {			\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
 				if (gids == NULL ||			\
-				    (*gids >= min && *gids <= max)) {	\
-					gid = gids ? *gids - min : (oid) i; \
+				    (gids[i] >= min && gids[i] <= max)) {	\
+					gid = gids ? gids[i] - min : (oid) i; \
 					if (nil_if_empty &&		\
 					    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 						seen[gid >> 5] |= 1 << (gid & 0x1F); \
 						sums[gid] = 0;		\
 					}				\
-					x = *vals;			\
+					x = vals[i];			\
 					if (x == TYPE1##_nil) {		\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
@@ -290,13 +281,13 @@ BATgroupaggrinit(const BAT *b, const BAT *g, const BAT *e, const BAT *s,
 						}			\
 					} else if (sums[gid] != TYPE2##_nil) { \
 						ADD_WITH_CHECK(TYPE1, x, \
-							       TYPE2, sums[gid], \
-							       TYPE2, sums[gid], \
+							       TYPE2,	\
+							       sums[gid], \
+							       TYPE2,	\
+							       sums[gid], \
 							       goto overflow); \
 					}				\
 				}					\
-				if (gids)				\
-					gids++;				\
 			}						\
 		}							\
 	} while (0)
@@ -622,123 +613,141 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 #define AGGR_PROD(TYPE1, TYPE2, TYPE3)					\
 	do {								\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
-		for (i = start; i < end; i++, vals++) {			\
+		assert(gidincr == 0 || gidincr == 1);			\
+		gid = 0;	/* doesn't change if gidincr == 0 */	\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - seqb) {			\
-					if (gids)			\
-						gids += gidincr;	\
-					continue;			\
-				}					\
-				assert(i == *cand - seqb);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL || gidincr == 0 ||		\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
 				if (nil_if_empty &&			\
 				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
-				if (*vals == TYPE1##_nil) {		\
+				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
 				} else if (prods[gid] != TYPE2##_nil) {	\
-					MUL4_WITH_CHECK(TYPE1, *vals,	\
+					MUL4_WITH_CHECK(TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
 							TYPE2, prods[gid], \
 							TYPE3,		\
 							goto overflow);	\
 				}					\
 			}						\
-			if (gids)					\
-				gids += gidincr;			\
 		}							\
 	} while (0)
 
 #define AGGR_PROD_LNG(TYPE)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) values;		\
-		for (i = start; i < end; i++, vals++) {			\
+		assert(gidincr == 0 || gidincr == 1);			\
+		gid = 0;	/* doesn't change if gidincr == 0 */	\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - seqb) {			\
-					if (gids)			\
-						gids += gidincr;	\
-					continue;			\
-				}					\
-				assert(i == *cand - seqb);		\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL || gidincr == 0 ||		\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
 				if (nil_if_empty &&			\
 				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
-				if (*vals == TYPE##_nil) {		\
+				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
 						nils++;			\
 					}				\
 				} else if (prods[gid] != lng_nil) {	\
-					LNGMUL_CHECK(TYPE, *vals,	\
+					LNGMUL_CHECK(TYPE, vals[i],	\
 						     lng, prods[gid],	\
 						     prods[gid],	\
 						     goto overflow);	\
 				}					\
 			}						\
-			if (gids)					\
-				gids += gidincr;			\
 		}							\
 	} while (0)
 
 #define AGGR_PROD_FLOAT(TYPE1, TYPE2)					\
 	do {								\
 		const TYPE1 *vals = (const TYPE1 *) values;		\
-		for (i = start; i < end; i++, vals++) {			\
+		assert(gidincr == 0 || gidincr == 1);			\
+		gid = 0;	/* doesn't change if gidincr == 0 */	\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - seqb) {			\
-					if (gids)			\
-						gids += gidincr;	\
-					continue;			\
-				}					\
-				assert(i == *cand - seqb);		\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - seqb;			\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL || gidincr == 0 ||		\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
 				if (nil_if_empty &&			\
 				    !(seen[gid >> 5] & (1 << (gid & 0x1F)))) { \
 					seen[gid >> 5] |= 1 << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
-				if (*vals == TYPE1##_nil) {		\
+				if (vals[i] == TYPE1##_nil) {		\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
 				} else if (prods[gid] != TYPE2##_nil) {	\
-					if (ABSOLUTE(*vals) > 1 &&	\
-					    GDK_##TYPE2##_max / ABSOLUTE(*vals) < ABSOLUTE(prods[gid])) { \
+					if (ABSOLUTE(vals[i]) > 1 &&	\
+					    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
 						if (abort_on_error)	\
 							goto overflow;	\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					} else {			\
-						prods[gid] *= *vals;	\
+						prods[gid] *= vals[i];	\
 					}				\
 				}					\
 			}						\
-			if (gids)					\
-				gids += gidincr;			\
 		}							\
 	} while (0)
 
@@ -1090,32 +1099,34 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		TYPE *avgs = GDKzalloc(ngrp * sizeof(TYPE));		\
 		if (avgs == NULL)					\
 			goto alloc_fail;				\
-		for (i = start; i < end; i++, vals++) {			\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - b->hseqbase);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;		\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL ||				\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
-				if (*vals == TYPE##_nil) {		\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
-					AVERAGE_ITER(TYPE, *vals,	\
+					AVERAGE_ITER(TYPE, vals[i],	\
 						     avgs[gid],		\
 						     rems[gid],		\
 						     cnts[gid]);	\
 				}					\
 			}						\
-			if (gids)					\
-				gids++;					\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
@@ -1133,31 +1144,33 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
 		for (i = 0; i < ngrp; i++)				\
 			dbls[i] = 0;					\
-		for (i = start; i < end; i++, vals++) {			\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - b->hseqbase);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;		\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL ||				\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
-				if (*vals == TYPE##_nil) {		\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
-					AVERAGE_ITER_FLOAT(TYPE, *vals, \
+					AVERAGE_ITER_FLOAT(TYPE, vals[i], \
 							   dbls[gid],	\
 							   cnts[gid]);	\
 				}					\
 			}						\
-			if (gids)					\
-				gids++;					\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
@@ -1293,14 +1306,17 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 									\
 		/* first try to calculate the sum of all values into a */ \
 		/* lng */						\
-		for (i = start; i < end; i++) {				\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->H->seq) {		\
-					continue;			\
-				}					\
-				assert(i == *cand - b->H->seq);		\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;		\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			x = ((const TYPE *) src)[i];			\
 			if (x == TYPE##_nil)				\
@@ -1362,13 +1378,17 @@ BATgroupavg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	do {							\
 		double a = 0;					\
 		TYPE x;						\
-		for (i = start; i < end; i++) {			\
+		for (;;) {					\
 			if (cand) {				\
-				if (i < *cand - b->H->seq)	\
-					continue;		\
-				assert(i == *cand - b->H->seq);	\
-				if (++cand == candend)		\
-					end = i + 1;		\
+				if (cand == candend)		\
+					break;			\
+				i = *cand++ - b->hseqbase;	\
+				if (i >= end)			\
+					break;			\
+			} else {				\
+				i = start++;			\
+				if (i == end)			\
+					break;			\
 			}					\
 			x = ((const TYPE *) src)[i];		\
 			if (x == TYPE##_nil)			\
@@ -1429,26 +1449,28 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 #define AGGR_COUNT(TYPE)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
-		for (i = start; i < end; i++, vals++) {			\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - b->hseqbase);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;		\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL ||				\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
-				if (!skip_nils || *vals != TYPE##_nil) { \
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (!skip_nils || vals[i] != TYPE##_nil) { \
 					cnts[gid]++;			\
 				}					\
 			}						\
-			if (gids)					\
-				gids++;					\
 		}							\
 	} while (0)
 
@@ -1533,28 +1555,30 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	default:
 		bi = bat_iterator(b);
 
-		for (i = start; i < end; i++) {
+		for (;;) {
 			if (cand) {
-				if (i < *cand - b->hseqbase) {
-					if (gids)
-						gids++;
-					continue;
-				}
-				assert(i == *cand - b->hseqbase);
-				if (++cand == candend)
-					end = i + 1;
+				if (cand == candend)
+					break;
+				i = *cand++ - b->hseqbase;
+				if (i >= end)
+					break;
+			} else {
+				i = start++;
+				if (i == end)
+					break;
 			}
 			if (gids == NULL ||
-			    (*gids >= min && *gids <= max)) {
-				gid = gids ? *gids - min : (oid) i;
+			    (gids[i] >= min && gids[i] <= max)) {
+				if (gids)
+					gid = gids[i] - min;
+				else
+					gid = (oid) i;
 				if (!skip_nils ||
 				    (*atomcmp)(BUNtail(bi, i + BUNfirst(b)),
 					       nil) != 0) {
 					cnts[gid]++;
 				}
 			}
-			if (gids)
-				gids++;
 		}
 		break;
 	}
@@ -1622,23 +1646,22 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 
 	bits = (const bit *) Tloc(b, BUNfirst(b));
 
-	for (i = start; i < end; i++, bits++) {
-		if (cand) {
-			if (i < *cand - b->hseqbase) {
-				if (gids)
-					gids++;
-				continue;
+		for (;;) {
+			if (cand) {
+				if (cand == candend)
+					break;
+				i = *cand++ - b->hseqbase;
+				if (i >= end)
+					break;
+			} else {
+				i = start++;
+				if (i == end)
+					break;
 			}
-			assert(i == *cand - b->hseqbase);
-			if (++cand == candend)
-				end = i + 1;
+		if (bits[i] == 1 &&
+		    (gids == NULL || (gids[i] >= min && gids[i] <= max))) {
+			cnts[gids ? gids[i] - min : (oid) i]++;
 		}
-		if ((gids == NULL || (*gids >= min && *gids <= max)) &&
-		    *bits == 1) {
-			cnts[gids ? *gids - min : (oid) i]++;
-		}
-		if (gids)
-			gids++;
 	}
 	BATsetcount(bn, ngrp);
 	BATseqbase(bn, min);
@@ -1656,20 +1679,24 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 #define AGGR_CMP(TYPE, OP)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
-		for (i = start; i < end; i++) {				\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - b->hseqbase);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;		\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL ||				\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
 				if (!skip_nils || vals[i] != TYPE##_nil) { \
 					if (oids[gid] == oid_nil) {	\
 						oids[gid] = i + b->hseqbase; \
@@ -1680,8 +1707,6 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 						oids[gid] = i + b->hseqbase; \
 				}					\
 			}						\
-			if (gids)					\
-				gids++;					\
 		}							\
 	} while (0)
 
@@ -1780,21 +1805,25 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		bi = bat_iterator(b);
 
-		for (i = start; i < end; i++) {
+		for (;;) {
 			if (cand) {
-				if (i < *cand - b->hseqbase) {
-					if (gids)
-						gids++;
-					continue;
-				}
-				assert(i == *cand - b->hseqbase);
-				if (++cand == candend)
-					end = i + 1;
+				if (cand == candend)
+					break;
+				i = *cand++ - b->hseqbase;
+				if (i >= end)
+					break;
+			} else {
+				i = start++;
+				if (i == end)
+					break;
 			}
 			if (gids == NULL ||
-			    (*gids >= min && *gids <= max)) {
+			    (gids[i] >= min && gids[i] <= max)) {
 				const void *v = BUNtail(bi, i + BUNfirst(b));
-				gid = gids ? *gids - min : (oid) i;
+				if (gids)
+					gid = gids[i] - min;
+				else
+					gid = (oid) i;
 				if (!skip_nils || (*atomcmp)(v, nil) != 0) {
 					if (oids[gid] == oid_nil) {
 						oids[gid] = i + b->hseqbase;
@@ -1808,8 +1837,6 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 					}
 				}
 			}
-			if (gids)
-				gids++;
 		}
 		break;
 	}
@@ -1919,21 +1946,25 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 	default:
 		bi = bat_iterator(b);
 
-		for (i = start; i < end; i++) {
+		for (;;) {
 			if (cand) {
-				if (i < *cand - b->hseqbase) {
-					if (gids)
-						gids++;
-					continue;
-				}
-				assert(i == *cand - b->hseqbase);
-				if (++cand == candend)
-					end = i + 1;
+				if (cand == candend)
+					break;
+				i = *cand++ - b->hseqbase;
+				if (i >= end)
+					break;
+			} else {
+				i = start++;
+				if (i == end)
+					break;
 			}
 			if (gids == NULL ||
-			    (*gids >= min && *gids <= max)) {
+			    (gids[i] >= min && gids[i] <= max)) {
 				const void *v = BUNtail(bi, i + BUNfirst(b));
-				gid = gids ? *gids - min : (oid) i;
+				if (gids)
+					gid = gids[i] - min;
+				else
+					gid = (oid) i;
 				if (!skip_nils || (*atomcmp)(v, nil) != 0) {
 					if (oids[gid] == oid_nil) {
 						oids[gid] = i + b->hseqbase;
@@ -1947,8 +1978,6 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_
 					}
 				}
 			}
-			if (gids)
-				gids++;
 		}
 		break;
 	}
@@ -2207,32 +2236,34 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 #define AGGR_STDEV(TYPE)						\
 	do {								\
 		const TYPE *vals = (const TYPE *) Tloc(b, BUNfirst(b)); \
-		for (i = start; i < end; i++, vals++) {			\
+		for (;;) {						\
 			if (cand) {					\
-				if (i < *cand - b->hseqbase) {		\
-					if (gids)			\
-						gids++;			\
-					continue;			\
-				}					\
-				assert(i == *cand - b->hseqbase);	\
-				if (++cand == candend)			\
-					end = i + 1;			\
+				if (cand == candend)			\
+					break;				\
+				i = *cand++ - b->hseqbase;			\
+				if (i >= end)				\
+					break;				\
+			} else {					\
+				i = start++;				\
+				if (i == end)				\
+					break;				\
 			}						\
 			if (gids == NULL ||				\
-			    (*gids >= min && *gids <= max)) {		\
-				gid = gids ? *gids - min : (oid) i;	\
-				if (*vals == TYPE##_nil) {		\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				if (vals[i] == TYPE##_nil) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
 					cnts[gid]++;			\
-					delta[gid] = (dbl) *vals - mean[gid]; \
+					delta[gid] = (dbl) vals[i] - mean[gid]; \
 					mean[gid] += delta[gid] / cnts[gid]; \
-					m2[gid] += delta[gid] * ((dbl) *vals - mean[gid]); \
+					m2[gid] += delta[gid] * ((dbl) vals[i] - mean[gid]); \
 				}					\
 			}						\
-			if (gids)					\
-				gids++;					\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
