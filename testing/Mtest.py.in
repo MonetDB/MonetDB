@@ -3729,9 +3729,17 @@ def main(argv) :
 
     global SOCK, HOST
     if SOCK:
-        SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
-                (env['GDK_DBFARM'], env['MAPIPORT'])
-        HOST = env['GDK_DBFARM']
+        # we cannot put the UNIX socket in the mtest root, because that
+        # makes the UNIX socket too long on most platforms, so use
+        # /var/tmp/mtest and try not to forget to clean that up
+        sockdir = "/var/tmp/mtest-%d" % os.getpid()
+        try:
+            os.mkdir(sockdir);
+            SOCK = "--set mapi_usock=%s/.s.monetdb.%s" % \
+                    (sockdir, env['MAPIPORT'])
+            HOST = sockdir
+        except:
+            SOCK = ""
     else:
         SOCK = ""
 
@@ -4070,6 +4078,13 @@ VALUES (%s, '%s', '%s', '%s',
         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
         if not testweb:
             CreateHtmlIndex(env, *body)
+
+        # cleanup the place where we put our UNIX sockets
+        if SOCK:
+            try:
+                shutil.rmtree(sockdir);
+            except:
+                pass
 
         Failed = 0
         for f in Failure[1:-1]:
