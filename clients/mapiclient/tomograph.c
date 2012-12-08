@@ -34,6 +34,7 @@
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
+#include "mprompt.h"
 #include "dotmonetdb.h"
 
 #ifndef HAVE_GETOPT_LONG
@@ -1518,15 +1519,12 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 
-	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
-
 	char **alts, **oalts;
 	wthread *walk;
 
-	static struct option long_options[18] = {
+	static struct option long_options[15] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
-		{ "password", 1, 0, 'P' },
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
@@ -1549,7 +1547,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:?T:t:r:o:Db:B:s:m",
+		int c = getopt_long(argc, argv, "d:u:p:h:?T:t:r:o:Db:B:s:m",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1570,6 +1568,10 @@ main(int argc, char **argv)
 			if (user)
 				free(user);
 			user = optarg;
+			/* force password prompt */
+			if (password)
+				free(password);
+			password = NULL;
 			break;
 		case 'm':
 			colormap = 1;
@@ -1634,6 +1636,11 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (user == NULL)
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+	if (password == NULL)
+		password = simple_prompt("password", BUFSIZ, 0, NULL);
+
 	if (tracefile) {
 		/* reload existing tomogram */
 		scandata(tracefile);
@@ -1656,12 +1663,6 @@ main(int argc, char **argv)
 	if (profileCounter[32].status) {
 		profileCounter[3].status = k++;
 		profileCounter[4].status = k;
-	}
-
-	if (user == NULL || password == NULL) {
-		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
-		usage();
-		exit(-1);
 	}
 
 #ifdef SIGPIPE
