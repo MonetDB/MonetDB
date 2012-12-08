@@ -159,20 +159,19 @@ deactivateCounter(str name)
  * It uses a local logbuffer[LOGLEN] and logbase, logtop, loglen
  */
 #define LOGLEN 8192
-#define lognew()  loglen = 0; logbase = logbuffer;
+#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 #define logadd(...) 											\
 	do {														\
 		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
 #define logsent()												\
-	do {														\
+	do { assert(loglen <= LOGLEN);								\
 		MT_lock_set(&mal_profileLock, "profileLock");			\
-		if (eventstream)										\
-			if (mnstr_write(eventstream, logbuffer,loglen,1 ) < 0) {	\
-				closeProfilerStream();							\
-			}													\
-		flushLog();												\
+		if (eventstream) {										\
+			(void)mnstr_write(eventstream, logbuffer,loglen,1 );\
+			mnstr_flush(eventstream);							\
+		}														\
 		eventcounter++;											\
 		MT_lock_unset(&mal_profileLock, "profileLock");			\
 	} while (0)
@@ -1123,7 +1122,6 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 	TRACE_id_wbytes = BUNappend(TRACE_id_wbytes, &mb->profiler[pc].wbytes, FALSE);
 
 	eventcounter++;
-	flushLog();
 	MT_lock_unset(&mal_profileLock, "profileLock");
 }
 /*
