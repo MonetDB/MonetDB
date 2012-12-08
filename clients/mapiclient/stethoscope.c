@@ -92,7 +92,7 @@ static char hostname[128];
 static void
 usage(void)
 {
-	fprintf(stderr, "stethoscope [options] +[trace options] {<mod>.<fcn>}\n");
+	fprintf(stderr, "stethoscope [options] [dbname] +[trace options] {<mod>.<fcn>}\n");
 	fprintf(stderr, "  -d | --dbname=<database_name>\n");
 	fprintf(stderr, "  -u | --user=<user>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
@@ -166,6 +166,7 @@ main(int argc, char **argv)
 	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
+	struct stat statb;
 	char *response, *x;
 	char buf[BUFSIZ + 1];
 	char *mod, *fcn;
@@ -219,6 +220,18 @@ main(int argc, char **argv)
 			usage();
 			exit(-1);
 		}
+	}
+
+	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
+			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+	{
+		dbname = argv[optind];
+		optind++;
+	}
+
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		uri = dbname;
+		dbname = NULL;
 	}
 
 	i = optind;
