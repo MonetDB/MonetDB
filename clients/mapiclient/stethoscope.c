@@ -284,10 +284,6 @@ main(int argc, char **argv)
 	if (mapi_error(dbh))
 		die(dbh, hdl);
 	host = strdup(mapi_get_host(dbh));
-	if (*host == '/') {
-		fprintf(stderr, "!! UNIX domain socket not supported\n");
-		goto stop_disconnect;
-	}
 #ifdef _DEBUG_STETHOSCOPE_
 	printf("-- connection with server %s\n", uri ? uri : host);
 #endif
@@ -314,7 +310,7 @@ main(int argc, char **argv)
 	}
 
 	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((conn = udp_rastream(host, portnr, "profileStream")) != NULL)
+		if ((conn = udp_rastream(hostname, portnr, "profileStream")) != NULL)
 			break;
 	}
 	if (conn == NULL) {
