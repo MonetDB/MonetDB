@@ -1280,21 +1280,17 @@ static int parser(char *row)
 static void
 format_result(Mapi mid, MapiHdl hdl)
 {
-	char *reply;
 	char *line;
 	(void) mid;
 
 	do {
 		/* handle errors first */
-		if ((reply = mapi_result_error(hdl)) != NULL) {
+		if (mapi_result_error(hdl) != NULL) {
 			mapi_explain_result(hdl, stderr);
 			/* don't need to print something like '0
 			 * tuples' if we got an error */
 			break;
 		}
-		if (debug)
-			fprintf(stderr, "Receive:%s\n", reply);
-
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
@@ -1316,8 +1312,6 @@ format_result(Mapi mid, MapiHdl hdl)
 			}
 		}
 	} while (mapi_next_result(hdl) == 1);
-	if (debug)
-		fprintf(stderr, "Done\n");
 }
 
 static int
@@ -1492,7 +1486,7 @@ doProfile(void *d)
 			*e = 0;
 			/* TOMOGRAPH EXTENSIONS */
 			i = parser(response);
-			if (debug && i)
+			if (debug )
 				fprintf(stderr, "ERROR %d:%s\n", i, response);
 			response = e + 1;
 		}
