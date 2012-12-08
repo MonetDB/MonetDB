@@ -1402,8 +1402,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		GDKfree(old);
 	}
 
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_mergetable: %d merge actions\n",actions);
 	GDKfree(mat);
 	return actions;
 }

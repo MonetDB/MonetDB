@@ -188,10 +188,5 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	GDKfree(vars);
 	GDKfree(old);
 	GDKfree(alias);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
-#ifdef DEBUG_OPT_COMMONTERMS_MORE
-		mnstr_printf(cntxt->fdout,"#opt_commonTerms: %d statements catched\n",actions);
-#endif
 	return actions;
 }

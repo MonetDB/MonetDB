@@ -80,8 +80,6 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	for(; i<slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_deadcode: %d statements removed\n", actions);
 	GDKfree(old);
 	/* we may have uncovered new use-less operations */
 	if (actions) 

@@ -22,7 +22,7 @@
 #include "opt_support.h"
 
 /* cf., gdk/gdk.mx */
-#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers && actions)
+#define DEBUGoptimizers		if (GDKdebug & GRPoptimizers)
 
 opt_export  str abortRef;
 opt_export  str affectedRowsRef;

@@ -66,7 +66,7 @@ OPTbackpropagate(MalBlkPtr mb, int i, int idx){
 int
 OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, actions = 1;
+	int i;
 	wrd k, c1, c2;
 	InstrPtr p;
 	str sortrevRef= putName("sortReverse",11);
@@ -199,7 +199,5 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 		}
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_costModel: processed\n");
 	return 1;
 }

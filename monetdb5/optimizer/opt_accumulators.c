@@ -112,7 +112,5 @@ OPTaccumulatorsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(span);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_accumulators:%d accumulations\n",actions);
 	return actions;
 }
