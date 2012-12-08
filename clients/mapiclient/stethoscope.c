@@ -86,18 +86,7 @@ static struct {
 	/*  3  */ { 0, 0, 0, 0 }
 };
 
-static struct _wthread {
-	char *uri;
-	char *host;
-	char *dbname;
-	int port;
-	char *user;
-	char *pass;
-	stream *s;
-	size_t argc;
-	char **argv;
-} wthr;
-
+static stream *conn = NULL;
 static char hostname[128];
 
 static void
@@ -138,7 +127,8 @@ static void
 stopListening(int i)
 {
 	(void)i;
-	mnstr_close(wthr.s);
+	if (conn != NULL)
+		mnstr_close(conn);
 }
 
 static int
@@ -158,171 +148,29 @@ setCounter(char *nme)
 
 #define die(dbh, hdl) while (1) {(hdl ? mapi_explain_query(hdl, stderr) :  \
 					   dbh ? mapi_explain(dbh, stderr) :        \
-					   fprintf(stderr, "!! %scommand failed\n", id)); \
+					   fprintf(stderr, "!! command failed\n")); \
 					   goto stop_disconnect;}
 #define doQ(X) \
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
 
-static void
-doProfile(void)
-{
-	int i;
-	size_t a;
-	ssize_t n;
-	char *response, *x;
-	char buf[BUFSIZ + 1];
-	char *e;
-	char *mod, *fcn;
-	char *host = NULL;
-	int portnr;
-	char id[10];
-	Mapi dbh;
-	MapiHdl hdl = NULL;
-
-	/* set up the profiler */
-	id[0] = '\0';
-	if (wthr.uri)
-		dbh = mapi_mapiuri(wthr.uri, wthr.user, wthr.pass, "mal");
-	else
-		dbh = mapi_mapi(wthr.host, wthr.port, wthr.user, wthr.pass, "mal", wthr.dbname);
-	if (dbh == NULL || mapi_error(dbh))
-		die(dbh, hdl);
-	mapi_reconnect(dbh);
-	if (mapi_error(dbh))
-		die(dbh, hdl);
-	host = strdup(mapi_get_host(dbh));
-	if (*host == '/') {
-		fprintf(stderr, "!! UNIX domain socket not supported\n");
-		goto stop_disconnect;
-	}
-#ifdef _DEBUG_STETHOSCOPE_
-	printf("-- connection with server %s\n", wthr.uri ? wthr.uri : host);
-#endif
-
-	/* set counters */
-	x = NULL;
-	for (i = 0; profileCounter[i].tag; i++) {
-		/* skip duplicates */
-		if (x == profileCounter[i].ptag)
-			continue;
-		/* deactivate any left over counter first */
-		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
-				profileCounter[i].ptag);
-		doQ(buf);
-		if (profileCounter[i].status) {
-			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
-					profileCounter[i].ptag);
-			doQ(buf);
-#ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s\n", buf);
-#endif
-		}
-		x = profileCounter[i].ptag;
-	}
-
-	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((wthr.s = udp_rastream(host, portnr, "profileStream")) != NULL)
-			break;
-	}
-	if (wthr.s == NULL) {
-		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
-				id);
-		goto stop_cleanup;
-	}
-
-	printf("-- opened UDP profile stream %s:%d for %s\n",
-			hostname, portnr, host);
-
-	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
-			hostname, portnr);
-	doQ(buf);
-
-	/* Set Filters */
-	doQ("profiler.setNone();");
-
-	if (wthr.argc == 0) {
-#ifdef _DEBUG_STETHOSCOPE_
-		printf("-- profiler.setAll();\n");
-#endif
-		doQ("profiler.setAll();");
-	} else {
-		for (a = 0; a < wthr.argc; a++) {
-			char *c;
-			char *arg = strdup(wthr.argv[a]);
-			c = strchr(arg, '.');
-			if (c) {
-				mod = arg;
-				if (mod == c)
-					mod = "*";
-				fcn = c + 1;
-				if (*fcn == 0)
-					fcn = "*";
-				*c = 0;
-			} else {
-				fcn = arg;
-				mod = "*";
-			}
-			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
-#ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s\n", buf);
-#endif
-			doQ(buf);
-			free(arg);
-		}
-	}
-#ifdef _DEBUG_STETHOSCOPE_
-	printf("-- profiler.start();\n");
-#endif
-	doQ("profiler.start();");
-	fflush(NULL);
-
-	i = 0;
-	while ((n = mnstr_read(wthr.s, buf, 1, BUFSIZ)) > 0) {
-		buf[n] = 0;
-		response = buf;
-		while ((e = strchr(response, '\n')) != NULL) {
-			*e = 0;
-			printf("%s\n", response);
-			response = e + 1;
-		}
-		/* handle last line in buffer */
-		if (*response)
-			printf("%s\n", response);
-		if (++i % 200) {
-			i = 0;
-			fflush(NULL);
-		}
-	}
-	fflush(NULL);
-
-stop_cleanup:
-	doQ("profiler.setNone();");
-	doQ("profiler.stop();");
-	doQ("profiler.closeStream();");
-stop_disconnect:
-	if (dbh) {
-		mapi_disconnect(dbh);
-		mapi_destroy(dbh);
-	}
-
-	if (host != NULL) {
-		printf("-- connection with server %s closed\n", wthr.uri ? wthr.uri : host);
-
-		free(host);
-	}
-}
-
 int
 main(int argc, char **argv)
 {
-	int a = 1;
-	int k;
+	int i, k;
+	ssize_t n;
+	char *e;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
+	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
+	char *response, *x;
+	char buf[BUFSIZ + 1];
+	char *mod, *fcn;
+	Mapi dbh;
+	MapiHdl hdl = NULL;
 
 	static struct option long_options[6] = {
 		{ "dbname", 1, 0, 'd' },
@@ -373,23 +221,32 @@ main(int argc, char **argv)
 		}
 	}
 
-	a = optind;
-	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		k = setCounter(argv[a] + 1);
-		a++;
+	i = optind;
+	if (argc > 1 && i < argc && argv[i][0] == '+') {
+		k = setCounter(argv[i] + 1);
+		i++;
 	} else
 		k = setCounter(COUNTERSDEFAULT);
 
 	/* DOT needs function id and PC to correlate */
 	if (profileCounter[32].status) {
-		profileCounter[3].status= k++;
-		profileCounter[4].status= k;
+		profileCounter[3].status = k++;
+		profileCounter[4].status = k;
 	}
 
 	if (user == NULL)
 		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
 	if (password == NULL)
 		password = simple_prompt("password", BUFSIZ, 0, NULL);
+
+	close(0); /* get rid of stdin */
+
+	/* our hostname, how remote servers have to contact us */
+	gethostname(hostname, sizeof(hostname));
+
+	/* forget about the options we've parsed */
+	argc = argc - i;
+	argv = &argv[i];
 
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
@@ -403,21 +260,135 @@ main(int argc, char **argv)
 	signal(SIGINT, stopListening);
 	signal(SIGTERM, stopListening);
 
-	close(0); /* get rid of stdin */
+	/* set up the profiler */
+	if (uri)
+		dbh = mapi_mapiuri(uri, user, password, "mal");
+	else
+		dbh = mapi_mapi(host, portnr, user, password, "mal", dbname);
+	if (dbh == NULL || mapi_error(dbh))
+		die(dbh, hdl);
+	mapi_reconnect(dbh);
+	if (mapi_error(dbh))
+		die(dbh, hdl);
+	host = strdup(mapi_get_host(dbh));
+	if (*host == '/') {
+		fprintf(stderr, "!! UNIX domain socket not supported\n");
+		goto stop_disconnect;
+	}
+#ifdef _DEBUG_STETHOSCOPE_
+	printf("-- connection with server %s\n", uri ? uri : host);
+#endif
 
-	/* our hostname, how remote servers have to contact us */
-	gethostname(hostname, sizeof(hostname));
+	/* set counters */
+	x = NULL;
+	for (i = 0; profileCounter[i].tag; i++) {
+		/* skip duplicates */
+		if (x == profileCounter[i].ptag)
+			continue;
+		/* deactivate any left over counter first */
+		snprintf(buf, BUFSIZ, "profiler.deactivate(\"%s\");",
+				profileCounter[i].ptag);
+		doQ(buf);
+		if (profileCounter[i].status) {
+			snprintf(buf, BUFSIZ, "profiler.activate(\"%s\");",
+					profileCounter[i].ptag);
+			doQ(buf);
+#ifdef _DEBUG_STETHOSCOPE_
+			printf("-- %s\n", buf);
+#endif
+		}
+		x = profileCounter[i].ptag;
+	}
 
-	wthr.uri = NULL;
-	wthr.host = host;
-	wthr.port = portnr;
-	wthr.dbname = dbname;
-	wthr.user = user;
-	wthr.pass = password;
-	wthr.argc = argc - a;
-	wthr.argv = &argv[a];
-	wthr.s = NULL;
-	doProfile();
+	for (portnr = 50010; portnr < 62010; portnr++) {
+		if ((conn = udp_rastream(host, portnr, "profileStream")) != NULL)
+			break;
+	}
+	if (conn == NULL) {
+		fprintf(stderr, "!! opening stream failed: no free ports available\n");
+		goto stop_cleanup;
+	}
+
+	printf("-- opened UDP profile stream %s:%d for %s\n",
+			hostname, portnr, host);
+
+	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
+			hostname, portnr);
+	doQ(buf);
+
+	/* Set Filters */
+	doQ("profiler.setNone();");
+
+	if (argc == 0) {
+#ifdef _DEBUG_STETHOSCOPE_
+		printf("-- profiler.setAll();\n");
+#endif
+		doQ("profiler.setAll();");
+	} else {
+		for (i = 0; i < argc; i++) {
+			char *c;
+			char *arg = strdup(argv[i]);
+			c = strchr(arg, '.');
+			if (c) {
+				mod = arg;
+				if (mod == c)
+					mod = "*";
+				fcn = c + 1;
+				if (*fcn == 0)
+					fcn = "*";
+				*c = 0;
+			} else {
+				fcn = arg;
+				mod = "*";
+			}
+			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
+#ifdef _DEBUG_STETHOSCOPE_
+			printf("-- %s\n", buf);
+#endif
+			doQ(buf);
+			free(arg);
+		}
+	}
+#ifdef _DEBUG_STETHOSCOPE_
+	printf("-- profiler.start();\n");
+#endif
+	doQ("profiler.start();");
+	fflush(NULL);
+
+	i = 0;
+	while ((n = mnstr_read(conn, buf, 1, BUFSIZ)) > 0) {
+		buf[n] = 0;
+		response = buf;
+		while ((e = strchr(response, '\n')) != NULL) {
+			*e = 0;
+			printf("%s\n", response);
+			response = e + 1;
+		}
+		/* handle last line in buffer */
+		if (*response)
+			printf("%s\n", response);
+		if (++i % 200) {
+			i = 0;
+			fflush(NULL);
+		}
+	}
+	fflush(NULL);
+
+stop_cleanup:
+	doQ("profiler.setNone();");
+	doQ("profiler.stop();");
+	doQ("profiler.closeStream();");
+stop_disconnect:
+	if (dbh) {
+		mapi_disconnect(dbh);
+		mapi_destroy(dbh);
+	}
+
+	if (host != NULL) {
+		printf("-- connection with server %s closed\n", uri ? uri : host);
+
+		free(host);
+	}
 	free(user);
 	free(password);
 	return 0;
