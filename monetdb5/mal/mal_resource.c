@@ -219,8 +219,10 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			delay = (long) ( ((double)delay) * running / threads);
 			running--;
 			if (delay) {
-				if ( delayed++ == 0)
-						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
+				if ( delayed++ == 0){
+						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  %ld[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_flush(GDKstdout);
+				}
 				MT_sleep_ms(delay);
 			}
 			running++;
