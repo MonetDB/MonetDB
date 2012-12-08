@@ -140,11 +140,11 @@ MATpackInternal(MalStkPtr stk, InstrPtr p)
 str
 MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int bid, *ret = (int*) getArgReference(stk,p,0);
+	int *ret = (int*) getArgReference(stk,p,0);
 	BAT *b, *bb, *bn;
 
 	(void) cntxt;
-	b = BATdescriptor( bid = stk->stk[getArg(p,1)].val.ival);
+	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
 	if ( b == NULL)
 		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
 
