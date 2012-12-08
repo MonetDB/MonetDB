@@ -227,8 +227,6 @@ ESevaluate(Client cntxt, MalBlkPtr mb, char *empty)
 			freeInstruction(old[i]);
 	GDKfree(old);
 	if (actions) {
-		DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_emptyset: %d empty sets statements removed\n",actions);
 		clrAllTypes(mb);	 /* force a complete resolve */
 	}
 	GDKfree(constraints);

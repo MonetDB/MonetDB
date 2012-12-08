@@ -39,6 +39,7 @@ Ready.
 [ "mapi_autosense"	]
 [ "mapi_open"	]
 [ "mapi_port"	]
+[ "mapi_usock"	]
 [ "max_clients"	]
 [ "monet_daemon"	]
 [ "monet_mod_path"	]

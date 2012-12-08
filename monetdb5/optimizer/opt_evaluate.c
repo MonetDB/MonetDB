@@ -184,8 +184,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 	}
 	actions += OPTremoveUnusedBlocks(cntxt, mb);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout, "#opt_evaluate: %d constant expressions\n", actions);
 	GDKfree(span);
 	GDKfree(alias);
 	freeStack(env);

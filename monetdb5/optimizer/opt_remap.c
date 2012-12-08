@@ -283,8 +283,6 @@ terminateMX:
 		mnstr_printf(cntxt->fdout,"#INLINED RESULT\n");
 		printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_remap: %d mappings\n",actions);
 	freeMalBlk(mq);
 	GDKfree(upgrade);
 	return 1;
