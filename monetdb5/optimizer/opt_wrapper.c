@@ -181,7 +181,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_STMT | LIST_MAPI);
 	}
 	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions (%3ld K) " LLFMT" ms\n", optimizer, actions, mb->stop, 
+		mnstr_printf(cntxt->fdout,"#optimizer %-11s %3d actions %5d MAL instructions (%3d K) " LLFMT" ms\n", optimizer, actions, mb->stop, 
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop * sizeof(int) /* argv estimate */ +mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024),
 		t);
 	QOTupdateStatistics(getModuleId(q),actions,t);
