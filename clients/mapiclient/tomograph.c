@@ -1512,14 +1512,15 @@ int
 main(int argc, char **argv)
 {
 	int a = 1;
-	int i, k = 0;
+	int k = 0;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
+	char *uri = NULL;
 	char *user = NULL;
 	char *password = NULL;
+	struct stat statb;
 
-	char **alts, **oalts;
 	wthread *walk;
 
 	static struct option long_options[15] = {
@@ -1636,10 +1637,24 @@ main(int argc, char **argv)
 		}
 	}
 
-	if (user == NULL)
-		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
-	if (password == NULL)
-		password = simple_prompt("password", BUFSIZ, 0, NULL);
+	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
+			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+	{
+		dbname = argv[optind];
+		optind++;
+	}
+
+	if (dbname != NULL && strncmp(dbname, "mapi:monetdb://", 15) == 0) {
+		uri = dbname;
+		dbname = NULL;
+	}
+
+	a = optind;
+	if (argc > 1 && a < argc && argv[a][0] == '+') {
+		k = setCounter(argv[a] + 1);
+		a++;
+	} else
+		k = setCounter(COUNTERSDEFAULT);
 
 	if (tracefile) {
 		/* reload existing tomogram */
@@ -1652,18 +1667,17 @@ main(int argc, char **argv)
 		printf("Color map file '%s.gpl' generated\n", filename);
 		exit(0);
 	}
-	a = optind;
-	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		k = setCounter(argv[a] + 1);
-		a++;
-	} else
-		k = setCounter(COUNTERSDEFAULT);
 
 	/* DOT needs function id and PC to correlate */
 	if (profileCounter[32].status) {
 		profileCounter[3].status = k++;
 		profileCounter[4].status = k;
 	}
+
+	if (user == NULL)
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+	if (password == NULL)
+		password = simple_prompt("password", BUFSIZ, 0, NULL);
 
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
@@ -1685,7 +1699,7 @@ main(int argc, char **argv)
 
 	/* nothing to redirect, so a single db to try */
 	walk = thds = malloc(sizeof(wthread));
-	walk->uri = NULL;
+	walk->uri = uri;
 	walk->host = host;
 	walk->port = portnr;
 	walk->dbname = dbname;
