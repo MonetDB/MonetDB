@@ -197,6 +197,7 @@ static void deactivateBeat(void)
 			doQ("profiler.stop();");
 		}
 
+
 	return;
 stop_disconnect:
 	;
@@ -252,6 +253,7 @@ static void activateBeat(void)
 		if (wthr->dbh) {
 			doQ(buf);
 		}
+
 
 	return;
 stop_disconnect:
@@ -618,6 +620,7 @@ static void dumpboxes(void)
 			}
 		}
 
+
 	if (f)
 		(void) fclose(f);
 	if (fcpu)
@@ -642,6 +645,7 @@ static void showmemory(void)
 			if (box[i].memend < min)
 				min = box[i].memend;
 		}
+
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -701,6 +705,7 @@ static void showio(void)
 			if (box[i].writes > max)
 				max = box[i].writes;
 		}
+
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -792,6 +797,7 @@ static void showcolormap(char *filename, int all)
 			k++;
 		}
 
+
 	h -= 45;
 	fprintf(f, "set label %d \" %ld MAL instructions executed\" at %d,%d\n",
 			object++, totfreq, (int) (0.2 * w), h - 35);
@@ -808,16 +814,18 @@ static void updmap(int idx)
 	if (fcn) {
 		*fcn = 0;
 		fcn++;
-	} else fcn = "*";
-	for ( i =0; colors[i].col; i++)
-	if ( mod && strcmp(mod,colors[i].mod)== 0) {
-		if (strcmp(fcn,colors[i].fcn) == 0 ){
-			fnd = i;
-			break;
+	} else
+		fcn = "*";
+	for (i = 0; colors[i].col; i++)
+		if (mod && strcmp(mod, colors[i].mod) == 0) {
+			if (strcmp(fcn, colors[i].fcn) == 0) {
+				fnd = i;
+				break;
+			}
 		}
-	} 
-	if ( colors[i].col == 0 )
-		fnd = i-1;
+
+	if (colors[i].col == 0)
+		fnd = i - 1;
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
@@ -847,6 +855,7 @@ static void keepdata(char *filename)
 			fprintf(f, "%s\n", box[i].stmt ? box[i].stmt : box[i].fcn);
 			fprintf(f, "%s\n", box[i].fcn);
 		}
+
 
 	(void) fclose(f);
 }
@@ -973,6 +982,7 @@ static void createTomogram(void)
 		}
 
 
+
 	height = top * 20;
 	fprintf(gnudata, "set yrange [0:%d]\n", height);
 	fprintf(gnudata, "set ylabel \"threads\"\n");
@@ -1026,6 +1036,7 @@ static void createTomogram(void)
 			fprintf(gnudata, "set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
 		}
+
 
 	fprintf(gnudata, "plot 0 notitle with lines\n");
 	fprintf(gnudata, "unset for[i=%d:%d] object i\n", prevobject, object - 1);
@@ -1635,7 +1646,7 @@ main(int argc, char **argv)
 	}
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+		(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
 	{
 		dbname = argv[optind];
 		optind++;
