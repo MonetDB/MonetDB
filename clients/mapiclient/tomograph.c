@@ -1710,6 +1710,8 @@ main(int argc, char **argv)
 	walk->tid = 0;
 	walk->s = NULL;
 	walk->next = NULL;
+	walk->dbh = NULL;
+	walk->hdl = NULL;
 	/* In principle we could do this without a thread, but it seems
 	 * that if we do it that way, ctrl-c (or any other signal)
 	 * doesn't interrupt the read inside this function, and hence
