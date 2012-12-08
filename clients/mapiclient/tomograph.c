@@ -1683,79 +1683,32 @@ main(int argc, char **argv)
 	/* our hostname, how remote servers have to contact us */
 	gethostname(hostname, sizeof(hostname));
 
-	/* try and find multiple options, we assume that we always need a
-	 * local merovingian for that, in the future we probably need to fix
-	 * this in a decent manner */
-	if (dbname != NULL && host == NULL) {
-		oalts = alts = mapi_resolve(host, portnr, dbname);
-	} else
-		alts = NULL;
-
-	if (alts == NULL || *alts == NULL) {
-		/* nothing to redirect, so a single db to try */
-		walk = thds = malloc(sizeof(wthread));
-		walk->uri = NULL;
-		walk->host = host;
-		walk->port = portnr;
-		walk->dbname = dbname;
-		walk->user = user;
-		walk->pass = password;
-		walk->argc = argc - a;
-		walk->argv = &argv[a];
-		walk->tid = 0;
-		walk->s = NULL;
-		walk->next = NULL;
-		/* In principle we could do this without a thread, but it seems
-		 * that if we do it that way, ctrl-c (or any other signal)
-		 * doesn't interrupt the read inside this function, and hence
-		 * the function never terminates... at least on Linux */
+	/* nothing to redirect, so a single db to try */
+	walk = thds = malloc(sizeof(wthread));
+	walk->uri = NULL;
+	walk->host = host;
+	walk->port = portnr;
+	walk->dbname = dbname;
+	walk->user = user;
+	walk->pass = password;
+	walk->argc = argc - a;
+	walk->argv = &argv[a];
+	walk->tid = 0;
+	walk->s = NULL;
+	walk->next = NULL;
+	/* In principle we could do this without a thread, but it seems
+	 * that if we do it that way, ctrl-c (or any other signal)
+	 * doesn't interrupt the read inside this function, and hence
+	 * the function never terminates... at least on Linux */
 #if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-		walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-		WaitForSingleObject(walk->id, INFINITE);
-		CloseHandle(walk->id);
+	walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
+	WaitForSingleObject(walk->id, INFINITE);
+	CloseHandle(walk->id);
 #else
-		pthread_create(&walk->id, NULL, &doProfile, walk);
-		pthread_join(walk->id, NULL);
+	pthread_create(&walk->id, NULL, &doProfile, walk);
+	pthread_join(walk->id, NULL);
 #endif
-		free(walk);
-	} else {
-		/* fork runner threads for all alternatives */
-		i = 1;
-		walk = thds = malloc(sizeof(wthread));
-		while (1) {
-			walk->tid = i++;
-			walk->uri = *alts;
-			walk->host = NULL;
-			walk->port = 0;
-			walk->dbname = NULL;
-			walk->user = user;
-			walk->pass = password;
-			walk->argc = argc - a;
-			walk->argv = &argv[a];
-			walk->s = NULL;
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-#else
-			pthread_create(&walk->id, NULL, &doProfile, walk);
-#endif
-			alts++;
-			if (*alts == NULL)
-				break;
-			walk = walk->next = malloc(sizeof(wthread));
-		}
-		walk->next = NULL;
-		free(oalts);
-		for (walk = thds; walk != NULL; walk = walk->next) {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			WaitForSingleObject(walk->id, INFINITE);
-			CloseHandle(walk->id);
-#else
-			pthread_join(walk->id, NULL);
-#endif
-			free(walk->uri);
-			free(walk);
-		}
-	}
+	free(walk);
 	free(user);
 	free(password);
 	return 0;
