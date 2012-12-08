@@ -28,9 +28,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#ifdef HAVE_PTHREAD_H
-#include <pthread.h>
-#endif
 #include "dotmonetdb.h"
 
 #ifndef HAVE_GETOPT_LONG
@@ -88,13 +85,7 @@ static struct {
 	/*  3  */ { 0, 0, 0, 0 }
 };
 
-typedef struct _wthread {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-	HANDLE id;
-#else
-	pthread_t id;
-#endif
-	int tid;
+static struct _wthread {
 	char *uri;
 	char *host;
 	char *dbname;
@@ -104,10 +95,8 @@ typedef struct _wthread {
 	stream *s;
 	size_t argc;
 	char **argv;
-	struct _wthread *next;
-} wthread;
+} wthr;
 
-static wthread *thds = NULL;
 static char hostname[128];
 
 static void
@@ -148,13 +137,8 @@ usage(void)
 static void
 stopListening(int i)
 {
-	wthread *walk;
 	(void)i;
-	/* kill all connections */
-	for (walk = thds; walk != NULL; walk = walk->next) {
-		if (walk->s != NULL)
-			mnstr_close(walk->s);
-	}
+	mnstr_close(wthr.s);
 }
 
 static int
@@ -180,14 +164,9 @@ setCounter(char *nme)
 	if ((hdl = mapi_query(dbh, X)) == NULL || mapi_error(dbh) != MOK) \
 			 die(dbh, hdl);
 
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-static DWORD WINAPI
-#else
-static void *
-#endif
-doProfile(void *d)
+static void
+doProfile(void)
 {
-	wthread *wthr = (wthread*)d;
 	int i;
 	size_t a;
 	ssize_t n;
@@ -203,10 +182,10 @@ doProfile(void *d)
 
 	/* set up the profiler */
 	id[0] = '\0';
-	if (wthr->uri)
-		dbh = mapi_mapiuri(wthr->uri, wthr->user, wthr->pass, "mal");
+	if (wthr.uri)
+		dbh = mapi_mapiuri(wthr.uri, wthr.user, wthr.pass, "mal");
 	else
-		dbh = mapi_mapi(wthr->host, wthr->port, wthr->user, wthr->pass, "mal", wthr->dbname);
+		dbh = mapi_mapi(wthr.host, wthr.port, wthr.user, wthr.pass, "mal", wthr.dbname);
 	if (dbh == NULL || mapi_error(dbh))
 		die(dbh, hdl);
 	mapi_reconnect(dbh);
@@ -217,16 +196,9 @@ doProfile(void *d)
 		fprintf(stderr, "!! UNIX domain socket not supported\n");
 		goto stop_disconnect;
 	}
-	if (wthr->tid > 0) {
-		snprintf(id, 10, "[%d] ", wthr->tid);
 #ifdef _DEBUG_STETHOSCOPE_
-		printf("-- connection with server %s is %s\n", wthr->uri ? wthr->uri : host, id);
+	printf("-- connection with server %s\n", wthr.uri ? wthr.uri : host);
 #endif
-	} else {
-#ifdef _DEBUG_STETHOSCOPE_
-		printf("-- connection with server %s\n", wthr->uri ? wthr->uri : host);
-#endif
-	}
 
 	/* set counters */
 	x = NULL;
@@ -243,24 +215,24 @@ doProfile(void *d)
 					profileCounter[i].ptag);
 			doQ(buf);
 #ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s%s\n", id, buf);
+			printf("-- %s\n", buf);
 #endif
 		}
 		x = profileCounter[i].ptag;
 	}
 
 	for (portnr = 50010; portnr < 62010; portnr++) {
-		if ((wthr->s = udp_rastream(host, portnr, "profileStream")) != NULL)
+		if ((wthr.s = udp_rastream(host, portnr, "profileStream")) != NULL)
 			break;
 	}
-	if (wthr->s == NULL) {
+	if (wthr.s == NULL) {
 		fprintf(stderr, "!! %sopening stream failed: no free ports available\n",
 				id);
 		goto stop_cleanup;
 	}
 
-	printf("-- %sopened UDP profile stream %s:%d for %s\n",
-			id, hostname, portnr, host);
+	printf("-- opened UDP profile stream %s:%d for %s\n",
+			hostname, portnr, host);
 
 	snprintf(buf, BUFSIZ, "port := profiler.openStream(\"%s\", %d);",
 			hostname, portnr);
@@ -269,15 +241,15 @@ doProfile(void *d)
 	/* Set Filters */
 	doQ("profiler.setNone();");
 
-	if (wthr->argc == 0) {
+	if (wthr.argc == 0) {
 #ifdef _DEBUG_STETHOSCOPE_
-		printf("-- %sprofiler.setAll();\n", id);
+		printf("-- profiler.setAll();\n");
 #endif
 		doQ("profiler.setAll();");
 	} else {
-		for (a = 0; a < wthr->argc; a++) {
+		for (a = 0; a < wthr.argc; a++) {
 			char *c;
-			char *arg = strdup(wthr->argv[a]);
+			char *arg = strdup(wthr.argv[a]);
 			c = strchr(arg, '.');
 			if (c) {
 				mod = arg;
@@ -293,30 +265,30 @@ doProfile(void *d)
 			}
 			snprintf(buf, BUFSIZ, "profiler.setFilter(\"%s\",\"%s\");", mod, fcn);
 #ifdef _DEBUG_STETHOSCOPE_
-			printf("-- %s%s\n", id, buf);
+			printf("-- %s\n", buf);
 #endif
 			doQ(buf);
 			free(arg);
 		}
 	}
 #ifdef _DEBUG_STETHOSCOPE_
-	printf("-- %sprofiler.start();\n", id);
+	printf("-- profiler.start();\n");
 #endif
 	doQ("profiler.start();");
 	fflush(NULL);
 
 	i = 0;
-	while ((n = mnstr_read(wthr->s, buf, 1, BUFSIZ)) > 0) {
+	while ((n = mnstr_read(wthr.s, buf, 1, BUFSIZ)) > 0) {
 		buf[n] = 0;
 		response = buf;
 		while ((e = strchr(response, '\n')) != NULL) {
 			*e = 0;
-			printf("%s%s\n", id, response);
+			printf("%s\n", response);
 			response = e + 1;
 		}
 		/* handle last line in buffer */
-		if ( *response)
-			printf("%s",response);
+		if (*response)
+			printf("%s\n", response);
 		if (++i % 200) {
 			i = 0;
 			fflush(NULL);
@@ -334,18 +306,16 @@ stop_disconnect:
 		mapi_destroy(dbh);
 	}
 
-	printf("-- %sconnection with server %s closed\n", id, wthr->uri ? wthr->uri : host);
+	printf("-- connection with server %s closed\n", wthr.uri ? wthr.uri : host);
 
 	free(host);
-
-	return(0);
 }
 
 int
 main(int argc, char **argv)
 {
 	int a = 1;
-	int i, k;
+	int k;
 	char *host = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
@@ -353,9 +323,6 @@ main(int argc, char **argv)
 	char *password = NULL;
 
 	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
-
-	char **alts, **oalts;
-	wthread *walk;
 
 	static struct option long_options[8] = {
 		{ "dbname", 1, 0, 'd' },
@@ -444,79 +411,16 @@ main(int argc, char **argv)
 	/* our hostname, how remote servers have to contact us */
 	gethostname(hostname, sizeof(hostname));
 
-	/* try and find multiple options, we assume that we always need a
-	 * local merovingian for that, in the future we probably need to fix
-	 * this in a decent manner */
-	if (dbname != NULL && host == NULL) {
-		oalts = alts = mapi_resolve(host, portnr, dbname);
-	} else 
-		alts = NULL;
-
-	if (alts == NULL || *alts == NULL) {
-		/* nothing to redirect, so a single host to try */
-		walk = thds = malloc(sizeof(wthread));
-		walk->uri = NULL;
-		walk->host = host;
-		walk->port = portnr;
-		walk->dbname = dbname;
-		walk->user = user;
-		walk->pass = password;
-		walk->argc = argc - a;
-		walk->argv = &argv[a];
-		walk->tid = 0;
-		walk->s = NULL;
-		walk->next = NULL;
-		/* In principle we could do this without a thread, but it seems
-		 * that if we do it that way, ctrl-c (or any other signal)
-		 * doesn't interrupt the read inside this function, and hence
-		 * the function never terminates... at least on Linux */
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-		walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-		WaitForSingleObject(walk->id, INFINITE);
-		CloseHandle(walk->id);
-#else
-		pthread_create(&walk->id, NULL, &doProfile, walk);
-		pthread_join(walk->id, NULL);
-#endif
-		free(walk);
-	} else {
-		/* fork runner threads for all alternatives */
-		i = 1;
-		walk = thds = malloc(sizeof(wthread));
-		while (1) {
-			walk->tid = i++;
-			walk->uri = *alts;
-			walk->host = NULL;
-			walk->port = 0;
-			walk->dbname = NULL;
-			walk->user = user;
-			walk->pass = password;
-			walk->argc = argc - a;
-			walk->argv = &argv[a];
-			walk->s = NULL;
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			walk->id = CreateThread(NULL, 0, doProfile, walk, 0, NULL);
-#else
-			pthread_create(&walk->id, NULL, &doProfile, walk);
-#endif
-			alts++;
-			if (*alts == NULL)
-				break;
-			walk = walk->next = malloc(sizeof(wthread));
-		}
-		walk->next = NULL;
-		free(oalts);
-		for (walk = thds; walk != NULL; walk = walk->next) {
-#if !defined(HAVE_PTHREAD_H) && defined(_MSC_VER)
-			WaitForSingleObject(walk->id, INFINITE);
-			CloseHandle(walk->id);
-#else
-			pthread_join(walk->id, NULL);
-#endif
-			free(walk->uri);
-			free(walk);
-		}
-	}
+	wthr.uri = NULL;
+	wthr.host = host;
+	wthr.port = portnr;
+	wthr.dbname = dbname;
+	wthr.user = user;
+	wthr.pass = password;
+	wthr.argc = argc - a;
+	wthr.argv = &argv[a];
+	wthr.s = NULL;
+	doProfile();
 	free(user);
 	free(password);
 	return 0;
