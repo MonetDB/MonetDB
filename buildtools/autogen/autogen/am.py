@@ -17,6 +17,8 @@
 
 import os
 import posixpath
+import sys
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from codegen import find_org
 import re
 
@@ -72,9 +74,9 @@ def am_sort_libs(libs, tree):
     for (pref,lib,sep,cond) in libs:
         after = -1
         # does lib depend on another library
-        if tree.has_key('lib_'+ lib):
+        if 'lib_'+ lib in tree:
             v = tree['lib_'+lib]
-            if v.has_key("LIBS"):
+            if "LIBS" in v:
                 for l in v['LIBS']:
                     if len(l) > 3:
                         l = l[3:] # strip lib prefix
@@ -82,9 +84,9 @@ def am_sort_libs(libs, tree):
                         pos = res.index(l)
                         if pos > after:
                             after = pos
-        elif tree.has_key('LIBS'):
+        elif 'LIBS' in tree:
             v = tree['LIBS']
-            if v.has_key(lib[1:] + "_DLIBS"):
+            if lib[1:] + "_DLIBS" in v:
                 for l in v[lib[1:] + '_DLIBS']:
                     if len(l) > 3:
                         l = l[3:] # strip lib prefix
@@ -157,14 +159,14 @@ def am_find_srcs(target, deps, am, cond):
     base, ext = split_filename(target)
     f = target
     pf = f
-    while ext != "h" and deps.has_key(f):
+    while ext != "h" and f in deps:
         f = deps[f][0]
         b, ext = split_filename(f)
         if ext in automake_ext:
             pf = f
 
     # built source if has dep and ext != cur ext
-    if not(cond) and deps.has_key(pf) and pf not in am['BUILT_SOURCES']:
+    if not(cond) and pf in deps and pf not in am['BUILT_SOURCES']:
         pfb, pfext = split_filename(pf)
         sfb, sfext = split_filename(deps[pf][0])
         if sfext != pfext:
@@ -178,7 +180,7 @@ def am_find_srcs(target, deps, am, cond):
     return dist, ""
 
 def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
-    if deps.has_key(target):
+    if target in deps:
         tdeps = deps[target]
         for dtarget in tdeps:
             t, ext = split_filename(dtarget)
@@ -189,7 +191,7 @@ def am_find_hdrs_r(am, target, deps, hdrs, hdrs_ext, map):
                 am_find_hdrs_r(am, dtarget, deps, hdrs, hdrs_ext, map)
 
 def am_find_hdrs(am, map):
-    if map.has_key('HEADERS'):
+    if 'HEADERS' in map:
         hdrs_ext = map['HEADERS']
         for target in map['TARGETS']:
             t, ext = split_filename(target)
@@ -312,11 +314,11 @@ def am_scripts(fd, var, scripts, am):
 
     s, ext = var.split('_', 1)
     ext = [ ext ]
-    if scripts.has_key("EXT"):
+    if "EXT" in scripts:
         ext = scripts["EXT"] # list of extentions
 
     sd = "bindir"
-    if scripts.has_key("DIR"):
+    if "DIR" in scripts:
         sd = scripts["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
 
@@ -331,7 +333,7 @@ def am_scripts(fd, var, scripts, am):
         cond = ''
         s = script
         scriptname = "script_" + script
-        if scripts.has_key('COND'):
+        if 'COND' in scripts:
             condname = '+'.join(scripts['COND'])
             mkname = am_normalize(script.replace('.', '_'))
             cond = '#' + condname
@@ -376,7 +378,7 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
 
-        if not scripts.has_key('NOINST'):
+        if 'NOINST' not in scripts:
             am['INSTALL'].append(s)
             am['UNINSTALL'].append(s)
             am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
@@ -398,7 +400,7 @@ def uniq(l):
 def am_headers(fd, var, headers, am):
 
     sd = "includedir"
-    if headers.has_key("DIR"):
+    if "DIR" in headers:
         sd = headers["DIR"][0] # use first name given
     sd = am_translate_dir(sd, am)
 
@@ -415,7 +417,7 @@ def am_headers(fd, var, headers, am):
             continue
         cond = ''
         h = header
-        if headers.has_key('COND'):
+        if 'COND' in headers:
             cond = '#' + '+'.join(headers['COND'])
             mkname = am_normalize(header.replace('.', '_'))
             for condname in headers['COND']:
@@ -496,25 +498,25 @@ def am_binary(fd, var, binmap, am):
 
     SCRIPTS = []
     scripts_ext = []
-    if binmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in binmap:
         scripts_ext = binmap['SCRIPTS']
 
     name = var[4:]
-    if binmap.has_key("NAME"):
+    if "NAME" in binmap:
         binname = binmap['NAME'][0]
     else:
         binname = name
     norm_binname = am_normalize(binname)
 
     bd = 'bindir'
-    if binmap.has_key("DIR"):
+    if "DIR" in binmap:
         bd = binmap["DIR"][0] # use first name given
     bd = am_translate_dir(bd, am)
     fd.write("%sdir = %s\n" % (norm_binname, bd))
 
     cname = name
     cond = ''
-    if binmap.has_key('COND'):
+    if 'COND' in binmap:
         for condname in binmap['COND']:
             fd.write("if %s\n" % condname)
         cond = '#' + '+'.join(binmap['COND'])
@@ -523,7 +525,7 @@ def am_binary(fd, var, binmap, am):
         for condname in binmap['COND']:
             fd.write("endif\n")
         cname = "$(C_" + name + ")"
-    elif binmap.has_key('CONDINST'):
+    elif 'CONDINST' in binmap:
         for condname in binmap['CONDINST']:
             fd.write("if %s\n" % condname)
         cond = '#' + '+'.join(binmap['CONDINST'])
@@ -543,25 +545,25 @@ def am_binary(fd, var, binmap, am):
         cname = "$(C_noinst_" + name + ")"
         am['NBINS'].append(cname)
         cname = ''
-    elif binmap.has_key('NOINST'):
+    elif 'NOINST' in binmap:
         am['NBINS'].append(binname)
     else:
         am['BINS'].append(binname)
 
     am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
-    if binmap.has_key('MTSAFE'):
+    if 'MTSAFE' in binmap:
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
-    if binmap.has_key("LIBS"):
+    if "LIBS" in binmap:
         fd.write(am_additional_libs(norm_binname, "", "BIN", binmap["LIBS"], am))
 
-    if binmap.has_key("LDFLAGS"):
+    if "LDFLAGS" in binmap:
         ldflags = binmap["LDFLAGS"][:]
     else:
         ldflags = []
     ldflags.append('-export-dynamic')
-    if binmap.has_key('NOINST'):
+    if 'NOINST' in binmap:
         ldflags.append('-no-install')
     fd.write(am_additional_flags(norm_binname, "", "BIN", ldflags, am))
 
@@ -602,20 +604,20 @@ def am_bins(fd, var, binsmap, am):
 
     lbins = []
     scripts_ext = []
-    if binsmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in binsmap:
         scripts_ext = binsmap['SCRIPTS']
 
     name = ""
-    if binsmap.has_key("NAME"):
+    if "NAME" in binsmap:
         name = binsmap["NAME"][0] # use first name given
-    if binsmap.has_key('MTSAFE'):
+    if 'MTSAFE' in binsmap:
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
     for binsrc in binsmap['SOURCES']:
         SCRIPTS = []
         bin, ext = split_filename(binsrc)
         am['EXTRA_DIST'].append(binsrc)
 
-        if binsmap.has_key('CONDINST'):
+        if 'CONDINST' in binsmap:
             for condname in binsmap['CONDINST']:
                 fd.write("if %s\n" % condname)
             cond = '#' + '+'.join(binsmap['CONDINST'])
@@ -636,24 +638,24 @@ def am_bins(fd, var, binsmap, am):
             cname = "$(C_noinst_" + bin + ")"
             am['NBINS'].append(cname)
             cname = ''
-        elif binsmap.has_key('NOINST'):
+        elif 'NOINST' in binsmap:
             am['NBINS'].append(bin)
         else:
             am['BINS'].append(bin)
-            if binsmap.has_key("DIR"):
+            if "DIR" in binsmap:
                 lbins.append(bin)
 
-        if binsmap.has_key(bin + "_LIBS"):
+        if bin + "_LIBS" in binsmap:
             fd.write(am_additional_libs(bin, "", "BIN", binsmap[bin + "_LIBS"], am))
-        elif binsmap.has_key("LIBS"):
+        elif "LIBS" in binsmap:
             fd.write(am_additional_libs(bin, "", "BIN", binsmap["LIBS"], am))
 
-        if binsmap.has_key("LDFLAGS"):
+        if "LDFLAGS" in binsmap:
             ldflags = binsmap["LDFLAGS"][:]
         else:
             ldflags = []
         ldflags.append('-export-dynamic')
-        if binsmap.has_key('NOINST'):
+        if 'NOINST' in binsmap:
             ldflags.append('-no-install')
         fd.write(am_additional_flags(bin, "", "BIN", ldflags, am))
 
@@ -691,7 +693,7 @@ def am_bins(fd, var, binsmap, am):
         for bn in lbins:
             am['InstallList'].append("\t%s/%s\n" % (bd, bn))
 
-    if binsmap.has_key('HEADERS'):
+    if 'HEADERS' in binsmap:
         HDRS = []
         hdrs_ext = binsmap['HEADERS']
         for target in binsmap['DEPS'].keys():
@@ -714,12 +716,12 @@ def am_library(fd, var, libmap, am):
 
     sep = ""
     pref = 'lib'
-    if libmap.has_key("NAME"):
+    if "NAME" in libmap:
         libname = libmap['NAME'][0]
     else:
         libname = name
 
-    if libmap.has_key("PREFIX"):
+    if "PREFIX" in libmap:
         if libmap['PREFIX']:
             pref = libmap['PREFIX'][0]
         else:
@@ -728,13 +730,13 @@ def am_library(fd, var, libmap, am):
     if libname[0] == "_":
         sep = "_"
         libname = libname[1:]
-    if libmap.has_key('SEP'):
+    if 'SEP' in libmap:
         sep = libmap['SEP'][0]
 
     cname = libname
     cond = ''
     condname = ''
-    if libmap.has_key('COND'):
+    if 'COND' in libmap:
         for condname in libmap['COND']:
             fd.write("if %s\n" % condname)
         fd.write(" C_%s = %s\n" % (libname, libname))
@@ -746,37 +748,37 @@ def am_library(fd, var, libmap, am):
     fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,name.upper()))
 
     ld = "libdir"
-    if libmap.has_key("DIR"):
+    if "DIR" in libmap:
         ld = libmap["DIR"][0] # use first name given
 
     SCRIPTS = []
     scripts_ext = []
-    if libmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in libmap:
         scripts_ext = libmap['SCRIPTS']
 
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
-    if libmap.has_key('NOINST'):
+    if 'NOINST' in libmap:
         am['NLIBS'].append((pref, libname, sep))
     else:
         am['LIBS'].append((pref, libname, sep, libmap.get('COND', ())))
         am['InstallList'].append("\t%s/%s%s%s.so%s\n" % (ld, pref, sep, libname, cond))
 
-    if libmap.has_key('MTSAFE'):
+    if 'MTSAFE' in libmap:
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
-    if libmap.has_key("LIBS"):
+    if "LIBS" in libmap:
         fd.write(am_additional_libs(libname, sep, "LIB", libmap["LIBS"], am, pref))
         fd.write(am_additional_install_libs(libname, sep, libmap["LIBS"], am))
 
     ldflags = []
-    if libmap.has_key('MODULE'):
+    if 'MODULE' in libmap:
         ldflags.append('-module')
         ldflags.append('-avoid-version')
-    if libmap.has_key("LDFLAGS"):
+    if "LDFLAGS" in libmap:
         for x in libmap["LDFLAGS"]:
             ldflags.append(x)
-    if libmap.has_key('VERSION'):
+    if 'VERSION' in libmap:
         ldflags.append('-version-info')
         ldflags.append(libmap['VERSION'][0])
 
@@ -805,7 +807,7 @@ def am_library(fd, var, libmap, am):
                 srcs = srcs + " " + src
             else:
                 nsrcs = nsrcs + " " + src
-            if target[-2:] == '.o' and libmap['DEPS'].has_key(target):
+            if target[-2:] == '.o' and target in libmap['DEPS']:
                 am_dep(fd, target, libmap['DEPS'][target], am, fullpref+"-")
                 basename = target[:-2]
                 fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
@@ -835,19 +837,19 @@ def am_library(fd, var, libmap, am):
 def am_libs(fd, var, libsmap, am):
 
     ld = "libdir"
-    if (libsmap.has_key("DIR")):
+    if ("DIR" in libsmap):
         ld = libsmap["DIR"][0] # use first name given
     ld = am_translate_dir(ld, am)
 
     sep = ""
-    if libsmap.has_key('SEP'):
+    if 'SEP' in libsmap:
         sep = libsmap['SEP'][0]
 
     scripts_ext = []
-    if libsmap.has_key('SCRIPTS'):
+    if 'SCRIPTS' in libsmap:
         scripts_ext = libsmap['SCRIPTS']
 
-    if libsmap.has_key('MTSAFE'):
+    if 'MTSAFE' in libsmap:
         fd.write("CFLAGS %s $(THREAD_SAVE_FLAGS)\n" % am_assign)
 
     libnames = []
@@ -860,22 +862,22 @@ def am_libs(fd, var, libsmap, am):
 
 # temporarily switched off, the scripts created by libtool cause problems
 # for so-so linking
-#    if libsmap.has_key(libname + "_LIBS"):
+#    if libname + "_LIBS" in libsmap:
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
-#    elif libsmap.has_key("LIBS"):
+#    elif "LIBS" in libsmap:
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"], am))
         _libs = []
-        if libsmap.has_key(libname + "_DLIBS"):
+        if libname + "_DLIBS" in libsmap:
             _libs += libsmap[libname + "_DLIBS"]
             fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
 
-        if libsmap.has_key("LIBS"):
+        if "LIBS" in libsmap:
             _libs += libsmap["LIBS"]
-        if libsmap.has_key("LDFLAGS"):
+        if "LDFLAGS" in libsmap:
             _libs += libsmap["LDFLAGS"]
-        if libsmap.has_key('VERSION'):
+        if 'VERSION' in libsmap:
             version = ['-version-info', libsmap['VERSION'][0]]
-        elif libsmap.has_key('MODULE'):
+        elif 'MODULE' in libsmap:
             version = ['-module', '-avoid-version']
         else:
             version = []
@@ -900,7 +902,7 @@ def am_libs(fd, var, libsmap, am):
                         srcs = srcs + " " + src
                     else:
                         nsrcs = nsrcs + " " + src
-                if target[-2:] == '.o' and libsmap['DEPS'].has_key(target):
+                if target[-2:] == '.o' and target in libsmap['DEPS']:
                     am_dep(fd, target, libsmap['DEPS'][target], am, fullpref+"-")
                     basename = target[:-2]
                     fd.write('\t$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(%s_CFLAGS) $(CFLAGS) $(%s_CFLAGS) -c -o %s-%s.lo `test -f \'%s.c\' || echo \'$(srcdir)/\'`%s.c\n' % (fullpref, basename, fullpref, basename, basename, basename))
@@ -918,7 +920,7 @@ def am_libs(fd, var, libsmap, am):
         am['LIBS'].append(('lib', libname, sep, ''))
         am['InstallList'].append("\t"+ld+sep+libname+".so\n")
 
-    if libsmap.has_key('HEADERS'):
+    if 'HEADERS' in libsmap:
         HDRS = []
         hdrs_ext = libsmap['HEADERS']
         for target in libsmap['DEPS'].keys():
@@ -934,7 +936,7 @@ def am_libs(fd, var, libsmap, am):
 def am_gem(fd, var, gem, am):
     gemre = re.compile(r'\.files *= *\[ *(.*[^ ]) *\]')
     rd = 'RUBY_DIR'
-    if gem.has_key('DIR'):
+    if 'DIR' in gem:
         rd = gem['DIR'][0]
     rd = am_translate_dir(rd, am)
     fd.write('if HAVE_RUBYGEM\n')
@@ -944,8 +946,8 @@ def am_gem(fd, var, gem, am):
         fd.write(' %s' % f[:-4])
     fd.write('\n')
     for f in gem['FILES']:
-        srcs = map(lambda x: x.strip('" '),
-                   gemre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
+        srcs = list(map(lambda x: x.strip('" '),
+                   gemre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', ')))
         srcs.append(f)
         sf = f.replace('.', '_')
         am['INSTALL'].append(sf)
@@ -1000,7 +1002,7 @@ def am_python_generic(fd, var, python, am, PYTHON):
                    pyre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(1).split(', '))
         pkgnams.append(pynmre.search(open(os.path.join(am['CWDRAW'], f)).read()).group(2))
         for pkg in pkgs:
-            pkgdir = apply(posixpath.join, pkg.split('.'))
+            pkgdir = posixpath.join(*pkg.split('.'))
             pkgdirs.append(pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || mkdir -p '%s'\n" % pkgdir)
             fd.write("\t[ '$(srcdir)' -ef . ] || cp -p '$(srcdir)/%s'/*.py '%s'\n" % (pkgdir, pkgdir))
@@ -1020,8 +1022,8 @@ def am_python_generic(fd, var, python, am, PYTHON):
     for pkgdir in sorted(pkgdirs, reverse = True):
         fd.write("\t[ '$(srcdir)' -ef . ] || rm -r '%s'\n" % pkgdir)
 
-def am_python(fd, var, python, am):
-    am_python_generic(fd, var, python, am, 'PYTHON')
+def am_python2(fd, var, python, am):
+    am_python_generic(fd, var, python, am, 'PYTHON2')
 
 def am_python3(fd, var, python3, am):
     am_python_generic(fd, var, python3, am, 'PYTHON3')
@@ -1031,17 +1033,17 @@ def am_ant(fd, var, ant, am):
     target = var[4:]                    # the ant target to call
 
     jd = "JAVADIR"
-    if ant.has_key("DIR"):
+    if "DIR" in ant:
         jd = ant["DIR"][0] # use first name given
     jd = am_translate_dir(jd, am)
 
-    #if ant.has_key("SOURCES"):
+    #if "SOURCES" in ant:
         #for src in ant['SOURCES']:
             #am['EXTRA_DIST'].append(src)
 
     fd.write("\nif HAVE_JAVA\n\n")  # there is ant if configure set HAVE_JAVA
 
-    if ant.has_key("COND"):
+    if "COND" in ant:
         fd.write("\nif " + ant["COND"][0] +"\n\n")
 
     fd.write("\n%s_ant_target:\n\t\"$(ANT)\" -f \"`$(anttranslatepath) $(srcdir)/build.xml`\" -Dbuilddir=\"`$(anttranslatepath) $(PWD)/%s`\" -Djardir=\"`$(anttranslatepath) $(PWD)`\" -Dbasedir=\"`$(anttranslatepath) $(srcdir)`\" %s\n" % (target, target, target))
@@ -1061,7 +1063,7 @@ def am_ant(fd, var, ant, am):
 
         am['ALL'].append(sfile)
 
-    if ant.has_key("COND"):
+    if "COND" in ant:
         fd.write("\nelse\n\n")
 
     for file in ant['FILES']:
@@ -1070,7 +1072,7 @@ def am_ant(fd, var, ant, am):
         fd.write("uninstall-local-%s:\n" % sfile)
         fd.write("all-local-%s:\n" % sfile)
 
-    if ant.has_key("COND"):
+    if "COND" in ant:
         fd.write("\nendif !" + ant["COND"][0] + "\n\n")
 
     fd.write("\nelse\n\n")
@@ -1083,7 +1085,7 @@ def am_ant(fd, var, ant, am):
 
     fd.write("\nendif !HAVE_JAVA\n\n")
 
-    if ant.has_key("COND"):
+    if "COND" in ant:
         cond = "#" + ant["COND"][0]
     else:
         cond = ""
@@ -1154,7 +1156,7 @@ output_funcs = {'SUBDIRS': am_subdirs,
                 'HEADERS': am_headers,
                 'ANT': am_ant,
                 'GEM': am_gem,
-                'PYTHON': am_python,
+                'PYTHON2': am_python2,
                 'PYTHON3': am_python3,
                 }
 
@@ -1179,11 +1181,11 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
     if cwd == topdir:
         fd.write('ACLOCAL_AMFLAGS = -I buildtools/conf\n')
 
-    if not tree.has_key('INCLUDES'):
+    if 'INCLUDES' not in tree:
         tree.add('INCLUDES', [])
 
     am = {}
-    if tree.has_key('NAME'):
+    if 'NAME' in tree:
         am['NAME'] = tree['NAME']
     else:
         if cwd != topdir:
@@ -1228,9 +1230,9 @@ AUTOMAKE_OPTIONS = no-dependencies 1.4 foreign
         if i.find('_') >= 0:
             k, j = i.split('_', 1)
             j = k.upper()
-        if output_funcs.has_key(i):
+        if i in output_funcs:
             output_funcs[i](fd, i, v, am)
-        elif output_funcs.has_key(j):
+        elif j in output_funcs:
             output_funcs[j](fd, i, v, am)
         elif i != 'TARGETS':
             am_assignment(fd, i, v, am)

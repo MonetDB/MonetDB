@@ -538,7 +538,7 @@ program.
 %dir %{python_sitelib}/monetdb
 %{python_sitelib}/monetdb/*
 %{python_sitelib}/python_monetdb-*.egg-info
-%doc clients/python/README.rst
+%doc clients/python2/README.rst
 
 %package -n python3-monetdb
 Summary: Native MonetDB client Python3 API
@@ -650,7 +650,7 @@ developer, but if you do want to test, this is the package you need.
 	--with-mseed=no \
 	--with-perl=yes \
 	--with-pthread=yes \
-	--with-python=yes \
+	--with-python2=yes \
 	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \

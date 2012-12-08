@@ -30,6 +30,12 @@
  * (if available) for +, -, *.  For division the output type can be
  * either input type of flt or dbl. */
 
+/* Generally, the functions return a new BAT aligned with the input
+ * BAT(s).  If there are multiple input BATs, they must be aligned.
+ * If there is a candidate list, the calculations are only done for
+ * the candidates, all other values are NIL (so that the output is
+ * still aligned). */
+
 /* format strings for the six basic types we deal with */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
@@ -3463,7 +3469,11 @@ MUL_3TYPE_enlarge(bte, int, lng)
 MUL_3TYPE_enlarge(bte, int, flt)
 MUL_3TYPE_enlarge(bte, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(bte, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(bte, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(bte, lng, flt)
 MUL_3TYPE_enlarge(bte, lng, dbl)
@@ -3491,7 +3501,11 @@ MUL_3TYPE_enlarge(sht, int, lng)
 MUL_3TYPE_enlarge(sht, int, flt)
 MUL_3TYPE_enlarge(sht, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(sht, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(sht, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(sht, lng, flt)
 MUL_3TYPE_enlarge(sht, lng, dbl)
@@ -3517,7 +3531,11 @@ MUL_3TYPE_enlarge(int, int, lng)
 MUL_3TYPE_enlarge(int, int, flt)
 MUL_3TYPE_enlarge(int, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(int, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(int, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(int, lng, flt)
 MUL_3TYPE_enlarge(int, lng, dbl)
@@ -3525,22 +3543,38 @@ MUL_3TYPE_enlarge(int, lng, dbl)
 MUL_2TYPE_float(int, flt, flt)
 MUL_3TYPE_enlarge(int, flt, dbl)
 MUL_2TYPE_float(int, dbl, dbl)
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, bte, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, bte)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, bte, flt)
 MUL_3TYPE_enlarge(lng, bte, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, sht, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, sht)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, sht, flt)
 MUL_3TYPE_enlarge(lng, sht, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, int, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, int)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, int, flt)
 MUL_3TYPE_enlarge(lng, int, dbl)
 #endif
+#ifdef HAVE___INT128
+MUL_4TYPE(lng, lng, lng, __int128)
+#else
 MUL_2TYPE_lng(lng, lng)
+#endif
 #ifdef FULL_IMPLEMENTATION
 MUL_3TYPE_enlarge(lng, lng, flt)
 MUL_3TYPE_enlarge(lng, lng, dbl)

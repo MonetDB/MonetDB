@@ -74,13 +74,13 @@ PTHREAD_LIBS =
 ODBCINST_LIBS = odbccp32.lib user32.lib
 ODBC_LIBS = odbc32.lib
 
-!IFNDEF PYTHONBASE
-PYTHONBASE=C:\Python27
+!IFNDEF PYTHON2BASE
+PYTHON2BASE=C:\Python27
 !ENDIF
-!IFNDEF PYTHONLIB
-PYTHONLIB=python27.lib
+!IFNDEF PYTHON2LIB
+PYTHON2LIB=python27.lib
 !ENDIF
-PYTHON_LIBDIR=share\MonetDB\python
+PYTHON2_LIBDIR=share\MonetDB\python
 
 !IFNDEF PYTHON3BASE
 PYTHON3BASE=C:\Python32
@@ -177,7 +177,8 @@ RUBY_DIR = lib\ruby\gems\1.9.1
 
 # some programs we use, probably no need to edit
 
-# install python, flex and bison on your systems 
+# install python, flex and bison on your systems
+# PYTHON may be either a version 2 or a version 3
 PYTHON = python
 YACC = bison
 LEX = flex
@@ -370,6 +371,11 @@ create_winconfig_conds_new_py:
 !ELSE
 	$(ECHO) HAVE_PYTHON_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ENDIF
+!IFDEF HAVE_PYTHON2
+	$(ECHO) HAVE_PYTHON2_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ELSE
+	$(ECHO) HAVE_PYTHON2_FALSE='' >> "$(TOPDIR)\winconfig_conds_new.py"
+!ENDIF
 !IFDEF HAVE_PYTHON3
 	$(ECHO) HAVE_PYTHON3_FALSE='#' >> "$(TOPDIR)\winconfig_conds_new.py"
 !ELSE
@@ -436,7 +442,8 @@ CONFIGURE=$(PYTHON) $(CONFIGURE_PY) \
 	"PACKAGE=$(pkg)" \
 	"PERL_LIBDIR=$(PERL_LIBDIR)" \
 	"PYTHON=$(PYTHON)" \
-	"PYTHON_LIBDIR=$(PYTHON_LIBDIR)" \
+	"PYTHON2=$(PYTHON2)" \
+	"PYTHON2_LIBDIR=$(PYTHON2_LIBDIR)" \
 	"PYTHON3=$(PYTHON3)" \
 	"PYTHON3_LIBDIR=$(PYTHON3_LIBDIR)" \
 	"RUBY_DIR=$(RUBY_DIR)" \

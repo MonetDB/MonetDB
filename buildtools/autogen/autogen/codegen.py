@@ -20,10 +20,10 @@ import re
 import fileinput
 import os
 import shelve
-from var import *
-
-from tokenize import tokenize, NL
 import sys
+
+from tokenize import tokenize
+from tokenize import NL
 
 
 mx2mal = re.compile("^@mal[ \t\r\n]+", re.MULTILINE)
@@ -141,8 +141,8 @@ scan_map = {
 def split_filename(f):
     base = f
     ext = ""
-    if string.find(f,".") >= 0:
-        return string.split(f,".", 1)
+    if f.find(".") >= 0:
+        return f.split(".", 1)
     return base,ext
 
 def readfile(f):
@@ -158,7 +158,7 @@ def readfilepart(f,ext):
     buf = src.read()
     src.close()
     buf2 = ""
-    if ext != 'mx' and code_extract.has_key(fext):
+    if ext != 'mx' and fext in code_extract:
         epat = end_code_extract[fext]
         for pat,newext in code_extract[fext]:
             if newext == "." + ext:
@@ -185,7 +185,7 @@ def readfilepart(f,ext):
 # these targets , ie. the dependencies.
 def do_code_extract(f,base,ext, targets, deps, cwd):
     file = os.path.join(cwd,f)
-    if os.path.exists(file) and code_extract.has_key(ext):
+    if os.path.exists(file) and ext in code_extract:
         b = readfile(file)
         for pat,newext in code_extract[ext]:
             if pat.search(b) is not None:
@@ -208,13 +208,13 @@ def do_code_gen(targets, deps, code_map):
         changes = 0
         for f in targets:
             base,ext = split_filename(f)
-            if code_map.has_key(ext):
+            if ext in code_map:
                 changes = 1
                 for newext in code_map[ext]:
                     newtarget = base + newext
                     if newtarget not in ntargets:
                         ntargets.append(newtarget)
-                    if deps.has_key(newtarget):
+                    if newtarget in deps:
                         if (f not in deps[newtarget]):
                             deps[newtarget].append(f)
                     else:
@@ -226,7 +226,7 @@ def do_code_gen(targets, deps, code_map):
 
 def find_org(deps,f):
     org = f
-    while deps.has_key(org):
+    while org in deps:
         org = deps[org][0] #gen code is done first, other deps are appended
     return org
 
@@ -276,7 +276,7 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
 
 def do_recursive_combine(deplist,includes,incs,depfiles):
     for d in deplist:
-        if includes.has_key(d):
+        if d in includes:
             for f in includes[d]:
                 if f not in depfiles:
                     depfiles.append(f)
@@ -284,7 +284,7 @@ def do_recursive_combine(deplist,includes,incs,depfiles):
             # need to add include d too
             if d not in depfiles:
                 depfiles.append(d)
-        elif incs.has_key(d):
+        elif d in incs:
             if d not in depfiles:
                 depfiles.append(d)
                 do_recursive_combine(incs[d],includes,incs,depfiles)
@@ -293,7 +293,7 @@ def do_recursive_combine(deplist,includes,incs,depfiles):
 def do_dep_combine(deps,includes,cwd,incs):
     for target,depfiles in deps.items():
         for d in depfiles:
-            if incs.has_key(d):
+            if d in incs:
                 do_recursive_combine(incs[d],includes,incs,depfiles)
         # remove recursive dependencies (target depends somehow on itself)
         if target in depfiles:
@@ -302,9 +302,9 @@ def do_dep_combine(deps,includes,cwd,incs):
 # scan for includes and match against the known deps and include map.
 def do_scan_target(target,targets,deps,incmap,cwd,incs):
     base,ext = split_filename(target)
-    if not incs.has_key(target):
+    if target not in incs:
         inc_files = []
-        if scan_map.has_key(ext):
+        if ext in scan_map:
             org = os.path.join(cwd,find_org(deps,target))
             if os.path.exists(org):
                 b = readfilepart(org,ext)
@@ -318,24 +318,24 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                             n = ressep.start(0)
                             fnd1 = b[p:n]
                             p = ressep.end(0) # start of next file
-                            if deps.has_key(fnd1+incext) or fnd1+incext in targets:
+                            if fnd1+incext in deps or fnd1+incext in targets:
                                 if fnd1+incext not in inc_files:
                                     inc_files.append(fnd1+incext)
-                            elif incmap.has_key(fnd1+incext):
+                            elif fnd1+incext in incmap:
                                 if fnd1+incext not in inc_files:
                                     inc_files.append(os.path.join(incmap[fnd1+incext],fnd1+incext))
                             ressep = sep.search(b,p,e)
                     fnd = b[p:e]
-                    if deps.has_key(fnd+incext) or fnd+incext in targets:
+                    if fnd+incext in deps or fnd+incext in targets:
                         if fnd+incext not in inc_files:
                             inc_files.append(fnd+incext)
-                    elif incmap.has_key(fnd+incext):
+                    elif fnd+incext in incmap:
                         if fnd+incext not in inc_files:
                             inc_files.append(os.path.join(incmap[fnd+incext],fnd+incext))
                     elif os.path.exists(os.path.join(cwd, fnd+incext)):
                         if fnd+incext not in inc_files:
                             inc_files.append(fnd+incext)
-                        if not incs.has_key(fnd+incext):
+                        if fnd+incext not in incs:
                             incs[fnd+incext] = []
 ##                     else:
 ##                         print fnd + incext + " not in deps or incmap"
@@ -344,7 +344,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
 
 def do_scan(targets,deps,incmap,cwd,incs):
     for target in targets:
-        if not deps.has_key(target):
+        if target not in deps:
             do_scan_target(target,targets,{},incmap,cwd,incs)
     for target,depfiles in deps.items():
         do_scan_target(target,targets,deps,incmap,cwd,incs)
@@ -358,9 +358,9 @@ def expand_env(i):
         sep = '}'
         if i[1] == '(':
             sep = ')'
-        var, rest = string.split(i[2:], sep)
+        var, rest = i[2:].split(sep)
 
-        if os.environ.has_key( var ):
+        if var in os.environ:
             value = os.environ[var]
             value = value.replace('{', '(').replace('}', ')')
             return value + rest
@@ -373,8 +373,8 @@ def expand_incdir(i,topdir):
     if (incdir != None):
         return incdir
     dir = i
-    if string.find(i,os.sep) >= 0:
-        d,rest = string.split(i,os.sep, 1)
+    if i.find(os.sep) >= 0:
+        d,rest = i.split(os.sep, 1)
         if d == "top_srcdir" or d == "top_builddir":
             dir = os.path.join(topdir, rest)
         elif d == "srcdir" or d == "builddir":
@@ -388,7 +388,7 @@ def expand_includes(i,topdir):
         print("!WARNING: it's not portable to use absolute paths: " + i)
     incdir = expand_env(i)
     if (incdir != None):
-        incs = string.split(incdir)
+        incs = incdir.split()
         if (len(incs) > 1):
             return expand_incdirs(incs,topdir)
         else:
@@ -399,7 +399,7 @@ def expand_includes(i,topdir):
 def expand_incdirs(incdirs,topdir):
     dirs = []
     for incdir in incdirs:
-        incs = string.split(incdir)
+        incs = incdir.split()
         if (len(incs) > 1):
             dirs.extend(expand_incdirs(incs,topdir))
         else:
@@ -417,9 +417,9 @@ def collect_includes(incdirs, cwd, topdir):
         if dir.startswith('$'):
             continue
         dir = os.path.normpath(os.path.join(cwd, dir))
-        if buildincsfiles.has_key(dir):
+        if dir in buildincsfiles:
             incs = buildincsfiles[dir]
-        elif installincsfiles.has_key(dir):
+        elif dir in installincsfiles:
             incs = installincsfiles[dir]
         else:
             incs = None
@@ -454,13 +454,13 @@ def collect_includes(incdirs, cwd, topdir):
 def codegen(tree, cwd, topdir, incdirsmap):
     includes = {}
     incmap = {}
-    if tree.has_key("INCLUDES"):
+    if 'INCLUDES' in tree:
         includes,incmap = collect_includes(tree["INCLUDES"],cwd, topdir)
 
     deps = {}
     for i,v in tree.items():
         targets = []
-        if type(v) is type({}) and v.has_key("SOURCES"):
+        if type(v) is type({}) and "SOURCES" in v:
             for f in v["SOURCES"]:
                 base,ext = split_filename(f)
                 do_code_extract(f,base,ext, targets, deps, cwd)
@@ -474,8 +474,10 @@ def codegen(tree, cwd, topdir, incdirsmap):
             v["DEPS"] = deps
 
     for i,v in tree.items():
-        if type(v) is type({}) and v.has_key("SOURCES"):
+        if type(v) is type({}) and "SOURCES" in v:
             if i[0:4] == "lib_":
                 lib = i[4:] + "_LIBS"
                 if lib[0] == "_":
                     lib = lib[1:]
+
+# vim: set expandtab ts=4 sw=4:

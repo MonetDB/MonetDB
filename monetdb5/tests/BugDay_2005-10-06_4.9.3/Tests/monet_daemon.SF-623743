@@ -2,6 +2,6 @@
 
 NAME="$1"
 
-Mlog   "$MSERVER --dbname=$TSTDB --set monet_daemon=yes"
-eval   "$MSERVER --dbname=$TSTDB --set monet_daemon=yes"
+Mlog   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB --set monet_daemon=yes"
+eval   "$MSERVER --dbpath=$GDK_DBFARM/$TSTDB --set monet_daemon=yes"
 

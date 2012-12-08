@@ -53,7 +53,9 @@ INETfromString(str src, int *len, inet **retval)
 	if (*len < (int)sizeof(inet)) {
 		if (*retval != NULL)
 			GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(inet));
+		*retval = GDKzalloc(sizeof(inet));
+	} else {
+		memset(*retval, 0, sizeof(inet));
 	}
 
 	/* handle the nil string */
