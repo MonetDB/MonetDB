@@ -30,6 +30,12 @@
  * (if available) for +, -, *.  For division the output type can be
  * either input type of flt or dbl. */
 
+/* Generally, the functions return a new BAT aligned with the input
+ * BAT(s).  If there are multiple input BATs, they must be aligned.
+ * If there is a candidate list, the calculations are only done for
+ * the candidates, all other values are NIL (so that the output is
+ * still aligned). */
+
 /* format strings for the six basic types we deal with */
 #define FMTbte	"%d"
 #define FMTsht	"%d"

@@ -84,7 +84,5 @@ OPTgroupsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			freeInstruction(old[i]);
 	GDKfree(old);
 	GDKfree(ref);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_groups: %d statements glued\n",actions);
 	return actions;
 }

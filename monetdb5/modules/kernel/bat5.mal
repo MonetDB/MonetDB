@@ -228,7 +228,7 @@ comment "Delete one specific BUN.";
 
 command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2]
 address BKCdelete
-comment "Delete all BUNs with a certain tail value.";
+comment "Delete all BUNs with a certain head value.";
 
 command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
 address BKCdelete_all

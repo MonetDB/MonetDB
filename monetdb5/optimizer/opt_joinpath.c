@@ -293,7 +293,5 @@ OPTjoinPathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	GDKfree(old);
 	GDKfree(pc);
 	if (varcnt ) GDKfree(varcnt);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_joinpath: %d statements glued\n",actions);
 	return actions;
 }

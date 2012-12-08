@@ -38,6 +38,7 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValRecord val;
 	VarPtr h, t;
 
+	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
@@ -123,7 +124,5 @@ OPToriginImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_origin: %d statements marked\n", actions);
 	return actions;
 }

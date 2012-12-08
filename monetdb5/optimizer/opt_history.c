@@ -37,7 +37,7 @@ OPTforgetPrevious(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 int 
 OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, slimit, actions = 1;
+	int i, limit, slimit;
 	InstrPtr p = 0, *old= mb->stmt, q,r;
 	int argc, inblock, oublock, arg, ctime;
 	int xtime=0, rtime = 0, foot=0, memory, tuples=0;
@@ -203,7 +203,5 @@ OPThistoryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		if(old[i])
 			freeInstruction(old[i]);
 	GDKfree(old);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_history: code added\n");
 	return 1;
 }

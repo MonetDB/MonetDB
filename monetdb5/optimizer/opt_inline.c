@@ -40,13 +40,12 @@ isCorrectInline(MalBlkPtr mb){
 int
 OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,limit;
+	int i;
 	InstrPtr q,sig;
 	int actions = 0;
 
 	(void) p;
 
-	limit = mb->stop;
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk ){
@@ -106,8 +105,6 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	OPTDEBUGinline
 		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop, 
 		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_inline: actions %d MAL %d->%d\n",actions,limit,mb->stop);
 	return actions;
 }
 
@@ -122,7 +119,6 @@ int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	if( (s= findSymbol(cntxt->nspace, mod,fcn)) ==0 )
 		return FALSE;
 	/*
-	 * @-
 	 * Before we decide to propagate the inline request
 	 * to the multiplex operation, we check some basic properties
 	 * of the target function. Moreover, we apply the inline optimizer
