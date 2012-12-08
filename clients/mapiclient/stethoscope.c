@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
+#include "mprompt.h"
 #include "dotmonetdb.h"
 
 #ifndef HAVE_GETOPT_LONG
@@ -105,7 +106,6 @@ usage(void)
 	fprintf(stderr, "stethoscope [options] +[trace options] {<mod>.<fcn>}\n");
 	fprintf(stderr, "  -d | --dbname=<database_name>\n");
 	fprintf(stderr, "  -u | --user=<user>\n");
-	fprintf(stderr, "  -P | --password=<password>\n");
 	fprintf(stderr, "  -p | --port=<portnr>\n");
 	fprintf(stderr, "  -h | --host=<hostname>\n");
 	fprintf(stderr, "  -? | --help\n");
@@ -306,9 +306,11 @@ stop_disconnect:
 		mapi_destroy(dbh);
 	}
 
-	printf("-- connection with server %s closed\n", wthr.uri ? wthr.uri : host);
+	if (host != NULL) {
+		printf("-- connection with server %s closed\n", wthr.uri ? wthr.uri : host);
 
-	free(host);
+		free(host);
+	}
 }
 
 int
@@ -322,12 +324,9 @@ main(int argc, char **argv)
 	char *user = NULL;
 	char *password = NULL;
 
-	/* some .monetdb properties are used by mclient, perhaps we need them as well later */
-
-	static struct option long_options[8] = {
+	static struct option long_options[6] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
-		{ "password", 1, 0, 'P' },
 		{ "port", 1, 0, 'p' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
@@ -339,7 +338,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:P:p:h:?",
+		int c = getopt_long(argc, argv, "d:u:p:h:?",
 			long_options, &option_index);
 		if (c == -1)
 			break;
@@ -351,11 +350,10 @@ main(int argc, char **argv)
 			if (user)
 				free(user);
 			user = strdup(optarg);
-			break;
-		case 'P':
+			/* force password prompt */
 			if (password)
 				free(password);
-			password = strdup(optarg);
+			password = NULL;
 			break;
 		case 'p':
 			portnr = atol(optarg);
@@ -377,22 +375,21 @@ main(int argc, char **argv)
 
 	a = optind;
 	if (argc > 1 && a < argc && argv[a][0] == '+') {
-		k= setCounter(argv[a] + 1);
+		k = setCounter(argv[a] + 1);
 		a++;
 	} else
-		k= setCounter(COUNTERSDEFAULT);
+		k = setCounter(COUNTERSDEFAULT);
 
 	/* DOT needs function id and PC to correlate */
-	if( profileCounter[32].status ) {
+	if (profileCounter[32].status) {
 		profileCounter[3].status= k++;
 		profileCounter[4].status= k;
 	}
 
-	if (user == NULL || password == NULL) {
-		fprintf(stderr, "%s: need -u and -P arguments\n", argv[0]);
-		usage();
-		exit(-1);
-	}
+	if (user == NULL)
+		user = simple_prompt("user", BUFSIZ, 1, prompt_getlogin());
+	if (password == NULL)
+		password = simple_prompt("password", BUFSIZ, 0, NULL);
 
 #ifdef SIGPIPE
 	signal(SIGPIPE, stopListening);
