@@ -95,7 +95,7 @@ parse_dotmonetdb(char **user, char **passwd, char **language, int *save_history,
 				if (user)
 					*user = strdup(q);
 				q = NULL;
-			} else if (strcmp(buf, "password") == 0) == 0) {
+			} else if (strcmp(buf, "password") == 0) {
 				if (passwd)
 					*passwd = strdup(q);
 				q = NULL;
