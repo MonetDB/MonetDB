@@ -21,115 +21,8 @@
  * @f sql_optimizer
  * @t SQL catalog management
  * @a N. Nes, M.L. Kersten
- * @+ SQL scenario
- * The SQL scenario implementation is a derivative of the MAL session scenario.
- *
- * It is also the first version that uses state records attached to
- * the client record. They are initialized as part of the initialization
- * phase of the scenario.
- *
- * August 18, 2007 the following coverage list was extracted from the SQL test set
- *
- * The SQL compiler uses only a small subset of the MAL language
- * using the default optimizer sequence.
- * This reference list is illustrative for optimizer developers .
- *
- *    2429 sql.bind                         17 algebra.select
- *    1734 algebra.join                     14 sql.append_idxbat
- *    1337 bat.reverse                      14 algebra.selectNotNil
- *     966 sql.rsColumn                     13 str.toLower
- *     964 constraints.emptySet             12 mmath.cos
- *     816 algebra.markT                    12 batcalc.hash
- *     688 bat.append                       12 batcalc.*
- *     517 algebra.joinPath                 12 algebra.markH
- *     506 algebra.project                  10 sql.bbp
- *     495 algebra.uselect                   9 sql.bind_idxbat
- *     408 bat.mirror                        9 aggr.sum
- *     366 bat.setWriteMode                  8 sql.setVariable
- *     343 sql.resultSet                     8 batcalc.length
- *     343 sql.exportResult                  7 sql.getVariable
- *     225 group.new                         7 batcalc.isnil
- *     214 algebra.semijoin                  7 batcalc.int
- *     158 group.derive                      7 algebra.thetajoin
- *     158 aggr.count                        7 algebra.find
- *     143 algebra.kdifference               6 sql.next_value
- *     113 sql.columnBind                    6 sql.exportOperation
- *     111 bat.new                           6 mmath.sin
- *     106 sql.assert                        6 calc.or
- *     104 bat.hasMoreElements               6 calc.lng
- *     104 calc.ifthenelse                   6 calc.abs
- *      98 aggr.count_no_nil                 6 calc.>
- *      85 calc.int                          6 batcalc.-
- *      85 algebra.kunion                    5 sql.importTable
- *      82 mkey.bulk_rotate_xor_hash         5 mtime.current_timestamp
- *      80 sql.bind_dbat
- *      67 sql.exportValue                   5 batcalc.bte
- *      64 bat.insert                        5 algebra.slice
- *      56 calc.sht                          5 aggr.avg
- *      52 exit MALException:str             4 str.stringlength
- *      52 exit                              4 sql.clear_table
- *      52 catch MALException:str            4 io.stdin
- *      52 bat.newIterator                   4 calc.dbl
- *      51 sql.append                        4 batcalc./
- *      51 algebra.sortTail                  4 aggr.max
- *      50 sql.affectedRows                  3 str.trim
- *      50 group.refine                      3 sql.zero_or_one
- *      48 batcalc.==                        3 mtime.current_date
- *      45 calc.!=                           3 calc.second_interval
- *      40 pcre.like                         3 bat.inplace
- *      37 calc.str                          3 batcalc.<
- *      34 calc.*                            3 algebra.groupby
- *      34 batcalc.str                       3 aggr.min
- *      33 nil:dbl                           2 str.like
- *      30 algebra.reuse                     2 sql.sql_environment
- *      28 str.stringleft                    2 sql.not_unique
- *      23 sql.dump_opt_stats                2 sql.dump_cache
- *      23 calc.isnil                        2 nil:lng
- *      23 calc.-                            2 mtime.hours
- *      21 calc./                            2 mtime.diff
- *      20 calc.==                           2 mmath.sqrt
- *      17 calc.+                            2 mmath.rand
- *      17 batcalc.+                         2 mmath.atan
- *       2 mmath.acos                        1 mapi.disconnect
- *       2 calc.not                          1 mmath.floor
- *       2 calc.date                         1 group.refine_reverse
- *       2 batcalc.not                       1 calc.month_interval
- *       2 batcalc.!=                        1 calc.min
- *       2 batcalc.<=                        1 calc.length
- *       2 aggr.rank_grp                     1 calc.flt
- *       2 aggr.exist                        1 calc.daytime
- *       1 str.substring                     1 calc.bte
- *       1 streams.openRead                  1 calc.and
- *       1 streams.close                     1 calc.<
- *       1 sql.round                         1 bstream.destroy
- *       1 sql.restart                       1 bstream.create
- *       1 sql.dec_round                     1 batcalc.sht
- *       1 pqueue.topn_max                   1 batcalc.>
- *       1 mtime.minutes                     1 algebra.kunique
- *       1 mtime.date_add_sec_interval
- *
- * Organized by module:
- *    4657 algebra
- *    4652 sql
- *    3232 bat
- *     964 constraints
- *     434 group
- *     409 calc
- *     281 aggr
- *     171 batcalc
- *      82 mkey
- *      51 str
- *      40 pcre
- *      27 mmath
- *      14 mtime
- *       4 io
- *       2 streams
- *       2 bstream
- *       1 pqueue
- *       1 mserver
  */
 /*
- * @-
  * The queries are stored in the user cache after they have been
  * type checked and optimized.
  * The Factory optimizer encapsulates the query with a re-entrance
@@ -137,7 +30,6 @@
  * quite some (expensive) instructions can be safed.
  * The current heuristic is geared at avoiding trivial
  * factory structures.
- * @-
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
@@ -151,127 +43,7 @@
 
 #define TOSMALL 10
 
-#if 0
-str
-FXoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	InstrPtr *ns, p;
-	int v;
-	int i, k, newssize;
-	lng clk = GDKusec();
-
-#ifdef _SQL_OPTIMIZER_DEBUG
-	mnstr_printf(GDKout, "First call to FXoptimizer\n");
-	printFunction(GDKout, mb, 0, LIST_MAL_ALL);
-#endif
-	(void) cntxt;
-	(void)stk;
-	if( mb->errors) {
-		/* remove the FXoptimizer request */
-		if (pci)
-			removeInstruction(mb, pci);
-		return MAL_SUCCEED;
-	}
-	if( !factoryHasFreeSpace())
-		return MAL_SUCCEED;
-
-	/*
-	 * @-
-	 * The factory code is also used for small blocks when there
-	 * is a bind operation.
-	 */
-	if (mb->stop <= TOSMALL){
-		for(i=0; i< mb->stop; i++){
-			p= getInstrPtr(mb,0);
-			if (getFunctionId(p)== bindRef &&
-				getModuleId(p)== sqlRef)  break;
-		}
-		if(i == mb->stop)
-			return MAL_SUCCEED;
-	}
-	/*
-	 * @-
-	 * The first step is to collect all the sql bind operations and
-	 * to extract some compiler relevant properties from the catalogue.
-	 * Double bind operations should also be eliminated.
-	 */
-	newssize = mb->ssize * 2;
-	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * newssize);
-	k = 1;
-	ns[0] = getInstrPtr(mb, 0);	/* its signature */
-	ns[0]->token = FACTORYsymbol;
- 	setVarType(mb, getArg(ns[0],0), TYPE_bit);
-	setVarUDFtype(mb,getArg(ns[0],0));
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		if ( (getFunctionId(p) == bindRef ||
-			  getFunctionId(p) == bindidxRef ||
-			  getFunctionId(p) == binddbatRef ) &&
-			getModuleId(p) == sqlRef) {
-			ns[k++] = p;
-		}
-	}
-	/*
-	 * @-
-	 * The prelude code has been generated, now we can inject the remaining
-	 * instructions, producing a syntactic correct MAL program again.
-	 */
-	p = newInstruction(mb, ASSIGNsymbol);
-	v = newTmpVariable(mb, TYPE_bit);
-	p->barrier = BARRIERsymbol;
-	p->argv[0] = v;
-	pushBit(mb,p,TRUE);
-	ns[k++] = p;
-
-	for (i = 1; i < mb->stop - 1; i++) {
-		p = getInstrPtr(mb, i);
-		if ( !(getModuleId(p) == sqlRef &&
-		     (getFunctionId(p) == bindRef ||
-		      getFunctionId(p) == binddbatRef ||
-		      getFunctionId(p) == bindidxRef)) ){
-		}
-			ns[k++] = p;
-	}
-	/*
-	 * @-
-	 * Finalize the factory loop
-	 */
-	p = newInstruction(mb,ASSIGNsymbol);
-	p->barrier = YIELDsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	p = newInstruction(mb,ASSIGNsymbol);
-	p->barrier = REDOsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	p = newInstruction(mb,ASSIGNsymbol);
-	p->barrier = EXITsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	ns[k++] = getInstrPtr(mb, i);
-
-	mb->stop = k;
-	mb->ssize = newssize;
-	GDKfree(mb->stmt);
-	mb->stmt = ns;
-
-	optimizerCheck(cntxt,mb,"sql.factorize",1,GDKusec()-clk, OPT_CHECK_ALL);
 /*
- * @-
- * At this stage we can once call upon the optimizers to do their work.
- * Static known information is known and stored in constant variables,
- * which can be used by the rewrite rules.
- * This all works under the assumption that the SQL layer properly invalidates
- * the cache when the underlying table is changed.
- */
-#ifdef _SQL_OPTIMIZER_DEBUG
-	printFunction(GDKout, mb, 0, LIST_MAL_STMT | LIST_MAPI);
-#endif
-	return MAL_SUCCEED;
-}
-#endif
-/*
- * @-
  * Cost-based optimization and semantic evaluations require statistics to work with.
  * They should come from the SQL catalog or the BATs themselves.
  * The properties passed at this point are the number of rows.
@@ -500,7 +272,6 @@ addQueryToCache(Client c)
 	printFunction(GDKout,mb,0,LIST_MAL_ALL);
 #endif
 	/*
-	 * @-
 	 * An error in the compilation should be reported to the user.
 	 * And if the debugging option is set, the debugger is called
 	 * to allow inspection.
@@ -530,7 +301,6 @@ addQueryToCache(Client c)
 }
 
 /*
- * @-
  * The default SQL optimizer performs a limited set of operations
  * that are known to be (reasonably) stable and effective.
  * Finegrained control over the optimizer steps is available thru

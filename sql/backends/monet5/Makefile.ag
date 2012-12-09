@@ -44,8 +44,7 @@ lib__sql = {
 		sql_gencode.c sql_gencode.h \
 		sql_optimizer.c sql_optimizer.h \
 		sql_result.c sql_result.h \
-		sql_readline.c sql_readline.h \
-		sql_emptyset.c sql_emptyset.h
+		sql_readline.c sql_readline.h 
 	LIBS = ../../server/libsqlserver \
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \

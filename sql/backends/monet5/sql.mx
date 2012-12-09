@@ -1270,7 +1270,6 @@ sql.prelude();
 #include "sql_string.h"
 #include "sql_qc.h"
 #include "sql_env.h"
-#include "sql_emptyset.h"
 #include "sql_statement.h"
 
 #include <bat/bat_storage.h>
