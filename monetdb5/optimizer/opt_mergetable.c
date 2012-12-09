@@ -36,6 +36,7 @@ typedef struct mat {
 	int im;			/* input mat, for attribute of sub relations */
 	int pm;			/* parent mat, for sub relations */
 	mat_type_t type;	/* type of operation */
+	int packed;
 } mat_t;
 
 static mat_type_t
@@ -84,6 +85,7 @@ mat_add(mat_t *mat, int mtop, InstrPtr q, mat_type_t type, char *func)
 	mat[mtop].mv = getArg(q,0);
 	mat[mtop].type = type;
 	mat[mtop].pm = -1;
+	mat[mtop].packed = 0;
 	(void)func;
 	//printf (" mtop %d %s\n", mtop, func);
 	return mtop+1;
@@ -100,15 +102,18 @@ mat_add_var(mat_t *mat, int mtop, InstrPtr q, InstrPtr p, int var, mat_type_t ty
 	mat[mtop].type = type;
 	mat[mtop].im = inputmat;
 	mat[mtop].pm = parentmat;
+	mat[mtop].packed = 0;
 	return mtop+1;
 }
 
-static InstrPtr 
+static void 
 mat_pack(MalBlkPtr mb, mat_t *mat, int m)
 {
 	InstrPtr r;
 
-	if( mat[m].mi->argc-mat[m].mi->retc == 1){
+	if (mat[m].packed)
+		return ;
+	if((mat[m].mi->argc-mat[m].mi->retc) == 1){
 		/* simple assignment is sufficient */
 		r = newInstruction(mb, ASSIGNsymbol);
 		getArg(r,0) = getArg(mat[m].mi,0);
@@ -125,8 +130,8 @@ mat_pack(MalBlkPtr mb, mat_t *mat, int m)
 		for(l=mat[m].mi->retc; l< mat[m].mi->argc; l++)
 			r= pushArgument(mb,r, getArg(mat[m].mi,l));
 	}
+	mat[m].packed = 1;
 	pushInstruction(mb, r);
-	return r;
 }
 
 static void
