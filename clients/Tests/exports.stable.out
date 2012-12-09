@@ -255,6 +255,7 @@ int GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...) __attribute_
 void GDKfilepath(str path, const char *nme, const char *mode, const char *ext);
 void GDKfree(void *blk);
 char *GDKgetenv(const char *name);
+int GDKgetenv_int(const char *name, int def);
 int GDKgetenv_istrue(const char *name);
 int GDKgetenv_isyes(const char *name);
 int GDKinit(opt *set, int setlen);
