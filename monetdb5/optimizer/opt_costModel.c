@@ -32,28 +32,6 @@
 		varSetProp(mb, getArg(p,Z), rowsProp, op_eq, VALset(&v,TYPE_wrd,&k));\
 }
 /*
- * SQL specific back propagation of table size may be needed to avoid
- * the empty-set optimizer to through away a BAT we need.
- */
-static void
-OPTbackpropagate(MalBlkPtr mb, int i, int idx){
-	wrd rows;
-	InstrPtr p;
-
-        rows = getVarRows(mb, idx);
-	if (rows == -1)
-		return;
-	for( ; i > 0; i--){
-		p = getInstrPtr(mb,i);
-		if (getFunctionId(p) == setWriteModeRef){
-			if (getVarRows(mb, getArg(p,1)) == 0) {
-				ValRecord v, *vp = VALset(&v, TYPE_wrd, &rows);
-				varSetProp(mb, getArg(p,1), rowsProp, op_eq, vp);
-			}
-		}
-	}
-}
-/*
  * The cost will be used in many places to make decisions.
  * Access should be fast.
  * The SQL front-end also makes the BAT index available as the
@@ -69,9 +47,6 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int i;
 	wrd k, c1, c2;
 	InstrPtr p;
-	str sortrevRef= putName("sortReverse",11);
-	str sortrevTailRef= putName("sortReverseTail",15);
-	str projectRef= putName("project",7);
 
 	(void) cntxt;
 	(void) stk;
@@ -83,13 +58,15 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p)==algebraRef) {
-			if (getFunctionId(p) == markTRef  ||
-				getFunctionId(p) == markHRef  ||
+			 if (getFunctionId(p) == selectRef ||
+				getFunctionId(p) == subselectRef ||
+				getFunctionId(p) == thetaselectRef ||
+				getFunctionId(p) == thetasubselectRef) {
+				newRows(1,1, (c1 > 100 ? c1 / 2 +1: c1),0);
+			} else if (
 				getFunctionId(p) == selectNotNilRef  ||
 				getFunctionId(p) == sortRef  ||
-				getFunctionId(p) == sortTailRef  ||
-				getFunctionId(p) == sortrevRef  ||
-				getFunctionId(p) == sortrevTailRef  ||
+				getFunctionId(p) == subsortRef  ||
 				getFunctionId(p) == projectRef  ){
 				newRows(1,1,c1,0);
 			} else if(getFunctionId(p) == unionRef ||
@@ -98,21 +75,22 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} else if (getFunctionId(p)== kdifferenceRef) {
 				newRows(1,2,(c1==0?0:c2==0?c1: c1 - c2 < 0 ? 1 : c1 - c2+1),0);
 			} else if (getFunctionId(p) == joinRef ||
+				getFunctionId(p) == leftfetchjoinRef ||
 				getFunctionId(p) == leftjoinRef ||
+				getFunctionId(p) == bandjoinRef ||
+				getFunctionId(p) == leftfetchjoinPathRef ||
 				getFunctionId(p) == leftjoinPathRef ) {
 				/* assume 1-1 joins */
 				newRows(1,2,(c1 < c2 ? c1 : c2),0);
-			} else if (getFunctionId(p) == semijoinRef ) {
+			} else if (getFunctionId(p) == semijoinRef ||
+						getFunctionId(p) == semijoinPathRef) {
 				/* assume 1-1 semijoins */
 				newRows(1,2,(c1 < c2? c1 : c2),0);
-			} else if (getFunctionId(p) == selectRef ||
-				getFunctionId(p) == uselectRef ||
-				getFunctionId(p) == thetaselectRef ||
-				getFunctionId(p) == thetauselectRef) {
-				newRows(1,1, (c1 > 100 ? c1 / 2 +1: c1),0);
-			} else if (getFunctionId(p) == crossRef) {
+			} else
+			if (getFunctionId(p) == crossRef) {
 				newRows(1,2,((log((double) c1) + log((double) c2) > log(INT_MAX) ? INT_MAX : c1 * c2 +1)),0);
-			} else if (getFunctionId(p) == tuniqueRef ) {
+			} else
+			if (getFunctionId(p) == tuniqueRef ) {
 				newRows(1,1,( c1 < 50 ? c1 : c1 / 10+1),0);
 			}
 		} else if (getModuleId(p) == batcalcRef) {
@@ -131,7 +109,6 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				newRows(1,1, c1,0);
 		} else if (getModuleId(p) == batRef) {
 			if (getFunctionId(p) == reverseRef ||
-			    getFunctionId(p) == setWriteModeRef  ||
 			    getFunctionId(p) == hashRef  ||
 			    getFunctionId(p) == mirrorRef) {
 				newRows(1,1, c1,0);
@@ -153,29 +130,23 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* insert BAT */
 					newRows(1,2, (c1 + c2+1),1);
-					OPTbackpropagate(mb,i,getArg(p,1));
 				} else {
 					/* insert scalars */
 					newRows(1,1, (c1 +1),1);
-					OPTbackpropagate(mb,i,getArg(p,1));
 				}
 			} else if (getFunctionId(p) == deleteRef){
 				if( isaBatType(getArgType(mb,p,2)) ){
 					/* delete BAT */
 					newRows(1,2, (c1 - c2 ==0? 1: c1-c2),1);
-					OPTbackpropagate(mb,i,getArg(p,1));
 				} else {
 					/* insert scalars */
 					newRows(1,1, (c1==1?1: c1-1),1);
-					OPTbackpropagate(mb,i,getArg(p,1));
 				}
-				OPTbackpropagate(mb,i,getArg(p,1));
 			} else if (getFunctionId(p) == insertRef){
 				newRows(1,1,( c1 + 1),0); /* faked */
-				OPTbackpropagate(mb,i,getArg(p,1));
 			}
 		} else if (getModuleId(p)==groupRef) {
-			if (getFunctionId(p) ==newRef) {
+			if (getFunctionId(p) ==subgroupRef ) {
 				newRows(1,1,( c1 / 10+1),0);
 			} else {
 				newRows(1,1, c1,0);
