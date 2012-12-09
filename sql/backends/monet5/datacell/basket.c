@@ -31,6 +31,8 @@
 #ifdef WIN32
 #include "winsock2.h"
 #endif
+#include "mal_builder.h"
+#include "opt_prelude.h"
 
 str schema_default = "datacell";
 str statusname[6] = { "<unknown>", "init", "paused", "running", "stop", "error" };
