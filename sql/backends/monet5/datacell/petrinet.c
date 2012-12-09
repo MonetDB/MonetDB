@@ -73,6 +73,7 @@
 #include "monetdb_config.h"
 #include "petrinet.h"
 #include "mal_builder.h"
+#include "opt_prelude.h"
 
 #define MAXPN 200           /* it is the minimum, if we need more space GDKrealloc */
 #define PNcontrolInfinit 1  /* infinit loop of PNController  */

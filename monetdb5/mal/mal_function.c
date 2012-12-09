@@ -694,7 +694,6 @@ setLifespan(MalBlkPtr mb)
 	int *blk;
 	Lifespan span= newLifespan(mb);
 
-	memset((char*) span,0, sizeof(LifespanRecord)* mb->vtop);
 	prop = PropertyIndex("transparent");
 
 	blk= (int *) GDKzalloc(sizeof(int)*mb->vtop);

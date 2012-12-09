@@ -331,8 +331,9 @@ DFLOWworker(void *t)
 			}
 		MT_lock_unset(&flow->flowlock, "MALworker");
 
-		MALresourceFairness(flow->cntxt, flow->mb, usec);
 		q_enqueue(flow->done, fe);
+		if ( fnxt == 0)
+			MALresourceFairness(flow->cntxt, flow->mb, usec);
 	}
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(0);

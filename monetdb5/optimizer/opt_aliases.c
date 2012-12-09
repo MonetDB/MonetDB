@@ -74,7 +74,6 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		mb->stmt[i]= NULL;
 	mb->stop= k;
 	/*
-	 * @-
 	 * The second phase is constant alias replacement should be implemented.
 	 */
 	GDKfree(span);

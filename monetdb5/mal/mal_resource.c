@@ -189,20 +189,20 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
 		return;
 
-	clk = GDKusec();
 	if ( usec )
 		/* worker reporting time spent ! */
-		clk = (clk - usec) / 1000;
+		clk =  usec / 1000;
 	else  {
 		/* interpreter calling without timing */
 		/* punish based on total duration of call */
-		clk = (clk-mb->starttime)/1000;
+		clk = (GDKusec() - mb->starttime)/1000;
 		if ( clk <= TIMESLICE) 
 			/* use fake time for penalty */
 			clk = DELAYUNIT;
 		}
 
 	if ( clk >= DELAYUNIT ) {
+		PARDEBUG mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"n", cntxt->idx, clk);
 		while (clk > 0) {
 			/* always keep one running to avoid all waiting  */
 			if (running < 2)
