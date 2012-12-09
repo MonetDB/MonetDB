@@ -45,23 +45,18 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int actions = 0;
 
 	(void) p;
+	(void)stk;
 
 	for (i = 1; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
 		if( q->blk ){
 			sig = getInstrPtr(q->blk,0);
 			/*
-			 * @-
 			 * Time for inlining functions that are used in multiplex operations.
 			 * They are produced by SQL compiler.
 			 */
-			OPTDEBUGinline {
-				mnstr_printf(cntxt->fdout,"#check inline statement\n");
-				printInstruction(cntxt->fdout,mb,0,q,LIST_MAL_ALL);
-				printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
-			}
-			if( getModuleId(q) == malRef &&
-				getFunctionId(q)== multiplexRef &&
+			if( getFunctionId(q)== multiplexRef &&
+				getModuleId(q) == malRef &&
 				OPTinlineMultiplex(cntxt,mb,q)){
 
 				OPTDEBUGinline {
@@ -72,7 +67,6 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			    varSetProp(mb, getArg(q,0), inlineProp, op_eq, NULL);
 			} else
 			/*
-			 * @-
 			 * Check if the function definition is tagged as being inlined.
 			 */
 			if (sig->token == FUNCTIONsymbol &&
@@ -84,10 +78,10 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				OPTDEBUGinline {
 					mnstr_printf(cntxt->fdout,"#inline function at %d\n",i);
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 				}
 			} else 
 			/*
-			 * @-
 			 * Check if the local call is tagged as being inlined.
 			 */
 			if (varGetProp(mb, getArg(q,0), inlineProp) != NULL) {
@@ -97,14 +91,11 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				OPTDEBUGinline {
 					mnstr_printf(cntxt->fdout,"#inlined called at %d\n",i);
 					printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+					printInstruction(cntxt->fdout,q->blk,0,sig,LIST_MAL_ALL);
 				}
 			} 
 		}
 	}
-	(void)stk;
-	OPTDEBUGinline
-		mnstr_printf(cntxt->fdout,"#mal program: %d MAL instr %d vars (" SZFMT " K)\n",mb->stop,mb->vtop, 
-		((sizeof( MalBlkRecord) +mb->ssize * sizeof(InstrRecord)+ mb->vtop* sizeof(VarRecord) + mb->vsize*sizeof(VarPtr)+1023)/1024));
 	return actions;
 }
 
