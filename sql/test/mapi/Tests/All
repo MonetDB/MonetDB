@@ -10,4 +10,5 @@ HAVE_PYTHON?python_dbapi
 HAVE_GEOM&HAVE_PHP?php_monetdb
 !HAVE_GEOM&HAVE_PHP?php_monetdb_nogeom
 utf8test
-python_test_monetdb_sql
+HAVE_PYTHON2?python2_test_monetdb_sql
+HAVE_PYTHON3?python3_test_monetdb_sql
