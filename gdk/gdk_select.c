@@ -537,6 +537,44 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * - if tl==nil and th!=NULL, no lower bound;
  * - if th==NULL or tl==th, point (equi) select;
  * - if th==nil, no upper bound
+ *
+ * A complete breakdown of the various arguments follows.  Here, v, v1
+ * and v2 are values from the appropriate domain, and
+ * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ *	tl	th	li	hi	anti	result list of OIDs for values
+ *	-----------------------------------------------------------------
+ *	nil	NULL	ignored	ignored	false	x = nil (only way to get nil)
+ *	nil	NULL	ignored	ignored	true	x != nil
+ *	nil	nil	ignored	ignored	false	x != nil
+ *	nil	v	ignored	false	false	x < v
+ *	nil	v	ignored	true	false	x <= v
+ *	nil	v	ignored	false	true	x >= v
+ *	nil	v	ignored	true	true	x > v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	true	x <= v
+ *	v	nil	true	ignored	true	x < v
+ *	v	NULL	false	ignored	false	NOTHING
+ *	v	NULL	true	ignored	false	x == v
+ *	v	NULL	false	ignored	true	x != nil
+ *	v	NULL	true	ignored	true	x != v
+ *	v	v	false	false	false	NOTHING
+ *	v	v	true	false	false	NOTHING
+ *	v	v	false	true	false	NOTHING
+ *	v	v	true	true	false	x == v
+ *	v	v	false	false	true	x != nil
+ *	v	v	true	false	true	x != nil
+ *	v	v	false	true	true	x != nil
+ *	v	v	true	true	true	x != v
+ *	v1	v2	false	false	false	v1 < x < v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	1	false	v1 < x <= v2
+ *	v1	v2	true	true	false	v1 <= x <= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ *	v1	v2	true	true	true	x < v1 or x > v2
+ *	v2	v1	ignored	ignored	ignored	NOTHING
  */
 BAT *
 BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
@@ -640,11 +678,24 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			lval = 0;
 			hval = 0;
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
-					  ",s=%s,anti=%d): anti-nil\n",
+					  ",s=%s,anti=0): anti-nil\n",
 					  BATgetId(b), BATcount(b),
-					  s ? BATgetId(s) : "NULL", anti);
-		} else {
+					  s ? BATgetId(s) : "NULL");
+		} else if (equi) {
 			equi = 0;
+			if (!(li && hi)) {
+				/* antiselect for nothing: turn into
+				 * range select for nil-nil range
+				 * (i.e. everything but nil) */
+				anti = 0;
+				lval = 0;
+				hval = 0;
+				ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#"
+						  BUNFMT ",s=%s,anti=0): "
+						  "anti-nothing\n",
+						  BATgetId(b), BATcount(b),
+						  s ? BATgetId(s) : "NULL");
+			}
 		}
 	}
 
@@ -812,36 +863,36 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		assert(s->tsorted);
 		assert(s->tkey);
 		if (BATtdense(s)) {
-			maximum = MIN( maximum , 
-			               MIN( oh , s->tseqbase + BATcount(s)) 
-			               - MAX( ol , s->tseqbase ) );
+			maximum = MIN(maximum , 
+				      MIN(oh, s->tseqbase + BATcount(s)) 
+				      - MAX(ol, s->tseqbase));
 		} else {
-			maximum = MIN( maximum ,
-			               SORTfndfirst(s, &oh) 
-			               - SORTfndfirst(s, &ol) ) ;
+			maximum = MIN(maximum,
+				      SORTfndfirst(s, &oh)
+				      - SORTfndfirst(s, &ol));
 		}
 	}
 	if (b->tkey) {
 		/* exact result size in special cases */
 		if (equi) {
 			estimate = 1;
-		} else
-		if (!anti && lval && hval) {
-			if (ATOMstorage(b->ttype) == TYPE_bte) {
+		} else if (!anti && lval && hval) {
+			switch (ATOMstorage(b->ttype)) {
+			case TYPE_bte:
 				estimate = (BUN) (*(bte*) th - *(bte*) tl);
-			} else
-			if (ATOMstorage(b->ttype) == TYPE_sht) {
+				break;
+			case TYPE_sht:
 				estimate = (BUN) (*(sht*) th - *(sht*) tl);
-			} else
-			if (ATOMstorage(b->ttype) == TYPE_int) {
+				break;
+			case TYPE_int:
 				estimate = (BUN) (*(int*) th - *(int*) tl);
-			} else
-			if (ATOMstorage(b->ttype) == TYPE_lng) {
+				break;
+			case TYPE_lng:
 				estimate = (BUN) (*(lng*) th - *(lng*) tl);
+				break;
 			}
-			if (estimate != BUN_NONE) {
+			if (estimate != BUN_NONE)
 				estimate += li + hi - 1;
-			}
 		}
 	}
 	/* refine upper limit by exact size (if known) */
