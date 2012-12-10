@@ -15,4 +15,6 @@
 # Copyright August 2008-2012 MonetDB B.V.
 # All Rights Reserved.
 
-SUBDIRS = C python php
+SUBDIRS = C php
+
+EXTRA_DIST_DIR = python

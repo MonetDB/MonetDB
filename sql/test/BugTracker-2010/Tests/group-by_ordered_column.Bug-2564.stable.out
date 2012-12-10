@@ -38,7 +38,7 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 61 # length
+% 65 # length
 function user.s4_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","t2564");
@@ -60,11 +60,11 @@ function user.s4_1{autoCommit=true}():void;
     (X_30,r1_36,r2_36) := group.subgroup(X_29);
     (X_33,r1_39,r2_39) := group.subgroup(X_22,X_30);
     (X_36,r1_42,r2_42) := group.subgroupdone(X_15,X_33);
-    X_39:bat[:oid,:wrd]  := aggr.subcount(X_36,X_36,r1_42,0);
+    X_39:bat[:oid,:wrd]  := aggr.subcount(X_36,X_36,r1_42,false);
     X_42 := sql.resultSet(1,1,X_39);
     sql.rsColumn(X_42,"sys.t2564","L1","wrd",64,0,X_39);
-    X_48 := io.stdout();
-    sql.exportResult(X_48,X_42);
+    X_49 := io.stdout();
+    sql.exportResult(X_49,X_42);
 end s4_1;
 #select count(*) from t2564 group by c1, c2, c3;
 % sys.t2564 # table_name

@@ -46,7 +46,7 @@ function user.f1(s:str):void;
     t25 := algebra.join(t24,t16);
     t30 := batcalc.oid(t21);
     t31 := array.grid(1,800,1,0);
-    t32 := aggr.product(t25,t30,t31);
+    t32 := aggr.prod(t25,t30,t31);
     t33 := batcalc.*(t15,t32);
     t34 := batcalc./(t8,t33);
     t40 := algebra.join(t6,t34);
@@ -135,7 +135,7 @@ factory user.f1(s:str):void;            #  0 f1:void := user.f1(s:str) {G}
     t25 := algebra.join(t24,t16);       # 27 t25:bat[:oid,:dbl] := ALGjoin(t24:bat[:oid,:oid], t16:bat[:oid,:dbl]) {G}
     t30 := batcalc.oid(t21);            # 28 t30:bat[:oid,:oid] := CMDconvertsignal_oid(t21:bat[:oid,:int]) {G}
     t31 := array.grid(1,800,1,0);       # 29 t31:bat[:oid,:int] := ARRAYgrid_int(_47:int, _32:int, _47:int, _48:int) {G}
-    t32 := aggr.product(t25,t30,t31);   # 30 t32:bat[:oid,:dbl] := AGGRprod3_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
+    t32 := aggr.prod(t25,t30,t31);      # 30 t32:bat[:oid,:dbl] := AGGRprod3_dbl(t25:bat[:oid,:dbl], t30:bat[:oid,:oid], t31:bat[:oid,:int]) {G}
     t33 := batcalc.*(t15,t32);          # 31 t33:bat[:oid,:dbl] := CMDbatMULsignal(t15:dbl, t32:bat[:oid,:dbl]) {G}
     t34 := batcalc./(t8,t33);           # 32 t34:bat[:oid,:dbl] := CMDbatDIVsignal(t8:dbl, t33:bat[:oid,:dbl]) {G}
     t40 := algebra.join(t6,t34);        # 33 t40:bat[:oid,:dbl] := ALGjoin(t6:bat[:oid,:oid], t34:bat[:oid,:dbl]) {G}

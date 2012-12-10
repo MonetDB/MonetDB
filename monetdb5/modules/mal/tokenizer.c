@@ -449,15 +449,17 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-takeOid(oid id, str *ret, size_t *totlen, str fcn)
+takeOid(oid id, str *val)
 {
 	int i, depth;
 	str parts[MAX_TKNZR_DEPTH];
 	size_t lngth = 0;
 	str s;
+
 	if (id >= BATcount(tokenBAT[INDEX])) {
-		throw(MAL, fcn, OPERATION_FAILED " illegal oid");
+		throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " illegal oid");
 	}
+
 	id = *(oid *) Tloc(tokenBAT[INDEX], id);
 
 	depth = GET_d(id);
@@ -470,23 +472,16 @@ takeOid(oid id, str *ret, size_t *totlen, str fcn)
 		lngth += strlen(parts[i]);
 	}
 
-	if (*totlen < lngth + depth + 3) {
-		if (*ret)
-			GDKfree(*ret);
-		*totlen = lngth + depth + 3;
-		*ret = (str) GDKmalloc(*totlen);
-		if (*ret == NULL)
-			throw(MAL, "tokenizer.takeOid", OPERATION_FAILED " malloc failed");
-	}
-	s = *ret;
-	*s++ = '<';
+	*val = (str) GDKmalloc(lngth+depth+1);
+	s = *val;
+
 	for (i = 0; i < depth; i++) {
 		strcpy(s, parts[i]);
 		s += strlen(parts[i]);
 		*s++ = '/';
 	}
-	*s++ = '>';
 	*s = '\0';
+
 	return MAL_SUCCEED;
 }
 
@@ -494,7 +489,6 @@ str
 TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret, val = NULL;
-	size_t l = 0;
 	oid id;
 	(void) cntxt;
 	(void) mb;
@@ -503,13 +497,12 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	}
 	id = *(oid *) getArgReference(stk, pci, 1);
-	ret = takeOid(id, &val, &l, "tokenizer.takeOid");
+	ret = takeOid(id, &val);
 	if (ret == MAL_SUCCEED) {
 		VALset(getArgReference(stk, pci, 0), TYPE_str, val);
 	}
 	return ret;
 }
-
 
 str
 TKNZRrdf2str(bat *res, bat *bid, bat *map)
@@ -518,7 +511,6 @@ TKNZRrdf2str(bat *res, bat *bid, bat *map)
 	BATiter bi, mi;
 	BUN p, q;
 	str s = NULL;
-	size_t l = 0;
 
 	b = BATdescriptor(*bid);
 	if (b == NULL) {
@@ -558,7 +550,7 @@ TKNZRrdf2str(bat *res, bat *bid, bat *map)
 			}
 			s = (str) BUNtail(mi, pos);
 		} else {
-			str ret = takeOid(id, &s, &l, "tokenizer.rdf2str");
+			str ret = takeOid(id, &s);
 			if (ret != MAL_SUCCEED) {
 				BBPunfix(*bid);
 				BBPunfix(*map);
