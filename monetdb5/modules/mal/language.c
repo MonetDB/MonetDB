@@ -138,6 +138,19 @@ MALstartDataflow( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+/*
+ * Garbage collection over variables can be postponed by grouping
+ * all dependent ones in a single sink() instruction.
+ */
+str
+MALgarbagesink( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return MAL_SUCCEED;
+}
 
 str 
 CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
