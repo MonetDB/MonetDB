@@ -191,7 +191,7 @@ class Server(object):
                 password = h.hexdigest()
             except ValueError as e:
                 raise NotSupportedError(e.message)
-		else:
+        else:
             raise NotSupportedError("We only speak protocol v9")
 
         h = hashes.split(",")
