@@ -1,4 +1,4 @@
-#!@PYTHON3@
+#!/usr/bin/env python3
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
