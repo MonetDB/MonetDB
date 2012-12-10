@@ -1,4 +1,4 @@
-#!@PYTHON@
+#!/usr/bin/env python
 
 # The contents of this file are subject to the MonetDB Public License
 # Version 1.1 (the "License"); you may not use this file except in
@@ -33,7 +33,7 @@ print(cursor.fetchone())
 # deliberately executing a wrong SQL statement:
 try:
     cursor.execute('( xyz 1);')
-except monetdb.sql.OperationalError, e:
+except monetdb.sql.OperationalError as e:
     print(e)
 
 cursor.execute('create table python_table (i smallint,s string);');
