@@ -34,6 +34,11 @@ pattern dataflow():bit
 address MALstartDataflow
 comment "The current guarded block is executed using dataflow control. ";
 
+pattern sink(v:any...):void
+address MALgarbagesink
+comment "Variables to be considered together when triggering garbage collection.
+Used in the dataflow blocks to avoid early release of values.";
+
 pattern register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string to MAL and register it as a function.";

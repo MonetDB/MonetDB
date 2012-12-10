@@ -20,4 +20,4 @@ python3_setup = {
 }
 
 EXTRA_DIST = README.rst setup.py
-EXTRA_DIST_DIR = examples monetdb test
+EXTRA_DIST_DIR = monetdb test

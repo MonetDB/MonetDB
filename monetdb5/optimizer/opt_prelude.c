@@ -207,6 +207,7 @@ str semijoinRef;
 str semijoinPathRef;
 str setAccessRef;
 str setWriteModeRef;
+str sinkRef;
 str sliceRef;
 str subsliceRef;
 str sortHRef;
@@ -461,6 +462,7 @@ void optimizerInit(void){
 		semijoinPathRef = putName("semijoinPath",12);
 		setAccessRef = putName("setAccess",9);
 		setWriteModeRef= putName("setWriteMode",12);
+		sinkRef = putName("sink",4);
 		sliceRef = putName("slice",5);
 		subsliceRef = putName("subslice",8);
 		singleRef = putName("single",6);
