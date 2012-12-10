@@ -166,6 +166,7 @@ opt_export  str openRef;
 opt_export  str optimizerRef;
 opt_export  str packRef;
 opt_export  str pack2Ref;
+opt_export  str passRef;
 opt_export  str partitionRef;
 opt_export  str pcreRef;
 opt_export  str pinRef;
