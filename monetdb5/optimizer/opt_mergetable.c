@@ -698,9 +698,9 @@ mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 	ai2 = pushArgument(mb, ai2, getArg(ai1, 0));
 	ai2 = pushArgument(mb, ai2, mat[g].mv);
 	ai2 = pushArgument(mb, ai2, mat[e].mv);
-	ai2 = pushInt(mb, ai2, 1); /* skip nils */
+	ai2 = pushBit(mb, ai2, 1); /* skip nils */
 	if (getFunctionId(p) != subminRef && getFunctionId(p) != submaxRef)
-		ai2 = pushInt(mb, ai2, 0); /* continue on errors */
+		ai2 = pushBit(mb, ai2, 0); /* continue on errors */
 	pushInstruction(mb, ai2);
 }
 
@@ -1197,7 +1197,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			 getFunctionId(p)== minRef ||
 			 getFunctionId(p)== maxRef ||
 			 getFunctionId(p)== sumRef ||
-		    	 getFunctionId(p) == prodRef)) ||
+			 getFunctionId(p) == prodRef)) ||
 		    (getModuleId(p) == algebraRef &&
 		     getFunctionId(p) == tuniqueRef)) &&
 			(m=is_a_mat(getArg(p,1), mat, mtop)) >= 0) {

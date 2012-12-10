@@ -91,11 +91,11 @@ command xml.aggr(val:bat[:oid,:xml]):xml
 address BATXMLgroup
 comment "Aggregate the XML values.";
 
-command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:int) :bat[:oid,:xml]
+command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1], skip_nils:bit) :bat[:oid,:xml]
 address AGGRsubxml
 comment "Grouped aggregation of XML values.";
 
-command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:int) :bat[:oid,:xml]
+command xml.subaggr(val:bat[:oid,:xml],g:bat[:oid,:oid],e:bat[:oid,:any_1],s:bat[:oid,:oid], skip_nils:bit) :bat[:oid,:xml]
 address AGGRsubxmlcand
 comment "Grouped aggregation of XML values with candidates list.";
 

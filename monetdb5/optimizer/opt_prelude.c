@@ -430,8 +430,8 @@ void optimizerInit(void){
 		sqlplusRef = putName("sqladd",6);
 		printRef = putName("print",5);
 		preludeRef = putName("prelude",7);
-		prodRef = putName("product",7);
-		subprodRef = putName("subproduct",10);
+		prodRef = putName("prod",4);
+		subprodRef = putName("subprod",7);
 		profilerRef = putName("profiler",8);
 		postludeRef = putName("postlude",8);
 		pqueueRef = putName("pqueue",6);

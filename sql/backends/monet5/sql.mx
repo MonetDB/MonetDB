@@ -978,7 +978,7 @@ function batcalc.dense_rank_grp{inline}( b:bat[:oid,:any_1]) :bat[:oid,:int];
 	return dense_rank_grp:= sql.dense_rank(b);
 end batcalc.dense_rank_grp;
 
-function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:int) :bat[:oid,:any_1];
+function sql.subzero_or_one{inline}( b:bat[:oid,:any_1], gp:bat[:oid,:oid], gpe:bat[:oid,:oid], no_nil:bit) :bat[:oid,:any_1];
 	(e,g) := group.new(gp);
 	m := aggr.max(e);
 	c0 := calc.isnil(m);
