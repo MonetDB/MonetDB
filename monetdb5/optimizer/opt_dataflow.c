@@ -132,34 +132,44 @@ dflowInstruction(InstrPtr p) {
 	return FALSE;
 }
 
-static InstrPtr
-dflowGarbagesink(MalBlkPtr mb, InstrPtr *old, int start, int last, int var, int *usage){
-	InstrPtr p, sink;
+static int
+dflowGarbagesink(MalBlkPtr mb, InstrPtr *old, int start, int last, int var, InstrPtr *sink, int top){
+	InstrPtr p, q, r;
 	int j,k;
-	if ( usage[var] == 0  || isVarConstant(mb, var) )
-		return NULL;
-	sink= newInstruction(mb,ASSIGNsymbol); 
-	getModuleId(sink) = languageRef;
-	getFunctionId(sink) = sinkRef;
-	getArg(sink,0)= newTmpVariable(mb,TYPE_void);
-	sink= pushArgument(mb, sink, var);
+	
+	q= newInstruction(NULL,ASSIGNsymbol); 
+	getModuleId(q) = languageRef;
+	getFunctionId(q) = sinkRef;
+	getArg(q,0)= newTmpVariable(mb,TYPE_void);
+	q= pushArgument(mb, q, var);
 	for ( j= start; j< last; j++){
+		assert(top <mb->vsize);
 		p = old[j];
 		if ( p )
 		for (k = p->retc; k< p->argc; k++)
-			if ( getArg(p,k)== var)
-				sink= pushArgument(mb,sink, getArg(p,0));
+			if ( getArg(p,k)== var) {
+				r = newInstruction(NULL,ASSIGNsymbol);
+				getModuleId(r) = languageRef;
+				getFunctionId(r) = passRef;
+				getArg(r,0) = newTmpVariable(mb,getArgType(mb,p,0));
+				r= pushArgument(mb,r, getArg(p,0));
+				sink[top++] = r;
+				q= pushArgument(mb,q, getArg(r,0));
+				break;
+		}
 	}
-	return sink;
+	assert(top <mb->vsize);
+	sink[top++] = q;
+	return top;
 }
 
 int
 OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i,j,k, cnt, start=1,entries=0, actions=0;
+	int i,j,k, var, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *sink, *old, q;
-	int limit, slimit, top = 0;
+	int limit, slimit, size, top = 0;
 	Lifespan span;
 	char *init;
 	int *usage;
@@ -187,18 +197,18 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(init);
 		return 0;
 	}
-	sink= (InstrPtr*) GDKzalloc(mb->stop * sizeof(InstrPtr));
-	if ( usage == NULL){
+	sink= (InstrPtr*) GDKzalloc(size = mb->vsize * sizeof(InstrPtr));
+	if ( sink == NULL){
 		GDKfree(span);
 		GDKfree(init);
-		GDKfree(sink);
+		GDKfree(usage);
 		return 0;
 	}
 
 	limit= mb->stop;
 	slimit= mb->ssize;
 	old = mb->stmt;
-	if ( newMalBlkStmt(mb, mb->ssize+20) <0 ){
+	if ( newMalBlkStmt(mb, mb->ssize+mb->vtop) <0 ){
 		GDKfree(span);
 		GDKfree(init);
 		GDKfree(usage);
@@ -222,6 +232,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			/* close old flow block */
 			if (flowblock){
 				int sf = simpleFlow(old,start,i);
+				top = 0;
 				if (!sf && entries > 1){
 					for( j=start ; j<i; j++)
 					if (old[j]) {
@@ -234,13 +245,12 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						}
 						/* collect variables garbage collected within the block */
 						for( k=old[j]->retc; k<old[j]->argc; k++)
-						if( getEndLifespan(span,getArg(old[j],k)) == j) {
-							sink[top] = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), usage);
-							top += sink[top] != NULL;
-						}
-						else
-						if( getEndLifespan(span,getArg(old[j],k)) < i)
-							usage[getArg(old[j],k)]++;
+							if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]==1 && !isVarConstant(mb, var) )
+								top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
+							else
+							if( getEndLifespan(span,getArg(old[j],k)) < i && !isVarConstant(mb, var) )
+								usage[getArg(old[j],k)]++;
+						assert(top <mb->vsize);
 					}
 					q= newFcnCall(mb,languageRef,dataflowRef);
 					q->barrier= BARRIERsymbol;
@@ -254,10 +264,6 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						pushInstruction(mb,old[j]);
 				for( j=0; j<top; j++)
 						pushInstruction(mb,sink[j]);
-				if ( top ) {
-					top = 0;
-					memset( (char*) sink, 0, limit * sizeof(InstrPtr));
-				}
 				if (!sf && entries>1){
 					q= newAssignment(mb);
 					q->barrier= EXITsymbol;
@@ -278,6 +284,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				/* close old flow block */
 				if (flowblock){
 					int sf = simpleFlow(old,start,i);
+					top = 0;
 					if (!sf && entries > 1){
 						for( j=start ; j<i; j++)
 						if (old[j]) {
@@ -290,13 +297,11 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 							}
 							/* collect variables garbagecollected in the block */
 							for( k=old[j]->retc; k<old[j]->argc; k++)
-								if( getEndLifespan(span,getArg(old[j],k)) == i) {
-									sink[top] = dflowGarbagesink(mb, old, start, i, getArg(old[j],k), usage);
-									top += sink[top] != NULL;
-								}
-								else
-								if( getEndLifespan(span,getArg(old[j],k)) < i) 
-									usage[getArg(old[j],k)]++;
+							if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]==1 && !isVarConstant(mb, var) )
+								top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
+							else
+							if( getEndLifespan(span,getArg(old[j],k)) < i && !isVarConstant(mb, var) )
+								usage[getArg(old[j],k)]++;
 						}
 						q= newFcnCall(mb,languageRef,dataflowRef);
 						q->barrier= BARRIERsymbol;
@@ -308,13 +313,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					for( j=start ; j<i; j++)
 						if (old[j])
 							pushInstruction(mb,old[j]);
-						/* inject the optional garbage sink statement */
-						for( j=0; j<top; j++)
-								pushInstruction(mb,sink[j]);
-						if ( top) {
-							top = 0;
-							memset( (char*) sink, 0, mb->stop * sizeof(InstrPtr));
-						}
+					assert(top <mb->vsize);
+					/* inject the optional garbage sink statement */
+					for( j=0; j<top; j++)
+							pushInstruction(mb,sink[j]);
 					if (!sf && entries>1){
 						q= newAssignment(mb);
 						q->barrier= EXITsymbol;
@@ -357,9 +359,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* close old flow block */
 	if (flowblock){
 		int sf = simpleFlow(old,start,i);
+		top = 0;
 		if (!sf && entries > 1){
 			for( j=start ; j<i; j++)
-			if (old[j]) 
+			if (old[j]) {
 				for( k=0; k<old[j]->retc; k++)
 				if( getBeginLifespan(span,getArg(old[j],k)) > start && getEndLifespan(span,getArg(old[j],k)) >= i && init[getArg(old[j],k)]==0){
 					InstrPtr r= newAssignment(mb);
@@ -367,6 +370,13 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					pushNil(mb,r,getArgType(mb,old[j],k));
 					init[getArg(old[j],k)]=1;
 				}
+				for( k=old[j]->retc; k<old[j]->argc; k++)
+				if( getEndLifespan(span, var = getArg(old[j],k)) == j && usage[var]==1 && !isVarConstant(mb, var) )
+					top = dflowGarbagesink(mb,old, start, i, getArg(old[j],k), sink,top);
+				else
+				if( getEndLifespan(span,getArg(old[j],k)) < i && !isVarConstant(mb, var) )
+					usage[getArg(old[j],k)]++;
+			}
 			q= newFcnCall(mb,languageRef,dataflowRef);
 			q->barrier= BARRIERsymbol;
 			getArg(q,0)= flowblock;
@@ -377,6 +387,10 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for( j=start ; j<i; j++)
 			if (old[j])
 				pushInstruction(mb,old[j]);
+		assert(top <mb->vsize);
+		/* inject the optional garbage sink statement */
+		for( j=0; j<top; j++)
+				pushInstruction(mb,sink[j]);
 		if (!sf && entries>1){
 			q= newAssignment(mb);
 			q->barrier= EXITsymbol;

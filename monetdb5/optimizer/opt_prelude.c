@@ -167,6 +167,7 @@ str openRef;
 str optimizerRef;
 str packRef;
 str pack2Ref;
+str passRef;
 str partitionRef;
 str pcreRef;
 str pinRef;
@@ -423,6 +424,7 @@ void optimizerInit(void){
 		openRef = putName("open",4);
 		packRef = putName("pack",4);
 		pack2Ref = putName("pack2",5);
+		passRef = putName("pass",4);
 		partitionRef = putName("partition",9);
 		pcreRef = putName("pcre",4);
 		pinRef = putName("pin",3);
