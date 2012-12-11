@@ -1115,7 +1115,7 @@ AC_ARG_WITH(python2,
 case "$have_python2" in
 	yes|no|auto) ;;
 	*)
-		PYTHON2="$have_python"
+		PYTHON2="$have_python2"
 		;;
 esac
 
