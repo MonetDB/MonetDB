@@ -644,8 +644,8 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			int ti;
 			assert(!equi);
 			ti = li;
-			li = hi;
-			hi = ti;
+			li = !hi;
+			hi = !ti;
 			tv = tl;
 			tl = th;
 			th = tv;
