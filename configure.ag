@@ -1103,28 +1103,10 @@ AC_SUBST(PERL_LIBDIR)
 # check if python2 and python3 exist
 # if python2 or python3 doesn't exist, use python if major matches
 
-AC_PATH_PROG(PYTHON,python,no,$PATH)
-PYTHON_MAJ=
-if test "x$PYTHON" != xno; then
-	AC_MSG_CHECKING([major version of $PYTHON])
-	case "`"$PYTHON" -V 2>&1`" in
-		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
-			PYTHON_MAJ=2
-			AC_MSG_RESULT([2])
-			;;
-		"Python 3."*)
-			PYTHON_MAJ=3
-			AC_MSG_RESULT([3])
-			;;
-		*)
-			AC_MSG_ERROR([unknown Python version])
-			;;
-	esac
-fi
-
-
 have_python2=auto
 PYTHON2=python2
+have_python3=auto
+PYTHON3=python3
 
 AC_ARG_WITH(python2,
 	AS_HELP_STRING([--with-python2=FILE], [python2 is installed as FILE]),
@@ -1133,15 +1115,45 @@ AC_ARG_WITH(python2,
 case "$have_python2" in
 	yes|no|auto) ;;
 	*)
-		PYTHON2="$have_python"
+		PYTHON2="$have_python2"
 		;;
 esac
+
+AC_ARG_WITH(python3,
+	AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE]),
+	have_python3="$withval")
+
+case "$have_python3" in
+	yes|no|auto) ;;
+	*)
+		PYTHON3="$have_python3"
+		;;
+esac
+
+AC_PATH_PROG(PYTHON,python,no,$PATH)
+PYTHON_MAJ=
+if test "x$PYTHON" != xno; then
+	AC_MSG_CHECKING([major version of $PYTHON])
+	case "`"$PYTHON" -V 2>&1`" in
+		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
+			PYTHON_MAJ=2
+			;;
+		"Python 3."*)
+			PYTHON_MAJ=3
+			;;
+		*)
+			AC_MSG_ERROR([unknown or unsupported Python version])
+			;;
+	esac
+	AC_MSG_RESULT($PYTHON_MAJ)
+fi
+
 
 if test "x$have_python2" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON2,$PYTHON2,no,$PATH)
 		if test "x$PYTHON2" = xno; then
-			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = 2; then
+			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2; then
 				PYTHON2="$PYTHON"
 				have_python2=yes
 			elif test "x$have_python2" != xauto; then
@@ -1167,10 +1179,15 @@ if test "x$have_python2" != xno; then
 			fi
 			case "$host_os-`"$PYTHON2" -V 2>&1`" in
 				darwin9*-*2.5.1)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					# This is the Python installed on OSX Leopard, in
+					# later versions of OSX, Python is fixed to return
+					# standard output
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages";;
 				*)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+					# Use prefix field for Ubuntu Python, bug #3207
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`";;
 			esac
+			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
@@ -1193,25 +1210,11 @@ AC_SUBST(PYTHON2)
 AM_CONDITIONAL(HAVE_PYTHON2, test x"$have_python2" != xno)
 AC_SUBST(PYTHON2_LIBDIR)
 
-have_python3=auto
-PYTHON3=python3
-
-AC_ARG_WITH(python3,
-	AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE]),
-	have_python3="$withval")
-
-case "$have_python3" in
-	yes|no|auto) ;;
-	*)
-		PYTHON3="$have_python3"
-		;;
-esac
-
 if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON3,$PYTHON3,no,$PATH)
 		if test "x$PYTHON3" = xno; then
-			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = 3; then
+			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = x3; then
 				PYTHON3="$PYTHON"
 				have_python3=yes
 			elif test "x$have_python3" != xauto; then
@@ -1235,7 +1238,9 @@ if test "x$have_python3" != xno; then
 			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
 			fi
-			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,""))' 2>/dev/null`"
+			# Use prefix field for Ubuntu Python, bug #3207
+			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`"
+			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
@@ -1272,7 +1277,7 @@ AC_SUBST(PYTHON)
 # Mtest/Mfilter currently require Python 2
 if test "x$enable_testing" != xno ; then
 	if test "x$PYTHON2" = xfalse ; then
-		enable_testing = no
+		enable_testing=no
 	fi
 fi
 

@@ -20,7 +20,6 @@ override_dh_auto_configure:
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
-	--enable-noexpand=no \
 	--enable-odbc=yes \
 	--enable-oid32=no \
 	--enable-optimize=yes \
@@ -38,6 +37,7 @@ override_dh_auto_configure:
 	--with-perl=yes \
 	--with-pthread=yes \
 	--with-python2=yes \
+	--with-python3=yes \
 	--with-readline=yes \
 	--with-rubygem=yes \
 	--with-rubygem-dir=lib/ruby/gems/1.8 \
