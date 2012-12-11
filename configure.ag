@@ -1115,7 +1115,7 @@ AC_ARG_WITH(python2,
 case "$have_python2" in
 	yes|no|auto) ;;
 	*)
-		PYTHON2="$have_python"
+		PYTHON2="$have_python2"
 		;;
 esac
 
@@ -1137,28 +1137,15 @@ if test "x$PYTHON" != xno; then
 	case "`"$PYTHON" -V 2>&1`" in
 		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
 			PYTHON_MAJ=2
-			case "$have_python2" in
-			yes|auto)
-				have_python2=yes
-				PYTHON2="$PYTHON"
-				;;
-			esac
-			AC_MSG_RESULT([2])
 			;;
 		"Python 3."*)
 			PYTHON_MAJ=3
-			case "$have_python3" in
-			yes|auto)
-				have_python3=yes
-				PYTHON3="$PYTHON"
-				;;
-			esac
-			AC_MSG_RESULT([3])
 			;;
 		*)
-			AC_MSG_ERROR([unknown Python version])
+			AC_MSG_ERROR([unknown or unsupported Python version])
 			;;
 	esac
+	AC_MSG_RESULT($PYTHON_MAJ)
 fi
 
 
@@ -1192,10 +1179,15 @@ if test "x$have_python2" != xno; then
 			fi
 			case "$host_os-`"$PYTHON2" -V 2>&1`" in
 				darwin9*-*2.5.1)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					# This is the Python installed on OSX Leopard, in
+					# later versions of OSX, Python is fixed to return
+					# standard output
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages";;
 				*)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+					# Use prefix field for Ubuntu Python, bug #3207
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`";;
 			esac
+			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
@@ -1246,7 +1238,9 @@ if test "x$have_python3" != xno; then
 			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
 			fi
-			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,""))' 2>/dev/null`"
+			# Use prefix field for Ubuntu Python, bug #3207
+			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`"
+			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious

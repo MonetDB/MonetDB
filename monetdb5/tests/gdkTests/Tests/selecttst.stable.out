@@ -1,0 +1,644 @@
+stdout of test 'selecttst` in directory 'tests/gdkTests` itself:
+
+
+# 16:33:28 >  
+# 16:33:28 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=33007" "--set" "mapi_usock=/var/tmp/mtest-18011/.s.monetdb.33007" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_tests_gdkTests" "selecttst.mal"
+# 16:33:28 >  
+
+# MonetDB 5 server v11.13.6
+# This is an unreleased version
+# Serving database 'mTests_tests_gdkTests', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2012 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:33007/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18011/.s.monetdb.33007
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+function user.main():void;
+    b := bat.new(:oid,:int);
+    bat.append(b,0);
+    bat.append(b,1);
+    bat.append(b,2);
+    bat.append(b,3);
+    bat.append(b,4);
+    bat.append(b,5);
+    bat.append(b,6);
+    bat.append(b,7);
+    bat.append(b,nil:int);
+    io.print(b);
+    x := algebra.subselect(b,4,nil:int,false,false,false);
+    io.print("low=4 high=nil li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,true,false,false);
+    io.print("low=4 high=nil li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,false,true,false);
+    io.print("low=4 high=nil li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,true,true,false);
+    io.print("low=4 high=nil li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,false,false,true);
+    io.print("low=4 high=nil li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,true,false,true);
+    io.print("low=4 high=nil li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,false,true,true);
+    io.print("low=4 high=nil li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,nil:int,true,true,true);
+    io.print("low=4 high=nil li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,false,false,false);
+    io.print("low=nil high=4 li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,true,false,false);
+    io.print("low=nil high=4 li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,false,true,false);
+    io.print("low=nil high=4 li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,true,true,false);
+    io.print("low=nil high=4 li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,false,false,true);
+    io.print("low=nil high=4 li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,true,false,true);
+    io.print("low=nil high=4 li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,false,true,true);
+    io.print("low=nil high=4 li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,4,true,true,true);
+    io.print("low=nil high=4 li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,false,false,false);
+    io.print("low=4 high=6 li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,true,false,false);
+    io.print("low=4 high=6 li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,false,true,false);
+    io.print("low=4 high=6 li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,true,true,false);
+    io.print("low=4 high=6 li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,false,false,true);
+    io.print("low=4 high=6 li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,true,false,true);
+    io.print("low=4 high=6 li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,false,true,true);
+    io.print("low=4 high=6 li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,6,true,true,true);
+    io.print("low=4 high=6 li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,false,false,false);
+    io.print("low=6 high=4 li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,true,false,false);
+    io.print("low=6 high=4 li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,false,true,false);
+    io.print("low=6 high=4 li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,true,true,false);
+    io.print("low=6 high=4 li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,false,false,true);
+    io.print("low=6 high=4 li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,true,false,true);
+    io.print("low=6 high=4 li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,false,true,true);
+    io.print("low=6 high=4 li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,6,4,true,true,true);
+    io.print("low=6 high=4 li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,false,false,false);
+    io.print("low=4 high=4 li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,true,false,false);
+    io.print("low=4 high=4 li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,false,true,false);
+    io.print("low=4 high=4 li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,true,true,false);
+    io.print("low=4 high=4 li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,false,false,true);
+    io.print("low=4 high=4 li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,true,false,true);
+    io.print("low=4 high=4 li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,false,true,true);
+    io.print("low=4 high=4 li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,4,4,true,true,true);
+    io.print("low=4 high=4 li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,false,false,false);
+    io.print("low=nil high=nil li=false hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,true,false,false);
+    io.print("low=nil high=nil li=true hi=false anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,false,true,false);
+    io.print("low=nil high=nil li=false hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,true,true,false);
+    io.print("low=nil high=nil li=true hi=true anti=false");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,false,false,true);
+    io.print("low=nil high=nil li=false hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,true,false,true);
+    io.print("low=nil high=nil li=true hi=false anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,false,true,true);
+    io.print("low=nil high=nil li=false hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+    x := algebra.subselect(b,nil:int,nil:int,true,true,true);
+    io.print("low=nil high=nil li=true hi=true anti=true");
+    y := algebra.leftfetchjoin(x,b);
+    io.print(y);
+end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  nil	  ]
+[ "low=4 high=nil li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 2@0,	  7	  ]
+[ "low=4 high=nil li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 2@0,	  6	  ]
+[ 3@0,	  7	  ]
+[ "low=4 high=nil li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 2@0,	  7	  ]
+[ "low=4 high=nil li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 2@0,	  6	  ]
+[ 3@0,	  7	  ]
+[ "low=4 high=nil li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ "low=4 high=nil li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ "low=4 high=nil li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ "low=4 high=nil li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ "low=nil high=4 li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ "low=nil high=4 li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ "low=nil high=4 li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ "low=nil high=4 li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ "low=nil high=4 li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 2@0,	  6	  ]
+[ 3@0,	  7	  ]
+[ "low=nil high=4 li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 2@0,	  6	  ]
+[ 3@0,	  7	  ]
+[ "low=nil high=4 li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 2@0,	  7	  ]
+[ "low=nil high=4 li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ 2@0,	  7	  ]
+[ "low=4 high=6 li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ "low=4 high=6 li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ "low=4 high=6 li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  5	  ]
+[ 1@0,	  6	  ]
+[ "low=4 high=6 li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ 1@0,	  5	  ]
+[ 2@0,	  6	  ]
+[ "low=4 high=6 li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ "low=4 high=6 li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  6	  ]
+[ 5@0,	  7	  ]
+[ "low=4 high=6 li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  7	  ]
+[ "low=4 high=6 li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  7	  ]
+[ "low=6 high=4 li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=6 high=4 li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=4 high=4 li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=4 high=4 li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=4 high=4 li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=4 high=4 li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  4	  ]
+[ "low=4 high=4 li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=4 high=4 li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=4 high=4 li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=4 high=4 li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  5	  ]
+[ 5@0,	  6	  ]
+[ 6@0,	  7	  ]
+[ "low=nil high=nil li=false hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=nil high=nil li=true hi=false anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=nil high=nil li=false hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ "low=nil high=nil li=true hi=true anti=false" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+[ "low=nil high=nil li=false hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=nil high=nil li=true hi=false anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=nil high=nil li=false hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ "low=nil high=nil li=true hi=true anti=true" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+
+# 16:33:28 >  
+# 16:33:28 >  "Done."
+# 16:33:28 >  
+
