@@ -633,7 +633,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
-	--enable-noexpand=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
