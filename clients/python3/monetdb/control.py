@@ -29,7 +29,7 @@ class Control:
     lock, unlock, destroy your databases and request status information.
     """
     def __init__(self, hostname, port, passphrase):
-        self.server = mapi.Server()
+        self.server = mapi.Connection()
         self.server.connect(hostname, port, 'monetdb', passphrase, 'merovingian', 'control')
 
     def _send_command(self, database_name, command):
