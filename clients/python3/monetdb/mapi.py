@@ -221,10 +221,10 @@ class Server(object):
             unpacked = struct.unpack('<H', flag)[0] # unpack little endian short
             length = unpacked >> 1
             last = unpacked & 1
-            logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
+            #logger.debug("II: reading %i bytes, last: %s" % (length, bool(last)))
             result.write(self.__getbytes(length))
         result_str = result.getvalue()
-        logger.debug("RX: length: %i payload: %s" % (len(result_str), result_str))
+        #logger.debug("RX: length: %i payload: %s" % (len(result_str), result_str))
         return result_str.decode()
 
 
@@ -237,7 +237,7 @@ class Server(object):
             recv = self.socket.recv(count)
             if len(recv) == 0:
                 time.sleep(1)
-            logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
+            #logger.debug("II: package size: %i payload: %s" % (len(recv), recv))
             count -= len(recv)
             result.write(recv)
         return result.getvalue()
@@ -253,8 +253,8 @@ class Server(object):
             if length < MAX_PACKAGE_LENGTH:
                 last = 1
             flag = struct.pack( '<H', ( length << 1 ) + last )
-            logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
-            logger.debug("TX: %s" % data)
+            #logger.debug("II: sending %i bytes, last: %s" % (length, bool(last)))
+            #logger.debug("TX: %s" % data)
             self.socket.send(flag)
             self.socket.send(data)
             pos += length
