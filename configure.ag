@@ -1141,7 +1141,7 @@ if test "x$have_python2" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON2,$PYTHON2,no,$PATH)
 		if test "x$PYTHON2" = xno; then
-			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = 2; then
+			if ( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2; then
 				PYTHON2="$PYTHON"
 				have_python2=yes
 			elif test "x$have_python2" != xauto; then
@@ -1211,7 +1211,7 @@ if test "x$have_python3" != xno; then
 	if test x$cross_compiling != xyes; then
 		AC_PATH_PROG(PYTHON3,$PYTHON3,no,$PATH)
 		if test "x$PYTHON3" = xno; then
-			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = 3; then
+			if ( test "x$have_python3" = xyes || test "x$have_python3" = xauto ) && test "x$PYTHON_MAJ" = x3; then
 				PYTHON3="$PYTHON"
 				have_python3=yes
 			elif test "x$have_python3" != xauto; then
