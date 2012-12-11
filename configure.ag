@@ -1179,10 +1179,15 @@ if test "x$have_python2" != xno; then
 			fi
 			case "$host_os-`"$PYTHON2" -V 2>&1`" in
 				darwin9*-*2.5.1)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"")' 2>/dev/null`/site-packages";;
+					# This is the Python installed on OSX Leopard, in
+					# later versions of OSX, Python is fixed to return
+					# standard output
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,1,"'"$Qprefix"'")' 2>/dev/null`/site-packages";;
 				*)
-					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"")' 2>/dev/null`";;
+					# Use prefix field for Ubuntu Python, bug #3207
+					PYTHON2_LIBDIR="`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`";;
 			esac
+			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious
@@ -1233,7 +1238,9 @@ if test "x$have_python3" != xno; then
 			if test x$cross_compiling = xyes; then
 				AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])
 			fi
-			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,""))' 2>/dev/null`"
+			# Use prefix field for Ubuntu Python, bug #3207
+			PYTHON3_LIBDIR="`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`"
+			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`
 			;;
 		no)	;;
 		$Qprefix/*) dnl dubious

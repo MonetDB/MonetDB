@@ -144,21 +144,7 @@ except ImportError:
     try:
         import MonetDBtesting.subprocess26 as subprocess
     except ImportError:
-        import distutils.sysconfig
-        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-        else:
-            p = distutils.sysconfig.get_python_lib(0, 0, '')
-            if p.endswith('dist-packages'):
-                # Ubuntu
-                p = p.replace('dist-packages', 'site-packages')
-                _configure(os.path.join('@QXprefix@', p))
-                sys.path.insert(0, p)
-                if os.environ.has_key('PYTHONPATH'):
-                    p += os.pathsep + os.environ['PYTHONPATH']
-                os.environ['PYTHONPATH'] = p
-                p = distutils.sysconfig.get_python_lib(0, 0, '')
-            p = _configure(os.path.join('@QXprefix@', p))
+        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.subprocess26 as subprocess
         if os.environ.has_key('PYTHONPATH'):
@@ -254,11 +240,7 @@ except ImportError:
     try:
         from MonetDBtesting import monet_options
     except ImportError:
-        import distutils.sysconfig
-        if os.name != "nt" and os.uname()[0] + os.uname()[2][:1] == "Darwin9" and sys.version[:5] == "2.5.1":
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,1,""),'site-packages'))
-        else:
-            p = _configure(os.path.join('@QXprefix@',distutils.sysconfig.get_python_lib(0,0,"")))
+        p = _configure(os.path.join('@QXprefix@', '@PYTHON2_LIBDIR@'))
         sys.path.insert(0, p)
         from MonetDBtesting import monet_options
         if os.environ.has_key('PYTHONPATH'):
