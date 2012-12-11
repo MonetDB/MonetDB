@@ -79,7 +79,7 @@ struct PIPELINES {
 	 "optimizer.reorder();"
 	 "optimizer.deadcode();"
 	 "optimizer.reduce();"
-	 //"optimizer.matpack();"
+	 "optimizer.matpack();"
 	 "optimizer.dataflow();"
 	 "optimizer.history();"
 	 "optimizer.multiplex();"
