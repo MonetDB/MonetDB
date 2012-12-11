@@ -335,7 +335,6 @@ developer.
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
-%{_bindir}/sqlsample.py
 
 %if %{?centos:0}%{!?centos:1}
 %package geom-MonetDB5
