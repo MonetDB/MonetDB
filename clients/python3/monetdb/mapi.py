@@ -52,7 +52,7 @@ STATE_INIT = 0
 STATE_READY = 1
 
 
-class Server(object):
+class Connection(object):
     """
     MAPI (low level MonetDB API) connection
     """
@@ -263,3 +263,8 @@ class Server(object):
     def __del__(self):
         if self.socket:
             self.socket.close()
+
+
+#backwards compatiblity
+Server = Connection
+

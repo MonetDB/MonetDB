@@ -44,7 +44,7 @@ class Connection(object):
             username = user
         if host is not None:
             hostname = host
-        self.mapi = mapi.Server()
+        self.mapi = mapi.Connection()
         self.mapi.connect(hostname=hostname, port=int(port), username=username,
             password=password, database=database, language="sql")
         self.set_autocommit(autocommit)
