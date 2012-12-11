@@ -1137,28 +1137,15 @@ if test "x$PYTHON" != xno; then
 	case "`"$PYTHON" -V 2>&1`" in
 		"Python 2."[[67]]*)  # older Pythons don't get Python3 syntax
 			PYTHON_MAJ=2
-			case "$have_python2" in
-			yes|auto)
-				have_python2=yes
-				PYTHON2="$PYTHON"
-				;;
-			esac
-			AC_MSG_RESULT([2])
 			;;
 		"Python 3."*)
 			PYTHON_MAJ=3
-			case "$have_python3" in
-			yes|auto)
-				have_python3=yes
-				PYTHON3="$PYTHON"
-				;;
-			esac
-			AC_MSG_RESULT([3])
 			;;
 		*)
-			AC_MSG_ERROR([unknown Python version])
+			AC_MSG_ERROR([unknown or unsupported Python version])
 			;;
 	esac
+	AC_MSG_RESULT($PYTHON_MAJ)
 fi
 
 
