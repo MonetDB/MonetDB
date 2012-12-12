@@ -20,6 +20,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include <math.h>
 
 #define buninsfix(B,C,A,I,T,V,G,M,R)				\
 	do {							\
@@ -199,172 +200,244 @@ do {									\
 	}								\
 } while (0)
 
-/* scan select predicate switch */
-#define scantest(CAND,READ,COMP,NIL1,NIL2)				      \
-do {									      \
-	if (equi                                                 ) {	      \
-		scanloop(CAND,READ, COMP(v,==,vl)                          ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,>=,vh))        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,> ,vh))        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,>=,vh))        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,> ,vh))        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval && !li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl)                 )        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil &&  lval &&  li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl)                 )        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil && !lval        &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,>=,vh))        ); \
-	} else								      \
-	if ( anti &&  b->T->nonil && !lval        &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,> ,vh))        ); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval && !li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,>=,vh)) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl) || COMP(v,> ,vh)) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,>=,vh)) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl) || COMP(v,> ,vh)) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval && !li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,<=,vl)                 ) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil &&  lval &&  li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,< ,vl)                 ) NIL1(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil && !lval        &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,>=,vh)) NIL2(v)); \
-	} else								      \
-	if ( anti && !b->T->nonil && !lval        &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,> ,vh)) NIL2(v)); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval && !li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,< ,vh))        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval && !li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,<=,vh))        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval &&  li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,< ,vh))        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval &&  li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,<=,vh))        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval && !li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl)                 )        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil &&  lval &&  li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl)                 )        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil && !lval        &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,< ,vh))        ); \
-	} else								      \
-	if (!anti &&  b->T->nonil && !lval        &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,<=,vh))        ); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval && !li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,< ,vh)) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval && !li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl) && COMP(v,<=,vh)) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval &&  li &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,< ,vh)) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval &&  li &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl) && COMP(v,<=,vh)) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval && !li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,> ,vl)                 ) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil &&  lval &&  li && !hval       ) {	      \
-		scanloop(CAND,READ,(COMP(v,>=,vl)                 ) NIL2(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil && !lval        &&  hval && !hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,< ,vh)) NIL1(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil && !lval        &&  hval &&  hi) {	      \
-		scanloop(CAND,READ,(                 COMP(v,<=,vh)) NIL1(v)); \
-	} else								      \
-	if (!anti && !b->T->nonil && !lval        && !hval       ) {	      \
-		scanloop(CAND,READ, COMP(v,!=,nil)                         ); \
-	} else								      \
-		assert(0);						      \
-} while (0)
-
-/* local variables for known fixed-width types */
-#define scaninit_fix(TYPE)				\
-	TYPE vl = *(TYPE *) tl;				\
-	TYPE vh = *(TYPE *) th;				\
-	TYPE v;						\
-	TYPE nil = TYPE##_nil;				\
-	const TYPE *src = (const TYPE *) Tloc(b, 0);
-
-/* local variables for generic types */
-#define scaninit_var(TYPE)						\
-	const void *vl = tl;						\
-	const void *vh = th;						\
-	const void *v;							\
-	const void *nil = ATOMnilptr(b->ttype);				\
-	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;\
-	BATiter bi = bat_iterator(b);					\
-
-/* various comparison calls for known fixed-width types */
-#define scancomp_fix(l,o,r)	(l) o (r)
-#define scannil1_fix(v)		&& scancomp_fix(v,!=,nil)
-#define scannil2_fix(v)
-
-/* various comparison calls for generic types */
-#define scancomp_var(l,o,r)	(*cmp)((l),(r)) o 0
-#define scannil1_var(v)		&& scancomp_var(v,!=,nil)
-#define scannil2_var(v)		scannil1_var(v)
-
 /* argument list for type-specific core scan select function call */
 #define scanargs	\
 	b, s, bn, tl, th, li, hi, equi, anti, lval, hval, \
 	p, q, cnt, off, dst, candlist, maximum
 
+#define PREVVALUEbte(x)	((x) - 1)
+#define PREVVALUEsht(x)	((x) - 1)
+#define PREVVALUEint(x)	((x) - 1)
+#define PREVVALUElng(x)	((x) - 1)
+#define PREVVALUEoid(x)	((x) - 1)
+#define PREVVALUEflt(x)	nextafterf((x), -HUGE_VALF)
+#define PREVVALUEdbl(x)	nextafter((x), -HUGE_VAL)
+
+#define NEXTVALUEbte(x)	((x) + 1)
+#define NEXTVALUEsht(x)	((x) + 1)
+#define NEXTVALUEint(x)	((x) + 1)
+#define NEXTVALUElng(x)	((x) + 1)
+#define NEXTVALUEoid(x)	((x) + 1)
+#define NEXTVALUEflt(x)	nextafterf((x), HUGE_VALF)
+#define NEXTVALUEdbl(x)	nextafter((x), HUGE_VAL)
+
+#define MINVALUEbte	NEXTVALUEbte(GDK_bte_min)
+#define MINVALUEsht	NEXTVALUEsht(GDK_sht_min)
+#define MINVALUEint	NEXTVALUEint(GDK_int_min)
+#define MINVALUElng	NEXTVALUElng(GDK_lng_min)
+#define MINVALUEoid	GDK_oid_min
+#define MINVALUEflt	NEXTVALUEflt(GDK_flt_min)
+#define MINVALUEdbl	NEXTVALUEdbl(GDK_dbl_min)
+
+#define MAXVALUEbte	GDK_bte_max
+#define MAXVALUEsht	GDK_sht_max
+#define MAXVALUEint	GDK_int_max
+#define MAXVALUElng	GDK_lng_max
+#define MAXVALUEoid	GDK_oid_max
+#define MAXVALUEflt	GDK_flt_max
+#define MAXVALUEdbl	GDK_dbl_max
+
+
 /* definition of type-specific core scan select function */
-#define scanfunc(NAME,WHAT,TYPE,CAND,READ)				\
+#define scanfunc(NAME, TYPE, CAND)					\
 static BUN								\
 NAME##_##TYPE (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,	\
                int li, int hi, int equi, int anti, int lval, int hval,	\
                BUN r, BUN q, BUN cnt, wrd off, oid *dst,		\
                const oid *candlist, BUN maximum)			\
 {									\
-	scaninit_##WHAT ( TYPE )					\
+	TYPE vl = *(const TYPE *) tl;					\
+	TYPE vh = *(const TYPE *) th;					\
+	TYPE v;								\
+	TYPE nil = TYPE##_nil;						\
+	const TYPE *src = (const TYPE *) Tloc(b, 0);			\
 	oid o;								\
 	BUN p = r;							\
 	(void) candlist;						\
-	scantest(CAND, READ, scancomp_##WHAT,				\
-	         scannil1_##WHAT, scannil2_##WHAT);			\
+	(void) li;							\
+	(void) hi;							\
+	(void) lval;							\
+	(void) hval;							\
+	if (equi) {							\
+		scanloop(CAND,v = src[o-off], v == vl);			\
+	} else if (anti) {						\
+		if (b->T->nonil) {					\
+			scanloop(CAND,v = src[o-off],(v <= vl || v >= vh)); \
+		} else {						\
+			scanloop(CAND,v = src[o-off],(v <= vl || v >= vh) && v != nil); \
+		}							\
+	} else if (b->T->nonil && vl == MINVALUE##TYPE) {		\
+		scanloop(CAND,v = src[o-off],v <= vh);			\
+	} else if (vh == MAXVALUE##TYPE) {				\
+		scanloop(CAND,v = src[o-off],v >= vl);			\
+	} else {							\
+		scanloop(CAND,v = src[o-off],v >= vl && v <= vh);	\
+	}								\
 	return cnt;							\
 }
 
+static BUN
+candscan_any (BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	      int li, int hi, int equi, int anti, int lval, int hval,
+	      BUN r, BUN q, BUN cnt, wrd off, oid *dst,
+	      const oid *candlist, BUN maximum)
+{
+	const void *v;
+	const void *nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	BATiter bi = bat_iterator(b);
+	oid o;
+	BUN p = r;
+	int c;
+
+	(void) maximum;
+	if (equi) {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect equi\n", BATgetId(b), BATcount(b),
+				  BATgetId(s), anti);
+		while (p < q) {
+			o = *candlist++;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((*cmp)(tl, v) == 0);
+			p++;
+		}
+	} else if (anti) {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect anti\n", BATgetId(b), BATcount(b),
+				  BATgetId(s), anti);
+		while (p < q) {
+			o = *candlist++;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			     ((lval &&
+			       ((c = (*cmp)(tl, v)) > 0 ||
+				(!li && c == 0))) ||
+			      (hval &&
+			       ((c = (*cmp)(th, v)) < 0 ||
+				(!hi && c == 0)))));
+			p++;
+		}
+	} else {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect range\n", BATgetId(b), BATcount(b),
+				  BATgetId(s), anti);
+		while (p < q) {
+			o = *candlist++;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			     ((!lval ||
+			       (c = cmp(tl, v)) < 0 ||
+			       (li && c == 0)) &&
+			      (!hval ||
+			       (c = cmp(th, v)) > 0 ||
+			       (hi && c == 0))));
+			p++;
+		}
+	}
+	return cnt;
+}
+
+static BUN
+fullscan_any(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
+	     int li, int hi, int equi, int anti, int lval, int hval,
+	     BUN r, BUN q, BUN cnt, wrd off, oid *dst,
+	     const oid *candlist, BUN maximum)
+{
+	const void *v;
+	const void *nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = BATatoms[b->ttype].atomCmp;
+	BATiter bi = bat_iterator(b);
+	oid o;
+	BUN p = r;
+	int c;
+
+	(void) candlist;
+	(void) maximum;
+
+	if (equi) {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect equi\n", BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
+		while (p < q) {
+			o = p + off;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((*cmp)(tl, v) == 0);
+			p++;
+		}
+	} else if (anti) {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect anti\n", BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
+		while (p < q) {
+			o = p + off;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			     ((lval &&
+			       ((c = (*cmp)(tl, v)) > 0 ||
+				(!li && c == 0))) ||
+			      (hval &&
+			       ((c = (*cmp)(th, v)) < 0 ||
+				(!hi && c == 0)))));
+			p++;
+		}
+	} else {
+		ALGODEBUG fprintf(stderr,
+				  "#BATsubselect(b=%s#"BUNFMT",s=%s,anti=%d): "
+				  "scanselect range\n", BATgetId(b), BATcount(b),
+				  s ? BATgetId(s) : "NULL", anti);
+		while (p < q) {
+			o = p + off;
+			v = BUNtail(bi,o-off);
+			buninsfix(bn, T, dst, cnt, oid, o,
+			          (BUN) ((dbl) cnt / (dbl) (p-r)
+			                 * (dbl) (q-p) * 1.1 + 1024),
+			          BATcapacity(bn) + q - p, BUN_NONE);
+			cnt += ((nil == NULL || (*cmp)(v, nil) != 0) &&
+			     ((!lval ||
+			       (c = cmp(tl, v)) < 0 ||
+			       (li && c == 0)) &&
+			      (!hval ||
+			       (c = cmp(th, v)) > 0 ||
+			       (hi && c == 0))));
+			p++;
+		}
+	}
+	return cnt;
+}
+
 /* scan select type switch */
-#define scan_sel(NAME,CAND)						\
-	scanfunc ( NAME , fix , bte , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , fix , sht , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , fix , int , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , fix , flt , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , fix , dbl , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , fix , lng , CAND , v = src[o-off]        )	\
-	scanfunc ( NAME , var , any , CAND , v = BUNtail(bi,o-off) )
+#define scan_sel(NAME, CAND)			\
+	scanfunc(NAME, bte, CAND)		\
+	scanfunc(NAME, sht, CAND)		\
+	scanfunc(NAME, int, CAND)		\
+	scanfunc(NAME, flt, CAND)		\
+	scanfunc(NAME, dbl, CAND)		\
+	scanfunc(NAME, lng, CAND)
 
 /* scan select with candidates */
 scan_sel ( candscan , o = *candlist++ )
@@ -576,6 +649,109 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  *	v1	v2	true	true	true	x < v1 or x > v2
  *	v2	v1	ignored	ignored	ignored	NOTHING
  */
+
+/* Normalize the variables li, hi, lval, hval, possibly changing anti
+ * in the process.  This works for all (and only) numeric types.
+ *
+ * Note that the expression x < v is equivalent to x <= v' where v' is
+ * the next smaller value in the domain of v (similarly for x > v).
+ * Also note that for floating point numbers there actually is such a
+ * value.  In fact, there is a function in standard C that calculates
+ * that value.
+ *
+ * The result of this macro is:
+ * li == !anti, hi == !anti, lval == 1, hval == 1
+ * This means that all ranges that we check for are closed ranges.  If
+ * a range is one-sided, we fill in the minimum resp. maximum value in
+ * the domain so that we create a closed ranges. */
+#define NORMALIZE(TYPE)							\
+	do {								\
+		if (anti && li) {					\
+			/* -inf < x < vl === -inf < x <= vl-1 */	\
+			if (*(TYPE*)tl == MINVALUE##TYPE) {		\
+				/* -inf < x < MIN || *th <[=] x < +inf */ \
+				/* degenerates into half range */	\
+				/* *th <[=] x < +inf */			\
+				anti = 0;				\
+				tl = th;				\
+				li = !hi;				\
+				hval = 0;				\
+				/* further dealt with below */		\
+			} else {					\
+				vl.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)tl); \
+				tl = &vl.v_##TYPE;			\
+				li = 0;					\
+			}						\
+		}							\
+		if (anti && hi) {					\
+			/* vl < x < +inf === vl+1 <= x < +inf */	\
+			if (*(TYPE*)th == MAXVALUE##TYPE) {		\
+				/* -inf < x <[=] *tl || MAX > x > +inf */ \
+				/* degenerates into half range */	\
+				/* -inf < x <[=] *tl */			\
+				anti = 0;				\
+				th = tl;				\
+				hi = !li;				\
+				lval = 0;				\
+				/* further dealt with below */		\
+			} else {					\
+				vh.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)th); \
+				th = &vh.v_##TYPE;			\
+				hi = 0;					\
+			}						\
+		}							\
+		if (!anti) {						\
+			if (lval) {					\
+				/* range bounded on left */		\
+				if (!li) {				\
+					/* open range on left */	\
+					if (*(TYPE*)tl == MAXVALUE##TYPE) \
+						return newempty();	\
+					/* vl < x === vl+1 <= x */	\
+					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
+					li = 1;				\
+					tl = &vl.v_##TYPE;		\
+				}					\
+			} else {					\
+				/* -inf, i.e. smallest value */		\
+				vl.v_##TYPE = MINVALUE##TYPE;		\
+				li = 1;					\
+				tl = &vl.v_##TYPE;			\
+				lval = 1;				\
+			}						\
+			if (hval) {					\
+				/* range bounded on right */		\
+				if (!hi) {				\
+					/* open range on right */	\
+					if (*(TYPE*)th == MINVALUE##TYPE) \
+						return newempty();	\
+					/* x < vh === x <= vh-1 */	\
+					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
+					hi = 1;				\
+					th = &vh.v_##TYPE;		\
+				}					\
+			} else {					\
+				/* +inf, i.e. largest value */		\
+				vh.v_##TYPE = MAXVALUE##TYPE;		\
+				hi = 1;					\
+				th = &vh.v_##TYPE;			\
+				hval = 1;				\
+			}						\
+		}							\
+		assert(lval);						\
+		assert(hval);						\
+		assert(li != anti);					\
+		assert(hi != anti);					\
+		/* if anti is set, we can now check */			\
+		/* (x <= *tl || x >= *th) && x != nil */		\
+		/* if equi==1, the check is x != *tl && x != nil */	\
+		/* if anti is not set, we can check just */		\
+		/* *tl <= x && x <= *th */				\
+		/* if equi==1, the check is x == *tl */			\
+		/* note that this includes the check for != nil */	\
+		/* in the case where equi==1, the check is x == *tl */	\
+	} while (0)
+
 BAT *
 BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
              int li, int hi, int anti)
@@ -584,6 +760,15 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 	const void *nil;
 	BAT *bn;
 	BUN estimate = BUN_NONE, maximum = BUN_NONE;
+	union {
+		bte v_bte;
+		sht v_sht;
+		int v_int;
+		lng v_lng;
+		flt v_flt;
+		dbl v_dbl;
+		oid v_oid;
+	} vl, vh;
 
 	BATcheck(b, "BATsubselect");
 	BATcheck(tl, "BATsubselect: tl value required");
@@ -733,6 +918,31 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
+	if (b->ttype == TYPE_oid || b->ttype == TYPE_void) {
+		NORMALIZE(oid);
+	} else {
+		switch (ATOMstorage(b->ttype)) {
+		case TYPE_bte:
+			NORMALIZE(bte);
+			break;
+		case TYPE_sht:
+			NORMALIZE(sht);
+			break;
+		case TYPE_int:
+			NORMALIZE(int);
+			break;
+		case TYPE_lng:
+			NORMALIZE(lng);
+			break;
+		case TYPE_flt:
+			NORMALIZE(flt);
+			break;
+		case TYPE_dbl:
+			NORMALIZE(dbl);
+			break;
+		}
+	}
+
 	if (b->tsorted || b->trevsorted) {
 		BAT *v;
 		BUN low = 0;
@@ -743,32 +953,28 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* we expect nonil to be set, in which case we
 			 * already know that we're not dealing with a
 			 * nil equiselect (dealt with above) */
+			oid h, l;
 			assert(b->T->nonil);
 			assert(b->tsorted);
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 					  ",s=%s,anti=%d): dense\n",
 					  BATgetId(b), BATcount(b),
 					  s ? BATgetId(s) : "NULL", anti);
-			if (hval) {
-				oid h = * (oid *) th + hi;
+			h = * (oid *) th + hi;
+			if (h > b->tseqbase)
+				h -= b->tseqbase;
+			else
+				h = 0;
+			if ((BUN) h < high)
+				high = (BUN) h;
 
-				if (h > b->tseqbase)
-					h -= b->tseqbase;
-				else
-					h = 0;
-				if ((BUN) h < high)
-					high = (BUN) h;
-			}
-			if (lval) {
-				oid l = * (oid *) tl + !li;
-
-				if (l > b->tseqbase)
-					l -= b->tseqbase;
-				else
-					l = 0;
-				if ((BUN) l > low)
-					low = (BUN) l;
-			}
+			l = * (oid *) tl + !li;
+			if (l > b->tseqbase)
+				l -= b->tseqbase;
+			else
+				l = 0;
+			if ((BUN) l > low)
+				low = (BUN) l;
 		} else if (b->tsorted) {
 			ALGODEBUG fprintf(stderr, "#BATsubselect(b=%s#" BUNFMT
 					  ",s=%s,anti=%d): sorted\n",
