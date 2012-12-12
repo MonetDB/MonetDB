@@ -22,6 +22,11 @@
 #include "gdk_private.h"
 #include <math.h>
 
+#ifdef _MSC_VER
+#define nextafter	_nextafter
+#define nextafterf	_nextafterf
+#endif
+
 #define buninsfix(B,C,A,I,T,V,G,M,R)				\
 	do {							\
 		if ((I) == BATcapacity(B)) {			\
@@ -210,16 +215,16 @@ do {									\
 #define PREVVALUEint(x)	((x) - 1)
 #define PREVVALUElng(x)	((x) - 1)
 #define PREVVALUEoid(x)	((x) - 1)
-#define PREVVALUEflt(x)	nextafterf((x), -HUGE_VALF)
-#define PREVVALUEdbl(x)	nextafter((x), -HUGE_VAL)
+#define PREVVALUEflt(x)	nextafterf((x), -GDK_flt_max)
+#define PREVVALUEdbl(x)	nextafter((x), -GDK_dbl_max)
 
 #define NEXTVALUEbte(x)	((x) + 1)
 #define NEXTVALUEsht(x)	((x) + 1)
 #define NEXTVALUEint(x)	((x) + 1)
 #define NEXTVALUElng(x)	((x) + 1)
 #define NEXTVALUEoid(x)	((x) + 1)
-#define NEXTVALUEflt(x)	nextafterf((x), HUGE_VALF)
-#define NEXTVALUEdbl(x)	nextafter((x), HUGE_VAL)
+#define NEXTVALUEflt(x)	nextafterf((x), GDK_flt_max)
+#define NEXTVALUEdbl(x)	nextafter((x), GDK_dbl_max)
 
 #define MINVALUEbte	NEXTVALUEbte(GDK_bte_min)
 #define MINVALUEsht	NEXTVALUEsht(GDK_sht_min)
