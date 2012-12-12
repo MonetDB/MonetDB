@@ -1,3 +1,34 @@
+monetdb (11.13.7-20121212) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 12 Dec 2012 13:00:49 +0100
+
+monetdb (11.13.7-20121212) unstable; urgency=low
+
+  * java: Implemented type map support of Connection to allow custom mapping
+    of UDTs to Java classes.  By default the INET and URL UDTs are
+    now mapped to nl.cwi.monetdb.jdbc.types.{INET,URL}.  Most notably,
+    ResultSet.getObject() and PreparedStatement.setObject() deal with the
+    type map.
+
+ -- Fabian Groffen <fabian@monetdb.org>  Fri, 23 Nov 2012 13:00:48 +0100
+
+monetdb (11.13.7-20121212) unstable; urgency=low
+
+  * java: Fixed a problem in PreparedStatement where the prepared statement's
+    ResultSetMetaData (on its columns to be produced) incorrectly threw
+    exceptions about non existing columns.  Bug #3192
+
+ -- Fabian Groffen <fabian@monetdb.org>  Thu, 22 Nov 2012 13:00:48 +0100
+
+monetdb (11.13.7-20121212) unstable; urgency=low
+
+  * sql: Fixed crash when performing an INSERT on a table with string-like column
+    defaulting to NULL and omitting that column from VALUES, bug #3168
+
+ -- Fabian Groffen <fabian@monetdb.org>  Wed, 21 Nov 2012 13:00:48 +0100
+
 monetdb (11.13.5-20121116) unstable; urgency=low
 
   * Rebuilt.

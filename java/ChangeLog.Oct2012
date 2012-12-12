@@ -1,15 +1,3 @@
 # ChangeLog file for java
 # This file is updated with Maddlog
 
-* Fri Nov 23 2012 Fabian Groffen <fabian@monetdb.org>
-- Implemented type map support of Connection to allow custom mapping
-  of UDTs to Java classes.  By default the INET and URL UDTs are
-  now mapped to nl.cwi.monetdb.jdbc.types.{INET,URL}.  Most notably,
-  ResultSet.getObject() and PreparedStatement.setObject() deal with the
-  type map.
-
-* Thu Nov 22 2012 Fabian Groffen <fabian@monetdb.org>
-- Fixed a problem in PreparedStatement where the prepared statement's
-  ResultSetMetaData (on its columns to be produced) incorrectly threw
-  exceptions about non existing columns.  Bug #3192
-
