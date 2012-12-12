@@ -44,12 +44,9 @@ function user.main():void;
     c := mat.pack(c0,c1);
     bat.append(c,6@0);
     b := mat.pack(m0,m1,m2);
-    c := mat.pack(c0,c1);
     j := algebra.join(b,c);
     io.print(j);
-    b := mat.pack(m0,m1,m2);
     io.print(b);
-    c := mat.pack(c0,c1);
     io.print(c);
 end main;
 function user.main():void;              #  0 main:void := user.main() {G}
@@ -80,14 +77,11 @@ function user.main():void;              #  0 main:void := user.main() {G}
     c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 25 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
     bat.append(c,6@0);                  # 26 _25:bat[:oid,:oid] := BKCappend_val_wrap(c:bat[:oid,:oid], _26:oid) {G}
     b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=2, torigin=2},m2{horigin=3, torigin=3});# 27 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
-    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 28 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
-    j := algebra.join(b,c);             # 29 j:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
-    io.print(j);                        # 30 _28:void := IOprint_val(j:bat[:oid,:oid]) {G}
-    b := mat.pack(m0{horigin=1, torigin=1},m1{horigin=2, torigin=2},m2{horigin=3, torigin=3});# 31 b:bat[:oid,:oid] := MATpack(m0:bat[:oid,:oid], m1:bat[:oid,:oid], m2:bat[:oid,:oid]) {G}
-    io.print(b);                        # 32 _29:void := IOprint_val(b:bat[:oid,:oid]) {G}
-    c := mat.pack(c0{horigin=1, torigin=1},c1{horigin=2, torigin=2});# 33 c:bat[:oid,:oid] := MATpack(c0:bat[:oid,:oid], c1:bat[:oid,:oid]) {G}
-    io.print(c);                        # 34 _30:void := IOprint_val(c:bat[:oid,:oid]) {G}
-end main;                               # 35  
+    j := algebra.join(b,c);             # 28 j:bat[:oid,:oid] := ALGjoin(b:bat[:oid,:oid], c:bat[:oid,:oid]) {G}
+    io.print(j);                        # 29 _28:void := IOprint_val(j:bat[:oid,:oid]) {G}
+    io.print(b);                        # 30 _29:void := IOprint_val(b:bat[:oid,:oid]) {G}
+    io.print(c);                        # 31 _30:void := IOprint_val(c:bat[:oid,:oid]) {G}
+end main;                               # 32  
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -102,6 +96,7 @@ end main;                               # 35
 #-----------------#
 [ 0@0,	  4@0	  ]
 [ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
@@ -115,6 +110,7 @@ end main;                               # 35
 #-----------------#
 [ 0@0,	  4@0	  ]
 [ 1@0,	  5@0	  ]
+[ 2@0,	  6@0	  ]
 
 # 08:54:20 >  
 # 08:54:20 >  Done.

@@ -63,7 +63,5 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		pushInstruction(mb,p);
 	} 
 	GDKfree(old);
-	DEBUGoptimizers
-		mnstr_printf(cntxt->fdout,"#opt_matpack: %d statements marked\n", actions);
 	return actions;
 }

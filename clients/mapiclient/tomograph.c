@@ -786,12 +786,12 @@ static void showcolormap(char *filename, int all)
 				scale = "sec";
 			}
 
-			fprintf(f, "set object %d rectangle from %d, %d to %d, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-					object++, (k % 3) * w, h - 40, (int) ((k % 3) * w + 0.15 * w), h - 5, colors[i].col);
+			fprintf(f, "set object %d rectangle from %f, %f to %f, %f fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+					object++, (double) (k % 3) * w, (double) h - 40, (double) ((k % 3) * w + 0.15 * w), (double) h - 5, colors[i].col);
 			fprintf(f, "set label %d \"%s.%s \" at %d,%d\n",
 					object++, colors[i].mod, colors[i].fcn, (int) ((k % 3) * w + 0.2 * w), h - 15);
-			fprintf(f, "set label %d \"%d calls %3.2f %s\" at %d,%d\n",
-					object++, colors[i].freq, tu, scale, (int) ((k % 3) * w + 0.2 * w), h - 35);
+			fprintf(f, "set label %d \"%d calls %3.2f %s\" at %f,%f\n",
+					object++, colors[i].freq, tu, scale, (double) ((k % 3) * w + 0.2 * w), (double) h - 35);
 			if (k % 3 == 2)
 				h -= 45;
 			k++;
@@ -967,7 +967,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.4\n");
 	fprintf(gnudata, "set origin 0.0,0.4\n");
-	fprintf(gnudata, "set xrange [%ld:%ld]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange [%f:%f]\n", (double) startrange, (double) lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
