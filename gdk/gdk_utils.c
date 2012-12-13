@@ -922,15 +922,14 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	if (blk == NULL) {
 		return GDKmallocmax(size, maxsize, emergency);
 	}
-#ifdef GDK_MEM_NULLALLOWED
 	if (size == 0) {
+#ifdef GDK_MEM_NULLALLOWED
 		GDKfree_(blk);
 		*maxsize = 0;
 		return NULL;
-	}
+#else
+		GDKfatal("GDKreallocmax: called with size 0");
 #endif
-	if (size <= 0) {
-		GDKfatal("GDKreallocmax: called with size " SZFMT "", size);
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	oldsize = GDK_MEM_BLKSIZE(blk);
@@ -1021,18 +1020,18 @@ GDKstrdup(const char *s)
  * allocations affect only the logical VM resources.
  */
 void *
-GDKmmap(const char *path, int mode, off_t off, size_t len)
+GDKmmap(const char *path, int mode, size_t len)
 {
-	void *ret = MT_mmap(path, mode, off, len);
+	void *ret = MT_mmap(path, mode, len);
 
 	if (ret == (void *) -1L) {
 		GDKmemfail("GDKmmap", len);
-		ret = MT_mmap(path, mode, off, len);
+		ret = MT_mmap(path, mode, len);
 		if (ret != (void *) -1L) {
 			THRprintf(GDKstdout, "#GDKmmap: recovery ok. Continuing..\n");
 		}
 	}
-	ALLOCDEBUG fprintf(stderr, "#GDKmmap " LLFMT " " SZFMT " " PTRFMT "\n", (lng) off, len, PTRFMTCAST ret);
+	ALLOCDEBUG fprintf(stderr, "#GDKmmap " SZFMT " " PTRFMT "\n", len, PTRFMTCAST ret);
 	if (ret != (void *) -1L) {
 		/* since mmap directly have content we say its zero-ed
 		 * memory */

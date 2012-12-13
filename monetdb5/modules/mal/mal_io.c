@@ -760,7 +760,7 @@ IOimport(int *ret, int *bid, str *fnme)
 			throw(MAL, "io.imports", OPERATION_FAILED "File too large");
 		}
 #endif
-		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, (size_t) st.st_size);
+		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
 			throw(MAL, "io.mport", OPERATION_FAILED "MT_mmap()");
