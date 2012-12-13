@@ -50,6 +50,16 @@
 
 #ifdef NATIVE_WIN32
 
+/* Some definitions that we need to compile on Windows.
+ * Note that Windows only runs on little endian architectures. */
+typedef unsigned int u_int32_t;
+typedef int int32_t;
+#define BIG_ENDIAN	4321
+#define LITTLE_ENDIAN	1234
+#define BYTE_ORDER	LITTLE_ENDIAN
+
+#include "s_nextafterf.c"
+
 #include <stdio.h>
 
 DIR *

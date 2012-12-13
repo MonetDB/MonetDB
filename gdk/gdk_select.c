@@ -24,7 +24,7 @@
 
 #ifdef _MSC_VER
 #define nextafter	_nextafter
-#define nextafterf	_nextafterf
+float nextafterf(float x, float y);
 #endif
 
 #define buninsfix(B,C,A,I,T,V,G,M,R)				\
