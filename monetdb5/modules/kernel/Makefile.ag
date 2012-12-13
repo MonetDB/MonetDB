@@ -40,7 +40,6 @@ lib_kernel = {
 		aggr.mx \
 		alarm.c alarm.h \
 		algebra.mx \
-		array.c array.h \
 		bat5.c bat5.h \
 		batcolor.c batcolor.h \
 		batmmath.c batmmath.h \
