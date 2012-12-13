@@ -362,7 +362,7 @@ MT_heapcur(void)
 }
 
 void *
-MT_mmap(const char *path, int mode, off_t off, size_t len)
+MT_mmap(const char *path, int mode, size_t len)
 {
 	int fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY), MONETDB_MODE);
 	void *ret = (void *) -1L;
@@ -373,7 +373,7 @@ MT_mmap(const char *path, int mode, off_t off, size_t len)
 			   ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
 			   (mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED,
 			   fd,
-			   off);
+			   0);
 		close(fd);
 	}
 	return ret;
@@ -511,7 +511,7 @@ MT_heapcur(void)
  * needs to be unmapped separately in the end. */
 
 void *
-MT_mmap(const char *path, int mode, off_t off, size_t len)
+MT_mmap(const char *path, int mode, size_t len)
 {
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -557,18 +557,18 @@ MT_mmap(const char *path, int mode, off_t off, size_t len)
 		}
 	}
 
-	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) ((((__int64) off + (__int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)), NULL);
+	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
 		GDKsyserror("MT_mmap: CreateFileMapping(" PTRFMT ", &sa, %lu, %lu, %lu, NULL) failed\n",
 			    PTRFMTCAST h1, mode3,
-			    (DWORD) ((((__int64) off + (__int64) len) >> 32) & LL_CONSTANT(0xFFFFFFFF)),
-			    (DWORD) ((off + len) & LL_CONSTANT(0xFFFFFFFF)));
+			    (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)),
+			    (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)));
 		CloseHandle(h1);
 		return (void *) -1;
 	}
 	CloseHandle(h1);
 
-	ret = MapViewOfFileEx(h2, mode4, (DWORD) ((__int64) off >> 32), (DWORD) off, len, NULL);
+	ret = MapViewOfFileEx(h2, mode4, (DWORD) 0, (DWORD) 0, len, NULL);
 	CloseHandle(h2);
 
 	return ret ? ret : (void *) -1;

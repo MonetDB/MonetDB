@@ -377,7 +377,7 @@ GDKload(const char *nme, const char *ext, size_t size, size_t maxsize, storage_t
 
 				if (mode == STORE_PRIV)
 					mod |= MMAP_COPY;
-				ret = (char *) GDKmmap(path, mod, (off_t) 0, maxsize);
+				ret = (char *) GDKmmap(path, mod, maxsize);
 				if (ret == (char *) -1L) {
 					ret = NULL;
 				}
