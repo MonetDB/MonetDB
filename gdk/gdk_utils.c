@@ -922,15 +922,14 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	if (blk == NULL) {
 		return GDKmallocmax(size, maxsize, emergency);
 	}
-#ifdef GDK_MEM_NULLALLOWED
 	if (size == 0) {
+#ifdef GDK_MEM_NULLALLOWED
 		GDKfree_(blk);
 		*maxsize = 0;
 		return NULL;
-	}
+#else
+		GDKfatal("GDKreallocmax: called with size 0");
 #endif
-	if (size <= 0) {
-		GDKfatal("GDKreallocmax: called with size " SZFMT "", size);
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
 	oldsize = GDK_MEM_BLKSIZE(blk);
