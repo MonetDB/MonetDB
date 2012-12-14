@@ -27,7 +27,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPL - http://www.monetdb.org/Legal/MonetDBLicense
 URL: http://www.monetdb.org/
-Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP1/%{name}-%{version}.tar.bz2
+Source: http://dev.monetdb.org/downloads/sources/Oct2012-SP2/%{name}-%{version}.tar.bz2
 
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -632,7 +632,6 @@ developer, but if you do want to test, this is the package you need.
 	--enable-jdbc=no \
 	--enable-merocontrol=no \
 	--enable-monetdb5=yes \
-	--enable-noexpand=no \
 	--enable-odbc=yes \
 	--enable-oid32=%{?oid32:yes}%{!?oid32:no} \
 	--enable-optimize=yes \
@@ -693,6 +692,25 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libmonetdb5.so
 rm -fr $RPM_BUILD_ROOT
 
 %changelog
+* Wed Dec 12 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.7-20121212
+- Rebuilt.
+
+* Fri Nov 23 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Implemented type map support of Connection to allow custom mapping
+  of UDTs to Java classes.  By default the INET and URL UDTs are
+  now mapped to nl.cwi.monetdb.jdbc.types.{INET,URL}.  Most notably,
+  ResultSet.getObject() and PreparedStatement.setObject() deal with the
+  type map.
+
+* Thu Nov 22 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- java: Fixed a problem in PreparedStatement where the prepared statement's
+  ResultSetMetaData (on its columns to be produced) incorrectly threw
+  exceptions about non existing columns.  Bug #3192
+
+* Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org> - 11.13.7-20121212
+- sql: Fixed crash when performing an INSERT on a table with string-like column
+  defaulting to NULL and omitting that column from VALUES, bug #3168
+
 * Fri Nov 16 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.13.5-20121116
 - Rebuilt.
 

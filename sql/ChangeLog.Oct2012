@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Wed Nov 21 2012 Fabian Groffen <fabian@monetdb.org>
-- Fixed crash when performing an INSERT on a table with string-like column
-  defaulting to NULL and omitting that column from VALUES, bug #3168
-

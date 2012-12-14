@@ -3050,6 +3050,7 @@ BATassertProps(BAT *b)
 	assert(b->batFirst >= b->batDeleted);
 	assert(b->batInserted >= b->batFirst);
 	assert(b->batFirst + b->batCount >= b->batInserted);
+	assert(b->U->first == 0);
 
 	BATassertHeadProps(b);
 	if (b->H != bm->H)

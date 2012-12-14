@@ -169,7 +169,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int i,j,k, var, cnt, start=1,entries=0, actions=0;
 	int flowblock= 0, dumbcopy=0;
 	InstrPtr *sink, *old, q;
-	int limit, slimit, size, top = 0;
+	int limit, slimit, top = 0;
 	Lifespan span;
 	char *init;
 	int *usage;
@@ -197,7 +197,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(init);
 		return 0;
 	}
-	sink= (InstrPtr*) GDKzalloc(size = mb->vsize * sizeof(InstrPtr));
+	sink= (InstrPtr*) GDKzalloc(mb->vsize * sizeof(InstrPtr));
 	if ( sink == NULL){
 		GDKfree(span);
 		GDKfree(init);
