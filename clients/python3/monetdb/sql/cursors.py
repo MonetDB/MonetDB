@@ -22,7 +22,7 @@ from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
-
+logger.addHandler(logging.NullHandler())
 
 class Cursor(object):
     """This object represents a database cursor, which is used to manage

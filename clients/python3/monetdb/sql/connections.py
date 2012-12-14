@@ -23,6 +23,7 @@ from monetdb.exceptions import *
 from monetdb import mapi
 
 logger = logging.getLogger("monetdb")
+logger.addHandler(logging.NullHandler())
 
 class Connection(object):
     """This represents a MonetDB SQL database connection"""
