@@ -163,9 +163,9 @@ class Connection(object):
         self.__putblock(operation)
         response = self.__getblock()
         if not len(response):
-            return True
+            return ""
         elif response.startswith(MSG_OK):
-            return response[3:].strip() or True
+            return response[3:].strip() or ""
         if response == MSG_MORE:
             # tell server it isn't going to get more
             return self.cmd("")
