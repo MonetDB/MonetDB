@@ -3763,7 +3763,7 @@ opt_alias_name:
 atom:
     literal
 	{ 
-	  if (m->emode == m_normal && m->caching && m->argc < 100) { 
+	  if (m->emode == m_normal && m->caching) { 
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
