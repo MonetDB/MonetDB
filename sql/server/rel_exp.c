@@ -1032,6 +1032,44 @@ exp_is_atom( sql_exp *e )
 }
 
 static int
+exps_has_func( list *exps)
+{
+	node *n;
+	int has_func = 0;
+
+	for(n=exps->h; n && !has_func; n=n->next) 
+		has_func |= exp_has_func(n->data);
+	return has_func;
+}
+
+int
+exp_has_func( sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		return 0;
+	case e_convert:
+		return exp_has_func(e->l);
+	case e_func:
+	case e_aggr:
+		return 1;
+	case e_cmp:
+		if (e->flag == cmp_or) {
+			return (exps_has_func(e->l) || exps_has_func(e->r));
+		} else if (e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter) {
+			return (exp_has_func(e->l) || exps_has_func(e->r));
+		} else {
+			return (exp_has_func(e->l) || exp_has_func(e->r) || 
+					(e->f && exp_has_func(e->f)));
+		}
+	case e_column:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
+static int
 exp_key( sql_exp *e )
 {
 	if (e->name)
