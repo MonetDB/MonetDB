@@ -348,9 +348,9 @@ prepareMALstack(MalBlkPtr mb, int size)
 
 	assert(size >= mb->vsize);
 	stk = newGlobalStack(size);
-	memset((char *)stk, 0, stackSize(size));
+	//memset((char *)stk, 0, stackSize(size)); already set
+	//stk->stksize = size;
 	stk->stktop = mb->vtop;
-	stk->stksize = size;
 	stk->blk = mb;
 
 	initStack(0);
