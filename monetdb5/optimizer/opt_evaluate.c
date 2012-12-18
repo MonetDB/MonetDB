@@ -26,24 +26,25 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	int i;
 	(void)cntxt;
 
-	if (p->argc == p->retc)
+	if ( !( p->token == ASSIGNsymbol ||
+			getModuleId(p) == calcRef ||
+		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mmathRef ))
 		return FALSE;
+
 	for (i = p->retc; i < p->argc; i++)
 		if (isVarConstant(mb, getArg(p, i)) == FALSE)
 			return FALSE;
 	for (i = 0; i < p->retc; i++)
 		if (isaBatType(getArgType(mb, p, i)))
 			return FALSE;
-	return(getModuleId(p) == calcRef ||
-		   getModuleId(p) == strRef ||
-		   getModuleId(p) == mmathRef ||
-		   p->token == ASSIGNsymbol);
+	return p->argc != p->retc;
 }
 
 static int
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
-	/* catch constant bounded blocks */
+	/* catch and remove constant bounded blocks */
 	int i, j = 0, action = 0, block = 0, skip = 0;
 	InstrPtr p;
 
@@ -85,17 +86,6 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 	return action;
 }
 
-static int
-assignedOnce(MalBlkPtr mb, Lifespan span, int varid)
-{
-	int i, cnt = 0;
-	for (i = getBeginLifespan(span, varid); i <= getLastUpdate(span, varid); i++)
-		cnt += getArg(getInstrPtr(mb, i), 0) == varid;
-	if (getInstrPtr(mb, getLastUpdate(span, varid))->barrier == EXITsymbol)
-		cnt--;
-	return cnt == 1;
-}
-
 int
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -104,8 +94,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	MalStkPtr env = NULL;
 	int profiler;
 	str msg;
-	int debugstate = cntxt->itrace, actions = 0;
-	Lifespan span;
+	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
+	int *assigned, use; 
 
 	cntxt->itrace = 0;
 	(void)stk;
@@ -117,32 +107,39 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	(void)cntxt;
 	OPTDEBUGevaluate mnstr_printf(cntxt->fdout, "Constant expression optimizer started\n");
 
-	span = setLifespan(mb);
-	if (span == NULL)
-		return 0;
-
-	env = prepareMALstack(mb, 2 * mb->vsize);
-	env->keepAlive = TRUE;
-	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
-	if (alias == NULL)
+	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
+	if (assigned == NULL)
 		return 0;
 
 	limit = mb->stop;
 	for (i = 1; i < limit; i++) {
 		p = getInstrPtr(mb, i);
+		for ( k =0;  k < p->retc; k++)
+			assigned[getArg(p,k)]++;
+	}
+
+	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
+	if (alias == NULL)
+		return 0;
+
+	for (i = 1; i < limit; i++) {
+		p = getInstrPtr(mb, i);
+		use = assigned[getArg(p,0)] == 1;
 		for (k = p->retc; k < p->argc; k++)
 			if (alias[getArg(p, k)])
 				getArg(p, k) = alias[getArg(p, k)];
 		OPTDEBUGevaluate printInstruction(cntxt->fdout, mb, 0, p, LIST_MAL_ALL);
 		/* be aware that you only assign once to a variable */
-		if (p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
-			if (assignedOnce(mb, span, getArg(p, 0)) == FALSE)
-				continue;
-			actions++;
+		if (use && p->retc == 1 && OPTallConstant(cntxt, mb, p) && !isUnsafeFunction(p)) {
+			constantblock += p->barrier > 0;
 			barrier = p->barrier;
 			p->barrier = 0;
 			profiler = malProfileMode;	/* we don't trace it */
 			malProfileMode = 0;
+			if ( env == NULL) {
+				env = prepareMALstack(mb,  2 * mb->vsize );
+				env->keepAlive = TRUE;
+			}
 			msg = reenterMAL(cntxt, mb, i, i + 1, env);
 			malProfileMode= profiler;
 			p->barrier = barrier;
@@ -154,6 +151,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				int nvar;
 				ValRecord cst;
 
+				actions++;
 				cst.vtype = 0;
 				VALcopy(&cst, &env->stk[getArg(p, 0)]);
 				/* You may not overwrite constants.  They may be used by
@@ -183,10 +181,12 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			}
 		}
 	}
-	actions += OPTremoveUnusedBlocks(cntxt, mb);
-	GDKfree(span);
+	if ( constantblock)
+		actions += OPTremoveUnusedBlocks(cntxt, mb);
+	GDKfree(assigned);
 	GDKfree(alias);
-	freeStack(env);
+	if ( env) 
+		freeStack(env);
 	cntxt->itrace = debugstate;
 	return actions;
 }

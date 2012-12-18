@@ -1102,6 +1102,7 @@ SQLworker_column(READERtask *task, int col)
 				} else
 					BUNins(task->as->complaints, NULL, err, TRUE);
 				MT_lock_unset(&mal_copyLock, "tablet insert value");
+				break;
 			}
 		}
 
