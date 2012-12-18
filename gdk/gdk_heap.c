@@ -297,7 +297,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (h->filename == NULL || (h->size < minsize)) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmallocmax(h->size, &h->maxsize, 0);
-		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
+		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
 	}
 	if (h->filename && h->base == NULL) {
 		char *of = h->filename;
@@ -585,7 +585,7 @@ HEAPfree_(Heap *h, int free_file)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
-			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "%s\n", h->size, h->maxsize, PTRFMTCAST h->base, h->base && ((ssize_t*) h->base)[-1] < 0 ? " VM" : "");
+			HEAPDEBUG fprintf(stderr, "#HEAPfree " SZFMT " " SZFMT " " PTRFMT "\n", h->size, h->maxsize, PTRFMTCAST h->base);
 			GDKfree(h->base);
 		} else {	/* mapped file, or STORE_PRIV */
 			int ret = HEAPcacheAdd(h->base, h->maxsize, h->filename, h->storage, free_file);

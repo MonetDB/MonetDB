@@ -92,9 +92,6 @@ void MT_global_exit(int status)
 	__attribute__((__noreturn__));
 void MT_init_posix(void);
 int MT_msync(void *p, size_t off, size_t len, int mode);
-void *MT_vmalloc(size_t size, size_t *maxsize);
-void MT_vmfree(void *p, size_t size);
-void *MT_vmrealloc(void *voidptr, size_t oldsize, size_t newsize, size_t oldmaxsize, size_t *newmaxsize);
 int OIDdirty(void);
 int OIDinit(void);
 oid *oidRead(oid *a, stream *s, size_t cnt);
