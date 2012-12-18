@@ -1341,6 +1341,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, BUN snapshot_m
 				obat->ibid = temp_copy(ci->batCacheid, FALSE);
 				bat_destroy(ci);
 				ci = temp_descriptor(obat->ibid);
+				BATseqbase(ci, cbat->ibase);
 			}
 			assert(obat->ibase == cbat->ibase);
 			append_inserted(ci, ins);
