@@ -468,7 +468,8 @@ HEAPextend(Heap *h, size_t size)
 		}
 		*h = bak;
 	}
-	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s\n", size, nme, ext ? ext : "");
+	GDKerror("HEAPextend: failed to extend to " SZFMT " for %s%s%s\n",
+		 size, nme, ext ? "." : "", ext ? ext : "");
 	return -1;
 }
 
