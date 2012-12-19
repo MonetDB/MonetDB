@@ -29,7 +29,6 @@ import time
 from monetdb.exceptions import OperationalError, DatabaseError, ProgrammingError, NotSupportedError
 
 logger = logging.getLogger("monetdb")
-logger.addHandler(logging.NullHandler())
 
 MAX_PACKAGE_LENGTH = (1024*8)-2
 
