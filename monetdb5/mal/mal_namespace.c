@@ -66,26 +66,13 @@ typedef struct NAMESPACE{
 static Namespace namespace;
 
 static void expandNamespace(void){
-	str *nme;
-	size_t *length;
-	int *link, newsize, incr = 2048;
-
-	newsize= namespace.size + incr;
-	nme= (str *) GDKmalloc(sizeof(str *) * newsize);
-	assert(nme != NULL); /* we cannot continue */
-	link= (int *) GDKmalloc(sizeof(int) * newsize);
-	assert(link != NULL); /* we cannot continue */
-	length = (size_t *) GDKmalloc(sizeof(size_t) * newsize);
-	assert(length != NULL); /* we cannot continue */
-
-	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
-	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
-	memcpy(length, namespace.length, sizeof(size_t) * namespace.nmetop);
-
-	namespace.size += incr;
-	GDKfree(namespace.nme); namespace.nme= nme;
-	GDKfree(namespace.link); namespace.link= link;
-	GDKfree(namespace.length); namespace.length= length;
+	namespace.size += 2048;
+	namespace.nme= (str *) GDKrealloc(namespace.nme, sizeof(str *) * namespace.size);
+	assert(namespace.nme != NULL); /* we cannot continue */
+	namespace.link= (int *) GDKrealloc(namespace.link, sizeof(int) * namespace.size);
+	assert(namespace.link != NULL); /* we cannot continue */
+	namespace.length = (size_t *) GDKrealloc(namespace.length, sizeof(size_t) * namespace.size);
+	assert(namespace.length != NULL); /* we cannot continue */
 }
 
 void initNamespace(void) {
