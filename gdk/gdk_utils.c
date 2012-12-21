@@ -652,15 +652,6 @@ GDKmemdump(void)
  *   log2 of the block size (similarly for virtual.  memory blocks;
  *   define GDK_VM_KEEPHISTO).
  *
- * - redirection to anonymous VM
- *   Sometimes, fragmentation problems arise on mallocs that are not
- *   tunable.  In that case, it makes sense to redirect large block
- *   requests (taken to be larger than GDK_mem_bigsize) to anonymous
- *   virtual memory. The seamless implementation of this stores the
- *   @strong{negative} block size in front of the pointer (as well as
- *   the VM maxsize), so the malloc primitives can recognize these
- *   redirected blocks.
- *
  * 64-bits update: Some 64-bit implementations (Linux) of mallinfo is
  * severely broken, as they use int-s for memory sizes!!  This causes
  * corruption of mallinfo stats. As we depend on those, we should keep
@@ -724,70 +715,6 @@ GDKmemfail(str s, size_t len)
 	} while (0)
 
 /*
- * @- VM alloc
- * this affects both physical and logical memory resources.
- * The emergency flag can be set to force a fatal error if needed.
- * Otherwise, the caller is able to deal with the lack of memory.
- */
-static void *
-GDKvmalloc(size_t size, size_t *maxsize, int emergency)
-{
-	void *ret = MT_vmalloc(size, maxsize);
-
-	if (ret == NULL) {
-		GDKmemfail("GDKvmalloc", size);
-		ret = MT_vmalloc(size, maxsize);
-		if (ret == NULL) {
-			if (!emergency)
-				return NULL;
-			GDKfatal("GDKvmalloc: failed for " SZFMT " bytes",
-				 size);
-		} else {
-			THRprintf(GDKstdout, "#GDKvmalloc(" SZFMT "): "
-				  "recovery ok. Continuing..\n", size);
-		}
-	}
-	if (ret != NULL) {
-		meminc(*maxsize, "GDKvmalloc");
-	}
-	return ret;
-}
-
-static void *
-GDKvmrealloc(void *pold, size_t oldsize, size_t newsize,
-	     size_t oldmax, size_t *newmax, int emergency)
-{
-	void *ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
-
-	if (ret == NULL) {
-		GDKmemfail("GDKvmrealloc", newsize);
-		ret = MT_vmrealloc(pold, oldsize, newsize, oldmax, newmax);
-		if (ret == NULL) {
-			if (!emergency)
-				return NULL;
-			GDKfatal("GDKvmrealloc: failed for " SZFMT " bytes "
-				 "(from " SZFMT ")", newsize, oldsize);
-		} else {
-			THRprintf(GDKstdout, "#GDKvmrealloc(" SZFMT "): "
-				  "recovery ok. Continuing..\n", newsize);
-		}
-	}
-	if (ret != NULL) {
-		memdec(oldmax, "GDKvmrealloc");
-		meminc(*newmax, "GDKvmrealloc");
-	}
-	return ret;
-}
-
-static void
-GDKvmfree(void *blk, size_t maxsize)
-{
-	MT_vmfree(blk, maxsize);
-	memdec(maxsize, "GDKvmfree");
-}
-
-
-/*
  * The emergency flag can be set to force a fatal error if needed.
  * Otherwise, the caller is able to deal with the lack of memory.
  */
@@ -804,21 +731,6 @@ GDKmallocmax(size_t size, size_t *maxsize, int emergency)
 #endif
 	}
 	size = (size + 7) & ~7;	/* round up to a multiple of eight */
-	if (size > GDK_mem_bigsize) {
-		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
-		size_t newmax = MAX(*maxsize, newsize);
-
-		/* round up to multiple of 64k */
-		newmax = ((newmax + 0xffff) >> 16) << 16;
-		s = (ssize_t *) GDKvmalloc(newsize, &newmax, emergency);
-		if (s == 0)
-			return s;
-		s += 2;
-		s[-2] = (ssize_t) newmax;
-		s[-1] = -((ssize_t) newsize);
-		*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-		return (void *) s;
-	}
 	GDKmalloc_prefixsize(s, size);
 	if (s == NULL) {
 		GDKmemfail("GDKmalloc", size);
@@ -843,7 +755,7 @@ GDKmalloc(size_t size)
 {
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 0);
-	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "%s\n", size, maxsize, PTRFMTCAST p, p && GDK_MEM_BLKSIZE(p) < 0 ? " VM" : "");
+	ALLOCDEBUG fprintf(stderr, "#GDKmalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
 #ifndef NDEBUG
 	DEADBEEFCHK if (p)
 		memset(p, 0xBD, size);
@@ -856,7 +768,7 @@ GDKzalloc(size_t size)
 {
 	size_t maxsize = size;
 	void *p = GDKmallocmax(size, &maxsize, 0);
-	ALLOCDEBUG fprintf(stderr, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "%s\n", size, maxsize, PTRFMTCAST p, p && GDK_MEM_BLKSIZE(p) < 0 ? " VM" : "");
+	ALLOCDEBUG fprintf(stderr, "#GDKzalloc " SZFMT " " SZFMT " " PTRFMT "\n", size, maxsize, PTRFMTCAST p);
 	if (p)
 		memset(p, 0, size);
 	return p;
@@ -877,32 +789,25 @@ GDKfree_(void *blk)
 
 	assert(size != 0);
 
-	if (size < 0) {
-		size_t maxsize = (size_t) s[-2];
-
-		size = -size;
-		GDKvmfree((char *) (s - 2), maxsize);
-	} else {
 #ifndef NDEBUG
-		/* The check above detects obvious duplicate free's,
-		 * but fails in case the "check-bit" is cleared between
-		 * two free's (e.g., as the respective memory has been
-		 * re-allocated and initialized.
-		 * To simplify detection & debugging of duplicate free's,
-		 * we now overwrite the to be freed memory, which will
-		 * (1) trigger a segfault in case the memory had already
-		 * been freed and/or trigger some error in case the memory
-		 * is accessed after is has been freed.
-		 * To avoid performance penalty in the "production version",
-		 * we only do this in debugging/development mode (i.e.,
-		 * when configured with --enable-assert).
-		 * Disable at command line using --debug=33554432
-		 */
-		DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
+	/* The check above detects obvious duplicate free's, but fails
+	 * in case the "check-bit" is cleared between two free's
+	 * (e.g., as the respective memory has been re-allocated and
+	 * initialized.
+	 * To simplify detection & debugging of duplicate free's, we
+	 * now overwrite the to be freed memory, which will trigger a
+	 * segfault in case the memory had already been freed and/or
+	 * trigger some error in case the memory is accessed after is
+	 * has been freed.
+	 * To avoid performance penalty in the "production version",
+	 * we only do this in debugging/development mode (i.e., when
+	 * configured with --enable-assert).
+	 * Disable at command line using --debug=33554432
+	 */
+	DEADBEEFCHK memset(s, 0xDB, size - (MALLOC_EXTRA_SPACE + (size & 1)));	/* 0xDeadBeef */
 #endif
-		free(((char *) s) - MALLOC_EXTRA_SPACE);
-		heapdec(size);
-	}
+	free(((char *) s) - MALLOC_EXTRA_SPACE);
+	heapdec(size);
 }
 
 void
@@ -937,57 +842,36 @@ GDKreallocmax(void *blk, size_t size, size_t *maxsize, int emergency)
 	/* check against duplicate free */
 	assert((oldsize & 2) == 0);
 
-	if (oldsize < 0) {
-		ssize_t *s = (ssize_t *) blk;
-		size_t newsize = size + sizeof(size_t) + sizeof(size_t);
-		size_t oldmax = (size_t) s[-2];
-		size_t newmax = MAX(*maxsize, newsize);
+	newsize = size + MALLOC_EXTRA_SPACE;
 
-		s = (ssize_t *) GDKvmrealloc((ptr) (s - 2), (size_t) - oldsize, newsize, oldmax, &newmax, emergency);
-		if (s) {
-			s[0] = (ssize_t) newmax;
-			s[1] = -((ssize_t) newsize);
-			*maxsize = newmax - (sizeof(size_t) + sizeof(size_t));
-			return (ptr) (s + 2);
-		}
-	} else if (size <= GDK_mem_bigsize) {
-		newsize = size + MALLOC_EXTRA_SPACE;
-
-		blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE, newsize + GLIBC_BUG);
+	blk = realloc(((char *) blk) - MALLOC_EXTRA_SPACE,
+		      newsize + GLIBC_BUG);
+	if (blk == NULL) {
+		GDKmemfail("GDKrealloc", newsize);
+		blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE,
+			      newsize);
 		if (blk == NULL) {
-			GDKmemfail("GDKrealloc", newsize);
-			blk = realloc(((char *) oldblk) - MALLOC_EXTRA_SPACE, newsize);
-			if (blk == NULL) {
-				if (emergency == 0) {
-					GDKerror("GDKreallocmax: failed for " SZFMT " bytes", newsize);
-					return NULL;
-				}
-				GDKfatal("GDKreallocmax: failed for " SZFMT " bytes", newsize);
-			} else {
-				THRprintf(GDKstdout, "#GDKremallocmax: recovery ok. Continuing..\n");
+			if (emergency == 0) {
+				GDKerror("GDKreallocmax: failed for "
+					 SZFMT " bytes", newsize);
+				return NULL;
 			}
+			GDKfatal("GDKreallocmax: failed for "
+				 SZFMT " bytes", newsize);
+		} else {
+			THRprintf(GDKstdout, "#GDKremallocmax: "
+				  "recovery ok. Continuing..\n");
 		}
-		if (blk != NULL) {
-			/* place MALLOC_EXTRA_SPACE bytes before it */
-			assert((((size_t) blk) & 4) == 0);
-			blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
-			((ssize_t *) blk)[-1] = (ssize_t) newsize;
+	}
+	/* place MALLOC_EXTRA_SPACE bytes before it */
+	assert((((size_t) blk) & 4) == 0);
+	blk = ((char *) blk) + MALLOC_EXTRA_SPACE;
+	((ssize_t *) blk)[-1] = (ssize_t) newsize;
 
-			/* adapt statistics */
-			heapinc(newsize);
-			heapdec(oldsize);
-			*maxsize = size;
-			return blk;
-		}
-	}
-	/* alloc&copy due to failed realloc (may be very big heap that
-	 * needs vm) */
-	oldsize = MIN((ssize_t) size, oldsize - MALLOC_EXTRA_SPACE);
-	blk = GDKmallocmax(size, maxsize, emergency);
-	if (blk) {
-		memcpy(blk, oldblk, oldsize);
-		GDKfree(oldblk);
-	}
+	/* adapt statistics */
+	heapinc(newsize);
+	heapdec(oldsize);
+	*maxsize = size;
 	return blk;
 }
 
@@ -998,7 +882,7 @@ GDKrealloc(void *blk, size_t size)
 	void *p;
 
 	p = GDKreallocmax(blk, size, &size, 0);
-	ALLOCDEBUG fprintf(stderr, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "%s\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p, p && GDK_MEM_BLKSIZE(p) < 0 ? " VM" : "");
+	ALLOCDEBUG fprintf(stderr, "#GDKrealloc " SZFMT " " SZFMT " " PTRFMT " " PTRFMT "\n", sz, size, PTRFMTCAST blk, PTRFMTCAST p);
 	return p;
 }
 
@@ -1183,9 +1067,7 @@ GDKinit(opt *set, int setlen)
 	GDK_mmap_minsize = MIN( 1<<30 , GDK_mem_maxsize_max/6 );
 	/*   per op:  2 args + 1 res, each with head & tail  =>  (2+1)*2 = 6  ^ */
 #endif
-#ifndef __GLIBC__		/* Linux (i.e. glibc) malloc is clever enough */
 	GDK_mem_bigsize = 1024*1024;
-#endif
 	GDKremovedir(DELDIR);
 	BBPinit();
 

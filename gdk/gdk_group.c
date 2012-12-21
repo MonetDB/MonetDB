@@ -152,10 +152,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-		if (BATcount(b) == 1 && b->htype == TYPE_oid)
-			ngrp = * (oid *) Hloc(b, BUNfirst(b));
-		else
-			ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
+		ngrp = BATcount(b) == 0 ? 0 : b->hseqbase;
 		gn = BATnew(TYPE_void, TYPE_void, BATcount(b));
 		if (gn == NULL)
 			goto error;

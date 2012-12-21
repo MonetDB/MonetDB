@@ -28,8 +28,8 @@
  * are used.
  *
  * The number of module and function names is expected to be limited.
- * Therefore, the namespace manager is organized as a shared table. The alternative
- * is a namespace per client. However, this would force
+ * Therefore, the namespace manager is organized as a shared global table.
+ * The alternative is a namespace per client. However, this would force
  * passing around the client identity or an expensive operation to deduce
  * this from the process id. The price paid is that updates to the namespace
  * should be protected against concurrent access.
@@ -40,107 +40,98 @@
  * Compilers are adviced to be conservative in their naming, or explicitly manage
  * the name space by deletion of non-used names once in a while.
  *
- * Code bodies
- * The Namespace block is organized using a simple hashstructure over the first
- * two characters. Better structures can be introduced when searching becomes
- * too expensive. An alternative would be to use a BAT to handle the collection.
+ * The SQL compiler currently pollutes the name space with function names,
+ * because it guarantees a global unique name for each query plan for the
+ * duration of the server session.
  */
 #include "monetdb_config.h"
 #include "mal_type.h"
 #include "mal_namespace.h"
 #include "mal_exception.h"
+
 #define MAXIDENTIFIERS 4096
-
 #define HASHMASK  4095
-#define NMEHASH(X,L)  (L > 1 ?( ((*X) ^ ((*(X+1)) << 7)) & HASHMASK): (*X))
-//#define NMEHASH(X,L)  (*X)
 
-typedef struct NAMESPACE{
-	int  size;  /* amount of space available */
-	int  nmetop;
-	str  *nme;
-	int  *link;
-	size_t	 *length;
-} Namespace;
+/* taken from gdk_atoms */
+#define NME_HASH(x,y,K)                \
+    do {                        \
+        const char *_key = (const char *) (x);  \
+        int _i;                 \
+        for (_i = y = 0; K-- && _key[_i]; _i++) {  \
+            y += _key[_i];          \
+            y += (y << 10);         \
+            y ^= (y >> 6);          \
+        }                   \
+        y += (y << 3);              \
+        y ^= (y >> 11);             \
+        y += (y << 15);             \
+		y = y & HASHMASK;			\
+    } while (0)
 
-static Namespace namespace;
 
-static void expandNamespace(void){
-	str *nme;
-	size_t *length;
-	int *link, newsize, incr = 2048;
+typedef struct NAME{
+	str nme;
+	size_t length;
+	struct NAME *next;
+} *NamePtr;
 
-	newsize= namespace.size + incr;
-	nme= (str *) GDKmalloc(sizeof(str *) * newsize);
-	assert(nme != NULL); /* we cannot continue */
-	link= (int *) GDKmalloc(sizeof(int) * newsize);
-	assert(link != NULL); /* we cannot continue */
-	length = (size_t *) GDKmalloc(sizeof(size_t) * newsize);
-	assert(length != NULL); /* we cannot continue */
-
-	memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
-	memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
-	memcpy(length, namespace.length, sizeof(size_t) * namespace.nmetop);
-
-	namespace.size += incr;
-	GDKfree(namespace.nme); namespace.nme= nme;
-	GDKfree(namespace.link); namespace.link= link;
-	GDKfree(namespace.length); namespace.length= length;
-}
+static NamePtr *hash, *ehash;
 
 void initNamespace(void) {
-	assert(namespace.nme == NULL);
-	assert(namespace.link == NULL);
-	assert(namespace.length == NULL);
-	namespace.nme= (str *) GDKzalloc(sizeof(str *) * MAXIDENTIFIERS);
-	namespace.link= (int *) GDKzalloc(sizeof(int) * MAXIDENTIFIERS);
-	namespace.length= (size_t *) GDKzalloc(sizeof(size_t) * MAXIDENTIFIERS);
-	if ( namespace.nme == NULL ||
-		 namespace.link == NULL ||
-		 namespace.length == NULL) {
-		/* absolute an error we can not recover from */
-		showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
-		mal_exit();
+	hash= (NamePtr *) GDKzalloc(sizeof(NamePtr) * MAXIDENTIFIERS);
+	ehash= (NamePtr *) GDKzalloc(sizeof(NamePtr) * MAXIDENTIFIERS);
+	if ( hash == NULL || ehash == NULL){
+        /* absolute an error we can not recover from */
+        showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
+        mal_exit();
 	}
-	namespace.size = MAXIDENTIFIERS;
-	namespace.nmetop= HASHMASK; /* hash overflow */
 }
+
 void finishNamespace(void) {
 	int i;
+	NamePtr n,m;
 
-	MT_lock_set(&mal_namespaceLock, "putName");
-	for(i=0;i<namespace.nmetop; i++) {
-		if( namespace.nme[i])
-			GDKfree(namespace.nme[i]);
-		namespace.nme[i]= 0;
+	/* assume we are at the end of the server session */
+	MT_lock_set(&mal_namespaceLock, "finishNamespace");
+	for ( i =0; i < HASHMASK; i++){
+		n = hash[i];
+		hash[i] = ehash[i] = 0;
+		for( n= hash[i]; n; n = m){
+			m = n->next;
+			GDKfree(n);
+		}
 	}
-	GDKfree(namespace.nme); namespace.nme= 0;
-	GDKfree(namespace.link); namespace.link= 0;
-	GDKfree(namespace.length); namespace.length= 0;
-	MT_lock_unset(&mal_namespaceLock, "putName");
+	GDKfree(hash);
+	GDKfree(ehash);
+	hash = ehash = 0;
+	MT_lock_unset(&mal_namespaceLock, "finishNamespace");
 }
 
 /*
  * Before a name is being stored we should check for its occurrence first.
  * The administration is initialized incrementally.
- * Beware, the routine getName is not thread safe under updates
- * of the namespace itself.
+ * Beware, the routine getName relies on datastructure maintenance that
+ * is conflict free.
  */
 str getName(str nme, size_t len)
 {
-	size_t l;
-	if(len == 0 || nme== NULL || *nme==0) return 0;
+	NamePtr n;
+	size_t l = len, key;
 
-	MT_lock_set(&mal_namespaceLock, "putName");
-	for(l= NMEHASH(nme,len); l && namespace.nme[l]; l= namespace.link[l]){
-		if (namespace.length[l] == len  &&
-			strncmp(nme,namespace.nme[l],len)==0) {
-			MT_lock_unset(&mal_namespaceLock, "putName");
-			return namespace.nme[l];
-	    }
-	}
-	MT_lock_unset(&mal_namespaceLock, "putName");
-	return 0;
+	if(len == 0 || nme== NULL || *nme==0) 
+		return NULL;
+	if(len>=MAXIDENTLEN)
+		len = MAXIDENTLEN - 1;
+	NME_HASH(nme, key, l);
+	if ( ( n = hash[(int)key]) == 0)
+		return NULL;
+
+	do {
+		if (len == n->length && strncmp(nme,n->nme,len)==0) 
+			return n->nme;
+		n = n->next;
+	} while (n);
+	return NULL;
 }
 /*
  * Name deletion from the namespace is tricky, because there may
@@ -155,44 +146,49 @@ void delName(str nme, size_t len){
 	str n;
 	n= getName(nme,len);
 	if( nme[0]==0 || n == 0) return ;
-
-	/*Namespace garbage collection not available yet 
-	MT_lock_set(&mal_namespaceLock, "putName");
-	MT_lock_unset(&mal_namespaceLock, "putName");
-	*/
+	/*Namespace garbage collection not available yet */
 }
+
 str putName(str nme, size_t len)
 {
-	size_t l,top;
+	size_t l,k;
+	int key;
 	char buf[MAXIDENTLEN];
+	str fnd;
+	NamePtr n;
+
+	fnd = getName(nme,len);
+	if ( fnd )
+		return fnd;
 
 	if( nme == NULL || len == 0)
 		return NULL;
-	/* protect this, as it will be updated by multiple threads */
-	MT_lock_set(&mal_namespaceLock, "putName");
-	for(l= NMEHASH(nme,len); l && namespace.nme[l]; l= namespace.link[l]){
-	    if( namespace.length[l] == len  &&
-			strncmp(nme,namespace.nme[l],len) == 0 ) {
-			MT_lock_unset(&mal_namespaceLock, "putName");
-			return namespace.nme[l];
-	    }
-	}
 
+	/* construct a new entry */
+	n = (NamePtr) GDKzalloc(sizeof(*n));
+	if ( n == NULL) {
+        /* absolute an error we can not recover from */
+        showException(GDKout, MAL,"initNamespace",MAL_MALLOC_FAIL);
+		mal_exit();
+	}
 	if(len>=MAXIDENTLEN)
 		len = MAXIDENTLEN - 1;
 	memcpy(buf, nme, len);
 	buf[len]=0;
+	n->nme= GDKstrdup(buf);
+	n->length = len;
+	l = len;
+	NME_HASH(nme, k, l);
+	key = (int) k;
 
-	if( namespace.nmetop+1== namespace.size)
-	    expandNamespace();
-	l= NMEHASH(nme,len);
-	top= namespace.nme[l]== 0? (int)l: namespace.nmetop;
-	namespace.nme[top]= GDKstrdup(buf);
-	namespace.link[top]= namespace.link[l];
-	if ((int)top == namespace.nmetop)
-		namespace.link[l] = (int)top;
-	namespace.length[top]= len;
-	namespace.nmetop++;
+	MT_lock_set(&mal_namespaceLock, "putName");
+	/* add new elements to the end of the list */
+	if ( ehash[key] == 0)
+		hash[key] = ehash[key] = n;
+	else {
+		ehash[key]->next = n;
+		ehash[key] = n;
+	}
 	MT_lock_unset(&mal_namespaceLock, "putName");
 	return putName(nme, len);	/* just to be sure */
 }

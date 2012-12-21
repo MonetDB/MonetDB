@@ -457,7 +457,6 @@ readConsole(Client cntxt)
 	struct stat statb;
 	char *buf;
 
-	assert(cntxt == mal_clients);
 	if (cntxt->promptlength == 0 ||
 	   !(fstat(fileno(stdin), &statb) == 0 && S_ISCHR(statb.st_mode))  )
 		return -1;

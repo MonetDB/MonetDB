@@ -202,6 +202,7 @@ mal_export int MCdefault;
 
 mal_export Client  MCgetClient(int id);
 mal_export Client  MCinitClient(oid user, bstream *fin, stream *fout);
+mal_export Client  MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout);
 mal_export int     MCinitClientThread(Client c);
 mal_export void    MCcloseClient(Client c);
 mal_export Client  MCforkClient(Client c);
