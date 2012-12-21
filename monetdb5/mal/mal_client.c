@@ -198,13 +198,9 @@ MCexitClient(Client c)
 }
 
 Client
-MCinitClient(oid user, bstream *fin, stream *fout)
+MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 {
-	Client c = NULL;
 	str prompt;
-
-	if ((c = MCnewClient()) == NULL)
-		return NULL;
 
 	c->user = user;
 	c->scenario = NULL;
@@ -254,6 +250,16 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	c->exception_buf_initialized = 0;
 	MT_sema_init(&c->s, 0, "MCinitClient");
 	return c;
+}
+
+Client
+MCinitClient(oid user, bstream *fin, stream *fout)
+{
+	Client c = NULL;
+
+	if ((c = MCnewClient()) == NULL)
+		return NULL;
+	return MCinitClientRecord(c, user, fin,fout);
 }
 
 /*
