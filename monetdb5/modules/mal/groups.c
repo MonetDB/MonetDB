@@ -28,10 +28,11 @@
 str
 GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *grp = (int*) getArgReference(stk,pci,0);
-	int *ext = (int*) getArgReference(stk,pci,1);
-	int *hist = (int*) getArgReference(stk,pci,2);
-	int i, j, oldgrp;
+	bat *grp = (bat*) getArgReference(stk,pci,0);
+	bat *ext = (bat*) getArgReference(stk,pci,1);
+	bat *hist = (bat*) getArgReference(stk,pci,2);
+	int i, j;
+	bat oldgrp, oldext, oldhist;
 	str msg = MAL_SUCCEED;
 	lng *sizes = (lng*) GDKzalloc(sizeof(lng) * pci->argc), l;
 	bat *bid = (bat*) GDKzalloc(sizeof(bat) * pci->argc), bi;
@@ -85,16 +86,18 @@ GRPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreleaseref(*hist);
 			if ( j) break;
 		}
-		BBPdecref(*hist, TRUE);
-		BBPdecref(*ext, TRUE);
-		
-		/* (grp,ext,hist) := group.subgroupdone(arg,grp) */
+
+		/* (grp,ext,hist) := group.subgroup(arg,grp,ext,hist) */
 		oldgrp= *grp;
+		oldext = *ext;
+		oldhist = *hist;
 		*grp = 0;
 		*ext = 0;
 		*hist = 0;
-		msg = GRPsubgroup2(grp, ext, hist, &bid[i], &oldgrp);
+		msg = GRPsubgroup4(grp, ext, hist, &bid[i], &oldgrp, &oldext, &oldhist);
 		BBPdecref(oldgrp,TRUE);
+		BBPdecref(oldext,TRUE);
+		BBPdecref(oldhist,TRUE);
 	} while (msg == MAL_SUCCEED &&  ++i < pci->argc); 
 	GDKfree(sizes);
 	GDKfree(bid);
