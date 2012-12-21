@@ -1440,6 +1440,7 @@ str GRPslidingsum_sht(int *retval, int *bid, int *size, int *shift);
 str GRPslidingsum_wrd(int *retval, int *bid, int *size, int *shift);
 str GRPsubgroup1(bat *ngid, bat *next, bat *nhis, bat *bid);
 str GRPsubgroup2(bat *ngid, bat *next, bat *nhis, bat *bid, bat *gid);
+str GRPsubgroup4(bat *ngid, bat *next, bat *nhis, bat *bid, bat *gid, bat *eid, bat *hid);
 str GRPsum_bte_bte(int *retval, int *bid, int *eid, bit *ignore_nils);
 str GRPsum_bte_int(int *retval, int *bid, int *eid, bit *ignore_nils);
 str GRPsum_bte_lng(int *retval, int *bid, int *eid, bit *ignore_nils);
