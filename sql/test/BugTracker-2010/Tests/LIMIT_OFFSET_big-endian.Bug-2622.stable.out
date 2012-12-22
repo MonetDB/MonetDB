@@ -129,7 +129,7 @@ top N (
 % mal # name
 % clob # type
 % 62 # length
-function user.s4_1{autoCommit=true}():void;
+function user.s1_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -144,13 +144,13 @@ function user.s4_1{autoCommit=true}():void;
     sql.rsColumn(X_22,"sys.oblo","a","int",32,0,X_17);
     X_27 := io.stdout();
     sql.exportResult(X_27,X_22);
-end s4_1;
+end s1_1;
 #EXPLAIN select * from oblo OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s5_1{autoCommit=true}():void;
+function user.s2_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -172,13 +172,13 @@ function user.s5_1{autoCommit=true}():void;
     sql.rsColumn(X_35,"sys.oblo","a","int",32,0,X_32);
     X_41 := io.stdout();
     sql.exportResult(X_41,X_35);
-end s5_1;
+end s2_1;
 #EXPLAIN select * from oblo LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s6_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -200,13 +200,13 @@ function user.s6_1{autoCommit=true}():void;
     sql.rsColumn(X_35,"sys.oblo","a","int",32,0,X_32);
     X_41 := io.stdout();
     sql.exportResult(X_41,X_35);
-end s6_1;
+end s3_1;
 #EXPLAIN select * from oblo LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s7_1{autoCommit=true}():void;
+function user.s4_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -228,13 +228,13 @@ function user.s7_1{autoCommit=true}():void;
     sql.rsColumn(X_35,"sys.oblo","a","int",32,0,X_32);
     X_41 := io.stdout();
     sql.exportResult(X_41,X_35);
-end s7_1;
+end s4_1;
 #EXPLAIN select * from oblo LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s8_1{autoCommit=true}():void;
+function user.s5_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -256,13 +256,13 @@ function user.s8_1{autoCommit=true}():void;
     sql.rsColumn(X_35,"sys.oblo","a","int",32,0,X_32);
     X_41 := io.stdout();
     sql.exportResult(X_41,X_35);
-end s8_1;
+end s5_1;
 #EXPLAIN select * from oblo ORDER BY a;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s9_1{autoCommit=true}():void;
+function user.s6_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -282,13 +282,13 @@ function user.s9_1{autoCommit=true}():void;
     sql.rsColumn(X_30,"sys.oblo","a","int",32,0,X_27);
     X_35 := io.stdout();
     sql.exportResult(X_35,X_30);
-end s9_1;
+end s6_1;
 #EXPLAIN select * from oblo ORDER BY a OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s10_1{autoCommit=true}():void;
+function user.s7_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -315,13 +315,13 @@ function user.s10_1{autoCommit=true}():void;
     sql.rsColumn(X_45,"sys.oblo","a","int",32,0,X_40);
     X_52 := io.stdout();
     sql.exportResult(X_52,X_45);
-end s10_1;
+end s7_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s11_1{autoCommit=true}():void;
+function user.s8_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -349,13 +349,13 @@ function user.s11_1{autoCommit=true}():void;
     sql.rsColumn(X_43,"sys.oblo","a","int",32,0,X_38);
     X_49 := io.stdout();
     sql.exportResult(X_49,X_43);
-end s11_1;
+end s8_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s12_1{autoCommit=true}():void;
+function user.s9_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -385,13 +385,13 @@ function user.s12_1{autoCommit=true}():void;
     sql.rsColumn(X_46,"sys.oblo","a","int",32,0,X_41);
     X_53 := io.stdout();
     sql.exportResult(X_53,X_46);
-end s12_1;
+end s9_1;
 #EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .explain # table_name
 % mal # name
 % clob # type
 % 62 # length
-function user.s13_1{autoCommit=true}():void;
+function user.s10_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",0);
     X_8:bat[:oid,:int]  := sql.bind(X_2,"sys","oblo","a",2);
@@ -421,7 +421,7 @@ function user.s13_1{autoCommit=true}():void;
     sql.rsColumn(X_46,"sys.oblo","a","int",32,0,X_41);
     X_53 := io.stdout();
     sql.exportResult(X_53,X_46);
-end s13_1;
+end s10_1;
 #select * from oblo;
 % sys.oblo # table_name
 % a # name

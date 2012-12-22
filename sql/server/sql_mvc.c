@@ -196,8 +196,6 @@ mvc_trans(mvc *m)
 			qc_clean(m->qc);
 		}
 	}
-	if (m->session->active) 
-		m->type = Q_TRANS;
 	store_unlock();
 }
 

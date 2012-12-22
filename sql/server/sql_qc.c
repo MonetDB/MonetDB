@@ -174,11 +174,13 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 
 			if (type != Q_UPDATE)
 				return -1;
+			/*
+				*/
 			/* FLT == DEC/NUM and DEC/NUM are equal */
 			if ((!((at->type->eclass == EC_DEC ||
 			        at->type->eclass == EC_NUM) &&
 			       tp->type->eclass == EC_FLT)) &&
-			   (!(EC_VARCHAR(tp->type->eclass) &&
+			   (!(EC_VARCHAR(tp->type->eclass) && 
 			      EC_VARCHAR(at->type->eclass) &&
 			      (!tp->digits ||
 			       tp->digits >= at->digits))) &&

@@ -47,7 +47,7 @@ Ready.
 #SELECT '' AS seven, VARCHAR_TBL.* FROM VARCHAR_TBL;
 % .,	sys.varchar_tbl # table_name
 % seven,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"a"	]
 [ "",	"A"	]
@@ -58,7 +58,7 @@ Ready.
 #SELECT '' AS six, c.*
 % .,	sys.c # table_name
 % six,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"A"	]
 [ "",	"1"	]
@@ -68,13 +68,13 @@ Ready.
 #SELECT '' AS one, c.*
 % .,	sys.c # table_name
 % one,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"a"	]
 #SELECT '' AS five, c.*
 % .,	sys.c # table_name
 % five,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"A"	]
 [ "",	"1"	]
@@ -84,7 +84,7 @@ Ready.
 #SELECT '' AS six, c.*
 % .,	sys.c # table_name
 % six,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"a"	]
 [ "",	"A"	]
@@ -95,12 +95,12 @@ Ready.
 #SELECT '' AS one, c.*
 % .,	sys.c # table_name
 % one,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	0 # length
 #SELECT '' AS two, c.*
 % .,	sys.c # table_name
 % two,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	1 # length
 [ "",	"a"	]
 #DROP TABLE VARCHAR_TBL;
@@ -116,7 +116,7 @@ Ready.
 #SELECT '' AS four, VARCHAR_TBL.* FROM VARCHAR_TBL;
 % .,	sys.varchar_tbl # table_name
 % four,	f1 # name
-% char,	varchar # type
+% varchar,	varchar # type
 % 0,	4 # length
 [ "",	"a"	]
 [ "",	"ab"	]

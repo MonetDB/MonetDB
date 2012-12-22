@@ -27,7 +27,7 @@ Ready.
 #select row_number() over (order by name) as row, '1' from tables limit 10;
 % .,	. # table_name
 % row,	single_value # name
-% int,	char # type
+% int,	varchar # type
 % 2,	1 # length
 [ 1,	"1"	]
 [ 2,	"1"	]

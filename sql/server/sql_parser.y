@@ -3945,7 +3945,7 @@ literal:
     string 	{ char *s = sql2str($1);
 		  int len = _strlen(s);
 		  sql_subtype t;
-		  sql_find_subtype(&t, "char", len, 0 );
+		  sql_find_subtype(&t, "varchar", len, 0 );
 		  $$ = _newAtomNode( _atom_string(&t, s)); }
 
  |  HEXADECIMAL { int len = _strlen($1), i = 2, err = 0;
