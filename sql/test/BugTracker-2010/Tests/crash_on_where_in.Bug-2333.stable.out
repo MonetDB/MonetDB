@@ -26,8 +26,8 @@ Ready.
 #select 'yes' where 3 in (1,2);
 % . # table_name
 % single_value # name
-% char # type
-% 3 # length
+% varchar # type
+% 0 # length
 
 # 19:45:34 >  
 # 19:45:34 >  Done.

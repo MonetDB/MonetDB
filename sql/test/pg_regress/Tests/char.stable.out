@@ -53,7 +53,7 @@ Ready.
 #SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL;
 % .,	sys.char_tbl # table_name
 % seven,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"a"	]
 [ "",	"A"	]
@@ -64,7 +64,7 @@ Ready.
 #SELECT '' AS six, c.*
 % .,	sys.c # table_name
 % six,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"A"	]
 [ "",	"1"	]
@@ -74,13 +74,13 @@ Ready.
 #SELECT '' AS one, c.*
 % .,	sys.c # table_name
 % one,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"a"	]
 #SELECT '' AS five, c.*
 % .,	sys.c # table_name
 % five,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"A"	]
 [ "",	"1"	]
@@ -90,7 +90,7 @@ Ready.
 #SELECT '' AS six, c.*
 % .,	sys.c # table_name
 % six,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"a"	]
 [ "",	"A"	]
@@ -101,12 +101,12 @@ Ready.
 #SELECT '' AS one, c.*
 % .,	sys.c # table_name
 % one,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 #SELECT '' AS two, c.*
 % .,	sys.c # table_name
 % two,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	1 # length
 [ "",	"a"	]
 #DROP TABLE CHAR_TBL;
@@ -122,7 +122,7 @@ Ready.
 #SELECT '' AS four, CHAR_TBL.* FROM CHAR_TBL;
 % .,	sys.char_tbl # table_name
 % four,	f1 # name
-% char,	char # type
+% varchar,	char # type
 % 0,	4 # length
 [ "",	"a"	]
 [ "",	"ab"	]

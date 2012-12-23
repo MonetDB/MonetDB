@@ -143,6 +143,11 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 
 	if (t1->scale != t2->scale)
 		return -1;
+
+	if (t1->type->eclass == EC_NUM && t2->type->eclass == EC_NUM &&
+		t1->digits >= t2->digits)
+		return 0;
+
 	res = is_subtype(t2, t1);
 	if (!res)
 		return -1;
@@ -178,7 +183,7 @@ param_list_cmp(sql_subtype *typelist, atom **atoms, int plen, int type)
 			if ((!((at->type->eclass == EC_DEC ||
 			        at->type->eclass == EC_NUM) &&
 			       tp->type->eclass == EC_FLT)) &&
-			   (!(EC_VARCHAR(tp->type->eclass) &&
+			   (!(EC_VARCHAR(tp->type->eclass) && 
 			      EC_VARCHAR(at->type->eclass) &&
 			      (!tp->digits ||
 			       tp->digits >= at->digits))) &&

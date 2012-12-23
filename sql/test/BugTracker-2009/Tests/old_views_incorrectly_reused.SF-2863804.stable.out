@@ -133,7 +133,7 @@ Ready.
 #		DATA_doc_string.a3 AS a3, DATA_result.a1 AS a4, 
 % sys.a,	.,	.a # table_name
 % value,	type,	prob # name
-% varchar,	char,	double # type
+% varchar,	varchar,	double # type
 % 2,	4,	24 # length
 [ "A2",	"term",	1	]
 [ "A1",	"term",	1	]
@@ -144,7 +144,7 @@ Ready.
 
 % sys.a,	.,	.a # table_name
 % value,	type,	prob # name
-% varchar,	char,	double # type
+% varchar,	varchar,	double # type
 % 4,	4,	24 # length
 [ "2001",	"term",	1	]
 [ "2000",	"term",	1	]
