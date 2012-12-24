@@ -68,8 +68,8 @@ Ready.
 [ 4,	-1	]
 % . # table_name
 % isnull_single_value # name
-% char # type
-% 0 # length
+% varchar # type
+% 1 # length
 [ "x"	]
 % sys.coalescetest,	sys.coalescetest,	sys.coalescetest # table_name
 % id,	name,	age  # name

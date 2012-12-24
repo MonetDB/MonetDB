@@ -26,47 +26,52 @@ Ready.
 
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	varchar # type
 % 1,	1 # length
 [ 1,	"x"	]
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
-% 1,	1 # length
+% tinyint,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE b = 'y';
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
-% 1,	1 # length
+% tinyint,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b='x';
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
-% 1,	1 # length
+% tinyint,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b<>'x';
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
-% 1,	1 # length
-[ 1,	"x"	]
-% .sub,	.sub # table_name
-% a,	b # name
-% tinyint,	char # type
+% tinyint,	varchar # type
 % 1,	1 # length
 [ 1,	"x"	]
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	varchar # type
 % 1,	1 # length
 [ 1,	"x"	]
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	varchar # type
 % 1,	1 # length
+[ 1,	"x"	]
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
-% 1,	1 # length
+% tinyint,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b IN ('x');
 % .sub,	.sub # table_name
 % a,	b # name
-% tinyint,	char # type
+% tinyint,	varchar # type
+% 1,	0 # length
+#SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b IN ('y');
+% .sub,	.sub # table_name
+% a,	b # name
+% tinyint,	varchar # type
 % 1,	1 # length
 [ 1,	"x"	]
 

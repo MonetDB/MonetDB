@@ -21,7 +21,7 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% char # type
+% varchar # type
 % 87 # length
 [ "the next query causes a \"sql_mem.mx:50: sql_ref_dec: Assertion `r->refcnt > 0' failed.\""	]
 [ 1	]

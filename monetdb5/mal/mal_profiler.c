@@ -202,7 +202,7 @@ profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 		return;
 	if (offlineProfiling)
 		offlineProfilerEvent(idx, mb, stk, pc,start);
-	if (cachedProfiling)
+	if (cachedProfiling && !start)
 		cachedProfilerEvent(idx, mb, stk, pc);
 }
 

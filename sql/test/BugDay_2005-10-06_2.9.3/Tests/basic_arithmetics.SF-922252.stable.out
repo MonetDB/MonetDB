@@ -63,8 +63,9 @@ Ready.
 [ 1	]
 % . # table_name
 % single_value # name
-% char # type
-% 1 # length
+% varchar # type
+% 0 # length
+#select * from my_table where 1 = 0;
 % sys.my_table # table_name
 % att # name
 % int # type

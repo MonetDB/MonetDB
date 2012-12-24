@@ -82,7 +82,7 @@ end s0_1;
 % mal # name
 % clob # type
 % 62 # length
-function user.s7_1{autoCommit=true}():void;
+function user.s3_1{autoCommit=true}():void;
     X_2 := sql.mvc();
     X_3:bat[:oid,:oid]  := sql.tid(X_2,"sys","udf_reverse");
     X_6 := sql.bind(X_2,"sys","udf_reverse","x",0);
@@ -95,7 +95,7 @@ function user.s7_1{autoCommit=true}():void;
     sql.rsColumn(X_18,"sys.","reverse_x":str,"clob",0,0,X_16);
     X_22 := io.stdout();
     sql.exportResult(X_22,X_18);
-end s7_1;
+end s3_1;
 #select reverse(x) from udf_reverse;
 % sys. # table_name
 % reverse_x # name

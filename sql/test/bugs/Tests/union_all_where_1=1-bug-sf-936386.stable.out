@@ -20,7 +20,7 @@ Ready.
 
 % .tables # table_name
 % table_cat # name
-% char # type
+% varchar # type
 % 1 # length
 [ "a"	]
 [ "a"	]

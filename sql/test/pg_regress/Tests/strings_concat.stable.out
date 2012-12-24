@@ -38,7 +38,7 @@ Ready.
 #SELECT 'first line'
 % . # table_name
 % Three lines to one # name
-% char # type
+% varchar # type
 % 35 # length
 [ "first line - next line - third line"	]
 #-- illegal string continuation syntax

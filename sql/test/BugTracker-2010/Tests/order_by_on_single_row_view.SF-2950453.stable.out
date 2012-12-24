@@ -28,13 +28,13 @@ Ready.
 #SELECT * FROM x;
 % .x,	.x,	.x # table_name
 % score,	avalue,	displayname # name
-% decimal,	char,	char # type
+% decimal,	varchar,	varchar # type
 % 4,	1,	1 # length
 [ 1.0,	"a",	"b"	]
 #SELECT * FROM x ORDER BY score;
 % .x,	.x,	.x # table_name
 % score,	avalue,	displayname # name
-% decimal,	char,	char # type
+% decimal,	varchar,	varchar # type
 % 4,	1,	1 # length
 [ 1.0,	"a",	"b"	]
 #SELECT * FROM (SELECT 1.0 as score) AS x ORDER BY x.score;

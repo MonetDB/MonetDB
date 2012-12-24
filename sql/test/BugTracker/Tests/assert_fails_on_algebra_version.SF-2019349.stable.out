@@ -25,10 +25,12 @@ Ready.
 
 % .trip,	sys.trip,	sys.trip # table_name
 % prop,	obj,	cnt # name
-% char,	int,	wrd # type
-% 16,	1,	1 # length
+% varchar,	int,	wrd # type
+% 0,	1,	1 # length
+#drop table prop1;
+#drop table prop2;
 
-# 17:27:51 >  
-# 17:27:51 >  Done.
-# 17:27:51 >  
+# 22:24:42 >  
+# 22:24:42 >  "Done."
+# 22:24:42 >  
 
