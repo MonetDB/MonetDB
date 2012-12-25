@@ -932,6 +932,9 @@ BATsubselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* linear extrapolation plus 10% margin */
 				estimate = (BUN) ((dbl) slct_cnt / (dbl) smpl_cnt 
 				                  * (dbl) BATcount(b) * 1.1);
+			} else if (smpl_cnt > 0 && slct_cnt == 0) {
+				/* estimate low enough to trigger hash select */
+				estimate = (BATcount(b)/100) -1;
 			}
 		}
 		hash = hash && estimate < BATcount(b) / 100;
