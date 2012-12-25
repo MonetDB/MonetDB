@@ -345,7 +345,8 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 	pl->inuse = 1;
 	/* inherit debugging */
 	cmd = stk->cmd;
-	assert(pl->stk != NULL); /* we should have a stack to run against */
+	if ( pl->stk == NULL)
+			throw(MAL, "factory.new", "internal error, stack frame missing");
 
 	/* copy the calling arguments onto the stack
 	   of the factory */
