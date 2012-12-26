@@ -175,15 +175,18 @@ static int running; /* should be protected, but no need for accurateness here. s
 void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 {
-	long rss = MT_getrss();
+	long rss;
 	lng delay, clk;
 	int threads;
 	double factor;
 
+	if ( usec > 0 && usec <= DELAYUNIT )
+		return;
 	threads= GDKnr_threads > 0? GDKnr_threads: 1;
 	if ( running == 0) // reset workers pool count
 		running = threads;
 
+	rss = MT_getrss();
 	/* ample of memory available*/
 	if ( rss < MEMORY_THRESHOLD * monet_memory)
 		return;
