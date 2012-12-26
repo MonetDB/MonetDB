@@ -1307,7 +1307,8 @@ static int gatherCPULoad(void){
 	return 0;
 }
 
-static void profilerHeartbeat(void *dummy){
+void profilerHeartbeatEvent(str msg)
+{
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
 	struct rusage infoUsage;
@@ -1318,12 +1319,14 @@ static void profilerHeartbeat(void *dummy){
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
+
+	if( hbdelay ==0 || eventstream  == NULL ) 
+		return;
 	times(&prevtimer);
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
-	(void) dummy;
 	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	//prevclock = (time_t) tv.tv_sec;
@@ -1361,7 +1364,7 @@ static void profilerHeartbeat(void *dummy){
 			log("%d,\t", eventcounter);
 		}
 		if (profileCounter[PROFstart].status) 
-			log("\"ping\",\t");
+			log("\"%s\",\t",msg);
 		if (profileCounter[PROFtime].status) {
 			char *tbuf, *c;
 			tbuf = ctime(&clock);
@@ -1433,6 +1436,18 @@ static void profilerHeartbeat(void *dummy){
 		eventcounter++;
 		flushLog();
 		MT_lock_unset(&mal_profileLock, "profileLock");
+	}
+}
+
+static void profilerHeartbeat(void *dummy)
+{
+	(void) dummy;
+	while (1){
+		/* wait until you need this info */
+		while( hbdelay ==0 || eventstream  == NULL ) 
+			MT_sleep_ms(1000);
+		MT_sleep_ms(hbdelay);
+		profilerHeartbeatEvent("ping");
 	}
 	hbdelay = 0;
 }
