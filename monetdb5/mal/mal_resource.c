@@ -180,7 +180,7 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 	int threads;
 	double factor;
 
-	if ( usec > 0 && usec <= DELAYUNIT )
+	if ( usec > 0 && ( (usec = GDKusec()-usec)) <= TIMESLICE )
 		return;
 	threads= GDKnr_threads > 0? GDKnr_threads: 1;
 	if ( running == 0) // reset workers pool count
