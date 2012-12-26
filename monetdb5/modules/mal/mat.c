@@ -157,9 +157,9 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (bn == NULL)
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		/* allocate enough space for the strings */
-		if ( b->T->vheap ){
+		if ( b->T->vheap && bn->T->vheap ){
 			newsize =  b->T->vheap->size * pieces;
-			if (HEAPextend(b->T->vheap, newsize) < 0) 
+			if (HEAPextend(bn->T->vheap, newsize) < 0) 
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
 		}
 		BATsettrivprop(bn);
