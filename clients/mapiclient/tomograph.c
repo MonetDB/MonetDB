@@ -1594,7 +1594,7 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			if (optarg)
-				portnr = atol(optarg);
+				portnr = atoi(optarg);
 			break;
 		case 'h':
 			host = optarg;
