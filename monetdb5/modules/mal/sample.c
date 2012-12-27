@@ -78,7 +78,7 @@
  *
  */
 
-sample_export str
+str
 SAMPLEuniform(bat *r, bat *b, ptr s) {
 	BAT *br, *bb;
 
@@ -95,7 +95,7 @@ SAMPLEuniform(bat *r, bat *b, ptr s) {
 
 }
 
-sample_export str
+str
 SAMPLEuniform_dbl(bat *r, bat *b, ptr p) {
 	BAT *bb;
 	double pr = *(double *)p;
