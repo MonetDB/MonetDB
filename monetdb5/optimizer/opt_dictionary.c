@@ -883,7 +883,7 @@ str DICTdecompress(int *ret, str *nme)
 	return MAL_SUCCEED;
 }
 
-opt_export str DICTgroupid(int *ret, int *idx, int *val)
+str DICTgroupid(int *ret, int *idx, int *val)
 {
 	BAT *bi, *bv, *b;
 	BATiter bii,bvi;

@@ -400,7 +400,6 @@ ZORDbatdecode_int_oid_y(int *ybid, int *zbid)
 	return MAL_SUCCEED;
 }
 
-zorder_export 
 str ZORDslice_int(int *r, int *xb, int *yb, int *xt, int *yt)
 {
 	BAT *bn;
