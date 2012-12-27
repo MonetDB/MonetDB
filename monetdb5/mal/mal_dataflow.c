@@ -244,7 +244,7 @@ DFLOWworker(void *t)
 	str error = 0;
 
 	int i;
-	long usec = 0;
+	lng usec = 0;
 
 	thr = THRnew("DFLOWworker");
 
