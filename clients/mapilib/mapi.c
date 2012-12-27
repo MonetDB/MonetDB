@@ -1288,20 +1288,20 @@ mapi_get_autocommit(Mapi mid)
 	return mid->auto_commit;
 }
 
-static long
+static mapi_int64
 usec(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return ((long) tp.tv_sec) * 1000000 + (long) tp.tv_usec;
+	return ((mapi_int64) tp.tv_sec) * 1000000 + (mapi_int64) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return ((long) tb.time) * 1000000 + ((long) tb.millitm) * 1000;
+	return ((mapi_int64) tb.time) * 1000000 + ((mapi_int64) tb.millitm) * 1000;
 #endif
 #endif
 }
@@ -1310,15 +1310,15 @@ usec(void)
 static void
 mapi_log_header(Mapi mid, char *mark)
 {
-	static long firstcall = 0;
-	long now;
+	static mapi_int64 firstcall = 0;
+	mapi_int64 now;
 
 	if (mid->tracelog == NULL)
 		return;
 	if (firstcall == 0)
 		firstcall = usec();
 	now = (usec() - firstcall) / 1000;
-	mnstr_printf(mid->tracelog, ":%ld[%d]:%s\n", now, mid->index, mark);
+	mnstr_printf(mid->tracelog, ":"LLFMT"[%d]:%s\n", now, mid->index, mark);
 	mnstr_flush(mid->tracelog);
 }
 

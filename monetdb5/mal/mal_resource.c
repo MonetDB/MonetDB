@@ -175,7 +175,7 @@ static int running; /* should be protected, but no need for accurateness here. s
 void
 MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 {
-	long rss;
+	size_t rss;
 	lng delay, clk;
 	int threads;
 	double factor;
@@ -215,12 +215,12 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
-			delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			delay = (long) ( ((double)delay) * running / threads);
+			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
+			delay = (lng) ( ((double)delay) * running / threads);
 			running--;
 			if (delay) {
 				if ( delayed++ == 0){
-						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  %ld[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
+						mnstr_printf(GDKstdout, "#delay %d initial "LLFMT"["LLFMT"] memory  "SZFMT"[%f]\n", cntxt->idx, delay, clk, rss, MEMORY_THRESHOLD * monet_memory);
 						mnstr_flush(GDKstdout);
 				}
 				MT_sleep_ms(delay);

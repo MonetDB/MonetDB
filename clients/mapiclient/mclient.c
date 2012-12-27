@@ -126,6 +126,7 @@ int csvheader = 0;		/* include header line in CSV format */
 
 /* use a 64 bit integer for the timer */
 typedef lng timertype;
+#define TTFMT LLFMT
 #if 0
 static char *mark, *mark2;
 #endif
@@ -279,7 +280,7 @@ timerEnd(void)
 	assert(t1 >= t0);
 #if 0
 	if (mark && specials == NOmodifier) {
-		fprintf(stderr, "%s %7ld.%03ld msec %s\n", mark, (long) ((t1 - t0) / 1000), (long) ((t1 - t0) % 1000), mark2 ? mark2 : "");
+		fprintf(stderr, "%s " TTFMT ".%03d msec %s\n", mark, (t1 - t0) / 1000, (int) ((t1 - t0) % 1000), mark2 ? mark2 : "");
 		fflush(stderr);
 	}
 #endif
@@ -308,18 +309,18 @@ timerHuman(void)
 	assert(th >= t0);
 
 	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
-		snprintf(htimbuf, 32, "%ld.%03ldms", (long) (t / 1000), (long) (t % 1000));
+		snprintf(htimbuf, 32, TTFMT ".%03dms", t / 1000, (int) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
 	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
-		snprintf(htimbuf, 32, "%ld.%lds", (long) (t / 1000),
-				(long) ((t % 1000) / 100));
+		snprintf(htimbuf, 32, TTFMT ".%ds", t / 1000,
+				(int) ((t % 1000) / 100));
 		return(htimbuf);
 	}
 	t /= 1000;
 	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
-	snprintf(htimbuf, 32, "%ldm %lds", (long) (t / 60), (long) (t % 60));
+	snprintf(htimbuf, 32, TTFMT "m %ds", t / 60, (int) (t % 60));
 	return(htimbuf);
 }
 
@@ -2550,7 +2551,7 @@ set_timezone(Mapi mid)
 	char buf[128];
 	time_t t, lt, gt;
 	struct tm *tmp;
-	long tzone;
+	int tzone;
 	MapiHdl hdl;
 
 	/* figure out our current timezone */
@@ -2559,14 +2560,15 @@ set_timezone(Mapi mid)
 	gt = mktime(tmp);
 	tmp = localtime(&t);
 	lt = mktime(tmp);
-	tzone = (long) (gt - lt);
+	assert((lng) (gt - lt) >= (lng) INT_MIN && (lng) (gt - lt) <= (lng) INT_MAX);
+	tzone = (int) (gt - lt);
 	if (tzone < 0)
 		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '+%02ld:%02ld' HOUR TO MINUTE",
+			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",
 			 -tzone / 3600, (-tzone % 3600) / 60);
 	else
 		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '-%02ld:%02ld' HOUR TO MINUTE",
+			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
 		if (formatter == TABLEformatter || formatter == CLEANformatter) {

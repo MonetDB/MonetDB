@@ -2962,7 +2962,7 @@ str pinRef;
 int pivotDisjunctiveProp;
 int pivotProp;
 str plusRef;
-long position(Client cntxt);
+ssize_t position(Client cntxt);
 str postludeRef;
 str pqueueRef;
 str preludeRef;
@@ -2982,6 +2982,7 @@ void printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 str prodRef;
 int profilerAvailable(void);
 void profilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start);
+void profilerHeartbeatEvent(str msg);
 str profilerRef;
 str projectRef;
 str projectdeltaRef;
