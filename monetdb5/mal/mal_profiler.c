@@ -381,10 +381,10 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
-		logadd("%ld,\t", (long) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
-		logadd("%ld,\t", (long) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
-		logadd("%ld,\t", (long) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
-		logadd("%ld,\t", (long) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - mb->profiler[pc].timer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - mb->profiler[pc].timer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime));
 	}
 #endif
 
@@ -1223,7 +1223,7 @@ static int hbdelay = 0;
  * Given the parsing involved, it should be used sparingly */
 
 static struct{
-	long user, nice, system, idle, iowait;
+	lng user, nice, system, idle, iowait;
 	double load;
 } corestat[256];
 
@@ -1231,7 +1231,7 @@ static char cpuload[BUFSIZ];
 
 static int gatherCPULoad(void){
     int cpu, len, i;
-	long user, nice, system, idle, iowait;
+	lng user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
 	static FILE *proc= NULL;
 
@@ -1258,7 +1258,7 @@ static int gatherCPULoad(void){
 				if ( s== 0) goto skip;
 			}
 			while( *s && isspace((int)*s)) s++;
-			i= sscanf(s,"%ld %ld %ld %ld %ld",  &user, &nice, &system, &idle, &iowait);
+			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
 				goto skip;
 			corestat[cpu].load = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
@@ -1365,10 +1365,10 @@ void profilerHeartbeatEvent(str msg)
 		logadd("0,\t");
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status && delayswitch < 0) {
-		logadd("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
-		logadd("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
-		logadd("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
-		logadd("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_utime - prevtimer.tms_utime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cutime -prevtimer.tms_cutime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_stime - prevtimer.tms_stime));
+		logadd(LLFMT",\t", (lng) (newTms.tms_cstime -prevtimer.tms_cstime));
 		prevtimer = newTms;
 	}
 #endif
