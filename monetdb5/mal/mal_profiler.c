@@ -63,7 +63,7 @@ static void stopHeartbeat(void);
 int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static int profileAll = 0;  /* all instructions should be profiled */
 static int delayswitch = 0; /* to wait before sending the profile info */
-static int eventcounter;
+static int eventcounter = 0;
 
 #define PROFevent   0
 #define PROFtime    1
@@ -165,16 +165,23 @@ deactivateCounter(str name)
 		(void) snprintf(logbase+loglen, LOGLEN -1 - loglen, __VA_ARGS__);					\
 		loglen += (int) strlen(logbase+loglen);					\
 	} while (0)
-#define logsent()												\
-	do { assert(loglen <= LOGLEN);								\
-		MT_lock_set(&mal_profileLock, "profileLock");			\
-		if (eventstream) {										\
-			(void)mnstr_write(eventstream, logbuffer,loglen,1 );\
-			mnstr_flush(eventstream);							\
-		}														\
-		eventcounter++;											\
-		MT_lock_unset(&mal_profileLock, "profileLock");			\
-	} while (0)
+
+static void logsent(int header, char *logbuffer)
+{
+	MT_lock_set(&mal_profileLock, "profileLock");
+	if (eventstream) {
+		if ( header)
+			mnstr_printf(eventstream,"%s\n", logbuffer);
+		else
+		if (profileCounter[PROFevent].status && eventcounter)
+			mnstr_printf(eventstream,"[ %d,\t%s ]\n", eventcounter, logbuffer);
+		else
+			mnstr_printf(eventstream,"[ %s ]\n", logbuffer);
+		mnstr_flush(eventstream);
+	}
+	eventcounter++;
+	MT_lock_unset(&mal_profileLock, "profileLock");
+}
 
 #define flushLog() if (eventstream) mnstr_flush(eventstream);
 
@@ -280,8 +287,8 @@ offlineProfilerHeader(void)
 		logadd("types,\t");
 	if (profileCounter[PROFuser].status)
 		logadd("user,\t");
-	logadd("# name\n");
-	logsent();
+	logadd("# name");
+	logsent(1, logbuffer);
 }
 
 void
@@ -330,10 +337,6 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 
 	/* make basic profile event tuple  */
 	lognew();
-	logadd("[ ");
-	if (profileCounter[PROFevent].status) {
-		logadd("%d,\t", eventcounter);
-	}
 	if (profileCounter[PROFstart].status) {
 		if ( start) {
 			logadd("\"start\",\t");
@@ -459,8 +462,7 @@ offlineProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc, int start)
 	if (profileCounter[PROFuser].status) {
 		logadd(" %d", idx);
 	}
-	logadd(" ]\n");
-	logsent();
+	logsent(0, logbuffer);
 }
 /*
  * Postprocessing events
@@ -536,6 +538,7 @@ closeProfilerStream(void)
 		(void)mnstr_close(eventstream);
 		(void)mnstr_destroy(eventstream);
 	}
+	profilerHeartbeatEvent("ping");
 	eventstream = NULL;
 	malProfileMode = FALSE;
 	return MAL_SUCCEED;
@@ -593,6 +596,7 @@ startProfiling(void)
 	if (TRACE_init == 0)
 		_initTrace();
 	malProfileMode = TRUE;
+	eventcounter = 0;
 	MT_lock_unset(&mal_profileLock, "profileLock");
 	return MAL_SUCCEED;
 }
@@ -1049,16 +1053,15 @@ cachedProfilerEvent(int idx, MalBlkPtr mb, MalStkPtr stk, int pc)
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 #endif
-	MT_lock_set(&mal_profileLock, "profileLock");
-	if (initTrace() || TRACE_init == 0) {
-		MT_lock_unset(&mal_profileLock, "profileLock");
+	if (initTrace() || TRACE_init == 0)
 		return;
-	}
 
 	/* update the Trace tables */
 	snprintf(buf, 1024, "%s.%s[%d]",
 		getModuleId(getInstrPtr(mb, 0)),
 		getFunctionId(getInstrPtr(mb, 0)), getPC(mb, pci));
+
+	MT_lock_set(&mal_profileLock, "profileLock");
 	TRACE_id_pc = BUNappend(TRACE_id_pc, buf, FALSE);
 
 	TRACE_id_thread = BUNappend(TRACE_id_thread, &tid, FALSE);
@@ -1227,9 +1230,7 @@ static struct{
 	double load;
 } corestat[256];
 
-static char cpuload[BUFSIZ];
-
-static int gatherCPULoad(void){
+static int gatherCPULoad(char cpuload[BUFSIZ]){
     int cpu, len, i;
 	lng user, nice, system, idle, iowait;
     char buf[BUFSIZ],*s;
@@ -1286,6 +1287,7 @@ static int gatherCPULoad(void){
 void profilerHeartbeatEvent(str msg)
 {
 	char logbuffer[LOGLEN], *logbase;
+	char cpuload[BUFSIZ];
 	int loglen;
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
@@ -1305,7 +1307,6 @@ void profilerHeartbeatEvent(str msg)
 #ifdef HAVE_SYS_RESOURCE_H
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
-	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	//prevclock = (time_t) tv.tv_sec;
 
@@ -1317,11 +1318,8 @@ void profilerHeartbeatEvent(str msg)
 	clock = (time_t) tv.tv_sec;
 
 	/* get CPU load on second boundaries only */
-	//if ( clock - prevclock >= 0 ) {
-		if ( gatherCPULoad() )
-			return;
-		//prevclock = clock;
-	//}
+	if ( gatherCPULoad(cpuload) )
+		return;
 	lognew();
 #ifdef HAVE_TIMES
 	times(&newTms);
@@ -1331,10 +1329,6 @@ void profilerHeartbeatEvent(str msg)
 #endif
 
 	/* make ping profile event tuple  */
-	logadd("[ ");
-	if (profileCounter[PROFevent].status) {
-		logadd("%d,\t", eventcounter);
-	}
 	if (profileCounter[PROFstart].status) 
 		logadd("\"%s\",\t",msg);
 	if (profileCounter[PROFtime].status) {
@@ -1404,8 +1398,7 @@ void profilerHeartbeatEvent(str msg)
 		//logadd("\"\",\t");
 	//if (profileCounter[PROFuser].status)
 		//logadd(" 0");
-	logadd(" ]\n");
-	logsent();
+	logsent(0, logbuffer);
 }
 
 static void profilerHeartbeat(void *dummy)

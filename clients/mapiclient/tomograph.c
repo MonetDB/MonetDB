@@ -533,6 +533,7 @@ colors[] =
 	{ 0, 0, "language", "*", "darkgray" },
 
 	{ 0, 0, "mat", "pack", "red" },
+	{ 0, 0, "mat", "packIncrement", "red" },
 	{ 0, 0, "mat", "*", "red" },
 
 
@@ -551,11 +552,13 @@ colors[] =
 	//{0,0,"sql","bind","thistle"},
 	//{0,0,"sql","bind_dbat","thistle"},
 	//{0,0,"sql","mvc","thistle"},
-	{ 0, 0, "sql", "projectdelta ", "hotpink" },
-	{ 0, 0, "sql", "subdelta ", "violet" },
-	{ 0, 0, "sql", "delta ", "salmon" },
+	{ 0, 0, "sql", "projectdelta", "hotpink" },
+	{ 0, 0, "sql", "subdelta", "violet" },
+	{ 0, 0, "sql", "delta", "salmon" },
 	{ 0, 0, "sql", "tid ", "plum" },
-	{ 0, 0, "sql", "*", "thistle" },
+	{ 0, 0, "sql", "bind", "thistle" },
+	{ 0, 0, "sql", "bind_idxbat", "deeppink" },
+	{ 0, 0, "sql", "*", "pink" },
 
 	{ 0, 0, "*", "*", "lavender" },
 	{ 0, 0, 0, 0, 0 }
@@ -584,6 +587,7 @@ static void dumpboxes(void)
 	FILE *fcpu = 0;
 	char buf[BUFSIZ];
 	int i;
+	lng e=0;
 
 	if (tracefile) {
 		snprintf(buf, BUFSIZ, "scratch.dat");
@@ -603,8 +607,13 @@ static void dumpboxes(void)
 				//io counters are zero at start of instruction !
 				//fprintf(f,""LLFMT" %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 				fprintf(f, ""LLFMT" %3.2f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
-			} else {
-				fprintf(f, ""LLFMT" %3.2f "LLFMT" "LLFMT"\n", box[i].clkend, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
+			} else 
+			if (box[i].state == PING) {
+				/* cpu stat events may arrive out of order, drop those */
+				if ( box[i].clkstart <= e)
+					continue;
+				e = box[i].clkstart;
+				fprintf(f, ""LLFMT" %3.2f "LLFMT" "LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].reads, box[i].writes);
 				if (cpus == 0) {
 					char *s = box[i].stmt;
 					while (s && isspace((int) *s))
@@ -863,7 +872,7 @@ static void scandata(char *filename)
 {
 	FILE *f;
 	char line[2*BUFSIZ], buf[BUFSIZ], buf2[BUFSIZ];
-	int cnt, i = 0;
+	int i = 0;
 
 	f = fopen(filename, "r");
 	if (f == 0) {
@@ -880,17 +889,12 @@ static void scandata(char *filename)
 		if ( fgets(line,2 * BUFSIZ,f) == NULL) {
 			fprintf(stderr, "scandata read error\n");
 		}
-		if ( (cnt =sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
-					&box[i].thread, &box[i].clkstart, &box[i].clkend,
-					&box[i].ticks, &box[i].memstart, &box[i].memend,
-					&box[i].state, &box[i].reads, &box[i].writes, buf, buf2)) != 11){
-			fprintf(stderr, "scandata error %d\n",cnt);
-			dumpbox(i);
-			topbox = i;
-			return;
-		}
+		sscanf(line, "%d\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t"LLFMT"\t%d\t"LLFMT"\t"LLFMT"\t%s\t%s\n", 
+			&box[i].thread, &box[i].clkstart, &box[i].clkend,
+			&box[i].ticks, &box[i].memstart, &box[i].memend,
+			&box[i].state, &box[i].reads, &box[i].writes, buf, buf2);
+		box[i].fcn = strdup(buf);
 		box[i].stmt = strdup(buf);
-		box[i].fcn = strdup(buf2);
 		/* focus on part of the time frame */
 		if (endrange) {
 			if (box[i].clkend < startrange || box[i].clkstart >endrange)
@@ -944,7 +948,7 @@ static void createTomogram(void)
 	double w = (lastclktick - starttime) / 10.0;
 	int scale;
 	char *scalename;
-	lng totalticks;
+	lng totalticks, tick;
 	static int figures = 0;
 
 	snprintf(buf, BUFSIZ, "%s.gpl", filename);
@@ -970,7 +974,7 @@ static void createTomogram(void)
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].state < PING) {
+		if (box[i].clkend && box[i].state != PING) {
 			for (j = 0; j < top; j++)
 				if (rows[j] == box[i].thread)
 					break;
@@ -1016,6 +1020,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set xlabel \"%sseconds, parallelism usage %6.1f %%\"\n", scalename, totalclkticks / (totalticks / 100.0));
 
 	h = 10; /* unit height of bars */
+	tick = totalticks/2000;
 	fprintf(gnudata, "set ytics (");
 	for (i = 0; i < top; i++)
 		fprintf(gnudata, "\"%d\" %d%c", rows[i], i * 2 * h + h / 2, (i < top - 1 ? ',' : ' '));
@@ -1028,7 +1033,8 @@ static void createTomogram(void)
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
-		switch (box[i].clkend && box[i].state ) {
+	if ( box[i].clkend)
+		switch (box[i].state ) {
 		default:
 			if (debug)
 				dumpbox(i);
@@ -1038,8 +1044,8 @@ static void createTomogram(void)
 		case PING:
 			break;
 		case WAIT:
-			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
-					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkend, box[i].row * 2 * h + h +h/5, colors[box[i].color].col);
+			fprintf(gnudata, "set object %d rectangle from "LLFMT", %d to "LLFMT", %d front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkend+tick, (int)(box[i].row * 2 * h + 1.25*h));
 		}
 
 
@@ -1167,10 +1173,14 @@ static void update(int state, int thread, lng clkticks, lng ticks, lng memory, l
 	}
 }
 
+/*
+ * Beware the UDP protocol may cause some loss
+ * Incomplete records from previous runs may also appear
+ */
 static int parser(char *row)
 {
 #ifdef HAVE_STRPTIME
-	char *c;
+	char *c, *cc;
 	struct tm stm;
 	lng clkticks = 0;
 	int thread = 0;
@@ -1180,8 +1190,12 @@ static int parser(char *row)
 	int state = 0;
 	lng reads, writes;
 
+	/* check basic validaty first */
 	if (row[0] != '[')
 		return -1;
+	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+		return -1;
+
 	c = strchr(row, (int) '"');
 	if (c == 0)
 		return -2;
@@ -1244,6 +1258,9 @@ static int parser(char *row)
 		return -8;
 	writes = strtoll(c + 1, NULL, 10);
 
+	/* check basic validity */
+	if ( (cc= strrchr(row,']')) == 0 || *(cc+1) !=0)
+		return -1;
 	c = strchr(c + 1, (int) ',');
 	if (c == 0)
 		return -9;
