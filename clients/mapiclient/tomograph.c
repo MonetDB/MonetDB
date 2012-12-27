@@ -824,8 +824,8 @@ static void updmap(int idx)
 			}
 		}
 
-	if ( colors[i].col == 0 )
-		fnd = i-1;
+	if (colors[i].col == 0)
+		fnd = i - 1;
 	colors[fnd].freq++;
 	colors[fnd].timeused += box[idx].clkend - box[idx].clkstart;
 	box[idx].color = fnd;
@@ -1648,7 +1648,7 @@ main(int argc, char **argv)
 	}
 
 	if (dbname == NULL && optind != argc && argv[optind][0] != '+' &&
-			(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
+		(stat(argv[optind], &statb) != 0 || !S_ISREG(statb.st_mode)))
 	{
 		dbname = argv[optind];
 		optind++;
