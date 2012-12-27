@@ -643,7 +643,7 @@ static void dumpboxes(void)
 static void showmemory(void)
 {
 	int i;
-	lng max = 0, min = LONG_LONG_MAX;
+	lng max = 0, min = LLONG_MAX;
 	lng mx, mn;
 
 	for (i = 0; i < topbox; i++)
