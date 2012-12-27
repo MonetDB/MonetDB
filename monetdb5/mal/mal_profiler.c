@@ -1283,7 +1283,8 @@ static int gatherCPULoad(void){
 	return 0;
 }
 
-static void profilerHeartbeat(void *dummy){
+void profilerHeartbeatEvent(str msg)
+{
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1296,119 +1297,126 @@ static void profilerHeartbeat(void *dummy){
 #ifdef HAVE_TIMES
 	struct tms newTms;
 	struct tms prevtimer;
+
+	if( hbdelay ==0 || eventstream  == NULL ) 
+		return;
 	times(&prevtimer);
 #endif
 #ifdef HAVE_SYS_RESOURCE_H
 		getrusage(RUSAGE_SELF, &prevUsage);
 #endif
-	(void) dummy;
 	(void) gatherCPULoad();
 	gettimeofday(&tv,NULL);
 	//prevclock = (time_t) tv.tv_sec;
 
+	/* without this cast, compilation on Windows fails with
+	 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
+	 */
+
+	gettimeofday(&tv,NULL);
+	clock = (time_t) tv.tv_sec;
+
+	/* get CPU load on second boundaries only */
+	//if ( clock - prevclock >= 0 ) {
+		if ( gatherCPULoad() )
+			return;
+		//prevclock = clock;
+	//}
+	lognew();
+#ifdef HAVE_TIMES
+	times(&newTms);
+#endif
+#ifdef HAVE_SYS_RESOURCE_H
+	getrusage(RUSAGE_SELF, &infoUsage);
+#endif
+
+	/* make ping profile event tuple  */
+	logadd("[ ");
+	if (profileCounter[PROFevent].status) {
+		logadd("%d,\t", eventcounter);
+	}
+	if (profileCounter[PROFstart].status) 
+		logadd("\"%s\",\t",msg);
+	if (profileCounter[PROFtime].status) {
+		char *tbuf, *c;
+		tbuf = ctime(&clock);
+		if (tbuf) {
+			c = strchr(tbuf, '\n');
+			if (c) {
+				c[-5] = 0;
+			}
+			tbuf[10] = '"';
+			logadd("%s", tbuf + 10);
+			logadd(".%06d\",\t", (int)tv.tv_usec);
+		} else
+			logadd("%s,\t", "nil");
+	}
+	if (profileCounter[PROFthread].status)
+		logadd(" %d,\t", THRgettid());
+	if (profileCounter[PROFflow].status) {
+		logadd("%d,\t", memoryclaims);
+		logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
+	}
+	if (profileCounter[PROFfunc].status) 
+			logadd("\"ping\",\t");
+	if (profileCounter[PROFpc].status) 
+		logadd("0,\t");
+	if (profileCounter[PROFticks].status) 
+		logadd("0,\t");
+#ifdef HAVE_TIMES
+	if (profileCounter[PROFcpu].status && delayswitch < 0) {
+		logadd("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
+		logadd("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
+		logadd("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
+		logadd("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
+		prevtimer = newTms;
+	}
+#endif
+	if (profileCounter[PROFmemory].status && delayswitch < 0)
+		logadd(SZFMT ",\t", MT_getrss()/1024/1024);
+#ifdef HAVE_SYS_RESOURCE_H
+	if ((profileCounter[PROFreads].status ||
+		 profileCounter[PROFwrites].status) && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
+		logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
+		prevUsage = infoUsage;
+	}
+	if (profileCounter[PROFprocess].status && delayswitch < 0) {
+		logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
+		logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
+		logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
+		logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
+		logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+		prevUsage = infoUsage;
+	}
+#endif
+	if (profileCounter[PROFrbytes].status)
+		logadd("0,\t");
+	if (profileCounter[PROFwbytes].status)
+		logadd("0,\t");
+
+	if (profileCounter[PROFaggr].status)
+		logadd("0,\t0,\t");
+
+	if (profileCounter[PROFstmt].status)
+			logadd(" %s", cpuload);
+	//if (profileCounter[PROFtype].status)
+		//logadd("\"\",\t");
+	//if (profileCounter[PROFuser].status)
+		//logadd(" 0");
+	logadd(" ]\n");
+	logsent();
+}
+
+static void profilerHeartbeat(void *dummy)
+{
+	(void) dummy;
 	while (1){
 		/* wait until you need this info */
 		while( hbdelay ==0 || eventstream  == NULL ) 
 			MT_sleep_ms(1000);
 		MT_sleep_ms(hbdelay);
-
-		/* without this cast, compilation on Windows fails with
-		 * argument of type "long *" is incompatible with parameter of type "const time_t={__time64_t={__int64}} *"
-		 */
-
-		gettimeofday(&tv,NULL);
-		clock = (time_t) tv.tv_sec;
-
-		/* get CPU load on second boundaries only */
-		//if ( clock - prevclock >= 0 ) {
-			if ( gatherCPULoad() )
-				continue;
-			//prevclock = clock;
-		//}
-		lognew();
-#ifdef HAVE_TIMES
-		times(&newTms);
-#endif
-#ifdef HAVE_SYS_RESOURCE_H
-		getrusage(RUSAGE_SELF, &infoUsage);
-#endif
-
-		/* make ping profile event tuple  */
-		logadd("[ ");
-		if (profileCounter[PROFevent].status) {
-			logadd("%d,\t", eventcounter);
-		}
-		if (profileCounter[PROFstart].status) 
-			logadd("\"ping\",\t");
-		if (profileCounter[PROFtime].status) {
-			char *tbuf, *c;
-			tbuf = ctime(&clock);
-			if (tbuf) {
-				c = strchr(tbuf, '\n');
-				if (c) {
-					c[-5] = 0;
-				}
-				tbuf[10] = '"';
-				logadd("%s", tbuf + 10);
-				logadd(".%06d\",\t", (int)tv.tv_usec);
-			} else
-				logadd("%s,\t", "nil");
-		}
-		if (profileCounter[PROFthread].status)
-			logadd(" %d,\t", THRgettid());
-		if (profileCounter[PROFflow].status) {
-			logadd("%d,\t", memoryclaims);
-			logadd(LLFMT",\t", memoryclaims?((lng)(MEMORY_THRESHOLD * monet_memory)-memorypool)/1024/1024:0);
-		}
-		if (profileCounter[PROFfunc].status) 
-				logadd("\"ping\",\t");
-		if (profileCounter[PROFpc].status) 
-			logadd("0,\t");
-		if (profileCounter[PROFticks].status) 
-			logadd("0,\t");
-#ifdef HAVE_TIMES
-		if (profileCounter[PROFcpu].status && delayswitch < 0) {
-			logadd("%ld,\t", (long) (newTms.tms_utime - prevtimer.tms_utime));
-			logadd("%ld,\t", (long) (newTms.tms_cutime -prevtimer.tms_cutime));
-			logadd("%ld,\t", (long) (newTms.tms_stime - prevtimer.tms_stime));
-			logadd("%ld,\t", (long) (newTms.tms_cstime -prevtimer.tms_cstime));
-			prevtimer = newTms;
-		}
-#endif
-		if (profileCounter[PROFmemory].status && delayswitch < 0)
-			logadd(SZFMT ",\t", MT_getrss()/1024/1024);
-#ifdef HAVE_SYS_RESOURCE_H
-		if ((profileCounter[PROFreads].status ||
-			 profileCounter[PROFwrites].status) && delayswitch < 0) {
-			logadd("%ld,\t", infoUsage.ru_inblock - prevUsage.ru_inblock);
-			logadd("%ld,\t", infoUsage.ru_oublock - prevUsage.ru_oublock);
-			prevUsage = infoUsage;
-		}
-		if (profileCounter[PROFprocess].status && delayswitch < 0) {
-			logadd("%ld,\t", infoUsage.ru_minflt - prevUsage.ru_minflt);
-			logadd("%ld,\t", infoUsage.ru_majflt - prevUsage.ru_majflt);
-			logadd("%ld,\t", infoUsage.ru_nswap - prevUsage.ru_nswap);
-			logadd("%ld,\t", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw);
-			logadd("%ld,\t", infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
-			prevUsage = infoUsage;
-		}
-#endif
-		if (profileCounter[PROFrbytes].status)
-			logadd("0,\t");
-		if (profileCounter[PROFwbytes].status)
-			logadd("0,\t");
-
-		if (profileCounter[PROFaggr].status)
-			logadd("0,\t0,\t");
-
-		if (profileCounter[PROFstmt].status)
-				logadd(" %s", cpuload);
-		//if (profileCounter[PROFtype].status)
-			//logadd("\"\",\t");
-		//if (profileCounter[PROFuser].status)
-			//logadd(" 0");
-		logadd(" ]\n");
-		logsent();
+		profilerHeartbeatEvent("ping");
 	}
 	hbdelay = 0;
 }

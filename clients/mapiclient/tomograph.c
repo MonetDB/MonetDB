@@ -197,7 +197,6 @@ static void deactivateBeat(void)
 			doQ("profiler.stop();");
 		}
 
-
 	return;
 stop_disconnect:
 	;
@@ -254,7 +253,6 @@ static void activateBeat(void)
 			doQ(buf);
 		}
 
-
 	return;
 stop_disconnect:
 	if (wthr) {
@@ -266,6 +264,12 @@ stop_disconnect:
 
 #define MAXTHREADS 2048
 #define MAXBOX 32678
+
+#define START 0
+#define DONE 1
+#define ACTION 2
+#define PING 4
+#define WAIT 5
 
 typedef struct BOX {
 	int row;
@@ -595,7 +599,7 @@ static void dumpboxes(void)
 
 	for (i = 0; i < topbox; i++)
 		if (box[i].clkend && box[i].fcn) {
-			if (box[i].state != 4) {
+			if (box[i].state < PING) {
 				//io counters are zero at start of instruction !
 				//fprintf(f,"%ld %3.2f 0 0 \n", box[i].clkstart, (box[i].memstart/1024.0));
 				fprintf(f, "%ld %3.2f 0 0\n", box[i].clkend, (box[i].memend / 1024.0));
@@ -619,7 +623,6 @@ static void dumpboxes(void)
 				fprintf(fcpu, "%ld %s\n", box[i].clkend, box[i].stmt);
 			}
 		}
-
 
 	if (f)
 		(void) fclose(f);
@@ -645,7 +648,6 @@ static void showmemory(void)
 			if (box[i].memend < min)
 				min = box[i].memend;
 		}
-
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -699,13 +701,12 @@ static void showio(void)
 	long max = 0;
 
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].state == 4) {
+		if (box[i].clkend && box[i].state >= PING) {
 			if (box[i].reads > max)
 				max = box[i].reads;
 			if (box[i].writes > max)
 				max = box[i].writes;
 		}
-
 
 
 	fprintf(gnudata, "\nset tmarg 1\n");
@@ -797,7 +798,6 @@ static void showcolormap(char *filename, int all)
 			k++;
 		}
 
-
 	h -= 45;
 	fprintf(f, "set label %d \" %ld MAL instructions executed\" at %d,%d\n",
 			object++, totfreq, (int) (0.2 * w), h - 35);
@@ -849,13 +849,12 @@ static void keepdata(char *filename)
 			//if ( debug)
 			//fprintf(stderr,"%3d\t%8ld\t%5ld\t%s\n", box[i].thread, box[i].clkstart, box[i].clkend-box[i].clkstart, box[i].fcn);
 
-			fprintf(f, "%d\t%ld\t%ld\n", box[i].thread, box[i].clkstart, box[i].clkend);
-			fprintf(f, "%ld\t%ld\t%ld\n", box[i].ticks, box[i].memstart, box[i].memend);
-			fprintf(f, "%d\t%ld\t%ld\n", box[i].state, box[i].reads, box[i].writes);
+			fprintf(f, "%d\t%ld\t%ld\t", box[i].thread, box[i].clkstart, box[i].clkend);
+			fprintf(f, "%ld\t%ld\t%ld\t", box[i].ticks, box[i].memstart, box[i].memend);
+			fprintf(f, "%d\t%ld\t%ld\t", box[i].state, box[i].reads, box[i].writes);
+			fprintf(f, "%s\t", box[i].fcn);
 			fprintf(f, "%s\n", box[i].stmt ? box[i].stmt : box[i].fcn);
-			fprintf(f, "%s\n", box[i].fcn);
 		}
-
 
 	(void) fclose(f);
 }
@@ -863,8 +862,8 @@ static void keepdata(char *filename)
 static void scandata(char *filename)
 {
 	FILE *f;
-	char buf[BUFSIZ];
-	int i = 0;
+	char line[2*BUFSIZ], buf[BUFSIZ], buf2[BUFSIZ];
+	int cnt, i = 0;
 
 	f = fopen(filename, "r");
 	if (f == 0) {
@@ -878,20 +877,20 @@ static void scandata(char *filename)
 	starttime = 0;
 
 	while (!feof(f)) {
-		if (fscanf(f, "%d\t%ld\t%ld\n", &box[i].thread, &box[i].clkstart, &box[i].clkend) != 3 ||
-			fscanf(f, "%ld\t%ld\t%ld\n", &box[i].ticks, &box[i].memstart, &box[i].memend) != 3 ||
-			fscanf(f, "%d\t%ld\t%ld\n", &box[i].state, &box[i].reads, &box[i].writes) != 3 ||
-			fgets(buf, BUFSIZ, f) == NULL ||
-			(box[i].stmt = strdup(buf)) == NULL ||
-			fgets(buf, BUFSIZ, f) == NULL) {
-			fprintf(stderr, "scandata error '%s'\n", buf);
+		if ( fgets(line,2 * BUFSIZ,f) == NULL) {
+			fprintf(stderr, "scandata read error\n");
+		}
+		if ( (cnt =sscanf(line, "%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%d\t%ld\t%ld\t%s\t%s\n", 
+					&box[i].thread, &box[i].clkstart, &box[i].clkend,
+					&box[i].ticks, &box[i].memstart, &box[i].memend,
+					&box[i].state, &box[i].reads, &box[i].writes, buf, buf2)) != 11){
+			fprintf(stderr, "scandata error %d\n",cnt);
 			dumpbox(i);
 			topbox = i;
 			return;
 		}
-		if (strchr(buf, (int) '\n'))
-			*(strchr(buf, (int) '\n')) = 0;
-		box[i].fcn = strdup(buf);
+		box[i].stmt = strdup(buf);
+		box[i].fcn = strdup(buf2);
 		/* focus on part of the time frame */
 		if (endrange) {
 			if (box[i].clkend < startrange || box[i].clkstart >endrange)
@@ -971,7 +970,7 @@ static void createTomogram(void)
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].state != 4) {
+		if (box[i].clkend && box[i].state < PING) {
 			for (j = 0; j < top; j++)
 				if (rows[j] == box[i].thread)
 					break;
@@ -980,7 +979,6 @@ static void createTomogram(void)
 				rows[top++] = box[i].thread;
 			updmap(i);
 		}
-
 
 
 	height = top * 20;
@@ -1030,11 +1028,18 @@ static void createTomogram(void)
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
 	for (i = 0; i < topbox; i++)
-		if (box[i].clkend && box[i].state != 4) {
+		switch (box[i].clkend && box[i].state ) {
+		default:
 			if (debug)
 				dumpbox(i);
 			fprintf(gnudata, "set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
 					object++, box[i].clkstart, box[i].row * 2 * h, box[i].clkend, box[i].row * 2 * h + h, colors[box[i].color].col);
+			break;
+		case PING:
+			break;
+		case WAIT:
+			fprintf(gnudata, "set object %d rectangle from %ld, %d to %ld, %d fillcolor rgb \"%s\" fillstyle solid 0.6\n",
+					object++, box[i].clkstart, box[i].row * 2 * h+h, box[i].clkend, box[i].row * 2 * h + h +h/5, colors[box[i].color].col);
 		}
 
 
@@ -1073,13 +1078,13 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		return;
 	if (starttime == 0) {
 		/* ignore all instructions up to the first function call */
-		if (state == 4 || fcn == 0 || strncmp(fcn, "function", 8) != 0)
+		if (state >= PING || fcn == 0 || strncmp(fcn, "function", 8) != 0)
 			return;
 		starttime = clkticks;
 		return;
 	}
 
-	if (state == 1 && fcn && (strncmp(fcn, "function", 8) == 0 || strncmp(fcn, "profiler.tomograph", 18) == 0)) {
+	if (state == DONE && fcn && (strncmp(fcn, "function", 8) == 0 || strncmp(fcn, "profiler.tomograph", 18) == 0)) {
 		if (debug)
 			fprintf(stderr, "Batch %d\n", batch);
 		if (strncmp(fcn, "function", 8) == 0 && batch-- > 1)
@@ -1097,10 +1102,10 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	clkticks -= starttime;
 
 	/* handle a ping event, keep the current instruction in focus */
-	if (state == 4) {
+	if (state >= PING) {
 		idx = threads[thread];
 		b = box[idx];
-		box[idx].state = 4;
+		box[idx].state = state;
 		box[idx].thread = thread;
 		lastclk[thread] = clkticks;
 		box[idx].clkend = box[idx].clkstart = clkticks;
@@ -1111,7 +1116,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		if (s)
 			*s = 0;
 		box[idx].stmt = stmt;
-		box[idx].fcn = fcn ? strdup(fcn) : "";
+		box[idx].fcn = state == PING? "profiler.ping":"profiler.wait";
 		threads[thread] = ++topbox;
 		idx = threads[thread];
 		box[idx] = b;
@@ -1123,7 +1128,7 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 	}
 	idx = threads[thread];
 	/* start of instruction box */
-	if (state == 0 && thread < MAXTHREADS) {
+	if (state == START && thread < MAXTHREADS) {
 		box[idx].state = state;
 		box[idx].thread = thread;
 		box[idx].clkstart = clkticks;
@@ -1132,12 +1137,12 @@ static void update(int state, int thread, long clkticks, long ticks, long memory
 		box[idx].fcn = fcn ? strdup(fcn) : "";
 	}
 	/* end the instruction box */
-	if (state == 1 && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
+	if (state == DONE && thread < MAXTHREADS && fcn && box[idx].fcn && strcmp(fcn, box[idx].fcn) == 0) {
 		lastclk[thread] = clkticks;
 		box[idx].clkend = clkticks;
 		box[idx].memend = memory;
 		box[idx].ticks = ticks;
-		box[idx].state = state;
+		box[idx].state = ACTION;
 		box[idx].reads = reads;
 		box[idx].writes = writes;
 		/* focus on part of the time frame */
@@ -1181,13 +1186,16 @@ static int parser(char *row)
 	if (c == 0)
 		return -2;
 	if (strncmp(c + 1, "start", 5) == 0) {
-		state = 0;
+		state = START;
 		c += 6;
 	} else if (strncmp(c + 1, "done", 4) == 0) {
-		state = 1;
+		state = DONE;
 		c += 5;
 	} else if (strncmp(c + 1, "ping", 4) == 0) {
-		state = 4;
+		state = PING;
+		c += 5;
+	} else if (strncmp(c + 1, "wait", 4) == 0) {
+		state = WAIT;
 		c += 5;
 	} else {
 		state = 0;
@@ -1226,10 +1234,10 @@ static int parser(char *row)
 		return -6;
 	memory = atol(c + 1);
 	c = strchr(c + 1, (int) ',');
-	if (debug && state != 4)
+	if (debug && state < PING)
 		fprintf(stderr, "%s\n", row);
-	if (c == 0)
-		return state == 4 ? 0 : -7;
+	if (c == 0) 
+		return state >= PING ? 0 : -7;
 	reads = atol(c + 1);
 	c = strchr(c + 1, (int) ',');
 	if (c == 0)
