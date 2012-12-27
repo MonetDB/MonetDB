@@ -215,8 +215,8 @@ MALresourceFairness(Client cntxt, MalBlkPtr mb, lng usec)
 			if (rss < MEMORY_THRESHOLD * monet_memory)
 				break;
 			factor = ((double) rss) / (MEMORY_THRESHOLD * monet_memory);
-			delay = (long) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
-			delay = (long) ( ((double)delay) * running / threads);
+			delay = (lng) (DELAYUNIT * (factor > 1.0 ? 1.0 : factor));
+			delay = (lng) ( ((double)delay) * running / threads);
 			running--;
 			if (delay) {
 				if ( delayed++ == 0){
