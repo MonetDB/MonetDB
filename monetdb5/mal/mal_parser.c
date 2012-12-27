@@ -370,11 +370,11 @@ lastline(Client cntxt)
 	return s;
 }
 
-long
+ssize_t
 position(Client cntxt)
 {
 	str s = lastline(cntxt);
-	return (long) (CURRENT(cntxt) - s);
+	return (ssize_t) (CURRENT(cntxt) - s);
 }
 
 /*

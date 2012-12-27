@@ -2963,7 +2963,7 @@ str pinRef;
 int pivotDisjunctiveProp;
 int pivotProp;
 str plusRef;
-long position(Client cntxt);
+ssize_t position(Client cntxt);
 str postludeRef;
 str pqueueRef;
 str preludeRef;
