@@ -657,13 +657,13 @@ static void showmemory(void)
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
-	fprintf(gnudata, "set xrange [%f:%f]\n", (double) startrange, ((double) lastclktick - starttime));
+	fprintf(gnudata, "set xrange [%ld:%ld]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in GB\"\n");
 	fprintf(gnudata, "unset xtics\n");
 	mn = (long) (min / 1024.0);
 	mx = (long) (max / 1024.0);
 	mx += (mn == mx) + 1;
-	fprintf(gnudata, "set yrange [%ld:%ld]\n", mn, (long) mx);
+	fprintf(gnudata, "set yrange [%ld:%ld]\n", mn, mx);
 	fprintf(gnudata, "set ytics (\"%.1f\" %ld, \"%.1f\" %ld)\n", min / 1024.0, mn, max / 1024.0, mx);
 	fprintf(gnudata, "plot \"%s.dat\" using 1:2 notitle with dots linecolor rgb \"blue\"\n", (tracefile ? "scratch" : filename));
 	fprintf(gnudata, "unset yrange\n");
@@ -684,7 +684,7 @@ static void showcpu(void)
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset border\n");
 
-	fprintf(gnudata, "set xrange [%f:%f]\n", (double) startrange, ((double) lastclktick - starttime));
+	fprintf(gnudata, "set xrange [%ld:%ld]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set yrange [0:%d.%d]\n", cpus, cpus);
 	if (cpus)
 		fprintf(gnudata, "plot ");
@@ -715,12 +715,12 @@ static void showio(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.07\n");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
-	fprintf(gnudata, "set xrange [%f:%f]\n", (double) startrange, (double) (lastclktick - starttime));
+	fprintf(gnudata, "set xrange [%ld:%ld]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set yrange [1:%ld]\n", ((1.1 * max / beat) <= 2 ? 2 : (long) (1.1 * max / beat)));
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (\"%d\" %ld)\n", (int) (max / beat), max / beat);
+	fprintf(gnudata, "set y2tics in (\"%ld\" %ld)\n", max / beat, max / beat);
 	fprintf(gnudata, "set y2label \"IO per ms\"\n");
 	fprintf(gnudata, "plot \"%s.dat\" using 1:(($3+$4)/%d.0) title \"reads\" with boxes fs solid linecolor rgb \"gray\" ,\\\n", (tracefile ? "scratch" : filename), beat);
 	fprintf(gnudata, "\"%s.dat\" using 1:($4/%d.0) title \"writes\" with boxes fs solid linecolor rgb \"red\"  \n", (tracefile ? "scratch" : filename), beat);
@@ -966,7 +966,7 @@ static void createTomogram(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.4\n");
 	fprintf(gnudata, "set origin 0.0,0.4\n");
-	fprintf(gnudata, "set xrange [%f:%f]\n", (double) startrange, (double) lastclktick - starttime);
+	fprintf(gnudata, "set xrange [%ld:%ld]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++)
