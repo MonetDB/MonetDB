@@ -1128,12 +1128,14 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		}
 	} else if (l->tseqbase != oid_nil) {
 		/* execute using slice */
-		BAT *v = BATmirror(VIEWhead(BATmirror(r)));
+		BAT *v = r;
 		oid lo_val = MAX(l->tseqbase, r->hseqbase);
 		oid hi_val = MIN(l->tseqbase + lcount, r->hseqbase + rcount);
 		BUN lo_pos = lo_val - r->hseqbase;
 		BUN hi_pos = hi_val;
 
+		if (v->H->type != TYPE_void) /* only create view when needed */
+			v = BATmirror(VIEWhead(BATmirror(r)));
 		if (hi_pos > r->hseqbase)
 			hi_pos -= r->hseqbase;
 		else
@@ -1144,7 +1146,8 @@ batfetchjoin(BAT *l, BAT *r, BUN estimate, bit swap, bit hitalways)
 		if (seqbase != oid_nil)
 			seqbase += lo_val - l->tseqbase;
 		BATseqbase(bn, seqbase);
-		BBPunfix(v->batCacheid);
+		if (v != r)
+			BBPunfix(v->batCacheid);
 	} else {
 		/* nil join column => empty result */
 		ALGODEBUG fprintf(stderr, "#BATfetchjoin: BAThvoid(l) && BATtvoid(l) && l->tseqbase == oid_nil\n");

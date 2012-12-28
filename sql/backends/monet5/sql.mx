@@ -1273,6 +1273,7 @@ sql.prelude();
 #include "sql_statement.h"
 
 #include <bat/bat_storage.h>
+#include <bat/bat_utils.h>
 
 /*
  * @-
@@ -3146,12 +3147,16 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (upd) {
 			int *uvl = (int *)getArgReference(stk, pci, 1);
 
-			BAT *id = BATmirror(BATmark(b, 0));
-			BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+			if (BATcount(b)) {
+				BAT *id = BATmirror(BATmark(b, 0));
+				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BBPkeepref( *bid = id->batCacheid);
+				BBPkeepref( *uvl = vl->batCacheid);
+			} else {
+				*bid = e_bat(TYPE_oid); 
+				*uvl = e_bat(b->T->type); 
+			}
 			BBPreleaseref(b->batCacheid);
-			
-			BBPkeepref( *bid = id->batCacheid);
-			BBPkeepref( *uvl = vl->batCacheid);
 		} else {
 			BBPkeepref( *bid = b->batCacheid);
 		}
@@ -3206,12 +3211,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (upd) {
 			int *uvl = (int *)getArgReference(stk, pci, 1);
 
-			BAT *id = BATmirror(BATmark(b, 0));
-			BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+			if (BATcount(b)) {
+				BAT *id = BATmirror(BATmark(b, 0));
+				BAT *vl = BATmirror(BATmark(BATmirror(b), 0));
+				BBPkeepref( *bid = id->batCacheid);
+				BBPkeepref( *uvl = vl->batCacheid);
+			} else {
+				*bid = e_bat(TYPE_oid); 
+				*uvl = e_bat(b->T->type); 
+			}
 			BBPreleaseref(b->batCacheid);
-			
-			BBPkeepref( *bid = id->batCacheid);
-			BBPkeepref( *uvl = vl->batCacheid);
 		} else {
 			BBPkeepref( *bid = b->batCacheid);
 		}
@@ -3548,22 +3557,25 @@ DELTAsub(bat *result, bat *col, bat *uid, bat *uval, bat *ins)
 		return MAL_SUCCEED;
 	}
 
-	cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
-	BBPunfix(c->batCacheid);
-	c = BATmirror(BATmark(cminu, 0));
-	BBPunfix(cminu->batCacheid);
-
-	if ((u_val = BATdescriptor(*uval)) == NULL) {
+	res = c;
+	if (BATcount(u_id)) {
+		cminu = BATkdiff(BATmirror(c), BATmirror(u_id));
 		BBPunfix(c->batCacheid);
-		if (i) BBPunfix(i->batCacheid);
+		c = BATmirror(BATmark(cminu, 0));
+		BBPunfix(cminu->batCacheid);
+
+		if ((u_val = BATdescriptor(*uval)) == NULL) {
+			BBPunfix(c->batCacheid);
+			if (i) BBPunfix(i->batCacheid);
+			BBPunfix(u_id->batCacheid);
+			throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		}
+		u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
 		BBPunfix(u_id->batCacheid);
-		throw(MAL, "sql.delta", RUNTIME_OBJECT_MISSING);
+		BBPunfix(u_val->batCacheid);
+		res = BATappend(c, u, TRUE);
+		BBPunfix(u->batCacheid);
 	}
-	u = BATleftfetchjoin(u_val, u_id, BATcount(u_val));
-	BBPunfix(u_id->batCacheid);
-	BBPunfix(u_val->batCacheid);
-	res = BATappend(c, u, TRUE);
-	BBPunfix(u->batCacheid);
 
 	if (i) res = BATappend(res, i, TRUE);
 	if (i) BBPunfix(i->batCacheid);
@@ -3672,7 +3684,7 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
-	BAT *b, *i, *d, *tids, *diff, *mark;
+	BAT *b, *i, *d, *tids, *diff;
 	size_t nr, sb = 0, inr = 0;
 	int readonly = 0;
 
@@ -3718,17 +3730,19 @@ TID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* create void,void bat with length and oid's set */
 	tids = BATnew(TYPE_void, TYPE_void, 0);
 	tids->H->seq = sb;
-	tids->T->seq = 0;
+	tids->T->seq = sb;
 	BATsetcount(tids, nr);
 	tids->H->revsorted = 0;
 	tids->T->revsorted = 0;
 	
-	diff = BATkdiff(tids, BATmirror(d));
+	if (BATcount(d)) {
+		diff = BATkdiff(tids, BATmirror(d));
+		BBPunfix(tids->batCacheid);
+		tids = BATmirror(BATmark(diff, sb));
+		BBPunfix(diff->batCacheid);
+	}
 	BBPunfix(d->batCacheid);
-	mark = BATmark(diff, sb);
-	BBPunfix(diff->batCacheid);
-	d = BATmirror(mark);
-	BBPkeepref( *res = d->batCacheid ); 
+	BBPkeepref( *res = tids->batCacheid ); 
 	return MAL_SUCCEED;
 }
 

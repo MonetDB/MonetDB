@@ -69,10 +69,12 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 	BAT *u = NULL, *d, *r;
 
 	c->t->s->base.rtime = c->t->base.rtime = c->base.rtime = tr->stime;
-	u = delta_bind_ubat(c->data, access);
+	r = u = delta_bind_ubat(c->data, access);
 	d = delta_bind_del(c->t->data, RD_INS);
-	r = BATkdiff(u, BATmirror(d));
-	BBPunfix(u->batCacheid);
+	if (BATcount(d)) {
+		r = BATkdiff(u, BATmirror(d));
+		BBPunfix(u->batCacheid);
+	}
 	BBPunfix(d->batCacheid);
 	return r;
 }
@@ -83,10 +85,12 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 	BAT *u = NULL, *d, *r;
 
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
-	u = delta_bind_ubat(i->data, access);
+	r = u = delta_bind_ubat(i->data, access);
 	d = delta_bind_del(i->t->data, RD_INS);
-	r = BATkdiff(u, BATmirror(d));
-	BBPunfix(u->batCacheid);
+	if (BATcount(d)) {
+		r = BATkdiff(u, BATmirror(d));
+		BBPunfix(u->batCacheid);
+	}
 	BBPunfix(d->batCacheid);
 	return r;
 }
